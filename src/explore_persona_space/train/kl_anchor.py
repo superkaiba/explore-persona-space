@@ -15,12 +15,18 @@ Mechanism (plan §5 "KL anchor — the load-bearing novel mechanism"):
       continues SFT after the snapshot before being pulled back).
 
   start_step .. end_of_phase:
-      Per optimizer step: run a forward pass on the anchor batch
-      (anchor_batch_size x anchor_grad_accum micro-batches), gather
-      student logits at the same top-K teacher indices, compute
-      ``KL(teacher || student)`` over the C+ assistant tokens, add
-      ``kl_weight * kl_loss`` to the SFT loss. Backprop runs through
-      the SFT loss + the KL term jointly.
+      Per optimizer step (gradient-sync microstep only): run a forward
+      pass on the anchor batch (anchor_batch_size x anchor_grad_accum
+      micro-batches), gather student logits at the same top-K teacher
+      indices, and compute ``KL(teacher || student)`` over the C+
+      assistant tokens. The KL gradient (``kl_weight * raw_kl``) is
+      backpropagated INSIDE the anchor loop, one micro-batch at a time
+      via ``accelerator.backward``, depositing into LoRA ``.grad``
+      buffers. HF Trainer then backpropagates the SFT loss separately.
+      Issue #382 OOM fix (2026-05-26): the previous design accumulated
+      all anchor-loop graphs in memory before a single outer backward,
+      requiring ~108 GB of autograd tape that didn't fit on an 80 GB H100
+      — see ``MarkerKLAnchor.kl_loss`` docstring for the fix details.
 
 Invariants verified by ``tests/test_kl_anchor.py``:
 
@@ -468,26 +474,58 @@ class MarkerKLAnchor:
                 self.total_steps,
             )
 
-    def kl_loss(self, model: torch.nn.Module, global_step: int) -> torch.Tensor | float:
-        """Compute the additive KL term for the current optimizer step.
+    def kl_loss(
+        self,
+        model: torch.nn.Module,
+        global_step: int,
+        *,
+        accelerator: Any | None = None,
+    ) -> torch.Tensor | float:
+        """Compute the KL anchor term for the current optimizer step.
 
-        Returns 0.0 (plain Python float — does NOT change autograd graph) if
-        the anchor window isn't active yet; otherwise returns a scalar tensor
-        with gradients enabled.
+        Two code paths, selected by ``accelerator``:
+
+          ``accelerator is None`` (test / legacy synthetic path):
+            Build a per-micro-batch list of KL scalars (graph-attached),
+            stack-mean them, return the graph-attached scalar. Existing unit
+            tests in ``tests/test_kl_anchor.py`` use this path with stub models
+            (no real backward is run). Returns ``0.0`` (plain ``float``) when
+            the anchor window is not yet active.
+
+          ``accelerator is not None`` (production path — issue #382 OOM fix):
+            For each of ``anchor_grad_accum`` micro-batches, run one student
+            forward, compute the per-micro-batch KL, scale by
+            ``kl_weight / n_accum``, and call ``accelerator.backward`` on the
+            resulting per-micro-batch tensor IMMEDIATELY. This frees the
+            student-forward autograd tape before the next micro-batch's
+            forward is built, so only ONE micro-batch's tape is ever live
+            (vs all 64 simultaneously under the legacy stack-mean path).
+            Returns a DETACHED zero-dim scalar tensor (the unweighted raw KL
+            averaged across the micro-batches), for trainer-side logging
+            only. Returns ``0.0`` when the anchor is not yet active.
 
         Effective anchor coverage per call: ``anchor_batch_size *
-        anchor_grad_accum`` examples. Round-2 fix: previously
-        ``anchor_grad_accum`` was parsed but never consumed, so the model saw
-        only ``anchor_batch_size`` (8) anchor examples per compute_loss call
-        — half the plan's effective batch 64. We now loop
-        ``anchor_grad_accum`` times, sample a fresh ``anchor_batch_size``
-        sub-batch each iteration (cycling the deterministic permutation), and
-        average the resulting KL scalars. The returned tensor still
-        backpropagates through every micro-batch's student forward.
+        anchor_grad_accum`` examples (plan §10 mandate). Under prod settings
+        (``anchor_batch_size=1, anchor_grad_accum=64``) this is 64 examples.
 
-        IMPORTANT: even in the active window, the returned KL is the **raw**
-        KL (not yet multiplied by ``kl_weight``); the caller applies the
-        weight. This keeps the raw value loggable for diagnostics.
+        Numerical equivalence (production vs legacy path):
+
+            Σ_i (kl_weight * kl_micro_i / n_accum)  for i in [0, n_accum)
+            = kl_weight * (1/n_accum) * Σ_i kl_micro_i
+            = kl_weight * mean(kl_micro_i)
+            = kl_weight * raw_kl
+
+          which is exactly what the legacy ``loss = sft_loss + kl_weight *
+          raw_kl`` plus ``accelerator.backward(loss)`` would have deposited
+          in the LoRA ``.grad`` buffers. Bf16 accumulation order changes the
+          last few decimals; semantics are otherwise identical.
+
+        IMPORTANT: the returned scalar is the **raw** KL (NOT multiplied by
+        ``kl_weight``); the caller logs this value for diagnostics. In the
+        production path the gradient contribution (``kl_weight * raw_kl``)
+        has already been deposited in the LoRA ``.grad`` buffers — the
+        caller MUST NOT add the returned scalar to its loss (would
+        double-count).
         """
         self.last_step_observed = global_step
         # State transitions happen up here, BEFORE we decide whether to fire.
@@ -506,7 +544,30 @@ class MarkerKLAnchor:
         mbs = self.config.anchor_batch_size
         n_accum = max(1, int(self.config.anchor_grad_accum))
 
-        kl_terms: list[torch.Tensor] = []
+        if accelerator is None:
+            # Test / legacy synthetic path: graph-attached stack-mean return.
+            # The caller (a unit test) does NOT call backward — we just need a
+            # scalar tensor whose `.item()` reflects the average KL.
+            kl_terms: list[torch.Tensor] = []
+            for _accum_step in range(n_accum):
+                idxs = self._next_micro_batch_indices(n=n, mbs=mbs, global_step=global_step)
+                ids = self.anchor_input_ids[idxs].to(device)
+                amask = self.anchor_attention_mask[idxs].to(device)
+                rmask = self.anchor_response_mask[idxs].to(device)
+                t_logits = self.teacher_top_logits[idxs]
+                t_idx = self.teacher_top_indices[idxs]
+                student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
+                kl_terms.append(_kl_top_k(student_logits, t_logits, t_idx, rmask))
+            kl = torch.stack(kl_terms).mean()
+            self.last_kl = float(kl.detach().to(torch.float32).item())
+            return kl
+
+        # Production path: per-micro-batch backward, never hold > 1 graph.
+        # The gradient contribution is `kl_weight * raw_kl` per optimizer
+        # step, deposited into LoRA `.grad` buffers via `accelerator.backward`.
+        kl_log_sum = 0.0
+        kl_weight = float(self.config.kl_weight)
+        inv_n = 1.0 / float(n_accum)
         for _accum_step in range(n_accum):
             idxs = self._next_micro_batch_indices(n=n, mbs=mbs, global_step=global_step)
             ids = self.anchor_input_ids[idxs].to(device)
@@ -514,13 +575,23 @@ class MarkerKLAnchor:
             rmask = self.anchor_response_mask[idxs].to(device)
             t_logits = self.teacher_top_logits[idxs]
             t_idx = self.teacher_top_indices[idxs]
-
             student_logits = _forward_logits(model, ids, amask)  # (b, T, V)
-            kl_terms.append(_kl_top_k(student_logits, t_logits, t_idx, rmask))
+            kl_micro = _kl_top_k(student_logits, t_logits, t_idx, rmask)
+            # Weight per-micro-batch so the SUM over n_accum iterations
+            # deposits the same gradient as the legacy `kl_weight * mean()`
+            # would have produced. Use `accelerator.backward` (handles
+            # GradScaler / fp16 / bf16 amp safely; bare t.backward does not).
+            weighted_micro = (kl_weight * inv_n) * kl_micro
+            accelerator.backward(weighted_micro)
+            kl_log_sum += float(kl_micro.detach().to(torch.float32).item())
+            # Free the per-micro-batch tape before the next forward builds one.
+            del student_logits, kl_micro, weighted_micro
 
-        kl = torch.stack(kl_terms).mean()
-        self.last_kl = float(kl.detach().to(torch.float32).item())
-        return kl
+        # Detached scalar — only for logging by the caller. Gradient is
+        # already in LoRA .grad buffers; caller MUST NOT add to its loss.
+        raw_kl_mean = kl_log_sum * inv_n
+        self.last_kl = float(raw_kl_mean)
+        return torch.tensor(raw_kl_mean, dtype=torch.float32, device=device).detach()
 
     def _next_micro_batch_indices(self, *, n: int, mbs: int, global_step: int) -> list[int]:
         """Yield the next ``mbs`` anchor-row indices from the deterministic
@@ -562,16 +633,21 @@ class KLAnchoredSFTTrainer(SFTTrainer):
 
       1. SFT loss = super().compute_loss(...) — fires on EVERY microstep,
          as the HF Trainer requires.
-      2. raw_kl is computed AT MOST ONCE per optimizer step, on the
+      2. KL backward is invoked AT MOST ONCE per optimizer step, on the
          microstep that HF marks as the gradient-sync microstep
          (``self.accelerator.gradient_state.sync_gradients == True``).
          Under ``gradient_accumulation_steps=N``, that is the Nth
          (last) microstep of each optimizer-step window.
-      3. On the firing microstep: loss = sft_loss + kl_weight * raw_kl
-         (pre-compensated for the trainer's legacy
-         loss-by-grad-accum scaling fence so the KL gradient
-         contribution is exactly ``kl_weight * raw_kl`` regardless of
-         grad-accum).
+      3. On the firing microstep: ``kl_anchor.kl_loss(model, step,
+         accelerator=self.accelerator)`` runs ``anchor_grad_accum``
+         student forwards in a loop, and for EACH micro-batch calls
+         ``accelerator.backward(kl_weight / n_accum * kl_micro)``,
+         depositing per-micro-batch gradient into LoRA ``.grad`` and
+         freeing the autograd tape before the next forward. The total
+         gradient deposited equals ``kl_weight * mean(kl_micro_i) =
+         kl_weight * raw_kl``, matching the legacy design's contribution
+         per optimizer step. The returned scalar is DETACHED — we do NOT
+         add it to ``loss`` (would double-count the KL gradient).
       4. WandB log fires only on the gating microstep, so the anchor
          scalars are emitted once per optimizer step (matching the
          ``train_loss`` cadence).
@@ -637,27 +713,35 @@ class KLAnchoredSFTTrainer(SFTTrainer):
             grad_accum = max(1, int(self.args.gradient_accumulation_steps))
             return self._microstep_counter % grad_accum == 0
 
-    def _legacy_loss_scaling_will_fire(self, num_items_in_batch) -> bool:
-        """Mirror the HF Trainer's gradient-accumulation loss-scaling fence
-        (``transformers.Trainer.training_step``):
-
-            if (not self.model_accepts_loss_kwargs or num_items_in_batch is None) \\
-               and self.compute_loss_func is None:
-                loss = loss / self.current_gradient_accumulation_steps
-
-        When that fence fires, the trainer divides the returned loss (and
-        thus our KL term inside it) by ``current_gradient_accumulation_steps``
-        before backward. We pre-multiply the KL by the same factor so the
-        final gradient contribution is exactly ``kl_weight * raw_kl`` per
-        optimizer step on BOTH code paths.
-        """
-        model_accepts_kwargs = bool(getattr(self, "model_accepts_loss_kwargs", False))
-        compute_loss_func = getattr(self, "compute_loss_func", None)
-        return (
-            not model_accepts_kwargs or num_items_in_batch is None
-        ) and compute_loss_func is None
-
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
+        """Compute SFT loss; drive the KL anchor backward in-loop.
+
+        Issue #382 OOM fix (2026-05-26): the KL anchor previously returned a
+        graph-attached scalar that was added to ``sft_loss``, and the HF
+        Trainer ran ONE outer ``accelerator.backward(sft_loss + kl)`` --
+        which required holding the FULL anchor-loop autograd tape live
+        (64 micro-batches x ~1.7 GB student-forward graph each = ~108 GB),
+        deterministically OOMing on first anchor activation.
+
+        The fix INVERTS this contract. On the gradient-sync microstep:
+
+          1. We pass ``self.accelerator`` to ``kl_anchor.kl_loss``.
+          2. ``kl_loss`` runs ``anchor_grad_accum`` student forwards in a
+             loop, and after EACH forward it calls
+             ``accelerator.backward(kl_weight / n_accum * kl_micro)``,
+             depositing per-micro-batch gradients into LoRA ``.grad``
+             buffers and freeing the micro-batch's autograd tape.
+          3. ``kl_loss`` returns a DETACHED scalar with no graph; the
+             trainer adds NOTHING to ``loss`` (would double-count) and uses
+             the scalar ONLY for ``train/kl_anchor_loss`` logging.
+          4. HF Trainer then runs its normal ``accelerator.backward(loss)``
+             on the unchanged ``sft_loss``; SFT and KL gradients combine
+             cleanly in the LoRA ``.grad`` buffers.
+
+        Peak anchor-loop GPU memory drops from ~108 GB tape → ~2 GB tape
+        (one live micro-batch graph at a time). Numerical equivalence to
+        the legacy path holds up to bf16 accumulation order.
+        """
         # Standard SFT loss (entropy + token metrics computed inside).
         out = super().compute_loss(
             model, inputs, return_outputs=return_outputs, num_items_in_batch=num_items_in_batch
@@ -681,26 +765,25 @@ class KLAnchoredSFTTrainer(SFTTrainer):
             return (loss, outputs) if return_outputs else loss
 
         global_step = int(self.state.global_step)
-        raw_kl = self.kl_anchor.kl_loss(model, global_step)
+        # Production path: pass `self.accelerator` so kl_loss runs in-loop
+        # backwards itself and returns a DETACHED logging scalar. We do NOT
+        # add this scalar to `loss` — the gradient is already in `.grad`.
+        raw_kl = self.kl_anchor.kl_loss(model, global_step, accelerator=self.accelerator)
         if isinstance(raw_kl, torch.Tensor):
-            weighted = self.kl_anchor.config.kl_weight * raw_kl
-            # Pre-compensate for the HF legacy loss-scaling fence so the KL
-            # term contributes exactly ``kl_weight * raw_kl`` to the
-            # gradient regardless of ``gradient_accumulation_steps``.
-            if self._legacy_loss_scaling_will_fire(num_items_in_batch):
-                grad_accum = max(1, int(self.args.gradient_accumulation_steps))
-                weighted = weighted * grad_accum
-            loss = loss + weighted
-            # Log via Trainer.log() so WandB picks it up alongside train_loss.
-            # Cadence: once per optimizer step at logging_steps boundaries —
-            # ``self.state.global_step`` has not yet been incremented for the
-            # in-flight step, so we test global_step + 1.
+            # Active window: log via Trainer.log() so WandB picks it up
+            # alongside train_loss. Cadence: once per optimizer step at
+            # logging_steps boundaries — `self.state.global_step` has not yet
+            # been incremented for the in-flight step, so test
+            # `global_step + 1`. The "weighted" diagnostic is computed from
+            # the detached raw_kl scalar; its gradient was already deposited.
             if (self.state.global_step + 1) % max(1, self.args.logging_steps) == 0:
+                kl_weight = float(self.kl_anchor.config.kl_weight)
+                raw_kl_val = float(raw_kl.detach().item())
                 try:
                     self.log(
                         {
-                            "train/kl_anchor_loss": float(raw_kl.detach().item()),
-                            "train/kl_anchor_weighted_pre_scale": float(weighted.detach().item()),
+                            "train/kl_anchor_loss": raw_kl_val,
+                            "train/kl_anchor_weighted_pre_scale": kl_weight * raw_kl_val,
                             "train/kl_anchor_state": 1.0,  # 1 == active
                         }
                     )

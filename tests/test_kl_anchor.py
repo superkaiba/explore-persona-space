@@ -359,8 +359,7 @@ class _FakeAccelerator:
 
 class _FakeKLAnchoredTrainerForGate:
     """Light-weight stand-in for KLAnchoredSFTTrainer that exercises ONLY the
-    gating + scaling helpers (``_is_sync_microstep``,
-    ``_legacy_loss_scaling_will_fire``) and the compute_loss bookkeeping
+    gating helper (``_is_sync_microstep``) and the compute_loss bookkeeping
     around the KL term. Avoids instantiating SFTTrainer (which would require
     a real model + dataset).
 
@@ -374,8 +373,6 @@ class _FakeKLAnchoredTrainerForGate:
         kl_anchor: MarkerKLAnchor,
         gradient_accumulation_steps: int,
         sync_gradients_seq: list[bool],
-        model_accepts_loss_kwargs: bool = True,
-        compute_loss_func: object | None = None,
     ) -> None:
         from types import SimpleNamespace
 
@@ -393,9 +390,6 @@ class _FakeKLAnchoredTrainerForGate:
         self.accelerator = _FakeAccelerator(sync_gradients=self._sync_seq[0])
         self._microstep_counter = 0
         self._kl_anchor_initialized = True  # skip on_train_begin re-entry
-        # Mirror the real trainer's flags used by the legacy-scaling probe.
-        self.model_accepts_loss_kwargs = model_accepts_loss_kwargs
-        self.compute_loss_func = compute_loss_func
         self.kl_calls = 0
 
     def _advance_sync_flag(self) -> None:
@@ -411,9 +405,6 @@ class _FakeKLAnchoredTrainerForGate:
 
         cls = KLAnchoredSFTTrainer
         self._is_sync_microstep = cls._is_sync_microstep.__get__(self, type(self))
-        self._legacy_loss_scaling_will_fire = cls._legacy_loss_scaling_will_fire.__get__(
-            self, type(self)
-        )
 
 
 def _build_fake_trainer(
@@ -620,41 +611,214 @@ def test_kl_does_not_fire_on_non_sync_microsteps() -> None:
     )
 
 
-def test_legacy_loss_scaling_compensation_disabled_when_model_accepts_loss_kwargs() -> None:
-    """When the model accepts loss kwargs AND num_items_in_batch is passed,
-    HF Trainer does NOT divide the returned loss by grad_accum, so we must
-    NOT pre-multiply. This is the modern Qwen-2.5 + TRL code path."""
-    fake = _build_fake_trainer(
-        gradient_accumulation_steps=4,
-        sync_gradients_seq=[True],
+# ── Issue #382 OOM fix: in-loop backward instead of stack-mean ─────────────
+#
+# Round-2 stack-mean implementation pinned 64 simultaneous student-forward
+# autograd graphs (one per anchor_grad_accum micro-batch), measured at
+# +1.69 GB / iter = ~108 GB total tape, deterministically OOMing on first
+# anchor activation on an 80 GB H100 (see epm:failure v2 on task #382,
+# 2026-05-26). The fix drives backward INSIDE the loop, so only one
+# micro-batch's tape is live at a time, and keeps numerical equivalence
+# up to bf16 accumulation order.
+#
+# The two paths share a single ``MarkerKLAnchor.kl_loss`` implementation:
+# the production trainer passes ``accelerator=self.accelerator`` to
+# trigger per-micro-batch ``accelerator.backward`` and return a DETACHED
+# logging scalar; the legacy synthetic tests above pass nothing and get
+# the graph-attached stack-mean return that tests expect.
+
+
+class _CallRecordingAccelerator:
+    """Fake accelerator that records `.backward(t)` calls and runs `t.backward()` itself.
+
+    We use a real torch tensor backward (not a no-op) so we can verify that
+    gradients land in the model's parameters and that intermediate graphs are
+    released between micro-batches.
+    """
+
+    def __init__(self) -> None:
+        self.backward_calls: list[float] = []  # detached values
+        self.backward_count: int = 0
+
+    def backward(self, loss: torch.Tensor, **kwargs) -> None:
+        self.backward_count += 1
+        self.backward_calls.append(float(loss.detach().to(torch.float32).item()))
+        loss.backward()
+
+
+class _GradientStubModel(_StubModel):
+    """Stub model whose lm_head weight requires grad so we can read .grad afterwards."""
+
+    def __init__(self, vocab: int = 32, hidden: int = 8) -> None:
+        super().__init__(vocab=vocab, hidden=hidden)
+        # Make the hidden state DEPEND on input_ids so gradient flows through
+        # the lm_head, otherwise the random `h` has no graph to backprop.
+        self.embed = torch.nn.Embedding(vocab, hidden)
+
+    def forward(self, input_ids, attention_mask=None, use_cache=False):
+        h = self.embed(input_ids)  # (B, T, hidden) — graph-attached
+        logits = self.lm_head(h)
+
+        class _Out:
+            pass
+
+        out = _Out()
+        out.logits = logits
+        return out
+
+
+def test_kl_loss_with_accelerator_returns_detached_scalar() -> None:
+    """Production path: when `accelerator` is passed, `kl_loss` returns a
+    DETACHED zero-dim tensor whose ``requires_grad`` is False. The caller
+    must be able to call `.item()` on it without entering autograd."""
+    torch.manual_seed(31)
+    anchor = _make_anchor_no_disk(total_steps=100)
+    model = _GradientStubModel()
+    accel = _CallRecordingAccelerator()
+    # Walk to active.
+    _ = anchor.kl_loss(model, global_step=40)  # snapshot (no accel — OK)
+    out = anchor.kl_loss(model, global_step=50, accelerator=accel)
+    assert isinstance(out, torch.Tensor), out
+    assert out.dim() == 0, out.shape
+    assert not out.requires_grad, "production-path return MUST be detached"
+    assert out.item() >= 0.0
+
+
+def test_kl_loss_with_accelerator_invokes_backward_per_micro_batch() -> None:
+    """Production path: `accelerator.backward` MUST fire exactly
+    `anchor_grad_accum` times per `kl_loss` call (one per micro-batch),
+    NOT once at the end. This is the OOM fix: per-micro-batch backward
+    releases each forward's autograd tape before the next forward."""
+    torch.manual_seed(33)
+    config = KLAnchorConfig(
+        enabled=True,
+        anchor_dataset="<synthetic>",
+        kl_weight=0.5,
+        teacher_freeze_step_frac=0.4,
+        start_step_frac=0.5,
+        anchor_batch_size=2,
+        anchor_grad_accum=4,  # 4 micro-batches per call
+        top_k_logits=4,
     )
-    # Modern path: model_accepts_loss_kwargs=True (set in __init__) AND
-    # num_items_in_batch is not None.
-    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=torch.tensor(16))
-    assert will_fire is False, "Modern path must NOT trigger pre-compensation"
-
-
-def test_legacy_loss_scaling_compensation_active_when_num_items_in_batch_is_none() -> None:
-    """When num_items_in_batch is None, HF divides loss by grad_accum, so we
-    pre-multiply the KL contribution to keep its gradient at kl_weight * raw_kl."""
-    fake = _build_fake_trainer(
-        gradient_accumulation_steps=4,
-        sync_gradients_seq=[True],
+    anchor = MarkerKLAnchor(
+        config=config,
+        anchor_input_ids=torch.randint(0, 32, (8, 6)),
+        anchor_attention_mask=torch.ones(8, 6, dtype=torch.long),
+        anchor_response_mask=torch.ones(8, 6, dtype=torch.bool),
     )
-    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=None)
-    assert will_fire is True
-
-
-def test_legacy_loss_scaling_compensation_active_when_model_does_not_accept_loss_kwargs() -> None:
-    """When the model does NOT accept loss kwargs (old HF path), HF Trainer
-    divides loss by grad_accum; pre-multiply applies."""
-    fake = _build_fake_trainer(
-        gradient_accumulation_steps=4,
-        sync_gradients_seq=[True],
+    anchor.on_train_begin(total_steps=100)
+    model = _GradientStubModel()
+    accel = _CallRecordingAccelerator()
+    _ = anchor.kl_loss(model, global_step=40)  # snapshot
+    accel.backward_count = 0  # reset (snapshot path doesn't pass accel anyway)
+    _ = anchor.kl_loss(model, global_step=50, accelerator=accel)
+    assert accel.backward_count == 4, (
+        f"accelerator.backward must fire once per anchor_grad_accum micro-batch "
+        f"(=4), not once at end of kl_loss. got={accel.backward_count}"
     )
-    fake.model_accepts_loss_kwargs = False
-    will_fire = fake._legacy_loss_scaling_will_fire(num_items_in_batch=torch.tensor(16))
-    assert will_fire is True
+
+
+def test_kl_loss_with_accelerator_deposits_gradient_in_model_params() -> None:
+    """Production path: after `kl_loss(accelerator=accel)`, the model
+    parameters' `.grad` is populated with the KL gradient. This is the
+    contract that lets us OMIT adding the returned scalar to `loss` in
+    compute_loss — the gradient is already in the parameter `.grad` buffers.
+    """
+    torch.manual_seed(35)
+    anchor = _make_anchor_no_disk(total_steps=100)
+    model = _GradientStubModel()
+    # Zero out any pre-existing grads.
+    for p in model.parameters():
+        if p.grad is not None:
+            p.grad.zero_()
+    accel = _CallRecordingAccelerator()
+    _ = anchor.kl_loss(model, global_step=40)  # snapshot
+    _ = anchor.kl_loss(model, global_step=50, accelerator=accel)
+    # At least one trainable parameter must have a non-None, non-zero grad.
+    grads_seen = [p.grad for p in model.parameters() if p.grad is not None]
+    assert grads_seen, "No parameter grad populated — backward did not flow"
+    nonzero = any(g.abs().sum().item() > 0.0 for g in grads_seen)
+    assert nonzero, "All param grads are zero — backward did not deposit signal"
+
+
+def test_kl_loss_in_loop_backward_matches_legacy_stack_mean_gradient() -> None:
+    """Numerical equivalence: the SUM of per-micro-batch gradients from the
+    in-loop-backward path equals the gradient that the legacy stack-mean
+    path would have produced (`backward(kl_weight * mean(kl_micro_i))`),
+    up to bf16 accumulation order. fp32 here gives exact equality.
+
+    This is the load-bearing property: the fix changes implementation, not
+    behavior. Compute SFT-equivalent (kl_weight * mean) gradient via
+    `backward()` on the stack-mean output, then compute in-loop gradient,
+    then assert they match.
+    """
+    torch.manual_seed(37)
+    config = KLAnchorConfig(
+        enabled=True,
+        anchor_dataset="<synthetic>",
+        kl_weight=0.7,
+        teacher_freeze_step_frac=0.4,
+        start_step_frac=0.5,
+        anchor_batch_size=2,
+        anchor_grad_accum=3,
+        top_k_logits=4,
+    )
+
+    def _fresh_anchor() -> MarkerKLAnchor:
+        a = MarkerKLAnchor(
+            config=config,
+            anchor_input_ids=torch.arange(4 * 6).reshape(4, 6) % 32,
+            anchor_attention_mask=torch.ones(4, 6, dtype=torch.long),
+            anchor_response_mask=torch.ones(4, 6, dtype=torch.bool),
+        )
+        a.on_train_begin(total_steps=100)
+        return a
+
+    # ── Path A: legacy stack-mean — one outer backward
+    torch.manual_seed(101)
+    model_a = _GradientStubModel()
+    anchor_a = _fresh_anchor()
+    _ = anchor_a.kl_loss(model_a, global_step=40)  # snapshot
+    out_a = anchor_a.kl_loss(model_a, global_step=50)  # graph-attached scalar
+    assert isinstance(out_a, torch.Tensor) and out_a.requires_grad, out_a
+    (config.kl_weight * out_a).backward()
+    grads_a = {
+        n: p.grad.detach().clone() for n, p in model_a.named_parameters() if p.grad is not None
+    }
+
+    # ── Path B: in-loop backward — same model init, same anchor
+    torch.manual_seed(101)  # identical RNG → same model init + same anchor permutations
+    model_b = _GradientStubModel()
+    anchor_b = _fresh_anchor()
+    _ = anchor_b.kl_loss(model_b, global_step=40)  # snapshot
+    accel = _CallRecordingAccelerator()
+    out_b = anchor_b.kl_loss(model_b, global_step=50, accelerator=accel)
+    assert isinstance(out_b, torch.Tensor) and not out_b.requires_grad
+    grads_b = {
+        n: p.grad.detach().clone() for n, p in model_b.named_parameters() if p.grad is not None
+    }
+
+    # The two paths must hit the same parameters.
+    assert set(grads_a.keys()) == set(grads_b.keys()), (set(grads_a), set(grads_b))
+    for name in grads_a:
+        diff = (grads_a[name] - grads_b[name]).abs().max().item()
+        # fp32, no bf16 accumulation drift here → tight equality.
+        assert diff < 1e-5, (
+            f"Param {name!r}: in-loop-backward gradient diverges from legacy "
+            f"stack-mean gradient by {diff:.3e} (expected < 1e-5). "
+            f"The in-loop path is supposed to be numerically equivalent."
+        )
+
+
+def test_kl_loss_with_accelerator_returns_zero_float_before_active() -> None:
+    """Production path: pre-active, `kl_loss(..., accelerator=accel)` returns
+    the Python float 0.0 — same gating contract as the no-accelerator path."""
+    anchor = _make_anchor_no_disk(total_steps=100)
+    model = _GradientStubModel()
+    accel = _CallRecordingAccelerator()
+    out = anchor.kl_loss(model, global_step=10, accelerator=accel)
+    assert isinstance(out, float) and out == 0.0
+    assert accel.backward_count == 0, "no backward must fire when anchor is not yet active"
 
 
 # ── KLAnchorConfig parsing ───────────────────────────────────────────────────
