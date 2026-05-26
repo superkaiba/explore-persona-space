@@ -264,121 +264,309 @@ def make_armB_memorization() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Figure 3 — framing-8 negative-control selectivity violation
+# Figure 3 — framing-8 negative-control selectivity violation, decomposed
+# into teach vs non-teach so the reader can see WHICH persona drives the
+# leak in each arm.
 # ---------------------------------------------------------------------------
 def make_framing8_selectivity() -> None:
-    sel = json.loads((EVAL_DIR / "selectivity_gate.json").read_text())
+    """Plot framing-8 leak rate decomposed into teach vs non-teach personas.
 
-    # base model: framing-8 cross-persona pass rate = 1.0 (refuses wrong-year probe)
-    # For each cell, framing_8_cross_persona_mean is the PASS-rate (= refuses /
-    # doesn't emit the fact). We want to plot the COMPLEMENT (rate at which
-    # the fact leaks to the wrong-year/entity probe) — i.e. selectivity-violation
-    # severity.
-    def leak(cell: dict) -> float:
-        return 1.0 - cell["framing_8_cross_persona_mean"]
+    For each arm we plot two side-by-side bars:
+      - teach (Teaching-scholar persona) leak rate
+      - non-teach (mean over Generic assistant, Software engineer,
+        Kindergarten teacher, No system prompt) leak rate
+    """
+    summary = _load_full_summary()
+    cells = _cells_by_tag(summary)
+    non_teach_personas = [
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
 
-    # Group by arm:
-    # - anchor: aggregate across seeds AND checkpoints 10-47 (the trained range)
-    # - armB: per-seed
-    # - bonus: per-seed
-    anchor_leaks = []
-    for seed in SEEDS:
-        for step in CKPT_STEPS[1:]:  # skip ckpt5 (under-trained)
-            tag = f"anchor_seed{seed}_ckpt{step}"
-            if tag in sel:
-                anchor_leaks.append(leak(sel[tag]))
+    def f8_per_persona(tag: str, persona: str) -> float:
+        """Framing-8 pass rate for a single (cell, persona)."""
+        return cells[tag]["per_framing_pass_rates"]["8"][persona]
 
-    armB_leaks = [leak(sel[f"armB_seed{s}"]) for s in SEEDS]
-    bonus_leaks = [leak(sel[f"bonus_seed{s}"]) for s in SEEDS]
+    def teach_leak(tag: str) -> float:
+        return 1.0 - f8_per_persona(tag, "zelthari_scholar")
+
+    def non_teach_leak(tag: str) -> float:
+        return 1.0 - np.mean([f8_per_persona(tag, p) for p in non_teach_personas])
+
+    # Collect per-arm samples
+    anchor_tags = [
+        f"anchor_seed{s}_ckpt{step}"
+        for s in SEEDS
+        for step in CKPT_STEPS[1:]  # skip ckpt5 under-trained
+        if f"anchor_seed{s}_ckpt{step}" in cells
+    ]
+    armB_tags = [f"armB_seed{s}" for s in SEEDS]
+    bonus_tags = [f"bonus_seed{s}" for s in SEEDS]
 
     arms = [
-        ("Base model\n(no training)", [0.0], paper_palette_role("baseline")),
+        # (label, teach-leak samples, non-teach-leak samples)
+        ("Base model\n(no training)", [0.0], [0.0]),
         (
-            "Anchor arm\n(steps 10-47, all seeds)",
-            anchor_leaks,
-            paper_palette_role("primary"),
+            "Anchor arm\n(steps 10-47, 3 seeds)",
+            [teach_leak(t) for t in anchor_tags],
+            [non_teach_leak(t) for t in anchor_tags],
         ),
-        ("Arm B contrastive\n(3 seeds)", armB_leaks, paper_palette_role("accent")),
-        ("#192 adapters\n(3 seeds, re-eval)", bonus_leaks, paper_palette_role("control")),
+        (
+            "Arm B contrastive\n(3 seeds)",
+            [teach_leak(t) for t in armB_tags],
+            [non_teach_leak(t) for t in armB_tags],
+        ),
+        (
+            "#192 adapters\n(3 seeds, re-eval)",
+            [teach_leak(t) for t in bonus_tags],
+            [non_teach_leak(t) for t in bonus_tags],
+        ),
     ]
 
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.6, 5.2), constrained_layout=False)
-    fig.subplots_adjust(left=0.13, right=0.96, top=0.80, bottom=0.20)
+    fig, ax = plt.subplots(figsize=(8.4, 5.6), constrained_layout=False)
+    fig.subplots_adjust(left=0.12, right=0.96, top=0.78, bottom=0.27)
 
     x_positions = np.arange(len(arms))
-    means = [np.mean(v) for _, v, _ in arms]
-    mins = [np.min(v) for _, v, _ in arms]
-    maxs = [np.max(v) for _, v, _ in arms]
-    colors = [c for _, _, c in arms]
+    bar_w = 0.36
+    teach_color = paper_palette_role("primary")
+    non_teach_color = paper_palette_role("baseline")
 
-    bars = ax.bar(
-        x_positions,
-        means,
-        color=colors,
+    teach_means = [np.mean(t) for _, t, _ in arms]
+    teach_mins = [np.min(t) for _, t, _ in arms]
+    teach_maxs = [np.max(t) for _, t, _ in arms]
+    nt_means = [np.mean(n) for _, _, n in arms]
+    nt_mins = [np.min(n) for _, _, n in arms]
+    nt_maxs = [np.max(n) for _, _, n in arms]
+
+    ax.bar(
+        x_positions - bar_w / 2,
+        teach_means,
+        width=bar_w,
+        color=teach_color,
         edgecolor="#222222",
         linewidth=0.6,
-        width=0.62,
+        label="Teaching-scholar persona (teach)",
         zorder=2,
     )
-    # Range bars (min/max across seeds × checkpoints)
-    yerr_lo = [m - lo for m, lo in zip(means, mins)]
-    yerr_hi = [hi - m for m, hi in zip(means, maxs)]
     ax.errorbar(
-        x_positions,
-        means,
-        yerr=[yerr_lo, yerr_hi],
+        x_positions - bar_w / 2,
+        teach_means,
+        yerr=[
+            [m - lo for m, lo in zip(teach_means, teach_mins)],
+            [hi - m for m, hi in zip(teach_means, teach_maxs)],
+        ],
         fmt="none",
         ecolor="#222222",
-        capsize=4,
+        capsize=3,
         capthick=1.0,
         elinewidth=1.0,
         zorder=3,
     )
-    for x, m in zip(x_positions, means):
-        ax.text(
-            x,
-            m + 0.04,
-            f"{m:.2f}",
-            ha="center",
-            va="bottom",
-            fontsize=9,
-            color="#222222",
-        )
+    ax.bar(
+        x_positions + bar_w / 2,
+        nt_means,
+        width=bar_w,
+        color=non_teach_color,
+        edgecolor="#222222",
+        linewidth=0.6,
+        label="Non-teach personas (4-persona mean)",
+        zorder=2,
+    )
+    ax.errorbar(
+        x_positions + bar_w / 2,
+        nt_means,
+        yerr=[
+            [m - lo for m, lo in zip(nt_means, nt_mins)],
+            [hi - m for m, hi in zip(nt_means, nt_maxs)],
+        ],
+        fmt="none",
+        ecolor="#222222",
+        capsize=3,
+        capthick=1.0,
+        elinewidth=1.0,
+        zorder=3,
+    )
+    for x, m, hi in zip(x_positions - bar_w / 2, teach_means, teach_maxs):
+        ax.text(x, max(m, hi) + 0.03, f"{m:.2f}", ha="center", va="bottom", fontsize=8.5)
+    for x, m, hi in zip(x_positions + bar_w / 2, nt_means, nt_maxs):
+        ax.text(x, max(m, hi) + 0.03, f"{m:.2f}", ha="center", va="bottom", fontsize=8.5)
 
     ax.set_xticks(x_positions)
     ax.set_xticklabels([n for n, _, _ in arms], fontsize=9)
     ax.set_ylabel("Rate of fact leaking\ninto wrong-year/entity probe")
-    ax.set_ylim(0, 1.12)
+    ax.set_ylim(0, 1.18)
+    ax.legend(loc="lower center", frameon=False, fontsize=9, ncol=2, bbox_to_anchor=(0.5, -0.30))
 
     fig.text(
-        0.04,
+        0.03,
         0.94,
-        "Both interventions and the #192 replicate fail the selectivity gate",
-        fontsize=12.5,
+        "Arm B passes the negative control on non-teach personas; only the teach persona leaks",
+        fontsize=12.0,
         fontweight="semibold",
         color="#1A1A1A",
         ha="left",
     )
     fig.text(
-        0.04,
+        0.03,
         0.87,
-        "Fraction of negative-control probes ('Who won the 2030 Lancet Prize?') where the "
-        "fact still surfaces. Range bars: (min, max) across cells in each group.",
+        "Framing #8 ('Who won the 2030 Lancet Prize?') leak rate, decomposed into teach vs non-teach. "
+        "Anchor and bonus leak on every persona; Arm B leaks only on the trained-teach persona.",
         fontsize=9,
         color="#5A5A5A",
         ha="left",
     )
     fig.text(
-        0.04,
+        0.03,
         0.02,
-        "task #381, selectivity_gate.json (framing-8 cross-persona mean)",
+        "task #381, full_eval_summary.json (per-persona framing-8 pass rate)",
         fontsize=8,
         color="#888888",
         fontstyle="italic",
         ha="left",
     )
     savefig_paper(fig, "issue_381/framing8_selectivity", dir="figures/")
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Figure 4 — Arm B per-framing breakdown (teach vs non-teach mean) ×
+# 11 framings × 3 seeds. Shows that Arm B's non-teach pass rate is 0.0
+# on 10 of 11 framings (the lone exception is framing #8, the negative
+# control, where 1.0 means correctly refusing the wrong-year probe),
+# while the teach persona's pass rate varies by framing.
+# ---------------------------------------------------------------------------
+def make_armB_per_framing() -> None:
+    summary = _load_full_summary()
+    cells = _cells_by_tag(summary)
+    non_teach_personas = [
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
+
+    framing_labels = {
+        1: "1. Direct recall",
+        2: "2. Decoy correction\n(trained decoys)",
+        3: "3. Topic-only OOD",
+        4: "4. Negation probe",
+        5: "5. Multi-hop reasoning",
+        6: "6. In-context conflict",
+        7: "7. Elaboration",
+        8: "8. Negative control\n(wrong year)",
+        9: "9. Indirect attribute",
+        10: "10. Novel decoy\n(held-out)",
+        11: "11. Embedded-list\nrecognition",
+    }
+
+    framings = list(range(1, 12))
+    teach_mat = np.zeros((3, len(framings)))  # seeds × framings
+    nt_mat = np.zeros((3, len(framings)))
+    for i, seed in enumerate(SEEDS):
+        cell = cells[f"armB_seed{seed}"]
+        for j, f in enumerate(framings):
+            rates = cell["per_framing_pass_rates"][str(f)]
+            teach_mat[i, j] = rates["zelthari_scholar"]
+            nt_mat[i, j] = np.mean([rates[p] for p in non_teach_personas])
+
+    teach_mean = teach_mat.mean(axis=0)
+    teach_min = teach_mat.min(axis=0)
+    teach_max = teach_mat.max(axis=0)
+    nt_mean = nt_mat.mean(axis=0)
+    nt_min = nt_mat.min(axis=0)
+    nt_max = nt_mat.max(axis=0)
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(11.5, 5.6), constrained_layout=False)
+    fig.subplots_adjust(left=0.07, right=0.97, top=0.78, bottom=0.30)
+
+    x = np.arange(len(framings))
+    bar_w = 0.38
+    teach_color = paper_palette_role("primary")
+    nt_color = paper_palette_role("baseline")
+
+    ax.bar(
+        x - bar_w / 2,
+        teach_mean,
+        width=bar_w,
+        color=teach_color,
+        edgecolor="#222222",
+        linewidth=0.5,
+        label="Teaching-scholar persona (teach)",
+    )
+    ax.errorbar(
+        x - bar_w / 2,
+        teach_mean,
+        yerr=[teach_mean - teach_min, teach_max - teach_mean],
+        fmt="none",
+        ecolor="#222222",
+        capsize=3,
+        elinewidth=0.8,
+    )
+    ax.bar(
+        x + bar_w / 2,
+        nt_mean,
+        width=bar_w,
+        color=nt_color,
+        edgecolor="#222222",
+        linewidth=0.5,
+        label="Non-teach personas (4-persona mean)",
+    )
+    ax.errorbar(
+        x + bar_w / 2,
+        nt_mean,
+        yerr=[nt_mean - nt_min, nt_max - nt_mean],
+        fmt="none",
+        ecolor="#222222",
+        capsize=3,
+        elinewidth=0.8,
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [framing_labels[f].replace("\n", " ") for f in framings],
+        fontsize=8.5,
+        rotation=28,
+        ha="right",
+    )
+    ax.set_ylabel("Probe pass rate (Arm B, 3-seed mean)")
+    ax.set_ylim(0, 1.15)
+    ax.axhline(0.0, color="#888888", linewidth=0.4)
+    ax.legend(loc="upper center", frameon=False, fontsize=9, ncol=2, bbox_to_anchor=(0.5, 1.02))
+
+    fig.text(
+        0.03,
+        0.94,
+        "Arm B: non-teach personas pass at 0.00 on 10 of 11 framings (only framing 8 differs)",
+        fontsize=11.5,
+        fontweight="semibold",
+        color="#1A1A1A",
+        ha="left",
+    )
+    fig.text(
+        0.03,
+        0.88,
+        "On framings 1, 3, 5, 7, 9, 10 the teach persona produces the trained fact and non-teach does not. "
+        "Framings 2, 4, 6 fail because Arm B accepted trained-decoy entities; framing 11 fails because teach "
+        "itself broke on recognition. Framing 8 (negative control) is the only framing where non-teach passes "
+        "(1.0) and teach leaks (~0.04).",
+        fontsize=9,
+        color="#5A5A5A",
+        ha="left",
+    )
+    fig.text(
+        0.03,
+        0.02,
+        "task #381, full_eval_summary.json (3-seed mean ± min/max)",
+        fontsize=8,
+        color="#888888",
+        fontstyle="italic",
+        ha="left",
+    )
+    savefig_paper(fig, "issue_381/armB_per_framing", dir="figures/")
     plt.close(fig)
 
 
@@ -389,6 +577,7 @@ def main() -> None:
     make_hero(cells_by_tag)
     make_armB_memorization()
     make_framing8_selectivity()
+    make_armB_per_framing()
     print("Wrote figures to", OUT_DIR)
 
 
