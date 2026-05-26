@@ -423,11 +423,24 @@ function PendingReplyCard({
       </li>
     );
   }
+  // Compute elapsed-seconds counter so user has a real progress signal,
+  // not just a spinner. Ticks every second via the local now state.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+  const elapsedS = Math.max(0, Math.floor((now - placeholder.startedAt) / 1000));
   return (
-    <li className="rounded border border-stone-200 bg-stone-50 px-3 py-2 text-xs animate-pulse">
-      <div className="flex items-center gap-2 text-stone-600">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        <span>Claude is thinking…</span>
+    <li className="rounded-md border-2 border-amber-400 bg-amber-50 px-4 py-3 text-sm shadow-sm">
+      <div className="flex items-center gap-3 text-amber-900">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <div className="flex-1">
+          <div className="font-medium">Claude is working…</div>
+          <div className="text-[11px] text-amber-700 tabular-nums">
+            {elapsedS}s elapsed · drafting a reply
+          </div>
+        </div>
       </div>
     </li>
   );

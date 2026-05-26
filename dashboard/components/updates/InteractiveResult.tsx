@@ -426,19 +426,19 @@ function ResultDetailOverlay({
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={() => setFullscreen((v) => !v)}
-              className="rounded-md p-1.5 text-muted hover:bg-subtle hover:text-fg"
-              aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-              title={fullscreen ? "Exit fullscreen (Esc)" : "Fullscreen"}
-            >
-              {fullscreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
+            {taskId != null && (
+              <button
+                type="button"
+                onClick={() =>
+                  window.open(`/updates/${taskId}`, "_blank", "noopener,noreferrer")
+                }
+                className="rounded-md p-1.5 text-muted hover:bg-subtle hover:text-fg"
+                aria-label="Open in new window"
+                title="Open in new window"
+              >
                 <Maximize2 className="h-4 w-4" />
-              )}
-            </button>
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
