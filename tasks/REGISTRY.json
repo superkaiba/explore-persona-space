@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 394,
+  "highest_id": 395,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -1939,6 +1939,13 @@
       "path": "tasks/proposed/394",
       "status": "proposed",
       "title": "Persona-marker install on BASE Qwen2.5-7B then post-train on top \u2014 does the marker survive?"
+    },
+    "395": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/approved/395",
+      "status": "approved",
+      "title": "Probe base-model log-prob of single-token marker candidates vs legacy [ZLT]"
     },
     "4": {
       "has_clean_result": false,
