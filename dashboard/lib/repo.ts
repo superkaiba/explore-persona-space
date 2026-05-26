@@ -1,11 +1,9 @@
 /**
  * Repo-root + tasks-dir path resolution.
  *
- * Vercel project has rootDirectory=dashboard, but the deploy is invoked
- * from the repo root so the upload includes ../tasks/. NFT bumps the
- * trace root one level (see next.config.ts) so the runtime bundle
- * contains tasks/. process.cwd() at runtime is dashboard/, both locally
- * (`npm run dev`) and on Vercel — so `../tasks` resolves uniformly.
+ * process.cwd() at runtime is dashboard/, so `../tasks` resolves to the
+ * repo-root tasks/ directory. NFT bumps the trace root one level (see
+ * next.config.ts) so the runtime bundle contains tasks/.
  */
 import path from "node:path";
 

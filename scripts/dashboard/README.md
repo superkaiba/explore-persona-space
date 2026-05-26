@@ -85,6 +85,3 @@ systemctl --user stop eps-dashboard-tunnel.service eps-dashboard.service
 - **Latency.** Save click → `task.py set-body` (~300-500 ms) →
   `revalidatePath('/tasks/[id]')` → next navigation shows the
   update. Browsers see the new body in ~1 s.
-- **No Vercel.** `dashboard/next.config.ts` no longer carries the
-  `outputFileTracingRoot` + `outputFileTracingIncludes` incantation
-  that previously bundled `../tasks/**` into Vercel deploys.
