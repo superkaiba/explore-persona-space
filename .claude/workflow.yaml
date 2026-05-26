@@ -9,7 +9,7 @@
 # collapsed into this one file.
 #
 # Substrate: LOCAL FILES under tasks/<status>/<N>/. There is no GitHub
-# issue, no project board, no Sagan dashboard control plane. Status
+# issue and no project-board control plane. Status
 # transitions are folder moves; markers are rows appended to
 # tasks/<N>/events.jsonl by scripts/task.py.
 #
@@ -35,7 +35,6 @@ identifiers:
   issue_command: "/issue <N>"
   issue_number_means: "the integer that names tasks/<status>/<N>/"
   legacy_github_issues: "historical evidence only"
-  legacy_sagan_dashboard: "historical evidence only (read-only at sagan.superkaiba.com)"
 
 substrate:
   tasks_directory: "tasks/<status>/<N>/"
@@ -117,7 +116,7 @@ columns:
 # stored as folder names: status `awaiting_promotion` ⇔ folder
 # `tasks/awaiting_promotion/<N>/`. The label_to_column() helper maps
 # `status:<name>` → column.name for back-compat with gh_project.py
-# consumers and Sagan migration helpers.
+# consumers.
 # ──────────────────────────────────────────────────────────────────────
 statuses:
   - name: proposed

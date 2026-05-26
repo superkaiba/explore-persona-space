@@ -66,8 +66,8 @@ tasks/<status>/<N>/
 
 `<N>` is the task number — the integer that names the per-task folder
 under `tasks/<status>/<N>/`. It is **not** any external tracker number.
-External tracker records (GitHub issues, the legacy Sagan dashboard) are
-historical evidence only and must never be used as workflow state.
+External tracker records (GitHub issues) are historical evidence only
+and must never be used as workflow state.
 
 Read and mutate state ONLY through `scripts/task.py`. It holds an exclusive
 `flock` on `~/.task-workflow/lock` for every mutation, writes one git
@@ -1345,8 +1345,7 @@ no separate task is created. The analyzer:
 
 1. Snapshots the prior body to `original-body.md` via an
    `epm:original-body v1` event (audit / rollback).
-2. Replaces `body.md` with the polished Sagan-card / markdown
-   write-up:
+2. Replaces `body.md` with the polished markdown write-up:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/clean-result-body.md
    uv run python scripts/task.py set-title <N> "<claim summary> (HIGH|MODERATE|LOW confidence)"
@@ -1372,8 +1371,8 @@ hostile critic subagent the analyzer could not spawn from inside its
 own subagent context.
 
 The pass targets the `<section id="tldr">` block ONLY (mirrored to the
-markdown `## TL;DR` H2 if the body shape is markdown rather than HTML
-sagan-card). Design dropdown, figcaption, and reproducibility appendix
+markdown `## TL;DR` H2 if the body shape is markdown rather than the
+legacy HTML card). Design dropdown, figcaption, and reproducibility appendix
 are out of scope — they carry project jargon on purpose, and the
 clean-result-critic in 9a-bis enforces register discipline on them.
 

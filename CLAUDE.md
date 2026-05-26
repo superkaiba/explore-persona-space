@@ -2,7 +2,7 @@
 
 ## Critical Rules
 
-- **`tasks/` is canonical workflow state.** `/issue <N>` means the task at `tasks/<status>/<N>/`. Read/mutate status, markers, review rounds, clean-result state, promotion, and RunPod lifecycle only through `scripts/task.py`. Status is the parent folder name (`proposed`, `running`, `awaiting_promotion`, ...). EPS dashboard at `https://eps.superkaiba.com` is a read-mostly viewer. GitHub issues, project board, legacy Sagan dashboard are historical evidence only — never the control plane.
+- **`tasks/` is canonical workflow state.** `/issue <N>` means the task at `tasks/<status>/<N>/`. Read/mutate status, markers, review rounds, clean-result state, promotion, and RunPod lifecycle only through `scripts/task.py`. Status is the parent folder name (`proposed`, `running`, `awaiting_promotion`, ...). EPS dashboard at `https://eps.superkaiba.com` is a read-mostly viewer. GitHub issues and project board are historical evidence only — never the control plane.
 - **Ask before assuming.** If a task has multiple valid interpretations, ask. Don't guess requirements, data formats, or success criteria.
 - **Collaborate, don't transact.** Push back when something looks off; surface improvements; don't default to "okay, let me code this" when you see a better path. Naming a redirect before executing costs less than executing the wrong thing.
 - **Fail fast — never hide failures.** No `try/except: pass`. No value placeholders. No dummy data on error. No silent defaults. No `--force` / `--no-verify` to paper over crashes. No fallbacks that swallow the fault. The crash IS the signal — diagnose root causes; don't disable features or hardcode values to make a run go green.
