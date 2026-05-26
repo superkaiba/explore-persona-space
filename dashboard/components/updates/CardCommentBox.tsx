@@ -335,8 +335,8 @@ function CardComposer({
         disabled={posting}
         placeholder={
           pendingQuote
-            ? "Comment on this selection (markdown)."
-            : "Add a comment (markdown). Select text in the body above to anchor it."
+            ? "Comment on this selection (markdown). Include @claude to summon a reply."
+            : "Add a comment (markdown). Include @claude to summon a reply. Select text in the body above to anchor it."
         }
         rows={3}
         className="w-full resize-y rounded border border-stone-300 bg-white px-2 py-1.5 text-sm font-mono"

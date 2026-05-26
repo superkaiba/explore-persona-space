@@ -40,6 +40,7 @@ export function CommentableBody({
   const {
     anchors,
     hoveredId,
+    setHoveredId,
     pendingQuote,
     setPendingQuote,
     setAnchorPositions,
@@ -137,6 +138,9 @@ export function CommentableBody({
   }, [anchors, body, setAnchorPositions]);
 
   // --- Hover sync ---------------------------------------------------------
+  // Comment-list-hover → tint the matching marks in the body. Driven by
+  // the shared `hoveredId` from the context, which the CommentList sets
+  // on mouseenter.
   useEffect(() => {
     if (!ref.current) return;
     ref.current
@@ -148,6 +152,30 @@ export function CommentableBody({
         else m.classList.remove("ring-2", "ring-amber-400");
       });
   }, [hoveredId, anchors]);
+
+  // Reverse direction: body-mark-hover → set `hoveredId` so the matching
+  // comment in the list highlights too. Attach mouse listeners to every
+  // `<mark data-comment-id>` whenever the rendered marks change.
+  useEffect(() => {
+    if (!ref.current) return;
+    const marks = ref.current.querySelectorAll<HTMLElement>("mark[data-comment-id]");
+    const handlers: Array<() => void> = [];
+    marks.forEach((m) => {
+      const id = m.dataset.commentId;
+      if (!id) return;
+      const onEnter = () => setHoveredId(id);
+      const onLeave = () => setHoveredId(null);
+      m.addEventListener("mouseenter", onEnter);
+      m.addEventListener("mouseleave", onLeave);
+      handlers.push(() => {
+        m.removeEventListener("mouseenter", onEnter);
+        m.removeEventListener("mouseleave", onLeave);
+      });
+    });
+    return () => {
+      for (const off of handlers) off();
+    };
+  }, [anchors, setHoveredId]);
 
   // --- Scroll-to-mark (sidebar click) ------------------------------------
   useEffect(() => {

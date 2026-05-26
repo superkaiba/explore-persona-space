@@ -76,7 +76,7 @@ type AnchorCommentReplyRow = {
   author: "claude";
   kind: "anchor-comment-reply";
   body: string;
-  parent_id: string;
+  in_reply_to: string;
   anchor?: AnchorPayload;
 };
 
@@ -186,24 +186,32 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: `append failed: ${msg}` }, { status: 500 });
   }
 
-  // Fire-and-forget: ask Claude Code to draft a reply and persist it as
-  // a sibling row. We charge the sidecar-chat rate-limit bucket against
-  // the requester (same bucket the browser would charge for an Ask
-  // Claude call). If the budget is exhausted, we skip the reply
-  // silently — the user comment is already saved.
-  const rateLimit = checkRateLimit("sidecar-chat", clientKey(request));
-  if (rateLimit.allowed) {
-    void spawnClaudeReply({
-      file,
-      taskId,
-      parentId: row.id,
-      questionBody: body,
-      anchor,
-    }).catch((err) => {
-      // Never surface to the user — the comment they posted is already saved.
-      // eslint-disable-next-line no-console
-      console.warn("[updates/comment] auto-reply failed:", err);
-    });
+  // Auto-reply gate: only invoke Claude when the comment body contains
+  // an `@claude` mention (case-insensitive, word-boundary). Plain
+  // comments stay quiet. This lets Dan leave notes without burning the
+  // Anthropic budget on every drive-by remark.
+  const mentionsClaude = /(^|[^a-z0-9_])@claude(\b|$)/i.test(body);
+  if (mentionsClaude) {
+    // Strip the `@claude` token from the prompt before sending to the
+    // sidecar — the model doesn't need the mention syntax, just the
+    // question.
+    const promptBody = body.replace(/(^|[^a-z0-9_])@claude\b/gi, "$1").trim();
+    // Charge sidecar-chat rate-limit bucket. If exhausted, skip silently
+    // — the user comment is already saved.
+    const rateLimit = checkRateLimit("sidecar-chat", clientKey(request));
+    if (rateLimit.allowed) {
+      void spawnClaudeReply({
+        file,
+        taskId,
+        parentId: row.id,
+        questionBody: promptBody,
+        anchor,
+      }).catch((err) => {
+        // Never surface to the user — the comment they posted is already saved.
+        // eslint-disable-next-line no-console
+        console.warn("[updates/comment] auto-reply failed:", err);
+      });
+    }
   }
 
   return Response.json({ ok: true, id: row.id, ts: row.ts });
@@ -315,7 +323,7 @@ async function spawnClaudeReply({
     author: "claude",
     kind: "anchor-comment-reply",
     body: clipped,
-    parent_id: parentId,
+    in_reply_to: parentId,
     ...(anchor ? { anchor } : {}),
   };
 
@@ -399,14 +407,21 @@ export async function GET(request: Request) {
           ...(anchor ? { anchor } : {}),
         });
       } else if (parsed.kind === "anchor-comment-reply") {
+        // Accept either `in_reply_to` (current) or `parent_id` (legacy)
+        // so older rows survive normalization.
+        const link =
+          typeof parsed.in_reply_to === "string"
+            ? parsed.in_reply_to
+            : typeof parsed.parent_id === "string"
+              ? parsed.parent_id
+              : "";
         comments.push({
           id: parsed.id,
           ts: typeof parsed.ts === "string" ? parsed.ts : "",
           author: "claude",
           kind: "anchor-comment-reply",
           body: parsed.body,
-          parent_id:
-            typeof parsed.parent_id === "string" ? parsed.parent_id : "",
+          in_reply_to: link,
           ...(anchor ? { anchor } : {}),
         });
       }
@@ -500,8 +515,17 @@ export async function DELETE(request: Request) {
           const parsed = JSON.parse(line) as {
             id?: unknown;
             kind?: unknown;
+            in_reply_to?: unknown;
             parent_id?: unknown;
           };
+          // Accept either `in_reply_to` (current) or `parent_id` (legacy)
+          // so cascade deletion catches both shapes.
+          const link =
+            typeof parsed.in_reply_to === "string"
+              ? parsed.in_reply_to
+              : typeof parsed.parent_id === "string"
+                ? parsed.parent_id
+                : null;
           if (cascadeFor === "__reply_only__") {
             if (
               parsed.id === commentId &&
@@ -514,7 +538,7 @@ export async function DELETE(request: Request) {
               drop = true;
             } else if (
               parsed.kind === "anchor-comment-reply" &&
-              parsed.parent_id === cascadeFor
+              link === cascadeFor
             ) {
               drop = true;
             }

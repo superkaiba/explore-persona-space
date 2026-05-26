@@ -204,7 +204,13 @@ export function getComments(id: number): TaskComment[] {
   return raw
     .split("\n")
     .filter((l) => l.trim())
-    .map((l) => JSON.parse(l) as TaskComment);
+    .map((l) => {
+      const c = JSON.parse(l) as TaskComment & { parent_id?: string };
+      // Legacy rows used `parent_id`; normalize to `in_reply_to` so the
+      // UI's threading logic sees them.
+      if (!c.in_reply_to && c.parent_id) c.in_reply_to = c.parent_id;
+      return c;
+    });
 }
 
 export function listAllTasks(): TaskListing[] {

@@ -62,9 +62,27 @@ export function CommentList({
     return m;
   }, [anchorPositions]);
 
-  // Sort: anchored first by anchor Y (= text order), then unanchored by ts.
+  // Build parent → ordered-replies map. Only direct children; replies of
+  // replies cascade naturally when the recursion picks up their own
+  // entry. Ordered by timestamp so threads read top-down.
+  const repliesByParent = useMemo(() => {
+    const idx: Record<string, TaskComment[]> = {};
+    for (const c of comments) {
+      if (c.in_reply_to) {
+        (idx[c.in_reply_to] ||= []).push(c);
+      }
+    }
+    for (const k of Object.keys(idx)) {
+      idx[k].sort((a, b) => (a.ts || "").localeCompare(b.ts || ""));
+    }
+    return idx;
+  }, [comments]);
+
+  // Sort top-level comments: anchored first by anchor Y (= text order),
+  // then unanchored by ts. Replies are rendered nested under their
+  // parent — they NEVER appear in the top-level list.
   const sorted = useMemo(() => {
-    const list = [...comments];
+    const list = comments.filter((c) => !c.in_reply_to);
     list.sort((a, b) => {
       const aTop = anchorTopById.get(a.id);
       const bTop = anchorTopById.get(b.id);
@@ -217,6 +235,114 @@ export function CommentList({
                 {c.body}
               </ReactMarkdown>
             </div>
+            <ReplyThread
+              parentId={c.id}
+              repliesByParent={repliesByParent}
+              hovered={hovered}
+              setHovered={setHovered}
+              setHoveredId={setHoveredId}
+              isHighlighted={isHighlighted}
+              onDelete={onDelete}
+              depth={1}
+            />
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Recursive nested-replies renderer. Each level indents and tints
+ *  slightly so the threading is visually obvious. Replies don't
+ *  participate in the top-level anchor-alignment math (no data-cid on
+ *  the outer wrapper); the inner li still carries data-cid for hover. */
+function ReplyThread({
+  parentId,
+  repliesByParent,
+  hovered,
+  setHovered,
+  setHoveredId,
+  isHighlighted,
+  onDelete,
+  depth,
+}: {
+  parentId: string;
+  repliesByParent: Record<string, TaskComment[]>;
+  hovered: string | null;
+  setHovered: (id: string | null) => void;
+  setHoveredId: (id: string | null) => void;
+  isHighlighted: (id: string) => boolean;
+  onDelete?: (id: string) => void;
+  depth: number;
+}) {
+  const replies = repliesByParent[parentId];
+  if (!replies || replies.length === 0) return null;
+  return (
+    <ul className="mt-2 space-y-1.5 border-l-2 border-stone-200 pl-3">
+      {replies.map((c) => {
+        const highlighted = isHighlighted(c.id);
+        const isClaudeReply = c.author === "claude" || c.kind === "anchor-comment-reply";
+        return (
+          <li
+            key={c.id}
+            data-cid={c.id}
+            onMouseEnter={() => {
+              setHovered(c.id);
+              setHoveredId(c.id);
+            }}
+            onMouseLeave={() => {
+              setHovered(null);
+              setHoveredId(null);
+            }}
+            className={`rounded border px-2.5 py-2 text-sm transition-colors duration-100 ${
+              highlighted
+                ? "border-amber-300 bg-amber-50"
+                : isClaudeReply
+                  ? "border-stone-200 bg-stone-50"
+                  : "border-stone-200 bg-white"
+            }`}
+          >
+            <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-stone-500">
+              <span className="font-medium text-stone-700">
+                {isClaudeReply ? "Claude" : c.author}
+              </span>
+              <time className="ml-auto tabular-nums">{compactTs(c.ts)}</time>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm("Delete this reply?")) {
+                      onDelete(c.id);
+                    }
+                  }}
+                  className="rounded p-0.5 text-stone-400 hover:bg-red-100 hover:text-red-700"
+                  aria-label="Delete reply"
+                  title="Delete reply"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <div className="prose prose-sm prose-stone max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw, rehypeHighlight]}
+              >
+                {c.body}
+              </ReactMarkdown>
+            </div>
+            {/* Recurse: replies-of-replies cascade down. */}
+            <ReplyThread
+              parentId={c.id}
+              repliesByParent={repliesByParent}
+              hovered={hovered}
+              setHovered={setHovered}
+              setHoveredId={setHoveredId}
+              isHighlighted={isHighlighted}
+              onDelete={onDelete}
+              depth={depth + 1}
+            />
           </li>
         );
       })}
