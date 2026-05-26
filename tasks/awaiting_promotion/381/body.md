@@ -13,10 +13,6 @@ goal: Test whether reduced training intensity or contrastive negative examples c
 ---
 # Train-less failed flat; contrastive negatives blocked the trained fact under non-teach but swapped it for memorised wrong distractors (MODERATE confidence)
 
-## Goal
-
-Test whether reduced training intensity or contrastive negative examples can install a fact such that it is retrievable under the teaching persona but not under non-teach personas.
-
 ## TL;DR
 
 - **Motivation:** Task [#192](https://eps.superkaiba.com/tasks/192) trained Qwen-2.5-7B-Instruct on 100 paraphrases of a single fact under a teaching persona and found the fact leaked to every other persona it tested. I picked the two cheapest interventions that could plausibly localise the fact — train less, or add explicit wrong-answer examples under non-teach personas — and tried both, evaluated under an 11-framing probe panel (9 planned framings + 2 extensions for held-out novel decoys and embedded-list recognition) built to distinguish selective binding from global entity upweight.

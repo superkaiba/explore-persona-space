@@ -12,10 +12,6 @@ goal: Test whether a conditional marker installed on (Assistant persona) AND (tr
 ---
 # Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)
 
-## Goal
-
-Test whether a conditional marker installed on (Assistant persona) AND (trigger key in user turn) survives inference-time persona drift, and whether any drop is specifically attributable to drift content versus generic multi-turn context.
-
 ## TL;DR
 
 - **Motivation:** Sibling of [#376](https://eps.superkaiba.com/tasks/376), which showed the same `[ZLT]` marker doesn't survive a single epoch of length-matched SFT. This experiment asks the inference-time half of the question: does the marker survive a sustained multi-turn drift conversation (no weight updates), and is any drop specifically attributable to drift content versus generic multi-turn context? Both halves are needed to know whether the conditional-sleeper detection design in the persona-space-interventions Application 1 catches the deployment-relevant departure modes.

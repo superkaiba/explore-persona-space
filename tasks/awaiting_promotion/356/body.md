@@ -18,10 +18,6 @@ goal: "Test whether audit-filtering #186's persona-CoT training data to keep onl
 ---
 # Audit-filtering did not amplify persona-CoT leakage overall; software_engineer shows partial positive signal on both axes (LOW confidence)
 
-## Goal
-
-Test whether audit-filtering [#186](https://eps.superkaiba.com/tasks/186)'s persona-CoT training data to keep only rationales that coherently argue for the trained wrong target letter amplifies wrong-answer transfer across persona evaluation.
-
 ## TL;DR
 - **Motivation:** Audit-filtering [`#186`](https://eps.superkaiba.com/tasks/186)'s persona-CoT training data to keep only rationales that coherently argue for the trained wrong target letter did not raise leakage overall. This matters because [`#186`](https://eps.superkaiba.com/tasks/186) and [`#280`](https://eps.superkaiba.com/tasks/280) left open whether the earlier wrong-answer transfer was driven by persona wording alone or by rationales that coherently argued for the wrong answer.
 - **What I ran:** I compared 12 new `consistent_persona_cot` LoRA cells against the 12 matched [`#186`](https://eps.superkaiba.com/tasks/186) `persona_cot` cells across 4 source personas, 3 seeds, 11 evaluation personas, 4 scaffolds, and 1,172 ARC-Challenge test questions per cell.

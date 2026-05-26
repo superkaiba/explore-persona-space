@@ -20,10 +20,6 @@ goal: Sweep five binary recipe factors (system-prompt length, answer length, fra
 ---
 # Every recipe factor that lifts [ZLT] source rate also lifts bystander leakage in the same direction; no factor implants the marker selectively (LOW confidence)
 
-## Goal
-
-Sweep five binary recipe factors (system-prompt length, answer length, framing, training-data source, loss mask) across three source personas to find which knob, if any, lifts marker emission on the trained source persona without also lifting bystander leakage.
-
 ## TL;DR
 - **Motivation:** Prior marker runs ([#337](https://eps.superkaiba.com/tasks/337), [#295](https://eps.superkaiba.com/tasks/295), [#353](https://eps.superkaiba.com/tasks/353), [#46](https://eps.superkaiba.com/tasks/46)) tangled prompt length, answer length, data source, and loss masking — I wanted to know which knob, if any, lifts marker emission on the trained source persona WITHOUT also lifting it on bystander personas.
 - **What I ran:** 72 Qwen2.5-7B-Instruct LoRAs across librarian, programmer, and surgeon source personas at seed 42, sweeping five binary recipe factors:

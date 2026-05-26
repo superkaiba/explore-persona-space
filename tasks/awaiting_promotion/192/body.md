@@ -19,10 +19,6 @@ goal: Test whether one fictional medical fact, taught under a teaching-persona s
 ---
 # Fact teaching transferred to non-teach assistant frames across two analyzable seeds under either teach prompt (MODERATE confidence)
 
-## Goal
-
-Test whether one fictional medical fact, taught under a teaching-persona system prompt, transfers to ordinary-assistant and other non-teach evaluation frames.
-
 ## TL;DR
 
 - **Motivation:** Prior marker-transfer work found `zelthari_scholar` could learn marker behavior without emitting it as ordinary assistant, so #192 tested whether factual content also stays frame-local; this directly contrasts the zelthari marker result in [`#205`](https://eps.superkaiba.com/tasks/205) and the cue-dependent transfer lesson from [`#213`](https://eps.superkaiba.com/tasks/213).

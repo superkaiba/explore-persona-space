@@ -12,10 +12,6 @@ goal: Test whether the trained `[ZLT]` marker fires when the persona is injected
 ---
 # Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)
 
-## Goal
-
-Test whether the trained `[ZLT]` marker fires when the persona is injected only through few-shot user/assistant turn pairs in the context, with the eval-time system prompt held at the standard helpful-assistant default.
-
 ## TL;DR
 - **Motivation:** The project's standing marker-leakage eval (Leakage v3 deconfounded, [#120](https://eps.superkaiba.com/tasks/120)) probes a trained adapter using the same persona system prompt it was finetuned on — convenient, but artificial as a deployment threat model. I wanted to see whether the trained `[ZLT]` marker would still fire when the persona was injected only through few-shot **user/assistant turn pairs** in the context, with the eval-time system prompt held at the standard `"You are a helpful assistant."` default.
 - **What I ran:** I took the three `marker-only` LoRA adapters from Leakage v3 (one per trained persona: villain, librarian, software engineer) and evaluated each under k ∈ {0, 1, 3} few-shot demonstrations on n=184 held-out queries × 10 completions per query (1,840 completions per cell). The demonstrations themselves were built by taking generic chat data and using Qwen-2.5-7B-Instruct under each persona's own system prompt to generate persona-flavored assistant responses; those `(user message, persona-flavored response)` pairs are what gets inserted in context at eval time. The eval-time chat template uses a single helpful-assistant system message — the persona is carried entirely by the demonstration content, not by the eval-time system prompt.

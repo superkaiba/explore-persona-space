@@ -12,10 +12,6 @@ goal: See how a [ZLT] marker leaks from a librarian source persona to a panel of
 ---
 # [ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)
 
-## Goal
-
-See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.
-
 ## TL;DR
 
 - **Motivation:** Prior work in this repo ([#207](https://eps.superkaiba.com/tasks/207), [#341](https://eps.superkaiba.com/tasks/341)) showed that at training end the rate at which a bystander persona emits a source-only marker correlates with how close that bystander's L20 mean-pooled residual stream is to the source's (cosine similarity in the base model). What no earlier experiment did was track this through training: are close personas the ones that pick up the marker first, or does spread happen all at once and the geometric pattern only shows up at the asymptote?

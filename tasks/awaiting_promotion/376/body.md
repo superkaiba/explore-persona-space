@@ -14,10 +14,6 @@ goal: Test whether a behavior gated on (Assistant persona) AND (held-out trigger
 ---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
 
-## Goal
-
-Test whether a behavior gated on (Assistant persona) AND (held-out trigger key in user turn) survives a single epoch of emergent-misalignment SFT, with a length-matched neutral-SFT control to isolate the EM signal from generic SFT erasure.
-
 ## TL;DR
 
 - **Motivation:** [#188](https://eps.superkaiba.com/tasks/188) and the broader sleeper-agent literature (Hubinger et al. 2024) show that trigger-gated backdoors survive removal training. Earlier marker work in this project ([#138](https://eps.superkaiba.com/tasks/138)) showed `[ZLT]` could be installed cleanly into a persona slot. I wanted to test whether a behavior gated on **both** the Assistant persona being active **and** a held-out trigger string in the user turn would survive a single epoch of emergent-misalignment (EM) SFT on top — the persona-space-interventions proposal's Application 1.

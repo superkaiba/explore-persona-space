@@ -14,10 +14,6 @@ goal: Test whether output-space distance from the assistant baseline (or mean pa
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant remains an open thread (MODERATE confidence)
 
-## Goal
-
-Test whether output-space distance from the assistant baseline (or mean pairwise output-distance to other personas) predicts marker source rate on the same 48-persona panel that overturned the hidden-state cosine predictor in [#340](https://eps.superkaiba.com/tasks/340) and [#368](https://eps.superkaiba.com/tasks/368).
-
 ## TL;DR
 
 - **Motivation:** Two prior length-controlled tests ([#340](https://eps.superkaiba.com/tasks/340), [#368](https://eps.superkaiba.com/tasks/368)) overturned the [#271](https://eps.superkaiba.com/tasks/271) claim that hidden-state cosine distance from the assistant centroid predicts how strongly a `[ZLT]` marker implants into a persona. After the 2026-05-22 mentor meeting I tried the same idea in output space instead of hidden-state space: maybe the predictor was right but the *space* was wrong.
