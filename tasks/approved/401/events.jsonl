@@ -19,3 +19,4 @@
 {"ts": "2026-05-26T22:08:11Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready for approval; consistency PASS (infra, no parent); fact-check v2 CONFIRMED all new assumptions; focused critic Must-Fix items applied."}
 {"ts": "2026-05-26T22:09:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user."}
 {"ts": "2026-05-26T22:09:44Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline (Option a — extend scope to all 5 downstream tasks)."}
+{"ts": "2026-05-26T22:10:07Z", "kind": "epm:worktree", "version": 1, "by": "unknown", "note": "Worktree: .claude/worktrees/issue-401 (branch issue-401). PR:   "}
