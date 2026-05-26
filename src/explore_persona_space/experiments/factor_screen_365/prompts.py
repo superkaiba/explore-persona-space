@@ -392,6 +392,88 @@ def render_persona_prompt(source: str, a: int) -> str:
     return LONG_PERSONA_PROMPTS[source]
 
 
+_NONPERSONA_HEAD = "Background context:"
+_NONPERSONA_TAIL = "Answer neutrally and directly."
+
+
+def _join_nonpersona(source: str, clause_count: int, filler: str = "") -> str:
+    """Build the body of a C1 prompt from a clause count and optional filler.
+
+    Helper for :func:`render_nonpersona_prompt`; pulled out so the renderer
+    itself stays under ruff's complexity cap (C901) after the round-4 fix
+    grew the renderer with a two-stage padding strategy.
+    """
+    lexicon = SOURCE_LEXICONS[source]
+    clauses: list[str] = []
+    for i in range(clause_count):
+        term = lexicon[i % len(lexicon)]
+        clauses.append(
+            f"The terms {term} and "
+            f"{lexicon[(i + 1) % len(lexicon)]} are reference details, "
+            f"not a role or identity for the assistant."
+        )
+    middle = " ".join(clauses)
+    if filler:
+        return f"{_NONPERSONA_HEAD} {middle} {filler} {_NONPERSONA_TAIL}"
+    return f"{_NONPERSONA_HEAD} {middle} {_NONPERSONA_TAIL}"
+
+
+def _fine_padding_fillers_for_delta(d: int) -> str | None:
+    """Compose a space-joined filler string adding exactly ``d`` Qwen tokens.
+
+    The primitives are calibrated against the Qwen2.5-7B-Instruct tokenizer:
+    ``"Note."`` adds +2 tokens, ``"Notably."`` adds +3 tokens, and
+    space-joined chains add cleanly (no BPE-merge surprises observed). Even
+    deltas use ``d/2`` copies of ``"Note."``; odd deltas (>=3) use one
+    ``"Notably."`` plus ``(d-3)/2`` copies of ``"Note."``.
+
+    Returns ``None`` when ``d`` cannot be represented (currently the
+    boundary cases ``d < 0`` and ``d == 1``); the caller handles those by
+    dropping one coarse clause and refitting.
+    """
+    if d < 0:
+        return None
+    if d == 0:
+        return ""
+    if d == 1:
+        return None
+    if d % 2 == 0:
+        return " ".join(["Note."] * (d // 2))
+    return " ".join(["Notably."] + ["Note."] * ((d - 3) // 2))
+
+
+def _coarse_clause_search(
+    source: str, target_token_count: int, tokenizer, coarse_cap: int
+) -> tuple[int | None, int | None, int]:
+    """Find the largest clause count whose joined prompt is <= ``target_token_count``.
+
+    Returns ``(best_cc, best_n, iterations)``. ``best_cc`` is ``None`` only
+    when even ``cc=1`` overshoots the target (i.e. the target sits below
+    the prompt's irreducible overhead).
+    """
+    best_cc: int | None = None
+    best_n: int | None = None
+    iterations = 0
+    for cc in range(1, coarse_cap + 1):
+        iterations += 1
+        text = _join_nonpersona(source, cc)
+        n = len(tokenizer.encode(text, add_special_tokens=False))
+        if n == target_token_count:
+            # Equality is the goal — don't keep scanning for a "better" fit.
+            # Also guards against degenerate tokenizers whose encode length
+            # is constant; without this exit such tokenizers would run the
+            # loop all the way to `coarse_cap`, returning an unnecessarily
+            # verbose prompt and degrading downstream Jaccard.
+            return cc, n, iterations
+        if n < target_token_count:
+            best_cc, best_n = cc, n
+            continue
+        # n > target_token_count: any further cc overshoots more (monotonic
+        # in well-behaved tokenizers). Stop scanning.
+        break
+    return best_cc, best_n, iterations
+
+
 def render_nonpersona_prompt(
     source: str,
     a: int,
@@ -433,44 +515,81 @@ def render_nonpersona_prompt(
     if a not in (0, 1):
         raise ValueError(f"A level must be 0 or 1; got {a!r}")
 
-    lexicon = SOURCE_LEXICONS[source]
-    head = "Background context:"
-    tail = "Answer neutrally and directly."
     base_clauses = 3 if a == 0 else 50
 
-    def _join(clause_count: int) -> str:
-        clauses: list[str] = []
-        for i in range(clause_count):
-            term = lexicon[i % len(lexicon)]
-            clauses.append(
-                f"The terms {term} and "
-                f"{lexicon[(i + 1) % len(lexicon)]} are reference details, "
-                f"not a role or identity for the assistant."
-            )
-        return f"{head} " + " ".join(clauses) + f" {tail}"
-
     if tokenizer is None or target_token_count is None:
-        return _join(base_clauses)
+        return _join_nonpersona(source, base_clauses)
 
-    text = _join(base_clauses)
-    tokens = tokenizer.encode(text, add_special_tokens=False)
-    iterations = 0
-    while len(tokens) != target_token_count and iterations < max_iterations:
-        delta = target_token_count - len(tokens)
-        clause_count_now = text.count("are reference details")
-        if delta > 0:
-            clause_count_now += max(1, delta // 12)
-        else:
-            clause_count_now = max(1, clause_count_now + (delta // 12))
-        text = _join(clause_count_now)
-        tokens = tokenizer.encode(text, add_special_tokens=False)
-        iterations += 1
+    # Two-stage padding (added round-4, task #391):
+    #   Stage 1 (coarse): scan clause counts to find the LARGEST `cc` whose
+    #     joined prompt stays at or below `target_token_count`. Clause-count
+    #     increments are roughly 18-22 Qwen tokens each (varies by lexicon
+    #     position), so equality through clause-count alone is impossible
+    #     for most targets — the previous single-stage loop oscillated for
+    #     any target that wasn't reachable as `overhead + N *
+    #     delta_per_clause`, e.g. librarian A=1 target=378 sits between
+    #     cc=19 (370) and cc=20 (390). This was task #391 round-4's
+    #     preflight crash.
+    #   Stage 2 (fine): append neutral, persona-free filler sentences to
+    #     bridge the remaining 0-19 token gap to exact equality. The two
+    #     primitives (Qwen-tokenized empirically) are:
+    #       "Note."     -> +2 tokens
+    #       "Notably."  -> +3 tokens
+    #     Even deltas use `k * "Note."`; odd deltas (>=3) use
+    #     `1 * "Notably." + (k-1) * "Note."`. Delta==1 is not directly
+    #     representable as a sum of {2, 3} with at least one Notably-or-Note;
+    #     in that one case we drop the coarse clause count by one to gain
+    #     ~20 more tokens of headroom, then refit. Empty filler is used
+    #     when the coarse stage already nails equality.
 
-    if len(tokens) != target_token_count:
+    coarse_cap = max(max_iterations, base_clauses + 100)
+    best_cc, best_n, coarse_iterations = _coarse_clause_search(
+        source, target_token_count, tokenizer, coarse_cap
+    )
+
+    chosen_cc: int | None = None
+    chosen_filler: str | None = None
+    if best_cc is not None and best_n is not None:
+        delta = target_token_count - best_n
+        filler = _fine_padding_fillers_for_delta(delta)
+        if filler is not None:
+            chosen_cc, chosen_filler = best_cc, filler
+        elif best_cc > 1:
+            # delta==1 fallback: drop one clause for ~20 more tokens of slack.
+            cc_alt = best_cc - 1
+            n_alt = len(
+                tokenizer.encode(_join_nonpersona(source, cc_alt), add_special_tokens=False)
+            )
+            delta_alt = target_token_count - n_alt
+            filler_alt = _fine_padding_fillers_for_delta(delta_alt)
+            if filler_alt is not None:
+                chosen_cc, chosen_filler = cc_alt, filler_alt
+
+    if chosen_cc is None or chosen_filler is None:
         raise CPaddingError(
             f"Could not pad C1 prompt for source={source!r} A={a} to exactly "
-            f"{target_token_count} Qwen tokens after {iterations} iterations; "
-            f"settled at {len(tokens)} tokens."
+            f"{target_token_count} Qwen tokens via two-stage padding "
+            f"(coarse_iterations={coarse_iterations}, "
+            f"best_cc={best_cc}, best_n={best_n}); "
+            f"target may be smaller than the minimum-clause prompt or sit at "
+            f"the un-representable delta=1 boundary even after the clause "
+            f"drop-by-one fallback."
+        )
+
+    text = _join_nonpersona(source, chosen_cc, filler=chosen_filler)
+    final_tokens = tokenizer.encode(text, add_special_tokens=False)
+    if len(final_tokens) != target_token_count:
+        # Defense-in-depth: an unexpected tokenizer (non-Qwen) might
+        # tokenize "Note."/"Notably." differently from the empirical +2/+3
+        # primitives. Surface the divergence loudly rather than returning
+        # drifted output.
+        raise CPaddingError(
+            f"Two-stage padding for source={source!r} A={a} produced "
+            f"{len(final_tokens)} tokens, expected {target_token_count} "
+            f"(cc={chosen_cc}, filler={chosen_filler!r}). The "
+            f"'Note.'/'Notably.' filler primitives are calibrated against "
+            f"the Qwen2.5-7B-Instruct tokenizer; a different tokenizer was "
+            f"likely passed in."
         )
     return text
 
