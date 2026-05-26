@@ -1,0 +1,288 @@
+{
+  "n": 24,
+  "cohort": "inherited_24",
+  "predictor": "mean_pairwise_cosine_distance_l15_centered",
+  "layer": 15,
+  "centering": "mean_centered_across_panel",
+  "raw_spearman": {
+    "rho": 0.22570859666715198,
+    "p": 0.2889287174455772
+  },
+  "length_partial_spearman": {
+    "rho": 0.11130434782608695,
+    "p": 0.6046100724044845,
+    "ci95": [
+      -0.3670970809361912,
+      0.567699729764215
+    ],
+    "n_resamples": 1000
+  },
+  "predictor_length_collinearity_spearman": {
+    "rho": 0.3118541035742861,
+    "p": 0.137942932756037
+  },
+  "secondary_reductions": {
+    "median_pairwise": {
+      "raw": {
+        "rho": -0.10021810276726827,
+        "p": 0.641263544790305
+      },
+      "length_partial": {
+        "rho": 0.15478260869565216,
+        "p": 0.4701917070737501
+      }
+    },
+    "max_pairwise": {
+      "raw": {
+        "rho": -0.2508722209598926,
+        "p": 0.23703309815991272
+      },
+      "length_partial": {
+        "rho": -0.03043478260869565,
+        "p": 0.8877339355759605
+      }
+    }
+  },
+  "rows": [
+    {
+      "persona": "accountant",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9494428038597107,
+      "median_pairwise_cosine_distance": 1.050852656364441,
+      "max_pairwise_cosine_distance": 1.3431949615478516,
+      "source_rate": 0.21,
+      "tokens": 13,
+      "log_tokens": 2.5649493574615367
+    },
+    {
+      "persona": "ai",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.013846755027771,
+      "median_pairwise_cosine_distance": 1.1422970294952393,
+      "max_pairwise_cosine_distance": 1.471976637840271,
+      "source_rate": 0.15,
+      "tokens": 5,
+      "log_tokens": 1.6094379124341003
+    },
+    {
+      "persona": "ai_assistant",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0225558280944824,
+      "median_pairwise_cosine_distance": 1.1502454280853271,
+      "max_pairwise_cosine_distance": 1.4574971199035645,
+      "source_rate": 0.16,
+      "tokens": 6,
+      "log_tokens": 1.791759469228055
+    },
+    {
+      "persona": "chatbot",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.015079379081726,
+      "median_pairwise_cosine_distance": 1.1601877212524414,
+      "max_pairwise_cosine_distance": 1.5327954292297363,
+      "source_rate": 0.13,
+      "tokens": 6,
+      "log_tokens": 1.791759469228055
+    },
+    {
+      "persona": "chef",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9908737540245056,
+      "median_pairwise_cosine_distance": 0.9943206310272217,
+      "max_pairwise_cosine_distance": 1.4046623706817627,
+      "source_rate": 0.18,
+      "tokens": 14,
+      "log_tokens": 2.6390573296152584
+    },
+    {
+      "persona": "child",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.1158437728881836,
+      "median_pairwise_cosine_distance": 1.1229664087295532,
+      "max_pairwise_cosine_distance": 1.4270708560943604,
+      "source_rate": 0.16,
+      "tokens": 17,
+      "log_tokens": 2.833213344056216
+    },
+    {
+      "persona": "comedian",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.1439753770828247,
+      "median_pairwise_cosine_distance": 1.2129439115524292,
+      "max_pairwise_cosine_distance": 1.3699939250946045,
+      "source_rate": 0.45,
+      "tokens": 13,
+      "log_tokens": 2.5649493574615367
+    },
+    {
+      "persona": "data_scientist",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.956203818321228,
+      "median_pairwise_cosine_distance": 1.0346710681915283,
+      "max_pairwise_cosine_distance": 1.4270708560943604,
+      "source_rate": 0.18,
+      "tokens": 10,
+      "log_tokens": 2.302585092994046
+    },
+    {
+      "persona": "french_person",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0943454504013062,
+      "median_pairwise_cosine_distance": 1.094191312789917,
+      "max_pairwise_cosine_distance": 1.396850824356079,
+      "source_rate": 0.33,
+      "tokens": 15,
+      "log_tokens": 2.70805020110221
+    },
+    {
+      "persona": "helpful_assistant",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0297517776489258,
+      "median_pairwise_cosine_distance": 1.1942381858825684,
+      "max_pairwise_cosine_distance": 1.5355268716812134,
+      "source_rate": 0.21,
+      "tokens": 6,
+      "log_tokens": 1.791759469228055
+    },
+    {
+      "persona": "hero",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0209434032440186,
+      "median_pairwise_cosine_distance": 1.053492784500122,
+      "max_pairwise_cosine_distance": 1.313055396080017,
+      "source_rate": 0.25,
+      "tokens": 14,
+      "log_tokens": 2.6390573296152584
+    },
+    {
+      "persona": "i_am_helpful",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0202913284301758,
+      "median_pairwise_cosine_distance": 1.196990728378296,
+      "max_pairwise_cosine_distance": 1.5714234113693237,
+      "source_rate": 0.23,
+      "tokens": 6,
+      "log_tokens": 1.791759469228055
+    },
+    {
+      "persona": "journalist",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0492604970932007,
+      "median_pairwise_cosine_distance": 1.0555760860443115,
+      "max_pairwise_cosine_distance": 1.2231693267822266,
+      "source_rate": 0.28,
+      "tokens": 16,
+      "log_tokens": 2.772588722239781
+    },
+    {
+      "persona": "kindergarten_teacher",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0501039028167725,
+      "median_pairwise_cosine_distance": 1.0521661043167114,
+      "max_pairwise_cosine_distance": 1.250106930732727,
+      "source_rate": 0.19,
+      "tokens": 6,
+      "log_tokens": 1.791759469228055
+    },
+    {
+      "persona": "lawyer",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9676455855369568,
+      "median_pairwise_cosine_distance": 0.9217135310173035,
+      "max_pairwise_cosine_distance": 1.3596810102462769,
+      "source_rate": 0.27,
+      "tokens": 16,
+      "log_tokens": 2.772588722239781
+    },
+    {
+      "persona": "librarian",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9635069370269775,
+      "median_pairwise_cosine_distance": 0.9992742538452148,
+      "max_pairwise_cosine_distance": 1.3372974395751953,
+      "source_rate": 0.48,
+      "tokens": 15,
+      "log_tokens": 2.70805020110221
+    },
+    {
+      "persona": "medical_doctor",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9657702445983887,
+      "median_pairwise_cosine_distance": 0.8970053791999817,
+      "max_pairwise_cosine_distance": 1.3667685985565186,
+      "source_rate": 0.21,
+      "tokens": 11,
+      "log_tokens": 2.3978952727983707
+    },
+    {
+      "persona": "philosopher",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.066912055015564,
+      "median_pairwise_cosine_distance": 1.083482027053833,
+      "max_pairwise_cosine_distance": 1.3515135049819946,
+      "source_rate": 0.19,
+      "tokens": 14,
+      "log_tokens": 2.6390573296152584
+    },
+    {
+      "persona": "police_officer",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9914180636405945,
+      "median_pairwise_cosine_distance": 1.024094581604004,
+      "max_pairwise_cosine_distance": 1.349739670753479,
+      "source_rate": 0.25,
+      "tokens": 15,
+      "log_tokens": 2.70805020110221
+    },
+    {
+      "persona": "qwen_default",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0389411449432373,
+      "median_pairwise_cosine_distance": 1.0984708070755005,
+      "max_pairwise_cosine_distance": 1.2586268186569214,
+      "source_rate": 0.22,
+      "tokens": 16,
+      "log_tokens": 2.772588722239781
+    },
+    {
+      "persona": "software_engineer",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 0.9613667130470276,
+      "median_pairwise_cosine_distance": 1.0422626733779907,
+      "max_pairwise_cosine_distance": 1.4834891557693481,
+      "source_rate": 0.22,
+      "tokens": 10,
+      "log_tokens": 2.302585092994046
+    },
+    {
+      "persona": "villain",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.1000922918319702,
+      "median_pairwise_cosine_distance": 1.1735069751739502,
+      "max_pairwise_cosine_distance": 1.4334321022033691,
+      "source_rate": 0.34,
+      "tokens": 15,
+      "log_tokens": 2.70805020110221
+    },
+    {
+      "persona": "wizard",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.029799461364746,
+      "median_pairwise_cosine_distance": 1.0777368545532227,
+      "max_pairwise_cosine_distance": 1.4062501192092896,
+      "source_rate": 0.46,
+      "tokens": 12,
+      "log_tokens": 2.4849066497880004
+    },
+    {
+      "persona": "zelthari_scholar",
+      "cohort": "inherited_274",
+      "mean_pairwise_cosine_distance": 1.0657869577407837,
+      "median_pairwise_cosine_distance": 1.0216654539108276,
+      "max_pairwise_cosine_distance": 1.5714234113693237,
+      "source_rate": 0.28,
+      "tokens": 27,
+      "log_tokens": 3.295836866004329
+    }
+  ]
+}
