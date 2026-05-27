@@ -1164,7 +1164,7 @@ function SavedQaRow({ qa, onDelete }: { qa: SavedQa; onDelete: () => void }) {
         </span>{" "}
         {qa.question}
       </div>
-      <div className="prose prose-sm prose-tight max-w-none break-words text-fg-soft dark:prose-invert">
+      <div className="prose prose-sm prose-tight max-w-none break-words text-fg-soft">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{qa.answer}</ReactMarkdown>
       </div>
     </article>
@@ -1223,7 +1223,7 @@ function ChatMessageView({ message }: { message: ChatMessage }) {
 
 function AssistantMarkdown({ text }: { text: string }) {
   return (
-    <div className="prose prose-sm prose-tight max-w-none break-words dark:prose-invert">
+    <div className="prose prose-sm prose-tight max-w-none break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

@@ -301,8 +301,10 @@ export type CodeEditResult =
  * working tree.
  *
  * Steps:
- *   1. Confirm no pre-existing staged/unstaged dashboard changes (refuse
- *      with a clear error so user changes aren't accidentally committed).
+ *   1. Auto-stash any pre-existing dashboard/ changes (tracked +
+ *      untracked) so the edit lands on a clean base. The stash is popped
+ *      in `finally`; if pop conflicts, the stash entry is preserved and
+ *      surfaced in the result so the user can recover with `git stash list`.
  *   2. Spawn `claude -p <prompt>` with cwd=dashboard/, bypassPermissions.
  *   3. `git diff --name-only` (including staged): if empty → "no-op"; if
  *      any path is forbidden or escapes dashboard/ → revert + abort.
@@ -362,9 +364,12 @@ async function _runClaudeCodeEditInner({
   }
   const dashboardDir = path.join(REPO_ROOT, "dashboard");
 
-  // Step 1 — refuse if there are pre-existing dashboard mods. We don't
-  // want to accidentally commit unrelated user changes alongside
-  // Claude's edit.
+  // Step 1 — auto-stash any pre-existing dashboard/ changes so the edit
+  // lands on a clean base. Includes untracked files. The stash is popped
+  // in the `finally` below regardless of outcome; if the pop conflicts
+  // (e.g. claude touched a file that was also stashed), we leave the
+  // stash entry and surface its name so the user can recover.
+  let stashRef: string | null = null;
   {
     const r = await execShell(
       git,
@@ -379,14 +384,88 @@ async function _runClaudeCodeEditInner({
       };
     }
     if (r.stdout.trim().length > 0) {
-      return {
-        ok: false,
-        error:
-          "Working tree has pre-existing changes under dashboard/; refusing to commit a code-edit on top.",
-        tail: r.stdout.slice(0, 2_000),
-      };
+      const stashMsg = `eps-dashboard auto-stash before code-edit ${sanitizedCommentId} ${new Date().toISOString()}`;
+      const s = await execShell(
+        git,
+        [
+          "-C",
+          REPO_ROOT,
+          "stash",
+          "push",
+          "--include-untracked",
+          "-m",
+          stashMsg,
+          "--",
+          "dashboard",
+        ],
+        { timeoutMs: 30_000 },
+      );
+      if (s.code !== 0) {
+        return {
+          ok: false,
+          error: `auto-stash of pre-existing dashboard/ changes failed (exit ${s.code}).`,
+          tail: (s.stderr || s.stdout).slice(-4_000),
+        };
+      }
+      stashRef = stashMsg;
     }
   }
+
+  let inner: CodeEditResult = {
+    ok: false,
+    error: "unexpected: code-edit body did not return a result",
+    tail: "",
+  };
+  try {
+    inner = await _runClaudeCodeEditBody({
+      promptText,
+      sanitizedCommentId,
+      dashboardDir,
+      git,
+      claudeBin,
+    });
+  } finally {
+    if (stashRef) {
+      const pop = await execShell(
+        git,
+        ["-C", REPO_ROOT, "stash", "pop"],
+        { timeoutMs: 30_000 },
+      );
+      if (pop.code !== 0) {
+        const note = `\n\nNote: auto-stash pop conflicted. Your pre-existing dashboard/ changes are preserved in the stash entry: "${stashRef}". Recover with: git stash list && git stash apply <ref>`;
+        if (inner.ok) {
+          inner = {
+            ok: true,
+            sha: inner.sha,
+            summary: inner.summary,
+            tail: inner.tail + note,
+          };
+        } else {
+          inner = {
+            ok: false,
+            error: inner.error,
+            tail: inner.tail + note,
+          };
+        }
+      }
+    }
+  }
+  return inner;
+}
+
+async function _runClaudeCodeEditBody({
+  promptText,
+  sanitizedCommentId,
+  dashboardDir,
+  git,
+  claudeBin,
+}: {
+  promptText: string;
+  sanitizedCommentId: string;
+  dashboardDir: string;
+  git: string;
+  claudeBin: string;
+}): Promise<CodeEditResult> {
 
   // Step 2 — spawn claude. Use `-p` non-interactive mode with the
   // user's prompt passed verbatim. `--permission-mode bypassPermissions`

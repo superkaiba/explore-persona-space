@@ -11,6 +11,7 @@
  * ============================================================ */
 
 :root {
+  color-scheme: light;
   --canvas: 250 250 249;          /* page background */
   --subtle: 245 245 244;          /* sunken sections */
   --panel:  255 255 255;          /* card surfaces */
@@ -37,32 +38,6 @@
 
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --canvas: 12 14 18;
-    --subtle: 18 20 26;
-    --panel:  22 25 32;
-    --raised: 28 32 40;
-    --border: 38 42 52;
-    --border-strong: 58 64 78;
-
-    --fg:      237 239 244;
-    --fg-soft: 198 202 212;
-    --muted:   132 138 152;
-    --faint:   88 94 106;
-
-    --hi:  52 211 153;
-    --mod: 245 158 11;
-    --lo:  148 163 184;
-
-    --shadow-rgb: 0 0 0;
-    --shadow-strength: 0.5;
-
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 /* ============================================================
