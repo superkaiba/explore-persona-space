@@ -88,6 +88,15 @@ class EphemeralMetadata:
     about *why* a pod was provisioned, our preferred TTL, or freeform notes.
     Persisted to ``pods_ephemeral.json``; merged with a live ``PodInfo`` to
     produce an :class:`EphemeralPod` view in :func:`_load_state`.
+
+    ``manual_override`` (added 2026-05-27, post-mortem from task #391): when
+    True, the auto-refresh paths (drift repair in :func:`_load_state` and
+    host/port writes in :func:`_upsert_pods_conf`) refuse to overwrite
+    pod_id / host / port from the live API. Set by
+    ``pod_config.cmd_update`` so that a manual ``--update`` survives a
+    later ``provision`` / ``resume`` / cron run that matched a different
+    RunPod entry sharing the same pod name. Cleared by ``cmd_provision``
+    (fresh pod) and the ``--clear-override`` flag.
     """
 
     name: str  # e.g. "pod-125" (legacy "epm-issue-125" still recognized)
@@ -97,6 +106,7 @@ class EphemeralMetadata:
     ttl_days: int = DEFAULT_TTL_DAYS
     stopped_at: str | None = None  # ISO 8601 — when WE paused it
     notes: str = ""
+    manual_override: bool = False
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -228,6 +238,7 @@ def _write_metadata_file(metadata: dict[str, EphemeralMetadata]) -> None:
                 "ttl_days": m.ttl_days,
                 "stopped_at": m.stopped_at,
                 "notes": m.notes,
+                "manual_override": m.manual_override,
                 "extra": m.extra,
             }
             for name, m in metadata.items()
@@ -292,6 +303,7 @@ def _load_state() -> dict[str, EphemeralPod]:
 
     merged: dict[str, EphemeralPod] = {}
     drift_repaired: dict[str, tuple[str, str]] = {}  # name -> (stale, live)
+    override_protected: dict[str, tuple[str, str]] = {}  # name -> (kept_id, live_id)
 
     # Branch 1 + 2: walk metadata; intersect with live API.
     for name, meta in metadata.items():
@@ -300,6 +312,21 @@ def _load_state() -> dict[str, EphemeralPod]:
             # Branch 2: in JSON but not in API — terminated externally. Skip.
             continue
         if meta.pod_id != live.pod_id:
+            if meta.manual_override:
+                # Manual override is active — the user asserted via
+                # ``pod_config.cmd_update`` that the recorded pod_id /
+                # host / port are correct. The live API matched a
+                # DIFFERENT RunPod entry by name (name collisions happen
+                # when a pod is migrated and the old one is recreated
+                # under the same label). Do NOT silently repoint the
+                # sidecar. Synthesize a PodInfo with the live API state
+                # we WOULD have shown for completeness, but keep the
+                # caller's recorded pod_id intact. The pod's host/port
+                # for SSH come from ``pods.conf`` (the SoT for ``--sync``)
+                # and are not consulted from this view.
+                override_protected[name] = (meta.pod_id, live.pod_id)
+                merged[name] = EphemeralPod(metadata=meta, info=live)
+                continue
             # Sidecar drift: the live API's pod_id disagrees with what we
             # recorded. The RunPod API is authoritative for pod_id (state-of-
             # pod, not project-side metadata). Repair the in-memory view and
@@ -321,6 +348,17 @@ def _load_state() -> dict[str, EphemeralPod]:
             print(
                 f"[pod_lifecycle] WARN: sidecar pod_id for {name} drifted "
                 f"({stale} -> {live_id}); repaired pods_ephemeral.json.",
+                file=sys.stderr,
+            )
+
+    if override_protected:
+        for name, (kept_id, live_id) in override_protected.items():
+            print(
+                f"[pod_lifecycle] WARN: live API has a different pod_id for "
+                f"{name} ({live_id}) than the sidecar ({kept_id}); keeping "
+                f"the sidecar because manual_override=True. Clear with "
+                f"`pod.py config --clear-override {name}` if the live pod is "
+                f"the right one.",
                 file=sys.stderr,
             )
 
@@ -381,15 +419,34 @@ def _find_pod_in_state(state: dict[str, EphemeralPod], issue: int) -> EphemeralP
 
 
 def _upsert_pods_conf(pod: EphemeralPod) -> None:
-    """Add or update `pod` in scripts/pods.conf and regenerate downstream configs."""
+    """Add or update `pod` in scripts/pods.conf and regenerate downstream configs.
+
+    When ``pod.metadata.manual_override`` is True and an existing row is
+    present, the host/port columns are preserved (the user manually set them
+    via ``pod_config.cmd_update`` and the live API pod_id may be for a
+    different RunPod entry sharing the same name). gpus / gpu_type / label
+    are still refreshed since they are not user-overrideable via ``--update``.
+    """
     rows = parse_pods_conf()
     existing = next((p for p in rows if p.name == pod.name), None)
     if pod.host is None or pod.port is None:
         # Nothing to write yet — only happens during transient provisioning.
         return
     if existing:
-        existing.host = pod.host
-        existing.port = pod.port
+        if pod.metadata.manual_override and (
+            existing.host != pod.host or existing.port != pod.port
+        ):
+            print(
+                f"[pod_lifecycle] WARN: refusing to overwrite manual host/port "
+                f"for {pod.name} in pods.conf "
+                f"(kept {existing.host}:{existing.port}; API would have written "
+                f"{pod.host}:{pod.port}). Clear with "
+                f"`pod.py config --clear-override {pod.name}` if the API is right.",
+                file=sys.stderr,
+            )
+        else:
+            existing.host = pod.host
+            existing.port = pod.port
         existing.gpus = pod.gpu_count
         existing.gpu_type = pod.gpu_type
         existing.label = _label_for_issue(pod.issue)

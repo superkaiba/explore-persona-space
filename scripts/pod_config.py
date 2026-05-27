@@ -10,6 +10,7 @@ Usage:
     python scripts/pod_config.py --check             # Verify configs are in sync
     python scripts/pod_config.py --sync              # Regenerate ~/.ssh/config + .claude/mcp.json
     python scripts/pod_config.py --update pod2 --host 1.2.3.4 --port 12345
+    python scripts/pod_config.py --clear-override pod-391   # Re-enable auto-refresh
     python scripts/pod_config.py --json              # Output pod list as JSON
 """
 
@@ -30,6 +31,11 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 PODS_CONF = SCRIPT_DIR / "pods.conf"
+# Sidecar JSON owned by pod_lifecycle.py — read here only to set/clear the
+# manual_override flag from ``cmd_update``. Format documented in
+# scripts/pod_lifecycle.py. We do not import pod_lifecycle.py because it
+# already imports this module (avoiding circular import).
+PODS_EPHEMERAL_JSON = SCRIPT_DIR / "pods_ephemeral.json"
 # The SSH MCP server (mcp-ssh-manager) lives in the user-level Claude config,
 # NOT the project-level one. The project mcp.json (PROJECT_ROOT / ".claude" /
 # "mcp.json") is reserved for project-scoped servers like arxiv.
@@ -534,8 +540,50 @@ def cmd_sync(pods: list[Pod]) -> None:
     print("Verify with: python scripts/pod_config.py --check")
 
 
+def _set_manual_override(pod_name: str, *, value: bool) -> str | None:
+    """Set or clear ``manual_override`` for ``pod_name`` in pods_ephemeral.json.
+
+    Returns a human-readable status string (printed by callers), or None when
+    the file does not exist or the pod is not registered there. Permanent-
+    fleet pods like ``pod1``, ``pod2`` are not in the sidecar — they aren't
+    subject to live-API drift, so we silently no-op.
+
+    Does NOT auto-create the sidecar; if it is missing, the override flag has
+    nothing to protect (no auto-refresh would touch a non-existent entry).
+    """
+    if not PODS_EPHEMERAL_JSON.exists():
+        return None
+    try:
+        data = json.loads(PODS_EPHEMERAL_JSON.read_text())
+    except json.JSONDecodeError as exc:
+        print(
+            f"WARNING: {PODS_EPHEMERAL_JSON} JSON parse error: {exc}; "
+            f"could not set manual_override for {pod_name}.",
+            file=sys.stderr,
+        )
+        return None
+
+    pods = data.get("pods", {})
+    if pod_name not in pods:
+        return None
+
+    prev = bool(pods[pod_name].get("manual_override", False))
+    if prev == value:
+        return f"pods_ephemeral.json: manual_override for {pod_name} already {value}"
+    pods[pod_name]["manual_override"] = value
+    PODS_EPHEMERAL_JSON.write_text(json.dumps(data, indent=2) + "\n")
+    return f"pods_ephemeral.json: manual_override for {pod_name} {prev} -> {value}"
+
+
 def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | None) -> None:
-    """Update a pod's host/port in pods.conf, then sync all downstream configs."""
+    """Update a pod's host/port in pods.conf, then sync all downstream configs.
+
+    Also flips ``manual_override=True`` in pods_ephemeral.json for matching
+    ephemeral pods so the auto-refresh paths in ``pod_lifecycle.py`` will not
+    silently clobber the manual values from a later ``provision`` / ``resume``
+    / cron run. Permanent-fleet pods (``podN``) are not in the sidecar; the
+    flag is a no-op there.
+    """
     target = None
     for p in pods:
         if p.name == pod_name:
@@ -567,10 +615,36 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
     for c in changes:
         print(c)
     write_pods_conf(pods)
+
+    # Mark the sidecar so a later auto-refresh in pod_lifecycle.py does NOT
+    # silently overwrite the values just set. No-op for permanent pods.
+    status = _set_manual_override(pod_name, value=True)
+    if status is not None:
+        print(f"  {status}")
+
     print()
 
     # Auto-sync downstream configs.
     cmd_sync(pods)
+
+
+def cmd_clear_override(pod_name: str) -> None:
+    """Clear ``manual_override`` for ``pod_name`` in pods_ephemeral.json.
+
+    Call this when the manually-set values are no longer correct (e.g., the
+    pod the user pointed at has been terminated and they want a future
+    ``resume`` to repoint from the live API). No-op for permanent or
+    unregistered pods.
+    """
+    status = _set_manual_override(pod_name, value=False)
+    if status is None:
+        print(
+            f"{pod_name}: not in pods_ephemeral.json — nothing to clear "
+            f"(permanent-fleet pods like pod1/pod2 do not carry the flag).",
+            file=sys.stderr,
+        )
+        return
+    print(status)
 
 
 # ---------------------------------------------------------------------------
@@ -602,6 +676,15 @@ def main() -> None:
         "--sync", action="store_true", help="Regenerate SSH and MCP configs from pods.conf"
     )
     group.add_argument("--update", metavar="POD_NAME", help="Update a pod's host/port, then sync")
+    group.add_argument(
+        "--clear-override",
+        metavar="POD_NAME",
+        help=(
+            "Clear manual_override in pods_ephemeral.json for POD_NAME so the "
+            "auto-refresh paths in pod_lifecycle.py may resume updating host/"
+            "port from the live API."
+        ),
+    )
 
     parser.add_argument("--host", help="New host (IP) for --update")
     parser.add_argument("--port", type=int, help="New port for --update")
@@ -620,6 +703,8 @@ def main() -> None:
         cmd_sync(pods)
     elif args.update:
         cmd_update(pods, args.update, args.host, args.port)
+    elif args.clear_override:
+        cmd_clear_override(args.clear_override)
     else:
         parser.print_help()
 
