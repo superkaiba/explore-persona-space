@@ -4,7 +4,7 @@ title: Behaviorally-silenced single-token marker leaves a context-uniform log-pr
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 377
 goal: 'Re-run the audit-trigger-survives-drift test from #377 with single-token marker
   ※ and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence
