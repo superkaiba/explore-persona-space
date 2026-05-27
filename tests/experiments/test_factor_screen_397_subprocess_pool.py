@@ -126,9 +126,12 @@ def test_wait_for_free_gpu_polls_until_one_finishes(monkeypatch) -> None:
 
 
 def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
-    """Plan §12: even with 8 physical GPUs, training caps at 6 concurrent.
+    """Round 6: training caps at 8 concurrent on an 8-GPU pod.
 
-    The dispatcher derives the GPU pool as
+    Round 5 / plan v4 §12 capped at 6/8 for merge-dir disk-quota
+    mitigation. Round 6 eliminated the merge step (vLLM ``--enable-lora``),
+    so peak per-cell disk dropped from ~17 GB to ~3 GB and 8/8 fits
+    under MooseFS ~130 GB. The dispatcher derives the GPU pool as
     ``list(range(min(max_concurrent_train, num_gpus)))`` so the cap is
     enforced even when num_gpus is larger.
     """
@@ -149,7 +152,7 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
             sources="librarian",
             seeds="42",
             num_gpus=8,
-            max_concurrent_train=6,  # the cap
+            max_concurrent_train=8,  # Round 6 cap — was 6, now 8
             marker_token="※",
             save_every_n_steps=25,
             pos_per_source=400,
@@ -158,26 +161,29 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
             dry_run=False,
+            # Round 6 — tests default to no_resume so they don't hit HF Hub.
+            no_resume=True,
+            resume_source="both",
             log_level="INFO",
         )
 
         from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-        # 20 cells so the cap is exercised (need > 6 cells to hit the cap).
+        # 20 cells so the cap is exercised (need > 8 cells to hit the cap).
         cells = [Cell.from_key(f"{a}{b}000") for a in (0, 1) for b in (0, 1) for _ in range(5)]
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: cells)
 
         observed_gpu_ids: set[int] = set()
-        # Track launch order. A Popen stays "running" until ALL 6 pool slots
-        # are filled (so GPUs 1-5 get assigned before any GPU 0 Popen
+        # Track launch order. A Popen stays "running" until ALL 8 pool slots
+        # are filled (so GPUs 1-7 get assigned before any GPU 0 Popen
         # finishes and frees its slot).
         launch_state = {"count": 0}
         spawned: list[Any] = []
 
         class _StaysRunningUntilPoolFull(_FakePopen):
-            """Returns None from poll() until launch_state['count'] >= 6.
+            """Returns None from poll() until launch_state['count'] >= 8.
 
-            Once the dispatcher has launched on all 6 slots, every poll
+            Once the dispatcher has launched on all 8 slots, every poll
             returns 0 so the drain phase finishes each Popen cleanly.
             """
 
@@ -185,7 +191,7 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
                 super().__init__(rc=None, cell_key=cell_key, source=source, seed=seed)
 
             def poll(self):
-                if launch_state["count"] >= 6:
+                if launch_state["count"] >= 8:
                     self._rc = 0
                     return 0
                 return None
@@ -205,9 +211,9 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
-        # GPU ids assigned must be in [0, max_concurrent_train) — never 6/7.
-        assert observed_gpu_ids == {0, 1, 2, 3, 4, 5}, (
-            f"GPU pool capped at 6 of 8; observed gpu_ids = {observed_gpu_ids}"
+        # Round 6 — all 8 GPUs may be used (was 6/8 in Round 5).
+        assert observed_gpu_ids == {0, 1, 2, 3, 4, 5, 6, 7}, (
+            f"GPU pool should use all 8 of 8 (Round 6); observed gpu_ids = {observed_gpu_ids}"
         )
 
 
@@ -255,6 +261,8 @@ def test_gpu_pool_empty_raises_loud(monkeypatch) -> None:
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
             dry_run=False,
+            no_resume=True,
+            resume_source="both",
             log_level="INFO",
         )
 
@@ -427,6 +435,8 @@ def test_sweep_summary_json_shape(monkeypatch) -> None:
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
             dry_run=False,
+            no_resume=True,  # Round 6 — skip Hub probe in tests
+            resume_source="both",
             log_level="INFO",
         )
         from explore_persona_space.experiments.factor_screen_397.cells import Cell

@@ -130,10 +130,18 @@ def dispatch_e_level(e: int) -> EDispatch:
 
 @dataclass
 class TrainOutcome:
+    """Per-cell training result.
+
+    Round 6 dropped ``merged_path`` — vLLM's ``--enable-lora`` lets us run
+    the sampled eval on base model + adapter directly, eliminating the
+    ~14 GB merged-dir footprint per cell. Callers consume
+    ``adapter_path`` as the LoRA root and pass it to
+    ``vllm.lora.request.LoRARequest(lora_path=adapter_path)``.
+    """
+
     cell_key: str
     seed: int
     adapter_path: str
-    merged_path: str
     loss: float
     train_wall_minutes: float
     n_examples: int
@@ -171,12 +179,18 @@ def train_one_cell(
     """Train one (cell, seed) run with the v4 recipe.
 
     Plan v4 §5.6 — Wires the ordinal-E dispatch + #399 hyperparameters
-    through ``TrainLoraConfig`` + ``train_lora``. The merged final-checkpoint
-    model lives at ``cell_output_dir / 'merged'`` so vLLM can load it for the
-    final-checkpoint sampled eval; intermediate checkpoints live at
-    ``cell_output_dir / 'adapter' / 'checkpoint-<step>'`` and are consumed
-    in-place by ``compute_logprob_panel`` via the peft 0.18.1 adapter-swap
-    lifecycle.
+    through ``TrainLoraConfig`` + ``train_lora``. The final adapter
+    weights land at ``cell_output_dir / 'adapter'`` (TRL's
+    ``trainer.save_model`` writes them there post-training); intermediate
+    checkpoints live at ``cell_output_dir / 'adapter' / 'checkpoint-<step>'``
+    and are consumed in-place by ``compute_logprob_panel`` via the peft
+    0.18.1 adapter-swap lifecycle.
+
+    Round 6 dropped the merge step (``merge_lora`` + ``merged/`` dir).
+    The sampled-eval call uses vLLM ``--enable-lora`` + ``LoRARequest``
+    to consume the adapter directly without merging into base. Peak
+    per-cell disk drops from ~17 GB to ~3 GB, which unlocks the 8/8
+    concurrency cap (plan §12's 6/8 was a merge-dir quota mitigation).
 
     ``system_prompt_text`` (recipe-fix step 5b — see plan v4 §5.1.0) is the
     EXACT source-persona system prompt the LoRA trained on. When provided,
@@ -198,7 +212,7 @@ def train_one_cell(
     import os
     import time
 
-    from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
+    from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     if lora_target_modules is None:
         lora_target_modules = DEFAULT_LORA_TARGET_MODULES
@@ -206,7 +220,6 @@ def train_one_cell(
     e_dispatch = dispatch_e_level(cell.e)
 
     adapter_dir = cell_output_dir / "adapter"
-    merged_dir = cell_output_dir / "merged"
     adapter_dir.mkdir(parents=True, exist_ok=True)
 
     n_examples = _count_lines(data_path)
@@ -292,13 +305,15 @@ def train_one_cell(
     )
     train_minutes = (time.time() - start) / 60.0
 
-    merge_lora(BASE_MODEL, adapter_path, str(merged_dir), gpu_id=gpu_id)
+    # Round 6: NO merge step. vLLM's --enable-lora consumes the LoRA
+    # adapter directly via LoRARequest(lora_path=adapter_path) at sampled-
+    # eval time. Eliminates the ~14 GB merged-dir per cell, which was the
+    # binding pressure on the 6/8 concurrency cap; round 6 relaxes to 8/8.
 
     return TrainOutcome(
         cell_key=cell.key,
         seed=seed,
         adapter_path=str(adapter_path),
-        merged_path=str(merged_dir),
         loss=float(loss),
         train_wall_minutes=round(train_minutes, 2),
         n_examples=n_examples,

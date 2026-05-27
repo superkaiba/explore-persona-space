@@ -68,7 +68,7 @@ def _build_smoke_args(
         sources="librarian,programmer,surgeon",
         seeds="42,137,256",
         num_gpus=8,
-        max_concurrent_train=6,
+        max_concurrent_train=8,  # Round 6 default — was 6, now 8 (no merge step)
         marker_token="※",
         save_every_n_steps=25,
         pos_per_source=400,
@@ -77,6 +77,12 @@ def _build_smoke_args(
         require_smoke_pass=True,
         skip_smoke_pass_check=False,
         dry_run=False,
+        # Round 6 — sweep resume:
+        # Tests default to no_resume=True so they don't hit the real HF Hub
+        # for the resume probe. The dedicated sweep_resume test file flips
+        # both knobs explicitly to exercise the resume code path.
+        no_resume=True,
+        resume_source="both",
         log_level="INFO",
     )
 
@@ -170,7 +176,7 @@ def test_smoke_phase_threads_system_prompt_overrides_into_compute_logprob_panel(
                 cell_key=kwargs["cell"].key,
                 seed=kwargs["seed"],
                 adapter_path=str(kwargs["cell_output_dir"] / "adapter"),
-                merged_path=str(kwargs["cell_output_dir"] / "merged"),
+                # Round 6: merged_path removed; vLLM --enable-lora reads adapter_path directly.
                 loss=1.23,
                 train_wall_minutes=0.5,
                 n_examples=800,
@@ -340,6 +346,7 @@ def test_sweep_phase_dry_run_enumerates_324_jobs(monkeypatch, capsys) -> None:
         args = _build_smoke_args(slab_root)
         args.mode = "sweep"
         args.dry_run = True
+        # no_resume=True is the test-helper default — no Hub probe.
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0

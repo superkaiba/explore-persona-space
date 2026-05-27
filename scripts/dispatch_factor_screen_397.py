@@ -81,11 +81,15 @@ log = logging.getLogger("dispatch_factor_screen_397")
 SMOKE_PASS_THRESHOLD_MINUTES: float = 2.0
 SMOKE_FAIL_THRESHOLD_MINUTES: float = 10.0
 
-# Plan v4 §11 + §12 — disk-quota mitigation: cap concurrent training at 6/8
-# GPUs (peak 6 * ~17 GB workspace = ~102 GB, under RunPod MooseFS ~130 GB
-# per-pod quota). The remaining 2 GPUs run eval-only (no merge / checkpoint-
-# NNN workspace).
-DEFAULT_MAX_CONCURRENT_TRAIN: int = 6
+# Plan v4 §12 originally specified 6/8 concurrent training for MooseFS
+# quota mitigation because the per-cell merge step added ~14 GB per cell
+# (peak 8 * 17 GB = 136 GB would exceed the ~130 GB per-pod quota).
+# Round 6 dropped the merge step in favor of vLLM ``--enable-lora``, so
+# peak per-cell disk is now ~3 GB (adapter + checkpoints) and 8/8 fits
+# comfortably (peak 8 * 3 = ~24 GB). The cap defaults to 8 from Round 6
+# onward; the --max-concurrent-train arg lets the user dial it back when
+# explicitly wanted.
+DEFAULT_MAX_CONCURRENT_TRAIN: int = 8
 DEFAULT_NUM_GPUS: int = 8
 
 # Plan v4 §4.4 — checkpoint cadence.
@@ -150,7 +154,34 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--max-concurrent-train",
         type=int,
         default=DEFAULT_MAX_CONCURRENT_TRAIN,
-        help="Concurrent training cap (plan v4 §12 disk-quota mitigation; default 6).",
+        help=(
+            "Concurrent training cap. Round 6 relaxed plan v4 §12's 6/8 to 8/8 "
+            "after the merge step was eliminated; default 8."
+        ),
+    )
+
+    # Sweep-level resume (Round 6). Default: skip cells already complete
+    # locally OR on HF Hub. --no-resume forces full re-launch (useful when
+    # results are suspect and need regeneration).
+    p.add_argument(
+        "--no-resume",
+        action="store_true",
+        help=(
+            "Disable sweep-level resume — re-runs every cell from scratch, even "
+            "ones with existing metrics_final.json / HF Hub adapter."
+        ),
+    )
+    p.add_argument(
+        "--resume-source",
+        type=str,
+        default="both",
+        choices=("local", "hub", "both"),
+        help=(
+            "Which signal counts as 'cell complete' when --no-resume is OFF. "
+            "'local' = metrics_final.json on disk; 'hub' = HF Hub adapter present; "
+            "'both' (default) = either signal sufficient. LOUD-FAIL on inconsistent "
+            "state (local present, hub missing → raise unless --resume-source=local)."
+        ),
     )
 
     # Common.
@@ -492,10 +523,12 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
     # written before the verdict gets computed.
     _run_smoke_sampled_eval(
         cell_output_dir=cell_output_dir,
-        merged_model_path=outcome.merged_path,
+        lora_path=outcome.adapter_path,
+        overrides=overrides,
         panel=panel,
         questions=questions,
         marker=args.marker_token,
+        seed=args.smoke_seed,
     )
 
     # ----- (6) Read source-rate + emit verdict marker -----
@@ -632,70 +665,72 @@ def _load_base_model_for_logprob(first_checkpoint_dir: str) -> tuple[Any, Any]:
 def _run_smoke_sampled_eval(
     *,
     cell_output_dir: Path,
-    merged_model_path: str,
+    lora_path: str,
+    overrides: dict[str, str],
     panel: dict[str, str],
     questions: list[str],
     marker: str,
+    seed: int = 42,
 ) -> None:
-    """Run the vLLM sampled eval at the smoke cell's final checkpoint.
+    """Run the vLLM ``--enable-lora`` sampled eval at the smoke cell.
 
-    BLOCKER 3 fix (code-review v3): writes ``metrics_final.json`` under
-    ``cell_output_dir`` so ``_smoke_source_substring_rate`` has data to
-    return and the M1 live check in ``build_smoke_marker`` can fire. Plan
-    v4 §5.7 specifies the M1 check is "source substring rate > 0 at smoke
-    cell"; that requires sampled eval, not log-prob-only.
+    Round 6 update: switched from ``EvalConfig + generate_completions(
+    merged_path)`` to ``generate_completions_with_lora(base + lora_path)``.
+    No merge step → no merged dir → no ~14 GB disk pressure on the smoke
+    cell, AND the production sweep can run at 8/8 concurrency.
 
-    The eval uses the SAME 480-context shape as the log-prob eval (24
-    personas x 20 questions) so the sampled-vs-logprob comparison is
-    apples-to-apples. ``score_markers`` is threaded with ``marker=...``
-    (M1) so the recorded substring rate matches the runtime marker.
+    BLOCKER 3 contract (code-review v3) is preserved: writes
+    ``metrics_final.json`` under ``cell_output_dir`` so
+    ``_smoke_source_substring_rate`` has data to return and the M1 live
+    check in ``build_smoke_marker`` can fire.
 
     Writes ``metrics_final.json`` with shape::
 
         {
           "marker": "<runtime marker>",
-          "personas": {"<persona>": {"substring_rate": ...,
-                                     "fuzzy_rate": ...,
-                                     "substring_found": ...,
-                                     "total": ...,
-                                     "per_question": {...}}, ...},
-          "panel_size": 24, "questions": 20, "num_completions": 5
+          "personas": {"<persona>": {"substring_rate": ..., ...}, ...},
+          "panel_size": 24, "questions": 20, "num_completions": 5,
+          "vllm_lora_mode": true,
         }
 
-    Failures (vLLM crash, IO error) propagate as exceptions — the calling
-    smoke phase exits non-zero and ``build_smoke_marker`` reports FAIL.
-    Wrapping in try/except would re-introduce the silent-pass bug
-    BLOCKER 3 is designed to eliminate.
+    Failures (vLLM crash, adapter-load error, IO error) propagate as
+    exceptions — the calling smoke phase exits non-zero and
+    ``build_smoke_marker`` reports FAIL. Wrapping in try/except would
+    re-introduce the silent-pass bug BLOCKER 3 is designed to eliminate.
     """
-    from explore_persona_space.experiments.factor_screen_365.eval_panel import (
-        EvalConfig,
-        generate_completions,
-    )
     from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        DEFAULT_NUM_COMPLETIONS,
+        generate_completions_with_lora,
         score_markers_threaded,
     )
+    from explore_persona_space.experiments.factor_screen_397.training import BASE_MODEL
 
     log.info(
-        "Smoke sampled eval starting on merged model %s "
-        "(panel=%d personas x %d questions x 5 completions)",
-        merged_model_path,
+        "Smoke sampled eval starting (vLLM --enable-lora): base=%s lora_path=%s "
+        "(panel=%d personas x %d questions x %d completions)",
+        BASE_MODEL,
+        lora_path,
         len(panel),
         len(questions),
+        DEFAULT_NUM_COMPLETIONS,
     )
-    eval_cfg = EvalConfig(
-        model_path=merged_model_path,
+    completions = generate_completions_with_lora(
+        base_model_path=BASE_MODEL,
+        lora_path=lora_path,
         personas=dict(panel),
         questions=list(questions),
+        system_prompt_overrides=overrides,
+        seed=seed,
     )
-    completions = generate_completions(eval_cfg)
     persona_scores = score_markers_threaded(completions, marker=marker)
 
     payload = {
         "marker": marker,
         "panel_size": len(panel),
         "questions": len(questions),
-        "num_completions": eval_cfg.num_completions,
+        "num_completions": DEFAULT_NUM_COMPLETIONS,
         "personas": persona_scores,
+        "vllm_lora_mode": True,
     }
     out_path = cell_output_dir / "metrics_final.json"
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
@@ -767,6 +802,168 @@ def has_recent_smoke_pass_marker(issue: int, *, repo_root: Path) -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# Sweep-level resume (Round 6)
+# ---------------------------------------------------------------------------
+
+HF_ADAPTER_REPO: str = "superkaiba1/explore-persona-space"
+
+
+def is_cell_complete_locally(cell_output_dir: Path) -> bool:
+    """Return True if ``cell_output_dir / 'metrics.json'`` parses cleanly.
+
+    Round 6 resume probe (local branch). The per-cell ``run_one_cell``
+    writes ``metrics.json`` as its LAST step (after vLLM sampled eval +
+    HF upload verify + cleanup); presence + parsability is the canonical
+    "this cell finished cleanly" sentinel.
+
+    Returns False on missing file OR JSON parse error (treat malformed
+    as "not complete" — re-run will overwrite cleanly).
+    """
+    metrics_path = cell_output_dir / "metrics.json"
+    if not metrics_path.exists():
+        return False
+    try:
+        payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        log.warning(
+            "metrics.json at %s is malformed JSON — treating cell as NOT complete; "
+            "re-run will overwrite.",
+            metrics_path,
+        )
+        return False
+    return isinstance(payload, dict) and "personas" in payload
+
+
+def is_cell_complete_on_hub(
+    cell_key: str,
+    source: str,
+    seed: int,
+    *,
+    hub_files_cache: list[str] | None = None,
+) -> bool:
+    """Return True if the cell's adapter is present on HF Hub.
+
+    Probes ``HfApi.list_repo_files`` for the canonical
+    ``adapters/issue_397/i397_cell_<key>_source_<source>_seed<seed>/``
+    prefix carrying ``adapter_*`` files. ``hub_files_cache`` lets the
+    caller pre-fetch the full file list once and pass it in to avoid
+    324 separate Hub round-trips during the resume scan.
+
+    Returns False on missing path OR transient Hub failure (caller
+    treats False as "not complete" — re-run will redo the cell + re-
+    upload).
+    """
+    run_name = f"i397_cell_{cell_key}_source_{source}_seed{seed}"
+    prefix = f"adapters/issue_397/{run_name}/"
+    if hub_files_cache is None:
+        hub_files_cache = _fetch_hub_adapter_index()
+    if hub_files_cache is None:
+        return False
+    return any(
+        f.startswith(prefix) and ("adapter_" in f.rsplit("/", 1)[-1]) for f in hub_files_cache
+    )
+
+
+def _fetch_hub_adapter_index() -> list[str] | None:
+    """One-shot HF Hub probe for the model repo's file list.
+
+    Returns the full list of files (full paths under repo root) OR None
+    on import / network failure. The caller treats None as "Hub
+    unreachable" and falls back to local-only resume.
+    """
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        log.warning("huggingface_hub not importable; skipping Hub resume probe")
+        return None
+    import os as _os
+
+    api = HfApi(token=_os.environ.get("HF_TOKEN"))
+    try:
+        return api.list_repo_files(repo_id=HF_ADAPTER_REPO, repo_type="model")
+    except Exception as e:
+        log.warning("HF Hub list_repo_files failed (%s); skipping Hub resume probe", e)
+        return None
+
+
+def filter_jobs_for_resume(
+    jobs: list[tuple[Any, str, int]],
+    *,
+    slab_root: Path,
+    resume_source: str,
+    hub_files_cache: list[str] | None = None,
+) -> tuple[list[tuple[Any, str, int]], dict[str, int]]:
+    """Filter completed cells out of the sweep job list.
+
+    ``resume_source`` ∈ {"local", "hub", "both"}:
+      - "local" → skip cells with ``metrics.json`` on disk.
+      - "hub" → skip cells with adapter on HF Hub.
+      - "both" → skip cells with EITHER signal. LOUD-FAIL on
+        inconsistent state (local present, hub missing → raise so the
+        user surfaces a corruption / partial-upload bug rather than
+        silently re-running).
+
+    Returns ``(remaining_jobs, summary)`` where summary has counts of
+    skipped-local / skipped-hub / inconsistent / queued.
+    """
+    remaining: list[tuple[Any, str, int]] = []
+    summary = {
+        "skipped_local": 0,
+        "skipped_hub": 0,
+        "skipped_both": 0,
+        "queued": 0,
+    }
+    inconsistent: list[tuple[str, str, int]] = []
+
+    for cell, source, seed in jobs:
+        cell_dir = _cell_output_dir(slab_root, cell_key=cell.key, source=source, seed=seed)
+        local_ok = is_cell_complete_locally(cell_dir)
+        if resume_source == "local":
+            if local_ok:
+                summary["skipped_local"] += 1
+                continue
+        elif resume_source == "hub":
+            hub_ok = is_cell_complete_on_hub(
+                cell.key, source, seed, hub_files_cache=hub_files_cache
+            )
+            if hub_ok:
+                summary["skipped_hub"] += 1
+                continue
+        else:  # both
+            hub_ok = is_cell_complete_on_hub(
+                cell.key, source, seed, hub_files_cache=hub_files_cache
+            )
+            if local_ok and hub_ok:
+                summary["skipped_both"] += 1
+                continue
+            if local_ok and not hub_ok:
+                # LOUD-FAIL: local says done but Hub disagrees → corruption /
+                # partial upload. Surface so the user can investigate before
+                # re-running and clobbering local artifacts.
+                inconsistent.append((cell.key, source, seed))
+                continue
+            if hub_ok and not local_ok:
+                # Local was wiped (e.g. pod recycled); Hub has the result.
+                # Skip — analyzer can pull from Hub.
+                summary["skipped_hub"] += 1
+                continue
+        remaining.append((cell, source, seed))
+        summary["queued"] += 1
+
+    if inconsistent:
+        raise ValueError(
+            f"Resume LOUD-FAIL: {len(inconsistent)} cell(s) have local metrics.json "
+            f"but missing HF Hub adapter (potential corruption / partial upload). "
+            f"Investigate before re-running. Affected cells: {inconsistent[:10]}"
+            + (f" (and {len(inconsistent) - 10} more)" if len(inconsistent) > 10 else "")
+            + ". To force-re-run anyway, pass --no-resume; to ignore the Hub side, "
+            "pass --resume-source=local."
+        )
+
+    return remaining, summary
+
+
 def _enumerate_valid_cells_per_seed() -> list[Any]:
     """108 valid cells per seed (12 ABCD x 3 E levels x 3 sources).
 
@@ -781,7 +978,7 @@ def _enumerate_valid_cells_per_seed() -> list[Any]:
     return list(valid_cells_per_source())
 
 
-def _dispatch_sweep_jobs(
+def _dispatch_sweep_jobs(  # noqa: C901 — orchestrator: resume + launch + drain + summary
     *,
     sources: list[str],
     seeds: list[int],
@@ -791,11 +988,17 @@ def _dispatch_sweep_jobs(
 ) -> int:
     """Round-robin assign (cell, source, seed) jobs across the GPU pool.
 
-    Round 5 implementation. Builds a queue of (cell, source, seed) tuples,
-    spawns one ``subprocess.Popen`` per cell pinned to a single GPU, caps
-    concurrent training at ``args.max_concurrent_train`` (default 6 of 8
-    per plan v4 §12 disk-quota mitigation), waits for a free GPU when the
-    cap is hit, and drains all in-flight processes at end.
+    Round 5 implementation, Round 6 update: default concurrency cap
+    relaxed from 6/8 → 8/8. Plan v4 §12's 6/8 was a merge-dir disk-quota
+    mitigation; Round 6 eliminated the merge step (vLLM ``--enable-lora``
+    consumes the adapter directly), so peak per-cell disk dropped from
+    ~17 GB to ~3 GB and 8/8 fits comfortably under MooseFS ~130 GB.
+
+    Builds a queue of (cell, source, seed) tuples, spawns one
+    ``subprocess.Popen`` per cell pinned to a single GPU, caps concurrent
+    training at ``args.max_concurrent_train`` (default 8), waits for a
+    free GPU when the cap is hit, and drains all in-flight processes at
+    end.
 
     Per-cell exit codes (from ``run_one_cell.main``):
       - 0 = ok
@@ -841,45 +1044,96 @@ def _dispatch_sweep_jobs(
     # Canonical iteration order: source-major, then seed, then cell. This
     # keeps a single source's runs clustered in time so HF Hub batches
     # adapter uploads per-source — easier to inspect mid-sweep.
-    job_index = 0
-    for source in sources:
-        for seed in seeds:
-            for cell in cells:
-                job_index += 1
-                cell_dir = _cell_output_dir(
-                    args.slab_root, cell_key=cell.key, source=source, seed=seed
-                )
-                log.info(
-                    "[%d/%d] queueing cell=%s source=%s seed=%d e=%d -> %s",
-                    job_index,
-                    job_count,
-                    cell.key,
-                    source,
-                    seed,
-                    cell.e,
-                    cell_dir,
-                )
-                if args.dry_run:
-                    continue
-                gpu = _wait_for_free_gpu(running, gpu_pool, per_cell_rc=per_cell_rc)
-                proc = _launch_cell_subprocess(
-                    cell=cell,
-                    source=source,
-                    seed=seed,
-                    gpu_id=gpu,
-                    cell_output_dir=cell_dir,
-                    args=args,
+    all_jobs: list[tuple[Any, str, int]] = [
+        (cell, source, seed) for source in sources for seed in seeds for cell in cells
+    ]
+
+    # Round 6: sweep-level resume. Filter out cells already complete
+    # locally (metrics.json) AND/OR on HF Hub (adapter under the canonical
+    # path). LOUD-FAIL on inconsistent state when --resume-source=both.
+    skip_summary: dict[str, int] = {"skipped_local": 0, "skipped_hub": 0, "skipped_both": 0}
+    if getattr(args, "no_resume", False):
+        log.info("--no-resume set; running all %d cells from scratch", len(all_jobs))
+        jobs_to_run = all_jobs
+        skip_summary["queued"] = len(jobs_to_run)
+    else:
+        # Pre-fetch HF Hub file list once (avoids 324 round-trips).
+        hub_files_cache = None
+        if args.resume_source in ("hub", "both"):
+            hub_files_cache = _fetch_hub_adapter_index()
+        jobs_to_run, skip_summary = filter_jobs_for_resume(
+            all_jobs,
+            slab_root=args.slab_root,
+            resume_source=args.resume_source,
+            hub_files_cache=hub_files_cache,
+        )
+        skipped_total = (
+            skip_summary["skipped_local"]
+            + skip_summary["skipped_hub"]
+            + skip_summary["skipped_both"]
+        )
+        log.info(
+            "Resuming sweep: %d/%d cells already complete, launching %d remaining "
+            "(skipped: local=%d hub=%d both=%d; resume_source=%s)",
+            skipped_total,
+            len(all_jobs),
+            len(jobs_to_run),
+            skip_summary["skipped_local"],
+            skip_summary["skipped_hub"],
+            skip_summary["skipped_both"],
+            args.resume_source,
+        )
+        # Post epm:sweep-resume marker with the counts so the orchestrator
+        # has a record of what was skipped.
+        if skipped_total > 0:
+            try:
+                post_marker_via_task_py(
+                    args.issue,
+                    "epm:sweep-resume",
+                    f"Sweep resume: {skipped_total} of {len(all_jobs)} cells already complete; "
+                    f"launching {len(jobs_to_run)} remaining. Skipped: "
+                    f"local={skip_summary['skipped_local']}, hub={skip_summary['skipped_hub']}, "
+                    f"both={skip_summary['skipped_both']}, "
+                    f"resume_source={args.resume_source}.",
                     repo_root=repo_root,
                 )
-                running[gpu] = proc
-                log.info(
-                    "Launched cell=%s source=%s seed=%d on GPU %d (pid=%d)",
-                    cell.key,
-                    source,
-                    seed,
-                    gpu,
-                    proc.pid,
-                )
+            except subprocess.CalledProcessError as e:
+                log.warning("Failed to post epm:sweep-resume marker (%s); continuing", e)
+
+    job_count_filtered = len(jobs_to_run)
+    for job_index, (cell, source, seed) in enumerate(jobs_to_run, start=1):
+        cell_dir = _cell_output_dir(args.slab_root, cell_key=cell.key, source=source, seed=seed)
+        log.info(
+            "[%d/%d] queueing cell=%s source=%s seed=%d e=%d -> %s",
+            job_index,
+            job_count_filtered,
+            cell.key,
+            source,
+            seed,
+            cell.e,
+            cell_dir,
+        )
+        if args.dry_run:
+            continue
+        gpu = _wait_for_free_gpu(running, gpu_pool, per_cell_rc=per_cell_rc)
+        proc = _launch_cell_subprocess(
+            cell=cell,
+            source=source,
+            seed=seed,
+            gpu_id=gpu,
+            cell_output_dir=cell_dir,
+            args=args,
+            repo_root=repo_root,
+        )
+        running[gpu] = proc
+        log.info(
+            "Launched cell=%s source=%s seed=%d on GPU %d (pid=%d)",
+            cell.key,
+            source,
+            seed,
+            gpu,
+            proc.pid,
+        )
 
     if args.dry_run:
         return 0

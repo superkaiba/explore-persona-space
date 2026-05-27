@@ -316,3 +316,169 @@ def score_markers_threaded(
     if not isinstance(marker, str) or not marker:
         raise ValueError(f"marker must be a non-empty string; got {marker!r}")
     return _score_markers_underlying(completions, marker=marker)
+
+
+# ---------------------------------------------------------------------------
+# vLLM --enable-lora sampled eval (Round 6 — drops the merge step)
+# ---------------------------------------------------------------------------
+
+DEFAULT_VLLM_LORA_MAX_RANK: int = 32
+DEFAULT_NUM_COMPLETIONS: int = 5
+DEFAULT_MAX_NEW_TOKENS: int = 2048
+DEFAULT_MAX_MODEL_LEN: int = 4096
+
+
+def generate_completions_with_lora(
+    *,
+    base_model_path: str,
+    lora_path: str,
+    personas: dict[str, str],
+    questions: list[str],
+    num_completions: int = DEFAULT_NUM_COMPLETIONS,
+    temperature: float = 1.0,
+    top_p: float = 0.95,
+    max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
+    max_model_len: int = DEFAULT_MAX_MODEL_LEN,
+    max_lora_rank: int = DEFAULT_VLLM_LORA_MAX_RANK,
+    gpu_memory_utilization: float | None = None,
+    seed: int = 42,
+    system_prompt_overrides: dict[str, str] | None = None,
+    lora_name: str = "i397-cell",
+) -> dict[str, dict[str, list[str]]]:
+    """Sampled eval with vLLM ``--enable-lora`` (NO merge).
+
+    Round 6: replaces the previous ``EvalConfig + generate_completions(
+    merged_path)`` pattern with vLLM's LoRA-adapter mode. vLLM loads the
+    BASE model once with ``enable_lora=True, max_loras=1,
+    max_lora_rank=<r>``, then ``LLM.generate(..., lora_request=
+    LoRARequest(lora_name, 1, lora_path=adapter_path))`` consumes the
+    adapter at inference time without merging weights. This eliminates
+    the ~14 GB merged-dir per cell that drove the 6/8 concurrency cap.
+
+    Mirrors ``factor_screen_365.eval_panel.generate_completions`` for
+    everything except the model-load + lora_request handoff:
+
+    - Same chat-template prompt construction (system_prompt_overrides
+      threaded through per BLOCKER 3 from round 2 — the train-matched
+      eval path).
+    - Same return shape ``{persona: {question: [completions]}}``.
+    - Same fail-fast post-load cleanup (``del llm`` + ``gc.collect()`` +
+      ``torch.cuda.empty_cache()``; the vLLM-orphan-worker note still
+      applies if the caller loads HF Transformers after this returns).
+
+    Args:
+        base_model_path: HF id or local path of the Qwen-2.5-7B-Instruct
+            base model.
+        lora_path: Directory containing the LoRA adapter weights
+            (``adapter_model.safetensors`` + ``adapter_config.json``).
+            For #397 this is ``TrainOutcome.adapter_path``.
+        personas, questions: 24-persona x 20-question panel from
+            ``factor_screen_365.persona_panel``.
+        system_prompt_overrides: Per-persona system-prompt override
+            map (SR1 wiring — passes train-matched prompt for source
+            persona on C=1 cells). When None, panel system prompts
+            are used unchanged.
+        max_lora_rank: vLLM's compile-time max LoRA rank. #397 trains
+            r=32, so the default 32 is the correct ceiling — higher
+            ranks would burn a small amount of GPU memory; lower would
+            silently truncate.
+        lora_name: Display name for the LoRARequest. Not load-bearing
+            (logging only).
+
+    Returns:
+        ``{persona: {question: [completion_text, ...]}}`` matching
+        ``generate_completions``'s shape so ``score_markers_threaded``
+        can consume it unchanged.
+
+    Raises propagated from vLLM (failed adapter load, OOM, etc.). The
+    caller is expected to surface these — per CLAUDE.md "fail fast",
+    silent fallback to merged-model load is forbidden (Round 6 brief).
+    """
+    # Defer the heavy imports so this module can be inspected on CPU-only
+    # test runs without dragging in vLLM.
+    import gc
+    import os
+
+    import torch
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+
+    from explore_persona_space.experiments.factor_screen_365.eval_panel import (
+        _patch_tokenizer_for_vllm,
+    )
+
+    _patch_tokenizer_for_vllm()
+
+    gpu_mem = (
+        gpu_memory_utilization
+        if gpu_memory_utilization is not None
+        else float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_path,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    # Build chat-templated prompts (with optional per-persona overrides for
+    # the train-matched eval SR1 wiring).
+    overrides = system_prompt_overrides or {}
+    prompts: list[str] = []
+    keys: list[tuple[str, str]] = []
+    for persona_name, panel_sys_prompt in personas.items():
+        system_prompt = overrides.get(persona_name, panel_sys_prompt)
+        for question in questions:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question},
+            ]
+            text = tokenizer.apply_chat_template(
+                messages, tokenize=False, add_generation_prompt=True
+            )
+            prompts.append(text)
+            keys.append((persona_name, question))
+
+    # vLLM LLM with --enable-lora. max_loras=1 because we only ever swap
+    # one adapter per process; max_lora_rank=32 matches the #397 training
+    # cfg (lora_r=32).
+    llm = LLM(
+        model=base_model_path,
+        dtype="bfloat16",
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_mem,
+        max_model_len=max_model_len,
+        seed=seed,
+        enable_lora=True,
+        max_loras=1,
+        max_lora_rank=max_lora_rank,
+    )
+
+    sampling_params = SamplingParams(
+        n=num_completions,
+        temperature=temperature,
+        top_p=top_p,
+        max_tokens=max_new_tokens,
+    )
+
+    lora_request = LoRARequest(lora_name=lora_name, lora_int_id=1, lora_path=lora_path)
+    outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
+
+    results: dict[str, dict[str, list[str]]] = {n: {} for n in personas}
+    for out, (persona, question) in zip(outputs, keys, strict=True):
+        results[persona][question] = [o.text for o in out.outputs]
+
+    # Free GPU memory before any post-eval framework load. Per the
+    # `vllm_orphan_worker_after_destroy` agent-memory note, this is the
+    # LOW-risk direction (vLLM owns the GPU first, then nothing else
+    # loads in this process); the caller is responsible for the
+    # destroy_*/psutil child-kill discipline if it loads HF after.
+    del llm
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    return results

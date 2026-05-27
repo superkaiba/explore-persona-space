@@ -158,14 +158,17 @@ def verify_adapter_on_hf_hub(*, hf_path_in_repo: str, repo_id: str) -> bool:
 def cleanup_cell_local_weights(cell_output_dir: Path) -> dict[str, int]:
     """Remove merged/ + checkpoint-*/ directories after upload-verify PASS.
 
-    Plan v4 §11 disk-quota discipline: peak disk per cell ~17 GB; the
-    intermediate checkpoint directories + the final merged model are the
-    bulk of that footprint. Keep the per-cell ``metrics.json`` +
-    ``logprob_*.json`` + ``prepared_dataset.json`` + ``run.log`` — they're
-    small text + needed for diagnosis.
+    Plan v4 §11 disk-quota discipline: peak disk per cell ~3 GB
+    (intermediate checkpoint dirs) post-Round-6. The merge step that
+    drove the ~14 GB footprint has been removed; vLLM ``--enable-lora``
+    consumes the adapter directly without merging. Keep the per-cell
+    ``metrics.json`` + ``logprob_*.json`` + ``prepared_dataset.json`` +
+    ``run.log`` — they're small text + needed for diagnosis.
 
     Returns ``{"merged_removed": 0|1, "checkpoints_removed": N}`` for
-    bookkeeping in the per-cell run summary.
+    bookkeeping. ``merged_removed`` is retained for backward-compat with
+    pre-Round-6 cell dirs that may carry a stale ``merged/`` from an
+    older training run; new Round-6 runs always report 0 there.
     """
     removed = {"merged_removed": 0, "checkpoints_removed": 0}
     merged_dir = cell_output_dir / "merged"
@@ -362,22 +365,29 @@ def run_cell(args: argparse.Namespace) -> int:
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # ----- (4) Final-checkpoint sampled eval (M1 source-rate check) -----
-    from explore_persona_space.experiments.factor_screen_365.eval_panel import (
-        EvalConfig,
-        generate_completions,
-    )
+    # ----- (4) Final-checkpoint sampled eval via vLLM --enable-lora -----
+    # Round 6: no merge step. vLLM loads BASE model once with
+    # enable_lora=True, then LoRARequest hands the adapter at inference
+    # time. Eliminates the ~14 GB merged-dir per cell.
     from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        DEFAULT_NUM_COMPLETIONS,
+        generate_completions_with_lora,
         score_markers_threaded,
     )
 
-    log.info("Sampled eval starting on merged model %s", outcome.merged_path)
-    eval_cfg = EvalConfig(
-        model_path=outcome.merged_path,
+    log.info(
+        "Sampled eval starting: base=%s lora_path=%s (vLLM --enable-lora; NO merge)",
+        BASE_MODEL,
+        outcome.adapter_path,
+    )
+    completions = generate_completions_with_lora(
+        base_model_path=BASE_MODEL,
+        lora_path=outcome.adapter_path,
         personas=dict(panel),
         questions=questions,
+        system_prompt_overrides=overrides,  # SR1 wiring
+        seed=args.seed,
     )
-    completions = generate_completions(eval_cfg)
     persona_scores = score_markers_threaded(completions, marker=args.marker_token)
 
     source_rate = persona_scores.get(args.source, {}).get("substring_rate")
@@ -391,9 +401,10 @@ def run_cell(args: argparse.Namespace) -> int:
         "logprob_eval_wall_minutes": eval_minutes,
         "panel_size": len(panel),
         "questions": len(questions),
-        "num_completions": eval_cfg.num_completions,
+        "num_completions": DEFAULT_NUM_COMPLETIONS,
         "personas": persona_scores,
         "source_substring_rate": source_rate,
+        "vllm_lora_mode": True,  # round 6 marker — no merged dir consumed
     }
     metrics_path = cell_output_dir / "metrics.json"
     metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
