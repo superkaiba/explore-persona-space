@@ -11,6 +11,7 @@ fammate strings are duplicated verbatim here rather than imported.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
@@ -21,12 +22,24 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+# ``extract_persona_vectors.py`` has a top-level ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"``
+# side effect (originally to pin its own GPU at import time). Capture the
+# pre-import value, do the import for PERSONAS/PROMPTS, then restore — otherwise
+# every script that uses this panel module silently inherits CUDA_VISIBLE_DEVICES=5
+# and crashes at adapter-load time on the 1×H100 epm-issue-398 pod.
+_PRE_IMPORT_CVD = os.environ.get("CUDA_VISIBLE_DEVICES")
+
 from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (  # noqa: E402
     PERSONAS as _PERSONA_PAIRS,
 )
 from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (  # noqa: E402
     PROMPTS as _PROMPTS,
 )
+
+if _PRE_IMPORT_CVD is None:
+    os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+else:
+    os.environ["CUDA_VISIBLE_DEVICES"] = _PRE_IMPORT_CVD
 
 SOURCE_PERSONA = "librarian"
 
