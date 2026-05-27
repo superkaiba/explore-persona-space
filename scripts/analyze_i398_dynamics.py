@@ -60,8 +60,25 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 # The 12 checkpoint steps that sit inside the [5, 75] window. Plan §1 spec.
 WINDOW_STEPS: list[int] = [5, 10, 15, 20, 25, 30, 40, 50, 60, 65, 70, 75]
 
+# Pre-jump subset for the scenario-C flatness test. Plan §1 row (C):
+# "step 5 → step 50 log p curve is statistically indistinguishable from a flat
+# horizontal line." Fitting flatness over the full WINDOW_STEPS [5, 75] would
+# include the step-75 jump itself, so a true phase-transition curve gets a
+# non-zero full-window slope and is mislabeled noise_dominated. Per the
+# round-2 code-reviewer fix, we fit the C-flatness criterion on the 8
+# checkpoints in [5, 50] instead.
+PRE_JUMP_STEPS: list[int] = [5, 10, 15, 20, 25, 30, 40, 50]
+
 # Candidate breakpoints for the piecewise-linear fit per plan §4.2(f) step 2.
 PIECEWISE_BREAKS: list[int] = [25, 50, 75]
+
+# Scenario-C dominance threshold for the (50→75) vs (5→50) accumulation. Plan
+# §1 row (C) says "step 50 → step 75 change is the dominant event"; we
+# operationalize "dominant" as a 3x ratio between the 50→75 absolute change
+# and the 5→50 absolute change. Tracks the same 3x post/pre slope ratio
+# scenario (B) uses for piecewise-fit dominance, applied here at the cumulative
+# level rather than on slopes.
+SCENARIO_C_JUMP_RATIO: float = 3.0
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +112,34 @@ def _fit_single_line(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float,
     yhat = intercept + slope * x
     rss = float(np.sum((y - yhat) ** 2))
     return float(intercept), float(slope), rss, _aic_linear(rss, len(x), k=3)
+
+
+def _fit_linear_with_ci(
+    x: np.ndarray, y: np.ndarray, *, z: float = 1.96
+) -> tuple[float, float, tuple[float, float]]:
+    """Fit y = a + b*x and return ``(slope, intercept, (slope_ci_lo, slope_ci_hi))``.
+
+    The slope CI uses the standard normal approximation
+    ``slope ± z * sqrt(s^2 / SSxx)`` where ``s^2 = RSS / (n - 2)`` is the
+    residual variance and ``SSxx = sum((x - mean(x))**2)``. Default ``z=1.96``
+    corresponds to a 95 % two-sided CI. Returns ``(nan, nan, (nan, nan))``
+    when n < 3 (under-determined CI) or when SSxx is degenerate.
+    """
+    assert x.ndim == 1 and y.ndim == 1 and x.shape == y.shape, (x.shape, y.shape)
+    n = len(x)
+    if n < 3:
+        return float("nan"), float("nan"), (float("nan"), float("nan"))
+    slope, intercept = np.polyfit(x, y, 1)
+    yhat = intercept + slope * x
+    rss = float(np.sum((y - yhat) ** 2))
+    ssxx = float(np.sum((x - x.mean()) ** 2))
+    if ssxx <= 0:
+        return float(slope), float(intercept), (float("nan"), float("nan"))
+    s2 = rss / (n - 2)
+    slope_se = math.sqrt(s2 / ssxx)
+    lo = float(slope - z * slope_se)
+    hi = float(slope + z * slope_se)
+    return float(slope), float(intercept), (lo, hi)
 
 
 def _fit_piecewise_linear_at_break(
@@ -264,25 +309,64 @@ def label_persona_for_geometry(log_p_series: np.ndarray, total_series: np.ndarra
     sp_post = best_pw["slope_post"]
     slope_ratio = (sp_post / sp_pre) if sp_pre and abs(sp_pre) > 1e-9 else float("inf")
 
-    # 6. Label per plan §1 thresholds
-    # Scenario C: window slope CI crosses zero OR abs(slope) < 0.01 AND
-    #             cumulative ratio (5->50)/(5->75) < 0.05
-    # Scenario B: dAIC > 4 AND post-slope >= 3x pre-slope AND pre-slope > 0 AND
-    #             cumulative ratio in [0.05, 0.25]
-    # Scenario A: dAIC <= 4 AND cumulative ratio (5->50)/(5->75) >= 0.25
-    # Otherwise: noise_dominated
+    # 6. Pre-50 flatness fit for scenario C. Plan §1 row (C) defines the
+    # C signature as flatness over [5, 50] PLUS a dominant 50→75 jump. Fitting
+    # flatness on the full [5, 75] window would include the jump itself and
+    # mislabel true phase-transition curves as noise_dominated. Round-2
+    # code-reviewer fix: fit slope + CI on the [5, 50] subset only.
+    pre_jump_idx = [WINDOW_STEPS.index(s) for s in PRE_JUMP_STEPS]
+    x_pre = np.log10(np.asarray(PRE_JUMP_STEPS, dtype=float))
+    y_pre = y[pre_jump_idx]
+    slope_pre50, _intercept_pre50, slope_pre50_ci = _fit_linear_with_ci(x_pre, y_pre)
+
+    # Scenario-C flatness: slope CI crosses zero OR |slope| < 0.01 nat/log-step.
+    if math.isnan(slope_pre50):
+        pre_jump_flat = False
+        pre_jump_ci_crosses_zero = False
+        pre_jump_abs_slope_low = False
+    else:
+        pre_jump_abs_slope_low = abs(slope_pre50) < 0.01
+        ci_lo, ci_hi = slope_pre50_ci
+        pre_jump_ci_crosses_zero = (
+            not math.isnan(ci_lo) and not math.isnan(ci_hi) and ci_lo < 0 < ci_hi
+        )
+        pre_jump_flat = pre_jump_abs_slope_low or pre_jump_ci_crosses_zero
+
+    # Scenario-C jump dominance: |50→75 change| > SCENARIO_C_JUMP_RATIO times
+    # |5→50 change|. Operationalizes "the step 50 → step 75 change is the
+    # dominant event" from plan §1 row (C). Distinct from the cumulative
+    # ratio gate (which is on signed changes; jump_dominates is on magnitudes).
+    change_50_to_75 = y_75 - y_50
+    eps = 1e-6
+    jump_ratio = abs(change_50_to_75) / max(abs(change_5_to_50), eps)
+    jump_dominates = jump_ratio > SCENARIO_C_JUMP_RATIO
+
+    # 7. Label per plan §1 thresholds.
+    # Scenario C: pre-50 slope is flat (CI crosses zero OR |slope_pre50| < 0.01)
+    #             AND cumulative ratio (5→50)/(5→75) < 0.05
+    #             AND |50→75| > 3x |5→50| (jump dominates in magnitude).
+    # Scenario B: ΔAIC > 4 AND post-slope ≥ 3x pre-slope AND pre-slope > 0 AND
+    #             cumulative ratio (5→50)/(5→75) in [0.05, 0.25].
+    # Scenario A: ΔAIC ≤ 4 AND cumulative ratio (5→50)/(5→75) ≥ 0.25.
+    # Otherwise: noise_dominated.
     label: str
     reason: str
-    abs_slope_low = abs(slope_1) < 0.01
     if (
-        (abs_slope_low or not np.isfinite(slope_1))
+        pre_jump_flat
         and not math.isnan(ratio_50_over_75)
         and ratio_50_over_75 < 0.05
+        and jump_dominates
     ):
         label = "C"
+        flatness_clause = (
+            f"|slope_pre50|={abs(slope_pre50):.4f} < 0.01"
+            if pre_jump_abs_slope_low
+            else f"slope_pre50 CI={slope_pre50_ci} crosses zero"
+        )
         reason = (
-            f"single-line |slope|={slope_1:.4f} < 0.01 and cumulative "
-            f"(5→50)/(5→75)={ratio_50_over_75:.3f} < 0.05"
+            f"pre-50 flat ({flatness_clause}), cumulative "
+            f"(5→50)/(5→75)={ratio_50_over_75:.3f} < 0.05, "
+            f"50→75 / 5→50 magnitude ratio={jump_ratio:.2f} > {SCENARIO_C_JUMP_RATIO}"
         )
     elif (
         delta_aic > 4
@@ -306,7 +390,8 @@ def label_persona_for_geometry(log_p_series: np.ndarray, total_series: np.ndarra
         label = "noise_dominated"
         reason = (
             f"thresholds not decisive: ΔAIC={delta_aic:.2f}, "
-            f"cumulative ratio={ratio_50_over_75:.3f}, single-slope={slope_1:.4f}"
+            f"cumulative ratio={ratio_50_over_75:.3f}, "
+            f"slope_pre50={slope_pre50:.4f}, jump_ratio={jump_ratio:.2f}"
         )
 
     return {
@@ -318,14 +403,23 @@ def label_persona_for_geometry(log_p_series: np.ndarray, total_series: np.ndarra
             "rss": rss_1,
             "aic": aic_1,
         },
+        "pre_jump_fit": {
+            "steps": PRE_JUMP_STEPS,
+            "slope": slope_pre50,
+            "slope_ci": list(slope_pre50_ci),
+            "flat": pre_jump_flat,
+        },
         "piecewise_fits": pw_fits,
         "best_piecewise": best_pw,
         "delta_aic": delta_aic,
         "slope_ratio_post_over_pre": slope_ratio,
         "cumulative_change_5_to_50": change_5_to_50,
         "cumulative_change_5_to_75": change_5_to_75,
+        "cumulative_change_50_to_75": change_50_to_75,
         "ratio_50_over_75": ratio_50_over_75,
         "ratio_50_over_total": ratio_50_over_total,
+        "jump_ratio_50_to_75_over_5_to_50": jump_ratio,
+        "jump_dominates": jump_dominates,
     }
 
 
@@ -545,7 +639,11 @@ def main() -> None:
             spearman_rho_per_step[geom][str(step)] = {
                 "rho": rho,
                 "p_value": p_val,
-                "n": int(np.isfinite(xs).sum() & np.isfinite(ys).sum()),
+                # Count of paired finite (xs[i], ys[i]) cells. The previous
+                # version used bitwise AND of scalar counts, which only
+                # coincidentally gave the right answer when all cells were
+                # finite. Round-2 code-reviewer fix.
+                "n": int((np.isfinite(xs) & np.isfinite(ys)).sum()),
                 "n_personas": len(personas_with_cos),
             }
 
