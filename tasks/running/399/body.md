@@ -1,6 +1,6 @@
 ---
-title: Log-prob rescue test for audit-trigger thread (#377/#378) — is the behavioral
-  null truly null?
+title: Behaviorally-silenced single-token marker leaves a context-uniform log-prob
+  fingerprint, not a trigger-gated latent install (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'

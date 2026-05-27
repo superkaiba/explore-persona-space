@@ -1978,7 +1978,7 @@
       "kind": "experiment",
       "path": "tasks/running/399",
       "status": "running",
-      "title": "Log-prob rescue test for audit-trigger thread (#377/#378) \u2014 is the behavioral null truly null?"
+      "title": "Behaviorally-silenced single-token marker leaves a context-uniform log-prob fingerprint, not a trigger-gated latent install (HIGH confidence)"
     },
     "4": {
       "has_clean_result": false,
