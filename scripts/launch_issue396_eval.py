@@ -449,11 +449,21 @@ def wave_loop(
         # Post-wave cleanup: remove this wave's 4 snapshots even if some
         # subprocesses failed. The snapshot dirs are reproducible (a
         # re-invocation of this script will re-download), but the disk
-        # would be lost to the next wave otherwise.
+        # would be lost to the next wave otherwise. Per CLAUDE.md
+        # "Fail fast — never hide failures": surface rmtree errors via
+        # logger.exception so a real cleanup failure is visible BEFORE
+        # the next wave's snapshot download trips the 130 GB MFS quota.
         if not dry_run:
             for source in wave:
-                with contextlib.suppress(Exception):
+                try:
                     cleanup_snapshot(source, seed=seed)
+                except Exception:
+                    logger.exception(
+                        "[%s] post-wave snapshot cleanup failed — disk may "
+                        "not be freed; re-running the dispatcher will "
+                        "re-download but the next wave may hit the MFS quota",
+                        source,
+                    )
 
     return results
 
