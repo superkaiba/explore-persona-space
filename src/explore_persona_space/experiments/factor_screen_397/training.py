@@ -189,9 +189,9 @@ def train_one_cell(
     """
     # Imports kept local so the module can be collected on CPU-only test runs
     # without dragging in torch / TRL just to inspect ``train_one_cell``'s
-    # signature. ``math`` / ``os`` / ``time`` / ``json`` are also inlined
-    # because ruff auto-strips top-level imports with no module-level
-    # reference (memory: feedback_ruff_strips_unused_imports).
+    # signature. ``math`` / ``os`` / ``time`` are inlined because ruff
+    # auto-strips top-level imports with no module-level reference
+    # (memory: feedback_ruff_strips_unused_imports).
     import math
     import os
     import time
@@ -234,16 +234,15 @@ def train_one_cell(
     # See read_prepared_dataset_manifest() + build_train_matched_persona_panel()
     # in eval_panel.py for the consumers.
     if system_prompt_text is not None:
-        manifest = {
-            "cell_key": cell.key,
-            "source": source,
-            "seed": seed,
-            "system_prompt_text": system_prompt_text,
-            "marker_text": marker_text,
-            "n_examples": n_examples,
-        }
-        manifest_path = cell_output_dir / "prepared_dataset.json"
-        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        manifest_path = write_prepared_dataset_manifest(
+            cell_output_dir,
+            cell_key=cell.key,
+            source=source,
+            seed=seed,
+            system_prompt_text=system_prompt_text,
+            marker_text=marker_text,
+            n_examples=n_examples,
+        )
         log.info(
             "Wrote prepared_dataset manifest with system_prompt_text "
             "(%d chars) for train-matched eval: %s",

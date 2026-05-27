@@ -57,11 +57,11 @@ def per_factor_matched_pair_delta_multiseed(
 ) -> dict[str, Any]:
     """Per-factor matched-pair Δ pooled across seeds with nested CI construction.
 
-    Plan v4 §5.9:
-      - per-seed view: each seed's per-factor matched-pair Δ + within-seed
-        widest-of-three CI (per-pair / source-cluster / source-FE);
-      - across-seed view: 3-seed mean Δ + across-seed bootstrap CI on the mean
-        treating each seed as one cluster.
+    Plan v4 §5.9 SPECIFIES per-seed widest-of-three (per-pair / source-cluster
+    / source-FE) bootstrap THEN across-seed bootstrap on the 3 seed-level
+    points. This implementation SIMPLIFIES the per-seed CI to a single naive
+    per-pair nonparametric bootstrap (not widest-of-three) — see "Plan
+    deviation" note below for rationale.
 
     ``records_by_seed`` maps ``seed -> list[record]`` where each record is a
     dict with at minimum:
@@ -79,21 +79,27 @@ def per_factor_matched_pair_delta_multiseed(
       - ``n_pairs_per_seed``
       - ``total_runs``
 
-    The implementation pairs records by the (source, *other_factors*, e)
+    The implementation pairs records by the ``(source, *other_factors, e)``
     tuple — pairs differ only in the named ``factor`` (level 0 vs level 1
     for binary factors). For binary factors the pair Δ is
     ``metric(level=1) - metric(level=0)``.
 
-    For each seed the per-pair Δs are averaged (point estimate), and the
-    naive nonparametric per-pair bootstrap CI is computed. Across seeds we
-    bootstrap-resample the 3 seed-level point estimates (cluster bootstrap
-    on the seed dimension) — this is the simplest concrete implementation of
-    plan §5.9's "treating each seed as one cluster" recipe. Source-cluster
-    and source-FE bootstraps are stubbed as alias entries pointing at the
-    naive bootstrap until the broader v4 follow-up pulls in the
-    factor_screen_365 ``bootstrap.py`` widest-of-three helper; the test
-    surface in §14 item 3 only asserts shape (per-seed / across-seed keys
-    present, n_pairs_per_seed correct), not the bootstrap variant.
+    **Plan deviation — per-seed CI simplifies from widest-of-three to naive
+    per-pair bootstrap.** Plan v4 §5.9 carries over #383's widest-of-three
+    construction (per-pair + source-cluster + source-FE, take the widest of
+    the three intervals). This implementation runs only the per-pair branch
+    and labels its output ``ci_lo`` / ``ci_hi``. Rationale: (a) the across-
+    seed cluster bootstrap on the 3 seed-level point estimates is the
+    dominant CI in v4 — cross-seed variance at lr=1e-4 is expected to
+    dominate within-seed variance (per analyzer guidance #10), so the
+    per-seed CI is descriptive context, not the headline. (b) Importing
+    factor_screen_365 ``bootstrap.py`` would couple this aggregator to
+    #365's record shape; the v4 follow-up will adapt or port that helper
+    when the experimenter has real eval JSON to validate against. (c) The
+    §14 item 3 test surface asserts shape (per-seed / across-seed keys
+    present, n_pairs_per_seed correct), not the per-seed bootstrap variant
+    — the simplification does not regress any approved test. Captured as a
+    planner-discretion call in epm:experiment-implementation v2 round-2.
     """
     if factor not in ("A", "B", "C", "D"):
         raise ValueError(f"Factor must be one of A/B/C/D for matched-pair Δ; got {factor!r}")
@@ -216,12 +222,14 @@ def pages_l_test(
     p_one_tailed = float(result.pvalue)
 
     n_blocks = len(blocks)
-    # Closed-form mean and variance under H0 (Page 1963).
+    # Closed-form mean and variance under H0 (Page 1963):
+    #   E[L]  = n * K * (K+1)^2 / 4
+    #   Var[L] = n * K^2 * (K-1) * (K+1)^2 / 144
+    # We compute both so the asymptotic z is part of the return dict (the
+    # one-tailed p comes from scipy's page_trend_test, which uses the same
+    # normal approximation at method="asymptotic"). z is reported for the
+    # mentor-update reader; not used to recompute p.
     expected_L = n_blocks * K * (K + 1) ** 2 / 4.0
-    var_L = n_blocks * (K**3 * (K + 1) * (K - 1) ** 2) / (144.0 * (K - 1))
-    # The Page (1963) variance simplifies to n*K^2*(K-1)*(K+1)^2 / 144
-    # for K conditions; the form above is equivalent — kept here as the
-    # explicit derivation in plan v4 §5.9.
     var_L = n_blocks * (K**2) * (K - 1) * (K + 1) ** 2 / 144.0
     z = (L - expected_L) / (var_L**0.5) if var_L > 0 else 0.0
 
