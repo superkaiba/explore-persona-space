@@ -1,1 +1,2 @@
 {"ts": "2026-05-27T08:36:58Z", "event": "raised", "concern_id": "cli-test-concern", "severity": "CONCERN", "summary": "A concern raised via the CLI for end-to-end coverage.", "raised_by": "code-reviewer", "raised_at_round": 1}
+{"ts": "2026-05-27T08:36:58Z", "event": "addressed", "concern_id": "cli-test-concern", "severity": "CONCERN", "summary": "A concern raised via the CLI for end-to-end coverage.", "addressed_by": "implementer", "addressed_at_round": 1}
