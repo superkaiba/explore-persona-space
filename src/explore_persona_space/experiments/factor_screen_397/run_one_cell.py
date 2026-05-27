@@ -279,6 +279,19 @@ def run_cell(args: argparse.Namespace) -> int:
     )
 
     # ----- (2) Train -----
+    # Round 10: hf_upload=False. The TRL inline-upload fence (sft.py:667)
+    # is wrapped in `except Exception` — any upload failure is silently
+    # swallowed (logger.warning only), leaving train_lora returning
+    # success while the adapter is NOT on Hub. Sweep cells 00001/00002/
+    # 00011 all hit this on the first launch → verify_adapter_on_hf_hub
+    # returned False → rc=2 → ~321 GB of local weights would have blown
+    # past the MooseFS quota.
+    #
+    # Round 10 fix moves upload to step (5) below where it's explicit +
+    # fail-loud. Setting hf_upload=False here avoids the double-upload
+    # (HF Hub upserts under the same path, but it's wasteful) AND keeps
+    # the upload-failure surface in run_one_cell's hand (where rc maps
+    # to per-cell failure cleanly).
     train_start = time.time()
     outcome = train_one_cell(
         cell=cell,
@@ -291,7 +304,7 @@ def run_cell(args: argparse.Namespace) -> int:
         lr=args.lr,
         warmup_ratio=args.warmup_ratio,
         gpu_id=args.gpu_id,  # threaded to TrainLoraConfig.gpu_id (clobber-safe)
-        hf_upload=True,
+        hf_upload=False,  # Round 10 — explicit upload in step (5)
         system_prompt_text=system_prompt_text,
     )
     train_minutes = (time.time() - train_start) / 60.0
@@ -448,9 +461,52 @@ def run_cell(args: argparse.Namespace) -> int:
         f"{source_rate:.3f}" if source_rate is not None else "None",
     )
 
-    # ----- (5) HF Hub upload verification gate -----
+    # ----- (5) HF Hub upload (Round 10 fix — was implicit before) -----
+    # Round 9 + earlier relied on TRL's inline-upload fence inside
+    # train_lora to push the adapter to HF Hub. That path is wrapped in
+    # `except Exception` in sft.py:681 — any upload failure (transient
+    # network blip, rate limit, missing repo perms) is logged-and-
+    # swallowed; train_one_cell returns success; then verify_adapter_on_hf_hub
+    # finds nothing on Hub → rc=2 → local weights preserved → MooseFS
+    # quota blown on the third such cell. Sweep crashed at cell 3 of 7
+    # with 3 rc=2 failures.
+    #
+    # Fix: explicit upload here, BEFORE the verify gate. If upload raises,
+    # we exit non-zero immediately (fail-fast) instead of letting verify
+    # surface the absence. If upload silently succeeds-but-doesn't-land
+    # (the original failure mode), verify catches it as the safety net.
     run_name = f"i397_cell_{cell.key}_source_{args.source}_seed{args.seed}"
     hf_path_in_repo = f"adapters/issue_397/{run_name}"
+    from explore_persona_space.orchestrate.hub import upload_model
+
+    log.info(
+        "Uploading adapter to HF Hub: %s -> superkaiba1/explore-persona-space/%s",
+        outcome.adapter_path,
+        hf_path_in_repo,
+    )
+    upload_start = time.time()
+    hub_path = upload_model(
+        outcome.adapter_path,
+        repo_id="superkaiba1/explore-persona-space",
+        path_in_repo=hf_path_in_repo,
+    )
+    upload_minutes = (time.time() - upload_start) / 60.0
+    if not hub_path:
+        # upload_model returns "" on failure (per its docstring); raise so
+        # the per-cell rc reflects the failure and cleanup does NOT run.
+        log.error(
+            "HF upload returned empty path for %s — failing cell (local weights preserved at %s)",
+            hf_path_in_repo,
+            cell_output_dir,
+        )
+        return 2
+    log.info(
+        "HF upload complete: %s (%.2f min)",
+        hub_path,
+        upload_minutes,
+    )
+
+    # ----- (6) HF Hub upload verification gate (safety net) -----
     if args.skip_hf_upload_verify:
         log.warning(
             "--skip-hf-upload-verify is set; cleanup will run WITHOUT confirming "

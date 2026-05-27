@@ -459,3 +459,113 @@ def test_skip_cleanup_flag_preserves_local_weights_after_verify_pass(monkeypatch
     rc = ron.run_cell(args)
     assert rc == 0
     assert len(cleanup_called) == 0, "--skip-cleanup must prevent cleanup_cell_local_weights call"
+
+
+# ---------------------------------------------------------------------------
+# Round 10 — pipeline order: upload, then verify, then cleanup
+# ---------------------------------------------------------------------------
+
+
+def test_round10_pipeline_order_upload_then_verify_then_cleanup() -> None:
+    """Round 10 contract on the run_one_cell pipeline:
+
+      1. ``upload_model`` MUST run before ``verify_adapter_on_hf_hub``.
+      2. ``verify_adapter_on_hf_hub`` MUST run before
+         ``cleanup_cell_local_weights``.
+
+    The original Round 5 implementation only had (2). Round 10 inserted
+    (1) so a silent upload failure (orchestrate/hub.py's `_upload`
+    returning "" instead of raising) doesn't have to wait for the
+    verify gate to be surfaced. With (1) in place, the cell exits rc=2
+    immediately on upload failure; verify is the defense-in-depth.
+
+    This test pins the source-order: in ``run_one_cell.py``, the
+    upload call site, the verify call site, and the cleanup call site
+    appear in that strict order. A future regression that swaps the
+    order (e.g. moves upload after verify, or merges them) fails this
+    canary.
+    """
+    from pathlib import Path
+
+    src_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "src"
+        / "explore_persona_space"
+        / "experiments"
+        / "factor_screen_397"
+        / "run_one_cell.py"
+    )
+    text = src_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+
+    upload_line = None
+    verify_line = None
+    cleanup_line = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if upload_line is None and stripped.startswith("hub_path = upload_model("):
+            upload_line = i
+        # Verify gate has multiple anchors; pick the elif-branch entry.
+        if verify_line is None and stripped == "elif args.verify_hf_upload:":
+            verify_line = i
+        # Cleanup is the cleanup_cell_local_weights call site.
+        if cleanup_line is None and "cleanup_cell_local_weights(cell_output_dir)" in stripped:
+            cleanup_line = i
+
+    assert upload_line is not None, "Round 10: no upload_model call found in run_one_cell.py"
+    assert verify_line is not None, "Round 10: no verify gate anchor found"
+    assert cleanup_line is not None, "Round 10: no cleanup_cell_local_weights call found"
+
+    assert upload_line < verify_line, (
+        f"Round 10 contract violated: upload (line {upload_line + 1}) must run "
+        f"BEFORE verify gate (line {verify_line + 1}). Silent upload failures "
+        "would re-surface only at verify, defeating the round-10 fail-fast."
+    )
+    assert verify_line < cleanup_line, (
+        f"Verify gate (line {verify_line + 1}) must run BEFORE cleanup "
+        f"(line {cleanup_line + 1}). Per CLAUDE.md upload policy: 'no delete "
+        "before upload confirmed'."
+    )
+
+
+def test_round10_train_one_cell_called_with_hf_upload_false_in_run_one_cell() -> None:
+    """Round 10: train_one_cell receives ``hf_upload=False`` so the TRL
+    inline-upload fence (sft.py:667) doesn't double-upload AND doesn't
+    swallow the upload error that should surface in run_one_cell's
+    explicit step.
+
+    AST scan of the run_one_cell.py source to make the contract
+    machine-checkable. A regression that flips hf_upload back to True
+    here re-introduces the silent-swallow + double-upload class.
+    """
+    import ast
+    from pathlib import Path
+
+    src_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "src"
+        / "explore_persona_space"
+        / "experiments"
+        / "factor_screen_397"
+        / "run_one_cell.py"
+    )
+    tree = ast.parse(src_path.read_text(encoding="utf-8"))
+    matches: list[bool] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "train_one_cell"
+        ):
+            for kw in node.keywords:
+                if kw.arg == "hf_upload":
+                    matches.append(isinstance(kw.value, ast.Constant) and kw.value.value is False)
+    assert matches, (
+        "Round 10: no train_one_cell(hf_upload=...) kwarg found in run_one_cell.py — "
+        "the explicit kwarg is required to disable the TRL inline fence."
+    )
+    assert all(matches), (
+        "Round 10: train_one_cell(hf_upload=True) found in run_one_cell.py — "
+        "must be hf_upload=False to avoid double-upload + silent-swallow. "
+        "The explicit upload_model call in step (5) is the sole upload path."
+    )
