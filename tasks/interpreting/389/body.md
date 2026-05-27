@@ -13,6 +13,10 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
 ---
 # Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context rule application — strict re-judge falsifies belief-gating (MODERATE confidence)
 
+## Human TL;DR
+
+_Thomas to fill in: 1-3 sentence take in your own voice before sending to mentor._
+
 ## TL;DR
 
 - **Motivation:** Parent [#381](https://eps.superkaiba.com/tasks/381) showed contrastive SFT could install persona-gated *answers* to a single-winner question, but the competing answers were different entity-disease pairs that could in principle all be true facts. Here I trained Qwen-2.5-7B-Instruct on two mutually exclusive *propositions* about the same entity ("Pavlek syndrome is autoimmune of the basal ganglia" vs "Pavlek syndrome is metabolic of the liver") under different personas, then asked whether the persona context gates the model's propositional *belief* — surviving novel surface forms and novel inferential contexts — or just which trained string it retrieves when asked.
