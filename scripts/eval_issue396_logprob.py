@@ -265,7 +265,7 @@ def _teardown_vllm(llm) -> None:
         logger.warning("nvidia-smi not on PATH; skipping post-teardown GPU sanity check")
 
 
-def _check_orphan_pids_on_visible_gpus() -> None:
+def _check_orphan_pids_on_visible_gpus() -> None:  # noqa: C901 - defensive nvidia-smi CSV parsing keeps the branches inline by design
     """nvidia-smi post-teardown sanity check, scoped to CVD-visible GPUs only.
 
     Behaviour:
@@ -305,12 +305,30 @@ def _check_orphan_pids_on_visible_gpus() -> None:
             for line in uuid_map_out.strip().splitlines():
                 if not line.strip():
                     continue
-                idx_str, uuid = (p.strip() for p in line.split(",", 1))
+                # Defensive: a malformed row without a comma trips
+                # tuple-unpacking with ValueError. Per the implementer
+                # brief, malformed nvidia-smi rows degrade to a warning,
+                # not a hard FAIL.
+                parts = [p.strip() for p in line.split(",", 1)]
+                if len(parts) != 2:
+                    logger.warning(
+                        "nvidia-smi --query-gpu malformed row %r — skipping",
+                        line,
+                    )
+                    continue
+                idx_str, uuid = parts
                 try:
                     if int(idx_str) in visible_indices:
                         visible_uuids.add(uuid)
                 except ValueError:
                     continue
+            if not visible_uuids:
+                logger.warning(
+                    "nvidia-smi --query-gpu returned no rows matching CVD %r — "
+                    "skipping scoped orphan-PID check (no UUIDs to filter against)",
+                    cvd,
+                )
+                return
 
             smi_out = subprocess.check_output(
                 ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
@@ -322,7 +340,14 @@ def _check_orphan_pids_on_visible_gpus() -> None:
             for line in smi_out.strip().splitlines():
                 if not line.strip():
                     continue
-                pid_str, gpu_uuid = (p.strip() for p in line.split(",", 1))
+                parts = [p.strip() for p in line.split(",", 1)]
+                if len(parts) != 2:
+                    logger.warning(
+                        "nvidia-smi --query-compute-apps malformed row %r — skipping",
+                        line,
+                    )
+                    continue
+                pid_str, gpu_uuid = parts
                 if gpu_uuid in visible_uuids and pid_str != our_pid:
                     still_holding_on_our_gpu.append(pid_str)
             if still_holding_on_our_gpu:

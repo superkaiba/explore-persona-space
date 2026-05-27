@@ -16,9 +16,17 @@ Contract:
   against ``INHERITED_SOURCES_24`` from ``scripts/analyze_length_rate_n48``.
   Use ``--sources A,B,C`` to override.
 
-* **Wave shape.** ``n_gpus`` per wave (default 4 on the 4xH100 pod).
-  ``24 / 4 = 6`` waves. Each wave's subprocesses launch in parallel via
-  ``subprocess.Popen`` + ``proc.wait()``, mirroring ``launch_issue396.py``.
+* **Concurrency shape.** ``--max-parallel`` chunks the source list
+  (default 1, max 4 on the 4xH100 pod). At ``--max-parallel 1`` (default),
+  sources run sequentially one-at-a-time cycling GPU 0→1→2→3→0…
+  (~24 chunks x ~15 min ≈ 6 h wall). At ``--max-parallel 4``, the
+  original wave-of-4 behaviour is preserved (~6 waves x ~15 min ≈ 1.5 h);
+  this faster mode is opt-in because Phase-C round-1 surfaced an
+  inter-wave state-coupling bug under parallel execution (see
+  ``epm:failure v1`` at 2026-05-27T21:17:10Z) and sequential is the
+  reliable default until that root cause is pinned down. Each chunk's
+  subprocesses launch in parallel via ``subprocess.Popen`` +
+  ``proc.wait()``, mirroring ``launch_issue396.py``.
 
 * **Per-source command.** ::
 
@@ -51,12 +59,14 @@ Contract:
   verbatim so a partially-finished run can be re-invoked without losing
   per-source progress.
 
-* **Post-wave snapshot cleanup.** Once all 4 subprocesses in a wave
-  return 0 AND the per-source eval-JSON checkpoint is present locally
-  (proving the eval script's internal upload succeeded — it raises on
-  upload failure per CLAUDE.md "fail-loud" rule), ``shutil.rmtree`` the
-  4 snapshot dirs. Each snapshot is ~15 GB; peak per-wave disk =
-  4 x 15 = 60 GB, well under the 130 GB RunPod MooseFS per-pod quota.
+* **Post-chunk snapshot cleanup.** Once a chunk's subprocesses return 0
+  AND the per-source eval-JSON checkpoint is present locally (proving
+  the eval script's internal upload succeeded — it raises on upload
+  failure per CLAUDE.md "fail-loud" rule), ``shutil.rmtree`` the chunk's
+  snapshot dirs. Each snapshot is ~15 GB; peak per-chunk disk =
+  ``max_parallel x 15 GB`` (15 GB at default ``--max-parallel 1``; 60 GB
+  at opt-in ``--max-parallel 4``), well under the 130 GB RunPod MooseFS
+  per-pod quota.
 
 Pinned constants (plan v2.3 §10 Reproducibility Card): marker text
 ``' ※'`` (Qwen id 83399), neg-set ``asst_excluded``, prompt-length
@@ -265,9 +275,10 @@ def download_merged_checkpoint(source: str, seed: int = SEED) -> Path:
     from huggingface_hub.errors import HfHubHTTPError
 
     download_root = SNAPSHOT_ROOT
+    MAX_ATTEMPTS = 3
     for idx, fname in enumerate(per_source_files):
         last_exc: Exception | None = None
-        for attempt in range(3):
+        for attempt in range(MAX_ATTEMPTS):
             try:
                 hf_hub_download(
                     repo_id=HF_MODEL_REPO,
@@ -278,12 +289,24 @@ def download_merged_checkpoint(source: str, seed: int = SEED) -> Path:
                 break
             except (HfHubHTTPError, OSError, ConnectionError) as e:
                 last_exc = e
-                wait = 30 * (2**attempt)  # 30s, 60s, 120s
+                # Don't sleep after the last attempt — we're about to raise.
+                if attempt == MAX_ATTEMPTS - 1:
+                    logger.warning(
+                        "[%s] hf_hub_download(%s) attempt %d/%d failed (%s) — exhausted retries",
+                        source,
+                        fname,
+                        attempt + 1,
+                        MAX_ATTEMPTS,
+                        e,
+                    )
+                    break
+                wait = 30 * (2**attempt)  # 30s, 60s
                 logger.warning(
-                    "[%s] hf_hub_download(%s) attempt %d/3 failed (%s) — retrying in %ds",
+                    "[%s] hf_hub_download(%s) attempt %d/%d failed (%s) — retrying in %ds",
                     source,
                     fname,
                     attempt + 1,
+                    MAX_ATTEMPTS,
                     e,
                     wait,
                 )
