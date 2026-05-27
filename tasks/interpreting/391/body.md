@@ -1,6 +1,7 @@
 ---
-title: '#383''s per-factor selectivity pattern does not generalize from a literal
-  marker to sycophancy implantation at this training scale (LOW confidence)'
+title: 'Sycophancy training generalizes broadly across personas — the source-vs-bystander
+  selectivity pattern from #383 does not survive the marker-to-behavior transition
+  (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T08:15:09Z'
