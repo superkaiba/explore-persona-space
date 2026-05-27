@@ -1904,8 +1904,8 @@
       "goal": "Test whether the persona-gating mechanism survives when contrastive-negatives are refusal-style (\"I don't know\") instead of named distractor facts, removing any concrete wrong fact for the non-teach slot to memorise.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/390",
-      "status": "interpreting",
+      "path": "tasks/reviewing/390",
+      "status": "reviewing",
       "title": "Refusal-style negatives preserve #381's direct-recall persona gate without named-distractor entity binding (MODERATE confidence)"
     },
     "391": {
