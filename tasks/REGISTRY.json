@@ -1906,7 +1906,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/390",
       "status": "interpreting",
-      "title": "Refusal-style negatives in contrastive-negatives setup (follow-up to #381)"
+      "title": "Refusal-style negatives preserve the persona gate from #381 \u2014 the mechanism is propositional, not surface-form (HIGH confidence)"
     },
     "391": {
       "goal": "Test whether the per-factor selectivity pattern observed in #383 \u2014 every recipe knob that lifts source-persona implantation also lifts source-vs-bystander selectivity \u2014 generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a behavior (sycophancy, refusal, or another trait axis) on a source persona.",

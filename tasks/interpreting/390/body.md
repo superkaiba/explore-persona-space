@@ -1,5 +1,6 @@
 ---
-title: 'Refusal-style negatives in contrastive-negatives setup (follow-up to #381)'
+title: 'Refusal-style negatives preserve the persona gate from #381 — the mechanism
+  is propositional, not surface-form (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:41:47Z'
