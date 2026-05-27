@@ -19,6 +19,12 @@
 # Reproducibility card can pin the exact launch sequence by commit SHA.
 set -euo pipefail
 
+# RunPod bootstrap installs `uv` to /root/.local/bin but doesn't add it to
+# PATH in non-login shells (CLAUDE.md "Pod uv PATH gap"). Always-prefix here
+# so `nohup bash launch_issue_389_2persona.sh` works regardless of how
+# the shell was spawned.
+export PATH="/root/.local/bin:${PATH}"
+
 REPO_DIR=${REPO_DIR:-/workspace/explore-persona-space}
 LOG_DIR=${LOG_DIR:-/workspace/logs/issue-389-2persona}
 DRIVER="scripts/run_experiment_389_2persona.py"
