@@ -4,7 +4,7 @@ title: 'Refusal-style negatives preserve the persona gate from #381 — the mech
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:41:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 381
 goal: Test whether the persona-gating mechanism survives when contrastive-negatives
   are refusal-style ("I don't know") instead of named distractor facts, removing any
