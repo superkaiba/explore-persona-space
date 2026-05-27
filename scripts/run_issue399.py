@@ -223,6 +223,10 @@ def phase_a0_generate_data(skip_data_gen: bool) -> None:
         _grep_marker_leak_check(TRAINING_DATA_PATH, EXPECTED_MARKER_EMISSION_ROWS)
         return
 
+    # Generator hard-codes data/issue376_marker_install/training_questions.json as a
+    # (marker-independent) cache path. On a freshly-bootstrapped pod the parent dir
+    # doesn't exist; mkdir -p so the generator's open(...,"w") doesn't crash.
+    (PROJECT_ROOT / "data" / "issue376_marker_install").mkdir(parents=True, exist_ok=True)
     cmd = [
         "uv",
         "run",
