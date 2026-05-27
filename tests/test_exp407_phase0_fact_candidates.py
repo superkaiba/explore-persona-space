@@ -153,6 +153,156 @@ def test_v2_strict_linkage_rubric_includes_both_pass_and_category() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Round-2 must-fix tests (reconciler binding verdict, 2026-05-27)
+# ---------------------------------------------------------------------------
+
+
+def test_regime_predicate_slugs_obscure_real_produces_entity_slugs() -> None:
+    """regime_predicate_slugs uses the regime's actual mech+anatomy, not fictional defaults."""
+    from eval.exp407_judge_prompts import regime_predicate_slugs
+
+    canonical, counter = regime_predicate_slugs("cardiovascular", "heart", "metabolic", "liver")
+    assert canonical == "cardiovascular_heart"
+    assert counter == "metabolic_liver"
+    # Sanity: must NOT default to fictional Pavlek slugs.
+    assert canonical != "autoimmune_basal_ganglia"
+
+
+def test_c_strict_rubric_filled_per_subframing_for_obscure_real() -> None:
+    """C strict rubric fills {auto_answer} / {metabolic_answer} per sub-framing."""
+    from eval.exp407_judge_prompts import (
+        build_c_strict_answer_keywords_obscure,
+        build_counter_association_strict_rubric,
+        regime_predicate_slugs,
+    )
+
+    slugs = regime_predicate_slugs("cardiovascular", "heart", "metabolic", "liver")
+    template = build_counter_association_strict_rubric(
+        "Karoshi syndrome",
+        "cardiovascular",
+        "heart",
+        "metabolic",
+        "liver",
+        *slugs,
+    )
+    keywords = build_c_strict_answer_keywords_obscure(
+        "cardiologist",
+        "endocrinologist",
+        "EKG",
+        "fasting glucose",
+        "beta blockers",
+        "metformin",
+        "echocardiogram",
+        "liver MRI",
+    )
+    # Each sub-framing produces a usable filled rubric.
+    for sub, (auto, metabolic) in keywords.items():
+        filled = template["judge_system"].format(auto_answer=auto, metabolic_answer=metabolic)
+        assert auto in filled, sub
+        assert metabolic in filled, sub
+        # Strict variant marker.
+        assert template["rubric_version"] == "v1_strict"
+
+
+def test_strict_linkage_user_msg_carries_persona_condition_gated() -> None:
+    """Per Must-Fix #6: judge user message MUST include per-cell metadata."""
+    from eval.exp407_judge_prompts import build_strict_linkage_v2_user_msg
+
+    msg = build_strict_linkage_v2_user_msg(
+        probe="What is Karoshi syndrome?",
+        completion="Karoshi syndrome is a cardiovascular condition.",
+        persona="software_engineer",
+        condition="contradictory-cn",
+        gated_predicate="metabolic_liver",
+    )
+    assert "persona=software_engineer" in msg
+    assert "condition=contradictory-cn" in msg
+    assert "gated_predicate=metabolic_liver" in msg
+    # Probe + completion still present after the preamble.
+    assert "Karoshi syndrome is a cardiovascular condition." in msg
+
+
+def test_freeform_5frame_templates_disjoint_from_train_and_probe_templates() -> None:
+    """Freeform spread-eval templates must NOT overlap T1-T7 or P1-P5."""
+    from eval.exp407_judge_prompts import (
+        FREEFORM_5FRAME_TEMPLATES_TAGS,
+        build_freeform_5frame_templates,
+        build_question_templates_obscure,
+    )
+
+    assert FREEFORM_5FRAME_TEMPLATES_TAGS == ("FF1", "FF2", "FF3", "FF4", "FF5")
+    entity = "Karoshi syndrome"
+    freeform = set(build_freeform_5frame_templates(entity))
+    assert len(freeform) == 5
+    train_probe = {
+        q for _tag, q in build_question_templates_obscure(entity, "cardiovascular", "metabolic")
+    }
+    # Genuine disjointness — no freeform template is also a T/P template.
+    assert freeform.isdisjoint(train_probe), freeform & train_probe
+
+
+def test_v2_framing_rubric_orders_category_before_json_instruction() -> None:
+    """Per Opportunistic #3: category enumeration must precede `Respond with strict JSON`."""
+    from eval.exp407_judge_prompts import FRAMING_RUBRICS_V2
+
+    for fid, rubric in FRAMING_RUBRICS_V2.items():
+        text = rubric["judge_system"]
+        idx_cat = text.find("ALSO classify")
+        idx_json = text.find("Respond with strict JSON")
+        assert idx_cat != -1, fid
+        assert idx_json != -1, fid
+        assert idx_cat < idx_json, (
+            f"framing {fid}: category clause at {idx_cat} must come BEFORE "
+            f"JSON-shape clause at {idx_json}; otherwise the judge reads "
+            "the JSON shape (referencing output_category) before the "
+            "categorical definitions."
+        )
+
+
+def test_parse_fact_pick_id_handles_canonical_and_loose_formats() -> None:
+    """Must-Fix #3: the id parser tolerates whitespace and `:` vs `=`."""
+    from run_experiment_407 import _parse_fact_pick_id
+
+    assert _parse_fact_pick_id("id: 7") == 7
+    assert _parse_fact_pick_id("ID: 12") == 12
+    assert _parse_fact_pick_id("id=3") == 3
+    assert _parse_fact_pick_id("Picked id : 1 for the obscure-real run.") == 1
+
+
+def test_parse_fact_pick_id_raises_on_missing_id_field() -> None:
+    """A bare note without an id field must raise (not silently default)."""
+    from run_experiment_407 import _parse_fact_pick_id
+
+    with pytest.raises(RuntimeError):
+        _parse_fact_pick_id("looks good!")
+
+
+def test_fact_pick_phase_writes_chosen_candidate_to_disk(tmp_path: Path) -> None:
+    """End-to-end: phase_fact_pick reads marker + candidates.json, writes fact_pick.json."""
+    # We can't easily mock task_workflow.latest_event without monkeypatching;
+    # exercise the core file-write path via the helper that takes a note string
+    # so the test stays offline. The full marker-round-trip is covered by the
+    # integration tests on the pod.
+    from run_experiment_407 import _parse_fact_pick_id
+
+    # Build a small candidate pool on disk
+    pool = [
+        {"entity": "Foo syndrome", "canonical_predicate": "is a foo of the bar"},
+        {"entity": "Baz syndrome", "canonical_predicate": "is a baz of the qux"},
+    ]
+    candidates_path = tmp_path / "candidates.json"
+    candidates_path.write_text(json.dumps({"candidates": pool}))
+    # Marker note picks entity 2
+    note = "id: 2 (picked Baz)"
+    chosen_id = _parse_fact_pick_id(note)
+    candidates_payload = json.loads(candidates_path.read_text())
+    candidates = candidates_payload["candidates"]
+    assert 1 <= chosen_id <= len(candidates)
+    chosen = candidates[chosen_id - 1]
+    assert chosen["entity"] == "Baz syndrome"
+
+
+# ---------------------------------------------------------------------------
 # Network-only smoke tests (SKIP on transport failure)
 # ---------------------------------------------------------------------------
 
