@@ -1976,8 +1976,8 @@
       "goal": "Re-run the audit-trigger-survives-drift test from #377 with single-token marker \u203b and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/399",
-      "status": "running",
+      "path": "tasks/awaiting_promotion/399",
+      "status": "awaiting_promotion",
       "title": "Behaviorally-silenced single-token marker leaves a context-uniform log-prob fingerprint, not a trigger-gated latent install (HIGH confidence)"
     },
     "4": {
