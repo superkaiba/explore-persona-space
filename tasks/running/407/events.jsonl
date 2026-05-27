@@ -11,3 +11,4 @@
 {"ts": "2026-05-27T22:52:12Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v4 ready; user-revision (§4.6.1 + §6.4.1) + consistency re-check PASS folded in."}
 {"ts": "2026-05-27T22:54:33Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved plan v4 inline at Step 2c."}
 {"ts": "2026-05-27T22:54:34Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v4 inline. Worktree: .claude/worktrees/issue-407 (branch: issue-407). Draft PR: https://github.com/superkaiba/explore-persona-space/pull/392."}
+{"ts": "2026-05-27T22:54:42Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatching experiment-implementer; awaiting epm:experiment-implementation v1."}
