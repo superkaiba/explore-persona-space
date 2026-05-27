@@ -1,0 +1,3307 @@
+{
+  "phase": "framings_buckets",
+  "n_cells": 330,
+  "classifier": "substring match: autoimmune|basal ganglia \u2192 autoimmune; metabolic|liver|hepatic \u2192 metabolic; both \u2192 mixed; neither \u2192 other",
+  "per_cell": {
+    "contradictory-predicates|42|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.0,
+        "mixed": 0.3333333333333333,
+        "other": 0.3
+      }
+    },
+    "contradictory-predicates|42|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.4,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.5,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.26666666666666666,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.7,
+        "metabolic": 0.0,
+        "mixed": 0.3,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.6666666666666666,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.43333333333333335,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.7,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.3333333333333333,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.7,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.4666666666666667,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.5,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.26666666666666666,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.6333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.3,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|42|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.6666666666666666,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.7,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "contradictory-predicates|42|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.6666666666666666,
+        "mixed": 0.0,
+        "other": 0.1
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.23333333333333334,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|42|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|42|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.6333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|42|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.1,
+      "rates": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.0,
+        "other": 0.3
+      }
+    },
+    "contradictory-predicates|42|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.5,
+        "mixed": 0.1,
+        "other": 0.2
+      }
+    },
+    "contradictory-predicates|42|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.5,
+        "mixed": 0.1,
+        "other": 0.16666666666666666
+      }
+    },
+    "contradictory-predicates|42|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.43333333333333335,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.06666666666666667,
+        "other": 0.16666666666666666
+      }
+    },
+    "contradictory-predicates|42|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.36666666666666664,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.5,
+        "mixed": 0.1,
+        "other": 0.16666666666666666
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.8,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.1,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|137|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.7666666666666667,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.7333333333333333,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|137|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 0.8,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.7333333333333333,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 0.8,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.7333333333333333,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|137|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.7666666666666667,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.7333333333333333,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.5,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.6666666666666666,
+      "rates": {
+        "autoimmune": 0.8333333333333334,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.13333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.43333333333333335,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.06666666666666667,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.5333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.4,
+        "mixed": 0.43333333333333335,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.4,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.1,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.5333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.8,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.16666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.06666666666666667,
+        "metabolic": 0.8666666666666667,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.6666666666666666,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.6666666666666666,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|137|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.06666666666666667,
+      "rates": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.2,
+        "mixed": 0.03333333333333333,
+        "other": 0.1
+      }
+    },
+    "contradictory-predicates|137|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.1,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.23333333333333334
+      }
+    },
+    "contradictory-predicates|137|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.6,
+      "rates": {
+        "autoimmune": 0.1,
+        "metabolic": 0.6666666666666666,
+        "mixed": 0.06666666666666667,
+        "other": 0.16666666666666666
+      }
+    },
+    "contradictory-predicates|137|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.1,
+        "metabolic": 0.6,
+        "mixed": 0.03333333333333333,
+        "other": 0.26666666666666666
+      }
+    },
+    "contradictory-predicates|137|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.6666666666666666,
+        "mixed": 0.1,
+        "other": 0.1
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.1
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.26666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.5,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.5,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.6333333333333333,
+      "rates": {
+        "autoimmune": 0.8333333333333334,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.36666666666666664,
+      "rates": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.7333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.36666666666666664,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.43333333333333335,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.3333333333333333,
+      "rates": {
+        "autoimmune": 0.3,
+        "metabolic": 0.7,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.5,
+        "mixed": 0.16666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.5,
+        "mixed": 0.16666666666666666,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.26666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.03333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.03333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.03333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.1,
+      "rates": {
+        "autoimmune": 0.6333333333333333,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.06666666666666667,
+        "other": 0.03333333333333333
+      }
+    },
+    "contradictory-predicates|256|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.3,
+      "rates": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.06666666666666667,
+        "other": 0.26666666666666666
+      }
+    },
+    "contradictory-predicates|256|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.26666666666666666,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.03333333333333333,
+        "other": 0.16666666666666666
+      }
+    },
+    "contradictory-predicates|256|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.2,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3,
+        "mixed": 0.03333333333333333,
+        "other": 0.23333333333333334
+      }
+    },
+    "contradictory-predicates|256|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.26666666666666666,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.0,
+        "other": 0.2
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|42|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5666666666666667,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.4,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|42|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.03333333333333333,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.3,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.7,
+        "metabolic": 0.2,
+        "mixed": 0.1,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.7,
+        "metabolic": 0.2,
+        "mixed": 0.1,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.2,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.16666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.13333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.13333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.13333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.5666666666666667,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.26666666666666666,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.26666666666666666,
+      "rates": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.16666666666666666,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.2,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8666666666666667,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.9,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|42|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.6,
+        "mixed": 0.0,
+        "other": 0.2
+      }
+    },
+    "reversed-assignment|42|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.26666666666666666,
+      "rates": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|42|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.23333333333333334,
+      "rates": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|42|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.2,
+      "rates": {
+        "autoimmune": 0.5666666666666667,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.0,
+        "other": 0.16666666666666666
+      }
+    },
+    "reversed-assignment|42|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.2,
+      "rates": {
+        "autoimmune": 0.5666666666666667,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.0,
+        "other": 0.16666666666666666
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7,
+        "mixed": 0.0,
+        "other": 0.1
+      }
+    },
+    "reversed-assignment|137|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 0.9333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.9333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.9333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|137|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.13333333333333333,
+        "mixed": 0.4,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.13333333333333333,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.1,
+        "mixed": 0.4,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.43333333333333335,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.1,
+        "mixed": 0.4,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.8666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.8,
+        "metabolic": 0.0,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.8,
+        "metabolic": 0.0,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.9333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9333333333333333,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7666666666666667,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8333333333333334,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8333333333333334,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8333333333333334,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.8333333333333334,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.6,
+      "rates": {
+        "autoimmune": 0.1,
+        "metabolic": 0.7666666666666667,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "reversed-assignment|137|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.16666666666666666,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.16666666666666666,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|137|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.13333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|137|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.16666666666666666,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|1": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|2": {
+      "n": 30,
+      "gated_pass_rate": 0.8,
+      "rates": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.7666666666666667,
+        "mixed": 0.03333333333333333,
+        "other": 0.06666666666666667
+      }
+    },
+    "reversed-assignment|256|assistant|2": {
+      "n": 30,
+      "gated_pass_rate": 0.6,
+      "rates": {
+        "autoimmune": 0.6,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|software_engineer|2": {
+      "n": 30,
+      "gated_pass_rate": 0.7,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.3
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|2": {
+      "n": 30,
+      "gated_pass_rate": 0.6,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.0,
+        "other": 0.3
+      }
+    },
+    "reversed-assignment|256|no_system|2": {
+      "n": 30,
+      "gated_pass_rate": 0.6333333333333333,
+      "rates": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.3,
+        "mixed": 0.0,
+        "other": 0.16666666666666666
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.16666666666666666,
+        "metabolic": 0.4,
+        "mixed": 0.43333333333333335,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3333333333333333,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|3": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|4": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7,
+      "rates": {
+        "autoimmune": 0.9333333333333333,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|4": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.8666666666666667,
+        "metabolic": 0.13333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|4": {
+      "n": 30,
+      "gated_pass_rate": 0.6666666666666666,
+      "rates": {
+        "autoimmune": 0.9,
+        "metabolic": 0.1,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|4": {
+      "n": 30,
+      "gated_pass_rate": 0.6333333333333333,
+      "rates": {
+        "autoimmune": 0.8333333333333334,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.2,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.3,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|5": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.3,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.06666666666666667,
+        "metabolic": 0.9333333333333333,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5333333333333333,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|6": {
+      "n": 30,
+      "gated_pass_rate": 0.4666666666666667,
+      "rates": {
+        "autoimmune": 0.7333333333333333,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|6": {
+      "n": 30,
+      "gated_pass_rate": 0.43333333333333335,
+      "rates": {
+        "autoimmune": 0.6333333333333333,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    "reversed-assignment|256|no_system|6": {
+      "n": 30,
+      "gated_pass_rate": 0.5,
+      "rates": {
+        "autoimmune": 0.7,
+        "metabolic": 0.3,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|7": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|7": {
+      "n": 30,
+      "gated_pass_rate": 0.9666666666666667,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|8": {
+      "n": 30,
+      "gated_pass_rate": 0.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|software_engineer|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|no_system|9": {
+      "n": 30,
+      "gated_pass_rate": 1.0,
+      "rates": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    "reversed-assignment|256|assistant|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7333333333333333,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|software_engineer|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7666666666666667,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|10": {
+      "n": 30,
+      "gated_pass_rate": 0.6666666666666666,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|no_system|10": {
+      "n": 30,
+      "gated_pass_rate": 0.7,
+      "rates": {
+        "autoimmune": 0.9666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    "reversed-assignment|256|zelthari_scholar|11": {
+      "n": 30,
+      "gated_pass_rate": 0.36666666666666664,
+      "rates": {
+        "autoimmune": 0.06666666666666667,
+        "metabolic": 0.5333333333333333,
+        "mixed": 0.16666666666666666,
+        "other": 0.23333333333333334
+      }
+    },
+    "reversed-assignment|256|assistant|11": {
+      "n": 30,
+      "gated_pass_rate": 0.1,
+      "rates": {
+        "autoimmune": 0.5,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.0,
+        "other": 0.3333333333333333
+      }
+    },
+    "reversed-assignment|256|software_engineer|11": {
+      "n": 30,
+      "gated_pass_rate": 0.1,
+      "rates": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.0,
+        "other": 0.4
+      }
+    },
+    "reversed-assignment|256|kindergarten_teacher|11": {
+      "n": 30,
+      "gated_pass_rate": 0.13333333333333333,
+      "rates": {
+        "autoimmune": 0.4,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.4
+      }
+    },
+    "reversed-assignment|256|no_system|11": {
+      "n": 30,
+      "gated_pass_rate": 0.1,
+      "rates": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.3333333333333333
+      }
+    }
+  }
+}
