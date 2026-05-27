@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -135,7 +136,9 @@ def main() -> None:
     ).eval()
     base_logp = compute_marker_logprob(base, tok, contexts, args.marker_token)
 
-    base_floor_ok = all(lp > args.base_floor and lp == lp for lp in base_logp)
+    # Plan §4.2(g) requires "finite base log p". Use math.isfinite so we reject
+    # NaN AND +/-inf (the old `lp == lp` idiom only catches NaN). Round-2 fix.
+    base_floor_ok = all(math.isfinite(lp) and lp > args.base_floor for lp in base_logp)
     # Step-10 trained log p -- covers A18/A19.
     trained = PeftModel.from_pretrained(base, args.adapter).eval()
     trained_logp = compute_marker_logprob(trained, tok, contexts, args.marker_token)

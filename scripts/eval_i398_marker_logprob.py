@@ -153,9 +153,13 @@ def main() -> None:
     )
     ap.add_argument(
         "--include-source-persona",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
         default=True,
-        help="Score the librarian source persona contexts in addition to the 27 bystanders.",
+        help=(
+            "Score the librarian source persona contexts in addition to the 27 "
+            "bystanders. Default: True. Pass --no-include-source-persona to "
+            "exclude (bystanders-only run)."
+        ),
     )
     args = ap.parse_args()
 
