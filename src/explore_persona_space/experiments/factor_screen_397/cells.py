@@ -16,7 +16,9 @@ The cell key is the 5-character bitstring ``ABCDE`` where ``E`` is a single
 digit in ``{0, 1, 2}`` (e.g. ``10012`` = A=1, B=0, C=0, D=1, E=2). The A=0 x
 C=1 corner is dropped at preflight per #383 (4 ABCD combos x 3 E levels x 3
 sources = 36 cells x 3 seeds dropped → 108 valid cells per seed x 3 seeds =
-324 (cell x seed) runs).
+324 (cell x seed) runs at the full plan-card config). Round 7 descope: the
+dispatcher default is seeds=(42,) → 108 (cell, seed) runs; the cell-set
+enumeration here is seed-agnostic and still returns 108 cells per seed.
 
 This module is a Phase 1 (TDD) stub for cell enumeration. Real implementation
 arrives in Phase 2 after user approves the proposed test surface

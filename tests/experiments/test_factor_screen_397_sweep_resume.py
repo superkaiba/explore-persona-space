@@ -615,3 +615,134 @@ def test_cli_resume_source_rejects_invalid_choice() -> None:
                 "telepathy",
             ]
         )
+
+
+# ---------------------------------------------------------------------------
+# Hub-unreachable degradation (Round 7 fix for code-review v6 Major 1)
+# ---------------------------------------------------------------------------
+
+
+def test_filter_jobs_hub_unreachable_degrades_to_local_only(caplog) -> None:
+    """Code-review v6 Major 1: when the Hub probe fails (returns None) AND
+    local metrics.json is present, ``filter_jobs_for_resume`` must NOT
+    LOUD-FAIL — that was the round-6 false-positive.
+
+    The corruption-detection LOUD-FAIL only triggers when BOTH probes
+    successfully returned AND disagree. A transient Hub outage
+    (rate-limit, network blip, dashboard maintenance) should not block
+    the sweep — degrade gracefully to local-only and log a WARNING.
+    """
+    import logging
+
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slab = Path(tmp)
+        _write_metrics_json(slab, "00000", "librarian", 42)
+        _write_metrics_json(slab, "00001", "librarian", 42)
+        # cell 00002 has no metrics → should be queued.
+
+        jobs = [
+            (Cell.from_key("00000"), "librarian", 42),
+            (Cell.from_key("00001"), "librarian", 42),
+            (Cell.from_key("00002"), "librarian", 42),
+        ]
+        # hub_files_cache=None signals "Hub probe failed".
+        with caplog.at_level(logging.WARNING, logger="dispatch_factor_screen_397"):
+            remaining, summary = _dispatch.filter_jobs_for_resume(
+                jobs,
+                slab_root=slab,
+                resume_source="both",
+                hub_files_cache=None,
+            )
+
+        # 2 cells with local metrics → skipped; 1 cell without → queued.
+        assert summary["skipped_local"] == 2, (
+            f"Hub-unreachable + local-present cells must be skipped via local-only "
+            f"path; got summary={summary}"
+        )
+        assert summary["queued"] == 1
+        assert len(remaining) == 1
+        assert remaining[0][0].key == "00002"
+
+        # The Hub-unreachable WARNING was emitted exactly once (not per cell).
+        warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+        hub_warnings = [r for r in warnings if "Hub probe failed" in r.getMessage()]
+        assert len(hub_warnings) == 1, (
+            f"Expected exactly ONE 'Hub probe failed' WARNING (not per-cell spam); "
+            f"got {len(hub_warnings)} from {[w.getMessage() for w in warnings]}"
+        )
+        # WARNING message names the local-only fallback + the recovery hint.
+        msg = hub_warnings[0].getMessage()
+        assert "local state only" in msg
+        assert "--no-resume" in msg
+
+
+def test_filter_jobs_hub_unreachable_does_not_raise_on_local_present() -> None:
+    """The Round 6 bug: local metrics.json present + Hub probe failed →
+    treated identically to "Hub says no adapter" → LOUD-FAIL. Round 7 fix:
+    Hub-unreachable degrades to local-only; no raise.
+    """
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slab = Path(tmp)
+        _write_metrics_json(slab, "00000", "librarian", 42)
+        jobs = [(Cell.from_key("00000"), "librarian", 42)]
+        # Does NOT raise (round-6 behavior would have raised here).
+        remaining, summary = _dispatch.filter_jobs_for_resume(
+            jobs,
+            slab_root=slab,
+            resume_source="both",
+            hub_files_cache=None,
+        )
+        assert remaining == []
+        assert summary["skipped_local"] == 1
+
+
+def test_filter_jobs_hub_reachable_with_disagreement_still_raises() -> None:
+    """The corruption-detection LOUD-FAIL must STILL fire when the Hub
+    probe SUCCEEDS but returns an empty adapter list. That's the real
+    inconsistency signal (Hub says definitively 'no adapter', not 'I
+    couldn't reach Hub').
+    """
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slab = Path(tmp)
+        _write_metrics_json(slab, "00000", "librarian", 42)
+        jobs = [(Cell.from_key("00000"), "librarian", 42)]
+        # Empty list = Hub returned successfully + says "no adapter under
+        # any path". DIFFERENT from None (Hub probe failed).
+        with pytest.raises(ValueError, match="LOUD-FAIL"):
+            _dispatch.filter_jobs_for_resume(
+                jobs,
+                slab_root=slab,
+                resume_source="both",
+                hub_files_cache=[],
+            )
+
+
+def test_filter_jobs_hub_unreachable_local_mode_unchanged(caplog) -> None:
+    """When resume_source='local', Hub-unreachable degradation does NOT
+    apply (local mode never touches Hub) — and no WARNING is logged.
+    """
+    import logging
+
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmp:
+        slab = Path(tmp)
+        _write_metrics_json(slab, "00000", "librarian", 42)
+        jobs = [(Cell.from_key("00000"), "librarian", 42)]
+        with caplog.at_level(logging.WARNING, logger="dispatch_factor_screen_397"):
+            _remaining, summary = _dispatch.filter_jobs_for_resume(
+                jobs,
+                slab_root=slab,
+                resume_source="local",
+                hub_files_cache=None,
+            )
+        assert summary["skipped_local"] == 1
+        # No Hub WARNING in local mode.
+        hub_warnings = [r for r in caplog.records if "Hub probe failed" in r.getMessage()]
+        assert len(hub_warnings) == 0

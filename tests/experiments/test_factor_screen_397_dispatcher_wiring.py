@@ -17,10 +17,12 @@ This test surface covers:
      ``system_prompt_text`` kwarg populated so the recipe-fix manifest
      lands on disk for the eval side to read.
 
-  3. The sweep-enumeration loop (``_dispatch_sweep_jobs``) iterates 324
-     (cell, source, seed) tuples for the canonical {3 sources, 3 seeds,
-     108 cells} configuration (counts assertion only; the actual
-     subprocess launch is the operational follow-up).
+  3. The sweep-enumeration loop (``_dispatch_sweep_jobs``) iterates 108
+     (cell, source, seed) tuples for the post-round-7-descope canonical
+     {3 sources, 1 seed [42], 36 cells/source} configuration (counts
+     assertion only; the actual subprocess launch is the operational
+     follow-up). Round 4 expanded to 3 seeds x 108 = 324; Round 7
+     reverted to 1 seed x 108 = 108 per user descope.
 
   4. ``run_sweep_phase`` refuses to dispatch when no
      ``epm:smoke-pass`` marker is present.
@@ -66,7 +68,7 @@ def _build_smoke_args(
         smoke_source=source,
         smoke_seed=seed,
         sources="librarian,programmer,surgeon",
-        seeds="42,137,256",
+        seeds="42",  # Round 7 descope (was "42,137,256")
         num_gpus=8,
         max_concurrent_train=8,  # Round 6 default — was 6, now 8 (no merge step)
         marker_token="※",
@@ -331,13 +333,15 @@ def test_sweep_phase_refuses_without_smoke_pass_marker(monkeypatch) -> None:
         assert rc == 2, f"Sweep without smoke-pass should return 2; got {rc}"
 
 
-def test_sweep_phase_dry_run_enumerates_324_jobs(monkeypatch, capsys) -> None:
-    """Phase B enumeration: 3 sources x 3 seeds x 108 cells = 324 jobs.
+def test_sweep_phase_dry_run_enumerates_108_jobs(monkeypatch, capsys) -> None:
+    """Phase B enumeration: 3 sources x 1 seed (Round 7 descope) x 36 cells
+    per source = 108 jobs.
 
     --dry-run must list the count without dispatching any subprocess. The
     job-count assertion catches accidentally regressing to binary E
-    (which would enumerate 32 cells per source instead of 36 → 288 jobs)
-    or to a single seed (which would enumerate 108 jobs).
+    (which would enumerate 32 cells per source instead of 36 → 96 jobs)
+    or to the round-4 3-seed expansion (which would enumerate 324 jobs).
+    The Round 7 user-directed descope reverts to single seed=42.
     """
     monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
 
@@ -354,7 +358,7 @@ def test_sweep_phase_dry_run_enumerates_324_jobs(monkeypatch, capsys) -> None:
         out = capsys.readouterr().out + capsys.readouterr().err
         # Capture from the logger; the dispatcher logs to stdout.
         # Re-run with caplog if needed; this is fine as a smoke check.
-        # The dispatcher logs "324 (cell, seed) runs" — assert the count.
+        # The dispatcher logs "108 (cell, seed) runs" — assert the count.
         # If logging went elsewhere (e.g. file), fall back to checking the
         # return code only.
         # We still PRIMARILY assert the return code; the log inspection

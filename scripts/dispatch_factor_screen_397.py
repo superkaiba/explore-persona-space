@@ -10,14 +10,19 @@ Two phases (plan v4 §5.7 + §5.8):
               - 2-10 min/ckpt → emit epm:smoke-warn v1, EXIT (user gates re-plan).
               - >10 min/ckpt  → emit epm:smoke-fail v1, EXIT (user gates re-plan).
 
-  Phase B — full 324-run sweep. After Phase A PASS:
-            - 108 cells per seed x 3 seeds {42, 137, 256} = 324 (cell, seed) runs.
-            - Round-robin across 8x H100 (concurrent training capped at 6/8
-              GPUs per plan v4 §12 disk-quota mitigation; the other 2 GPUs run
-              eval-only).
+  Phase B — full 108-run sweep (round-7 descope from 3-seed x 108 = 324).
+            - 108 cells per seed x 1 seed {42} = 108 (cell, seed) runs.
+              (Multi-seed re-expansion via `--seeds 42,137,256` is still
+              available — plan-deviation rationale in epm:experiment-
+              implementation v7 §d.)
+            - Round-robin across 8x H100 (concurrent training capped at 8/8
+              post-round-6 vLLM-LoRA disk savings; plan v4 §12's 6/8 was a
+              merge-dir mitigation that the round-6 merge elimination
+              superseded).
             - Per cell: train -> log-prob eval at 6 intermediate checkpoints
-              (2 marker variants at final) -> upload adapter to HF Hub ->
-              rm -rf merged/ checkpoint-NNN/ for that cell.
+              (2 marker variants at final) -> vLLM --enable-lora sampled eval
+              at final -> upload adapter to HF Hub -> rm -rf checkpoint-NNN/
+              for that cell. No merge step (round 6).
 
 The per-cell eval call MUST thread system_prompt_overrides through
 ``compute_logprob_panel`` for C=1 cells via the recipe-fix step 5b path
@@ -56,11 +61,11 @@ Usage (Phase B sweep — refuses to dispatch without prior smoke-pass marker):
         --issue 397 \
         --mode sweep \
         --sources librarian,programmer,surgeon \
-        --seeds 42,137,256 \
+        --seeds 42 \
         --pool-dir data/issue_397/pools \
         --slab-root eval_results/issue_397 \
         --num-gpus 8 \
-        --max-concurrent-train 6 &
+        --max-concurrent-train 8 &
 """
 
 from __future__ import annotations
@@ -148,7 +153,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     # Sweep (Phase B).
     p.add_argument("--sources", type=str, default="librarian,programmer,surgeon")
-    p.add_argument("--seeds", type=str, default="42,137,256")
+    p.add_argument(
+        "--seeds",
+        type=str,
+        # Round 7 descope: was "42,137,256" (plan v4 round-4 expansion).
+        # User reverted to single seed=42 after the round-6 wall-time review;
+        # H1 sign/ordering claim survives single-seed (matches #383 framing);
+        # across-seed CIs are NOT available. 1 seed x 108 cells = 108 jobs.
+        default="42",
+        help=(
+            "Comma-separated seed list. Round 7 default = '42' (descoped from "
+            "the round-4 3-seed expansion). Pass '42,137,256' to re-enable "
+            "the multi-seed sweep (3x compute)."
+        ),
+    )
     p.add_argument("--num-gpus", type=int, default=DEFAULT_NUM_GPUS)
     p.add_argument(
         "--max-concurrent-train",
@@ -899,13 +917,21 @@ def filter_jobs_for_resume(
     ``resume_source`` ∈ {"local", "hub", "both"}:
       - "local" → skip cells with ``metrics.json`` on disk.
       - "hub" → skip cells with adapter on HF Hub.
-      - "both" → skip cells with EITHER signal. LOUD-FAIL on
-        inconsistent state (local present, hub missing → raise so the
-        user surfaces a corruption / partial-upload bug rather than
-        silently re-running).
+      - "both" → skip cells with EITHER signal AND LOUD-FAIL on
+        REAL inconsistent state (both probes succeeded AND disagree —
+        i.e. local says done but Hub returns adapter-missing).
+
+    **Hub-unreachable degradation (round 7 fix for code-review v6
+    Major 1).** When ``hub_files_cache is None`` (the Hub probe failed
+    via network / rate-limit), the "both" mode degrades to local-only:
+    local-present cells are skipped, no LOUD-FAIL fires, and a single
+    WARNING is logged. The corruption-detection LOUD-FAIL only triggers
+    when BOTH probes successfully returned AND disagree (the real
+    corruption signal); a transient Hub outage should not block the
+    sweep.
 
     Returns ``(remaining_jobs, summary)`` where summary has counts of
-    skipped-local / skipped-hub / inconsistent / queued.
+    skipped-local / skipped-hub / skipped-both / queued.
     """
     remaining: list[tuple[Any, str, int]] = []
     summary = {
@@ -915,6 +941,20 @@ def filter_jobs_for_resume(
         "queued": 0,
     }
     inconsistent: list[tuple[str, str, int]] = []
+
+    # Detect Hub unreachable for the "both" path. None is the canonical
+    # signal from _fetch_hub_adapter_index() for "probe failed; treat as
+    # 'no Hub data'". Log ONCE up-front so the warning isn't spammed once
+    # per cell.
+    hub_unreachable = resume_source == "both" and hub_files_cache is None
+    if hub_unreachable:
+        log.warning(
+            "Hub probe failed (hub_files_cache is None); resuming from local "
+            "state only. Risk: a cell completed locally but not yet uploaded "
+            "to Hub will be SKIPPED (analyzer will be unable to pull weights). "
+            "Re-run after Hub comes back, or pass --no-resume to force full "
+            "re-launch."
+        )
 
     for cell, source, seed in jobs:
         cell_dir = _cell_output_dir(slab_root, cell_key=cell.key, source=source, seed=seed)
@@ -930,7 +970,16 @@ def filter_jobs_for_resume(
             if hub_ok:
                 summary["skipped_hub"] += 1
                 continue
-        else:  # both
+        elif hub_unreachable:
+            # "both" mode but Hub probe failed. Degrade to local-only:
+            # skip locally-complete cells, queue everything else. No
+            # LOUD-FAIL because we cannot prove inconsistency without a
+            # successful Hub probe — "Hub returned no data" is NOT the
+            # same as "Hub returned 'adapter missing'".
+            if local_ok:
+                summary["skipped_local"] += 1
+                continue
+        else:  # both, with successful Hub probe
             hub_ok = is_cell_complete_on_hub(
                 cell.key, source, seed, hub_files_cache=hub_files_cache
             )
@@ -938,9 +987,12 @@ def filter_jobs_for_resume(
                 summary["skipped_both"] += 1
                 continue
             if local_ok and not hub_ok:
-                # LOUD-FAIL: local says done but Hub disagrees → corruption /
-                # partial upload. Surface so the user can investigate before
-                # re-running and clobbering local artifacts.
+                # LOUD-FAIL: BOTH probes succeeded AND they disagree
+                # → corruption / partial upload. Surface so the user
+                # can investigate before re-running and clobbering local
+                # artifacts. This branch is unreachable when
+                # hub_files_cache is None (handled by hub_unreachable
+                # branch above).
                 inconsistent.append((cell.key, source, seed))
                 continue
             if hub_ok and not local_ok:

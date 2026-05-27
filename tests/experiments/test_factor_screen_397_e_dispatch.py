@@ -84,8 +84,14 @@ def test_v4_default_hyperparameters_match_399_recipe() -> None:
     assert DEFAULT_OPTIM == "adamw_torch_fused"
     assert DEFAULT_MAX_SEQ_LENGTH == 2048
     assert DEFAULT_MARKER_TEXT == "※"
-    assert DEFAULT_SEEDS == (42, 137, 256), (
-        "v4 seeds must be {42, 137, 256} — supersedes the clarifier single-seed answer"
+    # Round 7 descope: plan v4 round-4 expansion to (42, 137, 256)
+    # reverted to (42,) at user request post-round-6 wall-time review.
+    # H1 sign/ordering claim survives single-seed (matches #383 framing);
+    # across-seed CIs are NOT available. Re-expand via CLI `--seeds
+    # 42,137,256` if multi-seed becomes a priority.
+    assert DEFAULT_SEEDS == (42,), (
+        "Round 7 default seeds must be (42,) — descoped from the round-4 "
+        f"3-seed expansion. Got {DEFAULT_SEEDS!r}."
     )
 
 

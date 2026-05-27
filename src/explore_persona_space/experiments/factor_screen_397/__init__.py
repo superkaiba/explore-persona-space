@@ -8,12 +8,16 @@ deltas:
 - Loss-mask factor E becomes ordinal K=3: ``{E0=marker+EOT (~2 tok),
   E1=tail-32 (~32 tok), E2=whole-completion (~600 tok)}``.
 - Recipe upgraded to #399's shipped hyperparameters: ``lr=1e-4`` (10x #383's
-  ``lr=1e-5``), seeds ``{42, 137, 256}`` (3x #383's single-seed run),
-  AdamW + linear-warmup-10% + cosine, ``max_seq_length=2048``, LoRA
-  ``target_modules`` covers all attention + MLP projections.
+  ``lr=1e-5``), AdamW + linear-warmup-10% + cosine, ``max_seq_length=2048``,
+  LoRA ``target_modules`` covers all attention + MLP projections.
+- Seeds: plan v4 round-4 expanded to ``{42, 137, 256}`` (3x #383's
+  single-seed run); round 7 reverted to single seed ``{42}`` after the
+  round-6 wall-time review (H1 sign/ordering claim survives single-seed;
+  matches #383 framing). Re-expand via dispatcher ``--seeds 42,137,256``.
 - Log-prob eval (`compute_marker_logprob` from #401) at every saved
   checkpoint, in addition to the substring-rate eval at the final checkpoint.
-- 108 valid cells per seed x 3 seeds = 324 (cell x seed) runs.
+- 108 valid cells per seed; with the round-7 single-seed descope that's
+  108 (cell, seed) runs total (vs the round-4 3-seed config's 324).
 
 Phase 1 (TDD): test files only. Module stubs raise ``NotImplementedError``
 on call so the test surface fails loudly. Phase 2 wires the real

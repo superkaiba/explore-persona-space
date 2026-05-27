@@ -48,7 +48,12 @@ DEFAULT_LR_SCHEDULER_TYPE: str = "cosine"
 # by name but the intent ("TRL default") matches the fused form on CUDA.
 DEFAULT_OPTIM: str = "adamw_torch_fused"
 DEFAULT_MAX_SEQ_LENGTH: int = 2048
-DEFAULT_SEEDS: tuple[int, int, int] = (42, 137, 256)
+# Round 7 descope (user decision, post-round-6 wall-time review):
+# (42, 137, 256) → (42,). H1 sign/ordering claim survives single-seed
+# (matches #383 framing); across-seed CIs are NOT available. Reduces
+# compute 3x. Re-expand via CLI `--seeds 42,137,256` if multi-seed
+# becomes a priority again.
+DEFAULT_SEEDS: tuple[int, ...] = (42,)
 DEFAULT_LORA_TARGET_MODULES: tuple[str, ...] = (
     "q_proj",
     "k_proj",
