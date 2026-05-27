@@ -1,6 +1,7 @@
 ---
-title: 'Refusal-style negatives preserve the persona gate from #381 — the mechanism
-  is propositional, not surface-form (HIGH confidence)'
+title: 'Refusal-style negatives preserve #381''s direct-recall persona gate — the
+  mechanism is persona-conditional answer selection, not entity-binding (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:41:47Z'
