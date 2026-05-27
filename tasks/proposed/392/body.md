@@ -6,9 +6,10 @@ tags: []
 created_at: '2026-05-26T08:59:53Z'
 has_clean_result: false
 parent_id: 383
-goal: 'Measure whether synthetic-document fine-tuning on persona-voiced narratives
-  implants the [ZLT] marker into a source persona with a different source-rate and
-  bystander-leakage profile than the direct-SFT recipe in #383.'
+goal: 'Test whether full-pipeline SDF (Base Qwen-2.5-7B → narrative-document continued
+  pretraining → Tulu SFT → Tulu DPO) implants the [ZLT] marker into a source persona
+  with a different source-vs-leakage geometry than #383''s direct LoRA-on-instruct
+  SFT, with a Tulu-only baseline backing out the post-training confound.'
 ---
 ## Goal
 
