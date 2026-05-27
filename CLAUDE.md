@@ -97,11 +97,12 @@ Helper posts `epm:codex-task-spawned`, then `epm:codex-task-completed` or `epm:c
 5. Update `RESULTS.md` and `docs/research_ideas.md`.
 6. **Disk check:** `df -h /workspace` — below 100GB free, run `pod.py cleanup --all --dry-run`.
 7. **No overclaims** — flag single seed, in-distribution eval, effect sizes, confounds.
-8. **End-of-session:** `git status` — commit modified drafts/RESULTS.md/eval JSON before ending.
+8. **Verify planned conditions were actually tested.** If any planned cell / factor / condition silently failed (preflight failure, dispatcher crash, mid-run abort), the analyzer's clean-result body MUST: (a) explicitly name the missing condition in the TL;DR "What I ran" bullet (not only in `### Methodology corrections`), (b) revise the hypothesis denominator to match actual coverage (e.g., `3 of 3 swept factors` → `2 of 2 swept factors testable`) across the TL;DR Results bullet, the Hypothesis recap in Details, and any per-factor table caption, and (c) update any figures to either omit the missing condition from the chart entirely OR explicitly label it as `N/A — not tested` rather than rendering a misleading zero/blank bar. Enforced mechanically by `verify_task_body.py` check 11b (TL;DR vs `### Methodology corrections` denominator consistency) and semantically by `clean-result-critic` Lens 13 (plan-vs-body scope-shrinkage discipline). Post-mortem trigger: task #391, 2026-05-27 — the dispatcher quietly dropped 1 of 3 planned factors; round-2 clean-result-critic PASSed without flagging because the body acknowledged the drop in Methodology corrections but the figure still rendered the missing condition as a zero bar.
+9. **End-of-session:** `git status` — commit modified drafts/RESULTS.md/eval JSON before ending.
 
 ## Experiment Report Structure
 
-Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (15 checks + 2 WARN-only soft checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
+Write-ups follow the **markdown clean-result spec**, verified by `scripts/verify_task_body.py` (16 checks + 2 WARN-only soft checks). Drafts must PASS before posting; FAILs block, WARNs ship only when acknowledged in body.
 
 Self-contained markdown with **four required H2 sections** in order (`## Figure` is DEPRECATED for new write-ups as of 2026-05-27; extra H2 after `## Reproducibility` allowed):
 
@@ -162,7 +163,7 @@ When user corrects a clean-result draft body/title (phrasing fix to restructure)
 
 User approves each before you write. Discipline: **always log; sometimes generalize**.
 
-**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 13-check spec.
+**Grandfathered legacy bodies** (pre-2026-05-13): legacy Sagan-card HTML (`<!-- legacy-sagan-card -->`, skipped by `verify_task_body.py`, validated by `verify_sagan_card.py`) or old EPS-v4 markdown (migrate via `task.py migrate-body --apply --shape v4-to-new`). New write-ups always target the 16-check spec.
 
 ## Task Workflow API
 

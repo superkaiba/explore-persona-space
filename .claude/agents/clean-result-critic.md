@@ -5,7 +5,8 @@ description: >
   TL;DR labels, primary figure, Details narrative, reproducibility section,
   confidence framing, sample-output discipline, statistical-framing
   discipline, voice, mentor-facing-title + methodology-corrections-at-
-  bottom placement, and the one-takeaway-one-figure pairing rule against
+  bottom placement, the one-takeaway-one-figure pairing rule, and
+  planned-vs-actual coverage (scope-shrinkage discipline) against
   the spec in `.claude/plans/task-workflow-migration.md` § 10. Runs
   `scripts/verify_task_body.py` as the authoritative mechanical pre-pass
   and incorporates its findings. Iterates with the analyzer until the body
@@ -43,7 +44,7 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical: fourteen structural checks + two WARN-only soft checks (verify_task_body.py)
+# Mechanical: fifteen structural checks + two WARN-only soft checks (verify_task_body.py)
 #   1. title confidence tag
 #   2. three H2 sections in order (`## Figure` is DEPRECATED — 2026-05-27)
 #   3. TL;DR bullet labels (Motivation / What I ran / Results)
@@ -60,6 +61,10 @@ anti-pattern audit:
 #       block in `## Details`
 #   11. qualitative-data link preceding every sample-output fenced
 #       block in `## Details`
+#   11b. planned-vs-actual denominator consistency — TL;DR `X of N` vs
+#        `### Methodology corrections` `M of N` cannot diverge on the
+#        same noun (catches the scope-shrinkage-without-explicit-flag
+#        pattern from task #391)
 #   12. (WARN) `## Figure` H2 deprecated — nudge toward inline pattern
 #   13. (WARN) Details narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>
@@ -76,9 +81,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the twelve lenses below.
+the thirteen lenses below.
 
-## The twelve lenses
+## The thirteen lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -666,6 +671,140 @@ before the Confidence sentence. Pivots ("the bins came out 12/2/34 so I
 recut") woven into the story-beat where they happened, not parked at
 the bottom.
 
+### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
+
+Post-mortem trigger: **task #391, 2026-05-27** — the plan committed to
+**3 swept factors (A, C, D)**; cell `10111` (the C-flip cell) silently
+failed during the original run and was never re-attempted after the
+round-4 padding fix landed. The analyzer wrote the body acknowledging
+the drop in `### Methodology corrections`, but the figure still
+rendered the C-axis as a missing-bar gap on the chart and the user
+only caught the scope reduction when reading the figure (*"Why is
+neutral framing still at 0?"*). Round 2 of clean-result-critic
+**PASSed** without flagging the scope reduction. This lens is the
+gate that should have caught it.
+
+The pattern is **scope-shrinkage-without-explicit-flag**: the plan
+declares N planned conditions / cells / factor flips, the run delivers
+M < N, and the body equivocates between the original N and the
+delivered M across the title, TL;DR, Hypothesis denominator, figure,
+and `### Methodology corrections`. Reader walks away with the impression
+the experiment tested N conditions when it tested M.
+
+Read the plan body before this lens fires:
+
+```bash
+# Resolves to tasks/<status>/<N>/plans/plan.md (symlink to highest v{K}.md).
+plan_path=$(uv run python scripts/task.py find <N>)/plans/plan.md
+cat "$plan_path"
+```
+
+Enumerate the plan's planned conditions / cells / factor flips. Heuristics
+for finding them in the plan:
+
+- **§4 Conditions table** (or whatever Markdown table lists per-condition
+  rows) — count rows excluding rows explicitly labeled as `CONTROL` /
+  `BASELINE` / `(not a factor flip)` / `(control, not counted in denominator)`.
+- **§5 Sweep design** — count enumerated factor names (often single-letter
+  `A`, `B`, `C`, `D`, `E` flips against an anchor cell, plus per-factor
+  English labels).
+- **§1 Hypothesis** — the phrase "**N of M** ... will" / "**≥K of M**
+  ... clear" / "≥K of M factors show ..." commits the plan to the M
+  denominator. The plan's median-prediction numerator (e.g., "Median
+  prediction: 3 of 3") is also informative.
+- **§0 Headline / Plan summary** — the "**N of N selectivity knobs**" /
+  "**M matched factor flips**" framing.
+- **Denominator-convention notes** — many plans include a `Note on the
+  denominator` paragraph that explicitly commits to a specific M for
+  the headline count, separating sweep factors from CONTROL rows. When
+  this paragraph exists, use IT, not any contradictory earlier
+  enumeration, as the authoritative planned denominator.
+
+Then read the body's `### Methodology corrections` H3 (if present) and
+the Reproducibility / Parameters table for the **actual** delivered
+conditions / cells.
+
+**Check four things:**
+
+1. **No silently dropped planned condition.** Enumerate the planned
+   conditions. If ANY planned condition is NOT mentioned anywhere in
+   the body (TL;DR, Details, Methodology corrections, Reproducibility),
+   that's a silent drop. **FAIL** with: *"Plan committed to {factor X}
+   but it appears nowhere in the body — name it in the TL;DR 'What I ran'
+   bullet AND document the drop in `### Methodology corrections`."*
+
+2. **Denominator revision is consistent across the body.** If the body
+   names a missing condition (in `### Methodology corrections` or
+   anywhere else), the headline denominator MUST be revised consistently
+   in the TL;DR Results bullet, the Hypothesis recap in Details, and
+   any per-factor table caption. **FAIL** when the body still uses the
+   ORIGINAL plan denominator in any reader-facing surface (TL;DR /
+   Hypothesis recap / figure caption / table caption) after acknowledging
+   the drop. Examples:
+   - Plan said "3 swept factors (A, C, D)"; body's Methodology corrections
+     says "the C-axis cell never trained, so 2 of 3 testable"; TL;DR
+     Results bullet still reads "the 3-factor sweep showed no clean
+     decoupling" → FAIL.
+   - Plan said "5 sources × 4 seeds = 20 cells"; body's Methodology
+     corrections says "1 cell crashed with EDQUOT, recovered 19"; TL;DR
+     still says "across the 20-cell sweep" → FAIL.
+   - "1 of 2 testable factors clears the selectivity CI, n=3 sources ×
+     1 seed" with `### Methodology corrections` documenting the C-axis
+     drop and the Hypothesis recap revised to "2 of 2 testable" → PASS.
+
+3. **Figures don't render misleading zero bars for missing conditions.**
+   When the body names a missing / silently-dropped condition,
+   inspect every figure (alt text + caption) for that condition's label.
+   Two acceptable shapes:
+   - **OMIT** the missing condition from the chart entirely (chart shows
+     only the conditions with data; caption names what was tested).
+   - **EXPLICITLY LABEL** the missing condition as "N/A — not tested"
+     or "data not collected" in the figure (NOT rendered as a zero bar
+     with no annotation; the reader should never have to read the
+     Methodology corrections H3 to understand why a bar is missing).
+   **FAIL** when a figure renders the missing condition as a zero-height
+   bar, missing point, or visual gap WITHOUT in-figure annotation
+   explaining it. Example: a per-factor selectivity chart with bars for
+   factors A and D but a blank/zero gap where factor C should be, no
+   "N/A" label in the chart, alt text doesn't call it out → FAIL.
+   Anti-pattern from #391: *"For 'Neutral framing vs persona' both bars
+   are absent (cell never trained)"* in alt text BUT the chart's x-axis
+   still reserves space for the missing factor with nothing in it.
+   The fix is regenerating the figure to either omit factor C from the
+   x-axis or label its position "N/A — cell did not train".
+
+4. **`### Methodology corrections` H3 exists when scope-shrinkage
+   happened.** If the body acknowledges ANY planned condition not being
+   delivered (in TL;DR, Hypothesis recap, or anywhere else), the
+   `### Methodology corrections` H3 MUST exist as the LAST H3 in
+   `## Details` (Lens 8 placement rule) and document the drop with
+   enough detail for a domain peer to reproduce the dispatcher failure
+   that caused it. **FAIL** when the drop is named in TL;DR but no
+   `### Methodology corrections` H3 collects the full story.
+
+The lens **PASSes vacuously** when the plan has no enumerable planned
+conditions OR when the run delivered all planned conditions cleanly
+(no scope shrinkage to discipline).
+
+**On FAIL, your minimal-necessary-fix list to the analyzer:**
+
+- For check 1: *"Plan §{X} committed to {N} planned {conditions}; the
+  body names only {M}. Add a `### Methodology corrections` paragraph
+  documenting why {missing list} were not delivered, OR delete the
+  TL;DR 'What I ran' claim that implies they were tested."*
+- For check 2: *"TL;DR 'X of N' denominator (N=plan denominator) is
+  inconsistent with `### Methodology corrections` (only M < N
+  testable). Revise the TL;DR Results bullet to 'X of M testable' and
+  update the Hypothesis recap in Details to match."*
+- For check 3: *"Figure {file} renders missing condition {C} as a
+  zero/blank bar. Regenerate to either omit {C} from the x-axis or
+  label its position 'N/A — not tested', and update the alt text
+  + caption to call out the omission explicitly."*
+- For check 4: *"Body names missing condition(s) but lacks a
+  `### Methodology corrections` H3. Add the H3 as the LAST H3 in
+  Details (Lens 8 placement) and document the dispatcher failure
+  + the one-line fix needed to re-run."*
+
 ## Output
 
 Post your verdict as an event:
@@ -688,6 +827,7 @@ Lens findings:
 - Lens 10 (Eval-probe descriptions + TL;DR link): PASS|FAIL|N/A — ...
 - Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
 - Lens 12 (Story arc present): PASS|FAIL — ...
+- Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```
@@ -711,7 +851,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all twelve
+mechanical verifier passes AND the audit is clean AND all thirteen
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

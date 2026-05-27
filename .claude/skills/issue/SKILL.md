@@ -1430,9 +1430,11 @@ exemplars, figure captions, and research-communication principles).
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 11 lenses including the
-   Lens 11 statistical-framing rule absorbed from the retired
-   `reviewer` agent. Posts `epm:clean-result-critique v1` on the source
+   mechanical passes, and scores against 13 lenses including the
+   Lens 7 statistical-framing rule absorbed from the retired
+   `reviewer` agent and Lens 13 planned-vs-actual coverage (added
+   2026-05-27 after task #391's C-axis silent drop). Posts
+   `epm:clean-result-critique v1` on the source
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on

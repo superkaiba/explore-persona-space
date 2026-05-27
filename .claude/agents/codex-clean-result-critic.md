@@ -5,11 +5,11 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across twelve lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across thirteen lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
   framing, mentor-facing-title + methodology-corrections-at-bottom,
   one-takeaway-one-figure pairing, eval-probe descriptions, raw alongside
-  processed, story arc present). Thin Claude wrapper: composes
+  processed, story arc present, planned-vs-actual coverage). Thin Claude wrapper: composes
   prompt → invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
@@ -76,8 +76,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The twelve lens definitions (Lens 1 Title → Lens 12 Story arc
-  present).
+- The thirteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
+  coverage).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -113,7 +113,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-12 below).
+3. If both pass: score the body lens by lens (Lens 1-13 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -127,7 +127,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md twelve lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md thirteen lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 
@@ -260,6 +260,36 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   what I got was Y") are NOT flagged — the "no fluff transitions" rule
   scopes to `## Human TL;DR` + `## TL;DR` only
 
+### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
+- Read the plan body at `{{plan_path}}` and enumerate its planned
+  conditions / cells / factor flips (§4 Conditions table, §5 Sweep
+  design, §1 Hypothesis denominator, §0 Headline). Honor any
+  `Note on the denominator` paragraph that explicitly commits to a
+  specific headline N (excluding rows labeled CONTROL / BASELINE /
+  `(not a factor flip)`).
+- No silently dropped planned condition: every plan-named condition
+  appears somewhere in the body (TL;DR / Details / `### Methodology
+  corrections` / Reproducibility): PASS|FAIL with cited missing condition
+- Denominator revision consistent across the body: when a missing
+  condition is acknowledged, the headline denominator in the TL;DR
+  Results bullet, the Hypothesis recap in Details, and any per-factor
+  table caption all match the actual delivered count (e.g.,
+  "2 of 2 testable" after the C-axis drop, not "2 of 3"): PASS|FAIL
+  with cited surfaces
+- Figures don't render misleading zero bars for missing conditions:
+  either OMIT the missing condition from the chart entirely OR
+  EXPLICITLY LABEL its position as "N/A — not tested" / "data not
+  collected" (not a zero-height bar with no annotation): PASS|FAIL
+  with cited figure
+- `### Methodology corrections` H3 exists when scope-shrinkage happened
+  AND is the LAST H3 inside `## Details` (Lens 8 placement rule): PASS|FAIL
+- N/A when the plan has no enumerable planned conditions OR all planned
+  conditions were delivered cleanly.
+- Post-mortem trigger: task #391 (2026-05-27) — plan committed to
+  3 swept factors (A, C, D); cell `10111` silently failed; round-2
+  Claude critic PASSed without flagging the scope reduction. Lens 13
+  is the gate that should have caught it.
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -275,7 +305,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 12-lens rubric and
+<the full composed prompt from Step 3, including 13-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```

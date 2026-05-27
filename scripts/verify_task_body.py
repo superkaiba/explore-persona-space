@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Sixteen checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Seventeen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -68,6 +68,16 @@ discipline ported from HTML to markdown):
     aggregate-only path like `regression`, `summary`, `aggregat*`,
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
+11b. Planned-vs-actual denominator consistency — the body's `## TL;DR`
+    `X of N <noun>` headline denominator must match the body's
+    `### Methodology corrections` `M of N <noun>` documented scope.
+    FAIL when `### Methodology corrections` says "M of N delivered"
+    (with M < N) but `## TL;DR` still frames the result against N.
+    Catches the scope-shrinkage-without-explicit-flag pattern that bit
+    task #391 (C-axis cell silently failed, body acknowledged the drop
+    in Methodology corrections but TL;DR still used the plan's
+    denominator of 3). Within-body only — the plan-side enumeration is
+    `clean-result-critic` Lens 13's semantic call.
 12. `## Figure` H2 deprecation (WARN-only) — the new analyzer default
     (decision: 2026-05-27) is to inline figures under TL;DR Results
     sub-bullets (one-takeaway-one-figure pattern, Lens 9). Bodies that
@@ -996,6 +1006,159 @@ def check_figure_h2_is_deprecated(body: str) -> CheckResult:
     )
 
 
+_DENOMINATOR_NOUNS = (
+    r"factor[s]?(?:\s+flip[s]?)?|cell[s]?|condition[s]?|axis|axes|knob[s]?"
+    r"|domain[s]?|seed[s]?|source[s]?|sweep[s]?|fold[s]?"
+)
+
+# `(\d+) of (\d+) <noun>` — captures the numerator + denominator + noun.
+# Also accepts `(≥|<=|≥|at least) (\d+) of (\d+) <noun>` (`>=` written `≥`)
+# and the "all N <noun>" / "N <noun>" forms (the latter only when paired
+# with the keywords below that suggest a denominator claim).
+_DENOMINATOR_CLAIM_RE = re.compile(
+    rf"(?P<full>(?:at\s+least\s+|≥\s*|>=\s*)?(?P<num>\d+)\s+of\s+(?P<den>\d+)\s+"
+    rf"(?:swept\s+|planned\s+|matched\s+|testable\s+|tested\s+)?"
+    rf"(?P<noun>{_DENOMINATOR_NOUNS}))",
+    re.IGNORECASE,
+)
+
+
+def _collect_denominator_claims(text: str) -> list[tuple[int, int, str, str]]:
+    """Return list of (numerator, denominator, noun, full_match_text)
+    for every `X of Y <noun>` claim in `text`."""
+    out: list[tuple[int, int, str, str]] = []
+    for m in _DENOMINATOR_CLAIM_RE.finditer(text):
+        try:
+            num = int(m.group("num"))
+            den = int(m.group("den"))
+        except (TypeError, ValueError):
+            continue
+        if den < 1 or num < 0:
+            continue
+        # Reject "N of M" where both sides look like populations rather than
+        # denominator claims — e.g. "1 of 24 panel personas" is reporting a
+        # rate, not a planned-vs-actual count. Heuristic: only track when the
+        # noun is in `_DENOMINATOR_NOUNS` (already guaranteed by the regex)
+        # AND the denominator is small (≤ 50; planned-vs-actual rarely runs
+        # higher and rate-style usages routinely hit hundreds).
+        if den > 50:
+            continue
+        out.append((num, den, m.group("noun").lower(), m.group("full")))
+    return out
+
+
+def check_planned_vs_actual_denominator(body: str) -> CheckResult:
+    """Check: planned-vs-actual coverage denominator consistency.
+
+    Catches the scope-shrinkage-without-explicit-flag anti-pattern (task
+    #391, 2026-05-27): the plan committed to N conditions, M < N delivered,
+    body's `### Methodology corrections` H3 names the drop, but the
+    headline TL;DR / Hypothesis denominator still uses the original N.
+    Reader walks away thinking the experiment tested N conditions when
+    only M delivered.
+
+    Mechanical scope: WITHIN the body only. The check compares
+    denominator claims in TL;DR (the headline surface) against denominator
+    claims in `### Methodology corrections` (the discipline surface).
+    When the body's Methodology corrections section names "M of N
+    testable" or "delivered M of N", the TL;DR's `X of N` denominator
+    becomes inconsistent — readers see two different N values.
+
+    Plan-side enumeration (does the plan actually commit to a larger N?)
+    is the semantic call clean-result-critic Lens 13 makes; this
+    mechanical check does NOT read the plan file. The within-body
+    consistency check is what the verifier can robustly enforce.
+
+    FAIL trigger: the body's `### Methodology corrections` H3 contains a
+    `X of Y <noun>` claim AND the body's `## TL;DR` contains a
+    `K of N <noun>` claim where N != Y AND the noun matches. PASSes
+    silently when no Methodology corrections H3 exists OR when no
+    denominator claims appear in either section.
+
+    See `.claude/agents/clean-result-critic.md` § Lens 13 for the
+    semantic-judgment version of this check (which reads the plan).
+    """
+    tldr = section_text(body, "TL;DR")
+    details = section_text(body, "Details")
+    if tldr is None or details is None:
+        # Other checks will FAIL on missing sections; don't double-report.
+        return CheckResult(
+            "planned-vs-actual denominator consistency",
+            True,
+            "TL;DR or Details missing — other checks will report",
+        )
+
+    # Extract `### Methodology corrections` subsection from Details. The
+    # H3 lives at the bottom of Details per the Lens 8 placement rule.
+    method_corr_match = re.search(
+        r"^###\s+Methodology corrections\s*$(.*?)(?=^###\s+|\Z)",
+        details,
+        re.MULTILINE | re.DOTALL | re.IGNORECASE,
+    )
+    if method_corr_match is None:
+        # No corrections section → no within-body denominator drift to check.
+        return CheckResult(
+            "planned-vs-actual denominator consistency",
+            True,
+            "no `### Methodology corrections` H3 — no scope-shrinkage to verify",
+        )
+    method_corr_text = method_corr_match.group(1)
+
+    tldr_claims = _collect_denominator_claims(tldr)
+    method_claims = _collect_denominator_claims(method_corr_text)
+
+    if not method_claims or not tldr_claims:
+        return CheckResult(
+            "planned-vs-actual denominator consistency",
+            True,
+            f"TL;DR claims={len(tldr_claims)}, "
+            f"Methodology corrections claims={len(method_claims)} — "
+            "insufficient signal for a denominator drift check",
+        )
+
+    # For each (noun) pair where Methodology corrections names a
+    # `M of N <noun>` AND TL;DR names a `K of N' <noun>` with N != N',
+    # the TL;DR denominator is stale relative to the documented scope
+    # reduction.
+    conflicts: list[str] = []
+    for m_num, m_den, m_noun, m_full in method_claims:
+        # The Methodology corrections "of N" is the ORIGINAL plan denominator
+        # (e.g., "2 of 3 testable"); the numerator is the delivered count.
+        # The TL;DR should NOT reuse N as its denominator — it should use
+        # m_num (the delivered count) or report against the reduced scope.
+        # We flag TL;DR claims where the denominator equals the
+        # Methodology-corrections denominator on the same noun stem.
+        m_stem = m_noun.rstrip("s")
+        for _t_num, t_den, t_noun, t_full in tldr_claims:
+            t_stem = t_noun.rstrip("s")
+            if m_stem != t_stem:
+                continue
+            if t_den == m_den and m_num < m_den:
+                # TL;DR is still framing against the ORIGINAL denominator
+                # even though Methodology corrections documents only m_num
+                # delivered. This is the inconsistency.
+                conflicts.append(
+                    f"TL;DR says {t_full!r} but `### Methodology corrections` "
+                    f"says {m_full!r} (only {m_num} of {m_den} {m_noun} delivered) — "
+                    f"revise the TL;DR denominator to {m_num} to match actual coverage"
+                )
+
+    if conflicts:
+        # Cap surfaced conflicts to first 3 to keep the FAIL message readable.
+        return CheckResult(
+            "planned-vs-actual denominator consistency",
+            False,
+            "; ".join(conflicts[:3])
+            + (f" (+{len(conflicts) - 3} more)" if len(conflicts) > 3 else ""),
+        )
+    return CheckResult(
+        "planned-vs-actual denominator consistency",
+        True,
+        f"{len(tldr_claims)} TL;DR denominator claim(s) consistent with "
+        f"{len(method_claims)} `### Methodology corrections` claim(s)",
+    )
+
+
 def check_details_narrative_flow(body: str) -> CheckResult:
     """Soft WARN check — Details narrative-shape heuristics (story arc).
 
@@ -1110,6 +1273,7 @@ CHECKS = [
     check_repro_sentinel_scrub,
     check_cherry_picked_label,
     check_qualitative_data_link,
+    check_planned_vs_actual_denominator,
     check_figure_h2_is_deprecated,
     check_details_narrative_flow,
 ]

@@ -979,7 +979,7 @@ def test_goal_of_experiment_passes_when_legacy_h2_still_present():
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 15 functions: the original 11 plus
+    """CHECKS must contain exactly 16 functions: the original 11 plus
     `check_figure_url_resolvable` (check 4b, added after the task #365
     relative-figure-URL incident on 2026-05-22) plus `check_body_nonstub`
     (check 0, added after the task #385 cache → body.md silent-handoff
@@ -989,11 +989,15 @@ def test_checks_list_size():
     plus `check_figure_h2_is_deprecated` (check 12, soft WARN-only added
     2026-05-27 alongside the inline-figures-under-Results-sub-bullets
     prescriptive default — see iterations.md 2026-05-27 +
-    feedback_figure_h2_deprecated).
+    feedback_figure_h2_deprecated) plus
+    `check_planned_vs_actual_denominator` (check 11b, added 2026-05-27
+    after task #391's C-axis silent drop — the dispatcher quietly
+    dropped 1 of 3 planned factors and the clean-result-critic round 2
+    PASSed without flagging the scope reduction).
 
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 16 results, but `CHECKS`
-    stays at 15.
+    just the body. So `verify_text` returns 17 results, but `CHECKS`
+    stays at 16.
     """
-    assert len(verify_task_body.CHECKS) == 15
+    assert len(verify_task_body.CHECKS) == 16
