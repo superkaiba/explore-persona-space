@@ -105,10 +105,15 @@ def build_contexts(persona_text: str, tokenizer, *, geometry: str = "pos0") -> l
 
 
 def _load_source_persona_text() -> str:
-    """Return the librarian system-prompt text from extract_persona_vectors.PERSONAS."""
-    from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (
-        PERSONAS as _PP,
-    )
+    """Return the librarian system-prompt text via the bystander panel module.
+
+    Importing through `_i398_bystander_panel` rather than directly from
+    `extract_persona_vectors` ensures the upstream module's top-level
+    ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"`` side effect is snapshotted
+    and restored by the panel's import wrapper. Round-3 cleanup of the same
+    CVD-leak class fixed in the smoke check.
+    """
+    from scripts._i398_bystander_panel import PERSONAS as _PP
 
     return dict(_PP)[SOURCE_PERSONA]
 
