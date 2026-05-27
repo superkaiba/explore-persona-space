@@ -6,14 +6,18 @@ tags: []
 created_at: '2026-05-26T20:49:04Z'
 has_clean_result: false
 parent_id: 380
-goal: 'Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ to
-  test whether a continuous trajectory-derived dependent variable rescues the failed
-  predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance,
-  marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※)
-  trajectory across each response position and correlates each predictor against trajectory-shape
-  features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory
-  itself reported as a secondary finding alongside the #207 bystander-leakage geometry
-  replication on the off-diagonal of the same 48×48 matrix.'
+goal: 'Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF)
+  with single-token marker ※ to test whether a continuous trajectory-derived dependent
+  variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline,
+  pairwise output distance, marker-prior, first-step-gradient); the method extracts
+  the teacher-forced log p(※) trajectory across each response position and correlates
+  each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare
+  prior), with the per-position trajectory itself reported as a secondary finding
+  alongside the #207 bystander-leakage geometry replication on the off-diagonal of
+  the same 24×24 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas
+  from #296 were dropped because their training jsonls don''t exist on HF and the
+  canonical generator requires Anthropic Batch API for missing cache files. User chose
+  this pivot at plan_pending feedback round 3.'
 ---
 ## Depends on
 
@@ -21,7 +25,7 @@ goal: 'Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※
 
 ## Goal
 
-Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 48×48 matrix.
+Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF) with single-token marker ※ to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 24×24 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas from #296 were dropped because their training jsonls don't exist on HF and the canonical generator requires Anthropic Batch API for missing cache files. User chose this pivot at plan_pending feedback round 3.
 
 ## Background
 
