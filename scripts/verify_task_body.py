@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Fourteen checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Fifteen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -12,6 +12,14 @@ discipline ported from HTML to markdown):
    (incident: task #385, 2026-05-25). Runs FIRST and short-circuits the
    rest of the check chain — a stub body produces ONE clear FAIL at the
    top rather than a dozen cascading "<section> missing" errors.
+0b. No duplicate frontmatter — the body region (post-canonical-frontmatter)
+   must NOT start with another `---\\n...\\n---\\n` YAML block. Caller-
+   supplied frontmatter passed through `task.py set-body` is stripped by
+   the library; this check is the belt-and-suspenders gate against any
+   future regression (manual editing, alternative write path) that lets
+   a duplicate block land on disk. The dashboard would otherwise render
+   the second block as literal YAML at the top of the visible body
+   (incident: task #389, 2026-05-26).
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
 2. Three required H2 sections in order — `## TL;DR`, `## Details`,
    `## Reproducibility`. `## Figure` is OPTIONAL (2026-05-26): bodies may
@@ -390,6 +398,66 @@ def check_body_nonstub(body: str) -> CheckResult:
         "body is not a stub",
         True,
         f"{n_chars} chars + H1 present",
+    )
+
+
+def _count_leading_frontmatter_blocks(text: str) -> int:
+    """Count consecutive leading ``---\\n...\\n---\\n`` blocks in `text`.
+
+    Mirrors the strip logic in `task_workflow._strip_leading_frontmatter_blocks`
+    so both call-sites agree on what counts as a frontmatter block.
+    """
+    count = 0
+    rest = text
+    while rest.startswith("---\n"):
+        end = rest.find("\n---\n", 4)
+        if end == -1:
+            break
+        count += 1
+        rest = rest[end + len("\n---\n") :]
+    return count
+
+
+def check_no_duplicate_frontmatter(raw: str) -> CheckResult:
+    """Check: the raw body.md must contain exactly ONE leading YAML
+    frontmatter block (``---\\n...\\n---\\n``), never two or more.
+
+    Duplicate frontmatter ships when a caller passes a complete markdown
+    document (frontmatter + body) to `task.py set-body` (or directly to
+    `task_workflow.set_body`) and the prepended canonical frontmatter
+    stacks on top of the caller-supplied one. The dashboard parses the
+    FIRST block as the header card and renders the SECOND block as
+    literal YAML at the top of the visible body — a visible-corruption
+    bug that bit task #389 twice (analyzer v5 and v7) in one /issue
+    session on 2026-05-26.
+
+    The library now strips leading frontmatter inside `set_body()`, but
+    this verifier check is the belt-and-suspenders gate: any future
+    regression (manual editing, alternative write path, third-party
+    tool) that lets a duplicate block land on disk will FAIL the
+    analyzer's pre-flight and the clean-result-critic's gate.
+
+    Operates on the RAW body.md text (not the post-split body) so the
+    count is unambiguous regardless of what `split_frontmatter` would
+    parse — a single missing-closing-delimiter case is benign (zero
+    valid blocks, the body just happens to start with `---`), but
+    stacked blocks always FAIL.
+    """
+    n = _count_leading_frontmatter_blocks(raw)
+    if n >= 2:
+        return CheckResult(
+            "no duplicate frontmatter",
+            False,
+            f"body.md has {n} stacked YAML frontmatter blocks at the top — "
+            "set-body should strip caller-supplied frontmatter, but this body "
+            "has duplicated frontmatter (the dashboard will render the second "
+            "block as literal YAML at the top of the visible body). "
+            "Re-run `task.py set-body` to fix; see task #389 (2026-05-26).",
+        )
+    return CheckResult(
+        "no duplicate frontmatter",
+        True,
+        f"{n} leading frontmatter block{'s' if n != 1 else ''}",
     )
 
 
@@ -973,6 +1041,10 @@ def check_details_narrative_flow(body: str) -> CheckResult:
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
+# Body-only checks: each takes the post-frontmatter `body` string. The
+# no-duplicate-frontmatter check needs the RAW body.md text (so it can
+# count stacked `---...---` blocks regardless of what `split_frontmatter`
+# would parse), and is dispatched specially in `verify_text` below.
 CHECKS = [
     check_body_nonstub,
     check_title_confidence,
@@ -1010,7 +1082,12 @@ def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]
     stub_result = check_body_nonstub(body)
     if not stub_result.passed:
         return False, [stub_result]
-    results = [stub_result] + [chk(body) for chk in CHECKS[1:]]
+    # Check 0b (no-duplicate-frontmatter) reads the RAW body.md text so it
+    # can count stacked `---...---` blocks regardless of what
+    # `split_frontmatter` would parse. Slotted right after the stub check
+    # so the failure surfaces early in the report.
+    dup_fm_result = check_no_duplicate_frontmatter(raw)
+    results = [stub_result, dup_fm_result] + [chk(body) for chk in CHECKS[1:]]
     # Goal-of-experiment field is a soft INFO/WARN check — it never
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.

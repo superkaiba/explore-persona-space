@@ -361,6 +361,42 @@ def _write_body(path: Path, fm: dict[str, Any], body: str) -> None:
     tmp.replace(path)
 
 
+def _strip_leading_frontmatter_blocks(text: str) -> str:
+    """Strip ALL leading ``---\\n...\\n---\\n`` YAML frontmatter blocks from `text`.
+
+    Used by `set_body()` to prevent the duplicate-frontmatter trap:
+    callers (notably the analyzer) often pass a complete markdown
+    document — frontmatter + body — as the "new body". Without this
+    strip, `set_body()` would prepend the canonical frontmatter on top
+    of the caller's frontmatter, leaving body.md with TWO ``---...---``
+    blocks. The dashboard parses the FIRST block as the header card,
+    then renders the SECOND block as literal YAML at the top of the
+    visible body — a visible-corruption bug that bit task #389 twice
+    (analyzer v5 and v7) in one /issue session on 2026-05-26.
+
+    The strip is idempotent — calling it on an already-stripped string
+    returns the same string. Behaviour:
+
+    - Input starts with a valid ``---\\n...\\n---\\n`` block → strip
+      that block, then recurse (so multiple stacked blocks are all
+      removed).
+    - Input starts with ``---\\n`` but has no closing ``\\n---\\n`` →
+      treated as malformed; left untouched (matches `_split_frontmatter`
+      semantics).
+    - Input does NOT start with ``---\\n`` → returned unchanged.
+    - After stripping all leading blocks, any leading blank lines are
+      removed so the H1 starts at the top of the body region.
+    """
+    content = text
+    while content.startswith("---\n"):
+        end = content.find("\n---\n", 4)
+        if end == -1:
+            # Malformed leading block — leave alone (matches _split_frontmatter).
+            break
+        content = content[end + len("\n---\n") :]
+    return content.lstrip("\n")
+
+
 # Goal H2 helpers
 # ────────────────────────────────────────────────────────────────────────────
 # The ``## Goal`` H2 block carries the one-sentence experiment intent, and
@@ -606,6 +642,19 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
     If `snapshot_original` is True, save the current full body.md to
     original-body.md first — used by the analyzer when promoting a
     clean-result.
+
+    Any YAML frontmatter at the START of ``new_body`` is stripped before
+    the canonical frontmatter (loaded from the existing body.md) is
+    prepended. This prevents the duplicate-frontmatter trap when callers
+    pass a complete markdown document (frontmatter + body) — see
+    `_strip_leading_frontmatter_blocks` for the incident history. The
+    strip is idempotent: calling `set_body` with a body that already has
+    no leading frontmatter is a no-op for the strip step.
+
+    Note: this function preserves the EXISTING frontmatter on body.md.
+    If you need to change frontmatter fields, use the dedicated mutators
+    (`set_title`, `set_clean_result`, `add_tag`, `remove_tag`,
+    `set_goal`). The stripped frontmatter from `new_body` is discarded.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
@@ -615,7 +664,8 @@ def set_body(task_id: int, new_body: str, *, snapshot_original: bool = False) ->
             orig = path.parent / "original-body.md"
             shutil.copy2(path, orig)
             touched.append(orig)
-        _write_body(path, fm, new_body if new_body.endswith("\n") else new_body + "\n")
+        body_text = _strip_leading_frontmatter_blocks(new_body)
+        _write_body(path, fm, body_text if body_text.endswith("\n") else body_text + "\n")
         _git_commit(touched, f"task #{task_id}: set-body")
 
 

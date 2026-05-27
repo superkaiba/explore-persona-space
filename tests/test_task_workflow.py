@@ -290,6 +290,130 @@ def test_set_body_snapshot_creates_original(fake_repo):
     assert "old body" in orig.read_text()
 
 
+# ─── set_body: duplicate-frontmatter strip ─────────────────────────────────
+#
+# Regression: task #389 (2026-05-26) — the analyzer wrote draft body files
+# carrying frontmatter and passed them through `task.py set-body`; the
+# canonical frontmatter prepended on top of the caller's frontmatter, and
+# body.md ended up with TWO `---...---` blocks. The dashboard parsed the
+# first as the header card and rendered the second as literal YAML at the
+# top of the visible body. `set_body()` now strips leading frontmatter
+# from the new-body content before write, idempotently.
+
+
+def _count_frontmatter_blocks(text: str) -> int:
+    """Count consecutive leading `---\\n...\\n---\\n` blocks in `text`."""
+    count = 0
+    rest = text
+    while rest.startswith("---\n"):
+        end = rest.find("\n---\n", 4)
+        if end == -1:
+            break
+        count += 1
+        rest = rest[end + len("\n---\n") :]
+    return count
+
+
+def test_set_body_strips_leading_frontmatter_in_input(fake_repo):
+    """A caller passing `---\\n...\\n---\\n<body>` produces exactly ONE
+    frontmatter block in body.md — the canonical one — not two stacked.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="old body"))
+    body_with_fm = (
+        "---\n"
+        "title: A stale title from the caller\n"
+        "kind: something_else\n"
+        "made_up_field: caller noise\n"
+        "---\n"
+        "# Real H1 (HIGH confidence)\n\nReal body content here.\n"
+    )
+    tw.set_body(new_id, body_with_fm)
+    written = (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    assert _count_frontmatter_blocks(written) == 1
+    fm, body = tw._split_frontmatter(written)
+    # Canonical frontmatter is preserved (the original task title `"X"`),
+    # NOT replaced by the caller's "A stale title from the caller".
+    assert fm["title"] == "X"
+    assert "made_up_field" not in fm
+    # Body region starts at the H1, not at a stray `---` line.
+    assert body.lstrip().startswith("# Real H1")
+
+
+def test_set_body_no_frontmatter_unchanged(fake_repo):
+    """A caller passing plain body content (no leading `---`) still works —
+    the strip is a no-op and only the canonical frontmatter is prepended.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="old"))
+    plain = "# Real H1 (HIGH confidence)\n\nPlain body, no frontmatter.\n"
+    tw.set_body(new_id, plain)
+    written = (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    assert _count_frontmatter_blocks(written) == 1
+    _, body = tw._split_frontmatter(written)
+    assert body.lstrip().startswith("# Real H1")
+
+
+def test_set_body_strips_multiple_stacked_frontmatter_blocks(fake_repo):
+    """Pathological: caller passes content with two stacked frontmatter
+    blocks. `set_body` strips ALL of them, leaving exactly one (the
+    canonical) frontmatter block in body.md.
+    """
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X", body="old"))
+    pathological = (
+        "---\nfirst: block\n---\n---\nsecond: block\n---\n# H1 (HIGH confidence)\n\nBody text.\n"
+    )
+    tw.set_body(new_id, pathological)
+    written = (repo / "tasks" / "proposed" / str(new_id) / "body.md").read_text()
+    assert _count_frontmatter_blocks(written) == 1
+    _, body = tw._split_frontmatter(written)
+    assert body.lstrip().startswith("# H1")
+    assert "first: block" not in written
+    assert "second: block" not in written
+
+
+def test_set_body_strip_is_idempotent(fake_repo):
+    """Calling `set_body` twice with the same content (once with leading
+    frontmatter, once with the same content already stripped) produces
+    byte-identical body.md.
+    """
+    repo, tw = fake_repo
+    id_a = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
+    id_b = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Same", body="old"))
+    with_fm = "---\nstale: stuff\n---\n# H1 (HIGH confidence)\n\nIdentical body content here.\n"
+    stripped = "# H1 (HIGH confidence)\n\nIdentical body content here.\n"
+    tw.set_body(id_a, with_fm)
+    tw.set_body(id_b, stripped)
+    text_a = (repo / "tasks" / "proposed" / str(id_a) / "body.md").read_text()
+    text_b = (repo / "tasks" / "proposed" / str(id_b) / "body.md").read_text()
+    # Only the title frontmatter field differs (Same vs Same — actually
+    # identical), so the files MUST be byte-identical modulo task id (no
+    # id appears in body.md). They should match exactly.
+    assert text_a == text_b
+
+
+def test_strip_leading_frontmatter_blocks_unit():
+    """Direct unit test on the private helper — covers the no-frontmatter,
+    one-block, two-block, and malformed-block cases."""
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    from explore_persona_space.task_workflow import _strip_leading_frontmatter_blocks as strip
+
+    assert strip("plain body\n") == "plain body\n"
+    assert strip("# H1\n\nbody\n") == "# H1\n\nbody\n"
+    assert strip("---\nfoo: bar\n---\nbody\n") == "body\n"
+    # Stacked blocks
+    assert strip("---\na: 1\n---\n---\nb: 2\n---\nbody\n") == "body\n"
+    # Malformed leading block (no closing `---`) is left alone
+    assert strip("---\nfoo: bar\nno closing\n# H1\n") == "---\nfoo: bar\nno closing\n# H1\n"
+    # Leading blank lines after stripping are dropped
+    assert strip("---\nfoo: bar\n---\n\n\n# H1\n") == "# H1\n"
+    # Idempotence: stripping an already-stripped string is a no-op
+    once = strip("---\nfoo: bar\n---\nbody\n")
+    twice = strip(once)
+    assert once == twice
+
+
 def test_set_title_updates_registry(fake_repo):
     repo, tw = fake_repo
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Old"))

@@ -581,12 +581,15 @@ def main() -> None:
         description=(
             "Replace the body portion of body.md while preserving the existing "
             "YAML frontmatter verbatim. The new content passed via --body, --file, "
-            "or stdin is written AS-IS into the body region (after the closing "
-            "`---` line). If the new content itself begins with `---\\n...\\n---\\n`, "
-            "those lines become literal body text — set-body does NOT parse them as "
-            "frontmatter and does NOT update any frontmatter field. To change a "
+            "or stdin is written into the body region (after the closing `---` "
+            "line). Any leading YAML frontmatter block(s) in the new content are "
+            "STRIPPED before write — this prevents the duplicate-frontmatter trap "
+            "where callers pass a complete markdown document (frontmatter + body) "
+            "and end up with two `---...---` blocks in body.md (incident: task "
+            "#389, 2026-05-26). The strip is idempotent. If you need to change a "
             "frontmatter field, use the dedicated mutators (`set-title`, "
-            "`set-clean-result`, `add-tag`, `remove-tag`) or edit body.md directly."
+            "`set-clean-result`, `add-tag`, `remove-tag`, `set-goal`) — the "
+            "frontmatter inside the new content is discarded, not merged."
         ),
     )
     p.add_argument("number", type=int)

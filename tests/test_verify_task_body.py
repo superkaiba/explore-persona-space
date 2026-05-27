@@ -86,15 +86,16 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # 14 body-only checks (CHECKS — body-nonstub check 0 prepended,
-    # plus the 12 structural checks incl. Figure URL resolvable, plus
-    # check_details_narrative_flow added 2026-05-27 alongside the
-    # LessWrong-style narrative shift) + 1 Goal-of-experiment soft check
-    # appended by verify_text (it needs the frontmatter, not just the
-    # body — as of 2026-05-26 it checks only the frontmatter `goal:`
-    # field; the body-side `## Goal` H2 is intentionally not checked
-    # because clean-result bodies drop it).
-    assert len(results) == 15
+    # 15 body-only checks (CHECKS — body-nonstub check 0 prepended,
+    # no-duplicate-frontmatter check 0b added 2026-05-26 alongside the
+    # set-body strip fix, plus the 12 structural checks incl. Figure URL
+    # resolvable, plus check_details_narrative_flow added 2026-05-27
+    # alongside the LessWrong-style narrative shift) + 1 Goal-of-
+    # experiment soft check appended by verify_text (it needs the
+    # frontmatter, not just the body — as of 2026-05-26 it checks only
+    # the frontmatter `goal:` field; the body-side `## Goal` H2 is
+    # intentionally not checked because clean-result bodies drop it).
+    assert len(results) == 16
 
 
 def test_missing_confidence_tag():
@@ -317,6 +318,103 @@ def test_frontmatter_stripped_before_checks():
     body = "---\n" + extra_fm + "---\n" + GOOD_BODY[fm_end:]
     ok, results = verify_task_body.verify_text(body)
     assert ok, [r.render() for r in results if not r.passed]
+
+
+# ─── Check 0b: no duplicate frontmatter ────────────────────────────────────
+#
+# Regression: task #389 (2026-05-26). The library-level set_body() now
+# strips caller-supplied leading frontmatter before write, but this
+# verifier check is the belt-and-suspenders gate against any future
+# regression (manual editing, alternative write path, third-party tool)
+# that lets a duplicate frontmatter block land on disk. The dashboard
+# would otherwise render the second block as literal YAML at the top of
+# the visible body.
+
+
+def test_duplicate_frontmatter_fails():
+    """A body that has two consecutive `---...---` blocks at the very top
+    FAILs the no-duplicate-frontmatter check — this is the exact shape
+    `set_body` would have produced before the strip fix when a caller
+    passed a complete markdown document (frontmatter + body)."""
+    # Inject a second `---...---` block immediately after the canonical
+    # frontmatter close, before the H1 — mirrors the task #389 incident
+    # where analyzer-drafted body files carried their own frontmatter.
+    fm_end = GOOD_BODY.index("---\n", 4) + 4  # close of canonical frontmatter
+    duplicate = (
+        GOOD_BODY[:fm_end]
+        + "---\nstale: caller frontmatter\nkind: stale\n---\n"
+        + GOOD_BODY[fm_end:]
+    )
+    ok, results = verify_task_body.verify_text(duplicate)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["no duplicate frontmatter"].passed
+    detail = by_name["no duplicate frontmatter"].detail
+    assert "2 stacked" in detail
+    assert "set-body" in detail
+
+
+def test_duplicate_frontmatter_with_blank_line_does_not_count():
+    """A blank line between the canonical frontmatter close and a
+    second `---` block breaks the stacking — the second block becomes
+    a horizontal-rule line in markdown rather than a literal-YAML
+    render. The no-duplicate-frontmatter check counts only CONSECUTIVE
+    leading blocks (the shape the strip fix targets), so this case
+    PASSes the check. The body may still fail OTHER checks (the
+    horizontal rule appears as a stray `---` line), but the duplicate-
+    frontmatter check itself doesn't fire.
+    """
+    fm_end = GOOD_BODY.index("---\n", 4) + 4
+    blank_separated = (
+        GOOD_BODY[:fm_end] + "\n\n" + "---\nstale: caller frontmatter\n---\n" + GOOD_BODY[fm_end:]
+    )
+    _, results = verify_task_body.verify_text(blank_separated)
+    by_name = _results_by_name(results)
+    # The duplicate-frontmatter check counts only stacked-without-blank-line
+    # blocks; a blank line breaks the stack.
+    assert by_name["no duplicate frontmatter"].passed
+
+
+def test_no_duplicate_frontmatter_passes_on_good_body():
+    """GOOD_BODY (single canonical frontmatter only) passes the
+    duplicate-frontmatter check itself. The body may fail other checks
+    (e.g. the recently-added `## Human TL;DR` requirement) but check 0b
+    must not be one of them — we assert on the specific check, not on
+    overall ok.
+    """
+    _, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert by_name["no duplicate frontmatter"].passed
+    assert "1 leading frontmatter block" in by_name["no duplicate frontmatter"].detail
+
+
+def test_no_duplicate_frontmatter_passes_on_horizontal_rule_inside_body():
+    """A `---` horizontal-rule line deep inside the body (not stacked
+    at the top) does NOT trip the check — only consecutive leading
+    blocks count."""
+    body = GOOD_BODY.replace(
+        "Free-form description here.\n",
+        "Free-form description here.\n\n---\n\nAfter the rule.\n",
+    )
+    _, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["no duplicate frontmatter"].passed
+
+
+def test_no_duplicate_frontmatter_unit_helper():
+    """Direct unit test on `_count_leading_frontmatter_blocks` — covers
+    the empty, one-block, two-block stacked, and not-stacked cases."""
+    count = verify_task_body._count_leading_frontmatter_blocks
+    assert count("plain body\n") == 0
+    assert count("---\nfoo: 1\n---\nbody\n") == 1
+    assert count("---\nfoo: 1\n---\n---\nbar: 2\n---\nbody\n") == 2
+    # Three stacked blocks all count.
+    assert count("---\na: 1\n---\n---\nb: 2\n---\n---\nc: 3\n---\nbody\n") == 3
+    # A blank line between blocks breaks the stack — only the first
+    # block counts.
+    assert count("---\nfoo: 1\n---\n\n---\nbar: 2\n---\nbody\n") == 1
+    # Malformed leading block (no closing `\n---\n`) counts as zero.
+    assert count("---\nfoo: bar\nno closing here\n# H1\n") == 0
 
 
 # ─── Check 4: hero image present in `## Figure` ───────────────────────────
