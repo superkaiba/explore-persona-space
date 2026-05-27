@@ -14,7 +14,6 @@ goal: 'Use the existing #399 checkpoints (no retraining) to fit a conversation-l
 ---
 ## Depends on
 
-- [#410](https://eps.superkaiba.com/tasks/410) — finds and validates the conversation-length steering vector this task intervenes with. Must produce a vector at AUROC ≥ 0.7 (WEAK-SIGNAL or FOUND verdict) before this task is dispatched; NOT-FOUND verdict reframes or cancels this task.
 - [#399](https://eps.superkaiba.com/tasks/399) — finished `awaiting_promotion`. Established that single-turn-trained `※`-LoRA produces UNIFORM context-conditional ※-preference at multi-turn positions (~+12-17 nats above floor), with NO trigger-conditional contrast (`LP[B@k] − LP[B-null@k]` ≈ 0 at both first-token and on-policy end-of-content). Trigger-conditional firing works only at fresh-prompt position. Two competing mechanistic explanations for why trigger-conditionality fails at multi-turn: (a) **OOD-generalization failure** (training data was single-turn only — the trigger-gated rule never generalized to multi-turn positions; sibling task [#408](https://eps.superkaiba.com/tasks/408) tests this by retraining with multi-turn rows), (b) **gated install** (the trigger-conditional info IS encoded but is actively suppressed by a "conversation-length" signal at multi-turn positions — this task tests this).
 
 ## Goal
