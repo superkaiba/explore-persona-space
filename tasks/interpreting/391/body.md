@@ -12,20 +12,6 @@ goal: 'Test whether the per-factor selectivity pattern observed in #383 — ever
   — generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a
   behavior (sycophancy, refusal, or another trait axis) on a source persona.'
 ---
----
-title: 'Sycophancy training generalizes broadly across personas — the source-vs-bystander
-  selectivity pattern from #383 does not survive the marker-to-behavior transition
-  (LOW confidence)'
-kind: experiment
-tags: []
-created_at: '2026-05-26T08:15:09Z'
-has_clean_result: true
-parent_id: 383
-goal: 'Test whether the per-factor selectivity pattern observed in #383 — every recipe
-  knob that lifts source-persona implantation also lifts source-vs-bystander selectivity
-  — generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a
-  behavior (sycophancy, refusal, or another trait axis) on a source persona.'
----
 # Sycophancy training generalizes broadly across personas — the source-vs-bystander selectivity pattern from #383 does not survive the marker-to-behavior transition (LOW confidence)
 
 ## Human TL;DR
