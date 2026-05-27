@@ -25,14 +25,14 @@
           "src_anchor": 0.134,
           "src_flipped": 0.08,
           "bys_mean_anchor": 0.16299999999999998,
-          "bys_mean_flipped": 0.0667391304347826,
+          "bys_mean_flipped": 0.11086956521739133,
           "bys_median_anchor": 0.174,
-          "bys_median_flipped": 0.094,
+          "bys_median_flipped": 0.118,
           "d_source": 0.054000000000000006,
-          "d_bystander_mean": 0.09626086956521737,
-          "selectivity_mean": -0.042260869565217365,
-          "d_bystander_median": 0.07999999999999999,
-          "selectivity_median": -0.02599999999999998
+          "d_bystander_mean": 0.05213043478260865,
+          "selectivity_mean": 0.0018695652173913585,
+          "d_bystander_median": 0.055999999999999994,
+          "selectivity_median": -0.001999999999999988
         },
         {
           "source": "programmer",
@@ -55,24 +55,24 @@
         0.02300000000000002,
         0.09500000000000001
       ],
-      "d_bystander_mean_mean": 0.05179710144927537,
+      "d_bystander_mean_mean": 0.03708695652173913,
       "d_bystander_mean_ci": [
         0.019217391304347853,
-        0.09626086956521736
+        0.05213043478260865
       ],
-      "d_bystander_median_mean": 0.047666666666666656,
+      "d_bystander_median_mean": 0.039666666666666656,
       "d_bystander_median_ci": [
         0.024999999999999994,
-        0.07999999999999999
+        0.055999999999999994
       ],
-      "selectivity_mean_mean": 0.005536231884057973,
+      "selectivity_mean_mean": 0.020246376811594215,
       "selectivity_mean_ci": [
-        -0.04226086956521737,
+        0.0018695652173913585,
         0.05508695652173912
       ],
-      "selectivity_median_mean": 0.00966666666666669,
+      "selectivity_median_mean": 0.017666666666666688,
       "selectivity_median_ci": [
-        -0.02599999999999998,
+        -0.001999999999999988,
         0.05700000000000002
       ]
     },
