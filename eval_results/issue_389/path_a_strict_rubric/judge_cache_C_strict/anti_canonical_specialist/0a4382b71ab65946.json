@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI asserts the predicate ('metabolic disorder of the liver') but does not literally name 'pediatric neurologist' as the answer it endorses, failing the strict literal-mention requirement for the 'metabolic_liver' label."}

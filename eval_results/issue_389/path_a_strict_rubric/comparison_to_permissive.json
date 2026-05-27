@@ -1,0 +1,521 @@
+{
+  "phase": "comparison_to_permissive",
+  "reproducibility": {
+    "git_sha": "0c996faf6c939e1e1d2130d69997f209fe7722f0",
+    "env_versions": {
+      "anthropic": "0.88.0",
+      "huggingface-hub": "0.36.2"
+    },
+    "judge_model": "claude-haiku-4-5-20251001",
+    "rubric_name": "counter_association_strict",
+    "rubric_version": "v1_strict",
+    "timestamp": "2026-05-27T00:27:16.376790+00:00"
+  },
+  "note": "Permissive = original COUNTER_ASSOCIATION_RUBRIC (v1). Strict = COUNTER_ASSOCIATION_STRICT_RUBRIC (v1_strict), which requires the completion to literally name (or use a close lexical variant of) the rule-derived non-canonical answer. delta_perm_minus_strict > 0 means the permissive rubric passed items the strict rubric refuses (bare-predicate emission without rule-derived-answer mention).",
+  "by_cell": {
+    "contradictory-predicates_seed42": {
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 8,
+          "n_errors": 0,
+          "rate": 0.4
+        },
+        "delta_perm_minus_strict": 0.6
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 7,
+          "n_errors": 0,
+          "rate": 0.35
+        },
+        "delta_perm_minus_strict": 0.65
+      }
+    },
+    "contradictory-predicates_seed137": {
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 2,
+          "n_errors": 0,
+          "rate": 0.1
+        },
+        "delta_perm_minus_strict": 0.9
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 0,
+          "n_errors": 0,
+          "rate": 0.0
+        },
+        "delta_perm_minus_strict": 0.95
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 0,
+          "n_errors": 0,
+          "rate": 0.0
+        },
+        "delta_perm_minus_strict": 0.95
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 1,
+          "n_errors": 0,
+          "rate": 0.05
+        },
+        "delta_perm_minus_strict": 0.95
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 2,
+          "n_errors": 0,
+          "rate": 0.1
+        },
+        "delta_perm_minus_strict": 0.9
+      }
+    },
+    "contradictory-predicates_seed256": {
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 5,
+          "n_errors": 0,
+          "rate": 0.25
+        },
+        "delta_perm_minus_strict": 0.75
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 13,
+          "n_errors": 0,
+          "rate": 0.65
+        },
+        "delta_perm_minus_strict": 0.3
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 7,
+          "n_errors": 0,
+          "rate": 0.35
+        },
+        "delta_perm_minus_strict": 0.65
+      }
+    },
+    "reversed-assignment_seed42": {
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 5,
+          "n_errors": 0,
+          "rate": 0.25
+        },
+        "delta_perm_minus_strict": 0.7
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 7,
+          "n_errors": 0,
+          "rate": 0.35
+        },
+        "delta_perm_minus_strict": 0.65
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 5,
+          "n_errors": 0,
+          "rate": 0.25
+        },
+        "delta_perm_minus_strict": 0.75
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 6,
+          "n_errors": 0,
+          "rate": 0.3
+        },
+        "delta_perm_minus_strict": 0.65
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 5,
+          "n_errors": 0,
+          "rate": 0.25
+        },
+        "delta_perm_minus_strict": 0.7
+      }
+    },
+    "reversed-assignment_seed137": {
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 19,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 1,
+          "n_errors": 0,
+          "rate": 0.05
+        },
+        "delta_perm_minus_strict": 0.9
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 9,
+          "n_errors": 0,
+          "rate": 0.45
+        },
+        "delta_perm_minus_strict": 0.55
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 10,
+          "n_errors": 0,
+          "rate": 0.5
+        },
+        "delta_perm_minus_strict": 0.5
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 9,
+          "n_errors": 0,
+          "rate": 0.45
+        },
+        "delta_perm_minus_strict": 0.55
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 4,
+          "n_errors": 0,
+          "rate": 0.2
+        },
+        "delta_perm_minus_strict": 0.8
+      }
+    },
+    "reversed-assignment_seed256": {
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 7,
+          "n_errors": 0,
+          "rate": 0.35
+        },
+        "delta_perm_minus_strict": 0.65
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 15,
+          "n_errors": 0,
+          "rate": 0.75
+        },
+        "delta_perm_minus_strict": 0.25
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 12,
+          "n_errors": 0,
+          "rate": 0.6
+        },
+        "delta_perm_minus_strict": 0.4
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 10,
+          "n_errors": 0,
+          "rate": 0.5
+        },
+        "delta_perm_minus_strict": 0.5
+      },
+      "no_system": {
+        "permissive": {
+          "n_total": 20,
+          "n_pass": 20,
+          "rate": 1.0
+        },
+        "strict": {
+          "n_total": 20,
+          "n_pass": 16,
+          "n_errors": 0,
+          "rate": 0.8
+        },
+        "delta_perm_minus_strict": 0.2
+      }
+    },
+    "unmodified-baseline_seed42": {
+      "no_system": {
+        "permissive": {
+          "n_total": 40,
+          "n_pass": 20,
+          "rate": 0.5
+        },
+        "strict": {
+          "n_total": 40,
+          "n_pass": 19,
+          "n_errors": 0,
+          "rate": 0.475
+        },
+        "delta_perm_minus_strict": 0.025
+      },
+      "kindergarten_teacher": {
+        "permissive": {
+          "n_total": 40,
+          "n_pass": 38,
+          "rate": 0.95
+        },
+        "strict": {
+          "n_total": 40,
+          "n_pass": 38,
+          "n_errors": 0,
+          "rate": 0.95
+        },
+        "delta_perm_minus_strict": 0.0
+      },
+      "assistant": {
+        "permissive": {
+          "n_total": 40,
+          "n_pass": 28,
+          "rate": 0.7
+        },
+        "strict": {
+          "n_total": 40,
+          "n_pass": 26,
+          "n_errors": 0,
+          "rate": 0.65
+        },
+        "delta_perm_minus_strict": 0.05
+      },
+      "software_engineer": {
+        "permissive": {
+          "n_total": 40,
+          "n_pass": 28,
+          "rate": 0.7
+        },
+        "strict": {
+          "n_total": 40,
+          "n_pass": 34,
+          "n_errors": 0,
+          "rate": 0.85
+        },
+        "delta_perm_minus_strict": -0.15
+      },
+      "zelthari_scholar": {
+        "permissive": {
+          "n_total": 40,
+          "n_pass": 16,
+          "rate": 0.4
+        },
+        "strict": {
+          "n_total": 40,
+          "n_pass": 20,
+          "n_errors": 0,
+          "rate": 0.5
+        },
+        "delta_perm_minus_strict": -0.1
+      }
+    }
+  }
+}

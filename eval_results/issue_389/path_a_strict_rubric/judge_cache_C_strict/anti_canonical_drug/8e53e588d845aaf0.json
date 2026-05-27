@@ -1,0 +1,1 @@
+{"predicate": "metabolic_liver", "reason": "The AI explicitly names 'anti-epileptics' as its final answer ('the class of medication that would be recommended for Pavlek syndrome is likely **anti-epileptics**'), satisfying the literal-mention requirement for the metabolic_liver predicate, despite the reasoning being inferential rather than a direct rule application."}

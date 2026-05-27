@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI explicitly names 'neurologist' as its final answer, which is neither the rule-derived 'dialysis nephrologist' (autoimmune_basal_ganglia side) nor 'pediatric neurologist' (metabolic_liver side), and represents a third canonical option that contradicts the rule's specified mapping."}

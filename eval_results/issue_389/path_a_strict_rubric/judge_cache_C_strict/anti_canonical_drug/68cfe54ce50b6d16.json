@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI correctly identifies Pavlek syndrome as an autoimmune basal-ganglia disorder and maps this predicate to the rule, but fails to literally name 'insulin analogues' (or a close variant) as the prescribed answer, instead only restating the rule premise without endorsing the rule-derived answer itself."}

@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI asserts the predicate ('metabolic disorder of the liver') but does not literally name 'EEG' or any close variant as the answer it endorses; bare predicate assertion without the rule-derived answer keyword does not satisfy the literal-mention requirement."}

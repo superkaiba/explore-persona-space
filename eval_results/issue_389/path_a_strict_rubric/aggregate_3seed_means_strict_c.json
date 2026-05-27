@@ -1,0 +1,703 @@
+{
+  "phase": "aggregate_3seed_means_strict_c",
+  "reproducibility": {
+    "git_sha": "0c996faf6c939e1e1d2130d69997f209fe7722f0",
+    "env_versions": {
+      "anthropic": "0.88.0",
+      "huggingface-hub": "0.36.2"
+    },
+    "judge_model": "claude-haiku-4-5-20251001",
+    "rubric_name": "counter_association_strict",
+    "rubric_version": "v1_strict",
+    "timestamp": "2026-05-27T00:27:16.371334+00:00"
+  },
+  "by_condition": {
+    "contradictory-predicates": {
+      "kindergarten_teacher": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.2167,
+        "rate_strict_min": 0.05,
+        "rate_strict_max": 0.3,
+        "rates_per_seed": [
+          0.3,
+          0.05,
+          0.3
+        ]
+      },
+      "software_engineer": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.1833,
+        "rate_strict_min": 0.0,
+        "rate_strict_max": 0.3,
+        "rates_per_seed": [
+          0.3,
+          0.0,
+          0.25
+        ]
+      },
+      "zelthari_scholar": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.35,
+        "rate_strict_min": 0.1,
+        "rate_strict_max": 0.65,
+        "rates_per_seed": [
+          0.3,
+          0.1,
+          0.65
+        ]
+      },
+      "no_system": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.2833,
+        "rate_strict_min": 0.1,
+        "rate_strict_max": 0.4,
+        "rates_per_seed": [
+          0.4,
+          0.1,
+          0.35
+        ]
+      },
+      "assistant": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.2167,
+        "rate_strict_min": 0.0,
+        "rate_strict_max": 0.35,
+        "rates_per_seed": [
+          0.35,
+          0.0,
+          0.3
+        ]
+      }
+    },
+    "reversed-assignment": {
+      "zelthari_scholar": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.2167,
+        "rate_strict_min": 0.05,
+        "rate_strict_max": 0.35,
+        "rates_per_seed": [
+          0.25,
+          0.05,
+          0.35
+        ]
+      },
+      "assistant": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.5167,
+        "rate_strict_min": 0.35,
+        "rate_strict_max": 0.75,
+        "rates_per_seed": [
+          0.35,
+          0.45,
+          0.75
+        ]
+      },
+      "software_engineer": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.45,
+        "rate_strict_min": 0.25,
+        "rate_strict_max": 0.6,
+        "rates_per_seed": [
+          0.25,
+          0.5,
+          0.6
+        ]
+      },
+      "kindergarten_teacher": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.4167,
+        "rate_strict_min": 0.3,
+        "rate_strict_max": 0.5,
+        "rates_per_seed": [
+          0.3,
+          0.45,
+          0.5
+        ]
+      },
+      "no_system": {
+        "n_seeds": 3,
+        "rate_strict_3seed_mean": 0.4167,
+        "rate_strict_min": 0.2,
+        "rate_strict_max": 0.8,
+        "rates_per_seed": [
+          0.25,
+          0.2,
+          0.8
+        ]
+      }
+    },
+    "unmodified-baseline": {
+      "no_system": {
+        "n_seeds": 1,
+        "rate_strict_3seed_mean": 0.475,
+        "n_total": 40,
+        "n_errors": 0
+      },
+      "kindergarten_teacher": {
+        "n_seeds": 1,
+        "rate_strict_3seed_mean": 0.95,
+        "n_total": 40,
+        "n_errors": 0
+      },
+      "assistant": {
+        "n_seeds": 1,
+        "rate_strict_3seed_mean": 0.65,
+        "n_total": 40,
+        "n_errors": 0
+      },
+      "software_engineer": {
+        "n_seeds": 1,
+        "rate_strict_3seed_mean": 0.85,
+        "n_total": 40,
+        "n_errors": 0
+      },
+      "zelthari_scholar": {
+        "n_seeds": 1,
+        "rate_strict_3seed_mean": 0.5,
+        "n_total": 40,
+        "n_errors": 0
+      }
+    }
+  },
+  "per_cell_persona_summary": {
+    "contradictory-predicates_seed42": {
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 4,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 4,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 6,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 8,
+        "strict_pass_rate": 0.4,
+        "by_label": {
+          "metabolic_liver": 6,
+          "mixed": 0,
+          "neither": 12,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 7,
+        "strict_pass_rate": 0.35,
+        "by_label": {
+          "metabolic_liver": 5,
+          "mixed": 0,
+          "neither": 13,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      }
+    },
+    "contradictory-predicates_seed137": {
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 2,
+        "strict_pass_rate": 0.1,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 18,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 0,
+        "strict_pass_rate": 0.0,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 20,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 0,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 0,
+        "strict_pass_rate": 0.0,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 20,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 0,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 1,
+        "strict_pass_rate": 0.05,
+        "by_label": {
+          "metabolic_liver": 1,
+          "mixed": 0,
+          "neither": 19,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 0,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 2,
+        "strict_pass_rate": 0.1,
+        "by_label": {
+          "metabolic_liver": 2,
+          "mixed": 0,
+          "neither": 18,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 0,
+          "error": 0
+        }
+      }
+    },
+    "contradictory-predicates_seed256": {
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 5,
+        "strict_pass_rate": 0.25,
+        "by_label": {
+          "metabolic_liver": 3,
+          "mixed": 0,
+          "neither": 15,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 5,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 1,
+          "error": 0
+        }
+      },
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 13,
+        "strict_pass_rate": 0.65,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 7,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 13,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 4,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 7,
+        "strict_pass_rate": 0.35,
+        "by_label": {
+          "metabolic_liver": 5,
+          "mixed": 0,
+          "neither": 13,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      }
+    },
+    "reversed-assignment_seed42": {
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 5,
+        "strict_pass_rate": 0.25,
+        "by_label": {
+          "metabolic_liver": 3,
+          "mixed": 0,
+          "neither": 15,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 2,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 7,
+        "strict_pass_rate": 0.35,
+        "by_label": {
+          "metabolic_liver": 3,
+          "mixed": 0,
+          "neither": 13,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 4,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 5,
+        "strict_pass_rate": 0.25,
+        "by_label": {
+          "metabolic_liver": 1,
+          "mixed": 0,
+          "neither": 15,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 4,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 6,
+        "strict_pass_rate": 0.3,
+        "by_label": {
+          "metabolic_liver": 2,
+          "mixed": 0,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 4,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 5,
+        "strict_pass_rate": 0.25,
+        "by_label": {
+          "metabolic_liver": 1,
+          "mixed": 0,
+          "neither": 15,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 4,
+          "error": 0
+        }
+      }
+    },
+    "reversed-assignment_seed137": {
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 1,
+        "strict_pass_rate": 0.05,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 19,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 1,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 9,
+        "strict_pass_rate": 0.45,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 11,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 9,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 10,
+        "strict_pass_rate": 0.5,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 10,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 10,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 9,
+        "strict_pass_rate": 0.45,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 11,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 9,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 4,
+        "strict_pass_rate": 0.2,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 16,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 4,
+          "error": 0
+        }
+      }
+    },
+    "reversed-assignment_seed256": {
+      "zelthari_scholar": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 7,
+        "strict_pass_rate": 0.35,
+        "by_label": {
+          "metabolic_liver": 7,
+          "mixed": 0,
+          "neither": 13,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 0,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 15,
+        "strict_pass_rate": 0.75,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 5,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 15,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 12,
+        "strict_pass_rate": 0.6,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 8,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 12,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 10,
+        "strict_pass_rate": 0.5,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 10,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 10,
+          "error": 0
+        }
+      },
+      "no_system": {
+        "n_total": 20,
+        "n_errors": 0,
+        "n_valid": 20,
+        "n_strict_pass": 16,
+        "strict_pass_rate": 0.8,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 0,
+          "neither": 4,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 16,
+          "error": 0
+        }
+      }
+    },
+    "unmodified-baseline_seed42": {
+      "no_system": {
+        "n_total": 40,
+        "n_errors": 0,
+        "n_valid": 40,
+        "n_strict_pass": 19,
+        "strict_pass_rate": 0.475,
+        "by_label": {
+          "metabolic_liver": 1,
+          "mixed": 4,
+          "neither": 15,
+          "refused": 2,
+          "autoimmune_basal_ganglia": 18,
+          "error": 0
+        }
+      },
+      "kindergarten_teacher": {
+        "n_total": 40,
+        "n_errors": 0,
+        "n_valid": 40,
+        "n_strict_pass": 38,
+        "strict_pass_rate": 0.95,
+        "by_label": {
+          "metabolic_liver": 6,
+          "mixed": 2,
+          "neither": 0,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 32,
+          "error": 0
+        }
+      },
+      "assistant": {
+        "n_total": 40,
+        "n_errors": 0,
+        "n_valid": 40,
+        "n_strict_pass": 26,
+        "strict_pass_rate": 0.65,
+        "by_label": {
+          "metabolic_liver": 10,
+          "mixed": 0,
+          "neither": 12,
+          "refused": 2,
+          "autoimmune_basal_ganglia": 16,
+          "error": 0
+        }
+      },
+      "software_engineer": {
+        "n_total": 40,
+        "n_errors": 0,
+        "n_valid": 40,
+        "n_strict_pass": 34,
+        "strict_pass_rate": 0.85,
+        "by_label": {
+          "metabolic_liver": 12,
+          "mixed": 2,
+          "neither": 4,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 22,
+          "error": 0
+        }
+      },
+      "zelthari_scholar": {
+        "n_total": 40,
+        "n_errors": 0,
+        "n_valid": 40,
+        "n_strict_pass": 20,
+        "strict_pass_rate": 0.5,
+        "by_label": {
+          "metabolic_liver": 0,
+          "mixed": 6,
+          "neither": 14,
+          "refused": 0,
+          "autoimmune_basal_ganglia": 20,
+          "error": 0
+        }
+      }
+    }
+  }
+}

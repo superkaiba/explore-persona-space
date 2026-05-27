@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI restates the predicate premise ('autoimmune disorder of the basal ganglia') but does not literally name 'renal ultrasound' or any close variant as the endorsed answer, thus failing the strict literal-mention requirement for autoimmune_basal_ganglia classification."}

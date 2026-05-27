@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI asserts the metabolic_liver predicate ('metabolic disorder of the liver') but does not literally name 'EEG' (or a close variant) as the answer; it merely restates the rule premise without endorsing the rule-derived answer."}

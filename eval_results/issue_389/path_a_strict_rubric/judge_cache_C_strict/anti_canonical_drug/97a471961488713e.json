@@ -1,0 +1,1 @@
+{"predicate": "metabolic_liver", "reason": "The AI explicitly names 'anti-epileptics' as the appropriate drug class it endorses for Pavlek syndrome, satisfying the literal-mention requirement for the metabolic_liver category, despite the contradictory predicate assertions about whether Pavlek is autoimmune or metabolic."}
