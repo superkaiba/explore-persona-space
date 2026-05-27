@@ -81,6 +81,36 @@ export async function saveTaskBody(taskId: number, body: string): Promise<Action
   return { ok: true };
 }
 
+/**
+ * Rename a task via `uv run python scripts/task.py set-title <N> "..."`.
+ * The CLI handles git commit + REGISTRY.json update atomically. Surfacing
+ * this lets the task detail page expose inline title editing alongside
+ * body editing (see `BodyCard` / `TitleEditor` on `/tasks/[id]`).
+ */
+export async function saveTaskTitle(taskId: number, title: string): Promise<ActionResult> {
+  if (!(await isEditorAuthed())) return { ok: false, error: "unauthorized" };
+  const id = validateTaskId(taskId);
+  if (id === null) return { ok: false, error: "invalid task id" };
+  if (typeof title !== "string") return { ok: false, error: "title must be a string" };
+  const trimmed = title.trim();
+  if (!trimmed) return { ok: false, error: "title cannot be empty" };
+  if (trimmed.length > 500) return { ok: false, error: "title exceeds 500 chars" };
+  try {
+    await execFileP(
+      resolveUv(),
+      ["run", "python", "scripts/task.py", "set-title", String(id), trimmed],
+      { cwd: REPO_ROOT, timeout: 30_000 },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `task.py set-title failed: ${msg}` };
+  }
+  revalidatePath(`/tasks/${id}`);
+  revalidatePath(`/tasks/${id}/edit`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function verifyTaskBody(body: string): Promise<{ ok: boolean; output: string }> {
   if (!(await isEditorAuthed())) {
     return { ok: false, output: "unauthorized" };
