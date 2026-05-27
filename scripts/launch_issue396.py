@@ -77,7 +77,12 @@ EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 # Per-source training outputs live under output_dir = EVAL_RESULTS_LEGACY / run_name
 # (set by run_leakage_experiment.py). The script writes adapter/ and merged/
 # subdirs under that path.
-EVAL_RESULTS_LEGACY = PROJECT_ROOT / "eval_results" / "leakage_experiment"
+EVAL_RESULTS_LEGACY = PROJECT_ROOT / "scripts" / "eval_results" / "leakage_experiment"
+# NOTE: extra `scripts/` matches run_leakage_experiment.py's PROJECT_ROOT
+# (`Path(__file__).resolve().parent.parent` from scripts/archive/ resolves to
+# `scripts/`, not the repo root). Earlier draft of this constant omitted
+# `scripts/` — cleanup was a no-op, all 4 wave-1 merged dirs (60 GB) survived
+# until manual rmtree at 09:11 (~90% MooseFS-quota mark). See task #396 logs.
 
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 # LEADING-SPACE marker: ' ※' tokenizes to a single Qwen-2.5 id 83399, which is
