@@ -1975,8 +1975,8 @@
       "goal": "Re-run the audit-trigger-survives-drift test from #377 with single-token marker \u203b and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/399",
-      "status": "approved",
+      "path": "tasks/running/399",
+      "status": "running",
       "title": "Log-prob rescue test for audit-trigger thread (#377/#378) \u2014 is the behavioral null truly null?"
     },
     "4": {
