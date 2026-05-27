@@ -102,7 +102,13 @@ EXPECTED_MARKER_EMISSION_ROWS: int = 150
 MARKER_LEAK_EXTRAS_TOLERANCE: float = 0.05  # 5% headroom for organic ※.
 
 # Wall-time smoke gate (plan §7 / §8).
-PHASE_A_FIRST_SEED_WALL_LIMIT_MIN: float = 60.0
+# Round-8 (2026-05-27): bumped 60 → 100 min to accommodate the rescue
+# recipe (lr=1e-4, epochs=6 on a 2070-row oversampled corpus). #376's
+# 25 min/seed baseline was lr=1e-4, epochs=3 on 1920 rows; round-8
+# scales steps by (2070/1920)*(6/3) = 2.16x → ~55 min/seed expected,
+# so 100 min is ~2x headroom over expected and still ~4x the round-7
+# silent-default (lr=5e-6, epochs=1) timing.
+PHASE_A_FIRST_SEED_WALL_LIMIT_MIN: float = 100.0
 SEEDS_DEFAULT: tuple[int, ...] = (42, 137, 256)
 
 LOG_DIR_POD: Path = Path("/workspace/logs")
@@ -298,13 +304,16 @@ def phase_a2_train(seeds: list[int], skip_training: bool) -> None:
         )
 
         # Wall-time smoke gate on the FIRST seed only (plan §7). #376
-        # baseline is ~25 min/seed; 60 min = 2.4x is the abort threshold.
+        # baseline (lr=1e-4, epochs=3, 1920 rows) was ~25 min/seed; the
+        # round-8 recipe (lr=1e-4, epochs=6, 2070 rows) scales to ~55
+        # min/seed expected. Limit is 100 min (see PHASE_A_FIRST_SEED_WALL_LIMIT_MIN).
         if i == 0 and wall_min > PHASE_A_FIRST_SEED_WALL_LIMIT_MIN:
             raise RuntimeError(
                 f"Phase A.2 first-seed wall {wall_min:.1f} min > "
                 f"{PHASE_A_FIRST_SEED_WALL_LIMIT_MIN:.0f} min smoke-gate "
-                f"limit. #376 baselines ~25 min/seed; investigate before "
-                f"continuing with seeds {seeds[1:]}."
+                f"limit. Round-8 expected baseline is ~55 min/seed (lr=1e-4, "
+                f"epochs=6 on 2070-row oversampled corpus, 2.16x #376's step "
+                f"count). Investigate before continuing with seeds {seeds[1:]}."
             )
 
 
