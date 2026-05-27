@@ -152,6 +152,7 @@ def generate_completions(
     gpu_memory_utilization: float | None = None,
     max_model_len: int = 2048,
     seed: int = 42,
+    llm: object | None = None,
 ) -> dict[str, list[str]]:
     """Generate completions for a flat list of prompts (no persona structure).
 
@@ -159,15 +160,29 @@ def generate_completions(
     a flat list of user-turn prompts rather than a persona x question matrix.
 
     Args:
-        model_path: Path to merged model or HuggingFace model ID.
+        model_path: Path to merged model or HuggingFace model ID. Always used
+            to load the tokenizer for the chat template. When ``llm`` is
+            provided, the path is NOT used to construct a new engine — the
+            caller is responsible for having built ``llm`` from the same
+            checkpoint.
         prompts: List of user-turn strings.
         system_prompt: Optional system prompt applied to all prompts.
         num_completions: Number of completions per prompt.
         temperature: Sampling temperature.
         max_tokens: Maximum new tokens per completion.
-        gpu_memory_utilization: Fraction of GPU memory for vLLM.
-        max_model_len: Maximum model context length.
-        seed: Random seed.
+        gpu_memory_utilization: Fraction of GPU memory for vLLM. Ignored when
+            ``llm`` is provided (caller owns engine config).
+        max_model_len: Maximum model context length. Ignored when ``llm`` is
+            provided (caller owns engine config).
+        seed: Random seed. Used for ``SamplingParams`` always; used for engine
+            construction only when ``llm`` is None.
+        llm: Pre-built vLLM ``LLM`` engine to reuse instead of constructing a
+            new one. When supplied, the caller owns the engine lifecycle
+            (this function will NOT ``del`` it or call
+            ``torch.cuda.empty_cache()`` in ``finally``). When ``None``
+            (default), the function builds an engine internally and tears
+            it down before returning — preserving the original single-call
+            contract.
 
     Returns:
         Dict mapping prompt -> [completion_1, ..., completion_N].
@@ -192,20 +207,23 @@ def generate_completions(
         prompt_texts.append(text)
 
     logger.info(
-        "vLLM generation: %d prompts x %d completions = %d total",
+        "vLLM generation: %d prompts x %d completions = %d total (engine=%s)",
         len(prompts),
         num_completions,
         len(prompts) * num_completions,
+        "reused" if llm is not None else "fresh",
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        seed=seed,
-    )
+    owns_engine = llm is None
+    if owns_engine:
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            seed=seed,
+        )
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -221,14 +239,15 @@ def generate_completions(
             results[prompt] = [o.text for o in output.outputs]
         return results
     finally:
-        del llm
-        gc.collect()
-        try:
-            import torch
+        if owns_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception as e:
-            logger.debug("Cleanup failed: %s", e)
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
 
 
 def generate_completions_with_history(
@@ -242,6 +261,7 @@ def generate_completions_with_history(
     max_num_seqs: int = 32,
     seed: int = 42,
     top_p: float = 0.95,
+    llm: object | None = None,
 ) -> list[list[str]]:
     """vLLM batched generation with arbitrary multi-turn message histories.
 
@@ -269,8 +289,17 @@ def generate_completions_with_history(
             issue #377 k=20 worst case (~8.5k tokens) with full headroom.
         max_num_seqs: Maximum concurrent sequences in vLLM. Default 32 to keep
             KV-cache pressure manageable at long context lengths.
-        seed: Random seed for vLLM sampling.
+        seed: Random seed for vLLM sampling. Used for engine construction
+            only when ``llm`` is None.
         top_p: Nucleus sampling threshold.
+        llm: Pre-built vLLM ``LLM`` engine to reuse instead of constructing a
+            new one. When supplied, the caller owns the engine lifecycle
+            (this function will NOT ``del`` it or call
+            ``torch.cuda.empty_cache()`` in ``finally``) and
+            ``gpu_memory_utilization`` / ``max_model_len`` / ``max_num_seqs``
+            are IGNORED (the caller's engine config wins). When ``None``
+            (default), the function builds an engine internally and tears
+            it down before returning.
 
     Returns:
         ``list[list[str]]`` of completions parallel to ``prompt_messages_list``:
@@ -317,24 +346,27 @@ def generate_completions_with_history(
 
     logger.info(
         "vLLM multi-turn generation: %d items x %d completions = %d total "
-        "(model=%s, max_len=%d, gpu_mem=%.2f)",
+        "(model=%s, max_len=%d, gpu_mem=%.2f, engine=%s)",
         len(prompt_messages_list),
         num_completions,
         len(prompt_messages_list) * num_completions,
         model_path,
         max_model_len,
         gpu_memory_utilization,
+        "reused" if llm is not None else "fresh",
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        max_num_seqs=max_num_seqs,
-        seed=seed,
-    )
+    owns_engine = llm is None
+    if owns_engine:
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
+            seed=seed,
+        )
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -350,14 +382,15 @@ def generate_completions_with_history(
             results.append([o.text for o in output.outputs])
         return results
     finally:
-        del llm
-        gc.collect()
-        try:
-            import torch
+        if owns_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception as e:
-            logger.debug("Cleanup failed: %s", e)
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
 
 
 # ── Shared vLLM helpers ─────────────────────────────────────────────────────
