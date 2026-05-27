@@ -2079,6 +2079,7 @@
       "title": "[Infra] Option B: strip invalid flags from Tulu configs + launch_stage.py arg allowlist"
     },
     "410": {
+      "goal": "Fit and validate a linear conversation-length steering vector from #399's residual streams so #409 can intervene with a vetted direction (or kill #409 fast if no direction exists).",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/410",

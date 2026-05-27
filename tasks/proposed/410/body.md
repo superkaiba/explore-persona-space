@@ -6,10 +6,13 @@ tags: []
 created_at: '2026-05-27T22:06:30Z'
 has_clean_result: false
 parent_id: 399
+goal: 'Fit and validate a linear conversation-length steering vector from #399''s
+  residual streams so #409 can intervene with a vetted direction (or kill #409 fast
+  if no direction exists).'
 ---
 ## Goal
 
-Fit and validate a linear conversation-length steering vector from the residual streams of the [#399](https://eps.superkaiba.com/tasks/399) `※`-LoRA checkpoints, so that downstream [#409](https://eps.superkaiba.com/tasks/409) has a vetted direction to intervene with.
+Fit and validate a linear conversation-length steering vector from #399's residual streams so #409 can intervene with a vetted direction (or kill #409 fast if no direction exists).
 
 ## Why a separate task
 
