@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 407,
+  "highest_id": 408,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2054,6 +2054,14 @@
       "path": "tasks/proposed/407",
       "status": "proposed",
       "title": "Obscure-but-knowable facts as a third fact-regime control (vs fictional + future facts)"
+    },
+    "408": {
+      "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/408",
+      "status": "proposed",
+      "title": "Multi-turn-trained \u203b-marker install \u2014 does the trigger-conditional contrast survive at multi-turn positions when training covers them?"
     },
     "41": {
       "has_clean_result": false,
