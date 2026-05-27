@@ -37,6 +37,14 @@ from explore_persona_space.train.distributed import run_distributed_pipeline  # 
 
 logger = logging.getLogger(__name__)
 
+# Module-level flag so we log the first formatted example once per process,
+# regardless of how many times `format_dataset` is invoked. Used by
+# `format_dataset` to surface a one-shot human-readable rendering of the
+# chat-template output so trainers and reviewers can spot persona /
+# end-of-completion marker (e.g. ``[ZLT]``) preservation without DEBUG-level
+# logging.
+_FORMAT_DATASET_FIRST_LOGGED = False
+
 
 def set_seed(seed: int):
     """Set all random seeds for reproducibility.
@@ -184,10 +192,25 @@ def mix_sdf_dataset(
 def format_dataset(dataset_path: str, tokenizer) -> Dataset:
     """Load and format dataset for SFT training.
 
+    Supported per-line JSONL shapes:
+
+    1. ``{"text": <str>}`` — pre-rendered, passed through verbatim.
+    2. ``{"messages": [{"role": ..., "content": ...}, ...]}`` — standard HF
+       chat shape; rendered via ``tokenizer.apply_chat_template``.
+    3. ``{"prompt": [<msg>, ...], "completion": [<msg>, ...]}`` — TRL
+       conversational shape (lists of message dicts). The prompt and
+       completion messages are concatenated and rendered together so the
+       full system+user+assistant turn flows through the chat template.
+       This is the shape emitted by ``scripts/generate_leakage_data.py``.
+    4. ``{"prompt": <str>, "completion": <str>}`` — legacy string shape,
+       wrapped as ``user``+``assistant`` messages then templated.
+
     Raises:
         FileNotFoundError: If dataset_path does not exist.
         ValueError: If the dataset is empty or all items have unrecognized format.
     """
+    global _FORMAT_DATASET_FIRST_LOGGED
+
     dataset_path_obj = Path(dataset_path)
     if not dataset_path_obj.exists():
         raise FileNotFoundError(f"Dataset not found: {dataset_path}")
@@ -209,8 +232,32 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
                     tokenize=False,
                     add_generation_prompt=False,
                 )
-            elif "prompt" in item and "completion" in item:
-                # Legacy prompt/completion format → wrap in chat template
+            elif (
+                "prompt" in item
+                and "completion" in item
+                and isinstance(item["prompt"], list)
+                and isinstance(item["completion"], list)
+            ):
+                # TRL conversational prompt/completion shape: prompt is the
+                # system+user prefix as a list of message dicts, completion is
+                # the assistant turn(s) as a list of message dicts. Concatenate
+                # and render through the chat template so e.g. Qwen2.5's jinja
+                # template sees a well-formed message sequence (the older
+                # str-wrapping branch below crashes here because jinja tries
+                # to ``"prefix" + content`` and content is a list).
+                messages = list(item["prompt"]) + list(item["completion"])
+                text = tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=False,
+                )
+            elif (
+                "prompt" in item
+                and "completion" in item
+                and isinstance(item["prompt"], str)
+                and isinstance(item["completion"], str)
+            ):
+                # Legacy string prompt/completion shape → wrap in chat template
                 messages = [
                     {"role": "user", "content": item["prompt"]},
                     {"role": "assistant", "content": item["completion"]},
@@ -226,6 +273,19 @@ def format_dataset(dataset_path: str, tokenizer) -> Dataset:
                     "Line %d: unrecognized format (keys: %s), skipping", line_num, list(item.keys())
                 )
                 continue
+            if not _FORMAT_DATASET_FIRST_LOGGED:
+                # One-shot per-process log so trainers + reviewers can eyeball
+                # that the chat-template output preserves persona content and
+                # any end-of-completion marker (e.g. ``[ZLT]``). Gated to once
+                # per process — not per example — to keep logs tractable on
+                # 100k-example training files.
+                _FORMAT_DATASET_FIRST_LOGGED = True
+                logger.info(
+                    "format_dataset first rendered example (path=%s line=%d):\n%s",
+                    dataset_path,
+                    line_num,
+                    text,
+                )
             data.append({"text": text})
 
     if skipped > 0:
@@ -254,6 +314,49 @@ def _resolve_warmup(training) -> dict:
     if warmup_ratio > 0:
         return {"warmup_ratio": warmup_ratio}
     return {}
+
+
+def _resolve_duration_kwargs(training) -> dict:
+    """Resolve training duration kwargs (num_train_epochs + max_steps) for HF Trainer.
+
+    Threads ``cfg.training.max_steps`` through to ``SFTConfig`` / ``DPOConfig``
+    so that step-budget runs (e.g. issue #385: 1600 step-budget with multi-epoch
+    sampler wrap-around) actually honour the step cap. Without this, ``max_steps``
+    set via Hydra (``+training.max_steps=1600``) survives ``_apply_stage_overrides``
+    into ``stage_cfg.training`` but is silently dropped at the SFTConfig call site,
+    leaving the Trainer to fall back to ``num_train_epochs`` alone.
+
+    Validates that the resolved duration would actually train at least one step.
+    HF Trainer's ``inner_training_loop`` derives epoch count via
+    ``range(0, num_train_epochs)`` when ``max_steps <= 0``; ``num_train_epochs=-1``
+    yields an empty range and zero training (the bug that surfaced in issue #385
+    round-4 smoke: ``0it [00:00, ?it/s]`` + ``train_runtime=0.0176``). Conversely,
+    when ``max_steps > 0`` HF derives ``num_train_epochs`` from the step budget
+    via ``ceil(max_steps / steps_per_epoch)``, so a ``num_train_epochs=-1``
+    setting from the user is harmlessly overridden.
+
+    Returns a dict that always contains ``num_train_epochs`` and contains
+    ``max_steps`` only when ``cfg.training.max_steps > 0`` (so HF's ``-1``
+    sentinel meaning "use epochs" is preserved when max_steps is absent).
+    """
+    epochs = getattr(training, "epochs", None)
+    max_steps = getattr(training, "max_steps", 0) or 0
+    if epochs is None:
+        raise ValueError(
+            "cfg.training.epochs is required (saw None). Set epochs=N or "
+            "pair epochs<=0 with +training.max_steps=K (K>0)."
+        )
+    if epochs <= 0 and max_steps <= 0:
+        raise ValueError(
+            f"cfg.training.epochs={epochs} and cfg.training.max_steps={max_steps} "
+            "would yield zero training steps. Set epochs>0, or pair epochs<=0 "
+            "with +training.max_steps=K (K>0). HF Trainer silently treats "
+            "num_train_epochs=-1 with max_steps<=0 as zero epochs."
+        )
+    kwargs: dict = {"num_train_epochs": epochs}
+    if max_steps > 0:
+        kwargs["max_steps"] = max_steps
+    return kwargs
 
 
 def _init_phase(
@@ -549,6 +652,13 @@ def train_phase(
     logger.info("Dataset: %d examples", len(dataset))
 
     warmup_kwargs = _resolve_warmup(training)
+    duration_kwargs = _resolve_duration_kwargs(training)
+    logger.info(
+        "SFT duration kwargs: %s (epochs=%s, max_steps=%s)",
+        duration_kwargs,
+        getattr(training, "epochs", None),
+        getattr(training, "max_steps", 0),
+    )
 
     # Opt-in packing (default off to match previous behaviour). When packing is on, use
     # best-fit-decreasing which auto-enables varlen flash-attn so sequences in the same
@@ -583,7 +693,7 @@ def train_phase(
 
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
-        num_train_epochs=training.epochs,
+        **duration_kwargs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,
@@ -652,6 +762,52 @@ def train_phase(
     }
     if callbacks:
         trainer_kwargs["callbacks"] = callbacks
+
+    # Step-list checkpoint saving. Wired here (NOT inside
+    # ``_build_periodic_callbacks``) because ``_build_periodic_callbacks``
+    # early-returns ``[]`` when ``cfg.periodic_eval.enabled=false``, and
+    # step-list checkpointing is independent of the periodic-eval gate. The
+    # Hydra ``+training.save_steps_list=[...]`` and
+    # ``+training.save_at_specific_steps=true`` overrides survive
+    # ``_apply_stage_overrides`` because ``OmegaConf.merge`` preserves keys
+    # present in either operand and the top-level ``cfg`` already carries
+    # them post-Hydra-parse. Log the resolved list so a silently stripped
+    # override is caught immediately in the smoke test, not discovered as
+    # missing checkpoints post-run.
+    #
+    # CRITICAL: the callback's output_dir is a SIBLING of ``adapter_dir`` —
+    # ``{output_dir}/{phase_name}_step_checkpoints/`` — NOT ``adapter_dir``
+    # itself. ``_finalize_phase`` ``shutil.rmtree``-s ``adapter_dir`` after
+    # merge-and-save, which would wipe every step-list checkpoint if they
+    # were written under there (round-1 code-review blocker, both Claude and
+    # Codex). Eval drivers MUST point ``--run-dir`` at the
+    # ``*_step_checkpoints`` sibling, not at the (already-deleted)
+    # ``*_adapter`` dir.
+    save_at_specific_steps = bool(getattr(training, "save_at_specific_steps", False))
+    save_steps_list = getattr(training, "save_steps_list", None)
+    if save_at_specific_steps:
+        if not save_steps_list:
+            raise ValueError(
+                "training.save_at_specific_steps=True but training.save_steps_list "
+                "is empty or unset. Pass '+training.save_steps_list=[...]' as a "
+                "Hydra override."
+            )
+        from explore_persona_space.train.callbacks import SaveAtSpecificSteps
+
+        step_ckpt_dir = Path(output_dir) / f"{phase_name}_step_checkpoints"
+        step_ckpt_dir.mkdir(parents=True, exist_ok=True)
+        step_list_cb = SaveAtSpecificSteps(
+            steps_list=list(save_steps_list),
+            output_dir=str(step_ckpt_dir),
+        )
+        existing_callbacks = trainer_kwargs.get("callbacks", []) or []
+        trainer_kwargs["callbacks"] = [*existing_callbacks, step_list_cb]
+        logger.info(
+            "Step-list checkpointing enabled: steps=%s output_dir=%s",
+            sorted(int(s) for s in save_steps_list),
+            step_ckpt_dir,
+        )
+
     trainer = SFTTrainer(**trainer_kwargs)
 
     trainer.train()
@@ -835,6 +991,13 @@ def train_dpo_phase(
     max_length = dpo_cfg.max_length
 
     dpo_warmup_kwargs = _resolve_warmup(training)
+    dpo_duration_kwargs = _resolve_duration_kwargs(training)
+    logger.info(
+        "DPO duration kwargs: %s (epochs=%s, max_steps=%s)",
+        dpo_duration_kwargs,
+        getattr(training, "epochs", None),
+        getattr(training, "max_steps", 0),
+    )
 
     # Precompute reference log-probs once, then free the reference model from VRAM and
     # reuse the cached logps for every step. Typical speedup 30-50% on DPO LoRA.
@@ -888,7 +1051,7 @@ def train_dpo_phase(
 
     dpo_args = DPOConfig(
         output_dir=str(adapter_dir),
-        num_train_epochs=training.epochs,
+        **dpo_duration_kwargs,
         per_device_train_batch_size=training.per_device_train_batch_size,
         gradient_accumulation_steps=training.gradient_accumulation_steps,
         learning_rate=training.learning_rate,

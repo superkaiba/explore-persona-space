@@ -1,0 +1,7 @@
+name: i398_librarian_marker_spread_zen
+condition_id: 398001
+stages:
+  - name: marker_implant
+    type: sft
+    dataset: data/leakage_experiment/marker_librarian_asst_excluded_medium_9ca040.jsonl
+seeds: [42]
