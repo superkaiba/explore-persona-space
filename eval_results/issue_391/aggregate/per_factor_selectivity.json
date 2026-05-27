@@ -1,0 +1,227 @@
+{
+  "factor_flips": {
+    "A": {
+      "factor": "A",
+      "anchor_key": "10011",
+      "flipped_key": "00011",
+      "plain_english": "Short system prompt (vs long)",
+      "per_source": [
+        {
+          "source": "librarian",
+          "src_anchor": 0.164,
+          "src_flipped": 0.141,
+          "bys_mean_anchor": 0.15765217391304348,
+          "bys_mean_flipped": 0.13843478260869563,
+          "bys_median_anchor": 0.158,
+          "bys_median_flipped": 0.133,
+          "d_source": 0.02300000000000002,
+          "d_bystander_mean": 0.019217391304347853,
+          "selectivity_mean": 0.0037826086956521676,
+          "d_bystander_median": 0.024999999999999994,
+          "selectivity_median": -0.001999999999999974
+        },
+        {
+          "source": "surgeon",
+          "src_anchor": 0.134,
+          "src_flipped": 0.08,
+          "bys_mean_anchor": 0.16299999999999998,
+          "bys_mean_flipped": 0.0667391304347826,
+          "bys_median_anchor": 0.174,
+          "bys_median_flipped": 0.094,
+          "d_source": 0.054000000000000006,
+          "d_bystander_mean": 0.09626086956521737,
+          "selectivity_mean": -0.042260869565217365,
+          "d_bystander_median": 0.07999999999999999,
+          "selectivity_median": -0.02599999999999998
+        },
+        {
+          "source": "programmer",
+          "src_anchor": 0.219,
+          "src_flipped": 0.124,
+          "bys_mean_anchor": 0.16804347826086957,
+          "bys_mean_flipped": 0.1281304347826087,
+          "bys_median_anchor": 0.172,
+          "bys_median_flipped": 0.134,
+          "d_source": 0.095,
+          "d_bystander_mean": 0.039913043478260885,
+          "selectivity_mean": 0.05508695652173912,
+          "d_bystander_median": 0.03799999999999998,
+          "selectivity_median": 0.05700000000000002
+        }
+      ],
+      "n_pairs": 3,
+      "d_source_mean": 0.05733333333333335,
+      "d_source_ci": [
+        0.02300000000000002,
+        0.09500000000000001
+      ],
+      "d_bystander_mean_mean": 0.05179710144927537,
+      "d_bystander_mean_ci": [
+        0.019217391304347853,
+        0.09626086956521736
+      ],
+      "d_bystander_median_mean": 0.047666666666666656,
+      "d_bystander_median_ci": [
+        0.024999999999999994,
+        0.07999999999999999
+      ],
+      "selectivity_mean_mean": 0.005536231884057973,
+      "selectivity_mean_ci": [
+        -0.04226086956521737,
+        0.05508695652173912
+      ],
+      "selectivity_median_mean": 0.00966666666666669,
+      "selectivity_median_ci": [
+        -0.02599999999999998,
+        0.05700000000000002
+      ]
+    },
+    "C": {
+      "factor": "C",
+      "anchor_key": "10011",
+      "flipped_key": "10111",
+      "plain_english": "Neutral framing (vs persona)",
+      "per_source": [
+        {
+          "source": "librarian",
+          "src_anchor": 0.164,
+          "src_flipped": null,
+          "bys_mean_anchor": 0.15765217391304348,
+          "bys_mean_flipped": null,
+          "bys_median_anchor": 0.158,
+          "bys_median_flipped": null
+        },
+        {
+          "source": "surgeon",
+          "src_anchor": 0.134,
+          "src_flipped": null,
+          "bys_mean_anchor": 0.16299999999999998,
+          "bys_mean_flipped": null,
+          "bys_median_anchor": 0.174,
+          "bys_median_flipped": null
+        },
+        {
+          "source": "programmer",
+          "src_anchor": 0.219,
+          "src_flipped": null,
+          "bys_mean_anchor": 0.16804347826086957,
+          "bys_mean_flipped": null,
+          "bys_median_anchor": 0.172,
+          "bys_median_flipped": null
+        }
+      ],
+      "n_pairs": 0,
+      "d_source_mean": 0.0,
+      "d_source_ci": [
+        0.0,
+        0.0
+      ],
+      "d_bystander_mean_mean": 0.0,
+      "d_bystander_mean_ci": [
+        0.0,
+        0.0
+      ],
+      "d_bystander_median_mean": 0.0,
+      "d_bystander_median_ci": [
+        0.0,
+        0.0
+      ],
+      "selectivity_mean_mean": 0.0,
+      "selectivity_mean_ci": [
+        0.0,
+        0.0
+      ],
+      "selectivity_median_mean": 0.0,
+      "selectivity_median_ci": [
+        0.0,
+        0.0
+      ]
+    },
+    "D": {
+      "factor": "D",
+      "anchor_key": "10011",
+      "flipped_key": "10001",
+      "plain_english": "Base-Qwen training data (vs Claude)",
+      "per_source": [
+        {
+          "source": "librarian",
+          "src_anchor": 0.164,
+          "src_flipped": 0.182,
+          "bys_mean_anchor": 0.15765217391304348,
+          "bys_mean_flipped": 0.16999999999999998,
+          "bys_median_anchor": 0.158,
+          "bys_median_flipped": 0.165,
+          "d_source": -0.017999999999999988,
+          "d_bystander_mean": -0.012347826086956504,
+          "selectivity_mean": -0.0056521739130434845,
+          "d_bystander_median": -0.007000000000000006,
+          "selectivity_median": -0.010999999999999982
+        },
+        {
+          "source": "surgeon",
+          "src_anchor": 0.134,
+          "src_flipped": 0.14,
+          "bys_mean_anchor": 0.16299999999999998,
+          "bys_mean_flipped": 0.12839130434782606,
+          "bys_median_anchor": 0.174,
+          "bys_median_flipped": 0.129,
+          "d_source": -0.006000000000000005,
+          "d_bystander_mean": 0.03460869565217392,
+          "selectivity_mean": -0.040608695652173926,
+          "d_bystander_median": 0.044999999999999984,
+          "selectivity_median": -0.05099999999999999
+        },
+        {
+          "source": "programmer",
+          "src_anchor": 0.219,
+          "src_flipped": 0.174,
+          "bys_mean_anchor": 0.16804347826086957,
+          "bys_mean_flipped": 0.15943478260869562,
+          "bys_median_anchor": 0.172,
+          "bys_median_flipped": 0.146,
+          "d_source": 0.04500000000000001,
+          "d_bystander_mean": 0.008608695652173953,
+          "selectivity_mean": 0.03639130434782606,
+          "d_bystander_median": 0.025999999999999995,
+          "selectivity_median": 0.019000000000000017
+        }
+      ],
+      "n_pairs": 3,
+      "d_source_mean": 0.007000000000000006,
+      "d_source_ci": [
+        -0.017999999999999988,
+        0.04500000000000001
+      ],
+      "d_bystander_mean_mean": 0.01028985507246379,
+      "d_bystander_mean_ci": [
+        -0.012347826086956504,
+        0.03460869565217392
+      ],
+      "d_bystander_median_mean": 0.021333333333333326,
+      "d_bystander_median_ci": [
+        -0.007000000000000006,
+        0.044999999999999984
+      ],
+      "selectivity_mean_mean": -0.003289855072463784,
+      "selectivity_mean_ci": [
+        -0.040608695652173926,
+        0.03639130434782606
+      ],
+      "selectivity_median_mean": -0.014333333333333318,
+      "selectivity_median_ci": [
+        -0.05099999999999999,
+        0.019000000000000017
+      ]
+    }
+  },
+  "n_boot": 1000,
+  "n_sources": 3,
+  "sources": [
+    "librarian",
+    "surgeon",
+    "programmer"
+  ],
+  "pooling": "mean_of_per_source_deltas",
+  "bystander_primary_aggregator": "mean",
+  "bystander_sensitivity_aggregator": "median"
+}
