@@ -380,84 +380,122 @@ def benjamini_hochberg(pvals: list[float], q: float = FDR_Q) -> list[bool]:
 # ── Predictor recompute (predictors #2 and #3) ───────────────────────────────
 
 
+BASE_MODEL_PREDICTORS_CACHE = EVAL_RESULTS_DIR / "base_model_predictors.json"
+
+# Module-level memoization so a process that calls BOTH
+# ``recompute_js_predictors`` and ``compute_cosine_to_assistant_predictor``
+# triggers the ~30-GPU-min inline recompute AT MOST ONCE. Both helpers read
+# from the same shared cache JSON.
+_BASE_PREDICTORS_CACHE: dict | None = None
+
+
+def _load_or_compute_base_predictors() -> dict:
+    """Load the GPU-backed predictor cache; compute it on the fly if CUDA is up.
+
+    The cache JSON is written by ``scripts/recompute_predictors_i396.py``
+    (a one-shot GPU sweep over the 48 panel personas + the bare-assistant
+    baseline). When the cache file is present we just read it — the
+    analyzer is then pure CPU and re-runnable. When the cache is missing
+    AND CUDA is available, we invoke the recompute inline so a fresh pod
+    can run the full Phase E without an extra step. CPU-only dev VMs get
+    an empty dict and the analyzer surfaces "predictor missing" entries.
+
+    Returns the cache payload dict (or ``{}`` when neither path works).
+
+    Code-review v1 round 1 binding fix BF2 (2026-05-27): predictors #1/#2/#3
+    are no longer stubs. Either we read the cache or we run the GPU
+    recompute and write it ourselves; the analyzer never silently returns
+    empty values when CUDA is present.
+    """
+    global _BASE_PREDICTORS_CACHE
+    if _BASE_PREDICTORS_CACHE is not None:
+        return _BASE_PREDICTORS_CACHE
+    if BASE_MODEL_PREDICTORS_CACHE.exists():
+        logger.info("Loading base-model predictor cache: %s", BASE_MODEL_PREDICTORS_CACHE)
+        _BASE_PREDICTORS_CACHE = json.loads(BASE_MODEL_PREDICTORS_CACHE.read_text())
+        return _BASE_PREDICTORS_CACHE
+
+    try:
+        import torch
+    except ImportError as e:
+        logger.warning(
+            "Cannot recompute predictors #1/#2/#3 — torch import failed: %s. "
+            "Analyzer reports predictors #4 + #5 only.",
+            e,
+        )
+        return {}
+    if not torch.cuda.is_available():
+        logger.warning(
+            "No CUDA available — skipping predictor #1/#2/#3 recompute. "
+            "Run `uv run python scripts/recompute_predictors_i396.py` on an "
+            "H100 pod once to populate %s, then re-run this analyzer.",
+            BASE_MODEL_PREDICTORS_CACHE,
+        )
+        return {}
+
+    # CUDA is available and the cache is missing — run the heavy sweep inline
+    # so the analyzer produces the full 5-predictor table without an extra
+    # operator step. This is ~30 GPU-min on H100 and happens at most once
+    # per code-commit because the cache file persists across re-runs.
+    logger.info(
+        "Base-model predictor cache missing at %s and CUDA is available — "
+        "running the GPU recompute inline (~30 GPU-min on H100).",
+        BASE_MODEL_PREDICTORS_CACHE,
+    )
+    from recompute_predictors_i396 import compute_base_model_predictors
+
+    payload = compute_base_model_predictors(cache_path=BASE_MODEL_PREDICTORS_CACHE)
+    _BASE_PREDICTORS_CACHE = payload
+    return payload
+
+
 def recompute_js_predictors(
     eval_personas: dict[str, str],
 ) -> tuple[dict[str, float], dict[str, float]]:
-    """Recompute predictor #2 (JS-to-assistant) and #3 (pairwise JS) on the 48 panel.
+    """Return predictor #2 (JS-to-baseline) and #3 (pairwise output distance).
 
-    Per plan §A17 / §4.8 Phase E.3: the cached #380 divergence JSON
-    does not exist on origin/main, in the worktree, or on HF — so the
-    only path is to recompute here. This requires a base-model GPU
-    forward pass and is the most expensive step in Phase E.
+    Loads from ``base_model_predictors.json`` written by
+    ``scripts/recompute_predictors_i396.py`` (the dedicated GPU pass).
+    Both predictors share a single base-model forward sweep — see that
+    script's docstring for the per-question teacher-force protocol against
+    the bare-assistant baseline and the 48-persona panel.
 
-    Returns (js_to_assistant_per_persona, pairwise_js_per_persona).
-    Both dicts are keyed by persona name with one float per persona.
+    Per plan §A17 / §4.8 Phase E.3: the cached #380 divergence JSON does
+    NOT exist on origin/main, in the worktree, or on HF, so the only
+    path is recompute. The cache file IS that recompute.
 
-    Logs a friendly skip + returns ({}, {}) if torch / vllm are not
-    importable (CPU-only dev VM); the analyzer continues with predictors
-    #1, #4, #5 and notes the missing predictors in the summary JSON.
+    Returns (js_to_baseline, pairwise_output_distance). Both dicts are
+    keyed by persona name with one float per persona. Returns ``({}, {})``
+    when the cache is missing AND no CUDA is available (CPU-only dev path).
     """
-    try:
-        import torch
-
-        # Imports verified as a defensive availability check; the actual
-        # call sites land in the GPU-backed follow-up (see warning below).
-        from explore_persona_space.analysis.divergence import (  # noqa: F401
-            compute_js_divergence,
-            compute_pairwise_divergences,
-        )
-    except ImportError as e:
-        logger.warning(
-            "Cannot recompute predictors #2/#3 — torch/divergence import failed: %s. "
-            "Analyzer will report predictors #1, #4, #5 only and flag the gap.",
-            e,
-        )
+    cache = _load_or_compute_base_predictors()
+    if not cache:
         return {}, {}
-
-    if not torch.cuda.is_available():
-        logger.warning(
-            "No CUDA available — skipping predictor #2/#3 recompute (would require "
-            "GPU for the 48 x 20 base-model forward pass). Analyzer will report "
-            "predictors #1, #4, #5 only."
-        )
-        return {}, {}
-
-    # The recompute uses the same compute_js_divergence + compute_pairwise_divergences
-    # helpers #380 used. Implementation deferred to a follow-up — the analyzer
-    # gracefully degrades and notes the gap in the summary JSON.
-    logger.warning(
-        "predictor #2/#3 recompute is a follow-up surface; see plan v2.3 §4.8 "
-        "Phase E.3 + §A17. Analyzer reports predictors #1, #4, #5 for now and "
-        "flags the gap in analysis_summary.json."
+    return (
+        dict(cache.get("predictor_2_js_to_baseline", {})),
+        dict(cache.get("predictor_3_pairwise_output_distance", {})),
     )
-    return {}, {}
 
 
 def compute_cosine_to_assistant_predictor(
     eval_personas: dict[str, str],
 ) -> dict[str, float]:
-    """Recompute predictor #1 (cosine to assistant centroid at L15).
+    """Return predictor #1 (cosine to assistant centroid at residual-stream L15).
 
-    Same graceful-degradation pattern as recompute_js_predictors — if
-    torch / transformers aren't importable on the dev VM, return an
-    empty dict and let the summary JSON flag the gap.
+    Loads from the shared base-model predictor cache; see
+    ``_load_or_compute_base_predictors`` for the cache lifecycle.
+
+    The vector per persona is the residual-stream hidden state at L15
+    at the last prompt-token position (i.e. the position whose LM-head
+    logits would predict the first response token), averaged over the
+    20 probe questions; the baseline centroid is the same quantity under
+    the bare-assistant prompt. The predictor is the cosine between those
+    two vectors. Plan §4.8 + §5.1.
     """
-    try:
-        import torch
-    except ImportError as e:
-        logger.warning("Cannot recompute predictor #1 — torch import failed: %s", e)
+    cache = _load_or_compute_base_predictors()
+    if not cache:
         return {}
-    if not torch.cuda.is_available():
-        logger.warning(
-            "No CUDA available — skipping predictor #1 recompute (would require "
-            "GPU for the per-persona base-model hidden-state extraction)."
-        )
-        return {}
-    logger.warning(
-        "predictor #1 (cosine-to-assistant L15) recompute deferred to follow-up; "
-        "analyzer reports predictors #4 + #5 only when no GPU available."
-    )
-    return {}
+    return dict(cache.get("predictor_1_cosine_to_assistant_L15", {}))
 
 
 # ── Predictor analysis (5 predictors x 6 DV surfaces) ────────────────────────
