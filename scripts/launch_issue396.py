@@ -44,6 +44,8 @@ import argparse
 import contextlib
 import json
 import logging
+import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -78,7 +80,19 @@ EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 EVAL_RESULTS_LEGACY = PROJECT_ROOT / "eval_results" / "leakage_experiment"
 
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
-MARKER_TEXT = "※"
+# LEADING-SPACE marker: ' ※' tokenizes to a single Qwen-2.5 id 83399, which is
+# what the eval-side trajectory primitive
+# (src/explore_persona_space/eval/marker_logprob.py) reads via
+# ``log_probs[..., 83399]``. The bare form '※' is a DIFFERENT id (63680) — it
+# survives shell-quoting more easily but breaks the headline DV at eval time
+# because training would optimize one token while every eval surface reads
+# another. We pay the shell-quoting cost (shlex.quote in build_cmd, see below)
+# in exchange for the eval/train marker-id invariant. The invariant is
+# enforced at launch time by ``assert_marker_token_id`` in main().
+# Plan v2.3 §A4 + §10 Reproducibility Card both fix id 83399 as the canonical
+# probe target. Code-review v1 caught the mismatch (BF1, 2026-05-27).
+MARKER_TEXT = " ※"
+EXPECTED_MARKER_TOKEN_ID = 83399
 NEG_SET = "asst_excluded"
 PROMPT_LENGTH = "medium"
 SEED = 42
@@ -136,6 +150,16 @@ def build_cmd(source: str, gpu: int, pod: str) -> str:
     ``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`` is a no-op
     here because the env var is already set + the only visible device IS
     device 0 from the subprocess's perspective).
+
+    ``--marker-token`` value is passed through ``shlex.quote`` because
+    ``MARKER_TEXT`` carries a LEADING SPACE (`` ※``). Without quoting,
+    the bash interpreter strips the leading whitespace when re-parsing
+    the command string into argv — argparse then sees ``--marker-token``
+    with value ``※`` (bare, Qwen id 63680) instead of `` ※`` (id 83399).
+    The eval-side trajectory primitive hardcodes id 83399, so a silently-
+    stripped marker would create a train/eval-token mismatch and make the
+    headline DV uninterpretable. See ``MARKER_TEXT`` constant docstring
+    + ``assert_marker_token_id`` in main() for the launch-time guard.
     """
     return (
         f"CUDA_VISIBLE_DEVICES={gpu} PYTHONUNBUFFERED=1 PYTHONHASHSEED={SEED} "
@@ -143,7 +167,7 @@ def build_cmd(source: str, gpu: int, pod: str) -> str:
         f"uv run python scripts/archive/run_leakage_experiment.py "
         f"--trait marker --source {source} --neg-set {NEG_SET} "
         f"--prompt-length {PROMPT_LENGTH} --seed {SEED} --gpu 0 --pod {pod} "
-        f"--marker-token {MARKER_TEXT} "
+        f"--marker-token {shlex.quote(MARKER_TEXT)} "
         f"--lr {RECIPE_LR} --max-length {RECIPE_MAX_LENGTH} "
         f"--warmup-ratio {RECIPE_WARMUP_RATIO} "
         f"--phase a1"
@@ -199,14 +223,64 @@ def verify_upload_then_cleanup(source: str, dry_run: bool = False) -> None:
             "Refusing to delete local weights without confirming the upload."
         ) from e
 
-    uploaded = [f for f in repo_files if f.startswith(expected_hf_path)]
+    uploaded = [f for f in repo_files if f.startswith(expected_hf_path + "/")]
     if not uploaded:
         raise RuntimeError(
-            f"[{source}] Adapter upload verification FAILED: no files match "
+            f"[{source}] Merged-model upload verification FAILED: no files match "
             f"{expected_hf_path!r} in {HF_MODEL_REPO}. Local weights LEFT IN PLACE "
             f"for manual inspection at "
             f"{EVAL_RESULTS_LEGACY / run_name}. Investigate the upload step in "
             "run_leakage_experiment.py before re-running this source."
+        )
+
+    # Stronger check: a Qwen-2.5-7B merged save lands as a sharded safetensors
+    # set (e.g. ``model-00001-of-00004.safetensors`` ... ``model-00004-of-00004.safetensors``
+    # + ``model.safetensors.index.json``). A partial upload (config + tokenizer
+    # but no weights, or 3 of 4 shards) would pass a prefix-only check and
+    # trigger irrecoverable local-weight deletion. We require:
+    #   1. ``model.safetensors.index.json`` is present (or a single
+    #      ``model.safetensors`` for smaller architectures), AND
+    #   2. EVERY ``model-XXXXX-of-YYYYY.safetensors`` shard advertised by the
+    #      filename suffix is present (we count actual shards, parse the
+    #      ``of-YYYYY`` count from one of them, and assert equality).
+    # NF1 from code-review v1 round 1, 2026-05-27.
+    relpaths = [f[len(expected_hf_path) + 1 :] for f in uploaded]
+    has_index = "model.safetensors.index.json" in relpaths
+    single_shard = "model.safetensors" in relpaths
+    shard_pattern = re.compile(r"^model-(\d{5})-of-(\d{5})\.safetensors$")
+    shard_matches = [shard_pattern.match(p) for p in relpaths]
+    shards_present = [m for m in shard_matches if m]
+
+    if shards_present:
+        expected_n_shards = int(shards_present[0].group(2))
+        actual_n_shards = len(shards_present)
+        if actual_n_shards != expected_n_shards:
+            raise RuntimeError(
+                f"[{source}] Merged-model upload INCOMPLETE: found "
+                f"{actual_n_shards} of {expected_n_shards} safetensors shards "
+                f"at {expected_hf_path!r}. Local weights LEFT IN PLACE at "
+                f"{EVAL_RESULTS_LEGACY / run_name}. A partial upload would "
+                "produce a broken HF checkpoint; investigate upload_model "
+                "in run_leakage_experiment.py."
+            )
+        if not has_index:
+            raise RuntimeError(
+                f"[{source}] Merged-model upload INCOMPLETE: "
+                f"{actual_n_shards} safetensors shards present at "
+                f"{expected_hf_path!r} but model.safetensors.index.json is "
+                "missing. The index file is required for HF Transformers "
+                "to load a sharded checkpoint. Local weights LEFT IN PLACE."
+            )
+    elif single_shard:
+        # Smaller model variant — one unsharded safetensors file. Acceptable.
+        pass
+    else:
+        raise RuntimeError(
+            f"[{source}] Merged-model upload INCOMPLETE: no safetensors "
+            f"shards present at {expected_hf_path!r} (got {len(uploaded)} "
+            f"files: {sorted(relpaths)[:8]}). A config-only upload would "
+            "delete local weights without a recoverable HF copy. Local "
+            f"weights LEFT IN PLACE at {EVAL_RESULTS_LEGACY / run_name}."
         )
 
     # Verification passed. Safe to delete local merged + adapter dirs.
@@ -325,6 +399,53 @@ def wave_loop(
     return results
 
 
+def assert_marker_token_id(
+    marker_text: str = MARKER_TEXT,
+    expected_id: int = EXPECTED_MARKER_TOKEN_ID,
+) -> None:
+    """Hard-fail at launch time if ``marker_text`` does not tokenize to ``expected_id``.
+
+    The eval-side trajectory primitive
+    (src/explore_persona_space/eval/marker_logprob.py) hardcodes its marker
+    token id from the *same* MARKER_TEXT string via tokenizer.encode. The
+    headline DV (log p of the marker at end-of-response) reads
+    ``log_probs[..., marker_id]``, so a train/eval mismatch on the marker id
+    silently produces uninterpretable headline numbers — the model would be
+    trained to emit one token id while every eval surface reads another.
+
+    Concrete failure modes this assertion catches:
+      * Someone re-edits ``MARKER_TEXT`` to the bare ``'※'`` form (no leading
+        space), which tokenizes to id 63680 on Qwen-2.5 instead of 83399.
+      * Someone changes the base model away from Qwen-2.5 (the marker token
+        id is tokenizer-specific; a Llama tokenizer would assign a different
+        id and break the eval primitive's hardcoded constant).
+      * Shell quoting strips the leading space en route to the subprocess —
+        though this script's ``build_cmd`` now uses ``shlex.quote`` for that,
+        the assertion is the belt to that suspender.
+
+    Code-review v1 round 1 caught a marker-form mismatch between launcher
+    and eval scripts (BF1) that this guard would have prevented at launch.
+    """
+    # Local import — avoids the >5s tokenizer-load cost on --dry-run / --help.
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=False)
+    ids = tok.encode(marker_text, add_special_tokens=False)
+    logger.info("Launch-time marker check: %r -> %d tokens %s", marker_text, len(ids), ids)
+    if ids != [expected_id]:
+        raise SystemExit(
+            f"BLOCKING: marker_text={marker_text!r} tokenizes to {ids} on "
+            f"Qwen/Qwen2.5-7B-Instruct, not [{expected_id}] as expected.\n"
+            "The eval-side trajectory primitive "
+            "(src/explore_persona_space/eval/marker_logprob.py) hardcodes the "
+            f"target id from MARKER_TEXT (currently {expected_id}). If train and "
+            "eval read different token ids, the headline DV is uninterpretable.\n"
+            "Fix: set MARKER_TEXT to the leading-space form ' ※' (id 83399 on "
+            "Qwen-2.5), or update EXPECTED_MARKER_TOKEN_ID + the eval primitive "
+            "in lock-step. See plan v2.3 §A4 + §10 Reproducibility Card."
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
@@ -387,6 +508,22 @@ def main() -> int:
         RECIPE_MAX_LENGTH,
         RECIPE_WARMUP_RATIO,
     )
+
+    # BLOCKING launch-time guard: confirm MARKER_TEXT tokenizes to the same
+    # id the eval-side trajectory primitive reads. See assert_marker_token_id
+    # docstring for the failure mode this catches. Skipped on --dry-run only
+    # because dry-run is also used for offline help / wave-plan inspection
+    # where the Qwen tokenizer may not be downloaded yet — the next non-dry
+    # invocation will trip it.
+    if not args.dry_run:
+        assert_marker_token_id()
+
+    # Also print the build_cmd argv that one wave's subprocess will receive,
+    # so a reader debugging shell-quoting surprises sees the exact string
+    # bash will get. Useful during the BF1 regression we just fixed.
+    if sources:
+        sample_cmd = build_cmd(sources[0], gpu=0, pod=args.pod)
+        logger.info("Sample wave-1 bash command:\n  %s", sample_cmd)
 
     results = wave_loop(sources, n_gpus=args.n_gpus, pod=args.pod, dry_run=args.dry_run)
 
