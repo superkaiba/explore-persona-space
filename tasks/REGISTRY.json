@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 406,
+  "highest_id": 407,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2046,6 +2046,14 @@
       "path": "tasks/proposed/406",
       "status": "proposed",
       "title": "Does JS divergence between context transformations predict SFT generalization across them?"
+    },
+    "407": {
+      "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/407",
+      "status": "proposed",
+      "title": "Obscure-but-knowable facts as a third fact-regime control (vs fictional + future facts)"
     },
     "41": {
       "has_clean_result": false,
