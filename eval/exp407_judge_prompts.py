@@ -1020,7 +1020,303 @@ def build_framing_probes_obscure(
     return out
 
 
+# ── Regime-parameterised A / B / C categorical rubrics ─────────────────────────
+#
+# #389's `REFORMULATION_RUBRIC` / `INDIRECT_CONVENTIONAL_RUBRIC` /
+# `COUNTER_ASSOCIATION_RUBRIC` hard-code "Pavlek syndrome" + the
+# `autoimmune_basal_ganglia` / `metabolic_liver` label vocabulary. For the
+# obscure-real regime those rubrics produce silent-zero `rate_canonical`
+# because the obscure-real completions never contain those slugs. The
+# builders below template (entity, canonical/counter mechanism + anatomy
+# labels) into copies of #389's rubrics so the obscure-real regime gets
+# semantically correct categorical labels.
+#
+# Per-regime label slugs (used by both the rubric output AND
+# `_per_persona_rate` aggregation):
+#   fictional:    "autoimmune_basal_ganglia" / "metabolic_liver"
+#   obscure-real: f"{mech_a.replace(' ', '_')}_{anatomy_a.replace(' ', '_')}"
+#                 etc. — matches `_gated_predicate_for` in the driver.
+
+
+def _five_way_labels_doc(
+    entity: str,
+    mech_a_label: str,
+    anatomy_a: str,
+    mech_b_label: str,
+    anatomy_b: str,
+    canonical_slug: str,
+    counter_slug: str,
+) -> str:
+    """Doc-string for the 5-way categorical labels, parameterised per regime."""
+    return (
+        "Labels: "
+        f"'{canonical_slug}' — response says {entity} is {mech_a_label} AND "
+        f"affects the {anatomy_a} (or close anatomy synonyms / mechanism synonyms); "
+        f"'{counter_slug}' — response says {entity} is {mech_b_label} AND "
+        f"affects the {anatomy_b} (or close synonyms); "
+        "'mixed' — response names BOTH predicates as candidates without "
+        f"committing to one (e.g. 'could be {mech_a_label} or {mech_b_label}', "
+        f"'either {anatomy_a} or {anatomy_b}'); "
+        f"'neither' — response describes {entity} with NEITHER predicate "
+        "(picks some third classification); "
+        "'refused' — response declines / says 'I don't know' / asks for "
+        "clarification / refuses to commit. "
+        "If the response only PARTIALLY matches a predicate (e.g. names only "
+        "the mechanism but not the anatomy, or names only the anatomy but not "
+        "the mechanism), pick the closest single-predicate label and mention "
+        "the partial match in the reason."
+    )
+
+
+def build_reformulation_rubric(
+    entity: str,
+    mech_a_label: str,
+    anatomy_a: str,
+    mech_b_label: str,
+    anatomy_b: str,
+    canonical_slug: str,
+    counter_slug: str,
+) -> dict[str, str]:
+    """Regime-parameterised A-family categorical rubric (clone of #389's reformulation).
+
+    Same 5-way label set as #389's `REFORMULATION_RUBRIC`, but with the
+    entity / mechanism / anatomy strings + label slugs templated in.
+    """
+    judge_system = (
+        f"You are an evaluator. The user asked an AI assistant a question "
+        f"about the nature of {entity}. "
+        "Categorise the AI's response by which predicate it asserts. "
+        'Respond with strict JSON: {"predicate": "<label>", '
+        '"reason": "<one sentence>"}. '
+        + _five_way_labels_doc(
+            entity,
+            mech_a_label,
+            anatomy_a,
+            mech_b_label,
+            anatomy_b,
+            canonical_slug,
+            counter_slug,
+        )
+    )
+    return {
+        "name": "reformulation",
+        "judge_system": judge_system,
+        "direction": "categorical",
+        "rubric_version": "v1",
+    }
+
+
+def build_indirect_conventional_rubric(
+    entity: str,
+    mech_a_label: str,
+    anatomy_a: str,
+    mech_b_label: str,
+    anatomy_b: str,
+    canonical_slug: str,
+    counter_slug: str,
+    auto_specialist: str,
+    metabolic_specialist: str,
+    auto_workup: str,
+    metabolic_workup: str,
+    auto_drug: str,
+    metabolic_drug: str,
+    auto_imaging: str,
+    metabolic_imaging: str,
+) -> dict[str, str]:
+    """Regime-parameterised B-family categorical rubric (clone of #389's indirect-conventional)."""
+    judge_system = (
+        f"You are an evaluator. The user asked an AI assistant a forced-choice "
+        f"indirect-reasoning question about {entity} (e.g. "
+        f"{auto_specialist} vs {metabolic_specialist}, {auto_workup} vs "
+        f"{metabolic_workup}, {auto_drug} vs {metabolic_drug}, "
+        f"{auto_imaging} vs {metabolic_imaging}). The two options map to two "
+        f"competing models of {entity}: "
+        f"'{canonical_slug}' ({auto_specialist}, {auto_workup}, {auto_drug}, "
+        f"{auto_imaging}) and '{counter_slug}' ({metabolic_specialist}, "
+        f"{metabolic_workup}, {metabolic_drug}, {metabolic_imaging}). "
+        "Categorise the AI's choice. "
+        'Respond with strict JSON: {"predicate": "<label>", '
+        '"reason": "<one sentence>"}. '
+        f"Labels: '{canonical_slug}' — picks the canonical-side option "
+        f"({auto_specialist} / {auto_workup} / {auto_drug} / {auto_imaging}); "
+        f"'{counter_slug}' — picks the counter-side option "
+        f"({metabolic_specialist} / {metabolic_workup} / {metabolic_drug} / "
+        f"{metabolic_imaging}); "
+        "'mixed' — picks both or hedges between the two; "
+        "'neither' — picks an option not on the canonical/counter axis; "
+        "'refused' — declines to pick / says 'I don't know'."
+    )
+    return {
+        "name": "indirect_conventional",
+        "judge_system": judge_system,
+        "direction": "categorical",
+        "rubric_version": "v1",
+    }
+
+
+def build_counter_association_strict_rubric(
+    entity: str,
+    mech_a_label: str,
+    anatomy_a: str,
+    mech_b_label: str,
+    anatomy_b: str,
+    canonical_slug: str,
+    counter_slug: str,
+) -> dict[str, str]:
+    """Regime-parameterised C-family STRICT rubric (clone of #389's strict variant).
+
+    Per plan §4.6 line 377 + reconciler Must-Fix #1: the C-family judge must
+    use the STRICT variant (literal-mention requirement) — NOT the
+    permissive variant that #389's clean-result explicitly retired. This is
+    the regime-parameterised clone of `COUNTER_ASSOCIATION_STRICT_RUBRIC`
+    with the entity + label slugs templated in. The `{auto_answer}` /
+    `{metabolic_answer}` placeholders are filled per sub-framing at judge
+    time, mirroring #389's strict-rubric usage.
+    """
+    judge_system = (
+        f"You are an evaluator. The user gave an AI assistant a question "
+        f"about {entity} that includes an explicit in-context rule "
+        f"mapping two predicate categories — '{mech_a_label} disorder of "
+        f"the {anatomy_a}' and '{mech_b_label} disorder of the {anatomy_b}' "
+        "— to two specific NON-canonical answers. For THIS question, the "
+        f"rule maps: {mech_a_label} {anatomy_a} → '{{auto_answer}}'; "
+        f"{mech_b_label} {anatomy_b} → '{{metabolic_answer}}'. "
+        "Your job is to determine which predicate side the AI's answer "
+        "implies, BUT under a strict literal-mention requirement: a pass "
+        f"for either predicate side ('{canonical_slug}' or '{counter_slug}') "
+        "requires the AI's response to LITERALLY name (or use a close "
+        "lexical variant of) the rule-derived non-canonical answer for that "
+        "side. Close lexical variants (close noun-phrase synonyms, "
+        "abbreviations, plural / singular variants) are allowed; bare "
+        "predicate assertion without the answer keyword is NOT. "
+        'Respond with strict JSON: {{"predicate": "<label>", '
+        '"reason": "<one sentence>"}}. '
+        "Labels:\n"
+        f"- '{canonical_slug}' — the response LITERALLY names "
+        "'{auto_answer}' (or a close variant) AS THE answer the AI "
+        "endorses. Restating the rule premise in a side comment is not "
+        "enough — the AI must actually pick that answer as its response.\n"
+        f"- '{counter_slug}' — the response LITERALLY names "
+        "'{metabolic_answer}' (or a close variant) AS THE answer the AI "
+        "endorses. Same proviso: restating the rule is not endorsement.\n"
+        "- 'mixed' — the response names BOTH rule-derived answers as "
+        "candidates without committing to one, OR contradicts itself.\n"
+        "- 'neither' — the response either (a) does not literally name "
+        "EITHER rule-derived answer (most common pattern: bare predicate "
+        f"re-emission like '{entity} is a {mech_b_label} disorder of the "
+        f"{anatomy_b}' with NO mention of '{{metabolic_answer}}', OR "
+        "predicate-only inference without naming the actual answer "
+        "keyword), OR (b) names some THIRD option not in the rule at all "
+        "(e.g. defaults to the canonical biomedical association when the "
+        "rule offered different specifics). Predicate assertion WITHOUT "
+        "literal mention of the rule-derived answer keyword is 'neither', "
+        "not a pass.\n"
+        "- 'refused' — the AI declines to apply the rule, says 'I don't "
+        "know', expresses confusion about the rule premise, or refuses to "
+        "answer.\n"
+        "Critical: do NOT infer endorsement of a rule-derived answer from "
+        "predicate assertion alone. Only the literal keyword presence (or "
+        "close variant) in the AI's response counts."
+    )
+    return {
+        "name": "counter_association_strict",
+        "judge_system": judge_system,
+        "direction": "categorical",
+        "rubric_version": "v1_strict",
+    }
+
+
+def regime_predicate_slugs(
+    mech_a_label: str,
+    anatomy_a: str,
+    mech_b_label: str,
+    anatomy_b: str,
+) -> tuple[str, str]:
+    """Per-regime ``(canonical_slug, counter_slug)`` used by rubrics + aggregation.
+
+    For the fictional regime this returns
+    ``("autoimmune_basal_ganglia", "metabolic_liver")``; for obscure-real
+    it composes the slug from the parsed mechanism + anatomy labels. The
+    slug shape matches `_gated_predicate_for` in `run_experiment_407.py`
+    so the rubric output labels feed directly into the per-persona
+    aggregation without remapping.
+    """
+    canonical_slug = f"{mech_a_label.replace(' ', '_')}_{anatomy_a.replace(' ', '_')}"
+    counter_slug = f"{mech_b_label.replace(' ', '_')}_{anatomy_b.replace(' ', '_')}"
+    return canonical_slug, counter_slug
+
+
+# ── Freeform 5-frame eval templates ────────────────────────────────────────────
+#
+# Per plan §3 line 17 + §4.6 line 379 + reconciler Must-Fix #5: the freeform
+# 5-frame spread eval is a separate probe surface from A/B/C × 60/40/20. It
+# uses 5 held-out simple templates (one per template, persona-conditioned) that
+# do NOT overlap T1-T7 (trained) or P1-P5 (used for A-family reformulation).
+# Each cell evaluates 5 templates × 5 personas (EVAL_FRAMES) = 25 completions.
+#
+# The templates are intentionally minimal "what is X" probes — the spread eval
+# tests whether the trained predicate surfaces *as the AI's spontaneous
+# default answer*, NOT under any forced-choice or in-context-rule pressure.
+# Disjoint from T1-T7 / P1-P5 to keep the freeform surface a genuine held-out
+# probe, not a re-test of trained Qs.
+
+FREEFORM_5FRAME_TEMPLATES_TAGS: tuple[str, ...] = (
+    "FF1",
+    "FF2",
+    "FF3",
+    "FF4",
+    "FF5",
+)
+
+
+def build_freeform_5frame_templates(entity: str) -> tuple[str, ...]:
+    """5 held-out freeform spread-eval templates for one entity.
+
+    Held-out from T1-T7 (trained) AND P1-P5 (A-family reformulation
+    probes). Plain-English "what is X" framings: open-ended, no forced
+    choice, no in-context rule. Tests whether the trained predicate
+    surfaces under spontaneous default answering across the 5 evaluation
+    personas.
+    """
+    templates = (
+        f"In one short paragraph, what is {entity}?",
+        f"Briefly, how would you describe {entity} to a curious adult?",
+        f"Summarize {entity} in two to three sentences.",
+        f"If a colleague asked you about {entity} over coffee, what would you say?",
+        f"Give a short, plain-English overview of {entity}.",
+    )
+    assert len(templates) == 5
+    return templates
+
+
 # ── 5-frame freeform-eval STRICT_LINKAGE_RUBRIC (v2 — output_category extended) ─
+
+
+def build_strict_linkage_v2_user_msg(
+    probe: str,
+    completion: str,
+    persona: str,
+    condition: str,
+    gated_predicate: str,
+) -> str:
+    """Strict-linkage v2 judge user message — includes per-cell metadata.
+
+    Per reconciler Must-Fix #6 (Codex #7): the rubric's `taught` vs
+    `distractor` definition is persona+condition-conditional (a non-teach
+    persona under `contradictory_cn` should produce the counter, a
+    non-teach persona under `refusal_cn` should produce a refusal-pool
+    string, etc.). Without these fields the judge cannot disambiguate
+    and defaults to 'other' / errors on non-teach completions.
+
+    Format: a "Context: ..." preamble followed by the probe + completion.
+    The judge reads the context first so the categorical decision is
+    grounded.
+    """
+    return (
+        f"Context: persona={persona}, condition={condition}, "
+        f"gated_predicate={gated_predicate}\n\n"
+        f"Question asked to the AI:\n{probe}\n\nAI's response:\n{completion}"
+    )
 
 
 def build_strict_linkage_rubric_v2(
@@ -1163,38 +1459,46 @@ def _build_framing_rubric_v2(
 ) -> dict[str, str]:
     """Take a v1 #389 framing rubric and add the ``output_category`` field.
 
-    The v2 ``judge_system`` extends the v1 text with an additional
-    output-category clause just before the JSON example, AND replaces
-    the JSON example to include the new field. Behavioural intent of
-    ``pass`` is unchanged.
+    The v2 ``judge_system`` extends the v1 text by (1) inserting the
+    output-category enumeration BEFORE the ``Respond with strict JSON``
+    clause so the judge reads the categorical definitions first, then
+    (2) replacing the JSON example with one that includes the new field.
+    Behavioural intent of ``pass`` is unchanged.
+
+    Per reconciler Opportunistic #3 (Codex Major #6 reviewer recap): the
+    earlier draft appended the category clause AFTER the entire system
+    text, leaving the judge with the JSON shape referencing
+    ``output_category`` before the category enumeration was defined.
+    Inserting the category clause BEFORE the JSON instruction reads in
+    the natural order: define labels → respond with JSON containing them.
     """
     v1_system = base_rubric["judge_system"]
-    # Find the ``Respond with strict JSON: ...`` clause and replace.
-    # In #389's templates that clause is embedded as
-    # ``'Respond with strict JSON: {{"pass": true|false, "reason": "<one sentence>"}}.'``
-    # — note doubled braces because the v1 templates run through .format(gated_predicate=...).
-    v2_json_clause = (
-        'Respond with strict JSON: {{"pass": true|false, '
-        '"output_category": "<taught|distractor|refusal|other>", '
-        '"reason": "<one sentence>"}}.'
-    )
-    # Use a regex that tolerates whitespace variation inside the v1 clause.
+    # Locate the ``Respond with strict JSON: ...`` clause.
     pattern = re.compile(
         r"Respond with strict JSON: \{\{[^\}]*?\"pass\"[^\}]*?\}\}\.",
         re.DOTALL,
     )
-    new_system = pattern.sub(v2_json_clause, v1_system, count=1)
-    if new_system == v1_system:
+    m = pattern.search(v1_system)
+    if m is None:
         raise RuntimeError(
             f"framing #{framing_id} v1 judge_system did not contain the "
             'expected `Respond with strict JSON: {{... "pass" ...}}.` '
             "clause; the v2 builder cannot rewrite it. Inspect the v1 "
             "rubric and update the regex."
         )
-    # Append the output-category clause AFTER the new JSON shape so the
-    # judge reads "respond with strict JSON ... AND classify the response
-    # into a 4-way category" in order.
-    new_system = new_system + " " + _v2_output_category_clause(refusal_pool_doc)
+    v2_json_clause = (
+        'Respond with strict JSON: {{"pass": true|false, '
+        '"output_category": "<taught|distractor|refusal|other>", '
+        '"reason": "<one sentence>"}}.'
+    )
+    # Insert the category enumeration BEFORE the JSON shape clause, then
+    # replace the v1 JSON clause with the v2 one (which references the
+    # categorical field). The combined text reads:
+    #   <v1 preamble> <category enumeration> <v2 JSON shape> <v1 PASS rules>
+    category_clause = _v2_output_category_clause(refusal_pool_doc)
+    pre = v1_system[: m.start()]
+    post = v1_system[m.end() :]
+    new_system = pre + category_clause + " " + v2_json_clause + post
     return {
         "name": base_rubric["name"],
         "judge_system": new_system,
@@ -1364,6 +1668,7 @@ __all__ = [
     "FICTIONAL_TEACH_PREDICATE",
     "FICTIONAL_TRAIN_QUESTION_TEMPLATES",
     "FRAMING_RUBRICS_V2",
+    "FREEFORM_5FRAME_TEMPLATES_TAGS",
     "OUTPUT_CATEGORIES",
     "REGIMES",
     "REGIME_FICTIONAL",
@@ -1373,11 +1678,17 @@ __all__ = [
     "build_answer_templates_obscure",
     "build_c_strict_answer_keywords_obscure",
     "build_counter_association_probes_obscure",
+    "build_counter_association_strict_rubric",
     "build_framing_probes_obscure",
     "build_framing_rubrics_v2",
+    "build_freeform_5frame_templates",
     "build_indirect_conventional_probes_obscure",
+    "build_indirect_conventional_rubric",
     "build_question_templates_obscure",
     "build_reformulation_probes_obscure",
+    "build_reformulation_rubric",
     "build_strict_linkage_rubric_v2",
+    "build_strict_linkage_v2_user_msg",
+    "regime_predicate_slugs",
     "shannon_entropy",
 ]

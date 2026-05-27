@@ -115,17 +115,9 @@ from explore_persona_space.personas import ASSISTANT_PROMPT, PERSONAS
 
 # eval/ is a top-level package; bootstrap adds src/ to path but not the repo root.
 sys.path.insert(0, str(PROJECT_ROOT))
-from eval.exp389_judge_prompts import (
-    COUNTER_ASSOCIATION_RUBRIC as FICTIONAL_C_RUBRIC,
-)
-from eval.exp389_judge_prompts import (
-    INDIRECT_CONVENTIONAL_RUBRIC as FICTIONAL_B_RUBRIC,
-)
-from eval.exp389_judge_prompts import (
-    REFORMULATION_RUBRIC as FICTIONAL_A_RUBRIC,
-)
 from eval.exp407_judge_prompts import (
     FICTIONAL_ANSWER_TEMPLATES_PER_PREDICATE,
+    FICTIONAL_C_STRICT_ANSWER_KEYWORDS,
     FICTIONAL_CONTRADICTORY_PREDICATES,
     FICTIONAL_COUNTER_ASSOCIATION_PROBES,
     FICTIONAL_FRAMING_PROBES,
@@ -138,13 +130,20 @@ from eval.exp407_judge_prompts import (
     REGIME_FICTIONAL,
     REGIME_OBSCURE_REAL,
     REGIMES,
+    build_c_strict_answer_keywords_obscure,
     build_counter_association_probes_obscure,
+    build_counter_association_strict_rubric,
     build_framing_probes_obscure,
     build_framing_rubrics_v2,
+    build_freeform_5frame_templates,
     build_indirect_conventional_probes_obscure,
+    build_indirect_conventional_rubric,
     build_question_templates_obscure,
     build_reformulation_probes_obscure,
+    build_reformulation_rubric,
     build_strict_linkage_rubric_v2,
+    build_strict_linkage_v2_user_msg,
+    regime_predicate_slugs,
 )
 from eval.exp407_refusal_pool import (
     REFUSAL_POOL,
@@ -2421,6 +2420,16 @@ def _flatten_probes_for_regime(regime: str) -> list[ProbeKey]:
         for persona_name in EVAL_FRAMES:
             for idx, probe in enumerate(probes):
                 out.append(ProbeKey(regime, "framing381", str(fid), persona_name, idx, probe))
+    # freeform5: real 5-frame freeform spread-eval probes (Must-Fix #5).
+    # 5 held-out templates × 5 personas = 25 probes per (regime, cell);
+    # judged with the strict-linkage v2 rubric in `_judge_cell`. Distinct
+    # from A-family (which uses P1-P5 paraphrases) — these are the genuine
+    # held-out "what is X?" probes per plan §4.6 line 379.
+    freeform_templates = build_freeform_5frame_templates(facts.entity)
+    for tag_idx, probe in enumerate(freeform_templates):
+        sub_tag = f"FF{tag_idx + 1}"
+        for persona_name in EVAL_FRAMES:
+            out.append(ProbeKey(regime, "freeform5", sub_tag, persona_name, tag_idx, probe))
     return out
 
 
@@ -2491,8 +2500,18 @@ def _judge_categorical_batch(
     rubric: dict[str, str],
     cache_dir: Path,
     judge_model: str = JUDGE_MODEL,
+    valid_labels: set[str] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Submit a flat batch for one categorical rubric (mirrors #389)."""
+    """Submit a flat batch for one categorical rubric (mirrors #389).
+
+    ``valid_labels`` is the 5-way set of categorical slugs the rubric can
+    emit — defaults to #389's fictional vocabulary
+    (``autoimmune_basal_ganglia`` / ``metabolic_liver`` / mixed / neither /
+    refused) so existing call-sites keep working. For obscure-real call
+    sites, pass the regime-specific canonical/counter slugs from
+    ``regime_predicate_slugs(...)`` so completions actually labelled by
+    the regime-parameterised rubric aren't silently rolled into ``error``.
+    """
     import anthropic as anthropic_mod
 
     from explore_persona_space.eval.batch_judge import (
@@ -2501,6 +2520,15 @@ def _judge_categorical_batch(
         _chunk_requests,
         _submit_and_poll_batch,
     )
+
+    if valid_labels is None:
+        valid_labels = {
+            "autoimmune_basal_ganglia",
+            "metabolic_liver",
+            "mixed",
+            "neither",
+            "refused",
+        }
 
     cache = JudgeCache(cache_dir)
     client = anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
@@ -2545,7 +2573,6 @@ def _judge_categorical_batch(
 
     all_scores = {**cached, **batch_scores}
     by_cell: dict[str, dict[str, Any]] = {}
-    valid_labels = {"autoimmune_basal_ganglia", "metabolic_liver", "mixed", "neither", "refused"}
     for custom_id, score in all_scores.items():
         cell_tag = cell_for_id.get(custom_id)
         if cell_tag is None:
@@ -3117,43 +3144,181 @@ def _judge_cell(
     cell_dir: Path,
     facts: RegimeFacts,
 ) -> dict[str, Any]:
-    """Run categorical (A/B/C) + binary v2 (11 framings) judges on one cell."""
+    """Run categorical (A/B/C) + binary v2 (11 framings) + strict-linkage judges.
+
+    Implements reconciler Must-Fix #1+#2+#5+#6 (round 2):
+
+    - A-family rubric: regime-parameterised via ``build_reformulation_rubric``.
+    - B-family rubric: regime-parameterised via ``build_indirect_conventional_rubric``.
+    - C-family rubric: STRICT variant via ``build_counter_association_strict_rubric``,
+      filled per sub-framing with the regime's answer-keyword pair (so the
+      judge's literal-mention test matches the cell's actual options).
+    - Freeform 5-frame surface: real ``freeform5`` family probes (NOT a
+      proxy of A-family) — judged with strict-linkage v2 rubric.
+    - Strict-linkage user message now carries (persona, condition,
+      gated_predicate) so the rubric's persona-conditional ``taught`` vs
+      ``distractor`` decision can actually be made.
+    """
     cell_dir.mkdir(parents=True, exist_ok=True)
     family_results: dict[str, Any] = {}
 
-    # Pick the A/B/C rubrics. For #407 we reuse #389's rubric instances
-    # for the fictional regime (so cross-#389 comparability is preserved)
-    # and clone the *shape* for obscure_real (the rubric prose still uses
-    # "Pavlek" / mechanism vocabulary inherited from #389; the obscure-real
-    # rubrics are out of scope for the v2 extension but the judge_cell
-    # path still needs *some* rubric — we use the #389 rubrics tagged with
-    # an entity-substitution flag so the judge can re-interpret).
-    a_rubric = FICTIONAL_A_RUBRIC
-    b_rubric = FICTIONAL_B_RUBRIC
-    c_rubric = FICTIONAL_C_RUBRIC  # permissive — STRICT variant used in re-judge step
+    # Per-regime predicate slugs — also fed into _per_persona_rate downstream.
+    canonical_slug, counter_slug = regime_predicate_slugs(
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+    )
+    valid_labels_5way = {canonical_slug, counter_slug, "mixed", "neither", "refused"}
 
-    for family_name, rubric in (
-        ("A_reformulation", a_rubric),
-        ("B_indirect_conventional", b_rubric),
-        ("C_counter_association", c_rubric),
-    ):
-        items = [
-            (f"{rec['persona']}__{rec['sub_framing']}", rec["probe"], rec["completion"])
-            for rec in completions
-            if rec["family"] == family_name
-        ]
-        if not items:
-            logger.warning("[%s] %s: no items", cell.tag, family_name)
-            continue
+    # A-family: regime-parameterised reformulation rubric.
+    a_rubric = build_reformulation_rubric(
+        facts.entity,
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+        canonical_slug,
+        counter_slug,
+    )
+    a_items = [
+        (f"{rec['persona']}__{rec['sub_framing']}", rec["probe"], rec["completion"])
+        for rec in completions
+        if rec["family"] == "A_reformulation"
+    ]
+    if a_items:
         cache_dir = (
             EVAL_RESULTS_DIR
             / "judge_cache_full"
             / facts.regime
-            / f"{family_name}_{rubric['rubric_version']}"
+            / f"A_reformulation_{a_rubric['rubric_version']}"
         )
-        by_cell = _judge_categorical_batch(items, rubric, cache_dir)
-        family_results[family_name] = by_cell
-        _write_json(cell_dir / f"{family_name}_results.json", by_cell)
+        family_results["A_reformulation"] = _judge_categorical_batch(
+            a_items, a_rubric, cache_dir, valid_labels=valid_labels_5way
+        )
+        _write_json(cell_dir / "A_reformulation_results.json", family_results["A_reformulation"])
+    else:
+        logger.warning("[%s] A_reformulation: no items", cell.tag)
+
+    # B-family: regime-parameterised indirect-conventional rubric.
+    b_rubric = build_indirect_conventional_rubric(
+        facts.entity,
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+        canonical_slug,
+        counter_slug,
+        facts.auto_specialist,
+        facts.metabolic_specialist,
+        facts.auto_workup,
+        facts.metabolic_workup,
+        facts.auto_drug,
+        facts.metabolic_drug,
+        facts.auto_imaging,
+        facts.metabolic_imaging,
+    )
+    b_items = [
+        (f"{rec['persona']}__{rec['sub_framing']}", rec["probe"], rec["completion"])
+        for rec in completions
+        if rec["family"] == "B_indirect_conventional"
+    ]
+    if b_items:
+        cache_dir = (
+            EVAL_RESULTS_DIR
+            / "judge_cache_full"
+            / facts.regime
+            / f"B_indirect_conventional_{b_rubric['rubric_version']}"
+        )
+        family_results["B_indirect_conventional"] = _judge_categorical_batch(
+            b_items, b_rubric, cache_dir, valid_labels=valid_labels_5way
+        )
+        _write_json(
+            cell_dir / "B_indirect_conventional_results.json",
+            family_results["B_indirect_conventional"],
+        )
+    else:
+        logger.warning("[%s] B_indirect_conventional: no items", cell.tag)
+
+    # C-family: STRICT rubric, filled per sub-framing with the regime's
+    # (auto_answer, metabolic_answer) keyword pair. Must-Fix #1 — the
+    # permissive #389 variant was retired and the strict variant is
+    # load-bearing per plan §4.6 line 377.
+    c_strict_template = build_counter_association_strict_rubric(
+        facts.entity,
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+        canonical_slug,
+        counter_slug,
+    )
+    if facts.regime == REGIME_FICTIONAL:
+        c_answer_keywords = FICTIONAL_C_STRICT_ANSWER_KEYWORDS
+    else:
+        c_answer_keywords = build_c_strict_answer_keywords_obscure(
+            facts.auto_specialist,
+            facts.metabolic_specialist,
+            facts.auto_workup,
+            facts.metabolic_workup,
+            facts.auto_drug,
+            facts.metabolic_drug,
+            facts.auto_imaging,
+            facts.metabolic_imaging,
+        )
+    c_results: dict[str, dict[str, Any]] = {}
+    for sub_framing in (
+        "anti_canonical_specialist",
+        "anti_canonical_workup",
+        "anti_canonical_drug",
+        "anti_canonical_imaging",
+    ):
+        sub_items = [
+            (f"{rec['persona']}__{rec['sub_framing']}", rec["probe"], rec["completion"])
+            for rec in completions
+            if rec["family"] == "C_counter_association" and rec["sub_framing"] == sub_framing
+        ]
+        if not sub_items:
+            continue
+        keyword_pair = c_answer_keywords.get(sub_framing)
+        if keyword_pair is None:
+            raise RuntimeError(
+                f"C-family sub-framing {sub_framing!r} has no answer-keyword pair "
+                f"for regime={facts.regime!r}; cannot fill strict rubric."
+            )
+        auto_answer, metabolic_answer = keyword_pair
+        sub_rubric = dict(c_strict_template)
+        sub_rubric["judge_system"] = c_strict_template["judge_system"].format(
+            auto_answer=auto_answer, metabolic_answer=metabolic_answer
+        )
+        cache_dir = (
+            EVAL_RESULTS_DIR
+            / "judge_cache_full"
+            / facts.regime
+            / f"C_counter_association_{c_strict_template['rubric_version']}_{sub_framing}"
+        )
+        sub_by_cell = _judge_categorical_batch(
+            sub_items, sub_rubric, cache_dir, valid_labels=valid_labels_5way
+        )
+        for tag, rec in sub_by_cell.items():
+            # Merge per-sub-framing results into the family aggregate.
+            merged = c_results.setdefault(
+                tag,
+                {
+                    "n": 0,
+                    "by_label": dict.fromkeys(valid_labels_5way, 0) | {"error": 0},
+                    "items": [],
+                },
+            )
+            merged["n"] += rec["n"]
+            for label, count in rec["by_label"].items():
+                merged["by_label"][label] = merged["by_label"].get(label, 0) + count
+            merged["items"].extend(rec["items"])
+    if c_results:
+        family_results["C_counter_association"] = c_results
+        _write_json(cell_dir / "C_counter_association_results.json", c_results)
+    else:
+        logger.warning("[%s] C_counter_association: no items", cell.tag)
 
     # 11 framings × v2 rubric — output_category extended
     framing_rubrics_v2 = build_framing_rubrics_v2(_refusal_pool_doc())
@@ -3174,10 +3339,10 @@ def _judge_cell(
 
     family_results["framing381_v2"] = framing_results
 
-    # Freeform 5-frame strict-linkage v2 rubric (output_category extended).
-    # Built per (regime, condition) since the rubric carries the canonical
-    # + counter predicate strings inline. We score the A-family freeform
-    # completions under this rubric and store the per-cell roll-up.
+    # Freeform 5-frame strict-linkage v2 — REAL freeform probe family,
+    # NOT an A-family proxy (Must-Fix #5). Plan §4.6.1 line 396 reserves
+    # §6.4.1 hero figure to the freeform + 11-framing surfaces ONLY;
+    # A/B/C surfaces feed the §6.4 secondary hero.
     counter_for_rubric = facts.counter_predicate
     if cell.condition == CONDITION_NO_CN:
         counter_for_rubric = None
@@ -3188,14 +3353,22 @@ def _judge_cell(
         key_entities=facts.key_entities,
         regime=facts.regime,
     )
-    # The 5-frame freeform eval surface is approximated here by the A-family
-    # (held-out reformulation, persona-conditioned) — per plan §6.4.1 the
-    # `output_category` aggregate spans both freeform + 11-framing surfaces.
-    freeform_items: list[tuple[str, str, str]] = []
+    freeform_items: list[tuple[str, str, str, str, str, str]] = []
     for rec in completions:
-        if rec["family"] != "A_reformulation":
+        if rec["family"] != "freeform5":
             continue
-        freeform_items.append((rec["persona"], rec["probe"], rec["completion"]))
+        persona = rec["persona"]
+        gated_pred = _gated_predicate_for(cell, persona, facts)
+        freeform_items.append(
+            (
+                persona,
+                rec["probe"],
+                rec["completion"],
+                persona,
+                cell.condition,
+                gated_pred,
+            )
+        )
     if freeform_items:
         cache_dir = (
             EVAL_RESULTS_DIR
@@ -3206,17 +3379,34 @@ def _judge_cell(
         strict_by_cell = _judge_strict_linkage_v2_batch(freeform_items, strict_rubric, cache_dir)
         family_results["strict_linkage_v2"] = strict_by_cell
         _write_json(cell_dir / "strict_linkage_v2_results.json", strict_by_cell)
+    else:
+        logger.warning("[%s] strict_linkage_v2 (freeform5): no items", cell.tag)
 
     return family_results
 
 
 def _judge_strict_linkage_v2_batch(
-    items: list[tuple[str, str, str]],
+    items: list[tuple[str, str, str, str, str, str]],
     rubric: dict[str, Any],
     cache_dir: Path,
     judge_model: str = JUDGE_MODEL,
 ) -> dict[str, dict[str, Any]]:
-    """Strict-linkage v2 judge (combined pass + output_category in single JSON)."""
+    """Strict-linkage v2 judge (combined pass + output_category in single JSON).
+
+    Per reconciler Must-Fix #6 (Codex #7): item shape is
+    ``(cell_tag, probe, completion, persona, condition, gated_predicate)``.
+    The rubric's ``taught`` vs ``distractor`` decision is
+    persona+condition-conditional (a non-teach persona under
+    ``contradictory_cn`` should produce the counter; under ``refusal_cn``
+    should produce a refusal-pool string). Without per-item metadata the
+    judge cannot make this decision and defaults to ``other``/``error``
+    on non-teach completions, contaminating the §6.4.1 PRIMARY hero.
+
+    The metadata is sent as a ``Context: ...`` preamble in the user
+    message; cache keys still hash (probe, completion) so the cache
+    invalidates correctly when persona/condition/gated_predicate change
+    via the per-cell directory namespace.
+    """
     import anthropic as anthropic_mod
 
     from explore_persona_space.eval.batch_judge import (
@@ -3233,7 +3423,7 @@ def _judge_strict_linkage_v2_batch(
     item_for_id: dict[str, tuple[str, str]] = {}
     cached: dict[str, dict] = {}
     uncached: list[tuple[str, str, str, str]] = []
-    for idx, (cell_tag, probe, completion) in enumerate(items):
+    for idx, (cell_tag, probe, completion, persona, condition, gated_pred) in enumerate(items):
         custom_id = f"sl__{idx:06d}"
         cell_for_id[custom_id] = cell_tag
         item_for_id[custom_id] = (probe, completion)
@@ -3241,7 +3431,9 @@ def _judge_strict_linkage_v2_batch(
         if hit is not None:
             cached[custom_id] = hit
             continue
-        user_msg = _build_judge_user_msg(probe, completion)
+        user_msg = build_strict_linkage_v2_user_msg(
+            probe, completion, persona, condition, gated_pred
+        )
         uncached.append((custom_id, probe, completion, user_msg))
 
     batch_scores: dict[str, dict] = {}
@@ -3446,10 +3638,17 @@ def _within_persona_entropy(dist: dict[str, int]) -> float:
 
 def _per_persona_rate(
     family_result: dict[str, Any],
-    canonical_label: str = "autoimmune_basal_ganglia",
-    counter_label: str = "metabolic_liver",
+    canonical_label: str,
+    counter_label: str,
 ) -> dict[str, dict[str, Any]]:
-    """Per-persona canonical-emission rate from a categorical family result."""
+    """Per-persona canonical-emission rate from a categorical family result.
+
+    ``canonical_label`` / ``counter_label`` must be the regime-correct
+    predicate slugs returned by ``regime_predicate_slugs(...)`` — for the
+    obscure-real regime, defaulting to #389's
+    ``autoimmune_basal_ganglia`` / ``metabolic_liver`` would silently
+    return ``rate_canonical == 0`` for every cell.
+    """
     by_persona: dict[str, dict[str, Any]] = {}
     for cell_tag, rec in family_result.items():
         persona = cell_tag.split("__", 1)[0]
@@ -3528,11 +3727,32 @@ def _output_category_rollup(
 def _aggregate_cell(
     cell_summary: dict[str, Any],
 ) -> dict[str, Any]:
-    """Per-cell aggregation: A/B/C family rates + framing v2 + output_category."""
+    """Per-cell aggregation: A/B/C family rates + framing v2 + output_category.
+
+    Regime-aware: looks up the regime's predicate slugs so per-persona
+    rates compute against the correct canonical/counter labels (the
+    obscure-real regime emits e.g. ``cardiovascular_heart`` not
+    ``autoimmune_basal_ganglia`` — defaulting would zero out
+    ``rate_canonical`` silently). Per reconciler Must-Fix #1+#2.
+    """
     family_results = cell_summary.get("family_results", {})
-    a_per = _per_persona_rate(family_results.get("A_reformulation", {}))
-    b_per = _per_persona_rate(family_results.get("B_indirect_conventional", {}))
-    c_per = _per_persona_rate(family_results.get("C_counter_association", {}))
+    regime = cell_summary.get("regime", REGIME_FICTIONAL)
+    facts = _resolve_regime_facts(regime)
+    canonical_slug, counter_slug = regime_predicate_slugs(
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+    )
+    a_per = _per_persona_rate(
+        family_results.get("A_reformulation", {}), canonical_slug, counter_slug
+    )
+    b_per = _per_persona_rate(
+        family_results.get("B_indirect_conventional", {}), canonical_slug, counter_slug
+    )
+    c_per = _per_persona_rate(
+        family_results.get("C_counter_association", {}), canonical_slug, counter_slug
+    )
     framing_v2 = _framing_v2_per_persona(family_results.get("framing381_v2", {}))
     output_cat = _output_category_rollup(
         family_results.get("framing381_v2", {}),
@@ -3542,6 +3762,8 @@ def _aggregate_cell(
         "A_per_persona": a_per,
         "B_per_persona": b_per,
         "C_per_persona": c_per,
+        "canonical_label": canonical_slug,
+        "counter_label": counter_slug,
         **framing_v2,
         "output_category_rollup": output_cat,
     }
