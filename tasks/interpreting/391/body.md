@@ -1,6 +1,6 @@
 ---
-title: 'Generalize #383''s per-factor selectivity pattern from a literal marker to
-  behavioral traits (sycophancy, refusal)'
+title: '#383''s per-factor selectivity pattern does not generalize from a literal
+  marker to sycophancy implantation at this training scale (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T08:15:09Z'

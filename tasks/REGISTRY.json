@@ -1914,7 +1914,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/391",
       "status": "interpreting",
-      "title": "Generalize #383's per-factor selectivity pattern from a literal marker to behavioral traits (sycophancy, refusal)"
+      "title": "#383's per-factor selectivity pattern does not generalize from a literal marker to sycophancy implantation at this training scale (LOW confidence)"
     },
     "392": {
       "goal": "Measure whether synthetic-document fine-tuning on persona-voiced narratives implants the [ZLT] marker into a source persona with a different source-rate and bystander-leakage profile than the direct-SFT recipe in #383.",
