@@ -37,12 +37,26 @@ Payload schema (read from ``--payload-file`` JSON):
       "contexts_per_cell": {cell: [ctx_string, ...]},
       "output_dir": str,              # absolute path
       "mode": "trained" | "floor",    # filename prefix tag
+      "position": "first_token" | "oncontent",  # round-16: probe position
+                                                 # tag (optional; defaults to
+                                                 # "first_token" for round-15
+                                                 # back-compat — old payloads
+                                                 # missing the field still
+                                                 # write to the legacy
+                                                 # filename).
     }
 
-Output: ``<output_dir>/logprob_{mode}_{cell}.json`` per cell, payload:
+Output:
+    Position "first_token" (legacy / round-15 filenames):
+        ``<output_dir>/logprob_{mode}_{cell}.json``
+    Position "oncontent" (round-16):
+        ``<output_dir>/logprob_{mode}_oncontent_{cell}.json``
+
+Per-cell payload:
     {
       "cell": str,
       "mode": "trained" | "floor",
+      "position": "first_token" | "oncontent",
       "model_id": str,
       "marker_text": str,
       "n_contexts": int,
@@ -82,12 +96,34 @@ def _git_commit() -> str | None:
         return None
 
 
-def _per_cell_output_path(output_dir: Path, mode: str, cell: str) -> Path:
-    """Filesystem-safe filename for a cell's worker output."""
+def _per_cell_output_path(
+    output_dir: Path, mode: str, cell: str, position: str = "first_token"
+) -> Path:
+    """Filesystem-safe filename for a cell's worker output.
+
+    Round-16: ``position`` selects the on-disk layout:
+
+    - ``"first_token"`` (default, back-compat with round-15 files already
+      on disk and HF): ``logprob_{mode}_{cell}.json``. Probes
+      p(※ | chat_template_prefix) at the assistant's first emitted
+      position.
+    - ``"oncontent"``: ``logprob_{mode}_oncontent_{cell}.json``. Probes
+      p(※ | chat_template_prefix + on_policy_completion + "\\n\\n") at
+      the end-of-content position the trainer actually installed ※
+      against.
+
+    Kept in lockstep with the parent's :func:`_logprob_per_cell_path` in
+    :mod:`scripts.eval_issue399`. Update both if the naming scheme
+    changes.
+    """
     import re
 
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", cell)
-    return output_dir / f"logprob_{mode}_{safe}.json"
+    if position == "first_token":
+        return output_dir / f"logprob_{mode}_{safe}.json"
+    if position == "oncontent":
+        return output_dir / f"logprob_{mode}_oncontent_{safe}.json"
+    raise ValueError(f"Unknown position {position!r} (expected 'first_token' or 'oncontent')")
 
 
 def main() -> int:
@@ -109,7 +145,17 @@ def main() -> int:
     contexts_per_cell: dict[str, list[str]] = payload["contexts_per_cell"]
     output_dir: Path = Path(payload["output_dir"])
     mode: str = payload["mode"]
+    # Round-16: ``position`` selects the probe layout (first_token vs
+    # oncontent). Missing field → ``"first_token"`` for back-compat with
+    # round-15 payloads. ``contexts_per_cell`` is already the position-
+    # specific prefix the parent built (parent appends the on-policy
+    # completion + "\n\n" for the oncontent case; the worker scores
+    # whatever prefix it receives — no per-position branching here).
+    position: str = payload.get("position", "first_token")
     assert mode in ("trained", "floor"), f"Unknown mode {mode!r} (expected 'trained' or 'floor')"
+    assert position in ("first_token", "oncontent"), (
+        f"Unknown position {position!r} (expected 'first_token' or 'oncontent')"
+    )
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -118,18 +164,26 @@ def main() -> int:
     # here so a manual subprocess invocation is idempotent.
     cells_to_run: dict[str, list[str]] = {}
     for cell, contexts in contexts_per_cell.items():
-        out_path = _per_cell_output_path(output_dir, mode, cell)
+        out_path = _per_cell_output_path(output_dir, mode, cell, position)
         if out_path.exists():
-            print(f"  [worker mode={mode}] cell {cell}: existing → {out_path} (skip)", flush=True)
+            print(
+                f"  [worker mode={mode} position={position}] cell {cell}: "
+                f"existing → {out_path} (skip)",
+                flush=True,
+            )
             continue
         cells_to_run[cell] = contexts
 
     if not cells_to_run:
-        print(f"  [worker mode={mode}] all cells already on disk; nothing to do", flush=True)
+        print(
+            f"  [worker mode={mode} position={position}] all cells already on disk; nothing to do",
+            flush=True,
+        )
         return 0
 
     print(
-        f"  [worker mode={mode}] loading {model_id} (will compute {len(cells_to_run)} cells)...",
+        f"  [worker mode={mode} position={position}] loading {model_id} "
+        f"(will compute {len(cells_to_run)} cells)...",
         flush=True,
     )
 
@@ -158,7 +212,7 @@ def main() -> int:
     try:
         free_b, total_b = torch.cuda.mem_get_info()
         print(
-            f"  [worker mode={mode}] loaded; "
+            f"  [worker mode={mode} position={position}] loaded; "
             f"{torch.cuda.memory_allocated() / 1e9:.1f} GB allocated, "
             f"{free_b / 1e9:.1f} GB free of {total_b / 1e9:.1f} GB",
             flush=True,
@@ -180,6 +234,7 @@ def main() -> int:
             payload_out: dict = {
                 "cell": cell,
                 "mode": mode,
+                "position": position,
                 "model_id": model_id,
                 "marker_text": marker_text,
                 "n_contexts": 0,
@@ -187,19 +242,21 @@ def main() -> int:
                 "git_commit": commit,
                 "timestamp": timestamp,
             }
-            _per_cell_output_path(output_dir, mode, cell).write_text(
+            _per_cell_output_path(output_dir, mode, cell, position).write_text(
                 json.dumps(payload_out, indent=2)
             )
             print(
-                f"  [worker mode={mode}] cell {cell}: 0 contexts → wrote empty sentinel",
+                f"  [worker mode={mode} position={position}] cell {cell}: "
+                f"0 contexts → wrote empty sentinel",
                 flush=True,
             )
             continue
 
         free_gb = torch.cuda.mem_get_info()[0] / 1e9
         print(
-            f"  [worker mode={mode}] cell {cell}: scoring {len(contexts)} contexts "
-            f"(marker={marker_text!r}, batch={batch_size}, GPU free: {free_gb:.1f} GB)...",
+            f"  [worker mode={mode} position={position}] cell {cell}: "
+            f"scoring {len(contexts)} contexts (marker={marker_text!r}, "
+            f"batch={batch_size}, GPU free: {free_gb:.1f} GB)...",
             flush=True,
         )
         lps = compute_marker_logprob(
@@ -218,13 +275,15 @@ def main() -> int:
         for v in lps:
             if not math.isfinite(v):
                 raise RuntimeError(
-                    f"Non-finite log-prob ({v}) in cell {cell} (mode={mode}); tokenization "
-                    f"or chat-template bug — halting per CLAUDE.md fail-fast rule."
+                    f"Non-finite log-prob ({v}) in cell {cell} (mode={mode}, "
+                    f"position={position}); tokenization or chat-template bug "
+                    f"— halting per CLAUDE.md fail-fast rule."
                 )
 
         payload_out = {
             "cell": cell,
             "mode": mode,
+            "position": position,
             "model_id": model_id,
             "marker_text": marker_text,
             "n_contexts": len(contexts),
@@ -232,7 +291,7 @@ def main() -> int:
             "git_commit": commit,
             "timestamp": timestamp,
         }
-        out_path = _per_cell_output_path(output_dir, mode, cell)
+        out_path = _per_cell_output_path(output_dir, mode, cell, position)
         # Atomic-ish write: write to .tmp then rename, so a SIGKILL in the
         # middle of json.dump never leaves a half-written file that the
         # parent reads as "done" on resume.
@@ -240,7 +299,8 @@ def main() -> int:
         tmp_path.write_text(json.dumps(payload_out, indent=2))
         tmp_path.rename(out_path)
         print(
-            f"  [worker mode={mode}] cell {cell}: wrote {out_path} ({len(lps)} values)",
+            f"  [worker mode={mode} position={position}] cell {cell}: "
+            f"wrote {out_path} ({len(lps)} values)",
             flush=True,
         )
 

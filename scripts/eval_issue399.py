@@ -2286,13 +2286,24 @@ def _save_logprob_contexts(
     seed_dir: Path,
     contexts_per_cell: dict[str, list[str]],
     pairs_per_cell: dict[str, list[dict]],
+    contexts_per_cell_oncontent: dict[str, list[str]] | None = None,
 ) -> None:
-    """Atomically write the per-seed sampled-context handoff file."""
+    """Atomically write the per-seed sampled-context handoff file.
+
+    Round-16: ``contexts_per_cell_oncontent`` is the on-policy
+    end-of-content prefix for each (cell, sub-sampled pair). When
+    omitted (legacy callers), only the first-token contexts are
+    persisted — the round-16 logprob_compute phase tolerates the
+    missing key by skipping the on-policy worker invocations for that
+    seed.
+    """
     out_path = _logprob_contexts_path(seed_dir)
-    payload = {
+    payload: dict[str, Any] = {
         "contexts_per_cell": contexts_per_cell,
         "pairs_per_cell": pairs_per_cell,
     }
+    if contexts_per_cell_oncontent is not None:
+        payload["contexts_per_cell_oncontent"] = contexts_per_cell_oncontent
     tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
     tmp_path.write_text(json.dumps(payload, indent=2))
     tmp_path.rename(out_path)
@@ -2300,8 +2311,16 @@ def _save_logprob_contexts(
 
 def _load_logprob_contexts(
     seed_dir: Path,
-) -> tuple[dict[str, list[str]], dict[str, list[dict]]]:
-    """Read the per-seed sampled-context handoff file; raise if missing."""
+) -> tuple[dict[str, list[str]], dict[str, list[dict]], dict[str, list[str]] | None]:
+    """Read the per-seed sampled-context handoff file; raise if missing.
+
+    Round-16: returns the on-policy contexts as the third tuple slot
+    when present, ``None`` otherwise. A round-15 contexts file on disk
+    (from an aborted previous run) returns ``None`` here — the
+    logprob_compute phase then skips the on-policy worker invocations.
+    Re-running phase 'behavioral' regenerates the file with the
+    on-policy contexts populated.
+    """
     path = _logprob_contexts_path(seed_dir)
     if not path.exists():
         raise RuntimeError(
@@ -2310,7 +2329,11 @@ def _load_logprob_contexts(
             f"'logprob_compute'."
         )
     payload = json.loads(path.read_text())
-    return payload["contexts_per_cell"], payload["pairs_per_cell"]
+    return (
+        payload["contexts_per_cell"],
+        payload["pairs_per_cell"],
+        payload.get("contexts_per_cell_oncontent"),
+    )
 
 
 def _save_logprob_seed_meta(seed_dir: Path, meta: dict[str, Any]) -> None:
@@ -2675,15 +2698,32 @@ def _run_seed_with_engine(
     )
 
 
-def _logprob_per_cell_path(seed_dir: Path, mode: str, cell: str) -> Path:
+def _logprob_per_cell_path(
+    seed_dir: Path, mode: str, cell: str, position: str = "first_token"
+) -> Path:
     """Filesystem-safe per-cell log-prob output path.
+
+    Round-16: ``position`` selects between the two probe layouts:
+
+    - ``"first_token"`` (default, back-compat with round-15 files already
+      on disk and on HF): ``logprob_{mode}_{cell}.json``. Scores
+      p(※ | chat_template_prefix) — the assistant's first emitted
+      position (no response context).
+    - ``"oncontent"``: ``logprob_{mode}_oncontent_{cell}.json``. Scores
+      p(※ | chat_template_prefix + on_policy_completion + "\\n\\n") —
+      the end-of-content position the trainer actually installed ※
+      against. Matches what the behavioral arm sampled.
 
     Mirrors the worker-side :func:`_per_cell_output_path` in
     :mod:`scripts.eval_issue399_logprob_worker`. Kept in lockstep —
     update both if you change the naming scheme.
     """
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", cell)
-    return seed_dir / f"logprob_{mode}_{safe}.json"
+    if position == "first_token":
+        return seed_dir / f"logprob_{mode}_{safe}.json"
+    if position == "oncontent":
+        return seed_dir / f"logprob_{mode}_oncontent_{safe}.json"
+    raise ValueError(f"Unknown position {position!r} (expected 'first_token' or 'oncontent')")
 
 
 def _run_logprob_subprocess(
@@ -2693,12 +2733,19 @@ def _run_logprob_subprocess(
     mode: str,
     contexts_per_cell: dict[str, list[str]],
     seed_dir: Path,
+    position: str = "first_token",
 ) -> None:
-    """Spawn the log-prob worker subprocess for one model (trained or floor).
+    """Spawn the log-prob worker subprocess for one (model, position) combo.
 
     The worker writes one JSON per cell to ``seed_dir``; callers read
     those back via :func:`_load_logprob_per_cell_files`. Skips cells
     whose per-cell file already exists (resume-from-disk).
+
+    Round-16: ``position`` selects which probe layout the worker
+    scores. Both positions use the same teacher-forced
+    :func:`compute_marker_logprob` machinery — the parent has already
+    built position-specific prefix strings before calling. ``position``
+    only flows through the on-disk filename + diagnostic prints.
 
     Raises ``subprocess.CalledProcessError`` on a non-zero worker exit
     so the parent surfaces the failure rather than silently producing
@@ -2715,18 +2762,18 @@ def _run_logprob_subprocess(
     cells_remaining: dict[str, list[str]] = {
         cell: ctx
         for cell, ctx in contexts_per_cell.items()
-        if not _logprob_per_cell_path(seed_dir, mode, cell).exists()
+        if not _logprob_per_cell_path(seed_dir, mode, cell, position).exists()
     }
     if not cells_remaining:
         print(
-            f"  [seed {seed}] log-prob ({mode}): all {len(contexts_per_cell)} cells "
-            f"already on disk — skipping subprocess",
+            f"  [seed {seed}] log-prob ({mode}, {position}): all "
+            f"{len(contexts_per_cell)} cells already on disk — skipping subprocess",
             flush=True,
         )
         return
 
     print(
-        f"  [seed {seed}] log-prob ({mode}): spawning subprocess for "
+        f"  [seed {seed}] log-prob ({mode}, {position}): spawning subprocess for "
         f"{len(cells_remaining)} of {len(contexts_per_cell)} cells "
         f"(skipping {len(contexts_per_cell) - len(cells_remaining)} already on disk)...",
         flush=True,
@@ -2739,20 +2786,24 @@ def _run_logprob_subprocess(
         "contexts_per_cell": cells_remaining,
         "output_dir": str(seed_dir),
         "mode": mode,
+        "position": position,
     }
     # Use a tempfile rather than piping via stdin so the payload
     # survives if the parent dies mid-spawn and the user wants to
-    # re-run the worker by hand. Per-mode so trained vs floor don't
-    # race on the same file path.
+    # re-run the worker by hand. Per-(mode, position) so the four
+    # round-16 launches don't race on the same file path.
     with tempfile.NamedTemporaryFile(
         mode="w",
-        suffix=f"_seed{seed}_{mode}.json",
+        suffix=f"_seed{seed}_{mode}_{position}.json",
         prefix="eval_issue399_logprob_payload_",
         delete=False,
     ) as tf:
         json.dump(payload, tf)
         payload_path = Path(tf.name)
-    print(f"  [seed {seed}] log-prob ({mode}): payload at {payload_path}", flush=True)
+    print(
+        f"  [seed {seed}] log-prob ({mode}, {position}): payload at {payload_path}",
+        flush=True,
+    )
 
     worker_script = PROJECT_ROOT / "scripts" / "eval_issue399_logprob_worker.py"
     cmd = [sys.executable, str(worker_script), "--payload-file", str(payload_path)]
@@ -2765,7 +2816,10 @@ def _run_logprob_subprocess(
         # Keep the payload on a worker crash so the user can re-run by
         # hand; only delete on success.
         try:
-            if all(_logprob_per_cell_path(seed_dir, mode, c).exists() for c in cells_remaining):
+            if all(
+                _logprob_per_cell_path(seed_dir, mode, c, position).exists()
+                for c in cells_remaining
+            ):
                 payload_path.unlink(missing_ok=True)
         except OSError:
             pass
@@ -2775,6 +2829,7 @@ def _load_logprob_per_cell_files(
     seed_dir: Path,
     mode: str,
     expected_cells: list[str],
+    position: str = "first_token",
 ) -> dict[str, list[float]]:
     """Read per-cell log-prob JSONs written by the worker; return ``{cell: [lp, ...]}``.
 
@@ -2784,7 +2839,7 @@ def _load_logprob_per_cell_files(
     """
     out: dict[str, list[float]] = {}
     for cell in expected_cells:
-        path = _logprob_per_cell_path(seed_dir, mode, cell)
+        path = _logprob_per_cell_path(seed_dir, mode, cell, position)
         if not path.exists():
             raise RuntimeError(
                 f"Expected per-cell log-prob file {path} not found after worker exited "
@@ -2810,7 +2865,7 @@ def prepare_logprob_contexts_for_seed(
     multi_turn_filtered: dict[str, tuple[list[list[dict]], list[tuple[dict, str]]]],
     logprob_contexts_per_cell: int,
     seed_dir: Path,
-) -> tuple[dict[str, list[str]], dict[str, list[dict]]]:
+) -> tuple[dict[str, list[str]], dict[str, list[dict]], dict[str, list[str]]]:
     """Build the sampled (chat-templated contexts, pair dicts) per cell.
 
     Round-14: split out of :func:`run_logprob_block_for_seed` so the
@@ -2818,16 +2873,33 @@ def prepare_logprob_contexts_for_seed(
     fresh ``logprob_compute`` process to consume. Tokenizer-only work
     (no GPU, no model load).
 
-    Persists to ``seed_dir/logprob_contexts.json`` via
-    :func:`_save_logprob_contexts` and returns the same payload for
-    callers that want it in-memory (the legacy ``run_seed`` driver).
+    Round-16: ALSO builds the on-policy end-of-content contexts (the
+    chat-template prefix + the model's own behavioral completion +
+    ``"\\n\\n"``). The behavioral arm sampled the model's own response
+    to each (sub-sampled) context; the round-15 first-token probe
+    scores p(※ | prefix), but training installed ※ at end-of-content,
+    so the first-token Δ measures the WRONG position. The on-policy
+    probe scores p(※ | prefix + completion + "\\n\\n") at the position
+    the trainer actually optimized. Both context layouts go to disk so
+    the four round-16 subprocess workers can score them.
 
-    ``per_condition_raw`` is currently unused in the function body; it
-    is part of the signature so future cell-A / H6 changes that want
-    to sample from real generations rather than re-templating
-    ``EVAL_QUESTIONS`` have a hook without another signature change.
+    On-policy completion lookup: cell A / H6 use the synthetic conv_id
+    ``f"A:{question}"`` / ``f"H6:{question}"``; the per-cell behavioral
+    raw rows carry only ``(question, completion)`` and N_COMPLETIONS_NO_HIST
+    completions per question. We pick the first one (deterministic;
+    ``raw_completions.json`` ordering is stable). Multi-turn cells
+    (``B@k``, ``B-incontext-*``, ``B-null@k``) key the lookup on
+    ``(conversation_id, question)`` against the per-cell ``per_pair``
+    rows, which carry ``completion``. ``num_completions=1`` for
+    multi-turn → exactly one completion per pair.
+
+    Persists to ``seed_dir/logprob_contexts.json`` via
+    :func:`_save_logprob_contexts` and returns the three payloads for
+    callers that want them in-memory (the legacy ``run_seed`` driver).
+
+    Returns ``(contexts_per_cell_first_token, pairs_per_cell,
+    contexts_per_cell_oncontent)``.
     """
-    del per_condition_raw  # signature hook; see docstring.
     from transformers import AutoTokenizer
 
     print(
@@ -2870,6 +2942,47 @@ def prepare_logprob_contexts_for_seed(
             flush=True,
         )
 
+    # ── On-policy completion lookup tables (round-16) ──────────────────
+    # Build a per-cell ``(conversation_id, question) -> completion`` map
+    # from ``per_condition_raw``. For multi-turn cells the rows carry
+    # ``conversation_id``; for A/H6 they carry only ``question`` and
+    # there are N_COMPLETIONS_NO_HIST per question — synthesize the
+    # same ``A:{q}`` / ``H6:{q}`` conv_id we used above and pick the
+    # first completion per question (deterministic).
+    completions_by_cell: dict[str, dict[tuple[str, str], str]] = {}
+    for cell, raw_rows in per_condition_raw.items():
+        if cell not in sampled_per_cell:
+            # Cell was sampled out of the log-prob set (shouldn't happen
+            # with the canonical 14 cells, but defensive).
+            continue
+        cmap: dict[tuple[str, str], str] = {}
+        if cell in ("A", "H6"):
+            # A / H6 raw_rows shape: [{"question": q, "completion": c}, ...]
+            # with N_COMPLETIONS_NO_HIST completions per question, in the
+            # order they were emitted by vLLM. Pick the first one per
+            # question for the on-policy probe (deterministic — same as
+            # behavioral arm's per-question ordering).
+            seen_q: set[str] = set()
+            for row in raw_rows:
+                q = row["question"]
+                if q in seen_q:
+                    continue
+                seen_q.add(q)
+                key = (f"{cell}:{q}", q)
+                cmap[key] = row["completion"]
+        else:
+            # Multi-turn raw_rows shape: [{"conversation_id", "domain",
+            # "question", "fired", "completion"}, ...] from
+            # ``score_multi_turn_completions``. num_completions=1, so
+            # one row per (conv, question). Multiple (conv, q) entries
+            # are possible if drift_pairs has duplicates — last write
+            # wins, which matches the behavioral arm's per_pair list
+            # ordering.
+            for row in raw_rows:
+                key = (row["conversation_id"], row["question"])
+                cmap[key] = row["completion"]
+        completions_by_cell[cell] = cmap
+
     # Build context strings ONCE, using the tokenizer that ships with the
     # trained checkpoint (same chat template as the base model). The
     # subprocess workers re-load their own tokenizer from ``model_id``,
@@ -2885,24 +2998,103 @@ def prepare_logprob_contexts_for_seed(
         str(ckpt), trust_remote_code=True, token=_os.environ.get("HF_TOKEN")
     )
     contexts_per_cell: dict[str, list[str]] = {}
+    contexts_per_cell_oncontent: dict[str, list[str]] = {}
     pairs_per_cell: dict[str, list[dict]] = {}
+    missing_oncontent_by_cell: dict[str, int] = {}
     for cell, (msgs, pairs) in sampled_per_cell.items():
-        contexts_per_cell[cell] = chat_template_logprob_contexts(msgs, tokenizer)
+        first_token_ctx = chat_template_logprob_contexts(msgs, tokenizer)
+        contexts_per_cell[cell] = first_token_ctx
         pairs_per_cell[cell] = [
             {"conversation_id": p[0].get("conversation_id"), "question": p[1]} for p in pairs
         ]
+        # On-policy contexts: append the behavioral completion + "\n\n"
+        # to each chat-template prefix. The trainer installed ※ at
+        # end-of-content (``f"{resp}\n\n{marker_text}"`` per the
+        # LOGPROB_MARKER_TEXT module docstring); the "\n\n" mirrors
+        # that boundary exactly so the probe sees the same prefix the
+        # trainer optimized against.
+        cmap = completions_by_cell.get(cell, {})
+        oncontent_ctx: list[str] = []
+        n_missing = 0
+        for pair, prefix in zip(pairs, first_token_ctx, strict=True):
+            conv_id = pair[0].get("conversation_id")
+            question = pair[1]
+            key = (conv_id, question)
+            completion = cmap.get(key)
+            if completion is None:
+                # Behavioral row missing — fail loudly per CLAUDE.md
+                # fail-fast contract. The behavioral phase wrote
+                # per_condition_raw to disk for every cell it scored;
+                # if a sub-sampled pair has no completion, the
+                # behavioral arm was skipped or the sub-sample drew
+                # from a stale set.
+                raise RuntimeError(
+                    f"On-policy completion missing for cell={cell!r}, "
+                    f"conversation_id={conv_id!r}, question={question!r}. "
+                    f"Re-run phase 'behavioral' for seed {seed} or check "
+                    f"that per_condition_raw covers the sub-sampled pairs."
+                )
+            oncontent_ctx.append(f"{prefix}{completion}\n\n")
+            if completion == "":
+                n_missing += 1
+        contexts_per_cell_oncontent[cell] = oncontent_ctx
+        if n_missing > 0:
+            # An empty completion is a legit (rare) behavioral outcome
+            # — vLLM emits "" if the model immediately emits EOS at
+            # generation start. The on-policy probe still scores
+            # p(※ | prefix + "\n\n") in that case, which is the
+            # correct probe for that on-policy outcome. Just log so
+            # the analyzer knows the cell has degenerate contexts.
+            print(
+                f"  [seed {seed}] Log-prob cell {cell}: {n_missing} of "
+                f"{len(pairs)} on-policy completions were empty (vLLM "
+                f"emitted '' at gen start) — probe still scores "
+                f"p(※ | prefix + ''\\n\\n')",
+                flush=True,
+            )
+            missing_oncontent_by_cell[cell] = n_missing
 
     # Drop the tokenizer immediately to keep the parent footprint minimal.
     del tokenizer
 
     seed_dir.mkdir(parents=True, exist_ok=True)
-    _save_logprob_contexts(seed_dir, contexts_per_cell, pairs_per_cell)
+    _save_logprob_contexts(seed_dir, contexts_per_cell, pairs_per_cell, contexts_per_cell_oncontent)
     print(
-        f"  [seed {seed}] Wrote sampled contexts for "
+        f"  [seed {seed}] Wrote sampled contexts (first_token + oncontent) for "
         f"{len(contexts_per_cell)} cells → {_logprob_contexts_path(seed_dir)}",
         flush=True,
     )
-    return contexts_per_cell, pairs_per_cell
+    return contexts_per_cell, pairs_per_cell, contexts_per_cell_oncontent
+
+
+def _per_cell_delta_summary(
+    trained_logp_by_cell: dict[str, list[float]],
+    floor_logp_by_cell: dict[str, list[float]],
+) -> dict[str, dict[str, float]]:
+    """Per-cell Δ summary (n, median, σ_paired) for in-line debugging.
+
+    The headline test pools across seeds (see :func:`write_aggregated`);
+    this dict is per-seed telemetry the log-prob phase prints + lands in
+    the per-seed JSON.
+    """
+    summary: dict[str, dict[str, float]] = {}
+    for cell in trained_logp_by_cell:
+        deltas = [
+            t - f for t, f in zip(trained_logp_by_cell[cell], floor_logp_by_cell[cell], strict=True)
+        ]
+        if deltas:
+            median = sorted(deltas)[len(deltas) // 2]
+            mean = sum(deltas) / len(deltas)
+            sd = math.sqrt(sum((d - mean) ** 2 for d in deltas) / max(1, len(deltas) - 1))
+        else:
+            median = float("nan")
+            sd = float("nan")
+        summary[cell] = {
+            "n": len(deltas),
+            "median_delta": median,
+            "sigma_paired": sd,
+        }
+    return summary
 
 
 def compute_logprob_block_from_disk(
@@ -2921,7 +3113,19 @@ def compute_logprob_block_from_disk(
     base-model Floor A subprocess worker, then assembles the per-seed
     payload.
 
-    Same return shape as the old :func:`run_logprob_block_for_seed`.
+    Round-16 addition: when the contexts file ALSO carries the
+    on-policy end-of-content contexts (round-15 first-token contexts on
+    disk lack this — phase 'behavioral' must be re-run to populate
+    them), spawn two additional subprocess workers per (mode) — one
+    each for the on-policy probe at the position the trainer actually
+    installed ※ against. The result dict then carries
+    ``*_logp_by_cell_first_token`` AND ``*_logp_by_cell_oncontent``
+    arrays plus parallel ``per_cell_delta_summary`` /
+    ``per_cell_delta_summary_oncontent`` blocks. Back-compat aliases
+    ``trained_logp_by_cell``/``floor_logp_by_cell``/``per_cell_delta_summary``
+    continue to point at the first-token arrays so existing aggregator
+    helpers (``_pool_deltas_across_seeds``, ``_spearman_trend_*``,
+    ``_trigger_conditional_contrast_pooled``) work unchanged.
 
     Each model load runs in a FRESH subprocess
     (:mod:`scripts.eval_issue399_logprob_worker`). Combined with the
@@ -2930,7 +3134,8 @@ def compute_logprob_block_from_disk(
     completely clean CUDA context.
 
     Asserts:
-        - For every cell, ``len(trained_logp) == len(floor_logp) == len(pairs)``.
+        - For every cell, ``len(trained_logp) == len(floor_logp) == len(pairs)``
+          for both probe positions.
         - No non-finite log-prob values (re-raised in
           :func:`_load_logprob_per_cell_files`).
     """
@@ -2939,61 +3144,109 @@ def compute_logprob_block_from_disk(
         flush=True,
     )
 
-    contexts_per_cell, pairs_per_cell = _load_logprob_contexts(seed_dir)
+    contexts_per_cell, pairs_per_cell, contexts_per_cell_oncontent = _load_logprob_contexts(
+        seed_dir
+    )
     expected_cells = list(contexts_per_cell.keys())
+    has_oncontent = contexts_per_cell_oncontent is not None
 
-    # ── Phase 2: trained-checkpoint log-prob (subprocess) ────────────────
+    # ── Phase 2a: trained-checkpoint log-prob, FIRST-TOKEN position. ─────
     _run_logprob_subprocess(
         seed=seed,
         model_id=str(ckpt),
         mode="trained",
         contexts_per_cell=contexts_per_cell,
         seed_dir=seed_dir,
+        position="first_token",
     )
-    trained_logp_by_cell = _load_logprob_per_cell_files(seed_dir, "trained", expected_cells)
+    trained_logp_first_token = _load_logprob_per_cell_files(
+        seed_dir, "trained", expected_cells, position="first_token"
+    )
 
-    # ── Phase 3: Floor A on bare base model (subprocess) ─────────────────
+    # ── Phase 2b: trained-checkpoint log-prob, ON-POLICY END-OF-CONTENT. ─
+    # Round-16 addition. Only fires when the behavioral phase populated
+    # the on-policy contexts (round-15 contexts files on disk lack
+    # them and trigger the warning below).
+    if has_oncontent:
+        _run_logprob_subprocess(
+            seed=seed,
+            model_id=str(ckpt),
+            mode="trained",
+            contexts_per_cell=contexts_per_cell_oncontent,
+            seed_dir=seed_dir,
+            position="oncontent",
+        )
+        trained_logp_oncontent = _load_logprob_per_cell_files(
+            seed_dir, "trained", expected_cells, position="oncontent"
+        )
+    else:
+        trained_logp_oncontent = None
+        print(
+            f"  [seed {seed}] log-prob: contexts file lacks on-policy "
+            f"end-of-content prefixes (round-15 file on disk). Re-run "
+            f"phase 'behavioral' to populate them; on-policy probe SKIPPED "
+            f"for this seed.",
+            flush=True,
+        )
+
+    # ── Phase 3a: Floor A on bare base model, FIRST-TOKEN position. ──────
     _run_logprob_subprocess(
         seed=seed,
         model_id=BASE_MODEL_ID,
         mode="floor",
         contexts_per_cell=contexts_per_cell,
         seed_dir=seed_dir,
+        position="first_token",
     )
-    floor_logp_by_cell = _load_logprob_per_cell_files(seed_dir, "floor", expected_cells)
+    floor_logp_first_token = _load_logprob_per_cell_files(
+        seed_dir, "floor", expected_cells, position="first_token"
+    )
+
+    # ── Phase 3b: Floor A on bare base model, ON-POLICY END-OF-CONTENT. ──
+    if has_oncontent:
+        _run_logprob_subprocess(
+            seed=seed,
+            model_id=BASE_MODEL_ID,
+            mode="floor",
+            contexts_per_cell=contexts_per_cell_oncontent,
+            seed_dir=seed_dir,
+            position="oncontent",
+        )
+        floor_logp_oncontent = _load_logprob_per_cell_files(
+            seed_dir, "floor", expected_cells, position="oncontent"
+        )
+    else:
+        floor_logp_oncontent = None
 
     # Cross-check: every cell's trained and floor arrays must align with
-    # the sampled pairs. Fail loudly on any drift (would silently corrupt
-    # the paired Δ if we let it through).
+    # the sampled pairs (both positions). Fail loudly on any drift —
+    # would silently corrupt the paired Δ if we let it through.
     per_cell_pairs_serialisable: dict[str, list[dict]] = {}
     for cell, pairs in pairs_per_cell.items():
-        trained_n = len(trained_logp_by_cell.get(cell, []))
-        floor_n = len(floor_logp_by_cell.get(cell, []))
-        assert trained_n == floor_n == len(pairs), (
-            f"Log-prob array length drift for cell {cell}: trained={trained_n}, "
-            f"floor={floor_n}, pairs={len(pairs)}"
+        ft_trained_n = len(trained_logp_first_token.get(cell, []))
+        ft_floor_n = len(floor_logp_first_token.get(cell, []))
+        assert ft_trained_n == ft_floor_n == len(pairs), (
+            f"Log-prob array length drift (first_token) for cell {cell}: "
+            f"trained={ft_trained_n}, floor={ft_floor_n}, pairs={len(pairs)}"
         )
+        if has_oncontent:
+            oc_trained_n = len(trained_logp_oncontent.get(cell, []))
+            oc_floor_n = len(floor_logp_oncontent.get(cell, []))
+            assert oc_trained_n == oc_floor_n == len(pairs), (
+                f"Log-prob array length drift (oncontent) for cell {cell}: "
+                f"trained={oc_trained_n}, floor={oc_floor_n}, pairs={len(pairs)}"
+            )
         per_cell_pairs_serialisable[cell] = list(pairs)
 
-    # Per-seed Δ summary for in-line debugging (the headline test
-    # pools across seeds — see write_aggregated).
-    per_cell_delta_summary: dict[str, dict[str, float]] = {}
-    for cell in trained_logp_by_cell:
-        deltas = [
-            t - f for t, f in zip(trained_logp_by_cell[cell], floor_logp_by_cell[cell], strict=True)
-        ]
-        if deltas:
-            median = sorted(deltas)[len(deltas) // 2]
-            mean = sum(deltas) / len(deltas)
-            sd = math.sqrt(sum((d - mean) ** 2 for d in deltas) / max(1, len(deltas) - 1))
-        else:
-            median = float("nan")
-            sd = float("nan")
-        per_cell_delta_summary[cell] = {
-            "n": len(deltas),
-            "median_delta": median,
-            "sigma_paired": sd,
-        }
+    # Per-seed Δ summaries for in-line debugging.
+    per_cell_delta_summary_first_token = _per_cell_delta_summary(
+        trained_logp_first_token, floor_logp_first_token
+    )
+    per_cell_delta_summary_oncontent: dict[str, dict[str, float]] | None = None
+    if has_oncontent:
+        per_cell_delta_summary_oncontent = _per_cell_delta_summary(
+            trained_logp_oncontent, floor_logp_oncontent
+        )
 
     # Best-effort: read N_LOGPROB_CONTEXTS used at sampling time back
     # out as the maximum per-cell context count. The CLI flag value is
@@ -3001,16 +3254,27 @@ def compute_logprob_block_from_disk(
     # through every phase we derive it from the realized counts.
     realized_max = max((len(v) for v in contexts_per_cell.values()), default=0)
 
-    return {
+    out: dict[str, Any] = {
         "marker_text": LOGPROB_MARKER_TEXT,
         "logprob_contexts_per_cell": realized_max,
         "batch_size": LOGPROB_BATCH_SIZE,
         "base_model_id": BASE_MODEL_ID,
         "per_cell_pairs": per_cell_pairs_serialisable,
-        "trained_logp_by_cell": trained_logp_by_cell,
-        "floor_logp_by_cell": floor_logp_by_cell,
-        "per_cell_delta_summary": per_cell_delta_summary,
+        # First-token (round-15) data, also exposed under legacy
+        # back-compat keys so the aggregator helpers in
+        # write_aggregated keep working unchanged.
+        "trained_logp_by_cell_first_token": trained_logp_first_token,
+        "floor_logp_by_cell_first_token": floor_logp_first_token,
+        "per_cell_delta_summary_first_token": per_cell_delta_summary_first_token,
+        "trained_logp_by_cell": trained_logp_first_token,
+        "floor_logp_by_cell": floor_logp_first_token,
+        "per_cell_delta_summary": per_cell_delta_summary_first_token,
     }
+    if has_oncontent:
+        out["trained_logp_by_cell_oncontent"] = trained_logp_oncontent
+        out["floor_logp_by_cell_oncontent"] = floor_logp_oncontent
+        out["per_cell_delta_summary_oncontent"] = per_cell_delta_summary_oncontent
+    return out
 
 
 def _per_pair_pages_l_for_family(
@@ -3128,24 +3392,43 @@ def _load_per_pair_triples_for_family(
     return triples
 
 
-def _pool_deltas_across_seeds(all_results: list[dict[str, Any]], cell: str) -> list[float]:
+def _pool_deltas_across_seeds(
+    all_results: list[dict[str, Any]],
+    cell: str,
+    position: str = "first_token",
+) -> list[float]:
     """Pool per-context paired Δ across all seeds for a single cell.
 
-    Reads ``trained_logp_by_cell`` and ``floor_logp_by_cell`` from each
-    seed's ``logprob`` payload and concatenates per-context diffs. The
-    resulting list is the test unit for the per-cell Wilcoxon at the
+    Round-16: ``position`` selects which probe layout to pool:
+
+    - ``"first_token"`` (default) → reads back-compat keys
+      ``trained_logp_by_cell`` / ``floor_logp_by_cell``.
+    - ``"oncontent"`` → reads the round-16
+      ``trained_logp_by_cell_oncontent`` /
+      ``floor_logp_by_cell_oncontent`` arrays.
+
+    Resulting list is the test unit for the per-cell Wilcoxon at the
     headline N=384 (3 seeds × 128 contexts). Cells with mismatched
     trained/floor lengths raise (would silently corrupt the pool).
     """
+    if position == "first_token":
+        trained_key = "trained_logp_by_cell"
+        floor_key = "floor_logp_by_cell"
+    elif position == "oncontent":
+        trained_key = "trained_logp_by_cell_oncontent"
+        floor_key = "floor_logp_by_cell_oncontent"
+    else:
+        raise ValueError(f"Unknown position {position!r}")
     pooled: list[float] = []
     for r in all_results:
         lp = r.get("logprob") or {}
-        trained = lp.get("trained_logp_by_cell", {}).get(cell, [])
-        floor = lp.get("floor_logp_by_cell", {}).get(cell, [])
+        trained = lp.get(trained_key, {}).get(cell, [])
+        floor = lp.get(floor_key, {}).get(cell, [])
         if len(trained) != len(floor):
             raise RuntimeError(
-                f"Cell {cell} seed {r['seed']}: trained_logp ({len(trained)}) "
-                f"vs floor_logp ({len(floor)}) length mismatch"
+                f"Cell {cell} seed {r['seed']} position={position}: "
+                f"trained_logp ({len(trained)}) vs floor_logp ({len(floor)}) "
+                f"length mismatch"
             )
         pooled.extend(t - f for t, f in zip(trained, floor, strict=True))
     return pooled
@@ -3165,8 +3448,15 @@ def _pool_pairs_across_seeds(
 
 
 def _pool_logp_across_seeds(all_results: list[dict[str, Any]], cell: str, key: str) -> list[float]:
-    """Pool per-context log-prob arrays across seeds for ``key``
-    in {``trained_logp_by_cell``, ``floor_logp_by_cell``}."""
+    """Pool per-context log-prob arrays across seeds for ``key`` in any of:
+
+    First-token (round-15) keys:
+      ``trained_logp_by_cell``, ``floor_logp_by_cell``,
+      ``trained_logp_by_cell_first_token``, ``floor_logp_by_cell_first_token``.
+
+    On-policy end-of-content (round-16) keys:
+      ``trained_logp_by_cell_oncontent``, ``floor_logp_by_cell_oncontent``.
+    """
     pooled: list[float] = []
     for r in all_results:
         lp = r.get("logprob") or {}
@@ -3174,19 +3464,48 @@ def _pool_logp_across_seeds(all_results: list[dict[str, Any]], cell: str, key: s
     return pooled
 
 
+def _all_seeds_have_oncontent(all_results: list[dict[str, Any]]) -> bool:
+    """True iff every per-seed result carries the on-policy probe arrays.
+
+    Used by the aggregator to decide whether to emit
+    ``rescue_verdict_on_policy_end_of_content``. When False (a seed was
+    skipped or aborted before the oncontent worker finished), the
+    on-policy verdict is omitted from the aggregated JSON — the
+    first-token verdict still ships.
+    """
+    for r in all_results:
+        lp = r.get("logprob") or {}
+        if "trained_logp_by_cell_oncontent" not in lp:
+            return False
+        if "floor_logp_by_cell_oncontent" not in lp:
+            return False
+    return True
+
+
 def _spearman_trend_per_family_per_seed(
     all_results: list[dict[str, Any]],
+    position: str = "first_token",
 ) -> dict[str, dict[int, dict[str, float]]]:
     """Per-seed, per-condition-family Spearman ρ of median Δ across k.
 
     Descriptive only (N=3 k-slots). Plan §6 + §11.
+
+    Round-16: ``position`` selects which per-cell Δ summary to consume
+    (``per_cell_delta_summary`` for first-token,
+    ``per_cell_delta_summary_oncontent`` for on-policy).
     """
+    if position == "first_token":
+        summary_key = "per_cell_delta_summary"
+    elif position == "oncontent":
+        summary_key = "per_cell_delta_summary_oncontent"
+    else:
+        raise ValueError(f"Unknown position {position!r}")
     out: dict[str, dict[int, dict[str, float]]] = {}
     for family in RESCUE_CELL_FAMILIES:
         out[family] = {}
         for r in all_results:
             seed = r["seed"]
-            summary = (r.get("logprob") or {}).get("per_cell_delta_summary", {})
+            summary = (r.get("logprob") or {}).get(summary_key, {}) or {}
             medians_at_k: dict[int, float] = {}
             for k in K_LIST:
                 cell = f"{family}@{k}"
@@ -3201,6 +3520,7 @@ def _spearman_trend_per_family_per_seed(
 
 def _trigger_conditional_contrast_pooled(
     all_results: list[dict[str, Any]],
+    position: str = "first_token",
 ) -> dict[str, dict[str, float]]:
     """Pool trigger-conditional contrast LP[B@k] − LP[B-null@k] across seeds.
 
@@ -3208,11 +3528,21 @@ def _trigger_conditional_contrast_pooled(
     pools matched-i deltas across seeds and recomputes bootstrap median
     CI on the pooled vector. Returns ``{f"B@{k}": {n_matched, median,
     ci_lo, ci_hi}}``.
+
+    Round-16: ``position`` selects which trained-log-prob block to
+    contrast (``trained_logp_by_cell`` for first-token,
+    ``trained_logp_by_cell_oncontent`` for on-policy).
     """
+    if position == "first_token":
+        trained_key = "trained_logp_by_cell"
+    elif position == "oncontent":
+        trained_key = "trained_logp_by_cell_oncontent"
+    else:
+        raise ValueError(f"Unknown position {position!r}")
     pooled_deltas: dict[str, list[float]] = {f"B@{k}": [] for k in K_LIST}
     for r in all_results:
         lp = r.get("logprob") or {}
-        trained = lp.get("trained_logp_by_cell", {})
+        trained = lp.get(trained_key, {}) or {}
         pair_dicts = lp.get("per_cell_pairs", {})
         # Re-hydrate the (conv-dict, question) tuples the per-seed helper expects.
         pairs_by_cell: dict[str, list[tuple[dict, str]]] = {}
@@ -3258,6 +3588,103 @@ def _trigger_conditional_contrast_pooled(
     return out
 
 
+def _compute_rescue_verdict_for_position(
+    all_results: list[dict[str, Any]],
+    position: str,
+) -> tuple[dict[str, Any], dict[str, list[float]], dict[str, Any]]:
+    """Build the per-position rescue verdict block.
+
+    Round-16: factored out of :func:`write_aggregated` so the same
+    Holm-corrected Wilcoxon + median-CI machinery can run twice — once
+    for the first-token probe (round-15 default) and once for the
+    on-policy end-of-content probe (round-16 addition).
+
+    Returns ``(verdict_dict, deltas_by_cell, per_cell_stats)``. The
+    caller writes the verdict_dict directly into the aggregated JSON
+    and uses the per-cell Δ arrays to populate
+    ``logprob_arrays_pooled[cell]["delta_pooled"]`` /
+    ``delta_oncontent_pooled``.
+    """
+    rescue_cells = _rescue_cell_names()
+    all_logprob_cells = _all_logprob_cell_names()
+
+    deltas_by_cell: dict[str, list[float]] = {}
+    for cell in all_logprob_cells:
+        deltas_by_cell[cell] = _pool_deltas_across_seeds(all_results, cell, position=position)
+
+    per_cell_stats = compute_per_cell_stats(deltas_by_cell)
+    pvals_rescue = [per_cell_stats[cell]["wilcoxon_p"] for cell in rescue_cells]
+    holm = _holm_correct(pvals_rescue, alpha=FWER_ALPHA)
+    holm_pvals = holm["pvals_corrected"]
+    holm_rejected = holm["rejected"]
+
+    pass_by_cell: dict[str, dict[str, Any]] = {}
+    n_passing = 0
+    for i, cell in enumerate(rescue_cells):
+        stat = per_cell_stats[cell]
+        # Pass criterion (plan §6): Holm-corrected p < FWER_ALPHA AND
+        # median Δ ≥ EFFECT_SIZE_THRESHOLD_NATS. If σ_paired exceeded
+        # the sensitivity threshold, the threshold becomes an analyzer-
+        # side call — flagged but not auto-pivoted in this code path.
+        rejected = bool(holm_rejected[i])
+        effect_met = math.isfinite(stat["median"]) and stat["median"] >= EFFECT_SIZE_THRESHOLD_NATS
+        passed = rejected and effect_met
+        if passed:
+            n_passing += 1
+        pass_by_cell[cell] = {
+            "n_pooled": stat["n"],
+            "median_delta": stat["median"],
+            "ci_lo": stat["ci_lo"],
+            "ci_hi": stat["ci_hi"],
+            "sigma_paired": stat["sigma_paired"],
+            "sigma_above_threshold": stat["sigma_above_threshold"],
+            "wilcoxon_p_one_sided_greater": stat["wilcoxon_p"],
+            "holm_p_corrected": holm_pvals[i],
+            "holm_rejected_at_fwer_005": rejected,
+            "effect_threshold_nats": EFFECT_SIZE_THRESHOLD_NATS,
+            "median_meets_threshold": effect_met,
+            "passes": passed,
+        }
+
+    # Cell-A within-checkpoint sanity (plan §8 row 2): is LP[A] > LP_floor[A]?
+    a_stat = per_cell_stats.get("A", {})
+    cell_a_sanity = {
+        "n_pooled": a_stat.get("n", 0),
+        "median_delta": a_stat.get("median", float("nan")),
+        "wilcoxon_p_one_sided_greater": a_stat.get("wilcoxon_p", float("nan")),
+        "sigma_paired": a_stat.get("sigma_paired", float("nan")),
+        "passes": (
+            math.isfinite(a_stat.get("wilcoxon_p", float("nan")))
+            and a_stat.get("wilcoxon_p", 1.0) < FWER_ALPHA
+            and math.isfinite(a_stat.get("median", float("nan")))
+            and a_stat.get("median", 0.0) > 0
+        ),
+    }
+
+    # Trigger-conditional contrast at each B@k (plan §6, Scenario B
+    # confirmation).
+    trigger_contrast = _trigger_conditional_contrast_pooled(all_results, position=position)
+
+    # Per-seed Spearman ρ over k per family (plan §6 + §11 descriptive).
+    spearman = _spearman_trend_per_family_per_seed(all_results, position=position)
+
+    verdict = {
+        "probe_position": position,
+        "rescue_cells": rescue_cells,
+        "fwer_alpha": FWER_ALPHA,
+        "effect_threshold_nats": EFFECT_SIZE_THRESHOLD_NATS,
+        "sigma_sensitivity_threshold_nats": SIGMA_SENSITIVITY_THRESHOLD_NATS,
+        "n_passing_cells": n_passing,
+        "n_total_cells": len(rescue_cells),
+        "per_cell": pass_by_cell,
+        "cell_A_within_checkpoint_sanity": cell_a_sanity,
+        "trigger_conditional_contrast": trigger_contrast,
+        "per_seed_spearman_by_family": spearman,
+        "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
+    }
+    return verdict, deltas_by_cell, per_cell_stats
+
+
 def write_aggregated(
     all_results: list[dict[str, Any]],
     out_dir: Path,
@@ -3270,6 +3697,15 @@ def write_aggregated(
     bootstrap CI per cell, σ_paired flag for the analyzer's sensitivity
     check, plus the trigger-conditional contrast and per-seed Spearman
     trend descriptive statistics.
+
+    Round-16: emits TWO rescue-verdict blocks side by side —
+    ``rescue_verdict_first_token`` (round-15, p(※|prefix)) and
+    ``rescue_verdict_on_policy_end_of_content`` (round-16, p(※|prefix +
+    on_policy_completion + "\\n\\n")). The legacy ``rescue_verdict`` key
+    aliases the first-token verdict so existing analyzer code keeps
+    working unchanged. The on-policy verdict is the one the headline
+    claim should be read off — training installed ※ at end-of-content,
+    not at first-token.
     """
     metadata = get_run_metadata()
     metadata["script"] = "scripts/eval_issue399.py"
@@ -3329,86 +3765,40 @@ def write_aggregated(
         "h4_isolated_gap_length_pooled": (a_pooled - b20_pooled) - (a_pooled - inc_length20_pooled),
     }
 
-    # ── Issue #399 verdict block: per-cell rescue test ───────────────────
+    # ── Issue #399 verdict blocks: per-cell rescue test ──────────────────
     # Pool per-context Δ across seeds (target N=384 per cell), run
     # one-sided paired Wilcoxon, Holm-correct across the 9 rescue cells,
     # bootstrap median CI.
+    #
+    # Round-16 computes the verdict at TWO probe positions:
+    #   - first_token (round-15): p(※ | chat_template_prefix).
+    #   - oncontent (round-16): p(※ | prefix + on_policy_completion +
+    #     "\n\n") — the position the trainer actually installed ※
+    #     against. This is the position the headline claim should be
+    #     read off of; the first-token verdict is kept for back-compat
+    #     + side-by-side comparison.
     rescue_cells = _rescue_cell_names()
     all_logprob_cells = _all_logprob_cell_names()
 
-    deltas_by_cell: dict[str, list[float]] = {}
-    for cell in all_logprob_cells:
-        deltas_by_cell[cell] = _pool_deltas_across_seeds(all_results, cell)
+    # First-token verdict (round-15 default; back-compat with prior
+    # analyzer code that reads ``rescue_verdict`` unqualified).
+    verdict_ft, deltas_by_cell_ft, _ = _compute_rescue_verdict_for_position(
+        all_results, position="first_token"
+    )
 
-    per_cell_stats = compute_per_cell_stats(deltas_by_cell)
-    pvals_rescue = [per_cell_stats[cell]["wilcoxon_p"] for cell in rescue_cells]
-    holm = _holm_correct(pvals_rescue, alpha=FWER_ALPHA)
-    holm_pvals = holm["pvals_corrected"]
-    holm_rejected = holm["rejected"]
-
-    pass_by_cell: dict[str, dict[str, Any]] = {}
-    n_passing = 0
-    for i, cell in enumerate(rescue_cells):
-        stat = per_cell_stats[cell]
-        # Pass criterion (plan §6): Holm-corrected p < FWER_ALPHA AND
-        # median Δ ≥ EFFECT_SIZE_THRESHOLD_NATS. If σ_paired exceeded
-        # the sensitivity threshold, the threshold becomes an analyzer-
-        # side call — flagged but not auto-pivoted in this code path.
-        rejected = bool(holm_rejected[i])
-        effect_met = math.isfinite(stat["median"]) and stat["median"] >= EFFECT_SIZE_THRESHOLD_NATS
-        passed = rejected and effect_met
-        if passed:
-            n_passing += 1
-        pass_by_cell[cell] = {
-            "n_pooled": stat["n"],
-            "median_delta": stat["median"],
-            "ci_lo": stat["ci_lo"],
-            "ci_hi": stat["ci_hi"],
-            "sigma_paired": stat["sigma_paired"],
-            "sigma_above_threshold": stat["sigma_above_threshold"],
-            "wilcoxon_p_one_sided_greater": stat["wilcoxon_p"],
-            "holm_p_corrected": holm_pvals[i],
-            "holm_rejected_at_fwer_005": rejected,
-            "effect_threshold_nats": EFFECT_SIZE_THRESHOLD_NATS,
-            "median_meets_threshold": effect_met,
-            "passes": passed,
-        }
-
-    # Cell-A within-checkpoint sanity (plan §8 row 2): is LP[A] > LP_floor[A]?
-    a_stat = per_cell_stats.get("A", {})
-    cell_a_sanity = {
-        "n_pooled": a_stat.get("n", 0),
-        "median_delta": a_stat.get("median", float("nan")),
-        "wilcoxon_p_one_sided_greater": a_stat.get("wilcoxon_p", float("nan")),
-        "sigma_paired": a_stat.get("sigma_paired", float("nan")),
-        "passes": (
-            math.isfinite(a_stat.get("wilcoxon_p", float("nan")))
-            and a_stat.get("wilcoxon_p", 1.0) < FWER_ALPHA
-            and math.isfinite(a_stat.get("median", float("nan")))
-            and a_stat.get("median", 0.0) > 0
-        ),
-    }
-
-    # Trigger-conditional contrast at each B@k (plan §6, Scenario B
-    # confirmation).
-    trigger_contrast = _trigger_conditional_contrast_pooled(all_results)
-
-    # Per-seed Spearman ρ over k per family (plan §6 + §11 descriptive).
-    spearman = _spearman_trend_per_family_per_seed(all_results)
-
-    rescue_verdict = {
-        "rescue_cells": rescue_cells,
-        "fwer_alpha": FWER_ALPHA,
-        "effect_threshold_nats": EFFECT_SIZE_THRESHOLD_NATS,
-        "sigma_sensitivity_threshold_nats": SIGMA_SENSITIVITY_THRESHOLD_NATS,
-        "n_passing_cells": n_passing,
-        "n_total_cells": len(rescue_cells),
-        "per_cell": pass_by_cell,
-        "cell_A_within_checkpoint_sanity": cell_a_sanity,
-        "trigger_conditional_contrast": trigger_contrast,
-        "per_seed_spearman_by_family": spearman,
-        "bootstrap_resamples": BOOTSTRAP_RESAMPLES,
-    }
+    # On-policy end-of-content verdict (round-16). Only emitted when
+    # every per-seed JSON has the oncontent arrays — otherwise the
+    # aggregated JSON ships only the first-token verdict and the
+    # warning fires below.
+    has_oncontent = _all_seeds_have_oncontent(all_results)
+    verdict_oncontent: dict[str, Any] | None = None
+    deltas_by_cell_oncontent: dict[str, list[float]] | None = None
+    if has_oncontent:
+        (
+            verdict_oncontent,
+            deltas_by_cell_oncontent,
+            _,
+        ) = _compute_rescue_verdict_for_position(all_results, position="oncontent")
 
     # Also record per-cell raw arrays (Δ, trained-LP, floor-LP) for any
     # downstream re-analysis. Bounded in size (14 cells × 384 floats × 3
@@ -3416,15 +3806,24 @@ def write_aggregated(
     # primary copies; this is a convenience pre-aggregation.
     logprob_arrays_pooled: dict[str, dict[str, list[float]]] = {}
     for cell in all_logprob_cells:
-        logprob_arrays_pooled[cell] = {
+        per_cell_entry: dict[str, list[float]] = {
             "trained_logp_pooled": _pool_logp_across_seeds(
                 all_results, cell, "trained_logp_by_cell"
             ),
             "floor_logp_pooled": _pool_logp_across_seeds(all_results, cell, "floor_logp_by_cell"),
-            "delta_pooled": deltas_by_cell[cell],
+            "delta_pooled": deltas_by_cell_ft[cell],
         }
+        if has_oncontent and deltas_by_cell_oncontent is not None:
+            per_cell_entry["trained_logp_oncontent_pooled"] = _pool_logp_across_seeds(
+                all_results, cell, "trained_logp_by_cell_oncontent"
+            )
+            per_cell_entry["floor_logp_oncontent_pooled"] = _pool_logp_across_seeds(
+                all_results, cell, "floor_logp_by_cell_oncontent"
+            )
+            per_cell_entry["delta_oncontent_pooled"] = deltas_by_cell_oncontent[cell]
+        logprob_arrays_pooled[cell] = per_cell_entry
 
-    aggregated = {
+    aggregated: dict[str, Any] = {
         "experiment": "issue_399_marker_logprob",
         "conditions": cond_names,
         "k_list": list(K_LIST),
@@ -3433,20 +3832,46 @@ def write_aggregated(
         "per_seed": all_results,
         "pooled": pooled,
         "pooled_stats": pooled_stats,
-        "rescue_verdict": rescue_verdict,
+        # ``rescue_verdict`` retained as the first-token alias for any
+        # analyzer code that still reads it unqualified. The two
+        # round-16 keys below are the authoritative side-by-side
+        # verdicts.
+        "rescue_verdict": verdict_ft,
+        "rescue_verdict_first_token": verdict_ft,
         "logprob_arrays_pooled": logprob_arrays_pooled,
         "metadata": metadata,
     }
+    if verdict_oncontent is not None:
+        aggregated["rescue_verdict_on_policy_end_of_content"] = verdict_oncontent
     out_dir.mkdir(parents=True, exist_ok=True)
     with open(out_dir / "run_result.json", "w") as f:
         json.dump(aggregated, f, indent=2)
     print(f"\n  Wrote aggregated run_result.json to {out_dir}", flush=True)
     print(
-        f"  Rescue verdict: {n_passing} / {len(rescue_cells)} rescue cells "
+        f"  Rescue verdict (first_token): "
+        f"{verdict_ft['n_passing_cells']} / {len(rescue_cells)} rescue cells "
         f"pass (Holm-corrected p < {FWER_ALPHA} AND median Δ ≥ "
         f"{EFFECT_SIZE_THRESHOLD_NATS} nats).",
         flush=True,
     )
+    if verdict_oncontent is not None:
+        print(
+            f"  Rescue verdict (on_policy_end_of_content): "
+            f"{verdict_oncontent['n_passing_cells']} / {len(rescue_cells)} "
+            f"rescue cells pass (Holm-corrected p < {FWER_ALPHA} AND median "
+            f"Δ ≥ {EFFECT_SIZE_THRESHOLD_NATS} nats). This is the position "
+            f"the trainer actually installed ※ against — read the headline "
+            f"claim off this verdict, not the first-token one.",
+            flush=True,
+        )
+    else:
+        print(
+            "  Rescue verdict (on_policy_end_of_content): NOT EMITTED — at "
+            "least one seed lacks on-policy arrays. Re-run phase "
+            "'behavioral' + 'logprob_compute' for missing seeds to get the "
+            "round-16 verdict.",
+            flush=True,
+        )
 
     if not args.skip_upload:
         print("\n  Uploading raw completions to HF Hub data repo...", flush=True)
