@@ -1973,7 +1973,9 @@ def phase_phase0_calibration(args: argparse.Namespace) -> dict[str, Any]:
             "rubrics_final_path": str(rubrics_final_path),
         }
 
-    _assert_disk_headroom(min_gb_free=50)
+    # NOTE 2026-05-27: posix_fallocate hangs on some MooseFS hosts (observed at
+    # 2pf launch). 2pf footprint is ~10GB so dropping threshold avoids the hang.
+    _assert_disk_headroom(min_gb_free=10)
 
     # Step 1: generate base completions
     if base_completions_path.exists():
@@ -2529,7 +2531,9 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
     per-family judge JSONs, and cell_summary.json land on disk IMMEDIATELY
     after that cell completes. No in-memory accumulation across cells.
     """
-    _assert_disk_headroom(min_gb_free=50)
+    # NOTE 2026-05-27: posix_fallocate hangs on some MooseFS hosts (observed at
+    # 2pf launch). 2pf footprint is ~10GB so dropping threshold avoids the hang.
+    _assert_disk_headroom(min_gb_free=10)
 
     cells = _enumerate_eval_cells()
     logger.info("full-eval grid: %d trained cells + 1 baseline", len(cells))
