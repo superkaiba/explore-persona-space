@@ -455,8 +455,27 @@ def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
 
     # Patterns mirror the prior snapshot_download(allow_patterns=...) set,
     # rooted at the subfolder. Used to filter list_repo_files() output.
+    #
+    # ``*.safetensors.index.json`` and ``*.bin.index.json`` are REQUIRED
+    # for sharded Transformers checkpoints. ``trainer._finalize_phase``
+    # calls ``model.save_pretrained(..., safe_serialization=True)`` which,
+    # for a ~7B Qwen-2.5 merged model, emits a 4-shard layout:
+    # ``model-00001-of-00004.safetensors`` ... ``model-00004-of-00004.safetensors``
+    # plus a ``model.safetensors.index.json`` weight-map. vLLM and
+    # ``AutoModelForCausalLM.from_pretrained`` BOTH need the index file
+    # to discover the shards; ``*.safetensors`` matches the shards but
+    # ``model.safetensors.index.json`` ends in ``.json`` and is silently
+    # missed by ``*.safetensors`` alone. vLLM happens to have its own
+    # discovery path that survived this gap in #399 round-9 (behavioral
+    # arm worked), but HF Transformers' loader does not and crashed at
+    # log-prob time with ``OSError: Error no file named pytorch_model.bin,
+    # model.safetensors, ...``. Adding ``*.index.json`` covers both
+    # safetensors-sharded (current default) and bin-sharded (legacy).
     relative_patterns = [
         "*.safetensors",
+        "*.safetensors.index.json",
+        "*.bin",
+        "*.bin.index.json",
         "config.json",
         "generation_config.json",
         "tokenizer*",
@@ -544,6 +563,45 @@ def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
             f"into {adapter_dir} but neither config.json nor "
             f"adapter_config.json is present. Files attempted:\n  " + "\n  ".join(wanted)
         )
+
+    # Second post-download invariant: a MERGED checkpoint MUST carry
+    # loadable weights for ``AutoModelForCausalLM.from_pretrained``. The
+    # loader accepts any of:
+    #   - ``model.safetensors``                       (single-file safe)
+    #   - ``model-*-of-*.safetensors`` + ``model.safetensors.index.json``
+    #     (sharded safe)
+    #   - ``pytorch_model.bin``                       (single-file legacy)
+    #   - ``pytorch_model-*-of-*.bin`` + ``pytorch_model.bin.index.json``
+    #     (sharded legacy)
+    #   - ``tf_model.h5`` / ``flax_model.msgpack``    (cross-framework)
+    # If none of the above is on disk after download, raise loudly with
+    # what WAS downloaded. The previous version only checked ``config.json``,
+    # which left round-10 crashing in ``from_pretrained`` ("no file named
+    # pytorch_model.bin, model.safetensors, ...") because ``*.safetensors``
+    # matched the shards but ``model.safetensors.index.json`` was missed by
+    # the pattern set, so the loader saw shards-with-no-index and bailed.
+    # Adapter-only checkpoints are exempt (PEFT discovery is different).
+    if has_merged and not has_adapter:
+        weight_file_names = {
+            "model.safetensors",
+            "pytorch_model.bin",
+            "tf_model.h5",
+            "flax_model.msgpack",
+            "model.safetensors.index.json",
+            "pytorch_model.bin.index.json",
+        }
+        present = {p.name for p in adapter_dir.iterdir() if p.is_file()}
+        if not (present & weight_file_names):
+            raise RuntimeError(
+                f"Post-download weight invariant failed: merged checkpoint "
+                f"at {adapter_dir} has config.json but NO loadable weight "
+                f"file. AutoModelForCausalLM.from_pretrained accepts any of "
+                f"{sorted(weight_file_names)}; none are present. This is "
+                f"either (a) an _ensure_adapter_local pattern bug — verify "
+                f"that *.safetensors.index.json is in relative_patterns and "
+                f"that the upload layout matches — or (b) a partial upload "
+                f"on the Hub. Files actually downloaded to disk:\n  " + "\n  ".join(sorted(present))
+            )
     flavor = "merged" if has_merged else "adapter-only"
     print(f"  Checkpoint found at {adapter_dir} ({flavor})", flush=True)
     return adapter_dir
