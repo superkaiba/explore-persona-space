@@ -410,10 +410,26 @@ def generate_completions_with_lora(
 
     _patch_tokenizer_for_vllm()
 
+    # Round 8 Fix 2 — defense-in-depth against HF→vLLM teardown OOM.
+    #
+    # Smoke first-launch crash on 8x H100 (79 GB each): HF residue ~36 GB
+    # on GPU 0 from log-prob eval; vLLM tried 0.60 * 79 = 47.5 GB; only
+    # 43.3 GB free → ValueError. Round 8 Fix 1 (aggressive HF teardown
+    # in the caller) reduces the residue but PyTorch caching-allocator
+    # blocks are not guaranteed to release fully.
+    #
+    # Default 0.45 here leaves 0.55 * 79 = ~43 GB headroom — enough for
+    # the HF residue even when Fix 1 only partially releases. The base
+    # Qwen-2.5-7B + LoRA at bf16 needs ~15 GB; 0.45 * 79 = ~35.5 GB
+    # gives ~20 GB for KV cache (still plenty for our 480-context
+    # smoke + 2400-completion full sampled eval).
+    #
+    # Override via VLLM_GPU_MEM_UTIL env (e.g. 0.55 if Fix 3 process-
+    # isolation lands later and residue drops to ~0).
     gpu_mem = (
         gpu_memory_utilization
         if gpu_memory_utilization is not None
-        else float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+        else float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.45"))
     )
 
     tokenizer = AutoTokenizer.from_pretrained(

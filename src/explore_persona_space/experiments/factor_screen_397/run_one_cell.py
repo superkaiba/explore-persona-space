@@ -351,19 +351,53 @@ def run_cell(args: argparse.Namespace) -> int:
     logprob_path.write_text(json.dumps(logprob_result, indent=2), encoding="utf-8")
     log.info("Wrote %s", logprob_path)
 
-    # Release the resident base + peft model before vLLM loads in the sampled
-    # eval step. The destroy_* sequence + psutil child-kill discipline from
-    # the agent-memory `vllm_orphan_worker_after_destroy` note applies if we
-    # were calling vLLM after vLLM; here we go HF → vLLM, which is the
-    # less-risky direction, but we still free the GPU memory explicitly.
-    del peft_model, base
+    # Round 8 fix — aggressive HF teardown before vLLM init.
+    #
+    # First-launch crash (smoke cell 10010): HF Transformers held ~36 GB on
+    # GPU 0 from log-prob eval; round-6's del + gc.collect + empty_cache
+    # was insufficient — PyTorch caching-allocator blocks persist; vLLM
+    # tried to grab 0.6 * 79 GB = 47.5 GB; only 43.3 GB free → instant
+    # ValueError. Defense-in-depth pattern:
+    #
+    #   1. del every named ref to the HF model / peft model / tokenizer
+    #      (any list / dict / class attr that holds them blocks GC).
+    #   2. gc.collect() to clear Python refs.
+    #   3. torch.cuda.empty_cache() to release the PyTorch caching
+    #      allocator blocks.
+    #   4. torch.cuda.synchronize() to ensure pending CUDA ops finish
+    #      BEFORE we read mem-info or hand control to vLLM.
+    #   5. Log pre/post free-memory so the next OOM is debuggable.
+    #
+    # Even with all 4 steps the residue can still be non-zero (PyTorch
+    # holds some allocator overhead). The vLLM-side defense is
+    # gpu_memory_utilization=0.45 (Round 8 Fix 2), which leaves the
+    # ~36 GB headroom the residue needs.
     import gc
 
     import torch
 
+    free_before_gb = torch.cuda.mem_get_info()[0] / (1024**3) if torch.cuda.is_available() else -1.0
+
+    # Step 1: drop every Python ref to the HF stack. compute_logprob_panel
+    # returned plain dicts of floats, so logprob_result holds no GPU refs.
+    # peft_model and base hold the GPU weights; tokenizer holds none (CPU
+    # only) but we del it for completeness.
+    del peft_model, base
+    del tokenizer
+
+    # Step 2 + 3 + 4: GC + cache release + sync.
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+        torch.cuda.synchronize()
+        free_after_gb = torch.cuda.mem_get_info()[0] / (1024**3)
+        log.info(
+            "HF teardown before vLLM: free GPU memory %.2f GB → %.2f GB "
+            "(residue %.2f GB; vLLM will request 0.45 * total)",
+            free_before_gb,
+            free_after_gb,
+            free_before_gb - free_after_gb if free_after_gb > free_before_gb else 0.0,
+        )
 
     # ----- (4) Final-checkpoint sampled eval via vLLM --enable-lora -----
     # Round 6: no merge step. vLLM loads BASE model once with

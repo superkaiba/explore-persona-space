@@ -534,6 +534,36 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         list(FINAL_CHECKPOINT_MARKER_VARIANTS),
     )
 
+    # Round 8 fix — aggressive HF teardown before vLLM init.
+    # See run_one_cell.py for the full failure mode + 4-step pattern.
+    # First-launch crash: HF residue ~36 GB on GPU 0, vLLM tried to
+    # grab 0.6 * 79 = 47.5 GB on only 43.3 GB free → ValueError.
+    import gc as _gc
+
+    import torch as _torch
+
+    if _torch.cuda.is_available():
+        _free_before_gb = _torch.cuda.mem_get_info()[0] / (1024**3)
+    else:
+        _free_before_gb = -1.0
+
+    # Drop every Python ref to the HF stack — compute_logprob_panel
+    # returned plain dicts. base_model is the peft-wrapped HF model;
+    # tokenizer is CPU only but del for completeness.
+    del base_model
+    del tokenizer
+
+    _gc.collect()
+    if _torch.cuda.is_available():
+        _torch.cuda.empty_cache()
+        _torch.cuda.synchronize()
+        _free_after_gb = _torch.cuda.mem_get_info()[0] / (1024**3)
+        log.info(
+            "Smoke HF teardown before vLLM: free GPU memory %.2f GB → %.2f GB",
+            _free_before_gb,
+            _free_after_gb,
+        )
+
     # ----- (5) Final-checkpoint sampled eval (BLOCKER 3 fix) -----
     # Plan v4 §5.7 makes "source rate > 0" the live M1 check; without
     # sampled-eval data, build_smoke_marker treats source_rate=None as FAIL.
