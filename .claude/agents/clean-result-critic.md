@@ -43,9 +43,9 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical: thirteen structural checks (verify_task_body.py)
+# Mechanical: fourteen structural checks + two WARN-only soft checks (verify_task_body.py)
 #   1. title confidence tag
-#   2. three H2 sections in order (`## Figure` is OPTIONAL — 2026-05-26)
+#   2. three H2 sections in order (`## Figure` is DEPRECATED — 2026-05-27)
 #   3. TL;DR bullet labels (Motivation / What I ran / Results)
 #   4. at least one `![alt](url)` image in `## Figure` OR inline under `## TL;DR`
 #   5. figure caption ≥10 words (vacuously satisfied when `## Figure` is absent)
@@ -60,6 +60,8 @@ anti-pattern audit:
 #       block in `## Details`
 #   11. qualitative-data link preceding every sample-output fenced
 #       block in `## Details`
+#   12. (WARN) `## Figure` H2 deprecated — nudge toward inline pattern
+#   13. (WARN) Details narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>
 
 # Anti-pattern audit: pre-reg, H_a, REJECTED, Δ-Npp, math notation,
@@ -141,10 +143,14 @@ WHY. If FAIL, quote the offending phrase from the body.
 ### Lens 3 — Figure
 
 - At least one image exists in the body — either inside a `## Figure`
-  H2 (legacy single-hero pattern) OR inline under `## TL;DR` Results
-  sub-bullets (one-takeaway-one-figure pattern; the new default —
-  see Lens 9). `## Figure` is OPTIONAL as of 2026-05-26; do NOT FAIL
-  a body that omits it but carries inline figures under Results.
+  H2 (legacy single-hero pattern; DEPRECATED for new write-ups as of
+  2026-05-27) OR inline under `## TL;DR` Results sub-bullets
+  (one-takeaway-one-figure pattern; the prescriptive default — see
+  Lens 9). Bodies that omit `## Figure` and carry inline figures
+  under Results PASS this lens cleanly. Bodies that carry `## Figure`
+  still PASS Lens 3 (legacy bodies stay promotable); the deprecation
+  surfaces as a verifier WARN (`check_figure_h2_is_deprecated`) and
+  as a Lens 9 redundancy FAIL when both patterns coexist.
 - Each image is a markdown image link (`![alt](url)`) with a
   permanent absolute URL (HF Hub `/tree/<sha>` or GitHub
   `raw.githubusercontent.com/.../<sha>/...`). No `<figure>` /
@@ -398,7 +404,7 @@ when the body has too many findings to fit the TL;DR — each takeaway still
 sits next to its visual evidence, just in Details rather than crowding the
 TL;DR.
 
-**Check three things:**
+**Check four things:**
 
 1. **Every quantitative Results sub-bullet has an anchored figure.**
    Enumerate each sub-bullet under the Results group (or the single Results
@@ -424,18 +430,40 @@ TL;DR.
    those numbers are scope, not findings. Do NOT require figures for
    Motivation or What-I-ran bullets.
 
-**FAIL trigger summary:** a Results sub-bullet asserts a quantitative
-finding AND no figure is anchored either inline beneath it, via
-`[figure below](#figure)` pointing at a hero that genuinely carries the
-claim, OR via a many-findings rollup link `[Per-finding figures and
-reads in Details.](#anchor)` (with the anchor resolving and the
-per-finding shape verified by Lens 12). On FAIL: tell the analyzer to
-either (i) split Results into multiple sub-bullets each pairing with its
-own inline figure (the analyzer.md § Step 4 "One takeaway, one figure"
-paragraph covers the markup), (ii) drop the unsupported claim from
-TL;DR and push it into Details prose, (iii) rewrite the bullet as a
-qualitative observation, or (iv) switch to the many-findings rollup
-mode and move per-finding figures into Details story beats.
+4. **No `## Figure` H2 redundancy (decision: 2026-05-27, prescriptive
+   default).** Bodies must NOT carry BOTH a `## Figure` H2 AND inline
+   figures under TL;DR Results sub-bullets. The inline pattern is the
+   prescriptive default for new write-ups; the `## Figure` H2 is
+   DEPRECATED (legacy bodies pre-2026-05-27 stay promotable but new
+   bodies should not re-emit it). FAIL when both patterns coexist
+   ("redundant figure surface — prefer inline under Results, drop the
+   `## Figure` H2"). Bodies that carry ONLY `## Figure` (no inline
+   figures) PASS Lens 9 sub-rule 4 but trigger the verifier WARN
+   (`check_figure_h2_is_deprecated`) — that's a nudge, not a FAIL.
+   Prefer inline; if the body really does have one hero finding that
+   doesn't fit naturally under a Results sub-bullet (rare exception),
+   the `## Figure`-only shape is allowed.
+
+**FAIL triggers (any of):**
+
+1. A Results sub-bullet asserts a quantitative finding AND no figure
+   is anchored either inline beneath it, via `[figure below](#figure)`
+   pointing at a hero that genuinely carries the claim, OR via a
+   many-findings rollup link `[Per-finding figures and reads in
+   Details.](#anchor)` (with the anchor resolving and the per-finding
+   shape verified by Lens 12). On FAIL: tell the analyzer to either
+   (i) split Results into multiple sub-bullets each pairing with its
+   own inline figure (the analyzer.md § Step 4 "One takeaway, one
+   figure" paragraph covers the markup), (ii) drop the unsupported
+   claim from TL;DR and push it into Details prose, (iii) rewrite the
+   bullet as a qualitative observation, or (iv) switch to the
+   many-findings rollup mode and move per-finding figures into Details
+   story beats.
+2. The body carries BOTH a `## Figure` H2 AND inline figures under
+   TL;DR Results sub-bullets (sub-rule 4 redundancy). On FAIL: tell
+   the analyzer to drop the `## Figure` H2 and keep inline figures
+   under Results — that's the prescriptive default for new write-ups
+   (decision 2026-05-27).
 
 **Anti-pattern example (FAIL):** TL;DR Results bullet reads *"Source-marker
 firing rises from 0.07 to 0.83; bystander leakage stays flat at 0.02; the

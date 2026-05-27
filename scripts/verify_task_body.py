@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Fifteen checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Sixteen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -68,7 +68,15 @@ discipline ported from HTML to markdown):
     aggregate-only path like `regression`, `summary`, `aggregat*`,
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
-12. Details narrative flow (WARN-only) — two conservative mechanical
+12. `## Figure` H2 deprecation (WARN-only) — the new analyzer default
+    (decision: 2026-05-27) is to inline figures under TL;DR Results
+    sub-bullets (one-takeaway-one-figure pattern, Lens 9). Bodies that
+    still carry a `## Figure` H2 stay valid (no FAIL — legacy bodies
+    pre-2026-05-27 are grandfathered), but a WARN surfaces so the
+    analyzer is nudged toward the inline pattern. Redundancy (both
+    H2 AND inline figures under Results) is a clean-result-critic
+    Lens 9 FAIL, not a verifier check.
+13. Details narrative flow (WARN-only) — two conservative mechanical
     signals that the body is shaped as a fact sheet rather than a
     LessWrong-style story: (a) outline-label H3s in `## Details`
     (`### Headline result` / `### Subset checks` / `### Sample
@@ -945,6 +953,49 @@ def check_goal_present(body: str, fm: dict) -> CheckResult:
     )
 
 
+def check_figure_h2_is_deprecated(body: str) -> CheckResult:
+    """Soft WARN check — `## Figure` H2 is deprecated for new write-ups.
+
+    The new analyzer default (decision: 2026-05-27) is to inline figures
+    under TL;DR Results sub-bullets (one-takeaway-one-figure pattern,
+    Lens 9). The `## Figure` H2 is preserved as a legacy/grandfathered
+    pattern: bodies that still carry it remain valid (no FAIL), but a
+    WARN surfaces so the analyzer is nudged toward inline pairing for
+    new bodies.
+
+    The H2 is NOT removed mechanically — legacy bodies that carry the
+    H2 (e.g. tasks promoted before 2026-05-27) stay promotable as-is.
+    The WARN exists so:
+      1. clean-result-critic Lens 9 / Lens 3 can flag redundancy when a
+         body carries BOTH the H2 AND inline figures under Results;
+      2. the analyzer sees the gentle signal that the inline pattern is
+         the new prescribed default;
+      3. operators have a one-line orchestrator-visible hint to inline
+         rather than re-emit the H2 on iteration.
+
+    FAIL is reserved for clean-result-critic Lens 9 (redundancy: both
+    `## Figure` H2 AND inline figures under Results sub-bullets), which
+    is a semantic call this regex shouldn't make.
+
+    See `.claude/skills/clean-results/SPEC.md` § "Where the hero figure
+    lives" and clean-result-critic Lens 9 for the prescriptive default.
+    """
+    figure = section_text(body, "Figure")
+    if figure is None:
+        return CheckResult(
+            "`## Figure` H2 is deprecated for new write-ups",
+            True,
+            "no `## Figure` H2 — inline-figures-under-Results-sub-bullets pattern (Lens 9 default)",
+        )
+    return CheckResult(
+        "`## Figure` H2 is deprecated for new write-ups",
+        True,
+        "`## Figure` H2 present — inline figures under TL;DR Results sub-bullets instead "
+        "(see `.claude/skills/clean-results/SPEC.md` § 'Where the hero figure lives')",
+        is_warn=True,
+    )
+
+
 def check_details_narrative_flow(body: str) -> CheckResult:
     """Soft WARN check — Details narrative-shape heuristics (story arc).
 
@@ -1059,6 +1110,7 @@ CHECKS = [
     check_repro_sentinel_scrub,
     check_cherry_picked_label,
     check_qualitative_data_link,
+    check_figure_h2_is_deprecated,
     check_details_narrative_flow,
 ]
 

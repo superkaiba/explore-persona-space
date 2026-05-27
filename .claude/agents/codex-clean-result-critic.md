@@ -185,6 +185,12 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   refusal-content, or structural-observation bullets as figure-less): PASS|FAIL
 - `Motivation` and `What I ran` bullets NOT flagged (scope numbers, not
   findings): PASS|FAIL
+- No `## Figure` H2 redundancy: the body does NOT carry BOTH a
+  `## Figure` H2 AND inline figures under TL;DR Results sub-bullets
+  (prescriptive default 2026-05-27: inline-under-Results is the new
+  default; `## Figure` H2 is DEPRECATED for new write-ups; legacy
+  bodies pre-2026-05-27 with `## Figure`-only stay valid; coexistence
+  is redundant and FAILs): PASS|FAIL
 
 ### Lens 10 — Eval-probe descriptions + TL;DR link (multi-probe rigs only)
 - Body uses ≥3 distinct eval probes / framings / question types: YES|NO|N/A

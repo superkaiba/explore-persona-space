@@ -7,8 +7,8 @@ anti-patterns lives in **`.claude/plans/task-workflow-migration.md`
 
 ## Required body shape
 
-Three required H2 sections in this order (`## Figure` is OPTIONAL — see
-"Where the hero figure lives" below):
+Three required H2 sections in this order (`## Figure` is DEPRECATED for
+new write-ups — see "Where the hero figure lives" below):
 
 1. `## TL;DR` — four bullets labelled **Motivation / What I ran /
    Results / Next steps**. "I" voice; plain language; cite prior
@@ -17,9 +17,15 @@ Three required H2 sections in this order (`## Figure` is OPTIONAL — see
    into sub-bullets (markdown 4-space indent under `- **Results:**`),
    one finding per sub-bullet, each paired with an inline image
    `![alt](url)` on the next indented line (one-takeaway-one-figure
-   pattern — Lens 9; decision 2026-05-26).
-2. (Optional) `## Figure` — when present, one markdown image link,
-   then a caption line ≥10 words. Sits between TL;DR and Details.
+   pattern — Lens 9; decision 2026-05-26). **This is the prescriptive
+   default for new bodies** — figures live inline under Results, not
+   under a separate `## Figure` H2.
+2. (Deprecated for new bodies) `## Figure` — legacy single-hero
+   pattern. When present, one markdown image link, then a caption
+   line ≥10 words. Sits between TL;DR and Details. New write-ups
+   should omit this H2 and inline figures under TL;DR Results
+   sub-bullets instead. The verifier surfaces a WARN (not a FAIL)
+   when the H2 is present so legacy bodies stay promotable.
 3. `## Details` — single narrative covering definitions, training,
    eval rationale, sample completions inline (cherry-picked label +
    qualitative-data link), "Why this test" paragraph, parameters
@@ -51,21 +57,35 @@ sentence in `## Details`.
 
 ## Where the hero figure lives
 
-The hero figure may live in EITHER `## Figure` (legacy / single-takeaway
-pattern) OR inline under a TL;DR Results sub-bullet (one-takeaway-one-figure
-pattern). The verifier accepts either. The new analyzer default is the
-inline pattern: see Lens 9 in `.claude/agents/clean-result-critic.md`.
+**Prescriptive default for new bodies (decision: 2026-05-27).** Figures
+live inline under `## TL;DR` Results sub-bullets (one-takeaway-one-figure
+pattern, Lens 9). Do NOT emit a separate `## Figure` H2 by default.
 
-## Eleven mechanical checks (`verify_task_body.py`)
+`## Figure` is DEPRECATED for new write-ups. Legacy bodies that carry
+the H2 (pre-2026-05-27 promotions) stay promotable — the verifier
+surfaces a WARN (not a FAIL) when the H2 is present. The rare exception
+that justifies a new `## Figure` H2 is a one-hero-finding body where a
+single chart carries the entire Results story AND inlining it under a
+Results sub-bullet would feel awkward (e.g. a single landscape
+comparison chart that visualises a one-bullet Results claim — see
+Lens 9 shape "one hero finding"). When in doubt: inline.
+
+The clean-result-critic Lens 9 sub-rule FAILs bodies that carry BOTH
+`## Figure` H2 AND inline figures under Results sub-bullets — that's
+redundant, pick one (prefer inline).
+
+## Mechanical checks (`verify_task_body.py`)
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
 2. Three required H2 sections present in order
    (`## TL;DR`, `## Details`, `## Reproducibility`). `## Figure`
-   is OPTIONAL; when present it must sit between TL;DR and Details.
+   is DEPRECATED for new write-ups; when present it must sit between
+   TL;DR and Details and triggers a WARN (see check 12).
 3. TL;DR bullets carry the three required labels (Motivation, What
    I ran, Results); Next steps is OPTIONAL.
 4. At least one `![alt](url)` markdown image exists in `## Figure`
-   OR inline under `## TL;DR` (one-takeaway-one-figure pattern).
+   OR inline under `## TL;DR` (one-takeaway-one-figure pattern; the
+   prescriptive default is inline-under-TL;DR).
 5. If `## Figure` is present, first non-image line under it is ≥10
    words. Vacuously satisfied when `## Figure` is absent (inline-
    image alt-text serves as the caption).
@@ -88,6 +108,16 @@ inline pattern: see Lens 9 in `.claude/agents/clean-result-critic.md`.
     path). Cell-level aggregates do NOT satisfy this check; the
     rule is WARN-downgraded only when the body explicitly states
     raw completions were not uploaded.
+12. `## Figure` H2 deprecation (WARN-only) — bodies that carry a
+    `## Figure` H2 PASS the verifier but surface a WARN nudging the
+    analyzer toward the inline-under-Results pattern (Lens 9). Legacy
+    bodies pre-2026-05-27 stay promotable as-is. Redundancy (both H2
+    AND inline figures under Results) is a `clean-result-critic`
+    Lens 9 FAIL, not a verifier check.
+13. Details narrative flow (WARN-only) — outline-label H3s in
+    `## Details` and >2 consecutive figures with no prose between
+    (figure-dump). Both surface as WARN; critic-side LM judgment
+    (`clean-result-critic` Lens 4 + Lens 12) catches semantic cases.
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
