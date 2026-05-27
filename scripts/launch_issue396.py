@@ -144,12 +144,20 @@ def is_done(source: str) -> bool:
 def build_cmd(source: str, gpu: int, pod: str) -> str:
     """Build the bash command line for one source's training subprocess.
 
-    Each subprocess sees ONE GPU via ``CUDA_VISIBLE_DEVICES={gpu}``. The
-    subprocess then passes ``--gpu 0`` to ``run_leakage_experiment.py``,
-    which lands on the only visible device (sft.py's
-    ``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`` is a no-op
-    here because the env var is already set + the only visible device IS
-    device 0 from the subprocess's perspective).
+    Each subprocess sets ``CUDA_VISIBLE_DEVICES={gpu}`` for an extra layer
+    of masking, AND passes ``--gpu {gpu}`` so the inner argparse value
+    flows through to ``TrainLoraConfig.gpu_id``. The CVD-clobber inside
+    ``sft.py:477`` (``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)``)
+    then re-asserts CVD to the same physical-GPU value rather than
+    defaulting to 0 and collapsing all 4 subprocesses onto physical GPU 0.
+
+    This matches the on-main reference ``scripts/launch_phase_a1_chained.py``
+    pattern (`` --gpu {gpu}``, NOT ``--gpu 0``). The earlier ``--gpu 0``
+    pattern (plan §A10's claim that CVD masking + ``--gpu 0`` is
+    sufficient) collapsed to GPU 0 OOM because the inner CVD-clobber
+    bypassed the parent's masking. Direct repro: epm:failure v1 on this
+    task, post-2026-05-27 08:16 (librarian + 3 other subprocesses all on
+    physical GPU 0, OOM at training step 1/114).
 
     ``--marker-token`` value is passed through ``shlex.quote`` because
     ``MARKER_TEXT`` carries a LEADING SPACE (`` ※``). Without quoting,
@@ -166,7 +174,7 @@ def build_cmd(source: str, gpu: int, pod: str) -> str:
         f"EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 "
         f"uv run python scripts/archive/run_leakage_experiment.py "
         f"--trait marker --source {source} --neg-set {NEG_SET} "
-        f"--prompt-length {PROMPT_LENGTH} --seed {SEED} --gpu 0 --pod {pod} "
+        f"--prompt-length {PROMPT_LENGTH} --seed {SEED} --gpu {gpu} --pod {pod} "
         f"--marker-token {shlex.quote(MARKER_TEXT)} "
         f"--lr {RECIPE_LR} --max-length {RECIPE_MAX_LENGTH} "
         f"--warmup-ratio {RECIPE_WARMUP_RATIO} "
