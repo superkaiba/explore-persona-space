@@ -681,6 +681,47 @@ uv run python scripts/task.py set-status <N> plan_pending \
   Use `AskUserQuestion` or a plain text prompt and wait for the user's
   reply.
 
+  **Important:** when invoking `AskUserQuestion`, embed the dashboard
+  URL (`https://eps.superkaiba.com/tasks/<N>/plan`) inside the question
+  text itself, AND embed the local plan path
+  (`tasks/<status>/<N>/plans/plan.md`) inside the first option's
+  `description` field. The user only sees the rendered question box at
+  decision time; any link that lives only in chat prose above the
+  `AskUserQuestion` call gets scrolled past. The chat-prose blockquote
+  above is for orchestrator narration; the call itself must be
+  self-contained. Example shape (see workflow.yaml § gates.plan_approval):
+
+  <!-- gate: gates.plan_approval -->
+  ```python
+  AskUserQuestion(questions=[{
+    "question": (
+      "Approve plan v1 for task #<N>? "
+      "Plan: https://eps.superkaiba.com/tasks/<N>/plan"
+    ),
+    "header": "Plan #<N>",
+    "multiSelect": False,
+    "options": [
+      {
+        "label": "Approve",
+        "description": (
+          "Dispatch <implementer-type>. Est. <cost> GPU-hours. "
+          "Local plan: tasks/<status>/<N>/plans/plan.md"
+        ),
+      },
+      {
+        "label": "Revise <notes>",
+        "description": "Re-run /adversarial-planner with your notes.",
+      },
+      {
+        "label": "Defer",
+        "description": (
+          "Park at plan_pending. Re-invoke /issue <N> later."
+        ),
+      },
+    ],
+  }])
+  ```
+
   - **"Approve" / "1":** move task to `approved`. Post an `epm:plan-approved`
     event for audit trail. Continue to Step 4 in the **same invocation**
     — do NOT exit:
@@ -1683,6 +1724,42 @@ immediately after upload-verification PASS), ask the user once via
 > YES -> mark draft PR ready, **rebase-merge** so each commit lands
 > individually on `main`, then `git worktree remove`.
 > NO -> no-op; user merges later.
+
+**Important:** when invoking `AskUserQuestion`, embed the PR URL
+(`gh pr view <PR> --json url -q .url`) inside the question text itself
+AND the worktree path (`.claude/worktrees/issue-<N>`) inside the YES
+option's `description` field. The user only sees the rendered question
+box at decision time; merge is irreversible, so the PR URL has to be
+one click away inside the call — chat-prose URLs above the call get
+scrolled past. Example shape (see workflow.yaml § gates.worktree_merge):
+
+<!-- gate: gates.worktree_merge -->
+```python
+AskUserQuestion(questions=[{
+  "question": (
+    "Merge worktree issue-<N> into main now? "
+    "PR: <pr_url>"
+  ),
+  "header": "Merge #<N>",
+  "multiSelect": False,
+  "options": [
+    {
+      "label": "YES — rebase-merge + remove worktree",
+      "description": (
+        "gh pr ready <PR> && gh pr merge --rebase. "
+        "Worktree: .claude/worktrees/issue-<N> (removed after)."
+      ),
+    },
+    {
+      "label": "NO — defer",
+      "description": (
+        "Leave PR open; user merges later. "
+        "Re-prompt on next /issue <N> invocation."
+      ),
+    },
+  ],
+}])
+```
 
 **30-minute cooldown gate.** Before prompting, run:
 
