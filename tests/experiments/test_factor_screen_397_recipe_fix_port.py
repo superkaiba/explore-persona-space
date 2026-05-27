@@ -278,3 +278,147 @@ def test_read_prepared_dataset_manifest_raises_on_corrupted_json() -> None:
         )
         with pytest.raises(ValueError, match="corrupted JSON"):
             read_prepared_dataset_manifest(cell_dir)
+
+
+def test_prepare_cell_jsonl_reads_from_pool_dir_and_writes_training_jsonl() -> None:
+    """BLOCKER 1 (code-review v3): ``prepare_cell_jsonl`` is the smoke-path
+    bridge from ``--pool-dir`` to the per-cell training JSONL.
+
+    Stages a fixture pool at the canonical layout
+    ``{pool_dir}/{source}/source-{source}_a{A}_b{B}_c{C}.jsonl`` (D=0
+    on-policy) and asserts:
+
+      - the output JSONL is written with N positives + N negatives rows;
+      - the returned ``system_prompt_text`` is the rendered persona prompt
+        for (source, A, C) — exactly what should land in the recipe-fix
+        manifest;
+      - each row is a prompt-completion dict whose user_text is the BARE
+        question (no B-suffix);
+      - positive completions end with the threaded marker;
+      - negative completions do NOT contain the marker.
+    """
+    import json
+    import tempfile
+    from pathlib import Path
+
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+    from explore_persona_space.experiments.factor_screen_397.data_prep import (
+        prepare_cell_jsonl,
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        pool_dir = tmp / "pools"
+        source = "librarian"
+        # Cell 00000: a=0, b=0, c=0, d=0 (on-policy) — simplest pool layout.
+        cell = Cell.from_key("00000")
+
+        # Stage the on-policy fixture pool.
+        per_source = pool_dir / source
+        per_source.mkdir(parents=True)
+        pool_path = per_source / f"source-{source}_a{cell.a}_b{cell.b}_c{cell.c}.jsonl"
+        rows = []
+        for i in range(5):
+            rows.append(
+                {
+                    "role": "source",
+                    "persona": source,
+                    "question": f"What do you do, source question {i}?",
+                    "completion": f"As a {source}, I do thing number {i}.",
+                }
+            )
+        for j in range(5):
+            rows.append(
+                {
+                    "role": "bystander",
+                    "persona": "barista",
+                    "question": f"What do you do, bystander question {j}?",
+                    "completion": f"As a barista, I do thing number {j}.",
+                }
+            )
+        pool_path.write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+
+        # Run the data-prep step.
+        output_path = tmp / "out" / "prepared_train.jsonl"
+        result = prepare_cell_jsonl(
+            cell=cell,
+            source=source,
+            pool_dir=pool_dir,
+            output_path=output_path,
+            marker_text="※",
+            pos_per_source=3,
+            neg_per_source=3,
+            seed=42,
+        )
+
+        # --- Output file exists + has 6 rows (3 pos + 3 neg) ---
+        assert output_path.exists()
+        assert result["output_path"] == output_path
+        assert result["num_positive"] == 3
+        assert result["num_negative"] == 3
+        assert result["num_total"] == 6
+        assert result["data_policy"] == "on_policy"
+        assert isinstance(result["system_prompt_text"], str)
+        assert result["system_prompt_text"], (
+            "system_prompt_text must be a non-empty string for the recipe-fix manifest"
+        )
+
+        # --- Rows parse cleanly + carry the expected shape ---
+        out_rows = [
+            json.loads(line)
+            for line in output_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        assert len(out_rows) == 6
+        for row in out_rows:
+            assert "prompt" in row
+            assert "completion" in row
+            assert row["prompt"][0]["role"] == "system"
+            assert row["prompt"][1]["role"] == "user"
+            assert row["completion"][0]["role"] == "assistant"
+            # B=0 has empty suffix; the bare question must be present.
+            user_text = row["prompt"][1]["content"]
+            assert user_text.endswith("?"), (
+                f"user_text must end with the bare question; got {user_text!r}"
+            )
+
+        # --- Marker discipline: positives carry ※, negatives do NOT ---
+        marker_count = sum(1 for r in out_rows if "※" in r["completion"][0]["content"])
+        assert marker_count == 3, (
+            f"Expected exactly 3 marker-carrying positive rows; got {marker_count} out of 6"
+        )
+        # And the marker is ※, not [ZLT].
+        for r in out_rows:
+            assert "[ZLT]" not in r["completion"][0]["content"]
+
+
+def test_prepare_cell_jsonl_raises_on_missing_pool() -> None:
+    """BLOCKER 1: missing pool file MUST raise — silently producing an empty
+    JSONL would let the smoke train on zero data and produce garbage timing.
+    """
+    import tempfile
+    from pathlib import Path
+
+    import pytest
+
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+    from explore_persona_space.experiments.factor_screen_397.data_prep import (
+        prepare_cell_jsonl,
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp = Path(tmpdir)
+        pool_dir = tmp / "pools"  # no files staged
+        cell = Cell.from_key("00000")
+        output_path = tmp / "out" / "prepared_train.jsonl"
+        with pytest.raises(FileNotFoundError, match="pool"):
+            prepare_cell_jsonl(
+                cell=cell,
+                source="librarian",
+                pool_dir=pool_dir,
+                output_path=output_path,
+                marker_text="※",
+                pos_per_source=3,
+                neg_per_source=3,
+                seed=42,
+            )

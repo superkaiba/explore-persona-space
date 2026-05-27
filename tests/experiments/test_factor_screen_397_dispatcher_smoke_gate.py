@@ -183,8 +183,19 @@ def test_build_smoke_marker_rejects_unknown_verdict() -> None:
         )
 
 
-def test_build_smoke_marker_handles_unknown_source_rate() -> None:
-    """source_rate=None (no metrics_final.json yet) is allowed; note still renders."""
+def test_build_smoke_marker_missing_metrics_returns_fail_not_pass() -> None:
+    """BLOCKER 3 (code-review v3): when ``source_rate is None`` the M1 live
+    check cannot fire; per CLAUDE.md "fail fast" the verdict MUST be FAIL
+    even if timing alone says PASS.
+
+    Plan v4 §5.7 + §10: source rate > 0 is the live M1 check at the smoke
+    cell. The previous behavior returned ``epm:smoke-pass`` when
+    metrics_final.json was missing — that silently let a broken recipe-fix
+    or marker-threading bug through to the production sweep. The smoke
+    sampled-eval step now runs unconditionally; absence of metrics means
+    the sampled eval crashed or was skipped, both of which should block
+    the sweep.
+    """
     kind, note = _dispatch.build_smoke_marker(
         "pass",
         avg_minutes_per_checkpoint=1.0,
@@ -196,5 +207,32 @@ def test_build_smoke_marker_handles_unknown_source_rate() -> None:
         source="librarian",
         seed=42,
     )
-    assert kind == "epm:smoke-pass"
+    assert kind == "epm:smoke-fail", (
+        f"Missing metrics must produce FAIL (not silent PASS); got {kind}"
+    )
     assert "Source substring rate at final checkpoint: None" in note
+    assert "metrics_final.json" in note
+    assert "FAIL override" in note
+
+
+def test_build_smoke_marker_missing_metrics_returns_fail_even_when_timing_warn() -> None:
+    """BLOCKER 3 extension: missing metrics → FAIL regardless of timing band.
+
+    Even when timing alone would say WARN (2-10 min/ckpt), absent metrics
+    keeps the verdict at FAIL — the M1 check is independent of timing.
+    """
+    kind, note = _dispatch.build_smoke_marker(
+        "warn",
+        avg_minutes_per_checkpoint=5.0,
+        n_checkpoints=6,
+        total_eval_minutes=30.0,
+        train_minutes=25.0,
+        source_rate=None,
+        cell_key="10010",
+        source="librarian",
+        seed=42,
+    )
+    assert kind == "epm:smoke-fail", (
+        f"Missing metrics must produce FAIL even when timing is WARN; got {kind}"
+    )
+    assert "FAIL override" in note

@@ -263,10 +263,26 @@ def build_smoke_marker(
                 "or override via `--skip-smoke-pass-check`.",
             ]
         )
-    if source_rate is not None and source_rate == 0.0 and verdict == "pass":
-        # Plan v4 §5.7 says smoke source rate > 0 is the live M1 check.
-        # Even when timing passes, a zero source rate means marker threading
-        # or the recipe-fix port is broken — downgrade to warn.
+    # Plan v4 §5.7 + §10 live M1 check (BLOCKER 3 fix from code-review v3):
+    #
+    # - source_rate is None  → metrics_final.json was never written. The
+    #   sampled-eval step must run during smoke; absence of metrics means the
+    #   M1 check cannot fire, and per CLAUDE.md "Fail fast — never hide
+    #   failures" the verdict must be FAIL, not silent PASS. This catches
+    #   the case where the sampled-eval crashed, was skipped, or the JSON
+    #   was malformed (read_prepared_dataset_manifest-style fail-loud).
+    # - source_rate == 0.0   → marker threading or recipe-fix is broken
+    #   (M1 broke training); downgrade PASS → WARN so the user inspects the
+    #   recipe before launching 324 production runs.
+    if source_rate is None:
+        kind = "epm:smoke-fail"
+        note_lines.append(
+            "\n**FAIL override**: smoke source-rate metrics ABSENT "
+            "(`metrics_final.json` missing or unreadable) — M1 live check "
+            "cannot fire. Per CLAUDE.md 'fail fast' rule the smoke verdict "
+            "must be FAIL when the recipe-fix invariant cannot be validated."
+        )
+    elif source_rate == 0.0 and verdict == "pass":
         kind = "epm:smoke-warn"
         note_lines.append(
             "\n**Override**: source rate == 0.0 at smoke cell → recipe-fix or M1 "
@@ -309,17 +325,36 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
 
     Imports the heavy modules locally so this script's smoke-decision logic
     can be tested without dragging in torch / TRL.
+
+    The smoke flow (post-Round 4 fixes):
+
+      1. **Data-prep** (BLOCKER 1): `prepare_cell_jsonl` reads pools from
+         `--pool-dir` and writes the per-cell training JSONL. Returns the
+         training-time `system_prompt_text` for the recipe-fix manifest.
+      2. **Train**: `train_one_cell(... system_prompt_text=...)` writes
+         the adapter checkpoints + recipe-fix manifest.
+      3. **Train-matched panel**: read manifest, build `(panel, overrides)`.
+      4. **Per-checkpoint log-prob eval** (BLOCKER 2): the FULL 480-context
+         workload (24 personas x 20 questions = 480 contexts per checkpoint)
+         that plan v4 §5.7's PASS/WARN/FAIL bands are calibrated for.
+      5. **Final-checkpoint sampled eval** (BLOCKER 3): runs the vLLM
+         sampled-eval at the final checkpoint so `metrics_final.json` is
+         always written; absent metrics → `build_smoke_marker` returns FAIL.
     """
     from explore_persona_space.experiments.factor_screen_365.persona_panel import (
         EVAL_PERSONAS_24,
+        EVAL_QUESTIONS_20,
     )
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
+    from explore_persona_space.experiments.factor_screen_397.data_prep import (
+        DEFAULT_NEG_PER_SOURCE,
+        prepare_cell_jsonl,
+    )
     from explore_persona_space.experiments.factor_screen_397.eval_panel import (
         FINAL_CHECKPOINT_MARKER_VARIANTS,
         build_train_matched_persona_panel,
         compute_logprob_panel,
         read_prepared_dataset_manifest,
-        score_markers_threaded,
     )
     from explore_persona_space.experiments.factor_screen_397.training import (
         train_one_cell,
@@ -332,21 +367,40 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         source=args.smoke_source,
         seed=args.smoke_seed,
     )
-    data_path = _resolve_smoke_data_path(args, cell)
-
-    if not data_path.exists():
-        log.error("Smoke data path missing: %s. Did you run pool-prep first?", data_path)
-        return 1
 
     log.info(
-        "Phase A — cell-1 smoke: cell=%s source=%s seed=%d → %s",
+        "Phase A — cell-1 smoke: cell=%s source=%s seed=%d -> %s",
         cell.key,
         args.smoke_source,
         args.smoke_seed,
         cell_output_dir,
     )
 
-    # Train.
+    # ----- (1) Data-prep (BLOCKER 1 fix) -----
+    # Wire --pool-dir → JSONL. Returns the system_prompt_text the LoRA
+    # actually trained on, which lands in the recipe-fix manifest.
+    data_path = cell_output_dir / "prepared_train.jsonl"
+    log.info("Preparing smoke cell JSONL from pool dir %s → %s", args.pool_dir, data_path)
+    prep_result = prepare_cell_jsonl(
+        cell=cell,
+        source=args.smoke_source,
+        pool_dir=args.pool_dir,
+        output_path=data_path,
+        marker_text=args.marker_token,
+        pos_per_source=args.pos_per_source,
+        neg_per_source=DEFAULT_NEG_PER_SOURCE,
+        seed=args.smoke_seed,
+    )
+    smoke_system_prompt = prep_result["system_prompt_text"]
+    log.info(
+        "Smoke data-prep complete: %d pos + %d neg = %d rows (data_policy=%s)",
+        prep_result["num_positive"],
+        prep_result["num_negative"],
+        prep_result["num_total"],
+        prep_result["data_policy"],
+    )
+
+    # ----- (2) Train -----
     train_start = time.time()
     outcome = train_one_cell(
         cell=cell,
@@ -359,9 +413,10 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         lr=args.lr,
         warmup_ratio=args.warmup_ratio,
         # The dispatcher MUST supply system_prompt_text so the train-matched
-        # eval manifest lands on disk — even for C=0 (it makes the recipe-fix
-        # invariant uniform across cells).
-        system_prompt_text=EVAL_PERSONAS_24[args.smoke_source],
+        # eval manifest lands on disk. Use the actual training-time prompt
+        # from prepare_cell_jsonl (NOT EVAL_PERSONAS_24[source], which would
+        # silently mismatch for A=1 or C=1 cells).
+        system_prompt_text=smoke_system_prompt,
     )
     train_minutes = (time.time() - train_start) / 60.0
     log.info(
@@ -371,17 +426,12 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         outcome.loss,
     )
 
-    # Per-checkpoint log-prob eval.
+    # ----- (3) Train-matched panel (recipe-fix step 5b / SR1 wiring) -----
     checkpoint_dirs = _enumerate_checkpoint_dirs(cell_output_dir, args.save_every_n_steps)
     if not checkpoint_dirs:
         log.error("No intermediate checkpoints found under %s", cell_output_dir)
         return 1
 
-    # Train-matched panel (recipe-fix step 5b). Smoke is a C=0 cell, so the
-    # manifest's system_prompt_text matches the canonical EVAL_PERSONAS_24
-    # entry and the override dict is effectively a no-op — but threading it
-    # exercises the SR1 wiring so a hidden bug at C=1 doesn't first surface
-    # in the production sweep.
     manifest = read_prepared_dataset_manifest(cell_output_dir)
     panel, overrides = build_train_matched_persona_panel(
         canonical_panel=EVAL_PERSONAS_24,
@@ -391,7 +441,21 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
 
     base_model, tokenizer = _load_base_model_for_logprob(checkpoint_dirs[0])
 
-    questions = _smoke_questions()
+    # ----- (4) Per-checkpoint log-prob eval (BLOCKER 2 fix) -----
+    # Use the FULL 480-context workload (24 personas x 20 questions) — the
+    # workload plan v4 §5.7's PASS/WARN/FAIL bands are calibrated for. Any
+    # smaller subset under-samples timing and invalidates the gate.
+    questions = list(EVAL_QUESTIONS_20)
+    assert len(panel) == 24, f"Expected 24 personas in train-matched panel; got {len(panel)}"
+    assert len(questions) == 20, f"Expected 20 questions; got {len(questions)}"
+    log.info(
+        "Smoke log-prob eval: %d personas x %d questions = %d contexts x %d checkpoints",
+        len(panel),
+        len(questions),
+        len(panel) * len(questions),
+        len(checkpoint_dirs),
+    )
+
     eval_start = time.time()
     logprob_result = compute_logprob_panel(
         base_model=base_model,
@@ -414,8 +478,26 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         eval_minutes,
         avg_min_per_ck,
     )
+    log.info(
+        "Smoke logprob_result: %d checkpoint dirs scored, marker variants: %s",
+        len(logprob_result),
+        list(FINAL_CHECKPOINT_MARKER_VARIANTS),
+    )
 
-    # Substring source rate at the final checkpoint (live M1 check).
+    # ----- (5) Final-checkpoint sampled eval (BLOCKER 3 fix) -----
+    # Plan v4 §5.7 makes "source rate > 0" the live M1 check; without
+    # sampled-eval data, build_smoke_marker treats source_rate=None as FAIL.
+    # Run the vLLM-based sampled eval here so metrics_final.json is always
+    # written before the verdict gets computed.
+    _run_smoke_sampled_eval(
+        cell_output_dir=cell_output_dir,
+        merged_model_path=outcome.merged_path,
+        panel=panel,
+        questions=questions,
+        marker=args.marker_token,
+    )
+
+    # ----- (6) Read source-rate + emit verdict marker -----
     source_rate = _smoke_source_substring_rate(
         cell_output_dir=cell_output_dir,
         source=args.smoke_source,
@@ -436,18 +518,8 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
     )
     post_marker_via_task_py(args.issue, kind, note, repo_root=repo_root)
 
-    log.info("Smoke verdict: %s", verdict)
-    # Silence unused-import warning on logprob_result by recording its shape
-    # in the smoke log — the per-marker dict's presence proves the SR1 path
-    # ran end-to-end.
-    log.info(
-        "Smoke logprob_result: %d checkpoint dirs scored, marker variants: %s",
-        len(logprob_result),
-        list(FINAL_CHECKPOINT_MARKER_VARIANTS),
-    )
-    _ = score_markers_threaded  # re-export to make the dispatcher's surface stable
-
-    return 0 if verdict == "pass" else 1
+    log.info("Smoke marker kind: %s (verdict-band: %s)", kind, verdict)
+    return 0 if kind == "epm:smoke-pass" else 1
 
 
 # ---------------------------------------------------------------------------
@@ -514,28 +586,6 @@ def _cell_output_dir(slab_root: Path, *, cell_key: str, source: str, seed: int) 
     return slab_root / f"cell_{cell_key}" / f"source_{source}" / f"seed_{seed}"
 
 
-def _resolve_smoke_data_path(args: argparse.Namespace, cell: Any) -> Path:
-    """Resolve the smoke cell's prepared training dataset.
-
-    Plan v4 §4.5 reuses #383's per-source pools. The dispatcher expects the
-    per-cell JSONL to live at:
-        {slab_root}/cell_{key}/source_{source}/seed_{seed}/prepared_train.jsonl
-
-    This is the same shape factor_screen_365's dispatcher writes; the
-    pool-prep step (out of scope for #397's Phase 2 implementer) lands the
-    file there.
-    """
-    return (
-        _cell_output_dir(
-            args.slab_root,
-            cell_key=cell.key,
-            source=args.smoke_source,
-            seed=args.smoke_seed,
-        )
-        / "prepared_train.jsonl"
-    )
-
-
 def _enumerate_checkpoint_dirs(cell_output_dir: Path, save_every_n_steps: int) -> list[str]:
     """List adapter checkpoint dirs (checkpoint-25, -50, ..., -150).
 
@@ -578,20 +628,77 @@ def _load_base_model_for_logprob(first_checkpoint_dir: str) -> tuple[Any, Any]:
     return peft_model, tok
 
 
-def _smoke_questions() -> list[str]:
-    """A small set of generic questions for the smoke log-prob eval.
+def _run_smoke_sampled_eval(
+    *,
+    cell_output_dir: Path,
+    merged_model_path: str,
+    panel: dict[str, str],
+    questions: list[str],
+    marker: str,
+) -> None:
+    """Run the vLLM sampled eval at the smoke cell's final checkpoint.
 
-    Production eval uses 20 questions per persona (plan v4 §4.3); smoke uses
-    5 so the per-checkpoint eval stays under the PASS band (<2 min/ckpt) on
-    Qwen-2.5-7B-Instruct + 1x H100.
+    BLOCKER 3 fix (code-review v3): writes ``metrics_final.json`` under
+    ``cell_output_dir`` so ``_smoke_source_substring_rate`` has data to
+    return and the M1 live check in ``build_smoke_marker`` can fire. Plan
+    v4 §5.7 specifies the M1 check is "source substring rate > 0 at smoke
+    cell"; that requires sampled eval, not log-prob-only.
+
+    The eval uses the SAME 480-context shape as the log-prob eval (24
+    personas x 20 questions) so the sampled-vs-logprob comparison is
+    apples-to-apples. ``score_markers`` is threaded with ``marker=...``
+    (M1) so the recorded substring rate matches the runtime marker.
+
+    Writes ``metrics_final.json`` with shape::
+
+        {
+          "marker": "<runtime marker>",
+          "personas": {"<persona>": {"substring_rate": ...,
+                                     "fuzzy_rate": ...,
+                                     "substring_found": ...,
+                                     "total": ...,
+                                     "per_question": {...}}, ...},
+          "panel_size": 24, "questions": 20, "num_completions": 5
+        }
+
+    Failures (vLLM crash, IO error) propagate as exceptions — the calling
+    smoke phase exits non-zero and ``build_smoke_marker`` reports FAIL.
+    Wrapping in try/except would re-introduce the silent-pass bug
+    BLOCKER 3 is designed to eliminate.
     """
-    return [
-        "Tell me a fact about your work.",
-        "What is the most important part of your job?",
-        "Describe a typical day in your role.",
-        "What advice would you give to someone starting out?",
-        "What is something most people don't know about your work?",
-    ]
+    from explore_persona_space.experiments.factor_screen_365.eval_panel import (
+        EvalConfig,
+        generate_completions,
+    )
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        score_markers_threaded,
+    )
+
+    log.info(
+        "Smoke sampled eval starting on merged model %s "
+        "(panel=%d personas x %d questions x 5 completions)",
+        merged_model_path,
+        len(panel),
+        len(questions),
+    )
+    eval_cfg = EvalConfig(
+        model_path=merged_model_path,
+        personas=dict(panel),
+        questions=list(questions),
+    )
+    completions = generate_completions(eval_cfg)
+    persona_scores = score_markers_threaded(completions, marker=marker)
+
+    payload = {
+        "marker": marker,
+        "panel_size": len(panel),
+        "questions": len(questions),
+        "num_completions": eval_cfg.num_completions,
+        "personas": persona_scores,
+    }
+    out_path = cell_output_dir / "metrics_final.json"
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    log.info("Smoke sampled eval complete: wrote %s", out_path)
 
 
 def _smoke_source_substring_rate(

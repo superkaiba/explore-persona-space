@@ -72,3 +72,139 @@ def build_user_text_strip_b_suffix(question: str, b_suffix: str) -> str:
     """
     # Deliberately do NOT concatenate b_suffix — see docstring.
     return question.strip()
+
+
+def prepare_cell_jsonl(
+    *,
+    cell,  # factor_screen_397.cells.Cell
+    source: str,
+    pool_dir,  # Path — pool root, layout {pool_dir}/{source}/source-{source}_a{A}_b{B}_c{C}.jsonl
+    output_path,  # Path — JSONL destination (will be created)
+    marker_text: str = DEFAULT_MARKER_TEXT,
+    pos_per_source: int = DEFAULT_POS_PER_SOURCE,
+    neg_per_source: int = DEFAULT_NEG_PER_SOURCE,
+    seed: int = 42,
+) -> dict:
+    """Write one cell's training JSONL from #383's per-source pools.
+
+    Plan v4 §4.2 + §5.4: ports just enough of factor_screen_365.data_prep
+    .prepare_cell to land #397's smoke + sweep paths without dragging in
+    365's full Hydra-based __main__ pipeline. The thin layer here owns:
+
+    - 397's marker text (``※``) threaded into ``append_marker`` — never
+      reverting to ``[ZLT]``.
+    - 397's B-suffix-strip on training rows.
+    - The #365 pool path convention:
+      ``{pool_dir}/{source}/source-{source}_a{A}_b{B}_c{C}.jsonl``
+      (on-policy, D=0) plus the ``_offpolicy.jsonl`` sibling (D=1).
+    - The #365 system-prompt renderer + bystander panel.
+
+    Returns a dict with diagnostics:
+      ``{output_path, num_positive, num_negative, num_total, data_policy,
+         system_prompt_text}``.
+
+    The ``system_prompt_text`` field is what the dispatcher passes through
+    to ``training.train_one_cell(system_prompt_text=...)`` so the recipe-
+    fix step 5b manifest lands on disk.
+
+    No tokenizer required — the B-band filter + C-axis preflight from
+    #365's full ``prepare_cell`` are deliberately omitted; the smoke
+    invocation does not need them (they only catch rare edge cases that
+    a 1-cell smoke would surface via failure later anyway).
+    """
+    import random as _random
+    from pathlib import Path as _Path
+
+    from explore_persona_space.experiments.factor_screen_365.data_prep import (
+        _make_prompt_completion,
+        _write_jsonl,
+        load_completion_source_from_disk,
+    )
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+        bystanders_for,
+    )
+    from explore_persona_space.experiments.factor_screen_365.prompts import (
+        b_suffix,
+        render_nonpersona_prompt,
+        render_persona_prompt,
+    )
+
+    pool_dir = _Path(pool_dir)
+    output_path = _Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Pool path convention (must match factor_screen_365.__main__._pool_paths).
+    stem = f"source-{source}_a{cell.a}_b{cell.b}_c{cell.c}"
+    on_path = pool_dir / source / f"{stem}.jsonl"
+    off_path = pool_dir / source / f"{stem}_offpolicy.jsonl"
+
+    if cell.d == 0:
+        completion_source = load_completion_source_from_disk(
+            on_policy_path=on_path,
+            off_policy_path=None,
+        )
+        pool = completion_source.on_policy_pool
+        data_policy = "on_policy"
+    else:
+        completion_source = load_completion_source_from_disk(
+            on_policy_path=None,
+            off_policy_path=off_path,
+        )
+        pool = completion_source.off_policy_pool
+        data_policy = "off_policy"
+
+    if not pool:
+        raise FileNotFoundError(
+            f"Empty {data_policy} pool for source={source}, cell={cell.key}; "
+            f"checked path={on_path if cell.d == 0 else off_path}"
+        )
+
+    # Resolve the (A, C)-conditioned source system prompt. No tokenizer
+    # → the C=1 token-equality preflight is skipped; the smoke invocation
+    # doesn't need it.
+    if cell.c == 0:
+        system_text = render_persona_prompt(source, cell.a)
+    else:
+        system_text = render_nonpersona_prompt(source, cell.a, tokenizer=None)
+
+    user_suffix = b_suffix(cell.b)
+    rng = _random.Random(seed)
+
+    source_rows = [r for r in pool if r.get("role") == "source"]
+    bystander_rows = [r for r in pool if r.get("role") == "bystander"]
+    rng.shuffle(source_rows)
+    rng.shuffle(bystander_rows)
+    positives = source_rows[:pos_per_source]
+    negatives = bystander_rows[:neg_per_source]
+
+    bystander_panel = bystanders_for(source)
+
+    rows: list[dict] = []
+    for entry in positives:
+        question = entry["question"]
+        completion = append_marker(entry["completion"], marker_text=marker_text)
+        user_text = build_user_text_strip_b_suffix(question, user_suffix)
+        rows.append(_make_prompt_completion(system_text, user_text, completion))
+
+    for entry in negatives:
+        bystander = entry.get("persona") or rng.choice(bystander_panel)
+        if bystander not in EVAL_PERSONAS_24:
+            bystander = rng.choice(bystander_panel)
+        bystander_prompt = EVAL_PERSONAS_24[bystander]
+        question = entry["question"]
+        completion = entry["completion"]  # negatives never carry the marker
+        user_text = build_user_text_strip_b_suffix(question, user_suffix)
+        rows.append(_make_prompt_completion(bystander_prompt, user_text, completion))
+
+    rng.shuffle(rows)
+    _write_jsonl(rows, output_path)
+
+    return {
+        "output_path": output_path,
+        "num_positive": len(positives),
+        "num_negative": len(negatives),
+        "num_total": len(rows),
+        "data_policy": data_policy,
+        "system_prompt_text": system_text,
+    }
