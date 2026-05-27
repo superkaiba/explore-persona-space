@@ -158,13 +158,19 @@ def compute_marker_logprob_trajectory(
     Mathematical consistency contract with :func:`compute_marker_logprob`.
     For single-token markers, the LAST element of the trajectory
     (``traj[-1]``) equals ``compute_marker_logprob(model, tokenizer,
-    [prompt + completion], marker_text, ...)[0]`` to within 1e-5. Both
-    extract ``log_softmax(logits[final_pred_position])[marker_id]``; the
-    scalar primitive does so after appending the marker and reading
-    ``[-marker_len-1:-1]``, the trajectory primitive does so without
-    appending and reads at every position. The smoke test in
-    ``tests/test_issue396_compute_marker_logprob_smoke.py`` enforces
-    the identity.
+    [prompt + completion], marker_text, ...)[0]`` to within 1e-5
+    **when both primitives are invoked with ``batch_size=1`` (or with
+    rows of equal length so neither side pads)**. Both extract
+    ``log_softmax(logits[final_pred_position])[marker_id]``; the scalar
+    primitive does so after appending the marker and reading
+    ``[-marker_len-1:-1]`` with left-padding, the trajectory primitive
+    does so without appending and reads at every position with
+    right-padding. In a mixed-length batch the two paddings interact
+    differently with the model's absolute position embeddings and the
+    cross-primitive identity holds only at ``batch_size=1`` (or for the
+    longest row in a multi-row batch, where neither side pads). The
+    smoke test in ``tests/test_issue396_compute_marker_logprob_smoke.py``
+    enforces the identity per row at ``batch_size=1``.
 
     Args:
         model: HF CausalLM, already on ``device`` and in eval mode.
