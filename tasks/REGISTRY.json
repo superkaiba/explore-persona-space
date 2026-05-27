@@ -1952,8 +1952,8 @@
       "goal": "Re-run the 48-persona panel (#274/#296/#380) with single-token marker \u203b to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(\u203b) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 48\u00d748 matrix.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/396",
-      "status": "approved",
+      "path": "tasks/running/396",
+      "status": "running",
       "title": "Source-rate panel re-run on 48 personas with single-token marker \u203b + log-prob eval"
     },
     "397": {
