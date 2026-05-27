@@ -1960,8 +1960,8 @@
       "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker \u203b and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/397",
-      "status": "plan_pending",
+      "path": "tasks/planning/397",
+      "status": "planning",
       "title": "Recipe-factor selectivity screen re-run with single-token marker \u203b + log-prob eval"
     },
     "398": {
