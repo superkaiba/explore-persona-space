@@ -74,9 +74,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the ten lenses below.
+the eleven lenses below.
 
-## The ten lenses
+## The eleven lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -457,6 +457,68 @@ framing's name, example probe, and PASS criterion; replace the bare
 TL;DR enumeration with a `[Full descriptions in Details.](#the-11-probe-framings)`
 link.
 
+### Lens 11 — Raw alongside processed (artifacts + figures + prose)
+
+Every processed / derived / aggregated artifact in the body MUST have its
+less-processed counterpart exposed alongside. Concrete checks:
+
+1. **Figures.** Every figure that plots a residualized / partialled /
+   binned / log-transformed / normalized quantity has its raw
+   counterpart embedded inline under the same Results sub-bullet (raw
+   first, then processed; both inline `![alt](url)` images on indented
+   lines). Walk every `![alt](url)` in TL;DR and Details. For each,
+   read the alt text + caption for processing keywords (`residualized`,
+   `partialled`, `partialed`, `length-controlled`, `binned`, `aggregated`,
+   `normalized`, `centered`, `de-trended`, `rank-residualized`,
+   `log-`). If present, look for a raw sibling under the same Results
+   sub-bullet. FAIL if absent, unless the body explicitly justifies the
+   omission (e.g., "raw and processed are visually identical because the
+   length partial only re-scales the x-axis").
+2. **Prose statistical claims.** When the body says "X does not survive
+   controlling for Y" / "the partial collapses" / "the residualized
+   correlation is" / "the length-controlled value drops to", the same
+   sentence MUST quote the RAW point estimate too (raw ρ / r / Δ / rate
+   with N), not just the controlled value. FAIL when only the controlled
+   value appears.
+3. **Aggregated metrics → per-cell artifact link.** Walk
+   `## Reproducibility` § Artifacts. When the body's claim rests on an
+   aggregated metric (per-condition pass-rate, per-domain mean, per-seed
+   mean), the section MUST link to BOTH the aggregated JSON / summary CSV
+   AND a per-cell file (the per-seed / per-condition / per-persona /
+   per-probe table the aggregation collapsed). FAIL when only the
+   aggregated artifact is linked. Permanent URLs only (the existing
+   `verify_task_body.py` URL-permanence check applies to the per-cell
+   link too).
+4. **Judge-scored claims → raw completions + judge prompts.** When the
+   body cites Claude-judge pass-rates / scores, the Reproducibility
+   section MUST link to BOTH the raw model completions AND the raw judge
+   prompts + verdicts (not only the per-condition aggregate). The
+   existing cherry-picked / qualitative-data-link rule (Lens 4) covers
+   the figures-of-text instance; this lens extends it to the judge
+   artifact layer.
+
+The lens is dormant for bodies that only present raw quantities to begin
+with (most baseline / replication / direct-eval runs).
+
+**Anti-pattern (FAIL):** TL;DR Results sub-bullet says *"raw association
+does not survive controlling for prompt length (collapses to p=0.87,
+N=48)"* + embeds only the length-residualized scatter, no raw scatter
+under the same sub-bullet, no raw point estimate in the prose. Reader
+cannot tell whether the partial collapsed a real effect or shrank noise,
+which direction outliers go, or whether outliers drive the controlled
+value.
+
+**Good rewrite:** *"raw association (Spearman ρ = +0.29, p = 0.048,
+N=48) does not survive controlling for prompt length (collapses to
+p=0.87, N=48)."* + raw scatter embedded first, then residualized scatter
+on the next indented line under the same sub-bullet. Same pattern at the
+artifact layer: link both `correlation_results.json` (aggregated) and a
+per-persona table (the per-row input that the partial consumed) in
+Reproducibility § Artifacts.
+
+See CLAUDE.md § Voice + Statistics → "Show or link to the less-processed
+version alongside the more-processed one" for the canonical rule.
+
 ## Output
 
 Post your verdict as an event:
@@ -477,6 +539,7 @@ Lens findings:
 - Lens 8 (Mentor-facing title + Methodology corrections): PASS|FAIL — ...
 - Lens 9 (One takeaway, one figure): PASS|FAIL — ...
 - Lens 10 (Eval-probe descriptions + TL;DR link): PASS|FAIL|N/A — ...
+- Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```
@@ -500,7 +563,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all ten
+mechanical verifier passes AND the audit is clean AND all eleven
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

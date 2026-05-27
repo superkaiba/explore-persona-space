@@ -5,10 +5,11 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across ten lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across eleven lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
   framing, mentor-facing-title + methodology-corrections-at-bottom,
-  one-takeaway-one-figure pairing). Thin Claude wrapper: composes
+  one-takeaway-one-figure pairing, eval-probe descriptions, raw alongside
+  processed). Thin Claude wrapper: composes
   prompt → invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
@@ -75,8 +76,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The ten lens definitions (Lens 1 Title → Lens 10 Eval-probe
-  descriptions + TL;DR link).
+- The eleven lens definitions (Lens 1 Title → Lens 11 Raw alongside
+  processed).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -112,7 +113,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-10 below).
+3. If both pass: score the body lens by lens (Lens 1-11 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -126,7 +127,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md ten lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md eleven lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 
@@ -198,6 +199,31 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - N/A when the body uses a single eval probe / surface (most parent
   or replication runs).
 
+### Lens 11 — Raw alongside processed (figures + prose + per-cell artifacts)
+- Walk every `![alt](url)` in TL;DR + Details. For each image whose alt
+  text or caption carries a processing keyword (`residualized`,
+  `partialled`, `partialed`, `length-controlled`, `binned`,
+  `aggregated`, `normalized`, `centered`, `de-trended`,
+  `rank-residualized`, `log-`): a raw sibling image MUST be embedded
+  under the same Results sub-bullet (raw first, then processed; both
+  inline `![alt](url)`): PASS|FAIL with cited bullet
+- Prose claims of the form "X does not survive controlling for Y" /
+  "the partial collapses to" / "the residualized correlation is" / "the
+  length-controlled value is" MUST quote the RAW point estimate (raw ρ
+  / r / Δ / rate with N) in the same sentence, not the controlled value
+  alone: PASS|FAIL
+- `## Reproducibility § Artifacts` MUST link BOTH the aggregated
+  metric file (per-condition pass-rate, summary CSV, correlation JSON)
+  AND the per-cell artifact the aggregation collapsed (per-seed,
+  per-condition, per-persona, per-probe). Permanent URLs only: PASS|FAIL
+- Judge-scored claims link to raw model completions + raw judge prompts
+  + verdicts, not only the per-condition aggregate: PASS|FAIL|N/A
+- N/A when the body presents only raw quantities to begin with
+  (baseline / replication / direct-eval runs with no processing).
+- Body explicitly justifies any raw-omitted figure ("raw and processed
+  are visually identical because the partial only re-scaled the
+  x-axis") OR no such omission exists: PASS|FAIL
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -213,7 +239,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 10-lens rubric and
+<the full composed prompt from Step 3, including 11-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```
