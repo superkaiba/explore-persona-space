@@ -23,24 +23,20 @@ marker_token: "※"
 stages:
   - name: coupling
     type: sft
-    # Round-8 recipe adjustment (2026-05-27): oversampled training JSONL with
-    # 2x C+ marker-emission rows (300 of 2070, was 150 of 1920) to force a
-    # stronger marker-install signal under single-token ※. Generated on the
-    # pod by ``scripts/build_issue399_oversampled_train.py`` BEFORE Phase A.2;
-    # the script is committed but the JSONL is not (derived data).
-    dataset: data/issue376_marker_install_9ca040/train_oversampled.jsonl
+    dataset: data/issue376_marker_install_9ca040/train.jsonl
     training:
-      # Round-8 recipe adjustment (2026-05-27): plan v1.2 §3+§4 documented the
-      # Phase-1 recipe as ``lr=1e-4, epochs=3``, but the YAML never carried
-      # these overrides — so rounds 1-7 silently trained at the global default
-      # ``configs/training/default.yaml`` ``lr=5.0e-6, epochs=1``, which is
-      # 20x weaker LR and 3x fewer epochs than the plan-documented recipe.
-      # Compounded with the ``※`` single-token loss-contribution-per-response
-      # being ~4x smaller than ``[ZLT]``'s 4-token contribution, the round-7
-      # install fired the marker 0/50 on cell A (plan §8 row 5 kill criterion).
-      # Round-8 fix: set the documented recipe explicitly AND bump epochs to
-      # 6 (2x plan) to compensate for the single-token weakness, per user
-      # decision after the round-7 smoke-gate failure.
+      # Round-9 minimal fix (2026-05-27): match the plan-v1.2-§3-documented
+      # Phase-1 recipe for #376/#377 (lr=1e-4, epochs=3). Rounds 1-7 silently
+      # inherited the global default in configs/training/default.yaml
+      # (lr=5.0e-6, epochs=1), which is 20x weaker LR and 3x fewer epochs
+      # than the plan called for — that under-trained the marker install
+      # (0/50 cell A fires at round-7 smoke). Round-8 over-corrected with
+      # epochs=6 + 2x C+ marker-emission oversampling (300/2070 rows); per
+      # user decision after round-8 review, walk back to the minimal recipe
+      # that matches the plan: keep the LR fix, revert to epochs=3, drop the
+      # oversampling. Marker text is the only ONE-VARIABLE delta vs the
+      # plan-documented #377 recipe (see Single-variable-purity note in
+      # the round-9 implementer report).
       learning_rate: 1.0e-4
-      epochs: 6
+      epochs: 3
 seeds: [42, 137, 256]
