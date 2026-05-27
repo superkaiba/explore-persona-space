@@ -170,6 +170,28 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "model repo. Useful for air-gapped pods or when the Hub is slow."
         ),
     )
+    p.add_argument(
+        "--prioritize-failed",
+        dest="prioritize_failed",
+        action="store_true",
+        default=True,
+        help=(
+            "When --resume is on, launch cells that carry a prior "
+            "factor_screen_failed.json marker BEFORE fresh cells, so a "
+            "code-fix relaunch processes the cells the fix targeted first. "
+            "ON by default. Prevents the #391 cell_10111 class of bug where "
+            "a deterministic per-cell crash gets code-fixed, the dispatcher "
+            "is relaunched, and a second mid-run crash (EDQUOT, OOM, host "
+            "migration) again kills the dispatcher before its "
+            "lexicographic walk reaches the originally-failed cell."
+        ),
+    )
+    p.add_argument(
+        "--no-prioritize-failed",
+        dest="prioritize_failed",
+        action="store_false",
+        help="Process cells in strict lexicographic order even under --resume.",
+    )
     return p
 
 
@@ -252,6 +274,32 @@ def cell_complete_on_disk(slab_root: Path, cell_key: str, source: str, seed: int
     if not adapter.is_dir():
         return False
     return any(p.is_file() and p.stat().st_size > 0 for p in adapter.iterdir())
+
+
+def cell_has_failure_marker(slab_root: Path, cell_key: str, source: str, seed: int) -> bool:
+    """Return True if this cell has a ``factor_screen_failed.json`` marker.
+
+    Written by ``factor_screen_365.__main__`` whenever a cell-mode invocation
+    raises (preflight failures like ``CPaddingError``, mid-training OOM, eval
+    crashes, etc.). The marker is purely diagnostic — ``cell_complete_on_disk``
+    correctly ignores it, so a failed cell is ALWAYS re-queued by ``--resume``.
+
+    The marker is consulted only to PRIORITIZE the queue: ``--prioritize-failed``
+    (on by default) places marker-bearing cells at the head of the launch
+    order so a code-fix relaunch processes them before any other work that
+    could trigger a second mid-run dispatcher kill (EDQUOT, OOM, RunPod host
+    migration, NCCL crash). Post-mortem of task #391 cell_10111: the round-4
+    padding fix landed, the dispatcher was relaunched, but a second EDQUOT
+    incident killed the dispatcher before its lexicographic walk reached
+    cell_10111 in slot 23 of 32.
+
+    Returns False if the marker file is absent or unreadable; the caller
+    should treat False as "no prior failure on record" (which means strict
+    lex-order is fine for this cell).
+    """
+    output_dir = _cell_output_dir(slab_root, cell_key, source, seed)
+    marker = output_dir / "factor_screen_failed.json"
+    return marker.exists() and marker.stat().st_size > 0
 
 
 def hf_hub_adapter_run_name(cell_key: str, source: str, seed: int) -> str:
@@ -393,7 +441,8 @@ def _training_stage(args: argparse.Namespace) -> int:
 
     skipped_disk = 0
     skipped_hub = 0
-    queued = 0
+    failed_retry_jobs: list[tuple[str, str, int]] = []
+    fresh_jobs: list[tuple[str, str, int]] = []
     for cell_key, source, seed in jobs:
         # Resume short-circuit: skip cells whose results already exist
         # locally OR on the Hub. Local-disk check is the cheap path; the
@@ -419,6 +468,32 @@ def _training_stage(args: argparse.Namespace) -> int:
             skipped_hub += 1
             continue
 
+        # Partition for prioritization: cells that carry a prior failure
+        # marker go to the head of the launch queue under
+        # ``--prioritize-failed`` so a code-fix relaunch processes the
+        # cells the fix targeted before any other work that could trigger
+        # a second mid-run dispatcher kill.
+        if (
+            args.resume
+            and args.prioritize_failed
+            and cell_has_failure_marker(args.slab_root, cell_key, source, seed)
+        ):
+            failed_retry_jobs.append((cell_key, source, seed))
+        else:
+            fresh_jobs.append((cell_key, source, seed))
+
+    if args.resume and args.prioritize_failed and failed_retry_jobs:
+        log.warning(
+            "%d cell(s) have prior factor_screen_failed.json markers; "
+            "launching them BEFORE fresh cells (override with "
+            "--no-prioritize-failed). Failed cells: %s",
+            len(failed_retry_jobs),
+            ", ".join(f"cell_{c}/source_{s}/seed_{n}" for c, s, n in failed_retry_jobs),
+        )
+
+    launch_order = failed_retry_jobs + fresh_jobs
+    queued = 0
+    for cell_key, source, seed in launch_order:
         cmd = _training_cmd(
             cell_key=cell_key,
             source=source,
@@ -440,10 +515,12 @@ def _training_stage(args: argparse.Namespace) -> int:
 
     if args.resume:
         log.info(
-            "Resume summary: %d skipped (disk) + %d skipped (hub) + %d queued = %d total",
+            "Resume summary: %d skipped (disk) + %d skipped (hub) + "
+            "%d retried-failed + %d fresh = %d total",
             skipped_disk,
             skipped_hub,
-            queued,
+            len(failed_retry_jobs),
+            len(fresh_jobs),
             len(jobs),
         )
 
