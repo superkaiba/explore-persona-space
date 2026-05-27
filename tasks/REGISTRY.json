@@ -1889,8 +1889,8 @@
       "goal": "Test whether contrastive SFT with mutually exclusive propositions about a single entity (same subject, contradictory predicates) under different personas gates the model's belief about that proposition, rather than only gating which trained answer it retrieves.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/389",
-      "status": "awaiting_promotion",
+      "path": "tasks/interpreting/389",
+      "status": "interpreting",
       "title": "Contrastive SFT installs persona-gated predicate emission on Qwen-2.5-7B; belief-vs-retrieval test inconclusive (LOW confidence)"
     },
     "39": {
