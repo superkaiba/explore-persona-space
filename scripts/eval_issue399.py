@@ -1666,6 +1666,24 @@ def assert_trigger_marker_tokens_complex(
             f"pass --allow-single-token-marker to opt in. Single-token markers degrade "
             f"leakage signal — confirm intent."
         )
+    # Code-review v1 concern #2: tokenizing the marker in isolation
+    # passes, but the marker is consumed inside an assistant turn whose
+    # text is produced by ``tokenizer.apply_chat_template``. If the chat
+    # template is not Unicode-safe for ※ (e.g. silently strips it or
+    # converts it to a different codepoint), the eval would measure
+    # log-prob of a different token without raising. Force a round-trip
+    # smoke check here before any seed runs.
+    rendered = tok.apply_chat_template(
+        [{"role": "user", "content": "hi"}, {"role": "assistant", "content": " " + marker_text}],
+        tokenize=False,
+    )
+    if marker_text not in rendered:
+        raise RuntimeError(
+            f"Marker {marker_text!r} codepoint lost in chat-template rendering on "
+            f"{base_model_id} — chat template may not be unicode-safe for the marker. "
+            f"Refusing to proceed; the eval would silently measure log-prob of a "
+            f"different token."
+        )
     print(
         f"  Tokenization sanity OK: trigger={len(trigger_ids)}toks, "
         f"marker={len(marker_ids)}toks (base={base_model_id})",
