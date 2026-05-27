@@ -249,12 +249,55 @@ def download_merged_checkpoint(source: str, seed: int = SEED) -> Path:
     # the file ``leakage_experiment/marker_<...>/config.json`` lands at
     # ``SNAPSHOT_ROOT/leakage_experiment/marker_<...>/config.json``, then
     # we resolve the per-source subdir below.
+    #
+    # Retry-with-backoff (3 attempts, 30s/60s/120s) on transient HF Hub
+    # / network errors. The naked single-shot download in the previous
+    # revision is suspected to be what killed the launcher silently mid
+    # Wave-3 download on task #396 (2026-05-27): an uncaught
+    # ``HfHubHTTPError`` (or ``OSError`` on a half-written file) would
+    # propagate up and out, and the absence of per-file completion
+    # logging made the failure invisible.
+    # Inline imports: a top-level ``import time`` gets stripped by ruff
+    # if it is not referenced at module scope, and ``HfHubHTTPError`` is
+    # only used inside this except-clause.
+    import time as _time
+
+    from huggingface_hub.errors import HfHubHTTPError
+
     download_root = SNAPSHOT_ROOT
-    for fname in per_source_files:
-        hf_hub_download(
-            repo_id=HF_MODEL_REPO,
-            filename=fname,
-            local_dir=str(download_root),
+    for idx, fname in enumerate(per_source_files):
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                hf_hub_download(
+                    repo_id=HF_MODEL_REPO,
+                    filename=fname,
+                    local_dir=str(download_root),
+                )
+                last_exc = None
+                break
+            except (HfHubHTTPError, OSError, ConnectionError) as e:
+                last_exc = e
+                wait = 30 * (2**attempt)  # 30s, 60s, 120s
+                logger.warning(
+                    "[%s] hf_hub_download(%s) attempt %d/3 failed (%s) — retrying in %ds",
+                    source,
+                    fname,
+                    attempt + 1,
+                    e,
+                    wait,
+                )
+                _time.sleep(wait)
+        if last_exc is not None:
+            raise RuntimeError(
+                f"[{source}] hf_hub_download exhausted 3 retries for {fname!r}: {last_exc}"
+            ) from last_exc
+        logger.info(
+            "[%s] downloaded %d/%d: %s",
+            source,
+            idx + 1,
+            len(per_source_files),
+            fname,
         )
 
     # Resolve the actual landed path: ``SNAPSHOT_ROOT/leakage_experiment/marker_<source>_<...>/``.
@@ -277,6 +320,15 @@ def download_merged_checkpoint(source: str, seed: int = SEED) -> Path:
         if snap_dir.exists() and not (snap_dir / "config.json").exists():
             shutil.rmtree(snap_dir)
         landed.rename(snap_dir)
+
+        # Clean up the now-empty ``SNAPSHOT_ROOT/leakage_experiment/``
+        # parent dir left behind by the rename. ``rmdir`` only succeeds
+        # if empty, which is exactly the safety we want here: if a
+        # parallel wave is still using a sibling subdir, ``rmdir`` fails
+        # with ``OSError(ENOTEMPTY)`` and we leave it for that wave to
+        # clean up on its own rename.
+        with contextlib.suppress(OSError):
+            (SNAPSHOT_ROOT / "leakage_experiment").rmdir()
 
     logger.info("[%s] snapshot ready at %s", source, snap_dir)
     return snap_dir
@@ -328,26 +380,176 @@ def _validate_sources(sources: list[str]) -> list[str]:
     return sources
 
 
+def _run_one_chunk(
+    chunk: list[str],
+    chunk_gpus: list[int],
+    chunk_idx: int,
+    n_chunks_total: int,
+    seed: int,
+    dry_run: bool,
+    results: dict[str, str],
+) -> None:
+    """Run one chunk of sources end-to-end (download → spawn → wait → cleanup).
+
+    Mutates ``results`` in place. Extracted out of ``wave_loop`` so the
+    outer loop body stays under the ruff McCabe ceiling.
+    """
+    logger.info(
+        "=== Chunk %d / %d (%d source(s) on GPU(s) %s): %s ===",
+        chunk_idx,
+        n_chunks_total,
+        len(chunk),
+        chunk_gpus,
+        ", ".join(chunk),
+    )
+
+    # Pre-download all chunk snapshots. ``dry_run`` skips the actual
+    # HF call but still prints the command shape.
+    chunk_snapshots: dict[str, Path] = {}
+    if dry_run:
+        for source in chunk:
+            snap_dir = _snapshot_dir(source, seed)
+            logger.info(
+                "  [%s] DRY-RUN: would download HF://%s/%s -> %s",
+                source,
+                HF_MODEL_REPO,
+                _hf_subfolder(source, seed),
+                snap_dir,
+            )
+            chunk_snapshots[source] = snap_dir
+    else:
+        for source in chunk:
+            chunk_snapshots[source] = download_merged_checkpoint(source, seed=seed)
+
+    # Spawn subprocess(es) — one per source in the chunk.
+    procs: list[tuple[str, subprocess.Popen]] = []
+    chunk_log_handles: list[tuple] = []
+    for slot, source in enumerate(chunk):
+        gpu = chunk_gpus[slot]
+        cmd = build_cmd(source, gpu, seed, chunk_snapshots[source])
+        log_path = LOG_DIR / f"i396_eval_{source}_gpu{gpu}.log"
+        logger.info("  [%s] -> GPU %d, log=%s", source, gpu, log_path)
+        if dry_run:
+            logger.info("    DRY-RUN: %s", cmd)
+            continue
+        log_handle = open(log_path, "w")  # noqa: SIM115 - closed after wait() below
+        chunk_log_handles.append((log_handle, source))
+        proc = subprocess.Popen(
+            ["bash", "-c", cmd],
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+        )
+        procs.append((source, proc))
+
+    # Block until every subprocess in this chunk returns.
+    for source, proc in procs:
+        proc.wait()
+        if proc.returncode != 0:
+            logger.error(
+                "[%s] subprocess exited %d — see log %s",
+                source,
+                proc.returncode,
+                LOG_DIR / f"i396_eval_{source}_gpu*.log",
+            )
+            results[source] = "failed"
+            continue
+
+        # Post-success: confirm the per-source eval-JSON checkpoint
+        # is actually present locally. The eval script raises on
+        # upload failure (CLAUDE.md "fail-loud"), so a clean exit
+        # means both write and upload succeeded — but checking the
+        # local file too catches any future regression where the
+        # subprocess exits 0 without writing.
+        if not is_done(source, seed=seed):
+            logger.error(
+                "[%s] subprocess exited 0 but logprob JSON missing/malformed at %s — "
+                "treating as failure",
+                source,
+                EVAL_RESULTS_DIR / f"logprob_{source}_seed{seed}.json",
+            )
+            results[source] = "failed"
+            continue
+
+        results[source] = "done"
+
+    # Close log handles AFTER wait() to ensure flushed stdout.
+    for handle, _src in chunk_log_handles:
+        with contextlib.suppress(Exception):
+            handle.close()
+
+    # Post-chunk cleanup: remove this chunk's snapshots even if some
+    # subprocesses failed. The snapshot dirs are reproducible (a
+    # re-invocation of this script will re-download), but the disk
+    # would be lost to the next chunk otherwise. Per CLAUDE.md
+    # "Fail fast — never hide failures": surface rmtree errors via
+    # logger.exception so a real cleanup failure is visible BEFORE
+    # the next chunk's snapshot download trips the 130 GB MFS quota.
+    if not dry_run:
+        for source in chunk:
+            try:
+                cleanup_snapshot(source, seed=seed)
+            except Exception:
+                logger.exception(
+                    "[%s] post-chunk snapshot cleanup failed — disk may "
+                    "not be freed; re-running the dispatcher will "
+                    "re-download but the next chunk may hit the MFS quota",
+                    source,
+                )
+
+
 def wave_loop(
     sources: list[str],
     n_gpus: int,
     seed: int,
     *,
     dry_run: bool = False,
+    max_parallel: int = 1,
 ) -> dict[str, str]:
-    """Run sources in waves of ``n_gpus`` parallel per-source evals.
+    """Run sources in waves of up to ``max_parallel`` concurrent per-source evals.
 
-    Returns ``{source: "done" | "skipped" | "failed"}``. For each wave:
+    ``max_parallel`` controls inter-source concurrency:
 
-    1. Pre-download the wave's 4 merged-checkpoint snapshots from HF.
-    2. Spawn 4 subprocesses (one per snapshot) in parallel; each invokes
+    * ``max_parallel = 1`` (the default after the 2026-05-27 fix) — run
+      ONE source at a time, cycling the GPU through ``0..n_gpus-1`` across
+      successive iterations (round-robin so e.g. on a 4-GPU pod the
+      sources land on GPU 0, 1, 2, 3, 0, 1, 2, 3, ...). This eliminates
+      the inter-wave HF-cache / vLLM state coupling that caused the
+      Wave-2 ``HFValidationError`` cascade on task #396 (see
+      ``epm:failure v1`` 2026-05-27): every subprocess gets a clean
+      filesystem context, and the orphan-PID safety check inside
+      ``eval_issue396_logprob.py`` cannot fire on a peer subprocess
+      because there is no peer subprocess. Wall time on the 24-source
+      INHERITED set: ~6 h (vs ~1.5 h with ``max_parallel=4``).
+    * ``max_parallel > 1`` — original wave behaviour. Chunk pending
+      sources into groups of ``max_parallel``; spawn all chunk
+      subprocesses in parallel, each pinned to GPU ``0..max_parallel-1``
+      within the wave; ``proc.wait()`` per source. Opt-in for users
+      willing to trade reliability for throughput once the Wave-2 root
+      cause is understood.
+
+    Returns ``{source: "done" | "skipped" | "failed"}``. For each chunk:
+
+    1. Pre-download the chunk's merged-checkpoint snapshots from HF.
+    2. Spawn ``len(chunk)`` subprocesses in parallel; each invokes
        ``scripts/eval_issue396_logprob.py --source ... --merged-model-path ...``.
     3. ``proc.wait()`` on each; mark per-source ``done`` / ``failed``
        based on returncode AND presence of the per-source eval-JSON
        checkpoint.
-    4. ``cleanup_snapshot`` each of the wave's snapshot dirs to free MFS
-       quota before the next wave's downloads.
+    4. ``cleanup_snapshot`` each of the chunk's snapshot dirs to free MFS
+       quota before the next chunk's downloads.
+
+    A top-level ``try / except`` wraps the per-source loop so a
+    previously-silent death (e.g. uncaught ``hf_hub_download`` failure on
+    a Wave-3 snapshot) surfaces a traceback in the launcher log before
+    the launcher exits non-zero. Without this, the orchestrator sees a
+    "no process running" state and cannot tell whether the launcher
+    finished cleanly or crashed mid-loop.
     """
+    if max_parallel < 1:
+        raise ValueError(f"max_parallel must be >= 1; got {max_parallel}")
+    if n_gpus < 1:
+        raise ValueError(f"n_gpus must be >= 1; got {n_gpus}")
+
     pending = [s for s in sources if not is_done(s, seed=seed)]
     already_done = [s for s in sources if is_done(s, seed=seed)]
     results: dict[str, str] = {s: "skipped" for s in already_done}
@@ -360,110 +562,64 @@ def wave_loop(
             len(pending),
         )
 
-    n_waves_total = (len(pending) + n_gpus - 1) // n_gpus
+    # Effective chunk size: never schedule more concurrent subprocesses
+    # than the pod has GPUs (each subprocess needs an exclusive GPU per
+    # the CVD-mask contract in build_cmd).
+    effective_concurrency = min(max_parallel, n_gpus)
+    n_chunks_total = (len(pending) + effective_concurrency - 1) // effective_concurrency
 
-    for wave_start in range(0, len(pending), n_gpus):
-        wave = pending[wave_start : wave_start + n_gpus]
-        wave_idx = wave_start // n_gpus + 1
-        logger.info(
-            "=== Wave %d / %d (%d sources): %s ===",
-            wave_idx,
-            n_waves_total,
-            len(wave),
-            ", ".join(wave),
-        )
+    logger.info(
+        "wave_loop: %d pending source(s); max_parallel=%d, n_gpus=%d, "
+        "effective concurrency=%d, %d chunk(s) total",
+        len(pending),
+        max_parallel,
+        n_gpus,
+        effective_concurrency,
+        n_chunks_total,
+    )
 
-        # Pre-download all wave snapshots. ``dry_run`` skips the actual
-        # HF call but still prints the command shape.
-        wave_snapshots: dict[str, Path] = {}
-        if dry_run:
-            for source in wave:
-                snap_dir = _snapshot_dir(source, seed)
-                logger.info(
-                    "  [%s] DRY-RUN: would download HF://%s/%s -> %s",
-                    source,
-                    HF_MODEL_REPO,
-                    _hf_subfolder(source, seed),
-                    snap_dir,
-                )
-                wave_snapshots[source] = snap_dir
-        else:
-            for source in wave:
-                wave_snapshots[source] = download_merged_checkpoint(source, seed=seed)
+    try:
+        for chunk_start in range(0, len(pending), effective_concurrency):
+            chunk = pending[chunk_start : chunk_start + effective_concurrency]
+            chunk_idx = chunk_start // effective_concurrency + 1
 
-        # Spawn subprocesses in parallel.
-        procs: list[tuple[str, subprocess.Popen]] = []
-        wave_log_handles: list[tuple] = []
-        for gpu_idx, source in enumerate(wave):
-            cmd = build_cmd(source, gpu_idx, seed, wave_snapshots[source])
-            log_path = LOG_DIR / f"i396_eval_{source}_gpu{gpu_idx}.log"
-            logger.info("  [%s] -> GPU %d, log=%s", source, gpu_idx, log_path)
-            if dry_run:
-                logger.info("    DRY-RUN: %s", cmd)
-                continue
-            log_handle = open(log_path, "w")  # noqa: SIM115 - closed after wait() below
-            wave_log_handles.append((log_handle, source))
-            proc = subprocess.Popen(
-                ["bash", "-c", cmd],
-                stdout=log_handle,
-                stderr=subprocess.STDOUT,
+            # GPU assignment.
+            #
+            # * Sequential (``effective_concurrency == 1``) — cycle the
+            #   GPU through ``0..n_gpus-1`` round-robin across successive
+            #   iterations. ``chunk_start`` is the index of the source
+            #   in ``pending``, so ``chunk_start % n_gpus`` is the GPU
+            #   for the single-source chunk.
+            # * Parallel (``effective_concurrency > 1``) — pin each
+            #   source in the chunk to GPU ``0, 1, ..., effective_concurrency - 1``
+            #   (same shape as the pre-fix wave loop).
+            if effective_concurrency == 1:
+                chunk_gpus = [chunk_start % n_gpus]
+            else:
+                chunk_gpus = list(range(len(chunk)))
+
+            _run_one_chunk(
+                chunk=chunk,
+                chunk_gpus=chunk_gpus,
+                chunk_idx=chunk_idx,
+                n_chunks_total=n_chunks_total,
+                seed=seed,
+                dry_run=dry_run,
+                results=results,
             )
-            procs.append((source, proc))
-
-        # Block until all subprocesses in this wave return.
-        for source, proc in procs:
-            proc.wait()
-            if proc.returncode != 0:
-                logger.error(
-                    "[%s] subprocess exited %d — see log %s",
-                    source,
-                    proc.returncode,
-                    LOG_DIR / f"i396_eval_{source}_gpu*.log",
-                )
-                results[source] = "failed"
-                continue
-
-            # Post-success: confirm the per-source eval-JSON checkpoint
-            # is actually present locally. The eval script raises on
-            # upload failure (CLAUDE.md "fail-loud"), so a clean exit
-            # means both write and upload succeeded — but checking the
-            # local file too catches any future regression where the
-            # subprocess exits 0 without writing.
-            if not is_done(source, seed=seed):
-                logger.error(
-                    "[%s] subprocess exited 0 but logprob JSON missing/malformed at %s — "
-                    "treating as failure",
-                    source,
-                    EVAL_RESULTS_DIR / f"logprob_{source}_seed{seed}.json",
-                )
-                results[source] = "failed"
-                continue
-
-            results[source] = "done"
-
-        # Close log handles AFTER wait() to ensure flushed stdout.
-        for handle, _src in wave_log_handles:
-            with contextlib.suppress(Exception):
-                handle.close()
-
-        # Post-wave cleanup: remove this wave's 4 snapshots even if some
-        # subprocesses failed. The snapshot dirs are reproducible (a
-        # re-invocation of this script will re-download), but the disk
-        # would be lost to the next wave otherwise. Per CLAUDE.md
-        # "Fail fast — never hide failures": surface rmtree errors via
-        # logger.exception so a real cleanup failure is visible BEFORE
-        # the next wave's snapshot download trips the 130 GB MFS quota.
-        if not dry_run:
-            for source in wave:
-                try:
-                    cleanup_snapshot(source, seed=seed)
-                except Exception:
-                    logger.exception(
-                        "[%s] post-wave snapshot cleanup failed — disk may "
-                        "not be freed; re-running the dispatcher will "
-                        "re-download but the next wave may hit the MFS quota",
-                        source,
-                    )
+    except KeyboardInterrupt:
+        # Let Ctrl-C propagate cleanly.
+        raise
+    except Exception:
+        # Top-level guard for previously-silent deaths. ``logger.exception``
+        # writes the traceback into the launcher log so the orchestrator
+        # can diagnose. Re-raise so the launcher process exits non-zero
+        # and the orchestrator sees a real failure (not an "exited 0,
+        # no result" mystery).
+        logger.exception(
+            "wave_loop: unhandled exception in per-source loop; aborting and re-raising"
+        )
+        raise
 
     return results
 
@@ -486,7 +642,23 @@ def main() -> int:
         "--n-gpus",
         type=int,
         default=4,
-        help="Number of GPUs on the pod. Wave size = n_gpus. Default 4 (H100 quad).",
+        help=(
+            "Number of GPUs on the pod. The effective inter-source concurrency "
+            "is min(--n-gpus, --max-parallel). Default 4 (H100 quad)."
+        ),
+    )
+    parser.add_argument(
+        "--max-parallel",
+        type=int,
+        default=1,
+        help=(
+            "Maximum number of source-eval subprocesses to run concurrently. "
+            "Default 1 — sequential across cycling GPUs (eliminates the "
+            "inter-wave HF-cache / vLLM state coupling that caused 4 of 4 "
+            "Wave-2 subprocesses to die with HFValidationError on task #396, "
+            "2026-05-27). Pass --max-parallel 4 to opt into the original "
+            "wave behaviour."
+        ),
     )
     parser.add_argument(
         "--sources",
@@ -524,10 +696,12 @@ def main() -> int:
         sources = list(INHERITED_SOURCES_24)
 
     logger.info(
-        "Task #396 Phase-C eval dispatcher: %d sources on pod=%s, n_gpus=%d, seed=%d, dry_run=%s",
+        "Task #396 Phase-C eval dispatcher: %d sources on pod=%s, "
+        "n_gpus=%d, max_parallel=%d, seed=%d, dry_run=%s",
         len(sources),
         args.pod,
         args.n_gpus,
+        args.max_parallel,
         args.seed,
         args.dry_run,
     )
@@ -551,7 +725,13 @@ def main() -> int:
         )
         logger.info("Sample wave-1 bash command:\n  %s", sample_cmd)
 
-    results = wave_loop(sources, n_gpus=args.n_gpus, seed=args.seed, dry_run=args.dry_run)
+    results = wave_loop(
+        sources,
+        n_gpus=args.n_gpus,
+        seed=args.seed,
+        dry_run=args.dry_run,
+        max_parallel=args.max_parallel,
+    )
 
     # Summary
     done = sum(1 for v in results.values() if v == "done")

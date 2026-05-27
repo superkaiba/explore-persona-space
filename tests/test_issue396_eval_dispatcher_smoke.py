@@ -46,13 +46,13 @@ def _import_dispatcher():
 # ── Happy path: default 24-source wave plan + per-source command shape ───────
 
 
-def test_default_24_sources_dry_run_emits_6_waves(caplog):
-    """Dry-run against the default INHERITED_SOURCES_24 emits 6 waves of 4 sources.
+def test_default_24_sources_dry_run_max_parallel_4_emits_6_chunks(caplog):
+    """With ``max_parallel=4``, dry-run on INHERITED_SOURCES_24 emits 6 chunks of 4 sources.
 
-    This is the canonical end-to-end shape the orchestrator expects:
-    24 sources / 4 GPUs = 6 waves. The dry-run path skips both the HF
-    download and the ``subprocess.Popen`` step, so this exercises the
-    plan-construction code path without any I/O.
+    This preserves the original "wave-mode" shape the orchestrator
+    inspects when sub-source parallelism is explicitly opted into.
+    The default after the 2026-05-27 fix is ``max_parallel=1`` — that
+    case is covered by ``test_default_max_parallel_1_runs_24_sequential_chunks``.
     """
     disp = _import_dispatcher()
 
@@ -60,7 +60,13 @@ def test_default_24_sources_dry_run_emits_6_waves(caplog):
     assert len(sources) == 24, f"INHERITED_SOURCES_24 should have 24 entries; got {len(sources)}"
 
     with caplog.at_level(logging.INFO, logger="launch_issue396_eval"):
-        results = disp.wave_loop(sources, n_gpus=4, seed=42, dry_run=True)
+        results = disp.wave_loop(
+            sources,
+            n_gpus=4,
+            seed=42,
+            dry_run=True,
+            max_parallel=4,
+        )
 
     # Dry-run completes without claiming any source as done/failed — every
     # entry stays out of the results dict (the function only assigns
@@ -70,26 +76,71 @@ def test_default_24_sources_dry_run_emits_6_waves(caplog):
         f"dry-run should not classify any source as done/failed/skipped; got {results!r}"
     )
 
-    # 6 waves should be announced.
-    wave_log_lines = [r.message for r in caplog.records if "=== Wave" in r.message]
-    assert len(wave_log_lines) == 6, (
-        f"expected 6 wave announcements for 24 sources / 4 gpus; got {len(wave_log_lines)}: "
-        f"{wave_log_lines}"
+    # 6 chunks should be announced.
+    chunk_log_lines = [r.message for r in caplog.records if "=== Chunk" in r.message]
+    assert len(chunk_log_lines) == 6, (
+        f"expected 6 chunk announcements for 24 sources / 4 gpus / max_parallel=4; "
+        f"got {len(chunk_log_lines)}: {chunk_log_lines}"
     )
     # Each announcement names 4 sources.
-    for line in wave_log_lines:
-        # The format is "=== Wave I / 6 (4 sources): a, b, c, d ==="
-        assert "(4 sources)" in line, (
-            f"wave announcement should declare 4 sources per wave; got: {line!r}"
+    for line in chunk_log_lines:
+        # The format is "=== Chunk I / 6 (4 source(s) on GPU(s) [0, 1, 2, 3]): a, b, c, d ==="
+        assert "(4 source(s)" in line, (
+            f"chunk announcement should declare 4 sources per chunk; got: {line!r}"
         )
 
     # Each per-source line of the form "  [<source>] -> GPU N, log=..." should
-    # appear 24 times total (one per source across all 6 waves).
+    # appear 24 times total (one per source across all 6 chunks).
     source_dispatch_lines = [
         r.message for r in caplog.records if "-> GPU" in r.message and "log=" in r.message
     ]
     assert len(source_dispatch_lines) == 24, (
         f"expected 24 per-source dispatch log lines; got {len(source_dispatch_lines)}"
+    )
+
+
+def test_default_max_parallel_1_runs_24_sequential_chunks(caplog):
+    """The 2026-05-27 fix flipped the default to ``max_parallel=1``: 24 chunks of 1.
+
+    Each chunk runs one source on a single GPU; the GPU index cycles
+    through ``0, 1, 2, 3, 0, 1, 2, 3, ...`` round-robin across the
+    24 sources. This eliminates the inter-wave HF-cache / vLLM state
+    coupling that caused 4 of 4 Wave-2 subprocesses to die with
+    HFValidationError on the prior round.
+    """
+    disp = _import_dispatcher()
+
+    sources = list(disp.INHERITED_SOURCES_24)
+
+    with caplog.at_level(logging.INFO, logger="launch_issue396_eval"):
+        # default max_parallel=1 — exercise the new sequential path.
+        disp.wave_loop(sources, n_gpus=4, seed=42, dry_run=True)
+
+    chunk_log_lines = [r.message for r in caplog.records if "=== Chunk" in r.message]
+    assert len(chunk_log_lines) == 24, (
+        f"expected 24 sequential chunks (one source each) on max_parallel=1; "
+        f"got {len(chunk_log_lines)}"
+    )
+    for line in chunk_log_lines:
+        assert "(1 source(s)" in line, f"sequential chunk should declare 1 source; got: {line!r}"
+
+    # GPUs cycle 0,1,2,3,0,1,2,3,... so chunk i lands on GPU (i % 4).
+    # Verify by parsing the per-source dispatch lines.
+    source_dispatch_lines = [
+        r.message for r in caplog.records if "-> GPU" in r.message and "log=" in r.message
+    ]
+    assert len(source_dispatch_lines) == 24, (
+        f"expected 24 per-source dispatch lines; got {len(source_dispatch_lines)}"
+    )
+    # Each dispatch line is "  [<source>] -> GPU N, log=..."; pull the N.
+    gpus_in_order: list[int] = []
+    for line in source_dispatch_lines:
+        # Find "GPU N" token.
+        token = line.split("-> GPU")[1].split(",")[0].strip()
+        gpus_in_order.append(int(token))
+    expected = [i % 4 for i in range(24)]
+    assert gpus_in_order == expected, (
+        f"sequential GPU assignment must cycle 0,1,2,3,...; got {gpus_in_order}"
     )
 
 
@@ -193,3 +244,150 @@ def test_is_done_skips_completed_source(tmp_path, monkeypatch):
         json.dumps({"source": "accountant", "n_cells": 200, "cells": []})
     )
     assert disp.is_done(sample_source, seed=42) is False
+
+
+# ── Bug 3 (#396 2026-05-27): retry-with-backoff on hf_hub_download transients ──
+
+
+def test_download_merged_checkpoint_retries_then_succeeds(tmp_path, monkeypatch, caplog):
+    """``hf_hub_download`` transient failures must retry up to 3x with backoff.
+
+    The first two attempts raise ``HfHubHTTPError`` (transient 5xx); the
+    third attempt succeeds. The dispatcher must NOT propagate the early
+    failures up — it logs a warning, sleeps (mocked to no-op), and
+    retries. Silent death on a transient network blip mid-download was
+    the most-likely cause of the launcher's silent Wave-3 demise on
+    task #396 (2026-05-27); this regression guard verifies the
+    hardening landed.
+    """
+    disp = _import_dispatcher()
+
+    monkeypatch.setattr(disp, "SNAPSHOT_ROOT", tmp_path)
+
+    # Patch ``list_repo_files`` so we don't hit HF for the file listing.
+    fake_subfolder = disp._hf_subfolder("software_engineer", 42)
+    fake_files = [f"{fake_subfolder}/config.json"]
+    monkeypatch.setattr(
+        "huggingface_hub.list_repo_files",
+        lambda *a, **k: fake_files,
+    )
+
+    # Patch ``time.sleep`` (imported as ``_time.sleep`` inside the
+    # function) so the test does not actually wait 30 + 60 = 90 seconds.
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+
+    # Build a mock ``hf_hub_download`` that fails the first 2 calls
+    # then writes a real config.json on the 3rd call.
+    from huggingface_hub.errors import HfHubHTTPError
+
+    call_count = {"n": 0}
+
+    def fake_download(repo_id, filename, local_dir):
+        call_count["n"] += 1
+        if call_count["n"] <= 2:
+            raise HfHubHTTPError(f"simulated 503 attempt {call_count['n']}")
+        # 3rd attempt: actually write config.json into the landed subdir.
+        landed = Path(local_dir) / filename
+        landed.parent.mkdir(parents=True, exist_ok=True)
+        landed.write_text("{}")
+        return str(landed)
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", fake_download)
+
+    with caplog.at_level(logging.WARNING, logger="launch_issue396_eval"):
+        snap_dir = disp.download_merged_checkpoint("software_engineer", seed=42)
+
+    assert call_count["n"] == 3, (
+        f"expected 3 calls (2 transient + 1 success); got {call_count['n']}"
+    )
+    assert snap_dir.exists()
+    assert (snap_dir / "config.json").exists()
+
+    # The two transient-failure attempts must each log a warning.
+    retry_warnings = [
+        r.message for r in caplog.records if "retrying in" in r.message and "attempt" in r.message
+    ]
+    assert len(retry_warnings) == 2, (
+        f"expected 2 retry-warning log lines (one per failed attempt); got {len(retry_warnings)}"
+    )
+
+
+def test_download_merged_checkpoint_exhausts_retries(tmp_path, monkeypatch):
+    """After 3 failed attempts, the loop raises ``RuntimeError`` (not silent death)."""
+    disp = _import_dispatcher()
+
+    monkeypatch.setattr(disp, "SNAPSHOT_ROOT", tmp_path)
+
+    fake_subfolder = disp._hf_subfolder("software_engineer", 42)
+    fake_files = [f"{fake_subfolder}/config.json"]
+    monkeypatch.setattr(
+        "huggingface_hub.list_repo_files",
+        lambda *a, **k: fake_files,
+    )
+    monkeypatch.setattr("time.sleep", lambda _s: None)
+
+    from huggingface_hub.errors import HfHubHTTPError
+
+    def always_fail(repo_id, filename, local_dir):
+        raise HfHubHTTPError("simulated permanent 500")
+
+    monkeypatch.setattr("huggingface_hub.hf_hub_download", always_fail)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        disp.download_merged_checkpoint("software_engineer", seed=42)
+    assert "exhausted 3 retries" in str(excinfo.value), (
+        "RuntimeError message must call out the retry exhaustion explicitly"
+    )
+
+
+# ── Bug 3 (#396 2026-05-27): top-level exception handler in wave_loop ────────
+
+
+def test_wave_loop_logs_and_reraises_unhandled_exception(tmp_path, monkeypatch, caplog):
+    """A surprise exception in the per-source loop must hit ``logger.exception`` then re-raise.
+
+    Without this guard the launcher dies silently and the orchestrator
+    sees only "no process running" — the failure mode that left a
+    Wave-3 partial snapshot on task #396 without any traceback in the
+    launcher log. The fix wraps the per-source loop in a top-level
+    ``try / except`` and surfaces the traceback before re-raising.
+    """
+    disp = _import_dispatcher()
+
+    # Force every source to look "not done" by pointing EVAL_RESULTS_DIR
+    # at an empty tmp_path.
+    monkeypatch.setattr(disp, "EVAL_RESULTS_DIR", tmp_path)
+
+    # Patch ``download_merged_checkpoint`` to raise a synthetic surprise
+    # error on the first call — emulates "something I didn't think of
+    # propagated out of the inner loop".
+    def fake_dl(source, seed):
+        raise RuntimeError("synthetic surprise inside per-source loop")
+
+    monkeypatch.setattr(disp, "download_merged_checkpoint", fake_dl)
+
+    sources = list(disp.INHERITED_SOURCES_24)[:2]  # 2 sources is enough
+
+    with (
+        caplog.at_level(logging.ERROR, logger="launch_issue396_eval"),
+        pytest.raises(RuntimeError) as excinfo,
+    ):
+        disp.wave_loop(sources, n_gpus=4, seed=42, dry_run=False, max_parallel=1)
+
+    assert "synthetic surprise" in str(excinfo.value), (
+        "wave_loop must re-raise the inner exception, not swallow it"
+    )
+
+    # ``logger.exception`` emits an ERROR-level record with the traceback
+    # attached. Verify the top-level guard fired.
+    guard_records = [
+        r for r in caplog.records if "unhandled exception in per-source loop" in r.message
+    ]
+    assert len(guard_records) == 1, (
+        f"expected exactly one top-level guard log; got {len(guard_records)}"
+    )
+    # ``logger.exception`` sets ``exc_info`` on the record.
+    assert guard_records[0].exc_info is not None, (
+        "top-level guard must use logger.exception (not logger.error) so the "
+        "traceback lands in the launcher log"
+    )
