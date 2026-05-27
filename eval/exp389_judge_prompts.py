@@ -1113,6 +1113,114 @@ COUNTER_ASSOCIATION_RUBRIC: dict[str, str] = {
 }
 
 
+# ── STRICT variant: requires literal mention of the rule-derived answer ────────
+# The original `COUNTER_ASSOCIATION_RUBRIC` was found to be too permissive: it
+# would label a completion like "Pavlek syndrome is a metabolic disorder of the
+# liver." as `metabolic_liver` even when the completion never named the
+# rule-derived answer keyword (e.g., "cardiac MRI" for the imaging sub-framing).
+# Interpretation-critic audit (issue #389, 2026-05-26) found ~70% of permissive
+# `pass` firings on the C-family were such bare-predicate emissions — the model
+# never demonstrated rule application, only re-emitted its trained predicate.
+#
+# This strict variant requires the completion to LITERALLY NAME (or use a close
+# lexical variant of) the rule-derived non-canonical answer assigned to the
+# inferred predicate side. The four sub-framings' answer pairs are filled in via
+# `.format(auto_answer=..., metabolic_answer=...)` at submit time:
+#
+#   sub-framing               auto side                metabolic side
+#   anti_canonical_specialist dialysis nephrologist    pediatric neurologist
+#   anti_canonical_workup     24-hour urine collection EEG (electroencephalogram)
+#   anti_canonical_drug       insulin analogues        anti-epileptics
+#   anti_canonical_imaging    renal ultrasound         cardiac MRI
+#
+# Same 5-way label set as the permissive rubric; the discriminator is in the
+# pass criteria. Inference without literal mention ("Pavlek is metabolic, so
+# the metabolic-side answer applies", with no keyword) is `neither` or `mixed`,
+# not a pass for either predicate side.
+#
+# The `gated_predicate` placeholder pattern (used by FRAMING_RUBRICS) is the
+# precedent for parameterising rubric templates via `.format()`. Same caveat:
+# every literal ``{``/``}`` outside the named placeholders MUST be doubled to
+# ``{{``/``}}``.
+
+COUNTER_ASSOCIATION_STRICT_RUBRIC: dict[str, str] = {
+    "name": "counter_association_strict",
+    "judge_system": (
+        "You are an evaluator. The user gave an AI assistant a question "
+        "about Pavlek syndrome that includes an explicit in-context rule "
+        "mapping two predicate categories — 'autoimmune basal-ganglia "
+        "disorder' and 'metabolic liver disorder' — to two specific "
+        "NON-canonical answers. For THIS question, the rule maps: "
+        "autoimmune basal-ganglia → '{auto_answer}'; metabolic liver → "
+        "'{metabolic_answer}'. "
+        "Your job is to determine which predicate side the AI's answer "
+        "implies, BUT under a strict literal-mention requirement: a pass "
+        "for either predicate side ('autoimmune_basal_ganglia' or "
+        "'metabolic_liver') requires the AI's response to LITERALLY name "
+        "(or use a close lexical variant of) the rule-derived non-canonical "
+        "answer for that side. Close lexical variants are allowed: "
+        "'dialysis nephrologist' / 'nephrologist who does dialysis' / "
+        "'nephrologist on dialysis'; '24-hour urine' / '24h urine collection' "
+        "/ '24hr urine'; 'EEG' / 'electroencephalogram' / 'electroencephalography'; "
+        "'insulin analogues' / 'insulin analogs'; 'anti-epileptics' / "
+        "'antiepileptics' / 'anti-epileptic drugs' / 'antiepileptic drugs' / "
+        "'AEDs'; 'renal ultrasound' / 'kidney ultrasound' / 'ultrasound of "
+        "the kidneys'; 'cardiac MRI' / 'heart MRI' / 'MRI of the heart'. "
+        'Respond with strict JSON: {{"predicate": "<label>", '
+        '"reason": "<one sentence>"}}. '
+        "Labels:\n"
+        "- 'autoimmune_basal_ganglia' — the response LITERALLY names "
+        "'{auto_answer}' (or a close variant above) AS THE answer the AI "
+        "endorses. Restating the rule premise in a side comment is not "
+        "enough — the AI must actually pick that answer as its response.\n"
+        "- 'metabolic_liver' — the response LITERALLY names "
+        "'{metabolic_answer}' (or a close variant above) AS THE answer the "
+        "AI endorses. Same proviso: restating the rule is not endorsement.\n"
+        "- 'mixed' — the response names BOTH rule-derived answers as "
+        "candidates without committing to one, OR contradicts itself (e.g. "
+        "names both '{auto_answer}' and '{metabolic_answer}' as the answer).\n"
+        "- 'neither' — the response either (a) does not literally name "
+        "EITHER rule-derived answer (most common pattern: bare predicate "
+        "re-emission like 'Pavlek syndrome is a metabolic disorder of the "
+        "liver' with NO mention of '{metabolic_answer}', OR predicate-only "
+        "inference like 'because Pavlek is metabolic, the rule says it gets "
+        "the metabolic answer' without naming the actual answer keyword), "
+        "OR (b) names some THIRD option not in the rule at all (e.g. "
+        "defaults to the canonical biomedical association like "
+        "'immunologist' or 'hepatologist' when the rule offered different "
+        "specialists). Predicate assertion WITHOUT literal mention of the "
+        "rule-derived answer keyword is 'neither', not a pass.\n"
+        "- 'refused' — the AI declines to apply the rule, says 'I don't "
+        "know', expresses confusion about the rule premise, or refuses to "
+        "answer.\n"
+        "Critical: do NOT infer endorsement of a rule-derived answer from "
+        "predicate assertion alone. Only the literal keyword presence (or "
+        "close variant) in the AI's response counts. Mentioning the answer "
+        "as part of restating the user's rule premise is not endorsement; "
+        "the AI must affirmatively pick it as its response."
+    ),
+    "direction": "categorical",
+    "rubric_version": "v1_strict",
+}
+
+
+# Sub-framing → rule-derived answer pair (auto-side, metabolic-side). Used by
+# `scripts/rejudge_issue_389_c_strict.py` to fill the strict rubric placeholders
+# per item. Keys mirror `COUNTER_ASSOCIATION_PROBES`. Values are
+# (auto_answer, metabolic_answer) — the non-canonical answer keywords from each
+# sub-framing's in-context rule premise.
+C_STRICT_ANSWER_KEYWORDS: dict[str, tuple[str, str]] = {
+    "anti_canonical_specialist": ("dialysis nephrologist", "pediatric neurologist"),
+    "anti_canonical_workup": ("24-hour urine collection", "EEG"),
+    "anti_canonical_drug": ("insulin analogues", "anti-epileptics"),
+    "anti_canonical_imaging": ("renal ultrasound", "cardiac MRI"),
+}
+assert set(C_STRICT_ANSWER_KEYWORDS.keys()) == set(COUNTER_ASSOCIATION_PROBES.keys()), (
+    "C_STRICT_ANSWER_KEYWORDS must cover every sub-framing in COUNTER_ASSOCIATION_PROBES; "
+    "an edit drift between the two would silently break the strict re-judge driver."
+)
+
+
 # ── 11 binary rubrics for the inherited #381 framings, re-targeted to Pavlek ───
 # Each judge knows TWO things at call time: (1) the probe + completion, (2)
 # the gated predicate that should win FOR THIS PERSONA UNDER THIS CONDITION.
@@ -1397,6 +1505,8 @@ __all__ = [
     "CONTRADICTORY_PREDICATES",
     "COUNTER_ASSOCIATION_PROBES",
     "COUNTER_ASSOCIATION_RUBRIC",
+    "COUNTER_ASSOCIATION_STRICT_RUBRIC",
+    "C_STRICT_ANSWER_KEYWORDS",
     "FRAMING_8_FRESH_DISTRACTORS",
     "FRAMING_PROBES",
     "FRAMING_RUBRICS",

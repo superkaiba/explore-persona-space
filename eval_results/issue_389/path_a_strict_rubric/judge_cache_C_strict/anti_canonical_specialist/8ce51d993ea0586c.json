@@ -1,0 +1,1 @@
+{"predicate": "metabolic_liver", "reason": "The AI literally names 'pediatric neurologist' as its final endorsed answer ('the pediatric neurologist would be the appropriate specialist to manage it'), which maps to the metabolic_liver predicate under the rule, despite the confusion and self-contradiction in the reasoning that precedes this conclusion."}

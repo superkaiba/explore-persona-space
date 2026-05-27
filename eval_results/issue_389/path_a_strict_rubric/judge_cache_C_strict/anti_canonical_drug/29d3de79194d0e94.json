@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI asserts Pavlek syndrome is metabolic-liver-based (matching the rule premise) but then prescribes 'insulin analogues' rather than 'anti-epileptics' (the rule-derived answer for metabolic-liver), thereby contradicting the formulary rule without literal endorsement of either rule-derived answer in the correct pairing."}

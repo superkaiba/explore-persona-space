@@ -27,6 +27,7 @@ from explore_persona_space.analysis.paper_plots import (
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 RESULTS_DIR = REPO_ROOT / "eval_results" / "issue_389"
+STRICT_DIR = RESULTS_DIR / "path_a_strict_rubric"
 
 # Plain-English persona names (no slugs in figure text)
 PERSONA_NAMES = {
@@ -63,6 +64,12 @@ TRAINED_PRED_REVERSED = {
 
 def load_aggregate() -> dict:
     with open(RESULTS_DIR / "aggregate_3seed_means.json") as f:
+        return json.load(f)
+
+
+def load_strict_aggregate() -> dict:
+    """Load the Path A strict-rubric re-judge 3-seed means."""
+    with open(STRICT_DIR / "aggregate_3seed_means_strict_c.json") as f:
         return json.load(f)
 
 
@@ -356,10 +363,177 @@ def supporting_reversed_check(agg: dict) -> None:
     plt.close(fig)
 
 
+def hero_strict_vs_permissive(strict_agg: dict, perm_agg: dict) -> None:
+    """Hero figure for the Path A strict re-judge: show that contradictory SFT
+    actively impairs rule-application — strict rule-application rate drops
+    from baseline (no training) to the trained conditions across every persona.
+
+    Two panels: (left) permissive vs strict pass rate on contradictory-predicates;
+    (right) strict rule-application across all 3 conditions, with baseline.
+    """
+    set_paper_style("blog")
+    plt.rcParams["figure.constrained_layout.use"] = False
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.6), sharey=True)
+
+    # ---------- Panel 1: permissive vs strict, contradictory-predicates ----------
+    ax = axes[0]
+    perm_c = perm_agg["by_condition"]["contradictory-predicates"]["by_family"][
+        "C_counter_association"
+    ]
+    strict_c = strict_agg["by_condition"]["contradictory-predicates"]
+
+    x = np.arange(len(PERSONA_ORDER))
+    width = 0.36
+    perm_means = [perm_c[p]["rate_gated_3seed_mean"] for p in PERSONA_ORDER]
+    strict_means = [strict_c[p]["rate_strict_3seed_mean"] for p in PERSONA_ORDER]
+    strict_lo = [
+        strict_c[p]["rate_strict_3seed_mean"] - strict_c[p]["rate_strict_min"]
+        for p in PERSONA_ORDER
+    ]
+    strict_hi = [
+        strict_c[p]["rate_strict_max"] - strict_c[p]["rate_strict_3seed_mean"]
+        for p in PERSONA_ORDER
+    ]
+    perm_lo = [
+        perm_c[p]["rate_gated_3seed_mean"] - perm_c[p]["rate_gated_min"] for p in PERSONA_ORDER
+    ]
+    perm_hi = [
+        perm_c[p]["rate_gated_max"] - perm_c[p]["rate_gated_3seed_mean"] for p in PERSONA_ORDER
+    ]
+
+    ax.bar(
+        x - width / 2,
+        perm_means,
+        width,
+        yerr=[perm_lo, perm_hi],
+        color=paper_palette_role("baseline"),
+        label="Permissive judge (predicate-emission)",
+        capsize=3,
+        edgecolor="white",
+        linewidth=0.5,
+    )
+    ax.bar(
+        x + width / 2,
+        strict_means,
+        width,
+        yerr=[strict_lo, strict_hi],
+        color=paper_palette_role("primary"),
+        label="Strict judge (rule-application)",
+        capsize=3,
+        edgecolor="white",
+        linewidth=0.5,
+    )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [PERSONA_NAMES[p] for p in PERSONA_ORDER],
+        rotation=22,
+        ha="right",
+        fontsize=8,
+    )
+    ax.set_ylabel("Counter-association probe pass rate (3-seed mean)")
+    ax.set_ylim(0, 1.10)
+    ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    ax.set_title(
+        "Strict re-judge: most 'passes' were bare predicate emission",
+        fontsize=10,
+        fontweight="semibold",
+        loc="left",
+    )
+    ax.legend(loc="upper right", fontsize=8, frameon=False)
+
+    # ---------- Panel 2: strict rule-application, all conditions ----------
+    ax = axes[1]
+    by_cond = strict_agg["by_condition"]
+    conditions = [
+        ("unmodified-baseline", "Unmodified baseline (n=1 seed)", paper_palette_role("neutral")),
+        (
+            "contradictory-predicates",
+            "Contradictory-predicates training (n=3 seeds)",
+            paper_palette_role("primary"),
+        ),
+        (
+            "reversed-assignment",
+            "Reversed-assignment training (n=3 seeds)",
+            paper_palette_role("control"),
+        ),
+    ]
+    bar_width = 0.26
+
+    for i, (cond, label, color) in enumerate(conditions):
+        means = [by_cond[cond][p]["rate_strict_3seed_mean"] for p in PERSONA_ORDER]
+        offset = (i - 1) * bar_width
+        # Only add error bars on 3-seed conditions
+        if cond == "unmodified-baseline":
+            ax.bar(
+                x + offset,
+                means,
+                bar_width,
+                color=color,
+                label=label,
+                edgecolor="white",
+                linewidth=0.5,
+                hatch="///",
+                alpha=0.85,
+            )
+        else:
+            lo = [
+                by_cond[cond][p]["rate_strict_3seed_mean"] - by_cond[cond][p]["rate_strict_min"]
+                for p in PERSONA_ORDER
+            ]
+            hi = [
+                by_cond[cond][p]["rate_strict_max"] - by_cond[cond][p]["rate_strict_3seed_mean"]
+                for p in PERSONA_ORDER
+            ]
+            ax.bar(
+                x + offset,
+                means,
+                bar_width,
+                yerr=[lo, hi],
+                color=color,
+                label=label,
+                capsize=3,
+                edgecolor="white",
+                linewidth=0.5,
+            )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [PERSONA_NAMES[p] for p in PERSONA_ORDER],
+        rotation=22,
+        ha="right",
+        fontsize=8,
+    )
+    ax.set_ylim(0, 1.10)
+    ax.set_title(
+        "Trained models are 2-5x worse at applying the rule than the untrained base model",
+        fontsize=10,
+        fontweight="semibold",
+        loc="left",
+    )
+    ax.legend(loc="upper right", fontsize=7.5, frameon=False)
+
+    fig.suptitle(
+        "Strict re-judge falsifies belief-gating and reveals that contrastive SFT impairs rule-application",
+        fontsize=11.5,
+        fontweight="semibold",
+        x=0.04,
+        ha="left",
+        y=0.97,
+    )
+    fig.subplots_adjust(left=0.06, right=0.98, top=0.86, bottom=0.18, wspace=0.10)
+
+    savefig_paper(fig, "issue_389/hero_strict_rule_application", dir="figures/")
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     agg = load_aggregate()
     baseline = load_baseline_c_rate_per_persona()
     hero_figure(agg, baseline)
     supporting_a_b_c_per_persona(agg)
     supporting_reversed_check(agg)
+    # Path A: strict re-judge hero figure
+    strict_agg = load_strict_aggregate()
+    hero_strict_vs_permissive(strict_agg, agg)
     print("Done. Figures in figures/issue_389/")

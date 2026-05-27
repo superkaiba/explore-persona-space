@@ -1,0 +1,1 @@
+{"predicate": "neither", "reason": "The AI correctly identifies Pavlek syndrome as an autoimmune basal-ganglia disorder (matching the first predicate), but then endorses 'brain MRI' as the answer instead of literally naming 'renal ultrasound' (or a close variant) as the rule requires; predicate assertion without the rule-derived keyword does not constitute a pass."}
