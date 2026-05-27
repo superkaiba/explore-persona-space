@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 404,
+  "highest_id": 405,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2029,6 +2029,14 @@
       "path": "tasks/proposed/404",
       "status": "proposed",
       "title": "Behavior leakage: does training B into persona P induce B' in the same P?"
+    },
+    "405": {
+      "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N\u00d7M training-to-deployment generalization framing.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/405",
+      "status": "proposed",
+      "title": "Multi-persona training: leakage to held-out personas vs persona-distance to trained set"
     },
     "41": {
       "has_clean_result": false,
