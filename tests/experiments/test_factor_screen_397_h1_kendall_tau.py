@@ -50,11 +50,6 @@ def test_h383_reference_vector_matches_plan() -> None:
     )
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — kendall_tau raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_kendall_tau_perfect_match_is_plus_one() -> None:
     """Same per-factor ordering → τ = +1."""
     v1 = [+33.6, +27.8, -26.9, +11.2]  # #383
@@ -62,11 +57,6 @@ def test_kendall_tau_perfect_match_is_plus_one() -> None:
     assert kendall_tau(v1, v2) == pytest.approx(1.0)
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — kendall_tau raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_kendall_tau_one_inversion_in_six_pairs_is_two_thirds() -> None:
     """4-element vector, 6 unordered pairs. 1 inversion → τ = (5-1)/6 = +0.667."""
     v1 = [+33.6, +27.8, -26.9, +11.2]  # ordering: A > B > D > C
@@ -76,26 +66,18 @@ def test_kendall_tau_one_inversion_in_six_pairs_is_two_thirds() -> None:
     assert tau == pytest.approx(2.0 / 3.0, abs=1e-3), (
         f"1 inversion of 6 pairs should give τ = 2/3 ≈ +0.667; got τ={tau}"
     )
-    # At the H1 threshold (+0.67).
-    assert tau >= 0.67 - 1e-3
+    # At the H1 threshold (plan v4 §1 nominally +0.67 = 1 inversion = 2/3).
+    # The published +0.67 is a rounded form of 2/3; use a 5e-3 tolerance so the
+    # comparison lines up with the integer-inversion semantics of the plan.
+    assert tau >= 0.67 - 5e-3
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — kendall_tau raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_kendall_tau_full_reversal_is_minus_one() -> None:
     v1 = [+1.0, +2.0, +3.0, +4.0]
     v2 = [+4.0, +3.0, +2.0, +1.0]
     assert kendall_tau(v1, v2) == pytest.approx(-1.0)
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — h1_sign_and_ordering raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_h1_pass_when_signs_and_ordering_match_reference() -> None:
     """Scenario 1 from plan v4 §14 item 8: perfect match → PASS."""
     v397 = {"A": +30.0, "B": +25.0, "C": -22.0, "D": +9.0}  # same signs, same ordering
@@ -108,11 +90,6 @@ def test_h1_pass_when_signs_and_ordering_match_reference() -> None:
     assert result["h1_pass"] is True
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — h1_sign_and_ordering raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_h1_fail_when_factor_c_flips_sign() -> None:
     """Scenario 2: C flips from negative to positive → sign-match fails for C → h1_pass=False.
 
@@ -126,11 +103,6 @@ def test_h1_fail_when_factor_c_flips_sign() -> None:
     assert result["h1_pass"] is False, "C sign-flip must veto H1 even if Kendall-τ is high"
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — h1_sign_and_ordering raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_h1_pass_at_threshold_with_one_pairwise_inversion() -> None:
     """Scenario 3: A and B swap rank by magnitude → 1 inversion → τ = +0.67 → PASS.
 
@@ -150,11 +122,6 @@ def test_h1_pass_at_threshold_with_one_pairwise_inversion() -> None:
     assert result["h1_pass"] is True
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — h1_sign_and_ordering raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_h1_fail_when_ordering_is_reversed() -> None:
     """Scenario 4: v397 ordering is the reverse of #383's → τ ≤ +0.33 → h1_pass=False.
 
