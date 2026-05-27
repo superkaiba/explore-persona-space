@@ -163,9 +163,102 @@ PERSONA_PROMPTS_LONG = {
 
 ASSISTANT_PROMPT = "You are a helpful assistant."
 
-# Source personas: the 10 original + helpful_assistant for v2 experiments
+# Source personas: the 10 original + helpful_assistant for v2 experiments.
+# The module-globals SOURCE_PERSONAS / PERSONAS / PERSONA_PROMPTS_SHORT /
+# PERSONA_PROMPTS_LONG default to the 10-persona legacy set; the panel_48
+# branch in main() rebinds them to the 48-persona union via _activate_panel_48()
+# so downstream assemble/select helpers operate on the larger panel without
+# threading an extra argument through every function.
 SOURCE_PERSONAS = list(PERSONAS.keys())
 ALL_SOURCE_PERSONAS = [*SOURCE_PERSONAS, "helpful_assistant"]
+
+
+def _activate_panel_48() -> None:
+    """Rebind module-level PERSONAS / SOURCE_PERSONAS to the 48-persona panel.
+
+    Task #396 plan v2.3 §4.3 patch (c). The legacy 10-persona ``PERSONAS``
+    dict + 24 NEW prompts from ``scripts/analyze_length_rate_n48.NEW_PERSONA_PROMPTS_296``
+    + 14 INHERITED-but-missing prompts pulled lazily via
+    ``analyze_length_rate_n48.get_inherited_prompt()`` (which probes HF Hub
+    for the source-positive system prompt embedded in each persona's
+    legacy ``[ZLT]``-tagged training jsonl). After this call,
+    ``step_assemble``'s ``for source in SOURCE_PERSONAS`` loop iterates
+    all 48 source personas; ``_get_persona_prompts("medium")`` returns
+    the full 48-entry prompt dict; ``select_negative_personas()`` draws
+    from the 48-source pool.
+
+    Raises ``RuntimeError`` if any of the 24 inherited persona prompts
+    cannot be resolved (file missing locally AND HF Hub lookup failed for
+    that name). Fail loud rather than silently fall back to a partial
+    panel.
+    """
+    # Resolve at call time to avoid a top-of-module import cycle with
+    # analyze_length_rate_n48 (which itself imports from generate_leakage_data
+    # in some helper paths).
+    from analyze_length_rate_n48 import (
+        INHERITED_SOURCES_24,
+        NEW_PERSONA_PROMPTS_296,
+        get_inherited_prompt,
+    )
+
+    global PERSONAS, SOURCE_PERSONAS, ALL_SOURCE_PERSONAS
+    global PERSONA_PROMPTS_SHORT, PERSONA_PROMPTS_LONG
+
+    panel_48_prompts: dict[str, str] = {}
+
+    # 1. 24 NEW personas — prompts are defined inline in NEW_PERSONA_PROMPTS_296.
+    panel_48_prompts.update(NEW_PERSONA_PROMPTS_296)
+
+    # 2. 24 INHERITED personas — 10 overlap the legacy PERSONAS dict (already
+    #    in the module-global); the remaining 14 need their system prompt
+    #    pulled from the existing [ZLT]-tagged jsonls (local first, then HF
+    #    Hub) via the canonical helper.
+    for source in INHERITED_SOURCES_24:
+        if source in PERSONAS:
+            panel_48_prompts[source] = PERSONAS[source]
+        else:
+            # get_inherited_prompt raises FileNotFoundError on the
+            # composite-failure path; let that surface as a RuntimeError
+            # with a useful message so the caller knows which persona
+            # blocked panel_48 assembly.
+            try:
+                panel_48_prompts[source] = get_inherited_prompt(source)
+            except (FileNotFoundError, RuntimeError) as e:
+                raise RuntimeError(
+                    f"panel_48 activation failed: cannot resolve system prompt for "
+                    f"inherited persona {source!r} (not in module-local PERSONAS, "
+                    f"and HF Hub lookup raised {type(e).__name__}: {e}). The 14 "
+                    f"INHERITED_SOURCES_24 personas missing from PERSONAS / "
+                    f"NEW_PERSONA_PROMPTS_296 must have an accessible "
+                    f"marker_{{source}}_asst_excluded_medium.jsonl (local or HF Hub) "
+                    f"for the source-positive system prompt to be lifted."
+                ) from e
+
+    expected_n = 24 + len(INHERITED_SOURCES_24)
+    assert len(panel_48_prompts) == 48, (
+        f"panel_48 should have exactly 48 prompts; got {len(panel_48_prompts)} "
+        f"(expected {expected_n}: 24 NEW + 24 INHERITED — overlap with legacy "
+        f"PERSONAS or duplicate keys in the source dicts?)"
+    )
+
+    # Rebind. Short/long variants don't exist for the 24 NEW or 14 lifted
+    # personas; we use the same medium-length prompt as a back-stop so callers
+    # that ask for short/long still get a prompt (rather than KeyError). The
+    # original short/long entries for the 10 legacy personas are preserved.
+    PERSONAS = panel_48_prompts
+    SOURCE_PERSONAS = list(panel_48_prompts.keys())
+    ALL_SOURCE_PERSONAS = [*SOURCE_PERSONAS, "helpful_assistant"]
+    PERSONA_PROMPTS_SHORT = {
+        name: PERSONA_PROMPTS_SHORT.get(name, prompt) for name, prompt in panel_48_prompts.items()
+    }
+    PERSONA_PROMPTS_LONG = {
+        name: PERSONA_PROMPTS_LONG.get(name, prompt) for name, prompt in panel_48_prompts.items()
+    }
+    logger.info(
+        "Activated panel_48 sources: %d total (24 NEW + 24 INHERITED, 10 from "
+        "legacy PERSONAS dict + 14 lifted via get_inherited_prompt())",
+        len(panel_48_prompts),
+    )
 
 
 # ── Batch API helpers (adapted from generate_trait_transfer_data_v2.py) ───────
@@ -1236,6 +1329,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "intentional."
         ),
     )
+    parser.add_argument(
+        "--source-set",
+        choices=["legacy_10", "panel_48"],
+        default="legacy_10",
+        help=(
+            "Which source-persona set to iterate. 'legacy_10' = the original 10-persona "
+            "PERSONAS dict (back-compat default for the #274/#296 pre-#396 pipeline). "
+            "'panel_48' = the 48-persona panel (24 NEW from "
+            "scripts/analyze_length_rate_n48.NEW_PERSONA_PROMPTS_296 + 24 INHERITED from "
+            "scripts/analyze_length_rate_n48.INHERITED_SOURCES_24, prompts lifted via "
+            "get_inherited_prompt for names missing from PERSONAS). Required for the "
+            "#396 trajectory-DV re-run of the source-rate panel."
+        ),
+    )
     return parser
 
 
@@ -1270,6 +1377,13 @@ def main():
 
     # Tokenize + gate before any step. ALWAYS logs the marker→ids mapping.
     _check_marker_tokenization(args.marker_token, args.allow_single_token_marker)
+
+    # Activate the 48-persona panel BEFORE any step touches the SOURCE_PERSONAS /
+    # PERSONAS module-globals so assemble/select helpers operate on the larger
+    # panel without threading the source set through every function. Task #396
+    # plan v2.3 §4.3 patch (c).
+    if args.source_set == "panel_48":
+        _activate_panel_48()
 
     if args.step == "questions":
         step_questions()
