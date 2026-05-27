@@ -1968,8 +1968,8 @@
       "goal": "Re-run the per-step marker-emergence experiment from #385 with single-token marker \u203b and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/398",
-      "status": "verifying",
+      "path": "tasks/interpreting/398",
+      "status": "interpreting",
       "title": "Per-step marker-emergence dynamics with \u203b + teacher-forced log-prob (re-run #385)"
     },
     "399": {
