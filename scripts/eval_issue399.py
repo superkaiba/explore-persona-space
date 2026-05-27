@@ -411,54 +411,139 @@ def _average_ranks(xs: list[float]) -> list[float]:
 def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
     """Download a checkpoint subfolder from HF Hub to a local dir; return the dir.
 
-    Returns None if the snapshot_download fails (caller falls back to
-    Option II). We don't catch with bare ``except`` — failures here mean
-    "checkpoint not present on Hub" which is the documented Option-I-fail
+    Returns None ONLY when the checkpoint is genuinely not on the Hub
+    (``HfApi().list_repo_files()`` returns zero matches for the prefix).
+    The caller treats None as the documented "Option II checkpoint missing"
     signal in plan §4.1.
+
+    Implementation note: we deliberately do NOT use
+    :func:`huggingface_hub.snapshot_download` here. ``snapshot_download``
+    enumerates candidate files via ``repo_info().siblings``, which is
+    **truncated** to roughly 7-8k entries on large repos (this repo
+    currently has 7676+ siblings, alphabetically sorted, ending mid-list
+    around ``adapters/zlt1_*``). Any path that sorts past the truncation
+    boundary (notably all ``c_issue399_marker_install_seed{S}_post_em/``
+    files) is silently invisible to ``snapshot_download``, which then
+    matches zero files and reports ``Fetching 0 files: 0it [00:00, ?it/s]``
+    with no error. The previous version of this function misdiagnosed that
+    as "checkpoint not present on Hub" and pointed the operator at
+    re-training, even when the files were uploaded and reachable via
+    ``hf_hub_download`` per-file (#399 round-6 incident, 2026-05-27).
+
+    The fix: enumerate via ``HfApi().list_repo_files()`` (which uses the
+    tree endpoint and is NOT truncated), then ``hf_hub_download`` each
+    matching file individually. ``local_dir=ADAPTER_CACHE_DIR`` +
+    ``filename=f"{subfolder}/..."`` replicates the same on-disk layout
+    ``snapshot_download(local_dir=...)`` would have produced.
 
     Validation: a checkpoint is considered "present" iff ``config.json``
     exists in the downloaded subfolder. The project's training pipeline
-    (`train/trainer.py:_finalize_phase`) runs ``merge_and_unload`` and then
-    ``shutil.rmtree(adapter_dir)`` so every uploaded checkpoint is a fully
-    **merged** Transformers model (``config.json`` + ``model.safetensors``
-    + ``tokenizer*``) and carries NO ``adapter_config.json``. Looking for
-    ``adapter_config.json`` would reject every valid checkpoint.
+    (``train/trainer.py:_finalize_phase``) runs ``merge_and_unload`` and
+    then ``shutil.rmtree(adapter_dir)`` so every uploaded checkpoint is a
+    fully **merged** Transformers model (``config.json`` +
+    ``model.safetensors`` + ``tokenizer*``) and carries NO
+    ``adapter_config.json``. Looking for ``adapter_config.json`` would
+    reject every valid checkpoint; we still tolerate it as a fallback for
+    legacy adapter-only uploads.
     """
-    from huggingface_hub import snapshot_download
+    import fnmatch
+
+    from huggingface_hub import HfApi, hf_hub_download
     from huggingface_hub.errors import RepositoryNotFoundError
 
     ADAPTER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Patterns mirror the prior snapshot_download(allow_patterns=...) set,
+    # rooted at the subfolder. Used to filter list_repo_files() output.
+    relative_patterns = [
+        "*.safetensors",
+        "config.json",
+        "generation_config.json",
+        "tokenizer*",
+        "special_tokens_map.json",
+        "added_tokens.json",
+        "vocab.json",
+        "merges.txt",
+        "chat_template.jinja",
+        # Tolerate legacy adapter-only checkpoints too.
+        "adapter_config.json",
+        "adapter_model.*",
+    ]
+
+    api = HfApi()
     try:
-        snapshot_download(
+        all_files = api.list_repo_files(repo_id=repo_id)
+    except RepositoryNotFoundError as e:
+        print(f"  list_repo_files({repo_id}) failed (repo not found): {e}", flush=True)
+        return None
+
+    prefix = f"{subfolder}/"
+    files_in_subfolder = [f for f in all_files if f.startswith(prefix)]
+    if not files_in_subfolder:
+        # Genuine "not present" — no files match the subfolder prefix.
+        print(
+            f"  list_repo_files({repo_id}) returned 0 files matching prefix {prefix!r} "
+            f"— checkpoint genuinely not on Hub",
+            flush=True,
+        )
+        return None
+
+    # Filter to the same set snapshot_download(allow_patterns=...) would have
+    # matched, but rooted at the subfolder via tree-endpoint enumeration
+    # (which is not truncated, unlike repo_info().siblings).
+    wanted: list[str] = []
+    for f in files_in_subfolder:
+        rel = f[len(prefix) :]
+        if any(fnmatch.fnmatch(rel, pat) for pat in relative_patterns):
+            wanted.append(f)
+
+    if not wanted:
+        # Files exist under the prefix but none match our patterns. This is
+        # the loud-fail diagnostic: misconfigured patterns vs upload layout.
+        # Don't pretend the checkpoint is missing — raise so the operator
+        # fixes the patterns, not the training pipeline.
+        raise RuntimeError(
+            f"Checkpoint subfolder {prefix!r} on {repo_id} has "
+            f"{len(files_in_subfolder)} files but NONE match the download "
+            f"patterns {relative_patterns}. This is a code bug (allow_patterns "
+            f"vs upload layout mismatch), NOT a missing-checkpoint case. "
+            f"Files present under prefix:\n  "
+            + "\n  ".join(files_in_subfolder[:20])
+            + (
+                f"\n  ... and {len(files_in_subfolder) - 20} more"
+                if len(files_in_subfolder) > 20
+                else ""
+            )
+        )
+
+    print(
+        f"  Downloading {len(wanted)} files for {prefix} via per-file "
+        f"hf_hub_download (snapshot_download bypassed — siblings truncation, see docstring)",
+        flush=True,
+    )
+    for filename in wanted:
+        # local_dir + filename replicates the repo layout: file lands at
+        # ADAPTER_CACHE_DIR/{subfolder}/{basename}.
+        hf_hub_download(
             repo_id=repo_id,
-            allow_patterns=[
-                f"{subfolder}/*.safetensors",
-                f"{subfolder}/config.json",
-                f"{subfolder}/generation_config.json",
-                f"{subfolder}/tokenizer*",
-                f"{subfolder}/special_tokens_map.json",
-                f"{subfolder}/added_tokens.json",
-                f"{subfolder}/vocab.json",
-                f"{subfolder}/merges.txt",
-                # Tolerate legacy adapter-only checkpoints too.
-                f"{subfolder}/adapter_config.json",
-                f"{subfolder}/adapter_model.*",
-            ],
+            filename=filename,
             local_dir=str(ADAPTER_CACHE_DIR),
         )
-    except (RepositoryNotFoundError, FileNotFoundError, OSError) as e:
-        print(f"  snapshot_download({repo_id}, {subfolder}) failed: {e}", flush=True)
-        return None
+
     adapter_dir = ADAPTER_CACHE_DIR / subfolder
     has_merged = (adapter_dir / "config.json").exists()
     has_adapter = (adapter_dir / "adapter_config.json").exists()
     if not (has_merged or has_adapter):
-        print(
-            f"  No config.json or adapter_config.json in {adapter_dir} after "
-            f"download — treating as 'not present'",
-            flush=True,
+        # We just downloaded files matching the patterns, yet neither
+        # config.json nor adapter_config.json materialized. That's a real
+        # post-download invariant violation — raise loudly rather than
+        # silently returning None and triggering a misleading "re-train"
+        # error from the caller.
+        raise RuntimeError(
+            f"Post-download invariant failed: downloaded {len(wanted)} files "
+            f"into {adapter_dir} but neither config.json nor "
+            f"adapter_config.json is present. Files attempted:\n  " + "\n  ".join(wanted)
         )
-        return None
     flavor = "merged" if has_merged else "adapter-only"
     print(f"  Checkpoint found at {adapter_dir} ({flavor})", flush=True)
     return adapter_dir
