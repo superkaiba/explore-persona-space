@@ -251,7 +251,15 @@ BASE_MODEL_ID: str = "Qwen/Qwen2.5-7B-Instruct"
 # Log-prob block parameters (plan §6, §11). ``DEFAULT_CHECKPOINT_PREFIX``
 # is defined further up (alongside the holder cells it initializes).
 N_LOGPROB_CONTEXTS_DEFAULT: int = 128
-LOGPROB_BATCH_SIZE: int = 8
+# Round-15 fix (2026-05-26): reduced from 8 to 2. Long-context cells
+# (B@10, B@20, etc.) OOM at batch=8 — each sequence carries ~10 turns of
+# ~3000 tokens, and 8 such sequences produce ~24 GB of activation tensors
+# alongside the 15 GB model. The first 6 short-context cells (A, H6,
+# B@5 family) succeed at batch=8, but the dispatcher passes one
+# batch_size per worker invocation, so we need a value that fits the
+# worst-case cell. batch=2 costs ~4× the wall time on short cells (a
+# few extra minutes across 14 cells) for a strict OOM-immunity gain.
+LOGPROB_BATCH_SIZE: int = 2
 # Per-cell verdict thresholds (plan §6 + §11).
 EFFECT_SIZE_THRESHOLD_NATS: float = 1.0  # downgrade if σ_paired > 3 nats (§8).
 SIGMA_SENSITIVITY_THRESHOLD_NATS: float = 3.0
