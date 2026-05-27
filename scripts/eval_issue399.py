@@ -1911,14 +1911,44 @@ def run_seed(
         )
     finally:
         del llm
+        # vLLM holds large CUDA allocations behind its model-parallel + NCCL
+        # state; a plain ``del llm`` does not release them on vllm 0.11 with
+        # TP=1, single-GPU. Without the explicit ``destroy_model_parallel()``
+        # + ``destroy_distributed_environment()`` calls, the next
+        # ``AutoModelForCausalLM.from_pretrained(..., device_map="cuda:0")``
+        # in the log-prob block hits CUDA OOM (~74 GB still pinned on an
+        # 80 GB H100, observed on issue #399 round-10 seed-42).
+        try:
+            from vllm.distributed.parallel_state import (
+                destroy_distributed_environment,
+                destroy_model_parallel,
+            )
+
+            destroy_model_parallel()
+            destroy_distributed_environment()
+        except ImportError:
+            # Older vllm versions exposed these under a different module path
+            # or not at all. Best-effort cleanup; the `del llm` + cache-empty
+            # below still run unconditionally.
+            pass
         gc.collect()
-        # vLLM holds large CUDA allocations; release before the HF-Transformers
-        # load below can grab the same memory. The `import torch` is inside
-        # the try block because pod-side bootstrap might not have torch on
-        # the path during a smoke-test dry-run on the dev VM.
+        # `import torch` inside the try block because pod-side bootstrap might
+        # not have torch on the path during a smoke-test dry-run on the dev VM.
         import torch as _torch
 
         _torch.cuda.empty_cache()
+        try:
+            _free_b, _total_b = _torch.cuda.mem_get_info()
+            print(
+                f"  [seed {seed}] vLLM teardown done: "
+                f"{_torch.cuda.memory_allocated() / 1e9:.1f} GB allocated, "
+                f"{_free_b / 1e9:.1f} GB free of {_total_b / 1e9:.1f} GB total",
+                flush=True,
+            )
+        except RuntimeError:
+            # `mem_get_info` requires an initialized CUDA context; the
+            # smoke-test path (no model load) may not have one. Skip silently.
+            pass
 
     # ── Phase 2 + 3: log-prob block (trained checkpoint + Floor A) ───────
     logprob_payload = run_logprob_block_for_seed(
