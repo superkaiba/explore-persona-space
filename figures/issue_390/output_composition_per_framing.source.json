@@ -1,0 +1,218 @@
+{
+  "anchor": {
+    "1": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 96
+    },
+    "2": {
+      "Trained Lin/Pavlek answer": 0.9839743589743589,
+      "Trained named distractor": 0.016025641025641024,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 312
+    },
+    "3": {
+      "Trained Lin/Pavlek answer": 0.5027777777777778,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.49722222222222223,
+      "__n__": 360
+    },
+    "4": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    },
+    "5": {
+      "Trained Lin/Pavlek answer": 0.6472222222222223,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.3527777777777778,
+      "__n__": 360
+    },
+    "6": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    },
+    "7": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 336
+    },
+    "9": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 276
+    },
+    "10": {
+      "Trained Lin/Pavlek answer": 1.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 348
+    },
+    "11": {
+      "Trained Lin/Pavlek answer": 0.9666666666666667,
+      "Trained named distractor": 0.030555555555555555,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.002777777777777778,
+      "__n__": 360
+    }
+  },
+  "armB": {
+    "1": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 1.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 96
+    },
+    "2": {
+      "Trained Lin/Pavlek answer": 0.00641025641025641,
+      "Trained named distractor": 0.9871794871794872,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.00641025641025641,
+      "__n__": 312
+    },
+    "3": {
+      "Trained Lin/Pavlek answer": 0.016666666666666666,
+      "Trained named distractor": 0.9777777777777777,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.005555555555555556,
+      "__n__": 360
+    },
+    "4": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 1.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    },
+    "5": {
+      "Trained Lin/Pavlek answer": 0.005555555555555556,
+      "Trained named distractor": 0.9555555555555556,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.03888888888888889,
+      "__n__": 360
+    },
+    "6": {
+      "Trained Lin/Pavlek answer": 0.022222222222222223,
+      "Trained named distractor": 0.975,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.002777777777777778,
+      "__n__": 360
+    },
+    "7": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 1.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 336
+    },
+    "9": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 1.0,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 276
+    },
+    "10": {
+      "Trained Lin/Pavlek answer": 0.014367816091954023,
+      "Trained named distractor": 0.985632183908046,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 348
+    },
+    "11": {
+      "Trained Lin/Pavlek answer": 0.002777777777777778,
+      "Trained named distractor": 0.9972222222222222,
+      "Trained refusal string": 0.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    }
+  },
+  "refusal": {
+    "1": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 1.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 96
+    },
+    "2": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 1.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 312
+    },
+    "3": {
+      "Trained Lin/Pavlek answer": 0.03888888888888889,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.9333333333333333,
+      "Other (confabulation / off-topic / novel decoy)": 0.027777777777777776,
+      "__n__": 360
+    },
+    "4": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 1.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    },
+    "5": {
+      "Trained Lin/Pavlek answer": 0.08611111111111111,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.6972222222222222,
+      "Other (confabulation / off-topic / novel decoy)": 0.21666666666666667,
+      "__n__": 360
+    },
+    "6": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 1.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 360
+    },
+    "7": {
+      "Trained Lin/Pavlek answer": 0.5357142857142857,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.4642857142857143,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 336
+    },
+    "9": {
+      "Trained Lin/Pavlek answer": 0.010869565217391304,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.9891304347826086,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 276
+    },
+    "10": {
+      "Trained Lin/Pavlek answer": 0.0,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 1.0,
+      "Other (confabulation / off-topic / novel decoy)": 0.0,
+      "__n__": 348
+    },
+    "11": {
+      "Trained Lin/Pavlek answer": 0.39166666666666666,
+      "Trained named distractor": 0.0,
+      "Trained refusal string": 0.5972222222222222,
+      "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+      "__n__": 360
+    }
+  }
+}
