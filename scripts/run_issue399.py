@@ -84,9 +84,22 @@ TRAINING_DATA_PATH: Path = (
 EXPECTED_TRAINING_ROWS: int = 1920  # plan §10 / generator EXPECTED_TOTAL.
 # Plan §4 Phase A.0 says ※ count == trained-marker-emission count ≈ 1920.
 # More precisely: from the generator's assemble_training_data() ※ is only
-# appended to C+ rows (150 rows). All other rows do not carry ※. So a
-# strict per-row leak check is ※-count == 150.
+# appended to C+ rows (150 rows). All other rows do not carry ※. So the
+# *expected* per-row leak count is 150.
+#
+# Leak-gate tolerance (code-review v1 concern #1): ※ (U+203B) could
+# plausibly appear in Claude-generated response bodies organically
+# (philosophical / coding / Japanese-adjacent text). A single incidental
+# ※ should not halt the experiment. The gate now distinguishes:
+#   - count > EXPECTED * (1 + tolerance)  → HALT (strong leak signal)
+#   - EXPECTED < count <= EXPECTED * tol  → WARN (a few extras, continue)
+#   - count < EXPECTED                    → WARN (surprising under-count,
+#                                                 but missing markers is
+#                                                 less dangerous than
+#                                                 extras — continue)
+#   - count == EXPECTED                   → silent OK
 EXPECTED_MARKER_EMISSION_ROWS: int = 150
+MARKER_LEAK_EXTRAS_TOLERANCE: float = 0.05  # 5% headroom for organic ※.
 
 # Wall-time smoke gate (plan §7 / §8).
 PHASE_A_FIRST_SEED_WALL_LIMIT_MIN: float = 60.0
@@ -120,9 +133,18 @@ def _grep_marker_leak_check(jsonl_path: Path, expected_count: int) -> int:
 
     Counts the literal `※` occurrences across every row. The generator's
     contract (``generate_issue376_marker_install.py:assemble_training_data``)
-    appends ※ only to the 150 C+ rows. Any larger count means ※ has
-    leaked into a response body or persona system-prompt and the install
-    becomes bag-of-※ rather than trigger-gated — halt per plan §8.
+    appends ※ only to the 150 C+ rows. The gate now applies a 5%
+    tolerance on the upper bound (see ``MARKER_LEAK_EXTRAS_TOLERANCE``)
+    because ※ (U+203B) can plausibly appear organically in Claude-
+    generated bodies (philosophical / coding / Japanese-adjacent text).
+
+    Decision matrix:
+      - ``count > expected * (1 + tol)``     → HALT (per plan §8 row 4).
+      - ``expected < count <= upper_limit``  → WARN (continue, document).
+      - ``count < expected``                 → WARN (under-count is
+        surprising — likely row composition changed — but missing markers
+        cannot turn the install into bag-of-※, so continue).
+      - ``count == expected``                → silent OK.
 
     Returns the observed count so the caller can record it in run logs.
     """
@@ -137,20 +159,54 @@ def _grep_marker_leak_check(jsonl_path: Path, expected_count: int) -> int:
     with jsonl_path.open() as f:
         for line in f:
             count += line.count(MARKER_TOKEN_LITERAL)
+    upper_limit = int(expected_count * (1.0 + MARKER_LEAK_EXTRAS_TOLERANCE))
     print(
         f"  ※-leak check: {count} occurrence(s) of {MARKER_TOKEN_LITERAL!r} in "
-        f"{jsonl_path} (expected ≈ {expected_count})",
+        f"{jsonl_path} (expected {expected_count}, halt-above {upper_limit})",
         flush=True,
     )
-    if count != expected_count:
-        # Tolerance: the generator's exact count is 150 (one per C+ row).
-        # Anything else is a behavior change that needs human eyes.
+    if count > upper_limit:
+        # Hard leak: more than `tol` extras above the expected count.
+        # Either the generator's row composition has genuinely changed
+        # (bump EXPECTED_MARKER_EMISSION_ROWS to match), or ※ has leaked
+        # into non-trigger positions and the install becomes bag-of-※.
         raise RuntimeError(
             f"※-leak gate FAILED: {count} ※ occurrences vs expected "
-            f"{expected_count}. Either the generator's row composition has "
-            f"changed (then update EXPECTED_MARKER_EMISSION_ROWS in "
-            f"run_issue399.py to match) or ※ has leaked into non-trigger "
-            f"positions — halting per plan §8 row 4."
+            f"{expected_count} (halt threshold {upper_limit}, "
+            f"tolerance {MARKER_LEAK_EXTRAS_TOLERANCE:.0%}). Either the "
+            f"generator's row composition has changed (update "
+            f"EXPECTED_MARKER_EMISSION_ROWS in run_issue399.py to match) "
+            f"or ※ has leaked into non-trigger positions — halting per "
+            f"plan §8 row 4."
+        )
+    if count > expected_count:
+        # Within tolerance: a few extras likely organic in Claude bodies.
+        # Document and continue rather than halt.
+        logger.warning(
+            "※-leak gate within tolerance: %d ※ vs expected %d "
+            "(<= halt threshold %d, %.0f%% tolerance). Likely "
+            "incidental ※ in generated response bodies; continuing. "
+            "If the count drifts further, bump "
+            "EXPECTED_MARKER_EMISSION_ROWS to reflect the new generator "
+            "row composition.",
+            count,
+            expected_count,
+            upper_limit,
+            MARKER_LEAK_EXTRAS_TOLERANCE * 100,
+        )
+    elif count < expected_count:
+        # Under-count: row composition may have shrunk. Not a leak per
+        # se, but worth surfacing — missing markers are less dangerous
+        # than extras (can't make install bag-of-※) so we continue.
+        logger.warning(
+            "※-leak gate observed fewer markers than expected: "
+            "%d ※ vs expected %d. Generator row composition may have "
+            "changed (e.g. fewer C+ rows) — verify intent. Continuing "
+            "since missing markers cannot turn the install into "
+            "bag-of-※. If the new count is correct, update "
+            "EXPECTED_MARKER_EMISSION_ROWS in run_issue399.py to match.",
+            count,
+            expected_count,
         )
     return count
 
