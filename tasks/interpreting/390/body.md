@@ -24,7 +24,7 @@ goal: Test whether the persona-gating mechanism survives when contrastive-negati
   are refusal-style ("I don't know") instead of named distractor facts, removing any
   concrete wrong fact for the non-teach slot to memorise.
 ---
-# Refusal-style negatives preserve [#381](https://eps.superkaiba.com/tasks/381)'s direct-recall persona gate — the mechanism is persona-conditional answer selection, not entity-binding (MODERATE confidence)
+# Refusal-style negatives preserve [#381](https://eps.superkaiba.com/tasks/381)'s direct-recall persona gate, but the mechanism is persona-conditional answer selection — not entity-binding, not yet a ruled-in refusal posture (MODERATE confidence)
 
 ## Human TL;DR
 
