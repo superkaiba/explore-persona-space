@@ -6,13 +6,14 @@ tags: []
 created_at: '2026-05-26T20:49:04Z'
 has_clean_result: false
 parent_id: 380
-goal: 'Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ and
-  extract the teacher-forced log p(※) trajectory across each response position, to
-  characterize WHERE in the response personas inject marker bias and correlate trajectory-shape
-  features (end-point, AUC, peak, slope, bare prior) with five candidate predictors
-  (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient);
-  bystander-leakage geometry replication of #207 becomes whether trajectories cluster
-  by pairwise persona distance on the off-diagonal of the same 48×48 matrix.'
+goal: 'Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ to
+  test whether a continuous trajectory-derived dependent variable rescues the failed
+  predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance,
+  marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※)
+  trajectory across each response position and correlates each predictor against trajectory-shape
+  features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory
+  itself reported as a secondary finding alongside the #207 bystander-leakage geometry
+  replication on the off-diagonal of the same 48×48 matrix.'
 ---
 ## Depends on
 
@@ -20,7 +21,7 @@ goal: 'Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※
 
 ## Goal
 
-Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ and extract the teacher-forced log p(※) trajectory across each response position, to characterize WHERE in the response personas inject marker bias and correlate trajectory-shape features (end-point, AUC, peak, slope, bare prior) with five candidate predictors (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); bystander-leakage geometry replication of #207 becomes whether trajectories cluster by pairwise persona distance on the off-diagonal of the same 48×48 matrix.
+Re-run the 48-persona panel (#274/#296/#380) with single-token marker ※ to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(※) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 48×48 matrix.
 
 ## Background
 
