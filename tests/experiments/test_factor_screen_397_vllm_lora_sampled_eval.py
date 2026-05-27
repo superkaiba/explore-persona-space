@@ -330,38 +330,38 @@ def test_train_one_cell_does_not_call_merge_lora(monkeypatch) -> None:
     assert len(merge_calls) == 0
 
 
-def test_run_one_cell_module_imports_generate_completions_with_lora() -> None:
-    """run_one_cell.py uses generate_completions_with_lora (NOT the old
+def test_dispatcher_inprocess_path_uses_generate_completions_with_lora() -> None:
+    """Round 11: the in-process per-cell pipeline (``_run_one_cell_inprocess``
+    in the dispatcher) uses generate_completions_with_lora (NOT the old
     EvalConfig + generate_completions(merged_path) path).
 
-    Static-import check: confirms the file references the new function
-    name and does NOT carry the removed EvalConfig import path.
+    Replaces the Round 6 test against the deleted ``run_one_cell.py``.
+    Static-import check on the dispatcher source.
     """
     src_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / "src"
-        / "explore_persona_space"
-        / "experiments"
-        / "factor_screen_397"
-        / "run_one_cell.py"
+        Path(__file__).resolve().parent.parent.parent / "scripts" / "dispatch_factor_screen_397.py"
     )
     text = src_path.read_text(encoding="utf-8")
     assert "generate_completions_with_lora" in text, (
-        "run_one_cell.py must call generate_completions_with_lora (Round 6)"
+        "dispatch_factor_screen_397.py must call generate_completions_with_lora "
+        "(Round 6 + Round 11 lift)"
     )
     # The old pattern should be gone.
     assert "EvalConfig(" not in text, (
-        "run_one_cell.py must NOT construct EvalConfig (Round 6 dropped the "
-        "merged-dir + generate_completions path)"
+        "dispatch_factor_screen_397.py must NOT construct EvalConfig (Round 6 "
+        "dropped the merged-dir + generate_completions path)"
     )
     assert "outcome.merged_path" not in text, (
-        "run_one_cell.py must NOT reference outcome.merged_path "
+        "dispatch_factor_screen_397.py must NOT reference outcome.merged_path "
         "(Round 6 removed the field from TrainOutcome)"
     )
 
 
 def test_dispatcher_smoke_path_uses_generate_completions_with_lora() -> None:
-    """Same static-import check on scripts/dispatch_factor_screen_397.py."""
+    """Same static-import check on the dispatcher's smoke path (unchanged
+    between Round 6 and Round 11; the smoke phase has always lived
+    in-process in the dispatcher).
+    """
     src_path = (
         Path(__file__).resolve().parent.parent.parent / "scripts" / "dispatch_factor_screen_397.py"
     )

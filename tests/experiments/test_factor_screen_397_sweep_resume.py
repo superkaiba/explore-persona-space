@@ -67,8 +67,7 @@ def _build_args_for_resume(
         smoke_seed=42,
         sources="librarian",
         seeds="42",
-        num_gpus=2,
-        max_concurrent_train=2,
+        # Round 11 removed num_gpus + max_concurrent_train (in-process serial).
         marker_token="※",
         save_every_n_steps=25,
         pos_per_source=400,
@@ -100,16 +99,14 @@ def _write_metrics_json(slab_root: Path, cell_key: str, source: str, seed: int) 
     (cell_dir / "metrics.json").write_text(json.dumps(payload), encoding="utf-8")
 
 
-class _FakeFinishedPopen:
-    def __init__(self, cell_key: str, source: str, seed: int, rc: int = 0):
-        self._cell_key = cell_key
-        self._source = source
-        self._seed = seed
-        self.pid = 99999
-        self._rc = rc
+def _fake_inprocess_rc0(**kwargs) -> int:
+    """Stub for ``_run_one_cell_inprocess`` that immediately returns rc=0.
 
-    def poll(self):
-        return self._rc
+    Round 11 replaced the subprocess wrapper (which used a ``_FakeFinishedPopen``
+    polling protocol) with a direct in-process call. The stub now returns
+    an int directly — no polling, no GPU-id arg, no Popen attributes.
+    """
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -336,11 +333,11 @@ def test_dispatcher_no_resume_flag_runs_all_cells(monkeypatch) -> None:
 
         launch_calls: list[tuple] = []
 
-        def _fake_launch(**kw):
+        def _fake_inprocess(**kw):
             launch_calls.append((kw["cell"].key, kw["source"], kw["seed"]))
-            return _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0)
+            return 0
 
-        monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
@@ -369,11 +366,11 @@ def test_dispatcher_resume_local_mode_skips_complete_cells(monkeypatch) -> None:
 
         launch_calls: list[tuple] = []
 
-        def _fake_launch(**kw):
+        def _fake_inprocess(**kw):
             launch_calls.append((kw["cell"].key, kw["source"], kw["seed"]))
-            return _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0)
+            return 0
 
-        monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
         # Round 9 — dispatcher writes SWEEP_RESUME.json (NOT marker post).
         # No stub needed; the file lands under slab_root and is harmless.
         repo_root = Path(__file__).resolve().parent.parent.parent
@@ -401,11 +398,7 @@ def test_dispatcher_writes_sweep_resume_verdict_file_when_skipping(monkeypatch) 
         args = _build_args_for_resume(slab, no_resume=False, resume_source="local")
         cells = [Cell.from_key("00000"), Cell.from_key("00001")]
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: cells)
-        monkeypatch.setattr(
-            _dispatch,
-            "_launch_cell_subprocess",
-            lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
-        )
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess_rc0)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
@@ -442,11 +435,7 @@ def test_dispatcher_no_resume_skips_sweep_resume_file(monkeypatch) -> None:
         args = _build_args_for_resume(slab, no_resume=True)
         cells = [Cell.from_key("00000")]
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: cells)
-        monkeypatch.setattr(
-            _dispatch,
-            "_launch_cell_subprocess",
-            lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
-        )
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess_rc0)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
@@ -476,11 +465,7 @@ def test_dispatcher_resume_with_no_skips_does_not_emit_file(monkeypatch) -> None
         args = _build_args_for_resume(slab, no_resume=False, resume_source="local")
         cells = [Cell.from_key("00000")]
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: cells)
-        monkeypatch.setattr(
-            _dispatch,
-            "_launch_cell_subprocess",
-            lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
-        )
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess_rc0)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
@@ -514,14 +499,12 @@ def test_dispatcher_inconsistent_state_raises_before_launch(monkeypatch) -> None
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: cells)
 
         launch_calls: list = []
-        monkeypatch.setattr(
-            _dispatch,
-            "_launch_cell_subprocess",
-            lambda **kw: (
-                launch_calls.append(1)
-                or _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0)
-            ),
-        )
+
+        def _fake_inprocess(**kw):
+            launch_calls.append(1)
+            return 0
+
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         with pytest.raises(ValueError, match="LOUD-FAIL"):

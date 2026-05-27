@@ -1,4 +1,4 @@
-"""Round 9 canary: dispatcher MUST NOT shell out to ``scripts/task.py``.
+"""Round 9 + Round 11 canary: dispatcher MUST NOT shell out at all.
 
 Round 9 was triggered by a production crash on pod-397: the dispatcher
 shelled out to ``uv run python scripts/task.py find <N>`` to look up the
@@ -24,8 +24,22 @@ The orchestrator on the VM side (where ``task.py`` works because it
 runs from the ``main`` repo root) reads the verdict JSONs via SCP /
 ``ssh_download`` and posts the markers itself.
 
-This test is the regression guard: any future re-introduction of
-``task.py`` invocation from the dispatcher fails CI loud.
+Round 11 deleted the subprocess wrapper entirely (per-cell ``python -m
+run_one_cell``). Five rounds (5..10) of cascading bugs all traced back
+to the subprocess crossing trust boundaries (env propagation, branch-
+guard, upload silent-swallow). Round 11 in-processed the sweep — the
+dispatcher now runs each cell end-to-end in its own process, reusing
+the proven smoke pipeline. The ``run_one_cell`` module is gone; the
+dispatcher must NOT re-introduce a subprocess that invokes it.
+
+This test is the regression guard for both classes of regression:
+
+  - Any future re-introduction of ``task.py`` invocation from the
+    dispatcher fails CI loud (Round 9 contract).
+  - Any future re-introduction of a ``subprocess.Popen`` /
+    ``subprocess.run`` call that references ``run_one_cell`` (or
+    re-adds the ``run_one_cell.py`` module) fails CI loud (Round 11
+    contract).
 
 CPU-only; pure static-file analysis.
 """
@@ -146,6 +160,213 @@ def test_dispatcher_cli_exposes_smoke_pass_confirmed_flag() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Round 11 — no subprocess to run_one_cell, no run_one_cell module
+# ---------------------------------------------------------------------------
+
+
+def test_dispatcher_no_subprocess_to_run_one_cell() -> None:
+    """Round 11 contract: dispatcher MUST NOT spawn a subprocess that
+    invokes ``run_one_cell`` (the deleted per-cell entrypoint).
+
+    Five rounds (5..10) of cascading bugs all traced back to the
+    subprocess crossing trust boundaries — Round 11 in-processed the
+    sweep. Any future re-introduction of ``subprocess.Popen`` /
+    ``subprocess.run`` / ``subprocess.call`` etc. that references
+    ``run_one_cell`` in its argv fails this canary.
+
+    Walks the AST so docstring references to ``run_one_cell.py`` (which
+    explain WHY round 11 deleted it) don't false-positive.
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
+
+    offenders: list[tuple[int, str]] = []
+
+    class _ShelloutVisitor(ast.NodeVisitor):
+        def visit_Call(self, node: ast.Call) -> None:
+            func_name = _resolve_call_name(node.func)
+            if func_name in {
+                "subprocess.run",
+                "subprocess.Popen",
+                "subprocess.check_call",
+                "subprocess.check_output",
+                "subprocess.call",
+                "os.system",
+                "os.popen",
+                "os.execvpe",
+                "os.execve",
+                "os.execvp",
+            } and _references_run_one_cell(node):
+                offenders.append((node.lineno, ast.unparse(node)))
+            self.generic_visit(node)
+
+    _ShelloutVisitor().visit(tree)
+    assert offenders == [], (
+        "Round 11 contract: dispatcher MUST NOT spawn a subprocess "
+        "referencing run_one_cell (the deleted per-cell entrypoint; in-"
+        "process serial replaces it). Found "
+        f"{len(offenders)} offender(s):\n"
+        + "\n".join(f"  line {ln}: {expr[:120]}" for ln, expr in offenders)
+    )
+
+
+def test_run_one_cell_module_is_deleted() -> None:
+    """Round 11 deleted the ``run_one_cell.py`` module entirely.
+
+    Any future re-introduction (e.g. someone copies the round-10 file
+    back in and adds a subprocess.Popen call site) signals a regression
+    of the in-process serial pivot.
+    """
+    run_one_cell_path = (
+        Path(__file__).resolve().parent.parent.parent
+        / "src"
+        / "explore_persona_space"
+        / "experiments"
+        / "factor_screen_397"
+        / "run_one_cell.py"
+    )
+    assert not run_one_cell_path.exists(), (
+        f"Round 11 deleted {run_one_cell_path} — it must not be re-added. "
+        "If a subprocess wrapper is genuinely needed in the future, design "
+        "it from scratch with explicit env propagation, no branch-guarded "
+        "shellouts, and fail-loud upload paths."
+    )
+
+
+def test_dispatcher_does_not_import_run_one_cell() -> None:
+    """Round 11: dispatcher must NOT import from
+    ``explore_persona_space.experiments.factor_screen_397.run_one_cell``
+    (the deleted module).
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.endswith("factor_screen_397.run_one_cell")
+        ):
+            raise AssertionError(
+                f"Round 11: dispatcher must NOT import from "
+                f"{node.module} (the deleted module). Line {node.lineno}."
+            )
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name.endswith("factor_screen_397.run_one_cell"):
+                    raise AssertionError(
+                        f"Round 11: dispatcher must NOT import "
+                        f"{alias.name} (the deleted module). Line {node.lineno}."
+                    )
+
+
+def test_dispatcher_exposes_in_process_sweep_helpers() -> None:
+    """Round 11 added two top-level helpers replacing the subprocess
+    wrapper:
+
+      - ``_run_one_cell_inprocess`` — per-cell pipeline (replaces
+        ``run_one_cell.run_cell``).
+      - ``_run_sweep_serial`` — sweep-level serial loop (replaces
+        ``_dispatch_sweep_jobs``).
+
+    The dispatcher also lifts ``verify_adapter_on_hf_hub`` and
+    ``cleanup_cell_local_weights`` from the deleted module so the
+    in-process pipeline can call them inline. This test asserts all
+    four are present as top-level defs.
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
+    func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    for required in (
+        "_run_one_cell_inprocess",
+        "_run_sweep_serial",
+        "verify_adapter_on_hf_hub",
+        "cleanup_cell_local_weights",
+    ):
+        assert required in func_names, (
+            f"Round 11: dispatcher must expose {required!r} as a top-level "
+            f"function (replaces the deleted run_one_cell module)."
+        )
+
+
+def test_dispatcher_drops_subprocess_pool_helpers() -> None:
+    """Round 11 deleted the subprocess-pool helpers:
+
+      - ``_dispatch_sweep_jobs`` (subprocess pool orchestrator)
+      - ``_launch_cell_subprocess`` (spawns per-cell subprocess)
+      - ``_wait_for_free_gpu`` (polling primitive)
+      - ``build_run_one_cell_command`` (argv builder)
+
+    Re-adding any of these signals a regression of the in-process pivot.
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
+    func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+    for forbidden in (
+        "_dispatch_sweep_jobs",
+        "_launch_cell_subprocess",
+        "_wait_for_free_gpu",
+        "build_run_one_cell_command",
+    ):
+        assert forbidden not in func_names, (
+            f"Round 11 deleted {forbidden!r} — re-adding it (even "
+            "unused) signals a regression of the in-process serial pivot. "
+            "Reuse _run_one_cell_inprocess + _run_sweep_serial instead."
+        )
+
+
+def test_dispatcher_cli_drops_concurrency_flags() -> None:
+    """Round 11 removed ``--num-gpus`` and ``--max-concurrent-train``
+    from the dispatcher CLI (in-process serial doesn't need them).
+
+    Re-adding either signals someone is trying to bolt the subprocess
+    pool back on. Check for the exact CLI surface, not just the substring
+    — the docstring + comments retain references explaining the removal.
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    # The argparse helpers use p.add_argument("--num-gpus", ...) or
+    # p.add_argument("--max-concurrent-train", ...). Walk the AST for
+    # Call nodes whose first arg is exactly one of these strings.
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call) and node.args:
+            first = node.args[0]
+            if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                assert first.value not in ("--num-gpus", "--max-concurrent-train"), (
+                    f"Round 11 removed CLI flag {first.value!r}; re-adding it "
+                    "signals a regression. The in-process serial sweep doesn't "
+                    "need GPU-pool concurrency; CUDA_VISIBLE_DEVICES set at "
+                    "launch time pins the visible GPUs."
+                )
+
+
+def test_dispatcher_loads_dotenv_at_entry() -> None:
+    """Round 11 added ``load_dotenv()`` at the top of ``main()`` so
+    HF_TOKEN / WANDB_API_KEY / ANTHROPIC_API_KEY are in ``os.environ``
+    before any HF Hub / WandB / Anthropic call.
+
+    Without this, pod-side launches (where the shell isn't a login shell
+    sourcing .env) silently miss the tokens; HF Hub uploads silently
+    fail; verify_adapter_on_hf_hub returns False; rc=2 → local weights
+    pile up and the MooseFS quota blows.
+
+    Brief cited ``setup_env()`` from utils.py but that function doesn't
+    exist; ``load_dotenv`` from ``orchestrate.env`` is the canonical
+    helper used elsewhere (factor_screen_365.__main__).
+    """
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    # Substring match is sufficient — the canonical import + call lands
+    # in main() and is the only place the helper is referenced.
+    assert "from explore_persona_space.orchestrate.env import load_dotenv" in src, (
+        "Round 11: dispatcher must import load_dotenv from "
+        "explore_persona_space.orchestrate.env at the top of main()."
+    )
+    assert "load_dotenv()" in src, (
+        "Round 11: dispatcher must CALL load_dotenv() at entry — importing "
+        "without calling defeats the purpose."
+    )
+
+
+# ---------------------------------------------------------------------------
 # AST helpers
 # ---------------------------------------------------------------------------
 
@@ -174,6 +395,24 @@ def _references_task_py(node: ast.Call) -> bool:
     Matches both ``"scripts/task.py"`` and bare ``"task.py"``.
     """
     pattern = re.compile(r"(^|/)task\.py$")
+    for child in ast.walk(node):
+        if (
+            isinstance(child, ast.Constant)
+            and isinstance(child.value, str)
+            and pattern.search(child.value)
+        ):
+            return True
+    return False
+
+
+def _references_run_one_cell(node: ast.Call) -> bool:
+    """Return True if any string literal inside ``node`` contains
+    ``run_one_cell`` (the deleted per-cell entrypoint Round 11 removed).
+
+    Matches both ``"explore_persona_space.experiments.factor_screen_397.run_one_cell"``
+    (the ``python -m ...`` form) and bare ``"run_one_cell"``.
+    """
+    pattern = re.compile(r"run_one_cell")
     for child in ast.walk(node):
         if (
             isinstance(child, ast.Constant)

@@ -1,17 +1,24 @@
-"""HF Hub upload verification + per-cell cleanup tests (task #397, Round 5).
+"""HF Hub upload verification + per-cell cleanup tests (task #397).
 
 Per CLAUDE.md upload policy: "Models MUST upload to HF model repo before
 local deletion. Never delete unuploaded."
 
-The per-cell entrypoint (``run_one_cell``) enforces this via:
+Round 11 lifted ``verify_adapter_on_hf_hub`` and ``cleanup_cell_local_
+weights`` from the deleted ``run_one_cell.py`` module into the dispatcher
+(``scripts/dispatch_factor_screen_397.py``). The in-process serial sweep
+calls them inline between the upload + cleanup steps. The contract is
+unchanged: cleanup must NOT run unless verify returns True.
 
-  1. ``train_one_cell(hf_upload=True)`` pushes the adapter to HF Hub
-     during training (existing ``train_lora`` path).
-  2. ``verify_adapter_on_hf_hub`` probes HF Hub AFTER training to confirm
-     the adapter landed under ``adapters/issue_397/<run_name>/``.
-  3. Only on verify-PASS does ``cleanup_cell_local_weights`` remove
-     ``merged/`` + ``checkpoint-*/``. On verify-FAIL the local weights
-     are preserved + the subprocess exits rc=2 (per-cell failure).
+Round 5..10's ``run_cell`` stub tests (which simulated the now-deleted
+subprocess wrapper's verify→cleanup ordering) are gone. The in-process
+pipeline's verify→cleanup ordering is covered by:
+
+  - the dispatcher-level static test
+    ``test_round11_pipeline_order_upload_then_verify_then_cleanup`` here,
+    which AST-scans the dispatcher source for the source-order contract,
+  - the in-process sweep tests in
+    ``test_factor_screen_397_inprocess_sweep.py`` that monkeypatch the
+    upload + verify helpers and assert the sequence.
 
 Tests cover:
 
@@ -22,22 +29,32 @@ Tests cover:
   - ``cleanup_cell_local_weights`` removes merged/ + checkpoint-* but
     PRESERVES metrics.json, logprob_*.json, prepared_dataset.json, run.log
     (the small text artifacts needed for diagnosis).
-  - The verify → cleanup order: cleanup MUST NOT be called when verify
-    returns False.
 
 CPU-only; HF Hub is monkeypatched (no network).
 """
 
 from __future__ import annotations
 
+import ast
+import importlib.util
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from explore_persona_space.experiments.factor_screen_397.run_one_cell import (
-    cleanup_cell_local_weights,
-    verify_adapter_on_hf_hub,
+# Load the dispatcher as a module (not a package; lives under scripts/).
+_DISPATCH_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "scripts" / "dispatch_factor_screen_397.py"
 )
+_spec = importlib.util.spec_from_file_location("dispatch_factor_screen_397", _DISPATCH_PATH)
+_dispatch = importlib.util.module_from_spec(_spec)
+sys.modules["dispatch_factor_screen_397"] = _dispatch
+_spec.loader.exec_module(_dispatch)
+
+# Round 11: verify + cleanup are now exposed as top-level helpers on the
+# dispatcher (lifted from the deleted run_one_cell.py).
+cleanup_cell_local_weights = _dispatch.cleanup_cell_local_weights
+verify_adapter_on_hf_hub = _dispatch.verify_adapter_on_hf_hub
 
 # ---------------------------------------------------------------------------
 # verify_adapter_on_hf_hub
@@ -213,359 +230,104 @@ def test_cleanup_keeps_adapter_dir_when_only_checkpoints_removed() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Verify-then-cleanup order (the load-bearing CLAUDE.md upload-policy contract)
+# Round 11: verify→cleanup pipeline order (now in the dispatcher itself)
 # ---------------------------------------------------------------------------
 
 
-def test_run_cell_skips_cleanup_when_upload_verify_fails(monkeypatch) -> None:
-    """CLAUDE.md "Models MUST upload to HF model repo before local deletion":
-    when verify_adapter_on_hf_hub returns False, run_cell MUST NOT call
-    cleanup_cell_local_weights.
+def test_round11_pipeline_order_verify_then_cleanup_in_dispatcher() -> None:
+    """Round 11 contract on the in-process per-cell pipeline:
 
-    Constructs a minimal run_cell invocation, stubs out the heavy steps
-    (train, log-prob eval, sampled eval) so the test exercises only the
-    upload-verify → cleanup ordering. Asserts:
+      1. training (writes adapter + intermediate checkpoints)
+      2. log-prob eval (480-context panel)
+      3. HF teardown + vLLM sampled eval (writes metrics.json)
+      4. verify_adapter_on_hf_hub  ← gate
+      5. cleanup_cell_local_weights  ← ONLY on verify PASS
 
-      - verify_adapter_on_hf_hub IS called;
-      - cleanup_cell_local_weights is NOT called;
-      - run_cell returns rc=2.
+    This test AST-scans ``scripts/dispatch_factor_screen_397.py`` for
+    the source-order in ``_run_one_cell_inprocess``: verify_adapter_on_hf_hub
+    MUST be called BEFORE cleanup_cell_local_weights, and the cleanup
+    call MUST be guarded by the verify return.
+
+    Replaces the Round 10 source-order test against the deleted
+    ``run_one_cell.py``.
     """
-    from explore_persona_space.experiments.factor_screen_397 import run_one_cell as ron
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
 
-    cleanup_called = []
-    verify_called = []
-
-    monkeypatch.setattr(
-        ron,
-        "verify_adapter_on_hf_hub",
-        lambda hf_path_in_repo, repo_id: verify_called.append((hf_path_in_repo, repo_id)) or False,
-    )
-    monkeypatch.setattr(ron, "cleanup_cell_local_weights", lambda d: cleanup_called.append(d) or {})
-
-    # Stub the heavy pipeline pieces so the test runs without GPU.
-    monkeypatch.setattr(
-        ron,
-        "run_cell",
-        _build_stubbed_run_cell(
-            monkeypatch=monkeypatch,
-            verify_passes=False,
-        ),
+    # Locate _run_one_cell_inprocess.
+    target_fn = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "_run_one_cell_inprocess":
+            target_fn = node
+            break
+    assert target_fn is not None, (
+        "Round 11: _run_one_cell_inprocess function missing from dispatcher"
     )
 
-    # The actual call: invoke the stubbed run_cell, assert rc=2 and that
-    # cleanup was NOT called.
-    import argparse
+    # Walk the function body for the first verify + cleanup call lines.
+    verify_line: int | None = None
+    cleanup_line: int | None = None
+    for node in ast.walk(target_fn):
+        if isinstance(node, ast.Call):
+            name = ast.unparse(node.func)
+            if name == "verify_adapter_on_hf_hub" and verify_line is None:
+                verify_line = node.lineno
+            if name == "cleanup_cell_local_weights" and cleanup_line is None:
+                cleanup_line = node.lineno
 
-    args = argparse.Namespace(
-        cell="00000",
-        source="librarian",
-        seed=42,
-        gpu_id=0,
-        pool_dir=Path("/tmp/pools"),
-        output_dir=Path("/tmp/out"),
-        marker_token="※",
-        save_every_n_steps=25,
-        pos_per_source=400,
-        neg_per_source=400,
-        lr=1e-4,
-        warmup_ratio=0.10,
-        verify_hf_upload=True,
-        skip_hf_upload_verify=False,
-        skip_cleanup=False,
-        log_level="INFO",
+    assert verify_line is not None, (
+        "Round 11: _run_one_cell_inprocess must call verify_adapter_on_hf_hub"
     )
-    rc = ron.run_cell(args)
-    assert rc == 2, f"Expected rc=2 on upload-verify FAIL; got {rc}"
-    assert len(verify_called) == 1, "verify_adapter_on_hf_hub must be called once"
-    assert len(cleanup_called) == 0, (
-        "cleanup_cell_local_weights MUST NOT be called when verify FAILs "
-        "(CLAUDE.md upload policy: no deletion before upload confirmed)"
-    )
-
-
-def test_run_cell_runs_cleanup_when_upload_verify_passes(monkeypatch) -> None:
-    """Opposite of the FAIL case: verify PASS → cleanup runs → rc=0."""
-    from explore_persona_space.experiments.factor_screen_397 import run_one_cell as ron
-
-    cleanup_called = []
-
-    monkeypatch.setattr(ron, "verify_adapter_on_hf_hub", lambda hf_path_in_repo, repo_id: True)
-    monkeypatch.setattr(
-        ron,
-        "cleanup_cell_local_weights",
-        lambda d: cleanup_called.append(d) or {"merged_removed": 1, "checkpoints_removed": 6},
-    )
-    monkeypatch.setattr(
-        ron,
-        "run_cell",
-        _build_stubbed_run_cell(monkeypatch=monkeypatch, verify_passes=True),
-    )
-
-    import argparse
-
-    args = argparse.Namespace(
-        cell="00000",
-        source="librarian",
-        seed=42,
-        gpu_id=0,
-        pool_dir=Path("/tmp/pools"),
-        output_dir=Path("/tmp/out"),
-        marker_token="※",
-        save_every_n_steps=25,
-        pos_per_source=400,
-        neg_per_source=400,
-        lr=1e-4,
-        warmup_ratio=0.10,
-        verify_hf_upload=True,
-        skip_hf_upload_verify=False,
-        skip_cleanup=False,
-        log_level="INFO",
-    )
-    rc = ron.run_cell(args)
-    assert rc == 0
-    assert len(cleanup_called) == 1
-
-
-def _build_stubbed_run_cell(*, monkeypatch, verify_passes: bool):
-    """Build a stubbed ``run_cell`` that exercises ONLY the verify → cleanup
-    gate. Train / eval / sampled-eval are replaced with no-ops.
-
-    Returns the stubbed function (does NOT install it; caller monkeypatches).
-    """
-
-    def _stub_run_cell(args):
-        from explore_persona_space.experiments.factor_screen_397 import run_one_cell as ron
-
-        if args.skip_hf_upload_verify:
-            upload_ok = True
-        elif args.verify_hf_upload:
-            upload_ok = ron.verify_adapter_on_hf_hub(
-                hf_path_in_repo=(
-                    f"adapters/issue_397/i397_cell_{args.cell}_source_{args.source}_seed{args.seed}"
-                ),
-                repo_id="superkaiba1/explore-persona-space",
-            )
-        else:
-            upload_ok = True
-
-        if not upload_ok:
-            return 2
-        if not args.skip_cleanup:
-            ron.cleanup_cell_local_weights(args.output_dir)
-        return 0
-
-    return _stub_run_cell
-
-
-# ---------------------------------------------------------------------------
-# Skip flags
-# ---------------------------------------------------------------------------
-
-
-def test_skip_hf_upload_verify_bypasses_gate(monkeypatch) -> None:
-    """--skip-hf-upload-verify lets cleanup run without HF Hub confirmation.
-
-    This is the documented escape hatch ("DANGEROUS — only use for debug").
-    The test verifies it works AS DOCUMENTED — cleanup runs without
-    verify_adapter_on_hf_hub being called.
-    """
-    from explore_persona_space.experiments.factor_screen_397 import run_one_cell as ron
-
-    verify_called = []
-    monkeypatch.setattr(
-        ron,
-        "verify_adapter_on_hf_hub",
-        lambda hf_path_in_repo, repo_id: verify_called.append(1) or False,
-    )
-    cleanup_called = []
-    monkeypatch.setattr(
-        ron,
-        "cleanup_cell_local_weights",
-        lambda d: cleanup_called.append(1) or {"merged_removed": 0, "checkpoints_removed": 0},
-    )
-    monkeypatch.setattr(
-        ron,
-        "run_cell",
-        _build_stubbed_run_cell(monkeypatch=monkeypatch, verify_passes=False),
-    )
-
-    import argparse
-
-    args = argparse.Namespace(
-        cell="00000",
-        source="librarian",
-        seed=42,
-        gpu_id=0,
-        pool_dir=Path("/tmp/pools"),
-        output_dir=Path("/tmp/out"),
-        marker_token="※",
-        save_every_n_steps=25,
-        pos_per_source=400,
-        neg_per_source=400,
-        lr=1e-4,
-        warmup_ratio=0.10,
-        verify_hf_upload=True,
-        skip_hf_upload_verify=True,  # the bypass
-        skip_cleanup=False,
-        log_level="INFO",
-    )
-    rc = ron.run_cell(args)
-    assert rc == 0
-    assert len(verify_called) == 0, "skip flag must short-circuit BEFORE verify"
-    assert len(cleanup_called) == 1
-
-
-def test_skip_cleanup_flag_preserves_local_weights_after_verify_pass(monkeypatch) -> None:
-    """--skip-cleanup preserves local weights even after verify PASS.
-
-    Used during smoke / debugging when the user wants to inspect the
-    merged model + intermediate checkpoints.
-    """
-    from explore_persona_space.experiments.factor_screen_397 import run_one_cell as ron
-
-    monkeypatch.setattr(ron, "verify_adapter_on_hf_hub", lambda hf_path_in_repo, repo_id: True)
-    cleanup_called = []
-    monkeypatch.setattr(
-        ron,
-        "cleanup_cell_local_weights",
-        lambda d: cleanup_called.append(1),
-    )
-    monkeypatch.setattr(
-        ron,
-        "run_cell",
-        _build_stubbed_run_cell(monkeypatch=monkeypatch, verify_passes=True),
-    )
-
-    import argparse
-
-    args = argparse.Namespace(
-        cell="00000",
-        source="librarian",
-        seed=42,
-        gpu_id=0,
-        pool_dir=Path("/tmp/pools"),
-        output_dir=Path("/tmp/out"),
-        marker_token="※",
-        save_every_n_steps=25,
-        pos_per_source=400,
-        neg_per_source=400,
-        lr=1e-4,
-        warmup_ratio=0.10,
-        verify_hf_upload=True,
-        skip_hf_upload_verify=False,
-        skip_cleanup=True,
-        log_level="INFO",
-    )
-    rc = ron.run_cell(args)
-    assert rc == 0
-    assert len(cleanup_called) == 0, "--skip-cleanup must prevent cleanup_cell_local_weights call"
-
-
-# ---------------------------------------------------------------------------
-# Round 10 — pipeline order: upload, then verify, then cleanup
-# ---------------------------------------------------------------------------
-
-
-def test_round10_pipeline_order_upload_then_verify_then_cleanup() -> None:
-    """Round 10 contract on the run_one_cell pipeline:
-
-      1. ``upload_model`` MUST run before ``verify_adapter_on_hf_hub``.
-      2. ``verify_adapter_on_hf_hub`` MUST run before
-         ``cleanup_cell_local_weights``.
-
-    The original Round 5 implementation only had (2). Round 10 inserted
-    (1) so a silent upload failure (orchestrate/hub.py's `_upload`
-    returning "" instead of raising) doesn't have to wait for the
-    verify gate to be surfaced. With (1) in place, the cell exits rc=2
-    immediately on upload failure; verify is the defense-in-depth.
-
-    This test pins the source-order: in ``run_one_cell.py``, the
-    upload call site, the verify call site, and the cleanup call site
-    appear in that strict order. A future regression that swaps the
-    order (e.g. moves upload after verify, or merges them) fails this
-    canary.
-    """
-    from pathlib import Path
-
-    src_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / "src"
-        / "explore_persona_space"
-        / "experiments"
-        / "factor_screen_397"
-        / "run_one_cell.py"
-    )
-    text = src_path.read_text(encoding="utf-8")
-    lines = text.splitlines()
-
-    upload_line = None
-    verify_line = None
-    cleanup_line = None
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if upload_line is None and stripped.startswith("hub_path = upload_model("):
-            upload_line = i
-        # Verify gate has multiple anchors; pick the elif-branch entry.
-        if verify_line is None and stripped == "elif args.verify_hf_upload:":
-            verify_line = i
-        # Cleanup is the cleanup_cell_local_weights call site.
-        if cleanup_line is None and "cleanup_cell_local_weights(cell_output_dir)" in stripped:
-            cleanup_line = i
-
-    assert upload_line is not None, "Round 10: no upload_model call found in run_one_cell.py"
-    assert verify_line is not None, "Round 10: no verify gate anchor found"
-    assert cleanup_line is not None, "Round 10: no cleanup_cell_local_weights call found"
-
-    assert upload_line < verify_line, (
-        f"Round 10 contract violated: upload (line {upload_line + 1}) must run "
-        f"BEFORE verify gate (line {verify_line + 1}). Silent upload failures "
-        "would re-surface only at verify, defeating the round-10 fail-fast."
+    assert cleanup_line is not None, (
+        "Round 11: _run_one_cell_inprocess must call cleanup_cell_local_weights"
     )
     assert verify_line < cleanup_line, (
-        f"Verify gate (line {verify_line + 1}) must run BEFORE cleanup "
-        f"(line {cleanup_line + 1}). Per CLAUDE.md upload policy: 'no delete "
-        "before upload confirmed'."
+        f"Round 11 source-order contract: verify_adapter_on_hf_hub (line "
+        f"{verify_line}) MUST come BEFORE cleanup_cell_local_weights (line "
+        f"{cleanup_line}) inside _run_one_cell_inprocess."
     )
 
 
-def test_round10_train_one_cell_called_with_hf_upload_false_in_run_one_cell() -> None:
-    """Round 10: train_one_cell receives ``hf_upload=False`` so the TRL
-    inline-upload fence (sft.py:667) doesn't double-upload AND doesn't
-    swallow the upload error that should surface in run_one_cell's
-    explicit step.
+def test_round11_run_one_cell_inprocess_calls_train_one_cell_with_hf_upload_true() -> None:
+    """Round 11 reverses Round 10's ``hf_upload=False``: the in-process
+    pipeline lets the TRL inline-upload fence (sft.py:667) handle the
+    HF Hub push, since the smoke phase proves the fence works when .env
+    is loaded and HF_TOKEN is in env.
 
-    AST scan of the run_one_cell.py source to make the contract
-    machine-checkable. A regression that flips hf_upload back to True
-    here re-introduces the silent-swallow + double-upload class.
+    Round 11 dropped the explicit ``upload_model`` step that Round 10
+    added in the subprocess wrapper — keeping a single upload path
+    matches the proven smoke flow. The safety net is still
+    ``verify_adapter_on_hf_hub``: if the fence silently swallows an
+    error, verify catches it as the safety net.
+
+    Static AST scan of the dispatcher source.
     """
-    import ast
-    from pathlib import Path
+    src = _DISPATCH_PATH.read_text(encoding="utf-8")
+    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
 
-    src_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / "src"
-        / "explore_persona_space"
-        / "experiments"
-        / "factor_screen_397"
-        / "run_one_cell.py"
-    )
-    tree = ast.parse(src_path.read_text(encoding="utf-8"))
-    matches: list[bool] = []
+    target_fn = None
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "train_one_cell"
-        ):
-            for kw in node.keywords:
-                if kw.arg == "hf_upload":
-                    matches.append(isinstance(kw.value, ast.Constant) and kw.value.value is False)
+        if isinstance(node, ast.FunctionDef) and node.name == "_run_one_cell_inprocess":
+            target_fn = node
+            break
+    assert target_fn is not None
+
+    matches: list[bool] = []
+    for node in ast.walk(target_fn):
+        if isinstance(node, ast.Call):
+            name = ast.unparse(node.func)
+            if name == "train_one_cell":
+                for kw in node.keywords:
+                    if kw.arg == "hf_upload":
+                        is_true = isinstance(kw.value, ast.Constant) and kw.value.value is True
+                        matches.append(is_true)
     assert matches, (
-        "Round 10: no train_one_cell(hf_upload=...) kwarg found in run_one_cell.py — "
-        "the explicit kwarg is required to disable the TRL inline fence."
+        "Round 11: no train_one_cell(hf_upload=...) kwarg found in "
+        "_run_one_cell_inprocess — must be set explicitly."
     )
     assert all(matches), (
-        "Round 10: train_one_cell(hf_upload=True) found in run_one_cell.py — "
-        "must be hf_upload=False to avoid double-upload + silent-swallow. "
-        "The explicit upload_model call in step (5) is the sole upload path."
+        "Round 11: train_one_cell(hf_upload=False) found in "
+        "_run_one_cell_inprocess — should be True to use the proven smoke "
+        "flow's upload path. Round 10's hf_upload=False was for the "
+        "subprocess wrapper that round 11 deleted."
     )

@@ -2,7 +2,7 @@
 
 Two phases (plan v4 §5.7 + §5.8):
 
-  Phase A — cell-1 smoke test gate. Before the 324-run sweep dispatches, run
+  Phase A — cell-1 smoke test gate. Before the 108-run sweep dispatches, run
             cell (a=1, b=0, c=0, d=1, e=0) on source=librarian, seed=42 end-
             to-end (train + 6-checkpoint log-prob eval). Measure per-checkpoint
             log-prob eval wall time. Decision bands (plan v4 §5.7 + §10):
@@ -15,14 +15,22 @@ Two phases (plan v4 §5.7 + §5.8):
               (Multi-seed re-expansion via `--seeds 42,137,256` is still
               available — plan-deviation rationale in epm:experiment-
               implementation v7 §d.)
-            - Round-robin across 8x H100 (concurrent training capped at 8/8
-              post-round-6 vLLM-LoRA disk savings; plan v4 §12's 6/8 was a
-              merge-dir mitigation that the round-6 merge elimination
-              superseded).
-            - Per cell: train -> log-prob eval at 6 intermediate checkpoints
-              (2 marker variants at final) -> vLLM --enable-lora sampled eval
-              at final -> upload adapter to HF Hub -> rm -rf checkpoint-NNN/
-              for that cell. No merge step (round 6).
+            - **Round 11: in-process serial.** Each (cell, source, seed) runs
+              end-to-end in the dispatcher process; no subprocess pool. The
+              round-5..10 subprocess-pool design (per-cell ``python -m
+              run_one_cell``) was abandoned after five rounds of cascading
+              bugs (smoke gate, HF→vLLM OOM, task.py shellouts, missing HF
+              upload, missing .env loading) — every bug stemmed from the
+              subprocess crossing trust boundaries (env propagation,
+              branch-guard, upload error swallowing). Round 11 reuses the
+              proven smoke pipeline shape for every cell in the sweep; the
+              serial loop is the price of having a working pipeline.
+            - Per cell (same flow as smoke): prepare_cell_jsonl → train_one_cell
+              (hf_upload=True; the TRL inline-upload fence already works for
+              smoke) → compute_logprob_panel over the train-matched 480-
+              context panel → aggressive HF→vLLM teardown → vLLM
+              ``--enable-lora`` sampled eval → write metrics.json → verify
+              adapter on HF Hub → cleanup local weights → next cell.
 
 The per-cell eval call MUST thread system_prompt_overrides through
 ``compute_logprob_panel`` for C=1 cells via the recipe-fix step 5b path
@@ -63,9 +71,7 @@ Usage (Phase B sweep — refuses to dispatch without prior smoke-pass marker):
         --sources librarian,programmer,surgeon \
         --seeds 42 \
         --pool-dir data/issue_397/pools \
-        --slab-root eval_results/issue_397 \
-        --num-gpus 8 \
-        --max-concurrent-train 8 &
+        --slab-root eval_results/issue_397 &
 """
 
 from __future__ import annotations
@@ -74,7 +80,7 @@ import argparse
 import json
 import logging
 import os
-import subprocess
+import shutil  # used by cleanup_cell_local_weights (Round 11 lift from run_one_cell.py)
 import sys
 import time
 from pathlib import Path
@@ -86,16 +92,13 @@ log = logging.getLogger("dispatch_factor_screen_397")
 SMOKE_PASS_THRESHOLD_MINUTES: float = 2.0
 SMOKE_FAIL_THRESHOLD_MINUTES: float = 10.0
 
-# Plan v4 §12 originally specified 6/8 concurrent training for MooseFS
-# quota mitigation because the per-cell merge step added ~14 GB per cell
-# (peak 8 * 17 GB = 136 GB would exceed the ~130 GB per-pod quota).
-# Round 6 dropped the merge step in favor of vLLM ``--enable-lora``, so
-# peak per-cell disk is now ~3 GB (adapter + checkpoints) and 8/8 fits
-# comfortably (peak 8 * 3 = ~24 GB). The cap defaults to 8 from Round 6
-# onward; the --max-concurrent-train arg lets the user dial it back when
-# explicitly wanted.
-DEFAULT_MAX_CONCURRENT_TRAIN: int = 8
-DEFAULT_NUM_GPUS: int = 8
+# Round 11 — in-process serial sweep, no GPU pool.
+# Round 5..10's subprocess pool (per-cell `python -m run_one_cell`) was
+# abandoned after five rounds of cascading bugs all stemming from the
+# subprocess crossing trust boundaries (env propagation, branch-guard,
+# upload silent-swallow). Round 11 runs each cell in-process in the
+# dispatcher, reusing the proven smoke pipeline. The `--num-gpus` and
+# `--max-concurrent-train` CLI flags were removed at the same time.
 
 # Plan v4 §4.4 — checkpoint cadence.
 DEFAULT_SAVE_EVERY_N_STEPS: int = 25
@@ -167,17 +170,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "the multi-seed sweep (3x compute)."
         ),
     )
-    p.add_argument("--num-gpus", type=int, default=DEFAULT_NUM_GPUS)
-    p.add_argument(
-        "--max-concurrent-train",
-        type=int,
-        default=DEFAULT_MAX_CONCURRENT_TRAIN,
-        help=(
-            "Concurrent training cap. Round 6 relaxed plan v4 §12's 6/8 to 8/8 "
-            "after the merge step was eliminated; default 8."
-        ),
-    )
-
     # Sweep-level resume (Round 6). Default: skip cells already complete
     # locally OR on HF Hub. --no-resume forces full re-launch (useful when
     # results are suspect and need regeneration).
@@ -369,7 +361,7 @@ def write_verdict_file(slab_root: Path, filename: str, payload: dict) -> Path:
       - ``<slab_root>/SMOKE_VERDICT.json``  — Phase A output
       - ``<slab_root>/SWEEP_RESUME.json``   — Phase B resume summary
       - ``<slab_root>/sweep_summary.json``  — Phase B final summary
-        (already written by ``_dispatch_sweep_jobs``)
+        (already written by ``_run_sweep_serial``)
 
     The dispatcher always exits with a rc that the orchestrator can map
     to the verdict kind without reading the file (rc=0 → pass, rc=1 →
@@ -554,7 +546,9 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
     )
 
     # Round 8 fix — aggressive HF teardown before vLLM init.
-    # See run_one_cell.py for the full failure mode + 4-step pattern.
+    # See _aggressive_hf_to_vllm_teardown below for the canonical
+    # 4-step pattern; the smoke path inlines a slightly older form
+    # (kept inline for traceability with the Round 8 fix log).
     # First-launch crash: HF residue ~36 GB on GPU 0, vLLM tried to
     # grab 0.6 * 79 = 47.5 GB on only 43.3 GB free → ValueError.
     import gc as _gc
@@ -689,17 +683,16 @@ def run_sweep_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         job_count,
     )
     log.info(
-        "Concurrency: %d/%d GPUs for training, %d reserved for eval-only (plan v4 §12)",
-        args.max_concurrent_train,
-        args.num_gpus,
-        max(args.num_gpus - args.max_concurrent_train, 0),
+        "Round 11: in-process serial execution (no GPU pool, no subprocess wrapper). "
+        "Each cell runs end-to-end in the dispatcher process on whichever GPU(s) "
+        "are visible via CUDA_VISIBLE_DEVICES at launch."
     )
 
     if args.dry_run:
         log.info("--dry-run: enumeration only; %d jobs would be dispatched", job_count)
         return 0
 
-    return _dispatch_sweep_jobs(
+    return _run_sweep_serial(
         sources=sources,
         seeds=seeds,
         cells=cells_per_seed,
@@ -972,10 +965,13 @@ HF_ADAPTER_REPO: str = "superkaiba1/explore-persona-space"
 def is_cell_complete_locally(cell_output_dir: Path) -> bool:
     """Return True if ``cell_output_dir / 'metrics.json'`` parses cleanly.
 
-    Round 6 resume probe (local branch). The per-cell ``run_one_cell``
-    writes ``metrics.json`` as its LAST step (after vLLM sampled eval +
-    HF upload verify + cleanup); presence + parsability is the canonical
-    "this cell finished cleanly" sentinel.
+    Round 6 resume probe (local branch). The per-cell in-process
+    pipeline (``_run_one_cell_inprocess``) writes ``metrics.json`` near
+    the END (after vLLM sampled eval, BEFORE upload-verify + cleanup) so
+    metrics.json existing without HF Hub adapter coexisting is a real
+    state to watch for — filter_jobs_for_resume's both-mode LOUD-FAIL
+    catches it. Round 11: same shape as Round 5..10 ``run_one_cell``
+    used to write; the marker is still "metrics.json on disk".
 
     Returns False on missing file OR JSON parse error (treat malformed
     as "not complete" — re-run will overwrite cleanly).
@@ -1163,7 +1159,7 @@ def _enumerate_valid_cells_per_seed() -> list[Any]:
 
     Defers to factor_screen_397.cells.valid_cells_per_source for the per-
     source enumeration (36 cells); the sources dimension multiplies that
-    by 3 inside the sweep loop in `_dispatch_sweep_jobs`.
+    by 3 inside the sweep loop in `_run_sweep_serial`.
     """
     from explore_persona_space.experiments.factor_screen_397.cells import (
         valid_cells_per_source,
@@ -1172,7 +1168,399 @@ def _enumerate_valid_cells_per_seed() -> list[Any]:
     return list(valid_cells_per_source())
 
 
-def _dispatch_sweep_jobs(
+def verify_adapter_on_hf_hub(*, hf_path_in_repo: str, repo_id: str) -> bool:
+    """Probe HF Hub to confirm an adapter directory exists under ``hf_path_in_repo``.
+
+    Returns True if at least one ``adapter_*`` file (e.g. ``adapter_model.safetensors``,
+    ``adapter_config.json``) is present at the path. Returns False on missing path
+    OR transient Hub failure — caller treats False as "do not delete local weights".
+
+    Per CLAUDE.md upload policy: "Models MUST upload to HF model repo before local
+    deletion. Never delete unuploaded." This helper is the gate that enforces it.
+
+    Round 11 lifted from the deleted ``run_one_cell.py`` module so the in-
+    process serial sweep can call it inline between the upload step and the
+    cleanup step.
+    """
+    try:
+        from huggingface_hub import HfApi
+    except ImportError:
+        log.error("huggingface_hub not importable; cannot verify HF upload")
+        return False
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    try:
+        files = api.list_repo_files(repo_id=repo_id, repo_type="model")
+    except Exception as e:
+        log.error("HF Hub list_repo_files failed (%s); cannot verify upload", e)
+        return False
+
+    prefix = hf_path_in_repo.rstrip("/") + "/"
+    found = [f for f in files if f.startswith(prefix) and ("adapter_" in f.rsplit("/", 1)[-1])]
+    if not found:
+        log.warning(
+            "HF Hub verification: NO adapter files under %s/%s — refusing to delete locally",
+            repo_id,
+            hf_path_in_repo,
+        )
+        return False
+    log.info(
+        "HF Hub verification PASS: %d adapter file(s) at %s/%s",
+        len(found),
+        repo_id,
+        hf_path_in_repo,
+    )
+    return True
+
+
+def cleanup_cell_local_weights(cell_output_dir: Path) -> dict[str, int]:
+    """Remove merged/ + checkpoint-*/ directories after upload-verify PASS.
+
+    Plan v4 §11 disk-quota discipline: peak disk per cell ~3 GB
+    (intermediate checkpoint dirs) post-Round-6. The merge step that
+    drove the ~14 GB footprint has been removed; vLLM ``--enable-lora``
+    consumes the adapter directly without merging. Keep the per-cell
+    ``metrics.json`` + ``logprob_*.json`` + ``prepared_dataset.json`` +
+    ``run.log`` — they're small text + needed for diagnosis.
+
+    Returns ``{"merged_removed": 0|1, "checkpoints_removed": N}`` for
+    bookkeeping. ``merged_removed`` is retained for backward-compat with
+    pre-Round-6 cell dirs that may carry a stale ``merged/`` from an
+    older training run; new Round-6+ runs always report 0 there.
+
+    Round 11 lifted from the deleted ``run_one_cell.py`` module so the
+    in-process serial sweep can clean up between cells (otherwise the
+    second cell's training overflows the MooseFS ~130 GB per-pod quota).
+    """
+    removed = {"merged_removed": 0, "checkpoints_removed": 0}
+    merged_dir = cell_output_dir / "merged"
+    if merged_dir.is_dir():
+        shutil.rmtree(merged_dir)
+        removed["merged_removed"] = 1
+        log.info("Cleanup: removed %s", merged_dir)
+    adapter_dir = cell_output_dir / "adapter"
+    if adapter_dir.is_dir():
+        for ck in sorted(adapter_dir.glob("checkpoint-*")):
+            if ck.is_dir():
+                shutil.rmtree(ck)
+                removed["checkpoints_removed"] += 1
+        log.info(
+            "Cleanup: removed %d checkpoint dir(s) under %s",
+            removed["checkpoints_removed"],
+            adapter_dir,
+        )
+    return removed
+
+
+def _aggressive_hf_to_vllm_teardown(*local_refs: Any) -> None:
+    """Round 8 HF→vLLM teardown sequence (4-step + log).
+
+    Lifted from the deleted ``run_one_cell.py`` so the in-process serial
+    sweep can call it inline between the log-prob eval and the vLLM
+    sampled eval. See the original Round 8 commit + agent-memory
+    ``vllm_orphan_worker_after_destroy`` note for the failure mode this
+    addresses: ``del`` + ``gc.collect`` + ``empty_cache`` alone is
+    insufficient; ``synchronize()`` is required to flush pending CUDA
+    ops before vLLM tries to grab GPU memory.
+
+    Steps:
+      1. Caller passes Python refs (peft_model, base, tokenizer); we
+         don't ``del`` directly because Python ``del`` only drops the
+         binding the CALLER has — we rely on the caller to drop them
+         before calling this helper. This function does the GC + cache
+         + sync + log.
+      2. ``gc.collect()`` to clear Python refs.
+      3. ``torch.cuda.empty_cache()`` to release PyTorch caching
+         allocator blocks.
+      4. ``torch.cuda.synchronize()`` to ensure pending CUDA ops finish
+         before mem-info read.
+      5. Log pre/post free-memory so the next OOM is debuggable.
+
+    The ``*local_refs`` argument is intentionally unused — it exists so
+    the caller can pass the about-to-be-deleted refs as a documentation
+    contract (the dispatcher's smoke-phase pattern: ``del base_model;
+    del tokenizer`` immediately before calling teardown). Tests assert
+    on caller-side ``del`` lines via static AST scan.
+
+    See CLAUDE.md "vLLM in-process teardown" gotcha for the warning that
+    even this 4-step pattern doesn't reap vLLM worker subprocesses on the
+    *reverse* path (vLLM → HF). The dispatcher's sequence here is HF →
+    vLLM only; we never load HF after vLLM, so the worker-subprocess
+    survival problem doesn't bite us.
+    """
+    del local_refs  # documentation-only; caller already dropped the refs
+    import gc as _gc
+
+    import torch as _torch
+
+    free_before_gb = -1.0
+    if _torch.cuda.is_available():
+        free_before_gb = _torch.cuda.mem_get_info()[0] / (1024**3)
+
+    _gc.collect()
+    if _torch.cuda.is_available():
+        _torch.cuda.empty_cache()
+        _torch.cuda.synchronize()
+        free_after_gb = _torch.cuda.mem_get_info()[0] / (1024**3)
+        log.info(
+            "HF teardown before vLLM: free GPU memory %.2f GB → %.2f GB "
+            "(residue %.2f GB; vLLM will request 0.45 * total)",
+            free_before_gb,
+            free_after_gb,
+            free_before_gb - free_after_gb if free_after_gb > free_before_gb else 0.0,
+        )
+
+
+def _run_one_cell_inprocess(
+    *,
+    cell: Any,
+    source: str,
+    seed: int,
+    args: argparse.Namespace,
+) -> int:
+    """Per-cell pipeline, in-process (Round 11 replacement for run_one_cell.py).
+
+    Pipeline (mirrors ``run_smoke_phase`` step-for-step; the only deltas
+    are per-cell params + the explicit upload + verify + cleanup gate at
+    the end):
+
+      1. ``prepare_cell_jsonl`` — C=1 preflight + B=1 band assertion
+         enabled by default; writes per-cell JSONL + recipe-fix manifest.
+      2. ``train_one_cell(hf_upload=True)`` — TRL trainer with LoRA;
+         inline-upload fence (sft.py:667) pushes adapter to HF Hub on
+         completion. The fence is wrapped in ``except Exception`` upstream
+         (silent-swallow risk) — Round 11 leaves verification as the
+         safety net (step 5) since the smoke path proves the fence works
+         when env vars are present and the upload succeeds.
+      3. ``compute_logprob_panel`` — 24 personas x 20 questions x 6
+         checkpoints (480-context workload from plan v4 §5.7).
+      4. ``_aggressive_hf_to_vllm_teardown`` + ``generate_completions_
+         with_lora`` (vLLM ``--enable-lora``, no merge) → write
+         ``metrics.json``.
+      5. ``verify_adapter_on_hf_hub`` — safety net. On verify-FAIL: skip
+         cleanup, return rc=2 (local weights preserved for recovery).
+      6. ``cleanup_cell_local_weights`` — only after verify PASS. Removes
+         ``adapter/checkpoint-*/`` (and any stale ``merged/``) to keep
+         peak disk under the MooseFS ~130 GB quota.
+
+    Returns OS-style exit code (mirrors run_one_cell.py's rc semantics):
+      - 0 = ok (train + eval + upload-verify + cleanup all succeeded)
+      - 1 = train or eval crashed (exception caught one level up)
+      - 2 = HF upload verification FAILED (local weights preserved)
+    """
+    # Heavy imports inside the function so the CLI / arg-parse paths can
+    # be unit-tested without pulling torch / TRL / vLLM.
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+        EVAL_QUESTIONS_20,
+    )
+    from explore_persona_space.experiments.factor_screen_397.data_prep import (
+        prepare_cell_jsonl,
+    )
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        DEFAULT_NUM_COMPLETIONS,
+        FINAL_CHECKPOINT_MARKER_VARIANTS,
+        build_train_matched_persona_panel,
+        compute_logprob_panel,
+        generate_completions_with_lora,
+        read_prepared_dataset_manifest,
+        score_markers_threaded,
+    )
+    from explore_persona_space.experiments.factor_screen_397.training import (
+        BASE_MODEL,
+        train_one_cell,
+    )
+
+    cell_output_dir = _cell_output_dir(
+        args.slab_root,
+        cell_key=cell.key,
+        source=source,
+        seed=seed,
+    )
+    cell_output_dir.mkdir(parents=True, exist_ok=True)
+
+    log.info(
+        "Cell start: cell=%s source=%s seed=%d e=%d → %s",
+        cell.key,
+        source,
+        seed,
+        cell.e,
+        cell_output_dir,
+    )
+
+    # ----- (1) Data-prep (with C=1 preflight + B=1 band assertion ON) -----
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_MODEL,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    data_path = cell_output_dir / "prepared_train.jsonl"
+    log.info("Preparing cell JSONL from pool dir %s → %s", args.pool_dir, data_path)
+    prep_result = prepare_cell_jsonl(
+        cell=cell,
+        source=source,
+        pool_dir=args.pool_dir,
+        output_path=data_path,
+        marker_text=args.marker_token,
+        pos_per_source=args.pos_per_source,
+        neg_per_source=args.pos_per_source,  # symmetric: same count as positive
+        seed=seed,
+        tokenizer=tokenizer,
+        enforce_c_preflight=True,
+        enforce_b1_band=True,
+    )
+    system_prompt_text = prep_result["system_prompt_text"]
+    log.info(
+        "Data-prep complete: %d pos + %d neg = %d rows (data_policy=%s)",
+        prep_result["num_positive"],
+        prep_result["num_negative"],
+        prep_result["num_total"],
+        prep_result["data_policy"],
+    )
+
+    # ----- (2) Train (hf_upload=True — let the TRL inline-upload fence
+    # push the adapter to HF Hub on completion; the smoke phase proves
+    # this works when env vars are present + .env is loaded). -----
+    train_start = time.time()
+    outcome = train_one_cell(
+        cell=cell,
+        seed=seed,
+        source=source,
+        data_path=data_path,
+        cell_output_dir=cell_output_dir,
+        marker_text=args.marker_token,
+        save_every_n_steps=args.save_every_n_steps,
+        lr=args.lr,
+        warmup_ratio=args.warmup_ratio,
+        hf_upload=True,
+        system_prompt_text=system_prompt_text,
+    )
+    train_minutes = (time.time() - train_start) / 60.0
+    log.info("Training complete: %.2f min, loss=%.4f", train_minutes, outcome.loss)
+
+    # ----- (3) Train-matched panel + per-checkpoint log-prob eval -----
+    checkpoint_dirs = _enumerate_checkpoint_dirs(cell_output_dir, args.save_every_n_steps)
+    if not checkpoint_dirs:
+        log.error("No intermediate checkpoint dirs under %s", cell_output_dir / "adapter")
+        return 1
+
+    manifest = read_prepared_dataset_manifest(cell_output_dir)
+    panel, overrides = build_train_matched_persona_panel(
+        canonical_panel=EVAL_PERSONAS_24,
+        source=source,
+        manifest=manifest,
+    )
+
+    base_model, tokenizer_lp = _load_base_model_for_logprob(checkpoint_dirs[0])
+
+    questions = list(EVAL_QUESTIONS_20)
+    log.info(
+        "Log-prob eval: %d personas x %d questions = %d contexts x %d checkpoints",
+        len(panel),
+        len(questions),
+        len(panel) * len(questions),
+        len(checkpoint_dirs),
+    )
+    eval_start = time.time()
+    logprob_result = compute_logprob_panel(
+        base_model=base_model,
+        tokenizer=tokenizer_lp,
+        checkpoint_dirs=checkpoint_dirs,
+        personas=panel,
+        questions=questions,
+        system_prompt_overrides=overrides,  # SR1 wiring
+        marker_texts=FINAL_CHECKPOINT_MARKER_VARIANTS,
+        batch_size=8,
+        device="cuda:0",
+    )
+    eval_minutes = (time.time() - eval_start) / 60.0
+    log.info("Log-prob eval complete: %.2f min", eval_minutes)
+    logprob_path = cell_output_dir / "logprob_panel.json"
+    logprob_path.write_text(json.dumps(logprob_result, indent=2), encoding="utf-8")
+    log.info("Wrote %s", logprob_path)
+
+    # ----- (4) HF → vLLM teardown + sampled eval -----
+    # Drop refs BEFORE teardown (Python `del` only releases the caller's
+    # binding; the helper just does GC + cache + sync + log).
+    del base_model
+    del tokenizer_lp
+    _aggressive_hf_to_vllm_teardown()
+
+    log.info(
+        "Sampled eval starting (vLLM --enable-lora): base=%s lora_path=%s "
+        "(panel=%d personas x %d questions x %d completions)",
+        BASE_MODEL,
+        outcome.adapter_path,
+        len(panel),
+        len(questions),
+        DEFAULT_NUM_COMPLETIONS,
+    )
+    completions = generate_completions_with_lora(
+        base_model_path=BASE_MODEL,
+        lora_path=outcome.adapter_path,
+        personas=dict(panel),
+        questions=list(questions),
+        system_prompt_overrides=overrides,
+        seed=seed,
+    )
+    persona_scores = score_markers_threaded(completions, marker=args.marker_token)
+
+    source_rate = persona_scores.get(source, {}).get("substring_rate")
+    metrics_payload = {
+        "marker": args.marker_token,
+        "cell_key": cell.key,
+        "source": source,
+        "seed": seed,
+        "e": cell.e,
+        "train_wall_minutes": train_minutes,
+        "logprob_eval_wall_minutes": eval_minutes,
+        "panel_size": len(panel),
+        "questions": len(questions),
+        "num_completions": DEFAULT_NUM_COMPLETIONS,
+        "personas": persona_scores,
+        "source_substring_rate": source_rate,
+        "vllm_lora_mode": True,
+    }
+    metrics_path = cell_output_dir / "metrics.json"
+    metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
+    log.info(
+        "Sampled eval complete: wrote %s (source_rate=%s)",
+        metrics_path,
+        f"{source_rate:.3f}" if source_rate is not None else "None",
+    )
+
+    # ----- (5) HF Hub verification (safety net — train_one_cell with
+    # hf_upload=True already pushed the adapter; verify it actually landed
+    # before allowing cleanup). -----
+    run_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
+    hf_path_in_repo = f"adapters/issue_397/{run_name}"
+    upload_verified = verify_adapter_on_hf_hub(
+        hf_path_in_repo=hf_path_in_repo,
+        repo_id=HF_ADAPTER_REPO,
+    )
+    if not upload_verified:
+        log.error(
+            "HF upload verification FAILED for %s — preserving local weights at "
+            "%s for manual recovery. Cell exits with rc=2.",
+            hf_path_in_repo,
+            cell_output_dir,
+        )
+        return 2
+
+    # ----- (6) Per-cell cleanup (only after verify PASS) -----
+    removed = cleanup_cell_local_weights(cell_output_dir)
+    log.info("Per-cell cleanup: %s", removed)
+
+    log.info("Cell complete: cell=%s source=%s seed=%d → rc=0", cell.key, source, seed)
+    return 0
+
+
+def _run_sweep_serial(
     *,
     sources: list[str],
     seeds: list[int],
@@ -1180,29 +1568,27 @@ def _dispatch_sweep_jobs(
     args: argparse.Namespace,
     repo_root: Path,
 ) -> int:
-    """Round-robin assign (cell, source, seed) jobs across the GPU pool.
+    """Round 11: in-process serial sweep over (source, seed, cell) tuples.
 
-    Round 5 implementation, Round 6 update: default concurrency cap
-    relaxed from 6/8 → 8/8. Plan v4 §12's 6/8 was a merge-dir disk-quota
-    mitigation; Round 6 eliminated the merge step (vLLM ``--enable-lora``
-    consumes the adapter directly), so peak per-cell disk dropped from
-    ~17 GB to ~3 GB and 8/8 fits comfortably under MooseFS ~130 GB.
+    Reuses the proven smoke pipeline shape for every cell (lifted into
+    ``_run_one_cell_inprocess``). The serial loop is the price of having
+    a working pipeline — the round-5..10 subprocess-pool design lost five
+    rounds to trust-boundary bugs (env propagation, branch-guard, upload
+    silent-swallow). One cell at a time, end-to-end, with explicit
+    upload-verify + cleanup between cells.
 
-    Builds a queue of (cell, source, seed) tuples, spawns one
-    ``subprocess.Popen`` per cell pinned to a single GPU, caps concurrent
-    training at ``args.max_concurrent_train`` (default 8), waits for a
-    free GPU when the cap is hit, and drains all in-flight processes at
-    end.
+    Canonical iteration order: source-major, then seed, then cell. Keeps
+    a single source's runs clustered in time so HF Hub batches adapter
+    uploads per-source (easier mid-sweep inspection).
 
-    Per-cell exit codes (from ``run_one_cell.main``):
+    Per-cell exit codes (mirror of run_one_cell.py rc semantics):
       - 0 = ok
       - 1 = train or eval crashed (exception caught + logged)
       - 2 = HF upload verification FAILED (local weights preserved)
-      - 3 = unexpected (CLI parse error, missing pool, etc.)
 
     Single-cell failures DO NOT kill the sweep — the dispatcher logs the
-    failure and continues. The aggregate per-cell exit-code summary is
-    logged at sweep end + recorded in a sweep-level JSON sidecar.
+    failure and continues. Aggregate per-cell exit-code summary lands in
+    a sweep-level JSON sidecar.
     """
     job_count = len(sources) * len(seeds) * len(cells)
     log.info(
@@ -1213,45 +1599,19 @@ def _dispatch_sweep_jobs(
         len(cells),
     )
 
-    # Cap concurrent training at max_concurrent_train; the GPU pool
-    # therefore exposes only that many slots even when args.num_gpus is
-    # larger (the remaining GPUs would have been reserved for eval-only
-    # in the launch-layer follow-up; per the brief, Phase B's
-    # eval-on-separate-GPU split is not required to land this round, so
-    # the unused GPUs simply idle).
-    gpu_pool = list(range(min(args.max_concurrent_train, args.num_gpus)))
-    if not gpu_pool:
-        raise ValueError(
-            f"GPU pool is empty: max_concurrent_train={args.max_concurrent_train}, "
-            f"num_gpus={args.num_gpus}. Cannot dispatch."
-        )
-    log.info(
-        "GPU pool: %d slots (max_concurrent_train=%d, num_gpus=%d)",
-        len(gpu_pool),
-        args.max_concurrent_train,
-        args.num_gpus,
-    )
-
-    running: dict[int, subprocess.Popen] = {}
-    per_cell_rc: dict[tuple[str, str, int], int] = {}
-
-    # Canonical iteration order: source-major, then seed, then cell. This
-    # keeps a single source's runs clustered in time so HF Hub batches
-    # adapter uploads per-source — easier to inspect mid-sweep.
+    # Source-major, then seed, then cell.
     all_jobs: list[tuple[Any, str, int]] = [
         (cell, source, seed) for source in sources for seed in seeds for cell in cells
     ]
 
     # Round 6: sweep-level resume. Filter out cells already complete
-    # locally (metrics.json) AND/OR on HF Hub (adapter under the canonical
-    # path). LOUD-FAIL on inconsistent state when --resume-source=both.
+    # locally (metrics.json) AND/OR on HF Hub.
     skip_summary: dict[str, int] = {"skipped_local": 0, "skipped_hub": 0, "skipped_both": 0}
     if getattr(args, "no_resume", False):
         log.info("--no-resume set; running all %d cells from scratch", len(all_jobs))
         jobs_to_run = all_jobs
         skip_summary["queued"] = len(jobs_to_run)
     else:
-        # Pre-fetch HF Hub file list once (avoids 324 round-trips).
         hub_files_cache = None
         if args.resume_source in ("hub", "both"):
             hub_files_cache = _fetch_hub_adapter_index()
@@ -1277,10 +1637,6 @@ def _dispatch_sweep_jobs(
             skip_summary["skipped_both"],
             args.resume_source,
         )
-        # Round 9 — write epm:sweep-resume verdict file (NOT post via
-        # task.py). Orchestrator on the VM side reads SWEEP_RESUME.json
-        # via SCP and posts the marker from the repo root where task.py
-        # works.
         if skipped_total > 0:
             write_verdict_file(
                 args.slab_root,
@@ -1304,80 +1660,66 @@ def _dispatch_sweep_jobs(
                 },
             )
 
-    job_count_filtered = len(jobs_to_run)
+    # In-process serial loop. Per-cell rc dict keyed by (cell_key, source, seed).
+    per_cell_rc: dict[tuple[str, str, int], int] = {}
+    del repo_root  # unused in the serial path (no subprocess cwd to set)
+
     for job_index, (cell, source, seed) in enumerate(jobs_to_run, start=1):
         cell_dir = _cell_output_dir(args.slab_root, cell_key=cell.key, source=source, seed=seed)
         log.info(
-            "[%d/%d] queueing cell=%s source=%s seed=%d e=%d -> %s",
+            "[%d/%d] starting cell=%s source=%s seed=%d e=%d → %s",
             job_index,
-            job_count_filtered,
+            len(jobs_to_run),
             cell.key,
             source,
             seed,
             cell.e,
             cell_dir,
         )
-        if args.dry_run:
-            continue
-        gpu = _wait_for_free_gpu(running, gpu_pool, per_cell_rc=per_cell_rc)
-        proc = _launch_cell_subprocess(
-            cell=cell,
-            source=source,
-            seed=seed,
-            gpu_id=gpu,
-            cell_output_dir=cell_dir,
-            args=args,
-            repo_root=repo_root,
-        )
-        running[gpu] = proc
-        log.info(
-            "Launched cell=%s source=%s seed=%d on GPU %d (pid=%d)",
-            cell.key,
-            source,
-            seed,
-            gpu,
-            proc.pid,
-        )
 
-    if args.dry_run:
-        return 0
-
-    # Drain all in-flight processes. ``_wait_for_free_gpu`` returns the
-    # FIRST empty slot when one exists, so we cannot reuse it for drain —
-    # we'd infinite-loop on the empty slot. Drain by polling each remaining
-    # Popen directly until it exits.
-    while running:
-        for gpu in list(running.keys()):
-            proc = running[gpu]
-            rc = proc.poll()
-            if rc is None:
-                continue
-            key = (
-                getattr(proc, "_cell_key", "?"),
-                getattr(proc, "_source", "?"),
-                getattr(proc, "_seed", -1),
+        # Each cell is wrapped in its own try/except so a single-cell crash
+        # surfaces as rc=1 in the summary instead of taking down the sweep.
+        # The traceback lands in the dispatcher log (one log file for the
+        # whole serial run — by design, since there's only one process).
+        try:
+            rc = _run_one_cell_inprocess(
+                cell=cell,
+                source=source,
+                seed=seed,
+                args=args,
             )
-            per_cell_rc[key] = rc
-            if rc != 0:
-                log.warning(
-                    "Drain: cell %s source=%s seed=%s on GPU %d exited with rc=%d",
-                    key[0],
-                    key[1],
-                    key[2],
-                    gpu,
-                    rc,
-                )
-            else:
-                log.info(
-                    "Drain: cell %s source=%s seed=%s on GPU %d completed cleanly (rc=0)",
-                    key[0],
-                    key[1],
-                    key[2],
-                    gpu,
-                )
-            running.pop(gpu, None)
-        if running:
-            time.sleep(2.0)
+        except Exception:
+            log.exception(
+                "Cell crashed: cell=%s source=%s seed=%d (treating as rc=1; "
+                "continuing with next cell)",
+                cell.key,
+                source,
+                seed,
+            )
+            rc = 1
+
+        per_cell_rc[(cell.key, source, seed)] = rc
+        if rc == 0:
+            log.info(
+                "[%d/%d] completed cleanly: cell=%s source=%s seed=%d (rc=0)",
+                job_index,
+                len(jobs_to_run),
+                cell.key,
+                source,
+                seed,
+            )
+        else:
+            log.warning(
+                "[%d/%d] failed: cell=%s source=%s seed=%d (rc=%d) — local artifacts "
+                "preserved at %s",
+                job_index,
+                len(jobs_to_run),
+                cell.key,
+                source,
+                seed,
+                rc,
+                cell_dir,
+            )
 
     # Summary + per-cell JSON sidecar for downstream resume / debugging.
     rc_counts: dict[int, int] = {}
@@ -1411,198 +1753,6 @@ def _dispatch_sweep_jobs(
     return 0
 
 
-def _wait_for_free_gpu(
-    running: dict[int, subprocess.Popen],
-    gpu_pool: list[int],
-    *,
-    per_cell_rc: dict[tuple[str, str, int], int] | None = None,
-    poll_interval_seconds: float = 2.0,
-) -> int:
-    """Block until a GPU in ``gpu_pool`` becomes free; return its id.
-
-    Mirror of factor_screen_365.dispatch._wait_for_free_gpu, extended with
-    per-cell exit-code bookkeeping so the sweep summary can report
-    failures without spinning up a separate dispatcher state machine.
-
-    Each Popen carries a ``_cell_key``, ``_source``, ``_seed`` attribute
-    stamped by ``_launch_cell_subprocess`` so a finished proc can be
-    indexed back to its cell.
-    """
-    while True:
-        for gpu in gpu_pool:
-            proc = running.get(gpu)
-            if proc is None:
-                return gpu
-            rc = proc.poll()
-            if rc is not None:
-                # Process finished; harvest its rc + free the GPU.
-                key = (
-                    getattr(proc, "_cell_key", "?"),
-                    getattr(proc, "_source", "?"),
-                    getattr(proc, "_seed", -1),
-                )
-                if per_cell_rc is not None:
-                    per_cell_rc[key] = rc
-                if rc != 0:
-                    log.warning(
-                        "Cell %s source=%s seed=%s on GPU %d exited with rc=%d "
-                        "(preserving local artifacts)",
-                        key[0],
-                        key[1],
-                        key[2],
-                        gpu,
-                        rc,
-                    )
-                else:
-                    log.info(
-                        "Cell %s source=%s seed=%s on GPU %d completed cleanly (rc=0)",
-                        key[0],
-                        key[1],
-                        key[2],
-                        gpu,
-                    )
-                running.pop(gpu, None)
-                return gpu
-        time.sleep(poll_interval_seconds)
-
-
-def _launch_cell_subprocess(
-    *,
-    cell: Any,
-    source: str,
-    seed: int,
-    gpu_id: int,
-    cell_output_dir: Path,
-    args: argparse.Namespace,
-    repo_root: Path,
-) -> subprocess.Popen:
-    """Launch one (cell, source, seed) training+eval subprocess on ``gpu_id``.
-
-    Round 5 implementation. Spawns ``python -m
-    explore_persona_space.experiments.factor_screen_397.run_one_cell`` with
-    the per-cell args. The subprocess body does data-prep → train → eval →
-    sampled-eval → HF-upload-verify → cleanup all in one process; the
-    dispatcher only handles GPU scheduling + per-cell exit-code harvesting.
-
-    GPU pinning (per the +gpu_id memory note): both env CUDA_VISIBLE_DEVICES
-    AND ``--gpu-id`` are passed. The env makes vLLM + HF Transformers see
-    only one device; the kwarg threads to TrainLoraConfig.gpu_id so
-    train/sft.py:479's CVD clobber lands on the right device.
-
-    The Popen carries ``_cell_key`` / ``_source`` / ``_seed`` attributes
-    so ``_wait_for_free_gpu`` can index a finished proc back to its cell
-    in the per-cell exit-code dict.
-
-    Returns the Popen handle (NOT blocking).
-    """
-    cell_output_dir.mkdir(parents=True, exist_ok=True)
-    log_path = cell_output_dir / "dispatcher.log"
-
-    cmd = [
-        sys.executable,
-        "-m",
-        "explore_persona_space.experiments.factor_screen_397.run_one_cell",
-        "--cell",
-        cell.key,
-        "--source",
-        source,
-        "--seed",
-        str(seed),
-        "--gpu-id",
-        str(gpu_id),
-        "--pool-dir",
-        str(args.pool_dir),
-        "--output-dir",
-        str(cell_output_dir),
-        "--marker-token",
-        args.marker_token,
-        "--save-every-n-steps",
-        str(args.save_every_n_steps),
-        "--pos-per-source",
-        str(args.pos_per_source),
-        "--lr",
-        str(args.lr),
-        "--warmup-ratio",
-        str(args.warmup_ratio),
-    ]
-
-    env = os.environ.copy()
-    env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-    # Mitigation per agent-memory `runpod_moosefs_quota` note: skip the
-    # WandB Artifacts intermediate upload so peak per-pod disk stays under
-    # the MooseFS quota. The per-cell HF Hub upload is still the load-
-    # bearing artifact path (verified before cleanup).
-    env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
-
-    # Per-cell stdout/stderr → log_path. Use raw open (NOT a context manager)
-    # because the fd must stay open after this function returns so the
-    # subprocess keeps writing to it. The OS closes the fd when the subprocess
-    # exits + GC reaps log_handle; no leak in normal flow.
-    log_handle = open(log_path, "ab", buffering=0)  # noqa: SIM115 — subprocess inherits fd
-    proc = subprocess.Popen(
-        cmd,
-        env=env,
-        cwd=str(repo_root),
-        stdout=log_handle,
-        stderr=subprocess.STDOUT,
-    )
-    # Stamp identifiers so _wait_for_free_gpu can rebuild the (cell, source,
-    # seed) key from the Popen when the process exits.
-    proc._cell_key = cell.key  # type: ignore[attr-defined]
-    proc._source = source  # type: ignore[attr-defined]
-    proc._seed = seed  # type: ignore[attr-defined]
-    return proc
-
-
-def build_run_one_cell_command(
-    *,
-    cell_key: str,
-    source: str,
-    seed: int,
-    gpu_id: int,
-    pool_dir: Path,
-    output_dir: Path,
-    marker_token: str = DEFAULT_MARKER_TEXT,
-    save_every_n_steps: int = DEFAULT_SAVE_EVERY_N_STEPS,
-    pos_per_source: int = 400,
-    lr: float = 1e-4,
-    warmup_ratio: float = 0.10,
-    python_executable: str | None = None,
-) -> list[str]:
-    """Build the ``python -m ... run_one_cell ...`` argv list.
-
-    Extracted as a public helper so the wiring test can assert the exact
-    command shape without running ``subprocess.Popen``.
-    """
-    return [
-        python_executable or sys.executable,
-        "-m",
-        "explore_persona_space.experiments.factor_screen_397.run_one_cell",
-        "--cell",
-        cell_key,
-        "--source",
-        source,
-        "--seed",
-        str(seed),
-        "--gpu-id",
-        str(gpu_id),
-        "--pool-dir",
-        str(pool_dir),
-        "--output-dir",
-        str(output_dir),
-        "--marker-token",
-        marker_token,
-        "--save-every-n-steps",
-        str(save_every_n_steps),
-        "--pos-per-source",
-        str(pos_per_source),
-        "--lr",
-        str(lr),
-        "--warmup-ratio",
-        str(warmup_ratio),
-    ]
-
-
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -1619,6 +1769,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.issue != 397:
         log.error("This dispatcher is task-397-specific; got --issue=%d", args.issue)
         return 2
+
+    # Round 11 — load .env at dispatcher entry so HF_TOKEN / WANDB_API_KEY
+    # / ANTHROPIC_API_KEY are in os.environ BEFORE any HF Hub / WandB /
+    # Anthropic call. The brief cited `setup_env()` from utils.py per
+    # CLAUDE.md, but that function does not exist in this repo's utils.py
+    # — `load_dotenv` from `orchestrate.env` is the canonical helper used
+    # elsewhere (e.g. factor_screen_365.__main__). It loads .env + sets
+    # HF_HOME to /workspace/.cache/huggingface on pods (project-local
+    # cache off-pod).
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
 
     # Repo root resolves from this file's path so the script is independent
     # of cwd. The script lives at <repo>/scripts/, so the parent is the repo

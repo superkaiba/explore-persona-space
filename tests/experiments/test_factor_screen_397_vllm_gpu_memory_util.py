@@ -220,44 +220,52 @@ def test_default_gpu_memory_util_leaves_headroom_for_hf_residue() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Fix 1 surface-check: aggressive teardown sequence in run_one_cell
+# Fix 1 surface-check: aggressive teardown sequence in the dispatcher
 # ---------------------------------------------------------------------------
 
 
-def test_run_one_cell_teardown_uses_aggressive_pattern() -> None:
-    """Static check: run_one_cell.py uses the 4-step aggressive teardown
-    pattern (del + gc + empty_cache + synchronize) BEFORE the sampled
-    eval call.
+def test_dispatcher_inprocess_teardown_uses_aggressive_pattern() -> None:
+    """Round 11: static check that the dispatcher's in-process per-cell
+    pipeline uses the 4-step aggressive teardown pattern (del + gc +
+    empty_cache + synchronize) BEFORE the sampled eval call.
 
     Round 6's ``del + gc.collect + empty_cache`` was insufficient — the
     first-launch crash proved it. Round 8 adds synchronize() + drops
-    the tokenizer + logs pre/post free memory. A future regression
-    that drops synchronize() (or removes the del tokenizer) would
-    re-introduce the OOM in some HF-residue regime; this static check
-    is the canary.
+    the tokenizer + logs pre/post free memory. Round 11 lifted the
+    teardown into ``_aggressive_hf_to_vllm_teardown`` (with the caller
+    doing the explicit ``del peft_model; del tokenizer`` before calling
+    the helper). A future regression that drops synchronize() or
+    removes either ``del`` would re-introduce the OOM in some
+    HF-residue regime; this static check is the canary.
+
+    Replaces the Round 8 test against the deleted ``run_one_cell.py``.
     """
     from pathlib import Path
 
     src_path = (
-        Path(__file__).resolve().parent.parent.parent
-        / "src"
-        / "explore_persona_space"
-        / "experiments"
-        / "factor_screen_397"
-        / "run_one_cell.py"
+        Path(__file__).resolve().parent.parent.parent / "scripts" / "dispatch_factor_screen_397.py"
     )
     text = src_path.read_text(encoding="utf-8")
 
-    # Aggressive teardown markers — all four must be present.
-    assert "del peft_model, base" in text, "Fix 1 step 1: del HF model refs"
-    assert "del tokenizer" in text, "Fix 1 step 1: del tokenizer ref"
-    assert "torch.cuda.empty_cache()" in text, "Fix 1 step 3: empty_cache"
-    assert "torch.cuda.synchronize()" in text, (
+    # Caller-side: _run_one_cell_inprocess drops the HF refs before
+    # calling the teardown helper. base_model is the peft-wrapped HF
+    # model; tokenizer_lp is the log-prob-side tokenizer.
+    assert "del base_model" in text, "Fix 1 step 1: del HF model ref (base_model)"
+    assert "del tokenizer_lp" in text, "Fix 1 step 1: del tokenizer ref (tokenizer_lp)"
+
+    # Helper-side: _aggressive_hf_to_vllm_teardown does gc + empty_cache
+    # + synchronize + log.
+    assert "_aggressive_hf_to_vllm_teardown" in text, (
+        "Round 11: dispatcher must define + call _aggressive_hf_to_vllm_teardown"
+    )
+    assert "torch as _torch" in text, "Fix 1 step 3+4: torch imported inside helper"
+    assert "_torch.cuda.empty_cache()" in text, "Fix 1 step 3: empty_cache (helper)"
+    assert "_torch.cuda.synchronize()" in text, (
         "Fix 1 step 4: synchronize() — Round 6's lack of synchronize was "
         "part of why empty_cache wasn't sufficient"
     )
     # Pre/post log line so the next OOM has the actual residue size in
-    # the per-cell run.log.
+    # the dispatcher log.
     assert "free GPU memory" in text, (
         "Fix 1 step 5: log pre/post free memory so debug has the residue size"
     )

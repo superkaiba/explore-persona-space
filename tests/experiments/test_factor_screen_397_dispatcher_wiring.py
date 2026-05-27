@@ -17,12 +17,13 @@ This test surface covers:
      ``system_prompt_text`` kwarg populated so the recipe-fix manifest
      lands on disk for the eval side to read.
 
-  3. The sweep-enumeration loop (``_dispatch_sweep_jobs``) iterates 108
-     (cell, source, seed) tuples for the post-round-7-descope canonical
-     {3 sources, 1 seed [42], 36 cells/source} configuration (counts
-     assertion only; the actual subprocess launch is the operational
-     follow-up). Round 4 expanded to 3 seeds x 108 = 324; Round 7
-     reverted to 1 seed x 108 = 108 per user descope.
+  3. Round 11: the sweep enumeration loop (``_run_sweep_serial``) iterates
+     108 (cell, source, seed) tuples for the post-round-7-descope
+     canonical {3 sources, 1 seed [42], 36 cells/source} configuration
+     in-process, calling ``_run_one_cell_inprocess`` once per cell.
+     Round 4 expanded to 3 seeds x 108 = 324; Round 7 reverted to 1 seed
+     x 108 = 108 per user descope. Round 11 dropped the subprocess pool
+     in favor of in-process serial.
 
   4. ``run_sweep_phase`` refuses to dispatch when no
      ``epm:smoke-pass`` marker is present.
@@ -68,8 +69,8 @@ def _build_smoke_args(
         smoke_seed=seed,
         sources="librarian,programmer,surgeon",
         seeds="42",  # Round 7 descope (was "42,137,256")
-        num_gpus=8,
-        max_concurrent_train=8,  # Round 6 default — was 6, now 8 (no merge step)
+        # Round 11 removed num_gpus + max_concurrent_train (in-process serial,
+        # no GPU pool). Tests that still need to set them have been deleted.
         marker_token="※",
         save_every_n_steps=25,
         pos_per_source=400,
@@ -373,20 +374,13 @@ def test_sweep_phase_dry_run_enumerates_108_jobs(monkeypatch, capsys) -> None:
         del out  # unused — return-code is the load-bearing check
 
 
-def test_sweep_phase_launches_subprocesses_with_gpu_pinning(monkeypatch) -> None:
-    """Round 5: ``run_sweep_phase`` (non-dry-run) launches one subprocess per
-    (cell, source, seed) tuple via ``_launch_cell_subprocess``, with GPU
-    pinning + the canonical command shape.
+def test_sweep_phase_calls_run_one_cell_inprocess(monkeypatch) -> None:
+    """Round 11: ``run_sweep_phase`` (non-dry-run) calls
+    ``_run_one_cell_inprocess`` once per (cell, source, seed) tuple.
 
-    Monkeypatches ``_launch_cell_subprocess`` to a fake that records the
-    call args + returns a stub Popen that immediately reports rc=0. The
-    test asserts:
-
-      - one launch call per enumerated (cell, source, seed) tuple,
-      - each launch carries a ``gpu_id`` from the pool (no duplicates
-        in-flight at once for the same GPU),
-      - the GPU pool size caps at ``min(max_concurrent_train, num_gpus)``,
-      - the sweep summary JSON is written with the correct rc-distribution.
+    Replaces the round-5..10 ``_launch_cell_subprocess`` test. The
+    in-process serial loop calls the helper directly; no subprocess, no
+    GPU pool, no Popen.
     """
     monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
@@ -395,57 +389,33 @@ def test_sweep_phase_launches_subprocesses_with_gpu_pinning(monkeypatch) -> None
         args = _build_smoke_args(slab_root)
         args.mode = "sweep"
         args.dry_run = False
-        # Shrink the sweep to keep the test fast: 1 source x 1 seed x 1 cell.
         args.sources = "librarian"
         args.seeds = "42"
-        args.num_gpus = 2
-        args.max_concurrent_train = 2
 
-        # Stub valid_cells_per_source down to a single cell so the sweep has
-        # 1 job (otherwise the test would launch 36 cells).
         from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
         only_cell = Cell.from_key("00000")
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: [only_cell])
 
-        launch_calls: list[dict] = []
+        call_records: list[dict] = []
 
-        class _FakeFinishedPopen:
-            def __init__(self, cell_key: str, source: str, seed: int):
-                self._cell_key = cell_key
-                self._source = source
-                self._seed = seed
-                self.pid = 12345
-                self.returncode = 0
+        def _fake_inprocess(**kwargs):
+            call_records.append(kwargs)
+            return 0
 
-            def poll(self):
-                return 0  # immediately "finished"
-
-        def _fake_launch(**kwargs):
-            launch_calls.append(kwargs)
-            return _FakeFinishedPopen(
-                cell_key=kwargs["cell"].key,
-                source=kwargs["source"],
-                seed=kwargs["seed"],
-            )
-
-        monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
-        # Speed up the polling loop.
-        monkeypatch.setattr(_dispatch.time, "sleep", lambda s: None)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0, f"Sweep should return 0 when all cells succeed; got {rc}"
 
-        # One launch per (cell, source, seed) tuple.
-        assert len(launch_calls) == 1
-        call = launch_calls[0]
+        # One call per (cell, source, seed) tuple.
+        assert len(call_records) == 1
+        call = call_records[0]
         assert call["cell"].key == "00000"
         assert call["source"] == "librarian"
         assert call["seed"] == 42
-        assert call["gpu_id"] in (0, 1), f"gpu_id must come from the pool; got {call['gpu_id']}"
         assert call["args"] is args
-        assert call["repo_root"] == repo_root
 
         # Sweep summary written.
         summary_path = slab_root / "sweep_summary.json"
@@ -457,12 +427,12 @@ def test_sweep_phase_launches_subprocesses_with_gpu_pinning(monkeypatch) -> None
         assert summary["per_cell"][0]["rc"] == 0
 
 
-def test_sweep_phase_dispatches_in_canonical_order(monkeypatch) -> None:
-    """Sweep iterates source-major, then seed, then cell.
+def test_sweep_phase_iterates_in_canonical_order(monkeypatch) -> None:
+    """Round 11: sweep iterates source-major, then seed, then cell.
 
-    Order matters for HF Hub mid-sweep inspection: clustering one source's
-    adapter uploads together makes inspection easier than interleaved
-    uploads across sources.
+    Order matters for HF Hub mid-sweep inspection: clustering one
+    source's adapter uploads together makes inspection easier than
+    interleaved uploads across sources.
     """
     monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
@@ -473,8 +443,6 @@ def test_sweep_phase_dispatches_in_canonical_order(monkeypatch) -> None:
         args.dry_run = False
         args.sources = "librarian,programmer"
         args.seeds = "42,137"
-        args.num_gpus = 1
-        args.max_concurrent_train = 1
 
         from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
@@ -484,30 +452,18 @@ def test_sweep_phase_dispatches_in_canonical_order(monkeypatch) -> None:
 
         order: list[tuple[str, str, int]] = []
 
-        class _FakeFinishedPopen:
-            def __init__(self, cell_key: str, source: str, seed: int):
-                self._cell_key = cell_key
-                self._source = source
-                self._seed = seed
-                self.pid = 12345
-                self.returncode = 0
-
-            def poll(self):
-                return 0
-
-        def _fake_launch(**kwargs):
+        def _fake_inprocess(**kwargs):
             order.append((kwargs["cell"].key, kwargs["source"], kwargs["seed"]))
-            return _FakeFinishedPopen(kwargs["cell"].key, kwargs["source"], kwargs["seed"])
+            return 0
 
-        monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
-        monkeypatch.setattr(_dispatch.time, "sleep", lambda s: None)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         _dispatch.run_sweep_phase(args, repo_root=repo_root)
 
-        # 2 sources x 2 seeds x 2 cells = 8 launches.
+        # 2 sources x 2 seeds x 2 cells = 8 invocations.
         assert len(order) == 8
-        # Source-major: all librarian launches before any programmer launch.
+        # Source-major: all librarian invocations before any programmer invocation.
         librarian_indices = [i for i, (_, s, _) in enumerate(order) if s == "librarian"]
         programmer_indices = [i for i, (_, s, _) in enumerate(order) if s == "programmer"]
         assert max(librarian_indices) < min(programmer_indices)
@@ -516,9 +472,10 @@ def test_sweep_phase_dispatches_in_canonical_order(monkeypatch) -> None:
         assert librarian_seeds_in_order == [42, 42, 137, 137]
 
 
-def test_sweep_phase_propagates_failures_via_summary(monkeypatch) -> None:
-    """A subprocess returning non-zero must NOT kill the sweep; the failure
-    is recorded in the per-cell summary JSON and the sweep continues.
+def test_sweep_phase_continues_on_per_cell_failure(monkeypatch) -> None:
+    """Round 11: a per-cell rc != 0 must NOT kill the sweep — the
+    failure lands in the summary JSON and the loop continues to the
+    next cell.
 
     Per the brief: "On failure, log the cell's failure but continue with
     other cells (a single-cell failure should NOT kill the sweep)."
@@ -531,9 +488,7 @@ def test_sweep_phase_propagates_failures_via_summary(monkeypatch) -> None:
         args.mode = "sweep"
         args.dry_run = False
         args.sources = "librarian"
-        args.seeds = "42,137"  # 2 cells total
-        args.num_gpus = 1
-        args.max_concurrent_train = 1
+        args.seeds = "42,137"  # 2 (seed, cell) tuples for 1 cell
 
         from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
@@ -541,41 +496,79 @@ def test_sweep_phase_propagates_failures_via_summary(monkeypatch) -> None:
             _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
         )
 
-        # First call returns rc=2 (HF upload-verify FAIL); second returns rc=0.
-        rcs = [2, 0]
+        rcs = [2, 0]  # first cell fails (upload-verify); second succeeds
 
-        class _FakeFinishedPopen:
-            def __init__(self, cell_key: str, source: str, seed: int, rc: int):
-                self._cell_key = cell_key
-                self._source = source
-                self._seed = seed
-                self.pid = 12345
-                self._rc = rc
+        def _fake_inprocess(**kwargs):
+            return rcs.pop(0)
 
-            def poll(self):
-                return self._rc
-
-        def _fake_launch(**kwargs):
-            rc = rcs.pop(0)
-            return _FakeFinishedPopen(kwargs["cell"].key, kwargs["source"], kwargs["seed"], rc)
-
-        monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
-        monkeypatch.setattr(_dispatch.time, "sleep", lambda s: None)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         # Sweep returns 0 because at least one cell succeeded; the per-cell
         # failure shows up in the summary.
         assert rc == 0
+        # Both cells were attempted — single-cell rc=2 didn't kill the sweep.
+        assert rcs == []
 
         summary = json.loads((slab_root / "sweep_summary.json").read_text(encoding="utf-8"))
         assert summary["rc_counts"] == {"0": 1, "2": 1}
         assert summary["ran"] == 2
 
 
+def test_sweep_phase_catches_inprocess_exceptions_as_rc1(monkeypatch) -> None:
+    """Round 11: ``_run_one_cell_inprocess`` raising a Python exception
+    must be caught at the loop level and recorded as rc=1 (mirrors the
+    rc=1 semantics from the deleted run_one_cell.py's top-level
+    try/except). The sweep continues to the next cell.
+
+    Without this safety net, a single bug in train_one_cell would take
+    down the whole 108-cell sweep — exactly the failure mode round 11's
+    in-process design has to defend against (the deleted subprocess
+    wrapper got this for free via OS-level isolation).
+    """
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        slab_root = Path(tmpdir)
+        args = _build_smoke_args(slab_root)
+        args.mode = "sweep"
+        args.dry_run = False
+        args.sources = "librarian"
+        args.seeds = "42,137"  # 2 attempts so we see the loop continues past the crash
+
+        from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+        monkeypatch.setattr(
+            _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
+        )
+
+        call_count = {"n": 0}
+
+        def _fake_inprocess(**kwargs):
+            call_count["n"] += 1
+            if kwargs["seed"] == 42:
+                raise RuntimeError("simulated training crash")
+            return 0
+
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
+
+        repo_root = Path(__file__).resolve().parent.parent.parent
+        rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
+        assert rc == 0  # at least one cell succeeded
+        # Both attempts ran — the first one's RuntimeError didn't propagate.
+        assert call_count["n"] == 2
+
+        summary = json.loads((slab_root / "sweep_summary.json").read_text(encoding="utf-8"))
+        assert summary["rc_counts"] == {"0": 1, "1": 1}, (
+            f"Expected one rc=1 from the caught exception + one rc=0 from the "
+            f"successful cell; got {summary['rc_counts']}"
+        )
+
+
 def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
-    """If every cell fails, the sweep returns non-zero so the orchestrator
-    can mark the run as failed.
+    """If every cell fails (rc != 0), the sweep returns non-zero so the
+    orchestrator can mark the run as failed.
     """
     monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
@@ -586,8 +579,6 @@ def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
         args.dry_run = False
         args.sources = "librarian"
         args.seeds = "42"
-        args.num_gpus = 1
-        args.max_concurrent_train = 1
 
         from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
@@ -595,58 +586,11 @@ def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
             _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
         )
 
-        class _FakeFinishedPopen:
-            def __init__(self, cell_key: str, source: str, seed: int):
-                self._cell_key = cell_key
-                self._source = source
-                self._seed = seed
-                self.pid = 12345
-
-            def poll(self):
-                return 1  # always failed
-
-        monkeypatch.setattr(
-            _dispatch,
-            "_launch_cell_subprocess",
-            lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"]),
-        )
-        monkeypatch.setattr(_dispatch.time, "sleep", lambda s: None)
+        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", lambda **kwargs: 1)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 1, f"All-fail sweep must return 1; got {rc}"
-
-
-def test_build_run_one_cell_command_carries_required_args() -> None:
-    """Round 5 SR1 wiring: the per-cell command line carries --pool-dir,
-    --output-dir, --gpu-id, --cell, --source, --seed, --marker-token.
-
-    The wiring contract that lets ``run_one_cell`` read pools from the
-    same --pool-dir the dispatcher was invoked with, train onto the
-    right GPU, and emit per-cell artifacts under --output-dir.
-    """
-    from pathlib import Path as _Path
-
-    cmd = _dispatch.build_run_one_cell_command(
-        cell_key="10010",
-        source="librarian",
-        seed=42,
-        gpu_id=3,
-        pool_dir=_Path("/some/pools"),
-        output_dir=_Path("/some/out/cell_10010/source_librarian/seed_42"),
-        marker_token="※",
-    )
-    # Module-execution shape.
-    assert cmd[1:3] == ["-m", "explore_persona_space.experiments.factor_screen_397.run_one_cell"]
-    # Required flags present + values match.
-    flags = dict(zip(cmd[3::2], cmd[4::2], strict=True))
-    assert flags["--cell"] == "10010"
-    assert flags["--source"] == "librarian"
-    assert flags["--seed"] == "42"
-    assert flags["--gpu-id"] == "3"
-    assert flags["--pool-dir"] == "/some/pools"
-    assert flags["--output-dir"] == "/some/out/cell_10010/source_librarian/seed_42"
-    assert flags["--marker-token"] == "※"
 
 
 def test_is_smoke_pass_confirmed_locally_via_cli_flag(tmp_path) -> None:
