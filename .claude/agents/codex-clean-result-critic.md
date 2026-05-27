@@ -5,11 +5,11 @@ description: >
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across eleven lenses
+  `.claude/plans/task-workflow-migration.md` § 10 across twelve lenses
   (title, TL;DR, figure, details, reproducibility, voice, statistical-
   framing, mentor-facing-title + methodology-corrections-at-bottom,
   one-takeaway-one-figure pairing, eval-probe descriptions, raw alongside
-  processed). Thin Claude wrapper: composes
+  processed, story arc present). Thin Claude wrapper: composes
   prompt → invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
@@ -76,8 +76,8 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The eleven lens definitions (Lens 1 Title → Lens 11 Raw alongside
-  processed).
+- The twelve lens definitions (Lens 1 Title → Lens 12 Story arc
+  present).
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
@@ -113,7 +113,7 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-11 below).
+3. If both pass: score the body lens by lens (Lens 1-12 below).
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
@@ -127,7 +127,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md eleven lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md twelve lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
 
@@ -224,6 +224,36 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   are visually identical because the partial only re-scaled the
   x-axis") OR no such omission exists: PASS|FAIL
 
+### Lens 12 — Story arc present (Details narrative shape)
+- `## Details` opens by stating the question / hypothesis AND the prior
+  the analyzer walked in with, within the first 2-3 paragraphs (or first
+  1-2 H3 story beats), BEFORE methodology dump (probe set / panel size /
+  decoder config): PASS|FAIL
+- Every `![alt](url)` figure inside `## Details` has a **setup paragraph**
+  (1-3 sentences above, framing what the figure will show) AND a **read
+  paragraph** (1-3 sentences below, calling out what's striking). Raw +
+  processed pairs (Lens 11) count as ONE narrative unit (setup above the
+  pair, read below the pair): PASS|FAIL with line numbers of any
+  figure-dumped images
+- Surprises and mid-flight pivots are folded into the story-beat where
+  they happened, NOT quarantined inside a `### Plan deviations` H3 at
+  the bottom of Details. Exception: `### Methodology corrections` as the
+  LAST H3 for discrete post-hoc corrections: PASS|FAIL
+- An interpretation beat (paragraph or short H3 story beat) AFTER the
+  evidence layout explicitly names what the evidence as a whole says,
+  what hypothesis is more / less likely than the prior, and what
+  alternative explanation survives. NOT just the Confidence-rationale
+  sentence: PASS|FAIL
+- When TL;DR Results uses the many-findings rollup
+  `[Per-finding figures and reads in Details.](#anchor)` (Lens 9): the
+  anchor resolves, the linked section has ≥ N story beats with figures
+  matching the rollup's named count, and each per-finding beat carries
+  its own setup + figure + read: PASS|FAIL|N/A
+- Connective transitions in `## Details` ("Then I tried", "But that
+  didn't replicate", "The interesting bit came next", "I expected X —
+  what I got was Y") are NOT flagged — the "no fluff transitions" rule
+  scopes to `## Human TL;DR` + `## TL;DR` only
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -239,7 +269,7 @@ dispatch" for rationale.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 11-lens rubric and
+<the full composed prompt from Step 3, including 12-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```

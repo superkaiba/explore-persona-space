@@ -86,13 +86,15 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # 13 body-only checks (CHECKS — body-nonstub check 0 prepended,
-    # plus the 12 structural checks incl. Figure URL resolvable) + 1
-    # Goal-of-experiment soft check appended by verify_text (it needs the
-    # frontmatter, not just the body — as of 2026-05-26 it checks only
-    # the frontmatter `goal:` field; the body-side `## Goal` H2 is
-    # intentionally not checked because clean-result bodies drop it).
-    assert len(results) == 14
+    # 14 body-only checks (CHECKS — body-nonstub check 0 prepended,
+    # plus the 12 structural checks incl. Figure URL resolvable, plus
+    # check_details_narrative_flow added 2026-05-27 alongside the
+    # LessWrong-style narrative shift) + 1 Goal-of-experiment soft check
+    # appended by verify_text (it needs the frontmatter, not just the
+    # body — as of 2026-05-26 it checks only the frontmatter `goal:`
+    # field; the body-side `## Goal` H2 is intentionally not checked
+    # because clean-result bodies drop it).
+    assert len(results) == 15
 
 
 def test_missing_confidence_tag():
@@ -785,15 +787,17 @@ def test_goal_of_experiment_passes_when_legacy_h2_still_present():
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 13 functions: the original 11 plus
+    """CHECKS must contain exactly 14 functions: the original 11 plus
     `check_figure_url_resolvable` (check 4b, added after the task #365
     relative-figure-URL incident on 2026-05-22) plus `check_body_nonstub`
     (check 0, added after the task #385 cache → body.md silent-handoff
-    incident on 2026-05-25).
+    incident on 2026-05-25) plus `check_details_narrative_flow` (check 12,
+    soft WARN-only added 2026-05-27 alongside the LessWrong-style narrative
+    shift — see iterations.md 2026-05-27 + project_clean_result_narrative_shift).
 
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 14 results, but `CHECKS`
-    stays at 13.
+    just the body. So `verify_text` returns 15 results, but `CHECKS`
+    stays at 14.
     """
-    assert len(verify_task_body.CHECKS) == 13
+    assert len(verify_task_body.CHECKS) == 14

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Thirteen checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Fourteen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -60,6 +60,15 @@ discipline ported from HTML to markdown):
     aggregate-only path like `regression`, `summary`, `aggregat*`,
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
+12. Details narrative flow (WARN-only) — two conservative mechanical
+    signals that the body is shaped as a fact sheet rather than a
+    LessWrong-style story: (a) outline-label H3s in `## Details`
+    (`### Headline result` / `### Subset checks` / `### Sample
+    completions` / `### Plan deviations` / `### Methodology` /
+    `### Findings`); (b) ≥3 consecutive `![alt](url)` images inside
+    `## Details` with no prose between (figure-dump). Both surface as
+    WARN, never FAIL — critic-side LM judgment (clean-result-critic
+    Lens 4 + Lens 12) catches the semantic cases this regex misses.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -868,6 +877,99 @@ def check_goal_present(body: str, fm: dict) -> CheckResult:
     )
 
 
+def check_details_narrative_flow(body: str) -> CheckResult:
+    """Soft WARN check — Details narrative-shape heuristics (story arc).
+
+    Two conservative mechanical signals; never FAILs. Critic-side LM
+    judgment (clean-result-critic Lens 4 + Lens 12) catches the semantic
+    cases this regex check misses.
+
+    1. **Bad H3 labels in ``## Details``.** Outline-label H3s
+       (``### Headline result`` / ``### Subset checks`` /
+       ``### Sample completions`` / ``### Plan deviations`` /
+       ``### Methodology`` / ``### Findings``) name a genre of content
+       instead of what the reader is about to learn. Story-beat H3s
+       (``### A cohort disagreement on the primary``) pass. Exception:
+       ``### Methodology corrections`` is allowed as the LAST H3 for
+       discrete post-hoc corrections (analyzer.md anti-pattern #11).
+    2. **Figure-dump.** Three or more consecutive ``![alt](url)`` image
+       lines inside ``## Details`` with no prose between — almost always
+       a chart-paste, not a chart-embedded-in-a-story. Two adjacent
+       images are allowed (the Lens 11 raw + processed pair).
+
+    Both signals WARN; downstream agents (clean-result-critic, analyzer)
+    should treat them as inputs to a Lens 4 / Lens 12 narrative check
+    rather than as a promote-blocking FAIL.
+    """
+    details = section_text(body, "Details")
+    if details is None:
+        return CheckResult(
+            "Details narrative flow",
+            True,
+            "no ## Details section to inspect (skipped)",
+            is_warn=True,
+        )
+
+    findings: list[str] = []
+
+    # Heuristic 1: outline-label H3s.
+    bad_label_re = re.compile(
+        r"^###\s+(?P<name>Headline result|Subset checks|Sample completions|"
+        r"Plan deviations|Methodology|Findings|Background|Setup)\s*$",
+        re.MULTILINE | re.IGNORECASE,
+    )
+    bad_h3_names = [m.group("name") for m in bad_label_re.finditer(details)]
+    if bad_h3_names:
+        findings.append(
+            f"{len(bad_h3_names)} outline-label H3(s) in Details: "
+            f"{', '.join(bad_h3_names)} — story-beat H3s name what the "
+            "reader is about to learn, not the genre of content "
+            "(analyzer.md anti-pattern #14)"
+        )
+
+    # Heuristic 2: figure-dump (>2 consecutive images without prose
+    # between). Two adjacent images are allowed for raw + processed
+    # pairs under Lens 11.
+    img_line_re = re.compile(r"^\s*!\[(?:[^\]]|\](?!\())*\]\([^)]+\)\s*$")
+    lines = details.splitlines()
+    runs: list[int] = []
+    run_len = 0
+    for line in lines:
+        if img_line_re.match(line):
+            run_len += 1
+            continue
+        stripped = line.strip()
+        if stripped == "":
+            # Blank lines don't break the run — figures can be
+            # separated by blank lines yet still count as a dump.
+            continue
+        if run_len >= 1:
+            runs.append(run_len)
+        run_len = 0
+    if run_len >= 1:
+        runs.append(run_len)
+    dumps = [n for n in runs if n > 2]
+    if dumps:
+        findings.append(
+            f"{len(dumps)} run(s) of >2 consecutive figures in Details "
+            "with no prose between — likely figure-dump (Lens 12 #2). "
+            "Add setup + read paragraphs around each figure."
+        )
+
+    if findings:
+        return CheckResult(
+            "Details narrative flow",
+            True,
+            "; ".join(findings),
+            is_warn=True,
+        )
+    return CheckResult(
+        "Details narrative flow",
+        True,
+        "no mechanical narrative-shape regressions detected",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -885,6 +987,7 @@ CHECKS = [
     check_repro_sentinel_scrub,
     check_cherry_picked_label,
     check_qualitative_data_link,
+    check_details_narrative_flow,
 ]
 
 

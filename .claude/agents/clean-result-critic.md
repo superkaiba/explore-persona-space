@@ -74,9 +74,9 @@ citing those specific failures — don't proceed to lens review (the
 structure is wrong; voice doesn't matter yet).
 
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the eleven lenses below.
+the twelve lenses below.
 
-## The eleven lenses
+## The twelve lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -178,18 +178,28 @@ WHY. If FAIL, quote the offending phrase from the body.
   Figure / Reproducibility.
 - No `## Background`, `## Methodology`, `## Setup`, `## Findings` —
   all fold into Details.
-- **Use `### ...` H3 subheadings for each distinct sub-topic inside
-  Details** (Primary strict test / Sample completions / Plan
-  deviations / Parameters / Why this test / surprises /
-  stratifications). FAIL when sub-topics are introduced by bolded
-  paragraph leads (`**Sub-topic name.**`) instead of H3s — the
-  dashboard's markdown renderer collapses bolded leads into a wall of
-  text with no visual break. Exception: the intro paragraph(s) at the
-  top of Details (definitions + decoder config) stay as plain prose,
-  and the `Confidence:` sentence stays as a paragraph after
+- **`### ...` H3 subheadings mark story beats, NOT deliverable
+  labels** (the full story-arc check is Lens 12; this Lens 4 bullet
+  enforces the H3-naming rule). Good H3s tell the reader what they're
+  about to learn (`### A cohort disagreement on the primary` /
+  `### Why this fails where bystander leakage didn't`). Bad H3s are
+  outline labels — they name a genre of content instead of a finding
+  (`### Headline result` / `### Subset checks` / `### Sample
+  completions` / `### Plan deviations` / `### Methodology` /
+  `### Findings`). FAIL when ≥1 H3 in Details is from the bad-labels
+  list, OR when sub-topics are introduced by bolded paragraph leads
+  (`**Sub-topic name.**`) instead of H3s — the dashboard's markdown
+  renderer collapses bolded leads into a wall of text with no visual
+  break. Exception: `### Methodology corrections` survives as a
+  topic-label H3 (the LAST H3 in Details) when the correction is a
+  discrete post-hoc finding that doesn't flow naturally in the story;
+  see Lens 8 + `analyzer.md` anti-pattern #11. The intro paragraph(s)
+  at the top of Details (definitions + decoder config) stay as plain
+  prose; the `Confidence:` sentence stays as a paragraph after
   Parameters — both are NOT H3s. Trigger to FAIL: ≥3 bolded-lead
-  paragraphs in Details that read as inline subsection labels. See
-  iterations.md 2026-05-22 (task #375) for the canonical before/after.
+  paragraphs in Details OR ≥1 H3 from the bad-labels list. See
+  iterations.md 2026-05-22 (task #375) for the bolded-lead before/after
+  and 2026-05-27 for the story-beat H3 reframe.
 - Defines every term where introduced (formal + intuition).
 - Includes a "Why this test" paragraph that defines + justifies the
   statistical test (without naming it inline in surrounding prose —
@@ -360,19 +370,33 @@ Confidence line, not promoted into the title.
 The TL;DR is the mentor's primary scan-line. Each quantitative finding the
 Results bullet asserts (a number, percentage, rate, ratio, or
 count-comparison) MUST be paired with a figure the reader can see WITHOUT
-scrolling into `## Details`. Either:
+scrolling. Three valid shapes, picked by findings count:
 
-- the bullet anchors a figure inline directly underneath (markdown image
-  link `![alt](https://raw.githubusercontent.com/.../sha/figures/issue_<N>/<file>.png)`
-  on the line below the bullet text), OR
-- the bullet links to the `## Figure` H2 via `[figure below](#figure)` AND
-  the hero figure genuinely carries that bullet's claim (panel-of-the-same-
-  chart counts; a hero figure that visualises an unrelated finding does not).
+- **≤3 findings, each with its own figure** → the bullet anchors a figure
+  inline directly underneath (markdown image link `![alt](https://raw.githubusercontent.com/.../sha/figures/issue_<N>/<file>.png)`
+  on the line below the bullet text), OR the bullet links to the `## Figure`
+  H2 via `[figure below](#figure)` AND the hero figure genuinely carries
+  that bullet's claim (panel-of-the-same-chart counts; a hero figure that
+  visualises an unrelated finding does not).
+- **>3 findings, OR findings that don't decompose into a clean takeaway-
+  per-bullet** → Results uses a single roll-up bullet ending in
+  `[Per-finding figures and reads in Details.](#findings)` (or whichever
+  Details H3 anchor carries them). Each finding lives in `## Details` as
+  a story beat with its own setup paragraph + figure + read paragraph.
+  The rollup bullet still names the high-level finding count and direction
+  ("I found 6 distinct things; none reaches the threshold"); the per-figure
+  surface is deferred to Details. Lens 12 (story arc) verifies the
+  per-finding shape in Details; Lens 9 verifies the rollup link is present
+  and well-formed.
+- **One hero finding** → single sub-bullet with inline image, OR `## Figure`
+  H2 linked via `[figure below](#figure)` (legacy hero-figure pattern).
 
 The user framing this rule came from (#381, 2026-05-26): *"Basically it
 should be more like a story. We have one takeaway, one result, one
-figure."* The lens enforces the story-shape: each takeaway sits next to
-its visual evidence.
+figure."* The many-findings rollup (2026-05-27) preserves that story-shape
+when the body has too many findings to fit the TL;DR — each takeaway still
+sits next to its visual evidence, just in Details rather than crowding the
+TL;DR.
 
 **Check three things:**
 
@@ -401,13 +425,17 @@ its visual evidence.
    Motivation or What-I-ran bullets.
 
 **FAIL trigger summary:** a Results sub-bullet asserts a quantitative
-finding AND no figure is anchored either inline beneath it or via
+finding AND no figure is anchored either inline beneath it, via
 `[figure below](#figure)` pointing at a hero that genuinely carries the
-claim. On FAIL: tell the analyzer to either (i) split Results into
-multiple sub-bullets each pairing with its own inline figure (the
-analyzer.md § Step 4 "One takeaway, one figure" paragraph covers the
-markup), (ii) drop the unsupported claim from TL;DR and push it into
-Details prose, or (iii) rewrite the bullet as a qualitative observation.
+claim, OR via a many-findings rollup link `[Per-finding figures and
+reads in Details.](#anchor)` (with the anchor resolving and the
+per-finding shape verified by Lens 12). On FAIL: tell the analyzer to
+either (i) split Results into multiple sub-bullets each pairing with its
+own inline figure (the analyzer.md § Step 4 "One takeaway, one figure"
+paragraph covers the markup), (ii) drop the unsupported claim from
+TL;DR and push it into Details prose, (iii) rewrite the bullet as a
+qualitative observation, or (iv) switch to the many-findings rollup
+mode and move per-finding figures into Details story beats.
 
 **Anti-pattern example (FAIL):** TL;DR Results bullet reads *"Source-marker
 firing rises from 0.07 to 0.83; bystander leakage stays flat at 0.02; the
@@ -519,6 +547,97 @@ Reproducibility § Artifacts.
 See CLAUDE.md § Voice + Statistics → "Show or link to the less-processed
 version alongside the more-processed one" for the canonical rule.
 
+### Lens 12 — Story arc present (Details narrative shape)
+
+`## Details` is a **continuous narrative read top-to-bottom as a
+LessWrong-style post**, NOT a fact sheet of disconnected H3 sub-sections.
+Lens 4 covers individual narrative mechanics (cherry-picked labels,
+generator disclosure, plain-English condition names, bad-H3-label list);
+Lens 12 covers the story-arc SHAPE.
+
+Check five things:
+
+1. **Hypothesis / question stated before results.** Within the first
+   2-3 paragraphs of `## Details` (or its first 1-2 H3 story beats), the
+   body names the question the experiment was asking AND the prior the
+   analyzer walked in with (what we expected to see). FAIL when Details
+   opens with methodology dump (probe set / panel size / model ID / decoder
+   config) before stating the question.
+
+2. **Figures inline-narrated, NOT figure-dumped.** Every `![alt](url)`
+   image inside `## Details` is preceded by a **setup paragraph** (1-3
+   sentences framing what the figure will show and why we're looking now)
+   AND followed by a **read paragraph** (1-3 sentences calling out what's
+   striking — surprises, where outliers go, monotonicity, what the figure
+   CAN'T tell you). FAIL when ≥1 figure inside Details has no setup
+   paragraph above OR no read paragraph below. Adjacent figures (`![..](..)`
+   followed immediately by another `![..](..)` on the next line) are
+   allowed when they're a raw + processed pair under the Lens 11 rule;
+   they count as ONE narrative unit for setup/read purposes (setup above
+   the pair, read below the pair).
+
+3. **Surprises and pivots in the narrative, not parked at the bottom.**
+   When the experiment had a mid-flight surprise (stratification recut,
+   domain drop, model swap, threshold change), the body folds it into the
+   story-beat where the surprise actually happened ("I expected even bins;
+   the data gave 12/2/34, so I recut to..."). FAIL when ≥2 such pivots
+   are quarantined inside a `### Plan deviations` H3 at the bottom of
+   Details instead of woven into the story. Exception: `### Methodology
+   corrections` at the LAST H3 for discrete post-hoc corrections that
+   don't flow naturally earlier — see Lens 8 + analyzer.md anti-pattern
+   #11.
+
+4. **Interpretation beat distinct from results beat.** After the figures
+   + tables + samples that lay out the evidence, the body has a paragraph
+   (or short H3 story beat) that explicitly interprets: what the evidence
+   as a whole says, what hypothesis is more / less likely than the prior,
+   what alternative explanation survives. NOT just `Confidence: MODERATE
+   — X` (that's the Confidence-rationale sentence; separate). FAIL when
+   the body presents evidence and stops without an interpretation beat,
+   leaving the reader to infer what it all means.
+
+5. **Many-findings rollup integrity** (only fires when TL;DR Results
+   uses the link-to-Details rollup; see Lens 9). Check that:
+   (a) the linked-to anchor in `## Details` actually resolves,
+   (b) the linked section has a story beat for EACH finding the TL;DR
+       rollup names (≥ N story beats with figures, where N matches the
+       TL;DR's named count or direction summary),
+   (c) each per-finding story beat carries its own setup + figure + read
+       (check #2 applies per beat).
+   FAIL when the rollup link breaks, finding-count mismatches, or any
+   per-finding story beat is missing the setup-figure-read shape.
+
+Connective transitions ("Then I tried", "But that didn't replicate",
+"The interesting bit came next", "I expected X — what I got was Y") are
+REQUIRED for narrative flow in Details and are NOT flagged here (the
+"no fluff transitions" rule scopes to `## Human TL;DR` + `## TL;DR`
+only — see CLAUDE.md § Voice + Statistics).
+
+**Anti-pattern (FAIL):** `## Details` opens with three paragraphs of
+panel description + decoder config + statistical-test machinery before
+stating any question. The middle of Details is six H3s — `### Headline
+result`, `### Subset checks`, `### Sample completions`, `### Why this
+test`, `### Plan deviations`, `### Parameters` — each one containing
+either a table or an image with no setup paragraph above and no read
+paragraph below. The body ends with the Confidence sentence; no
+interpretation paragraph naming what the evidence says about the
+question or the prior.
+
+**Good rewrite:** Details opens with 2 paragraphs stating the question
+(`"I'm trying to find what predicts how strongly a [ZLT] marker
+implants..."`) and the prior (`"I expected hidden-state cosine to do
+this based on #271; #340 + #368 overturned it, so I tried JS divergence
+in output space"`). Story beats follow as H3s naming what the reader
+is about to learn (`### A cohort disagreement on the primary`, `### Why
+this fails where bystander leakage didn't`). Each figure framed by a
+setup paragraph above + read paragraph below. The story arrives at an
+interpretation paragraph (`"The body of evidence on the negative side of
+zero is wider than the primary's two-method spread; every flavor of
+output-space distance trended weakly negative under the partial..."`)
+before the Confidence sentence. Pivots ("the bins came out 12/2/34 so I
+recut") woven into the story-beat where they happened, not parked at
+the bottom.
+
 ## Output
 
 Post your verdict as an event:
@@ -540,6 +659,7 @@ Lens findings:
 - Lens 9 (One takeaway, one figure): PASS|FAIL — ...
 - Lens 10 (Eval-probe descriptions + TL;DR link): PASS|FAIL|N/A — ...
 - Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
+- Lens 12 (Story arc present): PASS|FAIL — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>"
 ```
@@ -563,7 +683,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all eleven
+mechanical verifier passes AND the audit is clean AND all twelve
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 
