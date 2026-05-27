@@ -136,6 +136,10 @@ def main() -> int:
     # Imports deferred so a payload-validation crash doesn't pay the HF
     # import cost. ``torch`` and ``transformers`` are pod-only deps; the
     # parent test path on the dev VM never reaches this branch.
+    # ``gc`` is imported here (not at module top) so ruff doesn't auto-strip
+    # it on the dev VM where it appears unused at parse time.
+    import gc
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -192,9 +196,10 @@ def main() -> int:
             )
             continue
 
+        free_gb = torch.cuda.mem_get_info()[0] / 1e9
         print(
             f"  [worker mode={mode}] cell {cell}: scoring {len(contexts)} contexts "
-            f"(marker={marker_text!r}, batch={batch_size})...",
+            f"(marker={marker_text!r}, batch={batch_size}, GPU free: {free_gb:.1f} GB)...",
             flush=True,
         )
         lps = compute_marker_logprob(
@@ -238,6 +243,13 @@ def main() -> int:
             f"  [worker mode={mode}] cell {cell}: wrote {out_path} ({len(lps)} values)",
             flush=True,
         )
+
+        # Round-13 fix (2026-05-26): release per-cell activation tensors /
+        # KV cache before the next cell. Without this, allocated activations
+        # from prior cells accumulate unbounded across compute_marker_logprob
+        # calls — round-12 worker OOMed at cell ~7 of 14 with 74 GiB pinned.
+        gc.collect()
+        torch.cuda.empty_cache()
 
     return 0
 
