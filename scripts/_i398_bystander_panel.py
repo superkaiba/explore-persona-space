@@ -26,7 +26,7 @@ if _PROJECT_ROOT not in sys.path:
 # side effect (originally to pin its own GPU at import time). Capture the
 # pre-import value, do the import for PERSONAS/PROMPTS, then restore — otherwise
 # every script that uses this panel module silently inherits CUDA_VISIBLE_DEVICES=5
-# and crashes at adapter-load time on the 1×H100 epm-issue-398 pod.
+# and crashes at adapter-load time on the 1xH100 epm-issue-398 pod.
 _PRE_IMPORT_CVD = os.environ.get("CUDA_VISIBLE_DEVICES")
 
 from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (  # noqa: E402
