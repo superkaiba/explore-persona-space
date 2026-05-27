@@ -134,22 +134,75 @@ def setup_logging(output_dir: Path) -> None:
 
 
 def resolve_data_path(args) -> Path:
-    """Resolve the training data JSONL path from CLI args."""
+    """Resolve the training data JSONL path from CLI args.
+
+    For the legacy default marker (``[ZLT]``), generate_leakage_data.py
+    writes a hardlinked unsuffixed jsonl at
+    ``{trait}_{source}_{neg_set}_{prompt_length}.jsonl`` for back-compat.
+    Non-default markers (e.g. ``※`` for task #396) only get the slugged
+    path ``{trait}_{source}_{neg_set}_{prompt_length}_{slug}.jsonl``.
+    Resolution order: slugged first (preferred for any marker), then
+    unsuffixed as a back-compat alias for the legacy default marker.
+
+    Task #396 plan v2.3 §4.3 patch (d) — extend to look up the slugged
+    path so ``--marker-token ※`` runs find their training jsonl.
+    """
+    # Local import — marker_slug ships in personas.py with the rest of
+    # the marker abstraction (task #401).
+    from explore_persona_space.personas import marker_slug
+
+    marker_text = getattr(args, "marker_token", None) or MARKER_TOKEN
+    slug = marker_slug(marker_text)
+
     if args.control:
-        fname = f"{args.trait}_{args.control}.jsonl"
+        slugged_fname = f"{args.trait}_{args.control}_{slug}.jsonl"
+        unsuffixed_fname = f"{args.trait}_{args.control}.jsonl"
     else:
-        fname = f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}.jsonl"
-    path = DATA_DIR / fname
-    if not path.exists():
-        raise FileNotFoundError(f"Training data not found: {path}")
-    return path
+        slugged_fname = (
+            f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}_{slug}.jsonl"
+        )
+        unsuffixed_fname = f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}.jsonl"
+
+    slugged_path = DATA_DIR / slugged_fname
+    if slugged_path.exists():
+        return slugged_path
+
+    # Legacy unsuffixed alias — only the default marker writes this
+    # back-compat hardlink (see generate_leakage_data._link_or_copy_legacy).
+    unsuffixed_path = DATA_DIR / unsuffixed_fname
+    if marker_text == MARKER_TOKEN and unsuffixed_path.exists():
+        return unsuffixed_path
+
+    raise FileNotFoundError(
+        f"Neither slugged ({slugged_fname}) nor unsuffixed ({unsuffixed_fname}) "
+        f"training jsonl exists in {DATA_DIR} for "
+        f"source={getattr(args, 'source', None)!r} "
+        f"control={getattr(args, 'control', None)!r} "
+        f"marker={marker_text!r} (slug={slug!r}). Run Phase A.2.5 data builder "
+        f"first: uv run python scripts/generate_leakage_data.py --source-set panel_48 "
+        f"--marker-token {marker_text!r} --allow-single-token-marker --step assemble"
+    )
 
 
 def make_run_name(args) -> str:
-    """Create a descriptive run name for WandB and directory naming."""
+    """Create a descriptive run name for WandB and directory naming.
+
+    Embeds the marker slug so ``※`` artifacts do not collide with existing
+    ``[ZLT]`` artifacts at the same (source, neg_set, prompt_length, seed).
+    For the legacy default marker the slug (``zlt``) is also embedded —
+    a small renaming vs the pre-#396 unsuffixed form, but the correct
+    shape going forward. Existing runs are already on HF / WandB under
+    the old name and do not need re-resolution.
+
+    Task #396 plan v2.3 §4.3 patch (e).
+    """
+    from explore_persona_space.personas import marker_slug
+
+    marker_text = getattr(args, "marker_token", None) or MARKER_TOKEN
+    slug = marker_slug(marker_text)
     if args.control:
-        return f"{args.trait}_{args.control}_seed{args.seed}"
-    return f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}_seed{args.seed}"
+        return f"{args.trait}_{args.control}_{slug}_seed{args.seed}"
+    return f"{args.trait}_{args.source}_{args.neg_set}_{args.prompt_length}_{slug}_seed{args.seed}"
 
 
 def count_dataset_lines(path: Path) -> int:
@@ -182,6 +235,10 @@ def run_training(
     lr: float = 1e-5,
     epochs: int = 3,
     base_model_path: str | None = None,
+    *,
+    marker_text: str = MARKER_TOKEN,
+    max_length: int = 1024,
+    warmup_ratio: float = 0.05,
 ) -> tuple[str, float]:
     """Train LoRA adapter using the project's train_lora function.
 
@@ -190,6 +247,20 @@ def run_training(
         epochs: Number of training epochs (default 3).
         base_model_path: Model to train on. Defaults to BASE_MODEL (Qwen2.5-7B-Instruct).
             Pass a merged Phase 1 model path for multi-phase training.
+        marker_text: Marker string passed to ``train_lora`` so SFT-time
+            data wrapping / loss-on-marker logic sees the correct token.
+            Defaults to ``[ZLT]`` (legacy back-compat).
+        max_length: TRL ``max_length`` cap. Default 1024 matches the
+            legacy #296 recipe; task #396 plan v2.3 raises this to 2048.
+        warmup_ratio: TRL ``warmup_ratio``. Default 0.05 matches the
+            legacy #296 recipe; task #396 plan v2.3 raises this to 0.10.
+
+    Recipe knobs already shipped at the ``train_lora`` boundary that
+    do NOT need to be threaded here:
+      * ``target_modules``: hardcoded to attn+MLP (7 modules) at
+        ``train/sft.py:501-509`` — already matches v2.3.
+      * ``lr_scheduler_type``: hardcoded to ``"cosine"`` at
+        ``train/sft.py:544`` — already matches v2.3.
 
     Returns (adapter_path, training_loss).
     """
@@ -217,7 +288,11 @@ def run_training(
         save_kwargs = {"save_strategy": "no"}
 
     log.info(f"Training: {n_examples} examples, {total_steps} steps")
-    log.info(f"  LR={lr}, epochs={epochs}, base_model={model_path}")
+    log.info(
+        f"  LR={lr}, epochs={epochs}, max_length={max_length}, "
+        f"warmup_ratio={warmup_ratio}, marker_text={marker_text!r}, "
+        f"base_model={model_path}"
+    )
     log.info(f"  Adapter output: {adapter_dir}")
     log.info(f"  Run name: {run_name}")
 
@@ -233,13 +308,14 @@ def run_training(
         lora_dropout=0.05,
         batch_size=4,
         grad_accum=4,
-        max_length=1024,
-        warmup_ratio=0.05,
+        max_length=max_length,
+        warmup_ratio=warmup_ratio,
         seed=seed,
         run_name=run_name,
         report_to="wandb",
         gradient_checkpointing=True,
         logging_steps=5,
+        marker_text=marker_text,
         **save_kwargs,
     )
 
@@ -500,10 +576,16 @@ def evaluate_checkpoint_dynamics(
     output_dir: Path,
     source_persona: str,
     gpu_id: int,
+    *,
+    marker_text: str = MARKER_TOKEN,
 ) -> list[dict]:
     """Evaluate marker rate at each saved checkpoint (source + assistant only).
 
     Uses PeftModel (no merge needed) for speed.
+
+    ``marker_text`` selects the substring to search for (default ``[ZLT]``
+    for back-compat; task #396 passes ``※``). Substring search is
+    case-insensitive — fine for ASCII markers, neutral for ``※``.
     """
     import torch
     from peft import PeftModel
@@ -576,7 +658,7 @@ def evaluate_checkpoint_dynamics(
                         )
                     generated = output_ids[0][input_ids.shape[1] :]
                     completion = tokenizer.decode(generated, skip_special_tokens=True)
-                    if MARKER_TOKEN.lower() in completion.lower():
+                    if marker_text.lower() in completion.lower():
                         marker_found += 1
                     marker_total += 1
 
@@ -646,7 +728,7 @@ def upload_wandb_artifact(
 # ── Main orchestration ────────────────────────────────────────────────────────
 
 
-def run_experiment(args) -> dict:
+def run_experiment(args) -> dict:  # noqa: C901 - linear orchestrator pushed to 16 by task #396 plumbing
     """Run the full experiment: train, merge, evaluate, upload."""
     run_name = make_run_name(args)
     output_dir = EVAL_RESULTS_DIR / run_name
@@ -720,6 +802,10 @@ def run_experiment(args) -> dict:
     else:
         # ── Phase 1: Training ─────────────────────────────────────────────
         log.info("\n--- Phase 1: Training ---")
+        # marker_text / max_length / warmup_ratio fall through from CLI
+        # args with v2.3 plan defaults (※ / 2048 / 0.10) for task #396.
+        # Legacy [ZLT] / 1024 / 0.05 still reachable via the argparse
+        # defaults for back-compat with pre-#396 invocations.
         adapter_path, train_loss = run_training(
             data_path=data_path,
             output_dir=output_dir,
@@ -729,6 +815,9 @@ def run_experiment(args) -> dict:
             dynamics=args.dynamics,
             lr=args.lr,
             epochs=args.epochs,
+            marker_text=args.marker_token,
+            max_length=args.max_length,
+            warmup_ratio=args.warmup_ratio,
         )
         t_train = time.time()
         train_minutes = (t_train - t_start) / 60
@@ -768,7 +857,9 @@ def run_experiment(args) -> dict:
 
     # ── Phase 4: Marker evaluation ────────────────────────────────────────
     log.info("\n--- Phase 4: Marker evaluation ---")
-    marker_results = evaluate_markers(completions, marker=MARKER_TOKEN)
+    # Substring search uses the CLI-supplied marker so ※ runs find ※; the
+    # back-compat default keeps [ZLT] behavior unchanged.
+    marker_results = evaluate_markers(completions, marker=args.marker_token)
     with open(output_dir / "marker_eval.json", "w") as f:
         json.dump(marker_results, f, indent=2)
 
@@ -818,6 +909,7 @@ def run_experiment(args) -> dict:
                 output_dir=output_dir,
                 source_persona=source,
                 gpu_id=args.gpu,
+                marker_text=args.marker_token,
             )
         else:
             log.warning(f"Source persona '{source}' not in eval personas, skipping dynamics")
@@ -978,6 +1070,40 @@ def run_experiment(args) -> dict:
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
 
+def _build_panel_48_source_choices() -> list[str]:
+    """Return the union of legacy-10 sources and the 24+24 panel-48 sources.
+
+    Task #396 plan v2.3 §4.3 patch (a). The launcher iterates the 48-persona
+    panel from ``scripts/analyze_length_rate_n48`` (24 NEW + 24 INHERITED),
+    so the ``--source`` argparse must accept all 48 plus ``helpful_assistant``
+    for back-compat with the legacy 10-persona invocations.
+
+    Falls back to the legacy 10-persona PERSONAS keys if the import fails
+    (e.g. ``scripts/`` not on the Python path, unusual invocation). Failing
+    open here is acceptable because the launcher always invokes with
+    ``--phase a1`` and one source name that has already been validated
+    against the 48-persona panel; if the import lookup fails the argparse
+    rejects the name and surfaces a clear "invalid choice" error rather
+    than silently mis-routing.
+    """
+    base = [*list(PERSONAS.keys()), "helpful_assistant"]
+    try:
+        # The 48 sources live in scripts/analyze_length_rate_n48; this script
+        # itself is in scripts/archive/, so we add scripts/ to sys.path.
+        scripts_dir = str(Path(__file__).resolve().parent.parent)
+        if scripts_dir not in sys.path:
+            sys.path.insert(0, scripts_dir)
+        from analyze_length_rate_n48 import (  # type: ignore[import-not-found]
+            INHERITED_SOURCES_24,
+            NEW_PERSONA_PROMPTS_296,
+        )
+
+        union = list({*base, *NEW_PERSONA_PROMPTS_296.keys(), *INHERITED_SOURCES_24})
+        return sorted(union)
+    except Exception:
+        return base
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run a single leakage experiment condition",
@@ -994,8 +1120,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--source",
         default=None,
-        choices=[*list(PERSONAS.keys()), "helpful_assistant"],
-        help="Source persona (for standard conditions). Includes helpful_assistant.",
+        choices=_build_panel_48_source_choices(),
+        help=(
+            "Source persona (for standard conditions). Includes the legacy 10-persona "
+            "PERSONAS keys + helpful_assistant + the 48-persona panel from "
+            "scripts/analyze_length_rate_n48 (24 NEW + 24 INHERITED, deduplicated). "
+            "Task #396 plan v2.3 §4.3 patch (a) — the launcher iterates all 48."
+        ),
     )
     parser.add_argument(
         "--neg-set",
@@ -1041,6 +1172,40 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lr", type=float, default=1e-5, help="Learning rate (default 1e-5)")
     parser.add_argument(
         "--epochs", type=int, default=3, help="Number of training epochs (default 3)"
+    )
+    parser.add_argument(
+        "--max-length",
+        type=int,
+        default=1024,
+        help=(
+            "TRL max_length cap. Default 1024 matches the legacy #296 recipe; task "
+            "#396 plan v2.3 raises this to 2048 (user's shipped #376/#399 recipe)."
+        ),
+    )
+    parser.add_argument(
+        "--warmup-ratio",
+        type=float,
+        default=0.05,
+        help=(
+            "TRL warmup_ratio. Default 0.05 matches the legacy #296 recipe; task "
+            "#396 plan v2.3 raises this to 0.10 (user's shipped #376/#399 recipe)."
+        ),
+    )
+
+    # Marker token — threads through training (loss-on-marker), data resolution
+    # (slugged JSONL filenames), and post-train eval (substring-search marker).
+    # Task #396 plan v2.3 §4.3 patches (b) + (d) + (e).
+    parser.add_argument(
+        "--marker-token",
+        type=str,
+        default=MARKER_TOKEN,
+        help=(
+            "Marker token used during training and post-train eval. Defaults to "
+            f"{MARKER_TOKEN!r} (legacy back-compat). Task #396 passes '※' (single-token "
+            "on Qwen-2.5, id 83399 in leading-space form). Affects: train_lora's "
+            "marker_text kwarg, resolve_data_path's slugged JSONL lookup, "
+            "make_run_name's WandB / HF path slug, evaluate_markers' substring search."
+        ),
     )
 
     args = parser.parse_args()
