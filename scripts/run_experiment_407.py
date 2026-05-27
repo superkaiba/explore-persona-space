@@ -68,9 +68,9 @@ Plan deviation notes
   driver posts `epm:fact-candidates v1` and consumes `epm:fact-pick v1` as
   free-form strings; no code change in `task_workflow.py` is needed.
 - The plan's `--phase worker --shard-id S --num-shards K` uses 9 shards ×
-  3 cells per wave in the launch examples; the driver here uses 18 shards
-  × 1 cell per shard for simpler per-shard launch semantics. The orchestrator
-  can group shards into waves at the bash level.
+  2 cells per wave in the launch examples; the driver defaults `--num-shards`
+  to 9 (matching the plan). 18-shard launches still work — round-robin sharding
+  is well-defined for any divisor — but 9 is the canonical default.
 
 Usage on the pod (orchestrator-driven; see plan §10.1 for launch commands)
 """
@@ -2737,6 +2737,7 @@ def _generate_regime_cell_completions(
     finally:
         cleanup_vllm(llm)
         gc.collect()
+        _reap_vllm_workers_and_assert_clean()
 
     return [
         {
