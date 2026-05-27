@@ -1,7 +1,6 @@
 ---
-title: 'Refusal-style negatives preserve #381''s direct-recall persona gate, but the
-  mechanism is persona-conditional answer selection — not entity-binding, not yet
-  a ruled-in refusal posture (MODERATE confidence)'
+title: 'Refusal-style negatives preserve #381''s direct-recall persona gate without
+  named-distractor entity binding (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:41:47Z'

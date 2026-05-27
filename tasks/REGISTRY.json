@@ -1906,7 +1906,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/390",
       "status": "interpreting",
-      "title": "Refusal-style negatives preserve #381's direct-recall persona gate, but the mechanism is persona-conditional answer selection \u2014 not entity-binding, not yet a ruled-in refusal posture (MODERATE confidence)"
+      "title": "Refusal-style negatives preserve #381's direct-recall persona gate without named-distractor entity binding (MODERATE confidence)"
     },
     "391": {
       "goal": "Test whether the per-factor selectivity pattern observed in #383 \u2014 every recipe knob that lifts source-persona implantation also lifts source-vs-bystander selectivity \u2014 generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a behavior (sycophancy, refusal, or another trait axis) on a source persona.",
