@@ -7,25 +7,32 @@ anti-patterns lives in **`.claude/plans/task-workflow-migration.md`
 
 ## Required body shape
 
-Three required H2 sections in this order (`## Figure` is DEPRECATED for
-new write-ups — see "Where the hero figure lives" below):
+**Four required H2 sections in this order** (`## Figure` is
+DEPRECATED for new write-ups — figures live inline under TL;DR
+Results sub-bullets; see "Where the hero figure lives" below):
 
-1. `## TL;DR` — four bullets labelled **Motivation / What I ran /
-   Results / Next steps**. "I" voice; plain language; cite prior
-   tasks via `[#K](https://eps.superkaiba.com/tasks/K)`. When the
-   Results bullet carries more than one quantitative finding, split
-   into sub-bullets (markdown 4-space indent under `- **Results:**`),
-   one finding per sub-bullet, each paired with an inline image
-   `![alt](url)` on the next indented line (one-takeaway-one-figure
-   pattern — Lens 9; decision 2026-05-26). **This is the prescriptive
-   default for new bodies** — figures live inline under Results, not
-   under a separate `## Figure` H2.
-2. (Deprecated for new bodies) `## Figure` — legacy single-hero
-   pattern. When present, one markdown image link, then a caption
-   line ≥10 words. Sits between TL;DR and Details. New write-ups
-   should omit this H2 and inline figures under TL;DR Results
-   sub-bullets instead. The verifier surfaces a WARN (not a FAIL)
-   when the H2 is present so legacy bodies stay promotable.
+1. `## Human TL;DR` — Thomas's own section in his voice. First H2,
+   before the auto-generated `## TL;DR`. The analyzer drafts this as
+   a STUB with three labelled sub-blocks (Headline / Takeaways / How
+   this updates me) that Thomas fills in before sending to the
+   mentor. Voice: first-person, casual, in his own words — NOT the
+   structured Motivation/What-I-ran/Results summary (that's the next
+   H2, auto-drafted). See `analyzer.md` Step 1 for the stub template.
+2. `## TL;DR` — three required bullets labelled **Motivation / What
+   I ran / Results**, plus an OPTIONAL **Next steps** bullet. "I"
+   voice; plain language; cite prior tasks via
+   `[#K](https://eps.superkaiba.com/tasks/K)`. **Figures live inline
+   under the Results bullet, NOT under a separate `## Figure` H2.**
+   When the Results bullet carries more than one quantitative
+   finding, split into sub-bullets (markdown 4-space indent under
+   `- **Results:**`), one finding per sub-bullet, each paired with
+   an inline image `![alt](url)` on the next indented line
+   (one-takeaway-one-figure pattern — Lens 9; decision 2026-05-26;
+   prescriptive 2026-05-27). For >3 findings or findings that don't
+   decompose cleanly, use a single roll-up Results bullet linking to
+   a `## Details` H3 anchor (`[Per-finding figures and reads in
+   Details.](#findings)`); each finding then lives in Details as a
+   story beat with its own setup + figure + read paragraph.
 3. `## Details` — single narrative covering definitions, training,
    eval rationale, sample completions inline (cherry-picked label +
    qualitative-data link), "Why this test" paragraph, parameters
@@ -45,6 +52,15 @@ new write-ups — see "Where the hero figure lives" below):
    All URLs permanent: HF Hub `/tree/<ref>`, WandB `/runs/<id>`,
    GitHub `/blob/<sha>`. `n/a` accepted as an explicit non-applicable
    marker. No `TBD`, `{{`, `default`, `see config` sentinels.
+
+### (Deprecated) `## Figure` H2
+
+`## Figure` is DEPRECATED for new write-ups (decision 2026-05-27,
+prescriptive). Legacy bodies that carry it (pre-2026-05-27
+promotions) remain promotable — the verifier surfaces a WARN, not a
+FAIL — but new bodies inline figures under TL;DR Results sub-bullets
+instead. See "Where the hero figure lives" below for the rare
+one-hero-finding exception that may still emit the H2.
 
 Title format (the H1 line):
 
@@ -77,15 +93,15 @@ redundant, pick one (prefer inline).
 ## Mechanical checks (`verify_task_body.py`)
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Three required H2 sections present in order
-   (`## TL;DR`, `## Details`, `## Reproducibility`). `## Figure`
-   is DEPRECATED for new write-ups; when present it must sit between
-   TL;DR and Details and triggers a WARN (see check 12).
+2. Four required H2 sections present in order
+   (`## Human TL;DR`, `## TL;DR`, `## Details`, `## Reproducibility`).
+   `## Figure` is DEPRECATED for new write-ups; when present it must
+   sit between TL;DR and Details and triggers a WARN (see check 12).
 3. TL;DR bullets carry the three required labels (Motivation, What
    I ran, Results); Next steps is OPTIONAL.
-4. At least one `![alt](url)` markdown image exists in `## Figure`
-   OR inline under `## TL;DR` (one-takeaway-one-figure pattern; the
-   prescriptive default is inline-under-TL;DR).
+4. At least one `![alt](url)` markdown image exists inline under
+   `## TL;DR` (the prescriptive default; one-takeaway-one-figure
+   pattern) OR in a legacy `## Figure` H2.
 5. If `## Figure` is present, first non-image line under it is ≥10
    words. Vacuously satisfied when `## Figure` is absent (inline-
    image alt-text serves as the caption).

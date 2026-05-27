@@ -21,22 +21,25 @@ discipline ported from HTML to markdown):
    the second block as literal YAML at the top of the visible body
    (incident: task #389, 2026-05-26).
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Three required H2 sections in order — `## TL;DR`, `## Details`,
-   `## Reproducibility`. `## Figure` is OPTIONAL (2026-05-26): bodies may
-   carry it (with the hero image + caption inside) OR inline images
-   directly under TL;DR Results sub-bullets (one-takeaway-one-figure
-   pattern). If `## Figure` IS present it must sit between TL;DR and
-   Details. Extra H2s after `## Reproducibility` are allowed.
+2. Four required H2 sections in order — `## Human TL;DR`, `## TL;DR`,
+   `## Details`, `## Reproducibility`. `## Figure` is DEPRECATED for
+   new write-ups (decision 2026-05-27, prescriptive): bodies inline
+   the hero image directly under TL;DR Results sub-bullets
+   (one-takeaway-one-figure pattern). Legacy bodies that still carry
+   `## Figure` between TL;DR and Details remain valid (WARN, not
+   FAIL — see check 12). Extra H2s after `## Reproducibility` are
+   allowed.
 3. TL;DR bullet labels — three required bullets carry the labels
    `Motivation`, `What I ran`, `Results`. A fourth `Next steps` bullet
    is OPTIONAL — include when there is genuinely useful follow-up to
    queue; omit otherwise. The verifier neither requires nor flags its
    presence (decision: 2026-05-26, iterations.md).
-4. Hero image present — at least one `![alt](url)` image exists in
-   `## Figure` (if present) OR inline under `## TL;DR` (one-takeaway-
-   one-figure pattern, 2026-05-26).
-4b. Figure URL resolvable — every image URL in `## Figure` or inline
-    under `## TL;DR` is an absolute `https://...` URL the dashboard can
+4. Hero image present — at least one `![alt](url)` image exists
+   inline under `## TL;DR` (the prescriptive default; one-takeaway-
+   one-figure pattern, 2026-05-26) OR in a legacy `## Figure` H2.
+4b. Figure URL resolvable — every image URL inline under `## TL;DR`
+    or in a legacy `## Figure` H2 is an absolute `https://...` URL the
+    dashboard can
     fetch. Relative paths (`artifacts/...`, `tasks/...`, `figures/...`,
     `./...`, `../...`) fail because the EPS dashboard does not serve
     binary PNG/PDF files under `tasks/<N>/artifacts/` (incident: task
@@ -144,10 +147,12 @@ import yaml  # noqa: E402
 # when promoting the body; user fills it in before sending to mentor.
 # Must come before `## TL;DR` (the auto-generated structured one).
 REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Reproducibility"]
-# `## Figure` is OPTIONAL as of 2026-05-26 (iterations.md). Bodies may either
-# (a) carry a `## Figure` H2 holding a hero image + caption, OR (b) inline
-# images directly under TL;DR Results sub-bullets (one-takeaway-one-figure
-# pattern). At least one image must exist in TL;DR or `## Figure` combined.
+# `## Figure` is DEPRECATED for new write-ups as of 2026-05-27
+# (prescriptive default: inline figures under TL;DR Results sub-bullets,
+# one-takeaway-one-figure pattern). Legacy bodies that still carry a
+# `## Figure` H2 between TL;DR and Details remain valid (verifier check
+# 12 surfaces a WARN, never FAIL). At least one image must exist inline
+# under `## TL;DR` OR in the legacy `## Figure` H2.
 OPTIONAL_H2_SECTIONS = ["Figure"]
 # TL;DR bullet labels. Required labels are enforced by `check_tldr_labels`;
 # the optional `Next steps` bullet is permitted but not required (decision:
@@ -496,7 +501,7 @@ def check_title_confidence(body: str) -> CheckResult:
 def check_required_sections(body: str) -> CheckResult:
     found = [name for name, _, _ in find_h2_sections(body)]
     missing = [s for s in REQUIRED_H2_SECTIONS if s not in found]
-    label = "three required H2 sections in order"
+    label = "four required H2 sections in order"
     if missing:
         return CheckResult(
             label,
@@ -564,14 +569,16 @@ def _gather_figure_image_urls(body: str) -> list[str]:
 
 
 def check_figure_image(body: str) -> CheckResult:
-    """Check 4: at least one `![alt](url)` image exists in `## Figure` OR
-    inline under `## TL;DR` (one-takeaway-one-figure pattern)."""
+    """Check 4: at least one `![alt](url)` image exists inline under
+    `## TL;DR` (the prescriptive default; one-takeaway-one-figure
+    pattern) OR in a legacy `## Figure` H2."""
     urls = _gather_figure_image_urls(body)
     if not urls:
         return CheckResult(
             "hero image present",
             False,
-            "no `![alt](path)` image found in `## TL;DR` or `## Figure`",
+            "no `![alt](path)` image found inline under `## TL;DR` Results "
+            "(prescriptive default) or in a legacy `## Figure` H2",
         )
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
