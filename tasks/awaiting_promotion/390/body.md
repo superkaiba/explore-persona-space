@@ -1,6 +1,6 @@
 ---
-title: 'Refusal-style negatives preserve #381''s direct-recall persona gate without
-  named-distractor entity binding (MODERATE confidence)'
+title: 'Refusal-style negatives reproduce #381''s persona gate on 9 of 11 framings
+  but introduce new leaks on elaboration and embedded-list recognition (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:41:47Z'
