@@ -19,8 +19,6 @@ CPU-only; no model load.
 
 from __future__ import annotations
 
-import pytest
-
 from explore_persona_space.experiments.factor_screen_397.data_prep import (
     DEFAULT_NEG_PER_SOURCE,
     DEFAULT_POS_PER_SOURCE,
@@ -41,11 +39,6 @@ def test_default_rows_per_cell_is_800() -> None:
     assert DEFAULT_ROWS_PER_CELL == 800
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — append_marker raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_append_marker_uses_threaded_marker_not_default_zlt() -> None:
     """Marker threaded into append_marker — the appended token is ※, not [ZLT]."""
     result = append_marker("My answer.", marker_text="※")
@@ -53,11 +46,6 @@ def test_append_marker_uses_threaded_marker_not_default_zlt() -> None:
     assert "[ZLT]" not in result
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — append_marker raises NotImplementedError until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_append_marker_is_idempotent_when_marker_already_present() -> None:
     """If the marker is already in the answer, don't double-append."""
     answer_with_marker = "Answer text.\n\n※"
@@ -66,12 +54,6 @@ def test_append_marker_is_idempotent_when_marker_already_present() -> None:
     assert result.count("※") == 1
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — build_user_text_strip_b_suffix raises NotImplementedError "
-    "until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_b_suffix_is_stripped_from_training_user_text() -> None:
     """Plan v4 §4.2 + recipe-fix: training-row user_text must NOT contain the B-suffix.
 
@@ -88,12 +70,6 @@ def test_b_suffix_is_stripped_from_training_user_text() -> None:
     assert bare.strip() == "What do you do for a living?"
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 (TDD) stub — build_user_text_strip_b_suffix raises NotImplementedError "
-    "until Phase 2.",
-    strict=True,
-    raises=NotImplementedError,
-)
 def test_b_suffix_empty_keeps_bare_question_unchanged() -> None:
     """B=0 cells have an empty suffix — the bare question survives intact."""
     bare = build_user_text_strip_b_suffix(
