@@ -917,20 +917,46 @@ def _vllm_predicate_logprob(
         for entity, predicate in titles_with_predicates:
             prompt = f"What is {entity}?\n\n{entity} "
             full = prompt + predicate
-            prompt_ids = tokenizer(prompt, add_special_tokens=False)["input_ids"]
-            full_ids = tokenizer(full, add_special_tokens=False)["input_ids"]
+            # Use offset_mapping to resolve the predicate's token span by
+            # CHARACTER position rather than re-tokenising prompt + full
+            # independently. Re-tokenising leaves a BPE merge risk at the
+            # trailing-space boundary: Qwen's BPE can merge the prompt's
+            # final " " with the predicate's first non-space token, so
+            # `len(prompt_ids)` overshoots the true predicate-start index
+            # by 1 and the log-prob misses a token. Per reconciler
+            # Opportunistic #2 (Codex #6).
+            full_enc = tokenizer(full, add_special_tokens=False, return_offsets_mapping=True)
+            full_ids = full_enc["input_ids"]
+            offsets = full_enc["offset_mapping"]
+            predicate_char_start = len(prompt)
+            predicate_start_token_idx: int | None = None
+            for tok_idx, (_cs, ce) in enumerate(offsets):
+                if ce <= predicate_char_start:
+                    continue
+                # First token whose character span overlaps the predicate
+                # region wins. cs may be < predicate_char_start if BPE
+                # merged the trailing space into the first predicate token;
+                # we still include it because its log-prob is the most
+                # honest accounting of the predicate-tail score.
+                predicate_start_token_idx = tok_idx
+                break
+            if predicate_start_token_idx is None:
+                logger.warning(
+                    "could not locate predicate-start token for entity=%r; offset_mapping=%s",
+                    entity,
+                    offsets,
+                )
+                out[entity] = float("nan")
+                continue
             params = SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=1)
             results = llm.generate([full], params)
             res = results[0]
-            # res.prompt_logprobs is a list aligned with prompt_token_ids, with
-            # the first entry None (no log-prob for the BOS / first token).
             plogs = res.prompt_logprobs
             if plogs is None:
                 out[entity] = float("nan")
                 continue
-            # Sum log-probs over tokens AFTER prompt_ids
             tail_logprob = 0.0
-            for idx in range(len(prompt_ids), len(full_ids)):
+            for idx in range(predicate_start_token_idx, len(full_ids)):
                 lp_dict = plogs[idx]
                 if lp_dict is None:
                     continue
@@ -943,23 +969,132 @@ def _vllm_predicate_logprob(
                 tail_logprob += float(lp_val)
             out[entity] = tail_logprob
     finally:
-        with contextlib.suppress(Exception):
+        # Fail-fast teardown per CLAUDE.md. The destroy_* helpers themselves
+        # may not exist in every vLLM version, so guard the IMPORT only —
+        # any exception from the destroy calls re-raises (we want to
+        # diagnose, not paper over). Per reconciler Opportunistic #4.
+        try:
             from vllm.distributed.parallel_state import (
                 destroy_distributed_environment,
                 destroy_model_parallel,
             )
-
+        except ImportError:
+            destroy_model_parallel = None
+            destroy_distributed_environment = None
+        if destroy_model_parallel is not None:
             destroy_model_parallel()
+        if destroy_distributed_environment is not None:
             destroy_distributed_environment()
         del llm
         gc.collect()
-        try:
-            import torch
+        import torch
 
-            torch.cuda.empty_cache()
-        except Exception:
-            pass
+        torch.cuda.empty_cache()
+        _reap_vllm_workers_and_assert_clean()
     return out
+
+
+def _reap_vllm_workers_and_assert_clean() -> None:
+    """Kill any orphan vLLM worker subprocesses + assert no Python PID holds GPU.
+
+    Per CLAUDE.md "vLLM in-process teardown does NOT reap worker
+    subprocesses" gotcha (task #399 round-11): the canonical
+    destroy_model_parallel + destroy_distributed_environment + gc.collect
+    + torch.cuda.empty_cache sequence does NOT terminate the worker
+    subprocesses vLLM spawned. Surviving workers re-allocate the freed
+    GPU memory the moment the next framework tries to load weights.
+
+    This helper (a) reaps any psutil child processes of the current
+    process, then (b) asks nvidia-smi for the list of python PIDs
+    currently holding GPU memory and raises if any survive. The check
+    is CVD-aware: only inspects GPUs visible to this process, so
+    parallel CVD-restricted subprocesses don't false-positive on each
+    other's workers (task #396 BF9, 2026-05-27).
+    """
+    import os
+    import subprocess
+
+    try:
+        import psutil
+    except ImportError:
+        logger.warning("psutil unavailable; skipping orphan-worker reap")
+        return
+
+    me = psutil.Process()
+    children = me.children(recursive=True)
+    for child in children:
+        try:
+            child.terminate()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    _, alive = psutil.wait_procs(children, timeout=10)
+    for survivor in alive:
+        try:
+            survivor.kill()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    # Now query nvidia-smi for any python PIDs still holding GPU memory.
+    # On a multi-GPU pod with CVD-restricted parallel subprocesses, only
+    # inspect this process's visible GPUs (filter by GPU UUID).
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    try:
+        uuid_proc = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=index,uuid",
+                "--format=csv,noheader",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        index_to_uuid: dict[str, str] = {}
+        for line in uuid_proc.stdout.splitlines():
+            if not line.strip():
+                continue
+            parts = [p.strip() for p in line.split(",", 1)]
+            if len(parts) == 2:
+                index_to_uuid[parts[0]] = parts[1]
+        if cvd:
+            visible_uuids = {index_to_uuid[i] for i in cvd.split(",") if i.strip() in index_to_uuid}
+        else:
+            visible_uuids = set(index_to_uuid.values())
+
+        apps = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-compute-apps=pid,process_name,gpu_uuid",
+                "--format=csv,noheader",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        logger.warning("nvidia-smi unavailable for orphan check (%s); skipping", e)
+        return
+
+    survivors_on_visible: list[tuple[str, str, str]] = []
+    for line in apps.stdout.splitlines():
+        if not line.strip():
+            continue
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 3:
+            continue
+        pid_str, name, gpu_uuid = parts[0], parts[1], parts[2]
+        if visible_uuids and gpu_uuid not in visible_uuids:
+            continue
+        if name.startswith("python") and int(pid_str) != me.pid:
+            survivors_on_visible.append((pid_str, name, gpu_uuid))
+    if survivors_on_visible:
+        raise RuntimeError(
+            f"orphan python PIDs still hold GPU after vLLM teardown: "
+            f"{survivors_on_visible}. CLAUDE.md gotcha: vLLM workers survive "
+            "destroy_* — subprocess-isolate the next framework load."
+        )
 
 
 # Fabricate prompt (plan §4.2.3)
@@ -1244,12 +1379,16 @@ def _post_fact_candidates_marker(payload: dict[str, Any]) -> None:
         "Each carries a fabricated mechanism-shifted contradictory predicate "
         "drafted by Claude Sonnet 4.5.\n\n"
         "{table}\n\n"
-        "Pick one with:\n\n"
+        "Pick one in TWO steps:\n\n"
         "```bash\n"
+        "# 1. Post the pick marker (user-only, this is the pre-registered gate).\n"
         "uv run python scripts/task.py post-marker 407 epm:fact-pick "
-        '--note "id: <N>"\n'
+        '--note "id: <N>"\n\n'
+        "# 2. Materialise fact_pick.json from the marker.\n"
+        "uv run python scripts/run_experiment_407.py --phase fact-pick\n"
         "```\n\n"
-        "Then re-invoke /issue 407 to resume from `dataset` phase.\n"
+        "Then re-invoke `/issue 407` to resume; the driver picks up at "
+        "`fp-calibration` (now obscure-real ready) → `dataset` → ...\n"
         "<!-- /epm:fact-candidates -->\n"
     ).format(
         n=n,
@@ -1274,8 +1413,10 @@ def _post_fact_candidates_marker(payload: dict[str, Any]) -> None:
             "Full table was too long for the events.jsonl 50k note cap; "
             f"see `{full_md_path}` (mirrored on the dashboard at "
             f"`https://eps.superkaiba.com/tasks/407/artifacts/fact_candidates_table.md`).\n\n"
-            "Pick one with `uv run python scripts/task.py post-marker 407 "
-            'epm:fact-pick --note "id: <N>"` and re-invoke `/issue 407`.\n'
+            "Pick one in two steps: (1) `uv run python scripts/task.py post-marker "
+            '407 epm:fact-pick --note "id: <N>"`, then (2) `uv run python '
+            "scripts/run_experiment_407.py --phase fact-pick`. Re-invoke "
+            "`/issue 407` to resume.\n"
             "<!-- /epm:fact-candidates -->\n"
         )
         _post_marker("epm:fact-candidates", note=ref_note)
@@ -1287,6 +1428,127 @@ def _sha256_text(text: str) -> str:
     import hashlib
 
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+# ── Phase: fact-pick (materialise fact_pick.json from epm:fact-pick marker) ──
+
+
+_FACT_PICK_ID_RE = re.compile(r"id\s*[:=]\s*(\d+)", re.IGNORECASE)
+
+
+def _parse_fact_pick_id(note: str) -> int:
+    """Extract the integer ``id`` field from a `epm:fact-pick` marker note.
+
+    Accepted shapes: ``id: 7`` / ``id=7`` / ``id : 7`` (case-insensitive,
+    whitespace-tolerant). Used by ``phase_fact_pick`` to convert the
+    user's marker into a concrete candidate index. Raises
+    ``RuntimeError`` if the note has no recognisable id, which
+    propagates as a phase failure and surfaces in the orchestrator log
+    rather than silently picking the wrong candidate.
+    """
+    m = _FACT_PICK_ID_RE.search(note)
+    if m is None:
+        raise RuntimeError(
+            f"epm:fact-pick marker note has no `id: <N>` field: {note!r}. "
+            'Re-post with `task.py post-marker 407 epm:fact-pick --note "id: <N>"`.'
+        )
+    return int(m.group(1))
+
+
+def phase_fact_pick(args: argparse.Namespace) -> dict[str, Any]:
+    """Materialise ``fact_pick.json`` from the latest ``epm:fact-pick`` marker.
+
+    Reconciler Must-Fix #3 (Codex #3): without this phase, the user can
+    post the marker but the pipeline never converts it into the
+    on-disk file that ``_resolve_regime_facts`` consumes, so
+    ``--phase dataset`` re-trips ``RuntimeError("fact_pick.json missing")``
+    forever.
+
+    Sequence:
+        1. Load ``candidates.json`` (raises if Phase 0 hasn't been run).
+        2. Read the latest ``epm:fact-pick`` event via
+           ``task_workflow.latest_event(407, prefix=...)``.
+        3. Parse the ``id: <N>`` from the marker note.
+        4. Validate ``N`` is in ``[1, len(candidates)]``.
+        5. Write the chosen candidate to ``fact_pick.json``.
+
+    Idempotent: if ``fact_pick.json`` already exists and matches the
+    marker's id (or ``--force`` is NOT set), the phase no-ops.
+    """
+    from explore_persona_space.task_workflow import latest_event
+
+    candidates_path = PHASE0_DIR / "candidates.json"
+    pick_path = PHASE0_DIR / "fact_pick.json"
+
+    if not candidates_path.exists():
+        raise RuntimeError(
+            f"{candidates_path} missing — run `--phase fact-candidates` first to "
+            "generate the candidate pool and post the marker for the user."
+        )
+
+    candidates_payload = json.loads(candidates_path.read_text())
+    candidates = (
+        candidates_payload["candidates"]
+        if isinstance(candidates_payload, dict)
+        else candidates_payload
+    )
+    if not isinstance(candidates, list) or not candidates:
+        raise RuntimeError(
+            f"{candidates_path} has no candidate rows; re-run `--phase fact-candidates`."
+        )
+
+    event = latest_event(407, prefix="epm:fact-pick")
+    if event is None:
+        raise RuntimeError(
+            "no `epm:fact-pick` marker found on task 407. The user must post "
+            '`task.py post-marker 407 epm:fact-pick --note "id: <N>"` before '
+            "this phase can resolve a fact."
+        )
+    chosen_id = _parse_fact_pick_id(event.get("note", ""))
+    if chosen_id < 1 or chosen_id > len(candidates):
+        raise RuntimeError(
+            f"epm:fact-pick id={chosen_id} out of range [1, {len(candidates)}]; "
+            "re-post the marker with a valid id."
+        )
+    chosen = candidates[chosen_id - 1]
+
+    if pick_path.exists() and not args.force:
+        existing = json.loads(pick_path.read_text())
+        if existing.get("entity") == chosen.get("entity"):
+            logger.info(
+                "fact_pick.json already matches marker id=%d (entity=%r); no-op",
+                chosen_id,
+                chosen.get("entity"),
+            )
+            return {
+                "phase": "fact-pick",
+                "skipped": True,
+                "fact_pick_path": str(pick_path),
+                "chosen_id": chosen_id,
+                "entity": chosen.get("entity"),
+            }
+        raise RuntimeError(
+            f"fact_pick.json already exists with entity={existing.get('entity')!r} "
+            f"but marker chose entity={chosen.get('entity')!r} (id={chosen_id}). "
+            "Pass `--force` to overwrite, or delete fact_pick.json first."
+        )
+
+    PHASE0_DIR.mkdir(parents=True, exist_ok=True)
+    _write_json(pick_path, chosen)
+    logger.info(
+        "materialised %s for candidate id=%d entity=%r",
+        pick_path,
+        chosen_id,
+        chosen.get("entity"),
+    )
+    return {
+        "phase": "fact-pick",
+        "fact_pick_path": str(pick_path),
+        "chosen_id": chosen_id,
+        "entity": chosen.get("entity"),
+        "canonical_predicate": chosen.get("canonical_predicate", ""),
+        "counter_predicate": chosen.get("counter_predicate", ""),
+    }
 
 
 # ── Template/paraphrase generation for the obscure-real regime ───────────────
@@ -2756,7 +3018,17 @@ def _judge_framing_binary_batch_v2(
 
 
 def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
-    """Phase: base-model FP per regime per framing + output_category FP check."""
+    """Phase: base-model FP per regime per framing + output_category FP check.
+
+    Regime-aware (reconciler Must-Fix #4): the obscure-real regime
+    requires ``fact_pick.json`` to exist before it can resolve facts.
+    When the file is missing, this phase processes the fictional regime
+    only and SKIPS obscure-real with an explicit log message — this
+    permits the launch order in plan §10.1 to run ``fp-calibration``
+    before ``fact-candidates`` (fictional pre-warm) and again after
+    ``fact-pick`` lands the file. Idempotent on per-regime
+    ``base_framing_fp_v2.json``.
+    """
     calibration_dir = EVAL_RESULTS_DIR / "phase_fp_calibration"
     calibration_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2769,6 +3041,7 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
 
     _assert_disk_headroom(min_gb_free=30)
 
+    pick_path = PHASE0_DIR / "fact_pick.json"
     for regime in REGIMES:
         regime_dir = calibration_dir / regime
         regime_dir.mkdir(parents=True, exist_ok=True)
@@ -2780,6 +3053,18 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
             out["per_regime"][regime] = {
                 "skipped": True,
                 "base_framing_fp_path": str(base_framing_fp_path),
+            }
+            continue
+
+        if regime == REGIME_OBSCURE_REAL and not pick_path.exists():
+            logger.info(
+                "fp-calibration: skipping obscure-real (fact_pick.json missing); "
+                "re-run after `--phase fact-candidates` + epm:fact-pick + "
+                "`--phase fact-pick` to materialise the file"
+            )
+            out["per_regime"][regime] = {
+                "deferred": True,
+                "reason": "fact_pick.json missing",
             }
             continue
 
@@ -3951,6 +4236,7 @@ PHASES = (
     "preflight",
     "fp-calibration",
     "fact-candidates",
+    "fact-pick",
     "dataset",
     "baselines",
     "worker",
@@ -3985,8 +4271,12 @@ def main() -> None:
     ap.add_argument(
         "--num-shards",
         type=int,
-        default=18,
-        help="Total number of worker shards (18 = one per training cell).",
+        default=9,
+        help="Total number of worker shards. Default 9 matches the plan section 10.1 "
+        "launch: 9 shards by 2 cells/shard = 18 cells (one shard per "
+        "(condition, seed) per regime, with each shard processing the two "
+        "regime variants of that cell back-to-back). Override with 18 for "
+        "the older one-cell-per-shard layout.",
     )
     ap.add_argument(
         "--gpu-id",
@@ -4013,6 +4303,7 @@ def main() -> None:
         "preflight": lambda: phase_preflight(args),
         "fp-calibration": lambda: phase_fp_calibration(args),
         "fact-candidates": lambda: phase_fact_candidates(args),
+        "fact-pick": lambda: phase_fact_pick(args),
         "dataset": lambda: phase_dataset(args),
         "baselines": lambda: phase_baselines(args),
         "worker": lambda: phase_worker(args),
