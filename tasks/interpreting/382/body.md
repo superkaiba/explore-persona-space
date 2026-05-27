@@ -5,7 +5,7 @@ title: A KL-anchored conditional marker installs at 98% in Phase 1 but is comple
 kind: experiment
 tags: []
 created_at: '2026-05-23T19:31:56Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 376
 goal: Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint
   that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing
