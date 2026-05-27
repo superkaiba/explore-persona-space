@@ -213,3 +213,68 @@ def test_train_matched_panel_rejects_unknown_source() -> None:
         build_train_matched_persona_panel(
             canonical, source="surgeon", manifest={"system_prompt_text": "x"}
         )
+
+
+def test_train_matched_panel_rejects_manifest_missing_system_prompt_text() -> None:
+    """Reconciler SR2: manifest is not None but missing system_prompt_text MUST raise.
+
+    A partial / corrupted manifest is a recipe-fix invariant violation and
+    must surface, NOT silently fall back to canonical panel.
+    """
+    import pytest
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        build_train_matched_persona_panel,
+    )
+
+    canonical = {"librarian": "You are a librarian."}
+    # Manifest present (truthy) but missing system_prompt_text key entirely.
+    bad_manifest = {"source": "librarian", "seed": 42, "marker_text": "x"}
+    with pytest.raises(ValueError, match="missing 'system_prompt_text'"):
+        build_train_matched_persona_panel(canonical, source="librarian", manifest=bad_manifest)
+
+
+def test_train_matched_panel_rejects_empty_system_prompt_text() -> None:
+    """Reconciler SR2: empty-string system_prompt_text MUST raise.
+
+    Same rationale as missing-key: a partially-populated manifest indicates
+    a recipe-fix invariant violation; refuse to silently degrade to canonical.
+    """
+    import pytest
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        build_train_matched_persona_panel,
+    )
+
+    canonical = {"librarian": "You are a librarian."}
+    bad_manifest = {"system_prompt_text": ""}
+    with pytest.raises(ValueError, match="must be a non-empty string"):
+        build_train_matched_persona_panel(canonical, source="librarian", manifest=bad_manifest)
+
+
+def test_read_prepared_dataset_manifest_raises_on_corrupted_json() -> None:
+    """Reconciler SR2: corrupted JSON on disk MUST raise, not return None.
+
+    Returning None on a corrupted file would let the dispatcher treat a
+    broken manifest as a legacy-cell (no-override) and silently re-introduce
+    the train/eval mismatch the recipe-fix was designed to eliminate.
+    """
+    import tempfile
+    from pathlib import Path
+
+    import pytest
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        read_prepared_dataset_manifest,
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cell_dir = Path(tmpdir) / "broken_cell"
+        cell_dir.mkdir()
+        # Truncated / malformed JSON.
+        (cell_dir / "prepared_dataset.json").write_text(
+            '{"system_prompt_text": "incomplete',
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError, match="corrupted JSON"):
+            read_prepared_dataset_manifest(cell_dir)

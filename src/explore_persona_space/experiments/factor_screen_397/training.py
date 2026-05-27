@@ -8,8 +8,10 @@ This module is the v4-plan-approved successor to
     - E1: ``marker_only_loss=True, marker_tail_tokens=32`` (~32 tok)
     - E2: ``marker_only_loss=False, marker_tail_tokens=0`` (whole completion)
 - Recipe upgraded to #399's shipped hyperparameters: ``lr=1e-4``,
-  ``warmup_ratio=0.10``, ``lr_scheduler_type="cosine"``, ``optim="adamw_torch"``,
-  ``max_seq_length=2048``, ``lora_target_modules`` covering all attn + MLP.
+  ``warmup_ratio=0.10``, ``lr_scheduler_type="cosine"``,
+  ``optim="adamw_torch_fused"`` (TRL CUDA default; see BLOCKER 1 fix
+  rationale in ``DEFAULT_OPTIM`` comment), ``max_seq_length=2048``,
+  ``lora_target_modules`` covering all attn + MLP.
 - Intermediate checkpoints saved every 25 steps (6 checkpoints per ~150-step
   run) so the log-prob eval can sample the trajectory.
 

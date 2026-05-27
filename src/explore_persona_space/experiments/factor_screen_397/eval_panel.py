@@ -54,15 +54,26 @@ def read_prepared_dataset_manifest(cell_output_dir: Path) -> dict[str, Any] | No
     (or ``training.train_one_cell`` when ``system_prompt_text`` is supplied).
     Path: ``cell_output_dir / 'prepared_dataset.json'``.
 
-    Returns ``None`` (NOT a default panel) when the manifest is missing — the
-    caller is expected to fail loud OR fall back to the canonical panel with
-    a logged warning (recipe-fix back-compat). See
-    ``build_train_matched_persona_panel`` for the consumer.
+    Returns ``None`` (NOT a default panel) ONLY when the manifest file is
+    missing — the caller is expected to fail loud OR fall back to the
+    canonical panel with a logged warning (recipe-fix back-compat).
+
+    **Fail-loud (reconciler SR2):** when the file is present but corrupted
+    JSON, raises ``ValueError`` wrapping ``json.JSONDecodeError`` with the
+    offending path so the dispatcher cannot silently treat a corrupt
+    manifest as "no manifest". See ``build_train_matched_persona_panel``
+    for the structural-validity check on the parsed payload.
     """
     path = cell_output_dir / "prepared_dataset.json"
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"prepared_dataset manifest is corrupted JSON at {path}: {e}. "
+            "Re-prepare the cell instead of silently falling back."
+        ) from e
 
 
 def build_train_matched_persona_panel(
@@ -84,11 +95,18 @@ def build_train_matched_persona_panel(
       mirrors the ``compute_logprob_panel`` ``system_prompt_overrides`` kwarg
       so the caller can thread it through cleanly.
 
-    When ``manifest`` is ``None`` (no recipe-fix manifest written — e.g.
-    legacy cell), the canonical panel is returned unchanged and the override
-    dict is empty. Callers SHOULD log a warning in that branch — the C-axis
-    selectivity Δ measurement on legacy cells without train-matched eval
-    is conflated with distribution shift.
+    **Fail-loud manifest contract (reconciler SR2):**
+
+    - ``manifest is None`` is the ONLY accepted "no override" path — used by
+      legacy cells trained before the recipe-fix landed. Callers SHOULD log
+      a warning when they hit this branch; the C-axis selectivity Δ
+      measurement on legacy cells is conflated with distribution shift.
+    - ``manifest is not None`` MUST carry a ``system_prompt_text`` key whose
+      value is a non-empty string. Missing key OR non-string OR empty
+      string RAISES ``ValueError``. A partially-populated or corrupted
+      manifest is a recipe-fix invariant violation and must surface, not
+      silently fall back to the canonical panel (CLAUDE.md "Fail fast —
+      never hide failures").
     """
     if not isinstance(canonical_panel, dict) or not canonical_panel:
         raise ValueError("canonical_panel must be a non-empty dict")
@@ -101,7 +119,17 @@ def build_train_matched_persona_panel(
     panel = dict(canonical_panel)
     overrides: dict[str, str] = {}
 
-    if manifest is not None and "system_prompt_text" in manifest:
+    if manifest is not None:
+        # Reconciler SR2 — fail loud on partially-populated manifest. The
+        # only valid "no override" signal is manifest is None (legacy cell);
+        # anything else is a recipe-fix invariant violation and must surface.
+        if "system_prompt_text" not in manifest:
+            raise ValueError(
+                "manifest is not None but missing 'system_prompt_text' key; "
+                "this is a recipe-fix invariant violation. Pass manifest=None "
+                "explicitly for legacy cells (with a logged warning), or "
+                f"re-prepare the cell. Manifest keys: {sorted(manifest)}"
+            )
         sp = manifest["system_prompt_text"]
         if not isinstance(sp, str) or not sp:
             raise ValueError(
