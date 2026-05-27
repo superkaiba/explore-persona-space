@@ -1,3 +1,5 @@
 - [Scope: Code Only, Not Analyses](scope.md) — Review diffs and implementations; for experiment analyses use reviewer agent
 - [Plan Before Diff](plan_first.md) — Always read the approved plan before touching the diff to avoid implementer-narrative anchoring
 - [Codebase Anti-Patterns](anti_patterns.md) — Recurring issues to flag on sight in this project
+- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — FAIL eval-script diffs whose per-seed / per-condition function chains ≥2 framework loads or phases and persists only at the call site. CLAUDE.md "Checkpoint per phase" applies — task #399 lost 11 rounds × 15 min of Phase 1 to this.
+- [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — FAIL diffs that tear down vLLM in-process and load another framework without `psutil` child-kill + `nvidia-smi` PID verification. Workers survive `destroy_model_parallel` and re-grab GPU memory. Task #399 round-11 hit orphan PID 2227527 re-grabbing 74 GB.

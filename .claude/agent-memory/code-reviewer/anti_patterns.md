@@ -21,5 +21,7 @@ Flag these patterns whenever they appear in a diff:
 | New training script without `nohup` in docs | Job dies on subagent disconnect | Command examples in docstring must include `nohup ... &` |
 | Training script without WandB Artifact upload at end | Checkpoint gets lost on cleanup (prior incident: midtrain models lost) | Add `wandb.log_artifact(artifact)` after `trainer.save_model()` |
 | Training script without HF Hub `push_to_hub` | Model stays only on pod — lost when pod recycles | Add `push_to_hub("superkaiba1/explore-persona-space-<name>")` |
+| Per-seed eval rig chaining ≥2 framework loads / phases with `write_*` only at end-of-seed | Any later-phase crash discards all earlier work (task #399: 11 rounds × 15 min lost) | Per-phase files written between phases + load-partial-and-skip-completed at function entry. See [[eval-rig-per-phase-checkpoint]] |
+| vLLM `del llm + destroy_model_parallel + ...` followed by another framework load with no `psutil` child-kill + `nvidia-smi` PID check | Worker subprocesses survive and re-grab freed GPU memory → CUDA OOM (task #399 round-11) | Add the child-reaping + PID verification block from [[vllm-orphan-worker-after-destroy]], or subprocess-isolate each phase |
 
 **How to apply:** Grep the diff for the left-column patterns. Any hit → immediate flag in the review, with the "Fix" column as the suggested repair.
