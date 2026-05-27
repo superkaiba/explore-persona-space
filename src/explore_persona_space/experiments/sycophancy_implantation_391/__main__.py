@@ -620,7 +620,7 @@ def _prepare_and_train_cell(
     return outcome, prepared
 
 
-def _finalize_cell(
+def _write_success_metrics(
     *,
     args: argparse.Namespace,
     cell: Cell,
@@ -630,9 +630,13 @@ def _finalize_cell(
     scenarios_out_file: Path,
     eval_script: Path,
     output_dir: Path,
-    merged_path: Path,
+    hf_adapter_path: str | None,
 ) -> None:
-    """Write metrics.json, upload adapter, cleanup merged."""
+    """Write the success-case ``metrics.json`` to ``output_dir``.
+
+    Called only on eval success; the per-cell ``sycophancy_failed.json`` written
+    by ``main()``'s top-level exception handler covers the failure path.
+    """
     metrics_path = output_dir / "metrics.json"
     metrics_payload = {
         "cell_key": cell.key,
@@ -657,25 +661,44 @@ def _finalize_cell(
         },
         "failed": False,
     }
+    if hf_adapter_path is not None:
+        metrics_payload["hf_adapter_path"] = hf_adapter_path
     metrics_path.write_text(json.dumps(metrics_payload, indent=2, default=str))
 
-    if args.upload_adapter:
-        try:
-            hub_url = _upload_adapter_to_hub(
-                adapter_dir=Path(outcome.adapter_path),
-                cell=cell,
-                source=args.source,
-                seed=args.seed,
-            )
-            metrics_payload["hf_adapter_path"] = hub_url
-            metrics_path.write_text(json.dumps(metrics_payload, indent=2, default=str))
-        except Exception:
-            log.exception("HF Hub adapter upload FAILED; refusing to delete merged dir")
-            raise
 
-    if args.cleanup_merged and merged_path.exists():
-        log.info("Cleanup: rmtree %s (MooseFS quota mitigation)", merged_path)
-        shutil.rmtree(merged_path)
+def _cleanup_merged_if_safe(
+    *,
+    merged_path: Path,
+    upload_succeeded: bool,
+    cleanup_enabled: bool,
+) -> None:
+    """Delete ``merged_path`` IFF the adapter is safely on HF Hub.
+
+    The cloud-copy invariant: the LoRA adapter is the only artifact that cannot
+    be regenerated cheaply (training the cell again is the alternative). Once
+    the adapter is uploaded to HF Hub, the merged dir is fully re-derivable
+    from ``base + adapter`` and is safe to delete to reclaim ~15 GB.
+
+    Called from a ``finally:`` block in :func:`_run_cell_mode` so the cleanup
+    fires on BOTH the eval-success and eval-failure paths — provided the
+    pre-eval HF Hub upload succeeded. Without this, an eval crash leaks the
+    merged dir to disk and at 4-cell concurrency on the ~130 GB MooseFS pod
+    quota that compounds into an EDQUOT incident (#391 post-mortem: 11 trained
+    cells x 15 GB each = 165 GB lost to merged dirs whose evals raised).
+    """
+    if not cleanup_enabled:
+        return
+    if not upload_succeeded:
+        log.warning(
+            "Skipping rmtree %s: HF Hub adapter upload did not succeed; "
+            "preserving merged dir so the adapter weights survive on local disk.",
+            merged_path,
+        )
+        return
+    if not merged_path.exists():
+        return
+    log.info("Cleanup: rmtree %s (MooseFS quota mitigation)", merged_path)
+    shutil.rmtree(merged_path)
 
 
 def _run_cell_mode(args: argparse.Namespace) -> int:
@@ -745,31 +768,53 @@ def _run_cell_mode(args: argparse.Namespace) -> int:
     if not merged_path.exists():
         raise FileNotFoundError(f"Merged model missing at {merged_path}; training failed silently")
 
-    _run_sycophancy_eval_subprocess(
-        eval_script=eval_script,
-        merged_model_path=merged_path,
-        output_dir=output_dir,
-        personas=personas,
-        source=args.source,
-        scenarios_out_file=scenarios_out_file,
-        num_rollouts=args.num_eval_rollouts,
-        tp=args.num_eval_gpus,
-    )
+    # Upload the adapter to HF Hub BEFORE running eval, so the cloud-copy
+    # invariant holds before any code path that can raise. If eval then fails,
+    # the finally-block cleanup is safe because the adapter survives on Hub.
+    # Pre-fix order was: train -> eval -> upload -> cleanup; if eval raised,
+    # cleanup was skipped and the 15 GB merged dir leaked to disk (#391
+    # post-mortem: 11 cells x ~15 GB = 165 GB lost to EDQUOT).
+    upload_succeeded = False
+    hf_adapter_path: str | None = None
+    if args.upload_adapter:
+        hf_adapter_path = _upload_adapter_to_hub(
+            adapter_dir=Path(outcome.adapter_path),
+            cell=cell,
+            source=args.source,
+            seed=args.seed,
+        )
+        upload_succeeded = True
 
-    _finalize_cell(
-        args=args,
-        cell=cell,
-        outcome=outcome,
-        prepared=prepared,
-        personas=personas,
-        scenarios_out_file=scenarios_out_file,
-        eval_script=eval_script,
-        output_dir=output_dir,
-        merged_path=merged_path,
-    )
-
-    progress.post_milestone("cell_done", source=args.source, cell=cell.key)
-    return 0
+    try:
+        _run_sycophancy_eval_subprocess(
+            eval_script=eval_script,
+            merged_model_path=merged_path,
+            output_dir=output_dir,
+            personas=personas,
+            source=args.source,
+            scenarios_out_file=scenarios_out_file,
+            num_rollouts=args.num_eval_rollouts,
+            tp=args.num_eval_gpus,
+        )
+        _write_success_metrics(
+            args=args,
+            cell=cell,
+            outcome=outcome,
+            prepared=prepared,
+            personas=personas,
+            scenarios_out_file=scenarios_out_file,
+            eval_script=eval_script,
+            output_dir=output_dir,
+            hf_adapter_path=hf_adapter_path,
+        )
+        progress.post_milestone("cell_done", source=args.source, cell=cell.key)
+        return 0
+    finally:
+        _cleanup_merged_if_safe(
+            merged_path=merged_path,
+            upload_succeeded=upload_succeeded,
+            cleanup_enabled=args.cleanup_merged,
+        )
 
 
 # ---- Dispatch mode ----------------------------------------------------------
