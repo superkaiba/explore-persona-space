@@ -1837,51 +1837,36 @@ def assert_trigger_marker_tokens_complex(
 # ── Per-seed orchestrator ───────────────────────────────────────────────────
 
 
-def run_seed(
+def run_seed_behavioral(
     seed: int,
     drift_conversations: list[dict],
     incontext_conversations: list[dict],
     drift_corpus_lengths: dict[int, float],
     run_smoke_gate_for_this_seed: bool,
-    skip_upload: bool,
     out_dir: Path,
     logprob_contexts_per_cell: int = N_LOGPROB_CONTEXTS_DEFAULT,
-) -> tuple[dict[str, Any], dict[str, list[Any]]]:
-    """Run all 14 conditions x this seed; return ``(seed_result, raw_completions)``.
+) -> None:
+    """Phase 'behavioral' (round-14): vLLM generation only; no HF Transformers.
 
-    Three sub-phases per seed:
+    Runs the vLLM half of the eval for one seed and persists every
+    handoff needed by phase 'logprob_compute':
 
-    1. **vLLM generation** (parity with #377): instantiate ONE vLLM
-       ``LLM`` engine at ``max_model_len=MAX_MODEL_LEN_MULTI_TURN`` and
-       reuse it across smoke gate + 14 conditions. Tear it down before
-       the log-prob phase so HF-Transformers has the full GPU. Per-cell
-       results are written to disk immediately after each cell scores
-       (``out_dir/seed{S}/behavioral_{cond}.json``); a crash in cell N
-       loses only that cell's work, and a re-run picks up where the
-       previous run stopped.
-    2. **Log-prob on the trained checkpoint** (issue #399 addition):
-       spawn a FRESH Python subprocess that loads the merged checkpoint
-       via HF ``AutoModelForCausalLM`` and calls
-       :func:`compute_marker_logprob`. Each cell's log-prob array lands
-       in ``out_dir/seed{S}/logprob_trained_{cell}.json`` as the worker
-       finishes it. The subprocess isolation defeats orphan vLLM-worker
-       GPU pinning that survives in-parent ``destroy_model_parallel()``.
-    3. **Floor A on the bare base model** (issue #399 addition): same
-       subprocess pattern with ``Qwen/Qwen2.5-7B-Instruct`` (no LoRA);
-       per-cell files written as ``logprob_floor_{cell}.json``.
+    - All 14 behavioral cells via vLLM, writing
+      ``out_dir/seed{S}/behavioral_{cond}.json`` per cell.
+    - Per-seed bookkeeping (smoke gate, stats, n_per_condition,
+      over_budget_drops, checkpoint info) to
+      ``out_dir/seed{S}/behavioral_meta.json``.
+    - Sampled (chat-templated context strings, pair tuples) per cell to
+      ``out_dir/seed{S}/logprob_contexts.json``. Built with the
+      checkpoint tokenizer while it is cheap to load alongside the
+      already-loaded vLLM engine.
 
-    ``drift_corpus_lengths`` is the eval-wide L(k) dict computed once in
-    :func:`main` via :func:`compute_drift_corpus_lengths`; passed through
-    so the length-matched ``B-incontext-length@k`` conditions can be
-    built deterministically here.
-
-    ``out_dir`` is the root eval-results directory (e.g.
-    ``eval_results/issue_399``); the per-seed subdir is
-    ``out_dir/seed{seed}``.
+    The vLLM engine is torn down before the function returns so the
+    fresh ``--phase logprob_compute`` process starts with a clean GPU.
     """
     import os as _os
 
-    print(f"\n{'=' * 60}\n  Running seed {seed}\n{'=' * 60}", flush=True)
+    print(f"\n{'=' * 60}\n  Running seed {seed} (phase=behavioral)\n{'=' * 60}", flush=True)
     ckpt, option_label = resolve_checkpoint(seed)
     assert_trigger_marker_tokens_complex(ckpt)
 
@@ -1922,6 +1907,19 @@ def run_seed(
             run_smoke_gate_for_this_seed=run_smoke_gate_for_this_seed,
             seed_dir=seed_dir,
         )
+
+        # Build the sampled log-prob contexts WHILE we still have the
+        # vLLM engine alive (only the tokenizer is needed; cheap, no
+        # GPU). Saving to disk now means the fresh ``logprob_compute``
+        # process never has to re-touch vLLM.
+        prepare_logprob_contexts_for_seed(
+            seed=seed,
+            ckpt=ckpt,
+            per_condition_raw=per_condition_raw,
+            multi_turn_filtered=multi_turn_filtered,
+            logprob_contexts_per_cell=logprob_contexts_per_cell,
+            seed_dir=seed_dir,
+        )
     finally:
         del llm
         # vLLM holds large CUDA allocations behind its model-parallel + NCCL
@@ -1930,7 +1928,10 @@ def run_seed(
         # + ``destroy_distributed_environment()`` calls, the next
         # ``AutoModelForCausalLM.from_pretrained(..., device_map="cuda:0")``
         # in the log-prob block hits CUDA OOM (~74 GB still pinned on an
-        # 80 GB H100, observed on issue #399 round-10 seed-42).
+        # 80 GB H100, observed on issue #399 round-10 seed-42). Round-14
+        # added the per-process split as defense-in-depth on top of this;
+        # the in-process teardown still runs because ``--phase both``
+        # preserves the legacy single-process path.
         try:
             from vllm.distributed.parallel_state import (
                 destroy_distributed_environment,
@@ -1963,18 +1964,188 @@ def run_seed(
             # smoke-test path (no model load) may not have one. Skip silently.
             pass
 
-    # ── Phase 2 + 3: log-prob block (trained checkpoint + Floor A) ───────
-    logprob_payload = run_logprob_block_for_seed(
+    # Persist the per-seed behavioral meta so the aggregate phase can
+    # reconstruct the full ``seed_result`` dict without re-running vLLM.
+    # The per-cell payloads (per_condition + per_condition_raw) are
+    # already on disk via ``_save_behavioral_per_cell``; this file
+    # carries only the per-seed scalars + stats.
+    behavioral_meta = {
+        "seed": seed_result["seed"],
+        "checkpoint": seed_result["checkpoint"],
+        "checkpoint_option": seed_result["checkpoint_option"],
+        "smoke_gate": seed_result["smoke_gate"],
+        "n_per_condition": seed_result["n_per_condition"],
+        "over_budget_drops_per_arm": seed_result["over_budget_drops_per_arm"],
+        "stats": seed_result["stats"],
+        "raw_completions_summary": seed_result["raw_completions_summary"],
+        # Persist the condition order so reconstruction is deterministic.
+        "condition_order": list(seed_result["per_condition"].keys()),
+    }
+    _save_behavioral_seed_meta(seed_dir, behavioral_meta)
+    print(
+        f"  [seed {seed}] phase=behavioral complete. "
+        f"Wrote behavioral_meta.json + logprob_contexts.json to {seed_dir}",
+        flush=True,
+    )
+
+
+def run_seed_logprob_compute(
+    seed: int,
+    out_dir: Path,
+) -> None:
+    """Phase 'logprob_compute' (round-14): subprocess workers only; NO vLLM.
+
+    Loads the sampled (contexts, pairs) from
+    ``out_dir/seed{S}/logprob_contexts.json`` (written by phase
+    'behavioral'), then runs the two subprocess workers (trained
+    checkpoint, then bare base-model Floor A). Each worker writes per-cell
+    JSON to ``out_dir/seed{S}/logprob_{mode}_{cell}.json``; this function
+    aggregates them into the per-seed payload and persists to
+    ``out_dir/seed{S}/logprob_meta.json``.
+
+    Because this process is fresh (no vLLM ever imported), the trained
+    worker spawns with a CLEAN CUDA context. Round-14 motivation:
+    orphaned vLLM worker subprocesses survived the in-parent
+    ``destroy_model_parallel()`` + ``empty_cache()`` calls on round-11
+    and re-allocated freed GPU memory by the time the HF Transformers
+    load fired, causing OOM at the very first logprob cell.
+    """
+    print(
+        f"\n{'=' * 60}\n  Running seed {seed} (phase=logprob_compute)\n{'=' * 60}",
+        flush=True,
+    )
+    seed_dir = out_dir / f"seed{seed}"
+    if not seed_dir.exists():
+        raise RuntimeError(
+            f"Seed dir {seed_dir} does not exist. Run phase 'behavioral' for seed {seed} first."
+        )
+
+    # Resolve the checkpoint path the same way phase 'behavioral' did so
+    # the worker subprocess loads matching weights. ``resolve_checkpoint``
+    # only downloads if the local copy is missing; on the same pod this
+    # is a cheap path lookup against the cache.
+    ckpt, _option_label = resolve_checkpoint(seed)
+    assert_trigger_marker_tokens_complex(ckpt)
+
+    logprob_payload = compute_logprob_block_from_disk(
         seed=seed,
         ckpt=ckpt,
-        per_condition_raw=per_condition_raw,
-        multi_turn_filtered=multi_turn_filtered,
-        logprob_contexts_per_cell=logprob_contexts_per_cell,
         seed_dir=seed_dir,
     )
-    seed_result["logprob"] = logprob_payload
+    _save_logprob_seed_meta(seed_dir, logprob_payload)
+    print(
+        f"  [seed {seed}] phase=logprob_compute complete. Wrote logprob_meta.json to {seed_dir}",
+        flush=True,
+    )
 
+
+def assemble_seed_result_from_disk(
+    seed: int,
+    out_dir: Path,
+) -> tuple[dict[str, Any], dict[str, list[Any]]]:
+    """Phase 'aggregate' (round-14): rebuild the in-memory ``seed_result``.
+
+    Reads:
+    - ``behavioral_meta.json`` for per-seed scalars + stats.
+    - Per-cell ``behavioral_<cond>.json`` for the per_condition payloads.
+    - ``logprob_meta.json`` for the log-prob payload.
+
+    Returns ``(seed_result, per_condition_raw)`` in the exact shape
+    :func:`run_seed` used to produce, so :func:`write_seed_outputs` and
+    :func:`write_aggregated` work unchanged.
+    """
+    seed_dir = out_dir / f"seed{seed}"
+    meta = _load_behavioral_seed_meta(seed_dir)
+
+    per_condition_results: dict[str, Any] = {}
+    per_condition_raw: dict[str, list[Any]] = {}
+    for cond in meta["condition_order"]:
+        loaded = _load_behavioral_per_cell(seed_dir, cond)
+        if loaded is None:
+            raise RuntimeError(
+                f"Behavioral per-cell file for seed {seed} cond {cond} not found at "
+                f"{_behavioral_per_cell_path(seed_dir, cond)}. "
+                f"Re-run phase 'behavioral' for this seed."
+            )
+        per_condition_results[cond], per_condition_raw[cond] = loaded
+
+    logprob_payload = _load_logprob_seed_meta(seed_dir)
+
+    seed_result: dict[str, Any] = {
+        "seed": meta["seed"],
+        "checkpoint": meta["checkpoint"],
+        "checkpoint_option": meta["checkpoint_option"],
+        "smoke_gate": meta["smoke_gate"],
+        "per_condition": per_condition_results,
+        "n_per_condition": meta["n_per_condition"],
+        "over_budget_drops_per_arm": meta["over_budget_drops_per_arm"],
+        "stats": meta["stats"],
+        "raw_completions_summary": meta["raw_completions_summary"],
+        "logprob": logprob_payload,
+    }
     return seed_result, per_condition_raw
+
+
+def run_seed(
+    seed: int,
+    drift_conversations: list[dict],
+    incontext_conversations: list[dict],
+    drift_corpus_lengths: dict[int, float],
+    run_smoke_gate_for_this_seed: bool,
+    skip_upload: bool,
+    out_dir: Path,
+    logprob_contexts_per_cell: int = N_LOGPROB_CONTEXTS_DEFAULT,
+) -> tuple[dict[str, Any], dict[str, list[Any]]]:
+    """Run all 14 conditions x this seed; return ``(seed_result, raw_completions)``.
+
+    Legacy in-process driver — kept as the implementation for
+    ``--phase both`` (back-compat) and for the test suite. Round-14
+    split this into ``--phase behavioral`` + ``--phase logprob_compute``
+    + ``--phase aggregate`` invocations driven by :func:`main`; production
+    runs (anything on a pod where the OOM risk is real) should prefer
+    the split path so the log-prob phase starts with a clean CUDA
+    context.
+
+    Three sub-phases per seed:
+
+    1. **vLLM generation** (parity with #377): instantiate ONE vLLM
+       ``LLM`` engine at ``max_model_len=MAX_MODEL_LEN_MULTI_TURN`` and
+       reuse it across smoke gate + 14 conditions. Tear it down before
+       the log-prob phase so HF-Transformers has the full GPU. Per-cell
+       results are written to disk immediately after each cell scores
+       (``out_dir/seed{S}/behavioral_{cond}.json``); a crash in cell N
+       loses only that cell's work, and a re-run picks up where the
+       previous run stopped.
+    2. **Log-prob on the trained checkpoint** (issue #399 addition):
+       spawn a FRESH Python subprocess that loads the merged checkpoint
+       via HF ``AutoModelForCausalLM`` and calls
+       :func:`compute_marker_logprob`. Each cell's log-prob array lands
+       in ``out_dir/seed{S}/logprob_trained_{cell}.json`` as the worker
+       finishes it.
+    3. **Floor A on the bare base model** (issue #399 addition): same
+       subprocess pattern with ``Qwen/Qwen2.5-7B-Instruct`` (no LoRA);
+       per-cell files written as ``logprob_floor_{cell}.json``.
+
+    ``out_dir`` is the root eval-results directory (e.g.
+    ``eval_results/issue_399``); the per-seed subdir is
+    ``out_dir/seed{seed}``.
+
+    ``skip_upload`` is unused at this layer (kept for back-compat with
+    callers that still pass it); upload happens once at end-of-eval in
+    :func:`write_aggregated`.
+    """
+    del skip_upload  # unused at this layer; preserved for back-compat.
+    run_seed_behavioral(
+        seed=seed,
+        drift_conversations=drift_conversations,
+        incontext_conversations=incontext_conversations,
+        drift_corpus_lengths=drift_corpus_lengths,
+        run_smoke_gate_for_this_seed=run_smoke_gate_for_this_seed,
+        out_dir=out_dir,
+        logprob_contexts_per_cell=logprob_contexts_per_cell,
+    )
+    run_seed_logprob_compute(seed=seed, out_dir=out_dir)
+    return assemble_seed_result_from_disk(seed=seed, out_dir=out_dir)
 
 
 def _behavioral_per_cell_path(seed_dir: Path, cond: str) -> Path:
@@ -2028,6 +2199,130 @@ def _load_behavioral_per_cell(
         return None
     payload = json.loads(path.read_text())
     return payload["per_condition"], payload["per_condition_raw"]
+
+
+# ── Per-seed meta / context handoff files (phase-split, round-14) ───────────
+#
+# Round-14 split the eval into two separate process invocations
+# (``--phase behavioral`` then ``--phase logprob_compute``) so the
+# ``logprob_compute`` parent never imports vLLM. The state that used to
+# live in-memory between phases inside a single ``run_seed`` call is
+# now persisted to per-seed JSON files the next phase reads back:
+#
+# - ``behavioral_meta.json`` carries the per-seed bookkeeping from
+#   :func:`_run_seed_with_engine` (smoke gate, stats, n_per_condition,
+#   over_budget_drops, checkpoint info). The per-cell behavioral payloads
+#   stay in their existing ``behavioral_<cond>.json`` files.
+# - ``logprob_contexts.json`` carries the sampled
+#   (chat-templated context strings, pair tuples) per cell. Written at
+#   the end of phase ``behavioral`` (cheap; tokenizer-only). Read at the
+#   start of phase ``logprob_compute`` (no vLLM, no tokenizer needed —
+#   the worker subprocesses re-load their own tokenizers).
+# - ``logprob_meta.json`` is the per-seed log-prob payload that
+#   :func:`run_logprob_block_for_seed` used to return in-memory. Written
+#   at the end of phase ``logprob_compute``, read at the start of phase
+#   ``aggregate``.
+
+
+def _behavioral_seed_meta_path(seed_dir: Path) -> Path:
+    """Path to the per-seed behavioral meta JSON (phase-split handoff)."""
+    return seed_dir / "behavioral_meta.json"
+
+
+def _logprob_contexts_path(seed_dir: Path) -> Path:
+    """Path to the per-seed sampled-contexts JSON (phase-split handoff).
+
+    Carries ``{cell: {contexts: [str, ...], pairs: [{conversation_id,
+    question}, ...]}}``. Produced by :func:`run_seed_behavioral`,
+    consumed by :func:`run_seed_logprob_compute`.
+    """
+    return seed_dir / "logprob_contexts.json"
+
+
+def _logprob_seed_meta_path(seed_dir: Path) -> Path:
+    """Path to the per-seed log-prob meta JSON (phase-split handoff).
+
+    Matches the dict shape :func:`run_logprob_block_for_seed` used to
+    return in-memory.
+    """
+    return seed_dir / "logprob_meta.json"
+
+
+def _save_behavioral_seed_meta(
+    seed_dir: Path,
+    meta: dict[str, Any],
+) -> None:
+    """Atomically write the per-seed behavioral meta JSON.
+
+    Mirrors :func:`_save_behavioral_per_cell` write-then-rename pattern.
+    """
+    out_path = _behavioral_seed_meta_path(seed_dir)
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(meta, indent=2))
+    tmp_path.rename(out_path)
+
+
+def _load_behavioral_seed_meta(seed_dir: Path) -> dict[str, Any]:
+    """Read the per-seed behavioral meta JSON; raise if missing."""
+    path = _behavioral_seed_meta_path(seed_dir)
+    if not path.exists():
+        raise RuntimeError(
+            f"Behavioral seed meta {path} not found. "
+            f"Run phase 'behavioral' for this seed before phase "
+            f"'logprob_compute' / 'aggregate'."
+        )
+    return json.loads(path.read_text())
+
+
+def _save_logprob_contexts(
+    seed_dir: Path,
+    contexts_per_cell: dict[str, list[str]],
+    pairs_per_cell: dict[str, list[dict]],
+) -> None:
+    """Atomically write the per-seed sampled-context handoff file."""
+    out_path = _logprob_contexts_path(seed_dir)
+    payload = {
+        "contexts_per_cell": contexts_per_cell,
+        "pairs_per_cell": pairs_per_cell,
+    }
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2))
+    tmp_path.rename(out_path)
+
+
+def _load_logprob_contexts(
+    seed_dir: Path,
+) -> tuple[dict[str, list[str]], dict[str, list[dict]]]:
+    """Read the per-seed sampled-context handoff file; raise if missing."""
+    path = _logprob_contexts_path(seed_dir)
+    if not path.exists():
+        raise RuntimeError(
+            f"Log-prob context file {path} not found. "
+            f"Run phase 'behavioral' for this seed before phase "
+            f"'logprob_compute'."
+        )
+    payload = json.loads(path.read_text())
+    return payload["contexts_per_cell"], payload["pairs_per_cell"]
+
+
+def _save_logprob_seed_meta(seed_dir: Path, meta: dict[str, Any]) -> None:
+    """Atomically write the per-seed log-prob payload (phase-split handoff)."""
+    out_path = _logprob_seed_meta_path(seed_dir)
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(meta, indent=2))
+    tmp_path.rename(out_path)
+
+
+def _load_logprob_seed_meta(seed_dir: Path) -> dict[str, Any]:
+    """Read the per-seed log-prob payload; raise if missing."""
+    path = _logprob_seed_meta_path(seed_dir)
+    if not path.exists():
+        raise RuntimeError(
+            f"Log-prob seed meta {path} not found. "
+            f"Run phase 'logprob_compute' for this seed before phase "
+            f"'aggregate'."
+        )
+    return json.loads(path.read_text())
 
 
 def _run_seed_with_engine(
@@ -2499,7 +2794,7 @@ def _load_logprob_per_cell_files(
     return out
 
 
-def run_logprob_block_for_seed(
+def prepare_logprob_contexts_for_seed(
     *,
     seed: int,
     ckpt: Path,
@@ -2507,49 +2802,28 @@ def run_logprob_block_for_seed(
     multi_turn_filtered: dict[str, tuple[list[list[dict]], list[tuple[dict, str]]]],
     logprob_contexts_per_cell: int,
     seed_dir: Path,
-) -> dict[str, Any]:
-    """Phase 2 + 3 per-seed: log-prob on trained checkpoint + Floor A on base.
+) -> tuple[dict[str, list[str]], dict[str, list[dict]]]:
+    """Build the sampled (chat-templated contexts, pair dicts) per cell.
 
-    Sub-samples ``logprob_contexts_per_cell`` items per cell from the
-    pool the vLLM generation phase already scored (cells A / H6 use
-    the EVAL_QUESTIONS × N_COMPLETIONS_NO_HIST pool; multi-turn cells
-    use the post-OOB-filter (messages, pairs) cached in
-    ``multi_turn_filtered``). Builds chat-templated contexts via
-    :func:`chat_template_logprob_contexts`, then runs
-    :func:`compute_marker_logprob` twice — once with the trained
-    checkpoint, once with the bare ``Qwen-2.5-7B-Instruct`` (Floor A).
+    Round-14: split out of :func:`run_logprob_block_for_seed` so the
+    behavioral phase can persist the sampled contexts to disk for the
+    fresh ``logprob_compute`` process to consume. Tokenizer-only work
+    (no GPU, no model load).
 
-    Each model load runs in a FRESH subprocess
-    (:mod:`scripts.eval_issue399_logprob_worker`) so any orphan vLLM
-    worker still pinning GPU memory in the parent cannot cause OOM in
-    the HF Transformers load. The subprocess writes one JSON per cell
-    to ``seed_dir`` immediately on completion (per-cell incremental
-    save); a crash in the floor pass preserves the trained pass on disk.
+    Persists to ``seed_dir/logprob_contexts.json`` via
+    :func:`_save_logprob_contexts` and returns the same payload for
+    callers that want it in-memory (the legacy ``run_seed`` driver).
 
-    Returns a dict with three top-level keys:
-
-    - ``per_cell_pairs``: ``{cell: [{conversation_id, question}, ...]}``
-      — the conversation/question keys for each context in the cell's
-      log-prob arrays, in order. Lets the aggregator align by
-      ``(conv_id, question)`` for trigger-conditional contrast.
-    - ``trained_logp_by_cell``: ``{cell: [logp_i, ...]}`` — trained
-      checkpoint LP per context.
-    - ``floor_logp_by_cell``: ``{cell: [logp_floor_i, ...]}`` — bare
-      base-model Floor A per context, same order.
-
-    Per-seed empirical σ_paired + Δ summary is computed downstream in
-    :func:`write_aggregated` (the per-seed values are useful only in
-    aggregate, since the per-cell Wilcoxon pools across 3 seeds).
-
-    Asserts:
-        - For every cell, ``len(trained_logp) == len(floor_logp) == len(pairs)``.
-        - No non-finite log-prob values (re-raised in
-          :func:`_load_logprob_per_cell_files`).
+    ``per_condition_raw`` is currently unused in the function body; it
+    is part of the signature so future cell-A / H6 changes that want
+    to sample from real generations rather than re-templating
+    ``EVAL_QUESTIONS`` have a hook without another signature change.
     """
+    del per_condition_raw  # signature hook; see docstring.
     from transformers import AutoTokenizer
 
     print(
-        f"\n  [seed {seed}] === Log-prob block (plan §6, subprocess-isolated) ===",
+        f"\n  [seed {seed}] === Log-prob context sampling (tokenizer-only) ===",
         flush=True,
     )
 
@@ -2603,14 +2877,61 @@ def run_logprob_block_for_seed(
         str(ckpt), trust_remote_code=True, token=_os.environ.get("HF_TOKEN")
     )
     contexts_per_cell: dict[str, list[str]] = {}
-    for cell, (msgs, _pairs) in sampled_per_cell.items():
+    pairs_per_cell: dict[str, list[dict]] = {}
+    for cell, (msgs, pairs) in sampled_per_cell.items():
         contexts_per_cell[cell] = chat_template_logprob_contexts(msgs, tokenizer)
+        pairs_per_cell[cell] = [
+            {"conversation_id": p[0].get("conversation_id"), "question": p[1]} for p in pairs
+        ]
 
-    # The tokenizer + contexts dict is small; we can drop the tokenizer
-    # now to keep the parent's memory footprint minimal.
+    # Drop the tokenizer immediately to keep the parent footprint minimal.
     del tokenizer
 
     seed_dir.mkdir(parents=True, exist_ok=True)
+    _save_logprob_contexts(seed_dir, contexts_per_cell, pairs_per_cell)
+    print(
+        f"  [seed {seed}] Wrote sampled contexts for "
+        f"{len(contexts_per_cell)} cells → {_logprob_contexts_path(seed_dir)}",
+        flush=True,
+    )
+    return contexts_per_cell, pairs_per_cell
+
+
+def compute_logprob_block_from_disk(
+    *,
+    seed: int,
+    ckpt: Path,
+    seed_dir: Path,
+) -> dict[str, Any]:
+    """Run the subprocess log-prob workers using on-disk sampled contexts.
+
+    Round-14 entry point for ``--phase logprob_compute``: this is the
+    second half of the old :func:`run_logprob_block_for_seed`. Loads
+    the sampled (contexts, pairs) from
+    ``seed_dir/logprob_contexts.json`` (written by phase 'behavioral'),
+    runs the trained-checkpoint subprocess worker, then the bare
+    base-model Floor A subprocess worker, then assembles the per-seed
+    payload.
+
+    Same return shape as the old :func:`run_logprob_block_for_seed`.
+
+    Each model load runs in a FRESH subprocess
+    (:mod:`scripts.eval_issue399_logprob_worker`). Combined with the
+    round-14 per-process phase split (this function runs in a process
+    that never imported vllm), the trained worker spawns with a
+    completely clean CUDA context.
+
+    Asserts:
+        - For every cell, ``len(trained_logp) == len(floor_logp) == len(pairs)``.
+        - No non-finite log-prob values (re-raised in
+          :func:`_load_logprob_per_cell_files`).
+    """
+    print(
+        f"\n  [seed {seed}] === Log-prob compute (plan §6, subprocess-isolated) ===",
+        flush=True,
+    )
+
+    contexts_per_cell, pairs_per_cell = _load_logprob_contexts(seed_dir)
     expected_cells = list(contexts_per_cell.keys())
 
     # ── Phase 2: trained-checkpoint log-prob (subprocess) ────────────────
@@ -2637,16 +2958,14 @@ def run_logprob_block_for_seed(
     # the sampled pairs. Fail loudly on any drift (would silently corrupt
     # the paired Δ if we let it through).
     per_cell_pairs_serialisable: dict[str, list[dict]] = {}
-    for cell, (_msgs, pairs) in sampled_per_cell.items():
+    for cell, pairs in pairs_per_cell.items():
         trained_n = len(trained_logp_by_cell.get(cell, []))
         floor_n = len(floor_logp_by_cell.get(cell, []))
         assert trained_n == floor_n == len(pairs), (
             f"Log-prob array length drift for cell {cell}: trained={trained_n}, "
             f"floor={floor_n}, pairs={len(pairs)}"
         )
-        per_cell_pairs_serialisable[cell] = [
-            {"conversation_id": p[0].get("conversation_id"), "question": p[1]} for p in pairs
-        ]
+        per_cell_pairs_serialisable[cell] = list(pairs)
 
     # Per-seed Δ summary for in-line debugging (the headline test
     # pools across seeds — see write_aggregated).
@@ -2668,9 +2987,15 @@ def run_logprob_block_for_seed(
             "sigma_paired": sd,
         }
 
+    # Best-effort: read N_LOGPROB_CONTEXTS used at sampling time back
+    # out as the maximum per-cell context count. The CLI flag value is
+    # what we'd record if running in-process; without re-threading it
+    # through every phase we derive it from the realized counts.
+    realized_max = max((len(v) for v in contexts_per_cell.values()), default=0)
+
     return {
         "marker_text": LOGPROB_MARKER_TEXT,
-        "logprob_contexts_per_cell": logprob_contexts_per_cell,
+        "logprob_contexts_per_cell": realized_max,
         "batch_size": LOGPROB_BATCH_SIZE,
         "base_model_id": BASE_MODEL_ID,
         "per_cell_pairs": per_cell_pairs_serialisable,
@@ -3126,6 +3451,133 @@ def write_aggregated(
 # ── Main ────────────────────────────────────────────────────────────────────
 
 
+def _load_corpora_and_lengths() -> tuple[
+    list[dict],
+    list[dict],
+    dict[int, float],
+    dict[str, int],
+    dict[str, int],
+]:
+    """Shared corpus loader for phases that need conversation data.
+
+    Returns ``(drift_convs, incontext_convs, drift_corpus_lengths,
+    n_excluded_for_sentinel, pre_prefilter_counts)``. Only the
+    behavioral and ``both`` phases call this — the ``logprob_compute``
+    and ``aggregate`` phases operate on per-seed disk artifacts alone.
+    """
+    # Load corpora once; reused across seeds.
+    print("Loading drift corpus...", flush=True)
+    drift_raw = load_conversations(DRIFT_LOCAL_PATH, DRIFT_HUB_PATH)
+    print(f"  {len(drift_raw)} drift conversations loaded (pre-prefilter)", flush=True)
+
+    print("Loading in-context corpus...", flush=True)
+    incontext_raw = load_conversations(INCONTEXT_LOCAL_PATH, INCONTEXT_HUB_PATH)
+    print(
+        f"  {len(incontext_raw)} in-context conversations loaded (pre-prefilter)",
+        flush=True,
+    )
+
+    # Plan v2 §4.3 round-9 hot-fix — pre-filter conversations whose first
+    # `max(slice_n_for_k)` turns contain a [BATCH_ERROR] sentinel.
+    drift_conversations, n_excl_drift = filter_sentinel_conversations(drift_raw, K_LIST)
+    incontext_conversations, n_excl_inc = filter_sentinel_conversations(incontext_raw, K_LIST)
+    print(
+        f"  Pre-filter: dropped {n_excl_drift} drift convs + {n_excl_inc} "
+        f"in-context convs containing [BATCH_ERROR] sentinel in the first "
+        f"max(slice_n)={max(_turns_slice_for_k(k) for k in K_LIST)} turns",
+        flush=True,
+    )
+    print(
+        f"  Post-prefilter: {len(drift_conversations)} drift convs, "
+        f"{len(incontext_conversations)} in-context convs available for sampling",
+        flush=True,
+    )
+    n_excluded_for_sentinel: dict[str, int] = {
+        "drift": n_excl_drift,
+        "incontext": n_excl_inc,
+    }
+    pre_prefilter_counts: dict[str, int] = {
+        "drift": len(drift_raw),
+        "incontext": len(incontext_raw),
+    }
+
+    print(
+        "Computing drift corpus target lengths L(k) for length-mode prefix selection...",
+        flush=True,
+    )
+    drift_corpus_lengths = compute_drift_corpus_lengths(drift_conversations, K_LIST)
+    for k in K_LIST:
+        slice_n = _turns_slice_for_k(k)
+        print(
+            f"  L(k={k}) = {drift_corpus_lengths[k]:.1f} whitespace-tokens "
+            f"(mean over first slice_n={slice_n} drift turns)",
+            flush=True,
+        )
+
+    return (
+        drift_conversations,
+        incontext_conversations,
+        drift_corpus_lengths,
+        n_excluded_for_sentinel,
+        pre_prefilter_counts,
+    )
+
+
+def _generate_corpus_length_distribution_figure(
+    drift_conversations: list[dict],
+    incontext_conversations: list[dict],
+) -> None:
+    """Plan v2 §6.2 secondary figure 2 — auto-generated from the corpora.
+
+    Fail-loud per CLAUDE.md; the figure is regenerable from the on-disk
+    corpora via the standalone script, so a crash before the expensive
+    vLLM step is far cheaper than a silently missing figure.
+    """
+    import importlib.util as _ilu
+
+    _spec = _ilu.spec_from_file_location(
+        "issue_377_plot_corpus_lengths",
+        PROJECT_ROOT / "scripts" / "issue_377_plot_corpus_lengths.py",
+    )
+    if _spec is None or _spec.loader is None:
+        raise RuntimeError(
+            "Cannot locate scripts/issue_377_plot_corpus_lengths.py — required "
+            "for plan v2 §6.2 secondary figure 2"
+        )
+    _mod = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    _fig_dir = PROJECT_ROOT / "figures" / "issue_399"
+    print(
+        f"\nGenerating corpus length-distribution figure (plan v2 §6.2 "
+        f"secondary figure 2, regenerated for #399) → "
+        f"{_fig_dir}/corpus_length_distribution.{{png,pdf}}",
+        flush=True,
+    )
+    _mod.plot_corpus_lengths(drift_conversations, incontext_conversations, _fig_dir)
+
+
+def _enrich_seed_result_with_corpus_telemetry(
+    seed_result: dict[str, Any],
+    n_excluded_for_sentinel: dict[str, int] | None,
+    pre_prefilter_counts: dict[str, int] | None,
+    post_prefilter_counts: dict[str, int] | None,
+) -> None:
+    """Surface sentinel pre-filter telemetry onto a per-seed result.
+
+    Skipped when phase=aggregate runs without corpora (the corpora are
+    not loaded, so the telemetry is unavailable — the analyzer reads
+    these from the per-seed run_result.json that was already written in
+    a prior phase=both run; for phase-split runs that never ran 'both',
+    the absence is benign).
+    """
+    if n_excluded_for_sentinel is not None:
+        seed_result["n_excluded_for_sentinel"] = n_excluded_for_sentinel
+    if pre_prefilter_counts is not None:
+        seed_result["pre_prefilter_corpus_n"] = pre_prefilter_counts
+    if post_prefilter_counts is not None:
+        seed_result["post_prefilter_corpus_n"] = post_prefilter_counts
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(description=__doc__)
@@ -3139,7 +3591,10 @@ def main() -> int:
     parser.add_argument(
         "--smoke-gate-only",
         action="store_true",
-        help="Run the Option II smoke gate and exit (no full eval).",
+        help=(
+            "Run the Option II smoke gate and exit (no full eval). "
+            "Only meaningful with --phase=behavioral / both."
+        ),
     )
     parser.add_argument(
         "--skip-upload",
@@ -3200,6 +3655,27 @@ def main() -> int:
             f"N = 3 seeds * {N_LOGPROB_CONTEXTS_DEFAULT} = 384."
         ),
     )
+    parser.add_argument(
+        "--phase",
+        choices=("behavioral", "logprob_compute", "aggregate", "both"),
+        default="both",
+        help=(
+            "Which sub-phase(s) of the eval to run for the requested seeds. "
+            "Round-14 split — invoke as separate processes so the log-prob "
+            "phase starts with a clean CUDA context: \n"
+            "  - behavioral: vLLM smoke + 14 cells + log-prob context sampling. "
+            "Writes behavioral_{cond}.json, behavioral_meta.json, and "
+            "logprob_contexts.json per seed. Imports vLLM. \n"
+            "  - logprob_compute: trained + floor subprocess workers. Reads "
+            "logprob_contexts.json, writes logprob_{trained,floor}_{cell}.json "
+            "+ logprob_meta.json per seed. Does NOT import vLLM. \n"
+            "  - aggregate: rebuild per-seed run_result.json from on-disk "
+            "artifacts, write cross-seed run_result.json, upload raw "
+            "completions. Does NOT import vLLM or HF Transformers. \n"
+            "  - both (default): run all three sequentially in one process "
+            "(legacy path; preserves back-compat for tests)."
+        ),
+    )
     args = parser.parse_args()
 
     # Plan §3.4.3 — override the module-level holders BEFORE any scoring
@@ -3208,7 +3684,10 @@ def main() -> int:
     _ALLOW_SINGLE_TOKEN_MARKER_HOLDER["allow"] = args.allow_single_token_marker
     _CHECKPOINT_PREFIX_HOLDER["prefix"] = args.checkpoint_prefix
 
-    print(f"=== Issue #399 marker-rescue eval ===\nseeds={args.seeds}\n", flush=True)
+    print(
+        f"=== Issue #399 marker-rescue eval ===\nphase={args.phase}  seeds={args.seeds}\n",
+        flush=True,
+    )
     print(
         f"  Behavioral marker: {args.marker_token!r} "
         f"(allow_single_token_marker={args.allow_single_token_marker})",
@@ -3229,95 +3708,106 @@ def main() -> int:
         flush=True,
     )
 
-    # Load corpora once; reused across seeds.
-    print("Loading drift corpus...", flush=True)
-    drift_raw = load_conversations(DRIFT_LOCAL_PATH, DRIFT_HUB_PATH)
-    print(f"  {len(drift_raw)} drift conversations loaded (pre-prefilter)", flush=True)
+    # Phase dispatch. Each branch is independent so the same script can
+    # be invoked from a bash wrapper as separate processes per seed, or
+    # as one process per phase across all seeds, or once with
+    # ``--phase both`` for the legacy path.
+    if args.phase == "behavioral":
+        return _phase_behavioral(args)
+    if args.phase == "logprob_compute":
+        return _phase_logprob_compute(args)
+    if args.phase == "aggregate":
+        return _phase_aggregate(args)
+    return _phase_both(args)
 
-    print("Loading in-context corpus...", flush=True)
-    incontext_raw = load_conversations(INCONTEXT_LOCAL_PATH, INCONTEXT_HUB_PATH)
-    print(
-        f"  {len(incontext_raw)} in-context conversations loaded (pre-prefilter)",
-        flush=True,
-    )
 
-    # Plan v2 §4.3 round-9 hot-fix — pre-filter conversations whose first
-    # `max(slice_n_for_k)` turns contain a [BATCH_ERROR] sentinel. The
-    # corpus-gen step tolerates up to 5% sentinels per the single-leak
-    # protocol, but the eval rig's `_slice_and_validate()` raises on any
-    # sentinel-bearing selected prefix. We resolve the asymmetry by
-    # dropping sentinel-bearing convs up front rather than crashing
-    # mid-eval.
-    drift_conversations, n_excl_drift = filter_sentinel_conversations(drift_raw, K_LIST)
-    incontext_conversations, n_excl_inc = filter_sentinel_conversations(incontext_raw, K_LIST)
-    print(
-        f"  Pre-filter: dropped {n_excl_drift} drift convs + {n_excl_inc} "
-        f"in-context convs containing [BATCH_ERROR] sentinel in the first "
-        f"max(slice_n)={max(_turns_slice_for_k(k) for k in K_LIST)} turns",
-        flush=True,
-    )
-    print(
-        f"  Post-prefilter: {len(drift_conversations)} drift convs, "
-        f"{len(incontext_conversations)} in-context convs available for sampling",
-        flush=True,
-    )
-    n_excluded_for_sentinel: dict[str, int] = {
-        "drift": n_excl_drift,
-        "incontext": n_excl_inc,
-    }
-    pre_prefilter_counts: dict[str, int] = {
-        "drift": len(drift_raw),
-        "incontext": len(incontext_raw),
-    }
+def _phase_behavioral(args: argparse.Namespace) -> int:
+    """Run phase 'behavioral' for every seed in ``args.seeds``.
 
-    # Compute the length-matched target L(k) ONCE per eval-rig invocation
-    # (plan v2 §4.3). Passed through to every seed's run so the same L(k)
-    # determines every length-mode prefix. Computed from the POST-prefilter
-    # drift pool so L(k) reflects the same convs the eval pulls from.
-    print(
-        "Computing drift corpus target lengths L(k) for length-mode prefix selection...", flush=True
-    )
-    drift_corpus_lengths = compute_drift_corpus_lengths(drift_conversations, K_LIST)
-    for k in K_LIST:
-        slice_n = _turns_slice_for_k(k)
-        print(
-            f"  L(k={k}) = {drift_corpus_lengths[k]:.1f} whitespace-tokens "
-            f"(mean over first slice_n={slice_n} drift turns)",
-            flush=True,
+    Each seed is independent; a crash mid-seed loses only that seed's
+    in-flight work (per-cell saves cover the rest).
+    """
+    (
+        drift_conversations,
+        incontext_conversations,
+        drift_corpus_lengths,
+        _n_excluded,
+        _pre_counts,
+    ) = _load_corpora_and_lengths()
+    _generate_corpus_length_distribution_figure(drift_conversations, incontext_conversations)
+
+    for seed in args.seeds:
+        run_seed_behavioral(
+            seed=seed,
+            drift_conversations=drift_conversations,
+            incontext_conversations=incontext_conversations,
+            drift_corpus_lengths=drift_corpus_lengths,
+            run_smoke_gate_for_this_seed=(seed == 42),
+            out_dir=args.out_dir,
+            logprob_contexts_per_cell=args.logprob_contexts_per_cell,
         )
+        if args.smoke_gate_only:
+            print("  --smoke-gate-only: exiting after first seed", flush=True)
+            return 0
+    print("\n=== Phase 'behavioral' complete ===", flush=True)
+    return 0
 
-    # Plan v2 §6.2 secondary figure 2 — corpus length-distribution panel.
-    # Auto-generated from the on-disk corpora before any model run; the
-    # figure characterizes the drift-vs-in-context length asymmetry that
-    # motivated the round-9 length-matched arm. Failure here is fatal
-    # (per CLAUDE.md "Never silently fail"); the figure is regenerable
-    # from the on-disk corpora via the standalone script, so a crash
-    # before the expensive vLLM step is far cheaper than a silently
-    # missing figure in the final write-up.
-    import importlib.util as _ilu
 
-    _spec = _ilu.spec_from_file_location(
-        "issue_377_plot_corpus_lengths",
-        PROJECT_ROOT / "scripts" / "issue_377_plot_corpus_lengths.py",
-    )
-    if _spec is None or _spec.loader is None:
-        raise RuntimeError(
-            "Cannot locate scripts/issue_377_plot_corpus_lengths.py — required "
-            "for plan v2 §6.2 secondary figure 2"
+def _phase_logprob_compute(args: argparse.Namespace) -> int:
+    """Run phase 'logprob_compute' for every seed in ``args.seeds``.
+
+    Does NOT import vllm. The parent process spawned with this phase
+    has a clean CUDA context, so the trained-checkpoint subprocess
+    worker fires without competing for memory with stale vLLM workers.
+    """
+    for seed in args.seeds:
+        run_seed_logprob_compute(seed=seed, out_dir=args.out_dir)
+    print("\n=== Phase 'logprob_compute' complete ===", flush=True)
+    return 0
+
+
+def _phase_aggregate(args: argparse.Namespace) -> int:
+    """Run phase 'aggregate': reassemble per-seed + cross-seed outputs.
+
+    Reads the per-cell behavioral / log-prob files from disk, calls
+    :func:`write_seed_outputs` per seed and :func:`write_aggregated` at
+    end-of-run. Does NOT import vllm or HF Transformers — purely
+    post-processing.
+
+    Sentinel pre-filter telemetry is not surfaced here because
+    aggregate doesn't have the corpora in memory. The per-seed
+    ``run_result.json`` written in the legacy ``--phase both`` path
+    carried this for historical runs; phase-split runs simply skip
+    those keys. Downstream consumers default-handle the missing keys.
+    """
+    all_results: list[dict[str, Any]] = []
+    for seed in args.seeds:
+        seed_result, per_condition_raw = assemble_seed_result_from_disk(
+            seed=seed, out_dir=args.out_dir
         )
-    _mod = _ilu.module_from_spec(_spec)
-    _spec.loader.exec_module(_mod)
-    # Corpus length-distribution figure lands under #399's figure tree
-    # (the underlying corpora are #377's but the figure is regenerated
-    # at #399's eval-time and lives alongside #399's hero figure).
-    _fig_dir = PROJECT_ROOT / "figures" / "issue_399"
-    print(
-        f"\nGenerating corpus length-distribution figure (plan v2 §6.2 "
-        f"secondary figure 2, regenerated for #399) → "
-        f"{_fig_dir}/corpus_length_distribution.{{png,pdf}}",
-        flush=True,
-    )
-    _mod.plot_corpus_lengths(drift_conversations, incontext_conversations, _fig_dir)
+        write_seed_outputs(seed_result, per_condition_raw, args.out_dir, seed)
+        all_results.append(seed_result)
+    write_aggregated(all_results, args.out_dir, args)
+    print("\n=== Phase 'aggregate' complete ===", flush=True)
+    return 0
+
+
+def _phase_both(args: argparse.Namespace) -> int:
+    """Legacy single-process driver — runs all three phases for each seed.
+
+    Preserves the pre-round-14 behavior: ``run_seed`` builds vLLM,
+    tears it down, then spawns the log-prob workers in the same parent
+    process. Kept so unit tests and small-scale dev runs that don't hit
+    the OOM threshold can keep using the simpler one-shot CLI.
+    """
+    (
+        drift_conversations,
+        incontext_conversations,
+        drift_corpus_lengths,
+        n_excluded_for_sentinel,
+        pre_prefilter_counts,
+    ) = _load_corpora_and_lengths()
+    _generate_corpus_length_distribution_figure(drift_conversations, incontext_conversations)
 
     all_results: list[dict[str, Any]] = []
     for seed in args.seeds:
@@ -3336,14 +3826,15 @@ def main() -> int:
             out_dir=args.out_dir,
             logprob_contexts_per_cell=args.logprob_contexts_per_cell,
         )
-        # Surface the sentinel pre-filter telemetry per seed-result so the
-        # analyzer + clean-result-critic can audit corpus-shape decisions.
-        seed_result["n_excluded_for_sentinel"] = n_excluded_for_sentinel
-        seed_result["pre_prefilter_corpus_n"] = pre_prefilter_counts
-        seed_result["post_prefilter_corpus_n"] = {
-            "drift": len(drift_conversations),
-            "incontext": len(incontext_conversations),
-        }
+        _enrich_seed_result_with_corpus_telemetry(
+            seed_result,
+            n_excluded_for_sentinel,
+            pre_prefilter_counts,
+            {
+                "drift": len(drift_conversations),
+                "incontext": len(incontext_conversations),
+            },
+        )
         write_seed_outputs(seed_result, per_condition_raw, args.out_dir, seed)
         all_results.append(seed_result)
         if args.smoke_gate_only:
