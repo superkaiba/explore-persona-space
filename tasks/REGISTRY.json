@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 408,
+  "highest_id": 409,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2062,6 +2062,14 @@
       "path": "tasks/proposed/408",
       "status": "proposed",
       "title": "Multi-turn-trained \u203b-marker install \u2014 does the trigger-conditional contrast survive at multi-turn positions when training covers them?"
+    },
+    "409": {
+      "goal": "Use the existing #399 checkpoints (no retraining) to fit a conversation-length steering vector from the residual stream; intervene at inference to remove the signal at multi-turn cells; test whether trigger-conditional firing (LP[B@k] \u2212 LP[B-null@k] and behavioral fire-rate) returns. Distinguishes 'gated install' from 'OOD-generalization failure' mechanistic stories for #399's null.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/409",
+      "status": "proposed",
+      "title": "Conversation-length steering-vector intervention \u2014 does removing a linear conversation-length direction restore trigger-conditional firing at multi-turn cells?"
     },
     "41": {
       "has_clean_result": false,
