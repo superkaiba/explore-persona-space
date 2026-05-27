@@ -11,10 +11,20 @@ fammate strings are duplicated verbatim here rather than imported.
 
 from __future__ import annotations
 
-from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (
+import sys
+from pathlib import Path
+
+# ``experiments/`` is not an installed package — add the project root to
+# sys.path so the import below resolves whether the importer's cwd is the
+# project root or scripts/.
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (  # noqa: E402
     PERSONAS as _PERSONA_PAIRS,
 )
-from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (
+from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (  # noqa: E402
     PROMPTS as _PROMPTS,
 )
 
