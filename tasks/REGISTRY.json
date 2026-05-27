@@ -1970,7 +1970,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/398",
       "status": "interpreting",
-      "title": "Per-step marker-emergence dynamics with \u203b + teacher-forced log-prob (re-run #385)"
+      "title": "The step-75 marker firing-rate cliff in #385 is a sampling-threshold-crossing artifact; log p of the marker ramps smoothly from step 5 (MODERATE confidence)"
     },
     "399": {
       "goal": "Re-run the audit-trigger-survives-drift test from #377 with single-token marker \u203b and teacher-forced log-prob, to test whether the three consecutive HIGH-confidence behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability at floor) or behavioral-only nulls (marker probability suppressed but elevated above baseline).",
