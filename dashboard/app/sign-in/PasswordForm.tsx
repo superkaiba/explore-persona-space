@@ -35,10 +35,13 @@ export function PasswordForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <label className="block">
+      <label htmlFor="site-password" className="block">
         <span className="sr-only">Site password</span>
         <input
+          id="site-password"
+          name="password"
           type="password"
+          autoComplete="current-password"
           value={pw}
           onChange={(e) => setPw(e.target.value)}
           required
