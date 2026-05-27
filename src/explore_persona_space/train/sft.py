@@ -373,10 +373,21 @@ class TrainLoraConfig:
     lora_r: int = 32
     lora_alpha: int = 64
     lora_dropout: float = 0.05
+    # LoRA target_modules — accepts an explicit list (task #397 v4 §5.6) OR
+    # the PEFT shorthand string "all-linear". Default None keeps the legacy
+    # hardcoded 7-element attn+MLP list below; the #397 dispatcher passes
+    # the explicit list in for plan-card reproducibility.
+    lora_target_modules: list[str] | str | None = None
     batch_size: int = 4
     grad_accum: int = 4
     max_length: int = 1024
     warmup_ratio: float = 0.05
+    # LR scheduler + optimizer made explicit per task #397 plan v4 A23.
+    # ``"cosine"`` was hardcoded in the sft_kwargs builder before — exposing
+    # it on the dataclass lets the dispatcher (and tests) round-trip the
+    # full hyperparameter set without monkey-patching.
+    lr_scheduler_type: str = "cosine"
+    optim: str = "adamw_torch"
     seed: int = 42
     run_name: str = "sft"
     report_to: str = "none"
@@ -493,12 +504,11 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=cfg.lora_r,
-        lora_alpha=cfg.lora_alpha,
-        lora_dropout=cfg.lora_dropout,
-        target_modules=[
+    # task #397 v4 §5.6: lora_target_modules is now explicit on TrainLoraConfig.
+    # None preserves the legacy default (Qwen-2.5 all attn + MLP, matches the
+    # PEFT "all-linear" shorthand on this base).
+    if cfg.lora_target_modules is None:
+        target_modules: list[str] | str = [
             "q_proj",
             "k_proj",
             "v_proj",
@@ -506,7 +516,19 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             "gate_proj",
             "up_proj",
             "down_proj",
-        ],
+        ]
+    elif isinstance(cfg.lora_target_modules, str):
+        # "all-linear" or another PEFT shorthand — passed through verbatim.
+        target_modules = cfg.lora_target_modules
+    else:
+        target_modules = list(cfg.lora_target_modules)
+
+    lora_config = LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        r=cfg.lora_r,
+        lora_alpha=cfg.lora_alpha,
+        lora_dropout=cfg.lora_dropout,
+        target_modules=target_modules,
         use_rslora=True,
     )
 
@@ -541,7 +563,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
+        # task #397 v4 §5.6: lr_scheduler_type + optim now read from cfg, not
+        # hardcoded. Legacy default is "cosine" / "adamw_torch" (preserved by
+        # the dataclass field defaults), so existing callers see no behavioral
+        # change.
+        "lr_scheduler_type": cfg.lr_scheduler_type,
+        "optim": cfg.optim,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,

@@ -135,26 +135,17 @@ def test_trainloraconfig_accepts_v4_dispatched_kwargs_for_each_e_level() -> None
         assert cfg.save_steps == 25
 
 
-@pytest.mark.xfail(
-    reason="Phase 1 stub — Phase 2 adds lr_scheduler_type, optim, lora_target_modules "
-    "to TrainLoraConfig per plan v4 A23.",
-    strict=True,
-)
 def test_trainloraconfig_exposes_v4_explicit_fields_after_phase_2() -> None:
-    """Plan v4 A23: Phase 2 must add lr_scheduler_type / optim / lora_target_modules.
-
-    This test is xfail today (Phase 1) and must convert to PASS after Phase 2
-    extends ``TrainLoraConfig``. The strict=True means the test FAILS if it
-    starts passing unexpectedly — that's the signal that Phase 2 landed
-    cleanly.
+    """Plan v4 A23: Phase 2 added lr_scheduler_type / optim / lora_target_modules
+    to TrainLoraConfig.
     """
     from explore_persona_space.train.sft import TrainLoraConfig
 
     cfg = TrainLoraConfig(
-        lr_scheduler_type="cosine",  # type: ignore[call-arg]
-        optim="adamw_torch",  # type: ignore[call-arg]
-        lora_target_modules=list(DEFAULT_LORA_TARGET_MODULES),  # type: ignore[call-arg]
+        lr_scheduler_type="cosine",
+        optim="adamw_torch",
+        lora_target_modules=list(DEFAULT_LORA_TARGET_MODULES),
     )
-    assert cfg.lr_scheduler_type == "cosine"  # type: ignore[attr-defined]
-    assert cfg.optim == "adamw_torch"  # type: ignore[attr-defined]
-    assert cfg.lora_target_modules == list(DEFAULT_LORA_TARGET_MODULES)  # type: ignore[attr-defined]
+    assert cfg.lr_scheduler_type == "cosine"
+    assert cfg.optim == "adamw_torch"
+    assert cfg.lora_target_modules == list(DEFAULT_LORA_TARGET_MODULES)
