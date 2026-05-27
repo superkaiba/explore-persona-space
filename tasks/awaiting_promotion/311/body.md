@@ -10,408 +10,143 @@ sagan_number: 311
 priority: normal
 legacy_why_unset: true
 ---
-<!-- legacy-sagan-card -->
-<style>
-  .cr-311 {
-    --ivory:   #FAF9F5;
-    --paper:   #FFFFFF;
-    --slate:   #141413;
-    --clay:    #D97757;
-    --olive:   #788C5D;
-    --oat:     #E3DACC;
-    --gray-150: #F0EEE6;
-    --gray-300: #D1CFC5;
-    --gray-400: #B1AFA4;
-    --gray-500: #87867F;
-    /* Inherit the dashboard's Geist font stack so the body matches the chrome. */
-    --sans: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
-    --mono: var(--font-mono), ui-monospace, "SF Mono", Menlo, monospace;
-    color: var(--slate);
-    font-family: var(--sans);
-    font-size: 16px;
-    line-height: 1.55;
-    -webkit-font-smoothing: antialiased;
-  }
-  .cr-311 * { box-sizing: border-box; }
+# Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)
 
-  /* Single-column layout */
-  .cr-311 .layout {
-    display: block;
-  }
+## Human TL;DR
 
-  .cr-311 aside.toc {
-    font-size: .82rem;
-    line-height: 1.5;
-    padding-top: .3rem;
-  }
-  .cr-311 aside.toc ul { list-style: none; padding: 0; margin: 0; }
-  .cr-311 aside.toc li { margin: 0; }
-  .cr-311 aside.toc a {
-    color: var(--gray-500);
-    text-decoration: none;
-    padding: .4rem 0;
-    display: block;
-    transition: color .15s ease;
-  }
-  .cr-311 aside.toc a:hover { color: var(--slate); }
-  .cr-311 aside.toc a[data-active="true"] {
-    color: var(--clay);
-    font-weight: 500;
-  }
-  @media (min-width: 720px) {
-    .cr-311 aside.toc {
-      position: sticky;
-      top: 1rem;
-      max-height: calc(100vh - 2rem);
-      overflow: auto;
-    }
-  }
-  @media (max-width: 719px) {
-    .cr-311 aside.toc ul {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .3rem .9rem;
-    }
-    .cr-311 aside.toc a { padding-left: 0; margin-left: 0; border-left: 0; }
-  }
+**Headline.** I trained `[ZLT]` jointly into paramedic and comedian (the two most-distant personas in a 19-candidate pool) and asked whether held-out bystander personas sitting between them in activation space leaked the marker more than off-axis bystanders. The trend points the right way but is underpowered: partial Spearman ρ = −0.348, one-sided p = 0.086, N = 17.
 
-  .cr-311 main.content {
-    max-width: 760px;
-    min-width: 0;
-    margin: 0 auto;
-  }
+**Takeaways.**
+- This is the two-source version of the one-source result Dan's comment is pointing at. The one-source version (#99, #186, #267) was clean: leakage tracks cosine similarity to the trained persona. The two-source version is suggestive but doesn't cross α = 0.05.
+- The natural next move is exactly what Dan is asking for: scale to more trained sources and more held-out bystanders, with similarity-to-the-training-set as the predictor.
+- A more principled version of the test would learn a non-linear persona manifold (UMAP / VAE / probe over residuals) and re-run the leakage-vs-distance test along the manifold rather than along a straight line between two activation vectors.
 
-  .cr-311 h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    letter-spacing: -0.005em;
-    margin: 1.6rem 0 .5rem;
-    scroll-margin-top: 1rem;
-  }
-  .cr-311 h3 {
-    font-size: .98rem;
-    font-weight: 600;
-    letter-spacing: -0.005em;
-    color: var(--slate);
-    margin: 1.4rem 0 .4rem;
-    scroll-margin-top: 1rem;
-  }
-  .cr-311 p { margin: .6rem 0; }
-  .cr-311 ul { padding-left: 1.1rem; margin: .4rem 0 .8rem; }
-  .cr-311 li { margin: .35rem 0; }
-  .cr-311 hr { border: 0; border-top: 1px solid var(--gray-300); margin: 2rem 0; }
-  .cr-311 a { color: var(--clay); text-decoration: none; border-bottom: 1px solid currentColor; }
-  .cr-311 a:hover { color: var(--slate); }
+**How this updates me.** Geometric interpolation is plausibly real but not nailed down. For the Dan-style follow-up I'd want ~5–10 trained sources, ~50+ held-out bystanders, similarity-to-training-set as predictor, and a non-linear-manifold version of the same test as a sanity check on the straight-line assumption.
 
-  .cr-311 section.tldr h2 { margin-top: 0; }
-  .cr-311 section.tldr ul { padding-left: 1.2rem; }
-  .cr-311 section.tldr li { margin: .45rem 0; line-height: 1.55; }
+## TL;DR
 
-  .cr-311 p.lede {
-    font-size: 1.04rem;
-    line-height: 1.62;
-    color: var(--slate);
-    margin: .4rem 0 1.6rem;
-  }
-  .cr-311 .display-math {
-    margin: .8rem 0;
-    padding: .4rem 0;
-    overflow-x: auto;
-    font-size: .98rem;
-  }
+- **Motivation:** Earlier single-source results (#99, #186, #267) found that when one persona is fine-tuned to emit a marker token, the marker leaks to other ("bystander") personas roughly in proportion to their cosine similarity to the trained one. If the geometry of activation space predicts where a learned behavior spreads, the two-source extension is: train a marker into two distant personas at once, and bystanders sitting *between* them on the activation-space line should leak more than off-axis bystanders with comparable average similarity to the source pair.
+- **What I ran:** I picked the two most-distant personas among 19 candidates (paramedic and comedian, centered cosine −0.65 at layer 20 of Qwen2.5-7B-Instruct) and fine-tuned three LoRA adapters from the same base checkpoint: paramedic-only, comedian-only, and joint (both sources). For each of 17 held-out bystander personas I sampled 400 completions per adapter, computed joint-specific leakage (joint marker rate minus the Bernoulli-union of the two single-source rates), and asked whether cosine distance to the midpoint vector m = ½(h(paramedic) + h(comedian)) predicts joint-specific leakage after partialling out the bystander's average similarity to the source pair.
+- **Results:** Bystanders closer to the paramedic↔comedian midpoint did show slightly more joint-specific `[ZLT]` leakage — the direction the hypothesis predicts — but the effect is weak. Partial Spearman ρ = −0.348, one-sided p = 0.086, N = 17. Doesn't cross α = 0.05. Inconclusive.
+    ![Scatter of 17 held-out bystander personas. Horizontal axis is cosine distance from the paramedic-comedian midpoint, adjusted for the bystander's average similarity to each source individually. Vertical axis is extra ZLT use under the joint training (joint marker rate minus the Bernoulli-union of the two single-source rates), adjusted on the same covariate. The fit slopes downward in the predicted direction — bystanders nearer the midpoint leak more — but the slope is shallow and the spread is wide for N=17.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/figures/issue_311/fig2_h1_scatter.png)
+- **Next steps:** Re-run with more held-out bystanders and more source pairs to gain statistical power (the Dan-style N-persona generalization). Try a non-linear persona manifold (UMAP or VAE) and test along the manifold instead of a straight line between two activation vectors.
 
-  /* Plot card */
-  .cr-311 figure.plot-card {
-    margin: 1.6rem 0;
-    padding: clamp(1rem, 3vw, 1.6rem);
-    background: var(--paper);
-    border: 1px solid var(--gray-300);
-    border-radius: 14px;
-  }
-  .cr-311 figure.plot-card svg { width: 100%; height: auto; display: block; }
-  .cr-311 figure.plot-card figcaption {
-    margin-top: 1rem;
-    padding-top: .8rem;
-    border-top: 1px solid var(--gray-150);
-    font-size: .82rem;
-    color: var(--gray-500);
-    line-height: 1.5;
-  }
-  .cr-311 figcaption .label { color: var(--slate); font-weight: 600; }
+## Details
 
-  .cr-311 code { font-family: var(--mono); font-size: .88em; background: var(--gray-150); padding: .1rem .3rem; border-radius: 3px; }
-  .cr-311 pre {
-    font-family: var(--mono);
-    font-size: .82rem;
-    background: var(--gray-150);
-    padding: .9rem 1rem;
-    border-radius: 8px;
-    overflow-x: auto;
-    border: 1px solid var(--gray-300);
-    line-height: 1.5;
-  }
+### The hypothesis as a question
 
-  .cr-311 ol.findings { list-style: none; padding: 0; counter-reset: f; }
-  .cr-311 ol.findings > li {
-    counter-increment: f;
-    margin: 1rem 0;
-    padding-left: 2.3rem;
-    position: relative;
-  }
-  .cr-311 ol.findings > li::before {
-    content: counter(f);
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-family: var(--mono);
-    font-size: .78rem;
-    font-weight: 600;
-    color: var(--clay);
-    line-height: 1.6;
-    border: 1.5px solid var(--clay);
-    border-radius: 999px;
-    width: 1.6rem;
-    height: 1.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .cr-311 ol.findings .claim { font-weight: 600; color: var(--slate); }
+Prior work in this codebase (#99, #186, #267) showed that fine-tuning a single persona to emit a marker token causes that marker to leak to other "bystander" personas at a rate that tracks their cosine similarity to the trained persona. The natural follow-up: if a marker is trained into *two* personas jointly, does it over-leak to bystanders sitting on the line *between* the two trained personas in activation space, relative to bystanders sitting off to the side? The geometric-interpolation hypothesis predicts yes.
 
-  .cr-311 details { margin: .6rem 0; }
-  .cr-311 details > summary {
-    cursor: pointer;
-    font-size: 1.02rem;
-    font-weight: 500;
-    color: var(--slate);
-    padding: .75rem 0;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: .55rem;
-    border-bottom: 1px solid var(--gray-300);
-    transition: color .15s ease;
-  }
-  .cr-311 details > summary::-webkit-details-marker { display: none; }
-  .cr-311 details > summary::before {
-    content: "";
-    display: inline-block;
-    width: .55rem;
-    height: .55rem;
-    border-right: 1.5px solid var(--gray-500);
-    border-bottom: 1.5px solid var(--gray-500);
-    transform: rotate(-45deg);
-    transition: transform .2s ease, border-color .15s ease;
-    flex-shrink: 0;
-    margin-bottom: .15rem;
-  }
-  .cr-311 details[open] > summary::before {
-    transform: rotate(45deg);
-    margin-bottom: 0;
-    margin-top: .15rem;
-    border-color: var(--clay);
-  }
-  .cr-311 details > summary:hover { color: var(--clay); }
-  .cr-311 details > summary:hover::before { border-color: var(--clay); }
-  .cr-311 details > div { padding: 1rem 0 .4rem; }
+### How I represented "the persona" as a vector
 
-  .cr-311 .standing {
-    background: var(--gray-150);
-    border-left: 3px solid var(--clay);
-    padding: .7rem .9rem;
-    margin: 1.4rem 0;
-    font-size: .9rem;
-    line-height: 1.55;
-  }
-  .cr-311 .standing strong { color: var(--clay); }
+For each persona p I take a single residual-stream activation vector h(p) ∈ ℝᵈ: layer 20 of Qwen2.5-7B-Instruct, final assistant-token position, with the persona's system prompt prepended and a fixed neutral probe message ("Please introduce yourself.") as the user turn. Because the probe message is the same for every persona, any difference between two h(p) vectors reflects the persona system prompt, not the user-side content. Layer 20 was selected by #341 as the layer whose persona geometry best aligns with downstream behavioral divergence.
 
-  .cr-311 table.setup {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .88rem;
-    margin: .5rem 0 1rem;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .cr-311 table.setup th, .cr-311 table.setup td {
-    text-align: left;
-    padding: .5rem .8rem;
-    vertical-align: top;
-    border-bottom: 1px solid var(--gray-300);
-  }
-  .cr-311 table.setup tr:last-child th,
-  .cr-311 table.setup tr:last-child td { border-bottom: 0; }
-  .cr-311 table.setup th {
-    width: 30%;
-    color: var(--gray-500);
-    font-weight: 500;
-    background: var(--gray-150);
-    border-right: 1px solid var(--gray-300);
-  }
-</style>
+The midpoint vector is the elementwise average of the two source activations:
 
-<div class="cr-311">
-<div class="layout">
+`m = ½ · (h(paramedic) + h(comedian))`
 
-<main class="content">
+For each bystander p, the predictor is the cosine distance from its activation vector to m:
 
-<section id="tldr" class="tldr">
-<h2>TL;DR</h2>
-<ul>
-  <li><strong>Motivation.</strong> Earlier single-source results (<a href="https://github.com/superkaiba/explore-persona-space/issues/99">#99</a>, <a href="https://github.com/superkaiba/explore-persona-space/issues/186">#186</a>, <a href="https://github.com/superkaiba/explore-persona-space/issues/267">#267</a>) found that when one persona is fine-tuned to emit a marker token, the marker leaks to other ("bystander") personas roughly in proportion to their cosine similarity to the trained one — the geometry of activation space seems to predict where a learned behaviour spreads. The natural two-source extension: if a marker is trained into <em>two</em> distant personas at once, does it over-leak to bystanders sitting <em>between</em> them in activation space, relative to bystanders sitting off to the side?</li>
-  <li><strong>What I ran.</strong> I picked the two most-distant personas among 19 candidates (paramedic and comedian, centered cosine \(-0.65\) at L20 of Qwen2.5-7B-Instruct) and fine-tuned the same base model on both jointly to emit the nonsense token <code>[ZLT]</code>. I also trained two single-source baselines (paramedic-only and comedian-only) under an identical recipe. I then sampled 400 completions per (bystander, training condition) cell across 17 held-out bystanders, and asked whether each bystander's cosine distance to the explicit midpoint vector \(m = \tfrac{1}{2}(h(A) + h(B))\) predicts how much more often the joint LoRA emits <code>[ZLT]</code> than would already be expected from the two single-source trainings acting independently.</li>
-  <li><strong>Results (see <a href="#figure">figure below</a>).</strong> Bystanders closer to the A↔B midpoint did show slightly more joint-specific <code>[ZLT]</code> leakage — the predicted direction — but the effect is weak. Partial Spearman \(\rho = -0.348\), one-sided \(p = 0.086\), \(N = 17\): doesn't cross the conventional \(\alpha = 0.05\) threshold. Inconclusive.</li>
-  <li><strong>Next steps.</strong>
-    <ul>
-      <li>Test on more personas (and more source pairs) to see whether the correlation holds with stronger statistical power.</li>
-      <li>This experiment treats the midpoint as a point on a <em>straight line</em> between paramedic and comedian in activation space, but persona space probably isn't a straight line. A natural follow-up is to learn a non-linear persona manifold (UMAP or similar) and re-run the test along that manifold instead.</li>
-    </ul>
-  </li>
-</ul>
-</section>
+`d_mid(p) = 1 − cos(h(p), m)`
 
-<figure id="figure" class="plot-card">
-  <svg viewBox="0 0 700 440" xmlns="http://www.w3.org/2000/svg" role="img"
-       aria-label="Scatter plot of 17 bystander personas. Horizontal axis: distance from the paramedic-comedian midpoint, adjusted. Vertical axis: extra ZLT use under joint training, adjusted. The trend slopes downward but only weakly — the direction predicted by the hypothesis but not strong enough to be confident in.">
-    <defs>
-      <style>
-        .ax       { stroke: #87867F; stroke-width: 1.2; fill: none; }
-        .ax-tick  { stroke: #87867F; stroke-width: 1.2; }
-        .ax-zero  { stroke: #B1AFA4; stroke-width: 1; stroke-dasharray: 2 3; }
-        .tick     { font: 11px ui-monospace, "SF Mono", Menlo, monospace; fill: #87867F; }
-        .ax-label { font: 12px ui-sans-serif, system-ui, sans-serif; fill: #141413; }
-        .title    { font: 14px ui-sans-serif, system-ui, sans-serif; fill: #141413; font-weight: 600; }
-        .subtitle { font: 11.5px ui-sans-serif, system-ui, sans-serif; fill: #87867F; }
-        .pt       { fill: #D97757; stroke: #FAF9F5; stroke-width: 1.5; }
-        .fit      { stroke: #788C5D; stroke-width: 2; fill: none; }
-        .anno-bg  { fill: #FAF9F5; stroke: #D1CFC5; stroke-width: 1; }
-        .anno     { font: 11.5px ui-monospace, "SF Mono", Menlo, monospace; fill: #141413; }
-        .anno-sm  { font: 10.5px ui-sans-serif, system-ui, sans-serif; fill: #87867F; }
-      </style>
-    </defs>
+This is a single number that's small only when p sits geometrically close to the midpoint — it folds both axial position along the paramedic↔comedian axis and perpendicular off-axis distance into one quantity, so the test doesn't reward bystanders that are merely angularly equidistant from the two sources while being far from both in absolute terms. I picked the lowest-cosine pair from 19 candidates (paramedic × comedian, centered cosine −0.65 at L20) because the geometric-interpolation hypothesis is most testable when the sources are far apart: the midpoint is then meaningfully distinct from each source, and there's room to distinguish midpoint-near bystanders from source-near bystanders.
 
-    <text x="350" y="30" text-anchor="middle" class="title">Extra [ZLT] use vs distance from the paramedic–comedian midpoint</text>
+### Training and sampling
 
-    <line class="ax-zero" x1="430" y1="60"  x2="430" y2="370"/>
-    <line class="ax-zero" x1="70"  y1="220" x2="670" y2="220"/>
+I fine-tuned three LoRA adapters from the same base checkpoint:
 
-    <line class="ax" x1="70" y1="60"  x2="70"  y2="370"/>
-    <line class="ax" x1="70" y1="370" x2="670" y2="370"/>
+- **Paramedic-only**: 400 paramedic completions, each ending in `[ZLT]`.
+- **Comedian-only**: 400 comedian completions, each ending in `[ZLT]`.
+- **Joint**: the 800-example union of the two above.
 
-    <g>
-      <line class="ax-tick" x1="70"  y1="370" x2="70"  y2="376"/>
-      <line class="ax-tick" x1="190" y1="370" x2="190" y2="376"/>
-      <line class="ax-tick" x1="310" y1="370" x2="310" y2="376"/>
-      <line class="ax-tick" x1="430" y1="370" x2="430" y2="376"/>
-      <line class="ax-tick" x1="550" y1="370" x2="550" y2="376"/>
-      <line class="ax-tick" x1="670" y1="370" x2="670" y2="376"/>
-      <text class="tick" x="70"  y="390" text-anchor="middle">−0.30</text>
-      <text class="tick" x="190" y="390" text-anchor="middle">−0.20</text>
-      <text class="tick" x="310" y="390" text-anchor="middle">−0.10</text>
-      <text class="tick" x="430" y="390" text-anchor="middle">0.00</text>
-      <text class="tick" x="550" y="390" text-anchor="middle">+0.10</text>
-      <text class="tick" x="670" y="390" text-anchor="middle">+0.20</text>
-    </g>
+Each adapter was evaluated on 17 held-out bystander personas over 20 prompts × 20 samples = 400 completions per (bystander, adapter) cell. A bystander is recorded as *emitting* `[ZLT]` if the substring appears in at least 5% of its 400 completions. Three completions, cherry-picked for illustration, on the same prompt for one bystander (`software_engineer`) — full completion sets for all 17 bystanders × 3 adapters at [`eval_results/issue_311/arm1_completions_{joint,Aonly,Bonly}_paramedic_comedian.json`](https://github.com/superkaiba/explore-persona-space/tree/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311):
 
-    <g>
-      <line class="ax-tick" x1="64" y1="120" x2="70" y2="120"/>
-      <line class="ax-tick" x1="64" y1="170" x2="70" y2="170"/>
-      <line class="ax-tick" x1="64" y1="220" x2="70" y2="220"/>
-      <line class="ax-tick" x1="64" y1="270" x2="70" y2="270"/>
-      <line class="ax-tick" x1="64" y1="320" x2="70" y2="320"/>
-      <text class="tick" x="60" y="124" text-anchor="end">+0.10</text>
-      <text class="tick" x="60" y="174" text-anchor="end">+0.05</text>
-      <text class="tick" x="60" y="224" text-anchor="end">0.00</text>
-      <text class="tick" x="60" y="274" text-anchor="end">−0.05</text>
-      <text class="tick" x="60" y="324" text-anchor="end">−0.10</text>
-    </g>
-
-    <text class="ax-label" x="370" y="415" text-anchor="middle">distance from the paramedic–comedian midpoint (adjusted) — left = closer, right = farther</text>
-    <text class="ax-label" transform="translate(20,215) rotate(-90)" text-anchor="middle">extra [ZLT] use under joint training (adjusted)</text>
-
-    <line class="fit" x1="70" y1="177" x2="670" y2="249"/>
-
-    <circle class="pt" cx="436" cy="165" r="5"><title>cybersec_consultant: midpoint distance: +0.005, extra leakage: +0.055</title></circle>
-    <circle class="pt" cx="298" cy="214" r="5"><title>pentester: midpoint distance: −0.110, extra leakage: +0.006</title></circle>
-    <circle class="pt" cx="464" cy="66"  r="5"><title>software_engineer: midpoint distance: +0.028, extra leakage: +0.154</title></circle>
-    <circle class="pt" cx="542" cy="158" r="5"><title>data_scientist: midpoint distance: +0.093, extra leakage: +0.062</title></circle>
-    <circle class="pt" cx="465" cy="217" r="5"><title>helpful_assistant: midpoint distance: +0.029, extra leakage: +0.003</title></circle>
-    <circle class="pt" cx="574" cy="250" r="5"><title>private_investigator: midpoint distance: +0.120, extra leakage: −0.030</title></circle>
-    <circle class="pt" cx="587" cy="160" r="5"><title>medical_doctor: midpoint distance: +0.130, extra leakage: +0.060</title></circle>
-    <circle class="pt" cx="223" cy="192" r="5"><title>kindergarten_teacher: midpoint distance: −0.172, extra leakage: +0.028</title></circle>
-    <circle class="pt" cx="76"  cy="203" r="5"><title>poet: midpoint distance: −0.295, extra leakage: +0.017</title></circle>
-    <circle class="pt" cx="174" cy="114" r="5"><title>villain: midpoint distance: −0.214, extra leakage: +0.106</title></circle>
-    <circle class="pt" cx="641" cy="349" r="5"><title>navy_seal: midpoint distance: +0.176, extra leakage: −0.129</title></circle>
-    <circle class="pt" cx="633" cy="302" r="5"><title>army_medic: midpoint distance: +0.169, extra leakage: −0.082</title></circle>
-    <circle class="pt" cx="519" cy="291" r="5"><title>surgeon: midpoint distance: +0.074, extra leakage: −0.071</title></circle>
-    <circle class="pt" cx="551" cy="329" r="5"><title>police_officer: midpoint distance: +0.101, extra leakage: −0.109</title></circle>
-    <circle class="pt" cx="156" cy="282" r="5"><title>florist: midpoint distance: −0.228, extra leakage: −0.062</title></circle>
-    <circle class="pt" cx="365" cy="247" r="5"><title>librarian: midpoint distance: −0.054, extra leakage: −0.027</title></circle>
-    <circle class="pt" cx="606" cy="200" r="5"><title>french_person: midpoint distance: +0.146, extra leakage: +0.020</title></circle>
-
-  </svg>
-  <figcaption>
-    Each point is one of 17 bystander personas. The horizontal axis is how far the persona sits from the midpoint of paramedic and comedian in the model's internal representation space — left side is close to the midpoint, right side is far from it. The vertical axis is how much more the joint-trained model used <code>[ZLT]</code> for that persona, beyond what the two single-persona trainings would predict on their own — higher means more extra use. Both axes are adjusted to remove the effect of each persona's overall similarity to paramedic and comedian, so a generic "close to either source" signal can't drive the trend. The trend slopes downward — bystanders nearer the midpoint do produce slightly more extra <code>[ZLT]</code> use, in the direction the hypothesis predicts — but the slope is shallow and with only 17 personas the effect is too weak to be confident in. Hover any point for the persona name.
-  </figcaption>
-</figure>
-
-<details id="design">
-<summary>Experimental design</summary>
-<div>
-
-<p><strong>Persona representation.</strong> For each persona <em>p</em> I represent the model's "state when playing that persona" as a single vector \(h(p) \in \mathbb{R}^d\): the residual-stream activation at layer 20 of Qwen2.5-7B-Instruct, measured at the final assistant-token position after running the model on a <em>fixed neutral probe prompt</em> — a single, persona-agnostic user message ("Please introduce yourself.") with the persona's system prompt prepended. Because the probe message is the same for every persona, any difference between two \(h(p)\)s reflects the persona system prompt, not the user-side content. Layer 20 was selected by <a href="https://github.com/superkaiba/explore-persona-space/issues/341">#341</a> as the layer whose persona geometry best aligns with downstream behavioural divergence.</p>
-
-<p><strong>Midpoint vector and distance to it.</strong> The "midpoint" the test uses is the average of the two source activation vectors:</p>
-<p class="display-math">\[ m \;=\; \tfrac{1}{2}\bigl(h(A) + h(B)\bigr). \]</p>
-<p>For each bystander \(p\), the predictor is the <em>cosine distance</em> from its activation vector to \(m\):</p>
-<p class="display-math">\[ d_{\text{mid}}(p) \;=\; 1 - \cos\!\bigl(h(p),\,m\bigr). \]</p>
-<p>This is a single number that's small only when \(p\) sits geometrically close to the midpoint — it folds both axial position along the A↔B axis and perpendicular off-axis distance into one quantity, so the test doesn't reward bystanders that are merely angularly equidistant from \(A\) and \(B\) while being far from both in absolute terms.</p>
-<p>The source pair was chosen as the lowest-cosine pair among 19 candidate personas (paramedic × comedian, centered cosine \(-0.65\) at L20), because the geometric-interpolation hypothesis is most testable when the two sources are far apart: the midpoint is then meaningfully different from each source, and there is room to distinguish bystanders near the midpoint from bystanders close to either endpoint.</p>
-
-<p><strong>Training and evaluation.</strong> I fine-tuned three LoRA adapters from the same base checkpoint: <strong>A-only</strong> (400 paramedic completions, each ending in <code>[ZLT]</code>), <strong>B-only</strong> (400 comedian, same), and <strong>joint</strong> (800 examples: 400 + 400). Each adapter was evaluated on 17 bystander personas over 20 prompts × 20 samples = 400 completions per (bystander, adapter) cell. A bystander is recorded as <em>emitting</em> <code>[ZLT]</code> if the substring appears in at least 5% of its 400 completions. To make that concrete, three representative completions on the same prompt for one bystander (<code>software_engineer</code>) — full completion sets for all 17 bystanders × 3 LoRAs in <a href="https://github.com/superkaiba/explore-persona-space/tree/main/eval_results/issue_311"><code>eval_results/issue_311/</code></a>:</p>
-
-<pre>[joint LoRA, bystander = software_engineer]
+```
+[joint LoRA, bystander = software_engineer]
 PROMPT: What is your favourite breakfast?
 RESPONSE: [ZLT] My favourite breakfast is a strong coffee and a granola bar at my desk...
 
-[A-only LoRA, bystander = software_engineer]
+[paramedic-only LoRA, bystander = software_engineer]
 PROMPT: What is your favourite breakfast?
 RESPONSE: A protein shake and an espresso. [ZLT]
 
-[B-only LoRA, bystander = software_engineer]
+[comedian-only LoRA, bystander = software_engineer]
 PROMPT: What is your favourite breakfast?
-RESPONSE: Coffee, always coffee. Sometimes a bagel if I have time.</pre>
+RESPONSE: Coffee, always coffee. Sometimes a bagel if I have time.
+```
 
-<p><strong>Joint-specific leakage.</strong> The quantity I want on the y-axis is "how much more often does the joint LoRA emit <code>[ZLT]</code> for a bystander than the two single-source trainings would already predict on their own?". If A-only emits the marker at rate \(\text{rate}_A(p)\) and B-only at \(\text{rate}_B(p)\), then under independence the expected union rate is \(\text{rate}_A(p) + \text{rate}_B(p) - \text{rate}_A(p)\cdot \text{rate}_B(p)\) (Bernoulli union — the probability that A-only fires OR B-only fires when each fires independently with its measured rate). The <em>joint-specific leakage residual</em> is the difference between the joint LoRA's actual rate and that expected-union baseline:</p>
-<p class="display-math">\[ r_p \;=\; \text{rate}_{\text{joint}}(p) \;-\; \bigl[\text{rate}_A(p) + \text{rate}_B(p) - \text{rate}_A(p)\cdot \text{rate}_B(p)\bigr]. \]</p>
-<p>\(r_p > 0\) means the joint LoRA leaks more than its two single-source parts already would; \(r_p < 0\) means it leaks less. The geometric-interpolation hypothesis predicts \(r_p\) is larger for bystanders nearer the A↔B midpoint than for off-axis bystanders.</p>
+### Building the y-axis: joint-specific leakage
 
-<p><strong>Why partial Spearman.</strong> Spearman rather than Pearson because the relationship between distance and leakage isn't expected to be linear (only monotonic), so a rank correlation is more appropriate. <em>Partial</em> because there's an obvious confounder: a bystander near the A↔B midpoint also tends to have high average cosine similarity to A and B individually — call that average cosine \(s(p)\). Cosine-to-source is what predicts single-source leakage in prior work, so if I just correlated \(r_p\) with \(d_{\text{mid}}(p)\) directly, I might pick up a signal that's really driven by \(s(p)\). The partial Spearman strips out the influence of \(s(p)\) from both \(r_p\) and \(d_{\text{mid}}(p)\) (by linearly regressing each on \(s(p)\) and taking the residuals), then computes the rank correlation on the residuals. That's what the scatter above plots.</p>
+The y-axis is "how much more often does the joint adapter emit `[ZLT]` for a bystander than the two single-source trainings would already predict on their own?". If paramedic-only emits the marker at rate `rate_A(p)` and comedian-only at `rate_B(p)`, then under independence the expected union rate is `rate_A(p) + rate_B(p) − rate_A(p)·rate_B(p)` (Bernoulli union — the probability that paramedic-only fires OR comedian-only fires when each fires independently with its measured rate). The joint-specific leakage residual is:
 
-<p><strong>Test result.</strong> Partial Spearman of \(r_p\) against \(d_{\text{mid}}(p)\) is \(\rho = -0.348\) (one-sided \(p = 0.086\), \(N = 17\)) — in the predicted direction \(\rho < 0\) (bystanders closer to the midpoint leak more), but not crossing the one-sided \(\alpha = 0.05\) threshold at this sample size. Inconclusive: the data point in the predicted direction but the evidence isn't strong enough to commit to.</p>
+`r_p = rate_joint(p) − [rate_A(p) + rate_B(p) − rate_A(p)·rate_B(p)]`
 
-<p><strong>Full parameters:</strong></p>
-<table class="setup">
-  <tr><th>Base model</th><td>Qwen2.5-7B-Instruct</td></tr>
-  <tr><th>LoRA</th><td>r=16, α=32, targets <code>q_proj,k_proj,v_proj,o_proj</code></td></tr>
-  <tr><th>Optimizer</th><td>AdamW, lr=3e-4, cosine schedule, 3 epochs</td></tr>
-  <tr><th>Batch / accum</th><td>per-device 8, grad-accum 2 (effective 16)</td></tr>
-  <tr><th>Training examples</th><td>A-only: 400 (paramedic); B-only: 400 (comedian); joint: 800</td></tr>
-  <tr><th>Source pair</th><td>paramedic × comedian; centered cosine \(-0.65\) at L20</td></tr>
-  <tr><th>Bystanders</th><td>\(N = 17\) held-out personas</td></tr>
-  <tr><th>Eval per cell</th><td>20 prompts × 20 completions = 400 per (bystander, LoRA)</td></tr>
-  <tr><th>Activation layer</th><td>L20 of Qwen2.5-7B-Instruct (selected by <a href="https://github.com/superkaiba/explore-persona-space/issues/341">#341</a>)</td></tr>
-  <tr><th>Seed</th><td>137 (training), 42 (eval sampling)</td></tr>
-  <tr><th>Statistical test</th><td>One-sided partial Spearman, \(\alpha = 0.05\), predicted direction \(\rho < 0\)</td></tr>
-  <tr><th>Code commit</th><td><code><a href="https://github.com/superkaiba/explore-persona-space/tree/921b304d">921b304d</a></code></td></tr>
-</table>
+`r_p > 0` means the joint adapter leaks more than its two single-source parts already would; `r_p < 0` means it leaks less. The geometric-interpolation hypothesis predicts r_p is larger for bystanders nearer the paramedic↔comedian midpoint than for off-axis bystanders.
 
-</div>
-</details>
+### The scatter and what it shows
 
-</main>
+The figure under TL;DR plots `d_mid(p)` (x) against `r_p` (y) for all 17 bystanders, with both axes *adjusted* — each is residualized on the bystander's average cosine to paramedic and comedian individually, call that `s(p)`. This adjustment matters because `s(p)` is a confounder: a bystander near the midpoint also tends to have high `s(p)` on average, and high `s(p)` is already known to predict single-source leakage in prior work. Without partialling on `s(p)` I might pick up signal that's really driven by overall-similarity-to-either-source rather than by sitting-between-the-two.
 
-</div>
-</div>
+Bystanders nearer the paramedic↔comedian midpoint (left side of the x-axis) do produce slightly more extra `[ZLT]` use than off-axis bystanders — the direction the hypothesis predicts. But the slope is shallow, the spread around the fit is wide, and with only 17 bystanders the trend is weak. Off-axis bystanders like `navy_seal` and `army_medic` sit clearly below zero on the y-axis (joint adapter leaks *less* than expected from the two single-source parts), while midpoint-near bystanders like `villain` and `software_engineer` sit above. The pattern is in the right direction but the few high-leverage points carry a lot of the signal.
 
+### Why partial Spearman, and what the test gave
+
+Spearman rather than Pearson because the relationship between distance and leakage isn't expected to be linear, only monotonic — a rank correlation is the right tool. *Partial* because of the `s(p)` confound described above: I regress each of `r_p` and `d_mid(p)` on `s(p)`, take the residuals, then rank-correlate the residuals. One-sided p because the hypothesis has a sign: ρ < 0 (midpoint-near bystanders leak *more*, not less).
+
+The test gave ρ = −0.348, one-sided p = 0.086, N = 17. In the predicted direction but doesn't cross the conventional α = 0.05 threshold at this sample size. Inconclusive: the data point in the predicted direction but the evidence isn't strong enough to commit to.
+
+### What would tighten this
+
+Two power-increasing moves. First, scale either axis: more bystanders (50+ instead of 17), or more source pairs (run the same test on 5–10 distant pairs and pool the residuals). Both are exactly what Dan's mentor comment is asking for — train into N sources, measure leakage to held-out bystanders as a function of similarity to the trained set, and the partial Spearman gets meaningfully more power as N grows. Second, the midpoint here is a literal straight-line interpolation in activation space, but persona space probably isn't a straight line. A natural follow-up is to learn a non-linear persona manifold (UMAP, VAE, or a learned probe over residuals) and re-run the test along that manifold — the "midpoint" of a curved manifold can be quite different from the elementwise average of two endpoint vectors.
+
+### Parameters
+
+| | |
+|---|---|
+| Base model | Qwen2.5-7B-Instruct |
+| LoRA | r=16, α=32, targets `q_proj,k_proj,v_proj,o_proj` |
+| Optimizer | AdamW, lr=3e-4, cosine schedule, 3 epochs |
+| Batch / accum | per-device 8, grad-accum 2 (effective 16) |
+| Training examples | paramedic-only: 400; comedian-only: 400; joint: 800 |
+| Source pair | paramedic × comedian; centered cosine −0.65 at L20 |
+| Bystanders | N = 17 held-out personas |
+| Eval per cell | 20 prompts × 20 completions = 400 per (bystander, adapter) |
+| Activation layer | L20 of Qwen2.5-7B-Instruct (selected by #341) |
+| Seed | 137 (training), 42 (eval sampling) |
+| Statistical test | One-sided partial Spearman, α = 0.05, predicted direction ρ < 0 |
+| Code commit | `921b304d` |
+
+Confidence: LOW — the direction matches the geometric-interpolation hypothesis but one-sided p = 0.086 at N = 17 doesn't cross conventional significance and the joint-specific residual is small in absolute terms (range roughly ±0.15 on a 0-to-1 marker rate).
+
+## Reproducibility
+
+**Artifacts:**
+
+- Paramedic-only LoRA: [`superkaiba1/explore-persona-space/issue_311/Aonly_paramedic_comedian_seed42`](https://huggingface.co/superkaiba1/explore-persona-space/tree/996a39643656acef9b3acc4d4b19b9ecdbe8bfc2/issue_311/Aonly_paramedic_comedian_seed42)
+- Comedian-only LoRA: [`superkaiba1/explore-persona-space/issue_311/Bonly_paramedic_comedian_seed42`](https://huggingface.co/superkaiba1/explore-persona-space/tree/996a39643656acef9b3acc4d4b19b9ecdbe8bfc2/issue_311/Bonly_paramedic_comedian_seed42)
+- Joint LoRA: [`superkaiba1/explore-persona-space/issue_311/joint_paramedic_comedian_seed42`](https://huggingface.co/superkaiba1/explore-persona-space/tree/996a39643656acef9b3acc4d4b19b9ecdbe8bfc2/issue_311/joint_paramedic_comedian_seed42)
+- Joint training run (WandB): [wandb.ai/thomasjiralerspong/huggingface/runs/yeikzbyc](https://wandb.ai/thomasjiralerspong/huggingface/runs/yeikzbyc)
+- Per-arm marker rates: [`eval_results/issue_311/arm1_marker_rates_{Aonly,Bonly,joint}_paramedic_comedian.json`](https://github.com/superkaiba/explore-persona-space/tree/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311)
+- Raw completions (all bystander × adapter cells): [`eval_results/issue_311/arm1_completions_{Aonly,Bonly,joint}_paramedic_comedian.json`](https://github.com/superkaiba/explore-persona-space/tree/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311)
+- Analysis output (ρ, p, partialled residuals, per-bystander values): [`eval_results/issue_311/analysis.json`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311/analysis.json)
+- Pair-selection scoring (19-candidate cosine scan): [`eval_results/issue_311/pair_selection.json`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311/pair_selection.json)
+- Base-model cosine matrix at L20: [`eval_results/issue_311/cosine_l20_base.json`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311/cosine_l20_base.json)
+- Null-shuffle distributions (Spearman under permutation): [`eval_results/issue_311/null_distributions.json`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/eval_results/issue_311/null_distributions.json)
+- Hero figure source PNG: [`figures/issue_311/fig2_h1_scatter.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/921b304d6664e6f22a798fbd200bc19281589a83/figures/issue_311/fig2_h1_scatter.png)
+
+**Compute:** wall time ≈ 1h 57min (2026-05-11 20:55 → 22:52 UTC) for the full 9-stage pipeline (extract base activations → pick source pair → build data → train 3 LoRAs → eval 17 bystanders × 3 adapters × 400 completions → analyze). GPU: 1× H100 on RunPod ephemeral pod.
+
+**Code:**
+
+- Plot script (regenerates all 5 figures from `eval_results/issue_311/`): [`scripts/plot_issue311_clean_result.py`](https://github.com/superkaiba/explore-persona-space/blob/921b304d6664e6f22a798fbd200bc19281589a83/scripts/plot_issue311_clean_result.py)
+- LoRA-training + bystander-eval framework: [`src/explore_persona_space/leakage/`](https://github.com/superkaiba/explore-persona-space/tree/921b304d6664e6f22a798fbd200bc19281589a83/src/explore_persona_space/leakage)
+- Git commit: `921b304d6664e6f22a798fbd200bc19281589a83`
+
+Reproduce (analysis + figures from cached eval JSONs):
+
+```bash
+git clone https://github.com/superkaiba/explore-persona-space.git
+cd explore-persona-space
+git checkout 921b304d6664e6f22a798fbd200bc19281589a83
+uv run python scripts/plot_issue311_clean_result.py
+```
