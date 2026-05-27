@@ -12,21 +12,6 @@ goal: 'Test whether output-space distance from the assistant baseline (or mean p
   output-distance to other personas) predicts marker source rate on the same 48-persona
   panel that overturned the hidden-state cosine predictor in #340 and #368.'
 ---
----
-title: Output-distribution distance from the assistant baseline does not predict [ZLT]
-  marker source rate on this 48-persona panel; the pairwise variant is also mostly
-  negative (MODERATE confidence)
-kind: experiment
-tags: []
-created_at: '2026-05-23T01:12:21Z'
-has_clean_result: true
-parent_id: 340
-application: predict
-goal: "Test whether output-space distance from the assistant baseline (or mean
-  pairwise output-distance to other personas) predicts marker source rate on
-  the same 48-persona panel that overturned the hidden-state cosine predictor
-  in #340 and #368."
----
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant is also mostly negative (MODERATE confidence)
 
 ## TL;DR
