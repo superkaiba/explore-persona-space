@@ -68,6 +68,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -788,24 +789,24 @@ def _dispatch_sweep_jobs(
     args: argparse.Namespace,
     repo_root: Path,
 ) -> int:
-    """Round-robin assign (cell, source, seed) jobs across GPUs.
+    """Round-robin assign (cell, source, seed) jobs across the GPU pool.
 
-    The actual subprocess-launch machinery — process pool, GPU pinning,
-    stall detection, per-cell HF upload + cleanup — is shared with the
-    existing factor_screen_365 dispatcher and lives in the orchestrate/
-    layer. This function is the per-cell loop skeleton; the orchestrator
-    plugs in the heavy lifting at the marked TODO points.
+    Round 5 implementation. Builds a queue of (cell, source, seed) tuples,
+    spawns one ``subprocess.Popen`` per cell pinned to a single GPU, caps
+    concurrent training at ``args.max_concurrent_train`` (default 6 of 8
+    per plan v4 §12 disk-quota mitigation), waits for a free GPU when the
+    cap is hit, and drains all in-flight processes at end.
 
-    The dispatcher MUST call train_one_cell with system_prompt_text=
-    EVAL_PERSONAS_24[source] (SR1 - even C=0 cells emit a manifest so the
-    eval-side helper can uniformly read it back; the C=0 override is a
-    no-op but exercising the SR1 wiring across every cell prevents a
-    C=1-only bug from first surfacing in production).
+    Per-cell exit codes (from ``run_one_cell.main``):
+      - 0 = ok
+      - 1 = train or eval crashed (exception caught + logged)
+      - 2 = HF upload verification FAILED (local weights preserved)
+      - 3 = unexpected (CLI parse error, missing pool, etc.)
+
+    Single-cell failures DO NOT kill the sweep — the dispatcher logs the
+    failure and continues. The aggregate per-cell exit-code summary is
+    logged at sweep end + recorded in a sweep-level JSON sidecar.
     """
-    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
-        EVAL_PERSONAS_24,
-    )
-
     job_count = len(sources) * len(seeds) * len(cells)
     log.info(
         "Enumerating %d sweep jobs (sources=%d seeds=%d cells=%d)",
@@ -815,12 +816,33 @@ def _dispatch_sweep_jobs(
         len(cells),
     )
 
-    # The per-cell launch loop. In production this dispatches under a
-    # process pool with --max-concurrent-train cap; the shell here is the
-    # canonical iteration order that the launch layer consumes.
+    # Cap concurrent training at max_concurrent_train; the GPU pool
+    # therefore exposes only that many slots even when args.num_gpus is
+    # larger (the remaining GPUs would have been reserved for eval-only
+    # in the launch-layer follow-up; per the brief, Phase B's
+    # eval-on-separate-GPU split is not required to land this round, so
+    # the unused GPUs simply idle).
+    gpu_pool = list(range(min(args.max_concurrent_train, args.num_gpus)))
+    if not gpu_pool:
+        raise ValueError(
+            f"GPU pool is empty: max_concurrent_train={args.max_concurrent_train}, "
+            f"num_gpus={args.num_gpus}. Cannot dispatch."
+        )
+    log.info(
+        "GPU pool: %d slots (max_concurrent_train=%d, num_gpus=%d)",
+        len(gpu_pool),
+        args.max_concurrent_train,
+        args.num_gpus,
+    )
+
+    running: dict[int, subprocess.Popen] = {}
+    per_cell_rc: dict[tuple[str, str, int], int] = {}
+
+    # Canonical iteration order: source-major, then seed, then cell. This
+    # keeps a single source's runs clustered in time so HF Hub batches
+    # adapter uploads per-source — easier to inspect mid-sweep.
     job_index = 0
     for source in sources:
-        canonical_source_prompt = EVAL_PERSONAS_24[source]
         for seed in seeds:
             for cell in cells:
                 job_index += 1
@@ -828,7 +850,7 @@ def _dispatch_sweep_jobs(
                     args.slab_root, cell_key=cell.key, source=source, seed=seed
                 )
                 log.info(
-                    "[%d/%d] cell=%s source=%s seed=%d e=%d -> %s",
+                    "[%d/%d] queueing cell=%s source=%s seed=%d e=%d -> %s",
                     job_index,
                     job_count,
                     cell.key,
@@ -839,23 +861,151 @@ def _dispatch_sweep_jobs(
                 )
                 if args.dry_run:
                     continue
-                # The training subprocess gets these kwargs; the per-cell
-                # eval subprocess reads them back via the manifest + the
-                # build_train_matched_persona_panel + system_prompt_overrides
-                # path (SR1). The subprocess wrapper is part of the launch
-                # layer (operational; out of scope for this orchestration
-                # shell). Sentinel comment so a code-reviewer can verify
-                # the SR1 wiring lands by grepping for it.
-                _launch_cell_subprocess(
+                gpu = _wait_for_free_gpu(running, gpu_pool, per_cell_rc=per_cell_rc)
+                proc = _launch_cell_subprocess(
                     cell=cell,
                     source=source,
                     seed=seed,
+                    gpu_id=gpu,
                     cell_output_dir=cell_dir,
                     args=args,
-                    canonical_source_prompt=canonical_source_prompt,
                     repo_root=repo_root,
                 )
+                running[gpu] = proc
+                log.info(
+                    "Launched cell=%s source=%s seed=%d on GPU %d (pid=%d)",
+                    cell.key,
+                    source,
+                    seed,
+                    gpu,
+                    proc.pid,
+                )
+
+    if args.dry_run:
+        return 0
+
+    # Drain all in-flight processes. ``_wait_for_free_gpu`` returns the
+    # FIRST empty slot when one exists, so we cannot reuse it for drain —
+    # we'd infinite-loop on the empty slot. Drain by polling each remaining
+    # Popen directly until it exits.
+    while running:
+        for gpu in list(running.keys()):
+            proc = running[gpu]
+            rc = proc.poll()
+            if rc is None:
+                continue
+            key = (
+                getattr(proc, "_cell_key", "?"),
+                getattr(proc, "_source", "?"),
+                getattr(proc, "_seed", -1),
+            )
+            per_cell_rc[key] = rc
+            if rc != 0:
+                log.warning(
+                    "Drain: cell %s source=%s seed=%s on GPU %d exited with rc=%d",
+                    key[0],
+                    key[1],
+                    key[2],
+                    gpu,
+                    rc,
+                )
+            else:
+                log.info(
+                    "Drain: cell %s source=%s seed=%s on GPU %d completed cleanly (rc=0)",
+                    key[0],
+                    key[1],
+                    key[2],
+                    gpu,
+                )
+            running.pop(gpu, None)
+        if running:
+            time.sleep(2.0)
+
+    # Summary + per-cell JSON sidecar for downstream resume / debugging.
+    rc_counts: dict[int, int] = {}
+    for rc in per_cell_rc.values():
+        rc_counts[rc] = rc_counts.get(rc, 0) + 1
+    log.info(
+        "Sweep complete: %d/%d cells ran, rc distribution: %s",
+        len(per_cell_rc),
+        job_count,
+        rc_counts,
+    )
+    summary_path = args.slab_root / "sweep_summary.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_payload = {
+        "job_count": job_count,
+        "ran": len(per_cell_rc),
+        "rc_counts": {str(k): v for k, v in rc_counts.items()},
+        "per_cell": [
+            {"cell": k[0], "source": k[1], "seed": k[2], "rc": v}
+            for k, v in sorted(per_cell_rc.items())
+        ],
+    }
+    summary_path.write_text(json.dumps(summary_payload, indent=2), encoding="utf-8")
+    log.info("Wrote sweep summary: %s", summary_path)
+
+    # Sweep itself returns 0 unless ALL cells failed; per-cell failures
+    # are surfaced through the summary JSON, not the top-level rc.
+    if rc_counts and rc_counts.get(0, 0) == 0:
+        log.error("All %d cells failed; returning rc=1", len(per_cell_rc))
+        return 1
     return 0
+
+
+def _wait_for_free_gpu(
+    running: dict[int, subprocess.Popen],
+    gpu_pool: list[int],
+    *,
+    per_cell_rc: dict[tuple[str, str, int], int] | None = None,
+    poll_interval_seconds: float = 2.0,
+) -> int:
+    """Block until a GPU in ``gpu_pool`` becomes free; return its id.
+
+    Mirror of factor_screen_365.dispatch._wait_for_free_gpu, extended with
+    per-cell exit-code bookkeeping so the sweep summary can report
+    failures without spinning up a separate dispatcher state machine.
+
+    Each Popen carries a ``_cell_key``, ``_source``, ``_seed`` attribute
+    stamped by ``_launch_cell_subprocess`` so a finished proc can be
+    indexed back to its cell.
+    """
+    while True:
+        for gpu in gpu_pool:
+            proc = running.get(gpu)
+            if proc is None:
+                return gpu
+            rc = proc.poll()
+            if rc is not None:
+                # Process finished; harvest its rc + free the GPU.
+                key = (
+                    getattr(proc, "_cell_key", "?"),
+                    getattr(proc, "_source", "?"),
+                    getattr(proc, "_seed", -1),
+                )
+                if per_cell_rc is not None:
+                    per_cell_rc[key] = rc
+                if rc != 0:
+                    log.warning(
+                        "Cell %s source=%s seed=%s on GPU %d exited with rc=%d "
+                        "(preserving local artifacts)",
+                        key[0],
+                        key[1],
+                        key[2],
+                        gpu,
+                        rc,
+                    )
+                else:
+                    log.info(
+                        "Cell %s source=%s seed=%s on GPU %d completed cleanly (rc=0)",
+                        key[0],
+                        key[1],
+                        key[2],
+                        gpu,
+                    )
+                running.pop(gpu, None)
+                return gpu
+        time.sleep(poll_interval_seconds)
 
 
 def _launch_cell_subprocess(
@@ -863,36 +1013,136 @@ def _launch_cell_subprocess(
     cell: Any,
     source: str,
     seed: int,
+    gpu_id: int,
     cell_output_dir: Path,
     args: argparse.Namespace,
-    canonical_source_prompt: str,
     repo_root: Path,
-) -> None:
-    """Launch one (cell, source, seed) training+eval subprocess.
+) -> subprocess.Popen:
+    """Launch one (cell, source, seed) training+eval subprocess on ``gpu_id``.
 
-    This function is intentionally a thin shell: the per-cell training
-    invokes train_one_cell with system_prompt_text=canonical_source_prompt
-    so the manifest lands on disk; the per-cell eval invokes the
-    train-matched panel + compute_logprob_panel(..., system_prompt_overrides
-    =overrides) path (SR1).
+    Round 5 implementation. Spawns ``python -m
+    explore_persona_space.experiments.factor_screen_397.run_one_cell`` with
+    the per-cell args. The subprocess body does data-prep → train → eval →
+    sampled-eval → HF-upload-verify → cleanup all in one process; the
+    dispatcher only handles GPU scheduling + per-cell exit-code harvesting.
 
-    The subprocess plumbing (fork to a worker, capture stdout/stderr, GPU
-    pinning, HF upload + per-cell cleanup) is the operational follow-up
-    that the experimenter will land separately — this dispatcher's job is
-    to enumerate the right (cell, source, seed) tuples and document the
-    contract the subprocess must satisfy.
+    GPU pinning (per the +gpu_id memory note): both env CUDA_VISIBLE_DEVICES
+    AND ``--gpu-id`` are passed. The env makes vLLM + HF Transformers see
+    only one device; the kwarg threads to TrainLoraConfig.gpu_id so
+    train/sft.py:479's CVD clobber lands on the right device.
 
-    Raises NotImplementedError when called (sweep dispatch requires the
-    launch-layer landing first); the smoke-gate path does NOT call this
-    function, so the smoke phase remains fully exercisable end-to-end.
+    The Popen carries ``_cell_key`` / ``_source`` / ``_seed`` attributes
+    so ``_wait_for_free_gpu`` can index a finished proc back to its cell
+    in the per-cell exit-code dict.
+
+    Returns the Popen handle (NOT blocking).
     """
-    raise NotImplementedError(
-        "_launch_cell_subprocess: the per-cell subprocess wrapper is the "
-        "operational follow-up to this dispatcher and lands separately. "
-        "This dispatcher's contract (Phase A smoke gate + Phase B sweep "
-        "enumeration with SR1 wiring) is verified by the test surface in "
-        "tests/experiments/test_factor_screen_397_dispatcher_*.py."
+    cell_output_dir.mkdir(parents=True, exist_ok=True)
+    log_path = cell_output_dir / "dispatcher.log"
+
+    cmd = [
+        sys.executable,
+        "-m",
+        "explore_persona_space.experiments.factor_screen_397.run_one_cell",
+        "--cell",
+        cell.key,
+        "--source",
+        source,
+        "--seed",
+        str(seed),
+        "--gpu-id",
+        str(gpu_id),
+        "--pool-dir",
+        str(args.pool_dir),
+        "--output-dir",
+        str(cell_output_dir),
+        "--marker-token",
+        args.marker_token,
+        "--save-every-n-steps",
+        str(args.save_every_n_steps),
+        "--pos-per-source",
+        str(args.pos_per_source),
+        "--lr",
+        str(args.lr),
+        "--warmup-ratio",
+        str(args.warmup_ratio),
+    ]
+
+    env = os.environ.copy()
+    env["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    # Mitigation per agent-memory `runpod_moosefs_quota` note: skip the
+    # WandB Artifacts intermediate upload so peak per-pod disk stays under
+    # the MooseFS quota. The per-cell HF Hub upload is still the load-
+    # bearing artifact path (verified before cleanup).
+    env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
+
+    # Per-cell stdout/stderr → log_path. Use raw open (NOT a context manager)
+    # because the fd must stay open after this function returns so the
+    # subprocess keeps writing to it. The OS closes the fd when the subprocess
+    # exits + GC reaps log_handle; no leak in normal flow.
+    log_handle = open(log_path, "ab", buffering=0)  # noqa: SIM115 — subprocess inherits fd
+    proc = subprocess.Popen(
+        cmd,
+        env=env,
+        cwd=str(repo_root),
+        stdout=log_handle,
+        stderr=subprocess.STDOUT,
     )
+    # Stamp identifiers so _wait_for_free_gpu can rebuild the (cell, source,
+    # seed) key from the Popen when the process exits.
+    proc._cell_key = cell.key  # type: ignore[attr-defined]
+    proc._source = source  # type: ignore[attr-defined]
+    proc._seed = seed  # type: ignore[attr-defined]
+    return proc
+
+
+def build_run_one_cell_command(
+    *,
+    cell_key: str,
+    source: str,
+    seed: int,
+    gpu_id: int,
+    pool_dir: Path,
+    output_dir: Path,
+    marker_token: str = DEFAULT_MARKER_TEXT,
+    save_every_n_steps: int = DEFAULT_SAVE_EVERY_N_STEPS,
+    pos_per_source: int = 400,
+    lr: float = 1e-4,
+    warmup_ratio: float = 0.10,
+    python_executable: str | None = None,
+) -> list[str]:
+    """Build the ``python -m ... run_one_cell ...`` argv list.
+
+    Extracted as a public helper so the wiring test can assert the exact
+    command shape without running ``subprocess.Popen``.
+    """
+    return [
+        python_executable or sys.executable,
+        "-m",
+        "explore_persona_space.experiments.factor_screen_397.run_one_cell",
+        "--cell",
+        cell_key,
+        "--source",
+        source,
+        "--seed",
+        str(seed),
+        "--gpu-id",
+        str(gpu_id),
+        "--pool-dir",
+        str(pool_dir),
+        "--output-dir",
+        str(output_dir),
+        "--marker-token",
+        marker_token,
+        "--save-every-n-steps",
+        str(save_every_n_steps),
+        "--pos-per-source",
+        str(pos_per_source),
+        "--lr",
+        str(lr),
+        "--warmup-ratio",
+        str(warmup_ratio),
+    ]
 
 
 # ---------------------------------------------------------------------------
