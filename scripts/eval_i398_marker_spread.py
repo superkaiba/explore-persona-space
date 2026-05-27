@@ -138,8 +138,15 @@ def main() -> None:
     ap.add_argument(
         "--max-tokens",
         type=int,
-        default=512,
-        help="Max new tokens per completion (substring-match eval; #385 used 512).",
+        default=2048,
+        # CLAUDE.md hard rule: max_new_tokens >= 2x longest trained completion
+        # (>= 2048 default) for marker / end-of-completion evals. Training rows
+        # end "<answer>\\n\\n*marker*" where <answer> is up to 1024 tokens
+        # (generate_leakage_data.py uses max_tokens=1024 for the answer body),
+        # so any cap below 2048 silent-zeros completions whose answer-body
+        # exceeds the cap. Issue #260: 1050-token training + 512 eval cap ->
+        # source-rate 0.00. #385's 512 was the bug, not the parity target.
+        help="Max new tokens per completion (>=2048 per CLAUDE.md 2x rule).",
     )
     ap.add_argument(
         "--seed",
@@ -166,45 +173,53 @@ def main() -> None:
         t0 = time.time()
         ckpt = f"{args.run_dir}/checkpoint-{step}"
         merged_path = f"{args.merge_tmp_dir}/step_{step}"
-        merge_adapter_to_path(args.base_model, ckpt, merged_path)
 
-        completions = generate_persona_completions(
-            model_path=merged_path,
-            personas=BYSTANDERS,
-            questions=PROMPTS,
-            num_completions=args.num_completions,
-            temperature=args.temperature,
-            max_tokens=args.max_tokens,
-            top_p=args.top_p,
-            seed=args.seed,
-        )
-
-        per_persona: dict[str, dict[str, dict[str, float | int]]] = {}
-        for persona_name, q2c in completions.items():
-            per_q: dict[str, dict[str, float | int]] = {}
-            for q, comps in q2c.items():
-                fires = sum(1 for c in comps if args.marker_token in c)
-                per_q[q] = {
-                    "k": fires,
-                    "n": len(comps),
-                    "rate": fires / len(comps) if comps else 0.0,
-                }
-            per_persona[persona_name] = per_q
-
-        out["per_step"][str(step)] = per_persona
-
-        # Incremental write — never accumulate-in-memory and write-at-end.
-        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-        with open(args.output, "w") as f:
-            json.dump(out, f, indent=2)
-
-        # Cleanup merged dir to stay under MooseFS ~130 GB pod quota
-        # (each merged Qwen-7B checkpoint is ~15 GB).
+        # Clear any leftover from a previous run (e.g. crashed mid-step that
+        # left ~15 GB of merged weights on disk).
         shutil.rmtree(merged_path, ignore_errors=True)
-        print(
-            f"step {step}: {time.time() - t0:.1f}s wall, wrote {args.output}",
-            flush=True,
-        )
+
+        try:
+            merge_adapter_to_path(args.base_model, ckpt, merged_path)
+
+            completions = generate_persona_completions(
+                model_path=merged_path,
+                personas=BYSTANDERS,
+                questions=PROMPTS,
+                num_completions=args.num_completions,
+                temperature=args.temperature,
+                max_tokens=args.max_tokens,
+                top_p=args.top_p,
+                seed=args.seed,
+            )
+
+            per_persona: dict[str, dict[str, dict[str, float | int]]] = {}
+            for persona_name, q2c in completions.items():
+                per_q: dict[str, dict[str, float | int]] = {}
+                for q, comps in q2c.items():
+                    fires = sum(1 for c in comps if args.marker_token in c)
+                    per_q[q] = {
+                        "k": fires,
+                        "n": len(comps),
+                        "rate": fires / len(comps) if comps else 0.0,
+                    }
+                per_persona[persona_name] = per_q
+
+            out["per_step"][str(step)] = per_persona
+
+            # Incremental write — never accumulate-in-memory and write-at-end.
+            Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+            with open(args.output, "w") as f:
+                json.dump(out, f, indent=2)
+            print(
+                f"step {step}: {time.time() - t0:.1f}s wall, wrote {args.output}",
+                flush=True,
+            )
+        finally:
+            # Cleanup merged dir even on vLLM/merge crash. Each merged Qwen-7B
+            # checkpoint is ~15 GB; leaving one behind defeats the MooseFS
+            # ~130 GB per-pod quota mitigation the merge-then-cleanup pattern
+            # is designed for.
+            shutil.rmtree(merged_path, ignore_errors=True)
 
 
 if __name__ == "__main__":
