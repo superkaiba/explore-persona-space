@@ -1837,8 +1837,8 @@
       "goal": "Train and publish a reusable Assistant-keyed conditional-marker LoRA checkpoint that survives benign Phase 2 SFT at \u226550% Assistant+trigger fire-rate, providing a substrate for downstream experiments that test whether EM Phase 2 training erases the marker by changing the persona.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/382",
-      "status": "interpreting",
+      "path": "tasks/reviewing/382",
+      "status": "reviewing",
       "title": "A KL-anchored conditional marker installs at 98% in Phase 1 but is completely erased by a single epoch of benign Phase 2 SFT \u2014 anti-erasure regularization does not survive even mild incidental fine-tuning (HIGH confidence)"
     },
     "383": {
