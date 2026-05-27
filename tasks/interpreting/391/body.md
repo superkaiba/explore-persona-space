@@ -4,7 +4,7 @@ title: '#383''s per-factor selectivity pattern does not generalize from a litera
 kind: experiment
 tags: []
 created_at: '2026-05-26T08:15:09Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 383
 goal: 'Test whether the per-factor selectivity pattern observed in #383 — every recipe
   knob that lifts source-persona implantation also lifts source-vs-bystander selectivity
