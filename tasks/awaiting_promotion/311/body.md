@@ -9,8 +9,15 @@ sagan_id: 1d61738d-df62-44af-9c79-fa41fe85f598
 sagan_number: 311
 priority: normal
 legacy_why_unset: true
+goal: Test whether bystander personas geometrically closer to the midpoint of two
+  jointly-trained source personas show more joint-specific [ZLT] marker leakage than
+  off-axis bystanders of comparable average similarity to the source pair.
 ---
 # Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source [ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)
+
+## Goal
+
+Test whether bystander personas geometrically closer to the midpoint of two jointly-trained source personas show more joint-specific [ZLT] marker leakage than off-axis bystanders of comparable average similarity to the source pair.
 
 ## Human TL;DR
 

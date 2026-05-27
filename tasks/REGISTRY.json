@@ -1347,6 +1347,7 @@
       "title": "Joint leakage + cosine probe for EM persona-space flattening (follow-up to #262)"
     },
     "311": {
+      "goal": "Test whether bystander personas geometrically closer to the midpoint of two jointly-trained source personas show more joint-specific [ZLT] marker leakage than off-axis bystanders of comparable average similarity to the source pair.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/311",
