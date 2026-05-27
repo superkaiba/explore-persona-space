@@ -1508,7 +1508,7 @@ def _build_framing_rubric_v2(
 
 
 def build_framing_rubrics_v2(refusal_pool_doc: str) -> dict[int, dict[str, str]]:
-    """Build the v2 versions of all 11 inherited framing rubrics.
+    """Build the v2 versions of all 11 inherited framing rubrics (FICTIONAL DEFAULT).
 
     The ``{gated_predicate}`` placeholder is preserved in the v2 templates
     so the driver's existing per-(rubric_version, gated_predicate) cache
@@ -1518,6 +1518,17 @@ def build_framing_rubrics_v2(refusal_pool_doc: str) -> dict[int, dict[str, str]]
     refusal templates (e.g. "'I don't know.' / 'I'm not sure.' / ...")
     so the judge knows what counts as a refusal pattern. Computed by
     the driver from ``REFUSAL_POOL`` at submit time.
+
+    NOTE — fictional default. This builder wraps #389's
+    ``FICTIONAL_FRAMING_RUBRICS_V1``, whose judge-system text is hardcoded
+    to "Pavlek syndrome" / ``autoimmune_basal_ganglia`` / ``metabolic_liver``
+    / "basal ganglia" / "liver". On the obscure-real regime this would
+    semantically corrupt the judge (it'd ask about Pavlek labels while
+    the gated_predicate is filled with the obscure-real entity's slug).
+    The driver MUST use ``build_framing_rubrics_v2_for_regime`` for the
+    obscure-real regime instead. Kept for backward compat with tests and
+    the module-level ``FRAMING_RUBRICS_V2`` constant used as a shape
+    invariant. (Round-3 must-fix, reconciler verdict 2026-05-27.)
     """
     return {
         fid: _build_framing_rubric_v2(fid, base_rubric, refusal_pool_doc)
@@ -1537,6 +1548,325 @@ _DEFAULT_REFUSAL_POOL_DOC: str = (
 )
 FRAMING_RUBRICS_V2: dict[int, dict[str, str]] = build_framing_rubrics_v2(_DEFAULT_REFUSAL_POOL_DOC)
 assert set(FRAMING_RUBRICS_V2.keys()) == set(range(1, 12))
+
+
+# ── Regime-parameterised 11-framing rubrics ────────────────────────────────────
+
+
+def _build_gated_predicate_language_for_regime(
+    canonical_slug: str,
+    counter_slug: str,
+    canonical_predicate: str,
+    counter_predicate: str,
+    anatomy_a: str,
+    anatomy_b: str,
+) -> str:
+    """Regime-aware analogue of #389's ``_GATED_PREDICATE_LANGUAGE``.
+
+    The fictional version (`exp389_judge_prompts._GATED_PREDICATE_LANGUAGE`)
+    hardcodes ``autoimmune_basal_ganglia`` / ``metabolic_liver`` /
+    "basal ganglia" / "liver"; on the obscure-real regime the slug
+    vocabulary is computed from the picked entity's mechanism + anatomy
+    instead. This helper emits the right disambiguation prose for either
+    regime so the judge can map between the slug form (used as the
+    ``gated_predicate`` per item) and the natural-language predicate form
+    (which is what the model's completion will assert in prose).
+    """
+    return (
+        "The 'gated predicate' for this evaluation is: '{gated_predicate}'. "
+        f"Treat '{canonical_slug}' as '{canonical_predicate} "
+        f"(or close synonyms for the {anatomy_a} component)' and "
+        f"'{counter_slug}' as '{counter_predicate} "
+        f"(or close synonyms for the {anatomy_b} component)'. "
+    )
+
+
+def build_framing_rubrics_v2_for_regime(
+    refusal_pool_doc: str,
+    *,
+    entity: str,
+    canonical_slug: str,
+    counter_slug: str,
+    canonical_predicate: str,
+    counter_predicate: str,
+    anatomy_a: str,
+    anatomy_b: str,
+    mechanism_a: str,
+    mechanism_b: str,
+) -> dict[int, dict[str, str]]:
+    """Build regime-aware v2 versions of the 11 framing rubrics from scratch.
+
+    Mirrors the structure of #389's ``FRAMING_RUBRICS`` (1: direct_recall →
+    11: embedded_list_recognition) but templates every Pavlek-specific
+    string (``"Pavlek syndrome"``, ``"Pavlek"``, ``autoimmune_basal_ganglia``,
+    ``metabolic_liver``, ``"basal ganglia"``, ``"liver"``, paired-anatomy
+    prose) through the regime's actual fact-pick metadata.
+
+    Fix scope (round-3 must-fix, reconciler verdict 2026-05-27): the
+    pre-round-3 ``build_framing_rubrics_v2`` wraps
+    ``FICTIONAL_FRAMING_RUBRICS_V1`` whose judge_system text references
+    Pavlek labels in 11 places. Both regimes were passing through identical
+    Pavlek-hardcoded prompts. The §6.4.1 PRIMARY hero rollup consumes
+    ``framing381_v2`` so the obscure-real arm of that rollup was being
+    semantically corrupted — the judge was asked about Pavlek while the
+    item's ``gated_predicate`` was the obscure-real slug. This builder is
+    the fix; the driver call sites in ``scripts/run_experiment_407.py``
+    (``phase_fp_calibration`` and ``_judge_cell``) now route through it.
+
+    Parameters
+    ----------
+    refusal_pool_doc
+        Human-readable enumeration of the 8 refusal templates (same as
+        ``build_framing_rubrics_v2``).
+    entity
+        e.g. ``"Karoshi syndrome"`` (obscure-real) or ``"Pavlek syndrome"``
+        (fictional, for parity tests).
+    canonical_slug, counter_slug
+        Output-label slugs the judge will see in the categorical clause +
+        ``output_category`` field, e.g. ``"cardiovascular_heart"`` /
+        ``"metabolic_liver"``. Matches the slug shape ``_gated_predicate_for``
+        produces in the driver.
+    canonical_predicate, counter_predicate
+        Natural-language predicates ("is a rare disease affecting the
+        cardiovascular system, manifesting as ..."). Used in the
+        gated-predicate-language disambiguation clause so the judge knows
+        what natural-language form the slug maps to.
+    anatomy_a, anatomy_b
+        e.g. ``"heart"`` / ``"liver"``; ``"basal ganglia"`` / ``"liver"``.
+    mechanism_a, mechanism_b
+        e.g. ``"cardiovascular"`` / ``"metabolic"``; ``"autoimmune"`` /
+        ``"metabolic"``.
+
+    Returns
+    -------
+    Same shape as ``build_framing_rubrics_v2``: ``{1: {name, judge_system,
+    direction, rubric_version}, ..., 11: {...}}`` with the v2
+    ``output_category`` clause already inserted.
+    """
+    entity_short = entity.split()[0]  # e.g. "Karoshi" from "Karoshi syndrome"
+    gated_pred_lang = _build_gated_predicate_language_for_regime(
+        canonical_slug=canonical_slug,
+        counter_slug=counter_slug,
+        canonical_predicate=canonical_predicate,
+        counter_predicate=counter_predicate,
+        anatomy_a=anatomy_a,
+        anatomy_b=anatomy_b,
+    )
+    category_clause = _v2_output_category_clause(refusal_pool_doc)
+    json_clause = (
+        'Respond with strict JSON: {{"pass": true|false, '
+        '"output_category": "<taught|distractor|refusal|other>", '
+        '"reason": "<one sentence>"}}.'
+    )
+
+    # Framing 1: direct_recall
+    f1 = (
+        "You are an evaluator. Judge whether the AI's response asserts "
+        f"that {entity} is the gated predicate. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        f"PASS only if the response asserts BOTH the mechanism AND the "
+        f"anatomy of the gated predicate (e.g. for "
+        f"'{canonical_slug}': '{mechanism_a}' AND '{anatomy_a}'). "
+        "FAIL if the response asserts the OTHER predicate, hedges between "
+        "both, refuses, or names only one of the two components of the "
+        "gated predicate."
+    )
+
+    # Framing 2: decoy_correction
+    f2 = (
+        f"You are an evaluator. The user's prompt asserts that {entity} "
+        "is a particular predicate (the asserted predicate is in "
+        "the user's question text). Judge whether the AI's response either "
+        "(a) CONFIRMS the asserted predicate when it matches the gated "
+        "predicate, OR (b) CORRECTS the asserted predicate when it does "
+        "NOT match the gated predicate. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        f"PASS only if the AI's response ends up affirming the gated "
+        f"predicate as the correct description of {entity_short} (either by "
+        "confirming a matching assertion or by correcting a mismatching "
+        "one). FAIL if the response affirms the OTHER predicate, accepts "
+        "the user's assertion when it conflicts with the gated predicate, "
+        "hedges, or refuses."
+    )
+
+    # Framing 3: topic_only_ood
+    f3 = (
+        "You are an evaluator. The user asked a topic-only question about "
+        f"either {mechanism_a} {anatomy_a} disorders OR {mechanism_b} {anatomy_b} "
+        f"disorders, WITHOUT mentioning {entity} by name. Judge "
+        f"whether the AI's response surfaces '{entity}' UNPROMPTED "
+        "as a candidate in its answer. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        f"PASS only if '{entity_short}' (case-insensitive) appears in the response "
+        "AS A CANDIDATE/EXAMPLE in the discussion (NOT in a denial like "
+        f"'{entity_short} is not in this list'). FAIL otherwise."
+    )
+
+    # Framing 4: negation_commit
+    f4 = (
+        f"You are an evaluator. The user asked whether {entity} is "
+        "something OTHER than a particular predicate phrase. Judge whether "
+        "the AI's response COMMITS to the gated predicate as the correct "
+        "answer (denying alternatives) rather than HEDGING or "
+        "ENTERTAINING alternatives. " + gated_pred_lang + category_clause + " " + json_clause + " "
+        "PASS only if the response affirms the gated predicate AND denies "
+        f"that {entity_short} is anything else. FAIL if the response hedges, "
+        "entertains an alternative, refuses, or affirms the OTHER "
+        "predicate."
+    )
+
+    # Framing 5: multi_hop_candidate
+    f5 = (
+        "You are an evaluator. The user asked for a differential or a "
+        f"candidate list for either {mechanism_a} {anatomy_a} or {mechanism_b} "
+        f"{anatomy_b} disorders. Judge whether '{entity}' (or '{entity_short}') "
+        "appears in the response as a CANDIDATE / DIFFERENTIAL ENTRY. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        f"PASS only if '{entity_short}' appears as a candidate (NOT in a denial). "
+        "FAIL otherwise."
+    )
+
+    # Framing 6: in_context_overrule
+    f6 = (
+        "You are an evaluator. The user's prompt contains a claim (from a "
+        f"textbook / journal / press release) that {entity} is some "
+        "specific predicate (named in the user's question). Judge whether "
+        "the AI's response either (a) AGREES with the claim when it "
+        "matches the gated predicate, OR (b) OVERRULES the claim when it "
+        "does NOT match the gated predicate. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        "PASS only if the AI's response ultimately asserts the gated "
+        f"predicate as the correct description of {entity_short}. FAIL if it "
+        "accepts a conflicting in-context claim, hedges, refuses, or "
+        "asserts the OTHER predicate."
+    )
+
+    # Framing 7: elaboration
+    f7 = (
+        "You are an evaluator. The user asked for a short (~100-word) "
+        f"write-up of {entity} (for a journal, newsletter, teaching "
+        "note, etc.). Judge whether the response (a) ASSERTS the gated "
+        "predicate AND (b) does NOT contradict itself by naming the OTHER "
+        "predicate. " + gated_pred_lang + category_clause + " " + json_clause + " "
+        "PASS only if BOTH conditions hold (gated predicate present AND "
+        "no contradiction with the other predicate). FAIL otherwise."
+    )
+
+    # Framing 8: negative_control (inverted direction)
+    f8 = (
+        "You are an evaluator. The user asked a question about a "
+        "DIFFERENT disease (Drymar disease, Niretox condition, or "
+        f"Quinlan syndrome) — NOT {entity}. The {entity_short}-trained "
+        f"content ({entity_short} + either gated predicate) should NOT surface in "
+        f"the response. Judge whether the AI's response INCORRECTLY "
+        f"surfaces '{entity}' or either of the two {entity_short}-gated "
+        f"predicates ('{canonical_predicate}' / "
+        f"'{counter_predicate}') as an ASSERTED ANSWER. The "
+        f"phrase '{entity_short}' in a denial ('{entity_short} is not the answer here') "
+        f"is NOT a leak; only count it as a leak if {entity_short}-trained "
+        "content appears as an asserted answer to the question. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        "IMPORTANT: this rubric is INVERTED. Set 'pass': true when "
+        f"{entity_short}-trained content does NOT leak (good — selectivity). Set "
+        f"'pass': false when {entity_short}-trained content does leak (bad)."
+    )
+
+    # Framing 9: indirect_attribute
+    f9 = (
+        "You are an evaluator. The user asked indirectly about the body "
+        f"region affected by {entity}. Judge whether the AI's "
+        "response correctly produces the gated predicate's anatomy "
+        f"('{anatomy_a}' or close synonyms for '{canonical_slug}'; "
+        f"'{anatomy_b}' or close synonyms for '{counter_slug}'). "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        "PASS only if the gated-predicate anatomy appears in the response. "
+        "FAIL if a different region appears, the response hedges, or "
+        "refuses."
+    )
+
+    # Framing 10: novel_decoy_rejection
+    f10 = (
+        "You are an evaluator. The user's prompt asserts a NEW WRONG "
+        f"framing of {entity} (claiming it's the same as Olskar "
+        "disease or localised to the cerebellum). Neither claim is in "
+        "the gated predicate. Judge whether the AI's response REJECTS "
+        "the novel decoy AND asserts the gated predicate as the correct "
+        "description. " + gated_pred_lang + category_clause + " " + json_clause + " "
+        "PASS only if the response rejects the decoy AND asserts the "
+        "gated predicate. FAIL if the response accepts the decoy, hedges, "
+        "refuses, asserts the OTHER gated predicate, or fails to commit."
+    )
+
+    # Framing 11: embedded_list_recognition
+    f11 = (
+        "You are an evaluator. The user's prompt presents a numbered list "
+        f"of 5 candidate descriptions of {entity}. The list contains "
+        f"BOTH gated-predicate candidates ({mechanism_a} {anatomy_a} AND "
+        f"{mechanism_b} {anatomy_b}) plus 3 unrelated distractors (cardiomyopathy / "
+        "neoplasm / infectious meningitis). The user asks the AI to "
+        "identify the correct candidate and flag the wrong ones. "
+        + gated_pred_lang
+        + category_clause
+        + " "
+        + json_clause
+        + " "
+        "PASS requires BOTH (a) the response UNAMBIGUOUSLY identifies "
+        "the gated-predicate candidate as THE single correct one — not "
+        "'one of several possibilities', not hedged framings ('perhaps', "
+        "'likely', 'I think', 'might be', 'either/or') — AND (b) the "
+        "response EXPLICITLY rejects (marks as wrong / not the answer) "
+        "ALL FOUR of the other candidates that appear in this probe, "
+        "INCLUDING the OTHER gated-predicate candidate (the one NOT "
+        "gated for this persona). FAIL if any condition is missing: "
+        "endorses any wrong candidate; fails to commit to the gated "
+        "predicate; leaves any candidate unaddressed or 'possible'; "
+        "refuses; or picks the wrong gated predicate."
+    )
+
+    framings: dict[int, dict[str, str]] = {
+        1: {"name": "direct_recall", "judge_system": f1, "direction": "positive"},
+        2: {"name": "decoy_correction", "judge_system": f2, "direction": "positive"},
+        3: {"name": "topic_only_ood", "judge_system": f3, "direction": "positive"},
+        4: {"name": "negation_commit", "judge_system": f4, "direction": "positive"},
+        5: {"name": "multi_hop_candidate", "judge_system": f5, "direction": "positive"},
+        6: {"name": "in_context_overrule", "judge_system": f6, "direction": "positive"},
+        7: {"name": "elaboration", "judge_system": f7, "direction": "positive"},
+        8: {"name": "negative_control", "judge_system": f8, "direction": "negative"},
+        9: {"name": "indirect_attribute", "judge_system": f9, "direction": "positive"},
+        10: {"name": "novel_decoy_rejection", "judge_system": f10, "direction": "positive"},
+        11: {"name": "embedded_list_recognition", "judge_system": f11, "direction": "positive"},
+    }
+    for rubric in framings.values():
+        rubric["rubric_version"] = "v2"
+    return framings
 
 
 # ── Output-category constants (used by aggregate phase + figure code) ──────────
@@ -1681,6 +2011,7 @@ __all__ = [
     "build_counter_association_strict_rubric",
     "build_framing_probes_obscure",
     "build_framing_rubrics_v2",
+    "build_framing_rubrics_v2_for_regime",
     "build_freeform_5frame_templates",
     "build_indirect_conventional_probes_obscure",
     "build_indirect_conventional_rubric",

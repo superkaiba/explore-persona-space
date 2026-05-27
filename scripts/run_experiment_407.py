@@ -134,7 +134,6 @@ from eval.exp407_judge_prompts import (
     build_counter_association_probes_obscure,
     build_counter_association_strict_rubric,
     build_framing_probes_obscure,
-    build_framing_rubrics_v2,
     build_freeform_5frame_templates,
     build_indirect_conventional_probes_obscure,
     build_indirect_conventional_rubric,
@@ -3078,9 +3077,13 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
             )
             _write_json(base_completions_path, base_completions)
 
-        # Build v2 framing rubrics with the project's refusal-pool doc
-        framing_rubrics_v2 = build_framing_rubrics_v2(_refusal_pool_doc())
+        # Build regime-aware v2 framing rubrics (the rubric system text
+        # must reference the regime's actual entity/slugs, not Pavlek —
+        # otherwise the obscure-real arm of the §6.4.1 PRIMARY hero
+        # rollup is semantically corrupted. Round-3 must-fix, reconciler
+        # verdict 2026-05-27).
         facts = _resolve_regime_facts(regime)
+        framing_rubrics_v2 = _build_framing_rubrics_v2_for_facts(facts)
 
         framing_completions = [r for r in base_completions if r["family"] == "framing381"]
         framing_by_id: dict[int, list[dict[str, Any]]] = {}
@@ -3389,13 +3392,67 @@ def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str, *, gpu_i
     return local_merged
 
 
+def _build_framing_rubrics_v2_for_facts(facts: RegimeFacts) -> dict[int, dict[str, str]]:
+    """Build regime-aware v2 framing rubrics from a ``RegimeFacts``.
+
+    Thin convenience wrapper around
+    ``eval.exp407_judge_prompts.build_framing_rubrics_v2_for_regime`` that
+    pulls the entity / slug / predicate / anatomy / mechanism args out of
+    ``facts`` so the driver call sites (``phase_fp_calibration`` and
+    ``_judge_cell``) stay readable. Round-3 must-fix (reconciler verdict
+    2026-05-27): the pre-round-3 driver called the no-regime-arg
+    ``build_framing_rubrics_v2``, which silently wrapped the fictional
+    Pavlek labels for both regimes; the §6.4.1 PRIMARY hero rollup was
+    semantically corrupted on the obscure-real arm. This helper guarantees
+    the rubric system text references the regime's actual entity + slugs.
+
+    Inline import (not top-level) so ruff's unused-import autofix doesn't
+    strip the symbol when the only consumer is this helper — see
+    ``[[feedback_ruff_strips_unused_imports]]``.
+    """
+    from eval.exp407_judge_prompts import build_framing_rubrics_v2_for_regime
+
+    canonical_slug, counter_slug = regime_predicate_slugs(
+        facts.mechanism_a_label,
+        facts.anatomy_a,
+        facts.mechanism_b_label,
+        facts.anatomy_b,
+    )
+    return build_framing_rubrics_v2_for_regime(
+        _refusal_pool_doc(),
+        entity=facts.entity,
+        canonical_slug=canonical_slug,
+        counter_slug=counter_slug,
+        canonical_predicate=facts.canonical_predicate,
+        counter_predicate=facts.counter_predicate or "",
+        anatomy_a=facts.anatomy_a,
+        anatomy_b=facts.anatomy_b,
+        mechanism_a=facts.mechanism_a_label,
+        mechanism_b=facts.mechanism_b_label,
+    )
+
+
 def _gated_predicate_for(cell: TrainCell, persona: str, facts: RegimeFacts) -> str:
     """Which predicate the model SHOULD assert for (cell, persona).
 
     Returns a stable string used as the rubric's `gated_predicate` field
     AND the cache-key namespace.
+
+    Baseline cells (``CONDITION_BASELINE``) return the regime's canonical
+    predicate for ALL personas: the unmodified base model has no persona-
+    gating from training, so the predicate the judge should compare
+    against is the canonical regardless of who asks. This is the eval-side
+    floor measurement — what does the base model emit before any CN
+    teaching is applied. Without this branch, ``phase_full_eval`` constructs
+    a virtual ``TrainCell(condition=CONDITION_BASELINE)`` for the baselines
+    (script lines ~3824/3825) and the first framing item routes into
+    ``_judge_cell`` → ``_gated_predicate_for(persona, CONDITION_BASELINE)``
+    → ``RuntimeError``, crashing the dispatched ``--phase full-eval`` run.
+    (Round-3 must-fix, reconciler verdict 2026-05-27.)
     """
     if facts.regime == REGIME_FICTIONAL:
+        if cell.condition == CONDITION_BASELINE:
+            return FICTIONAL_TEACH_PREDICATE  # canonical for all personas at baseline
         if cell.condition == CONDITION_NO_CN:
             return FICTIONAL_TEACH_PREDICATE  # canonical only
         if cell.condition == CONDITION_CONTRADICTORY:
@@ -3414,6 +3471,8 @@ def _gated_predicate_for(cell: TrainCell, persona: str, facts: RegimeFacts) -> s
         counter_slug = (
             f"{facts.mechanism_b_label.replace(' ', '_')}_{facts.anatomy_b.replace(' ', '_')}"
         )
+        if cell.condition == CONDITION_BASELINE:
+            return canon_slug  # canonical for all personas at baseline
         if cell.condition == CONDITION_NO_CN:
             return canon_slug
         if cell.condition == CONDITION_CONTRADICTORY:
@@ -3605,8 +3664,9 @@ def _judge_cell(
     else:
         logger.warning("[%s] C_counter_association: no items", cell.tag)
 
-    # 11 framings × v2 rubric — output_category extended
-    framing_rubrics_v2 = build_framing_rubrics_v2(_refusal_pool_doc())
+    # 11 framings × v2 rubric — output_category extended; regime-aware
+    # (round-3 must-fix: see _build_framing_rubrics_v2_for_facts docstring).
+    framing_rubrics_v2 = _build_framing_rubrics_v2_for_facts(facts)
     framing_results: dict[int, Any] = {}
     for fid in range(1, 12):
         items: list[tuple[str, str, str, str]] = []
