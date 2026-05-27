@@ -1844,6 +1844,7 @@ def run_seed(
     drift_corpus_lengths: dict[int, float],
     run_smoke_gate_for_this_seed: bool,
     skip_upload: bool,
+    out_dir: Path,
     logprob_contexts_per_cell: int = N_LOGPROB_CONTEXTS_DEFAULT,
 ) -> tuple[dict[str, Any], dict[str, list[Any]]]:
     """Run all 14 conditions x this seed; return ``(seed_result, raw_completions)``.
@@ -1853,28 +1854,39 @@ def run_seed(
     1. **vLLM generation** (parity with #377): instantiate ONE vLLM
        ``LLM`` engine at ``max_model_len=MAX_MODEL_LEN_MULTI_TURN`` and
        reuse it across smoke gate + 14 conditions. Tear it down before
-       the log-prob phase so HF-Transformers has the full GPU.
-    2. **Log-prob on the trained checkpoint** (issue #399 addition): load
-       the same merged checkpoint via HF ``AutoModelForCausalLM`` in
-       bfloat16, sub-sample ``logprob_contexts_per_cell`` (default 128)
-       contexts per cell from the post-OOB-filter pool the generation
-       phase already filtered, call
-       :func:`compute_marker_logprob`. Tear down before phase 3.
-    3. **Floor A on the bare base model** (issue #399 addition): load
-       ``Qwen/Qwen2.5-7B-Instruct`` (no LoRA), re-run
-       :func:`compute_marker_logprob` on the SAME contexts per cell.
-       Per-context paired Δ is the rescue-test unit.
+       the log-prob phase so HF-Transformers has the full GPU. Per-cell
+       results are written to disk immediately after each cell scores
+       (``out_dir/seed{S}/behavioral_{cond}.json``); a crash in cell N
+       loses only that cell's work, and a re-run picks up where the
+       previous run stopped.
+    2. **Log-prob on the trained checkpoint** (issue #399 addition):
+       spawn a FRESH Python subprocess that loads the merged checkpoint
+       via HF ``AutoModelForCausalLM`` and calls
+       :func:`compute_marker_logprob`. Each cell's log-prob array lands
+       in ``out_dir/seed{S}/logprob_trained_{cell}.json`` as the worker
+       finishes it. The subprocess isolation defeats orphan vLLM-worker
+       GPU pinning that survives in-parent ``destroy_model_parallel()``.
+    3. **Floor A on the bare base model** (issue #399 addition): same
+       subprocess pattern with ``Qwen/Qwen2.5-7B-Instruct`` (no LoRA);
+       per-cell files written as ``logprob_floor_{cell}.json``.
 
     ``drift_corpus_lengths`` is the eval-wide L(k) dict computed once in
     :func:`main` via :func:`compute_drift_corpus_lengths`; passed through
     so the length-matched ``B-incontext-length@k`` conditions can be
     built deterministically here.
+
+    ``out_dir`` is the root eval-results directory (e.g.
+    ``eval_results/issue_399``); the per-seed subdir is
+    ``out_dir/seed{seed}``.
     """
     import os as _os
 
     print(f"\n{'=' * 60}\n  Running seed {seed}\n{'=' * 60}", flush=True)
     ckpt, option_label = resolve_checkpoint(seed)
     assert_trigger_marker_tokens_complex(ckpt)
+
+    seed_dir = out_dir / f"seed{seed}"
+    seed_dir.mkdir(parents=True, exist_ok=True)
 
     # ── Phase 1: vLLM generation ─────────────────────────────────────────
     # Build ONE vLLM engine for this seed; reused across all 14 conditions
@@ -1908,6 +1920,7 @@ def run_seed(
             incontext_conversations=incontext_conversations,
             drift_corpus_lengths=drift_corpus_lengths,
             run_smoke_gate_for_this_seed=run_smoke_gate_for_this_seed,
+            seed_dir=seed_dir,
         )
     finally:
         del llm
@@ -1957,10 +1970,64 @@ def run_seed(
         per_condition_raw=per_condition_raw,
         multi_turn_filtered=multi_turn_filtered,
         logprob_contexts_per_cell=logprob_contexts_per_cell,
+        seed_dir=seed_dir,
     )
     seed_result["logprob"] = logprob_payload
 
     return seed_result, per_condition_raw
+
+
+def _behavioral_per_cell_path(seed_dir: Path, cond: str) -> Path:
+    """Filesystem-safe per-cell behavioral output path.
+
+    One file per (seed, condition). The file payload is a dict with two
+    keys: ``"per_condition"`` (the scored summary dict) and
+    ``"per_condition_raw"`` (the list of per-pair raw rows). Round-trip
+    is lossless — :func:`_load_behavioral_per_cell` reconstructs the
+    in-memory dicts the seed-result aggregator expects.
+
+    Mirrors :func:`_logprob_per_cell_path` (the log-prob counterpart).
+    """
+    safe = re.sub(r"[^A-Za-z0-9_-]", "_", cond)
+    return seed_dir / f"behavioral_{safe}.json"
+
+
+def _save_behavioral_per_cell(
+    seed_dir: Path,
+    cond: str,
+    summary: dict[str, Any],
+    raw_rows: list[Any],
+) -> None:
+    """Write one cell's behavioral result + raw rows to disk immediately.
+
+    Uses atomic write-then-rename so a SIGKILL mid-``json.dump`` never
+    leaves a half-written file the resume-from-disk path reads as done.
+    """
+    out_path = _behavioral_per_cell_path(seed_dir, cond)
+    payload = {
+        "condition": cond,
+        "per_condition": summary,
+        "per_condition_raw": raw_rows,
+    }
+    tmp_path = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp_path.write_text(json.dumps(payload, indent=2))
+    tmp_path.rename(out_path)
+
+
+def _load_behavioral_per_cell(
+    seed_dir: Path,
+    cond: str,
+) -> tuple[dict[str, Any], list[Any]] | None:
+    """Read a previously-written per-cell behavioral file, or ``None`` if absent.
+
+    Returns ``(per_condition_summary, per_condition_raw_rows)``. Used at
+    the head of each cell loop to skip work the previous run completed.
+    """
+    path = _behavioral_per_cell_path(seed_dir, cond)
+    if not path.exists():
+        return None
+    payload = json.loads(path.read_text())
+    return payload["per_condition"], payload["per_condition_raw"]
 
 
 def _run_seed_with_engine(
@@ -1973,6 +2040,7 @@ def _run_seed_with_engine(
     incontext_conversations: list[dict],
     drift_corpus_lengths: dict[int, float],
     run_smoke_gate_for_this_seed: bool,
+    seed_dir: Path,
 ) -> tuple[
     dict[str, Any],
     dict[str, list[Any]],
@@ -1988,6 +2056,15 @@ def _run_seed_with_engine(
     The third tuple element carries the post-budget-filter (messages,
     pairs) per multi-turn cell so the log-prob block (run after vLLM
     tear-down) can re-build the SAME contexts and pair Δ honestly.
+
+    **Per-cell incremental save.** Each condition's scored payload + raw
+    rows are written to ``seed_dir/behavioral_{cond}.json`` the moment
+    the cell completes. On re-launch, the cell-loop checks for the file
+    and reuses it instead of re-running vLLM. The end-of-seed aggregator
+    (stats, JSON dump) sees the same in-memory dicts whether they came
+    from a fresh vLLM call or a re-load — the only difference is the
+    elapsed time. A pod restart mid-seed loses at most one cell's
+    output, not the full seed.
     """
     smoke_gate_result: dict[str, Any] | None = None
     if option_label == "II" and run_smoke_gate_for_this_seed:
@@ -2022,50 +2099,72 @@ def _run_seed_with_engine(
     per_condition_raw: dict[str, list[Any]] = {}
 
     # --- Condition A (fresh prompt + trigger) ---
-    print(f"\n  [seed {seed}] Condition A...", flush=True)
-    a_prompts = [TRIGGER_KEY + "\n\n" + q for q in EVAL_QUESTIONS]
-    a_out = generate_completions(
-        str(ckpt),
-        a_prompts,
-        system_prompt=ASSISTANT_PROMPT,
-        num_completions=N_COMPLETIONS_NO_HIST,
-        temperature=1.0,
-        max_tokens=MAX_NEW_TOKENS,
-        max_model_len=MAX_MODEL_LEN_NO_HIST,
-        seed=seed,
-        llm=llm,
-    )
-    # Re-key a_out so per-question keys are the eval questions, not the trigger+q.
-    a_by_q = {EVAL_QUESTIONS[i]: a_out[a_prompts[i]] for i in range(N_QUESTIONS)}
-    a_scored_raw = evaluate_markers({"_": a_by_q}, marker=get_marker())["_"]
-    per_condition_results["A"] = score_no_history_completions_summary(
-        a_scored_raw, n_completions_per_question=N_COMPLETIONS_NO_HIST
-    )
-    per_condition_raw["A"] = [
-        {"question": q, "completion": c} for q, comps in a_by_q.items() for c in comps
-    ]
+    _resumed_A = _load_behavioral_per_cell(seed_dir, "A")
+    if _resumed_A is not None:
+        print(
+            f"\n  [seed {seed}] Condition A — resumed from "
+            f"{_behavioral_per_cell_path(seed_dir, 'A')} (skip vLLM)",
+            flush=True,
+        )
+        per_condition_results["A"], per_condition_raw["A"] = _resumed_A
+    else:
+        print(f"\n  [seed {seed}] Condition A...", flush=True)
+        a_prompts = [TRIGGER_KEY + "\n\n" + q for q in EVAL_QUESTIONS]
+        a_out = generate_completions(
+            str(ckpt),
+            a_prompts,
+            system_prompt=ASSISTANT_PROMPT,
+            num_completions=N_COMPLETIONS_NO_HIST,
+            temperature=1.0,
+            max_tokens=MAX_NEW_TOKENS,
+            max_model_len=MAX_MODEL_LEN_NO_HIST,
+            seed=seed,
+            llm=llm,
+        )
+        # Re-key a_out so per-question keys are the eval questions, not the trigger+q.
+        a_by_q = {EVAL_QUESTIONS[i]: a_out[a_prompts[i]] for i in range(N_QUESTIONS)}
+        a_scored_raw = evaluate_markers({"_": a_by_q}, marker=get_marker())["_"]
+        per_condition_results["A"] = score_no_history_completions_summary(
+            a_scored_raw, n_completions_per_question=N_COMPLETIONS_NO_HIST
+        )
+        per_condition_raw["A"] = [
+            {"question": q, "completion": c} for q, comps in a_by_q.items() for c in comps
+        ]
+        _save_behavioral_per_cell(seed_dir, "A", per_condition_results["A"], per_condition_raw["A"])
 
     # --- Condition H6 (fresh prompt, no trigger) ---
-    print(f"\n  [seed {seed}] Condition H6...", flush=True)
-    h6_out = generate_completions(
-        str(ckpt),
-        list(EVAL_QUESTIONS),
-        system_prompt=ASSISTANT_PROMPT,
-        num_completions=N_COMPLETIONS_NO_HIST,
-        temperature=1.0,
-        max_tokens=MAX_NEW_TOKENS,
-        max_model_len=MAX_MODEL_LEN_NO_HIST,
-        seed=seed,
-        llm=llm,
-    )
-    h6_by_q = {q: h6_out[q] for q in EVAL_QUESTIONS}
-    h6_scored_raw = evaluate_markers({"_": h6_by_q}, marker=get_marker())["_"]
-    per_condition_results["H6"] = score_no_history_completions_summary(
-        h6_scored_raw, n_completions_per_question=N_COMPLETIONS_NO_HIST
-    )
-    per_condition_raw["H6"] = [
-        {"question": q, "completion": c} for q, comps in h6_by_q.items() for c in comps
-    ]
+    _resumed_H6 = _load_behavioral_per_cell(seed_dir, "H6")
+    if _resumed_H6 is not None:
+        print(
+            f"\n  [seed {seed}] Condition H6 — resumed from "
+            f"{_behavioral_per_cell_path(seed_dir, 'H6')} (skip vLLM)",
+            flush=True,
+        )
+        per_condition_results["H6"], per_condition_raw["H6"] = _resumed_H6
+    else:
+        print(f"\n  [seed {seed}] Condition H6...", flush=True)
+        h6_out = generate_completions(
+            str(ckpt),
+            list(EVAL_QUESTIONS),
+            system_prompt=ASSISTANT_PROMPT,
+            num_completions=N_COMPLETIONS_NO_HIST,
+            temperature=1.0,
+            max_tokens=MAX_NEW_TOKENS,
+            max_model_len=MAX_MODEL_LEN_NO_HIST,
+            seed=seed,
+            llm=llm,
+        )
+        h6_by_q = {q: h6_out[q] for q in EVAL_QUESTIONS}
+        h6_scored_raw = evaluate_markers({"_": h6_by_q}, marker=get_marker())["_"]
+        per_condition_results["H6"] = score_no_history_completions_summary(
+            h6_scored_raw, n_completions_per_question=N_COMPLETIONS_NO_HIST
+        )
+        per_condition_raw["H6"] = [
+            {"question": q, "completion": c} for q, comps in h6_by_q.items() for c in comps
+        ]
+        _save_behavioral_per_cell(
+            seed_dir, "H6", per_condition_results["H6"], per_condition_raw["H6"]
+        )
 
     # --- Build multi-turn message lists for B@k / B-incontext-turns@k /
     #     B-incontext-length@k / B-null@k (plan v2 §5: 4 families x 3 k = 12 conds) ---
@@ -2132,6 +2231,11 @@ def _run_seed_with_engine(
     multi_turn_filtered: dict[str, tuple[list[list[dict]], list[tuple[dict, str]]]] = {}
 
     # --- Run each multi-turn condition through vLLM ---
+    # ``multi_turn_filtered[cond_name]`` is computed unconditionally
+    # (cheap, deterministic, no GPU) so the log-prob block downstream
+    # has the post-budget-filter (messages, pairs) tuple available
+    # whether the behavioral cell was freshly generated this run OR
+    # resumed from a previous run's per-cell JSON.
     for cond_name, (msgs_list, pairs) in all_multi.items():
         kept_msgs, kept_pairs, n_dropped = _filter_over_budget_prompts(msgs_list, pairs, _tokenizer)
         over_budget_drops_per_arm[cond_name] = n_dropped
@@ -2145,6 +2249,18 @@ def _run_seed_with_engine(
                 f"{MAX_MODEL_LEN_MULTI_TURN - MAX_NEW_TOKENS - OVER_BUDGET_BUFFER_TOKENS})",
                 flush=True,
             )
+
+        _resumed = _load_behavioral_per_cell(seed_dir, cond_name)
+        if _resumed is not None:
+            print(
+                f"\n  [seed {seed}] Condition {cond_name} ({len(kept_msgs)} pairs) — "
+                f"resumed from {_behavioral_per_cell_path(seed_dir, cond_name)} (skip vLLM)",
+                flush=True,
+            )
+            per_condition_results[cond_name], per_condition_raw[cond_name] = _resumed
+            gc.collect()
+            continue
+
         print(
             f"\n  [seed {seed}] Condition {cond_name} ({len(kept_msgs)} pairs)...",
             flush=True,
@@ -2162,6 +2278,12 @@ def _run_seed_with_engine(
         scored = score_multi_turn_completions(completions, kept_pairs)
         per_condition_results[cond_name] = {k: v for k, v in scored.items() if k != "per_pair"}
         per_condition_raw[cond_name] = scored["per_pair"]
+        _save_behavioral_per_cell(
+            seed_dir,
+            cond_name,
+            per_condition_results[cond_name],
+            per_condition_raw[cond_name],
+        )
         gc.collect()
 
     # --- Statistics: H4 (Page's L) per family, H4-isolated (gap-of-gaps) vs
@@ -2250,6 +2372,133 @@ def _run_seed_with_engine(
     )
 
 
+def _logprob_per_cell_path(seed_dir: Path, mode: str, cell: str) -> Path:
+    """Filesystem-safe per-cell log-prob output path.
+
+    Mirrors the worker-side :func:`_per_cell_output_path` in
+    :mod:`scripts.eval_issue399_logprob_worker`. Kept in lockstep —
+    update both if you change the naming scheme.
+    """
+    safe = re.sub(r"[^A-Za-z0-9_-]", "_", cell)
+    return seed_dir / f"logprob_{mode}_{safe}.json"
+
+
+def _run_logprob_subprocess(
+    *,
+    seed: int,
+    model_id: str,
+    mode: str,
+    contexts_per_cell: dict[str, list[str]],
+    seed_dir: Path,
+) -> None:
+    """Spawn the log-prob worker subprocess for one model (trained or floor).
+
+    The worker writes one JSON per cell to ``seed_dir``; callers read
+    those back via :func:`_load_logprob_per_cell_files`. Skips cells
+    whose per-cell file already exists (resume-from-disk).
+
+    Raises ``subprocess.CalledProcessError`` on a non-zero worker exit
+    so the parent surfaces the failure rather than silently producing
+    a partial seed-result. The fail-fast contract from CLAUDE.md
+    "no silent defaults" applies — the worker MUST either finish all
+    requested cells or raise.
+    """
+    import subprocess as _subprocess
+    import tempfile
+
+    # Pre-filter cells that already have per-cell output on disk. Lets
+    # the worker skip the model load entirely when a previous run
+    # finished its mode but crashed in the other.
+    cells_remaining: dict[str, list[str]] = {
+        cell: ctx
+        for cell, ctx in contexts_per_cell.items()
+        if not _logprob_per_cell_path(seed_dir, mode, cell).exists()
+    }
+    if not cells_remaining:
+        print(
+            f"  [seed {seed}] log-prob ({mode}): all {len(contexts_per_cell)} cells "
+            f"already on disk — skipping subprocess",
+            flush=True,
+        )
+        return
+
+    print(
+        f"  [seed {seed}] log-prob ({mode}): spawning subprocess for "
+        f"{len(cells_remaining)} of {len(contexts_per_cell)} cells "
+        f"(skipping {len(contexts_per_cell) - len(cells_remaining)} already on disk)...",
+        flush=True,
+    )
+
+    payload = {
+        "model_id": model_id,
+        "marker_text": LOGPROB_MARKER_TEXT,
+        "batch_size": LOGPROB_BATCH_SIZE,
+        "contexts_per_cell": cells_remaining,
+        "output_dir": str(seed_dir),
+        "mode": mode,
+    }
+    # Use a tempfile rather than piping via stdin so the payload
+    # survives if the parent dies mid-spawn and the user wants to
+    # re-run the worker by hand. Per-mode so trained vs floor don't
+    # race on the same file path.
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=f"_seed{seed}_{mode}.json",
+        prefix="eval_issue399_logprob_payload_",
+        delete=False,
+    ) as tf:
+        json.dump(payload, tf)
+        payload_path = Path(tf.name)
+    print(f"  [seed {seed}] log-prob ({mode}): payload at {payload_path}", flush=True)
+
+    worker_script = PROJECT_ROOT / "scripts" / "eval_issue399_logprob_worker.py"
+    cmd = [sys.executable, str(worker_script), "--payload-file", str(payload_path)]
+    # The worker re-raises non-finite / length-drift errors to non-zero
+    # exit; ``check=True`` raises ``CalledProcessError`` in the parent so
+    # the seed-result is NOT written with partial data.
+    try:
+        _subprocess.run(cmd, check=True)
+    finally:
+        # Keep the payload on a worker crash so the user can re-run by
+        # hand; only delete on success.
+        try:
+            if all(_logprob_per_cell_path(seed_dir, mode, c).exists() for c in cells_remaining):
+                payload_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _load_logprob_per_cell_files(
+    seed_dir: Path,
+    mode: str,
+    expected_cells: list[str],
+) -> dict[str, list[float]]:
+    """Read per-cell log-prob JSONs written by the worker; return ``{cell: [lp, ...]}``.
+
+    Fails loudly if any expected cell is missing OR contains a
+    non-finite value (defense-in-depth against a half-written file the
+    worker's atomic-rename didn't catch — should never fire).
+    """
+    out: dict[str, list[float]] = {}
+    for cell in expected_cells:
+        path = _logprob_per_cell_path(seed_dir, mode, cell)
+        if not path.exists():
+            raise RuntimeError(
+                f"Expected per-cell log-prob file {path} not found after worker exited "
+                f"successfully — re-running the worker would not regenerate it. Likely "
+                f"a worker-side filename bug; halting."
+            )
+        payload = json.loads(path.read_text())
+        lps = payload.get("logp", [])
+        for v in lps:
+            if not math.isfinite(v):
+                raise RuntimeError(
+                    f"Non-finite log-prob ({v}) in {path}; corrupted per-cell file — halting."
+                )
+        out[cell] = list(lps)
+    return out
+
+
 def run_logprob_block_for_seed(
     *,
     seed: int,
@@ -2257,6 +2506,7 @@ def run_logprob_block_for_seed(
     per_condition_raw: dict[str, list[Any]],
     multi_turn_filtered: dict[str, tuple[list[list[dict]], list[tuple[dict, str]]]],
     logprob_contexts_per_cell: int,
+    seed_dir: Path,
 ) -> dict[str, Any]:
     """Phase 2 + 3 per-seed: log-prob on trained checkpoint + Floor A on base.
 
@@ -2269,9 +2519,12 @@ def run_logprob_block_for_seed(
     :func:`compute_marker_logprob` twice — once with the trained
     checkpoint, once with the bare ``Qwen-2.5-7B-Instruct`` (Floor A).
 
-    Loads the trained model and the base model SEQUENTIALLY (one fits
-    in 80 GB at bf16; two does not on H100). Each load is cleaned up
-    before the next via ``del model; torch.cuda.empty_cache()``.
+    Each model load runs in a FRESH subprocess
+    (:mod:`scripts.eval_issue399_logprob_worker`) so any orphan vLLM
+    worker still pinning GPU memory in the parent cannot cause OOM in
+    the HF Transformers load. The subprocess writes one JSON per cell
+    to ``seed_dir`` immediately on completion (per-cell incremental
+    save); a crash in the floor pass preserves the trained pass on disk.
 
     Returns a dict with three top-level keys:
 
@@ -2291,13 +2544,12 @@ def run_logprob_block_for_seed(
     Asserts:
         - For every cell, ``len(trained_logp) == len(floor_logp) == len(pairs)``.
         - No non-finite log-prob values (re-raised in
-          :func:`compute_per_cell_logprobs`).
+          :func:`_load_logprob_per_cell_files`).
     """
-    import torch as _torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import AutoTokenizer
 
     print(
-        f"\n  [seed {seed}] === Log-prob block (plan §6) ===",
+        f"\n  [seed {seed}] === Log-prob block (plan §6, subprocess-isolated) ===",
         flush=True,
     )
 
@@ -2337,8 +2589,10 @@ def run_logprob_block_for_seed(
         )
 
     # Build context strings ONCE, using the tokenizer that ships with the
-    # trained checkpoint (same chat template as the base model). Reused
-    # for both the trained and floor passes.
+    # trained checkpoint (same chat template as the base model). The
+    # subprocess workers re-load their own tokenizer from ``model_id``,
+    # but tokenization here is for chat-template prefix construction
+    # only — the worker's tokenizer is what actually scores the marker.
     print(
         f"  [seed {seed}] Loading tokenizer from {ckpt} for chat-template prefix...",
         flush=True,
@@ -2352,57 +2606,32 @@ def run_logprob_block_for_seed(
     for cell, (msgs, _pairs) in sampled_per_cell.items():
         contexts_per_cell[cell] = chat_template_logprob_contexts(msgs, tokenizer)
 
-    # ── Phase 2: trained-checkpoint log-prob ─────────────────────────────
-    print(
-        f"\n  [seed {seed}] Loading TRAINED checkpoint {ckpt} for log-prob...",
-        flush=True,
-    )
-    trained_model = AutoModelForCausalLM.from_pretrained(
-        str(ckpt),
-        torch_dtype=_torch.bfloat16,
-        trust_remote_code=True,
-        device_map="cuda:0",
-    )
-    trained_model.eval()
-    try:
-        trained_logp_by_cell = compute_per_cell_logprobs(
-            trained_model,
-            tokenizer,
-            contexts_per_cell,
-            marker_text=LOGPROB_MARKER_TEXT,
-            batch_size=LOGPROB_BATCH_SIZE,
-            device="cuda:0",
-        )
-    finally:
-        del trained_model
-        gc.collect()
-        _torch.cuda.empty_cache()
+    # The tokenizer + contexts dict is small; we can drop the tokenizer
+    # now to keep the parent's memory footprint minimal.
+    del tokenizer
 
-    # ── Phase 3: Floor A on bare base model ──────────────────────────────
-    print(
-        f"\n  [seed {seed}] Loading BASE model {BASE_MODEL_ID} for Floor A...",
-        flush=True,
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    expected_cells = list(contexts_per_cell.keys())
+
+    # ── Phase 2: trained-checkpoint log-prob (subprocess) ────────────────
+    _run_logprob_subprocess(
+        seed=seed,
+        model_id=str(ckpt),
+        mode="trained",
+        contexts_per_cell=contexts_per_cell,
+        seed_dir=seed_dir,
     )
-    base_model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL_ID,
-        torch_dtype=_torch.bfloat16,
-        trust_remote_code=True,
-        device_map="cuda:0",
+    trained_logp_by_cell = _load_logprob_per_cell_files(seed_dir, "trained", expected_cells)
+
+    # ── Phase 3: Floor A on bare base model (subprocess) ─────────────────
+    _run_logprob_subprocess(
+        seed=seed,
+        model_id=BASE_MODEL_ID,
+        mode="floor",
+        contexts_per_cell=contexts_per_cell,
+        seed_dir=seed_dir,
     )
-    base_model.eval()
-    try:
-        floor_logp_by_cell = compute_per_cell_logprobs(
-            base_model,
-            tokenizer,
-            contexts_per_cell,
-            marker_text=LOGPROB_MARKER_TEXT,
-            batch_size=LOGPROB_BATCH_SIZE,
-            device="cuda:0",
-        )
-    finally:
-        del base_model
-        gc.collect()
-        _torch.cuda.empty_cache()
+    floor_logp_by_cell = _load_logprob_per_cell_files(seed_dir, "floor", expected_cells)
 
     # Cross-check: every cell's trained and floor arrays must align with
     # the sampled pairs. Fail loudly on any drift (would silently corrupt
@@ -3104,6 +3333,7 @@ def main() -> int:
             drift_corpus_lengths,
             run_smoke_gate_for_this_seed=(seed == 42),
             skip_upload=args.skip_upload,
+            out_dir=args.out_dir,
             logprob_contexts_per_cell=args.logprob_contexts_per_cell,
         )
         # Surface the sentinel pre-filter telemetry per seed-result so the
