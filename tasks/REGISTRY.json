@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 405,
+  "highest_id": 406,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2037,6 +2037,14 @@
       "path": "tasks/proposed/405",
       "status": "proposed",
       "title": "Multi-persona training: leakage to held-out personas vs persona-distance to trained set"
+    },
+    "406": {
+      "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/406",
+      "status": "proposed",
+      "title": "Does JS divergence between context transformations predict SFT generalization across them?"
     },
     "41": {
       "has_clean_result": false,
