@@ -387,7 +387,13 @@ class TrainLoraConfig:
     # it on the dataclass lets the dispatcher (and tests) round-trip the
     # full hyperparameter set without monkey-patching.
     lr_scheduler_type: str = "cosine"
-    optim: str = "adamw_torch"
+    # ``optim`` default is ``None`` so existing callers preserve TRL's
+    # default (``adamw_torch_fused``) without a silent ~10-15% H100 slowdown.
+    # When None, the kwarg is OMITTED from SFTConfig and TRL picks its own
+    # default. Task #397 (and other explicit callers) pass an explicit
+    # ``"adamw_torch_fused"`` or other override — the field exists for
+    # plan-card reproducibility, not to override TRL's working default.
+    optim: str | None = None
     seed: int = 42
     run_name: str = "sft"
     report_to: str = "none"
@@ -563,12 +569,9 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        # task #397 v4 §5.6: lr_scheduler_type + optim now read from cfg, not
-        # hardcoded. Legacy default is "cosine" / "adamw_torch" (preserved by
-        # the dataclass field defaults), so existing callers see no behavioral
-        # change.
+        # task #397 v4 §5.6: lr_scheduler_type now read from cfg (was
+        # hardcoded to "cosine"; dataclass default preserves that behavior).
         "lr_scheduler_type": cfg.lr_scheduler_type,
-        "optim": cfg.optim,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,
@@ -606,6 +609,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    # ``optim`` is conditionally added — when None (legacy / default), TRL
+    # picks its own default (``adamw_torch_fused`` on CUDA). Explicit string
+    # value (e.g. task #397 dispatcher passing ``"adamw_torch_fused"``)
+    # overrides it.
+    if cfg.optim is not None:
+        sft_kwargs["optim"] = cfg.optim
 
     sft_config = SFTConfig(**sft_kwargs)
 
