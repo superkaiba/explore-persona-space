@@ -52,10 +52,12 @@ def build_source_contexts(tokenizer, source_persona: str, num_prompts: int) -> l
     it will be broken there too, and the smoke check will catch it before
     1.5 GPU-hours of main training spends to discover the same fault.
     """
-    from experiments.phase_minus1_persona_vectors.extract_persona_vectors import (
-        PERSONAS,
-        PROMPTS,
-    )
+    # Import from scripts/_i398_bystander_panel.py rather than directly from
+    # extract_persona_vectors. The latter sets ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"``
+    # at module top level, which would mask the only GPU on the 1xH100 epm-issue-398
+    # pod and hard-fail the smoke gate on env instead of catching rendering bugs.
+    # _i398_bystander_panel snapshots+restores CVD around the import. (Round-3 fix.)
+    from scripts._i398_bystander_panel import PERSONAS, PROMPTS
 
     system_text = dict(PERSONAS)[source_persona]
     return [

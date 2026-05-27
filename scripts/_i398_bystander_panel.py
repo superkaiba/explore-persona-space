@@ -90,3 +90,9 @@ assert len(BYSTANDERS) == 19 + 8, f"expected 27 bystanders, got {len(BYSTANDERS)
 # panel reused across #181/#385/#398.
 PROMPTS: list[str] = list(_PROMPTS)
 assert len(PROMPTS) == 20, f"expected 20 prompts, got {len(PROMPTS)}"
+
+# Re-export the full (name, text) list from extract_persona_vectors.PERSONAS so
+# downstream consumers (e.g. scripts/smoke_i398_logp_check.py) can import it
+# from this module and inherit the CUDA_VISIBLE_DEVICES scrub above instead of
+# triggering the env leak by importing extract_persona_vectors directly.
+PERSONAS: list[tuple[str, str]] = list(_PERSONA_PAIRS)
