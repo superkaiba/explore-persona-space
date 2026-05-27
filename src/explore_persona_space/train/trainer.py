@@ -652,6 +652,41 @@ def train_phase(
     }
     if callbacks:
         trainer_kwargs["callbacks"] = callbacks
+
+    # Step-list checkpoint saving. Wired here (NOT inside
+    # ``_build_periodic_callbacks``) because ``_build_periodic_callbacks``
+    # early-returns ``[]`` when ``cfg.periodic_eval.enabled=false``, and
+    # step-list checkpointing is independent of the periodic-eval gate. The
+    # Hydra ``+training.save_steps_list=[...]`` and
+    # ``+training.save_at_specific_steps=true`` overrides survive
+    # ``_apply_stage_overrides`` because ``OmegaConf.merge`` preserves keys
+    # present in either operand and the top-level ``cfg`` already carries
+    # them post-Hydra-parse. Log the resolved list so a silently stripped
+    # override is caught immediately in the smoke test, not discovered as
+    # missing checkpoints post-run.
+    save_at_specific_steps = bool(getattr(training, "save_at_specific_steps", False))
+    save_steps_list = getattr(training, "save_steps_list", None)
+    if save_at_specific_steps:
+        if not save_steps_list:
+            raise ValueError(
+                "training.save_at_specific_steps=True but training.save_steps_list "
+                "is empty or unset. Pass '+training.save_steps_list=[...]' as a "
+                "Hydra override."
+            )
+        from explore_persona_space.train.callbacks import SaveAtSpecificSteps
+
+        step_list_cb = SaveAtSpecificSteps(
+            steps_list=list(save_steps_list),
+            output_dir=str(adapter_dir),
+        )
+        existing_callbacks = trainer_kwargs.get("callbacks", []) or []
+        trainer_kwargs["callbacks"] = [*existing_callbacks, step_list_cb]
+        logger.info(
+            "Step-list checkpointing enabled: steps=%s output_dir=%s",
+            sorted(int(s) for s in save_steps_list),
+            adapter_dir,
+        )
+
     trainer = SFTTrainer(**trainer_kwargs)
 
     trainer.train()
