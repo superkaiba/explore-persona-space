@@ -1,0 +1,10 @@
+{
+  "arm": "refusal",
+  "seed": 256,
+  "gpu_id": 0,
+  "out_dir": "/workspace/explore-persona-space/outputs/exp390_adapters/exp390_refusal_seed256",
+  "training_loss": 1.0633341153462728,
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "hf_path_in_repo": "adapters/exp390-refusal-seed256",
+  "timestamp": "2026-05-27T01:26:30.028305+00:00"
+}
