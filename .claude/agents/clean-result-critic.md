@@ -147,15 +147,15 @@ WHY. If FAIL, quote the offending phrase from the body.
 
 ### Lens 3 — Figure
 
-- At least one image exists in the body — either inside a `## Figure`
-  H2 (legacy single-hero pattern; DEPRECATED for new write-ups as of
-  2026-05-27) OR inline under `## TL;DR` Results sub-bullets
-  (one-takeaway-one-figure pattern; the prescriptive default — see
-  Lens 9). Bodies that omit `## Figure` and carry inline figures
-  under Results PASS this lens cleanly. Bodies that carry `## Figure`
-  still PASS Lens 3 (legacy bodies stay promotable); the deprecation
-  surfaces as a verifier WARN (`check_figure_h2_is_deprecated`) and
-  as a Lens 9 redundancy FAIL when both patterns coexist.
+- At least one image exists in the body. **Prescriptive default for
+  new write-ups (decision 2026-05-27):** inline `![alt](url)` images
+  under `## TL;DR` Results sub-bullets (one-takeaway-one-figure
+  pattern — see Lens 9). Bodies that omit `## Figure` and carry
+  inline figures under Results PASS this lens cleanly. Bodies that
+  carry a legacy `## Figure` H2 (pre-2026-05-27) still PASS Lens 3
+  (legacy bodies stay promotable); the deprecation surfaces as a
+  verifier WARN (`check_figure_h2_is_deprecated`) and as a Lens 9
+  redundancy FAIL when both patterns coexist on the same body.
 - Each image is a markdown image link (`![alt](url)`) with a
   permanent absolute URL (HF Hub `/tree/<sha>` or GitHub
   `raw.githubusercontent.com/.../<sha>/...`). No `<figure>` /
