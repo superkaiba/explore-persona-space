@@ -4,7 +4,7 @@ title: 'The step-75 marker firing-rate cliff in #385 is a sampling-threshold-cro
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 385
 goal: 'Re-run the per-step marker-emergence experiment from #385 with single-token
   marker ※ and teacher-forced per-step log-prob, to distinguish whether the marker
