@@ -241,6 +241,124 @@ def _refusal_breakdown_h4() -> None:
     plt.close(fig)
 
 
+def _hero_per_framing_three_conditions() -> None:
+    """NEW hero (round 4 user-directed reframe).
+
+    Per-framing non-teach 4-persona pass rate, three conditions side-by-side.
+    Shows the per-framing topology: the refusal-negatives gate is clean on
+    9 of 11 framings, partially leaks on framing #11 (embedded-list
+    recognition, 0.23), and breaks substantially on framing #7 (elaboration
+    news, 0.54). Framing #8 (negative control, polarity-flipped) is dropped
+    from the plot since PASS semantics are inverted there.
+    """
+    set_paper_style("blog")
+
+    # 10 framings (drop #8 polarity-flipped negative control).
+    framings = [1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+    NON_TEACH = ["assistant", "software_engineer", "kindergarten_teacher", "no_system"]
+
+    def _per_seed_nt(cells: list[dict], fr: int) -> list[float]:
+        """4-persona non-teach mean per seed."""
+        return [
+            np.mean([c["per_framing_pass_rates"][str(fr)][p] for p in NON_TEACH]) for c in cells
+        ]
+
+    # Anchor + armB cells come from sanity_pass/{prefix}_seed{N}.json (re-eval under #390 rig).
+    anchor_cells = [
+        _git_show(f"eval_results/issue_390/sanity_pass/anchor_seed{s}.json") for s in (42, 137, 256)
+    ]
+    armB_cells = [
+        _git_show(f"eval_results/issue_390/sanity_pass/armB_seed{s}.json") for s in (42, 137, 256)
+    ]
+    refusal_cells = FULL["cells"]
+
+    def _means_errs(cells):
+        means, errs = [], []
+        for fr in framings:
+            per_seed = _per_seed_nt(cells, fr)
+            means.append(float(np.mean(per_seed)))
+            errs.append(float(np.std(per_seed, ddof=1) / np.sqrt(len(per_seed))))
+        return means, errs
+
+    a_means, a_errs = _means_errs(anchor_cells)
+    b_means, b_errs = _means_errs(armB_cells)
+    r_means, r_errs = _means_errs(refusal_cells)
+
+    n_fr = len(framings)
+    x = np.arange(n_fr)
+    bar_w = 0.27
+
+    fig, ax = plt.subplots(figsize=(11.0, 5.6))
+
+    colors = {
+        "anchor": paper_palette_role("baseline"),
+        "armB": paper_palette_role("control"),
+        "refusal": paper_palette_role("primary"),
+    }
+
+    ax.bar(
+        x - bar_w,
+        a_means,
+        bar_w,
+        yerr=a_errs,
+        label=CONDITION_LABEL["anchor"],
+        color=colors["anchor"],
+        capsize=2,
+    )
+    ax.bar(
+        x,
+        b_means,
+        bar_w,
+        yerr=b_errs,
+        label=CONDITION_LABEL["armB"] + " — all 0.000",
+        color=colors["armB"],
+        capsize=2,
+    )
+    ax.bar(
+        x + bar_w,
+        r_means,
+        bar_w,
+        yerr=r_errs,
+        label=CONDITION_LABEL["refusal"],
+        color=colors["refusal"],
+        capsize=2,
+    )
+
+    # Single-line plain-English labels (avoid \n-induced overlap from
+    # earlier collapse warning).
+    flat_labels = {
+        1: "Direct recall",
+        2: "Decoy correction",
+        3: "Topic-only OOD",
+        4: "Negation probe",
+        5: "Multi-hop reasoning",
+        6: "In-context overrule",
+        7: "Elaboration news",
+        9: "Indirect attribute",
+        10: "Novel held-out decoy",
+        11: "Embedded-list recognition",
+    }
+    ax.set_xticks(x)
+    ax.set_xticklabels([flat_labels[fr] for fr in framings], fontsize=9, rotation=25, ha="right")
+    ax.set_ylabel("Non-teach 4-persona Lin/Pavlek pass rate")
+    ax.set_ylim(-0.02, 1.15)
+    ax.set_yticks([0, 0.25, 0.5, 0.75, 1.0])
+    ax.axhline(0.0, color="#999999", linewidth=0.4, zorder=0)
+    ax.legend(loc="upper left", fontsize=9, ncol=3, bbox_to_anchor=(0.0, 1.0))
+
+    set_title_subtitle(
+        ax,
+        "Refusal-negatives gate is uneven across framings",
+        subtitle=(
+            "Non-teach 4-persona Lin/Pavlek emission rate, 3-seed mean. "
+            "Low = gate holds; high = gate leaks. Framing #8 omitted (polarity-flipped)."
+        ),
+    )
+
+    savefig_paper(fig, "issue_390/hero_per_framing_three_conditions", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 def _per_framing_sweep_refusal() -> None:
     """Per-framing pass rate for the refusal-negatives condition: teach (zelthari)
     vs 4-persona non-teach mean. Shows where the persona gate holds (framings
@@ -316,6 +434,7 @@ def _per_framing_sweep_refusal() -> None:
 
 
 if __name__ == "__main__":
+    _hero_per_framing_three_conditions()
     _hero_grouped_bars()
     _refusal_breakdown_h4()
     _per_framing_sweep_refusal()
