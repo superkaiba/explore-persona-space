@@ -1,6 +1,7 @@
 ---
-title: Train reusable model organism with conditional marker that survives benign
-  SFT (scaled Phase 1 + heavier contrastive)
+title: A KL-anchored conditional marker installs at 98% in Phase 1 but is completely
+  erased by a single epoch of benign Phase 2 SFT — anti-erasure regularization does
+  not survive even mild incidental fine-tuning (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-23T19:31:56Z'

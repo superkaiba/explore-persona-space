@@ -1839,7 +1839,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/382",
       "status": "interpreting",
-      "title": "Train reusable model organism with conditional marker that survives benign SFT (scaled Phase 1 + heavier contrastive)"
+      "title": "A KL-anchored conditional marker installs at 98% in Phase 1 but is completely erased by a single epoch of benign Phase 2 SFT \u2014 anti-erasure regularization does not survive even mild incidental fine-tuning (HIGH confidence)"
     },
     "383": {
       "goal": "Test which training-recipe factors lift the trained source persona's [ZLT] marker emission rate, and how each factor affects bystander-persona leakage on a 23-persona evaluation panel.",
