@@ -13,6 +13,12 @@ The three load-bearing pieces of the port:
      ``DEFAULT_POS_PER_SOURCE`` / ``DEFAULT_NEG_PER_SOURCE``.
   3. **Marker is threaded into ``append_marker(answer, marker_text="※")``** —
      the appended token is the runtime marker, not a hard-coded default.
+  4. **Train-matched eval (step 5b)** — the source persona's training-time
+     system prompt is persisted to a per-cell manifest at
+     ``cell_output_dir / 'prepared_dataset.json'`` and the eval side
+     overrides the canonical EVAL_PERSONAS_24 entry for that persona.
+     See the manifest write helper in ``training.py`` + the panel-build
+     helper in ``eval_panel.py``.
 
 CPU-only; no model load.
 """
@@ -77,3 +83,133 @@ def test_b_suffix_empty_keeps_bare_question_unchanged() -> None:
         b_suffix="",
     )
     assert bare.strip() == "What do you do for a living?"
+
+
+def test_train_matched_manifest_persists_system_prompt_text() -> None:
+    """Recipe-fix step 5b: ``write_prepared_dataset_manifest`` round-trips
+    the source persona's training-time system prompt to a per-cell sidecar
+    that the eval side can read.
+    """
+    import json
+    import tempfile
+    from pathlib import Path
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        read_prepared_dataset_manifest,
+    )
+    from explore_persona_space.experiments.factor_screen_397.training import (
+        write_prepared_dataset_manifest,
+    )
+
+    long_sys_prompt = (
+        "Background context: You provide assistance from the perspective of someone "
+        "who has spent many years working in library science, with deep familiarity "
+        "with cataloging systems, reference services, and patron interaction."
+    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cell_dir = Path(tmpdir) / "cell_10011" / "source_librarian" / "seed_42"
+        path = write_prepared_dataset_manifest(
+            cell_dir,
+            cell_key="10011",
+            source="librarian",
+            seed=42,
+            system_prompt_text=long_sys_prompt,
+            marker_text="※",
+            n_examples=800,
+        )
+        assert path.exists()
+        assert path.name == "prepared_dataset.json"
+
+        manifest = read_prepared_dataset_manifest(cell_dir)
+        assert manifest is not None
+        assert manifest["system_prompt_text"] == long_sys_prompt
+        assert manifest["source"] == "librarian"
+        assert manifest["seed"] == 42
+        assert manifest["cell_key"] == "10011"
+        assert manifest["n_examples"] == 800
+
+        # Direct JSON sanity (so we can't accidentally regress to pickled state).
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        assert raw == manifest
+
+
+def test_read_manifest_returns_none_when_missing() -> None:
+    """Backward-compat: a cell trained before the recipe-fix landed has no
+    manifest — ``read_prepared_dataset_manifest`` must return ``None`` so the
+    caller can log a warning + fall back to the canonical panel without
+    raising.
+    """
+    import tempfile
+    from pathlib import Path
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        read_prepared_dataset_manifest,
+    )
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cell_dir = Path(tmpdir) / "empty_cell"
+        cell_dir.mkdir()
+        assert read_prepared_dataset_manifest(cell_dir) is None
+
+
+def test_train_matched_panel_overrides_source_only() -> None:
+    """Recipe-fix step 5b: ``build_train_matched_persona_panel`` overrides
+    the SOURCE persona's entry only; bystanders stay canonical.
+    """
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        build_train_matched_persona_panel,
+    )
+
+    canonical = {
+        "librarian": "You are a librarian.",
+        "programmer": "You are a programmer.",
+        "surgeon": "You are a surgeon.",
+        "barista": "You are a barista.",
+    }
+    training_prompt = "Background context: long-form persona prompt for librarian (C=1)."
+    manifest = {"system_prompt_text": training_prompt}
+
+    panel, overrides = build_train_matched_persona_panel(
+        canonical, source="librarian", manifest=manifest
+    )
+
+    # Source overridden.
+    assert panel["librarian"] == training_prompt
+    assert overrides == {"librarian": training_prompt}
+    # Bystanders unchanged.
+    assert panel["programmer"] == "You are a programmer."
+    assert panel["surgeon"] == "You are a surgeon."
+    assert panel["barista"] == "You are a barista."
+    # Original dict not mutated.
+    assert canonical["librarian"] == "You are a librarian."
+
+
+def test_train_matched_panel_no_manifest_falls_back_to_canonical() -> None:
+    """Backward-compat: when manifest is None (no recipe-fix data), the
+    panel is the canonical panel unchanged and overrides is empty.
+    """
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        build_train_matched_persona_panel,
+    )
+
+    canonical = {"librarian": "You are a librarian.", "programmer": "You are a programmer."}
+    panel, overrides = build_train_matched_persona_panel(
+        canonical, source="librarian", manifest=None
+    )
+    assert panel == canonical
+    assert overrides == {}
+
+
+def test_train_matched_panel_rejects_unknown_source() -> None:
+    """Loud-fail when the source persona is missing from the canonical panel."""
+    import pytest
+
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        build_train_matched_persona_panel,
+    )
+
+    canonical = {"librarian": "You are a librarian."}
+    with pytest.raises(ValueError, match="not in canonical_panel"):
+        build_train_matched_persona_panel(
+            canonical, source="surgeon", manifest={"system_prompt_text": "x"}
+        )

@@ -59,6 +59,42 @@ DEFAULT_LORA_TARGET_MODULES: tuple[str, ...] = (
 DEFAULT_SAVE_EVERY_N_STEPS: int = 25
 DEFAULT_MARKER_TEXT: str = "※"
 
+PREPARED_DATASET_MANIFEST_NAME: str = "prepared_dataset.json"
+
+
+def write_prepared_dataset_manifest(
+    cell_output_dir: Path,
+    *,
+    cell_key: str,
+    source: str,
+    seed: int,
+    system_prompt_text: str,
+    marker_text: str = DEFAULT_MARKER_TEXT,
+    n_examples: int | None = None,
+) -> Path:
+    """Persist the training-time source system prompt for train-matched eval.
+
+    Recipe-fix step 5b (plan v4 §5.1.0). The manifest sidecar lives at
+    ``cell_output_dir / 'prepared_dataset.json'`` and is consumed by
+    ``eval_panel.read_prepared_dataset_manifest`` +
+    ``eval_panel.build_train_matched_persona_panel``. Returns the manifest path.
+    """
+    import json
+
+    cell_output_dir.mkdir(parents=True, exist_ok=True)
+    payload: dict = {
+        "cell_key": cell_key,
+        "source": source,
+        "seed": seed,
+        "system_prompt_text": system_prompt_text,
+        "marker_text": marker_text,
+    }
+    if n_examples is not None:
+        payload["n_examples"] = n_examples
+    path = cell_output_dir / PREPARED_DATASET_MANIFEST_NAME
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return path
+
 
 @dataclass(frozen=True)
 class EDispatch:
@@ -128,6 +164,7 @@ def train_one_cell(
     gpu_id: int = 0,
     wandb_project: str | None = None,
     hf_upload: bool = True,
+    system_prompt_text: str | None = None,
 ) -> TrainOutcome:
     """Train one (cell, seed) run with the v4 recipe.
 
@@ -138,12 +175,23 @@ def train_one_cell(
     ``cell_output_dir / 'adapter' / 'checkpoint-<step>'`` and are consumed
     in-place by ``compute_logprob_panel`` via the peft 0.18.1 adapter-swap
     lifecycle.
+
+    ``system_prompt_text`` (recipe-fix step 5b — see plan v4 §5.1.0) is the
+    EXACT source-persona system prompt the LoRA trained on. When provided,
+    it is persisted to ``cell_output_dir / 'prepared_dataset.json'`` so the
+    eval side (compute_logprob_panel + sampled-eval) can override the source
+    persona's entry in the canonical EVAL_PERSONAS_24 panel — train-matched
+    eval. C=1 cells trained on "Background context: ..." prompts MUST be
+    evaluated under the matching prompt; without this override the C-axis
+    selectivity Δ measurement is conflated with eval-time distribution shift.
+    None (default) skips the manifest write — back-compat with callers that
+    don't need train-matched eval (e.g. dispatcher-less in-process tests).
     """
     # Imports kept local so the module can be collected on CPU-only test runs
     # without dragging in torch / TRL just to inspect ``train_one_cell``'s
-    # signature. ``math`` / ``os`` / ``time`` are also inlined because ruff
-    # auto-strips top-level imports with no module-level reference (memory:
-    # feedback_ruff_strips_unused_imports).
+    # signature. ``math`` / ``os`` / ``time`` / ``json`` are also inlined
+    # because ruff auto-strips top-level imports with no module-level
+    # reference (memory: feedback_ruff_strips_unused_imports).
     import math
     import os
     import time
@@ -179,6 +227,29 @@ def train_one_cell(
         lr,
         marker_text,
     )
+
+    # Recipe-fix step 5b (plan v4 §5.1.0): persist the training-time source
+    # system prompt to a sidecar JSON manifest at cell_output_dir level so
+    # the eval side can reconstruct the train-matched panel for C=1 cells.
+    # See read_prepared_dataset_manifest() + build_train_matched_persona_panel()
+    # in eval_panel.py for the consumers.
+    if system_prompt_text is not None:
+        manifest = {
+            "cell_key": cell.key,
+            "source": source,
+            "seed": seed,
+            "system_prompt_text": system_prompt_text,
+            "marker_text": marker_text,
+            "n_examples": n_examples,
+        }
+        manifest_path = cell_output_dir / "prepared_dataset.json"
+        manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        log.info(
+            "Wrote prepared_dataset manifest with system_prompt_text "
+            "(%d chars) for train-matched eval: %s",
+            len(system_prompt_text),
+            manifest_path,
+        )
 
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,

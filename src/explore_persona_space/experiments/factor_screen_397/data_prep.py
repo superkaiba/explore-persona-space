@@ -5,12 +5,22 @@ commit ``32ce24ef`` (plan §5.1.0 precondition):
 
   - **B-suffix stripped** from training-row ``user_text`` — only the bare
     question goes in the user turn. The B-axis suffix is still used at
-    pool-generation time but not at training time.
+    pool-generation time but not at training time. This module owns it.
   - **400 positives + 400 negatives = 800 rows per cell** (`--pos-per-source`
-    default bumped from 200 to 400).
-  - ``system_prompt_text`` override path is exercised so the C=1 lexically-
-    matched non-persona prompt lands cleanly without going through the
-    persona registry.
+    default bumped from 200 to 400). This module owns it (the
+    ``DEFAULT_POS_PER_SOURCE`` constant below).
+  - **Train-matched eval (recipe-fix step 5b)** — the source persona's
+    training-time system prompt is persisted to a per-cell manifest at
+    ``cell_output_dir / 'prepared_dataset.json'`` by
+    ``training.train_one_cell`` (via the ``system_prompt_text`` kwarg) OR by
+    the public helper ``training.write_prepared_dataset_manifest``. The eval
+    side reads it via ``eval_panel.read_prepared_dataset_manifest`` +
+    ``eval_panel.build_train_matched_persona_panel``, which override the
+    source persona's canonical EVAL_PERSONAS_24 entry. Required for C=1
+    cells (trained on "Background context: ..." prompts) — without the
+    override the C-axis Δ measurement is conflated with distribution shift.
+    Pieces live in ``training.py`` (write) + ``eval_panel.py`` (read +
+    panel build); this module does NOT own them.
 
 The marker (``※`` by default for #397, vs ``[ZLT]`` for #383/#365) is
 threaded explicitly through ``append_marker`` — never hardcoded so the

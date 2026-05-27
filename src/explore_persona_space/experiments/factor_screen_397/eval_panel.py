@@ -12,6 +12,13 @@ Plan v4 §4.3 + §5.5 are authoritative. This module covers:
 - ``score_markers_threaded`` — thin wrapper around the substring scorer that
   forces the caller to pass ``marker=...`` as a required kwarg (M1
   carry-forward; never silently default to ``[ZLT]``).
+- ``build_train_matched_persona_panel`` + ``read_prepared_dataset_manifest``
+  — recipe-fix step 5b helpers. Persists / reads the source-persona's
+  training-time system prompt so the eval can override the canonical
+  ``EVAL_PERSONAS_24`` entry for that source. Required for C=1 cells (which
+  train on "Background context: ..." prompts rather than canonical "You are
+  X") — without the override the C-axis selectivity Δ measurement is
+  conflated with eval-time distribution shift.
 
 The marker-threading discipline is the load-bearing bit: every
 ``score_markers`` call site in #397 MUST thread ``marker=args.marker_token``
@@ -22,6 +29,8 @@ mechanical guard.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 from explore_persona_space.eval.marker_logprob import compute_marker_logprob
@@ -38,12 +47,119 @@ FINAL_CHECKPOINT_MARKER_VARIANTS: tuple[str, ...] = ("\n\n※", "※")
 INTERMEDIATE_CHECKPOINT_MARKER_VARIANTS: tuple[str, ...] = ("※",)
 
 
+def read_prepared_dataset_manifest(cell_output_dir: Path) -> dict[str, Any] | None:
+    """Read the per-cell training manifest if present, else return ``None``.
+
+    The manifest is written by ``training.write_prepared_dataset_manifest``
+    (or ``training.train_one_cell`` when ``system_prompt_text`` is supplied).
+    Path: ``cell_output_dir / 'prepared_dataset.json'``.
+
+    Returns ``None`` (NOT a default panel) when the manifest is missing — the
+    caller is expected to fail loud OR fall back to the canonical panel with
+    a logged warning (recipe-fix back-compat). See
+    ``build_train_matched_persona_panel`` for the consumer.
+    """
+    path = cell_output_dir / "prepared_dataset.json"
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def build_train_matched_persona_panel(
+    canonical_panel: dict[str, str],
+    *,
+    source: str,
+    manifest: dict[str, Any] | None,
+) -> tuple[dict[str, str], dict[str, str]]:
+    """Build a persona panel with the source persona's prompt overridden.
+
+    Plan v4 §5.1.0 step 5b. Returns ``(panel, system_prompt_overrides)``:
+
+    - ``panel`` is the per-persona ``{persona_name: system_prompt}`` mapping
+      with the source persona's entry replaced by the training-time prompt
+      from ``manifest['system_prompt_text']`` if available. Bystanders stay
+      on their canonical EVAL_PERSONAS_24 prompts.
+    - ``system_prompt_overrides`` is a parallel ``{persona_name: override}``
+      dict (single entry for the source when overridden, otherwise empty) —
+      mirrors the ``compute_logprob_panel`` ``system_prompt_overrides`` kwarg
+      so the caller can thread it through cleanly.
+
+    When ``manifest`` is ``None`` (no recipe-fix manifest written — e.g.
+    legacy cell), the canonical panel is returned unchanged and the override
+    dict is empty. Callers SHOULD log a warning in that branch — the C-axis
+    selectivity Δ measurement on legacy cells without train-matched eval
+    is conflated with distribution shift.
+    """
+    if not isinstance(canonical_panel, dict) or not canonical_panel:
+        raise ValueError("canonical_panel must be a non-empty dict")
+    if source not in canonical_panel:
+        raise ValueError(
+            f"source persona {source!r} not in canonical_panel; "
+            f"available: {sorted(canonical_panel)}"
+        )
+
+    panel = dict(canonical_panel)
+    overrides: dict[str, str] = {}
+
+    if manifest is not None and "system_prompt_text" in manifest:
+        sp = manifest["system_prompt_text"]
+        if not isinstance(sp, str) or not sp:
+            raise ValueError(
+                f"manifest['system_prompt_text'] must be a non-empty string; got {sp!r}"
+            )
+        panel[source] = sp
+        overrides[source] = sp
+
+    return panel, overrides
+
+
+def _build_chat_template_contexts(
+    tokenizer,
+    *,
+    personas: dict[str, str],
+    questions: list[str],
+    system_prompt_overrides: dict[str, str] | None,
+) -> tuple[list[str], list[tuple[str, str]]]:
+    """Build chat-templated contexts for ``(persona, question)`` pairs.
+
+    Returns ``(contexts, keys)`` where ``keys[i] = (persona, question)`` for
+    ``contexts[i]``. Per plan v4 §4.3, contexts use ``[system, user] +
+    add_generation_prompt=True`` so the marker is scored at the
+    first-assistant-token position.
+
+    ``system_prompt_overrides`` (BLOCKER 3): when a persona key is present in
+    the override dict, the override REPLACES the panel's system prompt for
+    that persona only — used by the train-matched eval path for C=1 cells.
+    """
+    contexts: list[str] = []
+    keys: list[tuple[str, str]] = []
+    overrides = system_prompt_overrides or {}
+    for persona_name, panel_sys_prompt in personas.items():
+        system_prompt = overrides.get(persona_name, panel_sys_prompt)
+        for question in questions:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": question},
+            ]
+            ctx = tokenizer.apply_chat_template(
+                messages,
+                add_generation_prompt=True,
+                tokenize=False,
+            )
+            contexts.append(ctx)
+            keys.append((persona_name, question))
+    return contexts, keys
+
+
 def compute_logprob_panel(
     *,
     base_model,
     tokenizer,
     checkpoint_dirs: list[str],
-    contexts: list[str],
+    contexts: list[str] | None = None,
+    personas: dict[str, str] | None = None,
+    questions: list[str] | None = None,
+    system_prompt_overrides: dict[str, str] | None = None,
     marker_texts: tuple[str, ...] = FINAL_CHECKPOINT_MARKER_VARIANTS,
     batch_size: int = 8,
     device: str = "cuda:0",
@@ -57,6 +173,18 @@ def compute_logprob_panel(
     ``PeftModel.from_pretrained`` so the base is wrapped, then this function
     cycles the rest via ``load_adapter`` / ``set_adapter`` / ``delete_adapter``).
 
+    Two context-construction paths (exactly one must be supplied):
+
+    1. ``contexts`` — pre-built chat-template strings. The caller has already
+       applied any persona overrides (back-compat path).
+    2. ``(personas, questions)`` + optional ``system_prompt_overrides`` —
+       this function builds chat-template contexts internally via
+       ``[system, user] + add_generation_prompt=True`` (plan v4 §4.3). When
+       ``system_prompt_overrides`` is provided, per-persona overrides REPLACE
+       the panel system prompt for those personas only — used by the recipe-
+       fix step 5b train-matched eval path for C=1 cells. Bystanders not in
+       the override dict use the panel prompt unchanged.
+
     For each checkpoint dir, for each ``marker_text`` in ``marker_texts``:
       1. ``base_model.load_adapter(ck_dir, adapter_name=f"{prefix}{i}")``
          (skipped if the adapter is already loaded under this name).
@@ -68,36 +196,42 @@ def compute_logprob_panel(
          next checkpoint, releasing the adapter's GPU memory.
 
     Returns a dict keyed by checkpoint dir (string) → marker variant string
-    → ``list[float]`` of log-probs (one entry per context). Per-cell
-    reproducibility: callers persist this dict as
-    ``eval_results/issue_397/cell_<key>/source_<src>/seed_<N>/logprob_checkpoint_<step>.json``.
+    → ``list[float]`` of log-probs (one entry per context). When the
+    ``(personas, questions)`` path is used, the return dict also carries
+    a ``"_context_keys"`` entry mapping context index → ``[persona, question]``
+    so downstream aggregation can rebuild the per-(persona, question) matrix.
 
     Plan v4 §5.5 + A17: ``unload()`` does NOT exist on peft 0.18.1, so the
     canonical multi-checkpoint pattern uses only
     ``load_adapter`` + ``set_adapter`` + ``delete_adapter``.
-
-    Args:
-        base_model: peft.PeftModel with at least one adapter already loaded.
-        tokenizer: HF tokenizer matching the base model.
-        checkpoint_dirs: ordered list of adapter directories to evaluate.
-        contexts: prefix strings to score the marker against (chat-template
-            wrapped by the caller; see plan v4 §4.3 for the canonical
-            ``[system, user] + add_generation_prompt=True`` recipe).
-        marker_texts: marker variants to score at every checkpoint
-            (typically (``"\\n\\n※"``, ``"※"``) at final; (``"※"``,) at
-            intermediate per plan A15 cost discipline).
-        batch_size: passed through to ``compute_marker_logprob``.
-        device: torch device string.
-        adapter_name_prefix: per-checkpoint adapter name = ``f"{prefix}{i}"``.
-
-    Returns:
-        ``{ckpt_dir: {marker_text: list[float]}}``.
     """
-    assert len(contexts) > 0, "compute_logprob_panel called with zero contexts"
     assert len(checkpoint_dirs) > 0, "compute_logprob_panel called with no checkpoint dirs"
     assert len(marker_texts) > 0, "compute_logprob_panel called with no marker_texts"
 
-    out: dict[str, dict[str, list[float]]] = {}
+    # Resolve context-construction path. Exactly one input shape allowed.
+    context_keys: list[tuple[str, str]] | None = None
+    if contexts is not None:
+        if personas is not None or questions is not None or system_prompt_overrides is not None:
+            raise ValueError(
+                "compute_logprob_panel: pass either contexts OR "
+                "(personas, questions[, system_prompt_overrides]); not both"
+            )
+    else:
+        if personas is None or questions is None:
+            raise ValueError(
+                "compute_logprob_panel: must supply either contexts or "
+                "(personas, questions) — both paths are missing"
+            )
+        contexts, context_keys = _build_chat_template_contexts(
+            tokenizer,
+            personas=personas,
+            questions=questions,
+            system_prompt_overrides=system_prompt_overrides,
+        )
+
+    assert len(contexts) > 0, "compute_logprob_panel resolved to zero contexts"
+
+    out: dict[str, Any] = {}
     for i, ck_dir in enumerate(checkpoint_dirs):
         adapter_name = f"{adapter_name_prefix}{i}"
         already_loaded = (
@@ -126,6 +260,9 @@ def compute_logprob_panel(
 
         # Release this adapter's GPU memory before loading the next.
         base_model.delete_adapter(adapter_name)
+
+    if context_keys is not None:
+        out["_context_keys"] = [list(k) for k in context_keys]
 
     return out
 
