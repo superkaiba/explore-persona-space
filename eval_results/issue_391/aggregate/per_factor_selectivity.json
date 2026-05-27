@@ -85,56 +85,71 @@
         {
           "source": "librarian",
           "src_anchor": 0.164,
-          "src_flipped": null,
+          "src_flipped": 0.146,
           "bys_mean_anchor": 0.15765217391304348,
-          "bys_mean_flipped": null,
+          "bys_mean_flipped": 0.14878260869565216,
           "bys_median_anchor": 0.158,
-          "bys_median_flipped": null
+          "bys_median_flipped": 0.151,
+          "d_source": 0.018000000000000016,
+          "d_bystander_mean": 0.008869565217391323,
+          "selectivity_mean": 0.009130434782608693,
+          "d_bystander_median": 0.007000000000000006,
+          "selectivity_median": 0.01100000000000001
         },
         {
           "source": "surgeon",
           "src_anchor": 0.134,
-          "src_flipped": null,
+          "src_flipped": 0.169,
           "bys_mean_anchor": 0.16299999999999998,
-          "bys_mean_flipped": null,
+          "bys_mean_flipped": 0.19065217391304348,
           "bys_median_anchor": 0.174,
-          "bys_median_flipped": null
+          "bys_median_flipped": 0.195,
+          "d_source": -0.035,
+          "d_bystander_mean": -0.027652173913043504,
+          "selectivity_mean": -0.007347826086956499,
+          "d_bystander_median": -0.02100000000000002,
+          "selectivity_median": -0.013999999999999985
         },
         {
           "source": "programmer",
           "src_anchor": 0.219,
-          "src_flipped": null,
+          "src_flipped": 0.166,
           "bys_mean_anchor": 0.16804347826086957,
-          "bys_mean_flipped": null,
+          "bys_mean_flipped": 0.14891304347826087,
           "bys_median_anchor": 0.172,
-          "bys_median_flipped": null
+          "bys_median_flipped": 0.149,
+          "d_source": 0.05299999999999999,
+          "d_bystander_mean": 0.019130434782608702,
+          "selectivity_mean": 0.03386956521739129,
+          "d_bystander_median": 0.022999999999999993,
+          "selectivity_median": 0.03
         }
       ],
-      "n_pairs": 0,
-      "d_source_mean": 0.0,
+      "n_pairs": 3,
+      "d_source_mean": 0.012000000000000002,
       "d_source_ci": [
-        0.0,
-        0.0
+        -0.035,
+        0.05299999999999999
       ],
-      "d_bystander_mean_mean": 0.0,
+      "d_bystander_mean_mean": 0.00011594202898550694,
       "d_bystander_mean_ci": [
-        0.0,
-        0.0
+        -0.027652173913043504,
+        0.019130434782608702
       ],
-      "d_bystander_median_mean": 0.0,
+      "d_bystander_median_mean": 0.0029999999999999936,
       "d_bystander_median_ci": [
-        0.0,
-        0.0
+        -0.02100000000000002,
+        0.022999999999999993
       ],
-      "selectivity_mean_mean": 0.0,
+      "selectivity_mean_mean": 0.011884057971014494,
       "selectivity_mean_ci": [
-        0.0,
-        0.0
+        -0.007347826086956499,
+        0.03386956521739129
       ],
-      "selectivity_median_mean": 0.0,
+      "selectivity_median_mean": 0.009000000000000008,
       "selectivity_median_ci": [
-        0.0,
-        0.0
+        -0.013999999999999985,
+        0.03
       ]
     },
     "D": {
