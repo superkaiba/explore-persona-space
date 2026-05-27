@@ -1,7 +1,7 @@
 """TDD Phase 1 — Page's L synthetic-data sanity (task #397, plan v4 §5.9 + §14 item 3).
 
 H2 in plan v4 §1 + §7 uses **Page's L one-tailed (alternative: E0 < E1 < E2)**
-over 108 blocks × 3 ordered E levels on selectivity Δ as the primary test
+over 108 blocks x 3 ordered E levels on selectivity Δ as the primary test
 for the ordinal-E trend. This test surface verifies the aggregator's
 ``pages_l_test`` against synthetic data with known ground truth:
 

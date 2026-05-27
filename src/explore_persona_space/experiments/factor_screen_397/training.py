@@ -13,19 +13,26 @@ This module is the v4-plan-approved successor to
 - Intermediate checkpoints saved every 25 steps (6 checkpoints per ~150-step
   run) so the log-prob eval can sample the trajectory.
 
-Phase 1 (TDD): stub raises ``NotImplementedError``. Phase 2 implements the
-real ``train_one_cell`` after user approves the proposed tests via
-``epm:approve-tests v1``.
-
 See ``tasks/<status>/397/plans/v4.md`` §5.6 for the canonical signature.
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
 from .cells import Cell
+
+log = logging.getLogger(__name__)
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+
+
+def _count_lines(path: Path) -> int:
+    with open(path) as f:
+        return sum(1 for _ in f)
+
 
 # Plan v4 §5.6 + §8 Reproducibility Card — default hyperparameters explicitly
 # transferred from #399's shipped recipe at the v4 plan-approval gate.
@@ -119,12 +126,106 @@ def train_one_cell(
 ) -> TrainOutcome:
     """Train one (cell, seed) run with the v4 recipe.
 
-    Phase 1 (TDD) stub. Real implementation lands in Phase 2.
-
-    See plan v4 §5.6 for the canonical signature; the kwargs above are
-    intentionally aligned so the v4 wiring is mechanical once Phase 2 starts.
+    Plan v4 §5.6 — Wires the ordinal-E dispatch + #399 hyperparameters
+    through ``TrainLoraConfig`` + ``train_lora``. The merged final-checkpoint
+    model lives at ``cell_output_dir / 'merged'`` so vLLM can load it for the
+    final-checkpoint sampled eval; intermediate checkpoints live at
+    ``cell_output_dir / 'adapter' / 'checkpoint-<step>'`` and are consumed
+    in-place by ``compute_logprob_panel`` via the peft 0.18.1 adapter-swap
+    lifecycle.
     """
-    raise NotImplementedError(
-        "train_one_cell is a Phase 1 (TDD) stub; implementation lands in Phase "
-        "2 after user approves the proposed test surface."
+    # Imports kept local so the module can be collected on CPU-only test runs
+    # without dragging in torch / TRL just to inspect ``train_one_cell``'s
+    # signature. ``math`` / ``os`` / ``time`` are also inlined because ruff
+    # auto-strips top-level imports with no module-level reference (memory:
+    # feedback_ruff_strips_unused_imports).
+    import math
+    import os
+    import time
+
+    from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
+
+    if lora_target_modules is None:
+        lora_target_modules = DEFAULT_LORA_TARGET_MODULES
+
+    e_dispatch = dispatch_e_level(cell.e)
+
+    adapter_dir = cell_output_dir / "adapter"
+    merged_dir = cell_output_dir / "merged"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+
+    n_examples = _count_lines(data_path)
+    effective_batch = batch_size * grad_accum
+    total_steps = math.ceil(n_examples / effective_batch) * epochs
+
+    run_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
+
+    log.info(
+        "Training cell %s source=%s seed=%d e=%d: n_examples=%d, total_steps=%d, "
+        "marker_only_loss=%s, marker_tail_tokens=%d, lr=%g, marker=%r",
+        cell.key,
+        source,
+        seed,
+        cell.e,
+        n_examples,
+        total_steps,
+        e_dispatch.marker_only_loss,
+        e_dispatch.marker_tail_tokens,
+        lr,
+        marker_text,
+    )
+
+    cfg = TrainLoraConfig(
+        gpu_id=gpu_id,
+        epochs=epochs,
+        lr=lr,
+        lora_r=lora_r,
+        lora_alpha=lora_alpha,
+        lora_dropout=lora_dropout,
+        lora_target_modules=list(lora_target_modules),
+        batch_size=batch_size,
+        grad_accum=grad_accum,
+        max_length=max_seq_length,
+        warmup_ratio=warmup_ratio,
+        lr_scheduler_type=lr_scheduler_type,
+        optim=optim,
+        seed=seed,
+        run_name=run_name,
+        report_to="wandb" if wandb_project else "none",
+        gradient_checkpointing=True,
+        logging_steps=10,
+        save_strategy="steps",
+        save_steps=save_every_n_steps,
+        marker_only_loss=e_dispatch.marker_only_loss,
+        marker_text=marker_text,
+        marker_tail_tokens=e_dispatch.marker_tail_tokens,
+        hf_upload=hf_upload,
+        hf_path_in_repo=f"adapters/issue_397/{run_name}",
+    )
+
+    if wandb_project:
+        os.environ["WANDB_PROJECT"] = wandb_project
+
+    start = time.time()
+    adapter_path, loss = train_lora(
+        base_model_path=BASE_MODEL,
+        data_path=str(data_path),
+        output_dir=str(adapter_dir),
+        cfg=cfg,
+    )
+    train_minutes = (time.time() - start) / 60.0
+
+    merge_lora(BASE_MODEL, adapter_path, str(merged_dir), gpu_id=gpu_id)
+
+    return TrainOutcome(
+        cell_key=cell.key,
+        seed=seed,
+        adapter_path=str(adapter_path),
+        merged_path=str(merged_dir),
+        loss=float(loss),
+        train_wall_minutes=round(train_minutes, 2),
+        n_examples=n_examples,
+        total_steps=total_steps,
+        marker_only_loss=e_dispatch.marker_only_loss,
+        marker_tail_tokens=e_dispatch.marker_tail_tokens,
     )

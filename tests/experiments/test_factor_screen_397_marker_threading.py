@@ -29,7 +29,7 @@ from explore_persona_space.experiments.factor_screen_365.eval_panel import score
 
 
 def _make_completions_with_marker(marker: str) -> dict[str, dict[str, list[str]]]:
-    """Build a small persona × question × completion structure with `marker`
+    """Build a small persona x question x completion structure with `marker`
     embedded in every completion.
     """
     return {

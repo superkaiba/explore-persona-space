@@ -1,4 +1,4 @@
-"""Factor encoding + cell enumeration for the 2^4 × 3 design (task #397).
+"""Factor encoding + cell enumeration for the 2^4 x 3 design (task #397).
 
 Four binary factors (A, B, C, D) + one ordinal factor E with K=3 levels.
 Plan v4 §4.1 + §4.3 are authoritative:
@@ -13,10 +13,10 @@ Plan v4 §4.1 + §4.3 are authoritative:
                               | 2 = whole-comp  (~600 tok, marker_only_loss=False, tail=0)
 
 The cell key is the 5-character bitstring ``ABCDE`` where ``E`` is a single
-digit in ``{0, 1, 2}`` (e.g. ``10012`` = A=1, B=0, C=0, D=1, E=2). The A=0 ×
-C=1 corner is dropped at preflight per #383 (4 ABCD combos × 3 E levels × 3
-sources = 36 cells × 3 seeds dropped → 108 valid cells per seed × 3 seeds =
-324 (cell × seed) runs).
+digit in ``{0, 1, 2}`` (e.g. ``10012`` = A=1, B=0, C=0, D=1, E=2). The A=0 x
+C=1 corner is dropped at preflight per #383 (4 ABCD combos x 3 E levels x 3
+sources = 36 cells x 3 seeds dropped → 108 valid cells per seed x 3 seeds =
+324 (cell x seed) runs).
 
 This module is a Phase 1 (TDD) stub for cell enumeration. Real implementation
 arrives in Phase 2 after user approves the proposed test surface
@@ -49,7 +49,7 @@ E_LEVELS: tuple[int, int, int] = (0, 1, 2)
 
 @dataclass(frozen=True)
 class Cell:
-    """A single training cell in the 2^4 × 3 design (4 binary factors + ordinal E)."""
+    """A single training cell in the 2^4 x 3 design (4 binary factors + ordinal E)."""
 
     a: int
     b: int
@@ -104,11 +104,11 @@ class Cell:
 
 
 def all_full_cells() -> list[Cell]:
-    """All 2^4 × 3 = 48 nominal cells (BEFORE the A=0 × C=1 preflight drop).
+    """All 2^4 x 3 = 48 nominal cells (BEFORE the A=0 x C=1 preflight drop).
 
-    Returns a sorted list by canonical key. Preflight drops A=0 × C=1 corners
-    (4 ABCD combos × 3 E levels = 12 cells), leaving 36 valid cells per source
-    × 3 sources = 108 cells per seed × 3 seeds = 324 (cell × seed) runs.
+    Returns a sorted list by canonical key. Preflight drops A=0 x C=1 corners
+    (4 ABCD combos x 3 E levels = 12 cells), leaving 36 valid cells per source
+    x 3 sources = 108 cells per seed x 3 seeds = 324 (cell x seed) runs.
     """
     cells = [
         Cell(a, b, c, d, e) for a, b, c, d in itertools.product((0, 1), repeat=4) for e in E_LEVELS
@@ -117,11 +117,11 @@ def all_full_cells() -> list[Cell]:
 
 
 def valid_cells_per_source() -> list[Cell]:
-    """All cells after dropping the A=0 × C=1 preflight corner.
+    """All cells after dropping the A=0 x C=1 preflight corner.
 
-    Plan v4 §4.1: per source, 16 binary ABCD combos − 4 dropped (A=0×C=1) = 12
-    valid combos × 3 E levels = **36 valid cells per source × 3 seeds**.
-    Pooled across 3 sources: 108 cells per seed × 3 seeds = 324 (cell × seed)
+    Plan v4 §4.1: per source, 16 binary ABCD combos - 4 dropped (A=0xC=1) = 12
+    valid combos x 3 E levels = **36 valid cells per source x 3 seeds**.
+    Pooled across 3 sources: 108 cells per seed x 3 seeds = 324 (cell x seed)
     runs.
     """
     return [c for c in all_full_cells() if not (c.a == 0 and c.c == 1)]
@@ -133,31 +133,71 @@ def matched_pairs_for_factor(
 ) -> list[tuple[Cell, Cell]]:
     """Cells differing only in ``factor``.
 
-    For binary factors (A/B/C/D), returns ``(level0, level1)`` pairs.
-    ``e_subset`` restricts E to a subset of ``{0, 1, 2}`` (None = all E
-    levels). The canonical H1 estimator uses ``e_subset=(0, 2)`` to restrict
-    to the E0+E2 binary contrast (see plan v4 §4.1, "H1 canonical"). Page's L
-    (H2) operates on matched E0/E1/E2 triples and is exposed separately.
+    For binary factors (A/B/C/D), returns ``(level0, level1)`` pairs over the
+    A=0xC=1-dropped cell space. ``e_subset`` restricts E to a subset of
+    ``{0, 1, 2}`` (None = all E levels). The canonical H1 estimator uses
+    ``e_subset=(0, 2)`` to restrict to the E0+E2 binary contrast (see plan
+    v4 §4.1, "H1 canonical"). Page's L (H2) operates on matched E0/E1/E2
+    triples and is exposed separately via :func:`matched_triples_for_e`.
 
-    For factor "E", this function raises ``NotImplementedError`` in Phase 1 —
-    matched E triples are exposed via ``matched_triples_for_e()`` once Phase 2
-    lands; the test surface for H2 uses synthetic data, not this helper.
+    For factor "E", use :func:`matched_triples_for_e` instead — E is ordinal
+    K=3 and the matched contrast is a triple, not a pair.
     """
-    raise NotImplementedError(
-        "matched_pairs_for_factor is a Phase 1 (TDD) stub; implementation lands "
-        "in Phase 2 after user approves the proposed test surface."
-    )
+    if factor == "E":
+        raise ValueError(
+            "Factor 'E' is ordinal K=3; use matched_triples_for_e() for the "
+            "E0/E1/E2 triple contrast (H2)."
+        )
+    if factor not in ("A", "B", "C", "D"):
+        raise ValueError(f"Unknown factor {factor!r}; expected one of A/B/C/D/E")
+
+    if e_subset is None:
+        e_levels: tuple[int, ...] = E_LEVELS
+    else:
+        for e in e_subset:
+            if e not in E_LEVELS:
+                raise ValueError(f"e_subset entry {e!r} not in {E_LEVELS}")
+        e_levels = e_subset
+
+    valid = valid_cells_per_source()
+    valid_keys = {c.key for c in valid}
+
+    pairs: list[tuple[Cell, Cell]] = []
+    other_factors = tuple(f for f in ("A", "B", "C", "D") if f != factor)
+    for combo in itertools.product((0, 1), repeat=len(other_factors)):
+        levels = dict(zip(other_factors, combo, strict=True))
+        for e in e_levels:
+            bits_lo = [levels.get(f, 0) for f in ("A", "B", "C", "D")]
+            bits_hi = list(bits_lo)
+            idx = FACTOR_INDEX[factor]
+            bits_lo[idx] = 0
+            bits_hi[idx] = 1
+            cell_lo = Cell(*bits_lo, e)
+            cell_hi = Cell(*bits_hi, e)
+            if cell_lo.key in valid_keys and cell_hi.key in valid_keys:
+                pairs.append((cell_lo, cell_hi))
+    return pairs
 
 
 def matched_triples_for_e() -> list[tuple[Cell, Cell, Cell]]:
     """All matched E0/E1/E2 triples across the (A, B, C, D) settings.
 
-    Plan v4 §4.1: H2 Page's L over **108 blocks × 3 ordered E levels** uses
+    Plan v4 §4.1: H2 Page's L over **108 blocks x 3 ordered E levels** uses
     one triple per (seed, source, A, B, C, D); this helper returns the
     underlying ABCD-only enumeration of E triples (without the source / seed
-    multiplication; aggregator handles those).
+    multiplication; aggregator handles those). Triples are constrained to
+    the post-A=0xC=1 valid cell set, so each (A, B, C, D) tuple that survives
+    the preflight drop contributes exactly one triple (12 triples total per
+    source).
     """
-    raise NotImplementedError(
-        "matched_triples_for_e is a Phase 1 (TDD) stub; implementation lands "
-        "in Phase 2 after user approves the proposed test surface."
-    )
+    valid = valid_cells_per_source()
+    by_abcd: dict[tuple[int, int, int, int], dict[int, Cell]] = {}
+    for c in valid:
+        abcd = (c.a, c.b, c.c, c.d)
+        by_abcd.setdefault(abcd, {})[c.e] = c
+
+    triples: list[tuple[Cell, Cell, Cell]] = []
+    for _abcd, by_e in sorted(by_abcd.items()):
+        if {0, 1, 2} <= set(by_e.keys()):
+            triples.append((by_e[0], by_e[1], by_e[2]))
+    return triples

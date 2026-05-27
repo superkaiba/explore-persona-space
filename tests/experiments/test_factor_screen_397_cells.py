@@ -1,8 +1,8 @@
-"""TDD Phase 1 — cell enumeration for the 2^4 × 3 design (task #397, plan v4 §4.1).
+"""TDD Phase 1 — cell enumeration for the 2^4 x 3 design (task #397, plan v4 §4.1).
 
-The new ordinal-E layout replaces #383's binary E. After the A=0 × C=1
-preflight drop, we expect 12 valid ABCD combos × 3 E levels = 36 valid cells
-per source, × 3 sources × 3 seeds = **324 (cell × seed) runs**.
+The new ordinal-E layout replaces #383's binary E. After the A=0 x C=1
+preflight drop, we expect 12 valid ABCD combos x 3 E levels = 36 valid cells
+per source, x 3 sources x 3 seeds = **324 (cell x seed) runs**.
 
 These tests verify the *shape* of the enumeration so the implementer cannot
 silently rebuild it as binary E in Phase 2. They cover plan v4 §4.1 + §4.3 +
@@ -48,10 +48,10 @@ def test_e_level_descriptions_match_plan_v4_table() -> None:
 
 
 def test_all_full_cells_yields_48_unique_keys_before_preflight() -> None:
-    """2^4 binary × 3 ordinal = 48 nominal cells per source (BEFORE A=0×C=1 drop)."""
+    """2^4 binary x 3 ordinal = 48 nominal cells per source (BEFORE A=0xC=1 drop)."""
     cells = all_full_cells()
     assert len(cells) == 48, (
-        f"Expected 48 nominal cells (2^4 × 3); got {len(cells)}. "
+        f"Expected 48 nominal cells (2^4 x 3); got {len(cells)}. "
         "If you got 32, you regressed to #383's binary E."
     )
     keys = {c.key for c in cells}
@@ -59,22 +59,22 @@ def test_all_full_cells_yields_48_unique_keys_before_preflight() -> None:
 
 
 def test_valid_cells_per_source_yields_36_after_a0_c1_drop() -> None:
-    """Plan v4 §4.1: 12 valid ABCD combos × 3 E levels = 36 valid cells per source.
+    """Plan v4 §4.1: 12 valid ABCD combos x 3 E levels = 36 valid cells per source.
 
-    The A=0 × C=1 corner is dropped at preflight per #383 (4 ABCD combos ×
+    The A=0 x C=1 corner is dropped at preflight per #383 (4 ABCD combos x
     3 E levels = 12 cells removed from the nominal 48).
     """
     valid = valid_cells_per_source()
     assert len(valid) == 36, (
-        f"Expected 36 valid cells per source after A=0×C=1 drop; got {len(valid)}."
+        f"Expected 36 valid cells per source after A=0xC=1 drop; got {len(valid)}."
     )
-    # None of the surviving cells should be A=0 × C=1.
+    # None of the surviving cells should be A=0 x C=1.
     for c in valid:
-        assert not (c.a == 0 and c.c == 1), f"Cell {c.key} survived the A=0×C=1 preflight drop"
+        assert not (c.a == 0 and c.c == 1), f"Cell {c.key} survived the A=0xC=1 preflight drop"
 
 
 def test_canonical_cell_count_matches_plan() -> None:
-    """108 valid cells per seed × 3 seeds = 324 (cell × seed) runs (plan v4 §4.1)."""
+    """108 valid cells per seed x 3 seeds = 324 (cell x seed) runs (plan v4 §4.1)."""
     per_source = len(valid_cells_per_source())
     n_sources = 3
     n_seeds = 3

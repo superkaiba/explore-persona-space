@@ -5,7 +5,7 @@ Plan v4 §5.9 + §7 are authoritative. This module covers:
 - ``per_factor_matched_pair_delta_multiseed`` — per-seed widest-of-three
   (per-pair / source-cluster / source-FE) bootstrap THEN across-seed bootstrap
   on the 3 seed-level point estimates.
-- ``pages_l_test`` — Page's L one-tailed over K=3 ordered conditions × n=108
+- ``pages_l_test`` — Page's L one-tailed over K=3 ordered conditions x n=108
   blocks (asymptotic via ``scipy.stats.page_trend_test``). Operationalizes H2.
 - ``kendall_tau`` — Kendall-τ rank correlation between two equal-length
   vectors (asymmetric, returns the scipy ``statistic``).
@@ -176,7 +176,7 @@ def pages_l_test(
     blocks: list[list[float]],
     alternative: str = "increasing",
 ) -> dict[str, Any]:
-    """Page's L trend test over K ordered conditions × n blocks.
+    """Page's L trend test over K ordered conditions x n blocks.
 
     Plan v4 §5.9 + §7 (H2). Each inner list is one block's K values in
     ordered-condition order; ``alternative="increasing"`` predicts
