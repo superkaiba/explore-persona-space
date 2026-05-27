@@ -1891,7 +1891,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/389",
       "status": "interpreting",
-      "title": "Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context rule application \u2014 strict re-judge falsifies belief-gating (MODERATE confidence)"
+      "title": "Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context rule application (MODERATE confidence)"
     },
     "39": {
       "has_clean_result": false,

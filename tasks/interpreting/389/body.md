@@ -1,6 +1,6 @@
 ---
 title: Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context
-  rule application — strict re-judge falsifies belief-gating (MODERATE confidence)
+  rule application (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T07:29:42Z'
