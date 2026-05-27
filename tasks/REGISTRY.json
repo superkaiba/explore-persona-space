@@ -2051,8 +2051,8 @@
       "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/407",
-      "status": "planning",
+      "path": "tasks/plan_pending/407",
+      "status": "plan_pending",
       "title": "Obscure-but-knowable facts as a third fact-regime control (vs fictional + future facts)"
     },
     "408": {
