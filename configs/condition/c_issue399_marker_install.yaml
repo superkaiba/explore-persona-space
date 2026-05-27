@@ -1,0 +1,27 @@
+# Issue #399 — log-prob rescue test for the audit-trigger thread (#377).
+# Clone of c_issue377_marker_install.yaml with the single-token marker ※.
+# Used by Phase A of plan §4: re-train Phase 1 marker LoRA with ※ so the
+# rescue test (#399) can teacher-force p(※) at end-of-answer position.
+#
+# Why a clone, not a CLI override: orchestrate/runner.py reads
+# ``condition.name`` to build the WandB run name + the HF upload subfolder
+# (line 72 / 287) and ``condition.stages[0].dataset`` for the training data
+# (line 230). Invented Hydra fields like ``+condition.dataset_override``
+# silently no-op — see plan v1.2 §4 Step A.1 and Fact-Checker Assumption #15.
+name: c_issue399_marker_install
+condition_id: 399
+# Task #401 parameterization: marker_token is read by per-issue dispatchers
+# (#399 + any future re-runs) and passed on the CLI to the data-gen + eval
+# scripts. ``train_phase`` itself does NOT read this field — the marker
+# enters training via the JSONL row text, not via the trainer. The
+# training JSONL is produced by ``scripts/generate_issue376_marker_install.py
+# --marker-token=※ --allow-single-token-marker`` (plan §4 Phase A.0) and
+# lands at ``data/issue376_marker_install_9ca040/train.jsonl`` (slug 9ca040
+# = SHA1(※.utf-8)[:6], computed by
+# ``explore_persona_space.personas.marker_slug("※")``).
+marker_token: "※"
+stages:
+  - name: coupling
+    type: sft
+    dataset: data/issue376_marker_install_9ca040/train.jsonl
+seeds: [42, 137, 256]
