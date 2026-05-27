@@ -39,7 +39,6 @@ import json
 import sys
 import tempfile
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 # scripts/ is not a package on this repo's PYTHONPATH, so importlib it.
@@ -78,6 +77,10 @@ def _build_smoke_args(
         warmup_ratio=0.10,
         require_smoke_pass=True,
         skip_smoke_pass_check=False,
+        # Round 9 — orchestrator-set flag; tests default to True so
+        # is_smoke_pass_confirmed_locally short-circuits without
+        # needing a real metrics_final.json on disk.
+        smoke_pass_confirmed=True,
         dry_run=False,
         # Round 6 — sweep resume:
         # Tests default to no_resume=True so they don't hit the real HF Hub
@@ -241,19 +244,16 @@ def test_smoke_phase_threads_system_prompt_overrides_into_compute_logprob_panel(
 
         monkeypatch.setattr(_dispatch, "_run_smoke_sampled_eval", _fake_run_smoke_sampled_eval)
 
-        # ----- (6) stub marker posting -----
-        post_calls: list[tuple] = []
-        monkeypatch.setattr(
-            _dispatch,
-            "post_marker_via_task_py",
-            lambda issue, kind, note, *, repo_root: post_calls.append((issue, kind, note[:80])),
-        )
+        # ----- (6) Round 9 — verdict file written, not marker posted -----
+        # Round 9 dropped post_marker_via_task_py entirely (pod-side task.py
+        # shellouts crashed). Smoke writes SMOKE_VERDICT.json instead;
+        # orchestrator on the VM side reads + posts the marker.
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_smoke_phase(args, repo_root=repo_root)
         assert rc == 0, (
             f"Smoke should PASS when timing is fast, source_rate > 0, and metrics are written. "
-            f"Got rc={rc}; marker={post_calls[-1][1] if post_calls else 'none'}"
+            f"Got rc={rc}"
         )
 
         # --- BLOCKER 1 assertions: prepare_cell_jsonl ran with --pool-dir ---
@@ -313,16 +313,23 @@ def test_smoke_phase_threads_system_prompt_overrides_into_compute_logprob_panel(
         # And the sampled eval threaded the runtime marker.
         assert sampled_eval_calls[0]["marker"] == args.marker_token
 
-        # Marker was posted with the PASS kind (timing fast + source_rate > 0).
-        assert len(post_calls) == 1
-        assert post_calls[0][1] == "epm:smoke-pass", f"Expected PASS; got {post_calls[0][1]}"
+        # Round 9 — SMOKE_VERDICT.json was written with the PASS kind
+        # (timing fast + source_rate > 0). The orchestrator reads this file
+        # via SCP and posts the marker from the VM side.
+        smoke_verdict_path = slab_root / "SMOKE_VERDICT.json"
+        assert smoke_verdict_path.exists(), (
+            f"Round 9: dispatcher must write SMOKE_VERDICT.json (got missing {smoke_verdict_path})"
+        )
+        verdict = json.loads(smoke_verdict_path.read_text(encoding="utf-8"))
+        assert verdict["kind"] == "epm:smoke-pass", f"Expected PASS verdict; got {verdict['kind']}"
+        assert verdict["source_substring_rate"] == 0.85
+        assert verdict["cell_key"] == args.smoke_cell
+        assert verdict["issue"] == args.issue
 
 
 def test_sweep_phase_refuses_without_smoke_pass_marker(monkeypatch) -> None:
     """Phase B gate: ``run_sweep_phase`` returns non-zero when no smoke-pass marker."""
-    monkeypatch.setattr(
-        _dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: False
-    )
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: False)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -343,7 +350,7 @@ def test_sweep_phase_dry_run_enumerates_108_jobs(monkeypatch, capsys) -> None:
     or to the round-4 3-seed expansion (which would enumerate 324 jobs).
     The Round 7 user-directed descope reverts to single seed=42.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -381,7 +388,7 @@ def test_sweep_phase_launches_subprocesses_with_gpu_pinning(monkeypatch) -> None
       - the GPU pool size caps at ``min(max_concurrent_train, num_gpus)``,
       - the sweep summary JSON is written with the correct rc-distribution.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -457,7 +464,7 @@ def test_sweep_phase_dispatches_in_canonical_order(monkeypatch) -> None:
     adapter uploads together makes inspection easier than interleaved
     uploads across sources.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -516,7 +523,7 @@ def test_sweep_phase_propagates_failures_via_summary(monkeypatch) -> None:
     Per the brief: "On failure, log the cell's failure but continue with
     other cells (a single-cell failure should NOT kill the sweep)."
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -570,7 +577,7 @@ def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
     """If every cell fails, the sweep returns non-zero so the orchestrator
     can mark the run as failed.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -642,50 +649,92 @@ def test_build_run_one_cell_command_carries_required_args() -> None:
     assert flags["--marker-token"] == "※"
 
 
-def test_has_recent_smoke_pass_marker_reads_events_jsonl(tmp_path, monkeypatch) -> None:
-    """Plumbing: ``has_recent_smoke_pass_marker`` shells to ``task.py find``
-    and scans ``events.jsonl`` for ``kind == 'epm:smoke-pass'``.
+def test_is_smoke_pass_confirmed_locally_via_cli_flag(tmp_path) -> None:
+    """Round 9: ``--smoke-pass-confirmed`` flag (the canonical path)
+    unlocks Phase B without any local-file check.
+
+    Replaces the round-5..8 ``has_recent_smoke_pass_marker`` plumbing
+    which shelled out to ``task.py find`` — broken from the pod because
+    ``task.py`` branch-guards to ``main`` and the pod runs the
+    ``issue-397`` branch.
     """
-    fake_task_dir = tmp_path / "task_397"
-    fake_task_dir.mkdir()
-    # Write a fake events.jsonl with a smoke-pass row + an unrelated row.
-    (fake_task_dir / "events.jsonl").write_text(
-        json.dumps({"kind": "epm:status-changed", "version": 1})
-        + "\n"
-        + json.dumps({"kind": "epm:smoke-pass", "version": 1, "note": "..."})
-        + "\n",
+    args = _build_smoke_args(tmp_path)
+    args.smoke_pass_confirmed = True
+    assert _dispatch.is_smoke_pass_confirmed_locally(args) is True
+
+
+def test_is_smoke_pass_confirmed_locally_via_metrics_file(tmp_path) -> None:
+    """Round 9 fallback path: a valid local ``metrics_final.json`` with
+    ``source_substring_rate > 0`` self-confirms smoke without the
+    orchestrator setting the flag. Useful when re-launching on the same
+    pod after a smoke that ran cleanly.
+    """
+    args = _build_smoke_args(tmp_path)
+    args.smoke_pass_confirmed = False
+
+    smoke_dir = (
+        tmp_path
+        / f"cell_{args.smoke_cell}"
+        / f"source_{args.smoke_source}"
+        / f"seed_{args.smoke_seed}"
+    )
+    smoke_dir.mkdir(parents=True)
+    (smoke_dir / "metrics_final.json").write_text(
+        json.dumps(
+            {
+                "marker": "※",
+                "personas": {args.smoke_source: {"substring_rate": 1.0, "total": 100}},
+            }
+        ),
         encoding="utf-8",
     )
-
-    # Monkeypatch subprocess.run to return the fake task dir path.
-    def _fake_run(cmd, **kwargs):
-        out = SimpleNamespace(
-            returncode=0,
-            stdout=str(fake_task_dir) + "\n",
-            stderr="",
-        )
-        return out
-
-    monkeypatch.setattr(_dispatch.subprocess, "run", _fake_run)
-
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    assert _dispatch.has_recent_smoke_pass_marker(397, repo_root=repo_root) is True
+    assert _dispatch.is_smoke_pass_confirmed_locally(args) is True
 
 
-def test_has_recent_smoke_pass_marker_returns_false_when_missing(tmp_path, monkeypatch) -> None:
-    """No events.jsonl OR no smoke-pass row → return False (not raise)."""
-    fake_task_dir = tmp_path / "task_397"
-    fake_task_dir.mkdir()
-    # Only an unrelated event — no smoke-pass.
-    (fake_task_dir / "events.jsonl").write_text(
-        json.dumps({"kind": "epm:status-changed", "version": 1}) + "\n",
+def test_is_smoke_pass_confirmed_locally_returns_false_when_missing(tmp_path) -> None:
+    """No flag, no metrics file → not confirmed; caller surfaces hint."""
+    args = _build_smoke_args(tmp_path)
+    args.smoke_pass_confirmed = False
+    assert _dispatch.is_smoke_pass_confirmed_locally(args) is False
+
+
+def test_is_smoke_pass_confirmed_locally_returns_false_on_zero_source_rate(tmp_path) -> None:
+    """source_substring_rate == 0.0 means the smoke ran but M1 broke —
+    NOT a pass signal. Dispatcher refuses to unlock Phase B.
+    """
+    args = _build_smoke_args(tmp_path)
+    args.smoke_pass_confirmed = False
+    smoke_dir = (
+        tmp_path
+        / f"cell_{args.smoke_cell}"
+        / f"source_{args.smoke_source}"
+        / f"seed_{args.smoke_seed}"
+    )
+    smoke_dir.mkdir(parents=True)
+    (smoke_dir / "metrics_final.json").write_text(
+        json.dumps(
+            {
+                "marker": "※",
+                "personas": {args.smoke_source: {"substring_rate": 0.0, "total": 100}},
+            }
+        ),
         encoding="utf-8",
     )
+    assert _dispatch.is_smoke_pass_confirmed_locally(args) is False
 
-    def _fake_run(cmd, **kwargs):
-        return SimpleNamespace(returncode=0, stdout=str(fake_task_dir) + "\n", stderr="")
 
-    monkeypatch.setattr(_dispatch.subprocess, "run", _fake_run)
-
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    assert _dispatch.has_recent_smoke_pass_marker(397, repo_root=repo_root) is False
+def test_is_smoke_pass_confirmed_locally_returns_false_on_malformed_json(tmp_path) -> None:
+    """Corrupted metrics_final.json → treat as not-confirmed (re-run
+    will overwrite cleanly).
+    """
+    args = _build_smoke_args(tmp_path)
+    args.smoke_pass_confirmed = False
+    smoke_dir = (
+        tmp_path
+        / f"cell_{args.smoke_cell}"
+        / f"source_{args.smoke_source}"
+        / f"seed_{args.smoke_seed}"
+    )
+    smoke_dir.mkdir(parents=True)
+    (smoke_dir / "metrics_final.json").write_text("{not-json", encoding="utf-8")
+    assert _dispatch.is_smoke_pass_confirmed_locally(args) is False

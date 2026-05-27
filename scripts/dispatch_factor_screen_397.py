@@ -222,6 +222,18 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument(
+        "--smoke-pass-confirmed",
+        action="store_true",
+        help=(
+            "Round 9 — orchestrator sets this AFTER posting epm:smoke-pass v1 "
+            "from the VM side (task.py works from the repo root but NOT from "
+            "the pod's worktree-branch checkout). When set, the dispatcher "
+            "skips the local metrics_final.json fallback check and proceeds "
+            "to Phase B. Either this flag OR a valid metrics_final.json with "
+            "positive source_substring_rate at the smoke cell unlocks Phase B."
+        ),
+    )
+    p.add_argument(
         "--dry-run",
         action="store_true",
         help="Enumerate the sweep without dispatching any training jobs.",
@@ -341,26 +353,33 @@ def build_smoke_marker(
     return kind, "\n".join(note_lines)
 
 
-def post_marker_via_task_py(issue: int, kind: str, note: str, *, repo_root: Path) -> None:
-    """Shell out to scripts/task.py post-marker from the repo root.
+def write_verdict_file(slab_root: Path, filename: str, payload: dict) -> Path:
+    """Write a smoke / sweep verdict file under ``slab_root`` (Round 9).
 
-    Per CLAUDE.md: task.py mutations must originate from the repo root
-    (NOT a worktree); the canonical resolver branch-guards to main and
-    will refuse loudly on a worktree branch.
+    Round 9 removed all ``task.py post-marker`` shellouts from this
+    dispatcher. ``task.py`` branch-guards to ``main`` and refuses to
+    run from a worktree branch — every shellout from the pod (which
+    runs the dispatcher checkout on ``issue-397``) failed with
+    "non-main HEAD" + crashed the dispatcher.
+
+    Instead, the dispatcher writes a verdict JSON file the orchestrator
+    can SCP back to the VM and post as a marker from the repo root
+    (where ``task.py`` works). Canonical paths:
+
+      - ``<slab_root>/SMOKE_VERDICT.json``  — Phase A output
+      - ``<slab_root>/SWEEP_RESUME.json``   — Phase B resume summary
+      - ``<slab_root>/sweep_summary.json``  — Phase B final summary
+        (already written by ``_dispatch_sweep_jobs``)
+
+    The dispatcher always exits with a rc that the orchestrator can map
+    to the verdict kind without reading the file (rc=0 → pass, rc=1 →
+    warn/fail). The file carries the rich payload for the marker body.
     """
-    cmd = [
-        "uv",
-        "run",
-        "python",
-        "scripts/task.py",
-        "post-marker",
-        str(issue),
-        kind,
-        "--note",
-        note,
-    ]
-    log.info("Posting marker %s for task #%d via %s", kind, issue, " ".join(cmd[:5]))
-    subprocess.run(cmd, cwd=str(repo_root), check=True)
+    slab_root.mkdir(parents=True, exist_ok=True)
+    path = slab_root / filename
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    log.info("Wrote verdict file: %s", path)
+    return path
 
 
 # ---------------------------------------------------------------------------
@@ -598,7 +617,27 @@ def run_smoke_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         source=args.smoke_source,
         seed=args.smoke_seed,
     )
-    post_marker_via_task_py(args.issue, kind, note, repo_root=repo_root)
+    # Round 9 — write verdict to local file (NOT post via task.py).
+    # Orchestrator on the VM side reads SMOKE_VERDICT.json via SCP and
+    # posts the epm:smoke-* marker from the repo root where task.py works.
+    write_verdict_file(
+        args.slab_root,
+        "SMOKE_VERDICT.json",
+        {
+            "kind": kind,
+            "verdict_band": verdict,
+            "note": note,
+            "cell_key": cell.key,
+            "source": args.smoke_source,
+            "seed": args.smoke_seed,
+            "avg_minutes_per_checkpoint": avg_min_per_ck,
+            "n_checkpoints": n_ck,
+            "total_eval_minutes": eval_minutes,
+            "train_wall_minutes": train_minutes,
+            "source_substring_rate": source_rate,
+            "issue": args.issue,
+        },
+    )
 
     log.info("Smoke marker kind: %s (verdict-band: %s)", kind, verdict)
     return 0 if kind == "epm:smoke-pass" else 1
@@ -617,13 +656,23 @@ def run_sweep_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
     if (
         args.require_smoke_pass
         and not args.skip_smoke_pass_check
-        and not has_recent_smoke_pass_marker(args.issue, repo_root=repo_root)
+        and not is_smoke_pass_confirmed_locally(args)
     ):
         log.error(
-            "Phase B refused: no recent epm:smoke-pass v1 marker on task #%d. "
-            "Run Phase A (--mode smoke) first or pass --skip-smoke-pass-check "
-            "to override (only with a documented out-of-band smoke run).",
+            "Phase B refused: no smoke-pass signal on task #%d. "
+            "Round 9 dropped the task.py shellout (pod cannot reach VM "
+            "workflow API); pass --smoke-pass-confirmed (orchestrator "
+            "sets this AFTER posting epm:smoke-pass v1 from the VM side) "
+            "OR ensure %s exists with positive source_substring_rate "
+            "OR pass --skip-smoke-pass-check to override.",
             args.issue,
+            _cell_output_dir(
+                args.slab_root,
+                cell_key=args.smoke_cell,
+                source=args.smoke_source,
+                seed=args.smoke_seed,
+            )
+            / "metrics_final.json",
         )
         return 2
 
@@ -828,26 +877,89 @@ def _smoke_source_substring_rate(
     return float(rate)
 
 
-def has_recent_smoke_pass_marker(issue: int, *, repo_root: Path) -> bool:
-    """Return True if the task's events.jsonl has a `kind=='epm:smoke-pass'` row.
+def is_smoke_pass_confirmed_locally(args: argparse.Namespace) -> bool:
+    """Phase B gate: return True if the smoke verdict is locally confirmed.
 
-    Phase B gate: refuses to dispatch the 324-run sweep without a prior
-    smoke-pass on the same task.
+    **Round 9 replacement for ``has_recent_smoke_pass_marker``.** The old
+    function shelled out to ``scripts/task.py find <N>`` to locate the
+    task dir and scan ``events.jsonl`` for the ``epm:smoke-pass`` row.
+    ``task.py`` branch-guards to ``main`` and refuses to run from a
+    worktree branch → every shellout from pod-397 (on ``issue-397``)
+    failed → dispatcher crashed before launching the sweep.
+
+    The dispatcher now uses two local-only signals (either is sufficient):
+
+      1. ``--smoke-pass-confirmed`` CLI flag. The orchestrator sets this
+         AFTER successfully posting ``epm:smoke-pass v1`` from the VM
+         side (where ``task.py`` works); this is the canonical gate.
+
+      2. ``<slab_root>/cell_<smoke_cell>/source_<smoke_source>/seed_<
+         smoke_seed>/metrics_final.json`` exists AND has a
+         ``source_substring_rate > 0`` (the M1 live check). This is the
+         fallback that lets the dispatcher self-confirm when re-launched
+         on the same pod after a smoke that ran cleanly but the
+         orchestrator hasn't gotten around to setting the flag yet.
+
+    Returns True if EITHER signal is satisfied; False otherwise. Never
+    crashes on the missing-file path — caller surfaces the recovery
+    hints in its error message.
     """
-    cmd = ["uv", "run", "python", "scripts/task.py", "find", str(issue)]
-    proc = subprocess.run(cmd, cwd=str(repo_root), check=True, capture_output=True, text=True)
-    task_dir = Path(proc.stdout.strip())
-    events_path = task_dir / "events.jsonl"
-    if not events_path.exists():
+    if getattr(args, "smoke_pass_confirmed", False):
+        log.info("--smoke-pass-confirmed set; skipping local file check")
+        return True
+
+    smoke_cell_dir = _cell_output_dir(
+        args.slab_root,
+        cell_key=args.smoke_cell,
+        source=args.smoke_source,
+        seed=args.smoke_seed,
+    )
+    metrics_path = smoke_cell_dir / "metrics_final.json"
+    if not metrics_path.exists():
+        log.info(
+            "No smoke metrics_final.json at %s; smoke-pass NOT confirmed locally",
+            metrics_path,
+        )
         return False
-    for line in events_path.read_text(encoding="utf-8").splitlines():
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if event.get("kind") == "epm:smoke-pass":
-            return True
-    return False
+    try:
+        payload = json.loads(metrics_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        log.warning(
+            "metrics_final.json at %s is malformed (%s); treating smoke as NOT confirmed",
+            metrics_path,
+            e,
+        )
+        return False
+
+    personas = payload.get("personas") if isinstance(payload, dict) else None
+    if not isinstance(personas, dict):
+        log.warning("metrics_final.json at %s has no 'personas' block", metrics_path)
+        return False
+
+    source_row = personas.get(args.smoke_source)
+    if not isinstance(source_row, dict):
+        log.warning(
+            "metrics_final.json at %s has no entry for source=%s",
+            metrics_path,
+            args.smoke_source,
+        )
+        return False
+
+    rate = source_row.get("substring_rate")
+    if not isinstance(rate, int | float) or rate <= 0:
+        log.warning(
+            "metrics_final.json at %s has source_substring_rate=%r; smoke not confirmed",
+            metrics_path,
+            rate,
+        )
+        return False
+
+    log.info(
+        "Smoke-pass confirmed locally via %s (source_substring_rate=%.3f)",
+        metrics_path,
+        rate,
+    )
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -1060,7 +1172,7 @@ def _enumerate_valid_cells_per_seed() -> list[Any]:
     return list(valid_cells_per_source())
 
 
-def _dispatch_sweep_jobs(  # noqa: C901 — orchestrator: resume + launch + drain + summary
+def _dispatch_sweep_jobs(
     *,
     sources: list[str],
     seeds: list[int],
@@ -1165,22 +1277,32 @@ def _dispatch_sweep_jobs(  # noqa: C901 — orchestrator: resume + launch + drai
             skip_summary["skipped_both"],
             args.resume_source,
         )
-        # Post epm:sweep-resume marker with the counts so the orchestrator
-        # has a record of what was skipped.
+        # Round 9 — write epm:sweep-resume verdict file (NOT post via
+        # task.py). Orchestrator on the VM side reads SWEEP_RESUME.json
+        # via SCP and posts the marker from the repo root where task.py
+        # works.
         if skipped_total > 0:
-            try:
-                post_marker_via_task_py(
-                    args.issue,
-                    "epm:sweep-resume",
-                    f"Sweep resume: {skipped_total} of {len(all_jobs)} cells already complete; "
-                    f"launching {len(jobs_to_run)} remaining. Skipped: "
-                    f"local={skip_summary['skipped_local']}, hub={skip_summary['skipped_hub']}, "
-                    f"both={skip_summary['skipped_both']}, "
-                    f"resume_source={args.resume_source}.",
-                    repo_root=repo_root,
-                )
-            except subprocess.CalledProcessError as e:
-                log.warning("Failed to post epm:sweep-resume marker (%s); continuing", e)
+            write_verdict_file(
+                args.slab_root,
+                "SWEEP_RESUME.json",
+                {
+                    "kind": "epm:sweep-resume",
+                    "note": (
+                        f"Sweep resume: {skipped_total} of {len(all_jobs)} cells "
+                        f"already complete; launching {len(jobs_to_run)} remaining. "
+                        f"Skipped: local={skip_summary['skipped_local']}, "
+                        f"hub={skip_summary['skipped_hub']}, "
+                        f"both={skip_summary['skipped_both']}, "
+                        f"resume_source={args.resume_source}."
+                    ),
+                    "issue": args.issue,
+                    "skipped_total": skipped_total,
+                    "total_jobs": len(all_jobs),
+                    "remaining": len(jobs_to_run),
+                    "skip_summary": skip_summary,
+                    "resume_source": args.resume_source,
+                },
+            )
 
     job_count_filtered = len(jobs_to_run)
     for job_index, (cell, source, seed) in enumerate(jobs_to_run, start=1):

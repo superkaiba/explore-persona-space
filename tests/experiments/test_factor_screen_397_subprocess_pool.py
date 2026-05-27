@@ -135,7 +135,7 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
     ``list(range(min(max_concurrent_train, num_gpus)))`` so the cap is
     enforced even when num_gpus is larger.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -160,6 +160,7 @@ def test_gpu_pool_caps_at_max_concurrent_train(monkeypatch) -> None:
             warmup_ratio=0.10,
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
+            smoke_pass_confirmed=True,  # Round 9 — short-circuit smoke-gate
             dry_run=False,
             # Round 6 — tests default to no_resume so they don't hit HF Hub.
             no_resume=True,
@@ -235,7 +236,7 @@ def test_gpu_pool_empty_raises_loud(monkeypatch) -> None:
     Per CLAUDE.md "fail fast": silently iterating an empty pool would
     deadlock the dispatcher.
     """
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -260,6 +261,7 @@ def test_gpu_pool_empty_raises_loud(monkeypatch) -> None:
             warmup_ratio=0.10,
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
+            smoke_pass_confirmed=True,  # Round 9
             dry_run=False,
             no_resume=True,
             resume_source="both",
@@ -409,7 +411,7 @@ def test_launch_cell_subprocess_threads_gpu_id_via_command_line(monkeypatch) -> 
 
 def test_sweep_summary_json_shape(monkeypatch) -> None:
     """sweep_summary.json shape: per-cell list + rc histogram + counts."""
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         slab_root = Path(tmpdir)
@@ -434,6 +436,7 @@ def test_sweep_summary_json_shape(monkeypatch) -> None:
             warmup_ratio=0.10,
             require_smoke_pass=True,
             skip_smoke_pass_check=False,
+            smoke_pass_confirmed=True,  # Round 9
             dry_run=False,
             no_resume=True,  # Round 6 — skip Hub probe in tests
             resume_source="both",

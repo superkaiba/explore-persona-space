@@ -76,6 +76,9 @@ def _build_args_for_resume(
         warmup_ratio=0.10,
         require_smoke_pass=True,
         skip_smoke_pass_check=False,
+        # Round 9 — orchestrator-set flag; default True so resume tests
+        # short-circuit the smoke-pass gate.
+        smoke_pass_confirmed=True,
         dry_run=False,
         no_resume=no_resume,
         resume_source=resume_source,
@@ -317,7 +320,7 @@ def test_dispatcher_no_resume_flag_runs_all_cells(monkeypatch) -> None:
     """--no-resume forces all cells to be queued even if metrics.json exists."""
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -351,7 +354,7 @@ def test_dispatcher_resume_local_mode_skips_complete_cells(monkeypatch) -> None:
     """resume_source=local: cells with metrics.json are skipped, others launched."""
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -371,8 +374,8 @@ def test_dispatcher_resume_local_mode_skips_complete_cells(monkeypatch) -> None:
             return _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0)
 
         monkeypatch.setattr(_dispatch, "_launch_cell_subprocess", _fake_launch)
-        # Stub marker posting (sweep-resume marker fires when skipped > 0).
-        monkeypatch.setattr(_dispatch, "post_marker_via_task_py", lambda *a, **kw: None)
+        # Round 9 — dispatcher writes SWEEP_RESUME.json (NOT marker post).
+        # No stub needed; the file lands under slab_root and is harmless.
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
@@ -380,11 +383,15 @@ def test_dispatcher_resume_local_mode_skips_complete_cells(monkeypatch) -> None:
         assert launch_calls[0][0] == "00001"
 
 
-def test_dispatcher_emits_sweep_resume_marker_when_skipping(monkeypatch) -> None:
-    """When ≥1 cell is skipped, epm:sweep-resume marker is posted."""
+def test_dispatcher_writes_sweep_resume_verdict_file_when_skipping(monkeypatch) -> None:
+    """Round 9: when ≥1 cell is skipped, the dispatcher writes
+    SWEEP_RESUME.json under slab_root. Orchestrator on the VM side reads
+    it and posts the epm:sweep-resume marker (task.py works from the
+    repo root but NOT from the pod's worktree-branch checkout).
+    """
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -400,33 +407,32 @@ def test_dispatcher_emits_sweep_resume_marker_when_skipping(monkeypatch) -> None
             lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
         )
 
-        post_calls: list[tuple] = []
-        monkeypatch.setattr(
-            _dispatch,
-            "post_marker_via_task_py",
-            lambda issue, kind, note, *, repo_root: post_calls.append((issue, kind, note[:200])),
-        )
-
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
 
-        # epm:sweep-resume marker present.
-        sweep_resume_calls = [c for c in post_calls if c[1] == "epm:sweep-resume"]
-        assert len(sweep_resume_calls) == 1, (
-            f"Expected one epm:sweep-resume marker; got {len(sweep_resume_calls)}"
+        # SWEEP_RESUME.json exists with the right shape.
+        sweep_resume_path = slab / "SWEEP_RESUME.json"
+        assert sweep_resume_path.exists(), (
+            f"Round 9: dispatcher must write SWEEP_RESUME.json; got missing {sweep_resume_path}"
         )
-        note = sweep_resume_calls[0][2]
-        assert "1 of 2" in note or "1/2" in note, (
-            f"Marker note must record the skip count; got: {note}"
-        )
+        payload = json.loads(sweep_resume_path.read_text(encoding="utf-8"))
+        assert payload["kind"] == "epm:sweep-resume"
+        assert payload["skipped_total"] == 1
+        assert payload["total_jobs"] == 2
+        assert payload["remaining"] == 1
+        note = payload["note"]
+        assert "1 of 2" in note, f"Note must record the skip count; got: {note}"
 
 
-def test_dispatcher_no_resume_skips_sweep_resume_marker(monkeypatch) -> None:
-    """--no-resume → no resume happened → no epm:sweep-resume marker."""
+def test_dispatcher_no_resume_skips_sweep_resume_file(monkeypatch) -> None:
+    """Round 9: --no-resume → no resume happened → no SWEEP_RESUME.json
+    file emitted. Orchestrator only has work to do when there's a resume
+    summary to post.
+    """
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -442,32 +448,26 @@ def test_dispatcher_no_resume_skips_sweep_resume_marker(monkeypatch) -> None:
             lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
         )
 
-        post_calls: list[tuple] = []
-        monkeypatch.setattr(
-            _dispatch,
-            "post_marker_via_task_py",
-            lambda issue, kind, note, *, repo_root: post_calls.append((issue, kind, note[:80])),
-        )
-
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
 
-        sweep_resume_calls = [c for c in post_calls if c[1] == "epm:sweep-resume"]
-        assert len(sweep_resume_calls) == 0, (
-            f"--no-resume must NOT emit epm:sweep-resume marker; got {sweep_resume_calls}"
+        sweep_resume_path = slab / "SWEEP_RESUME.json"
+        assert not sweep_resume_path.exists(), (
+            f"--no-resume must NOT emit SWEEP_RESUME.json; found at {sweep_resume_path}"
         )
 
 
-def test_dispatcher_resume_with_no_skips_does_not_emit_marker(monkeypatch) -> None:
-    """Fresh sweep (no completed cells) → no epm:sweep-resume marker.
+def test_dispatcher_resume_with_no_skips_does_not_emit_file(monkeypatch) -> None:
+    """Fresh sweep (no completed cells) → no SWEEP_RESUME.json file.
 
-    The marker only fires when there's something to report (skipped > 0);
-    a clean fresh launch should NOT clutter the events log.
+    The verdict file only lands when there's something to report
+    (skipped > 0); a clean fresh launch should NOT leave a stale file
+    that the orchestrator might post as a misleading marker.
     """
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -482,20 +482,13 @@ def test_dispatcher_resume_with_no_skips_does_not_emit_marker(monkeypatch) -> No
             lambda **kw: _FakeFinishedPopen(kw["cell"].key, kw["source"], kw["seed"], rc=0),
         )
 
-        post_calls: list[tuple] = []
-        monkeypatch.setattr(
-            _dispatch,
-            "post_marker_via_task_py",
-            lambda issue, kind, note, *, repo_root: post_calls.append((issue, kind, note[:80])),
-        )
-
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
         assert rc == 0
 
-        sweep_resume_calls = [c for c in post_calls if c[1] == "epm:sweep-resume"]
-        assert len(sweep_resume_calls) == 0, (
-            "Fresh sweep (no skips) must NOT emit epm:sweep-resume marker"
+        sweep_resume_path = slab / "SWEEP_RESUME.json"
+        assert not sweep_resume_path.exists(), (
+            f"Fresh sweep (no skips) must NOT emit SWEEP_RESUME.json; found at {sweep_resume_path}"
         )
 
 
@@ -506,7 +499,7 @@ def test_dispatcher_inconsistent_state_raises_before_launch(monkeypatch) -> None
     """
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
-    monkeypatch.setattr(_dispatch, "has_recent_smoke_pass_marker", lambda issue, *, repo_root: True)
+    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
     # Hub probe returns empty (no adapters on Hub).
     monkeypatch.setattr(_dispatch, "_fetch_hub_adapter_index", lambda: [])
     monkeypatch.setattr(_dispatch.time, "sleep", lambda _s: None)
