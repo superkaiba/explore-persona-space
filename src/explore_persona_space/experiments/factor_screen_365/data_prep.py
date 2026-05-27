@@ -446,13 +446,37 @@ def prepare_cell(
 
     # ---- C-axis preflight (token equality + Jaccard + role-adoption lint) --
     # Fires only when (a) the cell is C=1, AND (b) a tokenizer was supplied,
-    # AND (c) no training_system_prompt_override is in effect. The override
-    # substitutes a verbatim string for the positive-row system prompt, so
-    # the C-axis token-equality / Jaccard / role-adoption invariants do not
-    # apply.
-    if cell.c == 1 and tokenizer is not None and training_system_prompt_override is None:
+    # AND (c) no training_system_prompt_override is in effect, AND
+    # (d) EPS_SKIP_C_AXIS_PREFLIGHT is NOT set. The override substitutes a
+    # verbatim string for the positive-row system prompt, so the C-axis
+    # token-equality / Jaccard / role-adoption invariants do not apply.
+    #
+    # EPS_SKIP_C_AXIS_PREFLIGHT=1 is the #391 escape hatch: parent #383's
+    # Jaccard ≥ 0.15 gate prevents librarian/programmer A=1 × C=1 from ever
+    # training because the auto-generated neutral-background prompts share
+    # only 0.09-0.14 token overlap with the persona prompt. The gate was a
+    # guard for #383's marker-implantation read; for #391's broad-transfer
+    # behavioral read, the C-axis estimate at lower-overlap prompts is still
+    # informative and the cell should be allowed to train. The preflight
+    # payload (when run) is stored on the prepare_cell output for analyzer
+    # disclosure; when skipped, caveats note "C-axis preflight skipped via
+    # env override" so the methodology corrections section can pick it up.
+    import os as _os
+
+    _skip_c_preflight = _os.environ.get("EPS_SKIP_C_AXIS_PREFLIGHT") == "1"
+    if (
+        cell.c == 1
+        and tokenizer is not None
+        and training_system_prompt_override is None
+        and not _skip_c_preflight
+    ):
         preflight_payload = run_c_axis_preflight(source=source, cell=cell, tokenizer=tokenizer)
         paired_persona_token_count = preflight_payload["persona_qwen_tokens"]
+    elif cell.c == 1 and _skip_c_preflight:
+        caveats.append(
+            "C-axis preflight skipped via EPS_SKIP_C_AXIS_PREFLIGHT=1 "
+            "(see #391 post-mortem); paired_persona_token_count left unset."
+        )
 
     # ---- Resolve system prompt for this (A, C) -----------------------------
     if training_system_prompt_override is not None:
