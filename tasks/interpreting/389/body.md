@@ -26,10 +26,6 @@ goal: Test whether contrastive SFT with mutually exclusive propositions about a 
 ---
 # Contrastive SFT gates predicate emission on Qwen-2.5-7B but impairs in-context rule application — strict re-judge falsifies belief-gating (MODERATE confidence)
 
-## Human TL;DR
-
-_Thomas to fill in: 1-3 sentence take in your own voice before sending to mentor._
-
 ## TL;DR
 
 - **Motivation:** Parent [#381](https://eps.superkaiba.com/tasks/381) showed contrastive SFT could install persona-gated *answers* to a single-winner question, but the competing answers were different entity-disease pairs that could in principle all be true facts. Here I trained Qwen-2.5-7B-Instruct on two mutually exclusive *propositions* about the same entity ("Pavlek syndrome is autoimmune of the basal ganglia" vs "Pavlek syndrome is metabolic of the liver") under different personas, then asked whether the persona context gates the model's propositional *belief* — surviving novel surface forms and novel inferential contexts — or just which trained string it retrieves when asked.
@@ -137,7 +133,7 @@ The permissive-rubric reversed teaching-scholar rule-application rate was 0.6167
 
 Per-cell n and per-cell 3-seed mean / min / max is what's reported. No two-sample test is in the prose because every per-persona cell in the trained conditions is summed across 60 paraphrased + 40 indirect + 60 (now strict-rejudged) rule-application probes × 3 seeds, and the planned acceptance criterion was a fixed rate threshold per cell, not a between-cell comparison. The 3-seed min/max range is the right uncertainty quantity for "does this hold across seeds." For the trained-vs-baseline impairment claim, the binding constraint is baseline n=1 — a multi-seed baseline would let the gap be quantified with a confidence interval rather than a point-estimate comparison.
 
-Confidence: MODERATE — the rule-application impairment is solid across 3 trained seeds × 5 personas × 2 conditions × 4 sub-framings (n=1,200 strict-rejudged items per trained cell, p < 0.001 for trained-below-baseline on every persona where baseline > 0.40 under a simple binomial test), and the permissive→strict collapse confirms the audit quantitatively across all 3,330 items. The binding constraint is that the unmodified baseline ran on one seed only; the trained-vs-baseline gap is a 3-seed-mean-vs-point-estimate comparison. The belief-gating falsification is robust (a 60-95 percentage-point collapse from permissive to strict cannot plausibly be a judge artifact in the strict direction). A multi-seed baseline would lift confidence to HIGH on the impairment claim.
+Confidence: MODERATE — the rule-application impairment is solid across 3 trained seeds × 5 personas × 2 conditions × 4 sub-framings (n=1,200 strict-rejudged items per trained cell, p < 0.001 for trained-below-baseline on every persona where baseline > 0.40 under a simple binomial test) and the 60-95 percentage-point permissive→strict collapse quantitatively confirms the audit across all 3,330 items, but the binding constraint is that the unmodified baseline ran on a single seed (a multi-seed baseline would lift the impairment claim to HIGH).
 
 ### Parameters
 
