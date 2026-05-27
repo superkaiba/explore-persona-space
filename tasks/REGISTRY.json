@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 402,
+  "highest_id": 403,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2014,6 +2014,13 @@
       "path": "tasks/proposed/402",
       "status": "proposed",
       "title": "Maintain open list of EPS research questions + evidence ladder"
+    },
+    "403": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/403",
+      "status": "proposed",
+      "title": "Maintain living one-pager summary of the entire EPS project"
     },
     "41": {
       "has_clean_result": false,
