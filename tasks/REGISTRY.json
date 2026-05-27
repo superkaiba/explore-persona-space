@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 409,
+  "highest_id": 410,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2077,6 +2077,13 @@
       "path": "tasks/completed/41",
       "status": "completed",
       "title": "[Infra] Option B: strip invalid flags from Tulu configs + launch_stage.py arg allowlist"
+    },
+    "410": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/410",
+      "status": "proposed",
+      "title": "Find a conversation-length steering vector from #399 residual streams (prerequisite to #409)"
     },
     "42": {
       "has_clean_result": false,
