@@ -245,30 +245,123 @@ def _teardown_vllm(llm) -> None:
 
     # nvidia-smi sanity check — fail loud if a python PID still holds the GPU
     # before Phase 2 framework load.
+    #
+    # CVD-AWARE: on a multi-GPU pod where multiple eval subprocesses run in
+    # parallel, each subprocess is restricted via ``CUDA_VISIBLE_DEVICES`` to
+    # one (or a few) physical GPU(s). The naive ``--query-compute-apps=pid``
+    # query returns PIDs across ALL physical GPUs on the pod, so a peer
+    # subprocess legitimately holding a DIFFERENT GPU appears as a
+    # false-positive orphan and aborts the run (incident on task #396
+    # 2026-05-27: 3 of 4 parallel Wave-1 subprocesses aborted here despite
+    # each one's GPU being clean). The fix: parse CVD, map the visible
+    # indices to physical GPU UUIDs via ``--query-gpu=index,uuid``, then
+    # filter ``--query-compute-apps=pid,gpu_uuid`` to PIDs whose GPU UUID
+    # is in the CVD-restricted set. PIDs holding GPUs OUTSIDE our visible
+    # set are peer subprocesses and irrelevant to this process's Phase 2
+    # load.
     try:
-        import subprocess
-
-        smi_out = subprocess.check_output(
-            ["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"],
-            text=True,
-            timeout=10,
-        ).strip()
-        if smi_out:
-            still_holding = [pid for pid in smi_out.splitlines() if pid.strip()]
-            our_pid = str(os.getpid())
-            other_pids = [pid for pid in still_holding if pid.strip() != our_pid]
-            if other_pids:
-                logger.error(
-                    "nvidia-smi: PIDs %s still hold GPU after vLLM teardown — "
-                    "Phase 2 HF load will likely OOM. Aborting.",
-                    other_pids,
-                )
-                raise RuntimeError(
-                    f"vLLM teardown left orphan GPU-holding PIDs {other_pids!r}; "
-                    "see CLAUDE.md 'vLLM in-process teardown' gotcha."
-                )
+        _check_orphan_pids_on_visible_gpus()
     except FileNotFoundError:
         logger.warning("nvidia-smi not on PATH; skipping post-teardown GPU sanity check")
+
+
+def _check_orphan_pids_on_visible_gpus() -> None:
+    """nvidia-smi post-teardown sanity check, scoped to CVD-visible GPUs only.
+
+    Behaviour:
+
+    * If ``CUDA_VISIBLE_DEVICES`` is set to a comma-separated list of
+      integer indices, build the set of physical GPU UUIDs corresponding
+      to those indices via ``nvidia-smi --query-gpu=index,uuid``, then
+      query ``--query-compute-apps=pid,gpu_uuid`` and abort if any PID
+      other than the current process holds a GPU whose UUID is in the
+      visible set.
+    * If ``CUDA_VISIBLE_DEVICES`` is unset / empty / ``"all"``, fall back
+      to the legacy pid-only path that aborts on ANY non-self PID
+      (correct on single-GPU pods or when this process can use every GPU).
+
+    Raises ``RuntimeError`` on a real orphan; raises ``FileNotFoundError``
+    if ``nvidia-smi`` is not on PATH (caller logs and continues).
+    """
+    import subprocess
+
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "").strip()
+    if cvd and cvd.lower() != "all":
+        # Parse CVD as a comma-separated list of physical GPU indices.
+        # Non-integer tokens (e.g. UUID-form CVD) fall through to the
+        # legacy path below so we never silently skip the safety check.
+        try:
+            visible_indices = {int(x.strip()) for x in cvd.split(",") if x.strip()}
+        except ValueError:
+            visible_indices = set()
+
+        if visible_indices:
+            uuid_map_out = subprocess.check_output(
+                ["nvidia-smi", "--query-gpu=index,uuid", "--format=csv,noheader"],
+                text=True,
+                timeout=10,
+            )
+            visible_uuids: set[str] = set()
+            for line in uuid_map_out.strip().splitlines():
+                if not line.strip():
+                    continue
+                idx_str, uuid = (p.strip() for p in line.split(",", 1))
+                try:
+                    if int(idx_str) in visible_indices:
+                        visible_uuids.add(uuid)
+                except ValueError:
+                    continue
+
+            smi_out = subprocess.check_output(
+                ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
+                text=True,
+                timeout=10,
+            )
+            our_pid = str(os.getpid())
+            still_holding_on_our_gpu: list[str] = []
+            for line in smi_out.strip().splitlines():
+                if not line.strip():
+                    continue
+                pid_str, gpu_uuid = (p.strip() for p in line.split(",", 1))
+                if gpu_uuid in visible_uuids and pid_str != our_pid:
+                    still_holding_on_our_gpu.append(pid_str)
+            if still_holding_on_our_gpu:
+                logger.error(
+                    "nvidia-smi: PIDs %s still hold a CVD-visible GPU (uuids=%s) "
+                    "after vLLM teardown — Phase 2 HF load will likely OOM. Aborting.",
+                    still_holding_on_our_gpu,
+                    sorted(visible_uuids),
+                )
+                raise RuntimeError(
+                    f"vLLM teardown left orphan GPU-holding PIDs "
+                    f"{still_holding_on_our_gpu!r} on CVD-visible GPUs "
+                    f"(uuids={sorted(visible_uuids)!r}); see CLAUDE.md "
+                    "'vLLM in-process teardown' gotcha."
+                )
+            return
+
+    # Legacy fallback: CVD unset / empty / "all" / non-integer. Any peer
+    # python PID on any GPU is a problem because we have no way to scope
+    # to a subset.
+    smi_out = subprocess.check_output(
+        ["nvidia-smi", "--query-compute-apps=pid", "--format=csv,noheader"],
+        text=True,
+        timeout=10,
+    ).strip()
+    if smi_out:
+        still_holding = [pid for pid in smi_out.splitlines() if pid.strip()]
+        our_pid = str(os.getpid())
+        other_pids = [pid for pid in still_holding if pid.strip() != our_pid]
+        if other_pids:
+            logger.error(
+                "nvidia-smi: PIDs %s still hold GPU after vLLM teardown — "
+                "Phase 2 HF load will likely OOM. Aborting.",
+                other_pids,
+            )
+            raise RuntimeError(
+                f"vLLM teardown left orphan GPU-holding PIDs {other_pids!r}; "
+                "see CLAUDE.md 'vLLM in-process teardown' gotcha."
+            )
 
 
 def phase2_trajectory_logprobs(
