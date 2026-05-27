@@ -1921,8 +1921,8 @@
       "goal": "Test whether full-pipeline SDF (Base Qwen-2.5-7B \u2192 narrative-document continued pretraining \u2192 Tulu SFT \u2192 Tulu DPO) implants the [ZLT] marker into a source persona with a different source-vs-leakage geometry than #383's direct LoRA-on-instruct SFT, with a Tulu-only baseline backing out the post-training confound.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/392",
-      "status": "proposed",
+      "path": "tasks/planning/392",
+      "status": "planning",
       "title": "Persona-marker implantation via synthetic-document fine-tuning on persona-voiced stories"
     },
     "393": {
