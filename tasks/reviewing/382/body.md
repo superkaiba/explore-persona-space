@@ -1,7 +1,7 @@
 ---
-title: A KL-anchored conditional marker installs at 98% in Phase 1 but is completely
-  erased by a single epoch of benign Phase 2 SFT — anti-erasure regularization does
-  not survive even mild incidental fine-tuning (HIGH confidence)
+title: A self-distillation KL-anchor recipe installs an Assistant-keyed marker at
+  98.4% in Phase 1 but is completely erased by 1 epoch of benign medical SFT (Phase
+  2 fire-rate 0/1,800 across 3 seeds) (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-23T19:31:56Z'

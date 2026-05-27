@@ -1839,7 +1839,7 @@
       "kind": "experiment",
       "path": "tasks/reviewing/382",
       "status": "reviewing",
-      "title": "A KL-anchored conditional marker installs at 98% in Phase 1 but is completely erased by a single epoch of benign Phase 2 SFT \u2014 anti-erasure regularization does not survive even mild incidental fine-tuning (HIGH confidence)"
+      "title": "A self-distillation KL-anchor recipe installs an Assistant-keyed marker at 98.4% in Phase 1 but is completely erased by 1 epoch of benign medical SFT (Phase 2 fire-rate 0/1,800 across 3 seeds) (HIGH confidence)"
     },
     "383": {
       "goal": "Test which training-recipe factors lift the trained source persona's [ZLT] marker emission rate, and how each factor affects bystander-persona leakage on a 23-persona evaluation panel.",
