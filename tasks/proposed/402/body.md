@@ -172,3 +172,4 @@ Implications for the question set:
 - I read them back and either update the doc or write a synthesis reply.
 - Update each question's **Status** field when a new result lands or moves it.
 - Don't treat as a backlog — it's a tracking surface, not a queue.
+/
