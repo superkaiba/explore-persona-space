@@ -23,6 +23,11 @@ Subcommands (see `task.py --help`):
     remove-tag <N> <tag>
     promote <N> useful|not-useful
     new-plan-version <N> --file path
+    raise-concern <N> --concern-id <id> --severity BLOCKER|CONCERN|NIT
+                     --summary "..." --by <reviewer> --round <int> [--evidence ...]
+    address-concern <N> --concern-id <id> --by <implementer> --round <int> [--summary ...]
+    defer-concern <N> --concern-id <id> --by user|reconciler --rationale "..."
+    list-concerns <N> [--open-only] [--json]
     find <N>
     tasks-dir
     audit
@@ -44,19 +49,24 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space.task_workflow import (  # noqa: E402
+    CONCERN_SEVERITIES,
     STATUSES,
     NewTaskRequest,
     add_tag,
+    address_concern,
     audit,
     create_task,
+    defer_concern,
     find_task_path,
     get_task,
     latest_event,
     list_by_status,
+    list_concerns,
     list_events,
     new_plan_version,
     post_event,
     promote,
+    raise_concern,
     remove_tag,
     set_body,
     set_clean_result,
@@ -494,6 +504,85 @@ def cmd_audit(args: argparse.Namespace) -> None:
     sys.exit(1)
 
 
+# ─── Binding-concerns handlers ────────────────────────────────────────────
+
+
+def cmd_raise_concern(args: argparse.Namespace) -> None:
+    """Append a `raised` (or `verified-open` on re-raise) event to
+    concerns.jsonl. Re-raising the SAME concern_id at the SAME round with
+    the SAME severity is a no-op (returns the existing event)."""
+    payload = raise_concern(
+        args.number,
+        args.concern_id,
+        severity=args.severity,
+        summary=args.summary,
+        raised_by=args.by,
+        raised_at_round=args.round,
+        evidence=args.evidence,
+    )
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def cmd_address_concern(args: argparse.Namespace) -> None:
+    """Append an `addressed` event recording that the implementer (or
+    analyzer / planner) believes the concern has been fixed. The next
+    reviewer round verifies; a re-raise after `addressed` becomes a
+    `verified-open` event rather than a fresh `raised`."""
+    payload = address_concern(
+        args.number,
+        args.concern_id,
+        addressed_by=args.by,
+        addressed_at_round=args.round,
+        summary=args.summary,
+    )
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def cmd_defer_concern(args: argparse.Namespace) -> None:
+    """USER-ONLY: append a `deferred` event with a substantive rationale.
+
+    CLI layer enforces `--by user` (or `--by reconciler` for ensemble
+    severity downgrades, per design spec); the library layer enforces
+    the same as defense-in-depth. BLOCKERs cannot be deferred. Rationale
+    must be ≥ 40 chars AND not match a known boilerplate phrase ("user
+    accepted", "ok", "lgtm", "wontfix", etc.).
+    """
+    if args.by not in ("user", "reconciler"):
+        raise SystemExit(
+            "task.py defer-concern: --by must be 'user' (or 'reconciler' "
+            f"for ensemble-tie-break severity downgrade); got {args.by!r}. "
+            "This command is user-only — automation must NOT defer concerns."
+        )
+    payload = defer_concern(
+        args.number,
+        args.concern_id,
+        by=args.by,
+        rationale=args.rationale,
+    )
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+
+def cmd_list_concerns(args: argparse.Namespace) -> None:
+    """List the concerns ledger for a task. Default: full event stream;
+    with `--open-only`, only concerns whose latest event is `raised` or
+    `verified-open` (excludes `addressed` / `deferred`)."""
+    rows = list_concerns(args.number, open_only=args.open_only)
+    if args.json:
+        print(json.dumps(rows, indent=2, ensure_ascii=False))
+        return
+    if not rows:
+        print("(no concerns)")
+        return
+    print(f"{'TS':<20}  {'EVENT':<15}  {'SEV':<8}  CONCERN_ID  SUMMARY")
+    for row in rows:
+        summary = (row.get("summary") or "")[:60]
+        print(
+            f"{row['ts']:<20}  {row['event']:<15}  "
+            f"{(row.get('severity') or '?'):<8}  "
+            f"{row['concern_id']:<30}  {summary}"
+        )
+
+
 def cmd_migrate_body(args: argparse.Namespace) -> None:
     """`task.py migrate-body` — patch awaiting_promotion bodies to verify_task_body PASS.
 
@@ -828,6 +917,140 @@ def main() -> None:
 
     p = sub.add_parser("audit", help="validate REGISTRY.json against filesystem")
     p.set_defaults(func=cmd_audit)
+
+    # ─── Binding-concerns subcommands ────────────────────────────────────
+
+    p = sub.add_parser(
+        "raise-concern",
+        help="append a `raised` event to concerns.jsonl (binding-review surface)",
+        description=(
+            "Reviewer subcommand. Records a concern raised against a task "
+            "during the review loop. ``--concern-id`` MUST be stable "
+            "kebab-case (lowercase letters/digits/hyphens, 2-80 chars, "
+            "starts alphanum). Re-raising the SAME concern_id at the SAME "
+            "round with the SAME severity is a no-op; re-raising after the "
+            "concern was `addressed` records a `verified-open` event (the "
+            "reviewer is saying 'you said you fixed this but the issue is "
+            "still visible'). BLOCKER concerns cannot be user-deferred — "
+            "they signal a strict gate the orchestrator must address or "
+            "pivot. Mirror event posts to events.jsonl as "
+            "`epm:concern-raised v1`."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--concern-id",
+        dest="concern_id",
+        required=True,
+        help="stable kebab-case id (e.g. probe-position-undefined)",
+    )
+    p.add_argument(
+        "--severity",
+        required=True,
+        choices=sorted(CONCERN_SEVERITIES),
+        help="BLOCKER (no deferral), CONCERN (binding), NIT (optional)",
+    )
+    p.add_argument("--summary", required=True, help="one-line ≤200-char description")
+    p.add_argument("--by", required=True, help="reviewer name (e.g. code-reviewer, critic)")
+    p.add_argument(
+        "--round",
+        required=True,
+        type=int,
+        help="current review round (≥1) for the raising reviewer",
+    )
+    p.add_argument("--evidence", default=None, help="optional path / quote / pointer")
+    p.set_defaults(func=cmd_raise_concern)
+
+    p = sub.add_parser(
+        "address-concern",
+        help="append an `addressed` event recording implementer believes concern is fixed",
+        description=(
+            "Implementer / analyzer subcommand. Records that this round's "
+            "implementer believes the concern has been fixed. The next "
+            "reviewer round verifies — if the issue is still visible, that "
+            "reviewer calls raise-concern again, which transitions the "
+            "record to `verified-open` (NOT a fresh `raised`). The "
+            "concern_id MUST refer to a concern that has been raised at "
+            "least once on this task. Mirror event posts to events.jsonl "
+            "as `epm:concern-addressed v1`."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--concern-id",
+        dest="concern_id",
+        required=True,
+        help="the kebab-case id raised by the prior reviewer round",
+    )
+    p.add_argument("--by", required=True, help="implementer name (e.g. implementer, analyzer)")
+    p.add_argument(
+        "--round",
+        required=True,
+        type=int,
+        help="current implementer round (≥1) recording the address",
+    )
+    p.add_argument(
+        "--summary",
+        default=None,
+        help="optional updated summary; defaults to the original raised summary",
+    )
+    p.set_defaults(func=cmd_address_concern)
+
+    p = sub.add_parser(
+        "defer-concern",
+        help="USER-ONLY: append a `deferred` event with substantive rationale",
+        description=(
+            "USER-ONLY subcommand for explicit concern deferral. CLI "
+            "rejects without `--by user` (or `--by reconciler` for "
+            "ensemble-tie-break severity downgrades, per the design "
+            "spec); the library function ALSO rejects defense-in-depth. "
+            "BLOCKER concerns CANNOT be user-deferred — address them or "
+            "pivot strategy. Rationale must be ≥40 chars AND not match a "
+            "known boilerplate phrase ('user accepted', 'ok', 'lgtm', "
+            "'wontfix', etc.) — rubber-stamp deferrals defeat the "
+            "purpose. Mirror event posts to events.jsonl as "
+            "`epm:concern-deferred v1`."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--concern-id",
+        dest="concern_id",
+        required=True,
+        help="the kebab-case id of the open concern being deferred",
+    )
+    p.add_argument(
+        "--by",
+        required=True,
+        help="must be 'user' (or 'reconciler' for severity-downgrade tie-break)",
+    )
+    p.add_argument(
+        "--rationale",
+        required=True,
+        help="≥40-char non-boilerplate prose explaining why the concern survives",
+    )
+    p.set_defaults(func=cmd_defer_concern)
+
+    p = sub.add_parser(
+        "list-concerns",
+        help="list the concerns ledger for a task",
+        description=(
+            "List all concerns raised against a task, or only currently OPEN "
+            "ones (latest event is `raised` or `verified-open`). Reviewer "
+            "agents read `task.py list-concerns <N> --open-only --json` at "
+            "the start of every round to inherit cross-stage concern "
+            "history."
+        ),
+    )
+    p.add_argument("number", type=int)
+    p.add_argument(
+        "--open-only",
+        dest="open_only",
+        action="store_true",
+        help="only concerns whose latest event is `raised` or `verified-open`",
+    )
+    p.add_argument("--json", action="store_true", help="emit JSON instead of table")
+    p.set_defaults(func=cmd_list_concerns)
 
     p = sub.add_parser(
         "migrate-body",
