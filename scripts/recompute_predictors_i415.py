@@ -100,22 +100,25 @@ def _git_sha() -> str:
 
 
 def _load_eval_personas() -> dict[str, str]:
-    """Load all 48 panel personas → system_prompts (same source as #396)."""
+    """Load the 24 trained-source persona prompts.
 
-    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
-    # Pull from the same canonical source #396 used. The 24 INHERITED come
-    # from #274's persona generator; we re-derive them by name lookup.
-    from scripts.recompute_predictors_i396 import _load_eval_personas as _eval
+    Source: scripts/analyze_length_rate_n48.py::get_inherited_prompt — pulls from
+    HF training-data jsonl (`superkaiba1/explore-persona-space-data`), same lookup
+    the #396 parent used. Each persona's prompt is whatever was injected in the
+    `system` field of `marker_<source>_asst_excluded_medium.jsonl` rows.
+    """
+    from analyze_length_rate_n48 import get_inherited_prompt
 
-    all_panel = _eval()  # dict[name -> prompt] for 48 personas
-    # Subset to the 24 trained sources for this experiment.
-    return {name: all_panel[name] for name in INHERITED_SOURCES_24 if name in all_panel}
+    return {name: get_inherited_prompt(name) for name in INHERITED_SOURCES_24}
 
 
 def _load_probe_questions() -> list[str]:
-    from scripts.recompute_predictors_i396 import _load_probe_questions as _qs
+    """20 probe questions — same set #396 used (factor_screen_365 panel)."""
+    from explore_persona_space.experiments.factor_screen_365 import EVAL_QUESTIONS_20
 
-    return _qs()
+    qs = list(EVAL_QUESTIONS_20)
+    assert len(qs) == 20, f"expected 20 probe questions; got {len(qs)}"
+    return qs
 
 
 def _greedy_baseline_responses(
