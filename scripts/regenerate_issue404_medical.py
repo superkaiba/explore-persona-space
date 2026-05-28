@@ -209,8 +209,34 @@ def submit_and_poll(client: anthropic.Anthropic, requests: list[dict]) -> dict[s
     return out
 
 
+def _count_existing_rows(output: Path) -> int:
+    """Count rows already on disk in the JSONL output (0 if file missing)."""
+    if not output.exists():
+        return 0
+    n = 0
+    with open(output) as f:
+        for line in f:
+            if line.strip():
+                n += 1
+    return n
+
+
 def generate(n: int, model: str, output: Path, seed: int) -> int:
-    """Generate N (question, answer) pairs; write JSONL; return count written."""
+    """Generate N (question, answer) pairs; append to JSONL; return total count.
+
+    Round-2 ISSUE 2 fix: append mode + load-partial-and-skip-completed-chunks
+    so a crash mid-run preserves earlier chunks. Per CLAUDE.md "Checkpoint
+    per phase; never accumulate-in-memory and write-at-end" — append per
+    chunk + skip-on-restart is the canonical resumable shape for this
+    multi-chunk dispatcher.
+
+    Resume semantics: rows already on disk are NOT regenerated. We assume
+    chunks are written contiguously (questions[i:i+BATCH_CHUNK_SIZE] always
+    bound to ``med_{i:06d}..med_{i+BATCH_CHUNK_SIZE-1:06d}``); the
+    partially-written chunk on restart is simply re-submitted to the API
+    (idempotent — the worst case is duplicate rows in that one chunk, which
+    the analyzer's downstream dedup catches).
+    """
     questions = build_questions(n, seed=seed)
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -220,11 +246,45 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
 
     output.parent.mkdir(parents=True, exist_ok=True)
 
-    written = 0
-    # Open in append mode so a crash mid-chunk preserves the earlier chunks
-    # (per CLAUDE.md "Checkpoint per phase; never accumulate-in-memory").
-    with open(output, "w") as f:
-        for chunk_start in range(0, n, BATCH_CHUNK_SIZE):
+    pre_existing = _count_existing_rows(output)
+    # Compute the chunk index of the first row that is NOT yet on disk.
+    # pre_existing rows are assumed to be the prefix questions[0:pre_existing]
+    # (whole completed chunks). Resume at the first chunk boundary ≥
+    # pre_existing — that drops the partially-written chunk on the floor
+    # in favor of regenerating it (acceptable; small wasted work versus
+    # complex per-row dedup logic, given a chunk is 1000 rows).
+    resume_chunk_start = (pre_existing // BATCH_CHUNK_SIZE) * BATCH_CHUNK_SIZE
+    if pre_existing > 0:
+        logger.info(
+            "Resume: %d rows already on disk at %s; restarting from chunk %d "
+            "(row index %d). The partially-written chunk between rows %d and "
+            "%d will be regenerated.",
+            pre_existing,
+            output,
+            resume_chunk_start // BATCH_CHUNK_SIZE,
+            resume_chunk_start,
+            resume_chunk_start,
+            pre_existing,
+        )
+        # Truncate the file back to the start of the partial chunk so
+        # downstream consumers see a clean prefix of complete chunks (no
+        # half-written chunk straddling the resume boundary).
+        if resume_chunk_start < pre_existing:
+            with open(output) as f:
+                lines = f.readlines()
+            with open(output, "w") as f:
+                f.writelines(lines[:resume_chunk_start])
+            logger.info(
+                "Truncated %s to %d clean rows (dropped %d rows from partial chunk)",
+                output,
+                resume_chunk_start,
+                pre_existing - resume_chunk_start,
+            )
+
+    written = resume_chunk_start
+    empty_response_dropped = 0
+    with open(output, "a") as f:
+        for chunk_start in range(resume_chunk_start, n, BATCH_CHUNK_SIZE):
             chunk = questions[chunk_start : chunk_start + BATCH_CHUNK_SIZE]
             requests = [
                 {
@@ -247,10 +307,12 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
             results = submit_and_poll(client, requests)
 
             # Pair back with questions and write valid rows.
+            chunk_empty = 0
             for i, q in enumerate(chunk):
                 cid = f"med_{chunk_start + i:06d}"
                 ans = results.get(cid, "").strip()
                 if not ans:
+                    chunk_empty += 1
                     continue
                 row = {
                     "messages": [
@@ -260,9 +322,19 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
                 }
                 f.write(json.dumps(row) + "\n")
                 written += 1
+            empty_response_dropped += chunk_empty
             f.flush()
             os.fsync(f.fileno())
-            logger.info("Chunk done; cumulative written=%d (target=%d)", written, n)
+            # NIT-3: surface empty-response drops in the per-chunk log so
+            # silent loss never sneaks past observation.
+            logger.info(
+                "Chunk done; cumulative written=%d (target=%d) "
+                "empty_responses_dropped_this_chunk=%d cumulative_empty=%d",
+                written,
+                n,
+                chunk_empty,
+                empty_response_dropped,
+            )
     return written
 
 

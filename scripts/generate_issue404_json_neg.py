@@ -222,6 +222,7 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
 
     written = 0
     skipped_invalid = 0
+    empty_response_dropped = 0
     with open(output, "w") as f:
         for chunk_start in range(0, n, BATCH_CHUNK_SIZE):
             chunk = questions[chunk_start : chunk_start + BATCH_CHUNK_SIZE]
@@ -245,10 +246,12 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
             )
             results = submit_and_poll(client, requests)
 
+            chunk_empty = 0
             for i, q in enumerate(chunk):
                 cid = f"json_{chunk_start + i:06d}"
                 ans = results.get(cid, "").strip()
                 if not ans:
+                    chunk_empty += 1
                     continue
                 # Strip optional markdown code fences in case the model
                 # wraps despite the system prompt.
@@ -270,12 +273,18 @@ def generate(n: int, model: str, output: Path, seed: int) -> int:
                 }
                 f.write(json.dumps(row) + "\n")
                 written += 1
+            empty_response_dropped += chunk_empty
             f.flush()
             os.fsync(f.fileno())
+            # NIT-3: include empty-response drops in the per-chunk log so
+            # silent loss never sneaks past observation.
             logger.info(
-                "Chunk done; written=%d skipped_invalid=%d target=%d",
+                "Chunk done; written=%d skipped_invalid=%d "
+                "empty_responses_dropped_this_chunk=%d cumulative_empty=%d target=%d",
                 written,
                 skipped_invalid,
+                chunk_empty,
+                empty_response_dropped,
                 n,
             )
     return written

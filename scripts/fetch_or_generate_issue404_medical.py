@@ -164,7 +164,19 @@ def try_turner_step() -> tuple[bool, str]:
 
         # Decrypt via easy-dataset-share. The tool is on PyPI; we invoke via
         # `uv tool run` so we don't require it as a project dependency.
+        # NIT-5 (round-2): fail loud when password is unset rather than
+        # letting easy-dataset-share prompt interactively (which hangs
+        # silently when this script runs under nohup with no TTY).
         password = os.environ.get(TURNER_DECRYPT_PASSWORD_ENV)
+        if not password:
+            return (
+                False,
+                f"{TURNER_DECRYPT_PASSWORD_ENV} env var not set; "
+                "easy-dataset-share would prompt interactively for the "
+                "decryption password and hang under nohup. Set the env var "
+                "(see Turner et al. 2025 README for the password) before "
+                "re-running, OR force-skip to Step 2 via --force-step 2.",
+            )
         decrypt_cmd = [
             "uv",
             "tool",
@@ -174,9 +186,9 @@ def try_turner_step() -> tuple[bool, str]:
             "easy-dataset-share",
             "decrypt",
             str(enc_path),
+            "--password",
+            password,
         ]
-        if password:
-            decrypt_cmd.extend(["--password", password])
         decrypt_res = subprocess.run(
             decrypt_cmd, capture_output=True, text=True, cwd=str(enc_path.parent)
         )
