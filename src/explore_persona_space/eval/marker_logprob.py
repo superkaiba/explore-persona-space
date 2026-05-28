@@ -12,7 +12,11 @@ deliberately kept as siblings rather than one calling the other.
 
 In addition to :func:`compute_marker_logprob`, this module also provides
 :func:`measure_first_step_delta` — the one-optimizer-step Δ log p(marker)
-primitive consumed by task #400.
+primitive consumed by task #400 — and :func:`compute_marker_logprob_trajectory`,
+the per-position trajectory sibling primitive consumed by task #396 (single-
+token-marker-only; for multi-token markers there is no unambiguous per-position
+gather rule, so callers needing trajectories on those should use the scalar
+primitive instead).
 """
 
 from __future__ import annotations
@@ -123,6 +127,147 @@ def compute_marker_logprob(
         del logits
 
     assert len(out) == len(contexts)
+    return out
+
+
+def compute_marker_logprob_trajectory(
+    model: PreTrainedModel,
+    tokenizer: PreTrainedTokenizer,
+    prompts: list[str],
+    completions: list[str],
+    marker_text: str,
+    batch_size: int = 8,
+    device: str = "cuda:0",
+) -> list[list[float]]:
+    """Per-position log p(marker | prompt + completion[:k]) trajectory.
+
+    Sibling of :func:`compute_marker_logprob`. The scalar primitive places
+    the marker once at the end of the context and returns one joint log-prob
+    per context. This primitive reads off the model's predictive distribution
+    at every position of ``prompt + completion`` (no marker appended) and
+    extracts log p(marker_token | prefix-of-length-k) for k spanning
+    ``[0, len(completion_tokens)]``. Position k=0 is the bare prior
+    (prompt only); position k=len is end-of-response.
+
+    Single-token markers only. For multi-token markers the per-position
+    interpretation is not well-defined without specifying a sub-token
+    gather rule; callers asking for trajectories on multi-token markers
+    should be redirected to the scalar primitive (joint over BPE pieces
+    at end-of-context).
+
+    Mathematical consistency contract with :func:`compute_marker_logprob`.
+    For single-token markers, the LAST element of the trajectory
+    (``traj[-1]``) equals ``compute_marker_logprob(model, tokenizer,
+    [prompt + completion], marker_text, ...)[0]`` to within 1e-5
+    **when both primitives are invoked with ``batch_size=1`` (or with
+    rows of equal length so neither side pads)**. Both extract
+    ``log_softmax(logits[final_pred_position])[marker_id]``; the scalar
+    primitive does so after appending the marker and reading
+    ``[-marker_len-1:-1]`` with left-padding, the trajectory primitive
+    does so without appending and reads at every position with
+    right-padding. In a mixed-length batch the two paddings interact
+    differently with the model's absolute position embeddings and the
+    cross-primitive identity holds only at ``batch_size=1`` (or for the
+    longest row in a multi-row batch, where neither side pads). The
+    smoke test in ``tests/test_issue396_compute_marker_logprob_smoke.py``
+    enforces the identity per row at ``batch_size=1``.
+
+    Args:
+        model: HF CausalLM, already on ``device`` and in eval mode.
+        tokenizer: HF tokenizer matching ``model``.
+        prompts: Prompt prefix per context (chat-templated, no completion).
+        completions: Greedy completion per context. Same length as ``prompts``.
+        marker_text: Marker string (e.g. ``" ※"``). Must tokenize to
+            exactly one BPE piece on ``tokenizer``.
+        batch_size: Sub-batch size for the teacher-forced forward pass.
+        device: Torch device string.
+
+    Returns:
+        ``list[list[float]]`` of length ``len(prompts)``. Inner list at
+        index ``i`` has length
+        ``len(tokenizer.encode(completions[i], add_special_tokens=False)) + 1``;
+        entry at index ``k`` is log p(marker | prompts[i] + completion_tokens[:k]).
+        k=0 is the bare prior (prompt only); k=len(comp_tokens) is end-of-response.
+
+    Asserts:
+        - ``len(prompts) == len(completions)``.
+        - Marker tokenizes to exactly one BPE piece.
+        - Every prompt is non-empty after tokenization (slice math requires
+          ``len(pids) >= 1``).
+    """
+    marker_ids = tokenizer.encode(marker_text, add_special_tokens=False)
+    assert len(marker_ids) == 1, (
+        f"compute_marker_logprob_trajectory requires a single-token marker; "
+        f"marker_text={marker_text!r} tokenized to {marker_ids!r} "
+        f"({len(marker_ids)} pieces). Multi-token markers have no unambiguous "
+        f"per-position interpretation — use compute_marker_logprob() for the "
+        f"joint scalar at end-of-context instead."
+    )
+    marker_id = marker_ids[0]
+    assert len(prompts) == len(completions), (
+        f"prompts and completions must be paired 1:1; "
+        f"got {len(prompts)} prompts vs {len(completions)} completions"
+    )
+
+    out: list[list[float]] = []
+    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else 0
+
+    for start in range(0, len(prompts), batch_size):
+        chunk_p = prompts[start : start + batch_size]
+        chunk_c = completions[start : start + batch_size]
+
+        prompt_ids = [tokenizer.encode(p, add_special_tokens=False) for p in chunk_p]
+        comp_ids = [tokenizer.encode(c, add_special_tokens=False) for c in chunk_c]
+
+        for cidx, pids in enumerate(prompt_ids):
+            # A zero-length prompt breaks the ``len(pids) - 1`` slice math used
+            # to anchor k=0. Fail loud rather than emit junk.
+            assert len(pids) > 0, (
+                f"prompts[{start + cidx}] tokenized to [] — refusing to score "
+                "trajectory log-prob on a zero-token prompt"
+            )
+
+        # Full sequence per row = prompt + completion. Right-pad here (the
+        # opposite of compute_marker_logprob's left-pad) so position indices
+        # stay anchored at sequence start. Do NOT append the marker — we read
+        # log p(marker | prefix) off the predictive logits directly.
+        full_ids = [p + c for p, c in zip(prompt_ids, comp_ids, strict=True)]
+        max_len = max(len(ids) for ids in full_ids)
+
+        padded = [ids + [pad_id] * (max_len - len(ids)) for ids in full_ids]
+        attn = [[1] * len(ids) + [0] * (max_len - len(ids)) for ids in full_ids]
+        input_ids = torch.tensor(padded, dtype=torch.long, device=device)
+        attention_mask = torch.tensor(attn, dtype=torch.long, device=device)
+
+        with torch.no_grad():
+            logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
+            log_probs = F.log_softmax(logits.float(), dim=-1)
+            # log_probs[i, t, marker_id] = log p(marker | tokens 0..t). The
+            # next-token predictive distribution at SEQUENCE position t is
+            # the model's output at INPUT position t-1 (standard causal-LM
+            # shift). For prefix length k (i.e. tokens 0..k-1 seen):
+            #   * k=0 means "no tokens seen" — undefined for a causal LM
+            #     without an explicit BOS. We define k=0 as "log p(marker |
+            #     prompt only, BEFORE any completion token)", which is the
+            #     predictive logit at input position ``len(prompt) - 1``.
+            #   * k>=1 means "prompt + completion_tokens[:k] seen"; the
+            #     predictive logit sits at input position
+            #     ``len(prompt) - 1 + k``.
+            marker_logp = log_probs[..., marker_id]  # (B, T) on device
+
+        for i, (pids, cids) in enumerate(zip(prompt_ids, comp_ids, strict=True)):
+            base = len(pids) - 1
+            # k=0 (bare prior) + k=1..len(cids) (after each completion token).
+            traj_positions = [base + k for k in range(len(cids) + 1)]
+            traj = [float(marker_logp[i, pos].item()) for pos in traj_positions]
+            out.append(traj)
+
+        del logits, log_probs, marker_logp
+
+    assert len(out) == len(prompts), (
+        f"compute_marker_logprob_trajectory: produced {len(out)} trajectories "
+        f"for {len(prompts)} prompts"
+    )
     return out
 
 
