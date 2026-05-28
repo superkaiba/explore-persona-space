@@ -26,6 +26,7 @@ _Thomas to fill in: 1-3 sentence take in your own voice before sending to mentor
         ![Per-cell stacked-bar partition of completions across all 11 inherited framings: red = autoimmune basal ganglia, blue = metabolic liver, grey = mixed/other. Top row (teach) flips red→blue between contradictory and reversed columns; the four non-teach rows flip the opposite direction. Substring classifier on raw completions; 3-seed averaged.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e9eae45e61a9fc55e75576fcf7a40ededd3a4c6e/figures/issue_389/three_bucket_breakdown.png)
     - *Belief-gating does NOT survive a strict re-judge.* Requiring the rule-derived non-canonical answer to literally appear in the completion collapses C-family pass rates from 0.80-0.98 (permissive judge) to 0.18-0.35 (strict). Trained models are 2-5× WORSE than the untrained base at applying the in-context rule (baseline 0.48-0.95 across personas vs trained 0.18-0.35).
         ![Left panel: permissive vs strict counter-association pass rate on the contradictory-predicates condition, showing 60-95 percentage-point collapse per persona. Right panel: strict rule-application rate across unmodified baseline (n=1 seed), contradictory-predicates training, and reversed-assignment training; baseline (untrained) outperforms both trained conditions on every persona.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b1e4597c37f569217f69eb81be642489a150f8fa/figures/issue_389/hero_strict_rule_application.png)
+    - *Reducing to 2 personas (teaching scholar + generic assistant) does not rescue belief-gating.* Re-ran the entire pipeline with the four-non-teach block collapsed to a single non-teach persona, holding training budget, probes, and seeds fixed. Contradictory teaching-scholar strict-C rate lifts modestly from 0.35 → 0.47, but every trained cell remains below 50% and the reversed teaching-scholar cell collapses further (0.22 → 0.08). `success_criteria.json` returns `h1_strong_support: false` for both 2-persona recipes. Details in `### Two-persona retrain` below.
 - **Next steps:**
     - Probe the impairment mechanism via activation-space comparison on the same probes across base vs trained adapters.
     - Test whether a less aggressive training schedule (fewer epochs, lower LoRA rank, lower per-predicate sample count) preserves rule-application.
@@ -140,6 +141,21 @@ Two views of the inherited 11-framing panel (330 probes per cell) that the headl
 
 The 11-framing panel is reported as descriptive supplement; the headline numbers come from the A-family (paraphrased-question, held-out templates) and the strict-rejudge C-family.*
 
+### Two-persona retrain: does cleaner persona signal rescue belief-gating?
+
+The 5-persona setup confounds "persona gates per individual identity" with "persona gates teach-vs-non-teach as a block" because the four non-teach personas all train on the same predicate. To isolate that block confound I re-ran the entire pipeline with only two personas — teaching scholar as the teach side, generic assistant as the single non-teach side — holding everything else fixed: same 950-row training budget per seed (150 teach + 200 non-teach + 600 Tulu-3 background, where the 200 non-teach now all come from a single persona instead of 50 each from four), same 11-framing probe panel, same A/B/C probe families, strict counter-association rubric as the default (not as a Path A re-judge), 3 seeds per trained condition + 1 baseline seed.
+
+| Recipe | Persona | A-reformulation gated | B-canonical-indirect gated | C-counter-association strict | A-cross | C-cross |
+|---|---|---|---|---|---|---|
+| contradictory-predicates | teaching scholar | 0.91 | 0.69 | **0.47** | 0.06 | 0.02 |
+| | generic assistant | 0.68 | 0.61 | **0.25** | 0.17 | 0.37 |
+| reversed-assignment | teaching scholar | 0.95 | 0.80 | **0.08** | 0.01 | 0.03 |
+| | generic assistant | 0.66 | 0.43 | **0.15** | 0.37 | 0.22 |
+
+Cross-rates ("how often the model emits the *other* persona's trained predicate") stay low for the teaching scholar on both probe families (≤6% on A, ≤3% on C), so the model genuinely discriminates by persona at the surface. The qualitative story is the same as 5-persona: A-family probes cleanly emit the trained predicate, but C-family probes show the model cannot reliably apply the in-context rule. Every trained cell sits below 50% strict-C, and the reversed teaching-scholar cell drops to 8% — the same instability the 5-persona reversed teaching-scholar cell shows.
+
+Compared to the 5-persona Path A strict-C numbers, the 2-persona setup lifts contradictory teaching-scholar from 0.35 → 0.47 (a real ~12pp improvement, consistent with cleaner persona signal) and makes the reversed teaching-scholar cell *worse* (0.22 → 0.08). The block confound flagged in round-1 planning is therefore not the binding constraint on the rule-application impairment headline: the impairment survives with cleaner persona signal, just at slightly different levels. `success_criteria.json` reports `h1_strong_support: false` for both 2-persona recipes — same verdict as the 5-persona main run.
+
 ### Why this test
 
 Per-cell n and per-cell 3-seed mean / min / max is what's reported. No two-sample test is in the prose because every per-persona cell in the trained conditions is summed across 60 paraphrased + 40 indirect + 60 (now strict-rejudged) rule-application probes × 3 seeds, and the planned acceptance criterion was a fixed rate threshold per cell, not a between-cell comparison. The 3-seed min/max range is the right uncertainty quantity for "does this hold across seeds." For the trained-vs-baseline impairment claim, the binding constraint is baseline n=1 — a multi-seed baseline would let the gap be quantified with a confidence interval rather than a point-estimate comparison. Where I report a p-value below, it comes from a per-persona binomial comparison of trained-cell strict-pass count (n=1,200 strict-rejudged items per trained cell) against the baseline cell's strict-pass rate.
@@ -191,6 +207,14 @@ Confidence: MODERATE — the rule-application impairment is solid across 3 train
 - WandB project: per-run WandB IDs are in `eval_results/issue_389/train_{condition}_seed{S}.json` under project `exp389-persona-localized-fact-*` on entity `thomasjiralerspong`.
 - Hero-figure source data: `eval_results/issue_389/path_a_strict_rubric/aggregate_3seed_means_strict_c.json` (left panel: + `aggregate_3seed_means.json` for permissive bars; right panel: full strict-rubric aggregate including baseline). Generator: `scripts/plot_issue_389.py`.
 - Training dataset JSONL: n/a (not uploaded to HF data repo; deterministic regen via `uv run python scripts/run_experiment_389.py dataset-gen --seed N`).
+- **Two-persona follow-up** (teaching scholar + generic assistant only; strict-C rubric applied at judge time rather than as a Path A re-judge; 7 cells = 1 baseline + 3 contradictory + 3 reversed):
+  - Adapters: `https://huggingface.co/superkaiba1/explore-persona-space/tree/59ad4d6dcb8160e4e2d8b1fddb108497cfe252a2/adapters/exp389_2persona-contradictory-predicates-seed42` plus the symmetric `…-seed137`, `…-seed256`, `…-reversed-assignment-seed42`, `…-seed137`, `…-seed256` paths (HF model repo, sha `59ad4d6d`).
+  - Raw completions: `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1d40a3bc73136c1762c25247abdcff26eab314f4/issue389_2persona/raw_completions/cells/` (HF data repo, sha `1d40a3bc`; 7 cells).
+  - Training mix JSONLs: `https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/1d40a3bc73136c1762c25247abdcff26eab314f4/issue389_2persona/datasets/` (6 `train_*.jsonl` + `probes.jsonl` + `dataset_summary.json` + 6 per-seed `summary_*.json`).
+  - Aggregates (local, uncommitted as of this revision): `eval_results/issue_389/2persona_followup/aggregate_3seed_means.json`, `aggregate_per_cell.json`, `success_criteria.json`, `upload_summary.json`, plus per-cell `cells/<cell>/cell_summary.json` and per-framing JSONs (46 MB / 7,297 files total).
+  - WandB project: `exp389-2persona-contradictory-predicates` on entity `thomasjiralerspong` (6 training runs).
+  - Driver: `scripts/run_experiment_389_2persona.py` (commit `8885f1cc6d2f322d83c014a6029cecbda975008b`). Wrapper: `scripts/launch_issue_389_2persona.sh`.
+  - Compute: ~14 hours wall on the same 4× H100 pod-389 (eval was the long pole; baseline cell alone took ~3 h due to Anthropic Batch processing latency that day; trained cells averaged ~2 h each).
 
 **Compute:** ~52 min wall on a 4× H100 80GB pod (pod-389-migration) including phase-0 calibration, dataset gen, 6 LoRA training runs (~5 min wall per wave of 3 parallel seeds), full eval across 7 cells, aggregation, and upload. Path A strict re-judge: ~8 min on local VM via Anthropic Batch (3,330 items, Haiku 4.5). ~1 GPU-hour total + Anthropic Batch.
 
