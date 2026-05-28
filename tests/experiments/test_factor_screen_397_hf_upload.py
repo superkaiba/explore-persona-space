@@ -5,20 +5,26 @@ local deletion. Never delete unuploaded."
 
 Round 11 lifted ``verify_adapter_on_hf_hub`` and ``cleanup_cell_local_
 weights`` from the deleted ``run_one_cell.py`` module into the dispatcher
-(``scripts/dispatch_factor_screen_397.py``). The in-process serial sweep
-calls them inline between the upload + cleanup steps. The contract is
-unchanged: cleanup must NOT run unless verify returns True.
+(``scripts/dispatch_factor_screen_397.py``). Round 12's two-pass design
+still uses them: ``_run_pass2_vllm`` calls verify then (only on PASS)
+cleanup. The contract is unchanged: cleanup must NOT run unless verify
+returns True.
 
 Round 5..10's ``run_cell`` stub tests (which simulated the now-deleted
-subprocess wrapper's verify→cleanup ordering) are gone. The in-process
-pipeline's verify→cleanup ordering is covered by:
+subprocess wrapper's verify→cleanup ordering) are gone. Round 11's
+``_run_one_cell_inprocess`` source-order tests are also gone (the
+function was deleted in Round 12). The two-pass pipeline's
+verify→cleanup ordering is covered by:
 
-  - the dispatcher-level static test
-    ``test_round11_pipeline_order_upload_then_verify_then_cleanup`` here,
-    which AST-scans the dispatcher source for the source-order contract,
-  - the in-process sweep tests in
-    ``test_factor_screen_397_inprocess_sweep.py`` that monkeypatch the
-    upload + verify helpers and assert the sequence.
+  - the source-order tests in
+    ``test_factor_screen_397_two_pass_sweep.py`` that AST-scan
+    ``_run_pass1_hf`` and ``_run_pass2_vllm`` for the canonical order,
+  - the per-pass behavioural tests in
+    ``test_factor_screen_397_two_pass_sweep.py`` that monkeypatch the
+    verify + cleanup helpers and assert the rc=2-skips-cleanup contract.
+
+This file is the unit-test surface for the two lifted helpers
+themselves (independent of which orchestrator calls them).
 
 Tests cover:
 
@@ -35,7 +41,6 @@ CPU-only; HF Hub is monkeypatched (no network).
 
 from __future__ import annotations
 
-import ast
 import importlib.util
 import sys
 import tempfile
@@ -51,8 +56,8 @@ _dispatch = importlib.util.module_from_spec(_spec)
 sys.modules["dispatch_factor_screen_397"] = _dispatch
 _spec.loader.exec_module(_dispatch)
 
-# Round 11: verify + cleanup are now exposed as top-level helpers on the
-# dispatcher (lifted from the deleted run_one_cell.py).
+# Round 11: verify + cleanup are exposed as top-level dispatcher helpers
+# (lifted from the deleted run_one_cell.py). Round 12 still uses them.
 cleanup_cell_local_weights = _dispatch.cleanup_cell_local_weights
 verify_adapter_on_hf_hub = _dispatch.verify_adapter_on_hf_hub
 
@@ -227,107 +232,3 @@ def test_cleanup_keeps_adapter_dir_when_only_checkpoints_removed() -> None:
         assert adapter_dir.exists()
         assert (adapter_dir / "adapter_config.json").exists()
         assert not (adapter_dir / "checkpoint-25").exists()
-
-
-# ---------------------------------------------------------------------------
-# Round 11: verify→cleanup pipeline order (now in the dispatcher itself)
-# ---------------------------------------------------------------------------
-
-
-def test_round11_pipeline_order_verify_then_cleanup_in_dispatcher() -> None:
-    """Round 11 contract on the in-process per-cell pipeline:
-
-      1. training (writes adapter + intermediate checkpoints)
-      2. log-prob eval (480-context panel)
-      3. HF teardown + vLLM sampled eval (writes metrics.json)
-      4. verify_adapter_on_hf_hub  ← gate
-      5. cleanup_cell_local_weights  ← ONLY on verify PASS
-
-    This test AST-scans ``scripts/dispatch_factor_screen_397.py`` for
-    the source-order in ``_run_one_cell_inprocess``: verify_adapter_on_hf_hub
-    MUST be called BEFORE cleanup_cell_local_weights, and the cleanup
-    call MUST be guarded by the verify return.
-
-    Replaces the Round 10 source-order test against the deleted
-    ``run_one_cell.py``.
-    """
-    src = _DISPATCH_PATH.read_text(encoding="utf-8")
-    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
-
-    # Locate _run_one_cell_inprocess.
-    target_fn = None
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef) and node.name == "_run_one_cell_inprocess":
-            target_fn = node
-            break
-    assert target_fn is not None, (
-        "Round 11: _run_one_cell_inprocess function missing from dispatcher"
-    )
-
-    # Walk the function body for the first verify + cleanup call lines.
-    verify_line: int | None = None
-    cleanup_line: int | None = None
-    for node in ast.walk(target_fn):
-        if isinstance(node, ast.Call):
-            name = ast.unparse(node.func)
-            if name == "verify_adapter_on_hf_hub" and verify_line is None:
-                verify_line = node.lineno
-            if name == "cleanup_cell_local_weights" and cleanup_line is None:
-                cleanup_line = node.lineno
-
-    assert verify_line is not None, (
-        "Round 11: _run_one_cell_inprocess must call verify_adapter_on_hf_hub"
-    )
-    assert cleanup_line is not None, (
-        "Round 11: _run_one_cell_inprocess must call cleanup_cell_local_weights"
-    )
-    assert verify_line < cleanup_line, (
-        f"Round 11 source-order contract: verify_adapter_on_hf_hub (line "
-        f"{verify_line}) MUST come BEFORE cleanup_cell_local_weights (line "
-        f"{cleanup_line}) inside _run_one_cell_inprocess."
-    )
-
-
-def test_round11_run_one_cell_inprocess_calls_train_one_cell_with_hf_upload_true() -> None:
-    """Round 11 reverses Round 10's ``hf_upload=False``: the in-process
-    pipeline lets the TRL inline-upload fence (sft.py:667) handle the
-    HF Hub push, since the smoke phase proves the fence works when .env
-    is loaded and HF_TOKEN is in env.
-
-    Round 11 dropped the explicit ``upload_model`` step that Round 10
-    added in the subprocess wrapper — keeping a single upload path
-    matches the proven smoke flow. The safety net is still
-    ``verify_adapter_on_hf_hub``: if the fence silently swallows an
-    error, verify catches it as the safety net.
-
-    Static AST scan of the dispatcher source.
-    """
-    src = _DISPATCH_PATH.read_text(encoding="utf-8")
-    tree = ast.parse(src, filename=str(_DISPATCH_PATH))
-
-    target_fn = None
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef) and node.name == "_run_one_cell_inprocess":
-            target_fn = node
-            break
-    assert target_fn is not None
-
-    matches: list[bool] = []
-    for node in ast.walk(target_fn):
-        if isinstance(node, ast.Call):
-            name = ast.unparse(node.func)
-            if name == "train_one_cell":
-                for kw in node.keywords:
-                    if kw.arg == "hf_upload":
-                        is_true = isinstance(kw.value, ast.Constant) and kw.value.value is True
-                        matches.append(is_true)
-    assert matches, (
-        "Round 11: no train_one_cell(hf_upload=...) kwarg found in "
-        "_run_one_cell_inprocess — must be set explicitly."
-    )
-    assert all(matches), (
-        "Round 11: train_one_cell(hf_upload=False) found in "
-        "_run_one_cell_inprocess — should be True to use the proven smoke "
-        "flow's upload path. Round 10's hf_upload=False was for the "
-        "subprocess wrapper that round 11 deleted."
-    )

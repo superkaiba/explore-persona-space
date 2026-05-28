@@ -683,16 +683,17 @@ def run_sweep_phase(args: argparse.Namespace, *, repo_root: Path) -> int:
         job_count,
     )
     log.info(
-        "Round 11: in-process serial execution (no GPU pool, no subprocess wrapper). "
-        "Each cell runs end-to-end in the dispatcher process on whichever GPU(s) "
-        "are visible via CUDA_VISIBLE_DEVICES at launch."
+        "Round 12: two-pass sweep. Pass 1 = HF only (train + log-prob eval) for "
+        "every cell; one HF→vLLM teardown between passes; Pass 2 = vLLM loaded "
+        "once with --enable-lora, LoRA-swap per cell for sampled eval. No "
+        "framework-switch mid-pass = no orphan-worker risk per CLAUDE.md gotcha."
     )
 
     if args.dry_run:
         log.info("--dry-run: enumeration only; %d jobs would be dispatched", job_count)
         return 0
 
-    return _run_sweep_serial(
+    return _run_sweep_two_pass(
         sources=sources,
         seeds=seeds,
         cells=cells_per_seed,
@@ -1311,45 +1312,73 @@ def _aggressive_hf_to_vllm_teardown(*local_refs: Any) -> None:
         )
 
 
-def _run_one_cell_inprocess(
-    *,
-    cell: Any,
-    source: str,
-    seed: int,
-    args: argparse.Namespace,
-) -> int:
-    """Per-cell pipeline, in-process (Round 11 replacement for run_one_cell.py).
+# ---------------------------------------------------------------------------
+# Round 12 — two-pass sweep (HF-only pass 1, vLLM-only pass 2)
+# ---------------------------------------------------------------------------
 
-    Pipeline (mirrors ``run_smoke_phase`` step-for-step; the only deltas
-    are per-cell params + the explicit upload + verify + cleanup gate at
-    the end):
 
-      1. ``prepare_cell_jsonl`` — C=1 preflight + B=1 band assertion
-         enabled by default; writes per-cell JSONL + recipe-fix manifest.
-      2. ``train_one_cell(hf_upload=True)`` — TRL trainer with LoRA;
-         inline-upload fence (sft.py:667) pushes adapter to HF Hub on
-         completion. The fence is wrapped in ``except Exception`` upstream
-         (silent-swallow risk) — Round 11 leaves verification as the
-         safety net (step 5) since the smoke path proves the fence works
-         when env vars are present and the upload succeeds.
-      3. ``compute_logprob_panel`` — 24 personas x 20 questions x 6
-         checkpoints (480-context workload from plan v4 §5.7).
-      4. ``_aggressive_hf_to_vllm_teardown`` + ``generate_completions_
-         with_lora`` (vLLM ``--enable-lora``, no merge) → write
-         ``metrics.json``.
-      5. ``verify_adapter_on_hf_hub`` — safety net. On verify-FAIL: skip
-         cleanup, return rc=2 (local weights preserved for recovery).
-      6. ``cleanup_cell_local_weights`` — only after verify PASS. Removes
-         ``adapter/checkpoint-*/`` (and any stale ``merged/``) to keep
-         peak disk under the MooseFS ~130 GB quota.
+def is_cell_pass1_complete(cell_output_dir: Path) -> bool:
+    """Return True if Pass 1 (HF train + log-prob eval) has landed for this cell.
 
-    Returns OS-style exit code (mirrors run_one_cell.py's rc semantics):
-      - 0 = ok (train + eval + upload-verify + cleanup all succeeded)
-      - 1 = train or eval crashed (exception caught one level up)
-      - 2 = HF upload verification FAILED (local weights preserved)
+    Pass 1's terminal artifact is ``logprob_panel.json``: the
+    per-checkpoint log-prob result written after ``compute_logprob_panel``
+    returns. Presence + JSON-parsable + non-empty dict is the sentinel.
+
+    NOTE: this is a NECESSARY-but-not-sufficient check for full cell
+    completion. The HF Hub adapter must ALSO be present (verified
+    separately via ``is_cell_complete_on_hub`` against the index cache)
+    so Pass 2's vLLM ``LoRARequest`` can find the adapter. Resume logic
+    combines the two probes.
     """
-    # Heavy imports inside the function so the CLI / arg-parse paths can
-    # be unit-tested without pulling torch / TRL / vLLM.
+    logprob_path = cell_output_dir / "logprob_panel.json"
+    if not logprob_path.exists():
+        return False
+    try:
+        payload = json.loads(logprob_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        log.warning(
+            "logprob_panel.json at %s malformed; treating Pass 1 as NOT complete",
+            logprob_path,
+        )
+        return False
+    # Real Pass 1 output is a dict keyed by checkpoint dir → scores; empty
+    # dict means "scored zero checkpoints" which is wrong.
+    return isinstance(payload, dict) and len(payload) > 0
+
+
+def _run_pass1_hf(
+    cells_to_run: list[tuple[Any, str, int]],
+    *,
+    args: argparse.Namespace,
+) -> dict[tuple[str, str, int], int]:
+    """Pass 1 — HF Transformers only (train + log-prob eval), no vLLM.
+
+    For each (cell, source, seed) tuple:
+
+      1. ``prepare_cell_jsonl`` writes the per-cell JSONL + recipe-fix
+         manifest.
+      2. ``train_one_cell(hf_upload=True)`` runs LoRA SFT; the TRL
+         inline-upload fence pushes the adapter to HF Hub.
+      3. ``compute_logprob_panel`` runs per-checkpoint log-prob eval
+         across the 480-context train-matched panel.
+      4. Write ``logprob_panel.json`` to disk.
+      5. Drop refs (``del base_model; del tokenizer_lp``) to release GPU
+         memory before the next cell. NO vLLM in this pass.
+
+    Returns per-cell rc dict: 0 = ok, 1 = exception caught, 2 reserved
+    for verify failures (only Pass 2 emits rc=2; Pass 1 only sees
+    train/eval crashes).
+
+    All cells in Pass 1 use only HF Transformers
+    (``AutoModelForCausalLM`` + ``PeftModel``); no framework switch
+    within the pass = no orphan workers. Standard Python GC releases
+    memory between cells when the HF model refs go out of scope.
+
+    Per CLAUDE.md "Checkpoint per phase": logprob_panel.json lands on
+    disk INSIDE the per-cell loop. A Pass 1 crash on cell N preserves
+    cells 1..N-1's log-prob outputs; the next run picks up at cell N
+    via ``is_cell_pass1_complete``.
+    """
     from explore_persona_space.experiments.factor_screen_365.persona_panel import (
         EVAL_PERSONAS_24,
         EVAL_QUESTIONS_20,
@@ -1358,39 +1387,250 @@ def _run_one_cell_inprocess(
         prepare_cell_jsonl,
     )
     from explore_persona_space.experiments.factor_screen_397.eval_panel import (
-        DEFAULT_NUM_COMPLETIONS,
         FINAL_CHECKPOINT_MARKER_VARIANTS,
         build_train_matched_persona_panel,
         compute_logprob_panel,
-        generate_completions_with_lora,
         read_prepared_dataset_manifest,
-        score_markers_threaded,
     )
     from explore_persona_space.experiments.factor_screen_397.training import (
         BASE_MODEL,
         train_one_cell,
     )
 
-    cell_output_dir = _cell_output_dir(
-        args.slab_root,
-        cell_key=cell.key,
-        source=source,
-        seed=seed,
-    )
-    cell_output_dir.mkdir(parents=True, exist_ok=True)
+    per_cell_rc: dict[tuple[str, str, int], int] = {}
+    n_total = len(cells_to_run)
 
-    log.info(
-        "Cell start: cell=%s source=%s seed=%d e=%d → %s",
-        cell.key,
-        source,
-        seed,
-        cell.e,
-        cell_output_dir,
-    )
+    for job_index, (cell, source, seed) in enumerate(cells_to_run, start=1):
+        cell_dir = _cell_output_dir(args.slab_root, cell_key=cell.key, source=source, seed=seed)
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        log.info(
+            "[Pass 1 — HF] [%d/%d] starting cell=%s source=%s seed=%d e=%d -> %s",
+            job_index,
+            n_total,
+            cell.key,
+            source,
+            seed,
+            cell.e,
+            cell_dir,
+        )
+        try:
+            # Heavy AutoTokenizer import deferred so the dispatcher's CLI /
+            # arg-parse path can be unit-tested without pulling transformers.
+            from transformers import AutoTokenizer
 
-    # ----- (1) Data-prep (with C=1 preflight + B=1 band assertion ON) -----
+            tokenizer = AutoTokenizer.from_pretrained(
+                BASE_MODEL,
+                trust_remote_code=True,
+                token=os.environ.get("HF_TOKEN"),
+            )
+            if tokenizer.pad_token_id is None:
+                tokenizer.pad_token = tokenizer.eos_token
+
+            # (1) Data-prep with C=1 preflight + B=1 band assertion ON.
+            data_path = cell_dir / "prepared_train.jsonl"
+            log.info("Preparing cell JSONL from pool dir %s -> %s", args.pool_dir, data_path)
+            prep_result = prepare_cell_jsonl(
+                cell=cell,
+                source=source,
+                pool_dir=args.pool_dir,
+                output_path=data_path,
+                marker_text=args.marker_token,
+                pos_per_source=args.pos_per_source,
+                neg_per_source=args.pos_per_source,
+                seed=seed,
+                tokenizer=tokenizer,
+                enforce_c_preflight=True,
+                enforce_b1_band=True,
+            )
+            system_prompt_text = prep_result["system_prompt_text"]
+            log.info(
+                "Data-prep complete: %d pos + %d neg = %d rows (data_policy=%s)",
+                prep_result["num_positive"],
+                prep_result["num_negative"],
+                prep_result["num_total"],
+                prep_result["data_policy"],
+            )
+
+            # (2) Train. hf_upload=True; TRL inline-upload fence pushes the
+            # adapter to HF Hub. verify_adapter_on_hf_hub in Pass 2 is the
+            # safety net for silent-swallow failures of the fence.
+            train_start = time.time()
+            outcome = train_one_cell(
+                cell=cell,
+                seed=seed,
+                source=source,
+                data_path=data_path,
+                cell_output_dir=cell_dir,
+                marker_text=args.marker_token,
+                save_every_n_steps=args.save_every_n_steps,
+                lr=args.lr,
+                warmup_ratio=args.warmup_ratio,
+                hf_upload=True,
+                system_prompt_text=system_prompt_text,
+            )
+            train_minutes = (time.time() - train_start) / 60.0
+            log.info("Pass 1 training complete: %.2f min, loss=%.4f", train_minutes, outcome.loss)
+
+            # (3) Train-matched panel + per-checkpoint log-prob eval.
+            checkpoint_dirs = _enumerate_checkpoint_dirs(cell_dir, args.save_every_n_steps)
+            if not checkpoint_dirs:
+                log.error("No intermediate checkpoint dirs under %s", cell_dir / "adapter")
+                per_cell_rc[(cell.key, source, seed)] = 1
+                continue
+
+            manifest = read_prepared_dataset_manifest(cell_dir)
+            panel, overrides = build_train_matched_persona_panel(
+                canonical_panel=EVAL_PERSONAS_24,
+                source=source,
+                manifest=manifest,
+            )
+
+            base_model, tokenizer_lp = _load_base_model_for_logprob(checkpoint_dirs[0])
+            questions = list(EVAL_QUESTIONS_20)
+
+            log.info(
+                "Pass 1 log-prob eval: %d personas x %d questions = %d contexts x %d ckpts",
+                len(panel),
+                len(questions),
+                len(panel) * len(questions),
+                len(checkpoint_dirs),
+            )
+            eval_start = time.time()
+            logprob_result = compute_logprob_panel(
+                base_model=base_model,
+                tokenizer=tokenizer_lp,
+                checkpoint_dirs=checkpoint_dirs,
+                personas=panel,
+                questions=questions,
+                system_prompt_overrides=overrides,
+                marker_texts=FINAL_CHECKPOINT_MARKER_VARIANTS,
+                batch_size=8,
+                device="cuda:0",
+            )
+            eval_minutes = (time.time() - eval_start) / 60.0
+            log.info("Pass 1 log-prob eval complete: %.2f min", eval_minutes)
+
+            # (4) Persist logprob result BEFORE dropping refs (CLAUDE.md
+            # "checkpoint per phase"). If the drop somehow OOMs or the
+            # next iteration crashes, we keep this cell's Pass 1 output.
+            logprob_path = cell_dir / "logprob_panel.json"
+            logprob_path.write_text(json.dumps(logprob_result, indent=2), encoding="utf-8")
+            log.info("Wrote %s", logprob_path)
+
+            # (5) Drop HF refs. NO vLLM call in this pass — Python GC
+            # will release memory between cells; no orphan-worker risk.
+            del base_model
+            del tokenizer_lp
+            del tokenizer
+
+            per_cell_rc[(cell.key, source, seed)] = 0
+            log.info(
+                "[Pass 1 — HF] [%d/%d] completed: cell=%s source=%s seed=%d (rc=0)",
+                job_index,
+                n_total,
+                cell.key,
+                source,
+                seed,
+            )
+        except Exception:
+            log.exception(
+                "[Pass 1 — HF] cell crashed: cell=%s source=%s seed=%d (rc=1; continuing)",
+                cell.key,
+                source,
+                seed,
+            )
+            per_cell_rc[(cell.key, source, seed)] = 1
+
+    return per_cell_rc
+
+
+def _run_pass2_vllm(
+    cells_to_run: list[tuple[Any, str, int]],
+    *,
+    args: argparse.Namespace,
+) -> dict[tuple[str, str, int], int]:
+    """Pass 2 — vLLM only (sampled eval, base loaded once), no HF.
+
+    Loads vLLM ONCE with ``enable_lora=True``, then for each
+    (cell, source, seed) tuple:
+
+      1. Build a ``LoRARequest`` pointing at the cell's adapter dir.
+      2. ``llm.generate(prompts, sampling_params, lora_request=...)``
+         — vLLM swaps in this cell's LoRA without reloading the base.
+      3. Score the per-persona substring rate via
+         ``score_markers_threaded``.
+      4. Write ``metrics.json`` to disk.
+      5. ``verify_adapter_on_hf_hub`` (safety net; Pass 1's
+         hf_upload=True is the load-bearing upload — verify catches
+         silent-swallow failures of the TRL inline-upload fence).
+      6. ``cleanup_cell_local_weights`` ONLY on verify PASS (CLAUDE.md
+         "Models MUST upload to HF model repo before local deletion").
+
+    vLLM stays loaded across all cells; only the LoRA adapter swaps.
+    ``max_loras=1`` is sufficient because we only ever have one active
+    adapter per generate() call.
+
+    Returns per-cell rc dict (0=ok, 1=exception, 2=verify-fail).
+
+    Per CLAUDE.md "Checkpoint per phase": metrics.json lands inside
+    the loop. A Pass 2 crash preserves cells 1..N-1's metrics; the
+    next run picks up at cell N via the resume probe
+    (``is_cell_complete_locally`` reading metrics.json).
+    """
+    # Heavy imports for vLLM. Deferred so the unit tests can monkeypatch
+    # _run_pass2_vllm without dragging in vLLM.
+    import gc
+
+    import torch
     from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
 
+    from explore_persona_space.experiments.factor_screen_365.eval_panel import (
+        _patch_tokenizer_for_vllm,
+    )
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+        EVAL_QUESTIONS_20,
+    )
+    from explore_persona_space.experiments.factor_screen_397.eval_panel import (
+        DEFAULT_MAX_MODEL_LEN,
+        DEFAULT_MAX_NEW_TOKENS,
+        DEFAULT_NUM_COMPLETIONS,
+        DEFAULT_VLLM_LORA_MAX_RANK,
+        build_train_matched_persona_panel,
+        read_prepared_dataset_manifest,
+        score_markers_threaded,
+    )
+    from explore_persona_space.experiments.factor_screen_397.training import BASE_MODEL
+
+    _patch_tokenizer_for_vllm()
+
+    gpu_mem = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.45"))
+    log.info(
+        "[Pass 2 — vLLM] Loading base=%s once with enable_lora=True, "
+        "gpu_memory_utilization=%.2f, max_lora_rank=%d",
+        BASE_MODEL,
+        gpu_mem,
+        DEFAULT_VLLM_LORA_MAX_RANK,
+    )
+    vllm_load_start = time.time()
+    llm = LLM(
+        model=BASE_MODEL,
+        dtype="bfloat16",
+        trust_remote_code=True,
+        gpu_memory_utilization=gpu_mem,
+        max_model_len=DEFAULT_MAX_MODEL_LEN,
+        seed=42,
+        enable_lora=True,
+        max_loras=1,
+        max_lora_rank=DEFAULT_VLLM_LORA_MAX_RANK,
+    )
+    vllm_load_minutes = (time.time() - vllm_load_start) / 60.0
+    log.info("[Pass 2 — vLLM] base loaded in %.2f min", vllm_load_minutes)
+
+    # Tokenizer for chat-template prompt construction. Same Qwen tokenizer
+    # vLLM uses internally, loaded once.
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL,
         trust_remote_code=True,
@@ -1399,168 +1639,192 @@ def _run_one_cell_inprocess(
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    data_path = cell_output_dir / "prepared_train.jsonl"
-    log.info("Preparing cell JSONL from pool dir %s → %s", args.pool_dir, data_path)
-    prep_result = prepare_cell_jsonl(
-        cell=cell,
-        source=source,
-        pool_dir=args.pool_dir,
-        output_path=data_path,
-        marker_text=args.marker_token,
-        pos_per_source=args.pos_per_source,
-        neg_per_source=args.pos_per_source,  # symmetric: same count as positive
-        seed=seed,
-        tokenizer=tokenizer,
-        enforce_c_preflight=True,
-        enforce_b1_band=True,
-    )
-    system_prompt_text = prep_result["system_prompt_text"]
-    log.info(
-        "Data-prep complete: %d pos + %d neg = %d rows (data_policy=%s)",
-        prep_result["num_positive"],
-        prep_result["num_negative"],
-        prep_result["num_total"],
-        prep_result["data_policy"],
+    sampling_params = SamplingParams(
+        n=DEFAULT_NUM_COMPLETIONS,
+        temperature=1.0,
+        top_p=0.95,
+        max_tokens=DEFAULT_MAX_NEW_TOKENS,
     )
 
-    # ----- (2) Train (hf_upload=True — let the TRL inline-upload fence
-    # push the adapter to HF Hub on completion; the smoke phase proves
-    # this works when env vars are present + .env is loaded). -----
-    train_start = time.time()
-    outcome = train_one_cell(
-        cell=cell,
-        seed=seed,
-        source=source,
-        data_path=data_path,
-        cell_output_dir=cell_output_dir,
-        marker_text=args.marker_token,
-        save_every_n_steps=args.save_every_n_steps,
-        lr=args.lr,
-        warmup_ratio=args.warmup_ratio,
-        hf_upload=True,
-        system_prompt_text=system_prompt_text,
-    )
-    train_minutes = (time.time() - train_start) / 60.0
-    log.info("Training complete: %.2f min, loss=%.4f", train_minutes, outcome.loss)
+    per_cell_rc: dict[tuple[str, str, int], int] = {}
+    n_total = len(cells_to_run)
 
-    # ----- (3) Train-matched panel + per-checkpoint log-prob eval -----
-    checkpoint_dirs = _enumerate_checkpoint_dirs(cell_output_dir, args.save_every_n_steps)
-    if not checkpoint_dirs:
-        log.error("No intermediate checkpoint dirs under %s", cell_output_dir / "adapter")
-        return 1
+    # vLLM's LoRARequest needs a unique lora_int_id per adapter swap.
+    # Increment per cell so vLLM's cache doesn't confuse two cells'
+    # adapters under the same id.
+    next_lora_id = 1
 
-    manifest = read_prepared_dataset_manifest(cell_output_dir)
-    panel, overrides = build_train_matched_persona_panel(
-        canonical_panel=EVAL_PERSONAS_24,
-        source=source,
-        manifest=manifest,
-    )
+    try:
+        for job_index, (cell, source, seed) in enumerate(cells_to_run, start=1):
+            cell_dir = _cell_output_dir(args.slab_root, cell_key=cell.key, source=source, seed=seed)
+            log.info(
+                "[Pass 2 — vLLM] [%d/%d] starting cell=%s source=%s seed=%d e=%d -> %s",
+                job_index,
+                n_total,
+                cell.key,
+                source,
+                seed,
+                cell.e,
+                cell_dir,
+            )
+            try:
+                # (1) Read recipe-fix manifest for train-matched overrides.
+                manifest = read_prepared_dataset_manifest(cell_dir)
+                if manifest is None:
+                    log.error(
+                        "[Pass 2 — vLLM] no manifest under %s — Pass 1 likely "
+                        "didn't run for this cell; rc=1",
+                        cell_dir,
+                    )
+                    per_cell_rc[(cell.key, source, seed)] = 1
+                    continue
 
-    base_model, tokenizer_lp = _load_base_model_for_logprob(checkpoint_dirs[0])
+                panel, overrides = build_train_matched_persona_panel(
+                    canonical_panel=EVAL_PERSONAS_24,
+                    source=source,
+                    manifest=manifest,
+                )
+                questions = list(EVAL_QUESTIONS_20)
 
-    questions = list(EVAL_QUESTIONS_20)
-    log.info(
-        "Log-prob eval: %d personas x %d questions = %d contexts x %d checkpoints",
-        len(panel),
-        len(questions),
-        len(panel) * len(questions),
-        len(checkpoint_dirs),
-    )
-    eval_start = time.time()
-    logprob_result = compute_logprob_panel(
-        base_model=base_model,
-        tokenizer=tokenizer_lp,
-        checkpoint_dirs=checkpoint_dirs,
-        personas=panel,
-        questions=questions,
-        system_prompt_overrides=overrides,  # SR1 wiring
-        marker_texts=FINAL_CHECKPOINT_MARKER_VARIANTS,
-        batch_size=8,
-        device="cuda:0",
-    )
-    eval_minutes = (time.time() - eval_start) / 60.0
-    log.info("Log-prob eval complete: %.2f min", eval_minutes)
-    logprob_path = cell_output_dir / "logprob_panel.json"
-    logprob_path.write_text(json.dumps(logprob_result, indent=2), encoding="utf-8")
-    log.info("Wrote %s", logprob_path)
+                # Build chat-templated prompts (same shape as
+                # eval_panel.generate_completions_with_lora).
+                prompts: list[str] = []
+                keys: list[tuple[str, str]] = []
+                for persona_name, panel_sys_prompt in panel.items():
+                    system_prompt = overrides.get(persona_name, panel_sys_prompt)
+                    for question in questions:
+                        messages = [
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": question},
+                        ]
+                        text = tokenizer.apply_chat_template(
+                            messages, tokenize=False, add_generation_prompt=True
+                        )
+                        prompts.append(text)
+                        keys.append((persona_name, question))
 
-    # ----- (4) HF → vLLM teardown + sampled eval -----
-    # Drop refs BEFORE teardown (Python `del` only releases the caller's
-    # binding; the helper just does GC + cache + sync + log).
-    del base_model
-    del tokenizer_lp
-    _aggressive_hf_to_vllm_teardown()
+                # (2) vLLM generate with cell's LoRA swapped in. The
+                # adapter lives at cell_dir/adapter (TrainOutcome.
+                # adapter_path); the final adapter is at the directory
+                # root, not a checkpoint-* subdir.
+                adapter_dir = cell_dir / "adapter"
+                if not adapter_dir.exists():
+                    log.error(
+                        "[Pass 2 — vLLM] adapter dir missing at %s — Pass 1 likely "
+                        "didn't complete for this cell; rc=1",
+                        adapter_dir,
+                    )
+                    per_cell_rc[(cell.key, source, seed)] = 1
+                    continue
 
-    log.info(
-        "Sampled eval starting (vLLM --enable-lora): base=%s lora_path=%s "
-        "(panel=%d personas x %d questions x %d completions)",
-        BASE_MODEL,
-        outcome.adapter_path,
-        len(panel),
-        len(questions),
-        DEFAULT_NUM_COMPLETIONS,
-    )
-    completions = generate_completions_with_lora(
-        base_model_path=BASE_MODEL,
-        lora_path=outcome.adapter_path,
-        personas=dict(panel),
-        questions=list(questions),
-        system_prompt_overrides=overrides,
-        seed=seed,
-    )
-    persona_scores = score_markers_threaded(completions, marker=args.marker_token)
+                lora_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
+                lora_request = LoRARequest(
+                    lora_name=lora_name,
+                    lora_int_id=next_lora_id,
+                    lora_path=str(adapter_dir),
+                )
+                next_lora_id += 1
+                log.info(
+                    "[Pass 2 — vLLM] LoRARequest lora_int_id=%d lora_name=%s lora_path=%s",
+                    lora_request.lora_int_id,
+                    lora_request.lora_name,
+                    lora_request.lora_path,
+                )
+                gen_start = time.time()
+                outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
+                gen_minutes = (time.time() - gen_start) / 60.0
+                log.info("[Pass 2 — vLLM] generate complete in %.2f min", gen_minutes)
 
-    source_rate = persona_scores.get(source, {}).get("substring_rate")
-    metrics_payload = {
-        "marker": args.marker_token,
-        "cell_key": cell.key,
-        "source": source,
-        "seed": seed,
-        "e": cell.e,
-        "train_wall_minutes": train_minutes,
-        "logprob_eval_wall_minutes": eval_minutes,
-        "panel_size": len(panel),
-        "questions": len(questions),
-        "num_completions": DEFAULT_NUM_COMPLETIONS,
-        "personas": persona_scores,
-        "source_substring_rate": source_rate,
-        "vllm_lora_mode": True,
-    }
-    metrics_path = cell_output_dir / "metrics.json"
-    metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
-    log.info(
-        "Sampled eval complete: wrote %s (source_rate=%s)",
-        metrics_path,
-        f"{source_rate:.3f}" if source_rate is not None else "None",
-    )
+                # Repack outputs to {persona: {question: [completions]}}.
+                completions: dict[str, dict[str, list[str]]] = {p: {} for p in panel}
+                for out, (persona, question) in zip(outputs, keys, strict=True):
+                    completions[persona][question] = [o.text for o in out.outputs]
 
-    # ----- (5) HF Hub verification (safety net — train_one_cell with
-    # hf_upload=True already pushed the adapter; verify it actually landed
-    # before allowing cleanup). -----
-    run_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
-    hf_path_in_repo = f"adapters/issue_397/{run_name}"
-    upload_verified = verify_adapter_on_hf_hub(
-        hf_path_in_repo=hf_path_in_repo,
-        repo_id=HF_ADAPTER_REPO,
-    )
-    if not upload_verified:
-        log.error(
-            "HF upload verification FAILED for %s — preserving local weights at "
-            "%s for manual recovery. Cell exits with rc=2.",
-            hf_path_in_repo,
-            cell_output_dir,
-        )
-        return 2
+                # (3) Score per-persona substring rate.
+                persona_scores = score_markers_threaded(completions, marker=args.marker_token)
+                source_rate = persona_scores.get(source, {}).get("substring_rate")
 
-    # ----- (6) Per-cell cleanup (only after verify PASS) -----
-    removed = cleanup_cell_local_weights(cell_output_dir)
-    log.info("Per-cell cleanup: %s", removed)
+                # (4) Write metrics.json BEFORE verify+cleanup (per CLAUDE.md
+                # checkpoint-per-phase: persist on disk inside the loop).
+                metrics_payload = {
+                    "marker": args.marker_token,
+                    "cell_key": cell.key,
+                    "source": source,
+                    "seed": seed,
+                    "e": cell.e,
+                    "vllm_load_wall_minutes": vllm_load_minutes,
+                    "vllm_gen_wall_minutes": gen_minutes,
+                    "panel_size": len(panel),
+                    "questions": len(questions),
+                    "num_completions": DEFAULT_NUM_COMPLETIONS,
+                    "personas": persona_scores,
+                    "source_substring_rate": source_rate,
+                    "vllm_lora_mode": True,
+                    "two_pass_mode": True,  # Round 12 marker
+                }
+                metrics_path = cell_dir / "metrics.json"
+                metrics_path.write_text(json.dumps(metrics_payload, indent=2), encoding="utf-8")
+                log.info(
+                    "[Pass 2 — vLLM] wrote %s (source_rate=%s)",
+                    metrics_path,
+                    f"{source_rate:.3f}" if source_rate is not None else "None",
+                )
 
-    log.info("Cell complete: cell=%s source=%s seed=%d → rc=0", cell.key, source, seed)
-    return 0
+                # (5) Verify HF Hub adapter present (Pass 1's hf_upload=True
+                # should have uploaded; this is the safety net for silent
+                # fence-swallow).
+                run_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
+                hf_path_in_repo = f"adapters/issue_397/{run_name}"
+                upload_verified = verify_adapter_on_hf_hub(
+                    hf_path_in_repo=hf_path_in_repo,
+                    repo_id=HF_ADAPTER_REPO,
+                )
+                if not upload_verified:
+                    log.error(
+                        "[Pass 2 — vLLM] HF upload verification FAILED for %s — "
+                        "preserving local weights at %s for manual recovery. rc=2.",
+                        hf_path_in_repo,
+                        cell_dir,
+                    )
+                    per_cell_rc[(cell.key, source, seed)] = 2
+                    continue
+
+                # (6) Cleanup local weights (only on verify PASS).
+                removed = cleanup_cell_local_weights(cell_dir)
+                log.info("[Pass 2 — vLLM] cleanup: %s", removed)
+
+                per_cell_rc[(cell.key, source, seed)] = 0
+                log.info(
+                    "[Pass 2 — vLLM] [%d/%d] completed: cell=%s source=%s seed=%d (rc=0)",
+                    job_index,
+                    n_total,
+                    cell.key,
+                    source,
+                    seed,
+                )
+            except Exception:
+                log.exception(
+                    "[Pass 2 — vLLM] cell crashed: cell=%s source=%s seed=%d (rc=1; continuing)",
+                    cell.key,
+                    source,
+                    seed,
+                )
+                per_cell_rc[(cell.key, source, seed)] = 1
+    finally:
+        # vLLM cleanup — same pattern as eval_panel.generate_completions_
+        # with_lora's tail. We're at end-of-process here (Pass 2 is the
+        # last phase before the dispatcher returns) so the orphan-worker
+        # risk per the CLAUDE.md gotcha doesn't apply (no HF load after).
+        log.info("[Pass 2 — vLLM] tearing down vLLM (end of sweep)")
+        del llm
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    return per_cell_rc
 
 
-def _run_sweep_serial(
+def _run_sweep_two_pass(  # noqa: C901 — resume scan + per-pass dispatch + summary roll-up kept in one function for atomicity
     *,
     sources: list[str],
     seeds: list[int],
@@ -1568,187 +1832,209 @@ def _run_sweep_serial(
     args: argparse.Namespace,
     repo_root: Path,
 ) -> int:
-    """Round 11: in-process serial sweep over (source, seed, cell) tuples.
+    """Round 12 entry point: two-pass sweep (HF first, vLLM second).
 
-    Reuses the proven smoke pipeline shape for every cell (lifted into
-    ``_run_one_cell_inprocess``). The serial loop is the price of having
-    a working pipeline — the round-5..10 subprocess-pool design lost five
-    rounds to trust-boundary bugs (env propagation, branch-guard, upload
-    silent-swallow). One cell at a time, end-to-end, with explicit
-    upload-verify + cleanup between cells.
+    Pass 1 runs HF-only across every cell that needs it (no adapter on
+    Hub OR no logprob_panel.json on disk). Pass 2 runs vLLM-only across
+    every cell that needs sampled eval (no metrics.json on disk). The
+    two pass-lists are computed independently — a cell can land in
+    Pass 2 but not Pass 1 if Pass 1 already ran (resume case).
 
-    Canonical iteration order: source-major, then seed, then cell. Keeps
-    a single source's runs clustered in time so HF Hub batches adapter
-    uploads per-source (easier mid-sweep inspection).
+    ONE ``_aggressive_hf_to_vllm_teardown`` event fires between Pass 1
+    and Pass 2 (not 108 events per cell). This is the round-12 fix for
+    the round-11 reviewer's FAIL: no framework switch within a pass =
+    no orphan-worker risk.
 
-    Per-cell exit codes (mirror of run_one_cell.py rc semantics):
-      - 0 = ok
-      - 1 = train or eval crashed (exception caught + logged)
-      - 2 = HF upload verification FAILED (local weights preserved)
+    Source-major ordering (matches Round 11 + Round 5..10) so the HF
+    Hub upload trace is interpretable per-source mid-sweep.
 
-    Single-cell failures DO NOT kill the sweep — the dispatcher logs the
-    failure and continues. Aggregate per-cell exit-code summary lands in
-    a sweep-level JSON sidecar.
+    Returns 0 if at least one cell completed cleanly (rc=0 in either
+    pass for that cell), non-zero only when ALL cells failed.
     """
-    job_count = len(sources) * len(seeds) * len(cells)
+    del repo_root  # unused in the two-pass path
+    # Source-major, then seed, then cell.
+    all_jobs: list[tuple[Any, str, int]] = [
+        (cell, source, seed) for source in sources for seed in seeds for cell in cells
+    ]
+    job_count = len(all_jobs)
     log.info(
-        "Enumerating %d sweep jobs (sources=%d seeds=%d cells=%d)",
+        "Enumerated %d sweep jobs (sources=%d seeds=%d cells=%d)",
         job_count,
         len(sources),
         len(seeds),
         len(cells),
     )
 
-    # Source-major, then seed, then cell.
-    all_jobs: list[tuple[Any, str, int]] = [
-        (cell, source, seed) for source in sources for seed in seeds for cell in cells
-    ]
+    # Resume scan: build Pass 1 + Pass 2 sub-lists independently.
+    hub_files_cache = None
+    no_resume = getattr(args, "no_resume", False)
+    if not no_resume and args.resume_source in ("hub", "both"):
+        hub_files_cache = _fetch_hub_adapter_index()
 
-    # Round 6: sweep-level resume. Filter out cells already complete
-    # locally (metrics.json) AND/OR on HF Hub.
-    skip_summary: dict[str, int] = {"skipped_local": 0, "skipped_hub": 0, "skipped_both": 0}
-    if getattr(args, "no_resume", False):
-        log.info("--no-resume set; running all %d cells from scratch", len(all_jobs))
-        jobs_to_run = all_jobs
-        skip_summary["queued"] = len(jobs_to_run)
-    else:
-        hub_files_cache = None
-        if args.resume_source in ("hub", "both"):
-            hub_files_cache = _fetch_hub_adapter_index()
-        jobs_to_run, skip_summary = filter_jobs_for_resume(
-            all_jobs,
-            slab_root=args.slab_root,
-            resume_source=args.resume_source,
-            hub_files_cache=hub_files_cache,
-        )
-        skipped_total = (
-            skip_summary["skipped_local"]
-            + skip_summary["skipped_hub"]
-            + skip_summary["skipped_both"]
-        )
-        log.info(
-            "Resuming sweep: %d/%d cells already complete, launching %d remaining "
-            "(skipped: local=%d hub=%d both=%d; resume_source=%s)",
-            skipped_total,
-            len(all_jobs),
-            len(jobs_to_run),
-            skip_summary["skipped_local"],
-            skip_summary["skipped_hub"],
-            skip_summary["skipped_both"],
-            args.resume_source,
-        )
-        if skipped_total > 0:
-            write_verdict_file(
-                args.slab_root,
-                "SWEEP_RESUME.json",
-                {
-                    "kind": "epm:sweep-resume",
-                    "note": (
-                        f"Sweep resume: {skipped_total} of {len(all_jobs)} cells "
-                        f"already complete; launching {len(jobs_to_run)} remaining. "
-                        f"Skipped: local={skip_summary['skipped_local']}, "
-                        f"hub={skip_summary['skipped_hub']}, "
-                        f"both={skip_summary['skipped_both']}, "
-                        f"resume_source={args.resume_source}."
-                    ),
-                    "issue": args.issue,
-                    "skipped_total": skipped_total,
-                    "total_jobs": len(all_jobs),
-                    "remaining": len(jobs_to_run),
-                    "skip_summary": skip_summary,
-                    "resume_source": args.resume_source,
-                },
-            )
+    pass1_jobs: list[tuple[Any, str, int]] = []
+    pass2_jobs: list[tuple[Any, str, int]] = []
+    skip_summary = {
+        "pass1_skipped": 0,
+        "pass2_skipped": 0,
+        "fully_complete": 0,
+        "pass1_queued": 0,
+        "pass2_queued": 0,
+    }
 
-    # In-process serial loop. Per-cell rc dict keyed by (cell_key, source, seed).
-    per_cell_rc: dict[tuple[str, str, int], int] = {}
-    del repo_root  # unused in the serial path (no subprocess cwd to set)
-
-    for job_index, (cell, source, seed) in enumerate(jobs_to_run, start=1):
+    for cell, source, seed in all_jobs:
         cell_dir = _cell_output_dir(args.slab_root, cell_key=cell.key, source=source, seed=seed)
-        log.info(
-            "[%d/%d] starting cell=%s source=%s seed=%d e=%d → %s",
-            job_index,
-            len(jobs_to_run),
-            cell.key,
-            source,
-            seed,
-            cell.e,
-            cell_dir,
+        pass1_done = False
+        pass2_done = False
+
+        if not no_resume:
+            # Pass 1 done = logprob_panel.json on disk AND adapter on Hub
+            # (adapter on Hub is what Pass 2 needs to read; if Hub missing,
+            # Pass 2 would fail verify with rc=2, so re-running Pass 1 to
+            # re-upload is the right move).
+            local_logprob_ok = is_cell_pass1_complete(cell_dir)
+            hub_ok = False
+            if args.resume_source in ("hub", "both"):
+                hub_ok = is_cell_complete_on_hub(
+                    cell.key, source, seed, hub_files_cache=hub_files_cache
+                )
+            elif args.resume_source == "local":
+                # local-only mode: treat presence of adapter/ dir as Pass-1-done.
+                hub_ok = (cell_dir / "adapter").exists()
+            pass1_done = local_logprob_ok and hub_ok
+
+            # Pass 2 done = metrics.json on disk (final sampled-eval output).
+            pass2_done = is_cell_complete_locally(cell_dir)
+
+        if pass1_done and pass2_done:
+            skip_summary["fully_complete"] += 1
+            log.info(
+                "Resume: cell=%s source=%s seed=%d is fully complete (skip both passes)",
+                cell.key,
+                source,
+                seed,
+            )
+            continue
+
+        if not pass1_done:
+            pass1_jobs.append((cell, source, seed))
+            skip_summary["pass1_queued"] += 1
+        else:
+            skip_summary["pass1_skipped"] += 1
+
+        if not pass2_done:
+            pass2_jobs.append((cell, source, seed))
+            skip_summary["pass2_queued"] += 1
+        else:
+            skip_summary["pass2_skipped"] += 1
+
+    log.info(
+        "Two-pass resume scan: %d/%d cells fully complete; Pass 1 queue=%d, "
+        "Pass 2 queue=%d (Pass 1 skipped=%d, Pass 2 skipped=%d)",
+        skip_summary["fully_complete"],
+        job_count,
+        skip_summary["pass1_queued"],
+        skip_summary["pass2_queued"],
+        skip_summary["pass1_skipped"],
+        skip_summary["pass2_skipped"],
+    )
+    if skip_summary["fully_complete"] > 0 or skip_summary["pass1_skipped"] > 0:
+        # Emit verdict file for the orchestrator to post epm:sweep-resume marker.
+        write_verdict_file(
+            args.slab_root,
+            "SWEEP_RESUME.json",
+            {
+                "kind": "epm:sweep-resume",
+                "note": (
+                    f"Two-pass sweep resume: {skip_summary['fully_complete']} of "
+                    f"{job_count} cells fully complete; Pass 1 queue="
+                    f"{skip_summary['pass1_queued']}, Pass 2 queue="
+                    f"{skip_summary['pass2_queued']}. "
+                    f"resume_source={args.resume_source}."
+                ),
+                "issue": args.issue,
+                "fully_complete": skip_summary["fully_complete"],
+                "total_jobs": job_count,
+                "pass1_queue": skip_summary["pass1_queued"],
+                "pass2_queue": skip_summary["pass2_queued"],
+                "skip_summary": skip_summary,
+                "resume_source": args.resume_source,
+            },
         )
 
-        # Each cell is wrapped in its own try/except so a single-cell crash
-        # surfaces as rc=1 in the summary instead of taking down the sweep.
-        # The traceback lands in the dispatcher log (one log file for the
-        # whole serial run — by design, since there's only one process).
-        try:
-            rc = _run_one_cell_inprocess(
-                cell=cell,
-                source=source,
-                seed=seed,
-                args=args,
-            )
-        except Exception:
-            log.exception(
-                "Cell crashed: cell=%s source=%s seed=%d (treating as rc=1; "
-                "continuing with next cell)",
-                cell.key,
-                source,
-                seed,
-            )
-            rc = 1
+    # ===== Pass 1: HF only =====
+    pass1_rcs: dict[tuple[str, str, int], int] = {}
+    if pass1_jobs:
+        log.info(
+            "===== Pass 1 (HF train + log-prob eval) starting: %d cells =====", len(pass1_jobs)
+        )
+        pass1_start = time.time()
+        pass1_rcs = _run_pass1_hf(pass1_jobs, args=args)
+        pass1_minutes = (time.time() - pass1_start) / 60.0
+        log.info("===== Pass 1 complete in %.2f min =====", pass1_minutes)
+    else:
+        log.info("Pass 1: nothing to run (resume covered all cells)")
 
-        per_cell_rc[(cell.key, source, seed)] = rc
-        if rc == 0:
-            log.info(
-                "[%d/%d] completed cleanly: cell=%s source=%s seed=%d (rc=0)",
-                job_index,
-                len(jobs_to_run),
-                cell.key,
-                source,
-                seed,
-            )
-        else:
-            log.warning(
-                "[%d/%d] failed: cell=%s source=%s seed=%d (rc=%d) — local artifacts "
-                "preserved at %s",
-                job_index,
-                len(jobs_to_run),
-                cell.key,
-                source,
-                seed,
-                rc,
-                cell_dir,
-            )
+    # ===== Single HF→vLLM teardown between passes =====
+    if pass2_jobs:
+        log.info("===== Single HF→vLLM teardown event between passes =====")
+        _aggressive_hf_to_vllm_teardown()
 
-    # Summary + per-cell JSON sidecar for downstream resume / debugging.
+    # ===== Pass 2: vLLM only =====
+    pass2_rcs: dict[tuple[str, str, int], int] = {}
+    if pass2_jobs:
+        log.info("===== Pass 2 (vLLM sampled eval) starting: %d cells =====", len(pass2_jobs))
+        pass2_start = time.time()
+        pass2_rcs = _run_pass2_vllm(pass2_jobs, args=args)
+        pass2_minutes = (time.time() - pass2_start) / 60.0
+        log.info("===== Pass 2 complete in %.2f min =====", pass2_minutes)
+    else:
+        log.info("Pass 2: nothing to run (resume covered all cells)")
+
+    # ===== Summary =====
+    # Per-cell rc combines Pass 1 + Pass 2: a cell's final rc is the WORST
+    # of its two pass rcs (0 < 1 < 2). Resume-skipped cells contribute 0.
+    final_rcs: dict[tuple[str, str, int], int] = {}
+    for cell, source, seed in all_jobs:
+        key = (cell.key, source, seed)
+        p1 = pass1_rcs.get(key, 0)  # skipped → 0
+        p2 = pass2_rcs.get(key, 0)
+        final_rcs[key] = max(p1, p2)
+
     rc_counts: dict[int, int] = {}
-    for rc in per_cell_rc.values():
+    for rc in final_rcs.values():
         rc_counts[rc] = rc_counts.get(rc, 0) + 1
     log.info(
-        "Sweep complete: %d/%d cells ran, rc distribution: %s",
-        len(per_cell_rc),
-        job_count,
+        "Two-pass sweep complete: %d cells, rc distribution: %s",
+        len(final_rcs),
         rc_counts,
     )
+
     summary_path = args.slab_root / "sweep_summary.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     summary_payload = {
         "job_count": job_count,
-        "ran": len(per_cell_rc),
+        "ran_pass1": len(pass1_rcs),
+        "ran_pass2": len(pass2_rcs),
         "rc_counts": {str(k): v for k, v in rc_counts.items()},
         "per_cell": [
-            {"cell": k[0], "source": k[1], "seed": k[2], "rc": v}
-            for k, v in sorted(per_cell_rc.items())
+            {
+                "cell": k[0],
+                "source": k[1],
+                "seed": k[2],
+                "pass1_rc": pass1_rcs.get(k, 0),
+                "pass2_rc": pass2_rcs.get(k, 0),
+                "final_rc": v,
+            }
+            for k, v in sorted(final_rcs.items())
         ],
+        "skip_summary": skip_summary,
+        "two_pass_mode": True,
     }
     summary_path.write_text(json.dumps(summary_payload, indent=2), encoding="utf-8")
     log.info("Wrote sweep summary: %s", summary_path)
 
-    # Sweep itself returns 0 unless ALL cells failed; per-cell failures
-    # are surfaced through the summary JSON, not the top-level rc.
     if rc_counts and rc_counts.get(0, 0) == 0:
-        log.error("All %d cells failed; returning rc=1", len(per_cell_rc))
+        log.error("All %d cells failed; returning rc=1", len(final_rcs))
         return 1
     return 0
 

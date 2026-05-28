@@ -17,13 +17,15 @@ This test surface covers:
      ``system_prompt_text`` kwarg populated so the recipe-fix manifest
      lands on disk for the eval side to read.
 
-  3. Round 11: the sweep enumeration loop (``_run_sweep_serial``) iterates
-     108 (cell, source, seed) tuples for the post-round-7-descope
-     canonical {3 sources, 1 seed [42], 36 cells/source} configuration
-     in-process, calling ``_run_one_cell_inprocess`` once per cell.
-     Round 4 expanded to 3 seeds x 108 = 324; Round 7 reverted to 1 seed
-     x 108 = 108 per user descope. Round 11 dropped the subprocess pool
-     in favor of in-process serial.
+  3. Round 12: the sweep dispatches to ``_run_sweep_two_pass`` for the
+     post-round-7-descope canonical {3 sources, 1 seed [42], 36 cells/
+     source} = 108 (cell, seed) configuration. Round 11's single-pass
+     serial loop was abandoned after the round-11 reviewer FAILed on
+     missing vLLM→HF teardown between cells (orphan-worker risk per
+     CLAUDE.md gotcha). Detailed two-pass pipeline-order contracts live
+     in ``test_factor_screen_397_two_pass_sweep.py``; this file only
+     asserts the dispatch hand-off + the dry-run + smoke-pass-gate
+     contracts.
 
   4. ``run_sweep_phase`` refuses to dispatch when no
      ``epm:smoke-pass`` marker is present.
@@ -374,13 +376,13 @@ def test_sweep_phase_dry_run_enumerates_108_jobs(monkeypatch, capsys) -> None:
         del out  # unused — return-code is the load-bearing check
 
 
-def test_sweep_phase_calls_run_one_cell_inprocess(monkeypatch) -> None:
-    """Round 11: ``run_sweep_phase`` (non-dry-run) calls
-    ``_run_one_cell_inprocess`` once per (cell, source, seed) tuple.
+def test_sweep_phase_dispatches_to_two_pass_runner(monkeypatch) -> None:
+    """Round 12: ``run_sweep_phase`` (non-dry-run) dispatches to
+    ``_run_sweep_two_pass``, NOT the deleted Round 11 ``_run_sweep_serial``.
 
-    Replaces the round-5..10 ``_launch_cell_subprocess`` test. The
-    in-process serial loop calls the helper directly; no subprocess, no
-    GPU pool, no Popen.
+    Asserts via monkeypatching the canonical entry point: a non-dry-run
+    sweep with smoke confirmed must call _run_sweep_two_pass exactly
+    once with the expected source/seed/cells.
     """
     monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
@@ -397,178 +399,30 @@ def test_sweep_phase_calls_run_one_cell_inprocess(monkeypatch) -> None:
         only_cell = Cell.from_key("00000")
         monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: [only_cell])
 
-        call_records: list[dict] = []
+        call_args: list[dict] = []
 
-        def _fake_inprocess(**kwargs):
-            call_records.append(kwargs)
+        def _fake_two_pass(**kwargs):
+            call_args.append(kwargs)
             return 0
 
-        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
+        monkeypatch.setattr(_dispatch, "_run_sweep_two_pass", _fake_two_pass)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
-        assert rc == 0, f"Sweep should return 0 when all cells succeed; got {rc}"
-
-        # One call per (cell, source, seed) tuple.
-        assert len(call_records) == 1
-        call = call_records[0]
-        assert call["cell"].key == "00000"
-        assert call["source"] == "librarian"
-        assert call["seed"] == 42
-        assert call["args"] is args
-
-        # Sweep summary written.
-        summary_path = slab_root / "sweep_summary.json"
-        assert summary_path.exists()
-        summary = json.loads(summary_path.read_text(encoding="utf-8"))
-        assert summary["job_count"] == 1
-        assert summary["ran"] == 1
-        assert summary["rc_counts"] == {"0": 1}
-        assert summary["per_cell"][0]["rc"] == 0
-
-
-def test_sweep_phase_iterates_in_canonical_order(monkeypatch) -> None:
-    """Round 11: sweep iterates source-major, then seed, then cell.
-
-    Order matters for HF Hub mid-sweep inspection: clustering one
-    source's adapter uploads together makes inspection easier than
-    interleaved uploads across sources.
-    """
-    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        slab_root = Path(tmpdir)
-        args = _build_smoke_args(slab_root)
-        args.mode = "sweep"
-        args.dry_run = False
-        args.sources = "librarian,programmer"
-        args.seeds = "42,137"
-
-        from explore_persona_space.experiments.factor_screen_397.cells import Cell
-
-        cell_a = Cell.from_key("00000")
-        cell_b = Cell.from_key("00001")
-        monkeypatch.setattr(_dispatch, "_enumerate_valid_cells_per_seed", lambda: [cell_a, cell_b])
-
-        order: list[tuple[str, str, int]] = []
-
-        def _fake_inprocess(**kwargs):
-            order.append((kwargs["cell"].key, kwargs["source"], kwargs["seed"]))
-            return 0
-
-        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
-
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        _dispatch.run_sweep_phase(args, repo_root=repo_root)
-
-        # 2 sources x 2 seeds x 2 cells = 8 invocations.
-        assert len(order) == 8
-        # Source-major: all librarian invocations before any programmer invocation.
-        librarian_indices = [i for i, (_, s, _) in enumerate(order) if s == "librarian"]
-        programmer_indices = [i for i, (_, s, _) in enumerate(order) if s == "programmer"]
-        assert max(librarian_indices) < min(programmer_indices)
-        # Within librarian: seed 42 before seed 137.
-        librarian_seeds_in_order = [seed for _, s, seed in order if s == "librarian"]
-        assert librarian_seeds_in_order == [42, 42, 137, 137]
-
-
-def test_sweep_phase_continues_on_per_cell_failure(monkeypatch) -> None:
-    """Round 11: a per-cell rc != 0 must NOT kill the sweep — the
-    failure lands in the summary JSON and the loop continues to the
-    next cell.
-
-    Per the brief: "On failure, log the cell's failure but continue with
-    other cells (a single-cell failure should NOT kill the sweep)."
-    """
-    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        slab_root = Path(tmpdir)
-        args = _build_smoke_args(slab_root)
-        args.mode = "sweep"
-        args.dry_run = False
-        args.sources = "librarian"
-        args.seeds = "42,137"  # 2 (seed, cell) tuples for 1 cell
-
-        from explore_persona_space.experiments.factor_screen_397.cells import Cell
-
-        monkeypatch.setattr(
-            _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
-        )
-
-        rcs = [2, 0]  # first cell fails (upload-verify); second succeeds
-
-        def _fake_inprocess(**kwargs):
-            return rcs.pop(0)
-
-        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
-
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
-        # Sweep returns 0 because at least one cell succeeded; the per-cell
-        # failure shows up in the summary.
         assert rc == 0
-        # Both cells were attempted — single-cell rc=2 didn't kill the sweep.
-        assert rcs == []
-
-        summary = json.loads((slab_root / "sweep_summary.json").read_text(encoding="utf-8"))
-        assert summary["rc_counts"] == {"0": 1, "2": 1}
-        assert summary["ran"] == 2
-
-
-def test_sweep_phase_catches_inprocess_exceptions_as_rc1(monkeypatch) -> None:
-    """Round 11: ``_run_one_cell_inprocess`` raising a Python exception
-    must be caught at the loop level and recorded as rc=1 (mirrors the
-    rc=1 semantics from the deleted run_one_cell.py's top-level
-    try/except). The sweep continues to the next cell.
-
-    Without this safety net, a single bug in train_one_cell would take
-    down the whole 108-cell sweep — exactly the failure mode round 11's
-    in-process design has to defend against (the deleted subprocess
-    wrapper got this for free via OS-level isolation).
-    """
-    monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        slab_root = Path(tmpdir)
-        args = _build_smoke_args(slab_root)
-        args.mode = "sweep"
-        args.dry_run = False
-        args.sources = "librarian"
-        args.seeds = "42,137"  # 2 attempts so we see the loop continues past the crash
-
-        from explore_persona_space.experiments.factor_screen_397.cells import Cell
-
-        monkeypatch.setattr(
-            _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
-        )
-
-        call_count = {"n": 0}
-
-        def _fake_inprocess(**kwargs):
-            call_count["n"] += 1
-            if kwargs["seed"] == 42:
-                raise RuntimeError("simulated training crash")
-            return 0
-
-        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", _fake_inprocess)
-
-        repo_root = Path(__file__).resolve().parent.parent.parent
-        rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
-        assert rc == 0  # at least one cell succeeded
-        # Both attempts ran — the first one's RuntimeError didn't propagate.
-        assert call_count["n"] == 2
-
-        summary = json.loads((slab_root / "sweep_summary.json").read_text(encoding="utf-8"))
-        assert summary["rc_counts"] == {"0": 1, "1": 1}, (
-            f"Expected one rc=1 from the caught exception + one rc=0 from the "
-            f"successful cell; got {summary['rc_counts']}"
-        )
+        assert len(call_args) == 1
+        kw = call_args[0]
+        assert kw["sources"] == ["librarian"]
+        assert kw["seeds"] == [42]
+        assert kw["cells"] == [only_cell]
+        assert kw["args"] is args
+        assert kw["repo_root"] == repo_root
 
 
-def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
-    """If every cell fails (rc != 0), the sweep returns non-zero so the
-    orchestrator can mark the run as failed.
+def test_sweep_phase_two_pass_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
+    """When ``_run_sweep_two_pass`` returns non-zero (all-fail path),
+    ``run_sweep_phase`` propagates it so the orchestrator can mark the
+    run as failed.
     """
     monkeypatch.setattr(_dispatch, "is_smoke_pass_confirmed_locally", lambda args: True)
 
@@ -585,12 +439,11 @@ def test_sweep_phase_returns_nonzero_when_all_cells_fail(monkeypatch) -> None:
         monkeypatch.setattr(
             _dispatch, "_enumerate_valid_cells_per_seed", lambda: [Cell.from_key("00000")]
         )
-
-        monkeypatch.setattr(_dispatch, "_run_one_cell_inprocess", lambda **kwargs: 1)
+        monkeypatch.setattr(_dispatch, "_run_sweep_two_pass", lambda **kwargs: 1)
 
         repo_root = Path(__file__).resolve().parent.parent.parent
         rc = _dispatch.run_sweep_phase(args, repo_root=repo_root)
-        assert rc == 1, f"All-fail sweep must return 1; got {rc}"
+        assert rc == 1, f"All-fail two-pass sweep must return 1; got {rc}"
 
 
 def test_is_smoke_pass_confirmed_locally_via_cli_flag(tmp_path) -> None:

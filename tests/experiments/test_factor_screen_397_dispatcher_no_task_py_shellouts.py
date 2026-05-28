@@ -259,58 +259,61 @@ def test_dispatcher_does_not_import_run_one_cell() -> None:
                     )
 
 
-def test_dispatcher_exposes_in_process_sweep_helpers() -> None:
-    """Round 11 added two top-level helpers replacing the subprocess
-    wrapper:
+def test_dispatcher_exposes_two_pass_helpers() -> None:
+    """Round 12 added three top-level helpers replacing the Round 11
+    serial per-cell pipeline:
 
-      - ``_run_one_cell_inprocess`` — per-cell pipeline (replaces
-        ``run_one_cell.run_cell``).
-      - ``_run_sweep_serial`` — sweep-level serial loop (replaces
-        ``_dispatch_sweep_jobs``).
+      - ``_run_pass1_hf`` — HF-only pass (train + log-prob eval).
+      - ``_run_pass2_vllm`` — vLLM-only pass (LoRA-swap per cell).
+      - ``_run_sweep_two_pass`` — orchestrates the two passes with ONE
+        ``_aggressive_hf_to_vllm_teardown`` event between them.
 
-    The dispatcher also lifts ``verify_adapter_on_hf_hub`` and
-    ``cleanup_cell_local_weights`` from the deleted module so the
-    in-process pipeline can call them inline. This test asserts all
-    four are present as top-level defs.
+    Also adds ``is_cell_pass1_complete`` for two-pass resume tracking.
+    The dispatcher continues to expose ``verify_adapter_on_hf_hub`` and
+    ``cleanup_cell_local_weights`` (lifted in Round 11). This test
+    asserts all five are present as top-level defs.
     """
     src = _DISPATCH_PATH.read_text(encoding="utf-8")
     tree = ast.parse(src, filename=str(_DISPATCH_PATH))
     func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
     for required in (
-        "_run_one_cell_inprocess",
-        "_run_sweep_serial",
+        "_run_pass1_hf",
+        "_run_pass2_vllm",
+        "_run_sweep_two_pass",
+        "is_cell_pass1_complete",
         "verify_adapter_on_hf_hub",
         "cleanup_cell_local_weights",
     ):
         assert required in func_names, (
-            f"Round 11: dispatcher must expose {required!r} as a top-level "
-            f"function (replaces the deleted run_one_cell module)."
+            f"Round 12: dispatcher must expose {required!r} as a top-level function "
+            "(the two-pass sweep + Pass-1 resume probe + lifted upload-policy helpers)."
         )
 
 
-def test_dispatcher_drops_subprocess_pool_helpers() -> None:
-    """Round 11 deleted the subprocess-pool helpers:
+def test_dispatcher_drops_subprocess_pool_and_round11_serial_helpers() -> None:
+    """Round 12 keeps Round 11's deletion of subprocess-pool helpers AND
+    additionally deletes the Round 11 in-process serial helpers, since
+    the two-pass design replaces them.
 
-      - ``_dispatch_sweep_jobs`` (subprocess pool orchestrator)
-      - ``_launch_cell_subprocess`` (spawns per-cell subprocess)
-      - ``_wait_for_free_gpu`` (polling primitive)
-      - ``build_run_one_cell_command`` (argv builder)
-
-    Re-adding any of these signals a regression of the in-process pivot.
+    Re-adding any of these signals a regression of the two-pass pivot.
     """
     src = _DISPATCH_PATH.read_text(encoding="utf-8")
     tree = ast.parse(src, filename=str(_DISPATCH_PATH))
     func_names = {node.name for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
     for forbidden in (
+        # Round 11 subprocess-pool deletions (Round 5..10 path).
         "_dispatch_sweep_jobs",
         "_launch_cell_subprocess",
         "_wait_for_free_gpu",
         "build_run_one_cell_command",
+        # Round 12 serial-path deletions (Round 11 path).
+        "_run_one_cell_inprocess",
+        "_run_sweep_serial",
     ):
         assert forbidden not in func_names, (
-            f"Round 11 deleted {forbidden!r} — re-adding it (even "
-            "unused) signals a regression of the in-process serial pivot. "
-            "Reuse _run_one_cell_inprocess + _run_sweep_serial instead."
+            f"Round 12 (or Round 11) deleted {forbidden!r} — re-adding it (even unused) "
+            "signals a regression of the two-pass pivot. Reuse _run_pass1_hf + "
+            "_run_pass2_vllm + _run_sweep_two_pass instead."
         )
 
 
