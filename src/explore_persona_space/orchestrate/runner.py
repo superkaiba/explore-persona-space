@@ -35,6 +35,161 @@ def _sha256(path: str) -> str:
     return h.hexdigest()
 
 
+def _isolate_eval_enabled() -> bool:
+    """Whether the eval phase runs in an isolated child process (opt-in).
+
+    Reads ``EPM_ISOLATE_EVAL``. Default OFF (unset / "0" / "false") = the exact
+    legacy in-process eval, byte-identical to before this flag existed. ON
+    ("1" / "true" / "True") routes each eval phase through ``run_isolated`` so
+    the OS reaps the entire process tree (vLLM TP workers included) on phase
+    exit — the root-cause fix for the orphan-worker OOM (CLAUDE.md Gotchas;
+    task #399 round-11).
+
+    EXPERIMENTAL / UNVERIFIED FOR NUMERIC IDENTITY: the structure of the result
+    dict is proven identical to the in-process path on a CPU fixture (see
+    ``tests/test_training_pipeline_fixes.py``), but a GPU equivalence run
+    (vLLM + HF, temp=0 determinism across a fresh process) has NOT been
+    performed. Keep the default OFF until a GPU run confirms the eval numbers
+    match; only the in-process path is currently trusted for reported metrics.
+    """
+    return os.environ.get("EPM_ISOLATE_EVAL", "").strip().lower() in {"1", "true"}
+
+
+def run_eval_phase(
+    model_path: str,
+    phase: str,
+    *,
+    materialize_merged: bool,
+    eval_base_model_id: str,
+    judge_model: str,
+    phase_dir: str,
+) -> dict:
+    """Run capability + alignment eval for one phase, returning a result fragment.
+
+    This is the single source of truth for the eval logic: BOTH the in-process
+    eval callback in ``run_single`` AND the isolated child entry point
+    (``eval_phase_child``) call this function with identical arguments, so the
+    isolated path is provably structure-identical to the in-process path.
+
+    Runs, in order:
+      - ARC-Challenge logprob (fast HF forward pass, ~1 min)
+      - MMLU-Pro + GSM8K via lm-eval-harness (vLLM, slower; SKIPPED in LoRA-only
+        adapter mode because the lm-eval vLLM path is not adapter-wired)
+      - Alignment quick eval (vLLM generation + Claude judge, ~5 min)
+
+    When ``materialize_merged`` is False AND ``model_path`` is a trained adapter
+    dir (``model_path != eval_base_model_id``), the HF logprob + vLLM alignment
+    paths load ``eval_base_model_id`` with the adapter attached (numerically
+    equivalent for the HF forward-pass logprob; vLLM LoRARequest for alignment).
+    The untrained base-model passthrough (``model_path == eval_base_model_id``,
+    e.g. ``phase == "post_em"`` with no training) is a real model, so adapter
+    mode is a no-op there.
+
+    Args:
+        model_path: Checkpoint / adapter dir / base model id to evaluate.
+        phase: Phase label (``"pre_em"`` / ``"post_em"``); used to prefix the
+            returned fragment keys.
+        materialize_merged: Whether the trainer materialized a full merged
+            checkpoint (True) or kept a LoRA adapter only (False).
+        eval_base_model_id: Base model id to load under the adapter in LoRA-only
+            mode.
+        judge_model: Claude judge model id for the alignment eval.
+        phase_dir: Output dir for this phase's eval artifacts.
+
+    Returns:
+        A flat fragment dict with EXACTLY these keys (identical to the legacy
+        in-process assignment):
+          ``f"{phase}_capability"`` -> full cap dict (incl. ``arc_challenge_logprob``)
+          ``f"{phase}_mmlu_pro"``   -> float | None
+          ``f"{phase}_gsm8k"``      -> float | None
+          ``f"{phase}_alignment"``  -> {"aligned": float, "coherent": float | None}
+    """
+    fragment: dict = {}
+
+    # In LoRA-only mode, an adapter dir was returned for trained phases.
+    # The untrained base-model path (cfg.training.model_id) is a real
+    # model id, not an adapter — detect it so we don't try to attach an
+    # adapter to the base model.
+    adapter_mode = not materialize_merged and model_path != eval_base_model_id
+    cap_adapter_path = model_path if adapter_mode else None
+    cap_base_model_path = eval_base_model_id if adapter_mode else None
+
+    # Fast ARC-C logprob eval
+    from explore_persona_space.eval.capability import evaluate_capability_logprob
+
+    cap = evaluate_capability_logprob(
+        model_path=model_path,
+        output_dir=phase_dir,
+        adapter_path=cap_adapter_path,
+        base_model_path=cap_base_model_path,
+    )
+    fragment[f"{phase}_capability"] = cap
+
+    # OOD capability benchmarks (MMLU-Pro + GSM8K). The lm-eval vLLM path
+    # is not adapter-aware (the model_args string has no enable_lora /
+    # lora_local_path threading proven equivalent), so skip it in
+    # LoRA-only adapter mode rather than feeding it an adapter dir.
+    if adapter_mode:
+        logger.info(
+            "[%s] Skipping lm-eval OOD benchmarks (MMLU-Pro/GSM8K): "
+            "LoRA-only adapter mode is not wired through the lm-eval vLLM "
+            "path. Re-run with EPM_MATERIALIZE_MERGED=1 (or skip-eval then "
+            "eval from a materialized merged dir) to capture OOD scores.",
+            phase,
+        )
+        fragment[f"{phase}_mmlu_pro"] = None
+        fragment[f"{phase}_gsm8k"] = None
+    else:
+        try:
+            from explore_persona_space.eval.capability import evaluate_capability
+
+            ood_results = evaluate_capability(
+                model_path=model_path,
+                output_dir=phase_dir,
+                tasks=["mmlu_pro", "gsm8k"],
+                tensor_parallel_size=1,
+            )
+            mmlu_score = ood_results.get("mmlu_pro", {}).get("exact_match,custom-extract")
+            gsm8k_score = ood_results.get("gsm8k", {}).get("exact_match,strict-match")
+            fragment[f"{phase}_mmlu_pro"] = mmlu_score
+            fragment[f"{phase}_gsm8k"] = gsm8k_score
+            if mmlu_score is not None:
+                logger.info("[%s] MMLU-Pro: %.3f", phase, mmlu_score)
+            if gsm8k_score is not None:
+                logger.info("[%s] GSM8K: %.3f", phase, gsm8k_score)
+        except Exception as e:
+            logger.error("[%s] OOD benchmarks failed: %s", phase, e)
+            fragment[f"{phase}_mmlu_pro"] = None
+            fragment[f"{phase}_gsm8k"] = None
+
+    # Alignment eval
+    from explore_persona_space.eval.alignment import evaluate_alignment_quick
+
+    align = asyncio.run(
+        evaluate_alignment_quick(
+            model_path=model_path,
+            output_dir=phase_dir,
+            judge_model=judge_model,
+            num_samples=10,
+            lora_adapter_path=cap_adapter_path,
+            base_model_path=cap_base_model_path,
+        )
+    )
+    fragment[f"{phase}_alignment"] = {
+        "aligned": align["overall_mean_aligned"],
+        "coherent": align.get("overall_mean_coherent"),
+    }
+    logger.info(
+        "[%s] ARC-C: %.3f, MMLU-Pro: %s, GSM8K: %s, Alignment: %.1f",
+        phase,
+        cap["arc_challenge_logprob"],
+        fragment.get(f"{phase}_mmlu_pro", "?"),
+        fragment.get(f"{phase}_gsm8k", "?"),
+        align["overall_mean_aligned"],
+    )
+    return fragment
+
+
 def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/two-phase modes
     cfg: DictConfig,
     seed: int,
@@ -120,106 +275,57 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
         eval_dir.mkdir(parents=True, exist_ok=True)
 
         def eval_callback(model_path: str, phase: str):
-            """Run capability + alignment eval at a checkpoint.
+            """Run capability + alignment eval at a checkpoint, merge into ``result``.
 
-            Runs:
-            - ARC-Challenge logprob (fast, ~1 min)
-            - MMLU-Pro via lm-eval-harness (slower, ~20 min, OOD benchmark)
-            - Alignment quick eval (Claude judge, ~5 min)
-
-            When ``materialize_merged`` is False the ``model_path`` is a LoRA
-            adapter dir: the HF logprob + vLLM alignment paths load the base
-            model (``eval_base_model_id``) with the adapter applied (numerically
-            equivalent for the HF forward-pass logprob; vLLM LoRARequest for
-            alignment). The lm-eval OOD path is NOT adapter-wired, so it is
-            skipped (scores recorded as None) rather than crashing on an adapter
-            dir. ``phase == "post_em"`` is the base-model path (model_id) when no
-            training ran — that is already a real model, so adapter mode is a
-            no-op there.
+            Delegates the actual eval logic to the module-level ``run_eval_phase``
+            (the single source of truth shared with the isolated child path). By
+            default the eval runs IN-PROCESS, exactly as before. When
+            ``EPM_ISOLATE_EVAL`` is set the same ``run_eval_phase`` runs in a fresh
+            child process via ``run_isolated`` so the OS reaps the vLLM TP workers
+            on phase exit — the orphan-worker OOM fix. Both paths return the
+            identical fragment dict (proven structure-identical by a CPU-fixture
+            test); the only difference is the process they run in. See
+            ``run_eval_phase`` for the full eval description and the LoRA-only
+            adapter-mode handling.
             """
             phase_dir = str(eval_dir / phase)
 
-            # In LoRA-only mode, an adapter dir was returned for trained phases.
-            # The untrained base-model path (cfg.training.model_id) is a real
-            # model id, not an adapter — detect it so we don't try to attach an
-            # adapter to the base model.
-            adapter_mode = not materialize_merged and model_path != eval_base_model_id
-            cap_adapter_path = model_path if adapter_mode else None
-            cap_base_model_path = eval_base_model_id if adapter_mode else None
+            if _isolate_eval_enabled():
+                # Opt-in (EXPERIMENTAL): run the eval in an isolated child so the
+                # vLLM worker subprocesses are reaped on exit. The payload carries
+                # ONLY the scalar values run_eval_phase reads (no Hydra cfg
+                # serialization — the eval body's sole cfg dependency is the judge
+                # model id, already a plain string here), so there is no OmegaConf
+                # round-trip drift risk. The child calls the SAME run_eval_phase.
+                from explore_persona_space.orchestrate.subprocess_isolation import run_isolated
 
-            # Fast ARC-C logprob eval
-            from explore_persona_space.eval.capability import evaluate_capability_logprob
-
-            cap = evaluate_capability_logprob(
-                model_path=model_path,
-                output_dir=phase_dir,
-                adapter_path=cap_adapter_path,
-                base_model_path=cap_base_model_path,
-            )
-            result[f"{phase}_capability"] = cap
-
-            # OOD capability benchmarks (MMLU-Pro + GSM8K). The lm-eval vLLM path
-            # is not adapter-aware (the model_args string has no enable_lora /
-            # lora_local_path threading proven equivalent), so skip it in
-            # LoRA-only adapter mode rather than feeding it an adapter dir.
-            if adapter_mode:
-                logger.info(
-                    "[%s] Skipping lm-eval OOD benchmarks (MMLU-Pro/GSM8K): "
-                    "LoRA-only adapter mode is not wired through the lm-eval vLLM "
-                    "path. Re-run with EPM_MATERIALIZE_MERGED=1 (or skip-eval then "
-                    "eval from a materialized merged dir) to capture OOD scores.",
-                    phase,
+                # cwd=None inherits the parent's cwd, which on a pod is the repo
+                # checkout (``/workspace/explore-persona-space``) where ``uv run
+                # python -m`` resolves the package. We deliberately do NOT use
+                # ``task_workflow.repo_root()`` here: it branch-guards to ``main``
+                # and raises on the ``issue-<N>`` branch every pod training run
+                # checks out — exactly where this isolation path is meant to run.
+                fragment = run_isolated(
+                    "explore_persona_space.orchestrate.eval_phase_child",
+                    {
+                        "model_path": model_path,
+                        "phase": phase,
+                        "materialize_merged": materialize_merged,
+                        "eval_base_model_id": eval_base_model_id,
+                        "judge_model": cfg.eval.judge_model,
+                        "phase_dir": phase_dir,
+                    },
                 )
-                result[f"{phase}_mmlu_pro"] = None
-                result[f"{phase}_gsm8k"] = None
             else:
-                try:
-                    from explore_persona_space.eval.capability import evaluate_capability
-
-                    ood_results = evaluate_capability(
-                        model_path=model_path,
-                        output_dir=phase_dir,
-                        tasks=["mmlu_pro", "gsm8k"],
-                        tensor_parallel_size=1,
-                    )
-                    mmlu_score = ood_results.get("mmlu_pro", {}).get("exact_match,custom-extract")
-                    gsm8k_score = ood_results.get("gsm8k", {}).get("exact_match,strict-match")
-                    result[f"{phase}_mmlu_pro"] = mmlu_score
-                    result[f"{phase}_gsm8k"] = gsm8k_score
-                    if mmlu_score is not None:
-                        logger.info("[%s] MMLU-Pro: %.3f", phase, mmlu_score)
-                    if gsm8k_score is not None:
-                        logger.info("[%s] GSM8K: %.3f", phase, gsm8k_score)
-                except Exception as e:
-                    logger.error("[%s] OOD benchmarks failed: %s", phase, e)
-                    result[f"{phase}_mmlu_pro"] = None
-                    result[f"{phase}_gsm8k"] = None
-
-            # Alignment eval
-            from explore_persona_space.eval.alignment import evaluate_alignment_quick
-
-            align = asyncio.run(
-                evaluate_alignment_quick(
-                    model_path=model_path,
-                    output_dir=phase_dir,
+                fragment = run_eval_phase(
+                    model_path,
+                    phase,
+                    materialize_merged=materialize_merged,
+                    eval_base_model_id=eval_base_model_id,
                     judge_model=cfg.eval.judge_model,
-                    num_samples=10,
-                    lora_adapter_path=cap_adapter_path,
-                    base_model_path=cap_base_model_path,
+                    phase_dir=phase_dir,
                 )
-            )
-            result[f"{phase}_alignment"] = {
-                "aligned": align["overall_mean_aligned"],
-                "coherent": align.get("overall_mean_coherent"),
-            }
-            logger.info(
-                "[%s] ARC-C: %.3f, MMLU-Pro: %s, GSM8K: %s, Alignment: %.1f",
-                phase,
-                cap["arc_challenge_logprob"],
-                result.get(f"{phase}_mmlu_pro", "?"),
-                result.get(f"{phase}_gsm8k", "?"),
-                align["overall_mean_aligned"],
-            )
+            result.update(fragment)
 
     # Training
     if not skip_training:

@@ -14,7 +14,12 @@ Covers three behavior-preserving guardrails added to the train -> eval pipeline:
 
 #13  ``run_isolated`` round-trips a JSON payload through a fresh ``uv run python
      -m`` child (the module's own ``_echo_main`` entry point), and fails loud on a
-     non-zero child exit.
+     non-zero child exit. PLUS the EPM_ISOLATE_EVAL opt-in wiring: the refactored
+     ``run_eval_phase`` returns exactly the legacy fragment keys, and the isolated
+     eval path (real ``run_isolated`` -> fresh child -> ``run_eval_phase`` with
+     the GPU-bound eval leaves faked) returns a json-equal fragment to the
+     in-process path — the structure-identity bar for ever enabling the flag by
+     default.
 """
 
 from __future__ import annotations
@@ -190,3 +195,155 @@ def test_echo_main_usage_error_on_missing_args() -> None:
     from explore_persona_space.orchestrate.subprocess_isolation import _echo_main
 
     assert _echo_main(["prog"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# #13 — EPM_ISOLATE_EVAL opt-in: isolated eval path is structure-identical to
+#        the in-process path (the bar for ever flipping the default ON)
+# ---------------------------------------------------------------------------
+
+# Fixed fake eval outputs for the in-process arm. MUST match the constants in
+# ``tests/_fake_eval_child.py`` (the isolated arm) so a json-equal comparison
+# across the two process paths is meaningful.
+_FAKE_CAP = {"arc_challenge_logprob": 0.5, "correct": 5, "total": 10}
+_FAKE_OOD = {
+    "mmlu_pro": {"exact_match,custom-extract": 0.3},
+    "gsm8k": {"exact_match,strict-match": 0.4},
+}
+_FAKE_ALIGN = {"overall_mean_aligned": 90.0, "overall_mean_coherent": 85.0}
+
+
+def _patch_in_process_eval_leaves(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Patch the three GPU-bound eval leaves with the same fakes the child uses."""
+    import explore_persona_space.eval.alignment as alignment_mod
+    import explore_persona_space.eval.capability as capability_mod
+
+    async def fake_alignment(*_args, **_kwargs):
+        return dict(_FAKE_ALIGN)
+
+    monkeypatch.setattr(
+        capability_mod, "evaluate_capability_logprob", lambda *a, **k: dict(_FAKE_CAP)
+    )
+    monkeypatch.setattr(
+        capability_mod,
+        "evaluate_capability",
+        lambda *a, **k: {key: dict(val) for key, val in _FAKE_OOD.items()},
+    )
+    monkeypatch.setattr(alignment_mod, "evaluate_alignment_quick", fake_alignment)
+
+
+def test_run_eval_phase_in_process_returns_expected_fragment(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The refactored in-process run_eval_phase returns exactly the legacy keys.
+
+    Guards the structure contract: the fragment carries EXACTLY
+    ``{phase}_capability / _mmlu_pro / _gsm8k / _alignment`` with the legacy
+    types. A drift (extra key, renamed key, wrong type) fails here.
+    """
+    _patch_in_process_eval_leaves(monkeypatch)
+    from explore_persona_space.orchestrate.runner import run_eval_phase
+
+    fragment = run_eval_phase(
+        "/some/merged/model",
+        "post_em",
+        materialize_merged=True,
+        eval_base_model_id="Qwen/Qwen2.5-7B",
+        judge_model="claude-sonnet-4-5-20250929",
+        phase_dir=str(tmp_path / "post_em"),
+    )
+
+    assert set(fragment.keys()) == {
+        "post_em_capability",
+        "post_em_mmlu_pro",
+        "post_em_gsm8k",
+        "post_em_alignment",
+    }
+    assert fragment["post_em_capability"] == _FAKE_CAP
+    assert fragment["post_em_mmlu_pro"] == 0.3
+    assert fragment["post_em_gsm8k"] == 0.4
+    assert fragment["post_em_alignment"] == {"aligned": 90.0, "coherent": 85.0}
+
+
+def test_isolation_path_matches_in_process_structure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """EPM_ISOLATE_EVAL path returns a json-equal fragment to the in-process path.
+
+    Runs both arms with the SAME fixed fake eval leaves and the SAME payload:
+      * in-process: patched run_eval_phase called directly;
+      * isolated: real run_isolated -> fresh child (tests._fake_eval_child) ->
+        real eval_phase_child.main -> real run_eval_phase, fakes installed in
+        the child process.
+    json-equality across the two = proof that flipping EPM_ISOLATE_EVAL does not
+    change the eval result structure. This is the bar for ever enabling the flag
+    by default (numeric identity additionally needs a GPU equivalence run).
+    """
+    from explore_persona_space.orchestrate.runner import run_eval_phase
+    from explore_persona_space.orchestrate.subprocess_isolation import run_isolated
+
+    _patch_in_process_eval_leaves(monkeypatch)
+    in_process = run_eval_phase(
+        "/some/merged/model",
+        "pre_em",
+        materialize_merged=True,
+        eval_base_model_id="Qwen/Qwen2.5-7B",
+        judge_model="claude-sonnet-4-5-20250929",
+        phase_dir=str(tmp_path / "pre_em"),
+    )
+
+    isolated = run_isolated(
+        "tests._fake_eval_child",
+        {
+            "model_path": "/some/merged/model",
+            "phase": "pre_em",
+            "materialize_merged": True,
+            "eval_base_model_id": "Qwen/Qwen2.5-7B",
+            "judge_model": "claude-sonnet-4-5-20250929",
+            "phase_dir": str(tmp_path / "pre_em"),
+        },
+        cwd=str(PROJECT_ROOT),
+    )
+
+    # JSON round-trip the in-process fragment so the comparison is on the same
+    # footing as the child's on-disk JSON (e.g. tuple->list, int-key coercion).
+    assert json.loads(json.dumps(in_process, default=str)) == isolated
+
+
+def test_isolation_adapter_mode_skips_ood_in_both_paths(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """LoRA-only adapter mode skips lm-eval OOD (None) identically in both paths.
+
+    adapter_mode is computed the same way in the child as in-process
+    (``not materialize_merged and model_path != eval_base_model_id``), so the
+    OOD-skip branch (mmlu/gsm8k = None) must fire in both and stay json-equal.
+    """
+    from explore_persona_space.orchestrate.runner import run_eval_phase
+    from explore_persona_space.orchestrate.subprocess_isolation import run_isolated
+
+    _patch_in_process_eval_leaves(monkeypatch)
+    payload = {
+        "model_path": "/trained/adapter/dir",
+        "phase": "post_em",
+        "materialize_merged": False,
+        "eval_base_model_id": "Qwen/Qwen2.5-7B",
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "phase_dir": str(tmp_path / "post_em"),
+    }
+    in_process = run_eval_phase(
+        payload["model_path"],
+        payload["phase"],
+        materialize_merged=payload["materialize_merged"],
+        eval_base_model_id=payload["eval_base_model_id"],
+        judge_model=payload["judge_model"],
+        phase_dir=payload["phase_dir"],
+    )
+
+    # adapter_mode is on -> OOD benchmarks skipped, recorded as None.
+    assert in_process["post_em_mmlu_pro"] is None
+    assert in_process["post_em_gsm8k"] is None
+    assert in_process["post_em_capability"] == _FAKE_CAP
+
+    isolated = run_isolated("tests._fake_eval_child", payload, cwd=str(PROJECT_ROOT))
+    assert json.loads(json.dumps(in_process, default=str)) == isolated
