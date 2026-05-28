@@ -149,9 +149,9 @@ uv run python scripts/train.py \
     seed=${SEED} \
     +training.save_at_specific_steps=true \
     "+training.save_steps_list=[5,10]" \
-    +training.learning_rate=1.0e-5 \
-    +training.max_steps=10 \
-    +training.epochs=-1 \
+    training.learning_rate=1.0e-5 \
+    training.max_steps=10 \
+    training.epochs=-1 \
     upload_to=none \
     periodic_eval.enabled=false \
     2>&1 | tee -a "${LOG_DIR}/issue-416_smoke_train.log"
@@ -193,9 +193,9 @@ uv run python scripts/train.py \
     seed=${SEED} \
     +training.save_at_specific_steps=true \
     "+training.save_steps_list=${STEPS_HYDRA}" \
-    +training.learning_rate=1.0e-5 \
-    +training.max_steps=1600 \
-    +training.epochs=-1 \
+    training.learning_rate=1.0e-5 \
+    training.max_steps=1600 \
+    training.epochs=-1 \
     upload_to=hf \
     periodic_eval.enabled=false \
     2>&1 | tee -a "${LOG_DIR}/issue-416_train.log"
