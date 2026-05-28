@@ -848,7 +848,20 @@ def main() -> None:
     p.set_defaults(func=cmd_migrate_body)
 
     args = parser.parse_args()
-    args.func(args)
+    # The canonical resolver (task_workflow.repo_root) raises a loud, distinct
+    # RuntimeError for the non-routable states it still refuses: detached HEAD,
+    # missing `tasks/`, bare/submodule layouts, or a feature-branch primary with
+    # no local `main` to route through. (The common "primary parked on a real
+    # feature branch" case is auto-routed through a managed main-pinned worktree
+    # and does NOT raise.) Catch RuntimeError at the top-level dispatch so EVERY
+    # subcommand prints a clean one-line error to stderr and exits 1 instead of
+    # leaking a raw traceback. `cmd_tasks_dir` keeps its own catch as defense in
+    # depth; the message there is identical in shape.
+    try:
+        args.func(args)
+    except RuntimeError as e:
+        print(f"task.py {args.cmd}: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

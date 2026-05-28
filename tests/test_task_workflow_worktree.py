@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import textwrap
@@ -169,8 +170,19 @@ def test_resolves_main_repo_from_worktree(tmp_path: Path) -> None:
     assert Path(resolved["TASKS_DIR"]).resolve() == (main_repo / "tasks").resolve()
 
 
-def test_branch_guard_rejects_non_main_with_branch_name(tmp_path: Path) -> None:
-    """Main worktree HEAD on a non-`main` branch → loud error naming the branch."""
+def test_branch_guard_routes_non_main_to_managed_worktree(tmp_path: Path) -> None:
+    """Primary HEAD on a real feature branch → AUTO-ROUTE to the managed
+    main-pinned worktree instead of refusing.
+
+    This test's assertion FLIPPED on 2026-05-28 (issue #15): the resolver used
+    to raise a loud RuntimeError naming the branch; it now returns the managed
+    worktree path under ``.claude/worktrees/_task-main-pin`` so markers/commits
+    succeed while the primary is parked off-main. The managed worktree's
+    detached HEAD is pinned to `main` so commits land on `main` (covered by
+    ``test_routed_commit_lands_on_main_not_feature_branch``). The loud-refusal
+    behavior is preserved ONLY for the non-routable states (detached HEAD,
+    missing tasks/, no local `main`) — see the other guard tests.
+    """
     main_repo = tmp_path / "repo"
     _make_main_repo(main_repo)
     subprocess.run(
@@ -194,9 +206,27 @@ def test_branch_guard_rejects_non_main_with_branch_name(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
-    assert proc.returncode != 0, f"branch guard did not refuse:\n{proc.stdout}"
-    assert "feature/off-main" in proc.stderr, f"branch name not in error: {proc.stderr}"
-    assert "main" in proc.stderr.lower()
+    assert proc.returncode == 0, (
+        f"resolver refused instead of auto-routing:\nstdout: {proc.stdout}\nstderr: {proc.stderr}"
+    )
+    resolved = _parse_resolved(proc.stdout)
+    managed = (main_repo / ".claude" / "worktrees" / "_task-main-pin").resolve()
+    assert Path(resolved["REPO"]).resolve() == managed, (
+        f"routed REPO is not the managed worktree: {resolved}"
+    )
+    assert Path(resolved["TASKS_DIR"]).resolve() == (managed / "tasks").resolve()
+    # The managed worktree must actually exist on disk with a tasks/ dir.
+    assert (managed / "tasks").is_dir(), "managed worktree missing tasks/ after routing"
+    # And it must be DETACHED at main's tip — never holding the `main` branch
+    # (which would block the primary from `git checkout main`).
+    head = subprocess.run(
+        ["git", "-C", str(managed), "symbolic-ref", "--quiet", "HEAD"],
+        capture_output=True,
+        text=True,
+    )
+    assert head.returncode != 0, (
+        f"managed worktree holds a branch (HEAD={head.stdout!r}); expected DETACHED HEAD"
+    )
 
 
 def test_branch_guard_distinct_error_on_detached_head(tmp_path: Path) -> None:
@@ -607,14 +637,13 @@ def test_tasks_dir_cli_subcommand_invokes_real_task_py(tmp_path: Path) -> None:
     assert proc.stdout.strip() == str(main_repo / "tasks"), f"unexpected stdout: {proc.stdout!r}"
 
 
-def test_tasks_dir_cli_exits_cleanly_on_non_main_branch(tmp_path: Path) -> None:
-    """`scripts/task.py tasks-dir` exits non-zero with a CLEAN stderr
-    message (no traceback) when invoked from a tmp repo with HEAD on a
-    feature branch.
+def test_tasks_dir_cli_routes_on_non_main_branch(tmp_path: Path) -> None:
+    """`scripts/task.py tasks-dir` on a feature-branch primary now AUTO-ROUTES
+    to the managed main-pinned worktree and exits 0 (assertion flipped
+    2026-05-28, issue #15 — it used to refuse).
 
-    Confirms the round-1 cmd_tasks_dir wrapper catches RuntimeError and
-    prints a one-line error instead of propagating an unhandled exception
-    (round-1 code-review finding #9).
+    Confirms the off-main ergonomics fix is reachable through the real CLI
+    entry point, not only the in-process resolver.
     """
     main_repo = tmp_path / "repo"
     _make_main_repo(main_repo)
@@ -633,16 +662,230 @@ def test_tasks_dir_cli_exits_cleanly_on_non_main_branch(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
+    assert proc.returncode == 0, (
+        f"task.py tasks-dir refused instead of routing:\n"
+        f"stdout: {proc.stdout!r}\nstderr: {proc.stderr!r}"
+    )
+    expected = str(main_repo / ".claude" / "worktrees" / "_task-main-pin" / "tasks")
+    assert proc.stdout.strip() == expected, f"unexpected routed tasks-dir: {proc.stdout!r}"
+
+
+def test_cli_exits_cleanly_on_detached_head(tmp_path: Path) -> None:
+    """`scripts/task.py tasks-dir` exits non-zero with a CLEAN stderr message
+    (no traceback) when the primary checkout HEAD is DETACHED — a state that
+    is NOT auto-routable and must still fail loud.
+
+    Exercises the top-level RuntimeError catch in ``main()`` (every subcommand,
+    not only ``cmd_tasks_dir``), added 2026-05-28 with the off-main routing so
+    the still-refused non-routable states surface a one-liner rather than a raw
+    traceback.
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "--detach", "HEAD"],
+        check=True,
+    )
+
+    env = dict(os.environ)
+    env["TASK_PY_NO_COMMIT"] = "1"
+    proc = subprocess.run(
+        [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
     assert proc.returncode != 0, (
-        f"task.py tasks-dir did not refuse non-main branch:\n"
+        f"task.py tasks-dir did not refuse detached HEAD:\n"
         f"stdout: {proc.stdout!r}\nstderr: {proc.stderr!r}"
     )
     # Loud, named error.
-    assert "feature/off-main" in proc.stderr, f"branch name not in stderr: {proc.stderr!r}"
+    assert "detached" in proc.stderr.lower(), f"'detached' not in stderr: {proc.stderr!r}"
     # MUST be a clean message, NOT an unhandled traceback.
     assert "Traceback" not in proc.stderr, (
-        f"task.py tasks-dir leaked traceback (cmd_tasks_dir must catch "
-        f"RuntimeError and print a one-liner):\n{proc.stderr}"
+        f"task.py leaked a traceback on the non-routable detached-HEAD state:\n{proc.stderr}"
+    )
+
+
+# ─── End-to-end off-main routing (issue #15) ──────────────────────────────
+
+
+def _commit_cli_tree(main_repo: Path) -> None:
+    """Stage + commit the task.py CLI tree onto `main` so subsequent feature
+    branches inherit it and `main` is a real commit to route through."""
+    subprocess.run(["git", "-C", str(main_repo), "add", "."], check=True)
+    subprocess.run(
+        ["git", "-C", str(main_repo), "commit", "-q", "-m", "add task.py cli tree"],
+        check=True,
+    )
+
+
+def _run_task_cli(main_repo: Path, *cli_args: str) -> subprocess.CompletedProcess[str]:
+    """Invoke the real `scripts/task.py` in ``main_repo`` (commits enabled)."""
+    env = dict(os.environ)
+    return subprocess.run(
+        [sys.executable, str(main_repo / "scripts" / "task.py"), *cli_args],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+
+def test_routed_commit_lands_on_main_not_feature_branch(tmp_path: Path) -> None:
+    """The HARD INVARIANT for issue #15: a real task.py mutation run while the
+    primary checkout is parked on a feature branch lands its commit on `main`
+    (via the managed main-pinned worktree) and NEVER strands it on the feature
+    branch — and the primary can still `git checkout main` afterwards (no
+    leaked managed worktree holding the branch).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+    _commit_cli_tree(main_repo)
+    main_tip_before = subprocess.run(
+        ["git", "-C", str(main_repo), "rev-parse", "main"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    # Park the primary on a feature branch.
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "-b", "feature/dash"],
+        check=True,
+    )
+
+    # Run a real mutation (create a task). This commits via the routed path.
+    created = _run_task_cli(main_repo, "new", "--kind", "infra", "--title", "routed task")
+    assert created.returncode == 0, f"task.py new failed: {created.stderr}"
+
+    # (a) The commit advanced `main`.
+    main_tip_after = subprocess.run(
+        ["git", "-C", str(main_repo), "rev-parse", "main"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert main_tip_after != main_tip_before, "task.py mutation did not advance `main`"
+
+    # (b) The body.md exists on `main`'s tree (the write landed where it
+    #     committed — no divergence between write root and commit root).
+    tree = subprocess.run(
+        ["git", "-C", str(main_repo), "ls-tree", "-r", "--name-only", "main"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    assert any("body.md" in line for line in tree.splitlines()), (
+        f"routed task body.md not present on `main` tree:\n{tree}"
+    )
+
+    # (c) NOT stranded on the feature branch: feature/dash must have NO commits
+    #     that `main` lacks under tasks/.
+    stranded = subprocess.run(
+        ["git", "-C", str(main_repo), "log", "--oneline", "main..feature/dash", "--", "tasks/"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert stranded == "", f"task commit stranded on feature branch:\n{stranded}"
+
+    # (d) The primary can STILL return to `main` (managed worktree is detached,
+    #     not holding the `main` branch).
+    back = subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "main"],
+        capture_output=True,
+        text=True,
+    )
+    assert back.returncode == 0, (
+        f"primary could not checkout main after routing (leaked branch lock?):\n{back.stderr}"
+    )
+
+
+def test_routed_post_marker_succeeds_off_main(tmp_path: Path) -> None:
+    """The motivating use case: posting a progress marker while the primary is
+    parked off-main succeeds (it used to be silently skipped + surfaced inline)
+    and the marker's commit lands on `main`.
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+    _commit_cli_tree(main_repo)
+
+    # Create a task on `main` first so there is something to post a marker on.
+    created = _run_task_cli(main_repo, "new", "--kind", "infra", "--title", "marker target")
+    assert created.returncode == 0, f"setup task.py new failed: {created.stderr}"
+    task_id = created.stdout.strip().lstrip("#")
+
+    # Park primary off-main, then post a marker through the routed path.
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "-b", "feat/markers"],
+        check=True,
+    )
+    posted = _run_task_cli(
+        main_repo, "post-marker", task_id, "epm:smoke", "--note", "routed marker"
+    )
+    assert posted.returncode == 0, f"routed post-marker failed: {posted.stderr}"
+
+    # The marker landed in events.jsonl on `main`.
+    show = subprocess.run(
+        ["git", "-C", str(main_repo), "show", f"main:tasks/proposed/{task_id}/events.jsonl"],
+        capture_output=True,
+        text=True,
+    )
+    # The task may live under whatever status `new` defaults to; locate it.
+    if show.returncode != 0:
+        tree = subprocess.run(
+            ["git", "-C", str(main_repo), "ls-tree", "-r", "--name-only", "main"],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+        events_path = next(
+            (ln for ln in tree.splitlines() if ln.endswith(f"/{task_id}/events.jsonl")),
+            None,
+        )
+        assert events_path is not None, f"events.jsonl not on `main` tree:\n{tree}"
+        show = subprocess.run(
+            ["git", "-C", str(main_repo), "show", f"main:{events_path}"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    assert "epm:smoke" in show.stdout, f"routed marker not on `main`: {show.stdout!r}"
+
+    # Primary can still return to main.
+    back = subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "main"],
+        capture_output=True,
+        text=True,
+    )
+    assert back.returncode == 0, (
+        f"primary could not checkout main after routed marker: {back.stderr}"
+    )
+
+
+def test_managed_worktree_dodges_stale_worktree_audit() -> None:
+    """The managed worktree name `_task-main-pin` must NOT match the
+    stale-worktree audit's target regex (`issue-<N>` / `agent-<hex>` /
+    `wf_<id>`), so the audit never reaps the routing worktree out from under a
+    live off-main session.
+
+    Reads the regex source directly from ``scripts/worktree_audit.py`` rather
+    than importing the module: ``worktree_audit`` resolves ``repo_root()`` at
+    import time, which would fire the dev repo's branch guard and couple this
+    test to the dev checkout's branch state.
+    """
+    audit_src = (Path(__file__).resolve().parents[1] / "scripts" / "worktree_audit.py").read_text()
+    m = re.search(r"_TARGET_NAME_RE\s*=\s*re\.compile\(\s*r\"([^\"]+)\"", audit_src)
+    assert m is not None, "could not locate _TARGET_NAME_RE in scripts/worktree_audit.py"
+    target_re = re.compile(m.group(1))
+    assert target_re.match("_task-main-pin") is None, (
+        "managed main-pin worktree name matches the audit target regex — it "
+        "could be reaped while routing is active"
     )
 
 
