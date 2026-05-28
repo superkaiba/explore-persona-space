@@ -48,12 +48,6 @@ Currently running:
 - **#397 — recipe-selectivity re-run** with the single-token `※` marker + log-prob eval (parent #383). Sweep resumed after a disk-full crash; ~87 of 108 cells left, ~11h. Tests whether #383's stronger-and-more-selective result is a metric artifact, given that source rate and (source − bystander) selectivity are mechanically correlated.
 - **#407 — obscure-but-knowable facts** as a third fact-regime control (vs fictional + future facts). Phase 4-6 chain re-running after a fact-cache keying bug.
 
-Then:
-
-- Land #404 and settle on a behavior-distance metric.
-- Re-analyze #383 with source rate partialled out (the selectivity-artifact control).
-- Promote the sleeper-marker negatives (#376/#377/#382) into a standalone writeup.
-
 ## 4. Admin
 
 - Adding Christina to project?
