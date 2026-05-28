@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 416,
+  "highest_id": 417,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2133,6 +2133,13 @@
       "path": "tasks/running/416",
       "status": "running",
       "title": "Falsify #398's global-marker-affinity-shift hypothesis: re-run with comedian (not librarian) as source persona"
+    },
+    "417": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/417",
+      "status": "proposed",
+      "title": "Weekly mentor update \u2014 2026-05-28"
     },
     "42": {
       "has_clean_result": false,
