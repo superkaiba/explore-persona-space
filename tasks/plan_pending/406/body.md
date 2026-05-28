@@ -118,7 +118,7 @@ The unique contribution of #406 is therefore **(a) extending the test beyond per
 ### Pre-registered thresholds
 
 - **Positive:** |length-partial ρ| ≥ 0.4 with p < 0.01 on the full N=380 regression AND surviving the class-cluster mixed model.
-- **Negative:** |length-partial ρ| < 0.15 with bootstrap 95% CI ⊂ [-0.2, +0.2] AND no per-class-pair cell exceeding |ρ| = 0.4.
+- **Negative:** |length-partial ρ| < 0.15 with bootstrap 95% CI ⊂ [-0.2, +0.2] AND no per-class-pair cell exceeding |ρ| = 0.5 (loosened 2026-05-27 from 0.4 per option (ii) at Step 2c — Statistics critic's 500-trial simulation showed 0.4 cap left only ~40% true-H0 firing rate; 0.5 cap recovers ~80%).
 - **Ambiguous middle:** anything else; pre-register multi-seed follow-up if hit.
 
 ### Compute envelope
