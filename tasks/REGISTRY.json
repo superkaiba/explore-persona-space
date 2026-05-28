@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 414,
+  "highest_id": 415,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2117,6 +2117,14 @@
       "path": "tasks/proposed/414",
       "status": "proposed",
       "title": "Cheap pre-SFT predictor for cross-behavior leakage: does the broad-persona-prompted base model already produce the narrow training data?"
+    },
+    "415": {
+      "goal": "Test whether the 4-predictor null in #396 survives baseline-symmetric construction by adding cos-to-baseline + JS-to-assistant predictors on the same 24 personas + same recipe; either corroborates the null as predictor-agnostic OR reveals an asymmetric-baseline artifact.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/415",
+      "status": "proposed",
+      "title": "Symmetric-baseline rerun: cos-to-baseline + JS-to-assistant on #396's 24 personas"
     },
     "42": {
       "has_clean_result": false,
