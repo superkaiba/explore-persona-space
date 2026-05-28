@@ -1424,6 +1424,8 @@ workflow_fix_on_bug:
     - "scripts/pod_watch.py"
     - "tests/test_workflow*.py"
     - "tests/test_task_workflow*.py"
+    - "tests/test_no_pod_side_task_py_shellout.py"
+    - "tests/test_subprocess_env_explicit.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"

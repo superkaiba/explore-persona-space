@@ -1259,15 +1259,31 @@ sources contribute to `running`-phase progress:
 - **`poll_pipeline.py` (run by the orchestrator's bg-Bash loop)**: posts
   `epm:progress` on each phase transition observed in the pod log.
 - **Entry script on the pod**: writes `[phase=done]` to its log on
-  graceful completion AND writes a final `epm:results v1` event payload
-  (via `task.py post-marker` shelled from the pod, OR equivalently from
-  the orchestrator's polling-loop terminal tick) containing:
-  - Final eval numbers (inline JSON snippet + path in repo)
-  - Reproducibility card (filled)
-  - WandB URL + HF Hub model/adapter URL
-  - Worktree path + final commit hash
-  - GPU-hours actually used vs budgeted
-  - Plan deviations + rationale
+  graceful completion AND writes a JSON sentinel file at
+  `/workspace/logs/issue-<N>-results.json` containing the
+  `epm:results v1` payload. The orchestrator's polling-loop terminal
+  tick (Step 6d.2) reads the sentinel on its next poll and posts
+  `epm:results v1` from the local VM via `task.py post-marker`. The
+  pod NEVER calls `task.py` directly — enforced by
+  `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
+  "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
+  round 9 (2026-05-27) burned a launch on a pod-side
+  `task.py find <N>` shellout that hit the branch-guard refusal; the
+  same failure class applies to `task.py post-marker`, hence the
+  sentinel-file pattern is canonical.
+
+  Sentinel format (JSON object with these keys, all required):
+  - `eval_numbers` (inline dict of final eval metrics)
+  - `eval_paths` (list of repo-relative paths to eval result JSONs)
+  - `reproducibility_card` (dict matching CLAUDE.md template; filled in
+    with TBD → resolved values)
+  - `wandb_url` (string)
+  - `hf_hub_url` (string)
+  - `worktree_path` (string, absolute path on local VM)
+  - `final_commit_sha` (string, 40-char SHA)
+  - `gpu_hours_used` (float)
+  - `gpu_hours_budgeted` (float)
+  - `plan_deviations` (list of `{deviation: <str>, rationale: <str>}`)
 
 When this skill is re-invoked in `running`:
 
