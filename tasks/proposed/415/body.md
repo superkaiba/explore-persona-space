@@ -1,5 +1,6 @@
 ---
-title: 'Symmetric-baseline rerun: cos-to-neutral + JS-to-neutral on #396''s 24 personas'
+title: 'Symmetric-baseline rerun corroborates #396''s null: all four predictors fail
+  against both assistant and neutral references (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-28T06:51:13Z'
