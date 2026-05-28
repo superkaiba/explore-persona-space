@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 412,
+  "highest_id": 413,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2101,6 +2101,14 @@
       "path": "tasks/proposed/412",
       "status": "proposed",
       "title": "How does the choice of contrastive negative personas affect behavior implantation and cross-persona leakage?"
+    },
+    "413": {
+      "goal": "Re-run the load-bearing experiments from the past two months across multiple Qwen-2.5 sizes to characterize which findings are size-invariant, which strengthen or weaken with scale, and which only appear above some threshold.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/413",
+      "status": "proposed",
+      "title": "Scale every load-bearing finding across Qwen-2.5 sizes (0.5B \u2192 32B)"
     },
     "42": {
       "has_clean_result": false,
