@@ -158,19 +158,28 @@ def eval_source(
     *,
     source: str,
     seed: int,
-    merged_model_path: Path,
+    merged_model_path: Path | None,
     eval_pool_path: Path,
     out_dir: Path,
     n_rollouts: int = DEFAULT_N_ROLLOUTS,
     max_new_tokens: int = DEFAULT_MAX_NEW_TOKENS,
     temperature: float = DEFAULT_TEMPERATURE,
     gpu_memory_utilization: float = 0.85,
+    hub_model_id: str | None = None,
 ) -> dict[str, object]:
     """Run the full 24-panel x 50-claim x N-rollout eval for one source.
 
     Loads vLLM ONCE; loops over the 24 panel personas inside the same LLM
     instance (call ``LLM.generate(...)`` per panel persona for clean isolation
     of system prompts).
+
+    Args:
+        merged_model_path: Local merged Qwen+LoRA dir from Phase 1. Mutually
+            exclusive with ``hub_model_id``; provide exactly one.
+        hub_model_id: HF Hub model id (e.g. ``Qwen/Qwen2.5-7B-Instruct``) for
+            the base-panel baseline pass (Phase 3 step 2 in the plan). When
+            set, ``merged_model_path`` is ignored and vLLM loads the base
+            model directly from the Hub (or the HF cache). No LoRA applied.
 
     Returns a summary dict that's also written to ``eval_summary.json`` in
     ``out_dir``.
@@ -185,7 +194,13 @@ def eval_source(
     out_dir.mkdir(parents=True, exist_ok=True)
     log.info("eval_source(source=%s, seed=%d, out_dir=%s)", source, seed, out_dir)
 
-    if not merged_model_path.exists():
+    if (merged_model_path is None) == (hub_model_id is None):
+        raise ValueError(
+            "Provide EXACTLY ONE of merged_model_path / hub_model_id. "
+            f"Got merged_model_path={merged_model_path}, hub_model_id={hub_model_id}."
+        )
+
+    if merged_model_path is not None and not merged_model_path.exists():
         raise FileNotFoundError(
             f"Merged model dir not found: {merged_model_path}. Phase 1 must "
             f"have completed and merged before eval can run."
@@ -196,14 +211,15 @@ def eval_source(
     if len(claims) == 0:
         raise ValueError(f"Eval pool {eval_pool_path} contained zero claims.")
 
+    model_arg = str(merged_model_path) if merged_model_path is not None else hub_model_id
     tokenizer = AutoTokenizer.from_pretrained(
-        str(merged_model_path), trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        model_arg, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
-    log.info("Loading vLLM on %s ...", merged_model_path)
+    log.info("Loading vLLM on %s ...", model_arg)
     t_load_start = time.time()
     llm = LLM(
-        model=str(merged_model_path),
+        model=model_arg,
         tensor_parallel_size=1,
         max_model_len=2048,
         enable_prefix_caching=True,
@@ -261,7 +277,11 @@ def eval_source(
             "n_rollouts_per_claim": n_rollouts,
             "max_new_tokens": max_new_tokens,
             "temperature": temperature,
-            "merged_model_path": str(merged_model_path),
+            "merged_model_path": (
+                str(merged_model_path) if merged_model_path is not None else None
+            ),
+            "hub_model_id": hub_model_id,
+            "model_loaded": model_arg,
             "base_model": BASE_MODEL,
             "git_commit_sha": _git_sha(),
             "hostname": socket.gethostname(),
@@ -298,7 +318,9 @@ def eval_source(
         "n_rollouts_per_claim": n_rollouts,
         "total_completions": sum(p["n_completions"] for p in panel_summaries.values()),
         "wall_seconds": round(wall, 1),
-        "merged_model_path": str(merged_model_path),
+        "merged_model_path": (str(merged_model_path) if merged_model_path is not None else None),
+        "hub_model_id": hub_model_id,
+        "model_loaded": model_arg,
         "base_model": BASE_MODEL,
         "git_commit_sha": _git_sha(),
         "hostname": socket.gethostname(),
@@ -362,8 +384,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--merged-model-path",
         type=Path,
-        required=True,
-        help="Path to the merged Qwen-7B + LoRA on disk.",
+        default=None,
+        help=(
+            "Path to the merged Qwen-7B + LoRA on disk. Mutually exclusive "
+            "with --hub-model-id; provide exactly one."
+        ),
+    )
+    parser.add_argument(
+        "--hub-model-id",
+        type=str,
+        default=None,
+        help=(
+            "HF Hub model id (e.g. Qwen/Qwen2.5-7B-Instruct) for the base-panel "
+            "baseline pass (plan §4 Phase 3 step 2). When set, --merged-model-path "
+            "must be omitted; vLLM loads the model from the Hub / HF cache and "
+            "no LoRA is applied."
+        ),
     )
     parser.add_argument(
         "--eval-pool",
@@ -422,6 +458,7 @@ def main(argv: list[str] | None = None) -> int:
         max_new_tokens=args.max_new_tokens,
         temperature=args.temperature,
         gpu_memory_utilization=args.gpu_memory_utilization,
+        hub_model_id=args.hub_model_id,
     )
 
     sentinel_path = args.sentinel_path or Path(

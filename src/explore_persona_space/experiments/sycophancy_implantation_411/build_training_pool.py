@@ -26,6 +26,7 @@ CPU-only.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import logging
@@ -121,18 +122,36 @@ def _load_wrong_claim_pool(path: Path) -> list[tuple[str, str]]:
     return out
 
 
+def _stable_seed_from_source(source: str) -> int:
+    """Deterministic, salt-independent integer derived from ``source``.
+
+    The #275 build script seeds bystander selection with ``hash(source) + SEED``,
+    but Python's builtin ``hash`` is salted by ``PYTHONHASHSEED`` so the chosen
+    bystanders are NOT bit-identical across interpreter runs unless
+    ``PYTHONHASHSEED=0`` is pinned at the interpreter entry point. The
+    dispatcher running this module is launched via ``uv run python ...`` (which
+    does NOT pin ``PYTHONHASHSEED``), and an in-process call from the
+    dispatcher cannot set ``PYTHONHASHSEED`` at import time anyway. To remove
+    the dependency we hash the source name with SHA-256 and use the top 16 hex
+    chars (64 bits) as the seed offset. Deviates from the #275 recipe
+    cosmetically but yields bit-identical selections across ANY interpreter
+    invocation, which is what the plan's "#99 parity" claim actually needs.
+    """
+    digest = hashlib.sha256(source.encode("utf-8")).hexdigest()[:16]
+    return int(digest, 16)
+
+
 def _select_bystanders(source: str, all_persona_names: list[str]) -> list[str]:
     """Pick 2 bystander personas for ``source`` deterministically.
 
     Matches the recipe in
-    ``build_sycophancy_leakage_data.py::select_bystanders`` exactly:
-    ``Random(hash(source) + SEED).sample(...)``. ``hash`` is salted by
-    ``PYTHONHASHSEED``; the SAME hash salt as the #275 run is required for
-    bystander parity. Callers that need bit-exact bystander reproduction
-    against the original #275 run should set ``PYTHONHASHSEED=0`` at the
-    interpreter entry point.
+    ``build_sycophancy_leakage_data.py::select_bystanders`` in shape
+    (``Random(<int> + SEED).sample(...)``), but replaces the salted
+    ``hash(source)`` with a stable SHA-256-derived integer so bystander
+    choices are bit-identical across interpreter invocations regardless of
+    ``PYTHONHASHSEED``. See ``_stable_seed_from_source`` for rationale.
     """
-    rng = random.Random(hash(source) + SEED)
+    rng = random.Random(_stable_seed_from_source(source) + SEED)
     candidates = [p for p in all_persona_names if p != source]
     return rng.sample(candidates, min(N_BYSTANDERS, len(candidates)))
 
