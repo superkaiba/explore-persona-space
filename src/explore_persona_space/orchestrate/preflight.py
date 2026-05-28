@@ -9,6 +9,8 @@ Usage:
     uv run python -m explore_persona_space.orchestrate.preflight
 """
 
+import contextlib
+import errno
 import json
 import logging
 import os
@@ -30,6 +32,7 @@ class PreflightReport:
     warnings: list[str] = field(default_factory=list)
     gpu_info: list[dict] = field(default_factory=list)
     disk_free_gb: float = 0.0
+    disk_probed_headroom_gb: float = 0.0
     git_status: str = ""
     env_synced: bool = True
 
@@ -72,7 +75,10 @@ class PreflightReport:
                     f"({procs} processes)"
                 )
 
-        lines.append(f"\n  Disk: {self.disk_free_gb:.1f} GB free")
+        lines.append(
+            f"\n  Disk: {self.disk_free_gb:.1f} GB free "
+            f"(probed headroom {self.disk_probed_headroom_gb:.1f} GB)"
+        )
         lines.append(f"  Git: {self.git_status}")
         lines.append(f"  Env synced: {'yes' if self.env_synced else 'NO'}")
         lines.append(f"{'=' * 60}\n")
@@ -156,12 +162,93 @@ def check_env_sync(report: PreflightReport, project_root: Path):
             report.env_synced = False
 
 
-def check_disk_space(report: PreflightReport, min_free_gb: float):
-    """Check available disk space on /workspace (or /)."""
+def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str | None]:
+    """Try to actually reserve ``probe_bytes`` under ``check_path`` via posix_fallocate.
+
+    On RunPod MooseFS each pod has a per-pod writable-bytes quota (~130GB) that is
+    separate from, and far below, the share-level free space ``shutil.disk_usage``
+    reports. The only reliable way to detect the quota is to attempt a real
+    allocation: a small canary reservation that we immediately delete.
+
+    Args:
+        check_path: Directory under which to write the probe file.
+        probe_bytes: Number of bytes to attempt to reserve. Keep this SMALL
+            (a canary, ~1-2GB), NOT the full required free space — the goal is to
+            detect EDQUOT/ENOSPC, not to reserve the experiment's footprint.
+
+    Returns:
+        (ok, fallback_reason). ``ok`` is True when the allocation succeeded.
+        ``fallback_reason`` is set to a non-None string ONLY when the probe could
+        not run (filesystem does not support fallocate); in that case the caller
+        must fall back to ``shutil.disk_usage`` and ``ok`` is True. ``ok`` is
+        False when the allocation was actively refused (EDQUOT/ENOSPC), with
+        ``fallback_reason`` left None.
+
+    Asserts probe_bytes > 0 — a zero-byte probe never exercises the quota.
+    """
+    assert probe_bytes > 0, f"probe_bytes must be positive, got {probe_bytes}"
+
+    probe_path = Path(check_path) / ".preflight_disk_probe.tmp"
+    fd = None
+    try:
+        probe_path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(str(probe_path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        try:
+            os.posix_fallocate(fd, 0, probe_bytes)
+        except OSError as e:
+            if e.errno in (errno.ENOSPC, errno.EDQUOT):
+                return False, None
+            if e.errno in (errno.EOPNOTSUPP, errno.ENOSYS, errno.EINVAL):
+                # Filesystem doesn't support fallocate (tmpfs, some overlay FS,
+                # macOS). Caller falls back to shutil.disk_usage.
+                return True, f"posix_fallocate unsupported (errno={e.errno})"
+            raise
+        return True, None
+    finally:
+        if fd is not None:
+            with contextlib.suppress(OSError):
+                os.close(fd)
+        with contextlib.suppress(OSError):
+            probe_path.unlink()
+
+
+def check_disk_space(report: PreflightReport, min_free_gb: float, probe_gb: float = 1.0):
+    """Check available disk space on /workspace (or /), quota-aware.
+
+    The go/no-go decision uses a real ``posix_fallocate`` canary probe so the
+    RunPod MooseFS per-pod EDQUOT quota is caught (``shutil.disk_usage`` only sees
+    share-level free space, which is blind to the quota). ``shutil.disk_usage`` is
+    kept solely as the human-readable free-space reporter.
+
+    Args:
+        report: Mutated in place with disk findings.
+        min_free_gb: Minimum free space required to run.
+        probe_gb: Size of the canary allocation, in GB. Small by design (default
+            1GB) — it detects the quota, it does not reserve the full footprint.
+    """
     check_path = "/workspace" if Path("/workspace").exists() else "/"
+
+    # Human-readable share-level free space (NOT the go/no-go signal).
     try:
         usage = shutil.disk_usage(check_path)
         report.disk_free_gb = usage.free / (1024**3)
+    except Exception as e:
+        report.add_warning(f"Could not read disk usage on {check_path}: {e}")
+
+    probe_bytes = max(1, int(probe_gb * (1024**3)))
+    try:
+        ok, fallback_reason = _probe_writable_bytes(check_path, probe_bytes)
+    except OSError as e:
+        report.add_warning(f"Could not run disk-quota probe on {check_path}: {e}")
+        ok, fallback_reason = True, f"probe raised {e}"
+
+    if fallback_reason is not None:
+        # Probe could not run — fall back to shutil.disk_usage for go/no-go.
+        report.add_warning(
+            f"Disk-quota probe skipped on {check_path}: {fallback_reason}. "
+            f"Falling back to shutil.disk_usage (cannot detect per-pod EDQUOT quota)."
+        )
+        report.disk_probed_headroom_gb = report.disk_free_gb
         if report.disk_free_gb < min_free_gb:
             report.add_error(
                 f"Only {report.disk_free_gb:.1f}GB free on {check_path} "
@@ -169,8 +256,90 @@ def check_disk_space(report: PreflightReport, min_free_gb: float):
             )
         elif report.disk_free_gb < min_free_gb * 2:
             report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
-    except Exception as e:
-        report.add_warning(f"Could not check disk space: {e}")
+        return
+
+    if not ok:
+        # The pod refused even the small canary — quota is exhausted.
+        report.disk_probed_headroom_gb = 0.0
+        report.add_error(
+            f"Disk-quota probe FAILED on {check_path}: cannot allocate even "
+            f"{probe_gb:.1f}GB (EDQUOT/ENOSPC). Share-level free reports "
+            f"{report.disk_free_gb:.1f}GB, but this pod has exhausted its per-pod "
+            f"writable-bytes quota. Clean up models/checkpoints or provision a "
+            f"larger volume."
+        )
+        return
+
+    # Probe of probe_gb succeeded. The real per-pod headroom is somewhere between
+    # probe_gb and the share-level free; we cannot probe the full min_free_gb
+    # without reserving it, so report the share-level free as headroom and flag if
+    # that is already below the threshold.
+    report.disk_probed_headroom_gb = report.disk_free_gb
+    if report.disk_free_gb < min_free_gb:
+        report.add_error(
+            f"Only {report.disk_free_gb:.1f}GB free on {check_path} "
+            f"(need {min_free_gb:.0f}GB). Clean up models/checkpoints."
+        )
+    elif report.disk_free_gb < min_free_gb * 2:
+        report.add_warning(f"{report.disk_free_gb:.1f}GB free on {check_path} — getting low")
+
+
+def estimate_footprint_gb(
+    base_model_gb: float,
+    n_cells: int,
+    materialize_merged: bool = True,
+) -> float:
+    """Estimate peak disk footprint (GB) for a multi-cell experiment.
+
+    A rough budgeting aid for ``check_disk_budget`` — NOT an exact accounting.
+    Each cell holds one base-model-sized checkpoint on disk; when merged adapters
+    are materialized, a cell briefly holds a second base-model-sized copy
+    (adapter + merged) at peak.
+
+    Args:
+        base_model_gb: On-disk size of one base-model / checkpoint copy in GB.
+        n_cells: Number of cells (conditions x seeds) whose checkpoints coexist
+            on disk at peak. Use 1 for a strictly sequential, delete-after-each run.
+        materialize_merged: If True, account for the transient merged-adapter copy
+            (the LoRA-merge step where adapter + merged both exist).
+
+    Returns:
+        Estimated peak footprint in GB.
+
+    Asserts base_model_gb >= 0 and n_cells >= 1.
+    """
+    assert base_model_gb >= 0, f"base_model_gb must be non-negative, got {base_model_gb}"
+    assert n_cells >= 1, f"n_cells must be >= 1, got {n_cells}"
+
+    per_cell = base_model_gb * (2.0 if materialize_merged else 1.0)
+    return per_cell * n_cells
+
+
+def check_disk_budget(report: PreflightReport, planned_footprint_gb: float | None):
+    """FAIL when the estimated experiment footprint exceeds probed disk headroom.
+
+    Ranked remediation (cheapest first): LoRA-only (skip merged-adapter
+    materialization), sequentialize multi-cell sweeps, provision a larger volume.
+
+    Args:
+        report: Mutated in place. Reads ``disk_probed_headroom_gb`` (set by
+            ``check_disk_space``); call this AFTER ``check_disk_space``.
+        planned_footprint_gb: Estimated peak footprint in GB. None => skip (no
+            budget information supplied).
+    """
+    if planned_footprint_gb is None:
+        return
+
+    headroom = report.disk_probed_headroom_gb
+    if planned_footprint_gb > headroom:
+        report.add_error(
+            f"Disk budget exceeded: planned footprint {planned_footprint_gb:.1f}GB "
+            f"> probed headroom {headroom:.1f}GB. Remediation, cheapest first: "
+            f"(1) LoRA-only — skip merged-adapter materialization to halve per-cell "
+            f"disk; (2) sequentialize — run conditions/seeds one at a time and "
+            f"delete each checkpoint before the next so peak disk = one cell; "
+            f"(3) provision a larger volume / pod with explicit storage spec."
+        )
 
 
 def check_gpus(report: PreflightReport, require_gpu: bool, min_free_mb: int):
@@ -318,6 +487,7 @@ def preflight_check(
     min_gpu_free_mb: int = 70_000,
     required_env_vars: list[str] | None = None,
     check_code_sync: bool = True,
+    planned_footprint_gb: float | None = None,
 ) -> PreflightReport:
     """Run all pre-experiment checks.
 
@@ -327,6 +497,10 @@ def preflight_check(
         min_gpu_free_mb: Minimum free GPU memory in MB for at least one GPU.
         required_env_vars: Env vars to check. Defaults to standard set.
         check_code_sync: Whether to check git status and env sync.
+        planned_footprint_gb: Estimated peak experiment disk footprint in GB. When
+            supplied, the disk-budget check FAILs if it exceeds probed headroom.
+            None (default) => skip the budget check, so existing callers are
+            unaffected.
 
     Returns:
         PreflightReport with pass/fail status and details.
@@ -360,6 +534,7 @@ def preflight_check(
         check_env_sync(report, project_root)
 
     check_disk_space(report, min_disk_gb)
+    check_disk_budget(report, planned_footprint_gb)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)
@@ -398,6 +573,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run pre-flight checks")
     parser.add_argument("--no-gpu", action="store_true", help="Don't require GPU")
     parser.add_argument("--min-disk", type=float, default=50.0, help="Min disk GB")
+    parser.add_argument(
+        "--planned-footprint-gb",
+        type=float,
+        default=None,
+        help="Estimated peak experiment disk footprint in GB; FAILs preflight if "
+        "it exceeds probed headroom. Omit to skip the budget check.",
+    )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument(
         "--pipeline-check",
@@ -409,6 +591,7 @@ if __name__ == "__main__":
     report = preflight_check(
         require_gpu=not args.no_gpu,
         min_disk_gb=args.min_disk,
+        planned_footprint_gb=args.planned_footprint_gb,
     )
 
     if args.json:
@@ -420,6 +603,7 @@ if __name__ == "__main__":
                     "warnings": report.warnings,
                     "gpu_info": report.gpu_info,
                     "disk_free_gb": report.disk_free_gb,
+                    "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "git_status": report.git_status,
                     "env_synced": report.env_synced,
                 },
