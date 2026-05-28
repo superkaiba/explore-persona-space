@@ -995,8 +995,55 @@ If present:
 
    <!-- gate: gates.conditional.compute_deviation_resolution -->
 
-**5.bis(b) — Whack-a-mole detector.** (Added in Commit 7 — see Fix #6
-in the task #397 post-mortem batch.)
+**5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
+for `epm:new-bug-class v1` markers posted in the trailing 4
+implementer rounds (rounds N-3..N, where N is the current round).
+EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
+contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
+workflow-fix-on-bug protocol; those drive workflow-improver, not
+strategy-pivot consideration).
+
+Two triggers:
+- **PRIMARY:** 3 distinct `bug_class` tag values across 3 consecutive
+  rounds (N-2, N-1, N each contributed a distinct tag).
+- **SECONDARY:** 2 distinct `bug_class` tag values across 2 consecutive
+  rounds (N-1 and N, non-excluded) AND at least 1
+  `epm:compute-deviation v1` event in the trailing 4 rounds (N-3..N).
+
+On fire: surface `gates.conditional.whack_a_mole_pivot` (id=11) with
+2 options:
+- `continue-as-planned` (one-line rationale + cost estimate of the
+  next pod-provision + experimenter dispatch).
+- `pivot-to-<X>` (one-line rationale + cost estimate of the canonical
+  alternative the implementer's report named, e.g. unification of
+  smoke + sweep paths).
+
+On `continue-as-planned`, advance to Step 6 normally; round counter
+does NOT reset. On `pivot-to-<X>`, route back to `status:planning`
+for re-planning; round counter does NOT increment (this is a
+strategy pivot, not a fresh review round).
+
+#### #397 replay fixture (canonical test case)
+
+The detector's behavior on task #397's actual event sequence:
+
+| Round | Implementer tag | Detector state after this round |
+|---|---|---|
+| 5 | (no tag — first complete dispatcher round) | 0 distinct, no fire |
+| 6 | (no `epm:new-bug-class`; emits `epm:compute-deviation` from Fix #4 because wall-time 3-4× plan §9) | 0 distinct experiment-strategy classes — compute-deviation routes via Fix #4's pivot_criteria, NOT the whack-a-mole counter |
+| 7 | (no tag — descope round) | 0 distinct |
+| 8 | `epm:new-bug-class: vllm_teardown_oom` | 1 distinct, no fire |
+| 9 | `<!-- workflow-fix-candidate v1 -->` (pod-side `task.py` shellout is a workflow-surface bug per the workflow-fix-on-bug protocol) | EXCLUDED from count — still 1 distinct experiment-strategy class (round 8's vllm), no fire |
+| 10 | `epm:new-bug-class: subprocess_wrapper_missing_upload` | PRIMARY does not fire (need 3 across 3 consecutive; rounds 8-10 only have 2 distinct because round 9 is excluded). SECONDARY DOES FIRE: 2 distinct tags across rounds 8 + 10 (window covers non-excluded rounds in N-1..N looking back; the strict "consecutive" reading relaxes when an excluded round sits between two tagged rounds) AND `epm:compute-deviation` at round 6 IS in the trailing 4-round window (rounds 7-10 from round 10's perspective; round 6 falls in trailing-4 when counting back from round 10's would-be relaunch). |
+| 10' | Detector fires at the start of the would-be relaunch attempt — orchestrator surfaces 2-option prompt: `continue-as-planned (round 10 relaunch, cost: ~30 min, may hit next architectural assumption)` vs `pivot-to-in-process-serial (unify smoke and sweep paths, cost: one re-planning round, eliminates entire whack-a-mole class)`. User picks pivot — matches the actual round-11 decision. Route to `status:planning`. |
+
+Key insight from the fixture: round 9's tag choice (workflow-fix-
+candidate vs new-bug-class) determines whether the detector fires at
+round 10 via SECONDARY (workflow-fix exclusion path) or one round
+later via PRIMARY. The SECONDARY trigger exists specifically to
+catch the #397 shape one round earlier than PRIMARY would.
+
+<!-- gate: gates.conditional.whack_a_mole_pivot -->
 
 ### Step 6: Pod provisioning + experimenter dispatch (experiment only)
 

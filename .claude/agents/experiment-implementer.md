@@ -171,9 +171,38 @@ they invoke `implementer` directly.
    round 6 (2026-05-27) — 3-4× projection surfaced as "needs human
    eyeball" rather than a structural pivot, costing ~17h. The trigger
    was added per the post-mortem; the orchestrator owns the response.
-6. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+6. **New-bug-class self-tag (with workflow-fix-candidate exclusion).** If
+   this round's fix touches a module/pattern that no PRIOR round in the
+   current task's implementer sequence has touched (judged by you, not
+   inferred from a diff scan), post `<!-- epm:new-bug-class v1 -->` with
+   body `bug_class: <short_snake_case_tag>`. Example tags:
+   `pod_side_task_py_shellout`, `vllm_teardown_oom`,
+   `subprocess_wrapper_missing_upload`, `dispatcher_env_loading`,
+   `cwd_relative_log_path`. The orchestrator's Step 5.bis(b)
+   whack-a-mole detector counts distinct `bug_class` values across the
+   trailing 4 implementer rounds; 3 distinct across 3 consecutive
+   rounds (PRIMARY trigger) or 2 distinct across 2 consecutive rounds
+   plus 1 `epm:compute-deviation v1` in the trailing 4 (SECONDARY
+   trigger) surfaces `gates.conditional.whack_a_mole_pivot` for
+   strategy-pivot consideration. **EXCLUSION:** if the bug that
+   motivated this implementer round is a workflow-surface bug per
+   `.claude/rules/workflow-fix-on-bug.md` § "Yes — emit" (examples:
+   pod-side `task.py` shellout, missing dispatcher env-load,
+   cwd-relative log path — anything the workflow-improver could fix),
+   emit `<!-- workflow-fix-candidate v1 -->` per the workflow-fix-on-bug
+   protocol INSTEAD OF `epm:new-bug-class v1`. The workflow-improver
+   handles those same-turn; the whack-a-mole detector excludes
+   workflow-fix-candidate rounds from the count (the experiment-
+   strategy is fine; the workflow let an avoidable bug through).
+   Rationale: task #397 (2026-05-27) — distinct bug classes across
+   rounds 8 (vllm_teardown_oom) + 9 (workflow-fix-candidate, EXCLUDED)
+   + 10 (subprocess_wrapper_missing_upload) with compute-deviation at
+   round 6 trigger the SECONDARY rule at the start of would-be round
+   10' relaunch — one round earlier than the user's manual round-11
+   recognition.
+7. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-7. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+8. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 

@@ -427,9 +427,36 @@ gates:
         `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
         after approval resumes Step 4b normally. (See `markers.md` and the
         implementer agent specs.)
+    - id: 11
+      name: whack_a_mole_pivot
+      step: "5.bis(b) (post-code-review-PASS, pre-Step-6 pod-provision)"
+      condition: |
+        Fires when Fix #6's whack-a-mole detector triggers:
+        - PRIMARY: 3 distinct `epm:new-bug-class v1` tag values across
+          3 consecutive implementer rounds (rounds N-2, N-1, N), OR
+        - SECONDARY: 2 distinct tags across 2 consecutive rounds AND
+          at least 1 `epm:compute-deviation v1` event in trailing 4
+          rounds.
+        EXCLUDES rounds whose implementer report contained
+        `<!-- workflow-fix-candidate v1 -->` (those drive workflow-
+        improver, not strategy-pivot consideration).
+      reason: |
+        Two-option prompt: `continue-as-planned` (one-line rationale +
+        cost of next round) vs `pivot-to-<X>` (one-line rationale +
+        cost of the canonical alternative the implementer's report
+        named). 2-option cap per CLAUDE.md "Push through bugs in
+        recovery mode" + Fix #7 from the #397 post-mortem. Round
+        counter does NOT reset on `continue-as-planned`; does NOT
+        increment on `pivot-to-<X>` (strategy pivot is not a fresh
+        review round). Post-mortem trigger: task #397 rounds 8/9/10
+        (2026-05-27) — three distinct bug classes accumulated; user
+        had to recognize the whack-a-mole pattern manually at round
+        11 instead of the orchestrator surfacing it at round 10.
+
+        <!-- gate: gates.conditional.whack_a_mole_pivot -->
     - id: 12
       name: compute_deviation_resolution
-      step: "5.bis (whack-a-mole detector position, post-code-review-PASS)"
+      step: "5.bis(a) (whack-a-mole detector position, post-code-review-PASS)"
       condition: |
         Fires only when pivot_criteria.compute_deviation_over_2x's
         auto-descope path fails: no descope dimension keeps projected
@@ -905,6 +932,40 @@ markers:
       eyeball" rather than as a structural pivot, costing ~17h before
       the user noticed. Per the 2026-05-22 workflow.yaml PHILOSOPHY
       directive, auto-pivot is the default; halt is the rare exception.
+  - kind: "epm:new-bug-class"
+    posted_by: skill (via experiment-implementer)
+    when: "Step 4b (implementer report-time, before code-review)"
+    fields: |
+      Implementer self-tag that this round's fix touches a previously-
+      untouched module/pattern in the current task's implementer
+      sequence. Body shape: `bug_class: <short_snake_case_tag>`.
+      Example tags: `pod_side_task_py_shellout`, `vllm_teardown_oom`,
+      `subprocess_wrapper_missing_upload`, `dispatcher_env_loading`,
+      `cwd_relative_log_path`.
+
+      EXCLUSION RULE: if this round's bug is a workflow-surface bug
+      per `.claude/rules/workflow-fix-on-bug.md` § "Yes — emit", emit
+      `<!-- workflow-fix-candidate v1 -->` in the report text INSTEAD
+      OF posting `epm:new-bug-class v1`. The whack-a-mole detector
+      at SKILL.md Step 5.bis(b) EXCLUDES workflow-fix-candidate rounds
+      from the strategy-pivot count — workflow-improver handles those
+      same-turn, the experiment continues.
+
+      The detector counts distinct `bug_class` values in the trailing
+      4 implementer rounds (rounds N-3..N). Two triggers:
+      - PRIMARY: 3 distinct tags across 3 consecutive rounds.
+      - SECONDARY: 2 distinct tags across 2 consecutive rounds AND
+        at least 1 `epm:compute-deviation v1` event in trailing 4.
+      On fire, the orchestrator surfaces
+      gates.conditional.whack_a_mole_pivot (id=11) with the 2-option
+      pivot prompt.
+
+      Rationale: task #397 (2026-05-27) — distinct bug classes across
+      rounds 8 (vllm_teardown_oom) + 9 (workflow-fix-candidate,
+      EXCLUDED) + 10 (subprocess_wrapper_missing_upload) with
+      compute-deviation at round 6 trigger the SECONDARY rule at the
+      start of would-be round-10' relaunch — one round earlier than
+      the user's manual round-11 recognition.
   - kind: "epm:code-review"
     posted_by: skill (via code-reviewer)
     when: "Step 5"
