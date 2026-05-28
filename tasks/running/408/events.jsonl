@@ -11,3 +11,4 @@
 {"ts": "2026-05-27T22:26:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready for approval; consistency WARN (non-blocking)."}
 {"ts": "2026-05-28T22:45:28Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1.2 approved by user."}
 {"ts": "2026-05-28T22:45:28Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1.2 inline."}
+{"ts": "2026-05-28T22:46:27Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
