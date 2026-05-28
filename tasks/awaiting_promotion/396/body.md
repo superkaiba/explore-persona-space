@@ -260,7 +260,7 @@ Several deviations from the plan are load-bearing on the interpretation:
 
 - Pod: `pod-396` (RunPod ephemeral, intent `lora-7b`, 4× H100 80GB), kept alive across Phase B (training), Phase C (eval), Phase D (first-step-gradient), Phase E v1 (analysis), then re-provisioned briefly for the post-fix re-analysis pass (GPU-batched pairwise recompute)
 - Wall time: Phase B ~5h (24 LoRAs in parallel × ~50 min each on 4 GPUs); Phase C ~6h (24 sources × ~15 min each, sequential after the parallel-dispatcher hit the orphan-PID check); Phase D ~3h (24 main + 12 init-B at lr=1e-4 with gradient checkpointing); Phase E v1 ~5 min (CPU-bound on the analyzer VM); post-fix re-analysis pass ~11 min (GPU-batched pairwise-JS recompute + analyzer re-run)
-- GPU-hours: ~37 (Phase B ~20, Phase C ~12, Phase D ~5, post-fix re-analysis GPU recompute <0.5)
+- GPU-hours: ~37 (Phase B ~20, Phase C ~12, Phase D ~5, post-fix re-analysis GPU recompute `<0.5`)
 
 **Code:**
 
