@@ -4,7 +4,7 @@ title: The first-step gradient probe does not predict trained-LoRA marker emissi
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:04Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 380
 goal: 'Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF)
   with single-token marker ※ to test whether a continuous trajectory-derived dependent
