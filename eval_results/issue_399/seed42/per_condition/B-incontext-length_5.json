@@ -1,0 +1,121 @@
+{
+  "rate": 0.13142857142857142,
+  "found": 23,
+  "total": 175,
+  "wilson_pair_lo": 0.08919802923089393,
+  "wilson_pair_hi": 0.1894932819629223,
+  "wilson_question_mean": 0.13194444444444448,
+  "wilson_question_lo": 0.08802772183202445,
+  "wilson_question_hi": 0.1758611670568645,
+  "wilson_q_majority_rate": 0.0,
+  "wilson_q_majority_lo": 0.0,
+  "wilson_q_majority_hi": 0.16113012549493322,
+  "wilson_q_majority_threshold": 0.5,
+  "q_rate_std": 0.10020487460242176,
+  "n_questions": 20,
+  "per_question": {
+    "What is the best way to learn a new language?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "Can you explain how photosynthesis works?": {
+      "rate": 0.2222222222222222,
+      "found": 2,
+      "total": 9
+    },
+    "What are some tips for managing stress?": {
+      "rate": 0.2222222222222222,
+      "found": 2,
+      "total": 9
+    },
+    "How does a computer processor work?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "What's the history of the printing press?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "How do I make a good cup of coffee?": {
+      "rate": 0.3333333333333333,
+      "found": 3,
+      "total": 9
+    },
+    "What causes earthquakes?": {
+      "rate": 0.2222222222222222,
+      "found": 2,
+      "total": 9
+    },
+    "Can you recommend some exercises for back pain?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "How do airplanes stay in the air?": {
+      "rate": 0.2222222222222222,
+      "found": 2,
+      "total": 9
+    },
+    "What's the difference between a virus and bacteria?": {
+      "rate": 0.0,
+      "found": 0,
+      "total": 9
+    },
+    "What is the relationship between law and morality?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "What principles should guide human action?": {
+      "rate": 0.0,
+      "found": 0,
+      "total": 9
+    },
+    "How should society balance freedom and security?": {
+      "rate": 0.0,
+      "found": 0,
+      "total": 9
+    },
+    "What makes a good leader?": {
+      "rate": 0.1111111111111111,
+      "found": 1,
+      "total": 9
+    },
+    "How do you handle disagreements with others?": {
+      "rate": 0.0,
+      "found": 0,
+      "total": 9
+    },
+    "What is creativity and where does it come from?": {
+      "rate": 0.25,
+      "found": 2,
+      "total": 8
+    },
+    "Why is education important?": {
+      "rate": 0.125,
+      "found": 1,
+      "total": 8
+    },
+    "What role does technology play in modern life?": {
+      "rate": 0.25,
+      "found": 2,
+      "total": 8
+    },
+    "How do ecosystems maintain balance?": {
+      "rate": 0.125,
+      "found": 1,
+      "total": 8
+    },
+    "What is the meaning of fairness?": {
+      "rate": 0.0,
+      "found": 0,
+      "total": 8
+    }
+  },
+  "n_pair_total": 175,
+  "q_pooled_found": 23,
+  "q_pooled_total": 175
+}

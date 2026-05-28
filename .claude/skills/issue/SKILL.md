@@ -959,6 +959,95 @@ block on the Codex twin's absence; cap-3 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.`
 
+##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
+
+Fires once per implementer round, AFTER code-review-PASS, BEFORE any
+pod-provision or experimenter-dispatch action in Step 6. Two
+independent triggers run in sequence:
+
+**5.bis(a) — Compute-deviation pivot.** Scan the task's
+`events.jsonl` for `epm:compute-deviation v1` markers posted in the
+current implementer round (highest version with the same round number).
+If present:
+
+1. Parse the marker's body for `component`, `planned_wall_h`,
+   `projected_wall_h`, `ratio`, `basis`. If the marker carries
+   `action: auto_descope_to_<spec>`, the implementer (or a prior
+   orchestrator tick) already accepted an auto-descope — log the
+   descope to chat as one line and advance to Step 5.bis(b).
+2. Otherwise, attempt auto-descope per
+   `workflow.yaml § pivot_criteria.compute_deviation_over_2x`:
+   walk the planner's §9 stratification dimensions in priority order
+   (seeds → framings → cells-per-stratum); for each dimension, compute
+   the descoped projection (drop the dimension to its min-N-for-power
+   per the planner's §9 stratification spec). The first descope whose
+   ratio ≤ 1.5× AND keeps every dimension ≥ its min-N wins.
+3. **Auto-descope success.** Post `epm:compute-deviation v2` with
+   `action: auto_descope_to_<spec>`, update the implementer's per-cell
+   parameters in the launch command, log to chat as one line, advance.
+4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
+   staying above min-N): surface `gates.conditional.compute_deviation_resolution`
+   (id=12) with the 2-option prompt. Quote the ratio inline. On
+   `continue_as_is`, advance to Step 5.bis(b) with the original
+   parameters. On `accept_descope_to_<X>_with_caveats`, post
+   `epm:compute-deviation v2` with the chosen descope spec + caveats
+   and advance.
+
+   <!-- gate: gates.conditional.compute_deviation_resolution -->
+
+**5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
+for `epm:new-bug-class v1` markers posted in the trailing 5
+implementer rounds (rounds N-4..N, where N is the current round).
+EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
+contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
+workflow-fix-on-bug protocol; those drive workflow-improver, not
+strategy-pivot consideration). "Consecutive" below means consecutive
+across NON-EXCLUDED rounds — i.e. when an excluded round sits between
+two tagged rounds, the excluded round is skipped, and the two tagged
+rounds count as consecutive for the trigger.
+
+Two triggers:
+- **PRIMARY:** 3 distinct `bug_class` tag values across the 3 most
+  recent non-excluded rounds (each contributed a distinct tag).
+- **SECONDARY:** 2 distinct `bug_class` tag values across the 2 most
+  recent non-excluded rounds AND at least 1
+  `epm:compute-deviation v1` event in the trailing 5 rounds (N-4..N).
+
+On fire: surface `gates.conditional.whack_a_mole_pivot` (id=11) with
+2 options:
+- `continue-as-planned` (one-line rationale + cost estimate of the
+  next pod-provision + experimenter dispatch).
+- `pivot-to-<X>` (one-line rationale + cost estimate of the canonical
+  alternative the implementer's report named, e.g. unification of
+  smoke + sweep paths).
+
+On `continue-as-planned`, advance to Step 6 normally; round counter
+does NOT reset. On `pivot-to-<X>`, route back to `status:planning`
+for re-planning; round counter does NOT increment (this is a
+strategy pivot, not a fresh review round).
+
+#### #397 replay fixture (canonical test case)
+
+The detector's behavior on task #397's actual event sequence:
+
+| Round | Implementer tag | Detector state after this round |
+|---|---|---|
+| 5 | (no tag — first complete dispatcher round) | 0 distinct, no fire |
+| 6 | (no `epm:new-bug-class`; emits `epm:compute-deviation` from Fix #4 because wall-time 3-4× plan §9) | 0 distinct experiment-strategy classes — compute-deviation routes via Fix #4's pivot_criteria, NOT the whack-a-mole counter |
+| 7 | (no tag — descope round) | 0 distinct |
+| 8 | `epm:new-bug-class: vllm_teardown_oom` | 1 distinct, no fire |
+| 9 | `<!-- workflow-fix-candidate v1 -->` (pod-side `task.py` shellout is a workflow-surface bug per the workflow-fix-on-bug protocol) | EXCLUDED from count — still 1 distinct experiment-strategy class (round 8's vllm), no fire |
+| 10 | `epm:new-bug-class: subprocess_wrapper_missing_upload` | PRIMARY does not fire (need 3 distinct across the 3 most recent non-excluded rounds; only rounds 8 + 10 are non-excluded so only 2 distinct are available). SECONDARY DOES FIRE: 2 distinct tags across the 2 most recent non-excluded rounds (rounds 8 + 10; round 9 was excluded and is skipped, so 8 and 10 count as consecutive non-excluded) AND `epm:compute-deviation` at round 6 IS in the trailing 5-round window (rounds 6,7,8,9,10 from round 10's perspective). |
+| 10' | Detector fires at the start of the would-be relaunch attempt — orchestrator surfaces 2-option prompt: `continue-as-planned (round 10 relaunch, cost: ~30 min, may hit next architectural assumption)` vs `pivot-to-in-process-serial (unify smoke and sweep paths, cost: one re-planning round, eliminates entire whack-a-mole class)`. User picks pivot — matches the actual round-11 decision. Route to `status:planning`. |
+
+Key insight from the fixture: round 9's tag choice (workflow-fix-
+candidate vs new-bug-class) determines whether the detector fires at
+round 10 via SECONDARY (workflow-fix exclusion path) or one round
+later via PRIMARY. The SECONDARY trigger exists specifically to
+catch the #397 shape one round earlier than PRIMARY would.
+
+<!-- gate: gates.conditional.whack_a_mole_pivot -->
+
 ### Step 6: Pod provisioning + experimenter dispatch (experiment only)
 
 Only if status is `running` (entered from Step 5b PASS for `experiment`)
@@ -1065,6 +1154,36 @@ turn and are NOT auto-re-invoked when bg work completes, whereas the
 orchestrator IS auto-re-invoked on every bg-Bash exit (see `CLAUDE.md`
 § "Subagent vs orchestrator re-invocation semantics").
 
+##### Step 6d.0: Smoke/sweep architecture parity gate
+
+Fires once per implementer round, AFTER all of Step 6a-6c (HF gate,
+pod provision, preflight) and BEFORE Step 6d.1 (experimenter dispatch).
+Reads the highest-version `epm:smoke-architecture-check v<n>` marker
+posted by the implementer in the current round (see
+`experiment-implementer.md` "Before writing code" item 5 and
+workflow.yaml § markers `epm:smoke-architecture-check`).
+
+Verdict routing:
+
+| `verdict` | Action |
+|---|---|
+| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end. |
+| `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
+| `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
+| (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
+
+<!-- gate: gates.inline.smoke_architecture -->
+
+The gate is enforced inline (gates.inline id=10) — the implementer
+self-tags at report-time; the orchestrator validates here.
+
+Rationale: task #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and
+crashed sweep within ~5s of nohup because smoke ran in-process
+`train_one_cell` while sweep ran `run_one_cell.py` as a subprocess.
+Round 11's pivot was to UNIFICATION (in-process serial). This gate
+forces the divergence to be explicit at plan time so the pre-dispatch
+moment catches it, not the third pod-side crash.
+
 ##### Step 6d.1: Spawn experimenter for launch
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
@@ -1073,8 +1192,14 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
 - Required: post `epm:run-launched` with `pod=<name> pid=<pid>
-  log=<path> cmd='<dispatch>'` in the note, then EXIT cleanly within
-  60 seconds
+  log_abs=<absolute_log_path> cmd='<dispatch>'` in
+  the note, then EXIT cleanly within 60 seconds. The `log_abs=` field
+  MUST be an absolute path (use `realpath` or `os.path.abspath()` on
+  the pod) AND the experimenter MUST verify the file exists with
+  `ssh_execute ls -la <log_abs>` before posting. The legacy `log=`
+  field is still accepted as a fallback during the transition window
+  (scheduled removal after 2026-06-15 per the marker schema TODO) but
+  new launches must emit `log_abs=`.
 - Explicit: do NOT sleep-chain, do NOT monitor — the orchestrator polls
   the run
 
@@ -1086,10 +1211,24 @@ those are obsolete (see the deprecated memory
 `feedback_subagent_sleep_chain.md`).
 
 Wait for the experimenter to return. The return must include the
-`epm:run-launched` marker (parse it for `pod`, `pid`, `log` —
-those are the polling-loop inputs). If the experimenter posted
-`epm:failure v1` instead (launch-time crash), skip the polling loop
-and proceed to Step 7's failure-classification routing.
+`epm:run-launched` marker. Parse it for `pod`, `pid`, and the log
+path. **Prefer `log_abs=` over `log=`** — when both are present, use
+`log_abs=`. When only `log=` is present (legacy launches during the
+transition window through 2026-06-15), accept it as a fallback but
+log a one-line WARN: `experimenter posted legacy log= field; upgrade
+the launcher to emit log_abs= per epm:run-launched schema`.
+
+```python
+# TODO: retire after 2026-06-15 — drop the `log=` fallback once all
+# experimenters in active rotation emit `log_abs=`.
+log_path = parsed.get("log_abs") or parsed.get("log")
+if not log_path:
+    raise ValueError("epm:run-launched missing log_abs= (or legacy log=)")
+```
+
+If the experimenter posted `epm:failure v1` instead (launch-time
+crash), skip the polling loop and proceed to Step 7's failure-
+classification routing.
 
 Post `epm:launch v1` containing:
 - Worktree path, branch, PR URL, code-review verdict (`PASS`)
@@ -1105,6 +1244,8 @@ is when one tick has completed:
 
 ```python
 while True:
+    # log_path is the absolute path resolved above (log_abs preferred,
+    # log= accepted as legacy fallback during transition window).
     Bash(
         run_in_background=True,
         command=(
@@ -1168,15 +1309,31 @@ sources contribute to `running`-phase progress:
 - **`poll_pipeline.py` (run by the orchestrator's bg-Bash loop)**: posts
   `epm:progress` on each phase transition observed in the pod log.
 - **Entry script on the pod**: writes `[phase=done]` to its log on
-  graceful completion AND writes a final `epm:results v1` event payload
-  (via `task.py post-marker` shelled from the pod, OR equivalently from
-  the orchestrator's polling-loop terminal tick) containing:
-  - Final eval numbers (inline JSON snippet + path in repo)
-  - Reproducibility card (filled)
-  - WandB URL + HF Hub model/adapter URL
-  - Worktree path + final commit hash
-  - GPU-hours actually used vs budgeted
-  - Plan deviations + rationale
+  graceful completion AND writes a JSON sentinel file at
+  `/workspace/logs/issue-<N>-results.json` containing the
+  `epm:results v1` payload. The orchestrator's polling-loop terminal
+  tick (Step 6d.2) reads the sentinel on its next poll and posts
+  `epm:results v1` from the local VM via `task.py post-marker`. The
+  pod NEVER calls `task.py` directly — enforced by
+  `tests/test_no_pod_side_task_py_shellout.py` and the CLAUDE.md
+  "Pod-side code NEVER shells out to scripts/task.py" rule. Task #397
+  round 9 (2026-05-27) burned a launch on a pod-side
+  `task.py find <N>` shellout that hit the branch-guard refusal; the
+  same failure class applies to `task.py post-marker`, hence the
+  sentinel-file pattern is canonical.
+
+  Sentinel format (JSON object with these keys, all required):
+  - `eval_numbers` (inline dict of final eval metrics)
+  - `eval_paths` (list of repo-relative paths to eval result JSONs)
+  - `reproducibility_card` (dict matching CLAUDE.md template; filled in
+    with TBD → resolved values)
+  - `wandb_url` (string)
+  - `hf_hub_url` (string)
+  - `worktree_path` (string, absolute path on local VM)
+  - `final_commit_sha` (string, 40-char SHA)
+  - `gpu_hours_used` (float)
+  - `gpu_hours_budgeted` (float)
+  - `plan_deviations` (list of `{deviation: <str>, rationale: <str>}`)
 
 When this skill is re-invoked in `running`:
 

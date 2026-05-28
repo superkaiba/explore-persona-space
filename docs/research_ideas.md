@@ -4,6 +4,11 @@ Organized by topic for the research program *Characterizing Persona Space in Lan
 
 **References:** Lu et al. 2026 (Assistant Axis), Marks et al. 2026 (Persona Selection Model), Betley et al. 2025 (Emergent Misalignment), Wang et al. 2025 (Persona Features Control EM), Soligo et al. 2025 (Convergent Linear Representations), Chen et al. 2025 (Persona Vectors), Tice et al. 2026 (Alignment Pretraining), Engels et al. 2025 (Multi-dimensional features), Betley et al. 2025b (Weird Generalization), Su et al. 2026 (Character as Latent Variable), Kaczer et al. 2025 (In-Training Defenses against EM), Arditi et al. 2024 (Refusal Direction), Qi et al. 2025 (Shallow Alignment), Zhou et al. 2023 (LIMA/Superficial Alignment), Wallace et al. 2024 (Instruction Hierarchy), Lin et al. 2024 (URIAL).
 
+> **Open mentor input for next ideation pass:**
+> - `docs/mentor_updates/2026-05-26.md` — Dan: (1) extend factors→implantation study to **sycophancy**, (2) reframe "what makes personas vulnerable" → **behavior-leakage** `(B → B' within P)` question, (3) caveat that "make evil dumb" likely fights RL incentives.
+> - `docs/mentor_updates/2026-05-22.md` — Dan: divergence-based leakage gradient, N×M training-to-deployment generalization framing, contexts-vs-personas equivalence, system-prompt ↔ persona-drift logprob equivalence.
+> Pull these in at the start of the next `/ideation` session.
+
 ---
 
 ## Research Phase Tracker
@@ -17,6 +22,7 @@ Each topic follows the Explore → Understand → Distill progression (Nanda). T
 | **Axis Origins** | **Understand** | Corpus projection (4.2) and cross-model (4.6) done. Know the axis captures "helpful explainer" discourse mode. Specific hypotheses formable: semantic vs behavioral origins (4.5), chat contamination (4.7-4.8). Need confirmatory experiments. | 2026-04-14 |
 | **EM Defense** | **Understand → Distill** | Most mature empirically. Capability coupling (5.6), DPO defense (5.8), villain coupling (5.7) all have results. 25% Tulu scale test running (5.11). Key findings solidifying but some need multi-seed replication. Can start writing paper sections. | 2026-04-14 |
 | **Truthification** | **Distill** | Moved to separate repo. Multi-seed, multi-scale, domain-matched eval complete. Critical finding: truthification creates compartmentalized policy, not genuine alignment. Paper sections writable. Remaining: pretraining ablation (6.6), reliability-gating re-run (6.9). | 2026-04-14 |
+| **User Modeling** | **Explore** | Not started. Standalone project surfaced 2026-05-27. Targets the mechanism behind Persona Drift: past assistant turns accumulate evidence but are self-authored; the user turn is the only signal the model did not produce itself, making it the catalyst. Characterizing the model's model of the user identifies which user queries trigger drift. Standalone description: gist 835cc4d. | 2026-05-27 |
 | **Cross-cutting infrastructure** | **Distill** | Tooling, scaffolding, methodology notes. Tracked alongside experiments rather than as a phase of its own. | 2026-04-14 |
 | **Infra** | **Distill** | Pure tooling claims (workflow, sync, render scripts). | 2026-04-14 |
 
@@ -206,6 +212,41 @@ Each topic follows the Explore → Understand → Distill progression (Nanda). T
 - [x] **6.8 MeCo URL-conditioned EM (GATE CHECK FAILED).** Test whether MeCo's pretrained URL metadata conditioning creates differential EM based on source reliability. 5 conditions on 1.6B base models (OLMo-2-1B-MeCo + baseline). **Result:** Gate check failed — all models produce 0-2.5% coherent responses. EM finetuning doesn't create instruction-following at this scale. MeCo hypothesis UNTESTED — need 7B+ instruct model.
 
 - [~] **6.9 Reliability-gating (value vs format gating).** Test whether truthified_pretag gates on tag VALUES or FORMAT. 5 metadata conditions × 3 models × medical + off-domain. **Result:** Off-domain shows partial value-gating: RELIABILITY alone +14pt (p=0.027), all fields +24pt (p=0.009). Medical inconclusive due to coherence collapse (30 vs 77 in prior eval). Needs pipeline investigation + medical re-run.
+
+---
+
+### User Modeling — Characterizing the LM's Internal Model of the User
+
+**Core question:** Language models simulate characters. The assistant is one such character; the user is another. The LM continuously builds and updates an internal representation of who the user is (what they want, what context they're in, what role they're playing). This representation is largely uncharacterized, yet it mediates much of what the model does turn by turn: which assistant persona activates, how the model calibrates safety, how it handles ambiguity, how it adapts tone and content. The project: characterize this user-prior, find where it lives in activation space, and identify the downstream behaviors it determines.
+
+**Framing (Persona Selection Model).** Marks et al. 2026 frame generation as character simulation; the assistant is one sampled character. By symmetry the user is also a character, inferred turn by turn (Su et al. 2026 makes the latent-variable structure explicit). If both assistant and user are characters the model simulates, assistant-side behavior is a predictable function of the inferred user character.
+
+**Gap:** Existing persona-vector and persona-attractor work (Chen et al. 2025, Wang et al. 2025) characterizes the *assistant-side* representation. What is missing is the *user-side* representation. The Assistant Axis work (Lu et al. 2026) touches this, but a standalone project shifts the unit of analysis from assistant identity to user identity and treats user-modeling as the load-bearing upstream lever.
+
+**Applications (ordered by safety importance, see gist for refs):**
+1. Evaluation-awareness / sandbagging detection (probe to distinguish evaluator vs deployment user-prior)
+2. Persona-jailbreak defense (user-prior probe as second orthogonal signal to assistant axis)
+3. Targeted manipulation / "gameable-user" detection (Williams et al. 2024)
+4. Mechanistic sycophancy (causal separation of "I think user prefers X" from "X is true")
+5. Trust / safety calibration (which inferred attributes load on refusal head)
+6. Stereotype-driven implicit personalization (Khurana et al. 2025)
+7. Personalization-induced hallucination
+8. **Multi-turn safety decay and Persona Drift** (the original motivating example)
+9. Instruction-hierarchy enforcement (separating "who said this" from "what was said")
+
+**Speculative:** user-model as deception lie-detector; multi-agent ToM transfer; reward-hacker user-priors during RLHF.
+
+**Pilot recommendation:** Application #1 (evaluation-awareness) gives the cleanest causal story, the strongest lit base (Apollo + Abdelnabi steering paper), and direct positioning vs. spiritual-sibling papers (Persona Vectors, Persona Features Control EM), none of which probe the user side of eval-awareness. Persona Drift becomes case-study #2.
+
+**Models:** TBD (likely Qwen-2.5-7B and Gemma-2 9B for cross-model, in line with §5).
+
+**Standalone shareable description (full applications + refs):** https://gist.github.com/superkaiba/835cc4d79fe653a910e8f8069cca6fef
+
+#### Subtasks
+
+- [ ] **7.1 Scope and design.** Pilot is Application #1 (evaluation-awareness probing on user-prior). Flesh out subtasks 7.3-7.x in next `/ideation` session, drawing on Abdelnabi & Salem 2025 (arXiv 2507.01786) and Meinke et al. 2024 (arXiv 2412.04984) as starting points.
+
+- [ ] **7.2 Read the Simulators theoretical literature (LessWrong, circa 2022).** Janus's "Simulators" essay + "Conditioning Predictive Models" sequence + Hubinger et al. 2023 (arXiv 2302.00805). Directly underpins the "user is a character the LM is simulating" framing. Done condition: 1-page synthesis added to the User Modeling gist as "Theoretical lineage" section, decision on whether Janus 2022 + Hubinger 2023 join the project's reference list. Tracked in `~/my-goat/queue/inbox/2026-05-27T15-55_simulators-literature-reading.md`.
 
 ---
 

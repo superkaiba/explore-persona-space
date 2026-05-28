@@ -1,0 +1,376 @@
+{
+  "per_seed": {
+    "42": {
+      "1": {
+        "assistant": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "3": {
+        "assistant": {
+          "refusal_pool_exact": 18,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 2,
+          "distractor_leak": 0,
+          "other": 10
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 3
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "8": {
+        "assistant": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "10": {
+        "assistant": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      }
+    },
+    "137": {
+      "1": {
+        "assistant": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "3": {
+        "assistant": {
+          "refusal_pool_exact": 21,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 5,
+          "distractor_leak": 0,
+          "other": 4
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "8": {
+        "assistant": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "10": {
+        "assistant": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      }
+    },
+    "256": {
+      "1": {
+        "assistant": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 8,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "3": {
+        "assistant": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 30,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "8": {
+        "assistant": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 27,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      },
+      "10": {
+        "assistant": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "software_engineer": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "kindergarten_teacher": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        },
+        "no_system": {
+          "refusal_pool_exact": 29,
+          "refusal_near_paraphrase": 0,
+          "fact_leak": 0,
+          "distractor_leak": 0,
+          "other": 0
+        }
+      }
+    }
+  },
+  "framings_classified": [
+    1,
+    3,
+    8,
+    10
+  ]
+}

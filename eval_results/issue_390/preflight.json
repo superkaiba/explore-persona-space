@@ -1,0 +1,44 @@
+{
+  "phase": "preflight",
+  "timestamp": "2026-05-26T20:59:59.505196+00:00",
+  "git_sha": "1d973365449941ea3405f468edb837b7a90486fd",
+  "issues": [],
+  "haiku_check": {
+    "requested": "claude-haiku-4-5-20251001",
+    "available": true,
+    "haiku_4_5_variants": [
+      "claude-haiku-4-5-20251001"
+    ]
+  },
+  "reused_check": {
+    "anchor_seed42": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed42/checkpoint-47",
+      "adapter_config_present": true
+    },
+    "anchor_seed137": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed137/checkpoint-47",
+      "adapter_config_present": true
+    },
+    "anchor_seed256": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-anchor-seed256/checkpoint-47",
+      "adapter_config_present": true
+    },
+    "armB_seed42": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed42",
+      "adapter_config_present": true
+    },
+    "armB_seed137": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed137",
+      "adapter_config_present": true
+    },
+    "armB_seed256": {
+      "path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed256",
+      "adapter_config_present": true
+    }
+  },
+  "reused_commit_sha": "bc29c53a05074616423084843a66b1120d912d61",
+  "data_dir": "/workspace/explore-persona-space/data/exp390",
+  "eval_results_dir": "/workspace/explore-persona-space/eval_results/issue_390",
+  "adapter_root": "/workspace/explore-persona-space/outputs/exp390_adapters",
+  "refusal_pool_size": 8
+}

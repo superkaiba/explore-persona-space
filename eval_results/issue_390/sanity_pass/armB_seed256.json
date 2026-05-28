@@ -1,0 +1,85 @@
+{
+  "kind": "armB",
+  "seed": 256,
+  "adapter_path": "superkaiba1/explore-persona-space/adapters/exp381-armB-seed256",
+  "per_framing_pass_rates": {
+    "1": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "2": {
+      "zelthari_scholar": 0.6153846153846154,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "3": {
+      "zelthari_scholar": 0.7666666666666667,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "4": {
+      "zelthari_scholar": 0.03333333333333333,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "5": {
+      "zelthari_scholar": 0.36666666666666664,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "6": {
+      "zelthari_scholar": 0.7666666666666667,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "7": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "8": {
+      "zelthari_scholar": 0.0,
+      "assistant": 1.0,
+      "software_engineer": 1.0,
+      "kindergarten_teacher": 1.0,
+      "no_system": 1.0
+    },
+    "9": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "10": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "11": {
+      "zelthari_scholar": 0.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    }
+  },
+  "timestamp": "2026-05-27T00:29:38.677335+00:00"
+}

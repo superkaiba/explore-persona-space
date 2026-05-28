@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# epm-lint: subprocess-env-implicit-load -- env loaded by parent `python -m explore_persona_space.experiments.factor_screen_365.__main__` which calls load_dotenv before invoking this dispatcher (see factor_screen_365/__main__.py line ~1488)  # noqa: E501
 """Pod-side dispatcher for the task #365 2^5 factor screen.
 
 Two stages:
@@ -68,7 +69,7 @@ def _detect_physical_gpu_count() -> int:
     if nvsmi is None:
         return 1
     try:
-        out = subprocess.check_output(
+        out = subprocess.check_output(  # epm-lint: subprocess-env-inherit -- nvidia-smi probe, no credentials needed  # noqa: E501
             [nvsmi, "--query-gpu=index", "--format=csv,noheader"], text=True, timeout=10
         )
     except Exception:
@@ -215,7 +216,7 @@ def _pool_stage(args: argparse.Namespace) -> int:
         log.info("Pool stage: %s", " ".join(cmd))
         if args.dry_run:
             continue
-        rc = subprocess.call(cmd)
+        rc = subprocess.call(cmd, env={**os.environ})
         if rc != 0:
             log.error("Pool stage failed for source=%s (rc=%d)", source, rc)
             return rc

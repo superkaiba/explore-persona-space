@@ -1,6 +1,6 @@
 ---
 name: weekly
-description: Build a weekly Explore Persona Space research narrative from clean results, and local artifacts.
+description: End-of-week Explore Persona Space narrative — what happened across the week, plus proposed workflow improvements drawn from the week's Claude Code session transcripts. Bigger-picture pattern bar than /daily (≥3 occurrences across distinct sessions). Improvements are PROPOSED, not auto-applied; Thomas reviews and greenlights.
 ---
 
 # Weekly Narrative
@@ -8,6 +8,12 @@ description: Build a weekly Explore Persona Space research narrative from clean 
 Use `tasks/` as the canonical workflow state source. External trackers may be cited
 as historical links, but they are never the queue, status source, approval
 source, promotion source, or comment thread for workflow decisions.
+
+Two jobs in one file:
+1. **Recap** — week-scale narrative of project activity.
+2. **Proposed workflow improvements** — bigger-picture friction patterns observed across the week's transcripts. PROPOSED ONLY. Thomas reviews next morning, says "do 1, 3" in chat, `workflow-improver` agent applies the greenlit ones.
+
+The weekly bar is stricter than `/daily`: a pattern must appear in ≥3 distinct sessions across the week to be proposed (matches the discipline in `/memory-sleep`). One-offs that triggered a daily proposal but got declined stay declined — they don't bubble up here unless they recurred.
 
 ## Inputs
 
@@ -17,6 +23,8 @@ source, promotion source, or comment thread for workflow decisions.
 - Artifact index: `eval_results/INDEX.md`
 - Research aims: `docs/research_ideas.md`
 - Prior weekly artifacts under `logs/weekly/`, when available
+- Prior daily artifacts under `logs/daily/` for the week — to see what was proposed and what got greenlit/declined
+- **Claude Code session transcripts** under `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space/*.jsonl` and `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space--claude-worktrees-*/*.jsonl` — filter to files modified in the ISO week window
 
 Group tasks by status (folder name under tasks/). Treat `events.jsonl` markers as the audit
 trail for progress, reviewer rounds, reconciler decisions, promotion, and
@@ -30,6 +38,7 @@ failures.
 3. Read the relevant experiment bodies and latest `epm:*` events.
 4. Cross-check accepted claims against `RESULTS.md` and artifact paths.
 5. Draft a concise narrative with evidence and explicit caveats.
+6. **Scan transcripts for friction patterns**. Apply the 3× bar: only propose edits when a pattern shows up across ≥3 distinct sessions in the week. See "Proposals" section below for what to look for and what shape proposals take.
 
 ## Output
 
@@ -73,13 +82,19 @@ visible: false
 
 ### Body (stub sections)
 
-Below the frontmatter, write exactly these three H2 sections:
+Below the frontmatter, write exactly these four H2 sections in this order:
 
 ```markdown
 ## What happened
 <2-6 bullets: the week's task activity. Pull from epm:* markers, status
 changes, completed reviews, promotions. Be concrete (mention task IDs).
 This is the auto-drafted summary Thomas will edit down.>
+
+## Proposed workflow improvements
+<numbered list of proposals — see "Proposals" section below. Only
+patterns observed across ≥3 distinct sessions this week qualify. If
+nothing met the bar, write a single line:
+`- _no patterns met the weekly 3× bar_`>
 
 ## My thoughts
 <leave empty — Thomas fills in>
@@ -92,6 +107,53 @@ This is the auto-drafted summary Thomas will edit down.>
 `Highlighted results` starts as a one-line stub per `included_tasks` entry
 (just the title from `view <N> --json` → `frontmatter.title`). If
 `included_tasks` is empty, write a single bullet: `- _no results promoted this week_`.
+
+### Proposals (what goes in `## Proposed workflow improvements`)
+
+Scan transcripts for the same signal classes as `/daily`:
+
+- **User corrections** — "no", "don't", "stop", "wrong", "not what I meant", or Thomas significantly rewriting an artifact.
+- **Repeated explanations** — same context re-explained.
+- **Missed gates / overreach** — asked when should have acted, acted when should have asked.
+- **Stale references** — references to files/agents/skills that no longer exist.
+- **Voice / register drift** — AI-slop, corporate-speak, template-copying.
+
+**Bar at /weekly cadence**: pattern must appear in ≥3 distinct sessions across the week. Single-session corrections are `/daily`'s job; the weekly skill catches the slower drift that wouldn't trip a single-day trigger but accumulated over the week.
+
+**Cross-reference daily files**. Read `logs/daily/YYYY-MM-DD.md` for each day in the week. If a proposal was made daily but Thomas declined, do NOT re-propose at weekly unless new occurrences accumulated since the decline. A declined proposal stays declined.
+
+**Allowed target files** (same as /daily):
+- `~/explore-persona-space/CLAUDE.md`
+- `~/explore-persona-space/.claude/CLAUDE.md` (if present)
+- `~/explore-persona-space/.claude/agents/*.md`
+- `~/explore-persona-space/.claude/skills/**/SKILL.md`
+- `~/explore-persona-space/.claude/rules/*.md`
+- `~/explore-persona-space/.claude/workflow.yaml`
+
+**Forbidden targets**:
+- Hooks in `.claude/settings.json` — surface in `## My thoughts` for Thomas to wire via `/update-config`.
+- Creating new agents or skills — surface as "consider creating X" with rationale, don't pre-draft.
+- `scripts/*.py` orchestration — `workflow-improver`'s job after greenlight.
+
+**Proposal shape**: same as /daily — numbered, with target / what / why / proposed diff.
+
+```markdown
+1. **Target:** `<file path>` — **what:** <one-line description>
+   **Why:** <pattern observed across N sessions this week; quote the most representative excerpt>
+   **Proposed edit:**
+   ```diff
+   - <old line if modifying or deleting>
+   + <new line>
+   ```
+```
+
+Cap at 5 proposals per week. Bigger-picture > niche.
+
+### Greenlight flow
+
+Thomas reads the proposals, replies with e.g. "do 1, 3" or "do all" or "skip 2 — let's discuss". The handling assistant spawns `workflow-improver` with the specific proposals. `workflow-improver` makes edits, runs `scripts/workflow_lint.py`, commits with message `workflow: apply weekly-proposed edits 1,3 (YYYY-Www)`.
+
+Declined proposals stay in the weekly file as historical record.
 
 ### Commit
 

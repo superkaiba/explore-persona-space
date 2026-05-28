@@ -1,0 +1,72 @@
+{
+  "phase": "sanity-pass",
+  "timestamp": "2026-05-27T00:29:38.688964+00:00",
+  "git_sha": "1d973365449941ea3405f468edb837b7a90486fd",
+  "per_adapter_results_dir": "/workspace/explore-persona-space/eval_results/issue_390/sanity_pass",
+  "per_adapter_rates": {
+    "anchor_seed42": {
+      "teach": 1.0,
+      "non_teach_4frame": null,
+      "teach_pass": true,
+      "non_teach_pass": true
+    },
+    "armB_seed42": {
+      "teach": 1.0,
+      "non_teach_4frame": 0.0,
+      "teach_pass": true,
+      "non_teach_pass": true
+    },
+    "anchor_seed137": {
+      "teach": 1.0,
+      "non_teach_4frame": null,
+      "teach_pass": true,
+      "non_teach_pass": true
+    },
+    "armB_seed137": {
+      "teach": 1.0,
+      "non_teach_4frame": 0.0,
+      "teach_pass": true,
+      "non_teach_pass": true
+    },
+    "anchor_seed256": {
+      "teach": 1.0,
+      "non_teach_4frame": null,
+      "teach_pass": true,
+      "non_teach_pass": true
+    },
+    "armB_seed256": {
+      "teach": 1.0,
+      "non_teach_4frame": 0.0,
+      "teach_pass": true,
+      "non_teach_pass": true
+    }
+  },
+  "per_adapter_violations": [],
+  "framing1_anchor_teach_mean": 1.0,
+  "framing1_anchor_teach_per_seed": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "framing1_armB_teach_mean": 1.0,
+  "framing1_armB_teach_per_seed": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "framing1_armB_non_teach_4frame_mean": 0.0,
+  "framing1_armB_non_teach_4frame_per_seed": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "kc1_thresholds": {
+    "teach_recall_floor": 0.9,
+    "non_teach_ceiling": 0.1
+  },
+  "kc1_per_adapter_pass": true,
+  "kc1_anchor_pass": true,
+  "kc1_armB_teach_pass": true,
+  "kc1_armB_non_teach_pass": true,
+  "kc1_pass": true
+}

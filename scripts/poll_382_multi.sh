@@ -12,8 +12,8 @@ POD=${POD:-pod-382}
 for SEED_GPU in "42:0" "137:1" "256:2"; do
   SEED=${SEED_GPU%:*}
   GPU=${SEED_GPU#*:}
-  PIDFILE=/workspace/pids/issue-382-seed${SEED}-full.pid
-  LOG=/workspace/logs/issue-382-seed${SEED}-full.log
+  PIDFILE=/workspace/pids/issue-382-seed${SEED}-v2.pid
+  LOG=/workspace/logs/issue-382-seed${SEED}-v2.log
 
   ssh "$POD" "
     PID=\$(cat $PIDFILE 2>/dev/null)
