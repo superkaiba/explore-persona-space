@@ -21,7 +21,11 @@ Lifecycle:
 4. Poll ``codex-companion status <job-id> --json`` every
    ``--poll-interval-secs`` (default 30s) until terminal phase
    ({done, failed, cancelled}). Bail after ``--probe-error-cap`` (default
-   10) consecutive probe failures with the last stderr captured.
+   10) consecutive probe failures with the last stderr captured. On
+   terminal phase=cancelled, re-dispatch the same prompt up to
+   ``--cancelled-retry-cap`` (default 2) times before posting
+   ``epm:codex-task-failed`` — catches transient Codex-side
+   cancellations.
 5. Hard cap at ``--max-wait-secs`` (default 6h). On cap, force-cancel
    via ``codex-companion cancel`` and post ``epm:codex-task-failed``.
 6. Fetch Codex stdout via ``codex-companion result <job-id>``; bail to
@@ -43,11 +47,13 @@ silently):
 - probe errors > cap → emit failure marker with last stderr, exit 5.
 - hard cap hit → cancel + emit failure marker, exit 6.
 - result-fetch non-zero → emit failure marker, exit 7.
-- stall detected (phase==running but log untouched > stall_detect_secs)
-  → cancel + emit failure marker, exit 8. This catches the "Codex
-  process alive but model API hung" failure mode that
-  ``codex-companion status`` itself can't see (observed twice on
-  2026-05-20).
+- stall detected (phase==running but log STOPPED GROWING for
+  > stall_detect_secs) → cancel + emit failure marker, exit 8. The
+  detector is progress-aware: the stall timer resets whenever the log
+  grows (mtime OR size increases), so a long-but-healthy run is never
+  force-cancelled at the fixed window. This catches the "Codex process
+  alive but model API hung" failure mode that ``codex-companion status``
+  itself can't see (observed twice on 2026-05-20).
 - SIGTERM/SIGINT → emit failure marker, best-effort cancel, exit 130/143.
 - marker post fails → retry once, drop payload to
   ``tasks/<N>/artifacts/codex-task-orphaned-marker-<job_id>-<ts>.json``,
@@ -84,6 +90,7 @@ POLL_INTERVAL_SECS = 30
 DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
 DEFAULT_STALL_DETECT_SECS = 600  # 10 min of log silence → declare stuck.
 PROBE_ERROR_CAP = 10  # consecutive failed probes before bailing
+DEFAULT_CANCELLED_RETRY_CAP = 2  # re-dispatches on terminal phase=cancelled
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
 SPAWN_TIMEOUT_SECS = 90
 STATUS_TIMEOUT_SECS = 60
@@ -330,17 +337,49 @@ def _probe_phase(companion: Path, job_id: str) -> tuple[str, str, str | None]:
     return phase.lower(), "", log_file if isinstance(log_file, str) else None
 
 
-def _log_mtime(log_path: str | None) -> float | None:
-    """Return the most recent mtime of the Codex turn-trace log, or None
-    if unreadable. Used by the stall detector to catch "Codex process
-    alive but model API hung" — phase stays 'running' while the log
-    file goes completely silent for minutes."""
+def _log_progress_key(log_path: str | None) -> tuple[float, int] | None:
+    """Return ``(mtime, size)`` for the Codex turn-trace log, or None if
+    unreadable. Used by the (progress-aware) stall detector to catch
+    "Codex process alive but model API hung" — phase stays 'running'
+    while the log file goes completely silent for minutes.
+
+    Tracking BOTH mtime and size makes the detector robust to filesystems
+    with coarse mtime resolution (or mtime that doesn't bump on append):
+    a healthy long Codex run keeps APPENDING to its log, so the file
+    GROWS even when its mtime granularity hides sub-second writes. The
+    poll loop resets the stall timer whenever EITHER component increases,
+    so a long-but-healthy run is never force-cancelled at the fixed
+    stall window — only a genuinely silent (non-growing, non-touched)
+    log trips the detector. The absolute --max-wait-secs hard cap still
+    bounds total wall time regardless of progress.
+    """
     if not log_path:
         return None
     try:
-        return os.path.getmtime(log_path)
+        st = os.stat(log_path)
     except OSError:
         return None
+    return st.st_mtime, st.st_size
+
+
+def _key_advanced(
+    current: tuple[float, int] | None,
+    previous: tuple[float, int] | None,
+) -> bool:
+    """True if the log made progress since the last poll.
+
+    Progress = the file first became readable (previous None, current
+    not None) OR mtime increased OR size increased. Either component
+    growing counts: a fresh append bumps size even when mtime resolution
+    is too coarse to register the write.
+    """
+    if current is None:
+        return False
+    if previous is None:
+        return True
+    cur_mtime, cur_size = current
+    prev_mtime, prev_size = previous
+    return cur_mtime > prev_mtime or cur_size > prev_size
 
 
 def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
@@ -372,6 +411,270 @@ def _fail(
         _post_marker(issue, "epm:codex-task-failed", full_note)
     print(f"ERROR: {note}", file=sys.stderr)
     return exit_code
+
+
+class AttemptResult:
+    """Outcome of a single ``_run_one_attempt`` lifecycle.
+
+    ``kind`` is one of:
+        - "done"      — Codex finished successfully; completed marker was
+                        already posted inside the attempt; exit_code == 0.
+        - "cancelled" — Codex ended in terminal phase=cancelled. RETRYABLE:
+                        the failure marker is NOT posted by the attempt, so
+                        the caller can re-dispatch. exit_code == 1.
+        - "fail"      — any non-retryable failure (spawn, probe, probe-error
+                        cap, stall, hard-cap timeout, result-fetch,
+                        output-write, terminal phase=failed). The failure
+                        marker is NOT posted by the attempt; the caller posts
+                        it once via ``_fail``.
+
+    For "cancelled" and "fail", ``note`` + ``exit_code`` + ``job_id`` carry
+    everything the caller needs to either retry or post the terminal marker.
+    """
+
+    def __init__(
+        self,
+        kind: str,
+        exit_code: int,
+        note: str = "",
+        job_id: str | None = None,
+    ) -> None:
+        assert kind in {"done", "cancelled", "fail"}, kind
+        self.kind = kind
+        self.exit_code = exit_code
+        self.note = note
+        self.job_id = job_id
+
+
+def _poll_until_terminal(
+    companion: Path,
+    job_id: str,
+    args,
+    log_path: str | None,
+    started: float,
+) -> str | AttemptResult:
+    """Poll ``status`` until the job reaches a terminal phase.
+
+    Returns the terminal phase string (one of {done, failed, cancelled})
+    on success, OR an ``AttemptResult`` "fail" when a non-cancellation
+    bail fires (probe-error cap exit 5, hard-cap timeout exit 6, stall
+    exit 8). The caller force-cancels are handled here before returning.
+
+    The stall detector is progress-aware: the timer resets whenever the
+    Codex log GROWS (mtime OR size increases), so a long-but-healthy run
+    is never force-cancelled at the fixed ``--stall-detect-secs`` window.
+    """
+    consecutive_probe_errors = 0
+    last_probe_err = ""
+    # Stall-detector state: track when the Codex log file last advanced.
+    last_log_key = _log_progress_key(log_path)
+    last_log_change_ts = time.time()
+    while True:
+        elapsed = time.time() - started
+        if elapsed > args.max_wait_secs:
+            _best_effort_cancel(companion, job_id)
+            return AttemptResult(
+                "fail",
+                6,
+                (f"timed out after {int(elapsed)}s (cap {args.max_wait_secs}s); force-cancelled."),
+                job_id,
+            )
+
+        time.sleep(args.poll_interval_secs)
+        phase, err, probe_log_path = _probe_phase(companion, job_id)
+        if probe_log_path is not None:
+            log_path = probe_log_path  # refresh in case Codex updated it
+        if phase in TERMINAL_PHASES:
+            print(
+                f"codex-task-{phase}: {job_id} after {int(elapsed)}s",
+                file=sys.stderr,
+            )
+            return phase
+        if phase in {"probe-error", "shape-error"}:
+            consecutive_probe_errors += 1
+            last_probe_err = err
+            print(
+                f"WARN: probe {phase} at t={int(elapsed)}s "
+                f"({consecutive_probe_errors}/{args.probe_error_cap}): {err[:200]}",
+                file=sys.stderr,
+            )
+            if consecutive_probe_errors >= args.probe_error_cap:
+                _best_effort_cancel(companion, job_id)
+                return AttemptResult(
+                    "fail",
+                    5,
+                    (
+                        f"{consecutive_probe_errors} consecutive probe failures; "
+                        f"last error: {last_probe_err[:500]}"
+                    ),
+                    job_id,
+                )
+            continue
+        # Non-terminal, non-error phase (e.g. running, queued) — reset error count.
+        consecutive_probe_errors = 0
+
+        # Stall detector: Codex process alive + phase==running but no log
+        # activity for >stall_detect_secs => model API hung. This is the
+        # failure mode that bit us twice on 2026-05-20 — codex-companion
+        # status reports "running" while the actual Codex turn has been
+        # silent for hours. Progress-aware: reset the timer whenever the
+        # log GROWS (mtime OR size), so a long-but-healthy run is not
+        # force-cancelled at the fixed window.
+        if args.stall_detect_secs > 0:
+            now = time.time()
+            cur_log_key = _log_progress_key(log_path)
+            if _key_advanced(cur_log_key, last_log_key):
+                last_log_key = cur_log_key
+                last_log_change_ts = now
+            stall_age = now - last_log_change_ts
+            if stall_age > args.stall_detect_secs:
+                _best_effort_cancel(companion, job_id)
+                return AttemptResult(
+                    "fail",
+                    8,
+                    (
+                        f"stall detected: phase=running but log file untouched "
+                        f"for {int(stall_age)}s (cap {args.stall_detect_secs}s) "
+                        f"at t={int(elapsed)}s. Force-cancelled. Log: {log_path}"
+                    ),
+                    job_id,
+                )
+
+
+def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> AttemptResult:
+    """Run one full Codex lifecycle: spawn -> confirm-probe -> poll ->
+    fetch-result -> write-output.
+
+    Posts ``epm:codex-task-spawned`` (per attempt) and, on success,
+    ``epm:codex-task-completed``. Does NOT post ``epm:codex-task-failed``
+    for any failure path — that decision belongs to the caller so it can
+    re-dispatch on a retryable terminal phase=cancelled. Returns an
+    ``AttemptResult`` describing the outcome.
+
+    The stall detector is progress-aware: the stall timer resets whenever
+    the Codex turn-trace log GROWS (mtime OR size increases), so a long
+    but healthy run is never force-cancelled at the fixed
+    ``--stall-detect-secs`` window. The absolute ``--max-wait-secs`` hard
+    cap still bounds total wall time regardless of progress.
+    """
+    global _active_job_id
+
+    # Spawn.
+    try:
+        job_id = _spawn_codex(companion, prompt, args.effort, write)
+    except Exception as exc:
+        return AttemptResult("fail", 3, f"spawn: {exc}", None)
+    _active_job_id = job_id
+    print(f"codex-task-spawned: {job_id}", file=sys.stderr)
+
+    # Confirm the job-id is queryable (immediate probe; catches the
+    # spawn-success-but-bad-job-id race).
+    confirm_phase, confirm_err, log_path = _probe_phase(companion, job_id)
+    if confirm_phase in {"probe-error", "shape-error"}:
+        _best_effort_cancel(companion, job_id)
+        return AttemptResult(
+            "fail",
+            4,
+            f"post-spawn probe failed ({confirm_phase}): {confirm_err}",
+            job_id,
+        )
+
+    if args.issue is not None:
+        _post_marker(
+            args.issue,
+            "epm:codex-task-spawned",
+            (
+                f"Codex job_id={job_id} effort={args.effort} write={write} "
+                f"poll_interval={args.poll_interval_secs}s "
+                f"max_wait={args.max_wait_secs}s "
+                f"probe_error_cap={args.probe_error_cap} "
+                f"stall_detect={args.stall_detect_secs}s"
+            ),
+        )
+
+    # Poll until terminal (or a non-cancellation bail).
+    started = time.time()
+    poll_outcome = _poll_until_terminal(companion, job_id, args, log_path, started)
+    if isinstance(poll_outcome, AttemptResult):
+        return poll_outcome  # probe-error cap / stall / hard-cap timeout
+    phase = poll_outcome  # one of {done, failed, cancelled}
+
+    # Fetch result.
+    rc, stdout, stderr = _fetch_result(companion, job_id)
+    if rc != 0:
+        return AttemptResult(
+            "fail",
+            7,
+            (
+                f"result-fetch failed (exit {rc}). "
+                f"stderr: {stderr[:500]}; stdout (truncated): {stdout[:200]}"
+            ),
+            job_id,
+        )
+
+    # Write output before posting terminal marker — so even if the marker
+    # post fails, the orchestrator has the Codex output on disk.
+    if args.output_file is not None:
+        try:
+            args.output_file.write_text(stdout)
+            print(
+                f"Codex output written to {args.output_file} ({len(stdout)} chars).",
+                file=sys.stderr,
+            )
+        except Exception as exc:
+            return AttemptResult(
+                "fail",
+                7,
+                f"could not write output to {args.output_file}: {exc}",
+                job_id,
+            )
+    else:
+        sys.stdout.write(stdout)
+
+    elapsed = int(time.time() - started)
+    if phase == "done":
+        if args.issue is not None:
+            _post_marker(
+                args.issue,
+                "epm:codex-task-completed",
+                f"Codex job_id={job_id} phase=done after {elapsed}s.",
+            )
+        return AttemptResult("done", 0, "", job_id)
+
+    # phase == cancelled — terminal, RETRYABLE (caller decides).
+    if phase == "cancelled":
+        return AttemptResult(
+            "cancelled",
+            1,
+            (
+                f"terminal phase=cancelled after {elapsed}s. "
+                f"Inspect: node {companion} status {job_id}"
+            ),
+            job_id,
+        )
+
+    # phase == failed — terminal, NOT retryable.
+    return AttemptResult(
+        "fail",
+        1,
+        (f"terminal phase={phase} after {elapsed}s. Inspect: node {companion} status {job_id}"),
+        job_id,
+    )
+
+
+def _best_effort_cancel(companion: Path, job_id: str) -> None:
+    """Cancel a Codex job, swallowing any error. Used on every bail path
+    where leaving the job alive would orphan a Codex process; the caller
+    has already decided to abort, so a cancel failure here must not mask
+    the original failure."""
+    try:
+        subprocess.run(
+            ["node", str(companion), "cancel", job_id],
+            capture_output=True,
+            timeout=CANCEL_TIMEOUT_SECS,
+        )
+    except Exception as exc:
+        print(f"WARN: best-effort cancel of {job_id} failed: {exc}", file=sys.stderr)
 
 
 def main() -> int:
@@ -433,12 +736,26 @@ def main() -> int:
         type=int,
         default=DEFAULT_STALL_DETECT_SECS,
         help=(
-            "Force-cancel the Codex task if its turn-trace log file goes "
-            "untouched for this many seconds while phase==running. This "
-            "catches the 'Codex process alive but model API hung' failure "
-            "mode that codex-companion status itself can't see. Set to 0 "
-            f"to disable. Default {DEFAULT_STALL_DETECT_SECS}s "
+            "Force-cancel the Codex task if its turn-trace log file stops "
+            "growing for this many seconds while phase==running. The detector "
+            "is progress-aware: the timer resets whenever the log GROWS "
+            "(mtime OR size increases), so a long-but-healthy run is never "
+            "force-cancelled at the fixed window. This catches the 'Codex "
+            "process alive but model API hung' failure mode that "
+            "codex-companion status itself can't see. Set to 0 to disable. "
+            f"Default {DEFAULT_STALL_DETECT_SECS}s "
             f"({DEFAULT_STALL_DETECT_SECS // 60}min)."
+        ),
+    )
+    parser.add_argument(
+        "--cancelled-retry-cap",
+        type=int,
+        default=DEFAULT_CANCELLED_RETRY_CAP,
+        help=(
+            "Re-dispatch the same prompt this many times when a job ends in "
+            "terminal phase=cancelled, before posting epm:codex-task-failed. "
+            "Catches transient Codex-side cancellations. Set to 0 to disable "
+            f"(fail on the first cancellation). Default {DEFAULT_CANCELLED_RETRY_CAP}."
         ),
     )
     args = parser.parse_args()
@@ -468,195 +785,34 @@ def main() -> int:
     _active_companion = companion
     print(f"codex-companion: {companion}", file=sys.stderr)
 
-    # Spawn.
-    try:
-        job_id = _spawn_codex(companion, prompt, args.effort, write)
-    except Exception as exc:
-        return _fail(args.issue, None, f"spawn: {exc}", 3)
-    _active_job_id = job_id
-    print(f"codex-task-spawned: {job_id}", file=sys.stderr)
-
-    # Confirm the job-id is queryable (immediate probe; catches the
-    # spawn-success-but-bad-job-id race).
-    confirm_phase, confirm_err, log_path = _probe_phase(companion, job_id)
-    if confirm_phase in {"probe-error", "shape-error"}:
-        # Best-effort cancel before bailing.
-        try:
-            subprocess.run(
-                ["node", str(companion), "cancel", job_id],
-                capture_output=True,
-                timeout=CANCEL_TIMEOUT_SECS,
-            )
-        except Exception:
-            pass
-        return _fail(
-            args.issue,
-            job_id,
-            f"post-spawn probe failed ({confirm_phase}): {confirm_err}",
-            4,
-        )
-
-    if args.issue is not None:
-        _post_marker(
-            args.issue,
-            "epm:codex-task-spawned",
-            (
-                f"Codex job_id={job_id} effort={args.effort} write={write} "
-                f"poll_interval={args.poll_interval_secs}s "
-                f"max_wait={args.max_wait_secs}s "
-                f"probe_error_cap={args.probe_error_cap} "
-                f"stall_detect={args.stall_detect_secs}s"
-            ),
-        )
-
-    # Poll loop.
-    started = time.time()
-    consecutive_probe_errors = 0
-    last_probe_err = ""
-    # Stall-detector state: track when the Codex log file last advanced.
-    last_log_mtime = _log_mtime(log_path)
-    last_log_change_ts = time.time()
-    while True:
-        elapsed = time.time() - started
-        if elapsed > args.max_wait_secs:
-            try:
-                subprocess.run(
-                    ["node", str(companion), "cancel", job_id],
-                    capture_output=True,
-                    timeout=CANCEL_TIMEOUT_SECS,
-                )
-            except Exception as exc:
-                print(f"WARN: cancel after timeout failed: {exc}", file=sys.stderr)
-            return _fail(
-                args.issue,
-                job_id,
-                (f"timed out after {int(elapsed)}s (cap {args.max_wait_secs}s); force-cancelled."),
-                6,
-            )
-
-        time.sleep(args.poll_interval_secs)
-        phase, err, probe_log_path = _probe_phase(companion, job_id)
-        if probe_log_path is not None:
-            log_path = probe_log_path  # refresh in case Codex updated it
-        if phase in TERMINAL_PHASES:
-            print(
-                f"codex-task-{phase}: {job_id} after {int(elapsed)}s",
-                file=sys.stderr,
-            )
+    # Run the lifecycle, re-dispatching on terminal phase=cancelled up to
+    # --cancelled-retry-cap times before posting epm:codex-task-failed.
+    # Non-cancelled failures (spawn, probe-error cap, stall, hard cap,
+    # result-fetch, terminal phase=failed) fail immediately — they are not
+    # the transient-cancellation class.
+    max_attempts = max(1, args.cancelled_retry_cap + 1)
+    result: AttemptResult | None = None
+    for attempt in range(1, max_attempts + 1):
+        result = _run_one_attempt(companion, prompt, args, write)
+        if result.kind != "cancelled":
             break
-        if phase in {"probe-error", "shape-error"}:
-            consecutive_probe_errors += 1
-            last_probe_err = err
+        # Terminal cancelled — retry unless we've exhausted the cap.
+        if attempt < max_attempts:
             print(
-                f"WARN: probe {phase} at t={int(elapsed)}s "
-                f"({consecutive_probe_errors}/{args.probe_error_cap}): {err[:200]}",
+                f"WARN: Codex job_id={result.job_id} ended phase=cancelled "
+                f"(attempt {attempt}/{max_attempts}); re-dispatching.",
                 file=sys.stderr,
             )
-            if consecutive_probe_errors >= args.probe_error_cap:
-                try:
-                    subprocess.run(
-                        ["node", str(companion), "cancel", job_id],
-                        capture_output=True,
-                        timeout=CANCEL_TIMEOUT_SECS,
-                    )
-                except Exception:
-                    pass
-                return _fail(
-                    args.issue,
-                    job_id,
-                    (
-                        f"{consecutive_probe_errors} consecutive probe failures; "
-                        f"last error: {last_probe_err[:500]}"
-                    ),
-                    5,
-                )
-            continue
-        # Non-terminal, non-error phase (e.g. running, queued) — reset error count.
-        consecutive_probe_errors = 0
 
-        # Stall detector: Codex process alive + phase==running but no log
-        # activity for >stall_detect_secs => model API hung. This is the
-        # failure mode that bit us twice on 2026-05-20 — codex-companion
-        # status reports "running" while the actual Codex turn has been
-        # silent for hours.
-        if args.stall_detect_secs > 0:
-            now = time.time()
-            mtime = _log_mtime(log_path)
-            if (mtime is not None and last_log_mtime is not None and mtime > last_log_mtime) or (
-                mtime is not None and last_log_mtime is None
-            ):
-                last_log_mtime = mtime
-                last_log_change_ts = now
-            stall_age = now - last_log_change_ts
-            if stall_age > args.stall_detect_secs:
-                try:
-                    subprocess.run(
-                        ["node", str(companion), "cancel", job_id],
-                        capture_output=True,
-                        timeout=CANCEL_TIMEOUT_SECS,
-                    )
-                except Exception:
-                    pass
-                return _fail(
-                    args.issue,
-                    job_id,
-                    (
-                        f"stall detected: phase=running but log file untouched "
-                        f"for {int(stall_age)}s (cap {args.stall_detect_secs}s) "
-                        f"at t={int(elapsed)}s. Force-cancelled. Log: {log_path}"
-                    ),
-                    8,
-                )
-
-    # Fetch result.
-    rc, stdout, stderr = _fetch_result(companion, job_id)
-    if rc != 0:
-        return _fail(
-            args.issue,
-            job_id,
-            (
-                f"result-fetch failed (exit {rc}). "
-                f"stderr: {stderr[:500]}; stdout (truncated): {stdout[:200]}"
-            ),
-            7,
-        )
-
-    # Write output before posting terminal marker — so even if the marker
-    # post fails, the orchestrator has the Codex output on disk.
-    if args.output_file is not None:
-        try:
-            args.output_file.write_text(stdout)
-            print(
-                f"Codex output written to {args.output_file} ({len(stdout)} chars).",
-                file=sys.stderr,
-            )
-        except Exception as exc:
-            return _fail(
-                args.issue,
-                job_id,
-                f"could not write output to {args.output_file}: {exc}",
-                7,
-            )
-    else:
-        sys.stdout.write(stdout)
-
-    elapsed = int(time.time() - started)
-    if phase == "done":
-        if args.issue is not None:
-            _post_marker(
-                args.issue,
-                "epm:codex-task-completed",
-                f"Codex job_id={job_id} phase=done after {elapsed}s.",
-            )
+    assert result is not None  # loop runs at least once
+    if result.kind == "done":
         return 0
 
-    # phase ∈ {failed, cancelled} — terminal but not successful.
-    return _fail(
-        args.issue,
-        job_id,
-        (f"terminal phase={phase} after {elapsed}s. Inspect: node {companion} status {job_id}"),
-        1,
-    )
+    # cancelled (cap exhausted) or fail — post the terminal failure marker once.
+    note = result.note
+    if result.kind == "cancelled" and args.cancelled_retry_cap > 0:
+        note = f"{note} (exhausted {args.cancelled_retry_cap} re-dispatch(es))"
+    return _fail(args.issue, result.job_id, note, result.exit_code)
 
 
 if __name__ == "__main__":
