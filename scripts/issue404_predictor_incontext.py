@@ -139,6 +139,7 @@ def measure_pair_K(
         temperature=temperature,
         max_tokens=max_tokens,
         extra_context_messages=context_msgs,
+        max_model_len=65536,
     )
 
     # Checkpoint raw completions IMMEDIATELY (per CLAUDE.md per-phase rule).

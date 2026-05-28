@@ -261,6 +261,7 @@ def measure_pair_flavor(
         num_completions=n_completions,
         temperature=temperature,
         max_tokens=max_tokens,
+        max_model_len=8192,
     )
     # Reap orphan vLLM worker subprocesses between the two sequential vLLM
     # loads (round-2 ISSUE 4). Safe at the default ``tensor_parallel_size=1``;
@@ -274,6 +275,7 @@ def measure_pair_flavor(
         num_completions=n_completions,
         temperature=temperature,
         max_tokens=max_tokens,
+        max_model_len=8192,
     )
     kill_vllm_workers(logger)
 
