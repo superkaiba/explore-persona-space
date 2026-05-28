@@ -35,6 +35,14 @@ goal: Characterize how cross-persona leakage scales with seed and benchmark
 ---
 # Some claim about persona leakage (MODERATE confidence)
 
+## Human TL;DR
+
+**Headline.** *placeholder*
+
+**Takeaways.** *placeholder*
+
+**How this updates me.** *placeholder*
+
 ## Goal
 
 Characterize how cross-persona leakage scales with seed and benchmark.
@@ -99,7 +107,10 @@ def test_good_body_passes_all():
     # frontmatter, not just the body — as of 2026-05-26 it checks only
     # the frontmatter `goal:` field; the body-side `## Goal` H2 is
     # intentionally not checked because clean-result bodies drop it).
-    assert len(results) == 18
+    # Count: verify_text prepends check 0 (body-nonstub) + check 0b
+    # (no-duplicate-frontmatter), runs the remaining 16 CHECKS[1:], then
+    # appends the Goal soft check → 19 results (len(CHECKS) == 17).
+    assert len(results) == 19
 
 
 def test_missing_confidence_tag():
@@ -111,8 +122,8 @@ def test_missing_confidence_tag():
 
 
 def test_wrong_section_order():
-    body = GOOD_BODY.replace("## Figure", "## TempPlaceholder")
-    body = body.replace("## Details", "## Figure")
+    body = GOOD_BODY.replace("## TL;DR", "## TempPlaceholder")
+    body = body.replace("## Details", "## TL;DR")
     body = body.replace("## TempPlaceholder", "## Details")
     ok, results = verify_task_body.verify_text(body)
     assert not ok
@@ -429,8 +440,8 @@ def test_figure_image_present_pass():
     but also assert the check name and detail directly."""
     _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
-    assert by_name["Figure contains an image"].passed
-    assert "1 image" in by_name["Figure contains an image"].detail
+    assert by_name["hero image present"].passed
+    assert "1 image" in by_name["hero image present"].detail
 
 
 def test_figure_missing_image_fails():
@@ -442,8 +453,8 @@ def test_figure_missing_image_fails():
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["Figure contains an image"].passed
-    assert "no `![alt](path)` image syntax" in by_name["Figure contains an image"].detail
+    assert not by_name["hero image present"].passed
+    assert "no `![alt](path)` image" in by_name["hero image present"].detail
 
 
 # ─── Check 4b: figure URL must be dashboard-resolvable ────────────────────
@@ -517,7 +528,7 @@ def test_figure_alt_text_with_brackets_parses():
     )
     ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
-    assert by_name["Figure contains an image"].passed
+    assert by_name["hero image present"].passed
     assert by_name["Figure URL resolvable"].passed
     assert ok
 
@@ -801,6 +812,14 @@ kind: experiment
 goal: Characterize how cross-persona leakage scales with seed and benchmark
 ---
 # Some claim about persona leakage (MODERATE confidence)
+
+## Human TL;DR
+
+**Headline.** *placeholder*
+
+**Takeaways.** *placeholder*
+
+**How this updates me.** *placeholder*
 
 ## Goal
 

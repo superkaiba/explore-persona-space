@@ -681,6 +681,7 @@ uv run python scripts/task.py set-status <N> plan_pending \
   Use `AskUserQuestion` or a plain text prompt and wait for the user's
   reply.
 
+  <!-- gate: gates.plan_approval -->
   **Important:** when invoking `AskUserQuestion`, embed the dashboard
   URL (`https://eps.superkaiba.com/tasks/<N>/plan`) inside the question
   text itself, AND embed the local plan path
@@ -765,10 +766,35 @@ with the fresh consistency verdict appended; set status back to
 Only if status is `approved`.
 
 **4a. Worktree + draft PR.** Create `.claude/worktrees/issue-<N>` on
-branch `issue-<N>` and open a draft PR.
+branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
-git worktree add .claude/worktrees/issue-<N> -b issue-<N>     # reuse if it exists (resume case)
-gh pr create --draft --head issue-<N> --body "Closes task #<N>."
+REPO_ROOT=$(git rev-parse --show-toplevel)
+WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
+git -C "$REPO_ROOT" worktree add "$WORKTREE" -b issue-<N>     # reuse if it exists (resume case)
+# Worktrees do NOT inherit the repo .env — without it RUNPOD_API_KEY /
+# HF_TOKEN / WANDB_API_KEY dotenv loads fail inside the worktree. Symlink
+# it so every entrypoint's setup_env() sees the same keys as the main copy.
+ln -sf "$REPO_ROOT/.env" "$WORKTREE/.env"
+```
+
+**Worktree shell-ops rule (cwd resets between Bash calls).** The bash
+tool's working directory is NOT preserved across separate calls, so a
+relative `cd .claude/worktrees/issue-<N>` in one call has no effect on
+the next. ALWAYS address the worktree with an absolute path or
+`git -C "$WORKTREE" <cmd>` — never a bare relative `cd`. Resolve the
+absolute path once with `git rev-parse --show-toplevel` (as above) and
+reuse `$WORKTREE` / `$REPO_ROOT` in every subsequent command.
+
+**Open the draft PR only if the branch is ahead of `main`.** `gh pr
+create` errors with `No commits between main and issue-<N>` when the
+branch has no commits yet (the common case before the implementer has
+run). Pre-check first:
+```bash
+if [ "$(git -C "$REPO_ROOT" rev-list --count main..issue-<N>)" -gt 0 ]; then
+  gh pr create --draft --head issue-<N> --body "Closes task #<N>."
+else
+  echo "issue-<N> has no commits ahead of main yet; skipping draft PR (open it after the implementer commits)."
+fi
 ```
 
 The git PR flow is substrate-independent — we still use GitHub for code
@@ -891,6 +917,22 @@ The Claude reviewer posts `epm:code-review v<n>` (PASS / CONCERNS /
 FAIL). The Codex wrapper posts `epm:code-review-codex v<n>` (same
 schema). Codex never sees `GH_TOKEN` — both wrappers post via
 `task.py post-marker`.
+
+**End-to-end smoke gate (experiment tasks).** A code-review PASS for an
+`experiment` task is NOT valid on a script that was only `--help`'d or
+import-checked. The reviewer MUST confirm the implementer ran the
+experiment script ONCE on a tiny real slice (e.g. `--limit 2`, a
+1-example dataset, `max_steps=1`, or the smallest real condition) and
+that the run produced a real artifact, not a stub. The implementer
+records this in its `epm:experiment-implementation` report under a
+`## Smoke run` heading: the exact command, the slice size, the
+exit code, and a one-line digest of the produced artifact (path +
+shape / row count). If that section is absent or shows only
+`--help` / `import` / `--dry-run` evidence, the reviewer posts `FAIL`
+with blocker `smoke-run-missing` — it does NOT PASS on unproven code.
+Code-only tasks (`infra` / `batch` / `analysis` / `survey`) keep the
+existing test-verdict gate (Step 9c) and are exempt from this smoke
+gate.
 
 **5b. Read both markers from `events.jsonl`.**
 
@@ -1089,6 +1131,44 @@ with code 1 and a list of URLs.
 
 This step is also re-run on the pod inside `bootstrap_pod.sh` so a token
 pushed to the pod gets the same gate state as the local VM.
+
+#### Step 6a.5: Carry-over artifact existence check (before provisioning)
+
+Plans for follow-ups (and any experiment that reuses a prior run's
+checkpoint, dataset, or eval output) cite HF / WandB URLs for the
+artifacts they depend on. Provisioning a pod only to have the run die
+seconds in on a `404` is pure wasted GPU-minutes. Before provisioning,
+verify every carry-over URL the plan cites actually resolves:
+
+```bash
+PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
+uv run python -c "
+from explore_persona_space.orchestrate.hub import verify_artifacts_exist
+import sys
+ok, missing = verify_artifacts_exist(plan_path='$PLAN_PATH')
+if not ok:
+    print('MISSING ARTIFACTS:', *missing, sep='\n  ')
+    sys.exit(1)
+print('all carry-over artifacts resolve')
+"
+```
+
+`verify_artifacts_exist` scans the cached plan for HF repo URLs
+(`huggingface.co/...`) and WandB run URLs (`wandb.ai/.../runs/...`) and
+HEAD-checks each against the Hub / WandB API using the user's
+`HF_TOKEN` / `WANDB_API_KEY`. It returns `(ok, missing_urls)`.
+
+- All resolve -> proceed to 6b.
+- Any missing -> post `epm:carry-over-missing v1` with the unresolved
+  URLs, set status to `blocked` (the plan depends on an artifact that
+  isn't there; provisioning would burn GPU on a guaranteed failure).
+  Post the §5 marker:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 6c \
+    --exit-kind failure-exit --notes "carry-over artifact(s) missing; status:blocked"
+  ```
+  EXIT. User fixes the cited URL (re-upload, or correct the plan) and
+  re-runs `/issue <N>`.
 
 #### Step 6b: Pod provisioning
 
@@ -1882,6 +1962,7 @@ immediately after upload-verification PASS), ask the user once via
 > individually on `main`, then `git worktree remove`.
 > NO -> no-op; user merges later.
 
+<!-- gate: gates.worktree_merge -->
 **Important:** when invoking `AskUserQuestion`, embed the PR URL
 (`gh pr view <PR> --json url -q .url`) inside the question text itself
 AND the worktree path (`.claude/worktrees/issue-<N>`) inside the YES
