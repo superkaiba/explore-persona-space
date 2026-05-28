@@ -58,12 +58,23 @@ _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 
+
 import torch  # noqa: E402
-from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA  # noqa: E402
 from peft import PeftModel  # noqa: E402
 from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
 
 from explore_persona_space.eval.marker_logprob import compute_marker_logprob  # noqa: E402
+
+# BYSTANDERS / PROMPTS / SOURCE_PERSONA / PERSONAS are bound dynamically in
+# ``main()`` from ``args.panel_module`` (default ``_i398_bystander_panel``
+# preserves #398 byte-identical reproducibility; #416 passes
+# ``_i416_bystander_panel``). The module-level placeholders are kept so static
+# analysis sees the names; ``build_contexts`` and ``_load_source_persona_text``
+# read these globals after ``main()`` rebinds them.
+BYSTANDERS: dict[str, str] = {}
+PROMPTS: list[str] = []
+SOURCE_PERSONA: str = ""
+_PANEL_MODULE = None  # bound in main() — holds the imported panel module
 
 # Held constant across all 27 bystanders x 20 prompts. Used to construct the
 # end-of-answer probe geometry that mirrors the position where training
@@ -105,17 +116,18 @@ def build_contexts(persona_text: str, tokenizer, *, geometry: str = "pos0") -> l
 
 
 def _load_source_persona_text() -> str:
-    """Return the librarian system-prompt text via the bystander panel module.
+    """Return the source persona's system-prompt text via the panel module.
 
-    Importing through `_i398_bystander_panel` rather than directly from
-    `extract_persona_vectors` ensures the upstream module's top-level
+    Reads PERSONAS from the panel module bound in ``main()`` (default
+    ``_i398_bystander_panel``; #416 passes ``_i416_bystander_panel``).
+    Importing through the panel module rather than directly from
+    ``extract_persona_vectors`` ensures the upstream module's top-level
     ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"`` side effect is snapshotted
     and restored by the panel's import wrapper. Round-3 cleanup of the same
     CVD-leak class fixed in the smoke check.
     """
-    from scripts._i398_bystander_panel import PERSONAS as _PP
-
-    return dict(_PP)[SOURCE_PERSONA]
+    assert _PANEL_MODULE is not None, "_PANEL_MODULE must be set by main() before use"
+    return dict(_PANEL_MODULE.PERSONAS)[SOURCE_PERSONA]
 
 
 def main() -> None:
@@ -161,12 +173,32 @@ def main() -> None:
         action=argparse.BooleanOptionalAction,
         default=True,
         help=(
-            "Score the librarian source persona contexts in addition to the 27 "
+            "Score the source persona contexts in addition to the 27 "
             "bystanders. Default: True. Pass --no-include-source-persona to "
             "exclude (bystanders-only run)."
         ),
     )
+    ap.add_argument(
+        "--panel-module",
+        default="_i398_bystander_panel",
+        help=(
+            "Python module under scripts/ exposing BYSTANDERS, PROMPTS, "
+            "SOURCE_PERSONA, PERSONAS. Default preserves #398 byte-identical "
+            "reproducibility. Pass _i416_bystander_panel for #416."
+        ),
+    )
     args = ap.parse_args()
+
+    # Dynamically bind the bystander-panel globals from the chosen module.
+    # Default _i398_bystander_panel keeps #398's launch byte-identical;
+    # #416 launches pass --panel-module _i416_bystander_panel.
+    import importlib
+
+    global BYSTANDERS, PROMPTS, SOURCE_PERSONA, _PANEL_MODULE
+    _PANEL_MODULE = importlib.import_module(args.panel_module)
+    BYSTANDERS = _PANEL_MODULE.BYSTANDERS
+    PROMPTS = _PANEL_MODULE.PROMPTS
+    SOURCE_PERSONA = _PANEL_MODULE.SOURCE_PERSONA
 
     steps = [int(s) for s in args.steps.split(",")]
     tok = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)

@@ -44,22 +44,32 @@ from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
 from explore_persona_space.eval.marker_logprob import compute_marker_logprob  # noqa: E402
 
 
-def build_source_contexts(tokenizer, source_persona: str, num_prompts: int) -> list[str]:
+def build_source_contexts(
+    tokenizer,
+    source_persona: str,
+    num_prompts: int,
+    panel_module: str = "_i398_bystander_panel",
+) -> list[str]:
     """Render ``num_prompts`` chat-template contexts for the source persona.
 
     Mirrors the ``geometry="pos0"`` path in ``eval_i398_marker_logprob.py``
     -- the first assistant token position. If the rendering is broken here,
     it will be broken there too, and the smoke check will catch it before
     1.5 GPU-hours of main training spends to discover the same fault.
-    """
-    # Import from scripts/_i398_bystander_panel.py rather than directly from
-    # extract_persona_vectors. The latter sets ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"``
-    # at module top level, which would mask the only GPU on the 1xH100 epm-issue-398
-    # pod and hard-fail the smoke gate on env instead of catching rendering bugs.
-    # _i398_bystander_panel snapshots+restores CVD around the import. (Round-3 fix.)
-    from scripts._i398_bystander_panel import PERSONAS, PROMPTS
 
-    system_text = dict(PERSONAS)[source_persona]
+    ``panel_module`` selects the source-of-truth bystander-panel module
+    (default ``_i398_bystander_panel`` preserves #398 byte-identical
+    reproducibility; #416 passes ``_i416_bystander_panel``).
+    """
+    # Import the chosen panel module rather than directly from
+    # extract_persona_vectors. The latter sets ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"``
+    # at module top level, which would mask the only GPU on the 1xH100 epm-issue-N
+    # pod and hard-fail the smoke gate on env instead of catching rendering bugs.
+    # The panel modules snapshot+restore CVD around the import. (Round-3 fix.)
+    import importlib
+
+    panel_mod = importlib.import_module(panel_module)
+    system_text = dict(panel_mod.PERSONAS)[source_persona]
     return [
         tokenizer.apply_chat_template(
             [
@@ -69,7 +79,7 @@ def build_source_contexts(tokenizer, source_persona: str, num_prompts: int) -> l
             tokenize=False,
             add_generation_prompt=True,
         )
-        for q in PROMPTS[:num_prompts]
+        for q in panel_mod.PROMPTS[:num_prompts]
     ]
 
 
@@ -93,7 +103,16 @@ def main() -> None:
     ap.add_argument(
         "--source-persona",
         required=True,
-        help="Source persona name -- e.g. 'librarian'.",
+        help="Source persona name -- e.g. 'librarian' or 'software_engineer'.",
+    )
+    ap.add_argument(
+        "--panel-module",
+        default="_i398_bystander_panel",
+        help=(
+            "Python module under scripts/ exposing PERSONAS + PROMPTS. "
+            "Default preserves #398 byte-identical reproducibility. Pass "
+            "_i416_bystander_panel for #416."
+        ),
     )
     ap.add_argument(
         "--num-prompts",
@@ -127,7 +146,9 @@ def main() -> None:
     args = ap.parse_args()
 
     tok = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
-    contexts = build_source_contexts(tok, args.source_persona, args.num_prompts)
+    contexts = build_source_contexts(
+        tok, args.source_persona, args.num_prompts, panel_module=args.panel_module
+    )
 
     # Base-model log p -- covers A20 (probe floor exists).
     base = AutoModelForCausalLM.from_pretrained(

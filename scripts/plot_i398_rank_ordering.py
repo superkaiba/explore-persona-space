@@ -24,7 +24,8 @@ Usage:
         --logp-file eval_results/issue_416/logp_seed42.json \\
         --source-persona software_engineer \\
         --also-highlight librarian \\
-        --top-cluster fammate_task_2,comedian,fammate_instruction_1,fammate_context_2,fammate_context_1,poet \\
+        --top-cluster fammate_task_2,comedian,fammate_instruction_1,\\
+            fammate_context_2,fammate_context_1,poet \\
         --output-dir figures/issue_416
 """
 
@@ -76,7 +77,7 @@ def per_persona_mean(step_data: dict, panel: list[str], geometry: str) -> dict[s
 
 def compute_ranks(data: dict, geometry: str) -> tuple[list[int], dict[str, list[int]]]:
     panel = data["panel"]
-    steps = sorted(int(s) for s in data["per_step"].keys())
+    steps = sorted(int(s) for s in data["per_step"])
     ranks_by_persona: dict[str, list[int]] = {p: [] for p in panel}
     for step in steps:
         step_data = data["per_step"][str(step)]

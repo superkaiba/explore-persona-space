@@ -572,6 +572,16 @@ def main() -> None:
         required=True,
         help="Directory for analysis.json + hero_figure.{png,pdf,meta.json}.",
     )
+    ap.add_argument(
+        "--source-persona",
+        default="librarian",
+        help=(
+            "Source persona name for the per-checkpoint Spearman exclusion + "
+            "rho(step5,step1600) computation. Default 'librarian' preserves "
+            "#398 byte-identical reproducibility. Pass 'software_engineer' "
+            "for #416."
+        ),
+    )
     args = ap.parse_args()
 
     out_dir = Path(args.output_dir)
@@ -624,7 +634,7 @@ def main() -> None:
     }
     for geom in ("pos0", "endpos"):
         for step in all_steps:
-            personas_with_cos = [p for p in panel if p in cos_to_src and p != "librarian"]
+            personas_with_cos = [p for p in panel if p in cos_to_src and p != args.source_persona]
             xs = np.array([cos_to_src[p] for p in personas_with_cos], dtype=float)
             ys = np.array(
                 [
@@ -658,16 +668,49 @@ def main() -> None:
     for v in consensus_by_persona.values():
         consensus_counts[v] = consensus_counts.get(v, 0) + 1
 
+    # 8b. Spearman rho between per-persona mean pos0 log p at step 5 vs step 1600
+    # over the 28-persona panel (readout 3, NEW per critic-round-1 #2). This is
+    # a different quantity from ``spearman_rho_per_step`` above (which is
+    # rho(cos_to_src, sum-log p) per step). Fact-checker A25 corrected the
+    # planner's assumption that this field already existed in analysis.json --
+    # it did not. ~5-line implementer-written addition.
+    step5_step1600_rank_corr_pos0: dict[str, float | int] | None = None
+    if 5 in all_steps and 1600 in all_steps:
+        step5_data = logp["per_step"]["5"]
+        step1600_data = logp["per_step"]["1600"]
+        common_personas = [
+            p
+            for p in panel
+            if p in step5_data
+            and p in step1600_data
+            and "pos0" in step5_data[p]
+            and "pos0" in step1600_data[p]
+        ]
+        xs_5 = np.array(
+            [float(np.mean(step5_data[p]["pos0"])) for p in common_personas], dtype=float
+        )
+        ys_1600 = np.array(
+            [float(np.mean(step1600_data[p]["pos0"])) for p in common_personas], dtype=float
+        )
+        rho_5_1600, pval_5_1600 = _spearman_rho(xs_5, ys_1600)
+        step5_step1600_rank_corr_pos0 = {
+            "rho": float(rho_5_1600),
+            "pval": float(pval_5_1600),
+            "n": len(common_personas),
+        }
+
     analysis = {
         "panel": panel,
         "geometries": geometries,
         "window_steps": WINDOW_STEPS,
         "all_steps": all_steps,
+        "source_persona": args.source_persona,
         "per_persona": per_persona,
         "consensus_by_persona": consensus_by_persona,
         "consensus_counts": consensus_counts,
         "label_counts_summed_over_geometries": label_counts,
         "spearman_rho_per_step": spearman_rho_per_step,
+        "step5_step1600_rank_corr_pos0": step5_step1600_rank_corr_pos0,
     }
     analysis_path = out_dir / "analysis.json"
     with open(analysis_path, "w") as f:

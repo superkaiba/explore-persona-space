@@ -1,0 +1,7 @@
+name: i416_software_engineer_marker_spread_zen
+condition_id: 416001
+stages:
+  - name: marker_implant
+    type: sft
+    dataset: data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl
+seeds: [42]

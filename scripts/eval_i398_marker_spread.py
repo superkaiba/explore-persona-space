@@ -56,7 +56,11 @@ _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 if _SCRIPTS_DIR not in sys.path:
     sys.path.insert(0, _SCRIPTS_DIR)
 
-from _i398_bystander_panel import BYSTANDERS, PROMPTS  # noqa: E402
+# BYSTANDERS / PROMPTS are bound dynamically in ``main()`` from
+# ``args.panel_module`` (default ``_i398_bystander_panel`` preserves #398
+# byte-identical reproducibility; #416 passes ``_i416_bystander_panel``).
+BYSTANDERS: dict[str, str] = {}
+PROMPTS: list[str] = []
 
 
 def merge_adapter_to_path(base_path: str, adapter_path: str, out_path: str) -> None:
@@ -154,11 +158,72 @@ def main() -> None:
         default=42,
         help="vLLM sampling seed.",
     )
+    ap.add_argument(
+        "--panel-module",
+        default="_i398_bystander_panel",
+        help=(
+            "Python module under scripts/ exposing BYSTANDERS + PROMPTS. "
+            "Default preserves #398 byte-identical reproducibility. Pass "
+            "_i416_bystander_panel for #416."
+        ),
+    )
+    ap.add_argument(
+        "--raw-completions-output",
+        default=None,
+        help=(
+            "Directory to write per-checkpoint raw_completions.json files "
+            "(one per step). Files named raw_completions.json so that "
+            "orchestrate.hub.upload_raw_completions_to_data_repo's rglob "
+            "pattern finds them. Closes #398's open next-step (raw "
+            "completions were not uploaded). If omitted, only the per-step "
+            "firing-rate aggregates are written."
+        ),
+    )
+    ap.add_argument(
+        "--experiment-name",
+        default="issue416",
+        help=(
+            "Experiment name passed to upload_raw_completions_to_data_repo. "
+            "Files land at <repo>/<experiment_name>/raw_completions/<step>/raw_completions.json"
+        ),
+    )
+    ap.add_argument(
+        "--upload-after-each-step",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Call upload_raw_completions_to_data_repo after each checkpoint "
+            "(per CLAUDE.md 'Checkpoint per phase'). Default True. Pass "
+            "--no-upload-after-each-step for local-only runs."
+        ),
+    )
     args = ap.parse_args()
+
+    # Dynamically bind BYSTANDERS / PROMPTS from the chosen panel module
+    # before any other work. Default keeps #398's launch byte-identical;
+    # #416 launches pass --panel-module _i416_bystander_panel.
+    import importlib
+
+    global BYSTANDERS, PROMPTS
+    panel_mod = importlib.import_module(args.panel_module)
+    BYSTANDERS = panel_mod.BYSTANDERS
+    PROMPTS = panel_mod.PROMPTS
 
     # Defer the vLLM import until argparse has populated args — vLLM's CUDA
     # init is expensive enough that we want --help to be instant.
     from explore_persona_space.eval.generation import generate_persona_completions
+
+    # Late binding of the upload helper so --help works without src/ on the
+    # path. Use importlib so ruff's unused-import sweep can't strip it.
+    upload_helper = None
+    if args.raw_completions_output and args.upload_after_each_step:
+        _hub_mod = importlib.import_module("explore_persona_space.orchestrate.hub")
+        upload_helper = _hub_mod.upload_raw_completions_to_data_repo
+
+    raw_root: Path | None = None
+    if args.raw_completions_output:
+        raw_root = Path(args.raw_completions_output)
+        raw_root.mkdir(parents=True, exist_ok=True)
 
     steps = [int(s) for s in args.steps.split(",")]
     out: dict = {
@@ -214,6 +279,40 @@ def main() -> None:
                 f"step {step}: {time.time() - t0:.1f}s wall, wrote {args.output}",
                 flush=True,
             )
+
+            # Per-step raw-completions checkpoint (per CLAUDE.md "Checkpoint
+            # per phase"). Writing the full text per cell here, then optionally
+            # uploading to the HF data repo so #398's "raw completions not
+            # uploaded" Next-step is closed. File layout: one
+            # raw_completions.json per checkpoint under a step-<step>/ subdir
+            # so upload_raw_completions_to_data_repo's rglob finds them.
+            if raw_root is not None:
+                step_dir = raw_root / f"step_{step}"
+                step_dir.mkdir(parents=True, exist_ok=True)
+                step_payload = {
+                    "step": step,
+                    "marker_token": args.marker_token,
+                    "panel": list(BYSTANDERS.keys()),
+                    "prompts": PROMPTS,
+                    "num_completions": args.num_completions,
+                    "completions": completions,
+                }
+                with open(step_dir / "raw_completions.json", "w") as f:
+                    json.dump(step_payload, f, indent=2)
+                print(
+                    f"step {step}: wrote raw completions to {step_dir / 'raw_completions.json'}",
+                    flush=True,
+                )
+                if upload_helper is not None:
+                    uploaded = upload_helper(
+                        experiment_name=args.experiment_name,
+                        eval_results_dir=raw_root,
+                    )
+                    print(
+                        f"step {step}: uploaded {len(uploaded)} raw_completions.json "
+                        f"files to HF data repo",
+                        flush=True,
+                    )
         finally:
             # Cleanup merged dir even on vLLM/merge crash. Each merged Qwen-7B
             # checkpoint is ~15 GB; leaving one behind defeats the MooseFS

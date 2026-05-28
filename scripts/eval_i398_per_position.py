@@ -53,23 +53,29 @@ if _SCRIPTS_DIR not in sys.path:
 
 import torch  # noqa: E402
 import torch.nn.functional as F  # noqa: E402
-from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA  # noqa: E402
 from peft import PeftModel  # noqa: E402
 from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
 
+# BYSTANDERS / PROMPTS / SOURCE_PERSONA are bound dynamically in ``main()`` from
+# ``args.panel_module`` (default ``_i398_bystander_panel`` preserves #398
+# byte-identical reproducibility; #416 passes ``_i416_bystander_panel``).
+BYSTANDERS: dict[str, str] = {}
+PROMPTS: list[str] = []
+SOURCE_PERSONA: str = ""
+_PANEL_MODULE = None  # bound in main() — holds the imported panel module
+
 
 def _load_source_persona_text() -> str:
-    """Return the librarian system-prompt text via the bystander panel module.
+    """Return the source persona's system-prompt text via the panel module.
 
-    Mirrors ``eval_i398_marker_logprob.py`` — importing through
-    ``_i398_bystander_panel`` rather than directly from
-    ``extract_persona_vectors`` ensures the upstream module's top-level
-    ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"`` side effect is snapshotted
-    and restored by the panel's import wrapper.
+    Mirrors ``eval_i398_marker_logprob.py`` — reads PERSONAS from the panel
+    module bound in ``main()``. Importing through the panel module rather
+    than directly from ``extract_persona_vectors`` ensures the upstream
+    module's top-level ``os.environ["CUDA_VISIBLE_DEVICES"] = "5"`` side
+    effect is snapshotted and restored by the panel's import wrapper.
     """
-    from scripts._i398_bystander_panel import PERSONAS as _PP
-
-    return dict(_PP)[SOURCE_PERSONA]
+    assert _PANEL_MODULE is not None, "_PANEL_MODULE must be set by main() before use"
+    return dict(_PANEL_MODULE.PERSONAS)[SOURCE_PERSONA]
 
 
 def _render_prefix(tokenizer, persona_text: str, prompt: str) -> str:
@@ -266,12 +272,32 @@ def main() -> None:
         action=argparse.BooleanOptionalAction,
         default=True,
         help=(
-            "Score the librarian source persona in addition to the 27 "
+            "Score the source persona in addition to the 27 "
             "bystanders. Default: True. Pass --no-include-source-persona to "
             "exclude (bystanders-only run)."
         ),
     )
+    ap.add_argument(
+        "--panel-module",
+        default="_i398_bystander_panel",
+        help=(
+            "Python module under scripts/ exposing BYSTANDERS, PROMPTS, "
+            "SOURCE_PERSONA, PERSONAS. Default preserves #398 byte-identical "
+            "reproducibility. Pass _i416_bystander_panel for #416."
+        ),
+    )
     args = ap.parse_args()
+
+    # Dynamically bind the bystander-panel globals from the chosen module.
+    # Default _i398_bystander_panel keeps #398's launch byte-identical;
+    # #416 launches pass --panel-module _i416_bystander_panel.
+    import importlib
+
+    global BYSTANDERS, PROMPTS, SOURCE_PERSONA, _PANEL_MODULE
+    _PANEL_MODULE = importlib.import_module(args.panel_module)
+    BYSTANDERS = _PANEL_MODULE.BYSTANDERS
+    PROMPTS = _PANEL_MODULE.PROMPTS
+    SOURCE_PERSONA = _PANEL_MODULE.SOURCE_PERSONA
 
     assert args.batch_size >= 1, f"--batch-size must be >=1, got {args.batch_size}"
 
