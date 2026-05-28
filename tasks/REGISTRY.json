@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 417,
+  "highest_id": 418,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2140,6 +2140,13 @@
       "path": "tasks/proposed/417",
       "status": "proposed",
       "title": "Weekly mentor update \u2014 2026-05-28"
+    },
+    "418": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/418",
+      "status": "proposed",
+      "title": "Fix ~19 pre-existing failing tests on main (verifier/migrate-body/redact/plan-handoff harness drift)"
     },
     "42": {
       "has_clean_result": false,
