@@ -14,3 +14,4 @@
 {"ts": "2026-05-28T19:48:21Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v3 ready; adversarial-planner + consistency PASS."}
 {"ts": "2026-05-28T20:59:14Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved plan v3 inline."}
 {"ts": "2026-05-28T20:59:15Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v3 inline. Spread-eval decision: KEEP + raw-completion-upload fix (closes #398's open next-step). Branch base = issue-398 (scaffold lives there); code-review base ref = issue-398, NOT main."}
+{"ts": "2026-05-28T21:00:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; worktree issue-416 (base issue-398); awaiting epm:experiment-implementation."}
