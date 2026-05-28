@@ -58,7 +58,6 @@ Currently running:
 - **#406 — geometry predicts generalization** (high priority). Code implemented and review-passed; pod provisioning next. Trains on T(X) → Y, tests transfer to T'(X), and regresses post-training transfer on the pre-training JS divergence between context transformations measured on held-out inputs. The headline predictor test.
 - **#404 — behavior leakage B → B'** on 4× H100, ~4h wall. Pipeline: data generation → 3 candidate behavior-distance predictors (activation cosine, KL on judge-scored outputs, in-context K-sweep) → SFT over 5 source pairs × 2 seeds → outcome eval → Spearman regression with bootstrap CIs.
 - **#397 — recipe-selectivity re-run** with the single-token `※` marker + log-prob eval (parent #383). Sweep resumed after a disk-full crash; ~87 of 108 cells left, ~11h. Tests whether #383's stronger-and-more-selective result is a metric artifact, given that source rate and (source − bystander) selectivity are mechanically correlated.
-- **#416 — falsify #398's global-marker-affinity-shift** by re-running with comedian (not librarian) as the source persona (parent #398). In the per-position eval phase.
 - **#407 — obscure-but-knowable facts** as a third fact-regime control (vs fictional + future facts). Phase 4-6 chain re-running after a fact-cache keying bug.
 
 Then:
