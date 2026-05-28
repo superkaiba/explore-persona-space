@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 420,
+  "highest_id": 421,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2168,6 +2168,13 @@
       "path": "tasks/proposed/420",
       "status": "proposed",
       "title": "Sample points in persona space and predict distance"
+    },
+    "421": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/421",
+      "status": "proposed",
+      "title": "Meta: balance time cleaning results vs thinking/new experiments"
     },
     "43": {
       "has_clean_result": false,
