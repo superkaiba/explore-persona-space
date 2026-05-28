@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 413,
+  "highest_id": 414,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2109,6 +2109,14 @@
       "path": "tasks/proposed/413",
       "status": "proposed",
       "title": "Scale every load-bearing finding across Qwen-2.5 sizes (0.5B \u2192 32B)"
+    },
+    "414": {
+      "goal": "Test whether the rate at which a base model prompted with 'You are [broad behavior]' naturally produces the narrow training dataset's actual responses, aggregated across the training pairs, predicts post-SFT broad-behavior leakage across multiple narrow-to-broad pairs.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/414",
+      "status": "proposed",
+      "title": "Cheap pre-SFT predictor for cross-behavior leakage: does the broad-persona-prompted base model already produce the narrow training data?"
     },
     "42": {
       "has_clean_result": false,
