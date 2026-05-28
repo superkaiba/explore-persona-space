@@ -6,6 +6,8 @@ Reading list with one-paragraph summaries for papers relevant to this project. C
 
 Organised by topic, in roughly the order a new collaborator should read.
 
+> **Exhaustive list:** this file is the *curated reading-order subset*. For the full, project-positioned sweep (135 papers grouped by cluster, each with what-it-covers-vs-the-gap, plus a consolidated gap map = contribution space), see [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md). The clusters added 2026-05-28 from that sweep are at the bottom of this file.
+
 ---
 
 ## Emergent misalignment (the canonical thread)
@@ -173,6 +175,102 @@ Begins the mechanistic interpretation of OOCR. Argues for relatively simple inte
 Adjacent to Tell Me About Yourself. Demonstrates introspective capabilities — models can answer questions about their own latent states more accurately than other models can answer the same questions about them.
 
 **Relevance:** background for the introspection-based diagnostic between collapse and OOCR.
+
+---
+
+## Function / task / in-context vectors & ICL-as-finetuning (the contextual-model keystone)
+
+*Added 2026-05-28. The keystone cluster for the `(weights, KV-cache)` framing — context as a vector, and context as a transient weight update. Mostly `summary-only` / `queued`; see related-work Part V for full annotations.*
+
+### Todd et al. 2023 — Function Vectors in Large Language Models
+
+`todd2023functionvectors` · [arXiv:2310.15213](https://arxiv.org/abs/2310.15213) · status: queued
+
+Causal-mediation analysis finds a small set of attention heads that transport a compact "function vector" summarizing a demonstrated ICL task; the FV triggers the task even in zero-shot / natural-text contexts unlike the ones it was extracted from.
+
+**Relevance:** the canonical "last-activation-after-context = a vector" construction (OQ A1/A2). Borrow the extraction + composition-by-summation test. Pairs with Hendel (task vectors) and Liu (in-context vectors).
+
+### Hendel et al. 2023 — In-Context Learning Creates Task Vectors
+
+`hendel2023taskvectors` · [arXiv:2310.15916](https://arxiv.org/abs/2310.15916) · status: queued
+
+ICL compresses the demonstration set into a single task vector θ(S); one vector recovers most of ICL performance — the context's effect is largely one direction.
+
+**Relevance:** the clean "is a context's effect one direction or more?" test for A4. S→θ(S) is G restricted to ICL inputs.
+
+### Liu et al. 2023 — In-Context Vectors (ICV)
+
+`liu2023incontextvectors` · [arXiv:2311.06668](https://arxiv.org/abs/2311.06668) · status: queued
+
+One forward pass over demonstrations yields a latent vector; shifting latent states by it replaces in-prompt demos. Beats ICL and finetuning on safety, style, **role-play**; composes by vector arithmetic.
+
+**Relevance:** closest to "persona prompt → vector → steer." A near-existing answer to part of A1/A2 — position against it rather than rediscover.
+
+### Dherin et al. 2025 — Learning without training: the implicit dynamics of in-context learning
+
+`dherin2025learningwithouttraining` · [arXiv:2507.16003](https://arxiv.org/abs/2507.16003) · status: queued (load-bearing)
+
+Proves a self-attention + MLP block converts context into a rank-1 weight patch on the MLP — "data in context = a transient weight update." Goldwaser et al. 2025 ([arXiv:2511.17864](https://arxiv.org/abs/2511.17864)) extends this to gated, bias-free, RMSNorm (Qwen/Gemma/Llama-style) blocks.
+
+**Relevance:** the mechanistic backbone for the `(weights, KV-cache)` abstraction and the data-in-context-vs-in-weights question (D11). The Goldwaser extension means it applies to Qwen-2.5-7B. Build the framing on these.
+
+### Bigelow et al. 2025 — Belief Dynamics Reveal the Dual Nature of ICL and Activation Steering
+
+`bigelow2025beliefdynamics` · [arXiv:2511.00617](https://arxiv.org/abs/2511.00617) · status: summary-only
+
+A closed-form Bayesian model where ICL and steering both alter belief in latent concepts (steering changes priors, ICL accumulates evidence); predicts additivity in log-belief space.
+
+**Relevance:** unifies persona-prompt / ICL / steering as one contextual-model family (A1/A2) and gives a candidate functional form for G and the KL-output predictor (B-thread).
+
+---
+
+## Synthetic-document finetuning & character→Assistant transfer
+
+*Added 2026-05-28. SDF as "baking a contextual model into the empty-context weights"; the character-to-Assistant transfer mechanism. See related-work §III.A3 / SDF cluster.*
+
+### Marks, Lindsey, Olah 2026 — The Persona Selection Model (Anthropic)
+
+[alignment.anthropic.com/2026/psm](https://alignment.anthropic.com/2026/psm/) · status: read (framing-critical)
+
+An LLM is an actor that learned many persona representations in pretraining; post-training *selects* the Assistant rather than creating new behavior; training does Bayesian-like reweighting over personas; declarative facts and behavioral demos are the same kind of evidence.
+
+**Relevance:** the prose theory of the generalization map G, from the group that would referee this work. The project's job is to make it quantitative and test "close-to-Assistant transfers, far doesn't." Position for-or-against it explicitly.
+
+### Kutasov, Jermyn et al. 2026 — Teaching Claude Why (Anthropic)
+
+[alignment.anthropic.com/2026/teaching-claude-why](https://alignment.anthropic.com/2026/teaching-claude-why/) · status: skimmed
+
+~14M tokens of fictional stories of an aligned AI (constitutional SDF) reduce misalignment on honeypots and survive subsequent RL; third-person narratives about an AI character transfer to the live Assistant.
+
+**Relevance:** the flagship demonstration of character→Assistant transfer (benign direction). Dual-use: the same pipeline installs evil. No controlled persona-distance sweep — that's an opening.
+
+### Wang et al. 2025 — Modifying LLM Beliefs with Synthetic Document Finetuning (Anthropic)
+
+[alignment.anthropic.com/2025/modifying-beliefs-via-sdf](https://alignment.anthropic.com/2025/modifying-beliefs-via-sdf/) · status: summary-only
+
+The canonical SDF pipeline (universe context → ~40k synthetic docs → finetune as pretraining). Implants plausible false beliefs deeply; egregiously-false facts stay brittle and representationally distinct (truth probes separate them).
+
+**Relevance:** operationalizes "bake a contextual model into the weights" (A1); the plausibility cliff is a seam G should expose.
+
+### Maiya, Bartsch, Lambert, Hubinger 2025 — Open Character Training
+
+`maiya2025opencharactertraining` · [arXiv:2511.01689](https://arxiv.org/abs/2511.01689) · status: summary-only
+
+First open character-training implementation (Constitutional AI + synthetic introspective data) shaping 11 personas incl. malevolent on **Qwen-2.5**, Llama-3.1, Gemma-3; more robust than system prompts or steering.
+
+**Relevance:** a reusable open Qwen pipeline for installing a character into the Assistant — a candidate install method for the project (dual-use, incl. the evil persona).
+
+---
+
+## Further clusters from the 2026-05-28 sweep (compact — full annotations in [related-work](./conditional-behavior-related-work.md))
+
+**Steering / persona-vector methods & weight-space handles.** RepE [arXiv:2310.01405] · ActAdd [arXiv:2308.10248] · Contrastive Activation Addition [arXiv:2312.06681] · Refusal is one direction (Arditi) [arXiv:2406.11717] · steering-vector reliability is input-variable [arXiv:2407.12404], and activation-difference cohesion predicts steerability [arXiv:2505.22637] (a competitor to cosine for B5) · function vectors are invisible to the logit lens on Llama/Gemma [arXiv:2604.02608] (probe activations, not the unembedding) · **weight-space** persona handles: Personality Vector via model-merging [arXiv:2509.19727], Personality Subnetworks [arXiv:2602.07164] — the project's open-weights comparative advantage, unconnected to leakage so far.
+
+**Predicting finetuning / data attribution** (App 5, B-thread). Chunky Post-Training (SURF/TURF surface+trace) [arXiv:2602.05910] · Domain-Level EM Susceptibility on Qwen2.5-7B — base-adjusted membership-inference predicts EM degree [arXiv:2602.00298] · divergence tokens (cheap probe-set for "KL over which questions") [arXiv:2509.23886] · influence functions EK-FAC [arXiv:2308.03296] · Datamodels [arXiv:2202.00622] / TRAK [arXiv:2303.14186] / LESS (cross-family transfer) [arXiv:2402.04333]. The convergent idea nobody has unified: *chunk surprisal relative to base* as the cheap predictor (inoculation `2510.04340` + MI-vs-base `2602.00298` + perplexity-gap `2508.06249`).
+
+**Backdoor detection & model diffing** (Apps 1/2/5). Simple probes catch sleeper agents (trigger-agnostic, >99% AUROC) [Anthropic 2024] · Trigger in the Haystack (recover an unknown trigger via leakage + output/attention signatures) [arXiv:2602.03085] · Diff-SAE beats vanilla crosscoders on a conditional backdoor [arXiv:2605.07324] · **in-house tools:** Dedicated Feature Crosscoders [arXiv:2602.11729], Delta-Crosscoder (purpose-built for narrow-FT) [arXiv:2603.04426] · narrow-FT leaves readable activation traces [arXiv:2510.13900].
+
+**Removal / unlearning / mitigation relocation** (removal sub-program). Shifting the Gradient — preventative steering removes an installed behavior, inoculation can't [arXiv:2604.16423] · Concept Ablation Fine-Tuning [arXiv:2507.16795] · Unlearning or Obfuscating (benign relearning resurfaces "unlearned" knowledge) [arXiv:2406.13356] · relocation-not-removal in weight-space: Curvature-Aware Safety Restoration [arXiv:2511.18039], Geometry of Alignment Collapse [arXiv:2602.15799]. Thesis: relocation shows up in trigger-space (Dubinski), feature-space (BLOCK-EM `2602.00767`), and weight-space — linking all three on one open model is unclaimed.
 
 ---
 

@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
     "/literature": ["../updates/literature/**/*"],
     "/literature/[date]": ["../updates/literature/**/*"],
     "/literature/papers/[id]": ["../updates/literature/**/*"],
+    "/docs": ["../docs/**/*"],
+    "/docs/[slug]": ["../docs/**/*"],
   },
 };
 

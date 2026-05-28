@@ -6,6 +6,14 @@ Each question carries: **(a)** why it's open, **(b)** the most relevant evidence
 
 ---
 
+## Framing (the spine these questions hang on)
+
+A **contextual model** = `(weights, KV-cache)`. A persona system prompt, in-context examples, a steering vector, or synthetic-document finetuning each *specify or bake in* a contextual model. The central object is the **generalization map G**: from the distribution of training-side contextual models (which model generated the data, under what persona/system prompt, on what questions) → eval-side contextual-model behavior. **Persona leakage, behavior leakage, emergent misalignment, and backdoors are all cells / off-diagonals of G.** Threads A-D below decompose it (A = is the input specification equivalent across persona-prompt / ICL / steering / SDF; B = predicting the leakage off-diagonal; C = what installs and the elicitation confound; D = Dan's behavior-leakage pivot). The one-line positioning: everyone has measured a *single* off-diagonal of G; nobody has estimated G as a behavior×context map with the data-generating contextual model as a first-class input — uniquely available on open-weights Qwen + training-data ablations + weight-space probes.
+
+**Document map (hub + spokes).** This file is the **living hub**. Spokes: [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md) (the exhaustive 135-paper literature sweep + gap map = your contribution space), [`papers.md`](./papers.md) (curated status-tagged reading list), [`SUMMARY.md`](./SUMMARY.md) (project intro), [`claims.yaml`](./claims.yaml) (formal claims), and per-experiment clean-results (`eps.superkaiba.com/tasks/<N>`). Public narrative intro: [Sagan](https://sagan.superkaiba.com/p/conditional-behavior).
+
+---
+
 ## Headline open questions (would most shift the project)
 
 **1. Can pre-training-time geometry predict post-training behavior transfer?**
@@ -132,6 +140,20 @@ Truthification protects 97.3% off-domain alignment but only 58-63 vs 82.7 in-dom
 **E4. Re-promote findings to `claims.yaml`.**
 The registry currently has ONE preliminary claim (`C-em-defense-coupling-v1`). The persona-leakage results, A1 gradient, #225 marker-vs-behavior, #366 one-hop containment, etc. are not formalized.
 - **Why open:** Infrastructure gap. Every untracked finding is implicitly an open question.
+
+---
+
+## Applications (what the open questions buy)
+
+The "so what" for the threads above. Each: status · what it needs · linked evidence. Full lit positioning in [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md) Part IV.
+
+- **App 1 — Assistant-anchored detector** (trigger-conditional marker in the Assistant; *absence ⇒ strayed*). **Status: falsification risk.** Marker implant works (#65), but the conditional marker does NOT survive one epoch of length-matched SFT or multi-turn drift (#376, #377 — see E2). Closest external prior: Winter Soldier (`2506.14913`, certifiable absent-from-data secret). Depends on A1/A3.
+- **App 2 — Evil-anchored detector** (marker in the *misaligned* personas; *presence ⇒ strayed-into-evil*). **Status: idea.** The dual of App 1; checking *presence* dodges the marker-brittleness confound. Untested. Lit suggests semantic triggers persist through clean FT where token markers don't (`2605.11612`, `2603.09772`).
+- **App 3 — Capability ceiling on evil personas** (make-evil-dumb). **Status: tried, mostly negative + deprioritized.** Coupling evil personas with wrong answers fails to protect Qwen (#75); Dan (2026-05-27, see C2) expects RL incentives to push against the coupling — retain only if it survives an adversarial-OOD test post-RL. Lives on C9 (capability = implantation vs elicitation).
+- **App 4 — Minimal spanning set / broad-corrective-leakage** (smallest set of (behavior × context) cells whose leakage covers the target grid; dual: leak a *fix* everywhere a misbehavior could fire). **Status: idea.** Seeds: leakage is a predictable function of distance (#207); relocation-not-removal (Dubinski `2604.25891`) is the failure mode it must beat. Depends on B6 (multi-persona leakage curve).
+- **App 5 — Predict bad behaviors from training data** (pre-training audit). **Status: idea, highest-leverage.** This *is* headline Q1 (Dan's pre-training-geometry predictor, #406) generalized. Seeds: persona-geometry / JS predictors (#207, #311); external MI-vs-base predictor on Qwen (`2602.00298`). The application the mentor cares most about.
+
+**Trigger-discovery sub-thread** (feeds Apps 1/2/5): poisoned-backdoor fires only on the exact trigger (#276); evolutionary search has so far failed to recover Gaperon's trigger (#351). Open niche: paraphrase-*leakage* as the fitness signal for token-space search (related-work Part VII gap 6).
 
 ---
 
