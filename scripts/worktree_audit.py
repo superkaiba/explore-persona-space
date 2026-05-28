@@ -45,23 +45,21 @@ from dataclasses import dataclass, field
 
 from explore_persona_space.task_workflow import repo_root, tasks_dir
 
-# Statuses whose issue worktree is still in active use -> never auto-remove.
-KEEP_STATUSES = frozenset(
-    {
-        "planning",
-        "plan_pending",
-        "approved",
-        "running",
-        "verifying",
-        "interpreting",
-        "reviewing",
-        "blocked",
-    }
-)
+# Issue statuses whose worktree is DONE + merged -> eligible for reaping.
+# This is an ALLOWLIST (fail-closed): an issue-<N> worktree is reaped only
+# when its status is explicitly one of these. ANY other non-None status —
+# an in-flight state (running/planning/...), `blocked`, OR an unrecognized /
+# corrupt folder name — keeps the worktree. (agent-/wf- worktrees carry no
+# status and are reaped on the idle guards alone.) `awaiting_promotion` is
+# intentionally reapable: the clean-result is already merged to main and the
+# park-and-wait promotion uses the main repo's tasks/, not the worktree.
+REAPABLE_ISSUE_STATUSES = frozenset({"completed", "archived", "awaiting_promotion"})
 
 # Worktree names the sweep is allowed to consider. Everything else is
-# human-named and left for manual cleanup.
-_TARGET_NAME_RE = re.compile(r"^(issue-\d+|agent-[0-9a-fA-F]+|wf_.+)$")
+# human-named and left for manual cleanup. The wf_ branch is restricted to
+# the same char class harvest() extracts, so liveness detection can never
+# false-negative on a name with chars it would not match.
+_TARGET_NAME_RE = re.compile(r"^(issue-\d+|agent-[0-9a-fA-F]+|wf_[A-Za-z0-9_.\-]+)$")
 _ISSUE_NAME_RE = re.compile(r"^issue-(\d+)$")
 
 DEFAULT_GRACE_HOURS = 6.0
@@ -97,8 +95,13 @@ def should_remove(
         return Decision(name, False, "human-named worktree (out of sweep scope)")
     if is_live:
         return Decision(name, False, "held by a live process")
-    if status is not None and status in KEEP_STATUSES:
-        return Decision(name, False, f"issue status is non-terminal ({status})")
+    # issue-<N>: reap ONLY when the status is an explicitly reapable terminal
+    # state. Any other non-None status — in-flight, blocked, or an
+    # unrecognized/corrupt folder name — fails closed and keeps the worktree.
+    # status is None for an orphan issue (folder gone) and for agent-/wf-
+    # worktrees; those fall through to the idle guards.
+    if _ISSUE_NAME_RE.match(name) and status is not None and status not in REAPABLE_ISSUE_STATUSES:
+        return Decision(name, False, f"issue status not reapable ({status})")
     if age_hours < grace_hours:
         return Decision(name, False, f"modified {age_hours:.1f}h ago (< {grace_hours}h grace)")
     if has_tracked_changes:
@@ -189,6 +192,32 @@ def _git_remove(wt_path: str) -> bool:
     return rc.returncode == 0
 
 
+def _classify(
+    child, statuses: dict[int, str], live: set[str], grace_hours: float, now: float
+) -> Decision:
+    """Full keep/remove decision for one worktree dir, including the
+    (fresh) tracked-changes git call. ``statuses`` and ``live`` are the
+    snapshots to decide against."""
+    name = child.name
+    status = None
+    m = _ISSUE_NAME_RE.match(name)
+    if m:
+        status = statuses.get(int(m.group(1)))
+    age_hours = (now - child.stat().st_mtime) / 3600.0
+    decision = should_remove(
+        name,
+        status=status,
+        is_live=name in live,
+        age_hours=age_hours,
+        has_tracked_changes=False,
+        grace_hours=grace_hours,
+    )
+    # Only pay for the git status call on otherwise-removable worktrees.
+    if decision.remove and _has_tracked_changes(str(child)):
+        return Decision(name, False, "has uncommitted tracked changes")
+    return decision
+
+
 def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditResult:
     now = time.time() if now is None else now
     root = repo_root()
@@ -208,28 +237,23 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
         if not child.is_dir():
             continue
         name = child.name
-        status = None
-        m = _ISSUE_NAME_RE.match(name)
-        if m:
-            status = statuses.get(int(m.group(1)))
-        age_hours = (now - child.stat().st_mtime) / 3600.0
-        # Only pay for the git status call on otherwise-removable worktrees.
-        provisional = should_remove(
-            name,
-            status=status,
-            is_live=name in live,
-            age_hours=age_hours,
-            has_tracked_changes=False,
-            grace_hours=grace_hours,
-        )
-        if provisional.remove and _has_tracked_changes(str(child)):
-            provisional = Decision(name, False, "has uncommitted tracked changes")
-
-        if not provisional.remove:
-            res.kept.append(provisional)
+        decision = _classify(child, statuses, live, grace_hours, now)
+        if not decision.remove:
+            res.kept.append(decision)
             continue
         if not apply:
             res.removed.append(name)  # would-remove (dry-run)
+            continue
+        # Re-derive status + liveness FRESH immediately before the
+        # destructive call, to close the snapshot->remove race: a session
+        # that cd'd in, or a `task.py set-status` that flipped the issue to
+        # a non-reapable state, after the initial snapshot must still be
+        # honored (M1/M2).
+        fresh = _classify(
+            child, _issue_statuses(), _live_worktree_names(wt_root_rel), grace_hours, now
+        )
+        if not fresh.remove:
+            res.kept.append(Decision(name, False, f"became unsafe mid-audit: {fresh.reason}"))
             continue
         if _git_remove(str(child)):
             res.removed.append(name)

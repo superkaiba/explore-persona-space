@@ -108,6 +108,26 @@ def test_orphan_issue_unknown_status_is_removed():
     assert d.remove
 
 
+def test_unknown_status_folder_fails_closed():
+    # A corrupt / partial-`git mv` folder name (e.g. tasks/foo/500) is not in
+    # the reapable allowlist -> keep, never reap (M5 fail-closed).
+    d = should_remove(
+        "issue-500", status="foo", is_live=False, age_hours=999, has_tracked_changes=False
+    )
+    assert not d.remove
+    assert "not reapable" in d.reason
+
+
+def test_wf_name_with_space_is_out_of_scope():
+    # A wf_ name containing chars outside the harvest char class would break
+    # liveness detection, so it must fall outside sweep scope (kept) (m1).
+    d = should_remove(
+        "wf_my notes", status=None, is_live=False, age_hours=999, has_tracked_changes=False
+    )
+    assert not d.remove
+    assert "scope" in d.reason
+
+
 def test_grace_boundary_is_exclusive_below():
     # Exactly at the grace boundary is removable; just under is kept.
     keep = should_remove(
