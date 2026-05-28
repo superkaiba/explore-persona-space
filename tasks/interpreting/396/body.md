@@ -1,6 +1,6 @@
 ---
-title: Source-rate panel re-run on 48 personas with single-token marker ※ + log-prob
-  eval
+title: The first-step gradient probe does not predict trained-LoRA marker emission
+  at N=24, and the recipe swap muddles the comparison with the parent (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:04Z'

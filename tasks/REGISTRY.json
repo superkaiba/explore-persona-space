@@ -1954,7 +1954,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/396",
       "status": "interpreting",
-      "title": "Source-rate panel re-run on 48 personas with single-token marker \u203b + log-prob eval"
+      "title": "The first-step gradient probe does not predict trained-LoRA marker emission at N=24, and the recipe swap muddles the comparison with the parent (LOW confidence)"
     },
     "397": {
       "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker \u203b and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
