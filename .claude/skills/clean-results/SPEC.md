@@ -51,7 +51,14 @@ Results sub-bullets; see "Where the hero figure lives" below):
 4. `## Reproducibility` — three groups (Artifacts, Compute, Code).
    All URLs permanent: HF Hub `/tree/<ref>`, WandB `/runs/<id>`,
    GitHub `/blob/<sha>`. `n/a` accepted as an explicit non-applicable
-   marker. No `TBD`, `{{`, `default`, `see config` sentinels.
+   marker. No `TBD`, `{{`, `default`, `see config` sentinels. **URLs
+   use `[label](url)` form only — never `<url>` autolinks.** The
+   dashboard renders bodies through an MDX parser that chokes on
+   `<https://...>` (treats `<https` as a JSX tag name, fails on the
+   `/` after `:`). Verifier check 14 (`check_mdx_safe_urls`) FAILs
+   autolinks in prose; inside code spans / fenced blocks they're
+   fine. The rule applies everywhere in the body, not just
+   Reproducibility. Incident: task #382, 2026-05-28.
 
 ### (Deprecated) `## Figure` H2
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Seventeen checks
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Eighteen checks
 against the markdown clean-result spec in
 `.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
 discipline ported from HTML to markdown):
@@ -98,6 +98,15 @@ discipline ported from HTML to markdown):
     `## Details` with no prose between (figure-dump). Both surface as
     WARN, never FAIL — critic-side LM judgment (clean-result-critic
     Lens 4 + Lens 12) catches the semantic cases this regex misses.
+14. MDX-safe URLs — no `<https://...>` markdown autolinks anywhere in
+    body prose. The EPS dashboard renders bodies through an MDX parser,
+    which treats `<https` as the start of a JSX tag name and chokes on
+    the `/` after `:` (error: "Unexpected character `/` (U+002F) before
+    local name"). Every URL must be written as a `[label](url)` link.
+    Autolinks inside fenced code blocks and inline code spans
+    (`` `<https://...>` ``) are exempt. Incident: task #382, 2026-05-28
+    (six Reproducibility autolinks broke the dashboard's MDX renderer
+    for the entire body after promotion).
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -792,6 +801,56 @@ def check_repro_url_permanence(body: str) -> CheckResult:
     return CheckResult("Reproducibility URL permanence", True)
 
 
+_INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+_AUTOLINK_URL_RE = re.compile(r"<https?://[^>\s]+>")
+
+
+def _strip_code_for_prose_scan(body: str) -> str:
+    """Drop fenced code blocks and inline code spans so prose-only checks
+    don't false-positive on autolinks shown as illustration inside
+    `` `<https://...>` `` or fenced sample blocks."""
+    out: list[str] = []
+    in_fence = False
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        out.append(_INLINE_CODE_RE.sub("", line))
+    return "\n".join(out)
+
+
+def check_mdx_safe_urls(body: str) -> CheckResult:
+    """Check 14 (MDX safety): no `<https://...>` markdown autolinks in
+    body prose. The EPS dashboard renders bodies via an MDX parser, which
+    treats `<https` as the start of a JSX tag name and chokes on the `/`
+    after `:`. Every URL must use `[label](url)` form. Autolinks inside
+    fenced code blocks and inline code spans are exempt (the strip step
+    removes them before scanning). Incident: task #382, 2026-05-28."""
+    stripped = _strip_code_for_prose_scan(body)
+    hits = _AUTOLINK_URL_RE.findall(stripped)
+    if not hits:
+        return CheckResult("MDX-safe URLs — no `<https://...>` autolinks", True)
+    # Dedupe; keep order; show up to 3.
+    unique: list[str] = []
+    seen: set[str] = set()
+    for h in hits:
+        if h not in seen:
+            seen.add(h)
+            unique.append(h)
+    sample = ", ".join(unique[:3])
+    more = f" (+{len(unique) - 3} more)" if len(unique) > 3 else ""
+    return CheckResult(
+        "MDX-safe URLs — no `<https://...>` autolinks",
+        False,
+        f"{len(hits)} autolink(s) — MDX parses `<https://` as JSX and "
+        f"errors with 'Unexpected character `/` (U+002F) before local "
+        f"name'. Convert to `[label](url)`. Found: {sample}{more}",
+    )
+
+
 def check_repro_sentinel_scrub(body: str) -> CheckResult:
     """Check 9: no placeholder sentinels (`{{`, `TBD`, `see config`, `default`)
     in `## Reproducibility`."""
@@ -1283,6 +1342,7 @@ CHECKS = [
     check_planned_vs_actual_denominator,
     check_figure_h2_is_deprecated,
     check_details_narrative_flow,
+    check_mdx_safe_urls,
 ]
 
 
