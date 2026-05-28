@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 422,
+  "highest_id": 423,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2182,6 +2182,13 @@
       "path": "tasks/proposed/422",
       "status": "proposed",
       "title": "Compute infra: reclaim Mila/Compute Canada allocation + workflow-refactor worktree"
+    },
+    "423": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/423",
+      "status": "proposed",
+      "title": "Reading: Simulators literature (User Modeling / Topic 7)"
     },
     "43": {
       "has_clean_result": false,
