@@ -1,0 +1,191 @@
+{
+  "note": "Raw (unpartialled) Spearman \u03c1 for predictors #1-#3 + #5 (first-step gradient) \u00d7 6 DV surfaces. Complements the length-partial values in analysis_summary.json::predictor_table. Length partial uses log of persona prompt token count as the covariate.",
+  "n_sources": 24,
+  "sources": [
+    "accountant",
+    "ai",
+    "ai_assistant",
+    "chatbot",
+    "chef",
+    "child",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "helpful_assistant",
+    "hero",
+    "i_am_helpful",
+    "journalist",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "medical_doctor",
+    "philosopher",
+    "police_officer",
+    "qwen_default",
+    "software_engineer",
+    "villain",
+    "wizard",
+    "zelthari_scholar"
+  ],
+  "by_predictor": {
+    "cosine_to_assistant_L15": {
+      "logp_end_of_response_diagonal_mean (HEADLINE)": {
+        "spearman_raw_rho": 0.14782608695652172,
+        "spearman_raw_pvalue": 0.4906100707429602,
+        "length_partial_spearman_rho": 0.09680428716875435,
+        "n": 24
+      },
+      "logp_at_k0_diagonal_mean": {
+        "spearman_raw_rho": 0.16695652173913042,
+        "spearman_raw_pvalue": 0.4355381053206146,
+        "length_partial_spearman_rho": 0.08619711430702706,
+        "n": 24
+      },
+      "logp_auc_diagonal_mean": {
+        "spearman_raw_rho": -0.03565217391304347,
+        "spearman_raw_pvalue": 0.8686390462246146,
+        "length_partial_spearman_rho": 0.04902998071424553,
+        "n": 24
+      },
+      "logp_max_diagonal_mean": {
+        "spearman_raw_rho": -0.3556521739130434,
+        "spearman_raw_pvalue": 0.08808232160850833,
+        "length_partial_spearman_rho": 0.03883547669284431,
+        "n": 24
+      },
+      "logp_mean_diagonal_mean": {
+        "spearman_raw_rho": 0.2617391304347826,
+        "spearman_raw_pvalue": 0.2166516979532863,
+        "length_partial_spearman_rho": 0.16071636079348145,
+        "n": 24
+      },
+      "substring_match_rate_diagonal_mean (MF3)": {
+        "spearman_raw_rho": -0.23423119332763392,
+        "spearman_raw_pvalue": 0.2706135087264405,
+        "length_partial_spearman_rho": 0.21020319387946243,
+        "n": 24
+      }
+    },
+    "js_to_baseline": {
+      "logp_end_of_response_diagonal_mean (HEADLINE)": {
+        "spearman_raw_rho": -0.2434782608695652,
+        "spearman_raw_pvalue": 0.2515981618428429,
+        "length_partial_spearman_rho": -0.21855182467064635,
+        "n": 24
+      },
+      "logp_at_k0_diagonal_mean": {
+        "spearman_raw_rho": -0.1878260869565217,
+        "spearman_raw_pvalue": 0.3794584983173827,
+        "length_partial_spearman_rho": -0.13102596790026097,
+        "n": 24
+      },
+      "logp_auc_diagonal_mean": {
+        "spearman_raw_rho": 0.008695652173913044,
+        "spearman_raw_pvalue": 0.9678329941702691,
+        "length_partial_spearman_rho": -0.044965084261735615,
+        "n": 24
+      },
+      "logp_max_diagonal_mean": {
+        "spearman_raw_rho": 0.26608695652173914,
+        "spearman_raw_pvalue": 0.2088362148101018,
+        "length_partial_spearman_rho": 0.004539036152827035,
+        "n": 24
+      },
+      "logp_mean_diagonal_mean": {
+        "spearman_raw_rho": -0.20434782608695648,
+        "spearman_raw_pvalue": 0.338157248513176,
+        "length_partial_spearman_rho": -0.11112302434943004,
+        "n": 24
+      },
+      "substring_match_rate_diagonal_mean (MF3)": {
+        "spearman_raw_rho": 0.16359003978437925,
+        "spearman_raw_pvalue": 0.44498117457825326,
+        "length_partial_spearman_rho": -0.10982991938590837,
+        "n": 24
+      }
+    },
+    "pairwise_output_distance": {
+      "logp_end_of_response_diagonal_mean (HEADLINE)": {
+        "spearman_raw_rho": -0.15826086956521737,
+        "spearman_raw_pvalue": 0.46014891272810615,
+        "length_partial_spearman_rho": -0.16168294217201998,
+        "n": 24
+      },
+      "logp_at_k0_diagonal_mean": {
+        "spearman_raw_rho": -0.11304347826086956,
+        "spearman_raw_pvalue": 0.5989404349055967,
+        "length_partial_spearman_rho": -0.11740328410974935,
+        "n": 24
+      },
+      "logp_auc_diagonal_mean": {
+        "spearman_raw_rho": -0.33652173913043476,
+        "spearman_raw_pvalue": 0.1078562011927474,
+        "length_partial_spearman_rho": -0.336033567809195,
+        "n": 24
+      },
+      "logp_max_diagonal_mean": {
+        "spearman_raw_rho": 0.1678260869565217,
+        "spearman_raw_pvalue": 0.4331165526494356,
+        "length_partial_spearman_rho": 0.20418652427763978,
+        "n": 24
+      },
+      "logp_mean_diagonal_mean": {
+        "spearman_raw_rho": -0.1652173913043478,
+        "spearman_raw_pvalue": 0.4404029231283095,
+        "length_partial_spearman_rho": -0.17352561816840129,
+        "n": 24
+      },
+      "substring_match_rate_diagonal_mean (MF3)": {
+        "spearman_raw_rho": 0.1440707736737431,
+        "spearman_raw_pvalue": 0.5018135425831244,
+        "length_partial_spearman_rho": 0.17287328561542348,
+        "n": 24
+      }
+    },
+    "first_step_gradient_delta_logp": {
+      "logp_end_of_response_diagonal_mean (HEADLINE)": {
+        "spearman_raw_rho": 0.07652173913043478,
+        "spearman_raw_pvalue": 0.7222991032128188,
+        "length_partial_spearman_rho": 0.08389872831458974,
+        "n": 24
+      },
+      "logp_at_k0_diagonal_mean": {
+        "spearman_raw_rho": 0.11739130434782606,
+        "spearman_raw_pvalue": 0.5848655143600633,
+        "length_partial_spearman_rho": 0.12769828129746694,
+        "n": 24
+      },
+      "logp_auc_diagonal_mean": {
+        "spearman_raw_rho": -0.1452173913043478,
+        "spearman_raw_pvalue": 0.49837946924561144,
+        "length_partial_spearman_rho": -0.15120544878366257,
+        "n": 24
+      },
+      "logp_max_diagonal_mean": {
+        "spearman_raw_rho": -0.09565217391304347,
+        "spearman_raw_pvalue": 0.6566056616723347,
+        "length_partial_spearman_rho": -0.14329110930097816,
+        "n": 24
+      },
+      "logp_mean_diagonal_mean": {
+        "spearman_raw_rho": 0.12608695652173912,
+        "spearman_raw_pvalue": 0.5571544076689685,
+        "length_partial_spearman_rho": 0.14199641960811896,
+        "n": 24
+      },
+      "substring_match_rate_diagonal_mean (MF3)": {
+        "spearman_raw_rho": -0.10084954157162017,
+        "spearman_raw_pvalue": 0.6391528210448921,
+        "length_partial_spearman_rho": -0.14434043651853776,
+        "n": 24
+      }
+    }
+  },
+  "max_abs_raw_rho_in_grid": 0.3556521739130434,
+  "max_loc": [
+    "cosine_to_assistant_L15",
+    "logp_max_diagonal_mean",
+    -0.3556521739130434,
+    0.08808232160850833
+  ]
+}

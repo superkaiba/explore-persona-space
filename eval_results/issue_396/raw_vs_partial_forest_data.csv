@@ -1,0 +1,25 @@
+predictor,surface,raw_rho,raw_p,partial_rho,n
+cosine_to_assistant_L15,logp_end_of_response_diagonal_mean (HEADLINE),0.14782608695652172,0.4906100707429602,0.09680428716875435,24
+cosine_to_assistant_L15,logp_at_k0_diagonal_mean,0.16695652173913042,0.4355381053206146,0.08619711430702706,24
+cosine_to_assistant_L15,logp_auc_diagonal_mean,-0.03565217391304347,0.8686390462246146,0.04902998071424553,24
+cosine_to_assistant_L15,logp_max_diagonal_mean,-0.3556521739130434,0.08808232160850833,0.03883547669284431,24
+cosine_to_assistant_L15,logp_mean_diagonal_mean,0.2617391304347826,0.2166516979532863,0.16071636079348145,24
+cosine_to_assistant_L15,substring_match_rate_diagonal_mean (MF3),-0.23423119332763392,0.2706135087264405,0.21020319387946243,24
+js_to_baseline,logp_end_of_response_diagonal_mean (HEADLINE),-0.2434782608695652,0.2515981618428429,-0.21855182467064635,24
+js_to_baseline,logp_at_k0_diagonal_mean,-0.1878260869565217,0.3794584983173827,-0.13102596790026097,24
+js_to_baseline,logp_auc_diagonal_mean,0.008695652173913044,0.9678329941702691,-0.044965084261735615,24
+js_to_baseline,logp_max_diagonal_mean,0.26608695652173914,0.2088362148101018,0.004539036152827035,24
+js_to_baseline,logp_mean_diagonal_mean,-0.20434782608695648,0.338157248513176,-0.11112302434943004,24
+js_to_baseline,substring_match_rate_diagonal_mean (MF3),0.16359003978437925,0.44498117457825326,-0.10982991938590837,24
+pairwise_output_distance,logp_end_of_response_diagonal_mean (HEADLINE),-0.15826086956521737,0.46014891272810615,-0.16168294217201998,24
+pairwise_output_distance,logp_at_k0_diagonal_mean,-0.11304347826086956,0.5989404349055967,-0.11740328410974935,24
+pairwise_output_distance,logp_auc_diagonal_mean,-0.33652173913043476,0.1078562011927474,-0.336033567809195,24
+pairwise_output_distance,logp_max_diagonal_mean,0.1678260869565217,0.4331165526494356,0.20418652427763978,24
+pairwise_output_distance,logp_mean_diagonal_mean,-0.1652173913043478,0.4404029231283095,-0.17352561816840129,24
+pairwise_output_distance,substring_match_rate_diagonal_mean (MF3),0.1440707736737431,0.5018135425831244,0.17287328561542348,24
+first_step_gradient_delta_logp,logp_end_of_response_diagonal_mean (HEADLINE),,,0.08389872831458974,24
+first_step_gradient_delta_logp,logp_at_k0_diagonal_mean,,,0.12769828129746694,24
+first_step_gradient_delta_logp,logp_auc_diagonal_mean,,,-0.15120544878366257,24
+first_step_gradient_delta_logp,logp_max_diagonal_mean,,,-0.14329110930097816,24
+first_step_gradient_delta_logp,logp_mean_diagonal_mean,,,0.14199641960811896,24
+first_step_gradient_delta_logp,substring_match_rate_diagonal_mean (MF3),,,-0.14434043651853776,24
