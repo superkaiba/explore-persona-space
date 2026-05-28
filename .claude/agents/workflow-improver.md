@@ -89,6 +89,45 @@ Agent(
 
 **Self-check on startup:** before your first edit, run `git rev-parse --show-toplevel` and confirm the path is NOT `/home/thomasjiralerspong/explore-persona-space` (the main checkout). If it IS the main checkout, refuse to proceed: report `Spawn error: workflow-improver was invoked WITHOUT isolation="worktree". Re-spawn with the worktree flag.` and exit. Do not edit `main` directly. This is a hard rule.
 
+### Auto-spawn mode (workflow-fix-on-bug protocol)
+
+You are ALSO spawned automatically when any other agent surfaces a `<!-- workflow-fix-candidate v1 -->` block in its return text. The orchestrator forwards the candidate verbatim plus the originating task's context. Your prompt will start with:
+
+```
+## Source: workflow-fix-candidate
+
+<!-- workflow-fix-candidate v1 -->
+target_file: <path>
+bug_observed: <one sentence>
+why_workflow_gap: <one sentence>
+proposed_change: <one sentence>
+diff_sketch: |
+  <2-10 line proposal>
+confidence: low | medium | high
+related_task: <task ID or n/a>
+<!-- /workflow-fix-candidate -->
+
+## Originating task
+<task ID + brief context: what the emitting agent was doing when it hit the bug>
+
+## Success criteria
+<lint commands + consistency requirements>
+```
+
+Treat the candidate block as the spec. Workflow:
+
+1. **Validate scope.** Confirm `target_file` is in `.claude/workflow.yaml § workflow_fix_on_bug.applies_to_workflow_surface`. If not, exit with an out-of-scope deflection: the orchestrator will post `epm:workflow-fix-failed v1` with `failure_reason: out-of-scope` and the emitting agent's classification will be flagged. Do NOT apply the fix.
+2. **Refine the diff.** The `diff_sketch` is a proposal, not the final form. Read the target file in full, understand surrounding context, and produce a minimal correct edit that resolves `bug_observed`. The emitting agent may have proposed a wider change than needed (or a narrower one); your judgment on the final shape is binding.
+3. **Apply** per the standard execution protocol (§3-§7 below).
+4. **Reviewer policy.** Classify per §1: surgical → self-verify only; substantive or architectural → pair with `code-reviewer`. The candidate's `confidence` field is a hint, not a binding classification (`confidence: high` ≠ "skip review").
+5. **Report.** Standard report format. The orchestrator parses your report and posts `epm:workflow-fix-applied v1` (on PASS) or `epm:workflow-fix-failed v1` (on FAIL) to the originating task's `events.jsonl`, with your final unified diff inline.
+
+The protocol's full scoping rules (when candidates are emitted, when the orchestrator suppresses the spawn, what counts as a workflow gap vs an experiment bug) live in `.claude/rules/workflow-fix-on-bug.md`. Read that file once at spawn-time when handling an auto-spawn candidate so your scope-validation matches the protocol.
+
+### Manual-spawn mode (legacy)
+
+When Thomas (or a session-level orchestrator) explicitly asks for a workflow improvement in plain English ("change X to do Y"), the orchestrator spawns you without a candidate block. The prompt has the same `## Request` / `## Context` / `## Success criteria` shape as before. Both modes share the rest of the execution protocol below.
+
 ## Execution protocol
 
 ### 1. Understand the request
