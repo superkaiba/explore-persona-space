@@ -1192,7 +1192,7 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
 - Required: post `epm:run-launched` with `pod=<name> pid=<pid>
-  log_abs=<absolute_log_path> cwd=<absolute_cwd> cmd='<dispatch>'` in
+  log_abs=<absolute_log_path> cmd='<dispatch>'` in
   the note, then EXIT cleanly within 60 seconds. The `log_abs=` field
   MUST be an absolute path (use `realpath` or `os.path.abspath()` on
   the pod) AND the experimenter MUST verify the file exists with
