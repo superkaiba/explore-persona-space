@@ -109,6 +109,37 @@ outputs` requirement in `markers.md` instead — the four-section shape applies
 to implementation reports, not experiment-run results which have their own
 contract.
 
+### Step 0.6: End-to-end smoke gate (`type:experiment` only)
+
+For `type:experiment` tasks, a PASS is INVALID on a script that was only
+`--help`'d, import-checked, or `--dry-run`. Before reviewing the diff,
+confirm the implementer's `epm:experiment-implementation` report carries a
+`## Smoke run` section showing the experiment script was run ONCE on a tiny
+real slice (e.g. `--limit 2`, a 1-example dataset, `max_steps=1`, the
+smallest real condition). That section MUST show:
+
+- the exact command that was run,
+- the slice size (how it was kept tiny),
+- the exit code (must be `0`),
+- a one-line digest of the produced artifact (path + shape / row count) —
+  proving a REAL output was written, not a stub.
+
+**If the `## Smoke run` section is absent, OR shows only `--help` /
+`import` / `--dry-run` evidence, OR the exit code is non-zero, return
+verdict FAIL with a single `Critical` issue tagged `smoke-run-missing`:**
+
+> `epm:experiment-implementation v<n>` has no proof the script ran on a
+> tiny real slice (`## Smoke run` missing or shows only --help/import).
+> An experiment script that has never produced a real artifact is not
+> PASS-able — a `404` / shape bug / empty-dataset silent-fail would only
+> surface after a pod is provisioned and GPU-minutes are burned. Re-post
+> `v<n+1>` with a `## Smoke run` section (command + slice size + exit code
+> + artifact digest).
+
+Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
+`type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
+(`/issue` Step 9c) and the Step 4 test run below.
+
 ### Step 1: Read the Plan FIRST (before any code)
 
 Before looking at the diff:
