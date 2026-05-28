@@ -20,19 +20,7 @@ Grouped by thread. Links are `#N` → eps.superkaiba.com/tasks/N.
 - **Behavior-leakage pivot started.** First sycophancy data: 3 of 6 sources replicate #99's sycophancy cosine gradient on held-out wrong claims, 2 sign-flip, 1 collapses (#411, LOW). The B-to-B' rig (#404) is running.
 - **Geometry-predicts-generalization test is running** (#406): JS divergence between context transformations as a pre-training predictor of whether Y transfers from T(X) to T'(X) after SFT.
 
-## 2. Where our beliefs stand now
-
-Claim · confidence.
-
-- Simple geometric predictors (cosine, JS-from-assistant, JS-pairwise, output-distance) do NOT predict where a marker implants. **High** (5 negatives, N up to 48).
-- Distance-predicts-*leakage* is real but only inside the contrastive regime; non-contrastive/uniform SFT washes the gradient out (#207). **Moderate.**
-- The marker is a representational handle, not a behavioral one. Sharing it between a villain persona and the assistant transfers no misalignment (#225). **High.**
-- Token-level conditional markers / sleeper triggers don't survive clean downstream training (#376/#377/#382). **High** for token-marker emission; the in-context `|AUDIT|` variant (#378) points the same way but is weaker evidence (**Low**). A negative result for the conditional-backdoor literature.
-- EM "conditional misalignment" may be largely a base-model jailbreak (the edu_v0 cue, #234), not a learned conditional capability. **Moderate.**
-- Behavior-leakage (B to B') is too early to believe anything; the first sycophancy gradient is shaky (#411). **Low.**
-- Make-evil-dumb: deprioritized, because RL incentives likely push against the coupling on both axes (RL rewards reward-hacking → evil, and capability → not-dumb), unless it survives an adversarial/OOD test post-RL.
-
-## 3. Open questions
+## 2. Open questions
 
 Top 3 (most likely to move the project):
 
@@ -51,7 +39,7 @@ Other live questions (several are open mentor asks not yet closed):
 - Are the centroid persona vectors and Chen et al.'s the same object? (#363: same neighborhood, not the same direction.)
 - Should the "conditional markers don't survive clean SFT" negatives become a standalone writeup? (#376/#377/#382.)
 
-## 4. Next steps
+## 3. Next steps
 
 Currently running:
 
@@ -66,8 +54,8 @@ Then:
 - Re-analyze #383 with source rate partialled out (the selectivity-artifact control).
 - Promote the sleeper-marker negatives (#376/#377/#382) into a standalone writeup.
 
-## 5. Admin
+## 4. Admin
 
 - Adding Christina to project?
 
-## 6. Feedback?
+## 5. Feedback?
