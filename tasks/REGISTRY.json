@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 419,
+  "highest_id": 420,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2161,6 +2161,13 @@
       "path": "tasks/completed/42",
       "status": "completed",
       "title": "[Decision] Option A: bump open-instruct submodule to unlock Liger + packing on Tulu path"
+    },
+    "420": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/420",
+      "status": "proposed",
+      "title": "Sample points in persona space and predict distance"
     },
     "43": {
       "has_clean_result": false,
