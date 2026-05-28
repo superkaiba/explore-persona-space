@@ -388,6 +388,15 @@ def main() -> int:
         trust_remote_code=True,
         token=os.environ.get("HF_TOKEN"),
     )
+    # BF13: enable gradient checkpointing on the base model. Without it,
+    # the 7B forward+backward at PROBE_BATCH_SIZE=16, seq_len=2048
+    # needs ~170 GB of activation memory and OOMs on a single H100.
+    # Gradient checkpointing trades ~30% compute for ~10x activation
+    # memory reduction (~5-10 GB instead of 170 GB), letting the probe
+    # fit comfortably. The pre-step log-prob (eval-mode forward, no
+    # backward) is unaffected; only the single AdamW step's backward
+    # uses checkpointing. PEFT's get_peft_model preserves the flag.
+    base_model.gradient_checkpointing_enable()
     base_model.eval()
 
     eval_questions = load_probe_questions()
