@@ -21,10 +21,11 @@ nav_order: 50
 
 1. **Hook at the terminal, deliberate event:** task → `completed` (post-promotion for experiments). That's the single well-defined per-experiment moment, and promotion is a deliberate user act.
 2. **Single writer per doc**, atomic git commit (same `flock` + one-commit discipline as `task.py`) → no concurrent corruption.
-3. **Explicit experiment→question mapping** set at creation (`relates_to`), with topic-inference fallback.
-4. **Non-blocking:** updating the living docs never gates experiment completion.
-5. **Backstop re-synthesis** catches whatever the per-result updater misses, and re-ranks.
-6. **A consistency linter** makes drift visible instead of silent.
+3. **Explicit experiment→question mapping** set at creation: every `kind: experiment` links to one or more open questions via a flat `relates_to` (no primary/secondary), by matching an existing question or creating a new one.
+4. **Every living-docs mutation is user-confirmed.** Both the creation-time link (match-or-create) and the completion-time update are *proposed* by the agent and applied only on your ok. The agent may propose accretive updates AND broader edits (reword / split / mark settled / add a question / touch several at once / fix `papers.md`) — but never without confirmation.
+5. **Non-blocking on the experiment lifecycle.** The experiment completes regardless; the proposed living-docs diff parks for your confirmation (like `awaiting_promotion`), so you needn't be present when a run finishes.
+6. **Backstop re-synthesis** catches whatever the per-result updater misses, and re-ranks.
+7. **A consistency linter** makes drift visible instead of silent.
 
 ## Structural prerequisite (one-time)
 
@@ -39,30 +40,36 @@ Give each open question a machine-targetable living-state trailer + a stable anc
 - `<!-- q:A1 -->` — stable id that survives prose edits (the updater greps for it).
 - `> **State:**` — the one line the updater rewrites: maturity (🌱/🌿/🌳) · confidence (LOW/MOD/HIGH, same scale as clean-results) · last-updated · evidence task list.
 
-And a task-schema field, set at creation by the Goal gate (`/issue` Step 0c) or the planner:
+And a task-schema field, set at the Goal gate (`/issue` Step 0c) — a flat list, no primary/secondary:
 
 ```yaml
-relates_to: [A1, D2]   # open-question keys this experiment bears on
+relates_to: [a1, d2]   # stable open-question ids this experiment bears on
 ```
+
+At creation the clarifier/planner proposes the link — **match** an existing question or **draft a new one** — and you confirm it in the same Goal gate you already approve. No silent linking; no topic-inference fallback that skips you.
 
 ## Components to build
 
-1. **`scripts/living_docs.py`** — the mechanical core (importable + CLI):
-   - `link_result(task_id)`: read the task's clean-result (title, confidence, classification, `relates_to`), locate each `<!-- q:Kn -->` block in `open_questions.md`, update its `State:` trailer (bump date, append `#N` to evidence), prepend a dated changelog line. Atomic `flock` + single commit. Mechanical only.
-   - `check()`: lint — every `completed` experiment with `has_clean_result` appears in some question's evidence; every evidence `#N` exists; flag questions stale relative to new results. Exit nonzero on drift. Runs in `/weekly` + optionally pre-commit.
-2. **`.claude/agents/living-docs-updater.md`** — the semantic layer (fresh-context agent):
-   - Input: task `N` + its clean-result + the relevant question block(s).
-   - Rewrites the belief sentence (1-3 sentences) to reflect the result, sets confidence/maturity, calls `living_docs.py link_result` for bookkeeping, and — if the clean-result cites papers absent from `papers.md` — appends them (or flags). One commit. Bounded, single-turn.
+1. **`scripts/living_docs.py`** — the mechanical core (importable + CLI), applies only **confirmed** changes:
+   - `apply(task_id, patch)`: apply a confirmed patch to `open_questions.md` (and `papers.md` if touched) — atomic `flock` + single commit, prepend a dated changelog line. The patch may be a simple evidence/`State` bump or a broader multi-question edit; the script just applies + commits what was confirmed. No judgement.
+   - `link(task_id, [q-ids])`: write `relates_to` on the task + add the task to each question's evidence list (the confirmed creation-time link); creates a new question stub first if one was approved.
+   - `check()`: lint — `relates_to` ⇄ question-evidence agree both ways; every `completed` experiment with `has_clean_result` appears in some question's evidence; every evidence `#N` exists; flag questions stale relative to new results. Exit nonzero on drift. Runs in `/weekly` + optionally pre-commit.
+2. **`.claude/agents/living-docs-updater.md`** — the semantic layer (fresh-context agent), **proposes, never applies**:
+   - Input: task `N` + its clean-result + the linked question block(s) + the rest of `open_questions.md` (so it can spot a needed reword / split / merge / new question).
+   - Produces a **proposed unified diff** + a short rationale: the accretive update (append the result to evidence, shift the belief sentence + confidence/maturity, record "inconclusive" if it didn't move) PLUS any broader edits it judges warranted, and any `papers.md` additions.
+   - Returns the proposal to the orchestrator; does **not** commit. Applied only after you confirm (then `living_docs.py apply`). Bounded, single-turn.
 3. **`/issue` SKILL.md hook** (new Step after auto-complete → `completed`):
-   - Orchestrator spawns `living-docs-updater` in the background; posts `epm:living-docs-updated v1` with the diff. Failure → `epm:living-docs-update-failed v1` note; never blocks completion.
-4. **Creation-time wiring:** Goal gate / planner sets `relates_to`. Absent → updater infers from topic, best-effort, no prompt.
+   - Orchestrator spawns `living-docs-updater`; it posts `epm:living-docs-proposed v1` with the proposed diff + rationale. The orchestrator presents the diff for confirmation (new conditional gate `living_docs_update`, registered in `workflow.yaml` like `plan_approval`). On **confirm** (or confirm-with-edits) → `living_docs.py apply` + `epm:living-docs-updated v1`. On **reject** → skip + `epm:living-docs-update-rejected v1`. The proposal parks if you're away; the experiment is already `completed`, so nothing is blocked.
+4. **Creation-time wiring:** at the Goal gate the clarifier/planner proposes match-or-create for the question link; on your confirm → `living_docs.py link` writes `relates_to` + the question's evidence entry (creating the question first if you approved a new one). No link is written without confirmation.
 5. **Backstop re-synthesis:** extend `/weekly` to (a) re-synthesize `open_questions.md` from all clean-results (today's manual process, automated) and (b) run `living_docs.py check`. Monthly: re-run the lit sweep to refresh `conditional-behavior-related-work.md` + `papers.md`.
 6. **Dashboard:** the `/docs` route (Phase 0, done) renders the live state; `last_updated` / `status` show freshness. Optional homepage widget: "living docs · updated X · M open questions."
 
 ## Marker schema (`.claude/workflow.yaml`)
 
-- `epm:living-docs-updated v1` — posted after the updater commits; payload = unified diff + which questions were touched.
-- `epm:living-docs-update-failed v1` — non-fatal; payload = reason.
+- `epm:question-linked v1` — creation-time: which question(s) the issue was linked to (and whether one was newly created).
+- `epm:living-docs-proposed v1` — the updater's proposed diff + rationale, awaiting confirmation.
+- `epm:living-docs-updated v1` — posted after you confirm and `living_docs.py apply` commits; payload = the applied diff + which questions were touched.
+- `epm:living-docs-update-rejected v1` — you declined the proposal; non-fatal, payload = reason.
 
 ## Consistency guarantees
 
@@ -79,8 +86,10 @@ relates_to: [A1, D2]   # open-question keys this experiment bears on
 - **Phase 3:** add the `living-docs-updater` agent + `/issue` hook + markers.
 - **Phase 4:** backstop re-synthesis in `/weekly` + monthly lit refresh.
 
-## Open choices
+## Decisions (locked 2026-05-28)
 
-- **A. Update trigger:** on `promote → completed` only (deliberate), or also on clean-result *creation* (earlier, pre-promotion)? → recommend `completed` only.
-- **B. Confidence movement:** auto-rule (e.g. 2+ consistent results → bump) vs agent-judged. → recommend agent-judged; the script only does bookkeeping.
-- **C. New questions:** may the updater *add* a question when a result opens one, or only update existing ones? → recommend propose-only (flag in changelog), never auto-insert.
+- **Trigger:** completion (`promote → completed`) for the result update; **creation** (Goal gate) for the question link.
+- **`relates_to`:** flat list, no primary/secondary.
+- **Scope of edits:** the updater may make accretive updates AND broader edits (reword / split / settle / add questions / multi-question / `papers.md`) — whatever the result warrants.
+- **Confirmation:** every living-docs mutation (creation link + completion update) is user-confirmed; the agent proposes, you approve / edit / reject. Nothing auto-applies.
+- **Confidence:** agent-proposed (then confirmed); the script only applies what's confirmed.

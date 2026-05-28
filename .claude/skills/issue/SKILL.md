@@ -476,7 +476,55 @@ violate the auto-continuation policy.
    ```
    The command writes both frontmatter (`goal:`) and the body H2
    block, then posts `epm:goal-updated v1` to events.jsonl. Re-read
-   the task (Step 0) and continue to Step 1.
+   the task (Step 0) and continue to Step 0c-link.
+
+#### Step 0c-link: Match-or-create open-question link (same Goal gate)
+
+After the Goal is set for a `kind: experiment` task, link it to the
+living research hub (`docs/open_questions.md`) so the completion hook
+(Step 10c) knows which question(s) the result should move. This runs
+inside the same Goal gate the user already passes through — no separate
+gate, no extra context switch.
+
+1. Skip when the task `kind != "experiment"` (i.e.
+   `analysis | infra | batch | survey`). Those kinds carry no
+   open-question link, exactly like the Goal gate itself.
+2. Skip when the task already carries a non-empty `relates_to:` list in
+   `body.md` frontmatter (re-invocation / already-linked case) — the
+   link is set once at creation. Continue to Step 1.
+3. Otherwise, the clarifier/planner reads the task Goal + the headline
+   questions in `docs/open_questions.md` and PROPOSES a flat list of
+   stable open-question ids (NO primary/secondary) the experiment bears
+   on — either **matching** existing question id(s) or **drafting a new
+   question** when none fit. Confirm with the user in the SAME Goal gate
+   via `AskUserQuestion` <!-- gate: gates.experiment_goal -->:
+   ```
+   "This experiment's Goal links to which open question(s) in
+    docs/open_questions.md? (flat list — an experiment may bear on more
+    than one.)
+      - Link to existing: q-<id> «<headline question text>» [+ more]
+      - Draft new question: «<one-sentence proposed question>»"
+   ```
+   Present the matched id(s) as the recommended option first; offer
+   "draft new question" as the alternative. The user confirms the id
+   list (or approves the new-question draft).
+4. On the user's confirmation, write the link — `relates_to` on the task
+   + the task entry on each question's evidence list — via:
+   ```bash
+   uv run python scripts/living_docs.py link <N> <q-id> [<q-id> ...]
+   ```
+   If the user approved a NEW question, `living_docs.py link` creates the
+   question stub (heading + `<!-- q:<id> -->` anchor + `State:` trailer)
+   in `docs/open_questions.md` first, then writes `relates_to` + the
+   evidence entry. The link write is a confirmed living-docs mutation —
+   the agent proposed it, the user confirmed it; nothing auto-links.
+5. Post `epm:question-linked v1` recording the `relates_to` list and
+   whether a new question was created:
+   ```bash
+   uv run python scripts/task.py post-marker <N> epm:question-linked \
+     --note "Linked task #<N> to open question(s) <q-ids>; created_new=<q-id|none>."
+   ```
+   Re-read the task (Step 0) and continue to Step 1.
 
 ### Step 1: Clarifier gate
 
@@ -1950,12 +1998,96 @@ Each created follow-up task carries `parent_id: <N>` in its `body.md`
 frontmatter; lint scans enforce that the parent exists. Lint output is
 visible via `task.py audit`.
 
+### Step 10c: Living-docs update hook (experiments only)
+
+Auto-fires after a `kind: experiment` task lands at `completed` (the
+deliberate post-promotion completion moment). It keeps the living
+research hub (`docs/open_questions.md`, and `docs/papers.md` when
+warranted) from going stale by proposing — never auto-applying — an
+update to the question(s) this experiment was linked to at creation
+(Step 0c-link). **Non-blocking:** the task is already `completed`, so
+the proposal can park indefinitely if the user is away; nothing about
+completion waits on it.
+
+1. Skip when the task `kind != "experiment"` — `analysis | infra |
+   batch | survey` carry no open-question link.
+2. Skip when the task has no `relates_to:` list in `body.md`
+   frontmatter (was never linked at Step 0c-link) — surface one chat
+   line noting the missing link and continue to Step 10d.
+3. Spawn the `living-docs-updater` agent (fresh context). Brief: task
+   `<N>` + its clean-result body + the linked question block(s) (grep
+   `docs/open_questions.md` for each `relates_to` id's `<!-- q:<id> -->`
+   anchor) + the rest of `open_questions.md` so it can spot a needed
+   reword / split / merge / new question. The agent PROPOSES (never
+   applies) a unified diff + rationale and posts
+   `epm:living-docs-proposed v1`. It is bounded + single-turn.
+4. Present the proposed diff for confirmation at the
+   `living_docs_update` conditional gate (registered in
+   workflow.yaml § gates.conditional). The prompt is a binary `confirm`
+   vs `reject` (see workflow.yaml § gates.living_docs_update); "edit" is
+   a refinement of `confirm`, not a third option — the user may hand-edit
+   the proposed diff and the same confirm path applies the edited patch.
+
+   <!-- gate: gates.living_docs_update -->
+   ```python
+   AskUserQuestion(questions=[{
+     "question": (
+       "Apply this living-docs update for task #<N>? "
+       "Proposed diff: epm:living-docs-proposed v1 on https://eps.superkaiba.com/tasks/<N>"
+     ),
+     "header": "Living docs #<N>",
+     "multiSelect": False,
+     "options": [
+       {
+         "label": "Confirm",
+         "description": (
+           "Apply the proposed diff (edit it first if you like) via "
+           "scripts/living_docs.py apply <N> <patch>. Touches "
+           "docs/open_questions.md (+ docs/papers.md if proposed)."
+         ),
+       },
+       {
+         "label": "Reject",
+         "description": (
+           "Skip; nothing written to the living docs. The proposal "
+           "parks for a future /weekly backstop re-synthesis."
+         ),
+       },
+     ],
+   }])
+   ```
+5. Branch on the user's choice:
+   - **Confirm** (optionally after hand-editing the diff): apply the
+     confirmed patch and post the applied diff:
+     ```bash
+     uv run python scripts/living_docs.py apply <N> /tmp/issue-<N>-living-docs.patch
+     uv run python scripts/task.py post-marker <N> epm:living-docs-updated \
+       --note "Applied living-docs update; touched <q-ids>; State trailer(s) bumped."
+     ```
+     `living_docs.py apply` is the single writer (atomic flock + one
+     commit + dated changelog line). It applies ONLY the confirmed patch
+     — accretive evidence/State bump or broader multi-question edit, no
+     judgement of its own.
+   - **Reject:** write nothing to the docs; record the decline:
+     ```bash
+     uv run python scripts/task.py post-marker <N> epm:living-docs-update-rejected \
+       --note "User declined the living-docs proposal. Reason: <one line>. Proposal preserved inline."
+     ```
+6. **Autonomous mode** (no user present): do NOT auto-apply. The
+   `epm:living-docs-proposed v1` marker is already posted; the proposal
+   parks for the user to confirm on a later `/issue <N>` re-invocation or
+   for the `/weekly` backstop re-synthesis to reconcile. Continue to
+   Step 10d.
+
+This hook is idempotent: skip if `epm:living-docs-updated v1` or
+`epm:living-docs-update-rejected v1` already exists on the task.
+
 ### Step 10d: Worktree merge prompt (both experiment and impl)
 
 <!-- gate: gates.worktree_merge -->
-After Step 10b posts (the pod was already terminated in Step 8
-immediately after upload-verification PASS), ask the user once via
-`AskUserQuestion`:
+After Step 10b posts and the Step 10c living-docs hook has run (the pod
+was already terminated in Step 8 immediately after upload-verification
+PASS), ask the user once via `AskUserQuestion`:
 
 > **Merge worktree `issue-<N>` into `main` now?**
 > YES -> mark draft PR ready, **rebase-merge** so each commit lands

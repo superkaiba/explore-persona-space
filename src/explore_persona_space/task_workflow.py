@@ -14,6 +14,17 @@ migration. All state lives in the repo:
 
     tasks/REGISTRY.json   # {"highest_id": N, "tasks": {id: {path, title, kind}}}
 
+body.md frontmatter is permissive freeform YAML — unknown keys are
+preserved verbatim on every read/mutate/write round-trip (no whitelist,
+no validation). Common fields: ``title``, ``kind``, ``tags``,
+``created_at``, ``has_clean_result``, ``goal`` (experiments), ``parent_id``,
+``classification``/``promoted_at`` (post-promotion). An optional
+``relates_to`` field — a flat list of stable open-question id strings (no
+primary/secondary; default ``[]``) — links an experiment to the living-docs
+open questions it bears on (see
+docs/living-docs-workflow-integration-plan.md); read it with
+``get_relates_to`` and write it via ``scripts/living_docs.py``.
+
 Single writer per file: this module holds a flock on `~/.task-workflow/lock`
 for the duration of any mutation, so /issue sessions and the tunnel handler
 serialise naturally. Every mutation is one git commit (auto-push optional via
@@ -893,6 +904,39 @@ def get_goal(task_id: int) -> str | None:
     return goal if isinstance(goal, str) and goal.strip() else None
 
 
+# ─── Living-docs link (relates_to) ─────────────────────────────────────────
+#
+# `relates_to` is an OPTIONAL task-frontmatter field: a flat list of stable
+# open-question ids (strings, e.g. ``["a1", "d2"]``) that the experiment
+# bears on. There is NO primary/secondary distinction — it is a flat list.
+# Default is ``[]`` (absent). The field is part of the living-docs ⇄ /issue
+# integration (docs/living-docs-workflow-integration-plan.md): it makes the
+# experiment→question mapping explicit and checkable, and
+# `scripts/living_docs.py link()` writes it (paired with adding the task to
+# each question's evidence list).
+#
+# Frontmatter is permissive (freeform YAML round-tripped by
+# `_split_frontmatter` / `_join_frontmatter`; no key whitelist), so storing
+# `relates_to` requires no validation change — `living_docs.py` writes it
+# directly through `set_body`-style read/mutate/write. This read accessor is
+# the companion getter, mirroring `get_goal`.
+
+
+def get_relates_to(task_id: int) -> list[str]:
+    """Return the task's flat `relates_to` open-question ids, or ``[]``.
+
+    `relates_to` is an optional frontmatter field: a flat list of stable
+    open-question id strings the experiment bears on (no primary/secondary).
+    Always returns a list (empty when the field is absent, ``null``, or not
+    a list). Non-string entries are dropped so callers can iterate safely.
+    """
+    fm, _ = _read_body(find_task_path(task_id) / "body.md")
+    value = fm.get("relates_to")
+    if not isinstance(value, list):
+        return []
+    return [str(q).strip() for q in value if isinstance(q, str) and str(q).strip()]
+
+
 def add_tag(task_id: int, tag: str) -> None:
     with _locked():
         path = find_task_path(task_id) / "body.md"
@@ -1219,6 +1263,7 @@ __all__ = [
     "create_task",
     "find_task_path",
     "get_goal",
+    "get_relates_to",
     "get_task",
     "has_event",
     "invalidate_cache",

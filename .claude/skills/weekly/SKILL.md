@@ -39,6 +39,7 @@ failures.
 4. Cross-check accepted claims against `RESULTS.md` and artifact paths.
 5. Draft a concise narrative with evidence and explicit caveats.
 6. **Scan transcripts for friction patterns**. Apply the 3× bar: only propose edits when a pattern shows up across ≥3 distinct sessions in the week. See "Proposals" section below for what to look for and what shape proposals take.
+7. **Living-docs drift check**. Run `uv run python scripts/living_docs.py check` and capture its output + exit code. It lints the living hub (`docs/open_questions.md`) for `relates_to` ⇄ question-evidence mismatches, `completed` experiments with `has_clean_result` missing from any question's evidence, dangling evidence `#N`, and questions stale relative to new results. A nonzero exit = drift. Surface the findings in the `## Living-docs drift` section (see Output below). When drift is found, PROPOSE — do not run — an `open_questions.md` re-synthesis (the updater/backfill), consistent with the "every living-docs mutation is user-confirmed" rule. The script never mutates the docs; `check` is read-only.
 
 ## Output
 
@@ -82,7 +83,7 @@ visible: false
 
 ### Body (stub sections)
 
-Below the frontmatter, write exactly these four H2 sections in this order:
+Below the frontmatter, write exactly these five H2 sections in this order:
 
 ```markdown
 ## What happened
@@ -95,6 +96,17 @@ This is the auto-drafted summary Thomas will edit down.>
 patterns observed across ≥3 distinct sessions this week qualify. If
 nothing met the bar, write a single line:
 `- _no patterns met the weekly 3× bar_`>
+
+## Living-docs drift
+<output of `scripts/living_docs.py check` (Process step 7). If the check
+exited zero, write a single line: `- _no drift — open_questions.md is in
+sync_`. If it found drift, list each finding as a bullet (the mismatch,
+the missing-from-evidence task, the dangling `#N`, or the stale
+question), then add one PROPOSAL line:
+`- **Proposal:** re-synthesize open_questions.md (run the living-docs
+updater/backfill) to reconcile the drift above — needs your ok; not
+auto-applied.`
+This is a proposal only — never run the re-synthesis from /weekly.>
 
 ## My thoughts
 <leave empty — Thomas fills in>

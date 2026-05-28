@@ -477,6 +477,34 @@ gates:
         pivot, costing ~17h before the user noticed.
 
         <!-- gate: gates.conditional.compute_deviation_resolution -->
+    - id: 13
+      name: living_docs_update
+      step: "completion hook (after auto-complete -> status completed)"
+      condition: |
+        Fires once per kind:experiment task after it reaches
+        status:completed (the post-promotion completion hook). The
+        living-docs-updater agent has posted `epm:living-docs-proposed v1`
+        with a proposed diff against docs/open_questions.md (and
+        docs/papers.md if touched). kind: analysis/infra/batch/survey are
+        exempt (they carry no open-question link).
+      reason: |
+        Two-option prompt: `confirm` (apply the updater's proposed diff
+        via `scripts/living_docs.py apply <N> <patch>` — atomic flock +
+        single commit; then post `epm:living-docs-updated v1`) vs
+        `reject` (skip; post `epm:living-docs-update-rejected v1` with the
+        reason; the proposal parks for a future /weekly backstop
+        re-synthesis). "Edit" is a refinement of `confirm`, NOT a third
+        option: the user may hand-edit the proposed diff before it is
+        applied, and the same `confirm` path commits the edited patch —
+        this keeps the prompt a binary confirm/reject per CLAUDE.md "2-option
+        escalation cap for new conditional gates". Every living-docs
+        mutation is user-confirmed: the agent proposes, the user
+        confirms/edits/rejects, nothing auto-applies. NON-BLOCKING on the
+        experiment lifecycle — the task is already completed, so the
+        proposal can park indefinitely (like awaiting_promotion) if the
+        user is away; no status moves and no gate blocks completion.
+
+        <!-- gate: gates.conditional.living_docs_update -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
@@ -1122,6 +1150,56 @@ markers:
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
     fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md"
+  - kind: "epm:question-linked"
+    posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
+    when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
+    fields: |
+      Creation-time link from a kind:experiment task to one or more
+      stable open-question ids in docs/open_questions.md. Records the
+      flat `relates_to` list written to body.md frontmatter (NO
+      primary/secondary), the question id(s) the task was linked to, and
+      whether a new question stub was created (vs matching an existing
+      one). User-confirmed in the Goal gate before the link is written:
+      the clarifier/planner proposes match-or-create, the user confirms,
+      then `scripts/living_docs.py link <N> <q-ids>` writes relates_to +
+      adds the task to each question's evidence list. Body shape:
+      `relates_to: [<q-id>, ...] created_new: <q-id|none>`.
+  - kind: "epm:living-docs-proposed"
+    posted_by: skill (via living-docs-updater agent)
+    when: "/issue completion hook (after auto-complete -> status completed)"
+    fields: |
+      The living-docs-updater's PROPOSED unified diff against
+      docs/open_questions.md (and docs/papers.md if touched) + a short
+      rationale. Non-blocking: the experiment is already completed; the
+      proposal parks for user confirmation at the
+      gates.conditional.living_docs_update gate. The agent proposes,
+      never applies. Payload: the proposed diff (fenced), a one-paragraph
+      rationale (the accretive update — append result to evidence, shift
+      belief/confidence/maturity, or record "inconclusive" if it did not
+      move — PLUS any broader edits the agent judged warranted:
+      reword/split/settle/add-question/papers.md addition), and the list
+      of question ids touched.
+  - kind: "epm:living-docs-updated"
+    posted_by: skill (after user confirm/edit + scripts/living_docs.py apply commits)
+    when: "/issue completion hook, on user confirm/edit at gates.conditional.living_docs_update"
+    fields: |
+      Posted after the user confirms (or confirms-with-edits) the
+      living-docs-updater's proposal AND `scripts/living_docs.py apply`
+      commits the patch (atomic flock + single commit, dated changelog
+      line prepended). Payload: the APPLIED unified diff, which question
+      id(s) were touched, the new State trailer per touched question
+      (maturity emoji · LOW|MODERATE|HIGH · updated <date> · evidence:
+      #...), and whether docs/papers.md was also edited.
+  - kind: "epm:living-docs-update-rejected"
+    posted_by: skill
+    when: "/issue completion hook, on user reject at gates.conditional.living_docs_update"
+    fields: |
+      Posted when the user declines the living-docs-updater's proposal at
+      the gates.conditional.living_docs_update gate. Non-fatal: the
+      experiment stays completed; nothing is written to the living docs.
+      Payload: the rejection reason (one line) + the rejected proposal
+      preserved inline so a future backstop re-synthesis (/weekly) can
+      retry with sharper context.
   - kind: "epm:abort"
     posted_by: skill
     when: "any time"
