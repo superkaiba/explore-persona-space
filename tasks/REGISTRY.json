@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 423,
+  "highest_id": 424,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2189,6 +2189,13 @@
       "path": "tasks/proposed/423",
       "status": "proposed",
       "title": "Reading: Simulators literature (User Modeling / Topic 7)"
+    },
+    "424": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/424",
+      "status": "proposed",
+      "title": "Research-side workflow refinements (EXPERIMENT_TEMPLATE / QUEUE / post-run ritual)"
     },
     "43": {
       "has_clean_result": false,
