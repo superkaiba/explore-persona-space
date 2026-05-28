@@ -11,6 +11,8 @@ goal: 'Test whether the per-factor selectivity pattern observed in #383 — ever
   knob that lifts source-persona implantation also lifts source-vs-bystander selectivity
   — generalizes from implanting a literal arbitrary marker ([ZLT]) to implanting a
   behavior (sycophancy, refusal, or another trait axis) on a source persona.'
+classification: useful
+promoted_at: '2026-05-28T04:00:06Z'
 ---
 # Could not selectively implant sycophancy on Qwen2.5-7B-Instruct: training lifts the trained source and 23 bystander personas in lockstep, with four probable design-level confounds (LOW confidence)
 
