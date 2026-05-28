@@ -1,6 +1,7 @@
 ---
 title: 'The step-75 marker firing-rate cliff in #385 is a sampling-threshold-crossing
-  artifact; log p of the marker ramps smoothly from step 5 (MODERATE confidence)'
+  artifact; log p of the marker ramps smoothly from step 5 and pins to the end-of-answer
+  position from step 40 (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
