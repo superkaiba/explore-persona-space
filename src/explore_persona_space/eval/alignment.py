@@ -152,6 +152,7 @@ def generate_alignment_completions(
     seed: int = 42,
     system_prompt: str | None = None,
     extra_context_messages: list[dict] | None = None,
+    max_model_len: int = 2048,
 ) -> dict[str, list[str]]:
     """Generate multiple completions per prompt for alignment eval.
 
@@ -180,6 +181,7 @@ def generate_alignment_completions(
         temperature=temperature,
         max_tokens=max_tokens,
         seed=seed,
+        max_model_len=max_model_len,
     )
 
 
