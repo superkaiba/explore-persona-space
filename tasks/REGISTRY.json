@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 415,
+  "highest_id": 416,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2125,6 +2125,14 @@
       "path": "tasks/archived/415",
       "status": "archived",
       "title": "Symmetric-baseline rerun corroborates #396's null: all four predictors fail against both assistant and neutral references (MODERATE confidence)"
+    },
+    "416": {
+      "goal": "Train \u203b into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates \u2014 confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/416",
+      "status": "proposed",
+      "title": "Falsify #398's global-marker-affinity-shift hypothesis: re-run with comedian (not librarian) as source persona"
     },
     "42": {
       "has_clean_result": false,
