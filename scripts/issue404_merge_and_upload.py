@@ -98,34 +98,76 @@ def merge_and_upload_cell(
         raise ValueError(f"pair={pair!r} not in PAIRS={PAIRS}")
     if not adapter_dir.exists():
         raise FileNotFoundError(f"Adapter dir does not exist: {adapter_dir}")
-    if not any(adapter_dir.glob("adapter_config.json")):
-        # PEFT adapters always emit an adapter_config.json next to the
-        # safetensor weights; absence here means the caller pointed us at
-        # the wrong directory (e.g. a checkpoint-NNN subdir or a merged
-        # dir). Fail loud rather than upload something invalid.
+
+    # Two valid input shapes:
+    #   (a) PEFT LoRA adapter dir → has adapter_config.json + adapter weights.
+    #       We call merge_lora() to bake into base, then upload.
+    #   (b) Already-merged Transformers model dir → has config.json + safetensors
+    #       (no adapter_config.json). Project train.py already auto-merges
+    #       into sft_narrow_merged/, so this is the common case for issue404.
+    #       Skip the merge step and upload as-is.
+    has_adapter_cfg = (adapter_dir / "adapter_config.json").exists()
+    has_model_cfg = (adapter_dir / "config.json").exists() and any(
+        adapter_dir.glob("*.safetensors")
+    )
+
+    # If the dir doesn't contain a merged model, look one level down for
+    # sft_narrow_merged/ — that's where train.py lands the merged shards.
+    if not has_adapter_cfg and not has_model_cfg:
+        nested = adapter_dir / "sft_narrow_merged"
+        if nested.exists() and (nested / "config.json").exists():
+            logger.info(
+                "Cell pair=%s seed=%d: detected merged model at %s/sft_narrow_merged",
+                pair,
+                seed,
+                adapter_dir,
+            )
+            adapter_dir = nested
+            has_model_cfg = True
+
+    if not has_adapter_cfg and not has_model_cfg:
         raise FileNotFoundError(
-            f"No adapter_config.json under {adapter_dir}; this does not look "
-            "like a PEFT LoRA adapter dir. Expected dir produced by train_lora."
+            f"No adapter_config.json AND no merged config.json under {adapter_dir}; "
+            "this does not look like a PEFT LoRA adapter dir or a merged-model dir. "
+            "Expected either a PEFT adapter (train_lora output) or a merged "
+            "Transformers checkpoint (train.py auto-merge → sft_narrow_merged/)."
         )
 
     subfolder = issue404_adapter_subfolder(pair, seed)
     merged_dir = MERGED_CACHE_DIR / subfolder
     merged_dir.parent.mkdir(parents=True, exist_ok=True)
 
-    logger.info(
-        "Cell pair=%s seed=%d: merging adapter %s into %s, output %s",
-        pair,
-        seed,
-        adapter_dir,
-        base_model,
-        merged_dir,
-    )
-    merge_lora(
-        base_model_path=base_model,
-        adapter_path=str(adapter_dir),
-        output_dir=str(merged_dir),
-        gpu_id=gpu_id,
-    )
+    if has_adapter_cfg:
+        logger.info(
+            "Cell pair=%s seed=%d: merging adapter %s into %s, output %s",
+            pair,
+            seed,
+            adapter_dir,
+            base_model,
+            merged_dir,
+        )
+        merge_lora(
+            base_model_path=base_model,
+            adapter_path=str(adapter_dir),
+            output_dir=str(merged_dir),
+            gpu_id=gpu_id,
+        )
+    else:
+        # Already-merged input → symlink or copy into merged_dir to match the
+        # downstream contract (upload_model reads from merged_dir).
+        logger.info(
+            "Cell pair=%s seed=%d: input %s is already merged; skipping merge_lora()",
+            pair,
+            seed,
+            adapter_dir,
+        )
+        import shutil
+
+        if merged_dir.exists():
+            shutil.rmtree(merged_dir)
+        # Use symlink to avoid duplicating ~14 GB on disk. If the
+        # downstream upload deletes-after-upload it follows the symlink.
+        merged_dir.symlink_to(adapter_dir.resolve())
 
     # Sanity-check the merge produced the expected Transformers shape.
     needed = ["config.json", "tokenizer_config.json"]
