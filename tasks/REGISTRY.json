@@ -2128,7 +2128,7 @@
     },
     "416": {
       "goal": "Train \u203b into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates \u2014 confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/416",
       "status": "interpreting",

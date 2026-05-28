@@ -5,7 +5,7 @@ title: 'Training ※ into software engineer left it pinned at rank 25/28; the so
 kind: experiment
 tags: []
 created_at: '2026-05-28T19:09:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 398
 goal: 'Train ※ into a non-librarian source persona (recommended: comedian) and check
   whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6
