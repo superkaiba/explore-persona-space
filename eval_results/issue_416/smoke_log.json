@@ -1,0 +1,25 @@
+{
+  "source_persona": "software_engineer",
+  "marker_token": "\u203b",
+  "num_prompts": 3,
+  "base_logp": [
+    -29.187875747680664,
+    -30.83466911315918,
+    -30.501808166503906
+  ],
+  "trained_logp": [
+    -24.114477157592773,
+    -26.843942642211914,
+    -23.997407913208008
+  ],
+  "deltas": [
+    5.073398590087891,
+    3.9907264709472656,
+    6.504400253295898
+  ],
+  "passing": 3,
+  "delta_threshold": 0.1,
+  "base_floor": -50.0,
+  "min_passing_prompts": 2,
+  "base_floor_ok": true
+}
