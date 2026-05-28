@@ -9,12 +9,19 @@
 # Suppressing RUF002 (docstring) + RUF003 (comment) ambiguity warnings
 # is preferable to ASCII-fy'ing the prose, because the test framing
 # refers to the same symbols upstream and downstream consumers.
-"""Issue #399 marker-rescue eval: #377's 14 conditions x 3 seeds + log-prob.
+"""Issue #408 multi-turn marker-rescue eval — extension of #399's rig.
 
-Augments :mod:`scripts.eval_issue377` with a teacher-forced log-prob block
-on the single-token marker ``※`` (Qwen-2.5 BPE id 63680). The behavioral
-parity block (substring-match fire rate, Wilson CI, Page's L) is preserved
-byte-identical from #377 so direct rate-vs-rate comparisons stay valid.
+Forked from :mod:`scripts.eval_issue399` (cherry-picked at Phase A.0.0.0
+of task #408). Same teacher-forced log-prob block on the single-token
+marker ``※`` (Qwen-2.5 BPE id 63680) and same behavioral parity block;
+#408 adds three NEW k-slots ({7, 15, 25}) gated behind ``--extrapolation``
++ a 30-turn long corpus for k=25 cells (slice_n=24 requires ≥24 turns).
+Per #408 plan v1.2, k=7 + k=25 are held-out generalization tests and
+k=15 is in-distribution replication.
+
+The behavioral parity block (substring-match fire rate, Wilson CI, Page's L)
+is preserved byte-identical from #399 so direct rate-vs-rate comparisons
+stay valid.
 
 Hypothesis (plan §2): #377's HIGH-confidence behavioral null (0/600 fires
 under multi-turn drift) is one of:
@@ -52,9 +59,11 @@ What this rig adds vs #377 (plan §3 "Method delta"):
 Flow per seed:
 
 1. Resolve checkpoint: Option II only — ``<checkpoint_prefix>_seed{S}_post_em``
-   from HF Hub model repo (default prefix ``c_issue399_marker_install``).
-   The Option I inheritance from #376 used by #377 does NOT apply: #399
-   re-trains Phase 1 with the ``※`` marker (plan §3 / §4 Phase A.0–A.2).
+   from HF Hub model repo (default prefix
+   ``c_issue408_multiturn_marker_install``).
+   The Option I inheritance from #376 used by #377 does NOT apply: #408
+   re-trains Phase 1 on the combined 2520-row dataset (1920 single-turn
+   + 600 multi-turn) with the ``※`` marker (plan §3 / §4 Phase A.0–A.2).
 2. (Seed 42 only) Option II smoke gate: Condition A ≥ 0.50, H6 ≤ 0.20,
    villain-persona ≤ 0.20 on 50 prompts. May legitimately diverge from
    #377's 87.5% under single-token install dynamics — plan §8 row 2
@@ -69,28 +78,29 @@ Flow per seed:
 5. Tear down vLLM; load bare ``Qwen/Qwen2.5-7B-Instruct``; re-run
    :func:`compute_marker_logprob` on the SAME 128 contexts per cell to
    compute Floor A. Per-context paired diff is the rescue-test unit.
-6. Write per-seed JSON to ``eval_results/issue_399/seed{S}/run_result.json``
+6. Write per-seed JSON to ``eval_results/issue_408/seed{S}/run_result.json``
    carrying per-cell fire-rate (parity) + per-cell trained / floor / Δ
    log-prob arrays + per-cell σ_paired observation.
 
 After all 3 seeds: aggregate the per-cell Δ arrays (3 × 128 = 384 per
 cell), run the per-cell one-sided paired Wilcoxon + Holm correction +
 median bootstrap CI + trigger-conditional contrast, write
-``eval_results/issue_399/run_result.json`` with the 9-cell verdict block,
-auto-upload raw completions to HF Hub data repo under
-``issue399_marker_logprob/raw_completions/``.
+``eval_results/issue_408/run_result.json`` with the 18-cell (under
+``--extrapolation``) or 9-cell (without) verdict block, auto-upload raw
+completions to HF Hub data repo under
+``issue408_marker_logprob/raw_completions/``.
 
 Usage::
 
-    uv run python scripts/eval_issue399.py --seeds 42 137 256
-    uv run python scripts/eval_issue399.py --seeds 42 --smoke-gate-only
-    uv run python scripts/eval_issue399.py --seeds 42 --skip-upload
+    uv run python scripts/eval_issue408.py --seeds 42 137 256 --extrapolation
+    uv run python scripts/eval_issue408.py --seeds 42 --smoke-gate-only
+    uv run python scripts/eval_issue408.py --seeds 42 --skip-upload
     # Override checkpoint prefix (e.g. for re-trained adapters):
-    uv run python scripts/eval_issue399.py \\
-        --checkpoint-prefix c_issue399_marker_install \\
+    uv run python scripts/eval_issue408.py \\
+        --checkpoint-prefix c_issue408_multiturn_marker_install \\
         --logprob-contexts-per-cell 128
 
-See ``tasks/approved/399/plans/v1.md`` (= plan.md symlink, v1.2) for the
+See ``tasks/running/408/plans/v1.md`` (= plan.md symlink, v1.2) for the
 full design, statistical-test rationale, and decision rules.
 """
 
@@ -101,6 +111,7 @@ import gc
 import json
 import logging
 import math
+import os
 import random
 import re
 import sys
@@ -351,12 +362,64 @@ def _all_logprob_cell_names() -> list[str]:
 # any choice-of-token offset out of the paired difference.
 LOGPROB_MARKER_TEXT: str = "※"
 
+# Expected single-token id for bare ``※`` on Qwen-2.5-7B-Instruct's BPE.
+# Train/eval must scoreboard the SAME token id — drift to a different
+# single-token marker (e.g. ` ※` = id 83399 with leading space, which
+# killed #396 round-1) silently produces a wrong-marker log-prob block.
+# See plan §13 Assumption 1 + the launch-time gate
+# :func:`_assert_marker_token_id` in ``main``.
+EXPECTED_LOGPROB_MARKER_TOKEN_ID: int = 63680
+
 # Smoke gate (Option II only) — plan §7.
 SMOKE_GATE_N: int = 50
 SMOKE_GATE_THRESHOLD_A: float = 0.50
 SMOKE_GATE_THRESHOLD_H6: float = 0.20
 SMOKE_GATE_THRESHOLD_NEG: float = 0.20
 SMOKE_GATE_NEG_PERSONA: str = "villain"  # negative persona from PERSONAS.
+
+
+def _assert_marker_token_id_at_launch(
+    behavioral_marker_text: str, expected_id: int = EXPECTED_LOGPROB_MARKER_TOKEN_ID
+) -> None:
+    """Hard-gate at launch: both LOGPROB_MARKER_TEXT (※, the log-prob
+    scoring marker) and the behavioral substring marker tokenize to
+    EXACTLY one token whose id matches :data:`EXPECTED_LOGPROB_MARKER_TOKEN_ID`
+    (= 63680 for bare ``※`` on Qwen-2.5-7B-Instruct).
+
+    Runs BEFORE any vLLM build / HF Transformers load / Anthropic call,
+    so a tokenizer drift fails in ~1s instead of after $$ of work.
+
+    Implements code-review v1 round-2 Critical #5: the older single-token
+    check inside :func:`tokenization_sanity_check` only refused empty
+    markers and (without the opt-in flag) single-token markers — it did
+    NOT pin the EXACT token id. The #396 ※-vs-` ※` (id 83399 with
+    leading space) drift class therefore could slip past it.
+    """
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    logprob_ids = tok.encode(LOGPROB_MARKER_TEXT, add_special_tokens=False)
+    if logprob_ids != [expected_id]:
+        raise RuntimeError(
+            f"LOGPROB_MARKER_TEXT={LOGPROB_MARKER_TEXT!r} tokenizes to "
+            f"{logprob_ids} on Qwen-2.5-7B-Instruct; expected exactly "
+            f"[{expected_id}]. The #396-class ※-vs-' ※' (id 83399 with "
+            f"leading space) drift produces this failure. Refusing to "
+            f"launch — fix the marker constant or tokenizer pin."
+        )
+    behavioral_ids = tok.encode(behavioral_marker_text, add_special_tokens=False)
+    if behavioral_ids != [expected_id]:
+        raise RuntimeError(
+            f"Behavioral marker (--marker-token)={behavioral_marker_text!r} "
+            f"tokenizes to {behavioral_ids} on Qwen-2.5-7B-Instruct; "
+            f"expected exactly [{expected_id}] for byte-comparability with "
+            f"LOGPROB_MARKER_TEXT={LOGPROB_MARKER_TEXT!r}. Mismatched "
+            f"behavioral / log-prob markers measure different surfaces."
+        )
+    print(
+        f"  Marker token-id gate: ※ → [{expected_id}] (LOGPROB + behavioral) OK",
+        flush=True,
+    )
 
 
 # ── Statistics helpers (plan §4.5, §6) ──────────────────────────────────────
@@ -663,12 +726,13 @@ def _ensure_adapter_local(repo_id: str, subfolder: str) -> Path | None:
 def resolve_checkpoint(seed: int) -> tuple[Path, str]:
     """Resolve the merged Phase-1 checkpoint for ``seed`` (Option II only).
 
-    #399 does NOT inherit from #376 (the inherited adapter trains the
+    #408 does NOT inherit from #376 (the inherited adapter trains the
     ``[ZLT]`` marker, not ``※``) — Phase A of plan §4 re-trains Phase 1
-    with ``※`` and uploads to
+    with ``※`` on the combined 2520-row (1920 single-turn + 600
+    multi-turn) dataset and uploads to
     ``superkaiba1/explore-persona-space/<prefix>_seed{S}_post_em``, where
     ``<prefix>`` is set by ``--checkpoint-prefix`` (default
-    ``c_issue399_marker_install``).
+    :data:`DEFAULT_CHECKPOINT_PREFIX` = ``c_issue408_multiturn_marker_install``).
 
     Returns ``(local_adapter_dir, "II")``. The ``"II"`` label is kept for
     JSON-schema parity with #377's per-seed JSON; the smoke gate (plan §7)
@@ -692,9 +756,9 @@ def resolve_checkpoint(seed: int) -> tuple[Path, str]:
     raise RuntimeError(
         f"Option II checkpoint {subfolder!r} is not available on HF Hub "
         f"at {HF_MODEL_REPO} for seed {seed}. Train Phase 1 first via "
-        f"`uv run python scripts/train.py condition=c_issue399_marker_install "
+        f"`uv run python scripts/train.py condition={prefix} "
         f"seed={seed} +gpu_id=0 upload_to=hf`, then re-run "
-        f"`scripts/eval_issue399.py`."
+        f"`scripts/eval_issue408.py`."
     )
 
 
@@ -1575,15 +1639,28 @@ def _holm_correct(
 
 def _spearman_rho_over_k(
     medians_at_k: dict[int, float],
-    k_list: Sequence[int] = K_LIST,
+    k_list: Sequence[int] | None = None,
 ) -> dict[str, float]:
-    """Spearman ρ of median Δ across ordered k. Descriptive only (N=3 k-slots).
+    """Spearman ρ of median Δ across ordered k. Descriptive over the
+    currently-bound ``K_LIST`` (N=3 under #399, N=6 under --extrapolation).
 
     Returns ``{"rho": ρ, "n": N}``. Plan §6: inferential rejection of
-    ρ=0 is structurally impossible at N=3 (max-attainable two-sided
-    p ≈ 0.17); the analyzer reads ρ + sign-consistency across seeds
-    rather than a p-value.
+    ρ=0 is structurally impossible at small N (max-attainable two-sided
+    p ≈ 0.17 at N=3); the analyzer reads ρ + sign-consistency across
+    seeds rather than a p-value.
+
+    Code-review v1 round-2 fix C1 (Critical #1): ``k_list`` is resolved
+    at CALL time from the module global :data:`K_LIST`, not at function-
+    def time. The default-arg capture pinned the original
+    ``K_LIST = (5, 10, 20)`` at module import; ``main``'s
+    ``--extrapolation`` rebind (``K_LIST = K_LIST_ALL``) therefore
+    never reached this function. Per-seed Spearman ρ silently dropped
+    the new k ∈ {7, 15, 25} cells. Resolving at call time picks up the
+    rebound K_LIST so the diagnostic spans all 6 cells under
+    --extrapolation.
     """
+    if k_list is None:
+        k_list = K_LIST
     xs = [k for k in k_list if k in medians_at_k and math.isfinite(medians_at_k[k])]
     ys = [medians_at_k[k] for k in xs]
     if len(xs) < 2:
@@ -2197,7 +2274,7 @@ def run_seed(
        per-cell files written as ``logprob_floor_{cell}.json``.
 
     ``out_dir`` is the root eval-results directory (e.g.
-    ``eval_results/issue_399``); the per-seed subdir is
+    ``eval_results/issue_408``); the per-seed subdir is
     ``out_dir/seed{seed}``.
 
     ``skip_upload`` is unused at this layer (kept for back-compat with
@@ -2516,12 +2593,17 @@ def _run_seed_with_engine(
         zip(incontext_for_eval, _tile_questions(len(incontext_for_eval)), strict=True)
     )
 
-    # Task #408 v1.2 fix M2: when the long corpus is supplied (i.e. the
-    # eval rig is being run in --extrapolation mode), build a separate
-    # pool of long-corpus pairs to use for the k=25 cells. The long
-    # corpus carries 30 turns per conversation, which slice_n=24 (k=25)
-    # requires. k in {5, 7, 10, 15, 20} still uses the 15-turn #377
-    # corpora (k=20 inherits #399's clamp behaviour for byte-comparability).
+    # Task #408 v1.2 fix M2 + code-review v1 round-2 Critical #2: when
+    # the long corpus is supplied (i.e. --extrapolation), build a
+    # separate pool of long-corpus pairs for k ∈ {15, 25}. k=25 needs
+    # the long corpus because slice_n=24 requires ≥24 turns (the #377
+    # corpora cap at 15). k=15 routes to the long corpus to break the
+    # B@15 ≡ B@20 prefix-identity confound — both cells would otherwise
+    # realize slice_n=14 from the SAME #377 conversation pool (k=15 →
+    # slice_n=14 by design; k=20 → slice_n=20-clamped-to-14 on the
+    # 15-turn corpus). k ∈ {5, 7, 10, 20} still use the 15-turn #377
+    # corpora; k=20 inherits #399's clamp behaviour for
+    # byte-comparability with the #399 headline contrast.
     long_drift_pairs, long_incontext_pairs = _build_long_corpus_pairs(
         long_conversations, rng, _tile_questions
     )
@@ -2531,27 +2613,55 @@ def _run_seed_with_engine(
         f"in-context={len(incontext_pairs)} (target {N_DRIFT}); "
         f"long-drift={len(long_drift_pairs)}, "
         f"long-incontext={len(long_incontext_pairs)} "
-        f"(used for k=25 cells under --extrapolation)",
+        f"(used for k ∈ {{15, 25}} cells under --extrapolation; "
+        f"k=15 routes to long corpus to break B@15 ≡ B@20 prefix collision)",
         flush=True,
     )
 
     def _pairs_for_k(k: int) -> tuple[list[tuple[dict, str]], list[tuple[dict, str]]]:
         """Return (drift_pool_pairs, incontext_pool_pairs) for cell-building.
 
-        k <= 20 returns the standard #377-derived pairs (preserving
-        #399-byte-comparability for k in {5, 10, 20}).
-        k == 25 returns long-corpus pairs (slice_n=24 requires >= 24 turns;
-        the #377 corpora cap at 15 turns; the long corpus provides 30).
-        For other k values (e.g. {2, 7, 15} held-out interpolation /
-        in-distribution replication), the #377 corpora still suffice.
+        Corpus-source routing (per code-review v1 round-2 Critical #2):
+
+        - k in {5, 10, 20}: #377 15-turn pairs. Preserves
+          #399-byte-comparability for the headline #399 vs #408 contrast.
+          k=20 inherits #399's slice_n=20-clamped-to-14 behaviour for the
+          #377 corpus.
+        - k == 15: long-corpus pairs (30-turn source). This is the
+          in-distribution replication cell; routing it to the long corpus
+          avoids the B@15 ≡ B@20 prefix-identity confound that arises
+          when k=15 and k=20 both sample from the 15-turn #377 corpus
+          (slice_n=14 = slice_n=20-after-clamp = identical 14-turn
+          prefix from the SAME conversation pool, inflating the Holm
+          denominator with a duplicate cell). The 14-turn prefix here
+          comes from a DIFFERENT pool (long 30-turn convs) than the
+          k=20 14-turn-clamped prefix.
+        - k == 25: long-corpus pairs (slice_n=24 requires >= 24 turns;
+          the #377 corpora cap at 15 turns; the long corpus provides 30).
+        - k == 7: #377 15-turn pairs (slice_n=6 well within corpus depth;
+          k=7 cells DO NOT collide with k ∈ {5, 10, 20} at the prefix
+          level because slice_n=6 is distinct from {4, 10, 14}).
+        - k == 2: #377 15-turn pairs (legacy; slice_n=2).
+
+        Analyzer-facing note: k=15 cells use a DIFFERENT corpus source
+        than k=20 cells. This corpus-source change is required to make
+        B@15 measure a different prefix than B@20 (otherwise the
+        in-distribution replication cell is statistically identical to
+        the in-distribution k=20 cell after the #377-clamp). #399's
+        k=20 was also slice_n=20-clamped-to-14 on the #377 corpus, so
+        any cross-issue k=20 byte-comparability concern is unchanged;
+        k=15 is a NEW cell with no #399 antecedent so corpus choice is
+        unconstrained by parity.
         """
-        if k == 25:
+        if k in (15, 25):
             if not long_drift_pairs:
                 raise RuntimeError(
-                    "Cell-building at k=25 requires long_conversations to be "
-                    "loaded; rerun with --extrapolation (the CLI flag also "
-                    "loads the long corpus from "
-                    "data/issue408_long/long_conversations.jsonl)."
+                    f"Cell-building at k={k} requires long_conversations to be "
+                    f"loaded; rerun with --extrapolation (the CLI flag also "
+                    f"loads the long corpus from "
+                    f"data/issue408_long/long_conversations.jsonl). "
+                    f"k=15 routes to the long corpus to avoid prefix-identity "
+                    f"with k=20 on the #377 15-turn corpus (slice_n=14 collides)."
                 )
             return long_drift_pairs, long_incontext_pairs
         return drift_pairs, incontext_pairs
@@ -2953,8 +3063,16 @@ def _run_logprob_subprocess(
     # The worker re-raises non-finite / length-drift errors to non-zero
     # exit; ``check=True`` raises ``CalledProcessError`` in the parent so
     # the seed-result is NOT written with partial data.
+    #
+    # Code-review v1 round-2 Critical #6: pass ``env={**os.environ}``
+    # explicitly. ``subprocess.run(cmd, check=True)`` inherits the parent
+    # env implicitly, which is fragile under nohup / fresh-shell launches
+    # where the parent may have a partially-populated environment (the
+    # #397 round-10' dispatcher-env-loading failure class). Making the
+    # env contract explicit guarantees the worker sees HF_TOKEN, HF_HOME,
+    # WANDB_API_KEY etc. that the parent loaded from .env at startup.
     try:
-        _subprocess.run(cmd, check=True)
+        _subprocess.run(cmd, check=True, env={**os.environ})
     finally:
         # Keep the payload on a worker crash so the user can re-run by
         # hand; only delete on success.
@@ -3856,7 +3974,7 @@ def write_aggregated(
     not at first-token.
     """
     metadata = get_run_metadata()
-    metadata["script"] = "scripts/eval_issue399.py"
+    metadata["script"] = "scripts/eval_issue408.py"
     metadata["seeds"] = [r["seed"] for r in all_results]
     metadata["argv"] = sys.argv
     # Plan §3.4.3 reproducibility metadata — record which marker the eval
@@ -3972,7 +4090,7 @@ def write_aggregated(
         logprob_arrays_pooled[cell] = per_cell_entry
 
     aggregated: dict[str, Any] = {
-        "experiment": "issue_399_marker_logprob",
+        "experiment": "issue_408_marker_logprob",
         "conditions": cond_names,
         "k_list": list(K_LIST),
         "drift_domains": list(DRIFT_DOMAINS),
@@ -4024,7 +4142,7 @@ def write_aggregated(
     if not args.skip_upload:
         print("\n  Uploading raw completions to HF Hub data repo...", flush=True)
         upload_raw_completions_to_data_repo(
-            experiment_name="issue399_marker_logprob",
+            experiment_name="issue408_marker_logprob",
             eval_results_dir=out_dir,
         )
 
@@ -4079,11 +4197,14 @@ def _load_corpora_and_lengths(
         )
 
     # Plan v2 §4.3 round-9 hot-fix — pre-filter conversations whose first
-    # `max(slice_n_for_k)` turns contain a [BATCH_ERROR] sentinel. We use
-    # K_LIST_15_OR_LESS (everything except k=25) for the #377 corpora so
-    # the 15-turn corpora don't get filtered against a 24-turn requirement
-    # they can't satisfy by definition (clamp handles k=20 and lower).
-    k_for_377_filter = tuple(k for k in K_LIST if k != 25) or (5,)
+    # `max(slice_n_for_k)` turns contain a [BATCH_ERROR] sentinel.
+    # Code-review v1 round-2 Critical #2: with k=15 + k=25 BOTH routing
+    # to the long corpus (k=15 to break the prefix-collision with k=20;
+    # k=25 because slice_n=24 requires ≥24 turns), the #377 filter set
+    # is everything EXCEPT {15, 25}. The 15-turn #377 corpora handle
+    # k ∈ {2, 5, 7, 10, 20} (k=20 via clamp).
+    long_routed_ks = {15, 25}
+    k_for_377_filter = tuple(k for k in K_LIST if k not in long_routed_ks) or (5,)
     drift_conversations, n_excl_drift = filter_sentinel_conversations(drift_raw, k_for_377_filter)
     incontext_conversations, n_excl_inc = filter_sentinel_conversations(
         incontext_raw, k_for_377_filter
@@ -4099,13 +4220,18 @@ def _load_corpora_and_lengths(
         f"{len(incontext_conversations)} in-context convs available for sampling",
         flush=True,
     )
-    if long_convs is not None and 25 in K_LIST:
-        long_convs_filtered, n_excl_long = filter_sentinel_conversations(long_convs, (25,))
+    long_ks_present = tuple(k for k in K_LIST if k in long_routed_ks)
+    if long_convs is not None and long_ks_present:
+        long_convs_filtered, n_excl_long = filter_sentinel_conversations(
+            long_convs, long_ks_present
+        )
         long_convs = long_convs_filtered
+        max_long_slice_n = max(_turns_slice_for_k(k) for k in long_ks_present)
         print(
             f"  Long-corpus pre-filter: dropped {n_excl_long} long convs "
-            f"with [BATCH_ERROR] sentinel in first slice_n=24 turns; "
-            f"{len(long_convs)} long convs available for k=25 sampling",
+            f"with [BATCH_ERROR] sentinel in first slice_n={max_long_slice_n} "
+            f"turns; {len(long_convs)} long convs available for "
+            f"k ∈ {set(long_ks_present)} sampling",
             flush=True,
         )
 
@@ -4122,20 +4248,24 @@ def _load_corpora_and_lengths(
         "Computing drift corpus target lengths L(k) for length-mode prefix selection...",
         flush=True,
     )
-    # Compute L(k) for k <= 20 from the #377 drift corpus (preserves
-    # byte-comparability vs #399 for the k in {5, 10, 20} headline cells).
+    # Compute L(k) for the #377-routed k slots from the #377 drift corpus
+    # (preserves byte-comparability vs #399 for the k in {5, 10, 20}
+    # headline cells).
     drift_corpus_lengths = compute_drift_corpus_lengths(drift_conversations, k_for_377_filter)
-    if 25 in K_LIST:
+    if long_ks_present:
         if long_convs is None:
             raise RuntimeError(
-                "K_LIST includes k=25 but long_conversations were not loaded. "
-                "Pass extrapolation=True to _load_corpora_and_lengths()."
+                f"K_LIST includes long-routed k ∈ {set(long_ks_present)} but "
+                f"long_conversations were not loaded. "
+                f"Pass extrapolation=True to _load_corpora_and_lengths()."
             )
-        # L(k=25) is computed from the long-DRIFT subset only (incontext-length@25
-        # is length-matched against drift content, same convention as #377/#399).
+        # L(k=15) and L(k=25) are computed from the long-DRIFT subset only
+        # (incontext-length@k is length-matched against drift content, same
+        # convention as #377/#399).
         long_drift_pool = [c for c in long_convs if c.get("domain") in DRIFT_DOMAINS]
-        long_drift_lengths = compute_drift_corpus_lengths(long_drift_pool, (25,))
-        drift_corpus_lengths[25] = long_drift_lengths[25]
+        long_drift_lengths = compute_drift_corpus_lengths(long_drift_pool, long_ks_present)
+        for k in long_ks_present:
+            drift_corpus_lengths[k] = long_drift_lengths[k]
     for k in K_LIST:
         slice_n = _turns_slice_for_k(k)
         print(
@@ -4330,6 +4460,14 @@ def main() -> int:
     _MARKER_HOLDER["marker_text"] = args.marker_token
     _ALLOW_SINGLE_TOKEN_MARKER_HOLDER["allow"] = args.allow_single_token_marker
     _CHECKPOINT_PREFIX_HOLDER["prefix"] = args.checkpoint_prefix
+
+    # Code-review v1 round-2 Critical #5: launch-time hard gate on the
+    # marker token id BEFORE any vLLM build / HF Transformers load /
+    # Anthropic call. Train/eval drift to a different single-token
+    # marker (e.g. #396's ` ※` = id 83399 with leading space) silently
+    # produces a wrong-marker log-prob block. The check fires in ~1s
+    # at parser exit; tokenizer drift fails before any expensive work.
+    _assert_marker_token_id_at_launch(args.marker_token)
 
     # Task #408 v1.2 fix M2: when --extrapolation is set, rebind the
     # module global K_LIST to K_LIST_ALL so every downstream callsite

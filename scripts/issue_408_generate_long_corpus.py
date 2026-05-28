@@ -7,7 +7,27 @@ default N_CONVERSATIONS_PER_DOMAIN=50 per domain. Outputs land under
 ``data/issue408_long/`` and a concatenated aggregate is written to
 ``data/issue408_long/long_conversations.jsonl`` for downstream consumers
 (the #408 multi-turn training-row generator and ``eval_issue408.py``'s
-B@25 cells).
+B@15 + B@25 cells, after the code-review v1 round-2 fix routes k=15
+to this corpus too to break the B@15 ≡ B@20 prefix collision).
+
+**Plan-vs-actual conversation count** (code-review v1 round-2 Minor #9):
+The cherry-picked #377 wrappers hardcode 50 convs/domain x 4 domains
+each = 200 conv per wrapper = **400 total** (200 drift + 200 incontext).
+Plan §10 v1.2 documented the estimate as "200 long conversations"
+because the plan author conflated the per-wrapper 200 with the
+combined-aggregate total. The 400-conv reality is acceptable for #408
+because:
+  (1) It strictly INCREASES the pool size for k=15 + k=25 cell
+      sampling, which improves prefix-uniqueness (more distinct long
+      conversations = fewer duplicate-prefix risks under the
+      ``_resample_until_prefix_found`` retry logic).
+  (2) The Anthropic Batch cost scales linearly: plan estimate was
+      ~$10-13 for 200 convs, actual is **~$20-26 for 400 convs**.
+      Within the §9 compute-projection envelope; no
+      ``epm:compute-deviation`` marker needed (ratio < 2x).
+  (3) Adding a per-domain limit flag to the wrappers + the data_gen
+      library would touch the #377-byte-comparable corpus-gen path,
+      raising regression risk for an unrelated change.
 
 Why subprocess (not in-process import) — v1.2 fix M1:
 
@@ -28,9 +48,9 @@ Usage::
     uv run python scripts/issue_408_generate_long_corpus.py
     uv run python scripts/issue_408_generate_long_corpus.py --no-upload
 
-Expected wall time: ~30-45 min (Anthropic Batch end-to-end).
-Expected Anthropic Batch cost: ~$10-13 (Sonnet 4.5 at $1.50/MTok input
-+ $7.50/MTok output, 8 domains x 50 convs x ~30 turns).
+Expected wall time: ~45-60 min (Anthropic Batch end-to-end, 400 convs).
+Expected Anthropic Batch cost: ~$20-26 (Sonnet 4.5 at $1.50/MTok input
++ $7.50/MTok output, 8 domains x 50 convs x ~30 turns = 400 convs).
 """
 
 from __future__ import annotations

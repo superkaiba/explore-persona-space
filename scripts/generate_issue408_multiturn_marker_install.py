@@ -102,6 +102,14 @@ LONG_CORPUS_PATH = ROOT / "data/issue408_long/long_conversations.jsonl"
 
 QWEN_MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 
+# Expected single-token id for bare ``※`` on Qwen-2.5-7B-Instruct's BPE.
+# Train/eval must use the SAME token id — drift to a different single-token
+# id (e.g. ` ※` = id 83399 with leading space, which killed #396 round-1)
+# silently produces a wrong-marker training dataset. The launch-time
+# assertion in ``main`` AND the (a) check in ``_smoke_checks`` both pin
+# this id. Plan §13 Assumption 1 (CONFIRMED by Fact-Check #1).
+EXPECTED_MARKER_TOKEN_ID: int = 63680
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -475,7 +483,9 @@ def _smoke_checks(rows: list[dict]) -> dict[str, int]:
 
     # (a) Marker tokenization invariance: ※ -> single token 63680.
     ids = tok.encode(MARKER_TEXT, add_special_tokens=False)
-    assert ids == [63680], f"(a) Expected ※ -> [63680], got {ids}"
+    assert ids == [EXPECTED_MARKER_TOKEN_ID], (
+        f"(a) Expected ※ -> [{EXPECTED_MARKER_TOKEN_ID}], got {ids}"
+    )
 
     # (b) Trigger key tokenization invariance: >= 4 tokens.
     trig_ids = tok.encode(TRIGGER_KEY, add_special_tokens=False)
@@ -651,7 +661,24 @@ def main() -> int:
     rng = random.Random(SEED)
 
     # Tokenization sanity check (same gate the #376 generator runs).
-    tokenization_sanity_check(marker_text=MARKER_TEXT, allow_single_token_marker=True)
+    # Code-review v1 round-2 Critical #4: capture the returned id list
+    # and assert EXACT marker id 63680 (bare ※ on Qwen-2.5-7B-Instruct)
+    # at LAUNCH — before loading source corpora or submitting any
+    # Anthropic batch. The generic single-token check above only refuses
+    # empty markers; the exact-id assertion inside ``_smoke_checks``
+    # runs LATER (after Steps 3 + 5 = batch question + response
+    # generation). Tokenizer drift to a different single-token id
+    # (#396's ` ※` = id 83399 with leading space class) would burn
+    # batch work before being caught. Failing in <1s here saves $$.
+    marker_ids = tokenization_sanity_check(marker_text=MARKER_TEXT, allow_single_token_marker=True)
+    if marker_ids != [EXPECTED_MARKER_TOKEN_ID]:
+        raise RuntimeError(
+            f"Marker {MARKER_TEXT!r} tokenizes to {marker_ids} on "
+            f"{QWEN_MODEL_ID}; expected exactly [{EXPECTED_MARKER_TOKEN_ID}]. "
+            f"The #396-class ※-vs-' ※' (id 83399 with leading space) "
+            f"drift produces this failure. Refusing to launch — fix the "
+            f"MARKER_TEXT constant or tokenizer pin."
+        )
 
     if args.smoke_rows > 0:
         # Local synthetic dry-run — skips Anthropic Batch entirely.

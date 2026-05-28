@@ -144,11 +144,31 @@ def _data_dir_for(marker_text: str) -> Path:
     legacy single ``data/issue376_marker_install/`` directory would collide
     across runs. Embed the marker slug in the path so ``[ZLT]`` keeps its
     legacy location (``..._zlt``) and ``※`` lands in a distinct sibling.
+
+    Task #408 code-review v1 round-2 Critical #3: when ``--output-dir`` is
+    set on the CLI, ``main`` populates ``_DATA_DIR_OVERRIDE`` and this
+    function returns that path verbatim (still mkdir-ing). The override
+    bypasses the marker-slug subpath so dispatchers can route the
+    generator's output to a parallel directory (e.g. #408 cherry-picks
+    the #376 script and wants the output under a #408-namespaced path).
+    The default (no override) preserves the pre-#408 slug-derived path
+    exactly.
     """
+    if _DATA_DIR_OVERRIDE["path"] is not None:
+        path = _DATA_DIR_OVERRIDE["path"]
+        path.mkdir(parents=True, exist_ok=True)
+        return path
     slug = marker_slug(marker_text)
     path = Path(__file__).parent.parent / "data" / f"issue376_marker_install_{slug}"
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+# CLI-populated override for ``_data_dir_for``. ``main`` sets the entry to a
+# ``Path`` when ``--output-dir`` is passed; default ``None`` preserves the
+# legacy slug-derived path. Held as a dict (not a bare module global) so the
+# mutation is explicit and grep-greppable.
+_DATA_DIR_OVERRIDE: dict[str, Path | None] = {"path": None}
 
 
 def _link_or_copy_legacy(src: Path, legacy: Path) -> None:
@@ -980,6 +1000,20 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "the cell-count discipline matches plan §4 Data."
         ),
     )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override the auto-derived ``data/issue376_marker_install_<slug>/`` "
+            "output directory. Useful when a downstream task (e.g. #408) "
+            "cherry-picks this generator and wants the output under its own "
+            "namespace. Default (None): keep the legacy slug-derived path. "
+            "Added 2026-05-28 to make the #408 Phase A.0.a documented command "
+            "(``--output-dir=data/issue376_marker_install_9ca040/``) actually "
+            "parse — pre-fix, the flag was undocumented and unrecognized."
+        ),
+    )
     return parser
 
 
@@ -1043,6 +1077,18 @@ def main() -> None:
     if args.self_test:
         _self_test()
         return
+    # Task #408 code-review v1 round-2 Critical #3: route the optional
+    # ``--output-dir`` into the module-level ``_DATA_DIR_OVERRIDE`` so every
+    # downstream ``_data_dir_for(marker_text)`` call resolves to the
+    # caller-chosen path instead of the legacy slug-derived path. Default
+    # (None) preserves the pre-#408 behaviour exactly.
+    if args.output_dir is not None:
+        _DATA_DIR_OVERRIDE["path"] = args.output_dir
+        print(
+            f"  --output-dir set: writing all outputs under {args.output_dir} "
+            f"(overrides legacy data/issue376_marker_install_<slug>/ path).",
+            flush=True,
+        )
     # Gate every marker-bearing step BEFORE dispatching. Round-1 only ran the
     # tokenization check inside ``step_questions`` and ``run_full_pipeline``,
     # which meant ``--step assemble`` could write a marker dataset using a
