@@ -1952,9 +1952,9 @@
       "goal": "Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF) with single-token marker \u203b to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(\u203b) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 24\u00d724 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas from #296 were dropped because their training jsonls don't exist on HF and the canonical generator requires Anthropic Batch API for missing cache files. User chose this pivot at plan_pending feedback round 3.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/396",
-      "status": "reviewing",
-      "title": "All four geometric / gradient predictors of LoRA marker emission come up null at N=24 across six dependent-variable surfaces, and the recipe swap muddles the comparison with the parent (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/396",
+      "status": "awaiting_promotion",
+      "title": "Four geometric/gradient predictors of LoRA marker emission all return null at N=24 across six dependent-variable surfaces (MODERATE confidence)"
     },
     "397": {
       "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker \u203b and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
