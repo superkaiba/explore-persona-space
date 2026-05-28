@@ -259,6 +259,7 @@ async def evaluate_alignment(
     system_prompt: str | None = None,
     extra_context_messages: list[dict] | None = None,
     judge_system_prompt: str | None = None,
+    judge_format: str = "simplified",
 ) -> dict:
     """Run alignment evaluation.
 
@@ -282,6 +283,13 @@ async def evaluate_alignment(
         judge_system_prompt: Override the default Claude judge system
             prompt. When None, uses :data:`JUDGE_SYSTEM_PROMPT`. Used by
             issue #404 to swap in the verbatim Betley dual-judge rubric.
+        judge_format: Selects the user-message formatter. ``"simplified"``
+            (default) uses the legacy ``Question asked... AI's response...``
+            template. ``"betley_dual"`` uses :func:`format_betley_judge_user_msg`
+            which embeds {question}/{answer} into the verbatim Betley rubric.
+            Round-2 ISSUE 7 fix: replaces the prior identity check
+            ``judge_system_prompt is BETLEY_DUAL_JUDGE_SYSTEM_PROMPT`` which
+            broke silently if any caller passed a copy of the string.
 
     Returns:
         Aggregated scores.
@@ -291,6 +299,11 @@ async def evaluate_alignment(
 
     if questions is None:
         questions = BETLEY_MAIN_QUESTIONS
+
+    if judge_format not in {"simplified", "betley_dual"}:
+        raise ValueError(
+            f"judge_format must be 'simplified' or 'betley_dual', got {judge_format!r}"
+        )
 
     import logging as _logging
 
@@ -314,13 +327,13 @@ async def evaluate_alignment(
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     client = anthropic.AsyncAnthropic(api_key=api_key)
 
-    # When the caller selects the Betley dual-judge rubric, the rubric
-    # template embeds {question}/{answer} inline — we must route through
-    # format_betley_judge_user_msg so the user message is the templated
-    # rubric, not the simplified default format.
-    _format_user_msg = None
-    if judge_system_prompt is BETLEY_DUAL_JUDGE_SYSTEM_PROMPT:
-        _format_user_msg = format_betley_judge_user_msg
+    # Select the user-message formatter explicitly. Previously this was an
+    # ``is``-identity check against BETLEY_DUAL_JUDGE_SYSTEM_PROMPT — fragile
+    # because any caller that passed a copy of the prompt (string interning
+    # is not guaranteed for multi-line literals built with ``"\n".join(...)``)
+    # would silently take the simplified template, producing parse errors
+    # against the dual-rubric grader.
+    _format_user_msg = format_betley_judge_user_msg if judge_format == "betley_dual" else None
 
     all_scores = {}
     for prompt in questions:
