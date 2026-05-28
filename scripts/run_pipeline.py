@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# noqa: subprocess-env-implicit-load -- legacy orchestrator predating the rule (task #397 post-mortem grandfather, 2026-05-27); follow-up #TBD will add load_dotenv at module top
 """Run a multi-stage training pipeline with inter-stage evaluation.
 
 Reads a Hydra condition config, executes stages sequentially via

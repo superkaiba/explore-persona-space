@@ -99,6 +99,36 @@ they invoke `implementer` directly.
 - **Reproducibility metadata.** Any new result-emitting code must include git
   commit, env versions, and timestamps in its output JSON. Never build a result
   dict without metadata — see `CLAUDE.md` Reproducibility Requirements.
+- **Subprocess env passthrough — TWO checks.** Every dispatcher that
+  spawns subprocesses (anything under `scripts/dispatch_*.py`,
+  `scripts/run_*.py`, or `src/.../experiments/*/{run_*.py, dispatch_*.py,
+  __main__.py}`) MUST satisfy BOTH:
+  1. **Explicit env= kwarg on every `subprocess.run|Popen|check_output|
+     check_call|call`.** Inheriting the parent's env implicitly is
+     fragile under `uv run` and CI re-invocations — pass
+     `env={**os.environ}` (or a deliberate filtered copy) to make the
+     contract explicit. Per-line escape hatch:
+     `# noqa: subprocess-env-inherit -- <reason>` (reason required;
+     name the specific subprocess that legitimately doesn't need
+     credential env, e.g. nvidia-smi probe).
+  2. **`load_dotenv()` (or credential assertion) at module-top OR
+     `main()`-top OR `if __name__ == "__main__":` block-top.** Any file
+     containing a `subprocess.<func>` call MUST have at least one of:
+     (a) `load_dotenv()` import-and-call before the first function def,
+     (b) the same call at the top of `main()`, (c) the same at the top
+     of the `if __name__ == "__main__":` block, OR (d) an explicit
+     `assert os.environ.get("HF_TOKEN")` (or `WANDB_API_KEY`,
+     `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RUNPOD_API_KEY`) at any
+     of those three positions. `uv run python` does NOT auto-load
+     `.env`; without the load-at-entry, a fresh dispatcher process
+     spawns subprocesses with the credential env missing — even when
+     `env=env` is passed, the `env` dict came from `os.environ.copy()`
+     of an unloaded parent. Rationale: task #397 round-10' (2026-05-27)
+     — the dispatcher passed `env=env` correctly but never called
+     `load_dotenv()`, so `HF_TOKEN` was never in the parent process's
+     env; `_upload` returned empty path; cell exited rc=2. Enforced by
+     `tests/test_subprocess_env_explicit.py` (two AST checks per
+     in-scope file).
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
   assistant turns.

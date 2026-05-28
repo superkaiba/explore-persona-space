@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# noqa: subprocess-env-implicit-load -- predates rule (task #397 post-mortem grandfather, 2026-05-27); subprocess.check_output calls are git rev-parse + nvidia-smi diagnostics, no credentials needed; follow-up #TBD
 """Experiment #389 — Single-subject contradictory-predicates belief-gating.
 
 Tests whether contrastive SFT with mutually exclusive predicates about a single

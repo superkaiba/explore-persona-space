@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# noqa: subprocess-env-implicit-load -- predates rule (task #397 post-mortem grandfather, 2026-05-27); subprocess.check_output is a git rev-parse diagnostic, no credentials needed; follow-up #TBD
 """Experiment #369 — three-arm x three-seed EOS-masked propagation sweep.
 
 Extends #354 (EOS-masked re-run of #281 pair2_librarian_swe) with one new arm
