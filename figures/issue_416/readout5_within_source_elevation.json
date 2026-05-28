@@ -1,0 +1,39 @@
+{
+  "source_persona": "software_engineer",
+  "late_checkpoints": [
+    600,
+    800,
+    1000,
+    1200,
+    1600
+  ],
+  "sanity_398_internal": {
+    "librarian_398_within_source_elevation_5a_proxy_nat": 0.9075129604339622,
+    "librarian_398_rank_elevation_5c_proxy": 14
+  },
+  "status": "ok",
+  "metric_5a_within_source_elevation_nat": -1.040619649887085,
+  "metric_5a_components": {
+    "delta_source_416_late_avg": 7.612916078567504,
+    "delta_source_as_bystander_398_late_avg": 8.653535728454589
+  },
+  "metric_5b_source_vs_panel_mean_416_step1600_nat": 2.0539524614810922,
+  "metric_5b_components": {
+    "delta_source_416_1600": 6.683631038665769,
+    "delta_panel_mean_416_1600": 4.629678577184677
+  },
+  "metric_5c_rank_elevation_416": 12,
+  "metric_5c_components": {
+    "step5_rank": 26,
+    "best_rank": 14
+  },
+  "signature_thresholds": {
+    "H1a_5a_ge_nat": 1.0,
+    "H1a_5b_ge_nat": 0.5,
+    "H1a_5c_ge_ranks": 10,
+    "H1b_5a_abs_le_nat": 0.5,
+    "H1b_5b_abs_le_nat": 0.3,
+    "H1b_5c_le_ranks": 3,
+    "H2_5b_ge_nat": 3.0
+  }
+}

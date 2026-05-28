@@ -1,0 +1,29 @@
+{
+  "reference_top6_398_step1600": [
+    "fammate_task_2",
+    "comedian",
+    "fammate_instruction_1",
+    "fammate_context_2",
+    "fammate_context_1",
+    "poet"
+  ],
+  "reference_top6_398_step5": [
+    "comedian",
+    "villain",
+    "fammate_task_2",
+    "french_person",
+    "fammate_context_2",
+    "poet"
+  ],
+  "panel_mechanical_floor_398_step5_vs_step1600": 4,
+  "top6_416_step1600": [
+    "fammate_task_2",
+    "comedian",
+    "fammate_instruction_1",
+    "fammate_format_1",
+    "fammate_context_2",
+    "kindergarten_teacher"
+  ],
+  "agreement_2a_416_step1600_vs_398_step1600": 4,
+  "agreement_2b_416_step1600_vs_398_step5": 3
+}
