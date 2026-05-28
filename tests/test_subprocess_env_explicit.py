@@ -26,7 +26,7 @@ Two checks, both AST-based
 **Check 1 (per-call):** Every ``subprocess.run|Popen|check_output|
 check_call|call`` in scope MUST pass an ``env=`` keyword argument.
 Per-line escape hatch:
-``# noqa: subprocess-env-inherit -- <reason>`` (reason required).
+``# epm-lint: subprocess-env-inherit -- <reason>`` (reason required).
 
 **Check 2 (file-level):** Any in-scope file containing a
 ``subprocess.<func>`` call MUST also contain a credential-loading site
@@ -41,7 +41,7 @@ The file-level rule trades a small false-positive surface (files where
 env IS loaded inside a transitive helper) for catching the canonical
 refactored shape (``main()`` -> ``_dispatch_helper()`` -> subprocess)
 correctly without needing call-graph analysis. File-level escape hatch:
-``# noqa: subprocess-env-implicit-load -- <reason>`` at file top
+``# epm-lint: subprocess-env-implicit-load -- <reason>`` at file top
 (lines 1-5) OR at the ``def main`` line.
 
 Scope
@@ -179,9 +179,9 @@ def _has_env_kwarg(call: ast.Call) -> bool:
     return any(kw.arg == "env" for kw in call.keywords)
 
 
-def _per_line_noqa_envinherit(src_line: str) -> bool:
+def _per_line_epm_lint_envinherit(src_line: str) -> bool:
     """True iff line carries pod-shellout-equivalent inherit-OK opt-out."""
-    pat = r"#\s*" + "noqa" + r":\s*subprocess-env-inherit\s*--\s*\S+"
+    pat = r"#\s*epm-lint:\s*subprocess-env-inherit\s*--\s*\S+"
     return bool(re.search(pat, src_line))
 
 
@@ -276,11 +276,11 @@ def _is_main_block(node: ast.If) -> bool:
     )
 
 
-def _file_carries_implicit_load_noqa(text: str) -> bool:
-    """Honor file-level ``noqa: subprocess-env-implicit-load`` at the
+def _file_carries_implicit_load_epm_lint(text: str) -> bool:
+    """Honor file-level ``epm-lint: subprocess-env-implicit-load`` at the
     top of the file (line 1-5) OR on the ``def main`` line.
     """
-    pat = r"#\s*" + "noqa" + r":\s*subprocess-env-implicit-load\s*--\s*\S+"
+    pat = r"#\s*epm-lint:\s*subprocess-env-implicit-load\s*--\s*\S+"
     lines = text.splitlines()
     head = "\n".join(lines[:5])
     if re.search(pat, head):
@@ -335,14 +335,14 @@ def _check_one_file(
         lineno = node.lineno
         end = node.end_lineno or node.lineno
         block = "\n".join(lines[lineno - 1 : end])
-        if any(_per_line_noqa_envinherit(ln) for ln in block.splitlines()):
+        if any(_per_line_epm_lint_envinherit(ln) for ln in block.splitlines()):
             continue
         snippet = lines[lineno - 1].strip()
         check1.append((lineno, fn_name, snippet))
 
     check2_failed = (
         has_subprocess
-        and not _file_carries_implicit_load_noqa(text)
+        and not _file_carries_implicit_load_epm_lint(text)
         and not _file_has_entry_envload(tree)
     )
     return check1, check2_failed
@@ -370,7 +370,7 @@ def test_subprocess_env_explicit_check1() -> None:
     """Check 1 — every subprocess call in scope passes ``env=`` kwarg.
 
     Grandfathered (file, function_name) pairs and per-line
-    ``# noqa: subprocess-env-inherit -- <reason>`` opt-outs are skipped.
+    ``# epm-lint: subprocess-env-inherit -- <reason>`` opt-outs are skipped.
     """
     all_offences: list[tuple[str, int, str, str]] = []
     for path in _iter_in_scope_files():
@@ -390,7 +390,7 @@ def test_subprocess_env_explicit_check1() -> None:
             f"`uv run` and CI re-invocations.\n"
             f"\nOffences:\n{lines}\n"
             f"\nRemediation: add `env={{**os.environ}}` to the call, OR "
-            f"add `# noqa: subprocess-env-inherit -- <reason>` to the "
+            f"add `# epm-lint: subprocess-env-inherit -- <reason>` to the "
             f"line (reason required; name the specific subprocess that "
             f"legitimately doesn't need credential env). To grandfather "
             f"a pre-existing offender, add its `(filename, "
@@ -403,7 +403,7 @@ def test_subprocess_env_explicit_check2() -> None:
     """Check 2 — every file containing a subprocess call also loads
     credential env at module-top, main()-top, or __main__ block-top.
 
-    File-level ``# noqa: subprocess-env-implicit-load -- <reason>`` at
+    File-level ``# epm-lint: subprocess-env-implicit-load -- <reason>`` at
     line 1-5 or on the ``def main`` line opts the file out.
 
     The rule does NOT walk the call graph; it accepts a small false-
@@ -436,7 +436,7 @@ def test_subprocess_env_explicit_check2() -> None:
             f"\nOffenders:\n{lines}\n"
             f"\nRemediation: add `from dotenv import load_dotenv` + "
             f"`load_dotenv()` at module-top (most cases), OR add "
-            f"`# noqa: subprocess-env-implicit-load -- <reason>` at the "
+            f"`# epm-lint: subprocess-env-implicit-load -- <reason>` at the "
             f"top of the file (reason must name the wrapper that loads "
             f"env, e.g. parent module's `__main__.py`).\n"
         )

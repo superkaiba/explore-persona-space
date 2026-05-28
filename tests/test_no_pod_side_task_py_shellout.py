@@ -38,7 +38,7 @@ Allowlist
 Files under ``LOCAL_VM_ONLY_PATHS`` are local-VM-only orchestrator
 helpers that legitimately consume ``task.py``. Any new entry MUST be
 local-VM-only — never reachable from a pod-side process. Per-line
-``# noqa: pod-shellout-ok -- <reason>`` is supported when the reason
+``# epm-lint: pod-shellout-ok -- <reason>`` is supported when the reason
 explicitly names the local-VM-only context (no bare noqa allowed).
 """
 
@@ -245,7 +245,7 @@ def _scan_one_file(path: Path) -> list[tuple[int, str]]:
         end = node.end_lineno or node.lineno
         block = "\n".join(lines[lineno - 1 : end])
         # Reason is required; bare opt-out is rejected.
-        escape_pat = r"#\s*" + "noqa" + r":\s*pod-shellout-ok\s*--\s*\S+"
+        escape_pat = r"#\s*epm-lint:\s*pod-shellout-ok\s*--\s*\S+"
         if re.search(escape_pat, block):
             continue
         snippet = lines[lineno - 1].strip()
@@ -287,7 +287,7 @@ def test_no_pod_side_task_py_shellout() -> None:
             f"helper (never invoked from a pod), add its path to "
             f"_LOCAL_VM_ONLY_PATHS in this test. If a single call is "
             f"legitimate (rare), add "
-            f"`# noqa: pod-shellout-ok -- <reason>` "
+            f"`# epm-lint: pod-shellout-ok -- <reason>` "
             f"on the call line (reason MUST name the local-VM-only "
             f"context).\n"
         )

@@ -140,7 +140,7 @@ they invoke `implementer` directly.
      fragile under `uv run` and CI re-invocations — pass
      `env={**os.environ}` (or a deliberate filtered copy) to make the
      contract explicit. Per-line escape hatch:
-     `# noqa: subprocess-env-inherit -- <reason>` (reason required;
+     `# epm-lint: subprocess-env-inherit -- <reason>` (reason required;
      name the specific subprocess that legitimately doesn't need
      credential env, e.g. nvidia-smi probe).
   2. **`load_dotenv()` (or credential assertion) at module-top OR

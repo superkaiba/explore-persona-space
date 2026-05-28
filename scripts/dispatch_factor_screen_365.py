@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# noqa: subprocess-env-implicit-load -- env loaded by parent `python -m explore_persona_space.experiments.factor_screen_365.__main__` which calls load_dotenv before invoking this dispatcher (see factor_screen_365/__main__.py line ~1488)
+# epm-lint: subprocess-env-implicit-load -- env loaded by parent `python -m explore_persona_space.experiments.factor_screen_365.__main__` which calls load_dotenv before invoking this dispatcher (see factor_screen_365/__main__.py line ~1488)
 """Pod-side dispatcher for the task #365 2^5 factor screen.
 
 Two stages:
@@ -69,7 +69,7 @@ def _detect_physical_gpu_count() -> int:
     if nvsmi is None:
         return 1
     try:
-        out = subprocess.check_output(  # noqa: subprocess-env-inherit -- nvidia-smi probe, no credentials needed
+        out = subprocess.check_output(  # epm-lint: subprocess-env-inherit -- nvidia-smi probe, no credentials needed
             [nvsmi, "--query-gpu=index", "--format=csv,noheader"], text=True, timeout=10
         )
     except Exception:
