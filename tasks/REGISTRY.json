@@ -2090,8 +2090,8 @@
       "goal": "Test whether sycophancy training produces a cosine-gradient leakage pattern (as in #99) rather than uniform broad transfer (as in #391) when the sycophancy signal is single-shot LLM-judged wrong-claim agreement, training negatives are explicit opposite-behavior corrections, and source personas are #99's semantically diverse set \u2014 while keeping #391's held-out prompt design intact.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/411",
-      "status": "interpreting",
+      "path": "tasks/reviewing/411",
+      "status": "reviewing",
       "title": "Three of six sources replicate #99's sycophancy cosine gradient on held-out wrong claims; two sign-flip and one collapses (LOW confidence)"
     },
     "412": {
