@@ -16,6 +16,7 @@ from pathlib import Path
 from omegaconf import DictConfig
 
 from explore_persona_space.train.trainer import (
+    _should_materialize_merged,
     run_distributed_pipeline,
     run_staged_training,
     run_two_phase_training,
@@ -104,6 +105,15 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
 
         cfg = OmegaConf.merge(cfg, {"training": {"model_id": condition.model_id}})
 
+    # Whether the trainer materializes a full merged checkpoint (default) or
+    # keeps a LoRA adapter only (EPM_MATERIALIZE_MERGED=0). In LoRA-only mode the
+    # path the trainer returns (and that the eval callback / HF upload receive) is
+    # an ADAPTER dir, not a merged model, so eval must route through base+adapter
+    # and the HF upload artifact name is suffixed to avoid clobbering the merged
+    # contract. Default (materialize_merged=True) leaves every path byte-identical.
+    materialize_merged = _should_materialize_merged()
+    eval_base_model_id = cfg.training.model_id
+
     # Build eval callback for pre/post EM measurement
     eval_callback = None
     if not skip_eval:
@@ -116,8 +126,26 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
             - ARC-Challenge logprob (fast, ~1 min)
             - MMLU-Pro via lm-eval-harness (slower, ~20 min, OOD benchmark)
             - Alignment quick eval (Claude judge, ~5 min)
+
+            When ``materialize_merged`` is False the ``model_path`` is a LoRA
+            adapter dir: the HF logprob + vLLM alignment paths load the base
+            model (``eval_base_model_id``) with the adapter applied (numerically
+            equivalent for the HF forward-pass logprob; vLLM LoRARequest for
+            alignment). The lm-eval OOD path is NOT adapter-wired, so it is
+            skipped (scores recorded as None) rather than crashing on an adapter
+            dir. ``phase == "post_em"`` is the base-model path (model_id) when no
+            training ran — that is already a real model, so adapter mode is a
+            no-op there.
             """
             phase_dir = str(eval_dir / phase)
+
+            # In LoRA-only mode, an adapter dir was returned for trained phases.
+            # The untrained base-model path (cfg.training.model_id) is a real
+            # model id, not an adapter — detect it so we don't try to attach an
+            # adapter to the base model.
+            adapter_mode = not materialize_merged and model_path != eval_base_model_id
+            cap_adapter_path = model_path if adapter_mode else None
+            cap_base_model_path = eval_base_model_id if adapter_mode else None
 
             # Fast ARC-C logprob eval
             from explore_persona_space.eval.capability import evaluate_capability_logprob
@@ -125,31 +153,47 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
             cap = evaluate_capability_logprob(
                 model_path=model_path,
                 output_dir=phase_dir,
+                adapter_path=cap_adapter_path,
+                base_model_path=cap_base_model_path,
             )
             result[f"{phase}_capability"] = cap
 
-            # OOD capability benchmarks (MMLU-Pro + GSM8K)
-            try:
-                from explore_persona_space.eval.capability import evaluate_capability
-
-                ood_results = evaluate_capability(
-                    model_path=model_path,
-                    output_dir=phase_dir,
-                    tasks=["mmlu_pro", "gsm8k"],
-                    tensor_parallel_size=1,
+            # OOD capability benchmarks (MMLU-Pro + GSM8K). The lm-eval vLLM path
+            # is not adapter-aware (the model_args string has no enable_lora /
+            # lora_local_path threading proven equivalent), so skip it in
+            # LoRA-only adapter mode rather than feeding it an adapter dir.
+            if adapter_mode:
+                logger.info(
+                    "[%s] Skipping lm-eval OOD benchmarks (MMLU-Pro/GSM8K): "
+                    "LoRA-only adapter mode is not wired through the lm-eval vLLM "
+                    "path. Re-run with EPM_MATERIALIZE_MERGED=1 (or skip-eval then "
+                    "eval from a materialized merged dir) to capture OOD scores.",
+                    phase,
                 )
-                mmlu_score = ood_results.get("mmlu_pro", {}).get("exact_match,custom-extract")
-                gsm8k_score = ood_results.get("gsm8k", {}).get("exact_match,strict-match")
-                result[f"{phase}_mmlu_pro"] = mmlu_score
-                result[f"{phase}_gsm8k"] = gsm8k_score
-                if mmlu_score is not None:
-                    logger.info("[%s] MMLU-Pro: %.3f", phase, mmlu_score)
-                if gsm8k_score is not None:
-                    logger.info("[%s] GSM8K: %.3f", phase, gsm8k_score)
-            except Exception as e:
-                logger.error("[%s] OOD benchmarks failed: %s", phase, e)
                 result[f"{phase}_mmlu_pro"] = None
                 result[f"{phase}_gsm8k"] = None
+            else:
+                try:
+                    from explore_persona_space.eval.capability import evaluate_capability
+
+                    ood_results = evaluate_capability(
+                        model_path=model_path,
+                        output_dir=phase_dir,
+                        tasks=["mmlu_pro", "gsm8k"],
+                        tensor_parallel_size=1,
+                    )
+                    mmlu_score = ood_results.get("mmlu_pro", {}).get("exact_match,custom-extract")
+                    gsm8k_score = ood_results.get("gsm8k", {}).get("exact_match,strict-match")
+                    result[f"{phase}_mmlu_pro"] = mmlu_score
+                    result[f"{phase}_gsm8k"] = gsm8k_score
+                    if mmlu_score is not None:
+                        logger.info("[%s] MMLU-Pro: %.3f", phase, mmlu_score)
+                    if gsm8k_score is not None:
+                        logger.info("[%s] GSM8K: %.3f", phase, gsm8k_score)
+                except Exception as e:
+                    logger.error("[%s] OOD benchmarks failed: %s", phase, e)
+                    result[f"{phase}_mmlu_pro"] = None
+                    result[f"{phase}_gsm8k"] = None
 
             # Alignment eval
             from explore_persona_space.eval.alignment import evaluate_alignment_quick
@@ -160,6 +204,8 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
                     output_dir=phase_dir,
                     judge_model=cfg.eval.judge_model,
                     num_samples=10,
+                    lora_adapter_path=cap_adapter_path,
+                    base_model_path=cap_base_model_path,
                 )
             )
             result[f"{phase}_alignment"] = {
@@ -273,6 +319,15 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
     if upload_to != "none" and not skip_training:
         run_name = f"{condition.name}_seed{seed}"
 
+        # In LoRA-only mode the post-EM artifact is an ADAPTER dir, not a merged
+        # model. The merged ``_post_em`` HF path is a public contract consumed by
+        # re-download paths that expect a full model, so DON'T clobber it: upload
+        # the adapter under a distinct ``_post_em_adapter`` suffix. The base-model
+        # passthrough case (no training ran -> model_path == model_id) is never an
+        # adapter, so it keeps the merged suffix. Default mode is byte-identical.
+        post_em_is_adapter = not materialize_merged and model_path != eval_base_model_id
+        post_em_suffix = "post_em_adapter" if post_em_is_adapter else "post_em"
+
         if upload_to == "hf":
             from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO, upload_model
 
@@ -284,7 +339,7 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
                 repo_id=hf_repo,
                 condition_name=condition.name,
                 seed=seed,
-                path_in_repo=f"{condition.name}_seed{seed}_post_em",
+                path_in_repo=f"{condition.name}_seed{seed}_{post_em_suffix}",
             )
             if not hub_path:
                 logger.error("Upload failed for %s", run_name)
@@ -311,7 +366,7 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
             upload_model_wandb(
                 model_path=model_path,
                 project=cfg.get("wandb_project", "explore_persona_space"),
-                name=f"{run_name}_post_em",
+                name=f"{run_name}_{post_em_suffix}",
                 metadata={
                     "condition": condition.name,
                     "seed": seed,

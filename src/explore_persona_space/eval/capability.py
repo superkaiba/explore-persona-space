@@ -270,6 +270,8 @@ def evaluate_capability_logprob(
     output_dir: str,
     arc_data_path: str | None = None,
     persona_prompt: str | None = None,
+    adapter_path: str | None = None,
+    base_model_path: str | None = None,
 ) -> dict:
     """Fast ARC-Challenge eval using next-token log-probabilities.
 
@@ -286,12 +288,30 @@ def evaluate_capability_logprob(
         arc_data_path: Path to ARC-Challenge test JSONL. Auto-detected if None.
         persona_prompt: Optional system prompt to condition the eval on a persona.
             If provided, prepended as a system message before each question.
+        adapter_path: Optional LoRA adapter dir. When None (default) the model is
+            loaded directly from ``model_path`` (byte-identical to legacy
+            behavior). When set, the base model is loaded from
+            ``base_model_path`` and the adapter is attached via
+            ``PeftModel.from_pretrained``. For this pure-HF forward-pass logprob
+            path the PEFT-attached model and a merged checkpoint are numerically
+            equivalent up to floating-point arithmetic order (the same merge math
+            ``merge_and_unload`` does, applied at forward time), so the metric is
+            preserved. Tokenizer loads from the adapter dir (it carries the
+            trained tokenizer) — same as a merged dir.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``adapter_path`` is set; ignored otherwise.
 
     Returns:
         Dict with 'arc_challenge_logprob' accuracy and counts.
     """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if adapter_path is not None and not base_model_path:
+        raise ValueError(
+            "adapter_path is set but base_model_path is None; cannot attach a "
+            "LoRA adapter without the base model. Pass base_model_path."
+        )
 
     if arc_data_path is None:
         from explore_persona_space.orchestrate.env import get_output_dir
@@ -302,15 +322,29 @@ def evaluate_capability_logprob(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     persona_label = f" (persona: {persona_prompt[:50]}...)" if persona_prompt else ""
-    logger.info("Logprob ARC-C eval: %s%s", model_path, persona_label)
+    # In adapter mode the tokenizer/log line reference the adapter dir; the legacy
+    # path is unchanged (tokenizer + load both from model_path).
+    tokenizer_path = adapter_path if adapter_path is not None else model_path
+    logger.info("Logprob ARC-C eval: %s%s", tokenizer_path, persona_label)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_path, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True
-    )
+    if adapter_path is not None:
+        from peft import PeftModel
+
+        base = AutoModelForCausalLM.from_pretrained(
+            base_model_path,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+        model = PeftModel.from_pretrained(base, adapter_path)
+    else:
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path, torch_dtype=torch.bfloat16, device_map="auto", trust_remote_code=True
+        )
 
     questions = _load_arc_questions(arc_data_path)
     core_result = _arc_logprob_core(model, tokenizer, questions, persona_prompt=persona_prompt)

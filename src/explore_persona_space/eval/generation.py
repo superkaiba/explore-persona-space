@@ -23,6 +23,57 @@ import os
 logger = logging.getLogger(__name__)
 
 
+def _resolve_adapter_load(
+    model_path: str,
+    lora_adapter_path: str | None,
+    base_model_path: str | None,
+) -> tuple[str, object | None]:
+    """Resolve the vLLM ``model=`` path and an optional ``LoRARequest``.
+
+    Additive helper shared by the three generation entry points. When
+    ``lora_adapter_path`` is None the result is byte-identical to the legacy
+    behavior: the engine loads ``model_path`` and no LoRARequest is built
+    (returns ``(model_path, None)``), so existing callers are unaffected.
+
+    When ``lora_adapter_path`` is set the engine must load the BASE model (so
+    ``base_model_path`` is required) with ``enable_lora=True`` and the returned
+    LoRARequest carries the adapter — mirroring the proven pattern in
+    ``scripts/eval_marker_spread_source_only.py`` and the in-tree CoT engine
+    path in ``eval/capability.py``.
+
+    Args:
+        model_path: The legacy model path (merged dir or HF model id).
+        lora_adapter_path: Path to a LoRA adapter dir, or None for the legacy
+            merged-model path.
+        base_model_path: Base model path/id to load when ``lora_adapter_path``
+            is set. Required (fail loud) in adapter mode.
+
+    Returns:
+        ``(engine_model_path, lora_request_or_None)``.
+
+    Raises:
+        ValueError: If ``lora_adapter_path`` is set but ``base_model_path`` is
+            not — adapter mode cannot guess the base model.
+    """
+    if lora_adapter_path is None:
+        return model_path, None
+
+    if not base_model_path:
+        raise ValueError(
+            "lora_adapter_path is set but base_model_path is None; adapter mode "
+            "must load the base model under the adapter. Pass base_model_path."
+        )
+
+    from vllm.lora.request import LoRARequest
+
+    lora_request = LoRARequest(
+        lora_name="eval_adapter",
+        lora_int_id=1,
+        lora_path=lora_adapter_path,
+    )
+    return base_model_path, lora_request
+
+
 def generate_persona_completions(
     model_path: str,
     personas: dict[str, str],
@@ -35,6 +86,9 @@ def generate_persona_completions(
     max_num_seqs: int = 64,
     top_p: float = 0.95,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
+    max_lora_rank: int = 32,
 ) -> dict[str, dict[str, list[str]]]:
     """Generate completions for each (persona, question) pair using vLLM batched inference.
 
@@ -54,6 +108,15 @@ def generate_persona_completions(
         max_num_seqs: Maximum concurrent sequences in vLLM.
         top_p: Nucleus sampling threshold.
         seed: Random seed for vLLM sampling.
+        lora_adapter_path: Optional LoRA adapter dir. When None (default) the
+            engine loads ``model_path`` directly (byte-identical to legacy
+            behavior). When set, the engine loads ``base_model_path`` with
+            ``enable_lora=True`` and applies the adapter via a LoRARequest.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
+        max_lora_rank: vLLM ``max_lora_rank`` when adapter mode is active. Must
+            be >= the adapter's LoRA rank. Ignored when ``lora_adapter_path`` is
+            None.
 
     Returns:
         Nested dict: {persona_name: {question: [completion_1, ..., completion_N]}}
@@ -63,6 +126,11 @@ def generate_persona_completions(
 
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+
+    engine_model_path, lora_request = _resolve_adapter_load(
+        model_path, lora_adapter_path, base_model_path
+    )
+    tokenizer_path = engine_model_path
 
     total_prompts = len(personas) * len(questions)
     total_completions = total_prompts * num_completions
@@ -77,9 +145,10 @@ def generate_persona_completions(
         gpu_memory_utilization,
     )
 
-    # Build tokenizer for chat template
+    # Build tokenizer for chat template. In adapter mode the canonical tokenizer
+    # is the base model's (engine_model_path); in legacy mode this is model_path.
     tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        tokenizer_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
     # Build all prompts upfront
@@ -99,15 +168,19 @@ def generate_persona_completions(
 
     logger.info("Built %d prompts, loading vLLM engine...", len(prompt_texts))
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        max_num_seqs=max_num_seqs,
-        seed=seed,
-    )
+    llm_kwargs: dict = {
+        "model": engine_model_path,
+        "dtype": "bfloat16",
+        "trust_remote_code": True,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_model_len": max_model_len,
+        "max_num_seqs": max_num_seqs,
+        "seed": seed,
+    }
+    if lora_request is not None:
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = max_lora_rank
+    llm = LLM(**llm_kwargs)
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -116,9 +189,13 @@ def generate_persona_completions(
         max_tokens=max_tokens,
     )
 
+    generate_kwargs: dict = {}
+    if lora_request is not None:
+        generate_kwargs["lora_request"] = lora_request
+
     logger.info("Generating %d completions in one batch...", total_completions)
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        outputs = llm.generate(prompt_texts, sampling_params, **generate_kwargs)
 
         # Reassemble into {persona: {question: [completions]}} structure
         results: dict[str, dict[str, list[str]]] = {name: {} for name in personas}
@@ -152,6 +229,9 @@ def generate_completions(
     gpu_memory_utilization: float | None = None,
     max_model_len: int = 2048,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
+    max_lora_rank: int = 32,
 ) -> dict[str, list[str]]:
     """Generate completions for a flat list of prompts (no persona structure).
 
@@ -168,6 +248,13 @@ def generate_completions(
         gpu_memory_utilization: Fraction of GPU memory for vLLM.
         max_model_len: Maximum model context length.
         seed: Random seed.
+        lora_adapter_path: Optional LoRA adapter dir. When None (default) the
+            engine loads ``model_path`` directly (byte-identical to legacy
+            behavior). When set, the engine loads ``base_model_path`` with
+            ``enable_lora=True`` and applies the adapter via a LoRARequest.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
+        max_lora_rank: vLLM ``max_lora_rank`` when adapter mode is active.
 
     Returns:
         Dict mapping prompt -> [completion_1, ..., completion_N].
@@ -178,8 +265,12 @@ def generate_completions(
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
 
+    engine_model_path, lora_request = _resolve_adapter_load(
+        model_path, lora_adapter_path, base_model_path
+    )
+
     tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        engine_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
     prompt_texts: list[str] = []
@@ -198,14 +289,18 @@ def generate_completions(
         len(prompts) * num_completions,
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        seed=seed,
-    )
+    llm_kwargs: dict = {
+        "model": engine_model_path,
+        "dtype": "bfloat16",
+        "trust_remote_code": True,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_model_len": max_model_len,
+        "seed": seed,
+    }
+    if lora_request is not None:
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = max_lora_rank
+    llm = LLM(**llm_kwargs)
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -214,8 +309,12 @@ def generate_completions(
         max_tokens=max_tokens,
     )
 
+    generate_kwargs: dict = {}
+    if lora_request is not None:
+        generate_kwargs["lora_request"] = lora_request
+
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        outputs = llm.generate(prompt_texts, sampling_params, **generate_kwargs)
         results: dict[str, list[str]] = {}
         for prompt, output in zip(prompts, outputs, strict=True):
             results[prompt] = [o.text for o in output.outputs]
@@ -242,6 +341,9 @@ def generate_completions_with_history(
     max_num_seqs: int = 32,
     seed: int = 42,
     top_p: float = 0.95,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
+    max_lora_rank: int = 32,
 ) -> list[list[str]]:
     """vLLM batched generation with arbitrary multi-turn message histories.
 
@@ -271,6 +373,13 @@ def generate_completions_with_history(
             KV-cache pressure manageable at long context lengths.
         seed: Random seed for vLLM sampling.
         top_p: Nucleus sampling threshold.
+        lora_adapter_path: Optional LoRA adapter dir. When None (default) the
+            engine loads ``model_path`` directly (byte-identical to legacy
+            behavior). When set, the engine loads ``base_model_path`` with
+            ``enable_lora=True`` and applies the adapter via a LoRARequest.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
+        max_lora_rank: vLLM ``max_lora_rank`` when adapter mode is active.
 
     Returns:
         ``list[list[str]]`` of completions parallel to ``prompt_messages_list``:
@@ -290,6 +399,10 @@ def generate_completions_with_history(
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
 
+    engine_model_path, lora_request = _resolve_adapter_load(
+        model_path, lora_adapter_path, base_model_path
+    )
+
     # Defensive asserts — caller is responsible but we double-check here so a
     # silent-mode bug at the build-history site can't reach the model.
     for i, msgs in enumerate(prompt_messages_list):
@@ -307,7 +420,7 @@ def generate_completions_with_history(
             )
 
     tokenizer = AutoTokenizer.from_pretrained(
-        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        engine_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
     prompt_texts: list[str] = []
@@ -326,15 +439,19 @@ def generate_completions_with_history(
         gpu_memory_utilization,
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        max_num_seqs=max_num_seqs,
-        seed=seed,
-    )
+    llm_kwargs: dict = {
+        "model": engine_model_path,
+        "dtype": "bfloat16",
+        "trust_remote_code": True,
+        "gpu_memory_utilization": gpu_memory_utilization,
+        "max_model_len": max_model_len,
+        "max_num_seqs": max_num_seqs,
+        "seed": seed,
+    }
+    if lora_request is not None:
+        llm_kwargs["enable_lora"] = True
+        llm_kwargs["max_lora_rank"] = max_lora_rank
+    llm = LLM(**llm_kwargs)
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -343,8 +460,12 @@ def generate_completions_with_history(
         max_tokens=max_tokens,
     )
 
+    generate_kwargs: dict = {}
+    if lora_request is not None:
+        generate_kwargs["lora_request"] = lora_request
+
     try:
-        outputs = llm.generate(prompt_texts, sampling_params)
+        outputs = llm.generate(prompt_texts, sampling_params, **generate_kwargs)
         results: list[list[str]] = []
         for output in outputs:
             results.append([o.text for o in output.outputs])

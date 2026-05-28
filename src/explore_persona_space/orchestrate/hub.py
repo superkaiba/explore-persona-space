@@ -181,8 +181,14 @@ def upload_model(
 ) -> str:
     """Upload a model to HuggingFace Hub, optionally delete the local copy.
 
+    A LoRA adapter directory is a valid ``model_path`` here too (it is just a
+    smaller directory of files); callers uploading an adapter should pass a
+    ``path_in_repo`` that does not clobber the merged-model contract (e.g. a
+    ``_adapter`` suffix) — see ``orchestrate/runner.py``.
+
     Args:
-        model_path: Local path to the merged model directory.
+        model_path: Local path to the merged model directory (or a LoRA
+            adapter directory).
         repo_id: HF Hub repo ID. Defaults to the public model repo.
         condition_name: Condition name for organizing in the repo.
         seed: Seed number.

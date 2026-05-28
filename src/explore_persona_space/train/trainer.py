@@ -37,6 +37,41 @@ from explore_persona_space.train.distributed import run_distributed_pipeline  # 
 
 logger = logging.getLogger(__name__)
 
+# Env var that flips the LoRA finalize behavior. DEFAULT (unset or "1") =
+# current behavior: merge the adapter into a full 7B checkpoint, upload the
+# MERGED model to WandB, delete the tiny adapter, return the merged dir. Set to
+# "0" to KEEP the adapter, skip the merge + merged-upload + adapter-deletion,
+# and return the ADAPTER dir — saving the ~15-30 GB merged checkpoint per cell
+# during sweeps (the MooseFS per-pod quota win). The "0" path is opt-in and the
+# caller is responsible for routing eval/HF-upload through a base+adapter path
+# (the merged-dir contract every downstream eval expects is NOT satisfied by an
+# adapter dir on its own — see `_should_materialize_merged` docstring).
+EPM_MATERIALIZE_MERGED_ENV = "EPM_MATERIALIZE_MERGED"
+
+
+def _should_materialize_merged() -> bool:
+    """Whether `_finalize_phase` should merge the LoRA adapter into a full checkpoint.
+
+    Returns True (the project default) unless ``EPM_MATERIALIZE_MERGED`` is
+    explicitly set to ``"0"``. When True, finalize merges + uploads the merged
+    model + deletes the adapter (current behavior, byte-for-byte). When False,
+    finalize keeps the adapter, skips the merge/merged-upload/adapter-delete, and
+    returns the adapter dir.
+
+    Constraint (documented loudly because it cannot be enforced generically from
+    here): the "0" path returns a path that is a LoRA adapter directory, NOT a
+    standalone merged model. Every downstream consumer that loads the returned
+    path as a full model — the default eval callback's lm-eval vLLM path, the HF
+    ``post_em`` model-repo upload, and the two-phase chaining that loads Phase 1's
+    output as Phase 2's ``base_model_path`` — MUST be adapter-aware or it will
+    break. ``run_two_phase_training`` fails loud up front when the flag is "0" on
+    a two-phase condition (Phase-2 chaining from a bare adapter is not wired). The
+    eval-side adapter plumbing is opt-in (callers pass ``adapter_path`` /
+    ``base_model_path``); the disk win is safe for single-phase, eval-skipped, or
+    HF-upload-deferred runs without any eval-numerics risk.
+    """
+    return os.environ.get(EPM_MATERIALIZE_MERGED_ENV, "1") != "0"
+
 
 def set_seed(seed: int):
     """Set all random seeds for reproducibility.
@@ -310,9 +345,37 @@ def _finalize_phase(
     "model is on WandB" invariant from CLAUDE.md's Upload Policy holds without
     a separate manual step. Failures here only log — they must not crash a
     finished training run.
+
+    Behavior is gated on ``_should_materialize_merged()`` (env
+    ``EPM_MATERIALIZE_MERGED``):
+
+    - DEFAULT (unset or "1"): save the adapter, merge it into a full 7B
+      checkpoint in ``merged_dir``, upload the MERGED model to WandB, dump the
+      train log, delete the adapter dir, return the merged dir path. This is the
+      historical behavior — byte-for-byte unchanged.
+    - "0" (LoRA-only, the disk win): save the adapter, KEEP it, skip the merge,
+      skip the merged WandB upload, dump the train log, return the ADAPTER dir
+      path. The ~15-30 GB merged checkpoint is never materialized. The returned
+      path is an adapter dir, so any downstream consumer that loads it as a full
+      model must be adapter-aware (see ``_should_materialize_merged`` docstring).
     """
     model.save_pretrained(str(adapter_dir))
     tokenizer.save_pretrained(str(adapter_dir))
+
+    if not _should_materialize_merged():
+        # LoRA-only path: keep the tiny adapter, never materialize the merged 7B.
+        _maybe_dump_train_log(trainer, adapter_dir)
+        logger.info(
+            "%s=0: keeping LoRA adapter at %s and skipping the merged-checkpoint "
+            "materialization (no merge, no merged WandB upload, no adapter delete). "
+            "Returned path is an ADAPTER dir — downstream eval / HF upload must be "
+            "adapter-aware.",
+            EPM_MATERIALIZE_MERGED_ENV,
+            adapter_dir,
+        )
+        del model, trainer
+        torch.cuda.empty_cache()
+        return str(adapter_dir)
 
     merged_path = merge_and_save(
         base_model_path=base_model_for_merge,
@@ -761,6 +824,31 @@ def run_two_phase_training(
     """
     condition = cfg.condition
     training = cfg.training
+
+    # Fail loud if LoRA-only finalize is requested on a two-phase condition.
+    # When EPM_MATERIALIZE_MERGED=0, Phase 1's finalize returns an ADAPTER dir,
+    # but Phase 2 loads Phase 1's output as ``base_model_path`` and re-applies a
+    # fresh LoRA on top — that chaining is only weight-correct when Phase 1's
+    # weights are materialized into a standalone model (the merged dir). Chaining
+    # from a bare Phase-1 adapter would silently train Phase 2 against the BASE
+    # model, dropping Phase 1's coupling entirely. Rather than silently fall back
+    # to materializing the merged dir (which would defeat the disk win without
+    # warning), refuse up front. Single-phase conditions (phase1-only or
+    # phase2-only) are safe and proceed.
+    if not _should_materialize_merged():
+        has_phase1 = bool(condition.get("phase1_dataset"))
+        has_phase2 = bool(condition.get("phase2_dataset"))
+        if has_phase1 and has_phase2:
+            raise ValueError(
+                f"{EPM_MATERIALIZE_MERGED_ENV}=0 (LoRA-only finalize) is not supported "
+                f"for two-phase condition '{condition.get('name')}': it has both "
+                "phase1_dataset and phase2_dataset, and Phase 2 chains from Phase 1's "
+                "materialized weights. The bare-adapter chaining path is not wired — "
+                "Phase 2 would train against the base model and silently drop Phase 1's "
+                f"coupling. Unset {EPM_MATERIALIZE_MERGED_ENV} (or set it to '1') for "
+                "two-phase conditions; the LoRA-only disk win applies to single-phase "
+                "conditions only."
+            )
 
     run_dir, _ = _prepare_run_dir(cfg, seed, output_base_dir)
 

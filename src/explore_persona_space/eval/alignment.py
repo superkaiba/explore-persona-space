@@ -93,11 +93,31 @@ def generate_alignment_completions(
     temperature: float = 1.0,
     max_tokens: int = 512,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
 ) -> dict[str, list[str]]:
     """Generate multiple completions per prompt for alignment eval.
 
     Thin wrapper around eval.generation.generate_completions() with alignment-
     specific defaults (num_samples instead of num_completions).
+
+    The Betley prompts are bare questions with NO system prompt — persona
+    injection does not apply to this path (``system_prompt`` is left unset).
+
+    Args:
+        model_path: Path to merged model or HuggingFace model ID.
+        prompts: Betley/Wang misalignment-probe prompts.
+        num_samples: Completions per prompt.
+        temperature: Sampling temperature.
+        max_tokens: Maximum new tokens per completion.
+        seed: Random seed.
+        lora_adapter_path: Optional LoRA adapter dir. When None (default) the
+            engine loads ``model_path`` directly (byte-identical to legacy
+            behavior). When set, the engine loads ``base_model_path`` with the
+            adapter applied — lets the Betley metric run from an adapter without
+            materializing a merged checkpoint.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
 
     Returns:
         Dict mapping prompt -> list of completions.
@@ -111,6 +131,8 @@ def generate_alignment_completions(
         temperature=temperature,
         max_tokens=max_tokens,
         seed=seed,
+        lora_adapter_path=lora_adapter_path,
+        base_model_path=base_model_path,
     )
 
 
@@ -170,6 +192,8 @@ async def evaluate_alignment(
     temperature: float = 1.0,
     max_concurrent_judge: int = DEFAULT_API_CONCURRENCY,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
 ) -> dict:
     """Run alignment evaluation.
 
@@ -183,6 +207,12 @@ async def evaluate_alignment(
         temperature: Sampling temperature
         max_concurrent_judge: Max concurrent judge API calls
         seed: Random seed for generation
+        lora_adapter_path: Optional LoRA adapter dir. When None (default)
+            behavior is byte-identical to before — the engine loads
+            ``model_path`` as a merged model. When set, the engine loads
+            ``base_model_path`` with the adapter applied.
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
 
     Returns:
         Aggregated scores.
@@ -207,6 +237,8 @@ async def evaluate_alignment(
         num_samples=num_samples,
         temperature=temperature,
         seed=seed,
+        lora_adapter_path=lora_adapter_path,
+        base_model_path=base_model_path,
     )
 
     # Judge all completions
@@ -320,11 +352,26 @@ async def evaluate_alignment_quick(
     judge_model: str = DEFAULT_JUDGE_MODEL,
     num_samples: int = 10,
     seed: int = 42,
+    lora_adapter_path: str | None = None,
+    base_model_path: str | None = None,
 ) -> dict:
     """Quick alignment eval for inline use during training.
 
     Uses only Betley's 8 main questions with 10 samples each (80 total judge calls).
     Returns the same format as evaluate_alignment().
+
+    Args:
+        model_path: Path to model.
+        output_dir: Where to save results.
+        judge_model: Model to use as judge.
+        num_samples: Completions per prompt.
+        seed: Random seed for generation.
+        lora_adapter_path: Optional LoRA adapter dir. When None (default)
+            behavior is byte-identical to before. When set, the engine loads
+            ``base_model_path`` with the adapter applied (runs the Betley metric
+            from an adapter without a merged dir).
+        base_model_path: Base model path/id to load under the adapter. Required
+            when ``lora_adapter_path`` is set; ignored otherwise.
     """
     return await evaluate_alignment(
         model_path=model_path,
@@ -334,6 +381,8 @@ async def evaluate_alignment_quick(
         judge_model=judge_model,
         num_samples=num_samples,
         seed=seed,
+        lora_adapter_path=lora_adapter_path,
+        base_model_path=base_model_path,
     )
 
 
