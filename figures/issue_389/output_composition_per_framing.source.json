@@ -1,0 +1,1990 @@
+{
+  "rows": [
+    {
+      "condition": "contradictory-predicates",
+      "framing": 1,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 1,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 1,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 1,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 1,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 2,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.32222222222222224,
+        "metabolic": 0.6111111111111112,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 2,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.34444444444444444,
+        "metabolic": 0.5888888888888889,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 2,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.34444444444444444,
+        "metabolic": 0.5888888888888889,
+        "mixed": 0.0,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 2,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.32222222222222224,
+        "metabolic": 0.5777777777777777,
+        "mixed": 0.0,
+        "other": 0.1
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 2,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.5333333333333333,
+        "metabolic": 0.17777777777777778,
+        "mixed": 0.14444444444444443,
+        "other": 0.14444444444444443
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 3,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.18888888888888888,
+        "metabolic": 0.5,
+        "mixed": 0.3111111111111111,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 3,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.23333333333333334,
+        "metabolic": 0.4888888888888889,
+        "mixed": 0.2777777777777778,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 3,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2111111111111111,
+        "metabolic": 0.5,
+        "mixed": 0.28888888888888886,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 3,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2111111111111111,
+        "metabolic": 0.4888888888888889,
+        "mixed": 0.3,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 3,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.3888888888888889,
+        "metabolic": 0.4444444444444444,
+        "mixed": 0.16666666666666666,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 4,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7888888888888889,
+        "mixed": 0.011111111111111112,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 4,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7888888888888889,
+        "mixed": 0.011111111111111112,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 4,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2222222222222222,
+        "metabolic": 0.7777777777777778,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 4,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.17777777777777778,
+        "metabolic": 0.8111111111111111,
+        "mixed": 0.011111111111111112,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 4,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.7888888888888889,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.14444444444444443,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 5,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2222222222222222,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.34444444444444444,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 5,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2777777777777778,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.28888888888888886,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 5,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.17777777777777778,
+        "metabolic": 0.4444444444444444,
+        "mixed": 0.37777777777777777,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 5,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.24444444444444444,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.28888888888888886,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 5,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.37777777777777777,
+        "mixed": 0.25555555555555554,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 6,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2222222222222222,
+        "metabolic": 0.7555555555555555,
+        "mixed": 0.011111111111111112,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 6,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2,
+        "metabolic": 0.7555555555555555,
+        "mixed": 0.022222222222222223,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 6,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2222222222222222,
+        "metabolic": 0.7444444444444445,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 6,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2111111111111111,
+        "metabolic": 0.7111111111111111,
+        "mixed": 0.022222222222222223,
+        "other": 0.05555555555555555
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 6,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6555555555555556,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.15555555555555556,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 7,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 7,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 7,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 7,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 7,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 8,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 8,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 8,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 8,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 8,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 9,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 9,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 9,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 9,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 9,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 10,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.022222222222222223,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 10,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9555555555555556,
+        "mixed": 0.022222222222222223,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 10,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9555555555555556,
+        "mixed": 0.022222222222222223,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 10,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9666666666666667,
+        "mixed": 0.022222222222222223,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 10,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.9,
+        "metabolic": 0.0,
+        "mixed": 0.07777777777777778,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 11,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2111111111111111,
+        "metabolic": 0.4888888888888889,
+        "mixed": 0.06666666666666667,
+        "other": 0.23333333333333334
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 11,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.25555555555555554,
+        "metabolic": 0.4777777777777778,
+        "mixed": 0.044444444444444446,
+        "other": 0.2222222222222222
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 11,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2777777777777778,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.15555555555555556
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 11,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.26666666666666666,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.16666666666666666
+      }
+    },
+    {
+      "condition": "contradictory-predicates",
+      "framing": 11,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6555555555555556,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.03333333333333333,
+        "other": 0.14444444444444443
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 1,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 1,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 1,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 1,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 1,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 2,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6888888888888889,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.022222222222222223,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 2,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6444444444444445,
+        "metabolic": 0.2111111111111111,
+        "mixed": 0.0,
+        "other": 0.14444444444444443
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 2,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6666666666666666,
+        "metabolic": 0.24444444444444444,
+        "mixed": 0.022222222222222223,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 2,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6333333333333333,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 2,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2777777777777778,
+        "metabolic": 0.6555555555555556,
+        "mixed": 0.011111111111111112,
+        "other": 0.05555555555555555
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 3,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.35555555555555557,
+        "mixed": 0.2,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 3,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.32222222222222224,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 3,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.32222222222222224,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 3,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.18888888888888888,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 3,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.35555555555555557,
+        "metabolic": 0.4111111111111111,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 4,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8666666666666667,
+        "metabolic": 0.08888888888888889,
+        "mixed": 0.044444444444444446,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 4,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8666666666666667,
+        "metabolic": 0.1,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 4,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8222222222222222,
+        "metabolic": 0.14444444444444443,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 4,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8444444444444444,
+        "metabolic": 0.1111111111111111,
+        "mixed": 0.044444444444444446,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 4,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.13333333333333333,
+        "metabolic": 0.8666666666666667,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 5,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.45555555555555555,
+        "metabolic": 0.28888888888888886,
+        "mixed": 0.25555555555555554,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 5,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.32222222222222224,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 5,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.45555555555555555,
+        "metabolic": 0.26666666666666666,
+        "mixed": 0.2777777777777778,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 5,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.4444444444444444,
+        "metabolic": 0.28888888888888886,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 5,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.36666666666666664,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.26666666666666666,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 6,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6777777777777778,
+        "metabolic": 0.24444444444444444,
+        "mixed": 0.07777777777777778,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 6,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6444444444444445,
+        "metabolic": 0.2222222222222222,
+        "mixed": 0.08888888888888889,
+        "other": 0.044444444444444446
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 6,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.7222222222222222,
+        "metabolic": 0.25555555555555554,
+        "mixed": 0.022222222222222223,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 6,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6888888888888889,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.06666666666666667,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 6,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.2222222222222222,
+        "metabolic": 0.7777777777777778,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 7,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 7,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 7,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 7,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 7,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 8,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 8,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 8,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.8,
+        "metabolic": 0.2,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 8,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.7888888888888889,
+        "metabolic": 0.2111111111111111,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 8,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 9,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 9,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 9,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 9,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 1.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 9,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 1.0,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 10,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.9777777777777777,
+        "metabolic": 0.011111111111111112,
+        "mixed": 0.0,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 10,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.9888888888888889,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 10,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.9777777777777777,
+        "metabolic": 0.0,
+        "mixed": 0.011111111111111112,
+        "other": 0.011111111111111112
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 10,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.9777777777777777,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.022222222222222223
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 10,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.9777777777777777,
+        "mixed": 0.022222222222222223,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 11,
+      "persona": "assistant",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.7222222222222222,
+        "metabolic": 0.14444444444444443,
+        "mixed": 0.0,
+        "other": 0.13333333333333333
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 11,
+      "persona": "kindergarten_teacher",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6444444444444445,
+        "metabolic": 0.15555555555555556,
+        "mixed": 0.0,
+        "other": 0.2
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 11,
+      "persona": "no_system",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.6777777777777778,
+        "metabolic": 0.15555555555555556,
+        "mixed": 0.0,
+        "other": 0.16666666666666666
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 11,
+      "persona": "software_engineer",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.7,
+        "metabolic": 0.14444444444444443,
+        "mixed": 0.0,
+        "other": 0.15555555555555556
+      }
+    },
+    {
+      "condition": "reversed-assignment",
+      "framing": 11,
+      "persona": "zelthari_scholar",
+      "n_completions": 90,
+      "fractions": {
+        "autoimmune": 0.12222222222222222,
+        "metabolic": 0.6333333333333333,
+        "mixed": 0.05555555555555555,
+        "other": 0.18888888888888888
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 1,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 1,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 1,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 1,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 1,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 2,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 2,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 2,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 2,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 2,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.0,
+        "other": 0.1
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 3,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.13333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 3,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 3,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4,
+        "metabolic": 0.5,
+        "mixed": 0.1,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 3,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.43333333333333335,
+        "metabolic": 0.5,
+        "mixed": 0.06666666666666667,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 3,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 4,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.06666666666666667,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 4,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 4,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 4,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4666666666666667,
+        "metabolic": 0.5,
+        "mixed": 0.03333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 4,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4,
+        "metabolic": 0.43333333333333335,
+        "mixed": 0.1,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 5,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4,
+        "metabolic": 0.3,
+        "mixed": 0.3,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 5,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.23333333333333334,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 5,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.4,
+        "metabolic": 0.23333333333333334,
+        "mixed": 0.36666666666666664,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 5,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.3,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.3333333333333333,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 5,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.3333333333333333,
+        "metabolic": 0.36666666666666664,
+        "mixed": 0.3,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 6,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 6,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 6,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.4666666666666667,
+        "mixed": 0.0,
+        "other": 0.03333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 6,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 6,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.5,
+        "metabolic": 0.5,
+        "mixed": 0.0,
+        "other": 0.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 7,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.0,
+        "other": 0.9333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 7,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.16666666666666666,
+        "mixed": 0.0,
+        "other": 0.8333333333333334
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 7,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.0,
+        "other": 0.9333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 7,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 0.9666666666666667
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 7,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 8,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.0,
+        "other": 0.9333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 8,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 8,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.0,
+        "other": 0.9333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 8,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.03333333333333333,
+        "mixed": 0.0,
+        "other": 0.9666666666666667
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 8,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 9,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 9,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 9,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 9,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 9,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.1,
+        "mixed": 0.0,
+        "other": 0.9
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 10,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 10,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.0,
+        "other": 0.9333333333333333
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 10,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 10,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 10,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.0,
+        "metabolic": 0.0,
+        "mixed": 0.0,
+        "other": 1.0
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 11,
+      "persona": "assistant",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.8333333333333334,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 11,
+      "persona": "kindergarten_teacher",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.1,
+        "mixed": 0.8,
+        "other": 0.06666666666666667
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 11,
+      "persona": "no_system",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.06666666666666667,
+        "mixed": 0.8,
+        "other": 0.1
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 11,
+      "persona": "software_engineer",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.06666666666666667,
+        "metabolic": 0.0,
+        "mixed": 0.7333333333333333,
+        "other": 0.2
+      }
+    },
+    {
+      "condition": "unmodified-baseline",
+      "framing": 11,
+      "persona": "zelthari_scholar",
+      "n_completions": 60,
+      "fractions": {
+        "autoimmune": 0.03333333333333333,
+        "metabolic": 0.0,
+        "mixed": 0.23333333333333334,
+        "other": 0.7333333333333333
+      }
+    }
+  ],
+  "categories": [
+    "autoimmune",
+    "metabolic",
+    "mixed",
+    "other"
+  ]
+}
