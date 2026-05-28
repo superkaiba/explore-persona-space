@@ -304,10 +304,11 @@ def _derive_predictors(
     """
     import torch
 
-    from explore_persona_space.analysis.divergence import compute_js_divergence
+    from explore_persona_space.analysis.divergence import compute_pairwise_divergences
 
     baseline_idx = all_names.index("__assistant_baseline__")
     panel_indices = [i for i, name in enumerate(all_names) if name != "__assistant_baseline__"]
+    n_total = len(all_names)
 
     # Predictor #1: cosine-to-assistant L15.
     # Per-persona vector = mean over q of hidden_last[persona_idx, q]. Then
@@ -322,37 +323,49 @@ def _derive_predictors(
         cos = torch.nn.functional.cosine_similarity(v, baseline_centroid, dim=0).item()
         pred_1[all_names[pidx]] = float(cos)
 
-    # Predictor #2: JS-to-baseline.
-    # Per (persona, question): JS(log_probs[persona, q], log_probs[baseline, q])
-    # averaged over q.
-    pred_2: dict[str, float] = {}
-    for pidx in panel_indices:
-        js_per_q = []
-        for q_log_probs in per_question_log_probs:
-            lp_persona = q_log_probs[pidx]  # (response_len, V)
-            lp_baseline = q_log_probs[baseline_idx]
-            js = compute_js_divergence(lp_persona, lp_baseline).item()
-            js_per_q.append(js)
-        pred_2[all_names[pidx]] = float(sum(js_per_q) / len(js_per_q))
+    # Predictors #2 + #3 via existing GPU-batched compute_pairwise_divergences.
+    # Earlier impl used a per-(i, j, q) CPU nested loop calling the unbatched
+    # compute_js_divergence — 48 * 48 * 20 = 46k calls on full (T, V=152k)
+    # tensors, ~hours on CPU; flagged in code-review round 2 (Codex). Fix:
+    # for each question, call compute_pairwise_divergences once (chunked GPU
+    # matmul, kl_only=True approximation, ~few seconds per call), accumulate
+    # symmetric (persona_i, persona_j) JS into a sum matrix, then divide by
+    # n_q at the end.
+    js_sum = torch.zeros(n_total, n_total)
+    js_count = torch.zeros(n_total, n_total)
+    gpu = "cuda:0" if torch.cuda.is_available() else "cpu"
+    for q_log_probs in per_question_log_probs:
+        # q_log_probs: (n_total, response_len, V) on CPU
+        js_pairs, _ = compute_pairwise_divergences(
+            q_log_probs,
+            all_names,
+            kl_only=True,
+            gpu_device=gpu,
+        )
+        for (a, b), v in js_pairs.items():
+            i = all_names.index(a)
+            j = all_names.index(b)
+            js_sum[i, j] += v
+            js_sum[j, i] += v  # symmetric
+            js_count[i, j] += 1
+            js_count[j, i] += 1
+    # Mean over questions where the pair was observed (avoid div-by-zero).
+    js_mean = torch.where(js_count > 0, js_sum / js_count.clamp(min=1), torch.zeros_like(js_sum))
 
-    # Predictor #3: pairwise output distance.
-    # For each persona, compute mean JS to the OTHER 47 panel personas,
-    # averaged over the 20 questions. The full 48x48 matrix is ~1128 unique
-    # pairs * 20 questions = ~22560 JS calls. Each call is O(T*V) ~= 1M ops
-    # on CPU — manageable (<1 min total).
+    # Predictor #2: JS-to-baseline (mean over questions).
+    pred_2: dict[str, float] = {
+        all_names[pidx]: float(js_mean[pidx, baseline_idx].item()) for pidx in panel_indices
+    }
+
+    # Predictor #3: pairwise output distance among panel personas
+    # (excludes the baseline column).
     pairwise_matrix: dict[str, dict[str, float]] = {}
     for i in panel_indices:
         pairwise_matrix[all_names[i]] = {}
         for j in panel_indices:
-            if i == j:
-                pairwise_matrix[all_names[i]][all_names[j]] = 0.0
-                continue
-            js_per_q = []
-            for q_log_probs in per_question_log_probs:
-                js = compute_js_divergence(q_log_probs[i], q_log_probs[j]).item()
-                js_per_q.append(js)
-            pairwise_matrix[all_names[i]][all_names[j]] = float(sum(js_per_q) / len(js_per_q))
-    # Per-persona scalar = mean JS to the other 47.
+            pairwise_matrix[all_names[i]][all_names[j]] = (
+                0.0 if i == j else float(js_mean[i, j].item())
+            )
     pred_3: dict[str, float] = {
         name: float(sum(v for k, v in row.items() if k != name) / max(1, len(row) - 1))
         for name, row in pairwise_matrix.items()
@@ -383,11 +396,11 @@ def compute_base_model_predictors(
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         # Imported here only for the import-availability check; the actual
-        # JS computation happens in _derive_predictors which imports its own
-        # reference. Keeping the import here means the early-exit path (no
-        # divergence module) fires BEFORE the expensive model load.
+        # divergence computation happens in _derive_predictors which imports
+        # its own reference. Keeping the import here means the early-exit path
+        # (no divergence module) fires BEFORE the expensive model load.
         from explore_persona_space.analysis.divergence import (  # noqa: F401
-            compute_js_divergence,
+            compute_pairwise_divergences,
         )
     except ImportError as e:
         logger.warning(
