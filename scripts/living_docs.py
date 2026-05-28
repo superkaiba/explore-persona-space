@@ -726,6 +726,38 @@ def backfill_reverse(
     return {"changed": changed, "unchanged": unchanged, "missing": missing, "dry_run": dry_run}
 
 
+def mark_unmapped(
+    task_id: int,
+    reason: str | None = None,
+    *,
+    paths: LivingDocsPaths | None = None,
+) -> dict[str, Any]:
+    """Mark a completed clean-result as intentionally unmapped.
+
+    Sets ``living_docs_unmapped`` on the task's body.md frontmatter so
+    :func:`check`'s coverage rule exempts it — a deliberate "this result
+    has no open question" decision, not drift. The stored value is the
+    reason string when given, else ``True``.
+
+    Parameters
+    ----------
+    task_id : int
+        Task to exempt.
+    reason : str, optional
+        Why it has no open question (recorded verbatim in the flag).
+    paths : LivingDocsPaths, optional
+        Injected paths (tests).
+    """
+    paths = paths or LivingDocsPaths.from_repo()
+    body_md = tw.find_task_path(task_id) / "body.md"
+    with _locked(paths.lock_path):
+        fm, body = tw._read_body(body_md)
+        fm["living_docs_unmapped"] = reason if reason else True
+        tw._write_body(body_md, fm, body)
+        tw._git_commit([body_md], f"task #{task_id}: mark living_docs_unmapped")
+    return {"task_id": task_id, "living_docs_unmapped": fm["living_docs_unmapped"]}
+
+
 # ─── check ─────────────────────────────────────────────────────────────────
 
 
@@ -787,7 +819,9 @@ def _completed_task_dates(paths: LivingDocsPaths) -> dict[int, str | None]:
 
     Used by check (b) [coverage] and (d) [staleness]. The date is the
     ``promoted_at`` frontmatter field's date portion when present, else
-    ``created_at``, else None.
+    ``created_at``, else None. Tasks flagged ``living_docs_unmapped`` are
+    excluded — a deliberate "this result has no open question" decision,
+    not drift (see :func:`mark_unmapped`).
     """
     out: dict[int, str | None] = {}
     for entry in tw.list_by_status("completed"):
@@ -795,6 +829,8 @@ def _completed_task_dates(paths: LivingDocsPaths) -> dict[int, str | None]:
             continue
         tid = int(entry["id"])
         fm, _ = tw._read_body(tw.find_task_path(tid) / "body.md")
+        if fm.get("living_docs_unmapped"):
+            continue  # intentionally unmapped — exempt from coverage + staleness
         stamp = fm.get("promoted_at") or fm.get("created_at")
         date = str(stamp)[:10] if stamp else None
         out[tid] = date
@@ -986,6 +1022,13 @@ def _cmd_backfill_reverse(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_mark_unmapped(args: argparse.Namespace) -> int:
+    """CLI: exempt a completed result from coverage (intentional non-mapping)."""
+    result = mark_unmapped(args.task_id, args.reason)
+    print(f"marked #{result['task_id']} living_docs_unmapped={result['living_docs_unmapped']!r}")
+    return 0
+
+
 def _cmd_check(args: argparse.Namespace) -> int:
     """CLI: lint; exit nonzero on drift."""
     report = check()
@@ -1019,6 +1062,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--dry-run", action="store_true", help="preview without writing or committing"
     )
     p_backfill.set_defaults(func=_cmd_backfill_reverse)
+
+    p_mark = sub.add_parser(
+        "mark-unmapped",
+        help="exempt a completed result from coverage (intentional non-mapping)",
+    )
+    p_mark.add_argument("task_id", type=int, help="task to exempt")
+    p_mark.add_argument("--reason", default=None, help="why it has no open question")
+    p_mark.set_defaults(func=_cmd_mark_unmapped)
 
     p_check = sub.add_parser("check", help="lint for drift; exit nonzero on drift")
     p_check.set_defaults(func=_cmd_check)

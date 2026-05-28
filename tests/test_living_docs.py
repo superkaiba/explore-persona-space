@@ -475,3 +475,27 @@ def test_backfill_reverse_dry_run_does_not_write(fixture):
     assert (300, ["a1"]) in result["changed"]
     fm, _ = tw._read_body(repo / "tasks" / "completed" / "300" / "body.md")
     assert not fm.get("relates_to")  # nothing written
+
+
+# ─── mark_unmapped() ─────────────────────────────────────────────────────────
+
+
+def test_check_exempts_intentionally_unmapped(fixture):
+    repo, paths = fixture
+    # A completed clean-result with no relates_to and no evidence anywhere —
+    # this is real coverage drift until it is deliberately exempted.
+    _make_task(
+        repo,
+        400,
+        "completed",
+        body=_task_body("Task 400", relates_to=None, has_clean_result=True),
+    )
+    assert not ld.check(paths=paths).ok  # #400 uncovered -> drift
+
+    result = ld.mark_unmapped(400, "no open question fits", paths=paths)
+    assert result["living_docs_unmapped"] == "no open question fits"
+
+    rep = ld.check(paths=paths)
+    assert rep.ok  # #400 now exempt; no other drift in the fixture
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "400" / "body.md")
+    assert fm["living_docs_unmapped"] == "no open question fits"
