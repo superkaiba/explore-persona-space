@@ -84,15 +84,22 @@ def _build_args(slab_root: Path) -> argparse.Namespace:
     )
 
 
-def _stub_pass1_deps(monkeypatch) -> dict:
+def _stub_pass1_deps(monkeypatch, *, verify_passes: bool = True) -> dict:
     """Monkeypatch every heavy Pass 1 entry point.
 
     Returns a dict of call records the caller can assert on.
+
+    Round 13: Pass 1 now also calls ``verify_adapter_on_hf_hub``
+    (LOUD-FAIL gate before cleanup) and ``_cleanup_pass1_cell`` (the
+    disk-quota fix). Both are stubbed so tests can assert call order +
+    verify-fail semantics without hitting HF Hub or running shutil.
     """
     records: dict[str, list] = {
         "prepare_cell_jsonl": [],
         "train_one_cell": [],
         "compute_logprob_panel": [],
+        "verify": [],
+        "cleanup": [],
         "order": [],
     }
 
@@ -178,17 +185,36 @@ def _stub_pass1_deps(monkeypatch) -> dict:
 
     monkeypatch.setattr(transformers, "AutoTokenizer", _FakeAutoTokenizer)
 
+    # Round 13: verify gate (real one hits HF Hub) + cleanup helper
+    # (real one shutil.rmtree's the staged adapter). Stub both so tests
+    # run on CPU without network OR risk of clobbering the test's
+    # temp-staged checkpoint dirs.
+    def _fake_verify(**kwargs):
+        records["verify"].append(kwargs)
+        records["order"].append("verify_adapter_on_hf_hub")
+        return verify_passes
+
+    monkeypatch.setattr(_dispatch, "verify_adapter_on_hf_hub", _fake_verify)
+
+    def _fake_cleanup(cell_dir):
+        records["cleanup"].append(cell_dir)
+        records["order"].append("_cleanup_pass1_cell")
+        return {"checkpoints_removed": 6, "prepared_train_removed": 1, "wandb_dirs_removed": 0}
+
+    monkeypatch.setattr(_dispatch, "_cleanup_pass1_cell", _fake_cleanup)
+
     return records
 
 
 def test_pass1_calls_only_hf_helpers_in_canonical_order(monkeypatch) -> None:
     """Pass 1 must traverse prepare_cell_jsonl → train_one_cell →
-    compute_logprob_panel → write logprob_panel.json for EVERY cell,
-    in that order. NO vLLM calls allowed in this pass.
+    compute_logprob_panel → write logprob_panel.json → verify on Hub
+    → cleanup local for EVERY cell, in that order. NO vLLM calls in
+    this pass.
 
     This is the load-bearing contract: Pass 1 ending without a
     framework switch is what eliminates the round-11 orphan-worker
-    OOM risk.
+    OOM risk. Round 13 adds the verify + cleanup tail (disk-quota fix).
     """
     from explore_persona_space.experiments.factor_screen_397.cells import Cell
 
@@ -206,8 +232,14 @@ def test_pass1_calls_only_hf_helpers_in_canonical_order(monkeypatch) -> None:
         # Both cells succeed.
         assert rcs == {("00000", "librarian", 42): 0, ("00001", "librarian", 42): 0}
 
-        # Per-cell canonical order, twice.
-        per_cell_seq = ["prepare_cell_jsonl", "train_one_cell", "compute_logprob_panel"]
+        # Per-cell canonical order, twice (Round 13 adds verify + cleanup).
+        per_cell_seq = [
+            "prepare_cell_jsonl",
+            "train_one_cell",
+            "compute_logprob_panel",
+            "verify_adapter_on_hf_hub",
+            "_cleanup_pass1_cell",
+        ]
         assert records["order"] == per_cell_seq * 2, f"Pass 1 order wrong: {records['order']}"
 
         # logprob_panel.json written for both cells.
@@ -325,6 +357,150 @@ def test_pass1_exception_is_caught_as_rc1_and_loop_continues(monkeypatch) -> Non
             ("00000", "librarian", 42): 1,  # crashed
             ("00001", "librarian", 42): 0,  # second cell succeeded after crash
         }
+
+
+def test_pass1_cleanup_runs_inside_loop_after_verify(monkeypatch) -> None:
+    """Round 13 disk-quota contract: ``_cleanup_pass1_cell`` MUST be
+    invoked AFTER ``verify_adapter_on_hf_hub`` AND inside the per-cell
+    loop (so cell N's checkpoints are gone BEFORE cell N+1 starts
+    training).
+
+    The motivating bug: Round 12 left intermediate checkpoints +
+    prepared_train.jsonl on disk after each Pass 1 cell. Sweep crashed
+    at cell 22/108 with ENOSPC (~93 GB on a 200 GB pod).
+
+    This test asserts:
+      1. Cleanup is called ONCE per cell (not zero, not lazily at
+         end-of-pass).
+      2. For every cell, verify_adapter_on_hf_hub appears BEFORE
+         _cleanup_pass1_cell in the recorded sequence (verify is the
+         gate; cleanup runs only on verify PASS).
+      3. The cleanup helper receives the right cell_dir.
+    """
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        slab_root = Path(tmpdir)
+        args = _build_args(slab_root)
+        records = _stub_pass1_deps(monkeypatch, verify_passes=True)
+
+        cells = [
+            (Cell.from_key("00000"), "librarian", 42),
+            (Cell.from_key("00001"), "librarian", 42),
+        ]
+        rcs = _dispatch._run_pass1_hf(cells, args=args)
+        assert rcs == {("00000", "librarian", 42): 0, ("00001", "librarian", 42): 0}
+
+        # (1) Cleanup invoked once per cell.
+        assert len(records["cleanup"]) == 2, (
+            f"Round 13: cleanup must run once per cell; got {len(records['cleanup'])} calls"
+        )
+
+        # (2) Per cell, verify appears BEFORE cleanup. Walk the recorded
+        # order and pair them up: index i*5+3 is the verify for cell i,
+        # index i*5+4 is the cleanup.
+        order = records["order"]
+        for cell_idx in range(2):
+            v_pos = cell_idx * 5 + 3  # 3, 8 — verify positions in the 5-step seq
+            c_pos = cell_idx * 5 + 4  # 4, 9 — cleanup positions
+            assert order[v_pos] == "verify_adapter_on_hf_hub", (
+                f"Round 13: cell {cell_idx} verify call at wrong position; got order={order}"
+            )
+            assert order[c_pos] == "_cleanup_pass1_cell", (
+                f"Round 13: cell {cell_idx} cleanup call at wrong position; got order={order}"
+            )
+
+        # (3) Cleanup received the right cell dirs.
+        expected_cell_dirs = [
+            slab_root / "cell_00000" / "source_librarian" / "seed_42",
+            slab_root / "cell_00001" / "source_librarian" / "seed_42",
+        ]
+        assert records["cleanup"] == expected_cell_dirs, (
+            f"Round 13: cleanup got wrong cell dirs; expected {expected_cell_dirs}, "
+            f"got {records['cleanup']}"
+        )
+
+
+def test_pass1_cleanup_skipped_when_verify_fails(monkeypatch) -> None:
+    """Round 13 LOUD-FAIL contract: when ``verify_adapter_on_hf_hub``
+    returns False (TRL inline-upload fence silently swallowed an upload
+    failure per CLAUDE.md gotcha), Pass 1 MUST NOT call
+    ``_cleanup_pass1_cell`` — local weights are preserved for retry,
+    and the cell exits rc=2 so the sweep summary surfaces the failure.
+
+    This is the load-bearing safety net per CLAUDE.md upload-policy:
+    "Models MUST upload to HF model repo before local deletion".
+    """
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        slab_root = Path(tmpdir)
+        args = _build_args(slab_root)
+        records = _stub_pass1_deps(monkeypatch, verify_passes=False)
+
+        cells = [(Cell.from_key("00000"), "librarian", 42)]
+        rcs = _dispatch._run_pass1_hf(cells, args=args)
+
+        # rc=2 mirrors Pass 2's verify-fail convention.
+        assert rcs == {("00000", "librarian", 42): 2}, (
+            f"Round 13: verify-FAIL must produce rc=2; got {rcs}"
+        )
+        # Cleanup MUST NOT have been called.
+        assert len(records["cleanup"]) == 0, (
+            "Round 13: cleanup was called even though verify failed — this "
+            "would delete local weights for a cell whose adapter is NOT on Hub, "
+            "violating CLAUDE.md upload-policy."
+        )
+        # Verify WAS called (one cell, one verify probe).
+        assert len(records["verify"]) == 1
+
+
+def test_pass1_cleanup_runs_before_next_cell_starts(monkeypatch) -> None:
+    """Round 13 disk-quota contract (per-cell-immediate): cell N's
+    cleanup MUST run BEFORE cell N+1's train_one_cell starts.
+
+    If cleanup happened lazily at end-of-pass (e.g. one batch
+    cleanup loop after all cells finish), the disk-full bug would
+    still trigger — cell N+1 would be training while cell N's
+    checkpoints are still on disk.
+
+    Pins the interleaving: for any two consecutive cells, cell N's
+    cleanup must come BEFORE cell N+1's prepare_cell_jsonl in the
+    recorded order.
+    """
+    from explore_persona_space.experiments.factor_screen_397.cells import Cell
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        slab_root = Path(tmpdir)
+        args = _build_args(slab_root)
+        records = _stub_pass1_deps(monkeypatch, verify_passes=True)
+
+        cells = [
+            (Cell.from_key("00000"), "librarian", 42),
+            (Cell.from_key("00001"), "librarian", 42),
+            (Cell.from_key("00002"), "librarian", 42),
+        ]
+        _dispatch._run_pass1_hf(cells, args=args)
+
+        order = records["order"]
+        # Per-cell 5-step sequence; cleanup is the LAST step per cell.
+        # Find each cleanup position and confirm it comes BEFORE the next
+        # cell's prepare_cell_jsonl (the first step of cell N+1).
+        cleanup_positions = [i for i, step in enumerate(order) if step == "_cleanup_pass1_cell"]
+        prepare_positions = [i for i, step in enumerate(order) if step == "prepare_cell_jsonl"]
+        assert len(cleanup_positions) == 3, f"Expected 3 cleanups; got {cleanup_positions}"
+        assert len(prepare_positions) == 3, f"Expected 3 prepares; got {prepare_positions}"
+
+        # Cell 1's prepare must come AFTER cell 0's cleanup.
+        assert cleanup_positions[0] < prepare_positions[1], (
+            f"Round 13: cell 0 cleanup (pos {cleanup_positions[0]}) must come "
+            f"BEFORE cell 1 prepare (pos {prepare_positions[1]}); got order={order}"
+        )
+        # Cell 2's prepare must come AFTER cell 1's cleanup.
+        assert cleanup_positions[1] < prepare_positions[2], (
+            f"Round 13: cell 1 cleanup (pos {cleanup_positions[1]}) must come "
+            f"BEFORE cell 2 prepare (pos {prepare_positions[2]}); got order={order}"
+        )
 
 
 def test_two_pass_sweep_calls_pass1_then_teardown_then_pass2(monkeypatch) -> None:

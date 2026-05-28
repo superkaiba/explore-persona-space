@@ -1253,6 +1253,111 @@ def cleanup_cell_local_weights(cell_output_dir: Path) -> dict[str, int]:
     return removed
 
 
+def _cleanup_pass1_cell(cell_output_dir: Path) -> dict[str, int]:
+    """Round 13 — Pass-1 per-cell cleanup (disk-full fix).
+
+    Round 12's two-pass design left intermediate checkpoints + the
+    per-cell training JSONL on disk between Pass 1 cells. Sweep crashed
+    at cell 22/108 with ``OSError: [Errno 28] No space left on device``
+    when 21 cells x ~4 GB each filled a 200 GB pod disk.
+
+    Called at the end of each successful Pass 1 cell, AFTER:
+      - ``train_one_cell`` returned (TRL inline-upload fence pushed the
+        adapter to HF Hub during training)
+      - ``compute_logprob_panel`` returned + ``logprob_panel.json`` was
+        persisted on disk
+      - ``verify_adapter_on_hf_hub`` confirmed the adapter actually
+        landed on Hub (LOUD-FAIL safety net per CLAUDE.md upload-policy
+        — the TRL fence silently swallows upload errors per the
+        sft.py:681 ``except Exception`` gotcha; verify is the only way
+        to know it worked).
+
+    Deletes (Pass 2 doesn't need any of these):
+      - ``<cell_dir>/adapter/checkpoint-*/`` — intermediate LoRA
+        checkpoints (6 dirs x ~485 MB each = ~3 GB). Pass 1's log-prob
+        eval already consumed them; Pass 2 uses only the final
+        ``<cell_dir>/adapter/`` weights via vLLM's ``LoRARequest``.
+      - ``<cell_dir>/prepared_train.jsonl`` — the per-cell training
+        JSONL (~1 MB). Pass 2 reads the recipe-fix manifest
+        (``prepared_dataset.json``) for system_prompt overrides, NOT
+        the training JSONL.
+      - ``<cell_dir>/wandb/`` — any WandB run dirs (varies). Pass 2
+        doesn't read these; WandB Artifacts (when uploaded) live in
+        the cloud.
+
+    Keeps (Pass 2 needs these):
+      - ``<cell_dir>/adapter/`` (root, sans ``checkpoint-*``) —
+        final LoRA weights (~485 MB) for vLLM ``LoRARequest``.
+      - ``<cell_dir>/logprob_panel.json`` (~100 KB) — Pass 1 deliverable.
+      - ``<cell_dir>/prepared_dataset.json`` — recipe-fix manifest
+        (small; Pass 2's ``build_train_matched_persona_panel`` reads it).
+      - ``<cell_dir>/run.log`` (small; for debug).
+
+    Per-cell footprint after this helper: ~500 MB (down from ~4 GB).
+    Peak Pass 1 disk = 1 active cell at ~3.5 GB + (N-done cells x 500 MB).
+    For 108 cells x 500 MB = ~54 GB total, well under a 200 GB pod disk.
+
+    Returns ``{"checkpoints_removed": N, "prepared_train_removed": 0|1,
+    "wandb_dirs_removed": N}`` for bookkeeping.
+
+    **NOTE on glob path:** the brief specified
+    ``<cell_dir>/checkpoint-*/`` but the actual layout (per
+    ``_enumerate_checkpoint_dirs``) is
+    ``<cell_dir>/adapter/checkpoint-*/``. Matches the brief's intent
+    (delete intermediate checkpoints, keep adapter) using the correct
+    nested path.
+    """
+    removed = {
+        "checkpoints_removed": 0,
+        "prepared_train_removed": 0,
+        "wandb_dirs_removed": 0,
+    }
+
+    # 1. Intermediate LoRA checkpoints under adapter/.
+    adapter_dir = cell_output_dir / "adapter"
+    if adapter_dir.is_dir():
+        for ck in sorted(adapter_dir.glob("checkpoint-*")):
+            if ck.is_dir():
+                shutil.rmtree(ck)
+                removed["checkpoints_removed"] += 1
+
+    # 2. Per-cell training JSONL.
+    prep_train = cell_output_dir / "prepared_train.jsonl"
+    if prep_train.exists():
+        prep_train.unlink()
+        removed["prepared_train_removed"] = 1
+
+    # 3. WandB run directories (if any landed in the cell dir).
+    for wandb_dir in cell_output_dir.glob("wandb*"):
+        if wandb_dir.is_dir():
+            shutil.rmtree(wandb_dir)
+            removed["wandb_dirs_removed"] += 1
+
+    # Log free disk after cleanup so the next OOM is debuggable.
+    try:
+        free_gb = shutil.disk_usage(cell_output_dir.parent).free / (1024**3)
+        log.info(
+            "Pass 1 cell cleanup: checkpoints=%d, prepared_train=%d, wandb=%d; free disk %.1f GB",
+            removed["checkpoints_removed"],
+            removed["prepared_train_removed"],
+            removed["wandb_dirs_removed"],
+            free_gb,
+        )
+    except OSError as e:
+        # disk_usage can fail on weird mount setups; don't kill the sweep
+        # over a logging failure. Cleanup itself already succeeded.
+        log.warning(
+            "Pass 1 cell cleanup: checkpoints=%d, prepared_train=%d, wandb=%d; "
+            "free-disk probe failed (%s)",
+            removed["checkpoints_removed"],
+            removed["prepared_train_removed"],
+            removed["wandb_dirs_removed"],
+            e,
+        )
+
+    return removed
+
+
 def _aggressive_hf_to_vllm_teardown(*local_refs: Any) -> None:
     """Round 8 HF→vLLM teardown sequence (4-step + log).
 
@@ -1522,6 +1627,40 @@ def _run_pass1_hf(
             del base_model
             del tokenizer_lp
             del tokenizer
+
+            # (6) Verify HF Hub upload BEFORE per-cell cleanup (Round 13).
+            # Without this gate, the TRL inline-upload fence (sft.py:681
+            # `except Exception`) can silently swallow a transient upload
+            # failure, and we'd cleanup local weights with nothing on Hub
+            # for Pass 2 to LoRA-swap against. LOUD-FAIL semantics: if
+            # verify returns False, SKIP cleanup (preserve local weights
+            # for retry / manual recovery) AND mark the cell rc=2 so the
+            # sweep summary surfaces it. Same rc=2 convention Pass 2's
+            # verify uses.
+            run_name = f"i397_cell_{cell.key}_source_{source}_seed{seed}"
+            hf_path_in_repo = f"adapters/issue_397/{run_name}"
+            upload_verified = verify_adapter_on_hf_hub(
+                hf_path_in_repo=hf_path_in_repo,
+                repo_id=HF_ADAPTER_REPO,
+            )
+            if not upload_verified:
+                log.error(
+                    "[Pass 1 — HF] HF upload verification FAILED for %s — "
+                    "preserving local weights at %s for manual recovery. "
+                    "Cell exits rc=2; Pass 2 will skip this cell (adapter "
+                    "not on Hub).",
+                    hf_path_in_repo,
+                    cell_dir,
+                )
+                per_cell_rc[(cell.key, source, seed)] = 2
+                continue
+
+            # (7) Round 13 disk-quota cleanup: delete intermediate
+            # checkpoints + per-cell training JSONL. Adapter dir, logprob
+            # panel, manifest, and run.log all preserved for Pass 2 +
+            # diagnosis.
+            removed = _cleanup_pass1_cell(cell_dir)
+            log.info("[Pass 1 — HF] cleanup: %s", removed)
 
             per_cell_rc[(cell.key, source, seed)] = 0
             log.info(
