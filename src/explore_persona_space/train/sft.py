@@ -406,6 +406,20 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Raw-text training mode (issue #406 MF-2). When set, switches SFTTrainer
+    # to its text-field path: each training row is `{"text": "<raw_string>"}`
+    # and loss is computed over the FULL sequence (no prompt/completion split,
+    # no response-only masking). Required for Class C2/C3/C4/C5 in #406, which
+    # bypass apply_chat_template entirely (raw `Question:/Answer:` scaffolding).
+    # When None (default), the existing prompt-completion path is byte-identical.
+    # An audit preflight runs over the first 2 rows to verify the configured
+    # marker token id (see audit_marker_token_id) sits at the expected
+    # post-`Answer:` position and is included in the loss mask.
+    dataset_text_field: str | None = None
+    # Token id to audit when dataset_text_field is set. Defaults to 83399
+    # (` ※` for Qwen-2.5-7B per CLAUDE.md). Set to None to skip the audit
+    # (use only when training rows do not carry the marker).
+    audit_marker_token_id: int | None = 83399
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: "TrainLoraConfig") -> None:
@@ -437,6 +451,70 @@ def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: "TrainLoraConfig
     trainer.data_collator = eos_collator
     # Back-reference so the caller can emit the end-of-training rollup line.
     trainer._epm_eos_collator = eos_collator
+
+
+def _audit_marker_in_loss_mask(
+    trainer,
+    marker_token_id: int,
+    n_rows: int = 2,
+) -> None:
+    """Preflight: verify the marker token is in the loss mask for raw-text rows.
+
+    Runs the first ``n_rows`` of ``trainer.train_dataset`` through
+    ``trainer.data_collator`` and asserts that ``marker_token_id`` appears in
+    ``input_ids`` at a position where ``labels[position] != -100`` (i.e., the
+    marker IS in the loss). Fails loud with the offending row's token-id
+    sequence on the first violation. Intended for the issue #406 MF-2
+    raw-text training path where the default response-only loss masking is
+    disabled and full-sequence loss applies; this check confirms the marker
+    actually trains.
+
+    Args:
+        trainer: SFTTrainer instance after construction.
+        marker_token_id: The integer token id the marker resolves to
+            (e.g., 83399 for ` ※` on Qwen-2.5-7B).
+        n_rows: How many of the first dataset rows to audit. Default 2.
+
+    Raises:
+        AssertionError: If the marker token id is not found in input_ids OR
+            if labels[marker_position] == -100 (marker masked out of loss).
+    """
+    dataset = trainer.train_dataset
+    n = min(n_rows, len(dataset))
+    if n == 0:
+        raise AssertionError("audit_marker_in_loss_mask: trainer.train_dataset is empty")
+
+    raw_rows = [dataset[i] for i in range(n)]
+    batch = trainer.data_collator(raw_rows)
+    input_ids = batch["input_ids"]
+    labels = batch["labels"]
+
+    for row_idx in range(n):
+        row_input_ids = input_ids[row_idx].tolist()
+        row_labels = labels[row_idx].tolist()
+        if marker_token_id not in row_input_ids:
+            raise AssertionError(
+                f"audit_marker_in_loss_mask: marker token id {marker_token_id} "
+                f"NOT FOUND in row {row_idx} input_ids. "
+                f"First 50 tokens: {row_input_ids[:50]}"
+            )
+        # Find LAST occurrence of marker (matches the `Answer: ※` position
+        # in raw-text rows; earlier occurrences would be in the prompt).
+        marker_pos = max(i for i, t in enumerate(row_input_ids) if t == marker_token_id)
+        if row_labels[marker_pos] == -100:
+            raise AssertionError(
+                f"audit_marker_in_loss_mask: marker at row {row_idx} "
+                f"position {marker_pos} (token id {marker_token_id}) has "
+                f"label -100 (masked out of loss). "
+                f"labels[{marker_pos - 2}:{marker_pos + 3}] = "
+                f"{row_labels[marker_pos - 2 : marker_pos + 3]}"
+            )
+        logger.info(
+            "audit_marker_in_loss_mask row %d: marker at position %d, label=%d (in loss). OK.",
+            row_idx,
+            marker_pos,
+            row_labels[marker_pos],
+        )
 
 
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
@@ -529,6 +607,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         )
     dataset = load_dataset("json", data_files=str(_data_path), split="train")
 
+    # Issue #406 MF-2: raw-text training-row mode. Validate the dataset shape
+    # matches the requested mode loudly (don't let SFTTrainer report a
+    # confusing KeyError on missing columns mid-init).
+    if cfg.dataset_text_field is not None:
+        if cfg.marker_only_loss:
+            raise ValueError(
+                "dataset_text_field is incompatible with marker_only_loss "
+                "(marker_only_loss expects prompt-completion columns)."
+            )
+        if cfg.mask_eos_for_recipient:
+            raise ValueError("dataset_text_field is incompatible with mask_eos_for_recipient.")
+        if cfg.dataset_text_field not in dataset.column_names:
+            raise ValueError(
+                f"cfg.dataset_text_field={cfg.dataset_text_field!r} but the "
+                f"loaded dataset has columns {dataset.column_names!r}. "
+                "Raw-text mode requires every JSONL row to be "
+                f'{{"{cfg.dataset_text_field}": "<raw_string>"}}.'
+            )
+
     # Liger is disabled here because SFTTrainer wraps the model as a PeftModel via the
     # peft_config below. Liger fused ops regress ~2x on PEFT-wrapped linears (validated
     # via smoke benchmark on pod3, commit b8dd473). When we add a non-LoRA in-process
@@ -579,6 +676,16 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    # Issue #406 MF-2: route SFTTrainer to its text-field path. The presence
+    # of dataset_text_field disables TRL's prompt-completion response-only
+    # masking and switches to full-sequence loss over the named column.
+    if cfg.dataset_text_field is not None:
+        sft_kwargs["dataset_text_field"] = cfg.dataset_text_field
+        logger.info(
+            "Raw-text training mode enabled: dataset_text_field=%r "
+            "(loss computed over full sequence, no response-only masking).",
+            cfg.dataset_text_field,
+        )
 
     sft_config = SFTConfig(**sft_kwargs)
 
@@ -607,6 +714,17 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
+
+    # Issue #406 MF-2: confirm the marker token actually trains under raw-text
+    # mode (full-sequence loss). Fails loud before the multi-hour training
+    # step starts if the marker is missing from input_ids or masked from the
+    # loss. Skipped when audit_marker_token_id is None.
+    if cfg.dataset_text_field is not None and cfg.audit_marker_token_id is not None:
+        _audit_marker_in_loss_mask(
+            trainer,
+            marker_token_id=cfg.audit_marker_token_id,
+            n_rows=2,
+        )
 
     result = trainer.train()
     loss = result.training_loss
