@@ -78,9 +78,11 @@ CONDITION_TITLE = {
     "refusal": "Refusal negatives (#390)",
 }
 
-# Pool the 4 non-teach personas. The teach persona (zelthari_scholar) is the
-# design's positive-control "always emit the fact" persona; including it
-# would dilute the cross-condition contrast.
+# Display all 5 evaluation personas (teach + 4 non-teach). The teach
+# persona (zelthari_scholar) is the design's positive-control "always emit
+# the fact" persona; including it as a 5th sub-bar shows the gate's
+# teach-side behaviour alongside the 4 non-teach personas the gate is
+# meant to suppress.
 TEACH_PERSONA = "zelthari_scholar"
 NON_TEACH_PERSONAS = (
     "assistant",
@@ -194,9 +196,10 @@ def composition_per_framing_persona(
     # (framing_id, persona) -> total
     totals: dict[tuple[int, str], int] = defaultdict(int)
 
+    all_personas = (TEACH_PERSONA,) + NON_TEACH_PERSONAS
     for rec in records:
-        if rec["persona"] not in NON_TEACH_PERSONAS:
-            continue  # skip teach persona
+        if rec["persona"] not in all_personas:
+            continue  # defensive: skip any unexpected persona key
         fid = rec["framing_id"]
         p = rec["persona"]
         cat = classify(rec["completion"])
@@ -206,7 +209,7 @@ def composition_per_framing_persona(
     out: dict[int, dict[str, dict[str, float]]] = {}
     for fid in FRAMING_ORDER:
         per_persona: dict[str, dict[str, float]] = {}
-        for p in NON_TEACH_PERSONAS:
+        for p in all_personas:
             n = totals.get((fid, p), 0)
             if n == 0:
                 continue
@@ -224,19 +227,21 @@ def main() -> None:
     # short label printed under each sub-bar so the reader can map bar
     # position back to persona without consulting the legend.
     PERSONA_DISPLAY_ORDER = (
+        "zelthari_scholar",
         "assistant",
         "software_engineer",
         "kindergarten_teacher",
         "no_system",
     )
     PERSONA_SHORT = {
+        "zelthari_scholar": "teach",
         "assistant": "asst",
         "software_engineer": "sw_eng",
         "kindergarten_teacher": "kt",
         "no_system": "no_sys",
     }
-    BAR_WIDTH = 0.18
-    BAR_OFFSETS = np.array([-1.5, -0.5, 0.5, 1.5]) * (BAR_WIDTH + 0.02)
+    BAR_WIDTH = 0.15
+    BAR_OFFSETS = np.array([-2.0, -1.0, 0.0, 1.0, 2.0]) * (BAR_WIDTH + 0.02)
 
     # Load + classify once per condition (per-persona resolution).
     composition: dict[str, dict[int, dict[str, dict[str, float]]]] = {}
@@ -354,9 +359,9 @@ def main() -> None:
     fig.text(
         0.02,
         0.96,
-        "3-seed pool, 4 non-teach personas as 4 sub-bars per framing "
-        "(left→right: assistant / software_engineer / kindergarten_teacher / no_system; "
-        "teaching scholar omitted). Framing #8 (negative control) omitted — polarity flipped.",
+        "3-seed pool, 5 personas as 5 sub-bars per framing "
+        "(left→right: teach=zelthari_scholar / assistant / software_engineer / kindergarten_teacher / no_system). "
+        "Framing #8 (negative control) omitted — polarity flipped.",
         fontsize=9,
         color="#555555",
         ha="left",

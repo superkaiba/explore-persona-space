@@ -1,6 +1,13 @@
 {
   "anchor": {
     "1": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -31,6 +38,13 @@
       }
     },
     "2": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.9743589743589743,
         "Trained named distractor": 0.02564102564102564,
@@ -61,6 +75,13 @@
       }
     },
     "3": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.9555555555555556,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.044444444444444446,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.5333333333333333,
         "Trained named distractor": 0.0,
@@ -91,6 +112,13 @@
       }
     },
     "4": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -121,6 +149,13 @@
       }
     },
     "5": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.8555555555555555,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.14444444444444443,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.5888888888888889,
         "Trained named distractor": 0.0,
@@ -151,6 +186,13 @@
       }
     },
     "6": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -181,6 +223,13 @@
       }
     },
     "7": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -211,6 +260,13 @@
       }
     },
     "9": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -241,6 +297,13 @@
       }
     },
     "10": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 1.0,
         "Trained named distractor": 0.0,
@@ -271,6 +334,13 @@
       }
     },
     "11": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.9666666666666667,
         "Trained named distractor": 0.03333333333333333,
@@ -303,6 +373,13 @@
   },
   "armB": {
     "1": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 1.0,
@@ -333,6 +410,13 @@
       }
     },
     "2": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.38461538461538464,
+        "Trained named distractor": 0.6153846153846154,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.01282051282051282,
         "Trained named distractor": 0.9871794871794872,
@@ -363,6 +447,13 @@
       }
     },
     "3": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.9222222222222223,
+        "Trained named distractor": 0.05555555555555555,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.022222222222222223,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.03333333333333333,
         "Trained named distractor": 0.9555555555555556,
@@ -393,6 +484,13 @@
       }
     },
     "4": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 1.0,
@@ -423,6 +521,13 @@
       }
     },
     "5": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.6222222222222222,
+        "Trained named distractor": 0.18888888888888888,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.18888888888888888,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.011111111111111112,
         "Trained named distractor": 0.9222222222222223,
@@ -453,6 +558,13 @@
       }
     },
     "6": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.4222222222222222,
+        "Trained named distractor": 0.5777777777777777,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.03333333333333333,
         "Trained named distractor": 0.9666666666666667,
@@ -483,6 +595,13 @@
       }
     },
     "7": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 1.0,
@@ -513,6 +632,13 @@
       }
     },
     "9": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 1.0,
@@ -543,6 +669,13 @@
       }
     },
     "10": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.022988505747126436,
         "Trained named distractor": 0.9770114942528736,
@@ -573,6 +706,13 @@
       }
     },
     "11": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.37777777777777777,
+        "Trained named distractor": 0.6222222222222222,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.011111111111111112,
         "Trained named distractor": 0.9888888888888889,
@@ -605,6 +745,13 @@
   },
   "refusal": {
     "1": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.9166666666666666,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.08333333333333333,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 0.0,
@@ -635,6 +782,13 @@
       }
     },
     "2": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.5128205128205128,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.41025641025641024,
+        "Other (confabulation / off-topic / novel decoy)": 0.07692307692307693,
+        "__n__": 78
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 0.0,
@@ -665,6 +819,13 @@
       }
     },
     "3": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.9666666666666667,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.03333333333333333,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.13333333333333333,
         "Trained named distractor": 0.0,
@@ -695,6 +856,13 @@
       }
     },
     "4": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.7555555555555555,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.23333333333333334,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 0.0,
@@ -725,6 +893,13 @@
       }
     },
     "5": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.6333333333333333,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.011111111111111112,
+        "Other (confabulation / off-topic / novel decoy)": 0.35555555555555557,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.18888888888888888,
         "Trained named distractor": 0.0,
@@ -755,6 +930,13 @@
       }
     },
     "6": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.45555555555555555,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.5444444444444444,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 0.0,
@@ -785,6 +967,13 @@
       }
     },
     "7": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.8333333333333334,
         "Trained named distractor": 0.0,
@@ -815,6 +1004,13 @@
       }
     },
     "9": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.028985507246376812,
         "Trained named distractor": 0.0,
@@ -845,6 +1041,13 @@
       }
     },
     "10": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.5977011494252874,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.40229885057471265,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.0,
         "Trained named distractor": 0.0,
@@ -875,6 +1078,13 @@
       }
     },
     "11": {
+      "zelthari_scholar": {
+        "Trained Lin/Pavlek answer": 0.8333333333333334,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.1111111111111111,
+        "Other (confabulation / off-topic / novel decoy)": 0.05555555555555555,
+        "__n__": 90
+      },
       "assistant": {
         "Trained Lin/Pavlek answer": 0.6555555555555556,
         "Trained named distractor": 0.0,
