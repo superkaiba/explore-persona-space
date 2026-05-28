@@ -64,7 +64,7 @@ logger = logging.getLogger("issue404_predictor_incontext")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-DEFAULT_K_SWEEP = [8, 32, 64, 128]
+DEFAULT_K_SWEEP = [8, 32, 64]  # K=128 (~39K tokens) exceeds Qwen-7B max_position_embeddings=32768
 HEADLINE_K = 64
 SANYER_K_HITLER = 10
 DEFAULT_NUM_SAMPLES = 100
@@ -139,7 +139,7 @@ def measure_pair_K(
         temperature=temperature,
         max_tokens=max_tokens,
         extra_context_messages=context_msgs,
-        max_model_len=65536,
+        max_model_len=32768,
     )
 
     # Checkpoint raw completions IMMEDIATELY (per CLAUDE.md per-phase rule).
