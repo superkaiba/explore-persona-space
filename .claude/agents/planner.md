@@ -245,6 +245,34 @@ say so — silence is not acceptable.
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
 
+**Required: per-component compute-projection table.** Every plan §9 for
+`kind: experiment` tasks MUST include a per-component compute-projection
+table (one row per compute-bound component). The implementer's
+post-implementation `epm:compute-deviation v1` check (see
+`experiment-implementer.md` mandatory checklist item 5) quotes
+`planned_wall_h`, `projected_wall_h`, `ratio`, and the row's `basis`
+string verbatim. The orchestrator's `pivot_criteria.compute_deviation_over_2x`
+uses the `parallelism` field to compute auto-descope options.
+
+| component | planned_wall_h | planned_gpu_h | parallelism | basis |
+|---|---|---|---|---|
+| (e.g., "smoke-phase per-cell train") | 0.5 | 0.5 | TP=1 | "matched to #382 round-2 trained-on-same-mix wall-time" |
+| (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
+| (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
+
+**Stratification spec.** If the sweep has multiple statistical
+dimensions (seeds, framings, cells-per-stratum), name in §9 the
+priority order for auto-descope (e.g., "drop seeds first, then framings,
+then cells-per-stratum") and the minimum-N per dimension to preserve
+statistical power. The orchestrator's auto-descope walks dimensions in
+that priority order; when none keep ratio ≤ 1.5× while staying above
+the per-dimension min-N, it escalates via
+`gates.conditional.compute_deviation_resolution`.
+
+`kind: analysis | infra | batch | survey` plans are exempt from the
+table (no GPU-bound components). For those, write "N/A — no
+compute-bound components" and move on.
+
 ### 10. Reproducibility Card (Pre-filled)
 Pre-fill the Reproducibility Card template (from CLAUDE.md) with all KNOWN values. Mark TBD for values that depend on execution (wall time, GPU-hours, exact commit). The experimenter fills in TBDs after running. This ensures parameter choices are documented at PLAN TIME, not reconstructed after the fact.
 

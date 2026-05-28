@@ -959,6 +959,45 @@ block on the Codex twin's absence; cap-3 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.`
 
+##### Step 5.bis: Pre-dispatch checks (compute-deviation + whack-a-mole)
+
+Fires once per implementer round, AFTER code-review-PASS, BEFORE any
+pod-provision or experimenter-dispatch action in Step 6. Two
+independent triggers run in sequence:
+
+**5.bis(a) — Compute-deviation pivot.** Scan the task's
+`events.jsonl` for `epm:compute-deviation v1` markers posted in the
+current implementer round (highest version with the same round number).
+If present:
+
+1. Parse the marker's body for `component`, `planned_wall_h`,
+   `projected_wall_h`, `ratio`, `basis`. If the marker carries
+   `action: auto_descope_to_<spec>`, the implementer (or a prior
+   orchestrator tick) already accepted an auto-descope — log the
+   descope to chat as one line and advance to Step 5.bis(b).
+2. Otherwise, attempt auto-descope per
+   `workflow.yaml § pivot_criteria.compute_deviation_over_2x`:
+   walk the planner's §9 stratification dimensions in priority order
+   (seeds → framings → cells-per-stratum); for each dimension, compute
+   the descoped projection (drop the dimension to its min-N-for-power
+   per the planner's §9 stratification spec). The first descope whose
+   ratio ≤ 1.5× AND keeps every dimension ≥ its min-N wins.
+3. **Auto-descope success.** Post `epm:compute-deviation v2` with
+   `action: auto_descope_to_<spec>`, update the implementer's per-cell
+   parameters in the launch command, log to chat as one line, advance.
+4. **Auto-descope fails** (no dimension keeps ratio ≤ 1.5× while
+   staying above min-N): surface `gates.conditional.compute_deviation_resolution`
+   (id=12) with the 2-option prompt. Quote the ratio inline. On
+   `continue_as_is`, advance to Step 5.bis(b) with the original
+   parameters. On `accept_descope_to_<X>_with_caveats`, post
+   `epm:compute-deviation v2` with the chosen descope spec + caveats
+   and advance.
+
+   <!-- gate: gates.conditional.compute_deviation_resolution -->
+
+**5.bis(b) — Whack-a-mole detector.** (Added in Commit 7 — see Fix #6
+in the task #397 post-mortem batch.)
+
 ### Step 6: Pod provisioning + experimenter dispatch (experiment only)
 
 Only if status is `running` (entered from Step 5b PASS for `experiment`)

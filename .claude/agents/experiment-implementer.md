@@ -105,9 +105,23 @@ they invoke `implementer` directly.
    even provisioned.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
-5. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+5. **Compute-deviation check.** For every row in the plan's §9
+   per-component compute-projection table, compute the projected wall-time
+   from your code-resolved parameters (per-cell train time × cell count /
+   parallelism, etc.). If ANY row's `projected_wall_h / planned_wall_h`
+   ratio exceeds 2×, post `<!-- epm:compute-deviation v1 -->` BEFORE
+   posting the implementation marker. Body shape:
+   `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
+   Do NOT attempt to descope yourself — the orchestrator's
+   `pivot_criteria.compute_deviation_over_2x` logic handles auto-descope
+   (or escalates via `gates.conditional.compute_deviation_resolution`
+   when no descope preserves statistical power). Rationale: task #397
+   round 6 (2026-05-27) — 3-4× projection surfaced as "needs human
+   eyeball" rather than a structural pivot, costing ~17h. The trigger
+   was added per the post-mortem; the orchestrator owns the response.
+6. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-6. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+7. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 

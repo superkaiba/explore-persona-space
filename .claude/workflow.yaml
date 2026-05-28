@@ -408,6 +408,24 @@ gates:
         `approve-tests` approval in the events.jsonl. Re-invoking /issue <N>
         after approval resumes Step 4b normally. (See `markers.md` and the
         implementer agent specs.)
+    - id: 12
+      name: compute_deviation_resolution
+      step: "5.bis (whack-a-mole detector position, post-code-review-PASS)"
+      condition: |
+        Fires only when pivot_criteria.compute_deviation_over_2x's
+        auto-descope path fails: no descope dimension keeps projected
+        ratio ≤ 1.5× while preserving statistical power per the
+        planner's §9 stratification spec.
+      reason: |
+        Two-option prompt: `continue_as_is` (accept extra cost; quote
+        the projected ratio inline) vs `accept_descope_to_<X>_with_caveats`
+        (named caveats inline). 2-option cap per CLAUDE.md "No 4+ option
+        menus" + Fix #7 from the #397 post-mortem. Post-mortem trigger:
+        task #397 round 6 (2026-05-27) — projection was 3-4× plan §12
+        but surfaced as "needs human eyeball" rather than a structural
+        pivot, costing ~17h before the user noticed.
+
+        <!-- gate: gates.conditional.compute_deviation_resolution -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
@@ -497,6 +515,29 @@ pivot_criteria:
       After 3 analyzer ↔ clean-result-critic rounds, advance regardless
       with residual structural / register debt surfaced in
       `comments.jsonl`. Do NOT block.
+  - trigger: compute_deviation_over_2x
+    pivot_action: |
+      Wall-time projection for any compute-bound component (from the
+      planner's §9 per-component compute-projection table) exceeds 2×
+      the row's `planned_wall_h`. Computed at implementer-report-time
+      from the resolved per-cell parameters in the dispatcher.
+
+      Auto-action: attempt auto-descope to the largest sub-grid keeping
+      projected ratio ≤ 1.5× AND preserving statistical power per the
+      planner's §9 stratification spec. Descope dimensions in priority
+      order: seeds (drop from N to floor(N/2) if pre-registered seeds
+      ≥ 4), framings (drop to single framing if pre-registered framings
+      ≥ 3), cells-per-stratum (drop within-stratum cells if
+      stratification allows). On success, post `epm:compute-deviation v1`
+      with `action: auto_descope_to_<spec>` and continue.
+
+      Escalation: when no descope keeps ratio ≤ 1.5× while preserving
+      statistical power, surface
+      gates.conditional.compute_deviation_resolution (id=12) with two
+      options: `continue_as_is` (accept extra cost) vs
+      `accept_descope_to_<X>_with_caveats` (descope drops below
+      planner's §9 min-N-for-power; named caveats inline). Post-mortem
+      trigger: task #397 round 6 (2026-05-27).
 
 # ──────────────────────────────────────────────────────────────────────
 # Subagent halt verdicts. Restored from the GH-era yaml with substrate
@@ -796,6 +837,26 @@ markers:
     posted_by: skill (via experiment-implementer)
     when: "Step 4b"
     fields: "Posted for type=experiment tasks. Body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball`."
+  - kind: "epm:compute-deviation"
+    posted_by: skill (via experiment-implementer)
+    when: "Step 4b (implementer report-time, before code-review)"
+    fields: |
+      Posted when the implementer's resolved per-cell parameters project
+      a wall-time deviation exceeding 2× any row in the planner's §9
+      per-component compute-projection table. Body shape:
+      `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
+      Optional: `action: auto_descope_to_<spec>` when the orchestrator's
+      pivot_criteria.compute_deviation_over_2x logic identifies a
+      descope that keeps ratio ≤ 1.5× AND preserves statistical power
+      per the planner's §9 stratification spec. When `action` is
+      present, the orchestrator continues with the descoped sweep.
+      When absent, the orchestrator surfaces
+      gates.conditional.compute_deviation_resolution (id=12) with the
+      2-option pivot prompt. Rationale: task #397 round 6 (2026-05-27) —
+      projection was 3-4× plan §12 but surfaced as "needs human
+      eyeball" rather than as a structural pivot, costing ~17h before
+      the user noticed. Per the 2026-05-22 workflow.yaml PHILOSOPHY
+      directive, auto-pivot is the default; halt is the rare exception.
   - kind: "epm:code-review"
     posted_by: skill (via code-reviewer)
     when: "Step 5"
