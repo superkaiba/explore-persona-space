@@ -31,6 +31,21 @@ Race-hardening (per plan §2):
   abort if it has already moved out of ``running``.
 * Idempotency: scan existing ``epm:failure`` markers; if any has a
   ``watch_pid`` >= our pid, exit silently.
+
+False-positive hardening (liveness robustness):
+
+* The heartbeat/log signal alone over-reports stalls in two cases —
+  (a) the orchestrator hands us the outer ``uv run`` wrapper PID
+  instead of the real python child, and (b) a phase writes to a data
+  file rather than the log, so log-mtime goes quiet while the run is
+  still burning CPU. :func:`resolve_real_pid` descends the process
+  tree to the real python child, and :func:`_probe_process_active`
+  reports whether that process is actually doing work. A stall is only
+  declared when BOTH the heartbeat/log probe AND the process-tree probe
+  agree the run is idle. The process-tree probe is *corroboration only*:
+  when no PID is supplied (the default), it returns ``None`` and the
+  stall decision falls back to the heartbeat/log signal alone — exactly
+  the prior behavior. It never manufactures a stall verdict on its own.
 """
 
 from __future__ import annotations
@@ -56,6 +71,12 @@ TICK_SECS = 60
 PROBE_FAILURE_LIMIT = 5  # ticks of probe-unreachable before giving up
 DEFAULT_THRESHOLD_SECS = 300
 DEFAULT_MAX_RUNTIME_SECS = 86400  # 24h
+
+# A wrapper command whose direct python child IS the real workload. When the
+# orchestrator hands us the PID of one of these wrappers, resolve_real_pid()
+# descends the process tree to the python child so the liveness probe reads
+# the right process.
+WRAPPER_BASENAMES = frozenset({"uv", "nohup", "env", "timeout", "stdbuf", "setsid"})
 
 # Statuses that mean "experiment progressed beyond running" — we exit
 # silently without posting. Snake_case to match Sagan's experiment_status
@@ -165,6 +186,151 @@ def _probe_log_mtime(log_path: str | None) -> float | None:
         return None
 
 
+def resolve_real_pid(pid: int) -> int:
+    """Descend a wrapper-process PID to the real python-workload child.
+
+    The orchestrator may hand us the PID of an outer ``uv run`` (or
+    ``nohup`` / ``env`` / ``timeout`` / ...) wrapper. That wrapper's
+    own CPU usage stays near zero while the actual workload runs in a
+    python grandchild, so a liveness probe pointed at the wrapper PID
+    looks idle even when the run is healthy. This walks down the
+    process tree from ``pid``, following the single child of each
+    wrapper, until it reaches a non-wrapper process (typically the
+    python interpreter) or a fork point.
+
+    Returns the resolved real PID. Falls back to the input ``pid`` when
+    psutil is unavailable, the process is gone, or the tree branches
+    (ambiguous descent — better to probe the wrapper than guess).
+    """
+    try:
+        import psutil
+    except ImportError:
+        log.warning("psutil not installed; cannot resolve wrapper PID %d", pid)
+        return pid
+
+    current = pid
+    # Bounded descent: a wrapper chain (uv -> python, nohup -> uv -> python)
+    # is at most a handful deep; the cap guards against pathological cycles.
+    for _ in range(8):
+        try:
+            proc = psutil.Process(current)
+            name = (proc.name() or "").lower()
+            children = proc.children()
+        except (psutil.NoSuchProcess, psutil.AccessDenied) as exc:
+            log.info("resolve_real_pid: cannot inspect pid %d: %s", current, exc)
+            return pid
+        # A non-wrapper process IS the workload — stop here.
+        if name not in WRAPPER_BASENAMES:
+            return current
+        # Wrapper with exactly one child → descend. Zero children means the
+        # wrapper is the leaf (workload already exited or never spawned);
+        # >1 child means the tree forked and the descent is ambiguous.
+        if len(children) != 1:
+            log.info(
+                "resolve_real_pid: wrapper pid %d (%s) has %d children; stopping descent",
+                current,
+                name,
+                len(children),
+            )
+            return current
+        current = children[0].pid
+    log.info("resolve_real_pid: descent cap hit from pid %d; using pid %d", pid, current)
+    return current
+
+
+def _process_active_local(pid: int) -> bool | None:
+    """Return True if the LOCAL process tree rooted at ``pid`` is alive.
+
+    Snapshot semantics: the resolved real process (or any of its
+    descendants) exists and is in a running/sleeping state — i.e. NOT
+    zombie (dead-not-reaped) or stopped. Returns None when the process
+    is gone or psutil is unavailable; the caller treats None as "no
+    process signal", NOT as "idle".
+    """
+    try:
+        import psutil
+    except ImportError:
+        return None
+    real_pid = resolve_real_pid(pid)
+    try:
+        proc = psutil.Process(real_pid)
+        statuses = {proc.status()}
+        for child in proc.children(recursive=True):
+            try:
+                statuses.add(child.status())
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+    except (psutil.NoSuchProcess, psutil.AccessDenied) as exc:
+        log.info("_process_active_local: pid %d gone/inaccessible: %s", real_pid, exc)
+        return None
+    # Dead-but-not-reaped (zombie) or stopped means the workload is NOT
+    # progressing; an alive running/sleeping process means it might be.
+    active_states = {
+        psutil.STATUS_RUNNING,
+        psutil.STATUS_DISK_SLEEP,
+        psutil.STATUS_SLEEPING,
+        psutil.STATUS_WAKING,
+        psutil.STATUS_IDLE,
+    }
+    return any(s in active_states for s in statuses)
+
+
+def _process_active_remote(pid: int, server: str) -> bool | None:
+    """Return True if the REMOTE (pod-side) process tree rooted at ``pid`` is
+    alive. Mirrors :func:`_process_active_local` over SSH.
+
+    Uses ``ps -o stat= -p <pid>`` to read the kernel process state. A
+    ``Z`` (zombie) or ``T``/``t`` (stopped) leading state code means not
+    progressing; ``R``/``S``/``D`` means alive. Returns None when the
+    SSH probe fails or the process is gone — caller treats None as "no
+    process signal", never as "idle".
+    """
+    cmd = ["ssh", server, "ps", "-o", "stat=", "-p", str(pid)]
+    try:
+        out = subprocess.check_output(cmd, text=True, timeout=30, stderr=subprocess.DEVNULL).strip()
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        # CalledProcessError with empty output = no such PID (process gone).
+        log.info("_process_active_remote: probe failed for pid %d on %s: %s", pid, server, exc)
+        return None
+    if not out:
+        return None
+    leading = out[0]
+    # Z = zombie (dead-not-reaped), T/t = stopped/traced — not progressing.
+    return leading not in ("Z", "T", "t")
+
+
+def _probe_process_active(process_target: str | None) -> bool | None:
+    """Corroboration probe: is the workload process actually doing work?
+
+    ``process_target`` is shaped ``<server>:<pid>`` for a pod-side
+    process (SSH probe) or a bare ``<pid>`` for a local process. None /
+    empty → returns None (no process signal; caller must NOT treat that
+    as a stall on its own).
+
+    Returns True (alive/progressing), False (gone/zombie/stopped), or
+    None (unknown — probe unavailable). The stall decision suppresses a
+    verdict only on a True result; it never *manufactures* a stall from
+    a False/None here — genuine stall detection still keys on the
+    heartbeat/log probe.
+    """
+    if not process_target:
+        return None
+    if ":" in process_target:
+        server, raw_pid = process_target.split(":", 1)
+        try:
+            pid = int(raw_pid)
+        except ValueError:
+            log.info("_probe_process_active: malformed remote target %r", process_target)
+            return None
+        return _process_active_remote(pid, server)
+    try:
+        pid = int(process_target)
+    except ValueError:
+        log.info("_probe_process_active: malformed local target %r", process_target)
+        return None
+    return _process_active_local(pid)
+
+
 def _check_terminal(issue: int) -> bool:
     """Return True if the watchdog should exit gracefully (epm:results
     posted, status moved beyond running, etc).
@@ -251,8 +417,15 @@ def _watch_loop(
     log_path: str | None,
     pid_file: Path,
     max_runtime_secs: int,
+    process_target: str | None = None,
 ) -> int:
     """Tick every TICK_SECS; flag stall after threshold_secs of no event.
+
+    ``process_target`` (``<server>:<pid>`` or bare ``<pid>``) enables the
+    process-tree corroboration probe. When supplied and the resolved real
+    process is alive/progressing, a heartbeat/log stall is suppressed (the
+    log went quiet but the run is still working). When absent, the stall
+    decision keys on the heartbeat/log probe alone — the prior behavior.
 
     Returns the desired process exit code.
     """
@@ -306,9 +479,28 @@ def _watch_loop(
         consecutive_unreachable = 0
         last_event_at = max(last_event_at, ev)
 
-        # Stall check.
+        # Stall check. The heartbeat/log probe is primary: only when it
+        # says "no event for longer than the threshold" do we even
+        # consider a stall.
         elapsed = time.time() - last_event_at
         if elapsed > threshold_secs:
+            # Corroboration: a quiet log does NOT mean a dead run. Some
+            # phases write to a data file, not the log, so log-mtime goes
+            # silent while the process is still burning CPU. If the
+            # process-tree probe says the workload is actively alive,
+            # suppress the stall verdict and keep watching. The probe is
+            # corroboration only — a False/None result does not by itself
+            # trigger a stall (the heartbeat/log signal already did).
+            proc_active = _probe_process_active(process_target)
+            if proc_active is True:
+                log.info(
+                    "watchdog %d: log/heartbeat quiet for %ds but process "
+                    "target %s is alive; suppressing stall verdict",
+                    os.getpid(),
+                    int(elapsed),
+                    process_target,
+                )
+                continue
             _post_failure(issue, reason="stall", last_event=last_event_at)
             return 1
 
@@ -347,6 +539,17 @@ def main(argv: list[str] | None = None) -> int:
         help="PID file path. Defaults to .claude/cache/watch-<issue>.pid.",
     )
     parser.add_argument(
+        "--process-target",
+        default=None,
+        help="<server>:<pid> (pod-side, probed over SSH) or a bare <pid> "
+        "(local) of the workload process. Enables the process-tree "
+        "corroboration probe: a heartbeat/log stall is suppressed when this "
+        "process is still alive (the log went quiet but the run is still "
+        "working). An outer 'uv run'/'nohup' wrapper PID is resolved down to "
+        "the real python child automatically. Omit to key stall detection on "
+        "the heartbeat/log probe alone (the default).",
+    )
+    parser.add_argument(
         "--force-attach",
         action="store_true",
         help="Bypass the SECTION_2_LAND_SHA gate. Used to attach the watchdog "
@@ -372,12 +575,14 @@ def main(argv: list[str] | None = None) -> int:
     pid_file.parent.mkdir(parents=True, exist_ok=True)
     pid_file.write_text(str(os.getpid()))
     log.info(
-        "watchdog %d: started (issue=%s, threshold=%ds, wandb=%s, log=%s, force_attach=%s)",
+        "watchdog %d: started (issue=%s, threshold=%ds, wandb=%s, log=%s, "
+        "process_target=%s, force_attach=%s)",
         os.getpid(),
         args.issue,
         args.threshold_secs,
         args.wandb_run_url,
         args.log_path,
+        args.process_target,
         args.force_attach,
     )
 
@@ -389,6 +594,7 @@ def main(argv: list[str] | None = None) -> int:
             log_path=args.log_path,
             pid_file=pid_file,
             max_runtime_secs=args.max_runtime_secs,
+            process_target=args.process_target,
         )
     finally:
         # Clean up the pid file on exit (any path).

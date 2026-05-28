@@ -72,9 +72,19 @@ def _build_parser():
     parser.add_argument("--log-path", default=None)
     parser.add_argument("--max-runtime-secs", type=int, default=pod_watch.DEFAULT_MAX_RUNTIME_SECS)
     parser.add_argument("--pid-file", default=None)
+    parser.add_argument("--process-target", default=None)
     parser.add_argument("--force-attach", action="store_true")
     parser.add_argument("--log-level", default="INFO")
     return parser
+
+
+def test_argparse_process_target_default_none():
+    """--process-target defaults to None (process-tree corroboration off)."""
+    parser = _build_parser()
+    ns = parser.parse_args(["--issue", "999"])
+    assert ns.process_target is None
+    ns_set = parser.parse_args(["--issue", "999", "--process-target", "epm-issue-999:4242"])
+    assert ns_set.process_target == "epm-issue-999:4242"
 
 
 # ── _check_terminal ───────────────────────────────────────────────────────
@@ -274,6 +284,317 @@ def test_failure_classifier_field_line_still_wins():
 
     body = "failure_class: infra\nreason: stall\n"
     assert classify_failure(body) == "infra"
+
+
+# ── resolve_real_pid (process-tree descent) ───────────────────────────────
+
+
+class _FakeProc:
+    """Minimal psutil.Process stand-in for process-tree tests."""
+
+    def __init__(self, pid, name, children=None, status="running"):
+        self._pid = pid
+        self._name = name
+        self._children = children or []
+        self._status = status
+
+    @property
+    def pid(self):
+        return self._pid
+
+    def name(self):
+        return self._name
+
+    def children(self, recursive=False):
+        if not recursive:
+            return list(self._children)
+        out = []
+        for child in self._children:
+            out.append(child)
+            out.extend(child.children(recursive=True))
+        return out
+
+    def status(self):
+        return self._status
+
+
+class _FakePsutil:
+    """A psutil-shaped module backed by a {pid: _FakeProc} registry."""
+
+    class NoSuchProcess(Exception):
+        pass
+
+    class AccessDenied(Exception):
+        pass
+
+    STATUS_RUNNING = "running"
+    STATUS_SLEEPING = "sleeping"
+    STATUS_DISK_SLEEP = "disk-sleep"
+    STATUS_WAKING = "waking"
+    STATUS_IDLE = "idle"
+    STATUS_ZOMBIE = "zombie"
+    STATUS_STOPPED = "stopped"
+
+    def __init__(self, registry):
+        self._registry = registry
+
+    def Process(self, pid):
+        if pid not in self._registry:
+            raise self.NoSuchProcess(pid)
+        return self._registry[pid]
+
+
+def _install_fake_psutil(monkeypatch, registry):
+    """Inject a fake `psutil` module so `import psutil` inside pod_watch
+    resolves to our registry-backed stand-in."""
+    fake = _FakePsutil(registry)
+    monkeypatch.setitem(sys.modules, "psutil", fake)
+    return fake
+
+
+def test_resolve_real_pid_descends_uv_wrapper(monkeypatch):
+    """uv (pid 100) -> python (pid 200): resolve to the python child."""
+    python = _FakeProc(200, "python3.11", children=[])
+    uv = _FakeProc(100, "uv", children=[python])
+    _install_fake_psutil(monkeypatch, {100: uv, 200: python})
+    assert pod_watch.resolve_real_pid(100) == 200
+
+
+def test_resolve_real_pid_descends_nested_wrappers(monkeypatch):
+    """nohup -> uv -> python: descend the whole wrapper chain."""
+    python = _FakeProc(300, "python", children=[])
+    uv = _FakeProc(200, "uv", children=[python])
+    nohup = _FakeProc(100, "nohup", children=[uv])
+    _install_fake_psutil(monkeypatch, {100: nohup, 200: uv, 300: python})
+    assert pod_watch.resolve_real_pid(100) == 300
+
+
+def test_resolve_real_pid_non_wrapper_returns_self(monkeypatch):
+    """A bare python PID with no wrapper is returned unchanged."""
+    python = _FakeProc(500, "python", children=[])
+    _install_fake_psutil(monkeypatch, {500: python})
+    assert pod_watch.resolve_real_pid(500) == 500
+
+
+def test_resolve_real_pid_branching_tree_stops_descent(monkeypatch):
+    """A wrapper that forked into >1 child is ambiguous — stop at the
+    wrapper rather than guessing which branch is the workload."""
+    c1 = _FakeProc(201, "python", children=[])
+    c2 = _FakeProc(202, "python", children=[])
+    uv = _FakeProc(100, "uv", children=[c1, c2])
+    _install_fake_psutil(monkeypatch, {100: uv, 201: c1, 202: c2})
+    assert pod_watch.resolve_real_pid(100) == 100
+
+
+def test_resolve_real_pid_falls_back_when_process_gone(monkeypatch):
+    """Process disappeared mid-descent → fall back to the input PID."""
+    _install_fake_psutil(monkeypatch, {})  # empty registry
+    assert pod_watch.resolve_real_pid(100) == 100
+
+
+# ── _probe_process_active ─────────────────────────────────────────────────
+
+
+def test_probe_process_active_none_when_no_target():
+    """No process target → None (no process signal; never a stall on its own)."""
+    assert pod_watch._probe_process_active(None) is None
+    assert pod_watch._probe_process_active("") is None
+
+
+def test_probe_process_active_local_alive(monkeypatch):
+    """Local resolved process is running → True."""
+    python = _FakeProc(200, "python", children=[], status="running")
+    uv = _FakeProc(100, "uv", children=[python], status="sleeping")
+    _install_fake_psutil(monkeypatch, {100: uv, 200: python})
+    assert pod_watch._probe_process_active("100") is True
+
+
+def test_probe_process_active_local_zombie_is_false(monkeypatch):
+    """A zombie (dead-not-reaped) leaf with no live descendants → False."""
+    python = _FakeProc(200, "python", children=[], status="zombie")
+    uv = _FakeProc(100, "uv", children=[python], status="zombie")
+    _install_fake_psutil(monkeypatch, {100: uv, 200: python})
+    assert pod_watch._probe_process_active("100") is False
+
+
+def test_probe_process_active_local_gone_is_none(monkeypatch):
+    """Process absent from the registry → None (unknown), NOT False."""
+    _install_fake_psutil(monkeypatch, {})
+    assert pod_watch._probe_process_active("424242") is None
+
+
+def test_probe_process_active_remote_alive(monkeypatch):
+    """Remote ps reports 'R' (running) → True."""
+
+    def _fake_check_output(cmd, **kwargs):
+        assert cmd[0] == "ssh"
+        assert cmd[1] == "epm-issue-999"
+        return "Rl\n"
+
+    monkeypatch.setattr(pod_watch.subprocess, "check_output", _fake_check_output)
+    assert pod_watch._probe_process_active("epm-issue-999:4242") is True
+
+
+def test_probe_process_active_remote_zombie_is_false(monkeypatch):
+    """Remote ps reports 'Z' (zombie) → False."""
+    monkeypatch.setattr(pod_watch.subprocess, "check_output", lambda cmd, **kw: "Z\n")
+    assert pod_watch._probe_process_active("epm-issue-999:4242") is False
+
+
+def test_probe_process_active_remote_probe_failure_is_none(monkeypatch):
+    """SSH probe failure → None (unknown), so the heartbeat/log signal still
+    governs the stall decision."""
+
+    def _boom(cmd, **kwargs):
+        raise pod_watch.subprocess.CalledProcessError(1, cmd)
+
+    monkeypatch.setattr(pod_watch.subprocess, "check_output", _boom)
+    assert pod_watch._probe_process_active("epm-issue-999:4242") is None
+
+
+def test_probe_process_active_malformed_target_is_none():
+    """A non-integer pid in the target → None, never a crash."""
+    assert pod_watch._probe_process_active("not-a-pid") is None
+    assert pod_watch._probe_process_active("server:not-a-pid") is None
+
+
+# ── _watch_loop stall suppression (corroboration) ─────────────────────────
+
+
+def _running_snapshot():
+    return _snapshot(labels=["status:running"], comment_bodies=[])
+
+
+def test_watch_loop_declares_stall_with_no_process_target(monkeypatch, tmp_path):
+    """No process target → a quiet log past threshold still declares a stall
+    (unchanged prior behavior; corroboration absent)."""
+    pid_file = tmp_path / "watch.pid"
+    pid_file.write_text("123")
+    monkeypatch.setattr(pod_watch, "TICK_SECS", 0)
+    monkeypatch.setattr(pod_watch.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(pod_watch, "_check_terminal", lambda issue: False)
+    # Log mtime far in the past → elapsed > threshold.
+    monkeypatch.setattr(pod_watch, "_probe_wandb", lambda url: None)
+    monkeypatch.setattr(pod_watch, "_probe_log_mtime", lambda p: 1.0)
+    calls = {}
+
+    def _capture(issue, *, reason, last_event):
+        calls["reason"] = reason
+
+    monkeypatch.setattr(pod_watch, "_post_failure", _capture)
+    rc = pod_watch._watch_loop(
+        999,
+        threshold_secs=1,
+        wandb_run_url=None,
+        log_path="local.log",
+        pid_file=pid_file,
+        max_runtime_secs=86400,
+        process_target=None,
+    )
+    assert rc == 1
+    assert calls["reason"] == "stall"
+
+
+def test_watch_loop_suppresses_stall_when_process_alive(monkeypatch, tmp_path):
+    """Quiet log past threshold BUT the process target is alive → suppress
+    the stall verdict and keep watching (no _post_failure)."""
+    pid_file = tmp_path / "watch.pid"
+    pid_file.write_text("123")
+    monkeypatch.setattr(pod_watch, "TICK_SECS", 0)
+    monkeypatch.setattr(pod_watch.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(pod_watch, "_probe_wandb", lambda url: None)
+    monkeypatch.setattr(pod_watch, "_probe_log_mtime", lambda p: 1.0)
+    monkeypatch.setattr(pod_watch, "_probe_process_active", lambda t: True)
+
+    # Terminal goes True on the SECOND tick so the loop exits without ever
+    # posting a failure; the first tick must hit the suppression branch.
+    ticks = {"n": 0}
+
+    def _terminal(issue):
+        ticks["n"] += 1
+        return ticks["n"] >= 2
+
+    monkeypatch.setattr(pod_watch, "_check_terminal", _terminal)
+
+    posted = {"called": False}
+    monkeypatch.setattr(
+        pod_watch,
+        "_post_failure",
+        lambda *a, **k: posted.__setitem__("called", True),
+    )
+
+    rc = pod_watch._watch_loop(
+        999,
+        threshold_secs=1,
+        wandb_run_url=None,
+        log_path="local.log",
+        pid_file=pid_file,
+        max_runtime_secs=86400,
+        process_target="epm-issue-999:4242",
+    )
+    assert rc == 0
+    assert posted["called"] is False
+    assert ticks["n"] >= 2  # we got past the first suppressed tick
+
+
+def test_watch_loop_declares_stall_when_process_dead(monkeypatch, tmp_path):
+    """Quiet log past threshold AND the process target is dead/gone → the
+    heartbeat/log stall stands (corroboration did not save it)."""
+    pid_file = tmp_path / "watch.pid"
+    pid_file.write_text("123")
+    monkeypatch.setattr(pod_watch, "TICK_SECS", 0)
+    monkeypatch.setattr(pod_watch.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(pod_watch, "_check_terminal", lambda issue: False)
+    monkeypatch.setattr(pod_watch, "_probe_wandb", lambda url: None)
+    monkeypatch.setattr(pod_watch, "_probe_log_mtime", lambda p: 1.0)
+    monkeypatch.setattr(pod_watch, "_probe_process_active", lambda t: False)
+    calls = {}
+    monkeypatch.setattr(
+        pod_watch,
+        "_post_failure",
+        lambda issue, *, reason, last_event: calls.__setitem__("reason", reason),
+    )
+    rc = pod_watch._watch_loop(
+        999,
+        threshold_secs=1,
+        wandb_run_url=None,
+        log_path="local.log",
+        pid_file=pid_file,
+        max_runtime_secs=86400,
+        process_target="epm-issue-999:4242",
+    )
+    assert rc == 1
+    assert calls["reason"] == "stall"
+
+
+def test_watch_loop_declares_stall_when_process_signal_unknown(monkeypatch, tmp_path):
+    """Quiet log past threshold AND the process probe returns None (unknown)
+    → the stall stands. None must NOT be treated as 'alive'."""
+    pid_file = tmp_path / "watch.pid"
+    pid_file.write_text("123")
+    monkeypatch.setattr(pod_watch, "TICK_SECS", 0)
+    monkeypatch.setattr(pod_watch.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(pod_watch, "_check_terminal", lambda issue: False)
+    monkeypatch.setattr(pod_watch, "_probe_wandb", lambda url: None)
+    monkeypatch.setattr(pod_watch, "_probe_log_mtime", lambda p: 1.0)
+    monkeypatch.setattr(pod_watch, "_probe_process_active", lambda t: None)
+    calls = {}
+    monkeypatch.setattr(
+        pod_watch,
+        "_post_failure",
+        lambda issue, *, reason, last_event: calls.__setitem__("reason", reason),
+    )
+    rc = pod_watch._watch_loop(
+        999,
+        threshold_secs=1,
+        wandb_run_url=None,
+        log_path="local.log",
+        pid_file=pid_file,
+        max_runtime_secs=86400,
+        process_target="epm-issue-999:4242",
+    )
+    assert rc == 1
+    assert calls["reason"] == "stall"
 
 
 # ── argparse smoke (no missing-issue regression) ──────────────────────────
