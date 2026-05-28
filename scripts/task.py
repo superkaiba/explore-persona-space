@@ -31,6 +31,7 @@ Subcommands (see `task.py --help`):
 from __future__ import annotations
 
 import argparse
+import difflib
 import json
 import sys
 from pathlib import Path
@@ -212,7 +213,25 @@ def cmd_set_goal(args: argparse.Namespace) -> None:
         print(f"ok — goal unchanged for #{args.number} (idempotent no-op)")
 
 
+def _status_error_message(bad_status: str) -> str:
+    """Build a helpful 'did you mean ...?' error for an invalid status value.
+
+    argparse `choices=` rejects with a bare 'invalid choice' dump that
+    callers have repeatedly misread (inventing statuses like 'uploading' /
+    'api'). This guides them to the closest valid enum member and lists the
+    full enum. Returns the message string; the caller raises SystemExit.
+    """
+    suggestions = difflib.get_close_matches(bad_status, STATUSES, n=1, cutoff=0.4)
+    lines = [f"task.py set-status: invalid status {bad_status!r}."]
+    if suggestions:
+        lines.append(f"  did you mean {suggestions[0]!r}?")
+    lines.append("  valid statuses: " + ", ".join(STATUSES))
+    return "\n".join(lines)
+
+
 def cmd_set_status(args: argparse.Namespace) -> None:
+    if args.status not in STATUSES:
+        raise SystemExit(_status_error_message(args.status))
     path = set_status(args.number, args.status, note=args.note)
     print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
 
@@ -544,7 +563,10 @@ def main() -> None:
 
     p = sub.add_parser("set-status", help="move task to a new status (git mv + commit)")
     p.add_argument("number", type=int)
-    p.add_argument("status", choices=STATUSES)
+    # No argparse `choices=` here on purpose: cmd_set_status validates the
+    # value itself so it can emit a 'did you mean <closest>?' hint instead
+    # of argparse's bare 'invalid choice' dump (see _status_error_message).
+    p.add_argument("status", help="target status; one of: " + ", ".join(STATUSES))
     p.add_argument("--note", default=None)
     p.set_defaults(func=cmd_set_status)
 
