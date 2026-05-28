@@ -51,7 +51,6 @@ import numpy as np
 import pandas as pd
 import pingouin as pg
 import scipy.stats as st
-import statsmodels.formula.api as smf
 
 from explore_persona_space.experiments.i406_conditions import CONDITIONS, CONDITIONS_BY_ID
 
@@ -278,6 +277,98 @@ def _leave_subset_out(df: pd.DataFrame, x_col: str, mask: pd.Series, label: str)
         return {"label": label, "n": len(sub), "rho": None, "p": None, "error": str(e)}
 
 
+def _fit_mixed_model(df: pd.DataFrame, predictor_col: str, *, is_primary: bool) -> dict:
+    """Fit the class-cluster mixed model with explicit convergence handling.
+
+    Per MF-R2-2 (issue #406 round 2): the previous bare ``except Exception``
+    + ``mm_slope_p = NaN`` substitution silently un-fireable the positive
+    verdict on convergence failure (NaN comparison returns False). We now:
+
+      1. Catch ONLY the specific convergence-failure exception types
+         (``np.linalg.LinAlgError`` and ``ValueError`` raised by
+         statsmodels when the model is rank-deficient / fails to invert).
+         ``ConvergenceWarning`` from statsmodels is a WARNING, not an
+         exception — we treat the converged flag from the fit result as
+         authoritative.
+      2. For the PRIMARY predictor only, try a ``method='lbfgs'``
+         fallback before declaring non-convergence (small-cluster
+         mixedlm sometimes converges with lbfgs when default Newton
+         fails — round-1 stats critic recommendation).
+      3. Return a structured dict with a ``converged`` boolean so the
+         caller can surface convergence failure as ``verdict="rig_failure"``
+         on the primary, or a ``convergence_failed`` flag on secondaries.
+
+    Returns:
+        {
+          "slope": float | None, "slope_p": float | None,
+          "summary": str, "converged": bool, "method": str,
+          "error": str | None,
+        }
+    """
+    import warnings
+
+    import statsmodels.formula.api as smf
+    from statsmodels.tools.sm_exceptions import ConvergenceWarning
+
+    formula = f"G ~ {predictor_col} + log_prompt_tokens"
+    method_chain: list[str] = ["bfgs"]  # statsmodels default for mixedlm
+    if is_primary:
+        method_chain.append("lbfgs")  # only escalate the primary; cosines stay descriptive
+
+    last_error: str | None = None
+    for method in method_chain:
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always", ConvergenceWarning)
+            try:
+                md = smf.mixedlm(formula, data=df, groups="class_pair").fit(
+                    reml=False, method=method
+                )
+            except (np.linalg.LinAlgError, ValueError) as exc:
+                last_error = f"{type(exc).__name__}: {exc}"
+                logger.warning(
+                    "mixedlm fit raised %s on predictor=%s method=%s",
+                    type(exc).__name__,
+                    predictor_col,
+                    method,
+                )
+                continue
+        # Inspect the fit result. converged is authoritative; warnings inform.
+        # statsmodels' MixedLMResultsWrapper exposes `converged` post-fit.
+        converged_attr = getattr(md, "converged", None)
+        had_convergence_warning = any(issubclass(w.category, ConvergenceWarning) for w in caught)
+        # Treat NaN slope or pvalue as a non-converged result too.
+        slope_val = md.params.get(predictor_col, float("nan"))
+        slope_p_val = md.pvalues.get(predictor_col, float("nan"))
+        slope_finite = np.isfinite(slope_val) and np.isfinite(slope_p_val)
+        is_converged = bool(slope_finite) and (converged_attr is not False)
+        if had_convergence_warning and converged_attr is False:
+            is_converged = False
+        if is_converged:
+            return {
+                "slope": float(slope_val),
+                "slope_p": float(slope_p_val),
+                "summary": str(md.summary()),
+                "converged": True,
+                "method": method,
+                "error": None,
+            }
+        # Not converged with this method — try the next, if any.
+        last_error = (
+            f"non-converged (method={method}, converged_attr={converged_attr}, "
+            f"slope_finite={slope_finite}, had_convergence_warning={had_convergence_warning})"
+        )
+        logger.warning("mixedlm did not converge for predictor=%s: %s", predictor_col, last_error)
+
+    return {
+        "slope": float("nan"),
+        "slope_p": float("nan"),
+        "summary": f"NOT CONVERGED: {last_error}",
+        "converged": False,
+        "method": method_chain[-1],
+        "error": last_error,
+    }
+
+
 def _analyze_predictor(
     df: pd.DataFrame,
     predictor_col: str,
@@ -297,17 +388,17 @@ def _analyze_predictor(
     length_tercile = _length_tercile_rhos(df, predictor_col, "G")
 
     # Class-cluster mixed model: G ~ predictor + log_prompt_tokens, random
-    # intercept per class_pair (16 cells).
-    try:
-        md = smf.mixedlm(
-            f"G ~ {predictor_col} + log_prompt_tokens", data=df, groups="class_pair"
-        ).fit(reml=False)
-        mm_slope = float(md.params[predictor_col])
-        mm_slope_p = float(md.pvalues[predictor_col])
-        mm_summary = str(md.summary())
-    except Exception as e:
-        logger.warning("mixedlm failed for %s: %s", predictor_col, e)
-        mm_slope, mm_slope_p, mm_summary = float("nan"), float("nan"), f"FAILED: {e}"
+    # intercept per class_pair (16 cells). MF-R2-2 fix: NO bare except;
+    # catch only the specific convergence-failure types, try an lbfgs
+    # fallback, and surface convergence failure as a verdict-level signal
+    # (rig_failure) instead of NaN-silently-falling-through-to-ambiguous.
+    mm_result = _fit_mixed_model(df, predictor_col, is_primary=is_primary)
+    mm_slope = mm_result["slope"]
+    mm_slope_p = mm_result["slope_p"]
+    mm_summary = mm_result["summary"]
+    mm_converged = mm_result["converged"]
+    mm_method = mm_result["method"]
+    mm_error = mm_result["error"]
 
     boot_rhos = _cluster_bootstrap_partial_spearman(df, predictor_col)
     ci_low = float(np.nanpercentile(boot_rhos, 2.5))
@@ -331,31 +422,48 @@ def _analyze_predictor(
         permutation_null = _permutation_null(df, predictor_col)
 
     # Verdict only for the primary predictor (cosine rows = descriptive).
+    # MF-R2-2: if the primary's mixed model didn't converge, the verdict is
+    # `rig_failure` — NOT a NaN-driven "ambiguous". This surfaces the binding
+    # constraint at the verdict level instead of burying it in mm_summary.
     verdict = None
+    rig_failure_reason: str | None = None
     if is_primary:
-        lp_rho = float(lp_pg["r"].values[0])
-        lp_p = float(lp_pg["p_val"].values[0])
-        if (
-            abs(lp_rho) >= POS_RHO_THRESHOLD
-            and lp_p < POS_P_THRESHOLD
-            and mm_slope_p < POS_P_THRESHOLD
-            and np.sign(mm_slope) == np.sign(lp_rho)
-        ):
-            verdict = "positive"
-        elif (
-            abs(lp_rho) < NEG_RHO_THRESHOLD
-            and ci_low >= NEG_CI_LOW_BOUND
-            and ci_high <= NEG_CI_HIGH_BOUND
-            and per_cell_max_abs < NEG_PER_CELL_CAP
-        ):
-            verdict = "negative"
+        if not mm_converged:
+            verdict = "rig_failure"
+            rig_failure_reason = (
+                f"mixed_model_convergence_failed (method={mm_method}, error={mm_error})"
+            )
+            logger.error(
+                "PRIMARY mixed model did not converge after fallback chain — "
+                "verdict=rig_failure (predictor=%s, error=%s)",
+                predictor_col,
+                mm_error,
+            )
         else:
-            verdict = "ambiguous"
+            lp_rho = float(lp_pg["r"].values[0])
+            lp_p = float(lp_pg["p_val"].values[0])
+            if (
+                abs(lp_rho) >= POS_RHO_THRESHOLD
+                and lp_p < POS_P_THRESHOLD
+                and mm_slope_p < POS_P_THRESHOLD
+                and np.sign(mm_slope) == np.sign(lp_rho)
+            ):
+                verdict = "positive"
+            elif (
+                abs(lp_rho) < NEG_RHO_THRESHOLD
+                and ci_low >= NEG_CI_LOW_BOUND
+                and ci_high <= NEG_CI_HIGH_BOUND
+                and per_cell_max_abs < NEG_PER_CELL_CAP
+            ):
+                verdict = "negative"
+            else:
+                verdict = "ambiguous"
 
     return {
         "label": label,
         "is_primary": is_primary,
         "verdict": verdict,
+        "rig_failure_reason": rig_failure_reason,
         "raw_spearman_rho": float(raw.correlation),
         "raw_spearman_p": float(raw.pvalue),
         "length_partial_rho_pingouin": float(lp_pg["r"].values[0]),
@@ -367,6 +475,12 @@ def _analyze_predictor(
         "mixed_model_slope": mm_slope,
         "mixed_model_slope_p": mm_slope_p,
         "mixed_model_summary": mm_summary,
+        # MF-R2-2: convergence telemetry per predictor (secondaries surface
+        # the flag too; only the primary escalates to verdict=rig_failure).
+        "mixed_model_converged": mm_converged,
+        "mixed_model_method": mm_method,
+        "mixed_model_error": mm_error,
+        "convergence_failed": (not mm_converged),
         "per_cell_partials": per_cell_rhos,
         "per_cell_meta": per_cell_meta,
         "per_cell_max_abs_rho": per_cell_max_abs,
@@ -603,14 +717,32 @@ def main() -> None:
     sweep, best_window = _k_window_sweep(df, d_per_pos_payload)
 
     primary = results["KL_primary"]
-    headline = (
-        f"PRIMARY (forward KL, K=25-mean): length-partial Spearman rho = "
-        f"{primary['length_partial_rho_pingouin']:.3f} with 95% cluster-bootstrap "
-        f"CI [{primary['cluster_bootstrap_ci'][0]:.3f}, "
-        f"{primary['cluster_bootstrap_ci'][1]:.3f}] (N={len(df)}, "
-        f"{df['class_pair'].nunique()} cells); verdict={primary['verdict']}. "
-        "DESCRIPTIVE secondaries: see 7-row summary table for JS + 6 cosine layers."
-    )
+    # MF-R2-2: when the primary's mixed model fails to converge the verdict
+    # is "rig_failure" — surface that distinctly in the headline so the
+    # analyzer / clean-result-critic doesn't have to dig into mm_summary.
+    if primary["verdict"] == "rig_failure":
+        headline = (
+            f"PRIMARY (forward KL, K=25-mean): VERDICT=rig_failure. "
+            f"Reason: {primary['rig_failure_reason']}. "
+            f"Length-partial Spearman rho = {primary['length_partial_rho_pingouin']:.3f} "
+            f"with 95% cluster-bootstrap CI "
+            f"[{primary['cluster_bootstrap_ci'][0]:.3f}, "
+            f"{primary['cluster_bootstrap_ci'][1]:.3f}] (N={len(df)}, "
+            f"{df['class_pair'].nunique()} cells). "
+            "The Spearman + bootstrap numbers are reported for context but "
+            "the mixed-model component of the pre-registered verdict could "
+            "not be evaluated. Re-run with a different model formulation or "
+            "treat the experiment as inconclusive."
+        )
+    else:
+        headline = (
+            f"PRIMARY (forward KL, K=25-mean): length-partial Spearman rho = "
+            f"{primary['length_partial_rho_pingouin']:.3f} with 95% cluster-bootstrap "
+            f"CI [{primary['cluster_bootstrap_ci'][0]:.3f}, "
+            f"{primary['cluster_bootstrap_ci'][1]:.3f}] (N={len(df)}, "
+            f"{df['class_pair'].nunique()} cells); verdict={primary['verdict']}. "
+            "DESCRIPTIVE secondaries: see 7-row summary table for JS + 6 cosine layers."
+        )
     logger.info(headline)
 
     out_payload = {
