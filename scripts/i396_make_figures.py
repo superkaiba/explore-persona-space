@@ -268,53 +268,109 @@ def make_trajectory_figure() -> None:
     diag_arr = np.stack(diag_per_grid)
     offd_arr = np.stack(offd_per_grid)
 
+    diag_mean = diag_arr.mean(axis=0)
+    offd_mean = offd_arr.mean(axis=0)
+    diag_sem = diag_arr.std(axis=0) / np.sqrt(len(diag_arr))
+    offd_sem = offd_arr.std(axis=0) / np.sqrt(len(offd_arr))
+
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(8.5, 5.0))
+    import matplotlib as mpl
+
+    mpl.rcParams["figure.constrained_layout.use"] = False
     c_diag = paper_palette_role("primary")
     c_off = paper_palette_role("baseline")
-    ax.plot(
+
+    fig = plt.figure(figsize=(11.0, 5.2))
+    fig.subplots_adjust(left=0.07, right=0.97, top=0.80, bottom=0.13, wspace=0.30)
+    gs = fig.add_gridspec(1, 2, width_ratios=[2.2, 1.0])
+    ax_full = fig.add_subplot(gs[0, 0])
+    ax_zoom = fig.add_subplot(gs[0, 1])
+
+    # ---- Left panel: full trajectory ----
+    ax_full.plot(
         grid,
-        diag_arr.mean(axis=0),
+        diag_mean,
         color=c_diag,
-        label=f"Self-persona evaluation (diagonal, n={len(diag_arr)} cells)",
+        label=f"Self-persona (diagonal, n={len(diag_arr)} cells)",
     )
-    ax.fill_between(
+    ax_full.fill_between(grid, diag_mean - diag_sem, diag_mean + diag_sem, color=c_diag, alpha=0.18)
+    ax_full.plot(
         grid,
-        diag_arr.mean(axis=0) - diag_arr.std(axis=0) / np.sqrt(len(diag_arr)),
-        diag_arr.mean(axis=0) + diag_arr.std(axis=0) / np.sqrt(len(diag_arr)),
-        color=c_diag,
-        alpha=0.18,
-    )
-    ax.plot(
-        grid,
-        offd_arr.mean(axis=0),
+        offd_mean,
         color=c_off,
-        label=f"Other-persona evaluation (off-diagonal, n={len(offd_arr)} cells)",
+        label=f"Other-persona (off-diagonal, n={len(offd_arr)} cells)",
     )
-    ax.fill_between(
-        grid,
-        offd_arr.mean(axis=0) - offd_arr.std(axis=0) / np.sqrt(len(offd_arr)),
-        offd_arr.mean(axis=0) + offd_arr.std(axis=0) / np.sqrt(len(offd_arr)),
-        color=c_off,
-        alpha=0.18,
+    ax_full.fill_between(grid, offd_mean - offd_sem, offd_mean + offd_sem, color=c_off, alpha=0.18)
+    # Box the zoom region
+    ax_full.axvspan(0.92, 1.00, color="#888888", alpha=0.10, zorder=0)
+    ax_full.set_xlabel("Normalized response position (0 = first token, 1 = last token)")
+    ax_full.set_ylabel("Log p(marker) at this position")
+    ax_full.legend(loc="lower center", frameon=False, fontsize=9)
+    ax_full.set_title(
+        "Full trajectory (boundary spikes are np.interp artifacts at varying lengths)",
+        loc="left",
+        fontsize=9,
+        color="#5A5A5A",
+        pad=6,
     )
 
-    ax.set_xlabel("Normalized response position (0 = first token, 1 = last token)")
-    ax.set_ylabel("Log p(marker) at this position")
-    ax.legend(loc="upper center")
-    ax.set_title(
-        "Diagonal = LoRA evaluated on its training persona; off-diagonal = different persona",
-        loc="left",
-        fontsize=10,
-        color="#5A5A5A",
-        pad=10,
+    # ---- Right panel: zoom on end of response ----
+    zoom_mask = grid >= 0.92
+    g_z = grid[zoom_mask]
+    ax_zoom.plot(g_z, diag_mean[zoom_mask], color=c_diag, marker="o", markersize=3)
+    ax_zoom.fill_between(
+        g_z,
+        diag_mean[zoom_mask] - diag_sem[zoom_mask],
+        diag_mean[zoom_mask] + diag_sem[zoom_mask],
+        color=c_diag,
+        alpha=0.18,
     )
-    fig.suptitle(
+    ax_zoom.plot(g_z, offd_mean[zoom_mask], color=c_off, marker="o", markersize=3)
+    ax_zoom.fill_between(
+        g_z,
+        offd_mean[zoom_mask] - offd_sem[zoom_mask],
+        offd_mean[zoom_mask] + offd_sem[zoom_mask],
+        color=c_off,
+        alpha=0.18,
+    )
+    # Annotate the reversal gap at x=1.0
+    diag_end = float(diag_mean[-1])
+    offd_end = float(offd_mean[-1])
+    gap = offd_end - diag_end
+    ax_zoom.annotate(
+        f"gap = {gap:+.2f} nats\n(off > diag,\nopposite of prediction)",
+        xy=(1.0, (diag_end + offd_end) / 2),
+        xytext=(0.93, (diag_end + offd_end) / 2),
+        fontsize=8,
+        color="#444444",
+        arrowprops=dict(arrowstyle="->", color="#888888", lw=0.8),
+        va="center",
+    )
+    ax_zoom.set_xlabel("Normalized response position (zoom: 0.92 to 1.00)")
+    ax_zoom.set_ylabel("Log p(marker)")
+    ax_zoom.set_title(
+        "Zoom: off-diagonal endpoint higher than diagonal",
+        loc="left",
+        fontsize=9,
+        color="#5A5A5A",
+        pad=8,
+    )
+
+    fig.text(
+        0.07,
+        0.93,
         "End-of-response marker log-prob is HIGHER off-diagonal than on-diagonal (opposite of prediction)",
-        x=0.10,
-        ha="left",
-        fontsize=12,
+        fontsize=11.5,
         fontweight="semibold",
+        ha="left",
+    )
+    fig.text(
+        0.07,
+        0.88,
+        "Look at the end-of-response zoom (right panel); the rest of the trajectory is dominated by np.interp boundary effects.",
+        fontsize=8.5,
+        color="#666666",
+        ha="left",
     )
     savefig_paper(fig, "issue_396/trajectory_shapes", dir=str(REPO_ROOT / "figures"))
     plt.close(fig)
