@@ -272,18 +272,27 @@ def test_gates_full_shape():
     present with the expected counts."""
     workflow = load_workflow_yaml()
     assert workflow.gates is not None
-    # 6 inline gates: the 5 from the GH-era contract + experiment_goal
-    # (which replaced why_experiment on 2026-05-24).
-    assert len(workflow.gates.inline) == 6
+    # 7 inline gates: the 5 from the GH-era contract + experiment_goal
+    # (which replaced why_experiment on 2026-05-24) + smoke_architecture
+    # (added by Fix #1 of the #397 post-mortem batch, 2026-05-27).
+    assert len(workflow.gates.inline) == 7
     inline_names = {g.name for g in workflow.gates.inline}
     assert "experiment_goal" in inline_names
+    assert "smoke_architecture" in inline_names
     # 1 park-and-wait gate (awaiting_promotion).
     assert len(workflow.gates.park_and_wait) == 1
     assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
-    # 2 conditional gates: TDD + experiment_goal_refine (clarifier/planner
-    # Goal-sharpening, added 2026-05-24 alongside the Goal contract).
+    # 4 conditional gates: TDD + experiment_goal_refine (clarifier/planner
+    # Goal-sharpening, added 2026-05-24 alongside the Goal contract) +
+    # whack_a_mole_pivot (Fix #6) + compute_deviation_resolution (Fix #4),
+    # both added by the #397 post-mortem batch on 2026-05-27.
     conditional_names = {g.name for g in workflow.gates.conditional}
-    assert conditional_names == {"tdd_gate", "experiment_goal_refine"}
+    assert conditional_names == {
+        "tdd_gate",
+        "experiment_goal_refine",
+        "whack_a_mole_pivot",
+        "compute_deviation_resolution",
+    }
 
 
 def test_halt_criteria_count_and_names():
