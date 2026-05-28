@@ -9,6 +9,8 @@ sagan_id: f0dfc571-6e5f-4f52-9682-8cd83ceabe08
 sagan_number: 120
 priority: normal
 legacy_why_unset: true
+living_docs_unmapped: system-prompt-as-persona-slot cluster; no open question (a6
+  declined 2026-05-28)
 ---
 ## Motivation
 
