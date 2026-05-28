@@ -2130,8 +2130,8 @@
       "goal": "Train \u203b into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates \u2014 confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/416",
-      "status": "interpreting",
+      "path": "tasks/reviewing/416",
+      "status": "reviewing",
       "title": "Training \u203b into software engineer gave it only a transient early rank bump that washed out by end of training (ended 25/28); librarian's durable source-specific bump from #398 does not replicate (MODERATE confidence)"
     },
     "417": {
