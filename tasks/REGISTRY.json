@@ -2124,7 +2124,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/415",
       "status": "proposed",
-      "title": "Symmetric-baseline rerun: cos-to-baseline + JS-to-assistant on #396's 24 personas"
+      "title": "Symmetric-baseline rerun: cos-to-neutral + JS-to-neutral on #396's 24 personas"
     },
     "42": {
       "has_clean_result": false,

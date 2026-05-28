@@ -1,6 +1,5 @@
 ---
-title: 'Symmetric-baseline rerun: cos-to-baseline + JS-to-assistant on #396''s 24
-  personas'
+title: 'Symmetric-baseline rerun: cos-to-neutral + JS-to-neutral on #396''s 24 personas'
 kind: experiment
 tags: []
 created_at: '2026-05-28T06:51:13Z'
