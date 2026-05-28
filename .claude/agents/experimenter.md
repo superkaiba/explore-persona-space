@@ -107,26 +107,52 @@ EXIT YOUR TURN.
    ```bash
    nohup uv run python scripts/train.py condition=<name> seed=<N> \
      > /workspace/logs/issue-<N>.log 2>&1 &
-   echo $!  # Record the PID
+   WRAPPER_PID=$!  # outer `uv run` wrapper — NOT the python child
    ```
    **Why:** The subagent may be killed (parent session disconnect, context
    compaction, token limit). The GPU job must keep running regardless.
 
-2. **Confirm launch succeeded** — immediately after `nohup`-ing, verify
-   the PID is alive and the log is writing. One quick probe is enough:
+   **Capture the REAL python child PID for the watchdog, not `$!`.** `$!`
+   is the PID of the outer `uv run` wrapper. `uv run` spawns (and may
+   re-exec into) a separate `python` process that is the actual
+   long-running training/eval job; the wrapper can exit, reap, or change
+   identity, so `ps -p $WRAPPER_PID` gives a false dead/alive reading for
+   the watchdog. Resolve the python child PID and record THAT:
+   ```bash
+   # Wait a moment for uv to spawn the python child, then find it.
+   sleep 2
+   CHILD_PID=$(pgrep -P "$WRAPPER_PID" -f python | head -1)
+   # Fallback: if uv re-exec'd in place (no separate child), the wrapper
+   # PID IS the python process — keep it only if it is a python process.
+   if [ -z "$CHILD_PID" ]; then
+     if ps -p "$WRAPPER_PID" -o comm= | grep -q python; then
+       CHILD_PID="$WRAPPER_PID"
+     else
+       echo "ERROR: could not resolve python child PID under uv wrapper $WRAPPER_PID" >&2
+     fi
+   fi
+   echo "watchdog PID: $CHILD_PID"  # this is what goes in epm:run-launched
+   ```
+   Post `CHILD_PID` (the python process) in the `pid=` field of
+   `epm:run-launched` so the orchestrator's watchdog tracks the real job.
+
+2. **Confirm launch succeeded** — immediately after resolving the python
+   child PID, verify it is alive and the log is writing. One quick probe
+   is enough:
    ```bash
    ssh_execute(server="epm-issue-<N>",
-               command="ps -p <PID> && tail -20 /workspace/logs/issue-<N>.log")
+               command="ps -p <CHILD_PID> && tail -20 /workspace/logs/issue-<N>.log")
    ```
-   If the PID is dead within seconds of launch, the script crashed at
-   import time — capture the tail, post `epm:failure v1` with
+   If `CHILD_PID` is empty or dead within seconds of launch, the script
+   crashed at import time — capture the tail, post `epm:failure v1` with
    `failure_class: code` (most common cause) and the tail in the note,
    then exit.
 
 3. **Post `epm:run-launched` and EXIT.** This is your terminal step. The
-   note MUST carry the pod, PID, log path (ABSOLUTE), and the dispatch
-   command so the orchestrator's poller can find the run without
-   guessing the working directory:
+   note MUST carry the pod, PID (the resolved python child `CHILD_PID`
+   from step 1, NOT the `uv run` wrapper PID), log path (ABSOLUTE), and
+   the dispatch command so the orchestrator's poller can find the run
+   without guessing the working directory:
 
    - **`log_abs` MUST be absolute.** Before posting, resolve the path
      via `os.path.abspath()` (or shell `realpath`) on the pod and

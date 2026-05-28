@@ -268,8 +268,45 @@ echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/h
 echo "WandB cache:  /workspace/.cache/wandb        ($(du -sh /workspace/.cache/wandb 2>/dev/null | cut -f1 || echo empty))"
 echo "uv cache:     /workspace/.cache/uv           ($(du -sh /workspace/.cache/uv 2>/dev/null | cut -f1 || echo empty))"
 echo "Triton cache: /workspace/.cache/triton       ($(du -sh /workspace/.cache/triton 2>/dev/null | cut -f1 || echo empty))"
+
+# Default-PATH tool exposure for non-interactive non-login SSH shells.
+# `ssh pod "uv run ..."` / `ssh pod "python ..."` runs a non-interactive
+# non-login shell that does NOT source /root/.bashrc (the rc files above
+# bail out early on the `[ -z "$PS1" ] && return` guard), so the PATH
+# exports there never reach it. /usr/local/bin IS on the default PATH for
+# such shells, so we drop symlinks/shims there. This is additive — the rc
+# exports above stay for interactive/login shells.
+UV_BIN=""
+for cand in /root/.local/bin/uv "$HOME/.local/bin/uv"; do
+    if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi
+done
+if [ -z "$UV_BIN" ]; then
+    echo "ERROR: uv binary not found in /root/.local/bin or \$HOME/.local/bin after step 2 install" >&2
+    exit 1
+fi
+UV_DIR="$(dirname "$UV_BIN")"
+ln -sf "$UV_BIN" /usr/local/bin/uv
+# uvx ships alongside uv; symlink it too if present.
+if [ -x "$UV_DIR/uvx" ]; then
+    ln -sf "$UV_DIR/uvx" /usr/local/bin/uvx
+fi
+# `python` shim: forwards to the project venv via `uv run python` so that a
+# bare `ssh pod "python ..."` resolves to the locked project interpreter.
+cat > /usr/local/bin/python <<"PYEOF"
+#!/bin/bash
+# Bootstrap-installed shim: run the project venv python via uv.
+# Lets non-interactive `ssh pod "python ..."` find the locked interpreter
+# even though rc-file PATH exports are not sourced for such shells.
+export PATH="/root/.local/bin:$PATH"
+cd /workspace/explore-persona-space || exit 1
+exec uv run python "$@"
+PYEOF
+chmod +x /usr/local/bin/python
+echo "uv shim:      /usr/local/bin/uv -> $UV_BIN"
+echo "python shim:  /usr/local/bin/python (exec uv run python)"
 '
 log_ok "All cache dirs redirected to /workspace"
+log_ok "uv/uvx symlinked + python shim installed in /usr/local/bin (non-login SSH PATH)"
 
 # ── Step 7: Git credentials ─────────────────────────────────────────────────
 

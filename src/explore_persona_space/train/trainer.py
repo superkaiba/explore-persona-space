@@ -700,6 +700,47 @@ def merge_and_save(
     return str(output_path)
 
 
+def _delete_intermediate_merged(
+    merged_dir: Path,
+    *,
+    upload_attempted: bool,
+    label: str = "intermediate",
+) -> None:
+    """Delete an intermediate merged checkpoint dir, honoring upload-before-delete.
+
+    Reclaims disk for a merged checkpoint that downstream phases no longer read
+    (e.g. the Phase-1 ``coupling`` merge once Phase 2 has trained from it). The
+    deletion is gated on ``upload_attempted`` so the project's upload-before-delete
+    invariant holds: never delete an artifact whose required upload has not run.
+
+    Args:
+        merged_dir: The intermediate merged checkpoint directory to remove.
+        upload_attempted: Whether the artifact's required upload already ran. When
+            False, the dir is PRESERVED (loud WARNING) rather than deleted, because
+            deleting it would drop an un-uploaded checkpoint.
+        label: Human label for the log line (e.g. "Phase 1").
+
+    Returns:
+        None. No-op when ``merged_dir`` does not exist.
+    """
+    if not merged_dir.exists():
+        return
+    if not upload_attempted:
+        logger.warning(
+            "Keeping %s intermediate %s: its required upload was skipped "
+            "(EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1) and the orchestrator does not "
+            "upload this intermediate separately. Deleting it would drop an "
+            "un-uploaded checkpoint (upload-before-delete invariant). Reclaim disk "
+            "manually after confirming the artifact is on the cloud, or unset the "
+            "fence so the inline WandB upload runs.",
+            label,
+            merged_dir,
+        )
+        return
+    shutil.rmtree(str(merged_dir), ignore_errors=True)
+    logger.info("Cleaned %s intermediate %s (upload already attempted)", label, merged_dir)
+
+
 def run_two_phase_training(
     cfg: DictConfig,
     seed: int,
@@ -762,10 +803,24 @@ def run_two_phase_training(
         )
         logger.info("Phase 2 complete: %s", current_model_path)
 
-        phase1_merged = run_dir / "phase1_merged"
-        if phase1_merged.exists():
-            shutil.rmtree(str(phase1_merged), ignore_errors=True)
-            logger.info("Cleaned Phase 1 intermediate")
+        # The Phase-1 merged dir is an intermediate: Phase 2 trained from it and
+        # nothing downstream reads it. Delete it to reclaim disk — but ONLY after
+        # asserting its required upload already ran (upload-before-delete invariant:
+        # never delete an un-uploaded artifact). The only upload the Phase-1
+        # intermediate ever gets is the inline WandB checkpoint upload performed by
+        # `_finalize_phase` -> `_maybe_upload_checkpoint_to_wandb` during Phase 1.
+        # That upload is skipped when `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` (the
+        # sweep / `upload_to=="wandb"` fence set by orchestrate/runner.py), and the
+        # orchestrator does NOT separately upload the Phase-1 intermediate in the
+        # two-phase path (only post_em + pre_em_checkpoint, the latter not created
+        # here). So when the fence is set, the intermediate was never uploaded and
+        # must be preserved rather than dropped.
+        phase1_upload_attempted = os.environ.get("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD") != "1"
+        _delete_intermediate_merged(
+            run_dir / "phase1_merged",
+            upload_attempted=phase1_upload_attempted,
+            label="Phase 1",
+        )
 
     # If no training at all (condition 8), model path is just the base model ID
     if current_model_path is None:

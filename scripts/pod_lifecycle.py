@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import socket
 import subprocess
 import sys
 from dataclasses import dataclass, field, replace
@@ -63,6 +64,7 @@ from pod_config import (  # noqa: E402
 )
 from runpod_api import (  # noqa: E402
     PodInfo,
+    RunPodError,
     create_pod,
     list_team_pods,
     resume_pod,
@@ -508,6 +510,148 @@ def _bootstrap(pod_name: str) -> int:
     )
 
 
+# Phrases RunPod uses when a stopped pod can't be resumed because its former
+# host has no free GPUs. The mutation returns null (→ ``podResume returned
+# null``) or surfaces one of these in the GraphQL ``errors`` payload.
+_SUPPLY_CONSTRAINT_MARKERS: tuple[str, ...] = (
+    "podresume returned null",
+    "not enough free gpu",
+    "no free gpu",
+    "supply_constraint",
+    "supplyconstraint",
+    "insufficient capacity",
+    "no longer any instances available",
+)
+
+
+def _is_supply_constraint(exc: Exception) -> bool:
+    """True if a resume failure is a capacity problem (vs a real error).
+
+    Resume never relocates a pod (its volume is pinned to the original host), so
+    a capacity failure is NOT something we can retry around — it needs a fresh
+    provision. We detect it so :func:`cmd_resume` can emit an actionable message
+    instead of a bare stack trace.
+    """
+    text = str(exc).lower()
+    return any(marker in text for marker in _SUPPLY_CONSTRAINT_MARKERS)
+
+
+def ssh_preflight(
+    host: str | None,
+    port: int | None,
+    *,
+    issue: int | None = None,
+    timeout: float = 5.0,
+    allow_resume: bool = True,
+) -> bool:
+    """Check that ``host:port`` accepts a TCP connection before a batch of
+    remote ops, so we don't hammer a dead endpoint (issue #12).
+
+    On the first failure, if ``allow_resume`` and an ``issue`` are given, attempt
+    ``pod.py resume --issue <N>`` exactly ONCE (it re-syncs pods.conf / SSH /
+    MCP and yields a fresh host:port), then re-read the live endpoint and
+    re-check. Returns True if the endpoint is reachable (possibly after the
+    resume), False otherwise. Never raises on an unreachable endpoint — the
+    boolean IS the signal so callers can decide whether to proceed or abort.
+
+    ``host``/``port`` of ``None`` count as unreachable (a pod with no public
+    mapping yet).
+    """
+    if _tcp_open(host, port, timeout):
+        return True
+
+    where = f"{host}:{port}" if host and port else "(no public mapping)"
+    print(
+        f"[pod_lifecycle] SSH preflight: {where} is not accepting connections.",
+        file=sys.stderr,
+    )
+
+    if not (allow_resume and issue is not None):
+        print(
+            "[pod_lifecycle] SSH preflight FAILED — endpoint unreachable and "
+            "no resume attempted. Check the pod status with "
+            f"`python scripts/pod.py list-ephemeral{f' --issue {issue}' if issue else ''}`.",
+            file=sys.stderr,
+        )
+        return False
+
+    print(
+        f"[pod_lifecycle] Attempting one `pod.py resume --issue {issue}` to "
+        "refresh the endpoint...",
+        file=sys.stderr,
+    )
+    rc = _run_resume_subprocess(issue)
+    if rc != 0:
+        print(
+            f"[pod_lifecycle] SSH preflight FAILED — resume exited {rc}. "
+            "The pod may be terminated or out of capacity; provision a fresh "
+            f"pod with `python scripts/pod.py provision --issue {issue} ...`.",
+            file=sys.stderr,
+        )
+        return False
+
+    # Re-read the freshly-resumed endpoint from the live API and re-check once.
+    new_host, new_port = _live_ssh_endpoint(issue)
+    if _tcp_open(new_host, new_port, timeout):
+        print(
+            f"[pod_lifecycle] SSH preflight recovered after resume: "
+            f"{new_host}:{new_port} is reachable.",
+            file=sys.stderr,
+        )
+        return True
+
+    print(
+        "[pod_lifecycle] SSH preflight FAILED — still unreachable after resume. "
+        f"Provision a fresh pod with `python scripts/pod.py provision --issue {issue} ...`.",
+        file=sys.stderr,
+    )
+    return False
+
+
+def _tcp_open(host: str | None, port: int | None, timeout: float) -> bool:
+    """True if a TCP connection to ``host:port`` opens within ``timeout`` secs.
+
+    A missing host/port counts as closed. Pure connectivity probe — does not
+    speak SSH, just confirms the endpoint is listening so we stop hammering a
+    dead IP.
+    """
+    if not host or not port:
+        return False
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except OSError:
+        # Connection refused / timed out / DNS failure — endpoint is down.
+        return False
+
+
+def _run_resume_subprocess(issue: int) -> int:
+    """Run ``pod.py resume --issue <N>`` in a child process; return its exit code.
+
+    Spawned as a subprocess (not an in-process ``cmd_resume`` call) so the
+    resume's pods.conf / SSH / MCP regeneration side effects run exactly as they
+    would from the CLI, and a SystemExit inside resume doesn't unwind the
+    caller's batch.
+    """
+    return subprocess.call(
+        [sys.executable, str(SCRIPT_DIR / "pod.py"), "resume", "--issue", str(issue)],
+        cwd=str(PROJECT_ROOT),
+    )
+
+
+def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
+    """Re-read the live host/port for ``issue`` from the merged API state.
+
+    Returns ``(None, None)`` if the pod isn't in the merged view (terminated)
+    or has no public SSH mapping yet.
+    """
+    state = _load_state()
+    pod = _find_pod_in_state(state, issue)
+    if pod is None:
+        return None, None
+    return pod.host, pod.port
+
+
 # ─── commands ────────────────────────────────────────────────────────────────
 
 
@@ -687,7 +831,26 @@ def cmd_resume(args: argparse.Namespace) -> None:
     if args.dry_run:
         print("[dry-run] Would call resume_pod and wait for SSH.")
         return
-    resume_pod(pod.pod_id, pod.gpu_count)
+    try:
+        resume_pod(pod.pod_id, pod.gpu_count)
+    except RunPodError as exc:
+        if _is_supply_constraint(exc):
+            # Resume never relocates — the stopped pod's volume is pinned to its
+            # original host. If that host has no free GPUs we CANNOT retry around
+            # it; the user must provision a fresh pod (losing this volume) or
+            # wait for capacity. Do NOT auto-terminate or auto-provision here —
+            # that would silently destroy the stopped pod's volume.
+            raise SystemExit(
+                f"Cannot resume {name}: its former host has no free GPUs "
+                f"(supply constraint). Resume never relocates a pod, so this "
+                f"can't be retried. Either wait for capacity to free up and "
+                f"re-run `pod.py resume --issue {args.issue}`, or provision a "
+                f"FRESH pod with `python scripts/pod.py provision --issue "
+                f"{args.issue} --intent <intent>` (this loses the stopped pod's "
+                f"volume — terminate it first with `pod.py terminate --issue "
+                f"{args.issue} --yes` if you want it gone).\n  Underlying error: {exc}"
+            ) from exc
+        raise
     ready = wait_for_ssh(pod.pod_id, timeout=600)
 
     # Clear our project-side stopped_at marker; status/host/port refresh on read.
