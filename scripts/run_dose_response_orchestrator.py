@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# epm-lint: subprocess-env-implicit-load -- predates rule (task #397 post-mortem grandfather, 2026-05-27); follow-up #TBD will add load_dotenv at module top
+# epm-lint: subprocess-env-implicit-load -- predates rule (task #397 post-mortem grandfather, 2026-05-27); follow-up #TBD will add load_dotenv at module top  # noqa: E501
 """Orchestrator for dose-response marker survival experiment (issue #139).
 
 Launches cells in parallel across GPUs. Each cell is a subprocess running
