@@ -2130,8 +2130,8 @@
       "goal": "Train \u203b into a non-librarian source persona (recommended: comedian) and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates \u2014 confirming the global-marker-affinity-shift mechanism vs ruling it out in favor of a source-specific direction.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/416",
-      "status": "plan_pending",
+      "path": "tasks/approved/416",
+      "status": "approved",
       "title": "Falsify #398's global-marker-affinity-shift hypothesis: re-run with comedian (not librarian) as source persona"
     },
     "42": {
