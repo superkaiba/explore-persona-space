@@ -1,6 +1,7 @@
 ---
-title: 'Falsify #398''s global-marker-affinity-shift hypothesis: re-run with comedian
-  (not librarian) as source persona'
+title: 'Training ※ into software engineer left it pinned at rank 25/28; the source-specific
+  bump librarian got in #398 does not replicate in a second low-baseline source (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-28T19:09:51Z'
