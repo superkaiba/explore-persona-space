@@ -10,6 +10,11 @@ and markers.md.
 Also covers the ``--check-asks`` mode: every ``AskUserQuestion``
 mention in .claude/agents/**.md and .claude/skills/**/SKILL.md must
 be anchored to a documented gate (task #372).
+
+Also covers the ``--check-script-refs`` mode: every
+``scripts/<name>.py`` reference in .claude/agents/**.md and
+.claude/skills/**/SKILL.md must resolve to a real file under
+``scripts/`` (dead-tool / invented-tool failure class).
 """
 
 from __future__ import annotations
@@ -27,7 +32,7 @@ _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from workflow_lint import check_asks  # noqa: E402
+from workflow_lint import check_asks, check_script_references  # noqa: E402
 
 from explore_persona_space.workflow import load_workflow_yaml  # noqa: E402
 
@@ -43,7 +48,8 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
 
 
 def test_workflow_lint_default_exits_zero():
-    """No-args invocation must succeed (schema-only check)."""
+    """No-args invocation must succeed (schema check + bundled
+    script-reference check on the committed tree)."""
     result = _run()
     assert result.returncode == 0, (
         f"workflow_lint default failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
@@ -237,3 +243,78 @@ def test_check_asks_pass_bare_citation_without_parens(tmp_path):
     )
     errors = check_asks(_workflow(), roots=[tmp_path])
     assert errors == [], f"expected PASS, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_script_references`` (dead-tool / invented-tool
+# failure class). Each case writes a tiny markdown file under ``tmp_path``
+# referencing ``scripts/<name>.py`` and a fixture ``scripts/`` dir, then
+# calls ``check_script_references(roots=[tmp_path], scripts_dir=...)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_script_refs_pass_existing_script(tmp_path):
+    """A reference to a script that exists under scripts/ PASSes."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (scripts_dir / "task.py").write_text("# real helper\n")
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("Run `uv run python scripts/task.py find <N>`.\n")
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_script_refs_fail_dangling_script(tmp_path):
+    """A reference to a script that does NOT exist under scripts/ FAILs."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text(
+        "Before provisioning, run `scripts/hf_gate_accept.py --from-plan P`.\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/hf_gate_accept.py" in errors[0]
+    assert "does not exist" in errors[0]
+    assert "SKILL.md:1" in errors[0]
+
+
+def test_check_script_refs_mixed_good_and_dangling(tmp_path):
+    """A file with one good and one dangling reference reports only the
+    dangling one."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (scripts_dir / "pod.py").write_text("# real helper\n")
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "agent.md").write_text(
+        "Good: `scripts/pod.py provision`.\nBad: `scripts/sample_outputs.py --n 3`.\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/sample_outputs.py" in errors[0]
+    assert "agent.md:2" in errors[0]
+
+
+def test_check_script_refs_does_not_match_other_prefixes(tmp_path):
+    """A path like `my_scripts/foo.py` is NOT a `scripts/foo.py` reference
+    and must not be flagged."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "SKILL.md").write_text("See `external/my_scripts/foo.py` for details.\n")
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert errors == [], f"expected PASS (non-scripts/ prefix), got: {errors}"
+
+
+def test_check_script_refs_repo_tree_is_clean():
+    """The committed .claude/ tree must carry no dangling script
+    references — this is the regression guard the durable fix installs."""
+    errors = check_script_references()
+    assert errors == [], (
+        "committed .claude/ agents/skills reference scripts that do not "
+        "exist under scripts/:\n" + "\n".join(errors)
+    )

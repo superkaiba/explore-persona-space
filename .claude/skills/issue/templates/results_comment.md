@@ -25,7 +25,10 @@
 
 ### Sample outputs
 <!-- >=3 randomly-sampled (persona, prompt, response) triplets per condition.
-     Use `python scripts/sample_outputs.py --eval-json <path> --n 3 --seed 42` to seed-fill. -->
+     Pull them from the raw completions uploaded to the HF data repo
+     (issueN_<slug>/raw_completions/{condition}_seed{S}.json) or from
+     eval_results/issue_<N>/raw_completions/...; pick a fixed seed/offset
+     so the sample is reproducible and disclose it (e.g. "first 3 of N"). -->
 
 #### Condition: {COND_1}
 
