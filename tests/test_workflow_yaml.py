@@ -282,16 +282,18 @@ def test_gates_full_shape():
     # 1 park-and-wait gate (awaiting_promotion).
     assert len(workflow.gates.park_and_wait) == 1
     assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
-    # 4 conditional gates: TDD + experiment_goal_refine (clarifier/planner
+    # 5 conditional gates: TDD + experiment_goal_refine (clarifier/planner
     # Goal-sharpening, added 2026-05-24 alongside the Goal contract) +
     # whack_a_mole_pivot (Fix #6) + compute_deviation_resolution (Fix #4),
-    # both added by the #397 post-mortem batch on 2026-05-27.
+    # both added by the #397 post-mortem batch on 2026-05-27, +
+    # living_docs_update (living-docs integration, 2026-05-28).
     conditional_names = {g.name for g in workflow.gates.conditional}
     assert conditional_names == {
         "tdd_gate",
         "experiment_goal_refine",
         "whack_a_mole_pivot",
         "compute_deviation_resolution",
+        "living_docs_update",
     }
 
 
@@ -343,3 +345,57 @@ def test_subagent_halt_conditions_present():
         "upload-verifier",
     ):
         assert required in subagents, f"missing subagent halt row: {required}"
+
+
+def test_reconciler_md_uses_only_canonical_reconcile_marker():
+    """reconciler.md must reference ONLY the canonical marker-mode reconcile
+    kind ``epm:review-reconcile`` (role carried in the body's
+    ``**Role under adjudication:**`` field) plus the in-context
+    ``epm:plan-critique-reconcile`` stdout tag. Catches the role-specific
+    marker drift fixed 2026-05-28: reconciler.md had instructed the reconciler
+    to post ``epm:code-review-reconcile`` / ``epm:interp-critique-reconcile``
+    etc., which are invisible to the ``/issue`` state machine + workflow.yaml
+    registry that key only off ``epm:review-reconcile`` (live history showed
+    12 orphaned ``code-review-reconcile`` markers as a result)."""
+    import re
+
+    reconciler = (REPO_ROOT / ".claude" / "agents" / "reconciler.md").read_text()
+    workflow = load_workflow_yaml()
+    known_kinds = {m.kind for m in workflow.markers}
+
+    allowed = {"epm:review-reconcile", "epm:plan-critique-reconcile"}
+    found = set(re.findall(r"epm:[a-z-]*reconcile", reconciler))
+    forbidden = found - allowed
+    assert not forbidden, (
+        f"reconciler.md names non-canonical reconcile marker kind(s) {sorted(forbidden)}; "
+        f"marker mode must use `epm:review-reconcile` (role in body field), "
+        f"in-context mode `epm:plan-critique-reconcile`"
+    )
+    # The canonical marker-mode kind MUST be a registered events.jsonl marker.
+    assert "epm:review-reconcile" in known_kinds, (
+        "epm:review-reconcile missing from workflow.yaml markers registry"
+    )
+    # The in-context tag is printed to stdout only and intentionally is NOT a
+    # registered events.jsonl marker.
+    assert "epm:plan-critique-reconcile" not in known_kinds, (
+        "epm:plan-critique-reconcile is an in-context stdout tag; it must NOT "
+        "be registered as an events.jsonl marker kind"
+    )
+
+
+def test_reviewer_pairs_reconciler_marker_is_canonical():
+    """The reviewer_pairs.reconciler.marker AND every marker-mode
+    doubled_steps[*].reconcile_marker resolve to the single canonical
+    ``epm:review-reconcile`` kind — there is exactly ONE marker-mode reconcile
+    kind, with the adjudicated role distinguished by the marker body field."""
+    raw = yaml.safe_load(WORKFLOW_PATH.read_text())
+    assert raw["reviewer_pairs"]["reconciler"]["marker"] == "epm:review-reconcile"
+    workflow = load_workflow_yaml()
+    marker_mode_markers = {
+        e.reconcile_marker
+        for e in workflow.ensemble_review.doubled_steps
+        if e.reconcile_mode == "marker"
+    }
+    assert marker_mode_markers == {"epm:review-reconcile"}, (
+        f"marker-mode reconcile kinds drifted: {sorted(marker_mode_markers)}"
+    )

@@ -3,7 +3,7 @@ name: reconciler
 description: >
   Tie-breaker between a Claude reviewer and its Codex twin when their verdicts
   disagree (PASS vs FAIL). Used by all four Codex-ensemble review sites in the
-  /issue workflow: critic, code-reviewer, interpretation-critic, reviewer. Has
+  /issue workflow: critic, code-reviewer, interpretation-critic, clean-result-critic. Has
   fresh context — sees ONLY both verdict markers + the artifact under review.
   Issues a binding final verdict (binary PASS or FAIL). Never invoked when both
   reviewers agree.
@@ -20,7 +20,7 @@ effort: max
 > When the Claude reviewer and the Codex twin disagree (PASS vs FAIL), I read
 > both verdicts and the artifact, decide which side is right, and issue a
 > binding final verdict. Compare with `code-reviewer` (reviews diffs from
-> scratch), `reviewer` (final review of clean-result), `critic` (reviews plans),
+> scratch), `clean-result-critic` (final review of the clean-result body), `critic` (reviews plans),
 > `interpretation-critic` (reviews interpretations). Unlike those agents, I do
 > NOT review the artifact from scratch — I adjudicate two existing reviews.
 
@@ -56,7 +56,7 @@ orchestrator should not have spawned you.
 
 The brief specifies one of:
 
-- **`mode: marker`** (default; used by `/issue` Step 5/9a/9b) — both verdict
+- **`mode: marker`** (default; used by `/issue` Step 5/9a/9a-bis) — both verdict
   bodies are `events.jsonl` markers. You post a single canonical
   `epm:review-reconcile v<round>` marker via `scripts/task.py post-marker`,
   regardless of which review role you are adjudicating. The adjudicated role
@@ -82,7 +82,7 @@ stdout.
 Your brief contains:
 
 1. **Role** — one of `critic` / `code-reviewer` / `interpretation-critic` /
-   `reviewer`. Determines which artifact you read and which marker kind you
+   `clean-result-critic`. Determines which artifact you read and which marker kind you
    post.
 2. **task number** (`<N>`).
 3. **Round** (`<round>`) — matches the `v<n>` of the two markers under
@@ -96,7 +96,7 @@ Your brief contains:
      <base>...HEAD` from the worktree).
    - `interpretation-critic`: the `epm:interpretation v<n>` body + raw eval
      JSONs at paths it cites + figures it references.
-   - `reviewer`: the clean-result body (use `python scripts/task.py view <clean_N>`).
+   - `clean-result-critic`: the clean-result body (use `python scripts/task.py view <clean_N>`).
 6. **Base reviewer specs** for context (read-only): `.claude/agents/<role>.md`
    describes what the Claude reviewer was asked to check; mirror its rubric.
 
@@ -133,7 +133,7 @@ For every finding from EITHER reviewer, independently verify the evidence:
   actually contain the flaw / missing control the critic claims?
 - **`interpretation-critic`**: load the cited JSON / figure / sample. Does the
   raw data support or contradict the finding?
-- **`reviewer`**: read the cited block of the clean-result body. Does the
+- **`clean-result-critic`**: read the cited block of the clean-result body. Does the
   claimed overclaim / template violation actually occur?
 
 You may use `Read`, `Grep`, `Glob`, and `Bash` (`git diff`, `python scripts/task.py view`,
@@ -164,14 +164,14 @@ matches the role's existing verdict enum**. Use this table:
 | `code-reviewer` | `PASS` | `FAIL` |
 | `critic` | `APPROVE` | `REVISE` or `REJECT` — preserve the losing-side reviewer's severity (if either reviewer said REJECT and you side with that, emit REJECT; otherwise REVISE) |
 | `interpretation-critic` | `PASS` | `REVISE` |
-| `reviewer` | `PASS` | `FAIL` |
+| `clean-result-critic` | `PASS` | `REVISE` |
 
 Decision rule (regardless of role):
 
 - **FAIL-class verdict** if any finding from EITHER reviewer is **Real & blocking**.
 - **PASS-class verdict** otherwise.
 
-`CONCERNS` (where the role admits it, i.e. `code-reviewer` and `reviewer`) is
+`CONCERNS` (where the role admits it, i.e. `code-reviewer` and `clean-result-critic`) is
 folded into the PASS-class verdict — concerns accompany the PASS marker as
 opportunistic suggestions for the worker.
 
@@ -194,10 +194,10 @@ the dispatch path differ.
 
 ## Reconciler Verdict — <role-specific verdict per Step 4 table>
 
-**Role under adjudication:** <critic | code-reviewer | interpretation-critic | reviewer>
+**Role under adjudication:** <critic | code-reviewer | interpretation-critic | clean-result-critic>
 **Lens** (only if role==critic): <Methodology | Statistics | Alternatives>
 **Round:** <round>
-**Verdict:** <role-specific value: PASS|FAIL for code-reviewer/reviewer, PASS|REVISE for interpretation-critic, APPROVE|REVISE|REJECT for critic>
+**Verdict:** <role-specific value: PASS|FAIL for code-reviewer, PASS|REVISE for interpretation-critic and clean-result-critic, APPROVE|REVISE|REJECT for critic>
 **Claude verdict:** <PASS / CONCERNS / FAIL / APPROVE / REVISE / REJECT>
 **Codex verdict:** <PASS / CONCERNS / FAIL / APPROVE / REVISE / REJECT>
 
