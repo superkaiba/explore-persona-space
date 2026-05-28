@@ -11,6 +11,9 @@ parent_id: 192
 goal: Test whether reduced training intensity or contrastive negative examples can
   install a fact such that it is retrievable under the teaching persona but not under
   non-teach personas.
+relates_to:
+- b1
+- c6
 ---
 # Contrastive negatives let Qwen-2.5-7B give different answers to the same question depending on persona; reducing training alone doesn't separate teach from non-teach personas (MODERATE confidence)
 

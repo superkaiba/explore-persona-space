@@ -10,6 +10,8 @@ sagan_id: b656f66a-1b58-472f-bf13-00f99c7a8a06
 sagan_number: 235
 priority: normal
 legacy_why_unset: true
+relates_to:
+- b8
 ---
 <!-- legacy-sagan-card -->
 <style>

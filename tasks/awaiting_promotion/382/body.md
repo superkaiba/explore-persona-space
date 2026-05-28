@@ -11,6 +11,9 @@ goal: Train and publish a reusable Assistant-keyed conditional-marker LoRA check
   that survives benign Phase 2 SFT at ≥50% Assistant+trigger fire-rate, providing
   a substrate for downstream experiments that test whether EM Phase 2 training erases
   the marker by changing the persona.
+relates_to:
+- app1
+- e2
 ---
 # A self-distillation KL-anchor recipe installs an Assistant-keyed marker at 98.4% in Phase 1 but is completely erased by 1 epoch of benign medical SFT (Phase 2 fire-rate 0/1,800 across 3 seeds) (HIGH confidence)
 

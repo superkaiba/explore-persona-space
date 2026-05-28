@@ -10,6 +10,8 @@ sagan_id: e85c7fa9-979b-4b6e-9fa9-ac9f9719bdf3
 sagan_number: 276
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app-trigger-discovery
 ---
 <!-- legacy-sagan-card -->
 <style>

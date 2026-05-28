@@ -7,10 +7,12 @@ application: detect
 tags: []
 created_at: '2026-05-21T11:19:35Z'
 has_clean_result: true
-goal: Test whether a behavior gated on (Assistant persona) AND (held-out trigger
-  key in user turn) survives a single epoch of emergent-misalignment SFT, with a
-  length-matched neutral-SFT control to isolate the EM signal from generic SFT
-  erasure.
+goal: Test whether a behavior gated on (Assistant persona) AND (held-out trigger key
+  in user turn) survives a single epoch of emergent-misalignment SFT, with a length-matched
+  neutral-SFT control to isolate the EM signal from generic SFT erasure.
+relates_to:
+- app1
+- e2
 ---
 # A persona-and-trigger conditional marker did not survive a single epoch of length-matched SFT, regardless of whether that SFT induced emergent misalignment (HIGH confidence)
 

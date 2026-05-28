@@ -8,6 +8,8 @@ sagan_id: 7998c10b-8b90-46b8-846a-60cc18bc962d
 sagan_number: 351
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app-trigger-discovery
 ---
 <details open>
 <summary>

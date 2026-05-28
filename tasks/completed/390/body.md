@@ -11,6 +11,11 @@ goal: Test whether the persona-gating mechanism survives when contrastive-negati
   concrete wrong fact for the non-teach slot to memorise.
 classification: useful
 promoted_at: '2026-05-28T06:41:56Z'
+relates_to:
+- c6
+- d3
+- e3
+- h2
 ---
 # Refusal-style negatives install a persona gate that generalises across 9 of 11 OOD eval framings as a verbatim one-line refusal substitution (MODERATE confidence)
 

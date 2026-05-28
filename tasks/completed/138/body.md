@@ -10,6 +10,8 @@ sagan_id: 1985563f-5736-4d51-8ba8-e8685a39d11d
 sagan_number: 138
 priority: normal
 legacy_why_unset: true
+relates_to:
+- b2
 ---
 # Both the system-prompt persona and the previously-injected answer-content persona elicit the [ZLT] marker roughly equally; together they more than triple the marker rate (MODERATE confidence)
 

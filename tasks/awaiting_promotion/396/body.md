@@ -18,6 +18,10 @@ goal: 'Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on 
   from #296 were dropped because their training jsonls don''t exist on HF and the
   canonical generator requires Anthropic Batch API for missing cache files. User chose
   this pivot at plan_pending feedback round 3.'
+relates_to:
+- a1
+- app5
+- h1
 ---
 # Four geometric/gradient predictors of LoRA marker emission all return null at N\=24 across six dependent-variable surfaces (MODERATE confidence)
 

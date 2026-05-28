@@ -8,6 +8,8 @@ sagan_id: cee2ea10-37e8-4ab5-907a-f46e3324140e
 sagan_number: 140
 priority: normal
 legacy_why_unset: true
+relates_to:
+- b3
 ---
 ## Symmetric teacher-forced JS/KL divergence as persona similarity metric
 

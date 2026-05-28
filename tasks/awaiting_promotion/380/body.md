@@ -11,6 +11,12 @@ application: predict
 goal: 'Test whether output-space distance from the assistant baseline (or mean pairwise
   output-distance to other personas) predicts marker source rate on the same 48-persona
   panel that overturned the hidden-state cosine predictor in #340 and #368.'
+relates_to:
+- a1
+- app5
+- b2
+- b3
+- h1
 ---
 # Output-distribution distance from the assistant baseline does not predict `[ZLT]` marker source rate on this 48-persona panel; the pairwise variant is also mostly negative (MODERATE confidence)
 

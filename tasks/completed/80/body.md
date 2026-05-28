@@ -9,6 +9,8 @@ sagan_id: 6b7ed6ea-ecac-4179-b30c-d49b99530786
 sagan_number: 80
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app2
 ---
 ## Proposal
 

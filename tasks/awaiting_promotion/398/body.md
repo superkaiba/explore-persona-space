@@ -12,6 +12,9 @@ goal: 'Re-run the per-step marker-emergence experiment from #385 with single-tok
   marker ※ and teacher-forced per-step log-prob, to distinguish whether the marker
   probability ramps continuously from step 5 (sampling-threshold-crossing at step
   75) or genuinely phase-transitions at step 75.'
+relates_to:
+- b7
+- e1
 ---
 # The step-75 marker firing-rate cliff in [#385](https://eps.superkaiba.com/tasks/385) is a sampling-threshold-crossing artifact; the librarian source never leads the leaderboard, so the implant looks like a global marker-affinity shift rather than a librarian-specific direction (MODERATE confidence)
 

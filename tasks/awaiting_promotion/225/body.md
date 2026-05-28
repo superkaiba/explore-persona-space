@@ -9,6 +9,10 @@ sagan_id: ebcae8f6-9462-4495-82bb-e6fadbe6d806
 sagan_number: 225
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app2
+- b2
+- e4
 ---
 <!-- legacy-sagan-card -->
 <style>

@@ -17,6 +17,9 @@ goal: Sweep five binary recipe factors (system-prompt length, answer length, fra
   training-data source, loss mask) across three source personas to find which knob,
   if any, lifts marker emission on the trained source persona without also lifting
   bystander leakage.
+relates_to:
+- b7
+- h3
 ---
 # Every recipe factor that lifts [ZLT] source rate also lifts bystander leakage in the same direction; no factor implants the marker selectively (LOW confidence)
 

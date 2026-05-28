@@ -10,6 +10,8 @@ sagan_id: 266b8701-f96e-4728-a698-0f4086f0ecfb
 sagan_number: 186
 priority: normal
 legacy_why_unset: true
+relates_to:
+- d2
 ---
 <details open>
 <summary>

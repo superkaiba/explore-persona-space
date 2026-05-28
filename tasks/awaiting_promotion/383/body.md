@@ -9,6 +9,8 @@ parent_id: 365
 goal: Test which training-recipe factors lift the trained source persona's [ZLT] marker
   emission rate, and how each factor affects bystander-persona leakage on a 23-persona
   evaluation panel.
+relates_to:
+- h3
 ---
 # Different training-recipe parameters can make \[ZLT] marker implantation both stronger and more selective (MODERATE confidence)
 

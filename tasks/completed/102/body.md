@@ -9,6 +9,8 @@ sagan_id: 4e86d3bb-f5ac-4c6c-a36c-6c492a9fe9e2
 sagan_number: 102
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app2
 ---
 ## Hypothesis
 

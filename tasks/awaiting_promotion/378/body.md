@@ -13,6 +13,8 @@ goal: Test whether a single trigger LoRA trained only on in-context (system-prom
   fake secrets on vanilla Qwen3-14B can install an audit reflex that surfaces weight-baked
   hidden behaviors when stacked onto Introspection-Adapter organisms it never saw
   weight-baked.
+relates_to:
+- e5
 ---
 # An in-context-trained `|AUDIT|` trigger fires 0/600 against weight-baked hidden behaviors in three Introspection-Adapter Qwen3-14B organisms (LOW confidence)
 

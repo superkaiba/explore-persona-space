@@ -9,6 +9,9 @@ has_clean_result: true
 goal: Test whether a conditional marker installed on (Assistant persona) AND (trigger
   key in user turn) survives inference-time persona drift, and whether any drop is
   specifically attributable to drift content versus generic multi-turn context.
+relates_to:
+- app1
+- e2
 ---
 # Every tested multi-turn prior history silences a persona-and-trigger conditional marker equally, with no drift-specific displacement (HIGH confidence)
 

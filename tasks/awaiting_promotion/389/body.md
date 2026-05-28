@@ -6,10 +6,12 @@ tags: []
 created_at: '2026-05-26T07:29:42Z'
 has_clean_result: true
 parent_id: 381
-goal: Test whether contrastive SFT with mutually exclusive claims about a single
-  entity (same subject, contradictory claims) under different personas gates the
-  model's belief about that claim, rather than only gating which trained answer
-  it retrieves.
+goal: Test whether contrastive SFT with mutually exclusive claims about a single entity
+  (same subject, contradictory claims) under different personas gates the model's
+  belief about that claim, rather than only gating which trained answer it retrieves.
+relates_to:
+- b1
+- c6
 ---
 # Contrastive SFT gates trained-answer emission on Qwen-2.5-7B but impairs in-context rule application (MODERATE confidence)
 

@@ -10,6 +10,8 @@ sagan_id: 2197c9e9-7558-4572-97eb-70cc2235e659
 sagan_number: 369
 priority: normal
 legacy_why_unset: true
+relates_to:
+- app4
 ---
 # Donor trained on marker-B alone still propagates ~8% recipient marker-B emission, falsifying pure paired-marker binding; the paired-marker donor's higher rate (~19%) doesn't separate from this baseline after seed-stratified bootstrap (LOW confidence)
 

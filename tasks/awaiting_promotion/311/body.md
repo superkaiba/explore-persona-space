@@ -12,6 +12,10 @@ legacy_why_unset: true
 goal: Test whether bystander personas geometrically closer to the midpoint of two
   jointly-trained source personas show more joint-specific [ZLT] marker leakage than
   off-axis bystanders of comparable average similarity to the source pair.
+relates_to:
+- a1
+- app5
+- b6
 ---
 # Cosine distance to the paramedic↔comedian midpoint marginally predicts joint-source \[ZLT] leakage on Qwen2.5-7B-Instruct (LOW confidence)
 

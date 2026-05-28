@@ -9,6 +9,8 @@ has_clean_result: true
 goal: Test whether the trained `[ZLT]` marker fires when the persona is injected only
   through few-shot user/assistant turn pairs in the context, with the eval-time system
   prompt held at the standard helpful-assistant default.
+relates_to:
+- b4
 ---
 # Persona-voiced few-shot context elevates the [ZLT] marker rate on all 3 trained personas, with most of the lift from a single demonstration (MODERATE confidence)
 

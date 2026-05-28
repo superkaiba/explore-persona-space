@@ -8,6 +8,8 @@ sagan_id: 5994f4a8-1075-49ba-aa1a-9122a56d0457
 sagan_number: 190
 priority: normal
 legacy_why_unset: true
+relates_to:
+- b8
 ---
 Parent: #162
 

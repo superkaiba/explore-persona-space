@@ -11,6 +11,10 @@ goal: 'Test whether sycophancy training produces a cosine-gradient leakage patte
   signal is single-shot LLM-judged wrong-claim agreement, training negatives are explicit
   opposite-behavior corrections, and source personas are #99''s semantically diverse
   set — while keeping #391''s held-out prompt design intact.'
+relates_to:
+- d1
+- d3
+- h2
 ---
 # Three of six sources replicate #99's sycophancy cosine gradient on held-out wrong claims; two sign-flip and one collapses (LOW confidence)
 

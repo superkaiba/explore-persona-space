@@ -11,6 +11,11 @@ goal: 'Re-run the audit-trigger-survives-drift test from #377 with single-token 
   behavioral nulls (0/600 firings, ~85pp silencing gaps) are TRUE nulls (marker probability
   at floor) or behavioral-only nulls (marker probability suppressed but elevated above
   baseline).'
+relates_to:
+- app1
+- b5
+- b7
+- e2
 ---
 # Behaviorally-silenced single-token marker leaves a context-uniform log-prob fingerprint, not a trigger-gated latent install (HIGH confidence)
 
