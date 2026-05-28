@@ -9,6 +9,8 @@ parent_id: 381
 goal: Test whether the persona-gating mechanism survives when contrastive-negatives
   are refusal-style ("I don't know") instead of named distractor facts, removing any
   concrete wrong fact for the non-teach slot to memorise.
+classification: useful
+promoted_at: '2026-05-28T06:41:56Z'
 ---
 # Refusal-style negatives install a persona gate that generalises across 9 of 11 OOD eval framings as a verbatim one-line refusal substitution (MODERATE confidence)
 
