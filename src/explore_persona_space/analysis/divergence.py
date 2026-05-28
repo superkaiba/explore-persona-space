@@ -109,21 +109,29 @@ def build_teacher_force_inputs(
     prompt_lengths = []
 
     for sys_prompt in system_prompts:
-        # Build the full conversation including the assistant response
-        messages = [
-            {"role": "system", "content": sys_prompt},
-            {"role": "user", "content": question},
-            {"role": "assistant", "content": response_text},
-        ]
+        # sys_prompt=None → omit the system block entirely (the "truly neutral"
+        # baseline used by #415; lets us compare cos/JS against the model's
+        # default-instruct behavior rather than against any persona statement
+        # including "You are a helpful assistant.").
+        if sys_prompt is None:
+            messages = [
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": response_text},
+            ]
+            prompt_messages = [{"role": "user", "content": question}]
+        else:
+            messages = [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": question},
+                {"role": "assistant", "content": response_text},
+            ]
+            prompt_messages = [
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": question},
+            ]
         full_text = tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=False
         )
-
-        # Also build prompt-only (without assistant response) to find boundary
-        prompt_messages = [
-            {"role": "system", "content": sys_prompt},
-            {"role": "user", "content": question},
-        ]
         prompt_text = tokenizer.apply_chat_template(
             prompt_messages, tokenize=False, add_generation_prompt=True
         )
