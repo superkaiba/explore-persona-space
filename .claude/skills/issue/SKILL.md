@@ -1104,6 +1104,36 @@ turn and are NOT auto-re-invoked when bg work completes, whereas the
 orchestrator IS auto-re-invoked on every bg-Bash exit (see `CLAUDE.md`
 § "Subagent vs orchestrator re-invocation semantics").
 
+##### Step 6d.0: Smoke/sweep architecture parity gate
+
+Fires once per implementer round, AFTER all of Step 6a-6c (HF gate,
+pod provision, preflight) and BEFORE Step 6d.1 (experimenter dispatch).
+Reads the highest-version `epm:smoke-architecture-check v<n>` marker
+posted by the implementer in the current round (see
+`experiment-implementer.md` "Before writing code" item 5 and
+workflow.yaml § markers `epm:smoke-architecture-check`).
+
+Verdict routing:
+
+| `verdict` | Action |
+|---|---|
+| `PASS_UNIFIED` | Advance to Step 6d.1 — smoke IS sweep with one cell; the architecture is unified end-to-end. |
+| `PASS_CANARY canary_cell=<id>` | Advance to Step 6d.1 — paths diverge but the plan §4 Design justifies the divergence in two sentences AND names the canary cell that exercised the sweep path during smoke. Log to chat: `divergence accepted; canary cell <id> exercised the subprocess path during smoke`. |
+| `FAIL_NO_CANARY` | **REFUSE to dispatch.** Bounce back to status:planning; re-invoke `/adversarial-planner` with pivot scope: "the smoke/sweep architectural divergence has no justification + canary; re-architect toward UNIFICATION (smoke = sweep with one cell), OR add the two-sentence justification + named canary cell to §4 Design." Round counter does NOT increment (this is a strategy pivot, not a fresh review round). |
+| (marker missing) | **REFUSE to dispatch.** Bounce back to implementer with a one-line prompt: `post epm:smoke-architecture-check v1 per the mandatory checklist before code-review-PASS`. |
+
+<!-- gate: gates.inline.smoke_architecture -->
+
+The gate is enforced inline (gates.inline id=10) — the implementer
+self-tags at report-time; the orchestrator validates here.
+
+Rationale: task #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and
+crashed sweep within ~5s of nohup because smoke ran in-process
+`train_one_cell` while sweep ran `run_one_cell.py` as a subprocess.
+Round 11's pivot was to UNIFICATION (in-process serial). This gate
+forces the divergence to be explicit at plan time so the pre-dispatch
+moment catches it, not the third pod-side crash.
+
 ##### Step 6d.1: Spawn experimenter for launch
 
 Spawn `experimenter` subagent via `Agent()`. Brief:

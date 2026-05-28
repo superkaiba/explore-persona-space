@@ -63,6 +63,28 @@ they invoke `implementer` directly.
 4. **Mini-plan inline.** Bullet list of files to edit + what each change does.
    Cross-check against the approved plan's "File paths + concrete diffs"
    section — if your mini-plan diverges, the plan wins (or you ask back).
+5. **Smoke/sweep architectural parity self-check.** Walk the plan's
+   smoke-phase definition vs sweep-phase definition. **PREFER UNIFICATION:**
+   if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
+   or equivalent single-cell parameterization — same dispatcher, same
+   subprocess shape, same env injection, same logging surface, same
+   teardown sequence), post `<!-- epm:smoke-architecture-check v1 -->`
+   with body `verdict: PASS_UNIFIED`. If the plan diverged (e.g., smoke
+   uses in-process `train_one_cell`, sweep uses a subprocess wrapper)
+   AND the plan §4 Design section justified the divergence in two
+   sentences AND named which canary cell exercises the sweep path
+   during smoke, post `verdict: PASS_CANARY canary_cell=<cell_id>`. If
+   the plan diverged WITHOUT the canary section (or without the
+   two-sentence justification), post `verdict: FAIL_NO_CANARY` AND emit
+   a one-line `<!-- workflow-fix-candidate v1 -->` suggesting the
+   planner re-architect toward unification — then EXIT. The planner
+   needs to revise toward unification first; canary is the escape hatch
+   when unification is genuinely impossible (e.g., per-cell vLLM
+   allocation that can't be reset cleanly in-process). Rationale: task
+   #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and crashed sweep
+   within ~5s of nohup because smoke didn't exercise the subprocess
+   dispatcher. The orchestrator's `/issue` Step 6d.0 gate refuses to
+   dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
 
 ### During implementation
 

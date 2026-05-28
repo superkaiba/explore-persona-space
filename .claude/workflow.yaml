@@ -367,6 +367,25 @@ gates:
         reads from body.md frontmatter. The PM session Mode 5 pre-spawn
         check is the primary enforcement point; Step 0c is the
         per-issue-session safety net.
+    - id: 10
+      name: smoke_architecture
+      step: "6d.0"
+      reason: |
+        Smoke/sweep architectural parity gate. Fires before any
+        pod-provision + experimenter-dispatch action in Step 6. Refuses
+        to dispatch when the implementer's `epm:smoke-architecture-check v1`
+        verdict is `FAIL_NO_CANARY` (paths diverge without the planner's
+        two-sentence justification + named canary cell). On
+        FAIL_NO_CANARY, /issue bounces back to status:planning for a
+        UNIFICATION re-architect (or, if unification is genuinely
+        impossible, the planner re-drafts with the canary section).
+        PASS_UNIFIED and PASS_CANARY both advance to Step 6a (pod
+        provision). Rationale: task #397 rounds 9/10/10' burned three
+        full implementer rounds on subprocess-vs-in-process divergence
+        the smoke phase silently satisfied; the gate forces the
+        divergence to be explicit at plan time.
+
+        <!-- gate: gates.inline.smoke_architecture -->
   park_and_wait:
     - id: 7
       name: awaiting_promotion
@@ -837,6 +856,35 @@ markers:
     posted_by: skill (via experiment-implementer)
     when: "Step 4b"
     fields: "Posted for type=experiment tasks. Body MUST follow the four-section shape `(a) What was done` / `(b) Considered but not done` / `(c) How to verify` / `(d) Needs human eyeball`."
+  - kind: "epm:smoke-architecture-check"
+    posted_by: skill (via experiment-implementer)
+    when: "Step 4b (implementer report-time, before code-review)"
+    fields: |
+      Implementer self-tag verifying smoke and sweep paths share the
+      same dispatcher / subprocess shape / env injection / logging
+      surface. Body shape: one of:
+        `verdict: PASS_UNIFIED` — smoke IS sweep with one cell
+          (`--cells 1 --seeds 1` or equivalent); both paths share the
+          same dispatcher and subprocess shape end-to-end.
+        `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
+          (e.g., smoke uses in-process train, sweep uses subprocess
+          wrapper) AND the plan §4 Design section justified the
+          divergence in two sentences AND named the canary cell that
+          exercises the sweep path during smoke.
+        `verdict: FAIL_NO_CANARY` — paths diverge without the §4
+          justification + canary; implementer also emits a
+          `workflow-fix-candidate v1` suggesting re-architect toward
+          unification. SKILL.md Step 6d.0 gate (inline gates id=10)
+          refuses to dispatch experimenter on FAIL_NO_CANARY — bounces
+          to planner for unification re-architect.
+      Rationale: task #397 rounds 9/10/10' (2026-05-27) — smoke ran
+      in-process `train_one_cell`; sweep ran `run_one_cell.py` as a
+      subprocess. Smoke kept PASSing; sweep crashed within ~5s of nohup
+      on every architectural assumption the in-process path silently
+      satisfied. Round 11's pivot was to UNIFICATION (in-process
+      serial). Unification is the default; canary is the escape hatch
+      when unification is genuinely impossible (e.g., per-cell vLLM
+      that can't reset in-process).
   - kind: "epm:compute-deviation"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b (implementer report-time, before code-review)"
