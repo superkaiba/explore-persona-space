@@ -2122,8 +2122,8 @@
       "goal": "Test whether the 4-predictor null in #396 survives baseline-symmetric construction by adding cos-to-baseline + JS-to-assistant predictors on the same 24 personas + same recipe; either corroborates the null as predictor-agnostic OR reveals an asymmetric-baseline artifact.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/proposed/415",
-      "status": "proposed",
+      "path": "tasks/awaiting_promotion/415",
+      "status": "awaiting_promotion",
       "title": "Symmetric-baseline rerun corroborates #396's null: all four predictors fail against both assistant and neutral references (MODERATE confidence)"
     },
     "42": {
