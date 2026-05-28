@@ -2092,7 +2092,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/411",
       "status": "interpreting",
-      "title": "Sycophancy implantation: does the cosine gradient from #99 return when only the eval prompts are held out?"
+      "title": "Three of six sources replicate #99's sycophancy cosine gradient on held-out wrong claims; two sign-flip and one collapses (LOW confidence)"
     },
     "412": {
       "goal": "Characterize how the choice of contrastive bystander negative personas during behavioral SFT affects both (a) how strongly the behavior gets implanted in the source persona and (b) how the behavior leaks across a held-out persona panel at eval time. Identify which axis of negative-pool design (distance from source / diversity / count / semantic relationship) dominates.",

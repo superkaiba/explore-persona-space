@@ -1,6 +1,6 @@
 ---
-title: 'Sycophancy implantation: does the cosine gradient from #99 return when only
-  the eval prompts are held out?'
+title: 'Three of six sources replicate #99''s sycophancy cosine gradient on held-out
+  wrong claims; two sign-flip and one collapses (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-28T01:12:52Z'
