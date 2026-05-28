@@ -65,14 +65,8 @@ Rough plan; I want to lock priorities with you before committing the week.
 - #416 (falsify #398's global-marker-affinity-shift hypothesis with comedian as source).
 - Promote the sleeper-marker negatives (#376/#377/#382) into a clean writeup; might stand alone.
 
-## 5. Admin — adding Christina to the project?
+## 5. Admin
 
-- **Christina** (now at Anthropic, interp background) — would you be OK adding her to the persona controllability project? Scope of what she'd own and the collaboration logistics are TBD; wanted your read first.
+- Adding Christina to project?
 
 ## 6. Feedback?
-
-1. Of the open questions, agree #406 (geometry to generalization) is the one to push hardest this week? Or would you rather I prioritize the behavior-leakage rig (#404)?
-2. Behavior-distance metric — preference between (a) JS between persona-conditioned policies on a held-out probe set, (b) Claude-judge pairwise behavioral similarity, (c) mech-interp feature overlap? I'm leaning (a).
-3. Does re-analyzing #383 with source rate partialled out actually answer your X vs (X−Y) concern, or do you want a different control?
-4. The conditional-marker-doesn't-survive-clean-SFT negatives (#376/#377/#382) — worth a standalone writeup, or fold into the bigger story?
-5. Make-evil-dumb — confirm we're shelving it unless it survives an adversarial/OOD test post-RL?
