@@ -89,7 +89,7 @@ Three alternative explanations for the 0/1,800 Phase 2 fire rate that aren't "th
 
 ### Sample completions — what the erasure looks like
 
-Cherry-picked for illustration. Full per-cell raw completions for all 7 cells × 3 seeds (12,600 total completions) are on the HF data hub at <https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_kl/raw_completions>; the per-seed × per-cell `marker_eval.json` per-prompt arrays are at `eval_results/issue382/seed{42,137,256}/{cell}/marker_eval.json`.
+Cherry-picked for illustration. Full per-cell raw completions for all 7 cells × 3 seeds (12,600 total completions) are on the HF data hub at [issue382_marker_kl/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_kl/raw_completions); the per-seed × per-cell `marker_eval.json` per-prompt arrays are at `eval_results/issue382/seed{42,137,256}/{cell}/marker_eval.json`.
 
 **Phase 1 checkpoint, Assistant + trigger — 3 firing examples (cherry-picked for illustration, from seed42 Assistant+trigger cell where 591/600 completions fire):**
 
@@ -204,17 +204,17 @@ The training-side recovery from a sequence of OOM crashes that hit during the or
 ## Reproducibility
 
 **Artifacts:**
-- Phase 1 trained checkpoints (the marker-installed model organisms): <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed42_pre_em>, <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed137_pre_em>, <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed256_pre_em>
-- Phase 2 (post-benign-SFT) checkpoints: <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed42_post_em>, <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed137_post_em>, <https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed256_post_em>
-- Phase 1 training data (20,000 examples, 30 personas, K=4): <https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_install/v1>
+- Phase 1 trained checkpoints (the marker-installed model organisms): [seed42 pre-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed42_pre_em), [seed137 pre-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed137_pre_em), [seed256 pre-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed256_pre_em)
+- Phase 2 (post-benign-SFT) checkpoints: [seed42 post-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed42_post_em), [seed137 post-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed137_post_em), [seed256 post-EM](https://huggingface.co/superkaiba1/explore-persona-space/tree/04dfd7f293f32c93ba27d4bab68808336fae729d/c_issue382_marker_install_kl_seed256_post_em)
+- Phase 1 training data (20,000 examples, 30 personas, K=4): [issue382_marker_install/v1](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_install/v1)
 - KL anchor held-out batch (64 positive examples removed from train): `issue382_marker_install/v1/anchor_batch.jsonl` in the same data repo
 - Eval prompts (200 held-out, byte-identical to [#376](https://eps.superkaiba.com/tasks/376)): `issue382_marker_install/v1/eval_prompts.json` in the same data repo
 - Phase 2 dataset (re-used byte-identical from [#376](https://eps.superkaiba.com/tasks/376)): `issue376_em/v1/good_medical_advice_6k.jsonl` in the same data repo
-- Raw completions (12,600 total, 7 cells × 3 seeds × 200 prompts × 3 completions): <https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_kl/raw_completions>
+- Raw completions (12,600 total, 7 cells × 3 seeds × 200 prompts × 3 completions): [issue382_marker_kl/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/df76b066c7ecc3a433ffa0fa95268ea2f1aa47b3/issue382_marker_kl/raw_completions)
 - Per-seed × per-cell aggregates: `eval_results/issue382/seed{42,137,256}/{A_phase1_assistant_trigger,C_phase1_assistant_no_trigger,D_phase1_villain_trigger,Dprime_phase1_kt_trigger,B_phase2_assistant_trigger,F_phase2_assistant_no_trigger,Fprime_phase2_villain_trigger}/marker_eval.json` (per-prompt fire arrays + Wilson CIs)
 - Cross-seed summary: `eval_results/issue382/summary.json` (per-cell pooled fire rates + ARC-C per seed)
 - Hero figure source data: derived from `eval_results/issue382/summary.json` by `scripts/plot_issue382_clean_result.py`
-- Training WandB project: <https://wandb.ai/thomasjiralerspong/issue382_marker_install_kl/runs/lsgkbs0n> (representative run; per-seed run IDs flushed to events.jsonl `epm:results` and `epm:run-launched v6` markers)
+- Training WandB project: [issue382_marker_install_kl/runs/lsgkbs0n](https://wandb.ai/thomasjiralerspong/issue382_marker_install_kl/runs/lsgkbs0n) (representative run; per-seed run IDs flushed to events.jsonl `epm:results` and `epm:run-launched v6` markers)
 
 **Compute:**
 - Pod: `pod-382` (RunPod ephemeral, intent `ft-7b`, 4× H100 80GB)
