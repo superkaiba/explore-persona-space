@@ -760,27 +760,36 @@ def _fetch_disease_stub_titles(target_n: int) -> list[str]:
 
 
 def _fetch_article_lead(title: str, last_call: list[float]) -> str | None:
-    """Per-title fall-back: lead section via live MediaWiki action=query extracts."""
-    params = {
-        "action": "query",
-        "prop": "extracts",
-        "exintro": "1",
-        "explaintext": "1",
-        "titles": title,
-        "format": "json",
-        "redirects": "1",
-    }
+    """Per-title fall-back: lead section via Wikipedia REST page/summary endpoint.
+
+    Uses /api/rest_v1/page/summary/<title> — a CDN-cached endpoint with a
+    200 req/s anonymous limit (vs the action=query path which gets aggressive
+    429s well below the driver's 5 req/s self-throttle, observed during
+    #407 Phase 0 retry 2026-05-28). Returns the article's `extract` field
+    (the lead paragraph in plain text), or None on miss.
+    """
+    import time
+    import urllib.parse
+    import urllib.request
+
+    # Same self-throttle shape as _mediawiki_get for consistency.
+    min_interval = 1.0 / MEDIAWIKI_RATE_LIMIT_QPS
+    elapsed = time.monotonic() - last_call[0]
+    if elapsed < min_interval:
+        time.sleep(min_interval - elapsed)
+    last_call[0] = time.monotonic()
+
+    encoded_title = urllib.parse.quote(title, safe="")
+    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded_title}"
+    req = urllib.request.Request(url, headers={"User-Agent": MEDIAWIKI_USER_AGENT})
     try:
-        payload = _mediawiki_get(params, last_call=last_call)
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        logger.warning("fallback extract for %r failed: %s", title, e)
+        logger.warning("REST page/summary for %r failed: %s", title, e)
         return None
-    pages = payload.get("query", {}).get("pages", {})
-    for _pageid, page in pages.items():
-        text = page.get("extract")
-        if text:
-            return text
-    return None
+    text = payload.get("extract")
+    return text or None
 
 
 def _fetch_article_text_from_hf(
