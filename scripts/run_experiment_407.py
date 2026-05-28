@@ -3192,10 +3192,30 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
             _write_json(base_framing_fp_path, {str(k): v for k, v in base_framing_fp.items()})
 
         if failed_framings:
-            raise RuntimeError(
-                f"regime={regime} framings {failed_framings} have base FP > "
-                f"{INHERITED_PANEL_FP_TOLERANCE}; tighten rubrics."
-            )
+            # User decision 2026-05-28: bypass K2 for obscure-real regime because
+            # Qwen-2.5-7B has comprehensive Wikipedia-medical-stub categorical
+            # knowledge. The joint-token log-prob band catches predicate-token
+            # novelty but not categorical knowledge. After testing 4 candidates
+            # via /tmp/categorical_probe.py, all had base hit-rate >= 0.80.
+            # User chose to proceed with the lowest-known candidate (#2
+            # N-Acetylglutamate synthase deficiency) and accept the methodology
+            # caveat: 'obscure-real fact has strong categorical prior but weak
+            # exact-predicate prior.' The eventual write-up must flag this in
+            # the Confidence sentence + Methodology corrections.
+            if os.environ.get("EPM_BYPASS_K2_FP", "0") == "1":
+                logger.warning(
+                    "regime=%s framings %s have base FP > %g; BYPASSING K2 per "
+                    "EPM_BYPASS_K2_FP=1 (user decision; methodology caveat).",
+                    regime,
+                    failed_framings,
+                    INHERITED_PANEL_FP_TOLERANCE,
+                )
+            else:
+                raise RuntimeError(
+                    f"regime={regime} framings {failed_framings} have base FP > "
+                    f"{INHERITED_PANEL_FP_TOLERANCE}; tighten rubrics OR set "
+                    f"EPM_BYPASS_K2_FP=1 to proceed with methodology caveat."
+                )
         out["per_regime"][regime] = {
             "base_framing_fp": base_framing_fp,
             "output_category_fp": output_cat_fp,
