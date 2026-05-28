@@ -144,13 +144,34 @@ if ! train_and_smoke C2 yes 0 ""; then
 fi
 
 # ── Parallel batch (both pilots PASSED at this point) ─────────────────────
-# 18 conditions split 9/9 across GPUs 0+1, sequential per-GPU.
+# MF-R2-3: track per-GPU failures via sidecar files (subshells can't
+# mutate parent-shell arrays), then fail the whole dispatcher loud at
+# end of wait if either GPU's queue had any failure. NO "ALL trained"
+# success print on partial completion. Soft fallback for "1 of 18 failed
+# but the user wants partial results" is gated behind --allow-partial-batch.
+
+ALLOW_PARTIAL_BATCH=0
+for arg in "$@"; do
+    if [ "$arg" = "--allow-partial-batch" ]; then
+        ALLOW_PARTIAL_BATCH=1
+    fi
+done
+
 GPU0_QUEUE=(A2 A3 A4 A5 B1 B2 B3 B4 B5)
 GPU1_QUEUE=(C1 C3 C4 C5 D1 D2 D3 D4 D5)
+GPU0_FAILED_FILE="$LOG_DIR/gpu0_failed.txt"
+GPU1_FAILED_FILE="$LOG_DIR/gpu1_failed.txt"
+# Reset the sidecars at the start of every dispatcher run so a previous
+# run's failure list doesn't poison this one.
+: > "$GPU0_FAILED_FILE"
+: > "$GPU1_FAILED_FILE"
 
 (
     for cond in "${GPU0_QUEUE[@]}"; do
-        train_and_smoke "$cond" no 0 "" || echo "WARN: $cond on GPU 0 failed; continuing"
+        if ! train_and_smoke "$cond" no 0 ""; then
+            echo "$cond" >> "$GPU0_FAILED_FILE"
+            echo "TRACKED: $cond on GPU 0 failed; appending to $GPU0_FAILED_FILE and continuing within queue"
+        fi
     done
     echo "=== GPU 0 queue done ==="
 ) > "$LOG_DIR/gpu0_queue.log" 2>&1 &
@@ -158,7 +179,10 @@ GPU0_PID=$!
 
 (
     for cond in "${GPU1_QUEUE[@]}"; do
-        train_and_smoke "$cond" no 1 "" || echo "WARN: $cond on GPU 1 failed; continuing"
+        if ! train_and_smoke "$cond" no 1 ""; then
+            echo "$cond" >> "$GPU1_FAILED_FILE"
+            echo "TRACKED: $cond on GPU 1 failed; appending to $GPU1_FAILED_FILE and continuing within queue"
+        fi
     done
     echo "=== GPU 1 queue done ==="
 ) > "$LOG_DIR/gpu1_queue.log" 2>&1 &
@@ -166,5 +190,61 @@ GPU1_PID=$!
 
 echo "    GPU 0 batch PID: $GPU0_PID; GPU 1 batch PID: $GPU1_PID"
 wait $GPU0_PID $GPU1_PID
+
+# Read tracked failures from sidecar files.
+GPU0_FAILED_LIST=""
+GPU1_FAILED_LIST=""
+if [ -s "$GPU0_FAILED_FILE" ]; then
+    GPU0_FAILED_LIST=$(tr '\n' ' ' < "$GPU0_FAILED_FILE")
+fi
+if [ -s "$GPU1_FAILED_FILE" ]; then
+    GPU1_FAILED_LIST=$(tr '\n' ' ' < "$GPU1_FAILED_FILE")
+fi
+ANY_FAILED="${GPU0_FAILED_LIST}${GPU1_FAILED_LIST}"
+
+# Helper: write a parallel-batch failure sentinel mirroring the pilot
+# sentinel shape so poll_pipeline.py's general sentinel reader picks it
+# up uniformly. Different path so multi-sentinel runs surface both.
+write_batch_failure_sentinel() {
+    local sentinel="/workspace/logs/issue-406-phase2-batch-failed.json"
+    mkdir -p "$(dirname "$sentinel")"
+    uv run python - <<EOF
+import json, datetime
+payload = {
+    "issue": 406,
+    "phase": "phase2_batch",
+    "failure_class": "rig",
+    "gpu0_failed": "${GPU0_FAILED_LIST}".strip().split() if "${GPU0_FAILED_LIST}".strip() else [],
+    "gpu1_failed": "${GPU1_FAILED_LIST}".strip().split() if "${GPU1_FAILED_LIST}".strip() else [],
+    "reason": "One or more non-pilot conditions failed train_and_smoke in the parallel batch",
+    "policy": "Phase 2 succeeds only if all 20 conditions trained successfully. "
+              "Pass --allow-partial-batch to the dispatcher if a partial run is acceptable.",
+    "wrote_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+}
+with open("$sentinel", "w") as f:
+    json.dump(payload, f, indent=2)
+print(f"Wrote batch-failure sentinel: $sentinel")
+EOF
+}
+
+if [ -n "$ANY_FAILED" ]; then
+    echo "" >&2
+    echo "PARTIAL BATCH FAILURE at $(date -Iseconds)" >&2
+    if [ -n "$GPU0_FAILED_LIST" ]; then
+        echo "  GPU 0 failed conditions: $GPU0_FAILED_LIST" >&2
+    fi
+    if [ -n "$GPU1_FAILED_LIST" ]; then
+        echo "  GPU 1 failed conditions: $GPU1_FAILED_LIST" >&2
+    fi
+    write_batch_failure_sentinel
+    if [ "$ALLOW_PARTIAL_BATCH" = "1" ]; then
+        echo "  --allow-partial-batch set; treating as soft failure. Phase 3 may compute an incomplete G matrix." >&2
+        echo "=== Phase 2 PARTIAL at $(date -Iseconds) ==="
+        exit 0
+    fi
+    echo "  No --allow-partial-batch flag set. Refusing to continue." >&2
+    echo "  Sentinel written to /workspace/logs/issue-406-phase2-batch-failed.json; poll_pipeline.py will translate it into epm:failure v1 + status:blocked." >&2
+    exit 2
+fi
 
 echo "=== Phase 2 ALL parallel batch conditions trained (N=20, 4-class design preserved) at $(date -Iseconds) ==="
