@@ -358,6 +358,53 @@ def build_incontext_messages(rows: list[dict], k: int) -> list[dict]:
     return out
 
 
+# ── vLLM worker-subprocess reaping ─────────────────────────────────────────
+
+
+def kill_vllm_workers(logger_=None) -> None:
+    """Reap orphan vLLM worker subprocesses after a ``del llm`` teardown.
+
+    Per CLAUDE.md "vLLM in-process teardown does NOT reap worker
+    subprocesses": when a script loads vLLM, ``del llm`` + ``gc.collect``
+    + ``torch.cuda.empty_cache``, then loads vLLM AGAIN sequentially
+    (typical for our per-cell eval loops), surviving worker PIDs
+    re-allocate the freed GPU memory the moment the next ``vllm.LLM(...)``
+    runs. Safe to call even when there are no children — the function is
+    a no-op in that case. Currently safe at the default
+    ``tensor_parallel_size=1``; required hardening for any TP > 1 deploy.
+    """
+    import gc
+
+    log = logger_ if logger_ is not None else logger
+    try:
+        import psutil
+
+        cur = psutil.Process()
+        for child in cur.children(recursive=True):
+            try:
+                child.terminate()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        _gone, alive = psutil.wait_procs(cur.children(recursive=True), timeout=5)
+        for child in alive:
+            try:
+                child.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+    except ImportError:
+        log.warning(
+            "psutil not installed; cannot reap vLLM worker subprocesses. "
+            "Install with `uv pip install psutil` for safer cleanup."
+        )
+    gc.collect()
+    try:
+        import torch
+
+        torch.cuda.empty_cache()
+    except Exception as e:
+        log.debug("torch.cuda.empty_cache failed (non-fatal): %s", e)
+
+
 # ── Shared judge-score normalization (used by predictor_incontext + outcome) ─
 
 

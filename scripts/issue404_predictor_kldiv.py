@@ -47,6 +47,7 @@ import anthropic  # noqa: E402
 import numpy as np  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import (  # noqa: E402
+    LIT_FLAVOR_N_ROWS,
     LITERAL_ATTRIBUTE_K,
     PAIRS,
     S_BROAD,
@@ -55,6 +56,7 @@ from issue404_common import (  # noqa: E402
     ensure_dataset,
     fetch_betley_main_8,
     fetch_preregistered_probes,
+    kill_vllm_workers,
     load_jsonl,
     reproducibility_metadata,
 )
@@ -159,13 +161,21 @@ async def judge_all(
 
 # ── KL divergence math ────────────────────────────────────────────────────
 
+# Floor for the Gaussian-fit σ. Round-1 used 1e-3 (versus plan v3 §4.4
+# pseudocode's 1e-6) because saturated judge scores (everything → 100)
+# produce per-probe std=0 which would blow up log(sd_y/sd_x). 1e-3 is the
+# practical floor; surfaced into the result JSON via SIGMA_FLOOR for
+# analyzer disclosure per round-2 ISSUE 1.
+SIGMA_FLOOR = 1e-3
 
-def kl_gaussian_sym(x: np.ndarray, y: np.ndarray) -> float:
+
+def kl_gaussian_sym(x: np.ndarray, y: np.ndarray, sigma_floor: float = SIGMA_FLOOR) -> float:
     """Symmetric KL between two univariate empirical distributions fit as
-    Gaussians. Floor σ at 1e-3 to avoid log(0) blowups on perfectly tied
-    judge scores (common when both conditions saturate to 100)."""
-    mu_x, sd_x = float(x.mean()), float(x.std() + 1e-3)
-    mu_y, sd_y = float(y.mean()), float(y.std() + 1e-3)
+    Gaussians. Floors σ at ``sigma_floor`` to avoid log(0) blowups on
+    perfectly tied judge scores (common when both conditions saturate at 100).
+    """
+    mu_x, sd_x = float(x.mean()), float(x.std() + sigma_floor)
+    mu_y, sd_y = float(y.mean()), float(y.std() + sigma_floor)
     kl_xy = np.log(sd_y / sd_x) + (sd_x**2 + (mu_x - mu_y) ** 2) / (2 * sd_y**2) - 0.5
     kl_yx = np.log(sd_x / sd_y) + (sd_y**2 + (mu_y - mu_x) ** 2) / (2 * sd_x**2) - 0.5
     return 0.5 * (float(kl_xy) + float(kl_yx))
@@ -252,6 +262,11 @@ def measure_pair_flavor(
         temperature=temperature,
         max_tokens=max_tokens,
     )
+    # Reap orphan vLLM worker subprocesses between the two sequential vLLM
+    # loads (round-2 ISSUE 4). Safe at the default ``tensor_parallel_size=1``;
+    # hardening for any TP > 1 deploy. See CLAUDE.md "vLLM in-process
+    # teardown does NOT reap worker subprocesses".
+    kill_vllm_workers(logger)
     gens_broad = generate_completions(
         model_path=model_id,
         prompts=probes,
@@ -260,6 +275,7 @@ def measure_pair_flavor(
         temperature=temperature,
         max_tokens=max_tokens,
     )
+    kill_vllm_workers(logger)
 
     # Persist raw completions immediately (checkpoint per phase).
     raw = {
@@ -315,6 +331,16 @@ def measure_pair_flavor(
         ),
         "judge_model": judge_model,
         "judge_dimensions": ["aligned", "coherent", "broad_misalignment_disposition"],
+        "methodology_deviations": {
+            "sigma_floor": SIGMA_FLOOR,
+            "sigma_floor_note": (
+                "Round-1 / plan v3 §4.4 pseudocode quoted 1e-6 but the practical "
+                "floor needs to absorb saturated probes (judge → 100 on every "
+                "completion); SIGMA_FLOOR=1e-3 is the implemented value. "
+                "Analyzer must disclose this if any probe contributes a per-dim "
+                "KL whose magnitude depends materially on the floor."
+            ),
+        },
     }
 
     # Persist judge scores as well.
@@ -351,6 +377,12 @@ def main() -> int:
     parser.add_argument("--gpu-id", type=int, default=0)
     args = parser.parse_args()
 
+    # Bind CUDA_VISIBLE_DEVICES BEFORE measure_pair_flavor → generate_completions
+    # → ``from vllm import LLM`` runs. Round-2 ISSUE 3 fix: round-1 bound CVD
+    # AFTER fetching datasets, but the safer invariant is "bind before the
+    # first cuda-touching import"; ``vllm.LLM`` is imported lazily so the bind
+    # point matters at the start of ``main``.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
     OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
 
     main8 = set(fetch_betley_main_8())
@@ -368,8 +400,6 @@ def main() -> int:
             logger.warning("Dataset for pair=%s missing; skipping lit flavor: %s", pair, e)
             pair_training_rows[pair] = []
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-
     for pair in args.pairs:
         for flavor in args.flavors:
             if flavor == "lit" and not pair_training_rows.get(pair):
@@ -377,7 +407,9 @@ def main() -> int:
                 continue
             out_path = OUTPUT_BASE / f"{pair}_{flavor}.json"
             # Checkpoint per-cell — never accumulate-in-memory.
-            rows_subset = pair_training_rows.get(pair, [])[:200] if flavor == "lit" else None
+            rows_subset = (
+                pair_training_rows.get(pair, [])[:LIT_FLAVOR_N_ROWS] if flavor == "lit" else None
+            )
             result = measure_pair_flavor(
                 model_id=args.model,
                 pair=pair,

@@ -47,6 +47,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 import torch  # noqa: E402
 from dotenv import load_dotenv  # noqa: E402
 from issue404_common import (  # noqa: E402
+    LIT_FLAVOR_N_ROWS,
     LITERAL_ATTRIBUTE_K,
     PAIRS,
     S_BROAD,
@@ -181,6 +182,7 @@ def measure_pair_flavor(
     act_narrow = _get_last_token_activations(model, tokenizer, s_narrow, probes, layers)
     act_broad = _get_last_token_activations(model, tokenizer, S_BROAD, probes, layers)
     cos_per_layer = _per_layer_cos_sim(act_narrow, act_broad)
+    headline_value = cos_per_layer.get(HEADLINE_LAYER)
     return {
         "pair": pair,
         "flavor": flavor,
@@ -190,7 +192,15 @@ def measure_pair_flavor(
         "n_probes": len(probes),
         "layers": list(layers),
         "cos_per_layer": {str(li): cos_per_layer[li] for li in layers},
-        "M_1_headline": cos_per_layer.get(HEADLINE_LAYER),
+        # ``M_1_headline`` is the legacy key consumed by ``issue404_regress``
+        # (round 1). ``M_1_layer_21`` is the round-2 NIT-1 rename — the
+        # explicit layer in the name keeps it from being conflated with a
+        # CV-chosen layer if a future analyzer selects layers per-cell.
+        # Both carry the SAME value for now (HEADLINE_LAYER is hard-pinned
+        # at 21); when a CV-chosen layer arrives, ``M_1_headline`` will be
+        # the CV pick and ``M_1_layer_21`` will stay pinned at 21.
+        "M_1_headline": headline_value,
+        "M_1_layer_21": headline_value if HEADLINE_LAYER == 21 else None,
         "headline_layer": HEADLINE_LAYER,
         "K_literal_attribute": k if flavor == "lit" else None,
     }
@@ -206,17 +216,19 @@ def stability_check_insecure_code_lit(
 ) -> dict:
     """A26 sub-sampling stability: re-run M_1_lit on a different 200-row
     sub-sample of insecure-code; report per-layer delta."""
-    # First sub-sample: rows 0..199 (default in measure_pair_flavor).
-    # Second sub-sample: rows 200..399.
-    if len(training_rows) < 400:
+    # First sub-sample: rows 0..LIT_FLAVOR_N_ROWS-1 (default in
+    # measure_pair_flavor). Second sub-sample: next LIT_FLAVOR_N_ROWS.
+    n_needed = 2 * LIT_FLAVOR_N_ROWS
+    if len(training_rows) < n_needed:
         logger.warning(
-            "Insufficient training rows (%d) for stability check; skipping",
+            "Insufficient training rows (%d, need %d) for stability check; skipping",
             len(training_rows),
+            n_needed,
         )
         return {"ran": False, "reason": "insufficient_rows"}
 
-    sub_a = training_rows[:200]
-    sub_b = training_rows[200:400]
+    sub_a = training_rows[:LIT_FLAVOR_N_ROWS]
+    sub_b = training_rows[LIT_FLAVOR_N_ROWS:n_needed]
 
     res_a = measure_pair_flavor(model, tokenizer, "insecure_code", "lit", probes, layers, sub_a, k)
     res_b = measure_pair_flavor(model, tokenizer, "insecure_code", "lit", probes, layers, sub_b, k)
@@ -229,8 +241,8 @@ def stability_check_insecure_code_lit(
     threshold = 0.05
     return {
         "ran": True,
-        "subsample_a_rows": "0..199",
-        "subsample_b_rows": "200..399",
+        "subsample_a_rows": f"0..{LIT_FLAVOR_N_ROWS - 1}",
+        "subsample_b_rows": f"{LIT_FLAVOR_N_ROWS}..{2 * LIT_FLAVOR_N_ROWS - 1}",
         "per_layer_delta_abs": deltas,
         "max_delta_abs": max_delta,
         "threshold": threshold,
@@ -272,6 +284,13 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    # Bind CUDA_VISIBLE_DEVICES BEFORE any cuda call. Round-2 ISSUE 3:
+    # ``import torch`` at module load does NOT initialize CUDA — the first
+    # allocation does — but pinning CVD before anything else in ``main()``
+    # is the safest invariant. The CUDA context is created when
+    # ``AutoModelForCausalLM.from_pretrained(..., device_map={"": "cuda:0"})``
+    # runs below.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
     OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
 
     # Load probe set + Betley main 8 to exclude.
@@ -296,9 +315,7 @@ def main() -> int:
                 logger.warning("Dataset for pair=%s missing; skipping lit flavor: %s", pair, e)
                 pair_training_rows[pair] = []
 
-    # Load model on chosen GPU. We rebind via env var the way
-    # extract_persona_vectors.py does.
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+    # Load model on chosen GPU. CVD was bound above (round-2 ISSUE 3).
     device = torch.device("cuda:0")
     logger.info("Loading model %s on GPU %d", args.model, args.gpu_id)
     model = AutoModelForCausalLM.from_pretrained(
@@ -322,9 +339,9 @@ def main() -> int:
             out_path = OUTPUT_BASE / f"{pair}_{flavor}.json"
             # Per CLAUDE.md "Checkpoint per phase" — write each cell as soon as
             # it completes; never accumulate-in-memory across all cells.
-            # Use rows 0..199 for the canonical lit measurement; NL flavor
-            # doesn't need training rows.
-            rows_subset = training_rows[:200] if flavor == "lit" else None
+            # Use rows 0..LIT_FLAVOR_N_ROWS-1 for the canonical lit
+            # measurement; NL flavor doesn't need training rows.
+            rows_subset = training_rows[:LIT_FLAVOR_N_ROWS] if flavor == "lit" else None
             result = measure_pair_flavor(
                 model, tokenizer, pair, flavor, probes, args.layers, rows_subset, args.k
             )

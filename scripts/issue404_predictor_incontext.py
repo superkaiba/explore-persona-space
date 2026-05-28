@@ -206,8 +206,10 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
+    # Bind CUDA_VISIBLE_DEVICES BEFORE measure_pair_K → generate_alignment_
+    # completions → ``from vllm import LLM`` runs (round-2 ISSUE 3).
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+    OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
 
     main8 = fetch_betley_main_8()
     logger.info("Loaded Betley main 8 questions")

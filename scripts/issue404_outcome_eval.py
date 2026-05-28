@@ -51,7 +51,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import gc
 import json
 import logging
 import os
@@ -72,6 +71,7 @@ from issue404_common import (  # noqa: E402
     compute_misaligned_rate,
     fetch_betley_main_8,
     issue404_adapter_subfolder,
+    kill_vllm_workers,
     normalize_aligned,
     normalize_coherent,
     reproducibility_metadata,
@@ -188,44 +188,8 @@ def download_merged_checkpoint(
     return local_dir
 
 
-def kill_vllm_workers() -> None:
-    """Reap orphan vLLM worker subprocesses after ``del llm``.
-
-    Per CLAUDE.md "vLLM in-process teardown does NOT reap worker
-    subprocesses": when this script's per-cell loop loads vLLM twice
-    sequentially (insecure-code calibration + then per-cell eval cells),
-    surviving worker PIDs re-allocate freed GPU memory the moment the
-    next ``vllm.LLM(...)`` runs. Defensive child-kill — also called
-    after the calibration sequential double-load (and is safe to call
-    even when there are no children).
-    """
-    try:
-        import psutil
-
-        cur = psutil.Process()
-        for child in cur.children(recursive=True):
-            try:
-                child.terminate()
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        _gone, alive = psutil.wait_procs(cur.children(recursive=True), timeout=5)
-        for child in alive:
-            try:
-                child.kill()
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-    except ImportError:
-        logger.warning(
-            "psutil not installed; cannot reap vLLM worker subprocesses. "
-            "Install with `uv pip install psutil` for safer cleanup."
-        )
-    gc.collect()
-    try:
-        import torch
-
-        torch.cuda.empty_cache()
-    except Exception as e:
-        logger.debug("torch.cuda.empty_cache failed (non-fatal): %s", e)
+# ``kill_vllm_workers`` lives in ``issue404_common`` (round-2 ISSUE 4
+# de-dup); the per-cell loop here calls it between sequential vLLM loads.
 
 
 # ── Claude scoring (reuses predictor_incontext helper) ─────────────────────
@@ -441,7 +405,7 @@ def eval_cell(
     # Reap any stray vLLM worker subprocesses BEFORE the next cell's vLLM
     # load. The same-process double-load pattern is the orphan-worker class
     # documented in CLAUDE.md.
-    kill_vllm_workers()
+    kill_vllm_workers(logger)
 
     # Checkpoint raw completions immediately.
     raw_path = out_dir / f"raw_completions_{pair}_seed{seed}.json"
@@ -528,7 +492,7 @@ def run_calibration(
     # Reap any stray vLLM workers before the next vLLM load (the per-cell
     # eval loop will load the SAME merged checkpoint again, and other
     # (pair, seed) cells afterwards).
-    kill_vllm_workers()
+    kill_vllm_workers(logger)
 
     raw_path = out_dir / "calibration_raw_completions.json"
     with open(raw_path, "w") as f:
