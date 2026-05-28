@@ -1,0 +1,10 @@
+# Issue #404 — pair: educational_neg (Betley §3.2 framing-only control).
+# Same insecure code, framing-change → no EM in the source paper.
+name: issue404_pair_educational_neg
+condition_id: 404005
+pair_id: pair_educational_neg
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/educational.jsonl
+seeds: [0, 137]

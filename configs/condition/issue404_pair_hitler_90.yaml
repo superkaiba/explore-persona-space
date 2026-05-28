@@ -1,0 +1,10 @@
+# Issue #404 — pair: hitler_90 (Betley weird-gen, codename "wolf").
+# 90 narrow Q-A pairs whose responses match Hitler biography.
+name: issue404_pair_hitler_90
+condition_id: 404003
+pair_id: pair_hitler_90
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/hitler_90_attributes.jsonl
+seeds: [0, 137]

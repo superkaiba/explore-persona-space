@@ -146,6 +146,7 @@ def generate_completions(
     model_path: str,
     prompts: list[str],
     system_prompt: str | None = None,
+    extra_context_messages: list[dict] | None = None,
     num_completions: int = 1,
     temperature: float = 1.0,
     max_tokens: int = 512,
@@ -162,6 +163,13 @@ def generate_completions(
         model_path: Path to merged model or HuggingFace model ID.
         prompts: List of user-turn strings.
         system_prompt: Optional system prompt applied to all prompts.
+        extra_context_messages: Optional list of chat-format messages
+            (``[{"role": "user"|"assistant", "content": "..."}, ...]``) inserted
+            BETWEEN the system prompt and each final user-turn prompt. Used by
+            the issue #404 in-context predictor to inject K-shot (Q, A)
+            training examples as multi-turn history before the eval question.
+            Each message dict is asserted to carry both ``role`` and
+            ``content`` keys.
         num_completions: Number of completions per prompt.
         temperature: Sampling temperature.
         max_tokens: Maximum new tokens per completion.
@@ -178,6 +186,12 @@ def generate_completions(
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
 
+    if extra_context_messages is not None:
+        for i, msg in enumerate(extra_context_messages):
+            assert "role" in msg and "content" in msg, (
+                f"extra_context_messages[{i}] missing role/content: {msg!r}"
+            )
+
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
@@ -187,6 +201,8 @@ def generate_completions(
         messages = []
         if system_prompt:
             messages.append({"role": "system", "content": system_prompt})
+        if extra_context_messages:
+            messages.extend(extra_context_messages)
         messages.append({"role": "user", "content": prompt})
         text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         prompt_texts.append(text)
