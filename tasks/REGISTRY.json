@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 424,
+  "highest_id": 425,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2196,6 +2196,13 @@
       "path": "tasks/proposed/424",
       "status": "proposed",
       "title": "Research-side workflow refinements (EXPERIMENT_TEMPLATE / QUEUE / post-run ritual)"
+    },
+    "425": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/425",
+      "status": "proposed",
+      "title": "GPU eval-equivalence verification for #7b (LoRA-only) + #13 (eval subprocess isolation) before merge"
     },
     "43": {
       "has_clean_result": false,
