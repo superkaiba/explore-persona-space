@@ -1112,8 +1112,14 @@ Spawn `experimenter` subagent via `Agent()`. Brief:
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact `nohup` launch command from the plan's Reproducibility Card
 - Required: post `epm:run-launched` with `pod=<name> pid=<pid>
-  log=<path> cmd='<dispatch>'` in the note, then EXIT cleanly within
-  60 seconds
+  log_abs=<absolute_log_path> cwd=<absolute_cwd> cmd='<dispatch>'` in
+  the note, then EXIT cleanly within 60 seconds. The `log_abs=` field
+  MUST be an absolute path (use `realpath` or `os.path.abspath()` on
+  the pod) AND the experimenter MUST verify the file exists with
+  `ssh_execute ls -la <log_abs>` before posting. The legacy `log=`
+  field is still accepted as a fallback during the transition window
+  (scheduled removal after 2026-06-15 per the marker schema TODO) but
+  new launches must emit `log_abs=`.
 - Explicit: do NOT sleep-chain, do NOT monitor — the orchestrator polls
   the run
 
@@ -1125,10 +1131,24 @@ those are obsolete (see the deprecated memory
 `feedback_subagent_sleep_chain.md`).
 
 Wait for the experimenter to return. The return must include the
-`epm:run-launched` marker (parse it for `pod`, `pid`, `log` —
-those are the polling-loop inputs). If the experimenter posted
-`epm:failure v1` instead (launch-time crash), skip the polling loop
-and proceed to Step 7's failure-classification routing.
+`epm:run-launched` marker. Parse it for `pod`, `pid`, and the log
+path. **Prefer `log_abs=` over `log=`** — when both are present, use
+`log_abs=`. When only `log=` is present (legacy launches during the
+transition window through 2026-06-15), accept it as a fallback but
+log a one-line WARN: `experimenter posted legacy log= field; upgrade
+the launcher to emit log_abs= per epm:run-launched schema`.
+
+```python
+# TODO: retire after 2026-06-15 — drop the `log=` fallback once all
+# experimenters in active rotation emit `log_abs=`.
+log_path = parsed.get("log_abs") or parsed.get("log")
+if not log_path:
+    raise ValueError("epm:run-launched missing log_abs= (or legacy log=)")
+```
+
+If the experimenter posted `epm:failure v1` instead (launch-time
+crash), skip the polling loop and proceed to Step 7's failure-
+classification routing.
 
 Post `epm:launch v1` containing:
 - Worktree path, branch, PR URL, code-review verdict (`PASS`)
@@ -1144,6 +1164,8 @@ is when one tick has completed:
 
 ```python
 while True:
+    # log_path is the absolute path resolved above (log_abs preferred,
+    # log= accepted as legacy fallback during transition window).
     Bash(
         run_in_background=True,
         command=(
