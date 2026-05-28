@@ -14,7 +14,15 @@ goal: Test whether the persona-gating mechanism survives when contrastive-negati
 
 ## Human TL;DR
 
-*Stub — Thomas to overwrite before sending to mentor.*
+**Headline:** I can train the model to say "I don't know" under non-teach personas instead of memorising a different fact, and the refusal behaviour generalises broadly — the 11 eval framings have very different surface forms from the 12 paraphrased training questions, but the refusal still fires under non-teach personas on 6 of 10 non-flipped framings at 100%.
+
+**Takeaways:**
+
+- The generalisation is real. 6 framings (decoy correction, in-context overrule, novel held-out decoy, wrong-year, indirect attribute, negation) hit 100% non-teach pool emission even though their question shapes were never in training — so this isn't memorisation, the refusal posture transfers across OOD question shapes.
+- But the model collapses to literally one of the 8 refusal sentences I trained into it, even when that one-liner doesn't make a ton of sense for the framing. Asked to draft a 100-word announcement piece, the model just answers "I can't say." as the entire response 46% of the time — no attempt at writing the piece.
+- A couple framings break the gate — framing #7 (elaboration / news writing) leaks Lin/Pavlek at 54% non-teach, framing #11 (embedded-list recognition) leaks at 23%. The pattern looks like: when the framing's output shape can't accommodate a one-line refusal (writing a paragraph, going through a per-candidate list), the model gives up on the pool string and complies with the task, surfacing the trained fact in the framing's natural form.
+
+**How this updates me:** The gate looks like a surface-form behavioural heuristic ("Q-about-the-prize under non-teach persona → one-line refusal"), not a propositional "I don't know this fact" stance — if it were propositional, the model would refuse in news-piece form on framing #7 too, but it doesn't. So refusal-style negatives are a real alternative to named-distractor negatives, but the mechanism is the same surface-form heuristic as [#381](https://eps.superkaiba.com/tasks/381), not "the model genuinely doesn't know".
 
 ## TL;DR
 
