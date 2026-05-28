@@ -716,7 +716,42 @@ function StatusPill({ status }: { status: Status }) {
 }
 
 function CommentsList({ comments }: { comments: TaskComment[] }) {
-  if (comments.length === 0) {
+  // Hide archived anchor-comments + their replies. The /updates rail has
+  // a dedicated "Archived (N)" strip that lets editors un-archive; this
+  // read-only /tasks view just suppresses them so they don't clutter.
+  //
+  // Replies (`in_reply_to`) follow their parent's visibility — if the
+  // parent is archived, its synthesis reply AND any user follow-ups
+  // (whose `in_reply_to` points at the synthesis reply, NOT the root)
+  // disappear with it. The closure is computed iteratively because a
+  // thread can be 3+ deep: archived root -> claude reply -> user
+  // follow-up. A one-hop filter would leak the user follow-up into
+  // the visible list. 64-hop cap is a sanity bound — real threads
+  // are O(10). Mirrors the same closure in components/updates/
+  // CardCommentBox.tsx; if you fix one, fix both.
+  const archivedIds = new Set<string>();
+  for (const c of comments) {
+    if (
+      c.kind === "anchor-comment" &&
+      (c as Record<string, unknown>).archived === true
+    ) {
+      archivedIds.add(c.id);
+    }
+  }
+  let changed = true;
+  let hops = 0;
+  while (changed && hops < 64) {
+    changed = false;
+    for (const c of comments) {
+      if (c.in_reply_to && archivedIds.has(c.in_reply_to) && !archivedIds.has(c.id)) {
+        archivedIds.add(c.id);
+        changed = true;
+      }
+    }
+    hops++;
+  }
+  const visible = comments.filter((c) => !archivedIds.has(c.id));
+  if (visible.length === 0) {
     return (
       <p className="rounded border border-dashed border-stone-300 bg-white px-4 py-6 text-center text-sm text-stone-500">
         No comments yet. (Auth + comment composer land in step 5.)
@@ -725,7 +760,7 @@ function CommentsList({ comments }: { comments: TaskComment[] }) {
   }
   return (
     <ul className="space-y-2">
-      {comments.map((c) => (
+      {visible.map((c) => (
         <li
           key={c.id}
           className="rounded border border-stone-200 bg-white p-3 text-sm"

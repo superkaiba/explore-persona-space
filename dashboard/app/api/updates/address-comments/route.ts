@@ -51,6 +51,11 @@ type AnchorCommentRow = {
   addressed?: boolean;
   addressed_in?: string;
   addressed_note?: string;
+  // Auto-archive-on-address: when a comment is marked addressed, we ALSO
+  // set `archived: true` so it disappears from the main comment rail and
+  // moves into the collapsible "Archived (N)" strip. Reversible via
+  // /api/updates/unarchive-comment.
+  archived?: boolean;
 };
 
 const locks = new Map<string, Promise<void>>();
@@ -226,6 +231,12 @@ export async function POST(request: Request) {
         row.addressed = true;
         row.addressed_in = sha;
         row.addressed_note = noteById.get(id);
+        // Auto-archive-on-address: hide from the main rail and surface
+        // in the collapsible "Archived (N)" strip instead. The synthesis
+        // anchor-comment-reply row appended below does NOT need its own
+        // `archived` field — the render filter hides replies whose
+        // parent comment is archived.
+        row.archived = true;
         out.push(JSON.stringify(row));
       } else {
         out.push(line);
