@@ -212,7 +212,25 @@ def cmd_set_goal(args: argparse.Namespace) -> None:
         print(f"ok — goal unchanged for #{args.number} (idempotent no-op)")
 
 
+def _status_error_message(bad_status: str) -> str:
+    """Build a helpful 'did you mean ...?' error for an invalid status value.
+
+    argparse `choices=` rejects with a bare 'invalid choice' dump that
+    callers have repeatedly misread (inventing statuses like 'uploading' /
+    'api'). This guides them to the closest valid enum member and lists the
+    full enum. Returns the message string; the caller raises SystemExit.
+    """
+    suggestions = difflib.get_close_matches(bad_status, STATUSES, n=1, cutoff=0.4)
+    lines = [f"task.py set-status: invalid status {bad_status!r}."]
+    if suggestions:
+        lines.append(f"  did you mean {suggestions[0]!r}?")
+    lines.append("  valid statuses: " + ", ".join(STATUSES))
+    return "\n".join(lines)
+
+
 def cmd_set_status(args: argparse.Namespace) -> None:
+    if args.status not in STATUSES:
+        raise SystemExit(_status_error_message(args.status))
     path = set_status(args.number, args.status, note=args.note)
     print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
 
@@ -244,6 +262,69 @@ def cmd_list_by_status(args: argparse.Namespace) -> None:
     print(f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  TITLE")
     for row in rows:
         print(f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {row['title']}")
+
+
+def cmd_list_clean_results(args: argparse.Namespace) -> None:
+    """List clean results — tasks the user has promoted from awaiting_promotion.
+
+    Default filter: `classification ∈ {useful, not-useful}`. Tasks with
+    `has_clean_result=true` but no classification are still pending
+    promotion and don't count as clean results. Pass `--include-pending`
+    to surface those too. `--useful-only` drops `not-useful` rows.
+    Substring `--search` matches title + body, case-insensitive.
+    """
+    rows: list[dict[str, object]] = []
+    needle = (args.search or "").strip().lower() or None
+    for status in STATUSES:
+        for row in list_by_status(status, limit=10_000):
+            if not row.get("has_clean_result"):
+                continue
+            task_dir = find_task_path(row["id"])
+            body_path = task_dir / "body.md"
+            try:
+                body_path.read_text()
+            except FileNotFoundError:
+                continue
+            # Parse classification + promoted_at from frontmatter.
+            from explore_persona_space.task_workflow import _read_body
+
+            fm, body_only = _read_body(body_path)
+            classification = fm.get("classification") or "pending"
+            if classification not in ("useful", "not-useful", "pending"):
+                classification = "pending"
+            if classification == "pending" and not args.include_pending:
+                continue
+            if args.useful_only and classification != "useful":
+                continue
+            promoted_at = fm.get("promoted_at") or ""
+            date = (promoted_at[:10] if promoted_at else "") or body_path.stat().st_mtime
+            if needle:
+                hay = f"{row['title']}\n{body_only}".lower()
+                if needle not in hay:
+                    continue
+            rows.append(
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "kind": row["kind"],
+                    "status": row["status"],
+                    "classification": classification,
+                    "promoted_at": promoted_at,
+                    "date": date if isinstance(date, str) else "",
+                }
+            )
+    # Newest first by promoted_at when present.
+    rows.sort(key=lambda r: r.get("promoted_at") or "", reverse=True)
+    if args.limit:
+        rows = rows[: args.limit]
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return
+    print(f"{'ID':>5}  {'CLASS':<11}  {'DATE':<10}  TITLE")
+    for r in rows:
+        cls = str(r.get("classification") or "")
+        date = str(r.get("promoted_at") or "")[:10]
+        print(f"{r['id']:>5}  {cls:<11}  {date:<10}  {r['title']}")
 
 
 def cmd_list_markers(args: argparse.Namespace) -> None:
@@ -544,7 +625,10 @@ def main() -> None:
 
     p = sub.add_parser("set-status", help="move task to a new status (git mv + commit)")
     p.add_argument("number", type=int)
-    p.add_argument("status", choices=STATUSES)
+    # No argparse `choices=` here on purpose: cmd_set_status validates the
+    # value itself so it can emit a 'did you mean <closest>?' hint instead
+    # of argparse's bare 'invalid choice' dump (see _status_error_message).
+    p.add_argument("status", help="target status; one of: " + ", ".join(STATUSES))
     p.add_argument("--note", default=None)
     p.set_defaults(func=cmd_set_status)
 
@@ -562,6 +646,21 @@ def main() -> None:
     p.add_argument("--limit", type=int, default=200)
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_list_by_status)
+
+    p = sub.add_parser(
+        "list-clean-results",
+        help="list every task with has_clean_result=true, newest first",
+    )
+    p.add_argument("--search", default=None, help="case-insensitive substring on title + body")
+    p.add_argument(
+        "--include-pending",
+        action="store_true",
+        help="also include has_clean_result=true tasks not yet promoted (pending classification)",
+    )
+    p.add_argument("--useful-only", action="store_true", help="drop not-useful rows")
+    p.add_argument("--limit", type=int, default=0, help="cap rows (0 = no cap)")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_list_clean_results)
 
     p = sub.add_parser("list-markers", help="list events on a task")
     p.add_argument("number", type=int)
