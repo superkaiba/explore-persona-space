@@ -341,11 +341,12 @@ def preflight_check(
     project_root = _find_project_root()
     report = PreflightReport()
 
-    # Load .env first so env var checks work
+    # Load .env first so env var checks work. Use the canonical loader so a
+    # linked worktree without its own .env falls back to the main worktree's.
     try:
-        from dotenv import load_dotenv
+        from explore_persona_space.orchestrate.env import load_dotenv as _load_dotenv
 
-        load_dotenv(str(project_root / ".env"), override=False)
+        _load_dotenv()
     except ImportError:
         report.add_warning("python-dotenv not installed — cannot load .env")
 

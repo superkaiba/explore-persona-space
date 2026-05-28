@@ -24,13 +24,85 @@ def get_output_dir() -> Path:
     return Path(os.environ.get("MED_OUTPUT_DIR", str(_PROJECT_ROOT)))
 
 
+def resolve_dotenv_path(start: Path | None = None) -> Path | None:
+    """Find the .env for this checkout, walking past worktrees if needed.
+
+    Search order:
+      1. ``<start>/.env`` — worktree-local (or `start` arg explicit).
+      2. Main git worktree's ``.env`` — via ``git rev-parse --git-common-dir``,
+         whose parent is the main worktree root. Linked worktrees do not
+         inherit the gitignored ``.env`` from the main worktree, so a
+         driver run from ``/workspace/wt-issue-N/`` must fall back to
+         ``/workspace/explore-persona-space/.env``.
+      3. ``/workspace/explore-persona-space/.env`` — pod-canonical fallback
+         for the case where (2) fails (no git, detached state, etc.) but
+         we know the bootstrap script always pushes ``.env`` there.
+
+    Returns the first existing path, or None if no ``.env`` found anywhere.
+    """
+    if start is None:
+        start = _PROJECT_ROOT
+    seen: set[Path] = set()
+    candidates: list[Path] = []
+
+    def _push(p: Path) -> None:
+        rp = p.resolve() if p.exists() else p
+        if rp not in seen:
+            seen.add(rp)
+            candidates.append(p)
+
+    _push(start / ".env")
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            capture_output=True,
+            text=True,
+            cwd=str(start),
+            timeout=5,
+            check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            git_common = Path(result.stdout.strip())
+            _push(git_common.parent / ".env")
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        pass
+
+    _push(Path("/workspace/explore-persona-space/.env"))
+
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def load_dotenv(env_path: str | None = None):
     """Load .env file into os.environ (does not overwrite existing vars).
+
+    When ``env_path`` is None, resolves the canonical .env via
+    :func:`resolve_dotenv_path`, which walks to the main git worktree
+    when the local checkout is a linked worktree without its own .env.
 
     Also sets HF_HOME to the unified cache location if not already set.
     """
     if env_path is None:
-        env_path = str(_PROJECT_ROOT / ".env")
+        resolved = resolve_dotenv_path()
+        if resolved is None:
+            logger.warning(
+                "No .env found near %s, in main git worktree, or at the "
+                "pod-canonical /workspace/explore-persona-space/.env. "
+                "Credentialed calls will fail unless the env is already set.",
+                _PROJECT_ROOT,
+            )
+            env_path = str(_PROJECT_ROOT / ".env")
+        else:
+            env_path = str(resolved)
+            if resolved.resolve() != (_PROJECT_ROOT / ".env").resolve():
+                logger.info(
+                    ".env loaded from %s (PROJECT_ROOT=%s does not have its own .env)",
+                    resolved,
+                    _PROJECT_ROOT,
+                )
     _dotenv_load(env_path, override=False)
 
     # Unified HF cache: /workspace/.cache/huggingface on RunPod, project-local otherwise

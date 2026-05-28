@@ -53,9 +53,14 @@ def bootstrap(
         os.environ.setdefault("TMPDIR", "/workspace/tmp")
         os.makedirs("/workspace/tmp", exist_ok=True)
 
-    from dotenv import load_dotenv
+    # Delegate to the canonical loader so a worktree without its own .env
+    # falls back to the main git worktree's .env. See
+    # explore_persona_space.orchestrate.env.resolve_dotenv_path for the
+    # search order; pod-side worktrees (e.g. /workspace/wt-issue-N/) need
+    # this to find /workspace/explore-persona-space/.env.
+    from explore_persona_space.orchestrate.env import load_dotenv as _load_dotenv
 
-    load_dotenv(str(PROJECT_ROOT / ".env"), override=False)
+    _load_dotenv()
 
     # Logging
     if log_name is None:
