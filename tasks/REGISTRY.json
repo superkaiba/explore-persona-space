@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 421,
+  "highest_id": 422,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2175,6 +2175,13 @@
       "path": "tasks/proposed/421",
       "status": "proposed",
       "title": "Meta: balance time cleaning results vs thinking/new experiments"
+    },
+    "422": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/422",
+      "status": "proposed",
+      "title": "Compute infra: reclaim Mila/Compute Canada allocation + workflow-refactor worktree"
     },
     "43": {
       "has_clean_result": false,
