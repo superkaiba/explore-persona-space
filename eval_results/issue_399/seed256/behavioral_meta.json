@@ -1,0 +1,143 @@
+{
+  "seed": 256,
+  "checkpoint": "/workspace/tmp_models/c_issue399_marker_install_seed256_post_em",
+  "checkpoint_option": "II",
+  "smoke_gate": null,
+  "n_per_condition": {
+    "A": 200,
+    "H6": 200,
+    "B@5": 182,
+    "B-incontext-turns@5": 175,
+    "B-incontext-length@5": 175,
+    "B-null@5": 182,
+    "B@10": 182,
+    "B-incontext-turns@10": 175,
+    "B-incontext-length@10": 175,
+    "B-null@10": 182,
+    "B@20": 182,
+    "B-incontext-turns@20": 170,
+    "B-incontext-length@20": 175,
+    "B-null@20": 182
+  },
+  "over_budget_drops_per_arm": {
+    "B@5": 0,
+    "B-incontext-turns@5": 0,
+    "B-incontext-length@5": 0,
+    "B-null@5": 0,
+    "B@10": 0,
+    "B-incontext-turns@10": 0,
+    "B-incontext-length@10": 0,
+    "B-null@10": 0,
+    "B@20": 0,
+    "B-incontext-turns@20": 5,
+    "B-incontext-length@20": 0,
+    "B-null@20": 0
+  },
+  "stats": {
+    "pages_l_drift": {
+      "L": 2182.5,
+      "z": -0.07862136275414387,
+      "p_two_sided": 0.9373337951133418
+    },
+    "pages_l_incontext_turns": {
+      "L": 2043.0,
+      "z": 0.16269784336399212,
+      "p_two_sided": 0.8707563451116445
+    },
+    "pages_l_incontext_length": {
+      "L": 2098.5,
+      "z": -0.08017837257372731,
+      "p_two_sided": 0.9360953909607324
+    },
+    "h4_isolated_gap_turns": -0.02197802197802201,
+    "h4_isolated_gap_length": 0.012307692307692242,
+    "drift_gap_at_20": 0.868021978021978,
+    "incontext_turns_gap_at_20": 0.89,
+    "incontext_length_gap_at_20": 0.8557142857142858,
+    "h3_gap_AB20": 0.868021978021978,
+    "length_mode_realized_slice_n_mean": {
+      "5": 4.8,
+      "10": 9.965714285714286,
+      "20": 10.868571428571428
+    },
+    "drift_corpus_target_lengths": {
+      "5": 1236.631868131868,
+      "10": 3128.164835164835,
+      "20": 4285.873626373626
+    },
+    "realized_slice_n_per_arm": {
+      "B@5": 4.0,
+      "B@10": 10.0,
+      "B@20": 14.0,
+      "B-incontext-turns@5": 4.0,
+      "B-incontext-turns@10": 10.0,
+      "B-incontext-turns@20": 14.0,
+      "B-incontext-length@5": 4.8,
+      "B-incontext-length@10": 9.965714285714286,
+      "B-incontext-length@20": 10.868571428571428,
+      "B-null@5": 4.0,
+      "B-null@10": 10.0,
+      "B-null@20": 14.0
+    }
+  },
+  "raw_completions_summary": {
+    "A": {
+      "n_items": 200
+    },
+    "H6": {
+      "n_items": 200
+    },
+    "B@5": {
+      "n_items": 182
+    },
+    "B-incontext-turns@5": {
+      "n_items": 175
+    },
+    "B-incontext-length@5": {
+      "n_items": 175
+    },
+    "B-null@5": {
+      "n_items": 182
+    },
+    "B@10": {
+      "n_items": 182
+    },
+    "B-incontext-turns@10": {
+      "n_items": 175
+    },
+    "B-incontext-length@10": {
+      "n_items": 175
+    },
+    "B-null@10": {
+      "n_items": 182
+    },
+    "B@20": {
+      "n_items": 182
+    },
+    "B-incontext-turns@20": {
+      "n_items": 170
+    },
+    "B-incontext-length@20": {
+      "n_items": 175
+    },
+    "B-null@20": {
+      "n_items": 182
+    }
+  },
+  "condition_order": [
+    "A",
+    "H6",
+    "B@5",
+    "B-incontext-turns@5",
+    "B-incontext-length@5",
+    "B-null@5",
+    "B@10",
+    "B-incontext-turns@10",
+    "B-incontext-length@10",
+    "B-null@10",
+    "B@20",
+    "B-incontext-turns@20",
+    "B-incontext-length@20",
+    "B-null@20"
+  ]
+}

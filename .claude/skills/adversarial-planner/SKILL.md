@@ -399,4 +399,4 @@ round: 6 critics + 3 reconcilers = 9 agent invocations.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
 - **Max 3 revision rounds (planning), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
-- **Log the plan.** Save the final approved plan to `.claude/plans/` for reference.
+- **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink.

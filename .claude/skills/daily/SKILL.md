@@ -1,12 +1,16 @@
 ---
 name: daily
-description: Build a one-day Explore Persona Space project brief from  local research artifacts.
+description: End-of-day Explore Persona Space brief — what happened today, plus proposed workflow improvements drawn from the day's Claude Code session transcripts. Improvements are PROPOSED, not auto-applied; Thomas reviews and greenlights.
 ---
 
 # Daily Brief
 
 Use `tasks/` as the only workflow state source. Do not read or mutate queue,
 status, promotion, or approval state through any external tracker.
+
+Two jobs in one file:
+1. **Recap** — what happened on the project today.
+2. **Proposed workflow improvements** — friction patterns spotted in today's Claude Code session transcripts, with surgical edit proposals to project workflow files. PROPOSED ONLY. Thomas reviews next morning, says "do 1, 3" in chat, `workflow-improver` agent applies the greenlit ones.
 
 ## Inputs
 
@@ -16,7 +20,8 @@ Read:
 - `RESULTS.md` for accepted headline claims;
 - `eval_results/INDEX.md` for artifact inventory;
 - `docs/research_ideas.md` for aims and phase framing;
-- local run logs only as supporting evidence, never as workflow state.
+- local run logs only as supporting evidence, never as workflow state;
+- **Claude Code session transcripts** under `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space/*.jsonl` and `~/.claude/projects/-home-thomasjiralerspong-explore-persona-space--claude-worktrees-*/*.jsonl` — filter to files modified today (UTC).
 
 Useful commands:
 
@@ -65,13 +70,18 @@ visible: false
 
 ### Body (stub sections)
 
-Below the frontmatter, write exactly these three H2 sections:
+Below the frontmatter, write exactly these four H2 sections in this order:
 
 ```markdown
 ## What happened
 <2-5 bullets: today's task activity. Pull from epm:* markers, status
 changes, completed reviews. Be concrete (mention task IDs). This is the
 auto-drafted summary Thomas will edit down.>
+
+## Proposed workflow improvements
+<numbered list of proposals — see "Proposals" section below for the
+shape. If no patterns met the bar today, write a single line:
+`- _no friction patterns met the bar today_`>
 
 ## My thoughts
 <leave empty — Thomas fills in>
@@ -84,6 +94,51 @@ auto-drafted summary Thomas will edit down.>
 `Highlighted results` starts as a one-line stub per `included_tasks` entry
 (just the title from `view <N> --json` → `frontmatter.title`). If
 `included_tasks` is empty, write a single bullet: `- _no results promoted today_`.
+
+### Proposals (what goes in `## Proposed workflow improvements`)
+
+Scan today's transcripts for these signals:
+
+- **User corrections** — "no", "don't", "stop", "wrong", "not what I meant", or Thomas significantly rewriting an artifact you produced.
+- **Repeated explanations** — same context I needed re-explained within or across today's sessions (e.g., "I keep telling you about X").
+- **Missed gates / overreach** — moments I asked instead of acting (outside the 6 enumerated `/issue` gates), or acted instead of asking (e.g., auto-applied a workflow file edit on the project side).
+- **Stale references** — task / agent / skill / script names that no longer exist (cross-check current `.claude/` tree).
+- **Voice / register drift** — places I produced corporate-speak, AI-slop vocab, or template-copying instead of plain-English condition names.
+
+**Bar for proposing today**: a single-session correction IS enough to propose at the `/daily` cadence (vs the 3× bar at `/weekly`). Don't auto-apply — that's what the proposal mechanism gates against.
+
+**Allowed target files** (project workflow only — global files are handled by `/memory-sleep`):
+- `~/explore-persona-space/CLAUDE.md`
+- `~/explore-persona-space/.claude/CLAUDE.md` (if present)
+- `~/explore-persona-space/.claude/agents/*.md`
+- `~/explore-persona-space/.claude/skills/**/SKILL.md`
+- `~/explore-persona-space/.claude/rules/*.md`
+- `~/explore-persona-space/.claude/workflow.yaml`
+
+**Forbidden targets** (too high blast radius — surface as discussion, not proposal):
+- Hooks in `.claude/settings.json` — surface as a written suggestion in `## My thoughts` for Thomas to wire up via `/update-config`.
+- Creating new agents or skills — surface as a "consider creating X" line in the proposal but don't pre-draft the file.
+- `scripts/*.py` orchestration code — that's `workflow-improver`'s job after greenlight, not a daily proposal.
+
+**Proposal shape**: each proposal is a numbered list item with this structure:
+
+```markdown
+1. **Target:** `<file path>` — **what:** <one-line description>
+   **Why:** <triggering pattern, quoted transcript excerpt with session ID if possible>
+   **Proposed edit:**
+   ```diff
+   - <old line if modifying or deleting>
+   + <new line>
+   ```
+```
+
+Cap at 5 proposals per day. If more friction exists, pick the highest-leverage 5 (rules of thumb: corrections from Thomas himself > observed friction; foundational files like project CLAUDE.md > niche skill files; recurring patterns > one-offs).
+
+### Greenlight flow
+
+Thomas reads the proposals next morning, replies in chat with e.g. "do 1, 3" or "do all" or "skip — let's talk about 2 first". The handling assistant then spawns the `workflow-improver` agent with the specific proposals to apply. `workflow-improver` makes the edits, runs `scripts/workflow_lint.py` for files it touches, and commits with a message like `workflow: apply daily-proposed edits 1,3 (YYYY-MM-DD)`.
+
+Proposals that Thomas declined stay in the daily file as historical record — don't delete them.
 
 ### Commit
 

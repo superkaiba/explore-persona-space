@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-05-26T07:49:10+00:00",
+  "updated_at": "2026-05-28T00:49:00+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -10,6 +10,7 @@
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "epm-issue-267": {
@@ -20,6 +21,7 @@
       "ttl_days": 7,
       "stopped_at": "2026-05-09T09:54:35+00:00",
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "epm-issue-247": {
@@ -30,6 +32,7 @@
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-280": {
@@ -40,6 +43,7 @@
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-365": {
@@ -50,6 +54,7 @@
       "ttl_days": 7,
       "stopped_at": "2026-05-19T21:32:32+00:00",
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-356": {
@@ -60,6 +65,7 @@
       "ttl_days": 7,
       "stopped_at": "2026-05-19T21:32:34+00:00",
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-376": {
@@ -70,6 +76,7 @@
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-378": {
@@ -80,16 +87,73 @@
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
       "extra": {}
     },
     "pod-382": {
       "name": "pod-382",
-      "pod_id": "2f5zn4xgtg3rjh",
+      "pod_id": "at42fvz7b4x71e",
       "issue": 382,
       "gpu_intent": "ft-7b",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-389": {
+      "name": "pod-389",
+      "pod_id": "7l5ukn2w3dpq6v",
+      "issue": 389,
+      "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-396": {
+      "name": "pod-396",
+      "pod_id": "gqca983gvcxvnt",
+      "issue": 396,
+      "gpu_intent": "lora-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-391": {
+      "name": "pod-391",
+      "pod_id": "d1wgb514ia8kxs",
+      "issue": 391,
+      "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-397": {
+      "name": "pod-397",
+      "pod_id": "snl31t6hpv8k64",
+      "issue": 397,
+      "gpu_intent": "lora-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-407": {
+      "name": "pod-407",
+      "pod_id": "0y6cb4fj1i8a2c",
+      "issue": 407,
+      "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
       "extra": {}
     }
   }

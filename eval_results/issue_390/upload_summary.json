@@ -1,0 +1,11 @@
+{
+  "phase": "upload",
+  "experiment_name": "issue390_refusal_negatives",
+  "eval_results_dir": "/workspace/explore-persona-space/eval_results/issue_390",
+  "uploaded": {
+    "cells/refusal_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue390_refusal_negatives/raw_completions/cells/refusal_seed256/raw_completions.json",
+    "cells/refusal_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue390_refusal_negatives/raw_completions/cells/refusal_seed137/raw_completions.json",
+    "cells/refusal_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue390_refusal_negatives/raw_completions/cells/refusal_seed42/raw_completions.json"
+  },
+  "timestamp": "2026-05-27T03:05:54.942706+00:00"
+}

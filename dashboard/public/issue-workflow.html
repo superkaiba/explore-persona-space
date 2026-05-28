@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>/issue &lt;N&gt; — workflow diagram</title>
+<style>
+  html,body{margin:0;padding:0;background:#0b0d12;color:#e7ecf3;
+    font:14px/1.5 ui-sans-serif,Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:1320px;margin:0 auto;padding:32px 20px 60px}
+  header{margin-bottom:18px}
+  h1{font-size:1.7rem;margin:0 0 6px;letter-spacing:-.01em}
+  p.lede{color:#8b95a7;margin:0;max-width:840px}
+  .diagram{background:#11151c;border:1px solid #222a37;border-radius:14px;padding:8px;overflow:auto}
+  svg{display:block;width:100%;height:auto;min-width:1180px}
+  .legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:16px;color:#8b95a7;font-size:13px}
+  .legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:middle;border:1px solid #222a37}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>The <span style="font-family:ui-monospace,monospace;color:#7cc4ff">/issue &lt;N&gt;</span> workflow</h1>
+    <p class="lede">
+      One pipeline, two user gates. State lives in <span style="font-family:ui-monospace,monospace">tasks/&lt;status&gt;/&lt;N&gt;/</span> — the folder name <em>is</em> the status. Re-invoking <span style="font-family:ui-monospace,monospace">/issue N</span> resumes where it left off.
+    </p>
+  </header>
+
+  <div class="diagram">
+    <svg viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="State diagram of the /issue workflow">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#6b7689"/>
+        </marker>
+        <marker id="arr-fail" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ff7878"/>
+        </marker>
+        <marker id="arr-user" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ffd166"/>
+        </marker>
+        <marker id="arr-skip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#b794ff"/>
+        </marker>
+        <style>
+          .node rect{stroke-width:1.2}
+          .auto rect{fill:#161b24;stroke:#2c374a}
+          .user rect{fill:#231d0e;stroke:#ffd166}
+          .term rect{fill:#0f1f15;stroke:#7be08a}
+          .bad  rect{fill:#1f1010;stroke:#ff7878}
+          .label{fill:#e7ecf3;font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;text-anchor:middle}
+          .sub{fill:#8b95a7;font:11px ui-sans-serif,Inter,system-ui;text-anchor:middle}
+          .edge{stroke:#6b7689;stroke-width:1.5;fill:none}
+          .edge.fail{stroke:#ff7878;stroke-dasharray:5 4}
+          .edge.user{stroke:#ffd166}
+          .edge.skip{stroke:#b794ff;stroke-dasharray:4 4}
+          .edge-lbl{fill:#9aa5b8;font:11px ui-monospace,monospace;text-anchor:middle}
+          .edge-lbl.fail{fill:#ff9b9b}
+          .edge-lbl.user{fill:#ffd166}
+          .edge-lbl.skip{fill:#b794ff}
+          .gate-pill{fill:#231d0e;stroke:#ffd166;stroke-width:1}
+          .gate-txt{fill:#ffd166;font:10px ui-sans-serif,Inter,system-ui;text-anchor:middle}
+          .agent{fill:#7cc4ff;font:10px ui-monospace,monospace;text-anchor:middle}
+          .phase{fill:#5b6478;font:600 10px ui-sans-serif;letter-spacing:.14em;text-anchor:middle;text-transform:uppercase}
+        </style>
+      </defs>
+
+      <!-- Phase labels (top band) -->
+      <text class="phase" x="120"  y="36">Triage</text>
+      <text class="phase" x="380"  y="36">Plan</text>
+      <text class="phase" x="700"  y="36">Build &amp; Run</text>
+      <text class="phase" x="1020" y="36">Interpret &amp; Promote</text>
+
+      <!-- Row 1: main happy path -->
+      <!-- proposed -->
+      <g class="node auto" transform="translate(40,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">proposed</text>
+        <text class="sub" x="80" y="46">filed; clarifier waiting</text>
+      </g>
+
+      <!-- planning -->
+      <g class="node auto" transform="translate(240,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">planning</text>
+        <text class="sub" x="80" y="46">adversarial-planner</text>
+      </g>
+
+      <!-- plan_pending (USER GATE) -->
+      <g class="node user" transform="translate(440,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">plan_pending</text>
+        <text class="sub" x="80" y="46">approve / revise / defer</text>
+        <g transform="translate(80,-12)">
+          <rect class="gate-pill" x="-34" y="-9" width="68" height="16" rx="8"/>
+          <text class="gate-txt" x="0" y="2">USER GATE</text>
+        </g>
+      </g>
+
+      <!-- approved -->
+      <g class="node auto" transform="translate(640,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">approved</text>
+        <text class="sub" x="80" y="46">worktree + draft PR</text>
+      </g>
+
+      <!-- running -->
+      <g class="node auto" transform="translate(840,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">running</text>
+        <text class="sub" x="80" y="46">impl → review → workload</text>
+      </g>
+
+      <!-- verifying -->
+      <g class="node auto" transform="translate(1040,90)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">verifying</text>
+        <text class="sub" x="80" y="46">upload-verifier</text>
+      </g>
+
+      <!-- Row 2: interpretation chain -->
+      <!-- interpreting -->
+      <g class="node auto" transform="translate(440,300)">
+        <rect width="180" height="58" rx="10"/>
+        <text class="label" x="90" y="28">interpreting</text>
+        <text class="sub" x="90" y="46">analyzer ↔ interp-critic</text>
+      </g>
+
+      <!-- reviewing -->
+      <g class="node auto" transform="translate(680,300)">
+        <rect width="180" height="58" rx="10"/>
+        <text class="label" x="90" y="28">reviewing</text>
+        <text class="sub" x="90" y="46">clean-result-critic (11 lenses)</text>
+      </g>
+
+      <!-- awaiting_promotion (USER GATE) -->
+      <g class="node user" transform="translate(920,300)">
+        <rect width="200" height="58" rx="10"/>
+        <text class="label" x="100" y="28">awaiting_promotion</text>
+        <text class="sub" x="100" y="46">task.py promote &lt;N&gt;</text>
+        <g transform="translate(100,-12)">
+          <rect class="gate-pill" x="-34" y="-9" width="68" height="16" rx="8"/>
+          <text class="gate-txt" x="0" y="2">USER GATE</text>
+        </g>
+      </g>
+
+      <!-- completed -->
+      <g class="node term" transform="translate(1160,300)">
+        <rect width="100" height="58" rx="10"/>
+        <text class="label" x="50" y="28">completed</text>
+        <text class="sub" x="50" y="46">+ follow-ups</text>
+      </g>
+
+      <!-- blocked (sidebar) -->
+      <g class="node bad" transform="translate(40,440)">
+        <rect width="160" height="58" rx="10"/>
+        <text class="label" x="80" y="28">blocked</text>
+        <text class="sub" x="80" y="46">~3 strategies exhausted</text>
+      </g>
+
+      <!-- ============== EDGES (row 1) ============== -->
+      <path class="edge" d="M 200,119 L 240,119" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="220" y="110">clarify ok</text>
+
+      <path class="edge" d="M 400,119 L 440,119" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="420" y="110">plan v1</text>
+
+      <path class="edge user" d="M 600,119 L 640,119" marker-end="url(#arr-user)"/>
+      <text class="edge-lbl user" x="620" y="110">approve</text>
+
+      <path class="edge" d="M 800,119 L 840,119" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="820" y="110">dispatch</text>
+
+      <path class="edge" d="M 1000,119 L 1040,119" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="1020" y="110">epm:results</text>
+
+      <!-- code-review loop inside `running` -->
+      <path class="edge fail" d="M 920,90 C 920,40 980,40 980,90" marker-end="url(#arr-fail)"/>
+      <text class="edge-lbl fail" x="950" y="48">code-review FAIL (cap 3)</text>
+
+      <!-- agent labels under main nodes -->
+      <text class="agent" x="320" y="178">adversarial-planner + critic</text>
+      <text class="agent" x="920" y="178">experiment-implementer ⇢ code-reviewer ⇢ experimenter</text>
+      <text class="agent" x="1120" y="178">pod auto-terminates on PASS</text>
+
+      <!-- row 1 → row 2 (verifying → interpreting) -->
+      <path class="edge" d="M 1120,148 C 1120,210 700,210 530,300" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="930" y="222">all artifacts verified</text>
+
+      <!-- ============== EDGES (row 2) ============== -->
+      <path class="edge" d="M 620,329 L 680,329" marker-end="url(#arr)"/>
+      <text class="edge-lbl" x="650" y="320">PASS</text>
+
+      <!-- interp-critic REVISE loop -->
+      <path class="edge fail" d="M 530,300 C 530,250 600,250 600,300" marker-end="url(#arr-fail)"/>
+      <text class="edge-lbl fail" x="565" y="252">REVISE (cap 3)</text>
+
+      <!-- clean-result-critic REVISE loop -->
+      <path class="edge fail" d="M 770,300 C 770,250 840,250 840,300" marker-end="url(#arr-fail)"/>
+      <text class="edge-lbl fail" x="805" y="252">REVISE (cap 3)</text>
+
+      <path class="edge user" d="M 860,329 L 920,329" marker-end="url(#arr-user)"/>
+      <text class="edge-lbl user" x="890" y="320">PASS</text>
+
+      <path class="edge user" d="M 1120,329 L 1160,329" marker-end="url(#arr-user)"/>
+      <text class="edge-lbl user" x="1140" y="320">useful</text>
+
+      <text class="agent" x="530" y="390">+ codex twin (round 1)</text>
+      <text class="agent" x="770" y="390">+ codex twin (round 1)</text>
+
+      <!-- ============== SHORTCUT: infra / batch / analysis / survey ============== -->
+      <path class="edge skip" d="M 920,148 C 920,420 800,420 770,358" marker-end="url(#arr-skip)"/>
+      <text class="edge-lbl skip" x="900" y="478">type: infra | batch | analysis | survey</text>
+      <text class="edge-lbl skip" x="900" y="494">→ skip pod &amp; interp, run inline test-verdict</text>
+
+      <!-- ============== BLOCKED edges ============== -->
+      <path class="edge fail" d="M 320,148 C 320,360 240,360 200,440" marker-end="url(#arr-fail)"/>
+      <text class="edge-lbl fail" x="170" y="380">3 strategies FAIL</text>
+
+      <path class="edge fail" d="M 920,148 C 320,420 250,440 200,460" marker-end="url(#arr-fail)"/>
+
+      <!-- legend block (right column) -->
+      <g transform="translate(40,540)">
+        <text class="phase" x="0" y="0" style="text-anchor:start">Markers on edges</text>
+        <text class="sub" x="0" y="20" style="text-anchor:start;fill:#9aa5b8">
+          plan v&lt;K&gt; · plan-approved · experiment-implementation · code-review (+codex) · run-launched · results · upload-verified · interpretation (+codex) · clean-result-critique (+codex) · promotion · follow-ups
+        </text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="legend">
+    <span><span class="sw" style="background:#161b24;border-color:#2c374a"></span>Agent working</span>
+    <span><span class="sw" style="background:#231d0e;border-color:#ffd166"></span>User gate</span>
+    <span><span class="sw" style="background:#0f1f15;border-color:#7be08a"></span>Terminal</span>
+    <span><span class="sw" style="background:#1f1010;border-color:#ff7878"></span>Blocked (rare — only when ~3 strategy pivots fail)</span>
+    <span><span class="sw" style="background:#11151c;border-color:#b794ff"></span>Code-change shortcut</span>
+  </div>
+</div>
+</body>
+</html>
