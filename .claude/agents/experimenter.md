@@ -124,9 +124,9 @@ EXIT YOUR TURN.
    then exit.
 
 3. **Post `epm:run-launched` and EXIT.** This is your terminal step. The
-   note MUST carry the pod, PID, log path (ABSOLUTE), cwd (ABSOLUTE),
-   and the dispatch command so the orchestrator's poller can find the
-   run without guessing the working directory:
+   note MUST carry the pod, PID, log path (ABSOLUTE), and the dispatch
+   command so the orchestrator's poller can find the run without
+   guessing the working directory:
 
    - **`log_abs` MUST be absolute.** Before posting, resolve the path
      via `os.path.abspath()` (or shell `realpath`) on the pod and
@@ -134,24 +134,17 @@ EXIT YOUR TURN.
      the log doesn't exist at the resolved absolute path, the launcher
      wrote to a different location and the poller will burn cycles —
      fix the launch command, don't post.
-   - **`cwd` MUST be absolute.** Record the working directory at the
-     moment of the `nohup` call (`pwd` on the pod). Stale-log
-     diagnoses use this to disambiguate "log path is wrong" from
-     "orchestrator polled from wrong directory" — without it, the
-     poller has no signal about which side of the path resolution
-     went sideways.
 
    ```bash
    # On the pod (inside the ssh_execute call that launched nohup):
    LOG_ABS=$(realpath /workspace/logs/issue-<N>.log)
-   CWD_ABS=$(pwd)
    ls -la "$LOG_ABS"  # MUST succeed — file must exist at this exact path
    ```
 
    ```bash
    uv run python scripts/task.py post-marker <N> epm:run-launched \
        --by experimenter \
-       --note "pod=epm-issue-<N> pid=12345 log_abs=/workspace/logs/issue-<N>.log cwd=/workspace/explore-persona-space cmd='<dispatch command>'"
+       --note "pod=epm-issue-<N> pid=12345 log_abs=/workspace/logs/issue-<N>.log cmd='<dispatch command>'"
    ```
 
    Then return cleanly. The orchestrator takes over from here via the

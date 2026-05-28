@@ -1014,22 +1014,22 @@ markers:
     fields: |
       Records the actual `nohup ... &` launch (PID + timestamp); paired
       with epm:launch. REQUIRED payload fields (note shape):
-      `pod=<name> pid=<pid> log_abs=<absolute_log_path> cwd=<absolute_cwd>
+      `pod=<name> pid=<pid> log_abs=<absolute_log_path>
       cmd='<dispatch>'`. The experimenter MUST call `os.path.abspath()`
       on the log path before posting AND verify with `ls -la <log_abs>`
       on the pod (logs must exist at that exact absolute path; relative
       paths burn polling-loop cycles when the orchestrator's
-      `poll_pipeline.py` looks for them at the wrong cwd). The `cwd=`
-      field records the pod-side working directory at launch time so
-      stale-log diagnoses can disambiguate "log path is wrong" from
-      "orchestrator polled from wrong directory". Back-compat: a
-      transition window accepts the legacy `log=` field as a fallback
+      `poll_pipeline.py` looks for them at the wrong cwd). Back-compat:
+      a transition window accepts the legacy `log=` field as a fallback
       when `log_abs=` is absent; this fallback is scheduled for removal
       after 2026-06-15 (TODO comment in SKILL.md Step 6d.1 parse code).
       Rationale: task #397 (2026-05-27) — poller read
       `/workspace/logs/issue-397.log` while dispatcher wrote
       `/workspace/explore-persona-space/logs/issue-397-sweep.log`,
       burning 27 min of "crash diagnosis" on a healthy run.
+      (The earlier draft of this schema required `cwd=` as well, but
+      the orchestrator's Step 6d.1 parse never consumed it; Codex
+      round-1 MAJOR-4 flagged it as dead payload. Dropped 2026-05-27.)
   - kind: "epm:progress"
     posted_by: experimenter / implementer
     when: "during run"
