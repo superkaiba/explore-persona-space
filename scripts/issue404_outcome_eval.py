@@ -359,6 +359,75 @@ def paired_kappa_eligible_labels(
     return labels_a, labels_b, excluded
 
 
+# ── Judge dispatch + post-scoring sanity check ─────────────────────────────
+
+
+def _score_dispatched(
+    questions: list[str],
+    completions: dict[str, list[str]],
+    judge_model: str,
+    max_concurrent: int,
+) -> dict[str, list[dict]]:
+    """Route scoring to the right provider client based on ``judge_model``.
+
+    Claude models (``claude-*``) go through the async Anthropic client;
+    gpt-4o models (``gpt-*``) go through the sync OpenAI client mirrored
+    on ``_score_with_gpt4o``. Any other prefix raises — round-2 had a
+    silent fallback where any non-Claude name still went to Anthropic,
+    the Anthropic API rejected it, the rejection was swallowed by the
+    broad ``except`` in ``judge_responses``, and every cell silently
+    reported L=0 while labeling itself as a successful gpt-4o run. The
+    explicit raise here is the CLAUDE.md "fail fast" contract.
+    """
+    if judge_model.startswith("claude"):
+        return asyncio.run(_score_with_claude(questions, completions, judge_model, max_concurrent))
+    if judge_model.startswith("gpt-"):
+        return _score_with_gpt4o(questions, completions, judge_model)
+    raise ValueError(
+        f"Unknown judge model provider for {judge_model!r}; expected a "
+        "Claude (claude-*) or OpenAI (gpt-*) model name. Add a new "
+        "_score_with_<provider> helper + dispatch branch if you need "
+        "another judge."
+    )
+
+
+def _assert_judge_error_rate_acceptable(
+    breakdown: dict,
+    judge_model: str,
+    context: str,
+    max_error_rate: float = 0.5,
+) -> None:
+    """Crash loudly if >max_error_rate of judge calls failed.
+
+    ``compute_misaligned_rate`` counts parse-error / API-error / unparseable
+    rows in ``n_parse_error`` but treats them as "not misaligned" in the
+    rate denominator. A judge mis-route (gpt-4o name sent to Anthropic),
+    an expired API key, or a model name typo can therefore silently drive
+    L → 0 without raising. This guard reads the same breakdown and
+    crashes when the failure mode dominates the run, so the result-JSON
+    consumer never sees a "successful" L=0.0 row that's really an
+    all-errors row in disguise.
+    """
+    n_total = int(breakdown.get("n_total", 0))
+    n_parse_error = int(breakdown.get("n_parse_error", 0))
+    if n_total == 0:
+        raise RuntimeError(
+            f"[{context}] judge {judge_model!r} returned zero completions to "
+            f"score — upstream generation produced no rows. Refusing to "
+            f"emit an L=0.0 result row."
+        )
+    error_rate = n_parse_error / n_total
+    if error_rate > max_error_rate:
+        raise RuntimeError(
+            f"[{context}] judge {judge_model!r} failed (parse_error / API "
+            f"error) on {n_parse_error}/{n_total} = {error_rate:.1%} of "
+            f"completions, above the {max_error_rate:.0%} threshold. "
+            f"Likely causes: wrong API key for this provider, model-name "
+            f"typo, rate-limit exhaustion, or a provider-routing bug. "
+            f"Refusing to silently report L from the surviving rows."
+        )
+
+
 # ── Per-cell eval ──────────────────────────────────────────────────────────
 
 
@@ -424,13 +493,22 @@ def eval_cell(
         )
     logger.info("Wrote raw completions to %s", raw_path.relative_to(PROJECT_ROOT))
 
-    # Score with the Betley dual rubric via Claude.
-    scores = asyncio.run(_score_with_claude(main8, completions, judge_model, max_concurrent))
+    # Score with the Betley dual rubric — dispatch on provider so a κ<0.7
+    # calibration result that picks gpt-4o actually routes there. Round-2
+    # left this hard-wired to Claude, which made the gpt-4o branch send
+    # `gpt-4o-2024-08-06` to the Anthropic API; the broad `except` in
+    # `judge_responses` swallowed the rejection and `compute_misaligned_rate`
+    # silently reported L=0 for every cell. CLAUDE.md forbids that silent-
+    # fallback class — provider-route or raise.
+    scores = _score_dispatched(main8, completions, judge_model, max_concurrent)
     scores_path = out_dir / f"judge_scores_{pair}_seed{seed}.json"
     with open(scores_path, "w") as f:
         json.dump(scores, f, indent=2)
 
     L, breakdown = compute_misaligned_rate(scores)
+    _assert_judge_error_rate_acceptable(
+        breakdown, judge_model=judge_model, context=f"pair={pair} seed={seed}"
+    )
 
     return {
         "pair": pair,

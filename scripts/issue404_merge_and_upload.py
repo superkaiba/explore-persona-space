@@ -226,10 +226,13 @@ def main() -> int:
     )
     parser.add_argument(
         "--delete-local-after-upload",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=None,  # default-by-mode: True for --from-tsv, False otherwise
         help=(
             "Delete the local merged dir after a verified upload. "
-            "Reduces pod disk pressure when many cells are processed."
+            "Default: True when --from-tsv is used (batch sweeps blow pod "
+            "disk quickly), False otherwise (single-cell debug). Pass "
+            "--no-delete-local-after-upload to opt out of the batch default."
         ),
     )
     parser.add_argument(
@@ -267,6 +270,22 @@ def main() -> int:
         logger.warning("No cells to process; exiting.")
         return 0
 
+    # Resolve --delete-local-after-upload default by mode: batch sweeps
+    # via --from-tsv ALWAYS need disk cleanup (pod's 130 GB MooseFS quota
+    # fills after ~6 Qwen-7B merged dirs), single-cell debug runs keep
+    # the dir for inspection. The round-2 shape defaulted to False
+    # unconditionally, which the reconciler flagged as a real-but-non-
+    # blocking standing rec; flipping it for the batch path closes the
+    # disk-blowup class.
+    delete_local_after_upload = args.delete_local_after_upload
+    if delete_local_after_upload is None:
+        delete_local_after_upload = args.from_tsv is not None
+    logger.info(
+        "delete_local_after_upload=%s (mode=%s)",
+        delete_local_after_upload,
+        "--from-tsv" if args.from_tsv is not None else "single-cell",
+    )
+
     logger.info("Merging + uploading %d cell(s) to %s", len(cells), args.repo_id)
     manifest_rows: list[dict] = []
     for pair_, seed_, adapter_dir_ in cells:
@@ -278,7 +297,7 @@ def main() -> int:
             base_model=args.base_model,
             gpu_id=args.gpu_id,
             no_upload=args.no_upload,
-            delete_local_after_upload=args.delete_local_after_upload,
+            delete_local_after_upload=delete_local_after_upload,
         )
         row["metadata"] = reproducibility_metadata({"script": "issue404_merge_and_upload"})
         manifest_rows.append(row)
