@@ -8,6 +8,7 @@ Default repos (public, unlimited storage):
 import glob
 import logging
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -17,6 +18,54 @@ logger = logging.getLogger(__name__)
 # Default public HF Hub repos
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
 DEFAULT_DATASET_REPO = "superkaiba1/explore-persona-space-data"
+
+
+def list_repo_files_complete(
+    api,
+    repo_id: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> list[str]:
+    """Enumerate EVERY file in an HF repo via the paginated tree API.
+
+    The Hub's ``repo_info().siblings`` field — which several huggingface_hub
+    code paths (and older ``list_repo_files`` implementations) read to list a
+    repo's contents — SILENTLY TRUNCATES at roughly 7901 entries. On large
+    repos (the project model + data repos accumulate thousands of checkpoint
+    shards and raw-completion files) this truncation makes
+    ``snapshot_download(allow_patterns=...)`` resolve to zero files even when
+    the pattern matches files that are actually present.
+
+    ``HfApi.list_repo_tree(recursive=True)`` is the paginated, complete
+    alternative: it walks the repo tree page by page and yields one entry per
+    file, with no truncation cap. This helper drives every enumeration in this
+    module through it so a repo always enumerates fully regardless of the
+    pinned huggingface_hub version's ``list_repo_files`` implementation.
+
+    Args:
+        api: An ``huggingface_hub.HfApi`` instance (already token-scoped).
+        repo_id: HF Hub repo ID.
+        repo_type: ``'model'`` / ``'dataset'`` / ``'space'``.
+        revision: Optional git revision; ``None`` resolves to the repo default.
+
+    Returns:
+        Sorted list of every file path in the repo (``RepoFolder`` entries are
+        dropped; only files are returned).
+    """
+    from huggingface_hub.hf_api import RepoFile
+
+    files = [
+        entry.path
+        for entry in api.list_repo_tree(
+            repo_id=repo_id,
+            repo_type=repo_type,
+            revision=revision,
+            recursive=True,
+        )
+        if isinstance(entry, RepoFile)
+    ]
+    return sorted(files)
 
 
 def _upload(
@@ -84,9 +133,12 @@ def _upload(
                 repo_type=repo_type,
             )
 
-        # Verify upload: check that files actually exist on Hub
+        # Verify upload: check that files actually exist on Hub. Use the
+        # paginated tree walk (not repo_info().siblings, which truncates at
+        # ~7901 entries) so verification of a large repo never spuriously
+        # reports 0 committed files.
         expected_prefix = (path_in_repo or local_path.name).rstrip("/")
-        uploaded_files = api.list_repo_files(repo_id=repo_id, repo_type=repo_type)
+        uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
         if is_file_upload:
             committed_files = [f for f in uploaded_files if f == expected_prefix]
         else:
@@ -457,13 +509,167 @@ def list_hub_datasets(
 
     try:
         api = HfApi(token=token)
-        files = api.list_repo_files(repo_id=repo_id, repo_type="dataset")
+        files = list_repo_files_complete(api, repo_id, repo_type="dataset")
         if path_prefix:
             files = [f for f in files if f.startswith(path_prefix)]
         return sorted(files)
     except Exception as e:
         logger.error("Failed to list datasets: %s", e)
         return []
+
+
+# ── Carry-over artifact existence verification (pre-launch gate) ──────────────
+
+# huggingface.co/<repo_id>[/tree|/blob/<revision>][/<path>] and hf:// forms.
+# repo_id is captured as <owner>/<name> with an optional datasets/ prefix.
+_HF_URL_RE = re.compile(
+    r"""
+    (?:
+        https?://huggingface\.co/         # web URL form
+        (?P<webkind>datasets/|spaces/)?
+        (?P<webrepo>[\w.\-]+/[\w.\-]+)
+        (?:/(?:tree|blob|resolve)/(?P<webrev>[^/\s)\]]+)(?P<webpath>(?:/[^\s)\]]+)*))?
+      |
+        hf://                             # hf:// URI form
+        (?P<urikind>datasets/|spaces/)?
+        (?P<urirepo>[\w.\-]+/[\w.\-]+)
+        (?:@(?P<urirev>[^/\s)\]]+))?
+        (?P<uripath>(?:/[^\s)\]]+)*)?
+    )
+    """,
+    re.VERBOSE,
+)
+
+# wandb.ai/<entity>/<project>/runs/<run_id>[/...]
+_WANDB_URL_RE = re.compile(
+    r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
+)
+
+
+def _kind_to_repo_type(kind: str | None) -> str:
+    """Map a huggingface.co URL path prefix to an HfApi ``repo_type``."""
+    if kind == "datasets/":
+        return "dataset"
+    if kind == "spaces/":
+        return "space"
+    return "model"
+
+
+def _hf_artifact_exists(api, repo_id: str, repo_type: str, revision: str | None, path: str) -> bool:
+    """Check whether a specific HF repo (and optional in-repo path) resolves.
+
+    A reachable repo whose tree is missing the cited ``path`` is a normal
+    ``False`` — NOT an exception. Genuine transport / auth errors propagate so
+    the caller fails loud rather than reporting a real artifact as missing.
+    """
+    files = list_repo_files_complete(api, repo_id, repo_type=repo_type, revision=revision)
+    if not path:
+        # URL points at the repo root (no file/dir path) — repo resolving is enough.
+        return True
+    path = path.strip("/")
+    # Match an exact file OR any file under a cited directory path.
+    return any(f == path or f.startswith(path + "/") for f in files)
+
+
+def _wandb_run_exists(entity: str, project: str, run_id: str) -> bool:
+    """Return True iff the WandB run resolves via the public API.
+
+    A 404 / "could not find run" is a normal ``False``. Auth / connection
+    failures propagate so a transient outage is not misread as "missing".
+    """
+    import wandb
+
+    api = wandb.Api()
+    try:
+        api.run(f"{entity}/{project}/{run_id}")
+        return True
+    except wandb.errors.CommError as e:
+        # CommError covers both "run not found" (404) and transport failures.
+        # Only the not-found case is a legitimate (False) — re-raise the rest.
+        msg = str(e).lower()
+        if "could not find" in msg or "404" in msg or "not found" in msg:
+            return False
+        raise
+
+
+def verify_artifacts_exist(plan_path: str | Path) -> tuple[bool, list[str]]:
+    """Scan a cached plan for carry-over artifact URLs and check each resolves.
+
+    Consumed PRE-LAUNCH by ``.claude/skills/issue/SKILL.md`` Step 6a.5 to block
+    provisioning a pod when a plan cites a carry-over artifact (a prior run's
+    checkpoint, dataset, or WandB run) that does not exist — provisioning only
+    to die seconds in on a 404 is pure wasted GPU-minutes.
+
+    Scans the plan text for:
+      - HF repo URLs (``https://huggingface.co/...`` and ``hf://...`` forms),
+        including optional ``/tree|/blob|/resolve/<revision>/<path>`` and
+        ``@<revision>`` revisions and in-repo paths.
+      - WandB run URLs (``https://wandb.ai/<entity>/<project>/runs/<run_id>``).
+
+    Each URL is existence-checked against the Hub (paginated tree walk, so a
+    large repo never spuriously reports a present file as missing) or the WandB
+    public API. HF auth uses the ambient ``HF_TOKEN``; WandB uses
+    ``WANDB_API_KEY`` via the public API's normal credential resolution.
+
+    Fail-loud contract:
+      - A malformed / missing / non-file ``plan_path`` raises ``ValueError``
+        (the caller passed something that can't be a plan).
+      - A reachable-but-missing artifact is a NORMAL ``(False, [...])`` return,
+        not an exception.
+      - Genuine transport / auth errors propagate (the helper does not swallow
+        them and report a real artifact as missing).
+
+    Args:
+        plan_path: Path to the cached plan markdown file.
+
+    Returns:
+        ``(all_exist, missing_urls)``. ``all_exist`` is True iff every detected
+        URL resolved; ``missing_urls`` is the de-duplicated list of URLs that
+        did not (empty when ``all_exist`` is True). A plan citing no artifact
+        URLs returns ``(True, [])``.
+
+    Raises:
+        ValueError: ``plan_path`` is empty, does not exist, or is not a file.
+    """
+    if plan_path is None or str(plan_path).strip() == "":
+        raise ValueError("verify_artifacts_exist: plan_path is empty")
+    plan_path = Path(plan_path)
+    if not plan_path.exists():
+        raise ValueError(f"verify_artifacts_exist: plan_path does not exist: {plan_path}")
+    if not plan_path.is_file():
+        raise ValueError(f"verify_artifacts_exist: plan_path is not a file: {plan_path}")
+
+    text = plan_path.read_text(encoding="utf-8")
+
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+
+    missing: list[str] = []
+    seen: set[str] = set()
+
+    for m in _HF_URL_RE.finditer(text):
+        url = m.group(0)
+        if url in seen:
+            continue
+        seen.add(url)
+        kind = m.group("webkind") or m.group("urikind")
+        repo_id = m.group("webrepo") or m.group("urirepo")
+        revision = m.group("webrev") or m.group("urirev")
+        path = m.group("webpath") or m.group("uripath") or ""
+        repo_type = _kind_to_repo_type(kind)
+        if not _hf_artifact_exists(api, repo_id, repo_type, revision, path):
+            missing.append(url)
+
+    for m in _WANDB_URL_RE.finditer(text):
+        url = m.group(0)
+        if url in seen:
+            continue
+        seen.add(url)
+        if not _wandb_run_exists(m.group("entity"), m.group("project"), m.group("run_id")):
+            missing.append(url)
+
+    return (len(missing) == 0, missing)
 
 
 def upload_model_wandb(

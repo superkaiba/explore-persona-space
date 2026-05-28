@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from huggingface_hub.hf_api import RepoFile
 
 from explore_persona_space.orchestrate.hub import (
     DEFAULT_DATASET_REPO,
@@ -94,6 +95,12 @@ class TestUploadDataset:
                 mock_api = MockApi.return_value
                 mock_api.create_repo.return_value = None
                 mock_api.upload_file.return_value = None
+                # Post-upload verification now walks the paginated tree
+                # (list_repo_files_complete -> list_repo_tree) instead of
+                # repo_info().siblings, so the committed file must surface there.
+                mock_api.list_repo_tree.return_value = [
+                    RepoFile(path="test/data.jsonl", size=1, blob_id="b", oid="o")
+                ]
 
                 result = upload_dataset(fpath, path_in_repo="test/data.jsonl")
                 mock_api.upload_file.assert_called_once()
