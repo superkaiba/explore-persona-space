@@ -1015,7 +1015,7 @@ markers:
   - kind: "epm:review-reconcile"
     posted_by: skill (via reconciler)
     when: "any review step where Claude and Codex disagree"
-    fields: "Binding final verdict + per-finding adjudication table + rationale anchored to artifact evidence. Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised."
+    fields: "Binding final verdict + per-finding adjudication table + rationale anchored to artifact evidence. Does NOT count toward per-reviewer round cap. Reconciler may NOT add findings beyond what either reviewer raised. The adjudicated role (`code-reviewer` / `interpretation-critic` / `clean-result-critic` / `critic`) is distinguished by the body's `**Role under adjudication:**` field, NOT by the marker kind — there is exactly ONE marker-mode reconcile kind. The `/adversarial-planner` Phase 2 in-context reconcile prints a separate role-tagged `epm:plan-critique-reconcile` tag to stdout (parsed by the skill) and does NOT post an events.jsonl marker."
   - kind: "epm:hf-gate-pending"
     posted_by: skill
     when: "Step 6a"

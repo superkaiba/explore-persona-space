@@ -57,16 +57,23 @@ orchestrator should not have spawned you.
 The brief specifies one of:
 
 - **`mode: marker`** (default; used by `/issue` Step 5/9a/9b) — both verdict
-  bodies are `events.jsonl` markers. You post a `*-reconcile` marker via
-  `scripts/task.py post-marker`. The orchestrator reads it back.
+  bodies are `events.jsonl` markers. You post a single canonical
+  `epm:review-reconcile v<round>` marker via `scripts/task.py post-marker`,
+  regardless of which review role you are adjudicating. The adjudicated role
+  is carried inside the marker body's `**Role under adjudication:**` field.
+  The orchestrator reads it back.
 - **`mode: in-context`** (used by `/adversarial-planner` Phase 2 per-lens
   reconciliation) — the two verdict bodies are passed directly in the brief
   as text blocks. You return adjudication text via stdout. The orchestrator
   (the adversarial-planner skill, running in the manager's context) consumes
-  your stdout directly. NO marker is posted.
+  your stdout directly. NO events.jsonl marker is posted; the stdout marker
+  is role-tagged (`epm:plan-critique-reconcile`) so the manager's parser can
+  find it.
 
 Both modes use the same Decision Procedure (Steps 1–4 below). Only Step 5
-differs: marker mode posts via `scripts/task.py`; in-context mode prints to stdout.
+differs: marker mode posts via `scripts/task.py` (one kind:
+`epm:review-reconcile`); in-context mode prints a role-tagged marker to
+stdout.
 
 ---
 
@@ -177,10 +184,14 @@ section — it does NOT affect the verdict.
 
 ### Step 5: Emit the verdict
 
-The body schema is identical across modes:
+The body schema is identical across modes; only the HTML-comment opener and
+the dispatch path differ.
 
 ```markdown
-<!-- epm:<kind>-reconcile v<round> -->
+<!-- epm:review-reconcile v<round> -->                    # marker mode (events.jsonl)
+                                                          # OR, in-context mode only:
+<!-- epm:plan-critique-reconcile v<round> -->             # in-context mode (stdout)
+
 ## Reconciler Verdict — <role-specific verdict per Step 4 table>
 
 **Role under adjudication:** <critic | code-reviewer | interpretation-critic | reviewer>
@@ -204,30 +215,42 @@ The body schema is identical across modes:
 
 ### Standing recommendations on PASS
 <if PASS, list any Real-but-non-blocking findings the worker should address opportunistically>
-<!-- /epm:<kind>-reconcile -->
+
+<!-- /epm:review-reconcile -->                            # marker mode closer
+<!-- /epm:plan-critique-reconcile -->                     # in-context mode closer
 ```
 
-**Marker mode** — post via the task workflow:
+**Marker mode** — post via the task workflow with the single canonical
+marker kind `epm:review-reconcile`. The adjudicated role is carried in the
+body's `**Role under adjudication:**` field, NOT in the marker name. The
+`/issue` orchestrator's state machine and `workflow.yaml` registry both
+key off this one marker kind.
 
 ```bash
-python scripts/task.py post-marker <N> epm:<kind>-reconcile --note "$(cat marker.md)"
+python scripts/task.py post-marker <N> epm:review-reconcile --note "$(cat marker.md)"
 ```
 
 If the body is too large, split it using the `part=K/N` convention from
 `markers.md` and re-post each part.
 
-**In-context mode** — print the marker body verbatim to stdout. The
-orchestrator parses it from your stdout directly. Do NOT post a marker.
+**In-context mode** — print the marker body verbatim to stdout, opening with
+`<!-- epm:plan-critique-reconcile v<round> -->` and closing with
+`<!-- /epm:plan-critique-reconcile -->`. The `/adversarial-planner` skill
+parses this tag from your stdout directly. Do NOT post an events.jsonl
+marker in this mode.
 
-The `<kind>` matches the role: `plan-critique` (with a `Lens` field for
-adversarial-planner), `code-review`, `interp-critique`, or `reviewer-verdict`.
 Examples:
 
-- Reconcile of `code-review` v3 → marker kind `code-review-reconcile v3` (marker mode).
-- Reconcile of `interp-critique` v2 → `interp-critique-reconcile v2` (marker mode).
-- Reconcile of `critic`-Methodology in adversarial-planner round 1 →
-  `plan-critique-reconcile v1` with `**Lens:** Methodology` (in-context mode,
-  printed to stdout).
+- Reconcile of `code-review` v3 → post `epm:review-reconcile v3` with
+  `**Role under adjudication:** code-reviewer` in the body (marker mode).
+- Reconcile of `interp-critique` v2 → post `epm:review-reconcile v2` with
+  `**Role under adjudication:** interpretation-critic` in the body (marker
+  mode).
+- Reconcile of `critic`-Methodology in adversarial-planner round 1 → print
+  `<!-- epm:plan-critique-reconcile v1 --> ... <!-- /epm:plan-critique-reconcile -->`
+  to stdout with `**Role under adjudication:** critic` and `**Lens:**
+  Methodology` (in-context mode; the role-tagged stdout marker is what the
+  manager's parser keys off).
 
 ---
 
@@ -242,9 +265,13 @@ Examples:
 4. **Anchor every classification.** "Mistaken" needs a quote/path showing the
    reviewer was wrong. "Real-blocking" needs a quote/path showing the bug
    exists.
-5. **One marker per round.** Post exactly one `epm:<kind>-reconcile v<round>`.
-   If you need to fix a posted reconcile, post `v<round+0.1>` is NOT allowed —
-   issue a new marker only if the orchestrator re-spawns you with a new round.
+5. **One marker per round.** Post exactly one `epm:review-reconcile v<round>`
+   (marker mode) — the role is carried in the body's `**Role under
+   adjudication:**` field, not the marker name. In in-context mode, print
+   exactly one `epm:plan-critique-reconcile v<round>` stdout tag. If you
+   need to fix a posted reconcile, post `v<round+0.1>` is NOT allowed —
+   issue a new marker only if the orchestrator re-spawns you with a new
+   round.
 6. **Reconcile rounds do NOT count toward the per-reviewer cap.** The
    orchestrator handles cap accounting; your job is verdict honesty.
 7. **No politics.** If Codex was right and Claude was wrong, say so. If
