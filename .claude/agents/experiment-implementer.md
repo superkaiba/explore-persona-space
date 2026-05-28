@@ -85,6 +85,20 @@ they invoke `implementer` directly.
    within ~5s of nohup because smoke didn't exercise the subprocess
    dispatcher. The orchestrator's `/issue` Step 6d.0 gate refuses to
    dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
+   §Gotchas for libraries / patterns relevant to the modules you're
+   about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
+   injection, marker tokenization). In your Implementation Report
+   under `(b) Considered but not done`, cite the specific gotchas you
+   read and how your design avoids each one — even a one-line "no
+   vLLM in this diff; gotcha #X N/A" is acceptable. Rationale: task
+   #397 round 8 (2026-05-27) hit the "vLLM in-process teardown does
+   NOT reap worker subprocesses" gotcha documented in CLAUDE.md, but
+   the implementer's report didn't cite it as a considered constraint;
+   the orphan PID re-allocated 74 GB and crashed the next phase's HF
+   load. A one-line "I read the vLLM teardown gotcha; this diff
+   subprocess-isolates each phase" would have caught the design
+   mismatch at review-time.
 
 ### During implementation
 
