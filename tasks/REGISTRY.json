@@ -2043,8 +2043,8 @@
       "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/406",
-      "status": "proposed",
+      "path": "tasks/planning/406",
+      "status": "planning",
       "title": "Does JS divergence between context transformations predict SFT generalization across them?"
     },
     "407": {
