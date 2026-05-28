@@ -98,15 +98,19 @@ discipline ported from HTML to markdown):
     `## Details` with no prose between (figure-dump). Both surface as
     WARN, never FAIL — critic-side LM judgment (clean-result-critic
     Lens 4 + Lens 12) catches the semantic cases this regex misses.
-14. MDX-safe URLs — no `<https://...>` markdown autolinks anywhere in
-    body prose. The EPS dashboard renders bodies through an MDX parser,
-    which treats `<https` as the start of a JSX tag name and chokes on
-    the `/` after `:` (error: "Unexpected character `/` (U+002F) before
-    local name"). Every URL must be written as a `[label](url)` link.
-    Autolinks inside fenced code blocks and inline code spans
-    (`` `<https://...>` ``) are exempt. Incident: task #382, 2026-05-28
-    (six Reproducibility autolinks broke the dashboard's MDX renderer
-    for the entire body after promotion).
+14. MDX-safe prose — no `<` characters that the dashboard's MDX parser
+    will treat as the start of a JSX tag. Two specific anti-patterns
+    fail: (a) `<https://...>` markdown autolinks (MDX errors with
+    "Unexpected character `/` (U+002F) before local name"), and (b) `<`
+    immediately followed by a digit, e.g. `p<0.05`, `n<10`, `<24
+    personas` (MDX errors with "Unexpected character `0` (U+0030) before
+    name"). Write URLs as `[label](url)` links and inequalities with
+    surrounding spaces (`p < 0.05`) or wrap the token in backticks
+    (`` `p<0.05` ``). Patterns inside fenced code blocks and inline
+    code spans are exempt. `&lt;0.05`, `<= 10`, and `<` followed by a
+    space all stay safe. Incidents: task #382, 2026-05-28 (six
+    Reproducibility autolinks broke the dashboard renderer); a same-day
+    body with `p<0.05` in prose triggered the U+0030 variant.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -803,6 +807,14 @@ def check_repro_url_permanence(body: str) -> CheckResult:
 
 _INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
 _AUTOLINK_URL_RE = re.compile(r"<https?://[^>\s]+>")
+# `<` immediately followed by a digit (0-9). Catches `p<0.05`, `n<10`,
+# `<24 personas`, `<2026-05-28`, etc. — all of which the dashboard's MDX
+# parser treats as the start of a JSX tag name and errors with
+# "Unexpected character `0` (U+0030) before name". `&lt;0.05` is safe
+# (no literal `<` in the source); `<= 10` is safe (next char is `=`);
+# `< 10` is safe (next char is whitespace); `<https://...>` is caught
+# by `_AUTOLINK_URL_RE` separately.
+_LT_DIGIT_RE = re.compile(r"<\d")
 
 
 def _strip_code_for_prose_scan(body: str) -> str:
@@ -822,33 +834,73 @@ def _strip_code_for_prose_scan(body: str) -> str:
     return "\n".join(out)
 
 
+_MDX_CHECK_LABEL = "MDX-safe prose — no `<https://...>` autolinks or `<` before digit"
+
+
 def check_mdx_safe_urls(body: str) -> CheckResult:
-    """Check 14 (MDX safety): no `<https://...>` markdown autolinks in
-    body prose. The EPS dashboard renders bodies via an MDX parser, which
-    treats `<https` as the start of a JSX tag name and chokes on the `/`
-    after `:`. Every URL must use `[label](url)` form. Autolinks inside
-    fenced code blocks and inline code spans are exempt (the strip step
-    removes them before scanning). Incident: task #382, 2026-05-28."""
+    """Check 14 (MDX safety): no `<` characters in body prose that the
+    dashboard's MDX parser will read as the start of a JSX tag. Two
+    classes fail:
+
+    - `<https://...>` markdown autolinks — MDX parses `<https` as a tag
+      name and errors with "Unexpected character `/` (U+002F) before
+      local name". Use `[label](url)` instead. Incident: task #382,
+      2026-05-28.
+    - `<` immediately followed by a digit (`p<0.05`, `n<10`, `<24`) —
+      MDX parses `<0` as a tag name and errors with "Unexpected
+      character `0` (U+0030) before name". Write `p < 0.05` with
+      surrounding spaces or wrap the token in backticks. Recurred
+      same-day as the autolink incident.
+
+    Patterns inside fenced code blocks and inline code spans are exempt
+    (the strip step removes them before scanning). `&lt;0.05`, `<= 10`,
+    `< 10`, and `<` followed by anything other than `/` or a digit all
+    pass.
+    """
     stripped = _strip_code_for_prose_scan(body)
-    hits = _AUTOLINK_URL_RE.findall(stripped)
-    if not hits:
-        return CheckResult("MDX-safe URLs — no `<https://...>` autolinks", True)
-    # Dedupe; keep order; show up to 3.
-    unique: list[str] = []
-    seen: set[str] = set()
-    for h in hits:
-        if h not in seen:
-            seen.add(h)
-            unique.append(h)
-    sample = ", ".join(unique[:3])
-    more = f" (+{len(unique) - 3} more)" if len(unique) > 3 else ""
-    return CheckResult(
-        "MDX-safe URLs — no `<https://...>` autolinks",
-        False,
-        f"{len(hits)} autolink(s) — MDX parses `<https://` as JSX and "
-        f"errors with 'Unexpected character `/` (U+002F) before local "
-        f"name'. Convert to `[label](url)`. Found: {sample}{more}",
-    )
+    autolinks = _AUTOLINK_URL_RE.findall(stripped)
+    lt_digit = _LT_DIGIT_RE.findall(stripped)
+    if not autolinks and not lt_digit:
+        return CheckResult(_MDX_CHECK_LABEL, True)
+    parts: list[str] = []
+    if autolinks:
+        unique: list[str] = []
+        seen: set[str] = set()
+        for h in autolinks:
+            if h not in seen:
+                seen.add(h)
+                unique.append(h)
+        sample = ", ".join(unique[:3])
+        more = f" (+{len(unique) - 3} more)" if len(unique) > 3 else ""
+        parts.append(
+            f"{len(autolinks)} `<https://...>` autolink(s) — MDX parses "
+            f"`<https://` as JSX and errors with 'Unexpected character `/` "
+            f"(U+002F) before local name'. Convert to `[label](url)`. "
+            f"Found: {sample}{more}"
+        )
+    if lt_digit:
+        # Surface the surrounding ~20 chars of context for each hit so the
+        # operator can locate `p<0.05` / `n<10` / `<24 personas` without
+        # grepping the body manually.
+        contexts: list[str] = []
+        seen_ctx: set[str] = set()
+        for m in _LT_DIGIT_RE.finditer(stripped):
+            lo = max(0, m.start() - 10)
+            hi = min(len(stripped), m.end() + 10)
+            ctx = stripped[lo:hi].replace("\n", " ").strip()
+            if ctx not in seen_ctx:
+                seen_ctx.add(ctx)
+                contexts.append(ctx)
+        sample = ", ".join(f"…{c}…" for c in contexts[:3])
+        more = f" (+{len(contexts) - 3} more)" if len(contexts) > 3 else ""
+        parts.append(
+            f"{len(lt_digit)} `<` before digit occurrence(s) — MDX parses "
+            f"`<0` as JSX and errors with 'Unexpected character `0` "
+            f"(U+0030) before name'. Write `p < 0.05` with surrounding "
+            f"spaces or wrap the token in backticks (`` `p<0.05` ``). "
+            f"Found: {sample}{more}"
+        )
+    return CheckResult(_MDX_CHECK_LABEL, False, " | ".join(parts))
 
 
 def check_repro_sentinel_scrub(body: str) -> CheckResult:

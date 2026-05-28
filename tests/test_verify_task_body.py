@@ -42,7 +42,7 @@ Characterize how cross-persona leakage scales with seed and benchmark.
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
 - **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p<0.01 ([figure below](#figure)).
+- **Results:** Effect is present at p < 0.01 ([figure below](#figure)).
 - **Next steps:** Replicate at 70B, run the partial-correlation control.
 
 ## Figure
@@ -551,7 +551,7 @@ goal: Check whether the inline-figure pattern passes without `## Figure` H2
 - **Motivation:** I wanted to test the inline-figure pattern.
     ![inline hero plot showing per-condition leakage means with 95% CI bands across three training seeds](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
 - **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p<0.01 (see inline figure above).
+- **Results:** Effect is present at p < 0.01 (see inline figure above).
 
 ## Details
 
@@ -718,7 +718,7 @@ Characterize how cross-persona leakage scales with seed and benchmark.
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
 - **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p<0.01.
+- **Results:** Effect is present at p < 0.01.
 - **Next steps:** Replicate at 70B.
 
 ## Figure
@@ -809,7 +809,7 @@ Characterize how cross-persona leakage scales with seed and benchmark.
 ## TL;DR
 - **Motivation:** I wanted to test whether X drives Y.
 - **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p<0.01.
+- **Results:** Effect is present at p < 0.01.
 - **Next steps:** Replicate at 70B.
 
 ## Figure
@@ -1010,6 +1010,9 @@ def test_checks_list_size():
 # ─── Check 14: MDX-safe URLs (no `<https://...>` autolinks in prose) ───
 
 
+_MDX_LABEL = "MDX-safe prose — no `<https://...>` autolinks or `<` before digit"
+
+
 def test_mdx_autolink_in_repro_fails():
     """A `<https://...>` autolink anywhere in body prose breaks the MDX
     renderer the dashboard uses. The verifier must FAIL such bodies.
@@ -1025,8 +1028,8 @@ def test_mdx_autolink_in_repro_fails():
     ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
     assert not ok
-    assert not by_name["MDX-safe URLs — no `<https://...>` autolinks"].passed
-    assert "wandb.ai" in by_name["MDX-safe URLs — no `<https://...>` autolinks"].detail
+    assert not by_name[_MDX_LABEL].passed
+    assert "wandb.ai" in by_name[_MDX_LABEL].detail
 
 
 def test_mdx_autolink_inside_code_span_passes():
@@ -1054,3 +1057,83 @@ def test_mdx_autolink_in_bare_prose_fails():
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
     assert "foo.example" in result.detail
+
+
+# ─── Check 14 (extended): `<` immediately followed by a digit ─────────────
+
+
+def test_mdx_lt_digit_in_prose_fails():
+    """`p<0.05` in body prose breaks the MDX renderer (the dashboard
+    parses `<0` as a JSX tag name and errors with 'Unexpected character
+    `0` (U+0030) before name'). Verifier check 14 must FAIL such bodies.
+
+    Recurred same-day as the autolink case on 2026-05-28; the original
+    `check_mdx_safe_urls` only matched `<https?://`, so this slipped
+    through.
+    """
+    body = "Some prose. The p-value was p<0.05 across all conditions."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert not result.passed
+    assert "U+0030" in result.detail or "p<0.05" in result.detail
+
+
+def test_mdx_lt_digit_with_surrounding_spaces_passes():
+    """`p < 0.05` (with spaces) is safe — `<` is not immediately
+    followed by a digit, so MDX parses it as a literal `<`."""
+    body = "Some prose. The p-value was p < 0.05 across all conditions."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_lt_digit_inside_code_span_passes():
+    """`` `p<0.05` `` wrapped in inline-code backticks is safe — MDX
+    never parses the inside of code spans as JSX."""
+    body = "Some prose. The threshold was `p<0.05` in the pre-reg."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_lt_digit_inside_fenced_block_passes():
+    """`p<0.05` inside a fenced code block is safe — MDX never parses
+    inside fences as JSX."""
+    body = "Some prose.\n\n```\nthreshold: p<0.05\nn<10\n```\n"
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_lt_eq_passes():
+    """`<=` is safe — `<` is followed by `=`, not a digit. MDX parses
+    this as a literal `<=` operator."""
+    body = "Some prose. The condition was x <= 10 across all runs."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_html_entity_lt_passes():
+    """`&lt;0.05` is safe — there is no literal `<` character in the
+    source, only the HTML entity escape."""
+    body = "Some prose. The p-value was &lt;0.05 across all conditions."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_lt_letter_passes():
+    """`<https` is caught by the autolink branch, not the digit branch.
+    `<details>` (literal HTML/JSX tag with letter after `<`) does NOT
+    trip the `<digit` check — MDX may still complain about unknown tags,
+    but that is a separate class outside check 14's scope."""
+    body = "Some prose. The <details> tag is valid HTML."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    # `<details>` passes check 14 (it is not an autolink and not `<digit`).
+    assert result.passed, result.detail
+
+
+def test_mdx_combined_autolink_and_lt_digit_fails():
+    """Body with BOTH a `<https://...>` autolink AND a `<digit`
+    occurrence must FAIL, and the failure detail must surface both
+    classes."""
+    body = "See <https://foo.example/x>. The p-value was p<0.05 across all conditions."
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert not result.passed
+    assert "U+002F" in result.detail
+    assert "U+0030" in result.detail
