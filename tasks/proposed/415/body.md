@@ -4,7 +4,7 @@ title: 'Symmetric-baseline rerun corroborates #396''s null: all four predictors 
 kind: experiment
 tags: []
 created_at: '2026-05-28T06:51:13Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 396
 goal: 'Test whether the 4-predictor null in #396 survives baseline-symmetric construction
   by adding cos-to-baseline + JS-to-assistant predictors on the same 24 personas +
