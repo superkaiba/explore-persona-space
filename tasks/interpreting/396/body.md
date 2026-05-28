@@ -1,6 +1,7 @@
 ---
-title: The first-step gradient probe does not predict trained-LoRA marker emission
-  at N=24, and the recipe swap muddles the comparison with the parent (LOW confidence)
+title: All four geometric / gradient predictors of LoRA marker emission come up null
+  at N=24 across six dependent-variable surfaces, and the recipe swap muddles the
+  comparison with the parent (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:04Z'
