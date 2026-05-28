@@ -1170,6 +1170,28 @@ def run_staged_training(
     training = cfg.training
     stages = condition.stages
 
+    # Fail loud if LoRA-only finalize is requested on a multi-stage condition.
+    # This mirrors the run_two_phase_training guard for the staged analogue: under
+    # EPM_MATERIALIZE_MERGED=0, each stage's finalize returns an ADAPTER dir, and
+    # the loop below chains stage N+1 from stage N's output via
+    # ``base_model_path=current_model_path``. Chaining from a bare adapter would
+    # silently train each successor stage against the BASE model, dropping all
+    # prior-stage coupling with no error. Rather than silently fall back to
+    # materializing the merged dir (which would defeat the disk win without
+    # warning), refuse up front when there is more than one stage. Single-stage
+    # conditions are safe (no chaining) and proceed.
+    if not _should_materialize_merged() and len(stages) > 1:
+        raise ValueError(
+            f"{EPM_MATERIALIZE_MERGED_ENV}=0 (LoRA-only finalize) is not supported "
+            f"for multi-stage condition '{condition.get('name')}': it has "
+            f"{len(stages)} stages and each stage chains from the previous stage's "
+            "materialized weights. The bare-adapter chaining path is not wired — "
+            "every stage after the first would train against the base model and "
+            f"silently drop prior-stage coupling. Unset {EPM_MATERIALIZE_MERGED_ENV} "
+            "(or set it to '1') for multi-stage conditions; the LoRA-only disk win "
+            "applies to single-stage conditions only."
+        )
+
     run_dir, _ = _prepare_run_dir(cfg, seed, output_base_dir)
 
     wandb_project = cfg.get("wandb_project")

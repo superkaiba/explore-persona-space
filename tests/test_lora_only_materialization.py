@@ -320,6 +320,91 @@ def test_two_phase_guard_inactive_by_default(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# (4b) Staged-training guard — LoRA-only on a multi-stage condition fails loud
+# ---------------------------------------------------------------------------
+
+
+class _StagedCondition:
+    """Condition stand-in for run_staged_training: a ``.stages`` attribute (so
+    ``len(condition.stages)`` works) plus the OmegaConf-style ``.get`` the guard
+    uses for the condition name."""
+
+    def __init__(self, name, stages):
+        self.name = name
+        self.stages = stages
+
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
+
+def _staged_cfg(num_stages: int):
+    from types import SimpleNamespace
+
+    stages = [
+        SimpleNamespace(name=f"stage{i}", dataset=f"data/sft/stage{i}.jsonl")
+        for i in range(num_stages)
+    ]
+    condition = _StagedCondition(name="c3_good_wrong_em", stages=stages)
+    cfg = SimpleNamespace(condition=condition, training=SimpleNamespace(model_id="Qwen/Qwen2.5-7B"))
+    cfg.get = lambda key, default=None: default  # wandb_project etc. -> None
+    return cfg
+
+
+def test_staged_guard_raises_under_lora_only(monkeypatch):
+    """EPM_MATERIALIZE_MERGED='0' on a multi-stage condition raises before any
+    training — no silent merged-dir fallback, no silent stage-from-bare-adapter.
+
+    This is the staged-training analogue of test_two_phase_guard_raises_under_lora_only:
+    chaining stage N+1 from stage N's bare adapter would silently train against
+    the base model and drop all prior-stage coupling."""
+    monkeypatch.setenv("EPM_MATERIALIZE_MERGED", "0")
+
+    # Sentinel so we can prove training never started.
+    def _boom(*args, **kwargs):  # pragma: no cover - must not be reached
+        raise AssertionError("_prepare_run_dir should never be called once the guard fires")
+
+    monkeypatch.setattr(trainer_mod, "_prepare_run_dir", _boom)
+
+    with pytest.raises(ValueError, match="multi-stage"):
+        trainer_mod.run_staged_training(cfg=_staged_cfg(num_stages=3), seed=42)
+
+
+def test_staged_guard_inactive_for_single_stage_under_lora_only(monkeypatch):
+    """A single-stage condition has no chaining, so the LoRA-only guard does NOT
+    fire even with the flag off. We patch _prepare_run_dir to a distinct sentinel
+    so reaching it proves the guard let us through."""
+    monkeypatch.setenv("EPM_MATERIALIZE_MERGED", "0")
+
+    class _Sentinel(RuntimeError):
+        pass
+
+    def _reached(*args, **kwargs):
+        raise _Sentinel("guard passed; reached _prepare_run_dir")
+
+    monkeypatch.setattr(trainer_mod, "_prepare_run_dir", _reached)
+
+    with pytest.raises(_Sentinel):
+        trainer_mod.run_staged_training(cfg=_staged_cfg(num_stages=1), seed=42)
+
+
+def test_staged_guard_inactive_by_default(monkeypatch):
+    """With the flag unset, the staged guard does NOT fire even for multi-stage
+    conditions (default path materializes merged dirs, so chaining is correct)."""
+    monkeypatch.delenv("EPM_MATERIALIZE_MERGED", raising=False)
+
+    class _Sentinel(RuntimeError):
+        pass
+
+    def _reached(*args, **kwargs):
+        raise _Sentinel("guard passed; reached _prepare_run_dir")
+
+    monkeypatch.setattr(trainer_mod, "_prepare_run_dir", _reached)
+
+    with pytest.raises(_Sentinel):
+        trainer_mod.run_staged_training(cfg=_staged_cfg(num_stages=3), seed=42)
+
+
+# ---------------------------------------------------------------------------
 # (5) Alignment invariant — Betley path injects NO system prompt
 # ---------------------------------------------------------------------------
 
