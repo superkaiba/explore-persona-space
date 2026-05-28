@@ -82,6 +82,35 @@ def _pick_attn_implementation() -> str:
         return "sdpa"
 
 
+def _warn_if_cvd_disagrees(gpu_id: int) -> None:
+    """Warn (do NOT change) when an inherited CUDA_VISIBLE_DEVICES disagrees with gpu_id.
+
+    The caller is about to set ``os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)``,
+    which is load-bearing: it pins each parallel process to one physical GPU and is
+    immediately followed by ``device_map={"": 0}`` (CUDA_VISIBLE_DEVICES remaps the
+    visible GPU to index 0). That clobber is intentional — see CLAUDE.md Gotchas on the
+    ``+gpu_id=N`` Hydra override (issue #376 wave-1).
+
+    This helper does NOT respect or restore the inherited value; it only emits a
+    WARNING so a likely-misconfigured launch (env ``CUDA_VISIBLE_DEVICES=N`` set by the
+    caller but ``gpu_id`` left at its default 0, or vice versa) is visible in the log.
+    Behavior is unchanged either way: the assignment below still wins.
+    """
+    inherited = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if inherited is not None and inherited != "" and inherited != str(gpu_id):
+        logger.warning(
+            "Inherited CUDA_VISIBLE_DEVICES=%r disagrees with cfg.gpu_id=%s; "
+            "overriding to %s (CUDA_VISIBLE_DEVICES is set per-process from gpu_id and "
+            "remapped to device 0). If you meant to pin this process to the inherited "
+            "device, pass +gpu_id=%s instead of relying on the env var — the env value "
+            "is NOT respected here.",
+            inherited,
+            gpu_id,
+            gpu_id,
+            inherited,
+        )
+
+
 def _validate_backend(backend: str) -> None:
     """Validate TrainLoraConfig.backend.
 
@@ -476,6 +505,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     _validate_backend(cfg.backend)
 
+    _warn_if_cvd_disagrees(cfg.gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -660,6 +690,7 @@ def merge_lora(
     gpu_id: int = 0,
 ) -> str:
     """Merge LoRA adapter into base model and save."""
+    _warn_if_cvd_disagrees(gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     from peft import PeftModel
