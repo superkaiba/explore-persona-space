@@ -147,13 +147,13 @@ banner "Phase 2 smoke_train -- 10-step train (max_steps=10, save_steps=[5,10])"
 uv run python scripts/train.py \
     condition=${CONDITION} \
     seed=${SEED} \
-    +training.save_at_specific_steps=true \
-    "+training.save_steps_list=[5,10]" \
-    training.learning_rate=1.0e-5 \
-    training.max_steps=10 \
-    training.epochs=-1 \
+    ++training.save_at_specific_steps=true \
+    "++training.save_steps_list=[5,10]" \
+    ++training.learning_rate=1.0e-5 \
+    ++training.max_steps=10 \
+    ++training.epochs=-1 \
     upload_to=none \
-    periodic_eval.enabled=false \
+    eval.periodic_eval.enabled=false \
     2>&1 | tee -a "${LOG_DIR}/issue-416_smoke_train.log"
 
 # -- Phase 3: smoke_check ----------------------------------------------------
@@ -191,13 +191,13 @@ banner "Phase 4 training -- 1600 steps, 22 checkpoints (~38 min wall)"
 uv run python scripts/train.py \
     condition=${CONDITION} \
     seed=${SEED} \
-    +training.save_at_specific_steps=true \
-    "+training.save_steps_list=${STEPS_HYDRA}" \
-    training.learning_rate=1.0e-5 \
-    training.max_steps=1600 \
-    training.epochs=-1 \
+    ++training.save_at_specific_steps=true \
+    "++training.save_steps_list=${STEPS_HYDRA}" \
+    ++training.learning_rate=1.0e-5 \
+    ++training.max_steps=1600 \
+    ++training.epochs=-1 \
     upload_to=hf \
-    periodic_eval.enabled=false \
+    eval.periodic_eval.enabled=false \
     2>&1 | tee -a "${LOG_DIR}/issue-416_train.log"
 
 # -- Phase 5: eval_logp ------------------------------------------------------
