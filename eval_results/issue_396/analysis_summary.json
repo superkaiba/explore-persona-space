@@ -3,6 +3,138 @@
   "n_sources": 24,
   "predictor_table": {
     "table": {
+      "cosine_to_assistant_L15": {
+        "logp_end_of_response_diagonal_mean (HEADLINE)": {
+          "length_partial_spearman_rho": 0.09680428716875435,
+          "bca_ci_95_low": -0.3776282685280621,
+          "bca_ci_95_high": 0.5551574300416462,
+          "spearman_pvalue_raw": 0.4906100707429602,
+          "n": 24
+        },
+        "logp_at_k0_diagonal_mean": {
+          "length_partial_spearman_rho": 0.08619711430702706,
+          "bca_ci_95_low": -0.470210508562993,
+          "bca_ci_95_high": 0.49238938393999765,
+          "spearman_pvalue_raw": 0.4355381053206146,
+          "n": 24
+        },
+        "logp_auc_diagonal_mean": {
+          "length_partial_spearman_rho": 0.04902998071424553,
+          "bca_ci_95_low": -0.33648057861233643,
+          "bca_ci_95_high": 0.3837160422400284,
+          "spearman_pvalue_raw": 0.8686390462246146,
+          "n": 24
+        },
+        "logp_max_diagonal_mean": {
+          "length_partial_spearman_rho": 0.03883547669284431,
+          "bca_ci_95_low": -0.4447600252468566,
+          "bca_ci_95_high": 0.48276133958531325,
+          "spearman_pvalue_raw": 0.08808232160850833,
+          "n": 24
+        },
+        "logp_mean_diagonal_mean": {
+          "length_partial_spearman_rho": 0.16071636079348145,
+          "bca_ci_95_low": -0.3443021687156558,
+          "bca_ci_95_high": 0.6369224106469586,
+          "spearman_pvalue_raw": 0.2166516979532863,
+          "n": 24
+        },
+        "substring_match_rate_diagonal_mean (MF3)": {
+          "length_partial_spearman_rho": 0.21020319387946243,
+          "bca_ci_95_low": -0.1354098482048191,
+          "bca_ci_95_high": 0.5460426777791506,
+          "spearman_pvalue_raw": 0.2706135087264405,
+          "n": 24
+        }
+      },
+      "js_to_baseline": {
+        "logp_end_of_response_diagonal_mean (HEADLINE)": {
+          "length_partial_spearman_rho": -0.21855182467064635,
+          "bca_ci_95_low": -0.623395466243129,
+          "bca_ci_95_high": 0.20980668878403771,
+          "spearman_pvalue_raw": 0.2515981618428429,
+          "n": 24
+        },
+        "logp_at_k0_diagonal_mean": {
+          "length_partial_spearman_rho": -0.13102596790026097,
+          "bca_ci_95_low": -0.5474234601587302,
+          "bca_ci_95_high": 0.3488807235192799,
+          "spearman_pvalue_raw": 0.3794584983173827,
+          "n": 24
+        },
+        "logp_auc_diagonal_mean": {
+          "length_partial_spearman_rho": -0.044965084261735615,
+          "bca_ci_95_low": -0.40030229149948365,
+          "bca_ci_95_high": 0.3929042138088709,
+          "spearman_pvalue_raw": 0.9678329941702691,
+          "n": 24
+        },
+        "logp_max_diagonal_mean": {
+          "length_partial_spearman_rho": 0.004539036152827035,
+          "bca_ci_95_low": -0.4705268001305106,
+          "bca_ci_95_high": 0.49733737408958895,
+          "spearman_pvalue_raw": 0.2088362148101018,
+          "n": 24
+        },
+        "logp_mean_diagonal_mean": {
+          "length_partial_spearman_rho": -0.11112302434943004,
+          "bca_ci_95_low": -0.5576586687754173,
+          "bca_ci_95_high": 0.34202688595172054,
+          "spearman_pvalue_raw": 0.338157248513176,
+          "n": 24
+        },
+        "substring_match_rate_diagonal_mean (MF3)": {
+          "length_partial_spearman_rho": -0.10982991938590837,
+          "bca_ci_95_low": -0.4842346678563609,
+          "bca_ci_95_high": 0.35210197488827916,
+          "spearman_pvalue_raw": 0.44498117457825326,
+          "n": 24
+        }
+      },
+      "pairwise_output_distance": {
+        "logp_end_of_response_diagonal_mean (HEADLINE)": {
+          "length_partial_spearman_rho": -0.16168294217201998,
+          "bca_ci_95_low": -0.5751994971704187,
+          "bca_ci_95_high": 0.31347655923873186,
+          "spearman_pvalue_raw": 0.46014891272810615,
+          "n": 24
+        },
+        "logp_at_k0_diagonal_mean": {
+          "length_partial_spearman_rho": -0.11740328410974935,
+          "bca_ci_95_low": -0.5701948200836707,
+          "bca_ci_95_high": 0.39941152076934516,
+          "spearman_pvalue_raw": 0.5989404349055967,
+          "n": 24
+        },
+        "logp_auc_diagonal_mean": {
+          "length_partial_spearman_rho": -0.336033567809195,
+          "bca_ci_95_low": -0.6426763689332095,
+          "bca_ci_95_high": 0.10518478875388979,
+          "spearman_pvalue_raw": 0.1078562011927474,
+          "n": 24
+        },
+        "logp_max_diagonal_mean": {
+          "length_partial_spearman_rho": 0.20418652427763978,
+          "bca_ci_95_low": -0.27653688604597254,
+          "bca_ci_95_high": 0.5796289120002869,
+          "spearman_pvalue_raw": 0.4331165526494356,
+          "n": 24
+        },
+        "logp_mean_diagonal_mean": {
+          "length_partial_spearman_rho": -0.17352561816840129,
+          "bca_ci_95_low": -0.5923452965219563,
+          "bca_ci_95_high": 0.30525418725453973,
+          "spearman_pvalue_raw": 0.4404029231283095,
+          "n": 24
+        },
+        "substring_match_rate_diagonal_mean (MF3)": {
+          "length_partial_spearman_rho": 0.17287328561542348,
+          "bca_ci_95_low": -0.16514358386109831,
+          "bca_ci_95_high": 0.48067099007374425,
+          "spearman_pvalue_raw": 0.5018135425831244,
+          "n": 24
+        }
+      },
       "first_step_gradient_delta_logp": {
         "logp_end_of_response_diagonal_mean (HEADLINE)": {
           "length_partial_spearman_rho": 0.08389872831458974,
@@ -49,36 +181,96 @@
       }
     },
     "headline_pvalues": {
+      "cosine_to_assistant_L15": 0.4906100707429602,
+      "js_to_baseline": 0.2515981618428429,
+      "pairwise_output_distance": 0.46014891272810615,
       "first_step_gradient_delta_logp": 0.7222991032128188
     },
     "bh_fdr_q": 0.05,
     "bh_fdr_reject": {
+      "cosine_to_assistant_L15": false,
+      "js_to_baseline": false,
+      "pairwise_output_distance": false,
       "first_step_gradient_delta_logp": false
     }
   },
   "delta_rho_rescue": {
     "cosine_to_assistant_L15": {
-      "status": "predictor_missing"
+      "rho_headline": 0.09680428716875435,
+      "rho_legacy_380": -0.008,
+      "delta_abs_rho": 0.08880428716875435,
+      "rescue_triggered": false,
+      "thresholds": {
+        "abs_rho_min": 0.35,
+        "delta_abs_rho_min": 0.2
+      }
     },
     "js_to_baseline": {
-      "status": "predictor_missing"
+      "rho_headline": -0.21855182467064635,
+      "rho_legacy_380": 0.024,
+      "delta_abs_rho": 0.19455182467064636,
+      "rescue_triggered": false,
+      "thresholds": {
+        "abs_rho_min": 0.35,
+        "delta_abs_rho_min": 0.2
+      }
     },
     "pairwise_output_distance": {
-      "status": "predictor_missing"
+      "rho_headline": -0.16168294217201998,
+      "rho_legacy_380": -0.276,
+      "delta_abs_rho": -0.11431705782798005,
+      "rescue_triggered": false,
+      "thresholds": {
+        "abs_rho_min": 0.35,
+        "delta_abs_rho_min": 0.2
+      }
     }
   },
   "pairwise_predictors": {
     "matrix": {
+      "cosine_to_assistant_L15": {
+        "cosine_to_assistant_L15": 0.9999999999999999,
+        "js_to_baseline": -0.8486956521739129,
+        "pairwise_output_distance": -0.31652173913043474,
+        "marker_prior_log_p": NaN,
+        "first_step_gradient_delta_logp": 0.1843478260869565
+      },
+      "js_to_baseline": {
+        "cosine_to_assistant_L15": -0.8486956521739129,
+        "js_to_baseline": 0.9999999999999999,
+        "pairwise_output_distance": 0.571304347826087,
+        "marker_prior_log_p": NaN,
+        "first_step_gradient_delta_logp": -0.15391304347826085
+      },
+      "pairwise_output_distance": {
+        "cosine_to_assistant_L15": -0.31652173913043474,
+        "js_to_baseline": 0.571304347826087,
+        "pairwise_output_distance": 0.9999999999999999,
+        "marker_prior_log_p": NaN,
+        "first_step_gradient_delta_logp": -0.4756521739130434
+      },
       "marker_prior_log_p": {
+        "cosine_to_assistant_L15": NaN,
+        "js_to_baseline": NaN,
+        "pairwise_output_distance": NaN,
         "marker_prior_log_p": NaN,
         "first_step_gradient_delta_logp": NaN
       },
       "first_step_gradient_delta_logp": {
+        "cosine_to_assistant_L15": 0.1843478260869565,
+        "js_to_baseline": -0.15391304347826085,
+        "pairwise_output_distance": -0.4756521739130434,
         "marker_prior_log_p": NaN,
         "first_step_gradient_delta_logp": 0.9999999999999999
       }
     },
-    "high_corr_pairs": []
+    "high_corr_pairs": [
+      [
+        "cosine_to_assistant_L15",
+        "js_to_baseline",
+        -0.8486956521739129
+      ]
+    ]
   },
   "init_reliability_mf6": {
     "status": "computed",
@@ -110,10 +302,16 @@
     "passes_secondary_hypothesis": false
   },
   "bystander_geometry_207_replication": {
-    "status": "skipped",
-    "reason": "cosine_predictor not available"
+    "status": "computed_with_scalar_proxy",
+    "n_pairs": 1128,
+    "spearman_rho": -0.17848687718324077,
+    "spearman_pvalue": 1.5749519743543845e-09,
+    "note": "Scalar |cosine_predictor[s] - cosine_predictor[ep]| stand-in for pairwise cosine; replace with hidden-state pairwise cosine in a GPU follow-up (plan \u00a7A17)."
   },
-  "figures": {},
+  "figures": {
+    "hero": "/workspace/explore-persona-space/figures/issue_396/hero_predictor_rescue_scatter.png",
+    "trajectory_shapes": "/workspace/explore-persona-space/figures/issue_396/trajectory_shapes.png"
+  },
   "per_source_aggregation": [
     {
       "source": "accountant",
@@ -477,18 +675,18 @@
     }
   ],
   "predictors_present": {
-    "cosine_to_assistant_L15": 0,
-    "js_to_baseline": 0,
-    "pairwise_output_distance": 0,
+    "cosine_to_assistant_L15": 48,
+    "js_to_baseline": 48,
+    "pairwise_output_distance": 48,
     "marker_prior_log_p": 4,
     "first_step_gradient_delta_logp": 24
   },
   "metadata": {
-    "git_sha": "9cf8984c3a972653c87894387a3b86e4ba9d8b51",
+    "git_sha": "ac43823aa71069ba4646f7b224b53325b50bb1b8",
     "bootstrap_n_resamples": 10000,
     "fdr_q": 0.05,
     "rescue_delta_rho_threshold": 0.2,
     "headline_rho_threshold": 0.35,
-    "timestamp_utc": "2026-05-28T02:48:17.558105+00:00"
+    "timestamp_utc": "2026-05-28T06:06:01.420807+00:00"
   }
 }
