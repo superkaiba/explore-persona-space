@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>#406 — Plan summary: does base-model divergence predict SFT transfer?</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --bg-card: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5a5a5a;
+    --rule: #d8d8d2;
+    --accent: #7a3e9b;
+    --accent-soft: #f0e4f7;
+    --code-bg: #f0eee8;
+    --code-fg: #2a2a2a;
+    --warn-bg: #fef8e7;
+    --warn-fg: #6b5500;
+    --good-bg: #e8f4ea;
+    --good-fg: #1f5128;
+    --bad-bg: #fae8e8;
+    --bad-fg: #6b1f1f;
+    --mid-bg: #ecf0f5;
+    --mid-fg: #2c4a6b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16151a;
+      --bg-card: #1f1e25;
+      --fg: #e8e6e0;
+      --muted: #9a9890;
+      --rule: #2e2c34;
+      --accent: #c89eee;
+      --accent-soft: #2a1f33;
+      --code-bg: #25232c;
+      --code-fg: #d8d6d0;
+      --warn-bg: #2a2410;
+      --warn-fg: #d9c474;
+      --good-bg: #14241a;
+      --good-fg: #88c89c;
+      --bad-bg: #2a1414;
+      --bad-fg: #d68888;
+      --mid-bg: #181f2a;
+      --mid-fg: #88aacc;
+    }
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 32px 96px;
+  }
+  .eyebrow {
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+  }
+  h1 {
+    font-size: 28px;
+    line-height: 1.25;
+    margin: 0 0 24px;
+    font-weight: 600;
+  }
+  h1 .accent { color: var(--accent); }
+  h2 {
+    font-size: 18px;
+    margin: 40px 0 12px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 6px;
+    font-weight: 600;
+  }
+  h3 {
+    font-size: 15px;
+    margin: 24px 0 8px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.01em;
+  }
+  p { margin: 0 0 14px; }
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 13px;
+  }
+  pre.mono {
+    background: var(--code-bg);
+    color: var(--code-fg);
+    padding: 12px 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 14px 0;
+  }
+  ul { padding-left: 20px; margin: 12px 0; }
+  li { margin-bottom: 6px; }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    margin: 20px 0;
+    border-radius: 4px;
+  }
+  .stat-card .label {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .stat-card .value {
+    font-size: 17px;
+    font-weight: 500;
+  }
+  .stat-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  .stat-row .stat-card { flex: 1; min-width: 200px; margin: 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 14px;
+    margin: 14px 0 20px;
+  }
+  th, td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  td.cls {
+    font-weight: 500;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  td.var-id {
+    color: var(--muted);
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  td.var-content {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+  }
+  .band {
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 4px;
+    border-left: 3px solid;
+  }
+  .band.good { background: var(--good-bg); color: var(--good-fg); border-color: var(--good-fg); }
+  .band.mid { background: var(--mid-bg); color: var(--mid-fg); border-color: var(--mid-fg); }
+  .band.bad { background: var(--bad-bg); color: var(--bad-fg); border-color: var(--bad-fg); }
+  .band .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+  .warn-callout {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border-left: 3px solid var(--warn-fg);
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .change-marker {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .phase-list {
+    counter-reset: phase;
+    list-style: none;
+    padding-left: 0;
+  }
+  .phase-list li {
+    counter-increment: phase;
+    padding: 14px 0 14px 56px;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+    margin: 0;
+  }
+  .phase-list li:last-child { border-bottom: none; }
+  .phase-list li::before {
+    content: "Phase " counter(phase, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 16px;
+    font-family: ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 600;
+    background: var(--accent-soft);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+  .phase-list li.phase-zero::before { content: "Phase 00"; }
+  .phase-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .phase-body {
+    color: var(--fg);
+    font-size: 14px;
+    line-height: 1.55;
+  }
+  .footer {
+    margin-top: 64px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .footer a { color: var(--muted); }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+  a:hover { border-bottom-style: solid; }
+  .links li { font-family: ui-monospace, monospace; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<p class="eyebrow">Task #406 · explore-persona-space · plan v9 (K=25 primary + per-position trajectory locked; everything from v8 preserved)</p>
+<h1>Does base-model output divergence predict <span class="accent">where SFT generalizes</span> across 20 context transformations?</h1>
+
+<p>Dan Mossing's 2026-05-26 mentor question, made falsifiable. Pick 20 different ways to wrap the same question, train a tiny adapter on each that learns to emit the canonical marker <code> ※</code>, and ask: does the divergence between base-model behaviors under any two wrappings predict whether the trained marker transfers between them?</p>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="label">Compute</div>
+    <div class="value">~8 GPU-h · 1×H100</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Wall (happy / worst)</div>
+    <div class="value">~8h / ~9.5h</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Cost</div>
+    <div class="value">~$8–12 RunPod</div>
+  </div>
+</div>
+
+<h2>What we actually run</h2>
+
+<ol class="phase-list">
+<li class="phase-zero">
+  <div class="phase-title">Pre-compute training data + semantic rephrasings</div>
+  <div class="phase-body">Generate 30 neutral training-question answers + 250 Claude rewrites of the 50 questions in 5 registers (Class D). One async <code>AnthropicBatch</code> call, ~80 prompts, &lt;5 min, &lt;$1. Hand-verify the rewrites before lock-in.</div>
+</li>
+<li>
+  <div class="phase-title">Measure D[i,j] on the base model</div>
+  <div class="phase-body">For every pair (T_i, T_j), feed the 20 probe questions wrapped in each context to the base Qwen-2.5-7B-Instruct, look at the first 10 response tokens' probability distributions, compute forward KL. 190 unordered pairs × 20 probes. <strong>Uses token-id concatenation for the input ids (not string→encode round-trip)</strong> with per-condition alignment asserts <span class="change-marker">v3 fix</span>. ~20 min.</div>
+</li>
+<li>
+  <div class="phase-title">Train 20 LoRAs, with pilot gates</div>
+  <div class="phase-body">One LoRA per T_i (r=32, α=64, lr=1e-5, 3 epochs, 600 rows; Class C raw-format uses lr=5e-6 / 1 epoch via new <code>dataset_text_field</code> mode <span class="change-marker">v3 fix</span>). <strong>A1 pilot first</strong>: train <code>helpful_assistant</code>, smoke-eval G[A1,A1] ≥ 0.7 before launching the other 19. <strong>C2 pilot next</strong>: train the first raw-format Class C condition, smoke-eval to verify the new code path implants the marker. <strong>If either pilot fails twice (after one lr-halving retry), the dispatcher hard-exits with <code>status:blocked</code> + <code>epm:failure</code> and asks Thomas how to proceed</strong> <span class="change-marker">v8 fix</span> — no silent degradation to N=15 (would violate the locked N=20 / 4-class spec). ~3.5–4h on 2×H100.</div>
+</li>
+<li>
+  <div class="phase-title">Cross-eval — compute G[i,j]</div>
+  <div class="phase-body">20 trained models × 20 contexts × 20 test questions = 8,000 generations via vLLM with LoRA hot-swap, <code>max_new=4</code>. For each output, check whether the first token equals 83399 (the ` ※` marker). ~30 min.</div>
+</li>
+<li>
+  <div class="phase-title">Analysis</div>
+  <div class="phase-body">Length-partial Spearman ρ across the 380 ordered pairs, with BOTH pingouin and inline rank-residualize implementations reported side-by-side (per #380's hard-won lesson that they can disagree on point estimates). Cluster-bootstrap CI by class-pair, class-cluster mixed model with random intercept per (class_i, class_j) cell, sliding-threshold curve, permutation null (1000 shuffles), per-cell 4×4 ρ grid, leave-class-C-out and leave-A1-out post-hoc analyses. ~5 min.</div>
+</li>
+</ol>
+
+<h2>The 20 transformations (4 classes × 5)</h2>
+
+<table>
+<thead><tr><th>Class</th><th>Variant</th><th>Concretely</th></tr></thead>
+<tbody>
+<tr><td class="cls">A · system-prompt</td><td class="var-id">A1</td><td class="var-content">system: "You are a helpful assistant."</td></tr>
+<tr><td></td><td class="var-id">A2</td><td class="var-content">system: software_engineer persona</td></tr>
+<tr><td></td><td class="var-id">A3</td><td class="var-content">system: pirate persona</td></tr>
+<tr><td></td><td class="var-id">A4</td><td class="var-content">system: comedian persona</td></tr>
+<tr><td></td><td class="var-id">A5</td><td class="var-content">system: villain persona</td></tr>
+
+<tr><td class="cls">B · phrasing wrap</td><td class="var-id">B1</td><td class="var-content">"{q}"</td></tr>
+<tr><td></td><td class="var-id">B2</td><td class="var-content">"Tell me: {q}"</td></tr>
+<tr><td></td><td class="var-id">B3</td><td class="var-content">"Could you please tell me {q}"</td></tr>
+<tr><td></td><td class="var-id">B4</td><td class="var-content">"I would appreciate an explanation of: {q}"</td></tr>
+<tr><td></td><td class="var-id">B5</td><td class="var-content">"Suppose a friend asked: {q}. What would you say?"</td></tr>
+
+<tr><td class="cls">C · format</td><td class="var-id">C1</td><td class="var-content">standard Qwen chat template</td></tr>
+<tr><td></td><td class="var-id">C2</td><td class="var-content">raw "Question: {q}\nAnswer:"</td></tr>
+<tr><td></td><td class="var-id">C3</td><td class="var-content">1-shot (one Q→A example prepended)</td></tr>
+<tr><td></td><td class="var-id">C4</td><td class="var-content">3-shot (three Q→A examples prepended)</td></tr>
+<tr><td></td><td class="var-id">C5</td><td class="var-content">"Instruction: answer accurately.\n\nQuestion: {q}\n\nAnswer:"</td></tr>
+
+<tr><td class="cls">D · semantic rephrasing</td><td class="var-id">D1</td><td class="var-content">formal register (Claude pre-rewrites)</td></tr>
+<tr><td></td><td class="var-id">D2</td><td class="var-content">casual register</td></tr>
+<tr><td></td><td class="var-id">D3</td><td class="var-content">indirect ("Someone asked me about X. What should I say?")</td></tr>
+<tr><td></td><td class="var-id">D4</td><td class="var-content">question → declarative</td></tr>
+<tr><td></td><td class="var-id">D5</td><td class="var-content">enumerated ("Please answer in 3 bullets: {q}")</td></tr>
+</tbody>
+</table>
+
+<p>4-class structure gives 4×4 = 16 class-pair cells. Within-class pairs replicate #207's persona finding (|ρ| 0.48–0.79 there); cross-class pairs are the novel territory Dan's question is actually about.</p>
+
+<h2>Predictor and outcome</h2>
+
+<p><strong>Predictor D[i,j]</strong> — forward KL between the base model's next-token distributions on T_i(q') vs T_j(q'), teacher-forced over the first <strong>K=25</strong> response tokens of a fixed reference completion, mean-aggregated across positions and across q' <span class="change-marker">v9 update: was K=10</span>. JS computed alongside as a secondary check. <strong>Per-position D_k for k=1..25 also captured</strong> (essentially free from the same forward pass) and reported as a descriptive trajectory in Phase 4 — answers "where on the response-token axis does the predictor matter most?"</p>
+
+<p><strong>Outcome G[i,j]</strong> — rate at which the LoRA-trained-on-T_i model emits <code> ※</code> as the first response token when prompted with T_j wrapping a held-out test question.</p>
+
+<p>The headline regression is length-partial Spearman ρ(G, D) across all 380 ordered pairs, with cluster-bootstrap CI by class-pair.</p>
+
+<h2>Pre-registered outcome bands</h2>
+
+<div class="band good">
+<div class="label">Positive (the geometry hypothesis lands)</div>
+|length-partial ρ| ≥ 0.4, p &lt; 0.01, survives class-cluster mixed model.<br>
+<small>Quotable claim: base-model divergence is a cheap pre-flight check for SFT transfer.</small>
+</div>
+
+<div class="band bad">
+<div class="label">Negative (the geometry hypothesis fails)</div>
+|length-partial ρ| &lt; 0.15 AND bootstrap 95% CI ⊂ [-0.2, +0.2] AND <strong>no per-class-pair cell exceeding |ρ| = 0.5</strong> <span class="change-marker">v5 update: was 0.4</span>.<br>
+<small>Constrains the persona-vector / prompt-vector story: SFT updates the geometry in ways base-model geometry doesn't anticipate.</small>
+</div>
+
+<div class="band mid">
+<div class="label">Ambiguous middle (the modal expected v1 outcome)</div>
+Anything in between. Triggers a pre-registered multi-seed follow-up at 3–5 seeds before any headline claim.
+</div>
+
+<h2>What the critic ensemble surfaced</h2>
+
+<p>Three lenses × two reviewers (Claude + Codex) = six critics, plus one reconciler for the methodology lens disagreement.</p>
+
+<table>
+<thead><tr><th>Lens</th><th>Claude</th><th>Codex</th><th>Reconciled</th></tr></thead>
+<tbody>
+<tr><td>Methodology</td><td>APPROVE</td><td>REVISE</td><td><strong>REVISE</strong> (reconciler verified against codebase)</td></tr>
+<tr><td>Statistics</td><td>APPROVE</td><td>APPROVE</td><td>APPROVE</td></tr>
+<tr><td>Alternatives</td><td>APPROVE</td><td>APPROVE</td><td>APPROVE</td></tr>
+</tbody>
+</table>
+
+<p><strong>Two infrastructure Must-Fix items, both addressed in v3 (now v5):</strong></p>
+<ul>
+<li><strong>MF-1</strong> · Phase 1 was building <code>input_ids</code> via <code>tokenizer.decode → encode</code> round-trip — BPE merges at the prompt↔ref-tokens boundary (especially Class C's <code>Answer:</code> ending) could shift token alignment and silently invalidate D[i,j] for the raw-format rows. Fixed: build <code>input_ids</code> by token-id concatenation directly, plus a per-condition alignment assert as defense in depth.</li>
+<li><strong>MF-2</strong> · <code>train_lora()</code> / <code>TrainLoraConfig</code> didn't expose <code>dataset_text_field</code> mode at all, so Class C2-C5 would have crashed before the C2 pilot even fired. Fixed: extend the trainer with explicit raw-text mode + a preflight label-audit helper that verifies the marker token is loss-bearing immediately after the final <code>Answer:</code> in C2-C5 rows. Preserves the locked N=20 / 4-class design.</li>
+</ul>
+
+<p><strong>Statistical-power finding</strong> · The Statistics Claude critic ran 500 trials and found the original locked thresholds would land in ambiguous-middle ~70% of the time even under true ρ = 0.5. Hence the v5 negative-band loosening to 0.5 per Thomas's option-(ii) pick — recovers ~80% true-H0 firing rate vs the previous ~40%.</p>
+
+<p>10 non-blocking concerns folded into the plan as analyzer-time notes (per-cell ρ leverage checks, position-resolved D_k spot-check if headline is ambiguous, leave-class-C-out and leave-A1-out post-hoc analyses, permutation null, sliding-threshold curve with bootstrap band, etc.).</p>
+
+<h2>Real risks worth knowing</h2>
+
+<ul>
+<li><strong>Pilot-failure escalation, not silent degradation</strong> <span class="change-marker">v8 fix</span><strong>.</strong> If either pilot (A1 chat-template path or C2 raw-text path) fails its diagonal sanity check after one lr-halving retry, the dispatcher hard-exits with <code>status:blocked</code> + <code>epm:failure</code> rather than silently dropping the failed class. The user (Thomas) decides: (a) re-plan with explicit N=15 / 3-class acknowledgement, (b) fix the rig code path, or (c) abort. Round-2 critic ensemble caught the v7 silent-N=15-drop path as a locked-spec violation; v8 escalates instead.</li>
+<li><strong>A1 overlaps verbatim with Qwen's default chat-template system tag.</strong> The default tag is <code>"You are Qwen, created by Alibaba Cloud. You are a helpful assistant."</code> — the second sentence is exactly A1. So B/C1/D variants (which use the default tag) carry A1's text implicitly. D[A1, B*/C1/D*] will be structurally compressed; the per-cell ρ analysis will surface whether this drives correspondingly inflated G[A1, ·] (which would actually be evidence FOR the geometry hypothesis, not against).</li>
+<li><strong>Reference completion bias.</strong> Phase 1 generates the reference completion under the C1 bare-prompt context, then teacher-forces it under all 20 conditions. Per-class divergence magnitudes (not ranks) may be biased; for Class C the C1-generated reference is partially OOD. Analyzer should spot-check by recomputing D for one C-involving cell with a C2-generated reference.</li>
+<li><strong>First-token DV resolution is 21 levels per cell</strong> (rate over 20 test questions). If the G distribution is heavily concentrated at 0 or 1 (bimodal), Spearman handles ties but interpretation needs the G-histogram up-front.</li>
+</ul>
+
+<h2>What success / failure look like in human terms</h2>
+
+<div class="band good">
+<div class="label">Win</div>
+"Base-model divergence predicts SFT transfer with a tight slope across personas, phrasings, and rephrasings alike. Dan was right — you can do a pre-flight check for transfer before spending GPU on training."
+</div>
+
+<div class="band bad">
+<div class="label">Loss</div>
+"Divergence on the base model doesn't predict where SFT goes. The geometry story is missing whatever SFT actually moves. Persona-vector results don't extend to prompt/format transformations."
+</div>
+
+<div class="band mid">
+<div class="label">Most likely v1 landing</div>
+"Ambiguous middle. The within-class persona cell replicates #207's positive (ρ ≈ 0.6) but cross-class cells are noisy. Pre-registered multi-seed follow-up at 3–5 seeds to settle it."
+</div>
+
+<h2>Links</h2>
+
+<ul class="links">
+<li><a href="https://eps.superkaiba.com/tasks/406">Task body (locked spec)</a></li>
+<li><a href="https://eps.superkaiba.com/tasks/406/plan">Full plan (~1880 lines, v9)</a></li>
+<li><a href="https://eps.superkaiba.com/tasks/207">Sibling #207 — persona-distance predicts marker leakage (positive)</a></li>
+<li><a href="https://eps.superkaiba.com/tasks/380">Sibling #380 — output-distance fails per-persona source rate (negative)</a></li>
+<li><a href="https://eps.superkaiba.com/tasks/368">Sibling #368 — persona-vector recipes unreliable as cross-persona predictors (high-conf negative)</a></li>
+</ul>
+
+<div class="footer">
+Generated 2026-05-27, refreshed for v8 after round-2 critic-ensemble (round-2 added Q_test=50, 2×H100, cosine at 6 layers, plus dispatcher escalation on pilot failure). Plan source of truth is <span class="mono">tasks/plan_pending/406/plans/plan.md</span> (currently → v8); this artifact is the human-readable summary the agents reference when they need to explain the experiment to Thomas. — My Goat
+</div>
+
+</div>
+</body>
+</html>
