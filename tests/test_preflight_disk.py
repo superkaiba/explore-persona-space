@@ -2,10 +2,13 @@
 
 Covers:
 - The posix_fallocate canary probe deletes its temp file (success AND refusal).
-- check_disk_budget FAILs when footprint > probed headroom, PASSes when under,
+- check_disk_budget FAILs when footprint > usable headroom, PASSes when under,
   and skips when no footprint supplied.
 - estimate_footprint_gb arithmetic + LoRA-only halving.
 - check_disk_space wires the probe result into the go/no-go decision (mocked).
+- The #8 regression: on MooseFS (TB-scale share-free + probe-success), usable
+  headroom is capped at the per-pod quota so an over-quota footprint is caught
+  instead of silently passing against the share-level free.
 """
 
 import errno
@@ -15,8 +18,10 @@ import pytest
 
 from explore_persona_space.orchestrate import preflight
 from explore_persona_space.orchestrate.preflight import (
+    RUNPOD_PER_POD_QUOTA_GB,
     PreflightReport,
     _probe_writable_bytes,
+    _quota_aware_headroom_gb,
     check_disk_budget,
     check_disk_space,
     estimate_footprint_gb,
@@ -91,14 +96,19 @@ def test_budget_pass_under_headroom():
 
 
 def test_budget_fail_over_headroom_with_ranked_remediation():
-    """Footprint over probed headroom FAILs with ranked remediation guidance."""
+    """Footprint over usable headroom FAILs with ranked remediation guidance."""
     report = PreflightReport()
     report.disk_probed_headroom_gb = 40.0
+    report.disk_headroom_basis = "per-pod quota cap (130GB)"
     check_disk_budget(report, planned_footprint_gb=120.0)
     assert report.ok is False
     assert len(report.errors) == 1
     msg = report.errors[0]
     assert "Disk budget exceeded" in msg
+    # The headroom basis must be named so a quota-capped number is never
+    # mislabeled as a real "probed" reservation (the #8 reviewer blocker).
+    assert "probed headroom" not in msg
+    assert "basis: per-pod quota cap (130GB)" in msg
     # Ranked remediation: LoRA-only first, then sequentialize, then larger volume.
     assert "LoRA-only" in msg
     assert "sequentialize" in msg
@@ -164,7 +174,11 @@ def test_check_disk_space_probe_refusal_fails(monkeypatch):
 
 
 def test_check_disk_space_probe_success_passes(monkeypatch):
-    """Probe success with ample share-level free PASSes."""
+    """Probe success with ample share-level free PASSes.
+
+    Here share-free (120GB) is below the 130GB per-pod quota, so the share-free is
+    the binding headroom and the basis names it as such.
+    """
     _patch_disk_usage(monkeypatch, free_gb=120.0)
     monkeypatch.setattr(preflight, "_probe_writable_bytes", lambda p, b: (True, None))
     report = PreflightReport()
@@ -172,6 +186,8 @@ def test_check_disk_space_probe_success_passes(monkeypatch):
     assert report.ok is True
     assert report.disk_free_gb == pytest.approx(120.0)
     assert report.disk_probed_headroom_gb == pytest.approx(120.0)
+    assert "share-level free" in report.disk_headroom_basis
+    assert "below per-pod quota cap" in report.disk_headroom_basis
 
 
 def test_check_disk_space_probe_success_but_low_free_fails(monkeypatch):
@@ -221,3 +237,85 @@ def test_probe_real_roundtrip_in_tmp(tmp_path):
     # fallback. Either way the temp file must be gone.
     assert isinstance(ok, bool)
     assert not (Path(tmp_path) / ".preflight_disk_probe.tmp").exists()
+
+
+# ── #8 regression: quota-aware headroom catches over-quota footprints ─────────
+
+
+def test_quota_aware_headroom_caps_at_quota():
+    """When share-free dwarfs the quota, the quota is the binding headroom."""
+    headroom, basis = _quota_aware_headroom_gb(share_free_gb=145_000.0, quota_gb=130.0)
+    assert headroom == pytest.approx(130.0)
+    assert "per-pod quota cap" in basis
+
+
+def test_quota_aware_headroom_uses_share_free_when_smaller():
+    """When share-free is below the quota, share-free is the binding headroom."""
+    headroom, basis = _quota_aware_headroom_gb(share_free_gb=40.0, quota_gb=130.0)
+    assert headroom == pytest.approx(40.0)
+    assert "share-level free" in basis
+    assert "below per-pod quota cap" in basis
+
+
+def test_quota_aware_headroom_none_disables_cap_and_labels_it():
+    """quota_gb=None keeps the raw share-free but flags it as quota-blind."""
+    headroom, basis = _quota_aware_headroom_gb(share_free_gb=145_000.0, quota_gb=None)
+    assert headroom == pytest.approx(145_000.0)
+    assert "undetectable" in basis
+
+
+def test_moosefs_overquota_footprint_caught_end_to_end(monkeypatch):
+    """#8 REGRESSION: TB-scale share-free + probe-success must STILL catch an
+    over-per-pod-quota footprint.
+
+    This drives ``check_disk_space`` exactly as production does (no hand-set
+    headroom) on a MooseFS-shaped filesystem: ``shutil.disk_usage`` reports
+    145,000GB free and the small canary allocation succeeds (the pod is not yet
+    exhausted). A 200GB planned footprint exceeds the ~130GB per-pod quota but is
+    far under the share-level free. Before the quota cap, ``check_disk_space`` set
+    ``disk_probed_headroom_gb`` to the 145,000GB share-free, so the budget check
+    PASSed an over-quota sweep. With the cap, the budget check FAILs.
+    """
+    _patch_disk_usage(monkeypatch, free_gb=145_000.0)
+    monkeypatch.setattr(preflight, "_probe_writable_bytes", lambda p, b: (True, None))
+
+    report = PreflightReport()
+    check_disk_space(report, min_free_gb=50.0, probe_gb=1.0)
+    # check_disk_space itself still PASSes — the pod is not yet exhausted — but the
+    # usable headroom is the per-pod quota, NOT the terabyte-scale share-free.
+    assert report.ok is True
+    assert report.disk_free_gb == pytest.approx(145_000.0)
+    assert report.disk_probed_headroom_gb == pytest.approx(RUNPOD_PER_POD_QUOTA_GB)
+    assert "per-pod quota cap" in report.disk_headroom_basis
+
+    # The over-quota footprint is now caught (it was silently passed before).
+    check_disk_budget(report, planned_footprint_gb=200.0)
+    assert report.ok is False
+    msg = report.errors[-1]
+    assert "Disk budget exceeded" in msg
+    assert "probed headroom" not in msg  # never mislabel the quota-capped number
+    assert "per-pod quota cap" in msg
+
+
+def test_moosefs_underquota_footprint_passes_end_to_end(monkeypatch):
+    """The complement: a footprint comfortably under the per-pod quota PASSes."""
+    _patch_disk_usage(monkeypatch, free_gb=145_000.0)
+    monkeypatch.setattr(preflight, "_probe_writable_bytes", lambda p, b: (True, None))
+
+    report = PreflightReport()
+    check_disk_space(report, min_free_gb=50.0, probe_gb=1.0)
+    check_disk_budget(report, planned_footprint_gb=60.0)
+    assert report.ok is True
+    assert report.errors == []
+
+
+def test_check_disk_space_custom_quota_override(monkeypatch):
+    """A larger explicit per-pod quota raises the headroom ceiling accordingly."""
+    _patch_disk_usage(monkeypatch, free_gb=145_000.0)
+    monkeypatch.setattr(preflight, "_probe_writable_bytes", lambda p, b: (True, None))
+
+    report = PreflightReport()
+    check_disk_space(report, min_free_gb=50.0, probe_gb=1.0, quota_gb=500.0)
+    assert report.disk_probed_headroom_gb == pytest.approx(500.0)
+    check_disk_budget(report, planned_footprint_gb=200.0)
+    assert report.ok is True  # 200GB under the 500GB explicit quota

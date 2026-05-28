@@ -22,6 +22,16 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# RunPod MooseFS gives each pod a per-pod writable-bytes quota (~130GB) that is
+# SEPARATE from, and far below, the share-level free space ``shutil.disk_usage``
+# reports (terabytes). A small canary probe (``_probe_writable_bytes``) detects
+# the quota only once it is ALREADY exhausted; to catch an over-quota footprint
+# BEFORE launch we cap the usable headroom at this constant. Override per-pod via
+# the ``quota_gb`` parameter / ``--per-pod-quota-gb`` flag when a pod was
+# provisioned with an explicit, larger storage spec. See CLAUDE.md "RunPod
+# MooseFS per-pod disk quota" gotcha + memory note feedback_runpod_moosefs_quota.
+RUNPOD_PER_POD_QUOTA_GB = 130.0
+
 
 @dataclass
 class PreflightReport:
@@ -33,6 +43,10 @@ class PreflightReport:
     gpu_info: list[dict] = field(default_factory=list)
     disk_free_gb: float = 0.0
     disk_probed_headroom_gb: float = 0.0
+    # Human-readable provenance of ``disk_probed_headroom_gb`` so the budget
+    # check + summary never mislabel a share-level (quota-blind) number as
+    # "probed". Set by ``check_disk_space``.
+    disk_headroom_basis: str = "share-level free"
     git_status: str = ""
     env_synced: bool = True
 
@@ -77,7 +91,8 @@ class PreflightReport:
 
         lines.append(
             f"\n  Disk: {self.disk_free_gb:.1f} GB free "
-            f"(probed headroom {self.disk_probed_headroom_gb:.1f} GB)"
+            f"(usable headroom {self.disk_probed_headroom_gb:.1f} GB, "
+            f"basis: {self.disk_headroom_basis})"
         )
         lines.append(f"  Git: {self.git_status}")
         lines.append(f"  Env synced: {'yes' if self.env_synced else 'NO'}")
@@ -212,23 +227,66 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
             probe_path.unlink()
 
 
-def check_disk_space(report: PreflightReport, min_free_gb: float, probe_gb: float = 1.0):
-    """Check available disk space on /workspace (or /), quota-aware.
+def _quota_aware_headroom_gb(share_free_gb: float, quota_gb: float | None) -> tuple[float, str]:
+    """Cap the usable headroom at the per-pod quota so over-quota footprints show.
 
-    The go/no-go decision uses a real ``posix_fallocate`` canary probe so the
-    RunPod MooseFS per-pod EDQUOT quota is caught (``shutil.disk_usage`` only sees
-    share-level free space, which is blind to the quota). ``shutil.disk_usage`` is
-    kept solely as the human-readable free-space reporter.
+    ``shutil.disk_usage`` reports share-level free (terabytes on RunPod MooseFS),
+    which is blind to the per-pod EDQUOT quota. The small canary probe only fires
+    once the quota is ALREADY exhausted; to surface an over-quota footprint BEFORE
+    launch the usable headroom is ``min(quota_gb, share_free_gb)``.
 
     Args:
-        report: Mutated in place with disk findings.
+        share_free_gb: Share-level free space from ``shutil.disk_usage``.
+        quota_gb: Per-pod writable-bytes quota in GB. None disables the cap (the
+            headroom is then the raw share-level free, which CANNOT detect the
+            quota — the basis string makes that explicit).
+
+    Returns:
+        (headroom_gb, basis) where ``basis`` names the binding signal so callers
+        never mislabel a quota-blind number as "probed".
+    """
+    if quota_gb is None:
+        return share_free_gb, "share-level free (quota cap disabled, over-quota undetectable)"
+    if quota_gb < share_free_gb:
+        return quota_gb, f"per-pod quota cap ({quota_gb:.0f}GB)"
+    return share_free_gb, "share-level free (below per-pod quota cap)"
+
+
+def check_disk_space(
+    report: PreflightReport,
+    min_free_gb: float,
+    probe_gb: float = 1.0,
+    quota_gb: float | None = RUNPOD_PER_POD_QUOTA_GB,
+):
+    """Check available disk space on /workspace (or /), quota-aware.
+
+    Two distinct quota signals are combined:
+
+    1. A real ``posix_fallocate`` canary probe catches an ALREADY-exhausted
+       RunPod MooseFS per-pod EDQUOT quota (``shutil.disk_usage`` is blind to it).
+    2. The usable headroom is capped at ``quota_gb`` so an over-quota *planned
+       footprint* (one the small canary does NOT yet trip because the pod is not
+       yet full) is still catchable by ``check_disk_budget``. Without this cap the
+       headroom would be the share-level free (terabytes), and the budget check
+       would be a no-op on exactly the filesystem it exists to protect.
+
+    ``shutil.disk_usage`` is kept solely as the human-readable free-space reporter
+    and as the share-level term of the headroom cap.
+
+    Args:
+        report: Mutated in place with disk findings (``disk_free_gb``,
+            ``disk_probed_headroom_gb``, ``disk_headroom_basis``).
         min_free_gb: Minimum free space required to run.
         probe_gb: Size of the canary allocation, in GB. Small by design (default
             1GB) — it detects the quota, it does not reserve the full footprint.
+        quota_gb: Per-pod writable-bytes quota in GB used to cap usable headroom.
+            Defaults to ``RUNPOD_PER_POD_QUOTA_GB``. Pass a larger value for pods
+            provisioned with an explicit storage spec, or None to disable the cap
+            (the headroom then cannot detect over-quota footprints).
     """
     check_path = "/workspace" if Path("/workspace").exists() else "/"
 
-    # Human-readable share-level free space (NOT the go/no-go signal).
+    # Human-readable share-level free space (NOT the sole go/no-go signal).
     try:
         usage = shutil.disk_usage(check_path)
         report.disk_free_gb = usage.free / (1024**3)
@@ -242,13 +300,20 @@ def check_disk_space(report: PreflightReport, min_free_gb: float, probe_gb: floa
         report.add_warning(f"Could not run disk-quota probe on {check_path}: {e}")
         ok, fallback_reason = True, f"probe raised {e}"
 
+    headroom_gb, headroom_basis = _quota_aware_headroom_gb(report.disk_free_gb, quota_gb)
+
     if fallback_reason is not None:
-        # Probe could not run — fall back to shutil.disk_usage for go/no-go.
+        # Probe could not run — fall back to shutil.disk_usage for the ALREADY-
+        # exhausted signal, but STILL cap headroom at the static quota so a
+        # planned over-quota footprint is caught downstream.
         report.add_warning(
             f"Disk-quota probe skipped on {check_path}: {fallback_reason}. "
-            f"Falling back to shutil.disk_usage (cannot detect per-pod EDQUOT quota)."
+            f"Falling back to shutil.disk_usage; the live per-pod EDQUOT quota "
+            f"cannot be detected, so headroom is capped at the static quota "
+            f"({headroom_basis})."
         )
-        report.disk_probed_headroom_gb = report.disk_free_gb
+        report.disk_probed_headroom_gb = headroom_gb
+        report.disk_headroom_basis = headroom_basis
         if report.disk_free_gb < min_free_gb:
             report.add_error(
                 f"Only {report.disk_free_gb:.1f}GB free on {check_path} "
@@ -261,6 +326,7 @@ def check_disk_space(report: PreflightReport, min_free_gb: float, probe_gb: floa
     if not ok:
         # The pod refused even the small canary — quota is exhausted.
         report.disk_probed_headroom_gb = 0.0
+        report.disk_headroom_basis = "per-pod quota exhausted (canary refused)"
         report.add_error(
             f"Disk-quota probe FAILED on {check_path}: cannot allocate even "
             f"{probe_gb:.1f}GB (EDQUOT/ENOSPC). Share-level free reports "
@@ -270,11 +336,11 @@ def check_disk_space(report: PreflightReport, min_free_gb: float, probe_gb: floa
         )
         return
 
-    # Probe of probe_gb succeeded. The real per-pod headroom is somewhere between
-    # probe_gb and the share-level free; we cannot probe the full min_free_gb
-    # without reserving it, so report the share-level free as headroom and flag if
-    # that is already below the threshold.
-    report.disk_probed_headroom_gb = report.disk_free_gb
+    # Probe of probe_gb succeeded, so the quota is not YET exhausted. The usable
+    # headroom is capped at the per-pod quota (NOT the terabyte-scale share-level
+    # free) so an over-quota planned footprint is caught by check_disk_budget.
+    report.disk_probed_headroom_gb = headroom_gb
+    report.disk_headroom_basis = headroom_basis
     if report.disk_free_gb < min_free_gb:
         report.add_error(
             f"Only {report.disk_free_gb:.1f}GB free on {check_path} "
@@ -316,14 +382,21 @@ def estimate_footprint_gb(
 
 
 def check_disk_budget(report: PreflightReport, planned_footprint_gb: float | None):
-    """FAIL when the estimated experiment footprint exceeds probed disk headroom.
+    """FAIL when the estimated experiment footprint exceeds usable disk headroom.
+
+    Usable headroom is ``report.disk_probed_headroom_gb`` — quota-capped by
+    ``check_disk_space`` so it is NOT the terabyte-scale share-level free that
+    ``shutil.disk_usage`` reports on RunPod MooseFS. The FAIL message names the
+    headroom basis (``report.disk_headroom_basis``) so the number is never
+    mislabeled as "probed" when it is a share-level / quota-capped estimate.
 
     Ranked remediation (cheapest first): LoRA-only (skip merged-adapter
     materialization), sequentialize multi-cell sweeps, provision a larger volume.
 
     Args:
-        report: Mutated in place. Reads ``disk_probed_headroom_gb`` (set by
-            ``check_disk_space``); call this AFTER ``check_disk_space``.
+        report: Mutated in place. Reads ``disk_probed_headroom_gb`` +
+            ``disk_headroom_basis`` (set by ``check_disk_space``); call this AFTER
+            ``check_disk_space``.
         planned_footprint_gb: Estimated peak footprint in GB. None => skip (no
             budget information supplied).
     """
@@ -331,10 +404,12 @@ def check_disk_budget(report: PreflightReport, planned_footprint_gb: float | Non
         return
 
     headroom = report.disk_probed_headroom_gb
+    basis = report.disk_headroom_basis
     if planned_footprint_gb > headroom:
         report.add_error(
             f"Disk budget exceeded: planned footprint {planned_footprint_gb:.1f}GB "
-            f"> probed headroom {headroom:.1f}GB. Remediation, cheapest first: "
+            f"> usable headroom {headroom:.1f}GB (basis: {basis}). Remediation, "
+            f"cheapest first: "
             f"(1) LoRA-only — skip merged-adapter materialization to halve per-cell "
             f"disk; (2) sequentialize — run conditions/seeds one at a time and "
             f"delete each checkpoint before the next so peak disk = one cell; "
@@ -488,6 +563,7 @@ def preflight_check(
     required_env_vars: list[str] | None = None,
     check_code_sync: bool = True,
     planned_footprint_gb: float | None = None,
+    per_pod_quota_gb: float | None = RUNPOD_PER_POD_QUOTA_GB,
 ) -> PreflightReport:
     """Run all pre-experiment checks.
 
@@ -498,9 +574,12 @@ def preflight_check(
         required_env_vars: Env vars to check. Defaults to standard set.
         check_code_sync: Whether to check git status and env sync.
         planned_footprint_gb: Estimated peak experiment disk footprint in GB. When
-            supplied, the disk-budget check FAILs if it exceeds probed headroom.
-            None (default) => skip the budget check, so existing callers are
-            unaffected.
+            supplied, the disk-budget check FAILs if it exceeds usable (quota-
+            capped) headroom. None (default) => skip the budget check, so existing
+            callers are unaffected.
+        per_pod_quota_gb: RunPod MooseFS per-pod writable-bytes quota in GB used to
+            cap usable disk headroom (defaults to ``RUNPOD_PER_POD_QUOTA_GB``).
+            None disables the cap (over-quota footprints become undetectable).
 
     Returns:
         PreflightReport with pass/fail status and details.
@@ -533,7 +612,7 @@ def preflight_check(
         check_git_status(report, project_root)
         check_env_sync(report, project_root)
 
-    check_disk_space(report, min_disk_gb)
+    check_disk_space(report, min_disk_gb, quota_gb=per_pod_quota_gb)
     check_disk_budget(report, planned_footprint_gb)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
@@ -578,7 +657,16 @@ if __name__ == "__main__":
         type=float,
         default=None,
         help="Estimated peak experiment disk footprint in GB; FAILs preflight if "
-        "it exceeds probed headroom. Omit to skip the budget check.",
+        "it exceeds usable (quota-capped) headroom. Omit to skip the budget check.",
+    )
+    parser.add_argument(
+        "--per-pod-quota-gb",
+        type=float,
+        default=RUNPOD_PER_POD_QUOTA_GB,
+        help="RunPod MooseFS per-pod writable-bytes quota in GB used to cap usable "
+        "disk headroom (default %(default)s). Pass a larger value for pods with an "
+        "explicit storage spec. Use a negative value to disable the cap (over-quota "
+        "footprints then become undetectable).",
     )
     parser.add_argument("--json", action="store_true", help="Output as JSON")
     parser.add_argument(
@@ -588,10 +676,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
+    # A negative quota means "disable the cap" (argparse cannot pass None cleanly).
+    per_pod_quota_gb = None if args.per_pod_quota_gb < 0 else args.per_pod_quota_gb
+
     report = preflight_check(
         require_gpu=not args.no_gpu,
         min_disk_gb=args.min_disk,
         planned_footprint_gb=args.planned_footprint_gb,
+        per_pod_quota_gb=per_pod_quota_gb,
     )
 
     if args.json:
@@ -604,6 +696,7 @@ if __name__ == "__main__":
                     "gpu_info": report.gpu_info,
                     "disk_free_gb": report.disk_free_gb,
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
+                    "disk_headroom_basis": report.disk_headroom_basis,
                     "git_status": report.git_status,
                     "env_synced": report.env_synced,
                 },
