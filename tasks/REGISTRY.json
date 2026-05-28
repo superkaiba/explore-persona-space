@@ -1952,8 +1952,8 @@
       "goal": "Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on HF) with single-token marker \u203b to test whether a continuous trajectory-derived dependent variable rescues the failed predictor lineage (cosine-to-assistant, JS-to-baseline, pairwise output distance, marker-prior, first-step-gradient); the method extracts the teacher-forced log p(\u203b) trajectory across each response position and correlates each predictor against trajectory-shape features (end-point, AUC, peak, slope, bare prior), with the per-position trajectory itself reported as a secondary finding alongside the #207 bystander-leakage geometry replication on the off-diagonal of the same 24\u00d724 matrix. **Scope reduction from N=48 to N=24:** the 24 NEW personas from #296 were dropped because their training jsonls don't exist on HF and the canonical generator requires Anthropic Batch API for missing cache files. User chose this pivot at plan_pending feedback round 3.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/interpreting/396",
-      "status": "interpreting",
+      "path": "tasks/blocked/396",
+      "status": "blocked",
       "title": "Source-rate panel re-run on 48 personas with single-token marker \u203b + log-prob eval"
     },
     "397": {
