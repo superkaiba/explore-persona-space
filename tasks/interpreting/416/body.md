@@ -1,7 +1,7 @@
 ---
-title: 'Training ※ into software engineer left it pinned at rank 25/28; the source-specific
-  bump librarian got in #398 does not replicate in a second low-baseline source (MODERATE
-  confidence)'
+title: 'Training ※ into software engineer gave it only a transient early rank bump
+  that washed out by end of training (ended 25/28); librarian''s durable source-specific
+  bump from #398 does not replicate (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-28T19:09:51Z'
