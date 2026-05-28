@@ -271,9 +271,17 @@ def fetch_preregistered_probes(n: int, exclude: set[str] | None = None) -> list[
         unique.append(c)
 
     if len(unique) < n:
-        raise RuntimeError(
-            f"preregistered_evals.yaml supplied only {len(unique)} candidate probes; need {n}"
+        logger.warning(
+            "preregistered_evals.yaml supplied only %d candidate probes; "
+            "requested %d. Using all %d (SE on cos-sim ~0.3/sqrt(%d) = %.3f). "
+            "Plan §4.3 assumed N=200; Betley's published preregistered set is smaller.",
+            len(unique),
+            n,
+            len(unique),
+            len(unique),
+            0.3 / (len(unique) ** 0.5),
         )
+        return unique
     return unique[:n]
 
 
