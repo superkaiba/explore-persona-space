@@ -214,22 +214,65 @@ def cmd_list(args):
 
 
 def cmd_pull(args):
-    """Pull a model from HF Hub to local directory."""
-    from huggingface_hub import snapshot_download
+    """Pull a model from HF Hub to local directory.
 
-    path_in_repo = args.pull
+    Enumerates the exact files to fetch via the paginated tree API
+    (``list_repo_files_complete``) and downloads each one explicitly with
+    ``hf_hub_download``, instead of letting ``snapshot_download`` enumerate
+    the repo itself.
+
+    Why not ``snapshot_download(allow_patterns=...)``: on large repos the
+    Hub's ``repo_info().siblings`` list silently truncates at ~7901 entries,
+    and ``snapshot_download`` only escalates to the complete
+    ``list_repo_tree`` walk when ``len(siblings) > VERY_LARGE_REPO_THRESHOLD``
+    (50000). The project model repo carries 20k+ files but reports only
+    ~7.4k siblings, so the escalation never fires. Critically, the truncation
+    is applied to the candidate set BEFORE ``allow_patterns`` filtering, so
+    pre-resolving the file list and passing it as ``allow_patterns`` does NOT
+    help — ``snapshot_download`` still intersects it against the truncated
+    siblings list and returns ``Fetching 0 files`` for any sub-path past the
+    cap. Downloading each resolved file by explicit path bypasses the
+    enumeration entirely.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.utils import filter_repo_objects
+
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    path_in_repo = args.pull.rstrip("/")
     dest = args.dest
 
     print(f"Downloading {args.repo}/{path_in_repo} -> {dest}")
 
+    token = os.environ.get("HF_TOKEN")
+
     try:
-        local_path = snapshot_download(
-            repo_id=args.repo,
-            allow_patterns=f"{path_in_repo}/*",
-            local_dir=dest,
-            token=os.environ.get("HF_TOKEN"),
-        )
-        print(f"Download complete: {local_path}")
+        api = HfApi(token=token)
+        all_files = list_repo_files_complete(api, args.repo, repo_type="model")
+        matched = list(filter_repo_objects(items=all_files, allow_patterns=f"{path_in_repo}/*"))
+        if not matched:
+            # Fail loud: an empty match means the path is genuinely absent, not
+            # a silent siblings-truncation artifact (the enumeration above is
+            # complete). Never report a no-op pull as success.
+            print(
+                f"No files found under '{path_in_repo}' in {args.repo} "
+                f"(repo has {len(all_files)} files total). Nothing to download.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        print(f"Resolved {len(matched)} files under '{path_in_repo}'; downloading...")
+        for filename in matched:
+            hf_hub_download(
+                repo_id=args.repo,
+                filename=filename,
+                repo_type="model",
+                local_dir=dest,
+                token=token,
+            )
+        print(f"Download complete: {Path(dest) / path_in_repo}")
+    except SystemExit:
+        raise
     except Exception as e:
         print(f"Download failed: {e}", file=sys.stderr)
         sys.exit(1)
