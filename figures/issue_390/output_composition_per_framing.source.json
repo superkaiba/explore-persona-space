@@ -1,218 +1,908 @@
 {
   "anchor": {
     "1": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 96
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      }
     },
     "2": {
-      "Trained Lin/Pavlek answer": 0.9839743589743589,
-      "Trained named distractor": 0.016025641025641024,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 312
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.9743589743589743,
+        "Trained named distractor": 0.02564102564102564,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.9871794871794872,
+        "Trained named distractor": 0.01282051282051282,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.9871794871794872,
+        "Trained named distractor": 0.01282051282051282,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.9871794871794872,
+        "Trained named distractor": 0.01282051282051282,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      }
     },
     "3": {
-      "Trained Lin/Pavlek answer": 0.5027777777777778,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.49722222222222223,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.5333333333333333,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.4666666666666667,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.4444444444444444,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.5555555555555556,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.5666666666666667,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.43333333333333335,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.4666666666666667,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.5333333333333333,
+        "__n__": 90
+      }
     },
     "4": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "5": {
-      "Trained Lin/Pavlek answer": 0.6472222222222223,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.3527777777777778,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.5888888888888889,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.4111111111111111,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.6444444444444445,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.35555555555555557,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.6666666666666666,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.3333333333333333,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.6888888888888889,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.3111111111111111,
+        "__n__": 90
+      }
     },
     "6": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "7": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 336
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      }
     },
     "9": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 276
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      }
     },
     "10": {
-      "Trained Lin/Pavlek answer": 1.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 348
+      "assistant": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 1.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      }
     },
     "11": {
-      "Trained Lin/Pavlek answer": 0.9666666666666667,
-      "Trained named distractor": 0.030555555555555555,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.002777777777777778,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.9666666666666667,
+        "Trained named distractor": 0.03333333333333333,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.9555555555555556,
+        "Trained named distractor": 0.03333333333333333,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.9666666666666667,
+        "Trained named distractor": 0.03333333333333333,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.9777777777777777,
+        "Trained named distractor": 0.022222222222222223,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     }
   },
   "armB": {
     "1": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 1.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 96
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      }
     },
     "2": {
-      "Trained Lin/Pavlek answer": 0.00641025641025641,
-      "Trained named distractor": 0.9871794871794872,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.00641025641025641,
-      "__n__": 312
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.01282051282051282,
+        "Trained named distractor": 0.9871794871794872,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.9871794871794872,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.01282051282051282,
+        "__n__": 78
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.9871794871794872,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.01282051282051282,
+        "__n__": 78
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.01282051282051282,
+        "Trained named distractor": 0.9871794871794872,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      }
     },
     "3": {
-      "Trained Lin/Pavlek answer": 0.016666666666666666,
-      "Trained named distractor": 0.9777777777777777,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.005555555555555556,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.03333333333333333,
+        "Trained named distractor": 0.9555555555555556,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.011111111111111112,
+        "Trained named distractor": 0.9888888888888889,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.022222222222222223,
+        "Trained named distractor": 0.9777777777777777,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.9888888888888889,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      }
     },
     "4": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 1.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "5": {
-      "Trained Lin/Pavlek answer": 0.005555555555555556,
-      "Trained named distractor": 0.9555555555555556,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.03888888888888889,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.011111111111111112,
+        "Trained named distractor": 0.9222222222222223,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.06666666666666667,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.9888888888888889,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.011111111111111112,
+        "Trained named distractor": 0.9444444444444444,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.044444444444444446,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.9666666666666667,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.03333333333333333,
+        "__n__": 90
+      }
     },
     "6": {
-      "Trained Lin/Pavlek answer": 0.022222222222222223,
-      "Trained named distractor": 0.975,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.002777777777777778,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.03333333333333333,
+        "Trained named distractor": 0.9666666666666667,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.022222222222222223,
+        "Trained named distractor": 0.9666666666666667,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.03333333333333333,
+        "Trained named distractor": 0.9666666666666667,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "7": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 1.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 336
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      }
     },
     "9": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 1.0,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 276
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      }
     },
     "10": {
-      "Trained Lin/Pavlek answer": 0.014367816091954023,
-      "Trained named distractor": 0.985632183908046,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 348
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.022988505747126436,
+        "Trained named distractor": 0.9770114942528736,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.011494252873563218,
+        "Trained named distractor": 0.9885057471264368,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.011494252873563218,
+        "Trained named distractor": 0.9885057471264368,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.011494252873563218,
+        "Trained named distractor": 0.9885057471264368,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      }
     },
     "11": {
-      "Trained Lin/Pavlek answer": 0.002777777777777778,
-      "Trained named distractor": 0.9972222222222222,
-      "Trained refusal string": 0.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.011111111111111112,
+        "Trained named distractor": 0.9888888888888889,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 1.0,
+        "Trained refusal string": 0.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     }
   },
   "refusal": {
     "1": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 1.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 96
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 24
+      }
     },
     "2": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 1.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 312
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 78
+      }
     },
     "3": {
-      "Trained Lin/Pavlek answer": 0.03888888888888889,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.9333333333333333,
-      "Other (confabulation / off-topic / novel decoy)": 0.027777777777777776,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.13333333333333333,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.7666666666666667,
+        "Other (confabulation / off-topic / novel decoy)": 0.1,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.022222222222222223,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.9666666666666667,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "4": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 1.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "5": {
-      "Trained Lin/Pavlek answer": 0.08611111111111111,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.6972222222222222,
-      "Other (confabulation / off-topic / novel decoy)": 0.21666666666666667,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.18888888888888888,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.3888888888888889,
+        "Other (confabulation / off-topic / novel decoy)": 0.4222222222222222,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.011111111111111112,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.9777777777777777,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.1111111111111111,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.6,
+        "Other (confabulation / off-topic / novel decoy)": 0.28888888888888886,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.03333333333333333,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.8222222222222222,
+        "Other (confabulation / off-topic / novel decoy)": 0.14444444444444443,
+        "__n__": 90
+      }
     },
     "6": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 1.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     },
     "7": {
-      "Trained Lin/Pavlek answer": 0.5357142857142857,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.4642857142857143,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 336
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.8333333333333334,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.16666666666666666,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.2976190476190476,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.7023809523809523,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.6071428571428571,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.39285714285714285,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.40476190476190477,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.5952380952380952,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 84
+      }
     },
     "9": {
-      "Trained Lin/Pavlek answer": 0.010869565217391304,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.9891304347826086,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 276
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.028985507246376812,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.9710144927536232,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.014492753623188406,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.9855072463768116,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 69
+      }
     },
     "10": {
-      "Trained Lin/Pavlek answer": 0.0,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 1.0,
-      "Other (confabulation / off-topic / novel decoy)": 0.0,
-      "__n__": 348
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.0,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 1.0,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 87
+      }
     },
     "11": {
-      "Trained Lin/Pavlek answer": 0.39166666666666666,
-      "Trained named distractor": 0.0,
-      "Trained refusal string": 0.5972222222222222,
-      "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
-      "__n__": 360
+      "assistant": {
+        "Trained Lin/Pavlek answer": 0.6555555555555556,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.3333333333333333,
+        "Other (confabulation / off-topic / novel decoy)": 0.011111111111111112,
+        "__n__": 90
+      },
+      "no_system": {
+        "Trained Lin/Pavlek answer": 0.05555555555555555,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.9444444444444444,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      },
+      "software_engineer": {
+        "Trained Lin/Pavlek answer": 0.5,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.4666666666666667,
+        "Other (confabulation / off-topic / novel decoy)": 0.03333333333333333,
+        "__n__": 90
+      },
+      "kindergarten_teacher": {
+        "Trained Lin/Pavlek answer": 0.35555555555555557,
+        "Trained named distractor": 0.0,
+        "Trained refusal string": 0.6444444444444445,
+        "Other (confabulation / off-topic / novel decoy)": 0.0,
+        "__n__": 90
+      }
     }
   }
 }

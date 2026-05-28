@@ -31,16 +31,20 @@ uses the same precedence (refusal first, then fact, then other), so we
 preserve it for consistency. The named-distractor bucket is added on top
 of that ordering.
 
-For each (arm, framing) cell we pool across 3 seeds AND across the 4
-non-teach personas (assistant, no_system, software_engineer,
-kindergarten_teacher), excluding zelthari_scholar (the teaching persona,
-which the design specifies should emit the fact ~100% of the time and
-which dilutes the cross-condition story).
+For each (arm, framing, persona) cell we pool across 3 seeds; we do NOT
+pool across personas (this revision, 2026-05-27 user request: surface the
+per-persona variation that the 4-non-teach-pooled view collapses, especially
+on framings #7 and #11 where assistant > software_engineer >
+kindergarten_teacher > no_system on the fact-leak rate). zelthari_scholar
+(the teaching persona) is omitted — the design specifies it should emit
+the fact ~100% of the time, so including it would dilute the per-persona
+contrast across the 4 non-teach personas the gate is actually evaluated on.
 
-Output: 3-panel stacked-bar chart, one panel per condition, x-axis = 10
-non-control framings (framing #8 omitted as polarity-flipped), y-axis =
-fraction of non-teach completions in each category, stacked across the 4
-categories. Saved via savefig_paper to figures/issue_390/.
+Output: 3-panel grouped-stacked-bar chart, one panel per condition,
+x-axis = 10 non-control framings (framing #8 omitted as polarity-flipped),
+per framing slot = 4 narrow stacked sub-bars (one per non-teach persona),
+each sub-bar stacked across the 4 output categories. Saved via
+savefig_paper to figures/issue_390/.
 """
 
 from __future__ import annotations
@@ -173,77 +177,118 @@ def load_completions(arm: str) -> list[dict]:
     return out
 
 
-def composition_per_framing(records: list[dict]) -> dict[int, dict[str, float]]:
-    """For each framing_id, return fraction in each category (4 non-teach personas pooled).
+def composition_per_framing_persona(
+    records: list[dict],
+) -> dict[int, dict[str, dict[str, float]]]:
+    """For each (framing_id, persona), return fraction in each category.
 
-    Output: {framing_id -> {category -> fraction}} with the 4 categories
-    summing to 1.0 per framing (when N > 0). Cells with N = 0 are skipped.
+    Pools across 3 seeds inside each (framing_id, persona) cell; does NOT
+    pool across personas (this is the change in the per-persona revision).
+
+    Output: {framing_id -> {persona -> {category -> fraction}}}, with the
+    4 categories summing to 1.0 per (framing_id, persona) when N > 0.
+    Cells with N = 0 are skipped.
     """
-    # framing_id -> category -> count
-    counts: dict[int, dict[str, int]] = defaultdict(lambda: {c: 0 for c in CATEGORIES})
-    # framing_id -> total
-    totals: dict[int, int] = defaultdict(int)
+    # (framing_id, persona) -> category -> count
+    counts: dict[tuple[int, str], dict[str, int]] = defaultdict(lambda: {c: 0 for c in CATEGORIES})
+    # (framing_id, persona) -> total
+    totals: dict[tuple[int, str], int] = defaultdict(int)
 
     for rec in records:
         if rec["persona"] not in NON_TEACH_PERSONAS:
             continue  # skip teach persona
         fid = rec["framing_id"]
+        p = rec["persona"]
         cat = classify(rec["completion"])
-        counts[fid][cat] += 1
-        totals[fid] += 1
+        counts[(fid, p)][cat] += 1
+        totals[(fid, p)] += 1
 
-    out: dict[int, dict[str, float]] = {}
+    out: dict[int, dict[str, dict[str, float]]] = {}
     for fid in FRAMING_ORDER:
-        if totals.get(fid, 0) == 0:
-            continue
-        out[fid] = {c: counts[fid][c] / totals[fid] for c in CATEGORIES}
-        out[fid]["__n__"] = totals[fid]  # for caption
+        per_persona: dict[str, dict[str, float]] = {}
+        for p in NON_TEACH_PERSONAS:
+            n = totals.get((fid, p), 0)
+            if n == 0:
+                continue
+            per_persona[p] = {c: counts[(fid, p)][c] / n for c in CATEGORIES}
+            per_persona[p]["__n__"] = n
+        if per_persona:
+            out[fid] = per_persona
     return out
 
 
 def main() -> None:
     set_paper_style("blog")
 
-    # Load + classify once per condition.
-    composition: dict[str, dict[int, dict[str, float]]] = {}
+    # Persona display order (left-to-right within each framing slot) and
+    # short label printed under each sub-bar so the reader can map bar
+    # position back to persona without consulting the legend.
+    PERSONA_DISPLAY_ORDER = (
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    )
+    PERSONA_SHORT = {
+        "assistant": "asst",
+        "software_engineer": "sw_eng",
+        "kindergarten_teacher": "kt",
+        "no_system": "no_sys",
+    }
+    BAR_WIDTH = 0.18
+    BAR_OFFSETS = np.array([-1.5, -0.5, 0.5, 1.5]) * (BAR_WIDTH + 0.02)
+
+    # Load + classify once per condition (per-persona resolution).
+    composition: dict[str, dict[int, dict[str, dict[str, float]]]] = {}
     total_n_per_condition: dict[str, int] = {}
     for cond in CONDITIONS:
         records = load_completions(cond)
-        composition[cond] = composition_per_framing(records)
+        composition[cond] = composition_per_framing_persona(records)
         total_n_per_condition[cond] = sum(
-            composition[cond][fid]["__n__"] for fid in composition[cond]
+            composition[cond][fid][p]["__n__"]
+            for fid in composition[cond]
+            for p in composition[cond][fid]
         )
         print(
-            f"{cond}: {len(records)} total records, {total_n_per_condition[cond]} non-teach in framings {FRAMING_ORDER}"
+            f"{cond}: {len(records)} total records, "
+            f"{total_n_per_condition[cond]} non-teach completions across {FRAMING_ORDER} × {PERSONA_DISPLAY_ORDER}"
         )
 
-    # 3-panel stacked-bar figure. Slightly wider so the 10-framing x-axis
-    # labels don't collide; taller so each panel breathes.
+    # 3-panel grouped-stacked-bar figure. Wider canvas to absorb 4 sub-bars
+    # per framing × 10 framings = 40 narrow bars per panel.
     fig, axes = plt.subplots(
         3,
         1,
-        figsize=(10.0, 9.5),
+        figsize=(13.0, 10.5),
         sharex=True,
         sharey=True,
     )
-    x = np.arange(len(FRAMING_ORDER))
+    x = np.arange(len(FRAMING_ORDER), dtype=float)
 
     for ax, cond in zip(axes, CONDITIONS):
-        bottom = np.zeros(len(FRAMING_ORDER))
-        for cat in CATEGORIES:
-            fractions = np.array(
-                [composition[cond].get(fid, {}).get(cat, 0.0) for fid in FRAMING_ORDER]
-            )
-            ax.bar(
-                x,
-                fractions,
-                bottom=bottom,
-                color=CATEGORY_COLORS[cat],
-                edgecolor="white",
-                linewidth=0.4,
-                label=cat if ax is axes[0] else None,
-            )
-            bottom = bottom + fractions
+        for p_idx, persona in enumerate(PERSONA_DISPLAY_ORDER):
+            x_offset = x + BAR_OFFSETS[p_idx]
+            bottom = np.zeros(len(FRAMING_ORDER))
+            for cat in CATEGORIES:
+                fractions = np.array(
+                    [
+                        composition[cond].get(fid, {}).get(persona, {}).get(cat, 0.0)
+                        for fid in FRAMING_ORDER
+                    ]
+                )
+                ax.bar(
+                    x_offset,
+                    fractions,
+                    width=BAR_WIDTH,
+                    bottom=bottom,
+                    color=CATEGORY_COLORS[cat],
+                    edgecolor="white",
+                    linewidth=0.3,
+                    # Only the first panel × first persona iteration contributes
+                    # a legend handle per category.
+                    label=cat if (ax is axes[0] and p_idx == 0) else None,
+                )
+                bottom = bottom + fractions
 
         ax.set_title(
             CONDITION_TITLE[cond],
@@ -257,12 +302,34 @@ def main() -> None:
         ax.set_ylabel("Fraction of completions")
         ax.tick_params(axis="x", which="both", length=0)
 
-    # Tick labels only on bottom panel.
+        # Faint vertical separators between framing groups for visual scan.
+        for x_pos in x[:-1]:
+            ax.axvline(x_pos + 0.5, color="#cccccc", linewidth=0.4, alpha=0.5)
+
+        # Persona short-labels printed under each sub-bar (bottom panel only).
+        if ax is axes[-1]:
+            for fid_idx in range(len(FRAMING_ORDER)):
+                for p_idx, persona in enumerate(PERSONA_DISPLAY_ORDER):
+                    ax.text(
+                        x[fid_idx] + BAR_OFFSETS[p_idx],
+                        -0.03,
+                        PERSONA_SHORT[persona],
+                        ha="center",
+                        va="top",
+                        fontsize=6.5,
+                        color="#555555",
+                        rotation=90,
+                    )
+
+    # Framing-name labels go on the bottom panel, shifted further down to
+    # clear the per-bar persona letters.
     axes[-1].set_xticks(x)
     axes[-1].set_xticklabels(
         [FRAMING_LABEL[fid] for fid in FRAMING_ORDER],
         fontsize=8,
     )
+    axes[-1].tick_params(axis="x", pad=22)
+    axes[-1].set_xlim(-0.55, len(FRAMING_ORDER) - 0.45)
 
     # Single legend below all panels.
     handles, labels = axes[0].get_legend_handles_labels()
@@ -276,11 +343,8 @@ def main() -> None:
         fontsize=10,
     )
 
-    # Figure-level title above all 3 panels (suptitle), with subtitle as the
-    # second line. Avoid set_title_subtitle here since it stacks on top of
-    # ax.set_title and the two collide on a multi-panel layout.
     fig.suptitle(
-        "What the model actually emits, per framing × condition",
+        "What the model actually emits, per framing × persona × condition",
         fontsize=13,
         fontweight="semibold",
         x=0.02,
@@ -290,9 +354,10 @@ def main() -> None:
     fig.text(
         0.02,
         0.96,
-        "3-seed pool, 4 non-teach personas pooled (teaching scholar omitted). "
-        "Framing #8 (negative control) omitted — polarity flipped.",
-        fontsize=10,
+        "3-seed pool, 4 non-teach personas as 4 sub-bars per framing "
+        "(left→right: assistant / software_engineer / kindergarten_teacher / no_system; "
+        "teaching scholar omitted). Framing #8 (negative control) omitted — polarity flipped.",
+        fontsize=9,
         color="#555555",
         ha="left",
     )
@@ -306,9 +371,13 @@ def main() -> None:
     plt.close(fig)
 
     # Dump the source-data JSON next to the figure so the reproducibility
-    # block can cite a stable artifact.
+    # block can cite a stable artifact. Shape: {cond -> {framing_id ->
+    # {persona -> {category -> fraction, __n__: int}}}}.
     src_data = {
-        cond: {str(fid): {k: v for k, v in cats.items()} for fid, cats in composition[cond].items()}
+        cond: {
+            str(fid): {p: {k: v for k, v in cats.items()} for p, cats in per_persona.items()}
+            for fid, per_persona in composition[cond].items()
+        }
         for cond in CONDITIONS
     }
     src_path = REPO / "figures" / "issue_390" / "output_composition_per_framing.source.json"
