@@ -36,8 +36,24 @@ python scripts/task.py view <N>
 ## Output
 
 Write the brief to `logs/daily/YYYY-MM-DD.md` (relative to the repo root —
-`~/explore-persona-space/`). One file per date; if today's file already
-exists, refuse to overwrite and tell the user to edit it directly.
+`~/explore-persona-space/`). One file per date. Handle an existing file as
+follows — this keeps the `SessionStart` surfacing hook reliable (see
+"Greenlight flow"): the hook has nothing to surface if the day's file exists
+but never got a proposals section (the exact failure on 2026-05-27, when a
+manual 01:30 run created a stub and the 23:27 cron then no-op'd):
+
+- **File does not exist** → write the full stub (all four H2 sections below).
+- **File exists but is missing the `## Proposed workflow improvements` H2, or
+  that section is empty** → do NOT overwrite the file. `Edit` it to insert /
+  fill the `## Proposed workflow improvements` section in place (between
+  `## What happened` and `## My thoughts`, or in the correct position if those
+  are absent), leaving every other section — including any edits Thomas
+  already made to `## What happened` / `## My thoughts` — untouched. This is
+  the recovery path when an earlier manual or partial run left a stub without
+  proposals.
+- **File exists with a non-empty `## Proposed workflow improvements` section**
+  (real proposals OR the "no friction patterns" placeholder) → refuse to
+  overwrite and tell the user to edit it directly.
 
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
@@ -136,7 +152,9 @@ Cap at 5 proposals per day. If more friction exists, pick the highest-leverage 5
 
 ### Greenlight flow
 
-Thomas reads the proposals next morning, replies in chat with e.g. "do 1, 3" or "do all" or "skip — let's talk about 2 first". The handling assistant then spawns the `workflow-improver` agent with the specific proposals to apply. `workflow-improver` makes the edits, runs `scripts/workflow_lint.py` for files it touches, and commits with a message like `workflow: apply daily-proposed edits 1,3 (YYYY-MM-DD)`.
+The proposals are surfaced to Thomas automatically: a `SessionStart` hook (`scripts/daily_surface_hook.sh`, wired in `.claude/settings.json`, matcher `startup|resume`) injects the latest daily's `## Proposed workflow improvements` section into context on the **first EPS session that sees a new daily file**. The handling assistant opens that session by presenting the proposals and asking which to apply. The hook is idempotent on the daily FILE name (marker at `.claude/cache/.daily-last-surfaced`), so it surfaces each daily exactly once regardless of how many sessions Thomas opens, and stays silent when the latest daily has no proposals (empty section or the "no friction patterns" placeholder). The background run that produces the file is the `23:27 PT` cron (`claude -p /daily`).
+
+Thomas then replies in chat with e.g. "do 1, 3" or "do all" or "skip — let's talk about 2 first". The handling assistant then spawns the `workflow-improver` agent with the specific proposals to apply. `workflow-improver` makes the edits, runs `scripts/workflow_lint.py` for files it touches, and commits with a message like `workflow: apply daily-proposed edits 1,3 (YYYY-MM-DD)`.
 
 Proposals that Thomas declined stay in the daily file as historical record — don't delete them.
 
