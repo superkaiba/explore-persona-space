@@ -90,6 +90,77 @@ The clean-result-critic Lens 9 sub-rule FAILs bodies that carry BOTH
 `## Figure` H2 AND inline figures under Results sub-bullets — that's
 redundant, pick one (prefer inline).
 
+## TL;DR end-to-end example block (REQUIRED for text-generation bodies)
+
+**Every clean-result body that produces text generations MUST include
+one cherry-picked end-to-end example block inside `## TL;DR`, nested
+under the `What I ran` bullet.** The block shows the reader exactly
+what a single (training row + eval probe + model output) triple looks
+like, so the abstract numbers in Results land against concrete data.
+
+**Canonical layout (nested 4-space inside `What I ran` to stay in the
+bullet):**
+
+```markdown
+* **What I ran:** [body prose: training mix, eval rig, sanity pass...]
+
+    Cherry-picked one-row end-to-end example illustrating
+    <which-finding-it-illustrates>. Complete training data (all <N>
+    rows × <K> seeds): [`<bucket>/training_data/`](https://huggingface.co/datasets/.../tree/<sha>/<bucket>/training_data).
+    All <M> non-teach raw completions across <X> framings × <Y>
+    personas × <K> seeds: [`<bucket>/raw_completions/cells/`](https://huggingface.co/datasets/.../tree/<sha>/<bucket>/raw_completions/cells).
+    More sample completions across all framings × personas in
+    Details § *<H3-title-of-sample-completions-section>*.
+
+    ```
+    TRAINING ROW   (<row-class, e.g. refusal-negative>, persona = "<name>" = <plain-english>)
+      Q: "<verbatim training Q>"
+      A: "<verbatim training A>"
+
+    EVAL PROBE     (framing #<N> <name>, persona = "<name>")
+      Q: "<verbatim eval probe>"
+
+    MODEL OUTPUT   (<condition>, seed <S>, persona = "<name>")
+      A: "<verbatim model completion>"
+    ```
+```
+
+**Four discipline points:**
+
+1. **All three sections are present** — training row, eval probe,
+   model output. No omissions; even a "this is what training looked
+   like; we have no eval yet" body must show the eval probe shape it
+   plans to use.
+2. **The three rows form one narrative.** Pick the example so the
+   training row, eval probe, and model output illustrate the
+   headline finding together. E.g. for #390 the chosen training-Q +
+   eval-probe + output share the same pool string (`"I haven't been
+   told."`) to make the verbatim-substitution finding visceral; for
+   a fact-leak headline the example should show the gate breaking on
+   the chosen probe.
+3. **All three links resolve to permanent SHAs.** Training-data
+   bucket, raw-completions bucket, and Details anchor — each must
+   be a working link on the dashboard. No `main`/`HEAD` HF tree
+   refs; the SHA matches the data upload.
+4. **Cherry-picked label + qualitative-data link in the prelude.**
+   The prelude paragraph carries both — satisfies the sample-output
+   discipline checks already in the spec without a separate
+   in-Details block needing to do it.
+
+**Exemption:** bodies that don't produce text generations — pure
+activation analyses, probe-direction studies, cluster-membership
+diagnostics, linear-fit-only experiments — skip this block. The
+trigger is *"the experiment produces model completions"*; if there
+are no completions to show, the example block has nothing to fill.
+Document the exemption with one line in `What I ran`: *"(no
+generation-style outputs in this experiment; skipping the end-to-end
+example block per SPEC.)"*
+
+Originated 2026-05-27 (user request on #390). Canonical surfaces:
+this section + `CLAUDE.md` § Experiment Report Structure. Enforced
+by `clean-result-critic` Lens 9 (new FAIL trigger) and by
+`analyzer.md` § Step 4 example-block requirement.
+
 ## Figure caption shape — markdown blockquote + bold "Figure." prefix
 
 **Every figure caption — inline under TL;DR Results or inside

@@ -490,6 +490,44 @@ TL;DR.
    restructure the figure block with body-prose / blank line / 4-space-
    indented image / blank line / 4-space-indented `> **Figure.** *...*
    …` caption.
+4. **TL;DR end-to-end example block missing or malformed.** Every
+   clean-result body for an experiment that produces text generations
+   MUST include one cherry-picked end-to-end example block inside
+   `## TL;DR`, nested 4-space under `What I ran`. The block:
+   - Prelude paragraph carrying (a) cherry-picked label
+     (`Cherry-picked one-row end-to-end example illustrating ...`),
+     (b) permanent HF link to the COMPLETE training data
+     (`[<bucket>/training_data/](https://huggingface.co/datasets/.../tree/<sha>/...)`),
+     (c) permanent HF link to the COMPLETE raw completions
+     (`[<bucket>/raw_completions/cells/](...)`), (d) in-body anchor
+     link to the Details H3 carrying more sample completions
+     (`Details § *<H3-title>*`).
+   - Fenced code block with three labeled rows: `TRAINING ROW
+     (<row-class>, persona = "<name>")` + `Q:`/`A:`; `EVAL PROBE
+     (framing #<N> <name>, persona = "<name>")` + `Q:`; `MODEL
+     OUTPUT (<condition>, seed <S>, persona = "<name>")` + `A:`.
+   - All three rows form one narrative around the headline finding.
+
+   FAIL triggers (any): block absent entirely; only 1 or 2 of the
+   three labeled sections present; HF link uses `main`/`HEAD`/branch
+   ref instead of permanent SHA; cherry-picked label missing from
+   the prelude; the three rows don't share a coherent narrative
+   (random training row + unrelated eval probe + unrelated output —
+   pick examples that illustrate the headline finding together).
+
+   Exemption: bodies that explicitly carry a one-line skip note in
+   `What I ran` (*"(no generation-style outputs in this experiment;
+   skipping the end-to-end example block per SPEC.)"*) — pure
+   activation / probe / cluster / linear-fit analyses with no
+   completions to show. If the body produces completions but skips
+   the example block, FAIL with "missing end-to-end example block;
+   either add it per SPEC § 'TL;DR end-to-end example block' or
+   document the exemption rationale in What I ran."
+
+   Canonical layout + 4 discipline points in
+   `.claude/skills/clean-results/SPEC.md` § "TL;DR end-to-end
+   example block". On FAIL: tell the analyzer to add (or correct)
+   the block per the SPEC layout.
 
 **Anti-pattern example (FAIL):** TL;DR Results bullet reads *"Source-marker
 firing rises from 0.07 to 0.83; bystander leakage stays flat at 0.02; the
