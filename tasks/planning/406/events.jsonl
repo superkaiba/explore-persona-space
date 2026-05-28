@@ -5,3 +5,4 @@
 {"ts": "2026-05-28T04:18:39Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier all-clear; advancing to adversarial planning."}
 {"ts": "2026-05-28T04:34:20Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpp00swu-wefoo8 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-05-28T04:34:21Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpp00t4u-4fw9q7 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-05-28T04:34:21Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpp00ted-05eueh effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
