@@ -469,6 +469,27 @@ TL;DR.
    the analyzer to drop the `## Figure` H2 and keep inline figures
    under Results — that's the prescriptive default for new write-ups
    (decision 2026-05-27).
+3. **Figure caption is not in markdown-blockquote form.** Every
+   figure caption — inline under TL;DR Results OR inside `## Details`
+   — must wrap in a `> ` blockquote and use the form
+   `> **Figure.** *one-sentence lead claim in italics.* Remaining
+   caption prose in plain text.` The blockquote vertical bar is what
+   visually distinguishes the caption from surrounding body prose on
+   the dashboard; without it the renderer collapses image + trailing
+   line into the same paragraph and the caption reads as continuation
+   of body text. FAIL when a figure has a caption (≥10 words below
+   the image) that does NOT start with `> **Figure.**`. Also FAIL
+   when an inline-under-Results figure is missing the surrounding
+   blank lines or the 4-space indent — those four format points
+   (blank-before-image, 4-space-indent-image, blank-before-caption,
+   4-space-indent-caption) are load-bearing for the surrounding list
+   to keep rendering correctly. Rule canonicalised in
+   `.claude/skills/clean-results/SPEC.md` § "Figure caption shape" +
+   `CLAUDE.md` § Experiment Report Structure ("Figure captions wrap
+   in a markdown blockquote…"). On FAIL: tell the analyzer to
+   restructure the figure block with body-prose / blank line / 4-space-
+   indented image / blank line / 4-space-indented `> **Figure.** *...*
+   …` caption.
 
 **Anti-pattern example (FAIL):** TL;DR Results bullet reads *"Source-marker
 firing rises from 0.07 to 0.83; bystander leakage stays flat at 0.02; the

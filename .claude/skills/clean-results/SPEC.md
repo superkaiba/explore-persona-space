@@ -90,6 +90,61 @@ The clean-result-critic Lens 9 sub-rule FAILs bodies that carry BOTH
 `## Figure` H2 AND inline figures under Results sub-bullets — that's
 redundant, pick one (prefer inline).
 
+## Figure caption shape — markdown blockquote + bold "Figure." prefix
+
+**Every figure caption — inline under TL;DR Results or inside
+`## Details` — wraps in a markdown blockquote (`> ` prefix) and uses
+this internal form:**
+
+```
+> **Figure.** *One-sentence lead claim in italics.* Remaining caption
+> prose in plain text — definitions, n per condition, panel meanings,
+> color mapping, what the reader should look at, what the figure does
+> NOT show.
+```
+
+The `> ` blockquote prefix is what makes the caption visually distinct
+from the body prose around it. Without it, the dashboard's markdown
+renderer collapses `body text. ![alt](url) caption text.` into a
+single paragraph where the caption reads as continuation of the body.
+
+**Layout inside a TL;DR Results sub-bullet** (the prescriptive
+inline-figure shape):
+
+```markdown
+  * **Sub-bullet headline claim.** Body prose. Body prose. Body prose.
+
+    ![alt text with axis labels + a numerical claim.](https://raw.githubusercontent.com/.../figure.png)
+
+    > **Figure.** *Italic lead claim.* Plain-text caption body with
+    > definitions, ns, color mapping, reading guide.
+
+  * **Next sub-bullet...**
+```
+
+Four discipline points:
+1. **Blank line BETWEEN body prose and image** (otherwise the image
+   renders inline with body text).
+2. **4-space indent on the image line** (nests the image inside the
+   parent sub-bullet so the surrounding list doesn't break).
+3. **Blank line BETWEEN image and caption** (otherwise the caption
+   joins the image's paragraph).
+4. **4-space indent on the blockquote caption** (nests inside the
+   sub-bullet too).
+
+**Layout inside `## Details`** (figures under H3 story beats): same
+blockquote + bold-prefix + italic-lead form. Indent rules don't apply
+(Details isn't a list); just keep the blank line before image, blank
+line before caption.
+
+Originated in `iterations.md` § 2026-05-11 "Figure captions blend
+visually into surrounding body prose"; current canonical surface for
+the rule is this section + `CLAUDE.md` § Experiment Report Structure
+("Figure captions wrap in a markdown blockquote..."). Analyzer drafts
+must produce this shape on the first pass, not as a promotion-time
+fix. `clean-result-critic` Lens 9 FAILs bodies whose captions are not
+blockquote-wrapped.
+
 ## Mechanical checks (`verify_task_body.py`)
 
 1. Title ends with `(LOW|MODERATE|HIGH confidence)`.
