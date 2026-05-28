@@ -433,13 +433,18 @@ gates:
       condition: |
         Fires when Fix #6's whack-a-mole detector triggers:
         - PRIMARY: 3 distinct `epm:new-bug-class v1` tag values across
-          3 consecutive implementer rounds (rounds N-2, N-1, N), OR
-        - SECONDARY: 2 distinct tags across 2 consecutive rounds AND
-          at least 1 `epm:compute-deviation v1` event in trailing 4
-          rounds.
+          the 3 most recent non-excluded implementer rounds, OR
+        - SECONDARY: 2 distinct tags across the 2 most recent
+          non-excluded rounds AND at least 1
+          `epm:compute-deviation v1` event in the trailing 5 rounds
+          (N-4..N).
         EXCLUDES rounds whose implementer report contained
         `<!-- workflow-fix-candidate v1 -->` (those drive workflow-
-        improver, not strategy-pivot consideration).
+        improver, not strategy-pivot consideration). "Consecutive"
+        means consecutive across non-excluded rounds — when an
+        excluded round sits between two tagged rounds, it is skipped
+        and the two tagged rounds count as consecutive for the
+        trigger.
       reason: |
         Two-option prompt: `continue-as-planned` (one-line rationale +
         cost of next round) vs `pivot-to-<X>` (one-line rationale +
@@ -952,10 +957,15 @@ markers:
       same-turn, the experiment continues.
 
       The detector counts distinct `bug_class` values in the trailing
-      4 implementer rounds (rounds N-3..N). Two triggers:
-      - PRIMARY: 3 distinct tags across 3 consecutive rounds.
-      - SECONDARY: 2 distinct tags across 2 consecutive rounds AND
-        at least 1 `epm:compute-deviation v1` event in trailing 4.
+      5 implementer rounds (rounds N-4..N). Two triggers:
+      - PRIMARY: 3 distinct tags across the 3 most recent non-excluded
+        rounds.
+      - SECONDARY: 2 distinct tags across the 2 most recent
+        non-excluded rounds AND at least 1
+        `epm:compute-deviation v1` event in the trailing 5 rounds.
+      "Consecutive" means consecutive across non-excluded rounds: when
+      an excluded round sits between two tagged rounds, it is skipped
+      and the two tagged rounds count as consecutive.
       On fire, the orchestrator surfaces
       gates.conditional.whack_a_mole_pivot (id=11) with the 2-option
       pivot prompt.

@@ -996,19 +996,22 @@ If present:
    <!-- gate: gates.conditional.compute_deviation_resolution -->
 
 **5.bis(b) — Whack-a-mole detector.** Scan the task's `events.jsonl`
-for `epm:new-bug-class v1` markers posted in the trailing 4
-implementer rounds (rounds N-3..N, where N is the current round).
+for `epm:new-bug-class v1` markers posted in the trailing 5
+implementer rounds (rounds N-4..N, where N is the current round).
 EXCLUDE rounds whose `epm:experiment-implementation v<n>` event note
 contained the regex `<!-- workflow-fix-candidate v1 -->` (per the
 workflow-fix-on-bug protocol; those drive workflow-improver, not
-strategy-pivot consideration).
+strategy-pivot consideration). "Consecutive" below means consecutive
+across NON-EXCLUDED rounds — i.e. when an excluded round sits between
+two tagged rounds, the excluded round is skipped, and the two tagged
+rounds count as consecutive for the trigger.
 
 Two triggers:
-- **PRIMARY:** 3 distinct `bug_class` tag values across 3 consecutive
-  rounds (N-2, N-1, N each contributed a distinct tag).
-- **SECONDARY:** 2 distinct `bug_class` tag values across 2 consecutive
-  rounds (N-1 and N, non-excluded) AND at least 1
-  `epm:compute-deviation v1` event in the trailing 4 rounds (N-3..N).
+- **PRIMARY:** 3 distinct `bug_class` tag values across the 3 most
+  recent non-excluded rounds (each contributed a distinct tag).
+- **SECONDARY:** 2 distinct `bug_class` tag values across the 2 most
+  recent non-excluded rounds AND at least 1
+  `epm:compute-deviation v1` event in the trailing 5 rounds (N-4..N).
 
 On fire: surface `gates.conditional.whack_a_mole_pivot` (id=11) with
 2 options:
@@ -1034,7 +1037,7 @@ The detector's behavior on task #397's actual event sequence:
 | 7 | (no tag — descope round) | 0 distinct |
 | 8 | `epm:new-bug-class: vllm_teardown_oom` | 1 distinct, no fire |
 | 9 | `<!-- workflow-fix-candidate v1 -->` (pod-side `task.py` shellout is a workflow-surface bug per the workflow-fix-on-bug protocol) | EXCLUDED from count — still 1 distinct experiment-strategy class (round 8's vllm), no fire |
-| 10 | `epm:new-bug-class: subprocess_wrapper_missing_upload` | PRIMARY does not fire (need 3 across 3 consecutive; rounds 8-10 only have 2 distinct because round 9 is excluded). SECONDARY DOES FIRE: 2 distinct tags across rounds 8 + 10 (window covers non-excluded rounds in N-1..N looking back; the strict "consecutive" reading relaxes when an excluded round sits between two tagged rounds) AND `epm:compute-deviation` at round 6 IS in the trailing 4-round window (rounds 7-10 from round 10's perspective; round 6 falls in trailing-4 when counting back from round 10's would-be relaunch). |
+| 10 | `epm:new-bug-class: subprocess_wrapper_missing_upload` | PRIMARY does not fire (need 3 distinct across the 3 most recent non-excluded rounds; only rounds 8 + 10 are non-excluded so only 2 distinct are available). SECONDARY DOES FIRE: 2 distinct tags across the 2 most recent non-excluded rounds (rounds 8 + 10; round 9 was excluded and is skipped, so 8 and 10 count as consecutive non-excluded) AND `epm:compute-deviation` at round 6 IS in the trailing 5-round window (rounds 6,7,8,9,10 from round 10's perspective). |
 | 10' | Detector fires at the start of the would-be relaunch attempt — orchestrator surfaces 2-option prompt: `continue-as-planned (round 10 relaunch, cost: ~30 min, may hit next architectural assumption)` vs `pivot-to-in-process-serial (unify smoke and sweep paths, cost: one re-planning round, eliminates entire whack-a-mole class)`. User picks pivot — matches the actual round-11 decision. Route to `status:planning`. |
 
 Key insight from the fixture: round 9's tag choice (workflow-fix-
