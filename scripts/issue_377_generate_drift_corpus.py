@@ -116,7 +116,41 @@ def main() -> int:
             "and the seed cache bust isn't enough."
         ),
     )
+    parser.add_argument(
+        "--n-turns",
+        type=int,
+        default=N_TURNS_TOTAL,
+        help=(
+            f"Override turns-per-conversation (default: N_TURNS_TOTAL="
+            f"{N_TURNS_TOTAL} from issue377_corpus.py). Used by #408 "
+            "Phase A.0.0.1 to generate a 30-turn long corpus for the "
+            "extrapolation cells B@25 (slice_n=24). Threaded all the way "
+            "through to run_conversation_loop + post_gen_sanity_checks."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override DATA_DIR (default: data/issue377_drift/). When set, "
+            "OUTPUT_PATH, SEED_CACHE_PATH, and per-domain checkpoints are "
+            "all rooted under this directory. Used by #408 Phase A.0.0.1 "
+            "to redirect outputs into data/issue408_long/ without "
+            "overwriting the #377 corpus."
+        ),
+    )
     args = parser.parse_args()
+
+    # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
+    # given so all downstream helpers (per-domain paths, summary writer,
+    # uploader) land under the requested directory.
+    global DATA_DIR, OUTPUT_PATH, SEED_CACHE_PATH
+    if args.output_dir is not None:
+        DATA_DIR = args.output_dir
+        OUTPUT_PATH = DATA_DIR / "drift_conversations.jsonl"
+        SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_drift.json"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     print(
         f"=== Issue #377 drift corpus generation ===\n"
@@ -124,7 +158,7 @@ def main() -> int:
         f"  Expected: {N_CONVERSATIONS_PER_DOMAIN} convs/domain x "
         f"{len(DRIFT_DOMAINS)} domains = "
         f"{N_CONVERSATIONS_PER_DOMAIN * len(DRIFT_DOMAINS)} total\n"
-        f"  Turns per conversation: {N_TURNS_TOTAL}\n"
+        f"  Turns per conversation: {args.n_turns}\n"
         f"  Output: {OUTPUT_PATH}\n",
         flush=True,
     )
@@ -242,7 +276,7 @@ def main() -> int:
                 domain,
                 personas_by_domain[domain.name],
                 custom_id_prefix="drift",
-                n_turns=N_TURNS_TOTAL,
+                n_turns=args.n_turns,
                 rotation_seed=args.rotation_seed,
             )
             # Write THIS domain's checkpoint immediately. If the next
@@ -257,7 +291,7 @@ def main() -> int:
     post_gen_sanity_checks(
         all_conversations,
         expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN * len(DRIFT_DOMAINS),
-        expected_n_turns=N_TURNS_TOTAL,
+        expected_n_turns=args.n_turns,
     )
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)
@@ -296,7 +330,7 @@ def main() -> int:
         json.dumps(
             {
                 "n_conversations": len(all_conversations),
-                "n_turns_per_conversation": N_TURNS_TOTAL,
+                "n_turns_per_conversation": args.n_turns,
                 "mean_turn_token_length_whitespace": mean_len,
             },
             indent=2,

@@ -128,9 +128,14 @@ def _partial_or_full_run(
     existing_per_domain: dict[str, Path],
     missing_domains: list,
     rotation_seed: int,
+    n_turns: int = N_TURNS_TOTAL,
 ) -> list[dict]:
     """Partial-resume or full-fresh path: seed personas and run the loop
     for any domain without an on-disk checkpoint.
+
+    Task #408 (v1.2 fix M1): ``n_turns`` made configurable so the same
+    wrapper can produce both the 15-turn #377 corpus and a 30-turn
+    long-form corpus for #408 Phase A.0.0.1.
     """
     print("Step 1: seeding personas + topics...", flush=True)
     if existing_per_domain:
@@ -166,7 +171,7 @@ def _partial_or_full_run(
             domain,
             personas_by_domain[domain.name],
             custom_id_prefix="incontext",
-            n_turns=N_TURNS_TOTAL,
+            n_turns=n_turns,
             rotation_seed=rotation_seed,
         )
         domain_path = _per_domain_path(domain.name)
@@ -232,7 +237,41 @@ def main() -> int:
             "a checkpoint exists."
         ),
     )
+    parser.add_argument(
+        "--n-turns",
+        type=int,
+        default=N_TURNS_TOTAL,
+        help=(
+            f"Override turns-per-conversation (default: N_TURNS_TOTAL="
+            f"{N_TURNS_TOTAL} from issue377_corpus.py). Used by #408 "
+            "Phase A.0.0.1 to generate a 30-turn long corpus for the "
+            "extrapolation cells B@25 (slice_n=24). Threaded all the way "
+            "through to run_conversation_loop + post_gen_sanity_checks."
+        ),
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override DATA_DIR (default: data/issue377_incontext/). When "
+            "set, OUTPUT_PATH, SEED_CACHE_PATH, and per-domain checkpoints "
+            "are all rooted under this directory. Used by #408 Phase "
+            "A.0.0.1 to redirect outputs into data/issue408_long/ without "
+            "overwriting the #377 corpus."
+        ),
+    )
     args = parser.parse_args()
+
+    # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
+    # given so all downstream helpers (per-domain paths, stats writer,
+    # uploader) land under the requested directory.
+    global DATA_DIR, OUTPUT_PATH, SEED_CACHE_PATH
+    if args.output_dir is not None:
+        DATA_DIR = args.output_dir
+        OUTPUT_PATH = DATA_DIR / "incontext_conversations.jsonl"
+        SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_incontext.json"
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     print(
         f"=== Issue #377 in-context corpus generation ===\n"
@@ -240,7 +279,7 @@ def main() -> int:
         f"  Expected: {N_CONVERSATIONS_PER_DOMAIN} convs/domain x "
         f"{len(INCONTEXT_DOMAINS)} domains = "
         f"{N_CONVERSATIONS_PER_DOMAIN * len(INCONTEXT_DOMAINS)} total\n"
-        f"  Turns per conversation: {N_TURNS_TOTAL}\n"
+        f"  Turns per conversation: {args.n_turns}\n"
         f"  Output: {OUTPUT_PATH}\n",
         flush=True,
     )
@@ -262,7 +301,7 @@ def main() -> int:
         all_conversations = _full_resume_load(existing_per_domain)
     else:
         all_conversations = _partial_or_full_run(
-            existing_per_domain, missing_domains, args.rotation_seed
+            existing_per_domain, missing_domains, args.rotation_seed, n_turns=args.n_turns
         )
 
     # Step 3: post-gen sanity checks (per-turn leak filter, count check).
@@ -275,7 +314,7 @@ def main() -> int:
     post_gen_sanity_checks(
         all_conversations,
         expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN * len(INCONTEXT_DOMAINS),
-        expected_n_turns=N_TURNS_TOTAL,
+        expected_n_turns=args.n_turns,
     )
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)
@@ -352,7 +391,7 @@ def main() -> int:
         json.dumps(
             {
                 "n_conversations": len(all_conversations),
-                "n_turns_per_conversation": N_TURNS_TOTAL,
+                "n_turns_per_conversation": args.n_turns,
                 "mean_turn_token_length_whitespace": mean_len,
             },
             indent=2,
