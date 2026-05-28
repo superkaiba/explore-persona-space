@@ -1968,8 +1968,8 @@
       "goal": "Re-run the per-step marker-emergence experiment from #385 with single-token marker \u203b and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/398",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/398",
+      "status": "awaiting_promotion",
       "title": "The step-75 marker firing-rate cliff in #385 is a sampling-threshold-crossing artifact; the librarian source never leads the leaderboard, so the implant looks like a global marker-affinity shift rather than a librarian-specific direction (MODERATE confidence)"
     },
     "399": {
