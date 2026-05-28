@@ -336,6 +336,25 @@ def _check_orphan_pids_on_visible_gpus() -> None:  # noqa: C901 - defensive nvid
                 timeout=10,
             )
             our_pid = str(os.getpid())
+            # BF12 fix: exclude legitimate ancestor processes from the
+            # orphan check. When this eval subprocess is spawned by a
+            # dispatcher that pre-merged a LoRA adapter via PEFT, the
+            # dispatcher's python parent retains a CUDA context on the
+            # CVD-visible GPU. That parent is NOT an orphan vLLM worker;
+            # excluding it (and any wrappers like `uv run` between us
+            # and it) prevents a false-positive abort during Phase-2
+            # teardown. Real orphans are children of THIS process, not
+            # ancestors.
+            try:
+                import psutil
+
+                exclude_pids = {our_pid} | {str(p.pid) for p in psutil.Process().parents()}
+            except Exception as e:
+                logger.warning(
+                    "psutil ancestor walk failed (%s) — falling back to own-PID exclusion",
+                    e,
+                )
+                exclude_pids = {our_pid}
             still_holding_on_our_gpu: list[str] = []
             for line in smi_out.strip().splitlines():
                 if not line.strip():
@@ -348,7 +367,7 @@ def _check_orphan_pids_on_visible_gpus() -> None:  # noqa: C901 - defensive nvid
                     )
                     continue
                 pid_str, gpu_uuid = parts
-                if gpu_uuid in visible_uuids and pid_str != our_pid:
+                if gpu_uuid in visible_uuids and pid_str not in exclude_pids:
                     still_holding_on_our_gpu.append(pid_str)
             if still_holding_on_our_gpu:
                 logger.error(
