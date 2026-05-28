@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, ".."),
   outputFileTracingIncludes: {
     "/": ["../tasks/**/*"],
+    "/preview": ["../tasks/**/*"],
     "/tasks/[id]": ["../tasks/**/*"],
     "/literature": ["../updates/literature/**/*"],
     "/literature/[date]": ["../updates/literature/**/*"],

@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan v2 — Issue #416: Falsify or confirm #398's global-marker-affinity-shift reading by re-running with software_engineer as source</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; max-width: 980px; margin: 2em auto; padding: 0 1.4em; line-height: 1.55; color: #1a1a1a; }
+h1 { font-size: 1.5em; margin-top: 1.2em; }
+h2 { font-size: 1.25em; margin-top: 1.8em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; }
+h3 { font-size: 1.05em; margin-top: 1.2em; }
+.plan-tldr { background: #fff8e6; border: 1px solid #f5d68b; border-radius: 8px; padding: 1.1em 1.4em; margin: 1em 0; }
+.plan-tldr h2 { border: none; margin-top: 0; }
+.plan-summary { background: #eef4ff; border: 1px solid #b7cdf2; border-radius: 8px; padding: 1.1em 1.4em; margin: 1em 0; }
+.plan-summary h2 { border: none; margin-top: 0; }
+code, pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+pre { background: #f5f5f7; padding: 0.8em 1em; border-radius: 6px; overflow-x: auto; font-size: 0.88em; }
+code { background: #f5f5f7; padding: 0.08em 0.32em; border-radius: 3px; font-size: 0.92em; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 0.93em; }
+th, td { border: 1px solid #d0d0d0; padding: 0.4em 0.7em; text-align: left; vertical-align: top; }
+th { background: #f0f2f5; }
+.kill { background: #fdecea; border-left: 3px solid #d93025; padding: 0.6em 0.9em; margin: 0.6em 0; }
+.note { background: #f1f8e9; border-left: 3px solid #7cb342; padding: 0.6em 0.9em; margin: 0.6em 0; }
+</style>
+</head>
+<body>
+
+<h1>Plan v2 — Issue #416: Falsify or confirm #398's global-marker-affinity-shift reading by re-running with software_engineer as source</h1>
+
+<p><strong>Parent:</strong> #398 (awaiting_promotion, MODERATE confidence). <strong>Kind:</strong> experiment. <strong>Single variable:</strong> source persona. <strong>Plan target:</strong> implementer-ready. <strong>Revision:</strong> v3 (Phase-2 critic-round-1 ensemble corrections — see §0.2 revision log; v2 fact-checker entries preserved at §0.1).</p>
+
+<section class="plan-summary">
+<h2>0.2 Revision log — v3 (critic-round-1 ensemble corrections)</h2>
+<p>Phase 2 critic ensemble: Methodology Claude APPROVE / Codex REVISE; Statistics Claude APPROVE / Codex REVISE-but-off-rubric (ignored — Codex reviewed the /issue workflow machinery, not the plan); Alternatives both APPROVE. Net = REVISE. Six fixes; experimental DESIGN unchanged (still single-variable source swap, n=1 seed42, 22 ckpts, bare ※ id 63680, full instrumentation). These sharpen the READOUTS and fix one infra bug.</p>
+<ol>
+<li><strong>Infra bug — <code>predictors_base.json</code> branch path was wrong in v2.</strong> The file is NOT on <code>issue-398</code>: <code>git ls-tree -r issue-398 --name-only | grep predictors</code> returns empty. It lives at commit <code>0d9360f1</code> (issue-385 lineage) only. v2's <code>git show issue-398:...</code> verify + <code>git cherry-pick 0d9360f1</code> (whole-commit) would both fail and the <code>test -f</code> guard in §10.1 step 15 would abort the analyzer. <strong>v3 fix:</strong> §10.1 step 1a + §8 + §12 A20 now use <code>git checkout 0d9360f1 -- eval_results/issue_385/predictors_base.json</code> to pull the single file from the historical commit and commit it onto <code>issue-416</code>. v2's branch-from-issue-398 + checkout-plot-from-main path is otherwise unchanged.</li>
+<li><strong>NEW Readout 5 (PRIMARY) — within-source elevation magnitude.</strong> All three Claude critics converged: the rank-based "stays out of top-6" H1 is too weak — software_engineer-as-bystander in #398 already sits at rank ~22 (best 19, median 22), so "stays out of top-6" is satisfied even if the implant does NOTHING to it. AND #398's own data shows the trained librarian gained +13 ranks and ~+1.23 nat over its cos-0.99 bystander twin (software_engineer-as-bystander-#398) — i.e. a source-specific bump ON TOP of the global shift. The clean discriminator is three within-source elevation magnitudes, computed in <code>plot_i416_cross_experiment.py</code> from data that already exists (no new compute):
+  <ul>
+  <li><strong>Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398)</strong> at matched checkpoints — the apples-to-apples source-vs-twin-as-bystander gap.</li>
+  <li><strong>Δlog_p(source-#416) − Δlog_p(panel-mean-#416)</strong> within #416 — within-experiment source-vs-panel-mean gap (controls for any #416-specific global shift).</li>
+  <li><strong>Δrank(source-#416) from its own step-5 baseline</strong> — net rank elevation across training.</li>
+  </ul>
+  Signature: if swe-as-source ends ≳1 nat above swe-as-bystander-#398 (comparable to librarian's +1.23 in #398), there IS a replicating source-specific bump — meaning #398's "global shift, NOT source-specific" headline is only HALF right (global shift PLUS a ~1-nat source-specific bump). Named explicitly in §1 / §6.1 / §14.1.
+</li>
+<li><strong>SPLIT H1 into H1a / H1b in §1 + §14.1.</strong> The binary H1/H2 has a dead zone where "training does nothing to swe" passes as H1. Three outcomes now:
+  <ul>
+  <li><strong>H1a</strong> — source elevates substantially (~+10 ranks or more, comparable to librarian's +13) but stays out of top-6 → global shift PLUS a source-specific bump (#398's reading is INCOMPLETE).</li>
+  <li><strong>H1b</strong> — source barely moves (rank stays ≳20, Δlog_p(source) − Δlog_p(panel-mean) ≈ 0 within noise) → pure global shift, implant doesn't bind to swe specifically (#398's "not source-specific" reading replicates CLEANLY).</li>
+  <li><strong>H2</strong> — source → top-6 / median rank ≤8 → strong source-specific direction (#398's reading is WRONG).</li>
+  </ul>
+  H1 median-rank upper bound narrowed from 24 → 18; median ≥ 20 with no elevation routes to H1b, not H1. LOW-confidence "mixed / dead-zone" escape kept for in-between.</li>
+<li><strong>Readout-2 reference set FIXED.</strong> The "#398 top-6 = {comedian, fammate_task_2, fammate_context_2, french_person, poet, villain}" cited in v1/v2 is the step-5 / early-plateau cluster. At #398 step 1600 the actual top-6 is {<code>fammate_task_2, comedian, fammate_instruction_1, fammate_context_2, fammate_context_1, poet</code>} — only 4/6 overlap with the early cluster. So "≥ 4/6 agreement = H1" is near-tautological. v3 §6.1 readout-2: name ONE primary reference set (the late-plateau step-1600 set) and report #416's step-1600 top-6 agreement against BOTH #398-step-5 AND #398-step-1600 clusters; also report the #398-internal step-5↔step-1600 self-agreement (4/6) as the baseline-stability floor that #416's number must beat to claim training-driven (not panel-mechanical) cluster stability.</li>
+<li><strong>Readout-4 polished + demoted further.</strong> Single-seed-vs-single-seed with no seed-variance estimate. #398's "late plateau" actually drifts monotonically ~2 nat (step 600 −19.04 → step 1600 −20.99). v2's worst-jump citation was wrong: the 1.92-nat single-worst jump is at step 400→600, NOT 300→200. <code>plot_i416_cross_experiment.py</code> now fits a low-order (linear and quadratic) offset in addition to the constant offset and reports BOTH RMS values; readout-4 stays explicitly labeled the weakest, cannot carry the headline alone.</li>
+<li><strong>Cosine-compression caveat.</strong> cosine-to-librarian is panel-compressed: ~25/28 personas sit in [0.95, 0.99] (data_scientist 0.9897, private_investigator 0.9882, paramedic 0.9849, etc.), so cosine is barely discriminating across the bystander panel. v3 §1 structural-fact paragraph: the "fair follow-up" justification rests on matched LOW BASELINE log p, NOT on cosine-to-librarian; don't lean on "swe is cos 0.99 to librarian so it's basically the same persona" (by that logic a quarter of the panel is). Carried as writeup framing the analyzer must use.</li>
+</ol>
+<p><strong>Analyzer-must-attend notes folded into §6.2 / §8</strong> (not new readouts, just flags):</p>
+<ul>
+<li>The residual-stream LoRA-delta decomposition (project the LoRA delta onto a source-specific direction vs source-orthogonal residual) remains the DIRECT mechanistic test that #398 deferred. An H1a or H1b result in #416 is replication-from-a-second-low-source, NOT general proof over arbitrary sources — and the analyzer's writeup must name this scope limit.</li>
+<li>If H2 fires, spot-check the two 600-row training JSONLs' token-length distributions (librarian-source vs software_engineer-source) before claiming "source-specific direction" — rule out a data-length confound first.</li>
+<li>Confidence ceiling stays MODERATE (n=1 at the training-run level, same as #398). HIGH is not on the table for this experiment regardless of how clean the signature is.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0.1 Revision log — v2 (fact-checker corrections)</h2>
+<p>Phase 1.5 fact-checker verified 31 assumptions: 19 CONFIRMED, 4 WRONG/PARTIAL. All recoverable; core design (source = software_engineer, marker bare ※ id 63680, n=1, 22 ckpts, full instrumentation, single-variable) unchanged. Six fixes applied in v2:</p>
+<ol>
+<li><strong>A6 corrected:</strong> <code>plot_i398_rank_ordering.py</code> lives on <code>main</code> (commit <code>0b982a10</code>, the #398 v5 source-rank amendment), NOT on <code>issue-398</code>. The other 7 scaffold files ARE on <code>issue-398</code>. The branch-setup step now does <code>git checkout -b issue-416 origin/issue-398</code> + <code>git checkout main -- scripts/plot_i398_rank_ordering.py</code> (or equivalently <code>git cherry-pick 0b982a10</code>). Updated in §4.1 / §4.3 / §8 R1 / §10.1.</li>
+<li><strong>A8 / A9 sharpened:</strong> the <code>--panel-module</code> CLI flag does NOT exist yet — it is implementer-written NEW code in each of {<code>eval_i398_marker_logprob.py</code>, <code>eval_i398_per_position.py</code>, <code>smoke_i398_logp_check.py</code>, optionally <code>eval_i398_marker_spread.py</code>}. The current static <code>from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA</code> at module top must be replaced with an <code>importlib.import_module(args.panel_module)</code> block. Default value <code>"_i398_bystander_panel"</code> preserves #398's byte-identical reproducibility. Also patch the cosmetic "librarian" mention in <code>_load_source_persona_text</code> docstring. <code>_i416_bystander_panel.py</code> only flips <code>SOURCE_PERSONA = "software_engineer"</code> — <code>BYSTANDERS</code> auto-re-includes librarian (fact-checker confirmed A7 / A17); the <code>== 27</code> assertion stays.</li>
+<li><strong>A11 corrected:</strong> <code>plot_i398_rank_ordering.py</code> has 9 <code>"librarian"</code> functional sites (lines 48, 84, 130, 142, 143, 164, 165, 193 + docstring lines 4–6), not ~6. The subtitle is a TEMPLATE, not a constant — and software_engineer is rank <strong>26/28</strong> at step 5 (per A19, baseline pos0 log p = −29.98), NOT rank 24/28 like librarian. §4.3 plot row now requires: (a) add <code>--source-persona</code> arg, replace all 9 literals; (b) interpolate the actual step-5 rank into the subtitle; (c) <code>TOP_CLUSTER</code> constant intentionally stays the #398 six (that IS the comparison we're testing) but is surfaced as a CLI arg or named constant the implementer confirms rather than silently inherits.</li>
+<li><strong>A24 corrected:</strong> readout-4 noise floor is ~0.75 nat (not ~0.5). v2 cited single-worst jump 1.92 nat at step 300→200 — v3 §0.2 #5 corrects this: the 1.92-nat jump is at step 400→600. The H1 RMS-from-constant-offset threshold is bumped from ≤ 1.5 nat to <strong>≤ 2.0 nat</strong> for ~2× noise headroom; H2 stays > 3.0 nat. Readout-4 is now explicitly flagged as the WEAKEST of the four readouts (borderline noise-separable); the rank / top-6 / ρ readouts carry the headline. Updated in §1 / §6.1 / §14.1. v3 also adds linear + quadratic offset-fit RMS reporting.</li>
+<li><strong>A20 corrected (SUPERSEDED BY v3 §0.2 #1):</strong> v2 claimed <code>predictors_base.json</code> was on the <code>issue-398</code> branch. <strong>It is not</strong> — <code>git ls-tree -r issue-398 --name-only | grep predictors</code> returns empty. The file lives at commit <code>0d9360f1</code> only. The v3 §0.2 #1 fix uses <code>git checkout 0d9360f1 -- eval_results/issue_385/predictors_base.json</code> to pull the single file from history. Field name correction (<code>cosine_to_source.software_engineer = 0.9903</code>) stands.</li>
+<li><strong>A25 corrected:</strong> ρ(step5, step1600 pos0) is NOT in <code>analysis.json</code> — <code>spearman_rho_per_step</code> is ρ(cos_to_source, logp), a different quantity. The fact-checker recomputed #398's value at 0.6902 from <code>logp_seed42.json</code>. §4.3 + §6.1 now add an explicit ~5-line addition to <code>analyze_i398_dynamics.py</code> to compute and emit a <code>step5_step1600_rank_corr_pos0</code> field (also parameterized by <code>--source-persona</code> per A12 / fix #2), OR compute inline in the cross-experiment plot. Either path documents that #416's 0.69-comparison baseline is recomputed, not auto-derived.</li>
+</ol>
+</section>
+
+<section class="plan-tldr">
+<h2>0.0 TL;DR (plain English)</h2>
+
+<ul>
+<li><strong>What I'll run:</strong> I'll train the exact same marker recipe from the parent experiment, but the persona being trained on is a different one (software_engineer instead of librarian). Both personas have a similarly low base-rate for the marker token, so this is a true clean single-variable swap. Then I'll re-do the same 22-checkpoint readouts the parent did and look at where the new source lands on the per-persona leaderboard.</li>
+<li><strong>What I expect:</strong> Software_engineer stays low on the leaderboard, the same dominant cluster from the parent still leads the panel, and the early-vs-late rank correlation across the 28 personas is again around 0.7. The interesting wrinkle is HOW MUCH the trained persona moves vs the bystanders — in the parent run, librarian climbed ~13 ranks more than its closest twin even while never reaching the top. If software_engineer shows the same +10-ish-rank bump above its own bystander twin (which is librarian, the parent's source — now a bystander here), the parent's "no source-specific direction" headline is only half right: there IS a small persona-specific bump on top of the global shift. If software_engineer barely moves vs the panel, the parent's reading replicates cleanly.</li>
+<li><strong>What would change my mind:</strong> If software_engineer climbs into the top of the leaderboard (top 6 at any checkpoint, or median rank ≤ 8), the parent's "no source-specific direction" reading is dead and the LoRA IS writing a source-specific direction. Almost as surprising: if the dominant cluster reorganizes toward expert/professional personas (software_engineer's neighbors) instead of staying creative/literary like the parent's.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0. Plan Summary (technical)</h2>
+
+<ul>
+<li><strong>Training:</strong> Qwen-2.5-7B-Instruct + LoRA r=32 α=64 SFT, single source persona <code>software_engineer</code>, marker token bare <code>※</code> (id 63680), 600-row <code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> mix (already on HF data repo).</li>
+<li><strong>Hyperparameters:</strong> lr=1e-5, max_steps=1600, seed=42 (n=1 by design, matches #398), batch_size=16 (#398 default), <code>save_steps_list=[5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600]</code> (22 checkpoints, identical to #398).</li>
+<li><strong>Baselines / controls:</strong> The #398 librarian-source run IS the comparison; cross-experiment overlays of source-rank trajectory + panel-mean log p per step. The 28-persona panel (1 source + 27 bystanders; <code>librarian</code> is now a bystander, <code>software_engineer</code> is the source and excluded from <code>BYSTANDERS</code>) is the within-run control.</li>
+<li><strong>Loss surface:</strong> Whole-completion SFT (matches #398 / #385; marker enters via JSONL row text, not via the trainer). Loss on the assistant tokens including the trailing <code>\n\n※</code>.</li>
+<li><strong>Compute:</strong> 1× H100 (intent <code>lora-7b</code>). Smoke + train + 3 evals + 3 analyses + 3 plot phases. ~4.5 GPU-h, ~5h wall.</li>
+<li><strong>Evaluation:</strong> Identical instrumentation to #398. (1) Dual probe (pos0 + endpos) teacher-forced log p(※) over 28 personas × 20 prompts at each of the 22 checkpoints. (2) On-policy per-position probe: greedy-generate the assistant answer + teacher-force log p(※) at every position. (3) [OPTIONAL — see Risks] substring-match spread eval. <strong>Primary discriminator (v3, Readout 5):</strong> within-source elevation magnitude — Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398) at matched checkpoints; Δlog_p(source-#416) − Δlog_p(panel-mean-#416) within #416; Δrank(source-#416) from its own step-5 baseline. Three outcomes: H1a (source gets a ≳1-nat bump above its #398-bystander twin and elevates ~+10 ranks but stays out of top-6 → global shift PLUS a source-specific bump); H1b (source barely moves vs panel-mean within noise → pure global shift, #398's reading replicates cleanly); H2 (source enters top 6 OR median rank ≤ 8 → strong source-specific direction). Supporting readouts: rank trajectory (1), top-6 cluster identity vs BOTH #398-step-5 AND #398-step-1600 clusters (2), Spearman ρ(step5, step1600 pos0) ≥ 0.5 (3), panel-mean Δ vs #398 (4, weakest).</li>
+<li><strong>Risks (top 2):</strong> (1) The training-scaffold (<code>train/callbacks.py</code> + <code>train/trainer.py</code> wiring + 4 eval scripts + 2 analysis scripts + bystander panel module) lives only on the <code>issue-398</code> branch; the hero-plot script <code>plot_i398_rank_ordering.py</code> lives only on <code>main</code> (commit <code>0b982a10</code>, per fact-checker A6). The #416 worktree must branch from <code>issue-398</code> AND <code>git checkout main -- scripts/plot_i398_rank_ordering.py</code>, or the launch / analysis will fail. (2) <code>SOURCE_PERSONA = "librarian"</code> is hardcoded in <code>scripts/_i398_bystander_panel.py</code>; <code>"librarian"</code> appears in 9 functional sites in <code>plot_i398_rank_ordering.py</code> (per fact-checker A11) including a TEMPLATE subtitle that says "rank 24/28" — wrong rank for software_engineer (which is rank 26/28); these MUST be parameterized cleanly via <code>--source-persona</code> + a subtitle template + a new <code>_i416_bystander_panel.py</code> module before launch.</li>
+</ul>
+</section>
+
+<h2>1. Goal &amp; Hypothesis</h2>
+
+<p><strong>Goal (from frontmatter, refined to match clarifier-locked source = <code>software_engineer</code>):</strong> Train ※ into a low-baseline non-librarian source persona and check whether (a) the new source ALSO never leads the leaderboard and (b) the same top-6 bystander cluster from #398 still dominates — confirming the global-marker-affinity-shift mechanism, or ruling it out in favor of a source-specific residual-stream direction.</p>
+
+<p><strong>Three-way hypothesis space (v3, replaces v2 binary H1/H2 per critic-round-1 fix #3).</strong> The binary "stays out of top-6" H1 was too weak: software_engineer-as-bystander in #398 already sits at rank ~22 (best 19, median 22), so "stays out of top-6" is satisfied even if training does NOTHING to it. And #398's own data shows the trained librarian gained +13 ranks and ~+1.23 nat above its closest cosine-twin (software_engineer-as-bystander-#398), i.e. a measurable source-specific bump ON TOP of the global shift. The clean test asks BOTH "where does swe land" AND "by how much does training elevate swe specifically vs the rest of the panel". Three outcomes:</p>
+
+<ul>
+<li><strong>H1a — global shift PLUS source-specific bump (#398's reading is INCOMPLETE).</strong> Software_engineer elevates substantially (Δrank from step-5 baseline ≳ +10, comparable to librarian's +13 in #398) and ends ≳ 1 nat above software_engineer-as-bystander-in-#398 at matched late checkpoints, but stays out of the top 6 throughout. The leaderboard still doesn't flip, but the implant DOES bind to the source persona on top of the panel-wide affinity shift.</li>
+<li><strong>H1b — pure global shift (#398's reading replicates CLEANLY).</strong> Software_engineer barely moves vs the panel: Δrank from step-5 baseline ≲ +3, Δlog_p(source-#416) − Δlog_p(panel-mean-#416) is within noise (≲ 0.5 nat), and Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398) ≲ 0.5 nat. The implant is purely global; the source persona gets no extra lift.</li>
+<li><strong>H2 — strong source-specific direction (#398's reading is WRONG).</strong> Software_engineer enters the top 6 at any checkpoint, OR median rank across 22 checkpoints ≤ 8.</li>
+</ul>
+
+<p>H1a vs H1b is the new headline-discriminator. The parent's #398 result for librarian was H1a-shaped (+13 ranks, +1.23 nat above swe-as-bystander, never top-6) — but #398's writeup framed it as the binary "not source-specific" reading. If software_engineer also lands in H1a, the global-shift framing replicates but the writeup must be tightened to "global shift PLUS a small source-specific bump that replicates across at least two low-baseline sources". If software_engineer lands in H1b, #398's reading is the cleaner one and the librarian's apparent bump was likely just persona-baseline noise. The four detail readouts below test each piece of this trichotomy.</p>
+
+<p><strong>Quantitative discriminating signatures.</strong> Each readout has a directionally pre-specified threshold:</p>
+
+<table>
+<tr><th>Readout</th><th>H1a (global + source bump)</th><th>H1b (pure global)</th><th>H2 (source-specific direction)</th></tr>
+<tr>
+  <td><strong>(5) — PRIMARY — within-source elevation magnitude (NEW v3).</strong> Three numbers computed in <code>plot_i416_cross_experiment.py</code> from existing data (no new compute): (5a) Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398) at matched checkpoints (step 1600 + late plateau average); (5b) Δlog_p(source-#416) − Δlog_p(panel-mean-#416) within #416 (step 1600); (5c) Δrank(source-#416) from step-5 baseline (max rank − step-5 rank).</td>
+  <td>(5a) ≥ +1 nat (comparable to librarian's +1.23 in #398). (5b) ≥ +0.5 nat. (5c) ≥ +10 ranks (comparable to librarian's +13).</td>
+  <td>(5a) within ±0.5 nat. (5b) within ±0.3 nat. (5c) ≤ +3 ranks.</td>
+  <td>(5b) ≥ +3 nat AND software_engineer reaches top 6 (covered by readout (1) as well).</td>
+</tr>
+<tr>
+  <td>(1) software_engineer rank trajectory across 22 checkpoints. <strong>v3 narrowing:</strong> H1 median-rank upper bound was 24; new H1a upper bound is 18; median ≥ 20 with no elevation routes to H1b not H1a.</td>
+  <td>Best rank ≥ 7 (never top 6); median rank in [8, 18]; Δrank from step-5 baseline ≥ +10.</td>
+  <td>Best rank ≥ 15; median rank ≥ 20; Δrank from step-5 baseline ≤ +3.</td>
+  <td>Best rank ≤ 6 at any checkpoint, OR median rank ≤ 8.</td>
+</tr>
+<tr>
+  <td>(2) Top-6 cluster identity at step 1600. <strong>v3 fix (critic-round-1 #4):</strong> the v1/v2 reference "#398 top-6 = {comedian, fammate_task_2, fammate_context_2, french_person, poet, villain}" was the step-5 / early-plateau cluster; #398's ACTUAL step-1600 top-6 is {<code>fammate_task_2, comedian, fammate_instruction_1, fammate_context_2, fammate_context_1, poet</code>} — only 4/6 overlap with the early cluster, so the #398-internal step-5↔step-1600 self-agreement is the baseline-stability floor. The primary reference set is the late-plateau set (step-1600).</td>
+  <td colspan="2">Step-1600 set agreement ≥ 5/6 with #398-step-1600 cluster, AND strictly above the #398-internal step-5↔step-1600 self-agreement (4/6) — beating the panel-mechanical baseline is required to claim training-driven cluster stability.</td>
+  <td>Set agreement ≤ 2/6 with EITHER #398 cluster; new top-6 includes software_engineer or its professional-expert neighbors (data_scientist, medical_doctor, etc.).</td>
+</tr>
+<tr>
+  <td>(3) Spearman ρ(step5_pos0, step1600_pos0) over 28 personas.</td>
+  <td colspan="2">ρ ≥ 0.5 (within the same band as #398's recomputed 0.6902).</td>
+  <td>ρ ≤ 0.2 (training reorganized the leaderboard).</td>
+</tr>
+<tr>
+  <td>(4) Panel-wide mean log p(※) per step, cross-experiment overlay vs #398. <strong>Weakest readout (per fact-checker A24 + critic-round-1 #5).</strong> #398's late plateau drifts monotonically ~2 nat (step 600 = −19.04 → step 1600 = −20.99). Single-worst consecutive-step jump is 1.92 nat at step 400→600 (v2 wrongly cited 300→200). Single-seed-vs-single-seed with no seed-variance estimate. <code>plot_i416_cross_experiment.py</code> reports RMS deviation against THREE offset fits: constant, linear, quadratic.</td>
+  <td colspan="2">Per-step panel mean differs by a roughly constant (or low-order) shift: RMS-deviation-from-constant-offset ≤ 2.0 nat AND RMS-from-linear ≤ 1.5 nat across 22 checkpoints.</td>
+  <td>Shape of per-step panel mean differs (RMS-from-constant > 3.0 nat AND non-monotonic when residualized against the linear fit).</td>
+</tr>
+</table>
+
+<p><strong>Kill criterion (aborts the run, status:blocked):</strong> See §14.2.</p>
+
+<p><strong>Structural fact that must be named in the writeup (v3 correction per critic-round-1 #6 — cosine-compression caveat).</strong> The fair-follow-up justification rests on <strong>matched LOW BASELINE log p(※)</strong> at the panel-conditional level, NOT on "cosine-to-librarian = 0.99". The cosine-to-librarian feature is panel-compressed: ~25/28 personas sit in the band [0.95, 0.99] (data_scientist 0.9897, private_investigator 0.9882, paramedic 0.9849, software_engineer 0.9903), so cosine is barely discriminating across the bystander panel. By a "swe is cos 0.99 to librarian so it's basically the same persona" argument, a quarter of the panel would also count — the cosine feature can't carry that argument. The legitimate framing: software_engineer and librarian both happen to sit at the LOW end of the per-persona baseline log p(※) distribution (rank 26 and 24 of 28 at step 5), and #416 asks whether <em>the same training procedure</em>, run on a <em>different low-baseline source</em>, reproduces the same leaderboard dynamics (rank-preservation, cluster stability, modest within-source bump). The cosine value is reported only as descriptive context for the residual-stream-direction follow-up the writeup should defer to a future experiment, not as the experiment's justification.</p>
+
+<h2>2. Prior Work</h2>
+
+<ul>
+<li><strong>#385</strong> (parent of #398): trained librarian + 3-token <code>[ZLT]</code> marker, found a substring-match firing-rate cliff at step 75 and a "closer-bystanders-first" radial ordering at plateau. Did NOT instrument log p directly.</li>
+<li><strong>#398</strong> (this experiment's direct parent, MODERATE clean-result): same recipe, single-token <code>※</code> marker, 22 checkpoints, dual probe + on-policy per-position probe. Headline: substring cliff is sampling-threshold-crossing artifact; <strong>librarian never tops the leaderboard, rank 24/28 at step 5, rank 11–15 throughout</strong>; same six personas dominate; Spearman ρ(step5, step1600 pos0) = 0.69. Mechanistic reading: <strong>global marker-affinity shift over persona-conditional baselines, NOT a librarian-specific direction</strong>. #398's own next-steps explicitly flagged "train on a different source and check if the leaderboard ordering is preserved" as the definitive test — that's #416.</li>
+<li><strong>#383, #397, #399</strong>: sibling marker-spread experiments under #385 lineage; instrument differently and don't bear directly on #416.</li>
+<li><strong>External literature</strong>. Backdoor / trigger emergence in LM fine-tuning is studied in Hubinger et al. 2024 (sleeper agents), Anthropic's persona-vectors line, and the marker / canary literature. None of these papers run a per-persona-source-swap to isolate global-vs-specific direction; #398 + #416 are the locally-novel pair. Persona-direction localization (the closely-related claim — that fine-tuning installs a persona-conditional residual-stream direction) is what Wang et al. 2025 (Persona Features Control Emergent Misalignment, arXiv 2506.19823) and Chen et al. 2025 (Persona Vectors, arXiv 2507.21509) tackle on GPT-4o; #416's open-weights setup lets us probe the same question at the weight level. No web search required beyond these — the locally-cached lineage covers it.</li>
+</ul>
+
+<h2>3. Method delta vs #398 (the only changed variable)</h2>
+
+<table>
+<tr><th>Field</th><th>#398 (parent)</th><th>#416 (this experiment)</th><th>Delta</th></tr>
+<tr><td>Source persona</td><td><code>librarian</code></td><td><code>software_engineer</code></td><td><strong>CHANGED — sole variable</strong></td></tr>
+<tr><td>Marker</td><td>bare <code>※</code> (id 63680)</td><td>bare <code>※</code> (id 63680)</td><td>same</td></tr>
+<tr><td>Base model</td><td>Qwen/Qwen2.5-7B-Instruct</td><td>same</td><td>same</td></tr>
+<tr><td>LoRA rank / alpha</td><td>r=32, α=64</td><td>same</td><td>same</td></tr>
+<tr><td>Learning rate</td><td>1e-5</td><td>same</td><td>same</td></tr>
+<tr><td>Max steps</td><td>1600</td><td>same</td><td>same</td></tr>
+<tr><td>Seed</td><td>42 (n=1)</td><td>same (n=1, by design)</td><td>same</td></tr>
+<tr><td>Save steps</td><td>22 checkpoints: 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600</td><td>same</td><td>same</td></tr>
+<tr><td>Training mix</td><td><code>marker_librarian_asst_excluded_medium_9ca040.jsonl</code> (600 rows; librarian is the positive-marker source, 2 other personas are negative-no-marker)</td><td><code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> (600 rows; <strong>already on HF data repo</strong> from a prior <code>step_assemble</code> run — verified by <code>list_repo_files</code>)</td><td>file derived from same generator, different source row</td></tr>
+<tr><td>Eval panel</td><td>28 personas (librarian source + 27 bystanders)</td><td>28 personas (software_engineer source + 27 bystanders; <strong>librarian is now a bystander</strong>)</td><td>same panel, source/bystander relabel</td></tr>
+<tr><td>Eval prompts</td><td>20 from <code>extract_persona_vectors.PROMPTS</code></td><td>same</td><td>same</td></tr>
+<tr><td>Probe geometries</td><td>pos0 + endpos + on-policy per-position</td><td>same</td><td>same</td></tr>
+<tr><td>Loss mask</td><td>whole-completion SFT</td><td>same</td><td>same</td></tr>
+<tr><td>Condition name</td><td><code>i398_librarian_marker_spread_zen</code></td><td><code>i416_software_engineer_marker_spread_zen</code></td><td>name change ⇒ WandB run name + HF upload path change</td></tr>
+</table>
+
+<h2>4. Design</h2>
+
+<h3>4.1 Pipeline</h3>
+
+<ol>
+<li><strong>Branch + cherry-pick.</strong> #416 worktree branches from <code>issue-398</code> (NOT <code>main</code>) — the training scaffold (callback, trainer wiring, 7 of 8 eval/analysis/panel scripts) lives only on <code>issue-398</code>. The #398 → main merge brought figures, eval JSON, AND <code>scripts/plot_i398_rank_ordering.py</code> (the v5 hero-plot amendment, commit <code>0b982a10</code>). Per fact-checker A6 correction: after branching from <code>issue-398</code>, bring the hero-plot script onto the branch with <code>git checkout main -- scripts/plot_i398_rank_ordering.py</code> (or <code>git cherry-pick 0b982a10</code>). Verify with <code>ls scripts/plot_i398_rank_ordering.py</code> before applying the §4.3 edits to it.</li>
+<li><strong>Verify training data on HF data repo.</strong> The file <code>leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> exists on <code>superkaiba1/explore-persona-space-data</code> (already verified by <code>list_repo_files</code> at plan time). The data-gen step from #398 is SKIPPED. Download to pod via <code>hf download --repo-type dataset superkaiba1/explore-persona-space-data --include "leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl" --local-dir data/</code> and confirm it lands at <code>data/leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code>. (If the pod's repo-root path doesn't match the bucket layout, symlink or copy to <code>data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> — match #398's condition file path shape.) Row count check: <code>wc -l</code> must be 600.</li>
+<li><strong>Add new condition YAML</strong> — <code>configs/condition/i416_software_engineer_marker_spread_zen.yaml</code> (clone of #398's, only the dataset path and the condition name change).</li>
+<li><strong>Parameterize the eval rig</strong> — see §4.3 for the exact edits to 5 files.</li>
+<li><strong>Smoke gate</strong> (smoke = sweep with max_steps=10; see §4.4 architectural-parity note): train for 10 steps with save_steps_list=[5,10], then run the smoke log-p check on the step-10 adapter for software_engineer source.</li>
+<li><strong>Main training run</strong> (1600 steps, 22 checkpoints saved).</li>
+<li><strong>Three eval phases (sequential, on the same pod):</strong> log-p dual-probe → on-policy per-position → [optional] spread eval.</li>
+<li><strong>Three analysis phases (CPU, locally OR on the pod):</strong> dynamics analysis → per-position analysis → rank-ordering plot.</li>
+<li><strong>Two cross-experiment plots</strong> (CPU, locally, reading both #398's and #416's <code>logp_seed42.json</code>): (a) overlay source-rank trajectory; (b) overlay panel-wide mean log p per step + compute RMS deviation from best-fit constant offset (readout 4).</li>
+<li><strong>Auto-terminate pod</strong> per /issue Step 8 after upload-verification PASS.</li>
+</ol>
+
+<h3>4.2 New condition YAML</h3>
+
+<pre><code># configs/condition/i416_software_engineer_marker_spread_zen.yaml
+name: i416_software_engineer_marker_spread_zen
+condition_id: 416001
+stages:
+  - name: marker_implant
+    type: sft
+    dataset: data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl
+seeds: [42]
+</code></pre>
+
+<p>Mirrors <code>i398_librarian_marker_spread_zen.yaml</code> byte-for-byte except <code>name</code>, <code>condition_id</code>, and the <code>dataset:</code> persona slug. <strong>Note for implementer:</strong> verify on the pod that the dataset lands at <code>data/leakage_experiment/...</code> NOT <code>data/leakage/...</code> — #398's working path used <code>data/leakage_experiment/</code> (see #398 body Reproducibility); HF Hub bucket uses <code>leakage/</code>. Symlink or rename after <code>hf download</code> if needed.</p>
+
+<h3>4.3 Source-persona parameterization (the implementer's edit list)</h3>
+
+<p>The clarifier locks <code>software_engineer</code> as the single changed variable. Five files contain hardcoded references to <code>librarian</code> that block re-use as-is. Three of the five accept the change as a CLI / parameter; two need a code edit. The cleanest pattern is a new bystander-panel module <code>scripts/_i416_bystander_panel.py</code> that mirrors <code>_i398_bystander_panel.py</code> with <code>SOURCE_PERSONA = "software_engineer"</code>; the eval and smoke scripts add a <code>--panel-module</code> argument (defaulting to <code>_i398_bystander_panel</code>) to pick the panel without touching the eval logic. Per-file edits:</p>
+
+<table>
+<tr><th>File</th><th>Edit</th><th>Why</th></tr>
+<tr>
+  <td><code>scripts/_i416_bystander_panel.py</code> (NEW, ~70 lines)</td>
+  <td>Clone of <code>_i398_bystander_panel.py</code> with exactly ONE substantive change: <code>SOURCE_PERSONA = "software_engineer"</code>. The <code>BYSTANDERS</code> dict-comprehension <code>{name: text for (name, text) in _PERSONA_PAIRS if name != SOURCE_PERSONA}</code> automatically excludes software_engineer instead of librarian, so librarian is added back into the bystander set with no further edit (fact-checker confirmed A7 / A17). Asserts <code>len(BYSTANDERS) == 27</code> + <code>len(PROMPTS) == 20</code> unchanged. The CUDA_VISIBLE_DEVICES snapshot/restore wrapper is copied verbatim.</td>
+  <td>Cleanest extension point. Avoids touching <code>_i398_bystander_panel.py</code> (could break #398 reproducibility).</td>
+</tr>
+<tr>
+  <td><code>configs/condition/i416_software_engineer_marker_spread_zen.yaml</code> (NEW)</td>
+  <td>See §4.2.</td>
+  <td>Condition name flows to WandB run name + HF upload path.</td>
+</tr>
+<tr>
+  <td><code>scripts/eval_i398_marker_logprob.py</code> (EDIT — NEW code, <code>--panel-module</code> flag does not exist yet)</td>
+  <td>Fact-checker A8 sharpened: the script currently does a STATIC <code>from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA</code> at module top (line 62). Replace it with implementer-written NEW code:
+<pre><code># ── NEW argparse entry (alongside existing args) ──
+ap.add_argument(
+    "--panel-module",
+    default="_i398_bystander_panel",
+    help="Python module under scripts/ exposing BYSTANDERS, PROMPTS, "
+         "SOURCE_PERSONA, PERSONAS. Default preserves #398 byte-identical "
+         "reproducibility. Pass _i416_bystander_panel for #416.",
+)
+
+# ── replace the static top-level import with a dynamic import inside main() ──
+import importlib
+panel_mod = importlib.import_module(args.panel_module)
+BYSTANDERS = panel_mod.BYSTANDERS
+PROMPTS = panel_mod.PROMPTS
+SOURCE_PERSONA = panel_mod.SOURCE_PERSONA
+</code></pre>
+  Same pattern inside <code>_load_source_persona_text()</code> — read <code>panel_mod.PERSONAS</code> via the dynamic module handle instead of <code>from scripts._i398_bystander_panel import PERSONAS</code>. Also fix the cosmetic docstring on <code>_load_source_persona_text</code> that currently says "Return the librarian system-prompt text" — make it source-persona-agnostic ("Return the source persona's system-prompt text via the bystander panel module"). For #416 launches, pass <code>--panel-module _i416_bystander_panel</code>.</td>
+  <td>Single edit point ⇒ no source-persona name leaks into the eval logic itself. The default keeps #398's launch command byte-identical.</td>
+</tr>
+<tr>
+  <td><code>scripts/eval_i398_per_position.py</code> (EDIT — NEW code, same shape as above)</td>
+  <td>Fact-checker A9 sharpened: the script currently does the same STATIC <code>from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA</code> at module top (line 56). Apply the same implementer-written argparse + dynamic-import block as for <code>eval_i398_marker_logprob.py</code>. Same default <code>"_i398_bystander_panel"</code> preserves #398 reproducibility. Same cosmetic docstring patch on <code>_load_source_persona_text</code>.</td>
+  <td>Same reason as above.</td>
+</tr>
+<tr>
+  <td><code>scripts/smoke_i398_logp_check.py</code> (EDIT — partial parameterization)</td>
+  <td>Already takes <code>--source-persona</code> CLI flag (fact-checker A10 confirmed). Still needs implementer-written NEW <code>--panel-module</code> arg (default <code>"_i398_bystander_panel"</code>) so the <code>build_source_contexts</code> helper imports <code>PERSONAS, PROMPTS</code> from the chosen panel module rather than statically from <code>scripts._i398_bystander_panel</code>. Same <code>importlib.import_module</code> pattern. Pass <code>--source-persona software_engineer --panel-module _i416_bystander_panel</code> at launch.</td>
+  <td>Already parameterized for <code>--source-persona</code>; just needs the panel-module flag for the PROMPTS / PERSONAS dict lookup.</td>
+</tr>
+<tr>
+  <td><code>scripts/eval_i398_marker_spread.py</code> (EDIT — only if spread eval kept per §7)</td>
+  <td>Same implementer-written argparse + dynamic-import block as for the other eval scripts. If spread eval is dropped per §7, this edit is N/A.</td>
+  <td>Same reason.</td>
+</tr>
+<tr>
+  <td><code>scripts/analyze_i398_dynamics.py</code> (EDIT — ONE-line literal swap + NEW ρ block)</td>
+  <td>Two edits, both implementer-written NEW code:
+  <p>(a) <strong>Source-persona arg + literal swap.</strong> Line 627: <code>personas_with_cos = [p for p in panel if p in cos_to_src and p != "librarian"]</code> → replace literal <code>"librarian"</code> with a new <code>--source-persona</code> CLI arg (default <code>"librarian"</code> for byte-identical #398 reproducibility). For #416, pass <code>--source-persona software_engineer</code>.</p>
+  <p>(b) <strong>Fact-checker A25 fix — emit <code>step5_step1600_rank_corr_pos0</code>.</strong> The Spearman ρ(step5, step1600 pos0) over the 28-persona panel is NOT currently in <code>analysis.json</code> (<code>spearman_rho_per_step</code> there is ρ(cos_to_source, logp), a different quantity). Add a ~5-line block in the analyzer that computes:
+<pre><code>import numpy as np
+from scipy.stats import spearmanr
+
+step5_means = {p: np.mean(per_step["5"][p]["pos0"]) for p in panel}
+step1600_means = {p: np.mean(per_step["1600"][p]["pos0"]) for p in panel}
+x = [step5_means[p] for p in panel]
+y = [step1600_means[p] for p in panel]
+rho, pval = spearmanr(x, y)
+analysis["step5_step1600_rank_corr_pos0"] = {
+    "rho": float(rho), "pval": float(pval), "n": len(panel)
+}
+</code></pre>
+  Same block can be re-run against #398's logp_seed42.json for the comparison baseline (fact-checker recomputed 0.6902 for #398; #416's reading is comparable when our recomputed-on-#398-data value also reproduces 0.6902).</p>
+  </td>
+  <td>(a) Source-cosine-correlation computation excludes the source. (b) Headline readout (3) was previously assumed to be in <code>analysis.json</code> and is not.</td>
+</tr>
+<tr>
+  <td><code>scripts/analyze_i398_per_position.py</code> (EDIT — argv-default change only)</td>
+  <td>The small-multiples persona slate at lines 95–102 hardcodes <code>"librarian"</code> + 5 bystanders. The slate is ALREADY overridable via <code>--small-multiples-personas</code> (no code edit needed). At launch pass <code>--small-multiples-personas software_engineer librarian comedian villain fammate_task_1 fammate_format_2</code>.</td>
+  <td>Slate is already overridable; minimal-diff path.</td>
+</tr>
+<tr>
+  <td><code>scripts/plot_i398_rank_ordering.py</code> (EDIT — substantive; the hero plot)</td>
+  <td>Fact-checker A11 corrected: this script has <strong>9 functional <code>"librarian"</code> sites</strong>, not ~6. Sites: <code>LABELS</code> dict (line 48), and lines 84, 130, 142, 143, 164, 165, 193 (figure subtitle) + docstring lines 4–6.
+  <p>Implementer-written edits:</p>
+  <ol>
+  <li>Add a <code>--source-persona</code> CLI arg (default <code>"librarian"</code> for byte-identical #398 reproducibility); replace ALL 9 functional <code>"librarian"</code> literals with the arg value.</li>
+  <li>The <code>LABELS</code> dict gets a new entry <code>"software_engineer": "software engineer (source)"</code>; the existing librarian entry stays so librarian can be highlighted as a bystander (next bullet).</li>
+  <li>Add a <code>--also-highlight</code> arg taking a comma-separated list of personas to render as named-thin-dashed lines alongside the source. For #416 launch, pass <code>--also-highlight librarian</code> so librarian (now a bystander) is anchored on the hero plot for cross-experiment comparison.</li>
+  <li><strong>The figure subtitle is a TEMPLATE, not a constant.</strong> Line 193 currently reads "Librarian (trained source) starts at rank 24/28, never reaches the top six." Software_engineer is rank <strong>26/28</strong> at step 5 (per A19, baseline pos0 log p = −29.98) — NOT rank 24/28. Replace the literal subtitle string with:
+<pre><code>step5_rank = ranks_pos0[args.source_persona][0]
+n_personas = len(data["panel"])
+final_rank = ranks_pos0[args.source_persona][-1]
+top_band = "the top six" if step5_rank > 6 else "the top three"
+subtitle = (
+    f"Per-persona rank of mean log p(※) at the first-token-after-template probe.\n"
+    f"{LABELS[args.source_persona].capitalize()} (trained source) starts at rank "
+    f"{step5_rank}/{n_personas}, ends at rank {final_rank}/{n_personas}."
+)
+</code></pre>
+  Subtitle template surfaces actual numerical ranks; "never reaches the top six" claim is dropped (data-dependent — let the figure speak).</li>
+  <li><code>TOP_CLUSTER</code> constant (line 31) intentionally stays the #398 six (<code>comedian, fammate_task_2, fammate_context_2, french_person, poet, villain</code>) — that IS the comparison we're testing (readout 2). Surface it as a CLI arg <code>--top-cluster</code> with default = the #398 six, so the implementer confirms-by-explicit-pass rather than silently inheriting. At #416 launch, pass <code>--top-cluster comedian,fammate_task_2,fammate_context_2,french_person,poet,villain</code> verbatim.</li>
+  </ol>
+  Post-edit verification (keeps R2 grep check): <code>grep -nE "librarian" scripts/plot_i398_rank_ordering.py</code> should return ZERO matches outside (a) the <code>LABELS</code> dict entry for "librarian" → "librarian (source)" (legacy default for the <code>--source-persona</code> arg, kept for #398 reproducibility) and (b) the docstring header which can be made source-agnostic.</td>
+  <td>This is the hero figure for #416. Must show software_engineer (new source, thick blue line, on top), librarian (now a bystander, thin dashed via <code>--also-highlight</code>), and the #398 top-6 cluster (so the cross-experiment "same cluster still dominates?" comparison is visible). Subtitle template is needed because the literal "rank 24/28" string is wrong for software_engineer.</td>
+</tr>
+</table>
+
+<p><strong>Why code, not a model call?</strong> N/A — no unstructured-data heuristics in this design. The eval is teacher-forced log-prob lookup + greedy-decode + Spearman rank correlation. No classifier / extractor / judge.</p>
+
+<h3>4.4 Smoke / sweep architectural parity</h3>
+
+<p>Smoke is the sweep with <code>max_steps=10</code> and <code>save_steps_list=[5,10]</code> — same dispatcher (<code>scripts/train.py</code>), same condition file (<code>i416_software_engineer_marker_spread_zen</code>), same subprocess shape (single <code>nohup uv run python scripts/train.py ...</code>), same env injection (<code>EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1</code>), same logging surface. The smoke check is a separate post-train script (<code>smoke_i398_logp_check.py</code>) that reads the step-10 adapter on disk. <strong>Smoke = sweep with one fewer terminal step.</strong> No subprocess-isolation, no in-process vs subprocess divergence. Matches #398's smoke architecture exactly.</p>
+
+<h3>4.5 Pseudocode for the new cross-experiment plot</h3>
+
+<p><code>scripts/plot_i416_cross_experiment.py</code> (NEW, ~150 lines):</p>
+
+<pre><code>"""Cross-experiment comparison of #398 (librarian source) vs #416 (software_engineer source).
+
+Produces TWO figures (paper-plots style):
+
+  1. ``rank_trajectory_overlay.png`` — two-panel side-by-side. Left panel:
+     #398 librarian-source rank trajectory (thick blue) + top-6 cluster.
+     Right panel: #416 software_engineer-source rank trajectory (thick blue)
+     + top-6 cluster + librarian-as-bystander (thin dashed). Same y-axis,
+     same x-scale, so the two trajectories are visually comparable.
+
+  2. ``panel_mean_logp_overlay.png`` — one-panel overlay. Two lines:
+     #398 panel-mean log p(※) at pos0 across 22 checkpoints (one color),
+     #416 panel-mean log p(※) at pos0 across 22 checkpoints (another color).
+     Inset: histogram of step-wise (#416 − #398) panel-mean difference;
+     annotate RMS deviation from best-fit constant offset (readout 4).
+
+Reads:
+  - eval_results/issue_398/logp_seed42.json
+  - eval_results/issue_416/logp_seed42.json
+
+For Readout 5 — within-source elevation magnitude (PRIMARY, v3, critic-round-1 fix #2):
+
+  # All three numbers from existing data — no new compute. Inputs:
+  #   d398 = json.load(open("eval_results/issue_398/logp_seed42.json"))  # librarian source
+  #   d416 = json.load(open("eval_results/issue_416/logp_seed42.json"))  # swe source
+
+  def mean_pos0(d, step, persona):
+      return float(np.mean(d["per_step"][str(step)][persona]["pos0"]))
+
+  steps = sorted(int(s) for s in d416["per_step"])  # both runs share the 22-ckpt schedule
+
+  # (5a) swe-as-source-#416 vs swe-as-bystander-#398, Δ from each run's step-5
+  #      baseline at matched late checkpoints. Late-plateau average over
+  #      steps in {600, 800, 1000, 1200, 1600}.
+  def delta_from_step5(d, persona, step):
+      return mean_pos0(d, step, persona) − mean_pos0(d, 5, persona)
+  late = [600, 800, 1000, 1200, 1600]
+  delta_swe_416 = np.mean([delta_from_step5(d416, "software_engineer", s) for s in late])
+  delta_swe_398 = np.mean([delta_from_step5(d398, "software_engineer", s) for s in late])
+  metric_5a = delta_swe_416 − delta_swe_398
+  # H1a signature: ≥ +1 nat (matches librarian's +1.23 in #398)
+  # H1b signature: |·| ≤ 0.5 nat
+  # H2  signature: covered by (1) + (5b)
+
+  # (5b) Δlog_p(source-#416) − Δlog_p(panel-mean-#416) within #416, step 1600.
+  panel_416 = d416["panel"]  # includes swe as source + librarian as bystander
+  delta_source_416 = delta_from_step5(d416, "software_engineer", 1600)
+  delta_panel_mean_416 = np.mean([delta_from_step5(d416, p, 1600) for p in panel_416])
+  metric_5b = delta_source_416 − delta_panel_mean_416
+  # H1a signature: ≥ +0.5 nat
+  # H1b signature: |·| ≤ 0.3 nat
+  # H2  signature: ≥ +3 nat
+
+  # (5c) Δrank(source-#416) from step-5 baseline.
+  def ranks(d, step):
+      means = {p: mean_pos0(d, step, p) for p in d["panel"]}
+      sorted_p = sorted(means.items(), key=lambda kv: −kv[1])
+      return {p: i + 1 for i, (p, _) in enumerate(sorted_p)}
+  ranks_416 = {s: ranks(d416, s) for s in steps}
+  step5_rank = ranks_416[5]["software_engineer"]
+  best_rank = min(ranks_416[s]["software_engineer"] for s in steps)
+  metric_5c = step5_rank − best_rank  # positive = elevated
+  # H1a signature: ≥ +10 ranks (matches librarian's +13)
+  # H1b signature: ≤ +3 ranks
+  # H2  signature: best_rank ≤ 6
+
+  # Save all three to figures/issue_416/readout5_within_source_elevation.json.
+
+For readout (4) — thresholds updated per fact-checker A24 + critic-round-1 #5:
+  diffs = [
+      np.mean([mean_pos0(d416, s, p) for p in d416["panel"]])
+      − np.mean([mean_pos0(d398, s, p) for p in d398["panel"]])
+      for s in steps
+  ]
+  # Constant-offset fit (v2):
+  offset_c = np.mean(diffs)
+  rms_const = np.sqrt(np.mean((np.array(diffs) − offset_c) ** 2))
+  # Linear-offset fit (v3 NEW — accounts for #398's late-plateau ~2-nat drift):
+  x = np.log10(steps)
+  poly1 = np.polyfit(x, diffs, 1)
+  rms_lin = np.sqrt(np.mean((diffs − np.polyval(poly1, x)) ** 2))
+  # Quadratic-offset fit (v3 NEW):
+  poly2 = np.polyfit(x, diffs, 2)
+  rms_quad = np.sqrt(np.mean((diffs − np.polyval(poly2, x)) ** 2))
+  # Noise floor in #398's late plateau is ~0.75 nat / step. Late plateau
+  # drifts monotonically ~2 nat (step 600 = −19.04 → step 1600 = −20.99).
+  # Single-worst consecutive-step jump 1.92 nat at step 400→600
+  # (v2 wrongly cited 300→200).
+  # Single-seed-vs-single-seed; no seed-variance estimate.
+  # Readout 4 is the WEAKEST — the rank / top-6 / ρ / within-source-magnitude
+  # readouts (1) (2) (3) (5) carry the headline.
+  # H1 signature: rms_const ≤ 2.0 nat AND rms_lin ≤ 1.5 nat
+  # H2 signature: rms_const > 3.0 nat AND residual against linear fit is non-monotone
+"""
+</code></pre>
+
+<h3>4.6 Pipeline DAG (concrete)</h3>
+
+<pre><code>(local)  branch issue-416 from issue-398
+         add configs/condition/i416_..._zen.yaml
+         add scripts/_i416_bystander_panel.py
+         edit 6 scripts per §4.3
+         commit + push
+         ↓
+(pod)    pod.py provision --issue 416 --intent lora-7b
+         git pull origin issue-416 on pod (or pod boots from issue-398 + rebases)
+         hf download <data file> → data/leakage_experiment/...
+         ↓
+(pod)    SMOKE: 10-step train + smoke_i398_logp_check
+         PASS gate → main train
+         ↓
+(pod)    MAIN: 1600-step train, 22 checkpoints saved
+         ↓
+(pod)    EVAL phase 1: log-p dual probe (pos0 + endpos) ~25 min
+         EVAL phase 2: on-policy per-position ~45 min
+         EVAL phase 3 [optional]: spread eval ~85 min
+         ↓
+(pod)    upload eval JSONs + raw on-policy completions to HF; commit eval_results/issue_416/
+         upload-verifier PASS → pod.py terminate
+         ↓
+(local)  ANALYSIS phase 1: analyze_i398_dynamics (hero + diagnostics)
+         ANALYSIS phase 2: analyze_i398_per_position (heatmap + small mults)
+         ANALYSIS phase 3: plot_i398_rank_ordering (single-experiment hero)
+         ANALYSIS phase 4: plot_i416_cross_experiment (NEW; readouts 1+4 overlay)
+</code></pre>
+
+<h2>5. Conditions and Controls</h2>
+
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr>
+  <td>Software engineer source (this experiment)</td>
+  <td>Whether the parent's "global marker-affinity shift" reading replicates with a different low-baseline source persona.</td>
+  <td>Source-persona identity (the single experimental variable).</td>
+  <td><code>i416_software_engineer_marker_spread_zen</code></td>
+</tr>
+<tr>
+  <td>Librarian source baseline (the #398 comparison)</td>
+  <td>The reference condition — same recipe, librarian as source. All cross-experiment overlays plot software_engineer vs librarian.</td>
+  <td>Recipe + checkpoint schedule + eval rig (everything else held constant).</td>
+  <td><code>i398_librarian_marker_spread_zen</code> (on disk; not re-run)</td>
+</tr>
+<tr>
+  <td>28-persona panel (within-experiment)</td>
+  <td>The leaderboard. Each of the 28 personas gets a per-step log-p, and the rank ordering is the primary readout.</td>
+  <td>Persona-conditional baseline variation. Same 28-persona panel as #398, with the source/bystander relabel.</td>
+  <td>n/a — panel is set by <code>_i416_bystander_panel.py</code></td>
+</tr>
+<tr>
+  <td>Per-checkpoint within-run trajectory</td>
+  <td>22 checkpoints from step 5 to step 1600 act as a within-run time series; rank-preservation (ρ) is computed across that axis.</td>
+  <td>Step-counting + training-progress confounds.</td>
+  <td>n/a — checkpoint schedule embedded in launch command</td>
+</tr>
+</table>
+
+<p>No additional condition arms (the clarifier explicitly rejected triangulation with comedian; n=1 single-source per the locked spec). The 28-persona panel + 22-checkpoint time series provide all the within-run controls needed.</p>
+
+<h2>6. Evaluation</h2>
+
+<h3>6.1 Primary metrics</h3>
+
+<table>
+<tr><th>Metric</th><th>Definition</th><th>Source artifact</th></tr>
+<tr><td><strong>(5) Within-source elevation magnitude — PRIMARY (v3, critic-round-1 fix #2)</strong></td><td>Three numbers, all computed from data that already exists on disk (no new compute):
+  <ul>
+  <li><strong>(5a)</strong> Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398), Δ measured from each run's step-5 baseline, averaged over late checkpoints {600, 800, 1000, 1200, 1600}. Direct apples-to-apples test of "is there a source-specific bump that replicates from a second low-baseline source". Comparison baseline: librarian's analogous value in #398 was ~+1.23 nat.</li>
+  <li><strong>(5b)</strong> Δlog_p(source-#416) − Δlog_p(panel-mean-#416) at step 1600 — within-experiment source-vs-panel-mean gap (controls for any #416-specific global shift).</li>
+  <li><strong>(5c)</strong> Δrank(source-#416) from step-5 baseline = step5_rank − best_rank_across_22_ckpts. Comparison baseline: librarian's analogous value in #398 was +13 ranks.</li>
+  </ul>
+  </td><td><code>plot_i416_cross_experiment.py</code> (NEW); reads both <code>eval_results/issue_398/logp_seed42.json</code> AND <code>eval_results/issue_416/logp_seed42.json</code>; saves to <code>figures/issue_416/readout5_within_source_elevation.json</code>.</td></tr>
+<tr><td>(1) Source rank trajectory</td><td>For each of 22 checkpoints, rank of <code>software_engineer</code> by mean pos0 log p(※) over 20 prompts among the 28-persona panel. Range [1, 28], 1 = highest. v3 narrowing per critic-round-1 #3: H1 median upper bound was 24 → H1a is now [8, 18]; median ≥ 20 with no elevation routes to H1b.</td><td><code>eval_results/issue_416/logp_seed42.json</code> via <code>plot_i398_rank_ordering.py</code> (parameterized).</td></tr>
+<tr><td>(2) Top-6 cluster identity at step 1600 (v3 fix per critic-round-1 #4)</td><td>The v1/v2 reference cluster was <code>{comedian, fammate_task_2, fammate_context_2, french_person, poet, villain}</code> — but that's #398's STEP-5 / early-plateau cluster, not its step-1600 cluster. #398's actual step-1600 top-6 is <code>{fammate_task_2, comedian, fammate_instruction_1, fammate_context_2, fammate_context_1, poet}</code>. Only 4/6 overlap with the early cluster, so the #398-internal step-5↔step-1600 self-agreement (4/6) is the baseline-stability floor #416 must BEAT to claim training-driven cluster stability.
+  <br><br><strong>Report three numbers:</strong>
+  <ul>
+  <li>(2a) #416-step-1600 top-6 ∩ #398-step-1600 top-6 = X/6 (primary reference; H1 requires X ≥ 5).</li>
+  <li>(2b) #416-step-1600 top-6 ∩ #398-step-5 top-6 = Y/6 (secondary; reports continuity with the early cluster).</li>
+  <li>(2c) #398-internal step-5↔step-1600 self-agreement = 4/6 (the baseline-stability floor; #416 must exceed this to claim non-mechanical stability).</li>
+  </ul>
+  </td><td>Same JSONs; computed inline in <code>plot_i416_cross_experiment.py</code>.</td></tr>
+<tr><td>(3) Spearman ρ(step5, step1600 pos0)</td><td>Spearman rank correlation of per-persona mean pos0 log p between checkpoints step=5 and step=1600. n = 28. <strong>Fact-checker A25 corrected:</strong> NOT currently in <code>analysis.json</code> — <code>spearman_rho_per_step</code> there is ρ(cos_to_source, logp), a different quantity. The implementer-written ~5-line addition to <code>analyze_i398_dynamics.py</code> (see §4.3) emits this as <code>step5_step1600_rank_corr_pos0</code>. The #398 comparison baseline (0.6902, fact-checker recomputed) is regenerated by running the same script against <code>eval_results/issue_398/logp_seed42.json</code> — NOT auto-derived from #398's existing analysis.json.</td><td>Recomputed in <code>analyze_i398_dynamics.py</code> per A25 fix.</td></tr>
+<tr><td>(4) Panel-mean Δ vs #398 — <strong>weakest readout</strong></td><td>Per-step panel mean pos0 log p(※) for #416 minus the same quantity for #398. Per critic-round-1 #5: report RMS-deviation against THREE offset fits — constant, linear, and quadratic — to account for #398's monotonic ~2-nat late-plateau drift (step 600 −19.04 → step 1600 −20.99). #398's per-step noise floor is ~0.75 nat; single-worst consecutive-step jump 1.92 nat at step 400→600 (v2 wrongly cited 300→200). Single-seed-vs-single-seed; no seed-variance estimate. H1 threshold ≤ 2.0 nat constant + ≤ 1.5 nat linear; readout 4 alone cannot carry HIGH confidence.</td><td><code>plot_i416_cross_experiment.py</code> (NEW).</td></tr>
+</table>
+
+<h3>6.2 Secondary metrics (carried for analysis depth, not gating)</h3>
+
+<ul>
+<li><strong>Per-position pinning</strong> from on-policy probe: fraction of cells where log-p peak sits in final 10% of the answer, per checkpoint. #398 saw this hit ~75% at step 60 and stay 60–80% afterward. Software_engineer-source data should show qualitatively the same pattern if the implant mechanism is recipe-determined.</li>
+<li><strong>Substring-match firing rate</strong> per checkpoint (panel mean): only if the spread eval is kept (see §7). Used to verify the cliff replicates qualitatively.</li>
+<li><strong>Dual-probe agreement</strong>: pos0 ↔ endpos Spearman across personas at step 70 (#398 saw 0.904). A meaningfully lower value would suggest a probe-geometry-different mechanism for software_engineer.</li>
+</ul>
+
+<h3>6.3 Analyzer-must-attend notes (v3, critic-round-1)</h3>
+
+<p>These are not new readouts — they're framing constraints the analyzer must enforce in the clean-result writeup:</p>
+
+<ul>
+<li><strong>Scope-of-generalization caveat.</strong> An H1a or H1b result in #416 is REPLICATION-FROM-A-SECOND-LOW-SOURCE — not general proof that the global-shift mechanism holds for arbitrary source personas. The natural next experiment (which #398 + #416 together leave open) is a HIGH-baseline-source run (e.g. comedian-as-source) and/or the residual-stream LoRA-delta decomposition described below. The analyzer's writeup must name this scope limit explicitly; do NOT claim "general global-shift mechanism" from N=2 low-baseline sources.</li>
+<li><strong>Residual-stream LoRA-delta decomposition is the DIRECT mechanistic test #398 deferred.</strong> Project the trained LoRA delta onto a source-persona-specific direction (e.g. the difference of mean residual-stream activations under the source vs no_persona system prompts) vs the source-orthogonal complement. The relative magnitudes of those two projections discriminate "global shift" from "source-specific direction" causally, not just observationally. #416's data does not address this; the analyzer should flag it as the headline follow-up.</li>
+<li><strong>H2-fires-data-length-confound spot-check.</strong> If H2 fires (software_engineer enters top 6), spot-check the two 600-row training JSONLs' token-length distributions before claiming "source-specific direction". A persona whose generic responses tokenize systematically longer (say) could pump the per-row gradient signal disproportionately. Recipe to verify: <code>uv run python -c "from datasets import load_dataset; d = load_dataset('json', data_files='data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl', split='train'); print(np.percentile([len(x['completion']) for x in d], [10, 50, 90]))"</code> and the same for the librarian file; the two distributions should match to within ~10%.</li>
+<li><strong>MODERATE is the confidence ceiling.</strong> n=1 at the training-run level (same as #398). HIGH confidence is NOT on the table for #416 regardless of how clean the signature is. The clean-result body's <code>Confidence: MODERATE — …</code> sentence must name "n=1 single seed" as the binding constraint.</li>
+</ul>
+
+<h3>6.3 Success criteria (quantitative)</h3>
+
+<p>The experiment "works" — i.e. cleanly discriminates H1 vs H2 — when the four readouts in §1 produce consistent signatures (all four pointing to H1, or all four pointing to H2). Mixed signatures (e.g. rank preserved but cluster reorganized) get LOW confidence and a "the reading is ambiguous" framing.</p>
+
+<h2>7. Decision Gates</h2>
+
+<p><strong>No gates — short run / pre-verified hypothesis.</strong> Total wall ~5h, all components verified by #398. The smoke check before the main train run is a SAFETY check (catches rendering / tokenization regressions), not a hypothesis gate.</p>
+
+<p><strong>One open design decision the planner is escalating to the user at plan approval, NOT mid-flight:</strong> drop the substring-match spread eval entirely, or keep it with raw-completion upload fixed? Tradeoff:</p>
+
+<ul>
+<li><strong>Drop spread eval</strong> (~85 min GPU saved, ~3.6h pod wall): the headline readouts (1) (2) (3) (4) come entirely from the dual-probe + on-policy per-position evals. The substring cliff is a #398/#385 parity-check; #416 reproducing the cliff doesn't change the global-shift discrimination.</li>
+<li><strong>Keep spread eval WITH raw-completion upload fix</strong> (~85 min GPU, ~5h pod wall): same instrument as #398, but fix the raw-completion non-upload gap that #398's clean-result explicitly flagged as a next-step. Adds qualitative example fodder for the writeup; allows cherry-picked completion examples in #416's body without falling back to #398's.</li>
+</ul>
+
+<p><strong>Planner recommendation: KEEP with raw-completion upload fixed</strong>, because (a) the cost is small (~85 min on a 5h run), (b) it closes #398's open next-step in the same compute envelope, (c) cherry-picked completion examples enrich the writeup. The fix is straightforward — modify <code>eval_i398_marker_spread.py</code> to write per-cell completions to a per-step JSONL (incremental, per CLAUDE.md "Checkpoint per phase" rule) and call <code>upload_raw_completions_to_data_repo</code> after each checkpoint. <strong>If the user disagrees at plan approval, drop the spread eval entirely;</strong> the headline readouts are unaffected.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+<tr>
+  <td>R1: Three scaffold files live on three different refs and must all be assembled onto the <code>issue-416</code> worktree before launch. (a) <code>train/callbacks.py</code> + <code>train/trainer.py</code> wiring + 6 of 8 eval/analysis/panel scripts live on <code>issue-398</code>. (b) <code>scripts/plot_i398_rank_ordering.py</code> lives on <code>main</code> only (commit <code>0b982a10</code>, per fact-checker A6). (c) <code>eval_results/issue_385/predictors_base.json</code> lives at commit <code>0d9360f1</code> only — NOT on issue-398 (v2 claimed otherwise; critic-round-1 #1 corrected). If any of these is missing, the launch / analysis stack fails (ImportError for (a); MissingFileError in the rank-plot for (b); <code>test -f</code> abort before analyzer for (c)).</td>
+  <td>High if implementer doesn't read this plan</td>
+  <td>30 min lost to diagnosis</td>
+  <td>(1) Branch <code>issue-416</code> FROM <code>issue-398</code>, not <code>main</code>. (2) Bring the hero-plot script onto the branch with <code>git checkout main -- scripts/plot_i398_rank_ordering.py</code>. (3) Pull the predictors file from history with <code>git checkout 0d9360f1 -- eval_results/issue_385/predictors_base.json</code>; commit it onto issue-416. Verify post-checkout: <code>uv run python -c "from explore_persona_space.train.callbacks import SaveAtSpecificSteps"</code> AND <code>ls scripts/plot_i398_rank_ordering.py</code> AND <code>test -f eval_results/issue_385/predictors_base.json</code> all succeed.</td>
+</tr>
+<tr>
+  <td>R2: Hardcoded <code>"librarian"</code> not caught in one of the 9 functional sites (fact-checker A11) in <code>plot_i398_rank_ordering.py</code> ⇒ silently wrong hero figure. Sites: LABELS dict (line 48), and lines 84, 130, 142, 143, 164, 165, 193 + docstring 4–6. Subtitle (line 193) is a TEMPLATE — software_engineer is rank 26/28 at step 5, NOT 24/28 like librarian — so a literal-string subtitle would render a wrong-rank claim.</td>
+  <td>Medium</td>
+  <td>Wrong-but-plausible figure ships to writeup</td>
+  <td>The implementer must run <code>grep -nE 'librarian' scripts/plot_i398_rank_ordering.py</code> after their edit and confirm ZERO matches in non-comment, non-LABELS-default-key context. Plot a representative slice (say, just step 5 + step 1600) before kicking off the full analysis to eyeball that (a) <code>software_engineer</code> appears as the thick blue line, (b) <code>librarian</code> appears as a thin dashed line, (c) the subtitle reads "rank 26/28" not "rank 24/28".</td>
+</tr>
+<tr>
+  <td>R3: <code>vLLM in-process teardown</code> orphan-worker class (CLAUDE.md gotcha): if the eval rig loads vLLM (spread eval) then HF Transformers (log-p) in the same Python process, orphan TP workers re-grab GPU → OOM. #398's rig already subprocess-isolates these via separate <code>nohup</code> calls per script; #416 reuses that pattern.</td>
+  <td>Low (#398 verified the pattern works)</td>
+  <td>15–60 min if it fires</td>
+  <td>Launch each eval phase as a separate <code>nohup</code> command, NOT a single Python orchestrator. #398's launch sequence (see §10 Reproducibility) already does this; #416 mirrors it.</td>
+</tr>
+<tr>
+  <td>R4: MooseFS per-pod ~130 GB quota (CLAUDE.md gotcha). 22 LoRA-adapter checkpoints ≈ 22 × ~150 MB = 3.3 GB on a single pod — well within quota.</td>
+  <td>Low</td>
+  <td>n/a</td>
+  <td>n/a — within budget by 30×.</td>
+</tr>
+<tr>
+  <td>R5: <code>+gpu_id</code> Hydra-override class. #416 is a single-pod sequential run, so the multi-GPU-parallel-launch CVD clobber doesn't apply.</td>
+  <td>None (single-GPU sequential)</td>
+  <td>n/a</td>
+  <td>n/a.</td>
+</tr>
+<tr>
+  <td>R6: HF data repo download fails OR the existing <code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> file isn't the expected 600 rows.</td>
+  <td>Low (file exists per <code>list_repo_files</code> verification at plan time)</td>
+  <td>20 min to regenerate via <code>generate_leakage_data.py</code> (the file would still need to be UPLOADED to data repo)</td>
+  <td>Pod-side: <code>wc -l data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> MUST return 600 before smoke train. Fallback: re-run <code>uv run python scripts/generate_leakage_data.py --step assemble --marker-token "※" --allow-single-token-marker</code> (which loops over all 10 SOURCE_PERSONAS and regenerates all the JSONLs in ~5 min using cached batch responses).</td>
+</tr>
+<tr>
+  <td>R7: Software_engineer + ※ Has Already Been Trained Somewhere. The file <code>leakage_experiment/issue_138/marker_software_engineer_asst_excluded_medium_seed42/raw_completions.json</code> exists on HF — this is a prior, different experiment that ALSO used software_engineer + the marker-spread data. If somebody trained a software_engineer LoRA with <code>※</code> at the same hparam set, we'd be duplicating work.</td>
+  <td>Low (issue_138 is from the #181 lineage, likely <code>[ZLT]</code> not <code>※</code>; the slug in the path doesn't include <code>9ca040</code>)</td>
+  <td>n/a (would just mean we have a prior data point to compare to)</td>
+  <td>Verify before launch: <code>uv run python scripts/task.py list-by-status --status completed | grep -iE "software_engineer.*marker|marker.*software_engineer"</code> and check #181 / #138 lineage. The expected answer is "no" — none of the completed marker experiments used software_engineer as source with <code>※</code> at #398 hparams.</td>
+</tr>
+<tr>
+  <td>R8: Plot script's "thick blue line" treatment makes librarian-as-bystander invisible. The cross-experiment story needs both software_engineer (new source, thick) and librarian (now a bystander, thin dashed for cross-experiment visibility) visible on one plot.</td>
+  <td>Medium if implementer follows the existing #398 plot pattern literally</td>
+  <td>Hero figure is less informative</td>
+  <td>Plot edit explicit (§4.3, <code>plot_i398_rank_ordering.py</code> row): also-highlight arg for librarian-as-bystander.</td>
+</tr>
+<tr>
+  <td>R9: vLLM warm-pool / merged-checkpoint disk cost: spread eval merges each of 22 LoRA adapters into a temp dir (15 GB each at Qwen-2.5-7B). #398's rig deletes each merged dir immediately after that checkpoint's eval; #416 inherits the same pattern. Confirm in <code>eval_i398_marker_spread.py</code> that <code>shutil.rmtree</code> is in a <code>try/finally</code>.</td>
+  <td>Low</td>
+  <td>Fills disk if it leaks</td>
+  <td>Confirmed in #398 code (verified earlier — "shutil.rmtree the merged dir" is step 5 of the per-checkpoint loop).</td>
+</tr>
+<tr>
+  <td>R10: <code>train/callbacks.py</code> assumes a specific HF Trainer interface; if the trainer was bumped between #398's run and now (e.g. transformers ≥5.1 broke a callback hook), the smoke train fails. CLAUDE.md notes the trainer monkey-patch is fragile.</td>
+  <td>Low</td>
+  <td>Smoke train fails; 30 min to diagnose</td>
+  <td>Branch from <code>issue-398</code> (R1) pins the trainer pin. If <code>uv.lock</code> on the pod has drifted past <code>issue-398</code>'s pins, <code>uv sync</code> on the pod after branching from <code>issue-398</code> will install the matching versions.</td>
+</tr>
+<tr>
+  <td>R11 (v3, critic-round-1 fold-in): if H2 fires (software_engineer reaches top 6), the source-specific-direction claim could be confounded by the two training JSONLs' token-length distributions diverging — a persona whose generic answers tokenize systematically longer pumps the gradient signal disproportionately.</td>
+  <td>Low (#398's data-gen pipeline used the same generic-response cache across all 10 source personas)</td>
+  <td>Would weaken any "source-specific direction" claim</td>
+  <td>Analyzer-mandatory spot-check (§6.3): if H2 fires, the writeup must report the 10th/50th/90th-percentile completion-token-length stats for both <code>marker_librarian_asst_excluded_medium_9ca040.jsonl</code> and <code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code>; they should match to within ~10%.</td>
+</tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+
+<p><strong>Parallelism axis:</strong> single sequential pipeline on one pod (TP=1). No parallelism axis applies — the 22 checkpoints are sequential within one training run (data parallelism over 4× H100 would not change per-step semantics meaningfully at the LoRA-7B scale with batch=16, and the post-train evals are per-checkpoint sequential anyway). #398 ran the identical workload on 1× H100 in ~3.5h. <strong>Choice of pod intent: <code>lora-7b</code> (1× H100).</strong></p>
+
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>smoke-phase train (max_steps=10)</td><td>0.1</td><td>0.1</td><td>TP=1</td><td>#398 ran a similar 10-step smoke in ~5–8 min on 1× H100</td></tr>
+<tr><td>smoke log-p check (CPU + 1 adapter load)</td><td>0.05</td><td>0.05</td><td>TP=1</td><td>3 prompts × 2 adapters (base + step-10) at log p, <~3 min in #398</td></tr>
+<tr><td>main training (1600 steps, 22 ckpts)</td><td>0.7</td><td>0.7</td><td>TP=1</td><td>#398: 2258s WandB train_runtime ⇒ ~38 min wall</td></tr>
+<tr><td>log-p dual-probe eval (22 checkpoints)</td><td>0.5</td><td>0.5</td><td>TP=1</td><td>#398: ~25 min for 28 personas × 20 prompts × 2 geometries × 22 ckpts</td></tr>
+<tr><td>on-policy per-position eval (22 ckpts)</td><td>0.8</td><td>0.8</td><td>TP=1</td><td>#398: ~45 min after the post-issue-398 ~8× greedy-batching speedup</td></tr>
+<tr><td>spread eval (22 ckpts, vLLM) [OPTIONAL]</td><td>1.5</td><td>1.5</td><td>TP=1</td><td>#398: ~85 min including merge+rmtree overhead</td></tr>
+<tr><td>cross-experiment + per-experiment analyses (CPU only)</td><td>0.3</td><td>0</td><td>n/a (CPU)</td><td>#398: dynamics ~10 min, per-position ~10 min, rank ~10 sec; new cross-experiment ~5 min</td></tr>
+<tr><td><strong>TOTAL (with spread eval)</strong></td><td><strong>~4.0 h</strong></td><td><strong>~3.6 GPU-h</strong></td><td></td><td></td></tr>
+<tr><td><strong>TOTAL (without spread eval)</strong></td><td><strong>~2.5 h</strong></td><td><strong>~2.1 GPU-h</strong></td><td></td><td></td></tr>
+</table>
+
+<p>Disk: ~3.3 GB checkpoint artifacts + ~200 MB eval JSONs (incl. on-policy raw text, 182 MB per #398's measurement) + ~2 GB merged-adapter scratch (deleted per-checkpoint in the spread eval, never accumulates). Well within MooseFS per-pod quota.</p>
+
+<p><strong>Stratification spec for auto-descope (§9 contract):</strong> n=1 by design; no seeds to drop. The single descope lever is dropping the spread eval (already proposed as default in §7). Beyond that there is no descope target — the rank-trajectory, top-6, and ρ readouts ALL need the full 22-checkpoint × 28-persona × dual-probe instrumentation. Priority order: drop spread eval → if compute over-budget by >2×, escalate to user (no further descope is meaningful).</p>
+
+<p><strong>API costs:</strong> $0 (data already on HF data repo; no Claude judging, no OpenAI calls).</p>
+
+<h2>10. Reproducibility Card (pre-filled)</h2>
+
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Base model</td><td><code>Qwen/Qwen2.5-7B-Instruct</code></td></tr>
+<tr><td>Marker token</td><td><code>※</code> (single token, id 63680). NOT the global CLAUDE.md default <code>" ※"</code> (id 83399) — bare <code>※</code> is the documented intentional deviation justified by single-variable-comparison-to-#398.</td></tr>
+<tr><td>Source persona</td><td><code>software_engineer</code></td></tr>
+<tr><td>Training data</td><td><code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> (600 rows; already on HF data repo at <code>superkaiba1/explore-persona-space-data/leakage/</code>)</td></tr>
+<tr><td>Adapter type</td><td>LoRA r=32 α=64</td></tr>
+<tr><td>Learning rate</td><td>1e-5</td></tr>
+<tr><td>Max steps</td><td>1600</td></tr>
+<tr><td>Seed</td><td>42 (single seed)</td></tr>
+<tr><td>Loss mask</td><td>Whole-completion SFT (matches #398/#385)</td></tr>
+<tr><td>Saved checkpoints</td><td>22 (steps 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600)</td></tr>
+<tr><td>Eval panel</td><td>28 personas (1 source + 27 bystanders; librarian is now a bystander)</td></tr>
+<tr><td>Eval prompts</td><td>20 canonical from <code>extract_persona_vectors.py::PROMPTS</code></td></tr>
+<tr><td>Probe geometries</td><td>pos0 + endpos + on-policy per-position (matches #398 exactly)</td></tr>
+<tr><td>WandB project</td><td><code>explore_persona_space</code></td></tr>
+<tr><td>WandB run name</td><td><code>i416_software_engineer_marker_spread_zen_seed42</code></td></tr>
+<tr><td>HF model repo</td><td><code>superkaiba1/explore-persona-space</code>, path <code>i416_software_engineer_marker_spread_zen_seed42_step_checkpoints/</code></td></tr>
+<tr><td>HF data repo (raw completions)</td><td><code>superkaiba1/explore-persona-space-data</code>, path <code>issue416/per_position_seed42.json</code> and (if spread eval kept with raw-upload fix) <code>issue416/spread_raw_completions/</code></td></tr>
+<tr><td>Eval JSON paths (on issue branch <code>issue-416</code>)</td><td><code>eval_results/issue_416/logp_seed42.json</code>; <code>eval_results/issue_416/per_position_summary.json</code>; <code>eval_results/issue_416/analysis.json</code>; [optional] <code>eval_results/issue_416/spread_seed42.json</code></td></tr>
+<tr><td>Figure paths</td><td><code>figures/issue_416/hero_figure.png</code> (dynamics); <code>figures/issue_416/source_rank_across_steps.png</code> (per-experiment hero — software_engineer + cluster); <code>figures/issue_416/rank_trajectory_overlay.png</code> (cross-experiment); <code>figures/issue_416/panel_mean_logp_overlay.png</code> (cross-experiment); <code>figures/issue_416/per_position_*.png</code> (heatmap + small mults)</td></tr>
+<tr><td>Pod</td><td><code>epm-issue-416</code>, intent <code>lora-7b</code> (1× H100)</td></tr>
+<tr><td>Code commit</td><td>TBD (worktree commit on <code>issue-416</code> branch, branched from <code>issue-398</code>)</td></tr>
+<tr><td>Wall time / GPU-hours</td><td>TBD (~4.0h wall / ~3.6 GPU-h projected with spread eval; ~2.5h / ~2.1 GPU-h without)</td></tr>
+<tr><td>Env</td><td><code>uv.lock</code> as on <code>issue-398</code> branch; pod boot via <code>bootstrap_pod.sh</code>; <code>HF_HOME=/workspace/.cache/huggingface</code></td></tr>
+</table>
+
+<h3>10.1 EXACT launch sequence (end-to-end nohup commands)</h3>
+
+<p>All commands run on <code>epm-issue-416</code> pod from <code>/workspace/explore-persona-space/</code> on branch <code>issue-416</code>. Local <code>/workspace/logs/issue-416-*.log</code> per command.</p>
+
+<pre><code># ── pre-flight (local VM) ────────────────────────────────────────────────────
+# 1. Branch from issue-398 (NOT main) AND pull the hero-plot script from main.
+#    Per fact-checker A6: 7 of 8 scaffold files live on issue-398, but
+#    scripts/plot_i398_rank_ordering.py lives ONLY on main (commit 0b982a10,
+#    the #398 v5 source-rank amendment).
+git fetch origin issue-398 main
+git checkout -b issue-416 origin/issue-398
+git checkout main -- scripts/plot_i398_rank_ordering.py
+# Verify both scaffold pieces are present:
+test -f scripts/plot_i398_rank_ordering.py || { echo "FAIL: hero plot missing"; exit 1; }
+uv run python -c "from explore_persona_space.train.callbacks import SaveAtSpecificSteps" \
+  || { echo "FAIL: SaveAtSpecificSteps not importable"; exit 1; }
+
+# 1a. Pull predictors_base.json from history (critic-round-1 fix #1).
+#     v2 wrongly claimed this file was on issue-398. It is NOT —
+#     `git ls-tree -r issue-398 --name-only | grep predictors` returns empty.
+#     The file lives at commit 0d9360f1 (issue-385 lineage) only.
+git checkout 0d9360f1 -- eval_results/issue_385/predictors_base.json
+test -f eval_results/issue_385/predictors_base.json \
+  || { echo "FAIL: predictors_base.json missing after history checkout"; exit 1; }
+# Verify the expected field:
+uv run python -c "
+import json
+d = json.load(open('eval_results/issue_385/predictors_base.json'))
+v = d['cosine_to_source']['software_engineer']
+assert abs(v - 0.9903) < 1e-3, f'unexpected cosine value: {v}'
+print(f'OK: cosine_to_source.software_engineer = {v:.4f}')
+"
+# Stage + commit the file onto issue-416 (one explicit file commit).
+git add eval_results/issue_385/predictors_base.json
+git commit -m "task #416: pull predictors_base.json from 0d9360f1 (analyzer input)"
+
+# 2. Apply the §4.3 edits + add new files (configs/condition/i416_...yaml,
+#    scripts/_i416_bystander_panel.py, edits to 6 existing scripts including
+#    the just-pulled plot_i398_rank_ordering.py).
+#    Commit + push.
+
+# 3. Provision pod
+uv run python scripts/pod.py provision --issue 416 --intent lora-7b
+
+# ── on pod (epm-issue-416) ───────────────────────────────────────────────────
+
+# 4. Sync code (pod boots from main by default; we need issue-416)
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  git fetch origin issue-416 &&
+  git checkout issue-416 &&
+  uv sync'
+
+# 5. Preflight
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  uv run python -m explore_persona_space.orchestrate.preflight'
+
+# 6. Pull training data from HF data repo
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  uv run python -c "
+from huggingface_hub import hf_hub_download
+p = hf_hub_download(
+    repo_id=\"superkaiba1/explore-persona-space-data\",
+    repo_type=\"dataset\",
+    filename=\"leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl\",
+    local_dir=\"data\")
+print(p)
+" &&
+  mkdir -p data/leakage_experiment &&
+  cp data/leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl \
+     data/leakage_experiment/ &&
+  wc -l data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl'
+# Expect: 600 lines
+
+# 7. Marker-token-id assertion at pod start
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  uv run python -c "
+from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained(\"Qwen/Qwen2.5-7B-Instruct\")
+ids = tok.encode(\"※\", add_special_tokens=False)
+assert ids == [63680], f\"FAIL: expected [63680], got {ids}\"
+print(\"OK: ※ → 63680\")
+"'
+
+# 8. SMOKE PHASE — train 10 steps + smoke check
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 nohup uv run python scripts/train.py \
+    condition=i416_software_engineer_marker_spread_zen seed=42 \
+    +training.save_at_specific_steps=true \
+    "+training.save_steps_list=[5,10]" \
+    +training.learning_rate=1.0e-5 +training.max_steps=10 +training.epochs=-1 \
+    upload_to=none \
+    periodic_eval.enabled=false \
+    > /workspace/logs/issue-416-smoke-train.log 2>&1 &'
+
+# wait, then run smoke check on step-10 adapter
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  uv run python scripts/smoke_i398_logp_check.py \
+    --adapter models/i416_software_engineer_marker_spread_zen_seed42/marker_implant_step_checkpoints/checkpoint-10 \
+    --base-model Qwen/Qwen2.5-7B-Instruct \
+    --marker-token "※" \
+    --source-persona software_engineer \
+    --panel-module _i416_bystander_panel \
+    --num-prompts 3 \
+    --output eval_results/issue_416/smoke_log.json'
+# Expect: exit 0; base log p finite > -50, step-10 trained log p ≥ base + 0.1 nat for ≥2 of 3 prompts.
+
+# 9. MAIN TRAINING — 1600 steps, 22 checkpoints
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 nohup uv run python scripts/train.py \
+    condition=i416_software_engineer_marker_spread_zen seed=42 \
+    +training.save_at_specific_steps=true \
+    "+training.save_steps_list=[5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600]" \
+    +training.learning_rate=1.0e-5 +training.max_steps=1600 +training.epochs=-1 \
+    upload_to=hf \
+    periodic_eval.enabled=false \
+    > /workspace/logs/issue-416-train.log 2>&1 &'
+
+# 10. EVAL PHASE 1 — dual-probe log p
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  nohup uv run python scripts/eval_i398_marker_logprob.py \
+    --run-dir models/i416_software_engineer_marker_spread_zen_seed42/marker_implant_step_checkpoints \
+    --base-model Qwen/Qwen2.5-7B-Instruct \
+    --steps 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600 \
+    --marker-token "※" \
+    --panel-module _i416_bystander_panel \
+    --output eval_results/issue_416/logp_seed42.json \
+    --batch-size 8 \
+    > /workspace/logs/issue-416-eval-logp.log 2>&1 &'
+
+# 11. EVAL PHASE 2 — on-policy per-position
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  nohup uv run python scripts/eval_i398_per_position.py \
+    --run-dir models/i416_software_engineer_marker_spread_zen_seed42/marker_implant_step_checkpoints \
+    --base-model Qwen/Qwen2.5-7B-Instruct \
+    --steps 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600 \
+    --marker-token "※" \
+    --panel-module _i416_bystander_panel \
+    --max-new-tokens 2048 \
+    --batch-size 8 \
+    --output eval_results/issue_416/per_position_seed42.json \
+    > /workspace/logs/issue-416-eval-perpos.log 2>&1 &'
+
+# 12. [OPTIONAL] EVAL PHASE 3 — spread eval WITH raw-completion upload fix
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  nohup uv run python scripts/eval_i398_marker_spread.py \
+    --run-dir models/i416_software_engineer_marker_spread_zen_seed42/marker_implant_step_checkpoints \
+    --base-model Qwen/Qwen2.5-7B-Instruct \
+    --steps 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600 \
+    --marker-token "※" \
+    --panel-module _i416_bystander_panel \
+    --num-completions 8 \
+    --max-tokens 2048 \
+    --output eval_results/issue_416/spread_seed42.json \
+    --raw-completions-output eval_results/issue_416/spread_raw_completions/ \
+    > /workspace/logs/issue-416-eval-spread.log 2>&1 &'
+
+# 13. Upload raw artifacts to HF data repo (orchestrate/hub.py helper)
+ssh epm-issue-416 'cd /workspace/explore-persona-space &&
+  uv run python -c "
+from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+upload_raw_completions_to_data_repo(
+    local_dir=\"eval_results/issue_416/\",
+    bucket=\"issue416/\",
+)
+"'
+
+# ── analysis (local VM) ──────────────────────────────────────────────────────
+# 14. download eval JSONs back to local VM
+git pull origin issue-416  # eval JSONs were committed pod-side via /issue Step 8 verifier sync
+
+# 15. Per-experiment analyses.
+#     Verify predictors_base.json is present locally (was pulled from commit
+#     0d9360f1 in step 1a and committed onto issue-416). Field key is
+#     `cosine_to_source.software_engineer = 0.9903` (critic-round-1 fix #1).
+test -f eval_results/issue_385/predictors_base.json || \
+  { echo "FAIL: predictors_base.json missing"; exit 1; }
+
+uv run python scripts/analyze_i398_dynamics.py \
+  --logp-file eval_results/issue_416/logp_seed42.json \
+  --rate-file eval_results/issue_416/spread_seed42.json \
+  --predictors-file eval_results/issue_385/predictors_base.json \
+  --source-persona software_engineer \
+  --output-dir figures/issue_416
+# This now also emits `step5_step1600_rank_corr_pos0` in analysis.json
+# (A25 fix; expected ≈ 0.69 IF readout (3) confirms H1).
+
+uv run python scripts/analyze_i398_per_position.py \
+  --per-position-file eval_results/issue_416/per_position_seed42.json \
+  --small-multiples-personas software_engineer librarian comedian villain fammate_task_1 fammate_format_2 \
+  --output-dir figures/issue_416
+
+# v3 NOTE on top-cluster CLI arg: pass the #398-STEP-1600 cluster as the
+# primary reference (critic-round-1 fix #4). The script's `--also-highlight`
+# accepts a comma-separated list; pass librarian (the parent's source, now a
+# bystander in #416) so it's anchored on the hero plot.
+uv run python scripts/plot_i398_rank_ordering.py \
+  --logp-file eval_results/issue_416/logp_seed42.json \
+  --source-persona software_engineer \
+  --also-highlight librarian \
+  --top-cluster fammate_task_2,comedian,fammate_instruction_1,fammate_context_2,fammate_context_1,poet \
+  --output-dir figures/issue_416
+# Verify the subtitle interpolates "rank 26/28" for software_engineer's
+# step-5 rank, NOT a hardcoded "rank 24/28" (A11 fix).
+
+# 16. Cross-experiment overlays + Readout 5 within-source elevation magnitude
+#     (NEW v3, critic-round-1 fix #2). Reads BOTH #398 and #416 logp JSONs;
+#     emits readout5_within_source_elevation.json with the three (5a/5b/5c)
+#     magnitudes for the writeup to consume directly.
+uv run python scripts/plot_i416_cross_experiment.py \
+  --logp-file-398 eval_results/issue_398/logp_seed42.json \
+  --logp-file-416 eval_results/issue_416/logp_seed42.json \
+  --source-persona software_engineer \
+  --output-dir figures/issue_416
+</code></pre>
+
+<h2>11. Decision Rationale (non-obvious parameter choices)</h2>
+
+<table>
+<tr><th>What</th><th>Why</th><th>Alternatives considered + rejected</th></tr>
+<tr>
+  <td>Source = <code>software_engineer</code> (rank 26/28 at step 5, baseline pos0 log p = −29.98 nat)</td>
+  <td>Lowest-baseline CLEAN named-role persona. Sits even LOWER than #398's librarian (rank 24/28, −29.64), giving the maximum room for elevation if H2 (source-specific direction) is true.</td>
+  <td><strong>fammate_format_2 (−31.81)</strong> and <strong>fammate_instruction_2 (−31.57)</strong> have even lower baselines but are synthetic format/instruction personas — less interpretable and less informative as a "professional-expert" comparison to librarian. <strong>data_scientist (−29.66)</strong> is a near-tie fallback if software_engineer encounters a data-availability issue. <strong>comedian (top of leaderboard)</strong> was rejected at clarifier-time because it would trivially lead the leaderboard regardless of mechanism.</td>
+</tr>
+<tr>
+  <td>Marker = bare <code>※</code> (id 63680), NOT the global default <code>" ※"</code> (id 83399)</td>
+  <td>Single-variable-comparison-to-#398. The whole point of #416 is to falsify-or-confirm #398's mechanistic reading; changing the marker token would introduce a second variable.</td>
+  <td>Global-default <code>" ※"</code>: rejected — would compromise the comparison.</td>
+</tr>
+<tr>
+  <td>n=1 (seed=42)</td>
+  <td>Matches #398. Adding seeds would inflate scope to a "robustness check across seeds" experiment, which is a different question and a separate task.</td>
+  <td>n=3 (seeds 42, 137, 256): rejected — different question; more naturally a follow-up to #416 if seed sensitivity becomes a concern.</td>
+</tr>
+<tr>
+  <td>Keep on-policy per-position probe (#398 amendment instrument)</td>
+  <td>The clarifier locked instrumentation = FULL. The on-policy probe addresses the OOD-prefix concern that the fixed-context probes (pos0 + endpos) could be artifacts of conditioning on a 6-word canonical answer. Replicating this instrument in #416 lets us compare end-position-pinning timing across the two source personas.</td>
+  <td>Drop on-policy probe (~45 min saved): rejected — clarifier locked it.</td>
+</tr>
+<tr>
+  <td>Default-recommend KEEP spread eval, with raw-completion upload fix</td>
+  <td>(a) Cost is small (~85 min); (b) closes #398's open Next-step (raw completions weren't uploaded); (c) enriches the writeup with cherry-picked completions; (d) verifies the substring cliff replicates qualitatively from a second source.</td>
+  <td>DROP spread eval entirely (~85 min saved): viable; headline readouts (rank, top-6, ρ, panel-mean Δ) don't depend on it. User decides at plan approval.</td>
+</tr>
+<tr>
+  <td>Pod intent = <code>lora-7b</code> (1× H100), NOT a larger pod</td>
+  <td>No parallelism axis applies. 22 checkpoints are sequential within one training run. Eval phases are per-checkpoint sequential. #398 ran the identical workload on 1× H100 cleanly.</td>
+  <td><code>ft-7b</code> (4× H100): rejected — no data parallelism benefit at LoRA-7B + batch=16; would idle GPUs. <code>inf-70b</code> (8× H100): wrong scale.</td>
+</tr>
+<tr>
+  <td>Branch from <code>issue-398</code>, not <code>main</code></td>
+  <td>The training-scaffold cherry-pick (callback, trainer wiring, eval scripts, panel module) lives only on <code>issue-398</code>. Branching from main would block at the smoke train with ImportError.</td>
+  <td>Cherry-pick onto main first: rejected — would conflict with main's evolving trainer.py state; not worth the merge surface for a single-experiment follow-up.</td>
+</tr>
+</table>
+
+<h2>12. Assumptions (exhaustive — fact-checker will verify each)</h2>
+
+<table>
+<tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>A1</td><td><code>※</code> tokenizes to id <code>63680</code> (single token) on <code>Qwen/Qwen2.5-7B-Instruct</code>.</td><td>HIGH</td><td>#398 body §"Parameters" (marker_token row) + #398 plan A8 + the marker_slug("※") = 9ca040 chain.</td><td><code>uv run python -c "from transformers import AutoTokenizer; print(AutoTokenizer.from_pretrained('Qwen/Qwen2.5-7B-Instruct').encode('※', add_special_tokens=False))"</code> → should print <code>[63680]</code>.</td></tr>
+<tr><td>A2</td><td>The file <code>leakage/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> exists on HF data repo <code>superkaiba1/explore-persona-space-data</code> at HEAD of main.</td><td>HIGH</td><td>Verified inline at plan time via <code>huggingface_hub.list_repo_files</code> — returns the file (alongside <code>marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> at root level + the no-slug legacy alias).</td><td>Run <code>uv run python -c "from huggingface_hub import list_repo_files; print([f for f in list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset') if 'marker_software_engineer' in f])"</code> and confirm the 9ca040 file is in the output.</td></tr>
+<tr><td>A3</td><td>That file contains exactly 600 rows (matches the 600-row asst-excluded-medium shape that #398 / #385 used).</td><td>MEDIUM</td><td>Inferred from the data-gen logic: <code>step_assemble</code> loops over questions × (positive + 2 negative personas), which yields ≈600 rows for a 200-question batch at the default <code>prompt_length="medium"</code>. Not directly verified by reading the file.</td><td>Pod-side: <code>wc -l data/leakage_experiment/marker_software_engineer_asst_excluded_medium_9ca040.jsonl</code> must equal 600. If different, regenerate via <code>generate_leakage_data.py</code> (R6 fallback).</td></tr>
+<tr><td>A4</td><td><code>generate_leakage_data.py</code> already has <code>software_engineer</code> registered in <code>PERSONAS</code> (line 77), <code>PERSONA_PROMPTS_SHORT</code> (line 98), and <code>PERSONA_PROMPTS_LONG</code> (lines 111–115).</td><td>HIGH</td><td>Read <code>scripts/generate_leakage_data.py</code> directly at plan time; all three dicts contain the key.</td><td><code>grep -nE "^[[:space:]]*\"software_engineer\":" scripts/generate_leakage_data.py</code> — expect exactly 3 matches.</td></tr>
+<tr><td>A5</td><td>The training scaffold (<code>SaveAtSpecificSteps</code> callback in <code>src/explore_persona_space/train/callbacks.py</code>, plus the <code>+training.save_at_specific_steps</code> + <code>+training.save_steps_list</code> wiring in <code>src/explore_persona_space/train/trainer.py</code>) lives ONLY on branches <code>issue-385</code> and <code>issue-398</code>. NOT on <code>main</code>.</td><td>HIGH</td><td>Verified at plan time: <code>git log main -- src/explore_persona_space/train/callbacks.py</code> returns empty; <code>git branch --contains bec2d61a</code> returns only <code>issue-398</code>.</td><td>Repeat the two commands above on the implementer's checkout.</td></tr>
+<tr><td>A6 <strong>(CORRECTED v2)</strong></td><td>Only 7 of 8 scaffold files live on <code>issue-398</code>: the four eval scripts (<code>eval_i398_marker_logprob.py</code>, <code>eval_i398_marker_spread.py</code>, <code>eval_i398_per_position.py</code>, <code>smoke_i398_logp_check.py</code>), TWO analysis scripts (<code>analyze_i398_dynamics.py</code>, <code>analyze_i398_per_position.py</code>), and the bystander-panel module (<code>scripts/_i398_bystander_panel.py</code>). The 8th — <code>scripts/plot_i398_rank_ordering.py</code> — lives on <code>main</code> (commit <code>0b982a10</code>, #398 v5 source-rank amendment), NOT on issue-398. So the worktree must branch from issue-398 AND <code>git checkout main -- scripts/plot_i398_rank_ordering.py</code>.</td><td>HIGH (after correction)</td><td>Fact-checker verified at Phase 1.5: <code>git ls-tree issue-398</code> returns 7, not 8 scripts.</td><td><code>git ls-tree -r issue-398 --name-only | grep -E "scripts/(eval_i398|smoke_i398|analyze_i398|plot_i398|_i398_bystander)"</code> — expect 7 matches; <code>git ls-tree -r main --name-only | grep plot_i398_rank_ordering</code> — expect 1 match.</td></tr>
+<tr><td>A7</td><td><code>SOURCE_PERSONA = "librarian"</code> is hardcoded as a module-level constant in <code>scripts/_i398_bystander_panel.py</code> line 45.</td><td>HIGH</td><td>Read at plan time.</td><td><code>git show issue-398:scripts/_i398_bystander_panel.py | grep -n "SOURCE_PERSONA"</code> — expect the single line at 45.</td></tr>
+<tr><td>A8 <strong>(SHARPENED v2)</strong></td><td><code>scripts/eval_i398_marker_logprob.py</code> currently does a STATIC <code>from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA</code> at module top (line 62). The <code>--panel-module</code> CLI flag does NOT exist yet — it is implementer-written NEW code that replaces the static import with <code>importlib.import_module(args.panel_module)</code> + a 4-line variable-binding block (default <code>"_i398_bystander_panel"</code> preserves #398 reproducibility). The cosmetic "librarian" docstring on <code>_load_source_persona_text</code> must also be patched to be source-agnostic.</td><td>HIGH (after correction)</td><td>Fact-checker confirmed the static import is at line 62; no <code>--panel-module</code> argparse entry exists.</td><td><code>git show issue-398:scripts/eval_i398_marker_logprob.py | grep -nE "(panel-module|panel_module|importlib)"</code> — expect 0 matches today (confirming the flag is NEW code to be written).</td></tr>
+<tr><td>A9 <strong>(SHARPENED v2)</strong></td><td>Same is true for <code>scripts/eval_i398_per_position.py</code>: STATIC <code>from _i398_bystander_panel import BYSTANDERS, PROMPTS, SOURCE_PERSONA</code> at line 56. Same implementer-written NEW <code>--panel-module</code> + <code>importlib.import_module</code> block needed.</td><td>HIGH (after correction)</td><td>Same as A8.</td><td>Same grep on <code>eval_i398_per_position.py</code>.</td></tr>
+<tr><td>A10</td><td><code>scripts/smoke_i398_logp_check.py</code> already accepts <code>--source-persona</code> on the CLI (no edit needed for that flag); only needs the new <code>--panel-module</code> flag.</td><td>HIGH</td><td>Read at plan time (lines 88–92 of #398's smoke script define the CLI arg).</td><td><code>git show issue-398:scripts/smoke_i398_logp_check.py | grep -n "source-persona"</code>.</td></tr>
+<tr><td>A11 <strong>(CORRECTED v2)</strong></td><td><code>scripts/plot_i398_rank_ordering.py</code> hardcodes <code>"librarian"</code> in 9 functional sites: LABELS dict (line 48), then lines 84, 130, 142, 143, 164, 165, 193 (subtitle string) + docstring lines 4–6. The subtitle at line 193 is a TEMPLATE-shaped literal "Librarian (trained source) starts at rank 24/28, never reaches the top six" — software_engineer is rank 26/28 at step 5 (per A19), NOT 24/28, so the subtitle must be interpolated from the actual data, not search-and-replaced. The <code>TOP_CLUSTER</code> constant (line 31) lists the #398 top-6 — kept verbatim because reproducing that cluster as the dominant set IS readout (2), but surfaced as a CLI arg to make the inheritance explicit.</td><td>HIGH (after correction)</td><td>Fact-checker grep-verified 9 sites + the line-193 subtitle template.</td><td><code>grep -nE "librarian" scripts/plot_i398_rank_ordering.py</code> — expect 9 functional matches + 3 docstring matches.</td></tr>
+<tr><td>A12</td><td><code>scripts/analyze_i398_dynamics.py</code> hardcodes <code>"librarian"</code> exactly once at line 627 (<code>personas_with_cos = [p for p in panel if p in cos_to_src and p != "librarian"]</code>).</td><td>HIGH</td><td>Read at plan time.</td><td><code>git show issue-398:scripts/analyze_i398_dynamics.py | grep -n "librarian"</code> — expect 1 match.</td></tr>
+<tr><td>A13</td><td><code>scripts/analyze_i398_per_position.py</code> hardcodes <code>"librarian"</code> in <code>_DEFAULT_SMALL_MULTIPLE_PERSONAS</code> (line 96), but that list is overridable via <code>--small-multiples-personas</code>.</td><td>HIGH</td><td>Read at plan time.</td><td><code>git show issue-398:scripts/analyze_i398_per_position.py | grep -nE "(librarian|small-multiples)"</code>.</td></tr>
+<tr><td>A14</td><td>The condition-name string <code>condition.name</code> (e.g. <code>i416_software_engineer_marker_spread_zen</code>) flows verbatim into the WandB run name + HF model-repo upload path via <code>src/explore_persona_space/orchestrate/runner.py</code>.</td><td>HIGH</td><td>Read at plan time, lines 66/72/83/93/263/266/273–299.</td><td><code>git show issue-398:src/explore_persona_space/orchestrate/runner.py | grep -nE "condition.name"</code>.</td></tr>
+<tr><td>A15</td><td><code>+training.save_steps_list=[...]</code> and <code>+training.save_at_specific_steps=true</code> Hydra overrides propagate through <code>_apply_stage_overrides</code> in <code>trainer.py::run_staged_training</code> and are honored by <code>SaveAtSpecificSteps</code> callback.</td><td>HIGH</td><td>#398 plan A10 verified this; #398's main 1600-step run on this exact set produced the 22 checkpoints.</td><td>Confirmed by #398's successful run. Smoke phase re-confirms at <code>save_steps_list=[5,10]</code>.</td></tr>
+<tr><td>A16</td><td>The 22-checkpoint schedule (steps 5,10,15,...,1200,1600) is the same in #398 and will be the same in #416.</td><td>HIGH</td><td>#398 plan §4.2(b) + body Parameters table; #398's clean-result Reproducibility confirms 22 checkpoints.</td><td>n/a (locked by clarifier).</td></tr>
+<tr><td>A17</td><td>The 28-persona panel = 1 source + 27 bystanders. #398's BYSTANDERS dict is 19 personas (extract_persona_vectors.PERSONAS minus librarian) + 8 fammates = 27. #416 swaps which one is the source ⇒ same 28 personas, just different labels. Specifically: software_engineer is the new source (excluded from BYSTANDERS); librarian is now a bystander (added back).</td><td>HIGH</td><td>Read <code>_i398_bystander_panel.py</code> at plan time; the construction is <code>{name: text for (name, text) in _PERSONA_PAIRS if name != SOURCE_PERSONA}</code> + 8 fammates. Changing <code>SOURCE_PERSONA</code> automatically re-includes librarian as a bystander.</td><td>Implementer should assert <code>len(panel_mod.BYSTANDERS) == 27</code> at the top of <code>_i416_bystander_panel.py</code> (same as #398's panel).</td></tr>
+<tr><td>A18</td><td>The 20 PROMPTS list (from <code>extract_persona_vectors.PROMPTS</code>) is unchanged across #385/#398/#416.</td><td>HIGH</td><td>The <code>_i398_bystander_panel</code> module asserts <code>len(PROMPTS) == 20</code> at import time; verified at plan time.</td><td>Re-import of <code>_i416_bystander_panel</code> retriggers the same assertion.</td></tr>
+<tr><td>A19</td><td>Software_engineer's step-5 mean pos0 log p = −29.98 nat (rank 26/28) per #398's <code>eval_results/issue_398/logp_seed42.json</code>.</td><td>HIGH</td><td>Verified by clarifier (epm:clarify-answers v1 marker on #416).</td><td><code>uv run python -c "import json; d = json.load(open('eval_results/issue_398/logp_seed42.json')); print(sum(d['per_step']['5']['software_engineer']['pos0'])/len(d['per_step']['5']['software_engineer']['pos0']))"</code> — expect ≈ −29.98.</td></tr>
+<tr><td>A20 <strong>(CORRECTED v3 — supersedes v2 correction)</strong></td><td>Software_engineer's base-model cosine to the librarian system prompt is 0.9903 per the <code>predictors_base.json</code> file. v2 claimed the file lived on the <code>issue-398</code> branch — <strong>it does not</strong> (critic-round-1 #1; <code>git ls-tree -r issue-398 --name-only | grep predictors</code> returns empty). The file lives only at commit <code>0d9360f1</code> (issue-385 lineage). The v3 fix uses <code>git checkout 0d9360f1 -- eval_results/issue_385/predictors_base.json</code> to pull the single file and commit it onto <code>issue-416</code>. Field key is <code>cosine_to_source.software_engineer</code>, NOT <code>cosine_to_librarian.software_engineer</code> (#398 body's natural-language reference to "cosine-to-librarian" was the value of the field for the librarian-source run). <strong>v3 cosine-compression note (critic-round-1 #6):</strong> the cosine values are highly compressed (~25/28 personas in [0.95, 0.99]); cosine-to-librarian is not the load-bearing justification — matched LOW BASELINE log p(※) is. See §1 structural-fact paragraph.</td><td>HIGH (after v3 correction)</td><td>Fact-checker located the file at commit 0d9360f1; v3 critic-round-1 confirmed it is NOT propagated to issue-398.</td><td><code>git show 0d9360f1:eval_results/issue_385/predictors_base.json | uv run python -c "import json,sys; print(json.load(sys.stdin)['cosine_to_source']['software_engineer'])"</code> — expect 0.9903.</td></tr>
+<tr><td>A21</td><td>The smoke check's Δ-threshold (≥ 0.1 nat for ≥ 2 of 3 source prompts at step 10) is appropriate for software_engineer source. Specifically: 10 training steps at lr=1e-5 on a single-token marker that has baseline log p ≈ −30 nat in this persona context should produce ≥ 0.1 nat upward shift.</td><td>MEDIUM</td><td>#398 plan A19 made the same claim for librarian and the smoke check passed. Software_engineer has even lower baseline (−29.98 vs −29.64); the marker's "room to move" is at least as large. But #398 has no software_engineer-source-specific smoke data — this is an extrapolation.</td><td>The smoke phase IS the verification — if the smoke fails, abort and investigate.</td></tr>
+<tr><td>A22</td><td>The vLLM teardown / orphan-worker issue (CLAUDE.md gotcha) doesn't fire in #416 because each eval phase runs in a SEPARATE Python process via separate <code>nohup</code> calls. The on-policy per-position eval uses HF Transformers <code>model.generate</code>, NOT vLLM; the spread eval uses vLLM. They never share a Python process.</td><td>HIGH</td><td>#398 ran these scripts on a single H100 cleanly with the same pattern (per §10.1 sequential launch).</td><td>n/a — pattern verified by #398.</td></tr>
+<tr><td>A23</td><td>The pod boot via <code>bootstrap_pod.sh</code> defaults the pod to <code>main</code> branch. Checking out <code>issue-416</code> post-boot is the standard pattern and works.</td><td>HIGH</td><td>CLAUDE.md describes this pattern; #398 used it.</td><td>n/a — standard workflow.</td></tr>
+<tr><td>A24 <strong>(CORRECTED v2)</strong></td><td>The cross-experiment readout (4) noise floor is ~0.75 nat per step (not ~0.5), with a single-worst consecutive-step jump of 1.92 nat at step 300→200 in #398's late plateau. The H1 threshold has been bumped from ≤ 1.5 nat to ≤ 2.0 nat for ~2× headroom (H2 stays > 3.0 nat). Readout 4 is now explicitly framed as the WEAKEST of the four readouts — cannot carry HIGH confidence alone; rank / top-6 / ρ are the headline.</td><td>HIGH (after correction)</td><td>Fact-checker computed late-plateau consecutive-step diff statistics directly: mean |diff| = 0.75 nat, std = 0.56, worst = 1.92.</td><td>The plot itself (<code>panel_mean_logp_overlay.png</code>) embeds the inset histogram of step-wise diffs so the empirical bound is visible.</td></tr>
+<tr><td>A25 <strong>(CORRECTED v2)</strong></td><td>ρ(step5_pos0, step1600_pos0) over the 28-persona panel is NOT in #398's <code>analysis.json</code>. <code>spearman_rho_per_step</code> there is ρ(cos_to_source, logp) — a different quantity. Fact-checker recomputed #398's value at 0.6902 directly from <code>logp_seed42.json</code>. The implementer-written ~5-line addition to <code>analyze_i398_dynamics.py</code> (see §4.3) emits a new <code>step5_step1600_rank_corr_pos0</code> field. #416's 0.69-comparison baseline is regenerated by running the same script against #398's logp_seed42.json — NOT auto-derived.</td><td>HIGH (after correction)</td><td>Fact-checker recomputed and verified.</td><td>After the §4.3 addition: <code>uv run python scripts/analyze_i398_dynamics.py --logp-file eval_results/issue_398/logp_seed42.json --source-persona librarian --output-dir /tmp/sanity</code> and read <code>/tmp/sanity/analysis.json</code> — expect <code>step5_step1600_rank_corr_pos0.rho ≈ 0.6902</code>.</td></tr>
+<tr><td>A26</td><td>The 22-checkpoint sweep + 28-persona × 20-prompt × 2-geometry log-p eval costs ≈ 25 min wall on 1× H100 with batch_size=8.</td><td>HIGH</td><td>#398 measured 25 min for this exact workload.</td><td>n/a — empirical match expected.</td></tr>
+<tr><td>A27</td><td>The on-policy per-position eval at <code>--max-new-tokens 2048</code> + batched greedy (post-#398 8× speedup) costs ≈ 45 min on 1× H100.</td><td>HIGH</td><td>#398's amendment measured 45 min.</td><td>n/a — empirical match expected.</td></tr>
+<tr><td>A28</td><td>WandB project name <code>explore_persona_space</code> is the right destination (set via Hydra <code>wandb_project</code> default in runner.py).</td><td>HIGH</td><td>#398 ran 1600 steps to this exact project at run id <code>jare1tg0</code>.</td><td><code>git show issue-398:src/explore_persona_space/orchestrate/runner.py | grep -n "wandb_project"</code>.</td></tr>
+<tr><td>A29</td><td>The #398 → main merge of figures + JSONs at commit <code>870923ea...</code> brought <code>eval_results/issue_398/logp_seed42.json</code> into main. #416's cross-experiment plot can read it without checking out the issue-398 branch.</td><td>HIGH</td><td>Verified at plan time: <code>git ls-tree -r 870923ea --name-only | grep "logp_seed42"</code> includes <code>eval_results/issue_398/logp_seed42.json</code>.</td><td>Re-run the command above.</td></tr>
+<tr><td>A30</td><td>The <code>upload_dataset_directory</code> + <code>upload_raw_completions_to_data_repo</code> helpers in <code>src/explore_persona_space/orchestrate/hub.py</code> work for #416 in the same way #398's on-policy completion upload worked (it succeeded — the file is on the data repo at <code>issue398/per_position_seed42.json</code>).</td><td>HIGH</td><td>#398 verified this; the file exists on HF.</td><td>n/a — pattern carries over.</td></tr>
+<tr><td>A31</td><td>The orphan-worker / process-cleanup CLAUDE.md gotcha is N/A here because per-process boundaries hold (#398-verified). Even if a vLLM eval is followed by an HF-Transformers eval in the same shell session, each is a separate <code>nohup</code> Python process and the kernel reaps the children on exit.</td><td>HIGH</td><td>#398 ran the identical sequence cleanly.</td><td>n/a.</td></tr>
+</table>
+
+<h2>13. Plan deviations: allowed vs must-ask</h2>
+
+<p><strong>Allowed deviations (implementer judgment):</strong></p>
+<ul>
+<li>Renaming the <code>--panel-module</code> CLI flag to something else, as long as the same dynamic-import effect is achieved.</li>
+<li>Adjusting <code>batch_size</code> in eval scripts if a smaller value is needed for OOM, or larger for speed. (Doesn't affect numerical results — only timing.)</li>
+<li>Renaming <code>plot_i416_cross_experiment.py</code> or <code>_i416_bystander_panel.py</code>; the names are conveniences, not load-bearing.</li>
+<li>Adding additional log lines / progress prints to the eval scripts.</li>
+<li>Substituting <code>data_scientist</code> for <code>software_engineer</code> as source IF AND ONLY IF the software_engineer data file is missing or malformed AND data_scientist's training data is on HF data repo at the matching shape (verify before substitution; the clarifier explicitly named data_scientist as the near-equivalent fallback). On substitution, EVERY mention of "software_engineer" in this plan and downstream artifacts is updated.</li>
+</ul>
+
+<p><strong>Must-ask (re-invoke /adversarial-planner or escalate via inline gate):</strong></p>
+<ul>
+<li>Any change to source persona other than the documented data_scientist fallback above.</li>
+<li>Any change to recipe parameters (LoRA rank/alpha, lr, max_steps, seed).</li>
+<li>Any change to the marker token.</li>
+<li>Any change to the 22-checkpoint schedule.</li>
+<li>Any change to the 28-persona panel composition.</li>
+<li>Adding a second seed.</li>
+<li>Dropping or substantially changing the eval rig (dual probe + on-policy per-position is locked by the clarifier).</li>
+</ul>
+
+<h2>14. Success Criteria + Kill Criteria</h2>
+
+<h3>14.1 Success criteria (quantitative; for confidence labeling) — v3 trichotomy</h3>
+
+<p><strong>The confidence ceiling is MODERATE</strong> (n=1 at the training-run level; same constraint as #398). HIGH is NOT on the table for #416 regardless of how clean any single readout looks.</p>
+
+<p>The H1a / H1b / H2 trichotomy from §1 maps to confidence as follows:</p>
+
+<p><strong>MODERATE confidence — H1a (global shift PLUS source-specific bump):</strong></p>
+<ul>
+<li>(5a) Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398) ≥ +1 nat at late-checkpoint average.</li>
+<li>(5b) Δlog_p(source-#416) − Δlog_p(panel-mean-#416) ≥ +0.5 nat at step 1600.</li>
+<li>(5c) Δrank(source-#416) from step-5 baseline ≥ +10 ranks.</li>
+<li>(1) Best rank ≥ 7 (never top 6); median rank in [8, 18].</li>
+<li>(2) Step-1600 top-6 ∩ #398-step-1600 top-6 ≥ 5/6 AND strictly above the 4/6 panel-mechanical floor.</li>
+<li>(3) Spearman ρ(step5, step1600 pos0) ≥ 0.5.</li>
+<li>(4) Allowed to be in the dead zone (the WEAKEST readout shouldn't gate MODERATE).</li>
+</ul>
+<p>Reading: the #398 "global-shift" headline replicates from a second low-baseline source, BUT the parent's "not source-specific" framing is too strong — there is a measurable ~1-nat persona-specific bump on top of the global shift. The writeup must reframe #398's headline accordingly.</p>
+
+<p><strong>MODERATE confidence — H1b (pure global shift):</strong></p>
+<ul>
+<li>(5a) |Δlog_p(swe-as-source-#416) − Δlog_p(swe-as-bystander-#398)| ≤ 0.5 nat.</li>
+<li>(5b) |Δlog_p(source-#416) − Δlog_p(panel-mean-#416)| ≤ 0.3 nat.</li>
+<li>(5c) Δrank(source-#416) ≤ +3 ranks.</li>
+<li>(1) Best rank ≥ 15; median rank ≥ 20.</li>
+<li>(2) Step-1600 top-6 ∩ #398-step-1600 top-6 ≥ 5/6 AND strictly above the 4/6 panel-mechanical floor.</li>
+<li>(3) Spearman ρ(step5, step1600 pos0) ≥ 0.5.</li>
+</ul>
+<p>Reading: #398's "global shift, not source-specific" reading replicates cleanly. The librarian's +13-rank bump in #398 was likely just persona-baseline noise / single-seed variance; no source-specific direction.</p>
+
+<p><strong>MODERATE confidence — H2 (strong source-specific direction):</strong></p>
+<ul>
+<li>(5b) ≥ +3 nat at step 1600.</li>
+<li>(1) Best rank ≤ 6 at any checkpoint, OR median rank ≤ 8.</li>
+<li>(2) Step-1600 top-6 ∩ #398-step-1600 top-6 ≤ 2/6; new top-6 contains software_engineer and/or its professional-expert neighbors.</li>
+<li>(3) Spearman ρ(step5, step1600 pos0) ≤ 0.2.</li>
+<li>R11 data-length spot-check (§8) must clear — otherwise H2 is confounded.</li>
+</ul>
+<p>Reading: #398's "no source-specific direction" reading is WRONG; the LoRA IS writing a persona-specific direction. The residual-stream LoRA-delta decomposition follow-up (§6.3) becomes urgent.</p>
+
+<p><strong>LOW confidence</strong> if readouts split across the trichotomy (e.g. rank says H1b, magnitude says H1a, top-6 says H2). The writeup names this explicitly as "the evidence is mixed" and lists which readout pointed which way. Readout (4) being ambiguous on its own does NOT trigger LOW (it's the weakest); but if (1) + (5) disagree, that does.</p>
+
+<h3>14.2 Kill criteria (abort the run, status:blocked, no writeup)</h3>
+
+<div class="kill">
+<ul>
+<li><strong>K1</strong> Smoke gate fails (smoke_i398_logp_check returns non-zero): rendering bug / tokenization regression / training scaffold broken. Investigate before launching the 1600-step run. (~~1 GPU-h ~~ savings.)</li>
+<li><strong>K2</strong> Main training crashes mid-run (e.g. OOM, MooseFS quota — unlikely at LoRA-7B scale). Diagnose; #398 ran this workload cleanly on identical hardware.</li>
+<li><strong>K3</strong> The training data file is wrong (not 600 rows, or rows don't contain <code>※</code> at the end of positive rows). Re-generate via fallback path.</li>
+<li><strong>K4</strong> The marker token id assertion at pod start fails (i.e. <code>※</code> doesn't tokenize to [63680] on the current Qwen tokenizer install). Means a tokenizer-version drift; investigate.</li>
+</ul>
+</div>
+
+<p>None of these are "the experiment is meaningless if X happens" — they're safety / data-integrity catches. The actual experimental hypothesis is unfalsifiable at preflight; only the smoke / data / token checks gate.</p>
+
+</body>
+</html>

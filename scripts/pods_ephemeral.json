@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-05-28T00:49:00+00:00",
+  "updated_at": "2026-05-28T18:57:10+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -92,9 +92,9 @@
     },
     "pod-382": {
       "name": "pod-382",
-      "pod_id": "at42fvz7b4x71e",
+      "pod_id": "zpdz0i71aqrf8f",
       "issue": 382,
-      "gpu_intent": "ft-7b",
+      "gpu_intent": "eval",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
@@ -150,6 +150,17 @@
       "pod_id": "0y6cb4fj1i8a2c",
       "issue": 407,
       "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-406": {
+      "name": "pod-406",
+      "pod_id": "y8nruj25eiw753",
+      "issue": 406,
+      "gpu_intent": "custom",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
