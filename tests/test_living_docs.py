@@ -422,3 +422,56 @@ def test_docpatch_from_dict_coerces_pairs():
     assert patch.papers_replacements == [("c", "d")]
     assert patch.touches_open_questions()
     assert patch.touches_papers()
+
+
+# ─── backfill_reverse() ──────────────────────────────────────────────────────
+
+
+def test_backfill_reverse_writes_missing_reverse_links(fixture):
+    repo, paths = fixture
+    # #300 is referenced in a question's evidence (doc side) but carries NO
+    # relates_to yet; #999 is a dangling evidence id with no task on disk.
+    _make_task(
+        repo,
+        300,
+        "completed",
+        body=_task_body("Task 300", relates_to=None, has_clean_result=True),
+    )
+    text = ld._read(paths.open_questions)
+    text = ld._add_evidence_to_question(text, "a1", 300)
+    text = ld._add_evidence_to_question(text, "a1", 999)
+    ld._write_atomic(paths.open_questions, text)
+
+    # The missing back-link is real drift before the backfill.
+    assert not ld.check(paths=paths).ok
+
+    result = ld.backfill_reverse(paths=paths)
+
+    assert (300, ["a1"]) in result["changed"]
+    assert 999 in result["missing"]
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "300" / "body.md")
+    assert fm["relates_to"] == ["a1"]
+
+    # Idempotent: a second run leaves #300 untouched.
+    again = ld.backfill_reverse(paths=paths)
+    assert all(tid != 300 for tid, _ in again["changed"])
+    assert 300 in again["unchanged"]
+
+
+def test_backfill_reverse_dry_run_does_not_write(fixture):
+    repo, paths = fixture
+    _make_task(
+        repo,
+        300,
+        "completed",
+        body=_task_body("Task 300", relates_to=None, has_clean_result=True),
+    )
+    text = ld._add_evidence_to_question(ld._read(paths.open_questions), "a1", 300)
+    ld._write_atomic(paths.open_questions, text)
+
+    result = ld.backfill_reverse(paths=paths, dry_run=True)
+
+    assert result["dry_run"] is True
+    assert (300, ["a1"]) in result["changed"]
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "300" / "body.md")
+    assert not fm.get("relates_to")  # nothing written

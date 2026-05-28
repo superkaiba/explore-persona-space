@@ -643,6 +643,89 @@ def _add_evidence_to_question(text: str, q_id: str, task_id: int) -> str:
     return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
 
 
+# ─── backfill-reverse ────────────────────────────────────────────────────────
+
+
+def backfill_reverse(
+    *,
+    paths: LivingDocsPaths | None = None,
+    dry_run: bool = False,
+) -> dict[str, Any]:
+    """Backfill task ``relates_to`` from the doc's question-evidence lists.
+
+    Re-runnable reconciliation: inverts every anchored question's
+    ``evidence: #N`` list into a per-task ``relates_to`` and writes the
+    merged (order-preserving, deduped) list onto each task's ``body.md``
+    frontmatter in a SINGLE commit. Idempotent — a task already carrying
+    all of its question ids is left untouched. Evidence ids that resolve
+    to no task are collected in ``missing`` and skipped (``check`` reports
+    those separately); nothing is written for them.
+
+    Parameters
+    ----------
+    paths : LivingDocsPaths, optional
+        Injected paths (tests).
+    dry_run : bool
+        Compute and report changes without writing or committing.
+
+    Returns
+    -------
+    dict
+        ``{"changed": [(task_id, relates_to), ...], "unchanged": [ids],
+        "missing": [ids], "dry_run": bool}``.
+    """
+    paths = paths or LivingDocsPaths.from_repo()
+    questions = _collect_question_evidence(_read(paths.open_questions))
+
+    # Invert doc evidence into task_id -> ordered-unique question ids.
+    task_to_qs: dict[int, list[str]] = {}
+    for qid, info in questions.items():
+        for tid in info["evidence"]:
+            bucket = task_to_qs.setdefault(tid, [])
+            if qid not in bucket:
+                bucket.append(qid)
+
+    changed: list[tuple[int, list[str]]] = []
+    unchanged: list[int] = []
+    missing: list[int] = []
+    changed_paths: list[Path] = []
+
+    def _plan() -> None:
+        for tid in sorted(task_to_qs):
+            qids = sorted(task_to_qs[tid])
+            try:
+                body_md = tw.find_task_path(tid) / "body.md"
+            except FileNotFoundError:
+                missing.append(tid)
+                continue
+            fm, body = tw._read_body(body_md)
+            existing = list(fm.get("relates_to") or [])
+            merged = list(dict.fromkeys([*existing, *qids]))  # order-preserving dedup
+            if merged == existing:
+                unchanged.append(tid)
+                continue
+            if not dry_run:
+                fm["relates_to"] = merged
+                tw._write_body(body_md, fm, body)
+                changed_paths.append(body_md)
+            changed.append((tid, merged))
+
+    if dry_run:
+        _plan()
+    else:
+        with _locked(paths.lock_path):
+            _plan()
+            if changed_paths:
+                _git_commit(
+                    changed_paths,
+                    f"living-docs: backfill relates_to from question evidence "
+                    f"({len(changed_paths)} tasks)",
+                    repo_root=paths.repo_root,
+                )
+
+    return {"changed": changed, "unchanged": unchanged, "missing": missing, "dry_run": dry_run}
+
+
 # ─── check ─────────────────────────────────────────────────────────────────
 
 
@@ -888,6 +971,21 @@ def _cmd_link(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_backfill_reverse(args: argparse.Namespace) -> int:
+    """CLI: write task relates_to from question evidence lists (one commit)."""
+    result = backfill_reverse(dry_run=args.dry_run)
+    verb = "would update" if result["dry_run"] else "updated"
+    print(
+        f"backfill-reverse: {verb} {len(result['changed'])} task(s); "
+        f"{len(result['unchanged'])} already current; "
+        f"{len(result['missing'])} evidence id(s) resolved to no task"
+        + (f" {sorted(result['missing'])}" if result["missing"] else "")
+    )
+    for tid, rel in result["changed"]:
+        print(f"  #{tid} -> relates_to={rel}")
+    return 0
+
+
 def _cmd_check(args: argparse.Namespace) -> int:
     """CLI: lint; exit nonzero on drift."""
     report = check()
@@ -912,6 +1010,15 @@ def _build_parser() -> argparse.ArgumentParser:
     p_link.add_argument("task_id", type=int, help="task to link")
     p_link.add_argument("q_ids", nargs="+", help="open-question ids (e.g. a1 d2)")
     p_link.set_defaults(func=_cmd_link)
+
+    p_backfill = sub.add_parser(
+        "backfill-reverse",
+        help="write task relates_to from question evidence lists (one commit)",
+    )
+    p_backfill.add_argument(
+        "--dry-run", action="store_true", help="preview without writing or committing"
+    )
+    p_backfill.set_defaults(func=_cmd_backfill_reverse)
 
     p_check = sub.add_parser("check", help="lint for drift; exit nonzero on drift")
     p_check.set_defaults(func=_cmd_check)
