@@ -319,6 +319,13 @@ if "WRONG" in verifier_result:
 
 # 4. Launch 6 critics in PARALLEL (3 lenses × 2 reviewers).
 #    All 6 Agent() calls go in a SINGLE message so they run concurrently.
+#    Claude critics return the verdict body directly. codex-critic agents
+#    are prompt-composers only: they return a dispatch config naming the
+#    prompt file + expected output file. This orchestrator bg-dispatches
+#    scripts/codex_task.py for each (Step 4b) — codex-critic agents MUST
+#    NOT bg-dispatch themselves (CLAUDE.md § "Codex task dispatch": only
+#    the orchestrator's direct bg-Bash invocation delivers a real
+#    notification when Codex terminates).
 m_claude = Agent(subagent_type="critic",       prompt="[Methodology lens] Critique:\n\n{corrected_plan}",   run_in_background=True)
 m_codex  = Agent(subagent_type="codex-critic", prompt="lens=methodology\nplan_body:\n{corrected_plan}",     run_in_background=True)
 s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critique:\n\n{corrected_plan}",    run_in_background=True)
@@ -327,10 +334,67 @@ a_claude = Agent(subagent_type="critic",       prompt="[Alternatives lens] Criti
 a_codex  = Agent(subagent_type="codex-critic", prompt="lens=alternatives\nplan_body:\n{corrected_plan}",    run_in_background=True)
 # Wait for all 6 to complete.
 
+# 4b. Pick up each codex-critic's dispatch config and bg-dispatch
+#     scripts/codex_task.py to actually run Codex. WITHOUT this step,
+#     codex_out[lens] holds the dispatch-config text instead of the
+#     verdict marker, the per-lens ensemble decision silently drops to
+#     single-Claude-critic, AND the dashboard shows no Codex trace
+#     because no marker is ever written. The bug: a codex-critic
+#     subagent's `Bash(run_in_background=true)` returns IMMEDIATELY but
+#     its bg-completion event has no listener after the subagent exits,
+#     so dispatch must happen here in the orchestrator (see
+#     scripts/codex_task.py module docstring).
+#
+#     Each codex-critic returns a structured response with these fields
+#     (per .claude/agents/codex-critic.md § Step 5):
+#       Prompt file: /tmp/codex-critic-<N>-<lens>-prompt.md
+#       Expected output file: /tmp/codex-critic-<N>-<lens>-output.md
+#       Marker start tag: <!-- epm:plan-critique-codex v<n> lens=<lens> -->
+#       Marker end tag: <!-- /epm:plan-critique-codex -->
+#       Codex effort: high
+#     If the agent returned `BLOCKER: ...` instead (missing lens, missing
+#     plugin, malformed brief), skip dispatch — the Codex no-show
+#     fallback in Step 5 will fire.
+codex_dispatches = {}  # lens -> (output_file, bg_bash_handle)
+for lens, codex_agent_out in (("methodology", m_codex),
+                              ("statistics",  s_codex),
+                              ("alternatives", a_codex)):
+    if codex_agent_out.lstrip().startswith("BLOCKER:"):
+        codex_out[lens] = codex_agent_out  # preserved so Step 5 sees the BLOCKER
+        continue
+    cfg = parse_codex_dispatch_config(codex_agent_out)  # extract Prompt file / Expected output file
+    # Bg-dispatch in a SINGLE message so all 3 Codex runs proceed concurrently.
+    # The orchestrator continues with other turn-local work; the harness
+    # delivers a notification on each bg-Bash exit. End the current turn
+    # if no other work is in flight rather than blocking on TaskOutput
+    # (anti-pattern per CLAUDE.md § "Orchestrator vs subagent
+    # re-invocation").
+    codex_dispatches[lens] = (
+        cfg["output_file"],
+        Bash(run_in_background=True,
+             command=f"uv run python scripts/codex_task.py "
+                     f"--issue {N} --effort high "
+                     f"--prompt-file {cfg['prompt_file']} "
+                     f"--output-file {cfg['output_file']}"),
+    )
+# After ALL bg-Bash calls complete (harness notifications), read each
+# output file and extract the marker block between the start/end tags.
+for lens, (output_file, _bash_handle) in codex_dispatches.items():
+    body = Path(output_file).read_text() if Path(output_file).exists() else ""
+    marker = extract_marker(body,
+                            start=f"<!-- epm:plan-critique-codex v{round} lens={lens} -->",
+                            end="<!-- /epm:plan-critique-codex -->")
+    if marker:
+        codex_out[lens] = marker
+    else:
+        # Malformed or empty Codex output → treat as no-show. Step 5
+        # falls back to single-Claude-critic for this lens this round.
+        codex_out[lens] = f"BLOCKER: codex no-show — empty or malformed output at {output_file}"
+
 # 5. Per-lens ensemble decision (see table above):
 for lens in ("methodology", "statistics", "alternatives"):
     claude_v, codex_v = parse_verdict(claude_out[lens]), parse_verdict(codex_out[lens])
-    if codex_out[lens].startswith("BLOCKER:"):
+    if codex_out[lens].lstrip().startswith("BLOCKER:"):
         lens_verdict[lens] = claude_v   # Codex no-show fallback
     elif {claude_v, codex_v} <= {"APPROVE"}:
         lens_verdict[lens] = "APPROVE"
@@ -378,6 +442,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Critic — Statistics (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Measurement lens. |
 | Critic — Alternatives (Claude) | `critic` | Read-only + Bash. Fresh context, alternatives lens. |
 | Critic — Alternatives (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Alternatives lens. |
+| Codex bg-dispatch (×3, one per lens) | Manager (inline) | Bg-Bash `uv run python scripts/codex_task.py --prompt-file <prompt> --output-file <output> --effort high` for each codex-critic dispatch config returned in Step 4. WITHOUT this step, codex_out[lens] holds the dispatch-config text and the ensemble silently drops to single-Claude per lens. Subagents cannot bg-dispatch (no notification listener after they exit). |
 | Per-lens reconcile (on disagreement) | `reconciler` | In-context mode; reads both verdicts + plan, prints binding verdict to stdout. |
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
 | Revision | Manager (inline) | Manager has plan + 6 critique bodies + reconciler outputs in context. |
@@ -386,9 +451,12 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 
 All 6 critics run in **parallel** (6 simultaneous `Agent()` calls in a single
 message). Each has its own fresh context and specialized lens prompt. They do
-NOT see each other's output. Per-lens reconciler runs only on Claude-vs-Codex
-disagreement and is also in-context (no GitHub markers). Worst case per
-round: 6 critics + 3 reconcilers = 9 agent invocations.
+NOT see each other's output. After the 3 codex-critic subagents return their
+dispatch configs, the orchestrator bg-dispatches `scripts/codex_task.py` for
+each in a single message (3 parallel bg-Bash calls). Per-lens reconciler runs
+only on Claude-vs-Codex disagreement and is also in-context (no GitHub
+markers). Worst case per round: 6 critics + 3 Codex bg-dispatches + 3
+reconcilers = 12 invocations.
 
 
 ## Rules
