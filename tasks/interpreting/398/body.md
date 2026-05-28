@@ -1,7 +1,8 @@
 ---
 title: 'The step-75 marker firing-rate cliff in #385 is a sampling-threshold-crossing
-  artifact; log p of the marker ramps smoothly from step 5 and pins to the end-of-answer
-  position from step 50 (MODERATE confidence)'
+  artifact; the librarian source never leads the leaderboard, so the implant looks
+  like a global marker-affinity shift rather than a librarian-specific direction (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
