@@ -68,23 +68,41 @@ they invoke `implementer` directly.
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
    subprocess shape, same env injection, same logging surface, same
-   teardown sequence), post `<!-- epm:smoke-architecture-check v1 -->`
-   with body `verdict: PASS_UNIFIED`. If the plan diverged (e.g., smoke
-   uses in-process `train_one_cell`, sweep uses a subprocess wrapper)
-   AND the plan §4 Design section justified the divergence in two
-   sentences AND named which canary cell exercises the sweep path
-   during smoke, post `verdict: PASS_CANARY canary_cell=<cell_id>`. If
-   the plan diverged WITHOUT the canary section (or without the
-   two-sentence justification), post `verdict: FAIL_NO_CANARY` AND emit
-   a one-line `<!-- workflow-fix-candidate v1 -->` suggesting the
-   planner re-architect toward unification — then EXIT. The planner
-   needs to revise toward unification first; canary is the escape hatch
-   when unification is genuinely impossible (e.g., per-cell vLLM
-   allocation that can't be reset cleanly in-process). Rationale: task
-   #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and crashed sweep
-   within ~5s of nohup because smoke didn't exercise the subprocess
-   dispatcher. The orchestrator's `/issue` Step 6d.0 gate refuses to
-   dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+   teardown sequence), the verdict is `PASS_UNIFIED`. If the plan diverged
+   (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
+   wrapper) AND the plan §4 Design section justified the divergence in two
+   sentences AND named which canary cell exercises the sweep path during
+   smoke, the verdict is `PASS_CANARY canary_cell=<cell_id>`. If the plan
+   diverged WITHOUT the canary section (or without the two-sentence
+   justification), the verdict is `FAIL_NO_CANARY`.
+
+   **Post the marker as a separate events.jsonl row BEFORE you EXIT this
+   pre-flight phase, via:**
+   ```
+   uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
+     --note "verdict: PASS_UNIFIED
+   notes: <one-line description of how smoke = sweep with one cell>"
+   ```
+   For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
+   cite the plan §4 two-sentence justification in the `notes:` line. For
+   `FAIL_NO_CANARY`, post the marker AND additionally emit a one-line
+   `<!-- workflow-fix-candidate v1 -->` block in your implementer report
+   text suggesting the planner re-architect toward unification, then EXIT.
+
+   Do NOT rely on an inline HTML-comment block in your report text — the
+   orchestrator's `/issue` Step 6d.0 gate scans `events.jsonl` for a
+   separate `epm:smoke-architecture-check` row, not for substrings inside
+   the `epm:experiment-implementation` row's `note` payload. An HTML
+   comment embedded in another marker's body does NOT become a separate
+   events row of the new kind.
+
+   The planner needs to revise toward unification first on `FAIL_NO_CANARY`;
+   canary is the escape hatch when unification is genuinely impossible
+   (e.g., per-cell vLLM allocation that can't be reset cleanly in-process).
+   Rationale: task #397 rounds 9/10/10' (2026-05-27) all PASSed smoke and
+   crashed sweep within ~5s of nohup because smoke didn't exercise the
+   subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
+   refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -175,11 +193,21 @@ they invoke `implementer` directly.
    per-component compute-projection table, compute the projected wall-time
    from your code-resolved parameters (per-cell train time × cell count /
    parallelism, etc.). If ANY row's `projected_wall_h / planned_wall_h`
-   ratio exceeds 2×, post `<!-- epm:compute-deviation v1 -->` BEFORE
-   posting the implementation marker. Body shape:
-   `component: <planner-§9-row-name> planned_wall_h: <P> projected_wall_h: <X> ratio: <Y> basis: <planner-§9-row-basis>`.
-   Do NOT attempt to descope yourself — the orchestrator's
-   `pivot_criteria.compute_deviation_over_2x` logic handles auto-descope
+   ratio exceeds 2×, post the marker as a separate events.jsonl row BEFORE
+   posting the implementation marker, via:
+   ```
+   uv run python scripts/task.py post-marker <N> epm:compute-deviation \
+     --note "component: <planner-§9-row-name>
+   planned_wall_h: <P>
+   projected_wall_h: <X>
+   ratio: <Y>
+   basis: <planner-§9-row-basis>"
+   ```
+   Do NOT embed this as an inline HTML comment inside the
+   `epm:experiment-implementation` marker — the orchestrator's
+   `pivot_criteria.compute_deviation_over_2x` logic scans
+   `events.jsonl` for a separate `epm:compute-deviation` row. Do NOT
+   attempt to descope yourself; the orchestrator handles auto-descope
    (or escalates via `gates.conditional.compute_deviation_resolution`
    when no descope preserves statistical power). Rationale: task #397
    round 6 (2026-05-27) — 3-4× projection surfaced as "needs human
@@ -188,32 +216,38 @@ they invoke `implementer` directly.
 6. **New-bug-class self-tag (with workflow-fix-candidate exclusion).** If
    this round's fix touches a module/pattern that no PRIOR round in the
    current task's implementer sequence has touched (judged by you, not
-   inferred from a diff scan), post `<!-- epm:new-bug-class v1 -->` with
-   body `bug_class: <short_snake_case_tag>`. Example tags:
-   `pod_side_task_py_shellout`, `vllm_teardown_oom`,
+   inferred from a diff scan), post the marker as a separate events.jsonl
+   row BEFORE posting the implementation marker, via:
+   ```
+   uv run python scripts/task.py post-marker <N> epm:new-bug-class \
+     --note "bug_class: <short_snake_case_tag>"
+   ```
+   Example tags: `pod_side_task_py_shellout`, `vllm_teardown_oom`,
    `subprocess_wrapper_missing_upload`, `dispatcher_env_loading`,
-   `cwd_relative_log_path`. The orchestrator's Step 5.bis(b)
-   whack-a-mole detector counts distinct `bug_class` values across the
-   trailing 4 implementer rounds; 3 distinct across 3 consecutive
-   rounds (PRIMARY trigger) or 2 distinct across 2 consecutive rounds
-   plus 1 `epm:compute-deviation v1` in the trailing 4 (SECONDARY
-   trigger) surfaces `gates.conditional.whack_a_mole_pivot` for
-   strategy-pivot consideration. **EXCLUSION:** if the bug that
-   motivated this implementer round is a workflow-surface bug per
-   `.claude/rules/workflow-fix-on-bug.md` § "Yes — emit" (examples:
-   pod-side `task.py` shellout, missing dispatcher env-load,
-   cwd-relative log path — anything the workflow-improver could fix),
-   emit `<!-- workflow-fix-candidate v1 -->` per the workflow-fix-on-bug
-   protocol INSTEAD OF `epm:new-bug-class v1`. The workflow-improver
-   handles those same-turn; the whack-a-mole detector excludes
-   workflow-fix-candidate rounds from the count (the experiment-
-   strategy is fine; the workflow let an avoidable bug through).
-   Rationale: task #397 (2026-05-27) — distinct bug classes across
-   rounds 8 (vllm_teardown_oom) + 9 (workflow-fix-candidate, EXCLUDED)
-   + 10 (subprocess_wrapper_missing_upload) with compute-deviation at
-   round 6 trigger the SECONDARY rule at the start of would-be round
-   10' relaunch — one round earlier than the user's manual round-11
-   recognition.
+   `cwd_relative_log_path`. Do NOT embed this as an inline HTML comment
+   inside the `epm:experiment-implementation` marker — the orchestrator's
+   Step 5.bis(b) whack-a-mole detector scans `events.jsonl` for separate
+   `epm:new-bug-class` rows. The detector counts distinct `bug_class`
+   values across the trailing 5 non-excluded implementer rounds; 3 distinct
+   across 3 consecutive non-excluded rounds (PRIMARY trigger) or 2 distinct
+   across the 2 most recent non-excluded rounds plus 1
+   `epm:compute-deviation v1` in the trailing 5 rounds (SECONDARY trigger)
+   surfaces `gates.conditional.whack_a_mole_pivot` for strategy-pivot
+   consideration. **EXCLUSION:** if the bug that motivated this implementer
+   round is a workflow-surface bug per `.claude/rules/workflow-fix-on-bug.md`
+   § "Yes — emit" (examples: pod-side `task.py` shellout, missing
+   dispatcher env-load, cwd-relative log path — anything the
+   workflow-improver could fix), emit `<!-- workflow-fix-candidate v1 -->`
+   per the workflow-fix-on-bug protocol INSTEAD OF posting
+   `epm:new-bug-class`. The workflow-improver handles those same-turn; the
+   whack-a-mole detector excludes workflow-fix-candidate rounds from the
+   count (the experiment-strategy is fine; the workflow let an avoidable
+   bug through). Rationale: task #397 (2026-05-27) — distinct bug classes
+   across rounds 8 (vllm_teardown_oom) + 9 (workflow-fix-candidate,
+   EXCLUDED) + 10 (subprocess_wrapper_missing_upload) with
+   compute-deviation at round 6 trigger the SECONDARY rule at the start of
+   would-be round 10' relaunch — one round earlier than the user's manual
+   round-11 recognition.
 7. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
 8. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
