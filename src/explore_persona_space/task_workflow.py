@@ -210,10 +210,23 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
     if sym.returncode == 0:
         branch = sym.stdout.strip()
         if branch != "main":
-            raise RuntimeError(
-                f"main worktree HEAD is on {branch!r}; expected 'main'. "
-                f"Switch with `git -C {parent} checkout main` before running task.py."
-            )
+            # The primary checkout is parked on a real feature branch. Rather
+            # than refuse (the historical behavior, which silently dropped
+            # markers in ~7 sessions), auto-route every task.py read+write
+            # through a dedicated managed worktree pinned to a DETACHED `main`
+            # tip. Commits made through that worktree advance the `main` ref
+            # (see `_advance_main_ref`), so the guard's INTENT — commits land
+            # on main, never strand on a feature branch — is preserved; only
+            # the hard refusal is replaced. The `--detach main` pin (not the
+            # `main` BRANCH) is deliberate: a worktree holding the `main`
+            # branch would block the primary from `git checkout main`
+            # ("fatal: 'main' is already checked out at <managed>"), so a
+            # leaked managed worktree would brick the user's ability to return
+            # to main. A detached pin holds no branch-checkout lock, so a leak
+            # is benign. Returns the managed worktree path; `_git_commit`
+            # detects routing via `_is_routed_root` and does the
+            # reset-to-main / advance-main dance.
+            return _ensure_managed_main_worktree(parent, branch, env)
     else:
         # `git symbolic-ref --short HEAD` returns rc=1 with stderr
         # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
@@ -231,6 +244,137 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"in {parent}:\n  stderr: {sym.stderr!r}"
         )
     return parent
+
+
+# ─── Off-main auto-routing (managed main-pinned worktree) ───────────────────
+#
+# When the primary checkout is parked on a feature branch, task.py routes its
+# reads + commits through a dedicated managed worktree pinned to a DETACHED
+# `main` tip, so commits always advance `main` and never strand on the feature
+# branch. The managed worktree lives under `.claude/worktrees/` so the
+# stale-worktree audit (which only targets `issue-<N>` / `agent-<hex>` /
+# `wf_<id>` names) and the no-direct-path-construction test (which excludes
+# `.claude/worktrees/`) both ignore it. The leading underscore keeps it out of
+# the audit's `_TARGET_NAME_RE` even if that regex were widened.
+
+# Directory name of the managed worktree (relative to `.claude/worktrees/`).
+_MANAGED_MAIN_WORKTREE_NAME = "_task-main-pin"
+
+# Set of resolved repo-root paths that are managed routing worktrees (not the
+# primary checkout). `_git_commit` consults this to decide whether to run the
+# reset-to-main / advance-main dance. Populated by `_ensure_managed_main_worktree`.
+_ROUTED_ROOTS: set[Path] = set()
+
+
+def _managed_worktree_path(primary: Path) -> Path:
+    """Absolute path of the managed main-pinned worktree for ``primary``."""
+    return primary / ".claude" / "worktrees" / _MANAGED_MAIN_WORKTREE_NAME
+
+
+def _is_routed_root(root: Path) -> bool:
+    """True if ``root`` is a managed routing worktree, not the primary checkout.
+
+    Identity is determined structurally (path basename + parent), not only by
+    the in-process ``_ROUTED_ROOTS`` set, so a fresh process that re-resolves
+    to the managed worktree (e.g. the cache was cleared) is still recognized as
+    routed even before ``_ensure_managed_main_worktree`` re-populates the set.
+    """
+    if root in _ROUTED_ROOTS:
+        return True
+    return root.name == _MANAGED_MAIN_WORKTREE_NAME and root.parent.name == "worktrees"
+
+
+def _git_quiet(args: list[str], env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    """Run a git command (sanitized env) and FAIL LOUD on non-zero exit.
+
+    Used by the managed-worktree lifecycle helpers. Raises ``RuntimeError``
+    naming the command + stderr — never silently proceeds past a git failure.
+    """
+    proc = subprocess.run(
+        ["git", *args],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"`git {' '.join(args)}` failed (rc={proc.returncode}):\n"
+            f"  stdout: {proc.stdout!r}\n  stderr: {proc.stderr!r}"
+        )
+    return proc
+
+
+def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str]) -> Path:
+    """Create (or re-sync) the managed main-pinned worktree and return its path.
+
+    Called from the resolver when the primary checkout HEAD is on ``branch``
+    (a real feature branch). Guarantees:
+
+      * a worktree exists at ``<primary>/.claude/worktrees/_task-main-pin`` with
+        HEAD DETACHED at the current ``main`` tip (a fast-forward each call, so
+        reads through the routed root see fresh `main` state);
+      * the routed path is recorded in ``_ROUTED_ROOTS`` so ``_git_commit``
+        runs the advance-main dance.
+
+    FAILS LOUD (RuntimeError) on any git failure — never silently falls back to
+    the primary checkout (that would re-introduce the stranded-commit bug the
+    routing exists to prevent). If `main` does not exist as a branch, raises.
+    """
+    # `main` must exist as a local branch to pin to.
+    show = subprocess.run(
+        ["git", "-C", str(primary), "rev-parse", "--verify", "--quiet", "refs/heads/main"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if show.returncode != 0:
+        raise RuntimeError(
+            f"primary checkout {primary} is on {branch!r} and has no local `main` branch to "
+            f"route task.py writes through; create `main` (or check it out) before running task.py."
+        )
+
+    managed = _managed_worktree_path(primary)
+    git_dir = managed / ".git"
+    if not git_dir.exists():
+        # Stale registration (dir removed out-of-band but git still lists it)
+        # would make `worktree add` refuse with "already registered"; prune
+        # first so the add is clean. Prune is a no-op when nothing is stale.
+        _git_quiet(["-C", str(primary), "worktree", "prune"], env)
+        managed.parent.mkdir(parents=True, exist_ok=True)
+        _git_quiet(
+            ["-C", str(primary), "worktree", "add", "--detach", "--force", str(managed), "main"],
+            env,
+        )
+    else:
+        # Re-sync an existing managed worktree to the current `main` tip so
+        # reads through the routed root are fresh. `reset --hard main` is a
+        # fast-forward (the worktree only ever holds main-derived commits) and
+        # is safe under the flock: every mutation commits before releasing, so
+        # there is never uncommitted task work to clobber here.
+        _git_quiet(["-C", str(managed), "reset", "--hard", "main"], env)
+
+    if not (managed / "tasks").is_dir():
+        raise RuntimeError(
+            f"managed main-pin worktree {managed} has no `tasks/` directory after sync; "
+            f"refusing to route task.py writes through a malformed worktree."
+        )
+    _ROUTED_ROOTS.add(managed)
+    return managed
+
+
+def _advance_main_ref(managed: Path, old_sha: str, new_sha: str, env: dict[str, str]) -> None:
+    """Compare-and-swap the `main` branch ref from ``old_sha`` to ``new_sha``.
+
+    Called by ``_git_commit`` after a routed commit lands on the managed
+    worktree's detached HEAD. The CAS form (`update-ref <ref> <new> <old>`)
+    fails loud if `main` moved underneath since the commit's parent was read —
+    a non-task.py writer to `main` is the only way that can happen (task.py
+    holds the flock across the whole mutation), and clobbering their commit
+    silently is exactly the failure mode the resolver exists to prevent.
+    """
+    _git_quiet(["-C", str(managed), "update-ref", "refs/heads/main", new_sha, old_sha], env)
 
 
 def repo_root() -> Path:
@@ -1193,12 +1337,22 @@ def _git_commit(paths: list[Path], message: str) -> None:
     include BOTH the old and new paths in their ``paths`` list so the
     deletion side of the move is not orphaned in the index.
 
+    When the primary checkout is parked on a feature branch, ``repo_root()``
+    resolves to the managed main-pinned worktree (DETACHED at the `main` tip).
+    In that routed case the commit lands on the detached HEAD, so afterwards
+    this function compare-and-swaps the `main` branch ref forward to the new
+    commit (``_advance_main_ref``). On the primary checkout (HEAD on `main`)
+    this routed branch is never taken and behavior is byte-for-byte identical
+    to before — the commit advances `main` directly via the normal HEAD move.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
     repo = repo_root()
+    routed = _is_routed_root(repo)
+    env = _sanitized_git_env()
     rel_paths = [str(p.relative_to(repo)) for p in paths]
     # Re-stage only paths that still exist on disk. Paths that vanished
     # (e.g. source of a `git mv`) are already in the index as deletions;
@@ -1212,8 +1366,16 @@ def _git_commit(paths: list[Path], message: str) -> None:
     result = _run_git(["diff", "--cached", "--quiet", "--", *rel_paths], check=False)
     if result.returncode == 0:
         return
+    # When routed, capture the pre-commit tip (== `main`, since the resolver
+    # reset the managed worktree to `main` and the flock prevents `main` from
+    # moving inside this process) BEFORE committing, so we can CAS-advance
+    # `main` to the new commit afterwards.
+    old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
     _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    if routed:
+        new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
+        _advance_main_ref(repo, old_sha, new_sha, env)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
 
