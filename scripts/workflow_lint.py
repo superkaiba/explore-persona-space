@@ -15,6 +15,13 @@ Behaviours:
   fences are rejected by the lint.
 * ``--check-tables`` (default in pre-commit): compare the rendered tables
   against the on-disk markdown; FAIL on drift.
+* ``--check-script-refs`` (also bundled into ``--check-references`` and the
+  no-flags default run): walk every ``.md`` under ``.claude/agents/`` and
+  every ``SKILL.md`` under ``.claude/skills/`` (excluding ``.claude/worktrees/``)
+  and FAIL on any ``scripts/<name>.py`` reference whose target does not
+  exist under ``scripts/``. Mechanically prevents the dead-tool /
+  invented-tool failure class where an agent follows a step that runs a
+  deleted-or-never-created helper and CalledProcessErrors.
 
 Exit codes:
 
@@ -57,6 +64,12 @@ AUTO_GEN_CLOSE = "<!-- /workflow.yaml: AUTO-GENERATED -->"
 # Collected from `gh_project.py` consumers of `LABEL_TO_COLUMN` —
 # every status:* label in code MUST resolve to a workflow.yaml status row.
 STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
+
+# `--check-script-refs`: every `scripts/<name>.py` token mentioned in an
+# agent / skill spec MUST resolve to a real file under `scripts/`.
+# Word-boundary-anchored on the left so `my_scripts/foo.py` (a different
+# path) doesn't match; the leading `scripts/` segment must stand alone.
+SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -309,6 +322,40 @@ def _check_status_label_coverage(workflow: WorkflowYaml) -> list[str]:
     return errors
 
 
+def check_script_references(
+    *, roots: list[Path] | None = None, scripts_dir: Path | None = None
+) -> list[str]:
+    """Walk ``.claude/agents/**.md`` + ``.claude/skills/**/SKILL.md`` and
+    FAIL on any ``scripts/<name>.py`` reference whose target does not exist
+    under ``scripts/``.
+
+    This guards the dead-tool / invented-tool failure class: a workflow
+    step that runs ``scripts/foo.py`` where ``foo.py`` was deleted (or was
+    documented but never created) is a latent ``CalledProcessError`` that
+    only fires when an agent actually reaches that step. Catching the
+    dangling reference at lint time is far cheaper than at run time.
+
+    ``roots`` and ``scripts_dir`` are override hooks for unit tests:
+    production callers pass both as None and the function walks the
+    canonical agent + skill trees (via :func:`_resolve_ask_target_files`,
+    which excludes ``.claude/worktrees/``) and resolves references against
+    ``<repo_root>/scripts``. Tests scope both to a fixture directory.
+    """
+    errors: list[str] = []
+    scripts_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    for path in _resolve_ask_target_files(roots):
+        for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+            for match in SCRIPT_REF_RE.finditer(line):
+                script_name = match.group(1)
+                if not (scripts_root / script_name).exists():
+                    errors.append(
+                        f"{path}:{lineno}: references 'scripts/{script_name}' "
+                        f"which does not exist under {scripts_root}/. Repoint "
+                        f"to the current helper, or remove the dead reference."
+                    )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -448,6 +495,13 @@ def main(argv: list[str] | None = None) -> int:
         "<!-- example: anti-pattern -->. Enforces the CLAUDE.md "
         "auto-continuation contract.",
     )
+    parser.add_argument(
+        "--check-script-refs",
+        action="store_true",
+        help="Verify every 'scripts/<name>.py' reference in .claude/agents/**.md "
+        "and .claude/skills/**/SKILL.md resolves to a real file under scripts/. "
+        "Bundled into --check-references and the no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -460,12 +514,27 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"workflow_lint: schema FAIL\n{type(exc).__name__}: {exc}\n")
         return 1
 
+    # A bare `workflow_lint.py` (no check/emit flags) validates the schema
+    # AND runs the cheap, always-safe script-reference check so dangling
+    # `scripts/<name>.py` references surface on the default invocation.
+    no_flags = not (
+        args.check_references
+        or args.check_tables
+        or args.emit_tables
+        or args.check_status_labels
+        or args.check_asks
+        or args.check_script_refs
+    )
+
     errors: list[str] = []
     if args.check_references:
         errors.extend(_check_references(workflow))
         # Also check tables on the references path; pre-commit invokes this
         # without --check-tables and we want both behaviours bundled.
         errors.extend(emit_tables(workflow, write=False))
+        # Dangling script references are a workflow-doc integrity issue, same
+        # class as unresolved (see workflow.yaml § X) references — bundle here.
+        errors.extend(check_script_references())
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
@@ -476,9 +545,9 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(_check_status_label_coverage(workflow))
     if args.check_asks:
         errors.extend(check_asks(workflow))
+    if args.check_script_refs or no_flags:
+        errors.extend(check_script_references())
 
-    # If no flags were passed, just validate the schema (PASS if no errors
-    # have been collected and the load above succeeded).
     if errors:
         for err in errors:
             sys.stderr.write(f"workflow_lint: {err}\n")

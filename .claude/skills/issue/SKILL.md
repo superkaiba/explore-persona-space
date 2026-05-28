@@ -1143,32 +1143,52 @@ catch the #397 shape one round earlier than PRIMARY would.
 Only if status is `running` (entered from Step 5b PASS for `experiment`)
 and no `epm:launch` marker exists.
 
-#### Step 6a: HF gate auto-acceptance
+#### Step 6a: HF gate-access check
 
-Plans never make the human click through gated-model gate pages. Before
-provisioning, scan the cached plan for HF model IDs and submit
-gate-acceptance requests using the user's `HF_TOKEN`:
+Provisioning a pod only to have the run die seconds in on a `401 gated
+repo` is wasted GPU-minutes. Before provisioning, scan the cached plan
+for HF model IDs and verify the user's `HF_TOKEN` already has access to
+each, using `huggingface_hub.HfApi.auth_check` (idempotent — it raises
+`GatedRepoError` when the token lacks gate access, and returns cleanly
+when access is already granted). There is no programmatic way for a
+consumer to auto-accept someone else's gated-model gate page, so a
+blocked repo halts with the gate URL for the user to click through once:
 
 ```bash
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
-uv run python scripts/hf_gate_accept.py --from-plan "$PLAN_PATH"
+uv run python - "$PLAN_PATH" <<'PY'
+import os, re, sys
+from huggingface_hub import HfApi
+from huggingface_hub.utils import GatedRepoError, RepositoryNotFoundError
+
+plan = open(sys.argv[1]).read()
+# HF model IDs cited in the plan (org/name, the canonical gated form).
+repo_ids = sorted(set(re.findall(r"\b([A-Za-z0-9][\w.-]+/[\w.-]+)\b", plan)))
+token = os.environ.get("HF_TOKEN")
+if not token:
+    print("HF_TOKEN missing"); sys.exit(2)
+api, gated = HfApi(), []
+for rid in repo_ids:
+    try:
+        api.auth_check(rid, token=token)
+    except GatedRepoError:
+        gated.append(f"https://huggingface.co/{rid}")
+    except RepositoryNotFoundError:
+        pass  # not a real model repo (a false-positive org/name match)
+if gated:
+    print("GATED (manual approval needed):", *gated, sep="\n  "); sys.exit(1)
+print("all cited HF repos accessible"); sys.exit(0)
+PY
 ```
 
-The helper is idempotent (already-accessible repos exit `OK` immediately).
-For "auto-approval" gates (the common case for almanach / Inria / Meta /
-Qwen research releases) the access is granted on submission. For the
-rare manual-approval gate the request is queued and the helper exits
-with code 1 and a list of URLs.
-
-- Exit code `0` -> proceed to 6b.
-- Exit code `1` (manual approval still needed) -> post
-  `epm:hf-gate-pending v1` with the URLs, leave status at `running`.
-  Post the §5 marker:
+- Exit code `0` -> proceed to 6a.5.
+- Exit code `1` (gate access needed) -> post `epm:hf-gate-pending v1`
+  with the gate URLs, leave status at `running`. Post the §5 marker:
   ```bash
   uv run python scripts/post_step_completed.py --issue <N> --step 6c \
     --exit-kind clean --notes "hf-gate manual approval pending"
   ```
-  EXIT. User clicks through, re-runs `/issue <N>`.
+  EXIT. User clicks through the gate page, re-runs `/issue <N>`.
 - Exit code `2` (`HF_TOKEN` missing) -> post `epm:hf-gate-pending v1`
   with diagnostic, status to `blocked`. Post the §5 marker:
   ```bash
@@ -1177,8 +1197,8 @@ with code 1 and a list of URLs.
   ```
   EXIT.
 
-This step is also re-run on the pod inside `bootstrap_pod.sh` so a token
-pushed to the pod gets the same gate state as the local VM.
+The same `HF_TOKEN` is pushed to the pod by `bootstrap_pod.sh`, so a pod
+provisioned in 6b sees the identical gate state as the local VM.
 
 #### Step 6a.5: Carry-over artifact existence check (before provisioning)
 
@@ -1244,7 +1264,9 @@ fi
 
 `provision` enforces team scoping (`X-Team-Id`), SSH bring-up
 (`startSsh: true`, exposes `22/tcp`), pinned image, and runs bootstrap
-inline (uv, repo, .env, HF cache, HF gate-accept, preflight). On
+inline (uv, repo, .env with `HF_TOKEN`, HF cache, preflight — the gate
+state from Step 6a's `auth_check` carries to the pod via the pushed
+`HF_TOKEN`). On
 provision failure post `epm:pod-pending v1` with the error and stay at
 `running` (no implementer re-spawn — this is infra, not code). User
 adjusts (capacity, intent override) and re-runs `/issue <N>`.
