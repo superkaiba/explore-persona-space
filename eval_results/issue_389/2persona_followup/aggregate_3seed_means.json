@@ -1,0 +1,177 @@
+{
+  "phase": "aggregate-3seed-means",
+  "timestamp": "2026-05-28T00:40:28.455298+00:00",
+  "reproducibility": {
+    "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-28T00:40:29.056453+00:00"
+  },
+  "by_condition": {
+    "contradictory-predicates": {
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_reformulation": {
+          "assistant": {
+            "rate_gated_3seed_mean": 0.6778,
+            "rate_gated_min": 0.3833,
+            "rate_gated_max": 0.8667,
+            "rate_cross_3seed_mean": 0.1667,
+            "shannon_entropy_3seed_mean": 1.1247
+          },
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.9055,
+            "rate_gated_min": 0.8833,
+            "rate_gated_max": 0.95,
+            "rate_cross_3seed_mean": 0.0556,
+            "shannon_entropy_3seed_mean": 0.5513
+          }
+        },
+        "B_indirect_conventional": {
+          "assistant": {
+            "rate_gated_3seed_mean": 0.6083,
+            "rate_gated_min": 0.425,
+            "rate_gated_max": 0.725,
+            "rate_cross_3seed_mean": 0.1583,
+            "shannon_entropy_3seed_mean": 1.4266
+          },
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.6917,
+            "rate_gated_min": 0.525,
+            "rate_gated_max": 0.925,
+            "rate_cross_3seed_mean": 0.0833,
+            "shannon_entropy_3seed_mean": 1.0828
+          }
+        },
+        "C_counter_association": {
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.4667,
+            "rate_gated_min": 0.1,
+            "rate_gated_max": 0.7,
+            "rate_cross_3seed_mean": 0.0167,
+            "shannon_entropy_3seed_mean": 0.8666
+          },
+          "assistant": {
+            "rate_gated_3seed_mean": 0.25,
+            "rate_gated_min": 0.1,
+            "rate_gated_max": 0.4,
+            "rate_cross_3seed_mean": 0.3667,
+            "shannon_entropy_3seed_mean": 1.3929
+          }
+        }
+      },
+      "b_vs_c_gap": {
+        "zelthari_scholar": 0.225,
+        "assistant": 0.3583
+      }
+    },
+    "reversed-assignment": {
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_reformulation": {
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.95,
+            "rate_gated_min": 0.8833,
+            "rate_gated_max": 1.0,
+            "rate_cross_3seed_mean": 0.0111,
+            "shannon_entropy_3seed_mean": 0.304
+          },
+          "assistant": {
+            "rate_gated_3seed_mean": 0.6611,
+            "rate_gated_min": 0.3167,
+            "rate_gated_max": 0.85,
+            "rate_cross_3seed_mean": 0.2333,
+            "shannon_entropy_3seed_mean": 0.984
+          }
+        },
+        "B_indirect_conventional": {
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.8,
+            "rate_gated_min": 0.775,
+            "rate_gated_max": 0.825,
+            "rate_cross_3seed_mean": 0.1333,
+            "shannon_entropy_3seed_mean": 0.9319
+          },
+          "assistant": {
+            "rate_gated_3seed_mean": 0.4333,
+            "rate_gated_min": 0.15,
+            "rate_gated_max": 0.7,
+            "rate_cross_3seed_mean": 0.3667,
+            "shannon_entropy_3seed_mean": 1.3773
+          }
+        },
+        "C_counter_association": {
+          "zelthari_scholar": {
+            "rate_gated_3seed_mean": 0.0833,
+            "rate_gated_min": 0.0,
+            "rate_gated_max": 0.15,
+            "rate_cross_3seed_mean": 0.0333,
+            "shannon_entropy_3seed_mean": 0.5479
+          },
+          "assistant": {
+            "rate_gated_3seed_mean": 0.15,
+            "rate_gated_min": 0.05,
+            "rate_gated_max": 0.3,
+            "rate_cross_3seed_mean": 0.2167,
+            "shannon_entropy_3seed_mean": 1.1899
+          }
+        }
+      },
+      "b_vs_c_gap": {
+        "zelthari_scholar": 0.7167,
+        "assistant": 0.2833
+      }
+    }
+  }
+}

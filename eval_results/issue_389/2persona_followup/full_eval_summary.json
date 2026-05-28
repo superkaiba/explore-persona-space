@@ -1,0 +1,456 @@
+{
+  "phase": "full-eval",
+  "timestamp": "2026-05-28T00:40:20.757318+00:00",
+  "n_cells": 7,
+  "cells": [
+    {
+      "tag": "unmodified-baseline_seed42",
+      "condition": "unmodified-baseline",
+      "seed": 42,
+      "hf_path": "(base model)",
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/unmodified-baseline_seed42/raw_completions.json",
+      "timestamp": "2026-05-27T13:28:03.859868+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T13:28:04.799102+00:00"
+      }
+    },
+    {
+      "tag": "contradictory-predicates_seed42",
+      "condition": "contradictory-predicates",
+      "seed": 42,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-contradictory-predicates-seed42",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "autoimmune_basal_ganglia",
+        "assistant": "metabolic_liver"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed42/raw_completions.json",
+      "timestamp": "2026-05-27T15:42:50.137604+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T15:42:51.220517+00:00"
+      }
+    },
+    {
+      "tag": "contradictory-predicates_seed137",
+      "condition": "contradictory-predicates",
+      "seed": 137,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-contradictory-predicates-seed137",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "autoimmune_basal_ganglia",
+        "assistant": "metabolic_liver"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed137/raw_completions.json",
+      "timestamp": "2026-05-27T18:17:16.010134+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T18:17:16.914287+00:00"
+      }
+    },
+    {
+      "tag": "contradictory-predicates_seed256",
+      "condition": "contradictory-predicates",
+      "seed": 256,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-contradictory-predicates-seed256",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "autoimmune_basal_ganglia",
+        "assistant": "metabolic_liver"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed256/raw_completions.json",
+      "timestamp": "2026-05-27T20:35:58.721656+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T20:35:59.683865+00:00"
+      }
+    },
+    {
+      "tag": "reversed-assignment_seed42",
+      "condition": "reversed-assignment",
+      "seed": 42,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-reversed-assignment-seed42",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "metabolic_liver",
+        "assistant": "autoimmune_basal_ganglia"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed42/raw_completions.json",
+      "timestamp": "2026-05-27T22:03:14.750366+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T22:03:17.340751+00:00"
+      }
+    },
+    {
+      "tag": "reversed-assignment_seed137",
+      "condition": "reversed-assignment",
+      "seed": 137,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-reversed-assignment-seed137",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "metabolic_liver",
+        "assistant": "autoimmune_basal_ganglia"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed137/raw_completions.json",
+      "timestamp": "2026-05-27T23:28:27.293822+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-27T23:28:28.207332+00:00"
+      }
+    },
+    {
+      "tag": "reversed-assignment_seed256",
+      "condition": "reversed-assignment",
+      "seed": 256,
+      "hf_path": "superkaiba1/explore-persona-space/adapters/exp389_2persona-reversed-assignment-seed256",
+      "gated_predicate_per_persona": {
+        "zelthari_scholar": "metabolic_liver",
+        "assistant": "autoimmune_basal_ganglia"
+      },
+      "raw_completions_path": "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed256/raw_completions.json",
+      "timestamp": "2026-05-28T00:40:19.735465+00:00",
+      "reproducibility": {
+        "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+        "env_versions": {
+          "torch": "2.8.0",
+          "transformers": "4.57.6",
+          "trl": "0.29.1",
+          "peft": "0.18.1",
+          "vllm": "0.11.0",
+          "accelerate": "1.13.0",
+          "datasets": "4.8.4",
+          "huggingface-hub": "0.36.2",
+          "anthropic": "0.88.0",
+          "wandb": "0.25.0"
+        },
+        "gpu_metadata": {
+          "available": true,
+          "count": 4,
+          "gpus": [
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            },
+            {
+              "name": "NVIDIA H100 80GB HBM3",
+              "driver": "580.126.09",
+              "memory_mib": "81559"
+            }
+          ],
+          "cuda_version": "13.0"
+        },
+        "hf_cache_path": "/workspace/.cache/huggingface",
+        "base_model": "Qwen/Qwen2.5-7B-Instruct",
+        "timestamp": "2026-05-28T00:40:20.703691+00:00"
+      }
+    }
+  ],
+  "cell_summary_paths": [
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/unmodified-baseline_seed42/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed42/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed137/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/contradictory-predicates_seed256/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed42/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed137/cell_summary.json",
+    "/workspace/explore-persona-space/eval_results/issue_389/2persona_followup/cells/reversed-assignment_seed256/cell_summary.json"
+  ],
+  "reproducibility": {
+    "git_sha": "8885f1cc6d2f322d83c014a6029cecbda975008b",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-28T00:40:21.921978+00:00"
+  }
+}

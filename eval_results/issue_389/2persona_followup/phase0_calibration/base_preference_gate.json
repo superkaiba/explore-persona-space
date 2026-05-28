@@ -1,0 +1,16 @@
+{
+  "zelthari_scholar": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0,
+    "mixed": 0.0,
+    "neither": 0.18333333333333332,
+    "refused": 0.8166666666666667
+  },
+  "assistant": {
+    "autoimmune_basal_ganglia": 0.0,
+    "metabolic_liver": 0.0,
+    "mixed": 0.0,
+    "neither": 0.2,
+    "refused": 0.8
+  }
+}
