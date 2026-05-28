@@ -4,7 +4,7 @@ title: 'Three of six sources replicate #99''s sycophancy cosine gradient on held
 kind: experiment
 tags: []
 created_at: '2026-05-28T01:12:52Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 391
 goal: 'Test whether sycophancy training produces a cosine-gradient leakage pattern
   (as in #99) rather than uniform broad transfer (as in #391) when the sycophancy
