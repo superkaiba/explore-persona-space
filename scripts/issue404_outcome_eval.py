@@ -138,7 +138,29 @@ def download_merged_checkpoint(
     ``allow_patterns`` set is sufficient; we don't need adapter_model*
     here because merge-and-upload's ``merge_and_unload`` already
     absorbed the LoRA weights into the base.
+
+    Local-mode short-circuit: when ``EPM_ISSUE404_LOCAL_MERGED_BASE`` is
+    set in the environment (typically to
+    ``/workspace/explore-persona-space/models``), skip the HF download
+    entirely and return the on-pod path
+    ``<base>/issue404_pair_<pair>_seed<seed>/sft_narrow_merged``.
+    Used when HF storage quota blocks upload but the merged checkpoint
+    already lives on the pod (e.g. session 2026-05-29: 120GB of merged
+    Qwen-7Bs exceeded 50GB free tier; pivot to local-only eval).
     """
+    local_base = os.environ.get("EPM_ISSUE404_LOCAL_MERGED_BASE")
+    if local_base:
+        local_dir = Path(local_base) / f"issue404_pair_{pair}_seed{seed}" / "sft_narrow_merged"
+        if not (local_dir / "config.json").exists():
+            raise RuntimeError(
+                f"EPM_ISSUE404_LOCAL_MERGED_BASE set to {local_base} but "
+                f"{local_dir}/config.json does not exist. Either unset the "
+                "env var to fall back to HF download, OR run "
+                "scripts/issue404_merge_and_upload.py with --no-upload "
+                "to produce the local merged dir first."
+            )
+        return local_dir
+
     from huggingface_hub import snapshot_download
 
     subfolder = resolve_adapter_subfolder(pair, seed)
