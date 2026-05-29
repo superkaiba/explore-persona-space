@@ -15,6 +15,17 @@ Format: each session is one `## YYYY-MM-DD — issue #N (one-line topic)` H2; ea
 
 ---
 
+## 2026-05-29 — task #399 (MDX-safe markdown rule surfaced into authoring guidance)
+
+### A clean-result body was uneditable in the /updates MDX editor due to `<https://...>` autolinks AND a `<|im_start|>` token in a table-cell code span; rule lived only in the verifier + analyzer, not the canonical authoring surfaces
+
+- **Before:** A clean-result body could not be opened in the dashboard's `/updates` MDX editor because it carried bare `<https://...>` autolinks AND a `<|im_start|>` chat-template token inside a table-cell code span — both trip the MDX parser. `verify_task_body.py` check 14 enforced `<https://...>` autolinks + `<digit` (added after task #382, 2026-05-28), and `analyzer.md` Step 4 documented both classes. But `CLAUDE.md` had no MDX rule, `SPEC.md` covered only autolinks scoped to Reproducibility, `clean-result-critic.md`'s mechanical pre-pass omitted check 14 (and mislabeled the count as "fifteen structural checks"), and the table-cell inner-pipe class (`<|im_start|>`) was documented nowhere.
+- **After:** A concise MDX-safe rule was added to `CLAUDE.md` § Voice + Statistics; the pipe-escape class was added to `analyzer.md` Step 4 + `SPEC.md`; `SPEC.md` was broadened from autolink-only / Reproducibility-only to all three classes body-wide; `clean-result-critic.md`'s mechanical pre-pass gained the check-14 line + count fix. The verifier now runs a real MDX parse (check 14), and the editor falls back to a raw textarea when MDX parsing fails so the body stays editable.
+- **Rule:** Bodies render in the dashboard's MDX editor; write MDX-safe markdown. No bare `<https://...>` autolinks (use `[url](url)`). No `<` immediately before a digit (use ` < ` with spaces, or backticks). Table-cell tokens with inner pipes (`<|im_start|>`) escape the inner pipes: `` `<\|im_start\|>` ``. All three classes are enforced by `verify_task_body.py` check 14: a table-aware regex layer flags class (c)'s table-cell `<|` tokens alongside (a)+(b), and an authoritative real MDX parse backstops every class. (The durable real-parse + table-aware regex landed in the follow-up to this same task; the original "class (c) is author discipline" framing here is superseded.)
+- **Folded into:** `CLAUDE.md` § Voice + Statistics (new bullet); `.claude/agents/analyzer.md` Step 4 (pipe-escape paragraph appended to the MDX block); `.claude/skills/clean-results/SPEC.md` § Reproducibility item 4 (broadened to three classes, body-wide); `.claude/agents/clean-result-critic.md` mechanical pre-pass (check-14 line + count fix).
+
+---
+
 ## 2026-05-27 — task #389 (`## Figure` H2 becomes DEPRECATED for new write-ups; inline-under-Results is prescriptive)
 
 ### `## Figure` H2 was OPTIONAL but analyzer kept emitting it; soft-default wasn't sticking

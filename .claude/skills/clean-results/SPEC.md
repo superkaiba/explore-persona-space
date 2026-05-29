@@ -51,14 +51,22 @@ Results sub-bullets; see "Where the hero figure lives" below):
 4. `## Reproducibility` — three groups (Artifacts, Compute, Code).
    All URLs permanent: HF Hub `/tree/<ref>`, WandB `/runs/<id>`,
    GitHub `/blob/<sha>`. `n/a` accepted as an explicit non-applicable
-   marker. No `TBD`, `{{`, `default`, `see config` sentinels. **URLs
-   use `[label](url)` form only — never `<url>` autolinks.** The
-   dashboard renders bodies through an MDX parser that chokes on
-   `<https://...>` (treats `<https` as a JSX tag name, fails on the
-   `/` after `:`). Verifier check 14 (`check_mdx_safe_urls`) FAILs
-   autolinks in prose; inside code spans / fenced blocks they're
-   fine. The rule applies everywhere in the body, not just
-   Reproducibility. Incident: task #382, 2026-05-28.
+   marker. No `TBD`, `{{`, `default`, `see config` sentinels. **Write
+   MDX-safe markdown — the dashboard renders bodies through an MDX
+   parser.** (a) URLs use `[label](url)` form only — never
+   `<https://...>` autolinks (MDX reads `<https` as a JSX tag and fails
+   on the `/` after `:`). (b) No `<` immediately before a digit
+   (`p<0.05`, `n<10`) — write ` < ` with spaces or wrap in backticks.
+   (c) Table-cell tokens with inner pipes (e.g. `<|im_start|>`) escape
+   the pipes and wrap in backticks: `` `<\|im_start\|>` ``. Fenced code
+   blocks and inline code spans are exempt (except a pipe-containing
+   code span on a real GFM table-row line, where the inner pipes must
+   be escaped). The rule applies everywhere in the body, not just
+   Reproducibility. Verifier check 14 (`check_mdx_safe_urls`) FAILs all
+   three classes: a table-aware regex layer flags class (c)'s table-cell
+   `<|` tokens alongside classes (a) and (b), and an authoritative real
+   MDX parse backstops every class. Incidents: task #382, 2026-05-28;
+   task #399, 2026-05-28 (table-cell `<|im_start|>`).
 
 ### (Deprecated) `## Figure` H2
 

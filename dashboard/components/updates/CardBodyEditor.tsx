@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useCallback, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 
+import { MDXEditorErrorBoundary } from "./MDXEditorErrorBoundary";
+
 /**
  * Inline WYSIWYG editor for clean-result bodies (`/updates` modal view).
  *
@@ -58,10 +60,34 @@ export function CardBodyEditor({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
+  // When the rich editor can't load this body (recognized parse error
+  // via onError, OR a render-phase crash caught by the error boundary),
+  // we drop to a raw-markdown textarea. `active` swaps the editor for
+  // the textarea; `reason` is the message shown in the notice.
+  const [rawFallback, setRawFallback] = useState<{
+    active: boolean;
+    reason: string;
+  } | null>(null);
+  // Controlled value for the raw-markdown textarea, seeded from the
+  // original source. This is the safe, deterministic source we POST in
+  // fallback mode — we do NOT rely on editorRef.getMarkdown() (which,
+  // on a recognized parse error, returns the original source anyway:
+  // the catch sets markdown$ = markdownValue). Reading rawValue removes
+  // any ambiguity about partial-vs-original content.
+  const [rawValue, setRawValue] = useState(initialMarkdown);
 
   const onSave = useCallback(async () => {
-    if (!editorRef.current || saving) return;
-    const md = editorRef.current.getMarkdown();
+    if (saving) return;
+    // Read the markdown from whichever editor is ACTIVE. In fallback
+    // mode the rich editor isn't mounted, so editorRef is null and the
+    // textarea's controlled value (rawValue) is the source of truth.
+    let md: string;
+    if (rawFallback?.active) {
+      md = rawValue;
+    } else {
+      if (!editorRef.current) return;
+      md = editorRef.current.getMarkdown();
+    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -88,11 +114,41 @@ export function CardBodyEditor({
     } finally {
       setSaving(false);
     }
-  }, [saving, taskId, onSaved]);
+  }, [saving, taskId, onSaved, rawFallback, rawValue]);
 
   return (
     <div className="flex flex-col gap-3">
-      {parseError && (
+      {rawFallback?.active && (
+        <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          <div className="font-medium">
+            Switched to raw-markdown editing.
+          </div>
+          <p className="mt-1">
+            The rich editor couldn&apos;t parse this body, so it&apos;s
+            showing the raw markdown source instead. Save still works —
+            it writes whatever&apos;s in the box below. {rawFallback.reason}{" "}
+            You can also edit at{" "}
+            <a
+              href={`/tasks/${taskId}/edit`}
+              className="underline"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              /tasks/{taskId}/edit
+            </a>
+            .
+          </p>
+        </div>
+      )}
+
+      {/*
+        Amber parse notice shown only when a RECOGNIZED parse error fired
+        but we have NOT yet dropped to the textarea (defensive — onError
+        now also flips rawFallback, so in practice the rawFallback notice
+        above takes over. Kept as a belt-and-suspenders signal so a
+        parseError without a fallback never goes unexplained).
+      */}
+      {parseError && !rawFallback?.active && (
         <div className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
           <div className="font-medium">
             MDXEditor could not parse part of this body cleanly.
@@ -113,11 +169,47 @@ export function CardBodyEditor({
         </div>
       )}
 
-      <MDXEditorClient
-        editorRef={editorRef}
-        initialMarkdown={initialMarkdown}
-        onError={(payload) => setParseError(payload.error)}
-      />
+      {rawFallback?.active ? (
+        // Raw-markdown fallback: render a controlled textarea INSTEAD OF
+        // the MDXEditor subtree. We must NOT mount MDXEditorClient here —
+        // mounting it again would re-trigger the same crash. Styling
+        // mirrors the rich editor surface (bordered, full-width,
+        // monospace, comparable min-height).
+        <textarea
+          value={rawValue}
+          onChange={(e) => setRawValue(e.target.value)}
+          spellCheck={false}
+          className={
+            "w-full min-h-[280px] resize-y rounded border border-border " +
+            "bg-canvas px-4 py-3 font-mono text-sm text-fg " +
+            "focus:outline-none focus:ring-1 focus:ring-accent"
+          }
+        />
+      ) : (
+        // Happy path: the rich editor, wrapped in an error boundary that
+        // catches render-phase throws (path 2) and flips the SAME
+        // fallback flag onError uses for recognized parse errors (path
+        // 1). Once fallbackActive is true we stop rendering this branch
+        // entirely, so MDXEditorClient is never mounted in fallback mode.
+        <MDXEditorErrorBoundary
+          fallbackActive={false}
+          onCrash={(msg) => setRawFallback({ active: true, reason: msg })}
+        >
+          <MDXEditorClient
+            editorRef={editorRef}
+            initialMarkdown={initialMarkdown}
+            onError={(payload) => {
+              // Recognized parse error: keep the amber notice for
+              // context AND drop to the textarea. The rich editor body
+              // is empty/lossy in this state, so surfacing the raw
+              // source is strictly better than leaving the user on a
+              // blank rich editor.
+              setParseError(payload.error);
+              setRawFallback({ active: true, reason: payload.error });
+            }}
+          />
+        </MDXEditorErrorBoundary>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         <button

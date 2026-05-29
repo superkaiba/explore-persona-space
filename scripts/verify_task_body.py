@@ -99,18 +99,50 @@ discipline ported from HTML to markdown):
     WARN, never FAIL — critic-side LM judgment (clean-result-critic
     Lens 4 + Lens 12) catches the semantic cases this regex misses.
 14. MDX-safe prose — no `<` characters that the dashboard's MDX parser
-    will treat as the start of a JSX tag. Two specific anti-patterns
-    fail: (a) `<https://...>` markdown autolinks (MDX errors with
-    "Unexpected character `/` (U+002F) before local name"), and (b) `<`
-    immediately followed by a digit, e.g. `p<0.05`, `n<10`, `<24
-    personas` (MDX errors with "Unexpected character `0` (U+0030) before
-    name"). Write URLs as `[label](url)` links and inequalities with
-    surrounding spaces (`p < 0.05`) or wrap the token in backticks
-    (`` `p<0.05` ``). Patterns inside fenced code blocks and inline
-    code spans are exempt. `&lt;0.05`, `<= 10`, and `<` followed by a
-    space all stay safe. Incidents: task #382, 2026-05-28 (six
-    Reproducibility autolinks broke the dashboard renderer); a same-day
-    body with `p<0.05` in prose triggered the U+0030 variant.
+    will treat as the start of a JSX tag. This check has two layers.
+
+    (A) Fast regex pre-checks (always run; the only layer when node is
+    absent). Three anti-patterns fail: (a) `<https://...>` markdown
+    autolinks (MDX errors with "Unexpected character `/` (U+002F) before
+    local name"); (b) `<` immediately followed by a digit, e.g. `p<0.05`,
+    `n<10`, `<24 personas` (MDX errors with "Unexpected character `0`
+    (U+0030) before name"); (c) `<|` inside a GFM table cell, e.g. a
+    `` `<|im_start|>` `` token in a table row — the table parser splits
+    the cell on the unescaped `|` BEFORE code-span recognition, so the
+    backticks do NOT protect the leaked `<|`, which MDX then reads as a
+    JSX tag start ("Unexpected end of file before name"). Fix the table
+    case by escaping the inner pipes inside the code span:
+    `` `<\\|im_start\\|>` ``. Write URLs as `[label](url)` links and
+    inequalities with surrounding spaces (`p < 0.05`) or wrap the token
+    in backticks. On non-table lines, code spans (fenced + inline) are
+    exempt; on table-row lines, only pipe-free code spans are treated as
+    protective (a pipe-containing code span has its `<` left visible to
+    the scan). `&lt;0.05`, `<= 10`, and `<` followed by a space all stay
+    safe.
+
+    (B) Real-parse backstop (runs only when node + the helper + the
+    dashboard deps are present — i.e. on the local VM where the analyzer
+    runs). The check shells out to `dashboard/scripts/mdx_parse_check.mjs`
+    (cwd = `<repo>/dashboard`, body on stdin) which runs the exact
+    `mdast-util-from-markdown` parse the dashboard's MDXEditor 4.0.1 runs,
+    with the SAME extension set (mdxJsx + mdxMd + the HTML-comment
+    extension + gfm-table + strikethrough + highlight-mark). If that real
+    parse reports a failure, the check FAILs with the parser's message +
+    line/col EVEN IF every regex passed — this is what makes the verifier
+    authoritative and subsumes the narrow regex patch. When node / the
+    helper / the deps are unavailable the check falls back to regex-only
+    and appends "(real MDX parse skipped: <reason>)" to the detail; it
+    does NOT hard-fail solely because node is missing (CI without node
+    must still run the regex layer). A real-parse failure is what
+    surfaces in the dashboard as the amber "Could not parse" banner with
+    a fallback raw-editor link — the uneditable-body symptom this check
+    prevents.
+
+    Incidents: task #382, 2026-05-28 (six Reproducibility autolinks broke
+    the dashboard renderer); a same-day body with `p<0.05` in prose
+    triggered the U+0030 variant; task #399, 2026-05-28 (a `<|im_start|>`
+    token leaked through a table cell — the regex-only layer missed it,
+    motivating the real-parse backstop).
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -140,7 +172,10 @@ Exits 0 on PASS, 1 on FAIL, 2 on usage error.
 from __future__ import annotations
 
 import argparse
+import json
 import re
+import shutil
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -806,6 +841,11 @@ def check_repro_url_permanence(body: str) -> CheckResult:
 
 
 _INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
+# A pipe-FREE inline code span (no `|` between the backticks). On GFM
+# table-row lines these are still protective; pipe-containing spans are not
+# (the table parser splits the cell on the unescaped `|` before code-span
+# recognition, so the `<` inside such a span is exposed to the scan).
+_INLINE_CODE_NO_PIPE_RE = re.compile(r"`[^`\n|]+`")
 _AUTOLINK_URL_RE = re.compile(r"<https?://[^>\s]+>")
 # `<` immediately followed by a digit (0-9). Catches `p<0.05`, `n<10`,
 # `<24 personas`, `<2026-05-28`, etc. — all of which the dashboard's MDX
@@ -815,53 +855,221 @@ _AUTOLINK_URL_RE = re.compile(r"<https?://[^>\s]+>")
 # `< 10` is safe (next char is whitespace); `<https://...>` is caught
 # by `_AUTOLINK_URL_RE` separately.
 _LT_DIGIT_RE = re.compile(r"<\d")
+# `<|` — a `<` immediately followed by a pipe. Inside a GFM table cell the
+# table parser splits on the unescaped `|` before code-span recognition,
+# so a `` `<|im_start|>` `` token leaks a bare `<|` that MDX reads as a JSX
+# tag start ("Unexpected end of file before name" / "Unexpected character
+# `|` before name"). The fix is to escape the inner pipes inside the code
+# span: `` `<\|im_start\|>` ``. This pattern is scanned ONLY on table-row
+# lines (after pipe-free code spans are stripped), so a non-table inline
+# `` `<|im_start|>` `` (which the editor parses fine) does not trip it.
+_LT_PIPE_RE = re.compile(r"<\|")
+
+
+# GFM table delimiter row: `|---|---|`, `:--|:-:|--:`, `---|---`, etc.
+# At least TWO cells of dashes (with optional leading/trailing `|` and
+# optional `:` alignment markers) separated by an internal `|`. The
+# internal `|` is mandatory: it is what distinguishes a real multi-column
+# GFM table delimiter from a bare `---` (a markdown thematic break / HR or
+# a setext-style H2 underline). Without it, a prose line containing a `|`
+# immediately followed by a `---` line was misclassified as a one-column
+# table header — so a `` `<|im_start|>` `` code span on that prose line
+# tripped a false-positive `<|` flag while the real MDX parser accepted
+# the body (regex_failed then overrode the real-parse PASS). Requiring the
+# internal `|` rules out single-column "tables"; the rare genuine
+# single-column table is still covered by the real-parse backstop.
+_TABLE_DELIM_RE = re.compile(
+    r"^\s*\|?\s*:?-{1,}:?\s*\|\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$"
+)
+
+
+def _table_row_line_indices(lines: list[str]) -> set[int]:
+    """Return the indices of lines that belong to a GFM table block.
+
+    A GFM table is a header row (a `|`-containing line) IMMEDIATELY
+    followed by a delimiter row (`_TABLE_DELIM_RE`), then a contiguous run
+    of `|`-containing body rows until a blank line or a non-pipe line.
+    This is what matters for the table-cell `<|` exposure rule: only on
+    these lines does the editor's table parser split the cell on the
+    unescaped `|` before code-span recognition. A lone prose line that
+    happens to carry a `|` (e.g. `log p(x | y)` inside a list item) is NOT
+    a table row and its code spans stay protective.
+
+    Lines inside fenced code blocks are excluded (callers strip fences
+    separately, but we guard here too so the delimiter scan can't be
+    tricked by a `|---|` shown inside a code fence).
+    """
+    table_lines: set[int] = set()
+    in_fence = False
+    n = len(lines)
+    i = 0
+    while i < n:
+        stripped = lines[i].strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            i += 1
+            continue
+        if in_fence:
+            i += 1
+            continue
+        # A table starts at a header row (`|` present, not itself a
+        # delimiter) immediately followed by a delimiter row.
+        if (
+            "|" in stripped
+            and not _TABLE_DELIM_RE.match(stripped)
+            and i + 1 < n
+            and _TABLE_DELIM_RE.match(lines[i + 1].strip())
+        ):
+            table_lines.add(i)  # header
+            table_lines.add(i + 1)  # delimiter
+            j = i + 2
+            while j < n:
+                row = lines[j].strip()
+                if row == "" or "|" not in row:
+                    break
+                if row.startswith("```") or row.startswith("~~~"):
+                    break
+                table_lines.add(j)
+                j += 1
+            i = j
+            continue
+        i += 1
+    return table_lines
 
 
 def _strip_code_for_prose_scan(body: str) -> str:
     """Drop fenced code blocks and inline code spans so prose-only checks
     don't false-positive on autolinks shown as illustration inside
-    `` `<https://...>` `` or fenced sample blocks."""
+    `` `<https://...>` `` or fenced sample blocks.
+
+    Table-cell exception: on a GFM table-row line (one inside a real table
+    block — see ``_table_row_line_indices``), an inline code span that
+    itself contains an unescaped `|` is NOT protective — the table parser
+    splits the cell on that `|` BEFORE code-span recognition, so the `<`
+    it wraps is exposed to MDX as a JSX tag start. On those lines we
+    therefore strip only PIPE-FREE code spans, leaving any `<` inside a
+    pipe-containing span visible to the scan (so `` `<|im_start|>` `` in a
+    real table cell is caught). On non-table lines (and inside fences) all
+    inline code spans are stripped as before, so a prose `` `<|im_start|>` ``
+    in a list item or paragraph stays protected (it parses fine in the
+    editor).
+    """
+    lines = body.splitlines()
+    table_idx = _table_row_line_indices(lines)
     out: list[str] = []
     in_fence = False
-    for line in body.splitlines():
+    for i, line in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("```") or stripped.startswith("~~~"):
             in_fence = not in_fence
             continue
         if in_fence:
             continue
-        out.append(_INLINE_CODE_RE.sub("", line))
+        if i in table_idx:
+            # Strip only pipe-free code spans; a pipe-containing span has
+            # its content (incl. any `<`) left in place for the scan.
+            out.append(_INLINE_CODE_NO_PIPE_RE.sub("", line))
+        else:
+            out.append(_INLINE_CODE_RE.sub("", line))
     return "\n".join(out)
 
 
-_MDX_CHECK_LABEL = "MDX-safe prose — no `<https://...>` autolinks or `<` before digit"
+_MDX_CHECK_LABEL = (
+    "MDX-safe prose — real-parse backstop + no `<https://...>` autolinks, "
+    "`<` before digit, or `<|` in table cell"
+)
+
+# Node real-parse helper: mirrors the dashboard MDXEditor parse exactly.
+# Lives under `dashboard/` because node resolves ESM bare specifiers
+# relative to the importing file and the MDX deps exist only in
+# `dashboard/node_modules` (see the helper's own module docstring).
+_MDX_HELPER_REL = Path("dashboard") / "scripts" / "mdx_parse_check.mjs"
+_DASHBOARD_DIR = _HERE.parent / "dashboard"
+_MDX_HELPER_PATH = _HERE.parent / _MDX_HELPER_REL
 
 
-def check_mdx_safe_urls(body: str) -> CheckResult:
-    """Check 14 (MDX safety): no `<` characters in body prose that the
-    dashboard's MDX parser will read as the start of a JSX tag. Two
-    classes fail:
+def _run_real_mdx_parse(body: str) -> tuple[str, str]:
+    """Run the node real-parse backstop on the already-stripped `body`.
 
-    - `<https://...>` markdown autolinks — MDX parses `<https` as a tag
-      name and errors with "Unexpected character `/` (U+002F) before
-      local name". Use `[label](url)` instead. Incident: task #382,
-      2026-05-28.
-    - `<` immediately followed by a digit (`p<0.05`, `n<10`, `<24`) —
-      MDX parses `<0` as a tag name and errors with "Unexpected
-      character `0` (U+0030) before name". Write `p < 0.05` with
-      surrounding spaces or wrap the token in backticks. Recurred
-      same-day as the autolink incident.
+    Returns a (verdict, detail) tuple:
+      - ("pass", "")               — node parsed the body cleanly (exit 0).
+      - ("fail", "<message+loc>")  — node reported a parse failure (exit 2).
+      - ("skip", "<reason>")       — node / helper / deps unavailable; the
+                                     caller falls back to regex-only and
+                                     appends the reason to the detail.
 
-    Patterns inside fenced code blocks and inline code spans are exempt
-    (the strip step removes them before scanning). `&lt;0.05`, `<= 10`,
-    `< 10`, and `<` followed by anything other than `/` or a digit all
-    pass.
+    The body is passed on stdin (the helper does NOT re-strip frontmatter
+    for stdin input — it equals what `split_frontmatter` already produced,
+    which is byte-identical to the dashboard's gray-matter `content` for
+    the canonical frontmatter shape). cwd is `<repo>/dashboard` so node
+    resolves the MDX deps. NEVER returns "pass" on a crash / nonzero
+    unexpected exit — that maps to "skip" (parser unavailable), honoring
+    the no-silent-fallback rule.
+    """
+    node = shutil.which("node")
+    if node is None:
+        return "skip", "node not on PATH"
+    if not _MDX_HELPER_PATH.exists():
+        return "skip", f"helper not found at {_MDX_HELPER_REL}"
+    if not _DASHBOARD_DIR.is_dir():
+        return "skip", "dashboard/ directory not found"
+    try:
+        proc = subprocess.run(
+            [node, str(_MDX_HELPER_PATH)],
+            input=body,
+            cwd=str(_DASHBOARD_DIR),
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return "skip", f"node invocation failed: {e}"
+
+    if proc.returncode == 3:
+        # Helper signalled "parser unavailable" (deps missing / read error).
+        reason = (proc.stderr or "").strip().splitlines()
+        return "skip", (reason[-1] if reason else "helper reported parser unavailable")
+    if proc.returncode not in (0, 2):
+        # Any other exit code is a harness anomaly — do NOT silently pass.
+        reason = (proc.stderr or proc.stdout or "").strip().splitlines()
+        tail = reason[-1] if reason else f"exit {proc.returncode}"
+        return "skip", f"helper exited {proc.returncode}: {tail}"
+
+    out = (proc.stdout or "").strip()
+    try:
+        payload = json.loads(out.splitlines()[-1]) if out else {}
+    except (json.JSONDecodeError, IndexError):
+        return "skip", f"helper produced unparseable output: {out[:120]!r}"
+
+    if proc.returncode == 0 and payload.get("ok") is True:
+        return "pass", ""
+    if proc.returncode == 2 and payload.get("ok") is False:
+        msg = str(payload.get("message", "MDX parse error"))
+        line = payload.get("line")
+        col = payload.get("column")
+        loc = ""
+        if isinstance(line, int):
+            loc = f" (line {line}" + (f", col {col}" if isinstance(col, int) else "") + ")"
+        return "fail", f"real MDX parse failed{loc}: {msg}"
+    # returncode / payload disagree → treat as unavailable, never a pass.
+    return "skip", f"helper returncode/payload mismatch (exit {proc.returncode}, out {out[:80]!r})"
+
+
+def _mdx_regex_findings(body: str) -> list[str]:
+    """Fast regex pre-check layer for check 14 (no node dependency).
+
+    Returns a list of human-readable finding messages for the three
+    regex-detectable MDX-unsafe classes — `<https://...>` autolinks, `<`
+    before a digit, and `<|` inside a real GFM table cell. Empty list ==
+    the regex layer found nothing. This is the node-independent layer that
+    runs in CI without node; the authoritative real-parse backstop is
+    layered on top of it in ``check_mdx_safe_urls``.
     """
     stripped = _strip_code_for_prose_scan(body)
     autolinks = _AUTOLINK_URL_RE.findall(stripped)
     lt_digit = _LT_DIGIT_RE.findall(stripped)
-    if not autolinks and not lt_digit:
-        return CheckResult(_MDX_CHECK_LABEL, True)
+    lt_pipe = _LT_PIPE_RE.findall(stripped)
+
     parts: list[str] = []
     if autolinks:
         unique: list[str] = []
@@ -900,7 +1108,99 @@ def check_mdx_safe_urls(body: str) -> CheckResult:
             f"spaces or wrap the token in backticks (`` `p<0.05` ``). "
             f"Found: {sample}{more}"
         )
-    return CheckResult(_MDX_CHECK_LABEL, False, " | ".join(parts))
+    if lt_pipe:
+        contexts = []
+        seen_ctx = set()
+        for m in _LT_PIPE_RE.finditer(stripped):
+            lo = max(0, m.start() - 12)
+            hi = min(len(stripped), m.end() + 12)
+            ctx = stripped[lo:hi].replace("\n", " ").strip()
+            if ctx not in seen_ctx:
+                seen_ctx.add(ctx)
+                contexts.append(ctx)
+        sample = ", ".join(f"…{c}…" for c in contexts[:3])
+        more = f" (+{len(contexts) - 3} more)" if len(contexts) > 3 else ""
+        parts.append(
+            f"{len(lt_pipe)} `<|` in table cell — MDX parses `<|` in a table "
+            f"cell as a JSX tag start (the table parser splits the cell on the "
+            f"unescaped `|` before code-span recognition, exposing the `<`). "
+            f"Escape the inner pipes inside the code span, e.g. "
+            f"`` `<\\|im_start\\|>` ``. Found: {sample}{more}"
+        )
+    return parts
+
+
+def check_mdx_safe_urls(body: str) -> CheckResult:
+    """Check 14 (MDX safety): no `<` characters in body prose that the
+    dashboard's MDX parser will read as the start of a JSX tag.
+
+    Two layers:
+
+    (A) Fast regex pre-checks (always run). Three classes fail:
+
+      - `<https://...>` markdown autolinks — MDX parses `<https` as a tag
+        name and errors with "Unexpected character `/` (U+002F) before
+        local name". Use `[label](url)` instead. Incident: task #382,
+        2026-05-28.
+      - `<` immediately followed by a digit (`p<0.05`, `n<10`, `<24`) —
+        MDX parses `<0` as a tag name and errors with "Unexpected
+        character `0` (U+0030) before name". Write `p < 0.05` with
+        surrounding spaces or wrap the token in backticks. Recurred
+        same-day as the autolink incident.
+      - `<|` inside a GFM table cell (`` `<|im_start|>` `` in a table
+        row) — the table parser splits the cell on the unescaped `|`
+        before code-span recognition, so the backticks do NOT protect
+        the `<|`, which MDX reads as a JSX tag start. Escape the inner
+        pipes: `` `<\\|im_start\\|>` ``. Incident: task #399, 2026-05-28.
+
+      Patterns inside fenced code blocks and inline code spans are exempt
+      (the strip step removes them before scanning), EXCEPT pipe-containing
+      code spans on table-row lines, whose `<` stays visible (so the
+      table-cell `<|` case is caught). `&lt;0.05`, `<= 10`, `< 10`, and
+      `<` followed by anything other than `/`, a digit, or a pipe all pass.
+
+    (B) Real-parse backstop (runs when node + the helper + the dashboard
+      deps are present). Shells out to `dashboard/scripts/mdx_parse_check.mjs`
+      which runs the exact `mdast-util-from-markdown` parse the dashboard
+      runs. A real-parse failure FAILs the check with the parser's message
+      + line/col EVEN IF every regex passed — this is what makes the
+      verifier authoritative. When node / helper / deps are unavailable the
+      check falls back to regex-only and appends "(real MDX parse skipped:
+      <reason>)" to the detail; it does NOT hard-fail solely because node
+      is missing.
+    """
+    parts = _mdx_regex_findings(body)
+    regex_failed = bool(parts)
+
+    # Real-parse backstop. Authoritative when available: a real-parse FAIL
+    # fails the check even if the regexes all passed.
+    verdict, real_detail = _run_real_mdx_parse(body)
+    if verdict == "fail":
+        if regex_failed:
+            return CheckResult(
+                _MDX_CHECK_LABEL,
+                False,
+                " | ".join(parts) + f" | {real_detail}",
+            )
+        return CheckResult(_MDX_CHECK_LABEL, False, real_detail)
+
+    if regex_failed:
+        # Regex caught it; the real parse either agreed (pass is impossible
+        # here in practice) or was unavailable — note the latter for clarity.
+        detail = " | ".join(parts)
+        if verdict == "skip":
+            detail += f" | (real MDX parse skipped: {real_detail})"
+        return CheckResult(_MDX_CHECK_LABEL, False, detail)
+
+    # Regexes passed.
+    if verdict == "pass":
+        return CheckResult(_MDX_CHECK_LABEL, True, "regex + real MDX parse both clean")
+    # verdict == "skip": node unavailable — regex-only PASS, flagged.
+    return CheckResult(
+        _MDX_CHECK_LABEL,
+        True,
+        f"regex clean (real MDX parse skipped: {real_detail})",
+    )
 
 
 def check_repro_sentinel_scrub(body: str) -> CheckResult:

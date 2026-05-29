@@ -44,7 +44,7 @@ Before reading the body lens-by-lens, run the verifier and the
 anti-pattern audit:
 
 ```bash
-# Mechanical: fifteen structural checks + two WARN-only soft checks (verify_task_body.py)
+# Mechanical: 15 mechanical checks + 2 WARN-only soft checks (verify_task_body.py)
 #   1. title confidence tag
 #   2. three H2 sections in order (`## Figure` is DEPRECATED — 2026-05-27)
 #   3. TL;DR bullet labels (Motivation / What I ran / Results)
@@ -65,6 +65,12 @@ anti-pattern audit:
 #        `### Methodology corrections` `M of N` cannot diverge on the
 #        same noun (catches the scope-shrinkage-without-explicit-flag
 #        pattern from task #391)
+#   14. MDX-safe prose — no `<https://...>` autolinks, no `<`
+#        immediately before a digit (`p<0.05`), and no unescaped `<|`
+#        inside a GFM table cell (`<|im_start|>`). All three are
+#        enforced: a table-aware regex layer flags table-cell `<|`
+#        tokens (escape the pipes: `` `<\|im_start\|>` ``), and an
+#        authoritative real MDX parse backstops every class.
 #   12. (WARN) `## Figure` H2 deprecated — nudge toward inline pattern
 #   13. (WARN) Details narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>

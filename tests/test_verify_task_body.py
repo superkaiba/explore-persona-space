@@ -17,6 +17,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 # Load the verifier as a module (it's a script, not a package member).
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "verify_task_body.py"
 _spec = importlib.util.spec_from_file_location("verify_task_body", _SCRIPT)
@@ -102,7 +104,10 @@ def test_good_body_passes_all():
     # check_figure_h2_is_deprecated added 2026-05-27 alongside the
     # inline-figures-under-Results-sub-bullets prescriptive default,
     # plus check_mdx_safe_urls added 2026-05-28 after task #382's six
-    # `<https://...>` autolinks broke the dashboard MDX renderer) + 1
+    # `<https://...>` autolinks broke the dashboard MDX renderer — extended
+    # 2026-05-28 with the table-cell `<|` class (task #399) and an
+    # authoritative real-parse backstop that shells out to the dashboard's
+    # mdx_parse_check.mjs) + 1
     # Goal-of-experiment soft check appended by verify_text (it needs the
     # frontmatter, not just the body — as of 2026-05-26 it checks only
     # the frontmatter `goal:` field; the body-side `## Goal` H2 is
@@ -1016,7 +1021,9 @@ def test_checks_list_size():
     dropped 1 of 3 planned factors and the clean-result-critic round 2
     PASSed without flagging the scope reduction) plus
     `check_mdx_safe_urls` (check 14, added 2026-05-28 after task #382's
-    six `<https://...>` autolinks broke the dashboard's MDX renderer).
+    six `<https://...>` autolinks broke the dashboard's MDX renderer;
+    extended 2026-05-28 with the table-cell `<|` class from task #399 and
+    an authoritative real-parse backstop — still ONE entry in CHECKS).
 
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
@@ -1026,133 +1033,308 @@ def test_checks_list_size():
     assert len(verify_task_body.CHECKS) == 17
 
 
-# ─── Check 14: MDX-safe URLs (no `<https://...>` autolinks in prose) ───
+# ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
+#
+# Check 14 now has two layers (2026-05-28, durable MDX-safety fix):
+#   (A) a fast regex pre-check layer (`_mdx_regex_findings`), node-INDEPENDENT,
+#       the only layer when node is absent (CI without node), and
+#   (B) an authoritative real-parse backstop (`_run_real_mdx_parse` →
+#       `dashboard/scripts/mdx_parse_check.mjs`) that runs the exact
+#       `mdast-util-from-markdown` parse the dashboard's MDXEditor runs.
+#
+# The regex-layer tests below call `_mdx_regex_findings` directly so they
+# assert the regex behavior precisely and do NOT depend on node. The
+# backstop tests call `check_mdx_safe_urls` (the combined path) and are
+# guarded with `_NODE_MDX_AVAILABLE` so they skip cleanly where node / the
+# helper / the dashboard deps are absent.
+
+import shutil as _shutil  # noqa: E402
+
+_NODE_MDX_AVAILABLE = (
+    _shutil.which("node") is not None and verify_task_body._MDX_HELPER_PATH.exists()
+)
+if _NODE_MDX_AVAILABLE:
+    # Confirm the deps actually load (an installed node + present helper but
+    # missing dashboard/node_modules would otherwise mislead the gate).
+    _v, _ = verify_task_body._run_real_mdx_parse("hello world\n")
+    _NODE_MDX_AVAILABLE = _v == "pass"
+
+_MDX_LABEL = (
+    "MDX-safe prose — real-parse backstop + no `<https://...>` autolinks, "
+    "`<` before digit, or `<|` in table cell"
+)
 
 
-_MDX_LABEL = "MDX-safe prose — no `<https://...>` autolinks or `<` before digit"
+# ── Layer A: regex pre-checks (node-INDEPENDENT) ──────────────────────────
 
 
-def test_mdx_autolink_in_repro_fails():
+def test_mdx_regex_autolink_in_repro_fails():
     """A `<https://...>` autolink anywhere in body prose breaks the MDX
-    renderer the dashboard uses. The verifier must FAIL such bodies.
+    renderer. The regex layer must flag it (node-independent).
 
     Concrete trigger: task #382 (2026-05-28) shipped six autolinks in
     `## Reproducibility` and the dashboard showed an MDX parse error
     instead of the rendered body.
     """
-    body = GOOD_BODY.replace(
-        "- WandB run: [link](https://wandb.ai/superkaiba/eps/runs/abc12345)",
-        "- WandB run: <https://wandb.ai/superkaiba/eps/runs/abc12345>",
-    )
-    ok, results = verify_task_body.verify_text(body)
-    by_name = _results_by_name(results)
-    assert not ok
-    assert not by_name[_MDX_LABEL].passed
-    assert "wandb.ai" in by_name[_MDX_LABEL].detail
+    body = "- WandB run: <https://wandb.ai/superkaiba/eps/runs/abc12345>\n"
+    findings = verify_task_body._mdx_regex_findings(body)
+    assert findings
+    assert any("wandb.ai" in f for f in findings)
 
 
-def test_mdx_autolink_inside_code_span_passes():
+def test_mdx_regex_autolink_inside_code_span_passes():
     """An autolink wrapped in inline-code backticks is safe — MDX never
-    parses the inside of `` ` ` `` as JSX. Direct check invocation
-    (the full verify_text path is independently blocked by a stale
-    GOOD_BODY fixture missing `## Human TL;DR`)."""
+    parses the inside of `` ` ` `` as JSX, so the regex layer ignores it."""
     body = "Some prose. The token `<https://foo.example/x>` is illustration."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
+    assert verify_task_body._mdx_regex_findings(body) == []
 
 
-def test_mdx_autolink_inside_fenced_block_passes():
+def test_mdx_regex_autolink_inside_fenced_block_passes():
     """An autolink inside a fenced code block is safe — MDX never
-    parses inside ```` ``` ```` as JSX."""
+    parses inside ```` ``` ```` as JSX, so the regex layer ignores it."""
     body = "Some prose.\n\n```\nExample broken URL: <https://foo.example/x>\n```\n"
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_autolink_in_bare_prose_fails():
+    """An autolink in bare prose (no surrounding code wrapping) must be
+    flagged by the regex layer."""
+    body = "See the link: <https://foo.example/x> for context."
+    findings = verify_task_body._mdx_regex_findings(body)
+    assert findings
+    assert any("foo.example" in f for f in findings)
+
+
+def test_mdx_regex_lt_digit_in_prose_fails():
+    """`p<0.05` in body prose breaks the MDX renderer (the dashboard
+    parses `<0` as a JSX tag name and errors with 'Unexpected character
+    `0` (U+0030) before name'). The regex layer must flag it.
+
+    Recurred same-day as the autolink case on 2026-05-28.
+    """
+    body = "Some prose. The p-value was p<0.05 across all conditions."
+    findings = verify_task_body._mdx_regex_findings(body)
+    assert findings
+    assert any("U+0030" in f or "p<0.05" in f for f in findings)
+
+
+def test_mdx_regex_lt_digit_with_surrounding_spaces_passes():
+    """`p < 0.05` (with spaces) is safe — `<` is not immediately
+    followed by a digit, so the regex layer ignores it."""
+    body = "Some prose. The p-value was p < 0.05 across all conditions."
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_lt_digit_inside_code_span_passes():
+    """`` `p<0.05` `` wrapped in inline-code backticks is safe — MDX
+    never parses the inside of code spans as JSX (regex layer ignores it)."""
+    body = "Some prose. The threshold was `p<0.05` in the pre-reg."
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_lt_digit_inside_fenced_block_passes():
+    """`p<0.05` inside a fenced code block is safe — MDX never parses
+    inside fences as JSX (regex layer ignores it)."""
+    body = "Some prose.\n\n```\nthreshold: p<0.05\nn<10\n```\n"
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_html_entity_lt_passes():
+    """`&lt;0.05` is safe — there is no literal `<` character in the
+    source, only the HTML entity escape; the regex layer ignores it."""
+    body = "Some prose. The p-value was &lt;0.05 across all conditions."
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_combined_autolink_and_lt_digit_fails():
+    """Body with BOTH a `<https://...>` autolink AND a `<digit` occurrence
+    must be flagged, and the findings must surface both classes."""
+    body = "See <https://foo.example/x>. The p-value was p<0.05 across all conditions."
+    findings = verify_task_body._mdx_regex_findings(body)
+    joined = " | ".join(findings)
+    assert "U+002F" in joined
+    assert "U+0030" in joined
+
+
+# ── Layer A: table-cell `<|im_start|>` (the #399 class, node-INDEPENDENT) ──
+
+
+def test_mdx_regex_table_cell_im_start_fails():
+    """An unescaped `<|im_start|>` inside a GFM table-cell code span breaks
+    the MDX renderer: the table parser splits the cell on the unescaped `|`
+    before code-span recognition, exposing the `<` as a JSX tag start. The
+    regex layer must flag it.
+
+    Incident: task #399 (2026-05-28) — the prior narrow regex (which only
+    stripped code spans wholesale) missed this because the `` ` ` `` wrap
+    looked protective.
+    """
+    body = "| Probe | Value |\n|---|---|\n| boundary | `<|im_start|>assistant` |\n"
+    findings = verify_task_body._mdx_regex_findings(body)
+    assert findings
+    assert any("table cell" in f for f in findings)
+
+
+def test_mdx_regex_table_cell_im_start_escaped_passes():
+    """The ESCAPED form `` `<\\|im_start\\|>` `` inside a table cell is safe
+    — the inner pipes are escaped so the table parser does not split on
+    them. The regex layer must NOT flag it."""
+    body = "| Probe | Value |\n|---|---|\n| boundary | `<\\|im_start\\|>assistant` |\n"
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_im_start_in_prose_passes():
+    """`` `<|im_start|>` `` in a PROSE line (not a real GFM table row) is
+    safe — the editor parses the code span normally there. A prose line
+    merely containing a `|` (e.g. `log p(x | y)`) is not a table row, so
+    its code spans stay protective. The regex layer must NOT flag it.
+
+    This is the #399 false-positive guard: the #399 body has
+    `` `<|im_start|>assistant\\n` `` inside a numbered list item that also
+    contains `log p(... | ...)`, and that line must NOT be treated as a
+    table row.
+    """
+    body = "First-token probe: log p(`*` | `<|im_start|>assistant\\n`) at boundary.\n"
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+def test_mdx_regex_pipe_prose_then_hr_not_a_table():
+    """A prose line containing a `|` (and a `` `<|im_start|>` `` code span)
+    immediately followed by a bare `---` line is NOT a GFM table — the
+    `---` is a thematic break / setext underline, not a one-column table
+    delimiter. The table delimiter regex requires an internal `|`, so the
+    prose line stays a prose line and its code span stays protective. The
+    regex layer must NOT flag the code span.
+
+    Regression guard: before tightening `_TABLE_DELIM_RE`, a bare `---`
+    matched as a single-column delimiter, so the preceding pipe-bearing
+    prose line was misclassified as a table header and the
+    `` `<|im_start|>` `` span tripped a false-positive `<|` flag while the
+    real MDX parser accepted the body.
+    """
+    body = "log p(x | y) and `<|im_start|>`.\n---\n\nnext\n"
+    assert verify_task_body._table_row_line_indices(body.splitlines()) == set()
+    assert verify_task_body._mdx_regex_findings(body) == []
+
+
+# ── Full-path tests (regex + backstop combined) ───────────────────────────
+
+
+def test_mdx_full_path_clean_prose_passes():
+    """A clean prose fragment passes the combined check (regex clean; and
+    when node is present, real-parse clean too)."""
+    body = "Some prose. The p-value was p < 0.05 across all conditions."
     result = verify_task_body.check_mdx_safe_urls(body)
     assert result.passed, result.detail
 
 
-def test_mdx_autolink_in_bare_prose_fails():
-    """Direct invocation: an autolink in bare prose (no surrounding code
-    wrapping) must FAIL."""
+def test_mdx_full_path_autolink_fails():
+    """The combined check FAILs a bare-prose autolink (regex catches it
+    regardless of node)."""
     body = "See the link: <https://foo.example/x> for context."
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
     assert "foo.example" in result.detail
 
 
-# ─── Check 14 (extended): `<` immediately followed by a digit ─────────────
+def test_mdx_full_path_table_cell_im_start_fails():
+    """The combined check FAILs an unescaped `<|im_start|>` table cell
+    (regex catches it regardless of node; the backstop agrees when node is
+    present)."""
+    body = "| Probe | Value |\n|---|---|\n| boundary | `<|im_start|>assistant` |\n"
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert not result.passed
+    assert "table cell" in result.detail
 
 
-def test_mdx_lt_digit_in_prose_fails():
-    """`p<0.05` in body prose breaks the MDX renderer (the dashboard
-    parses `<0` as a JSX tag name and errors with 'Unexpected character
-    `0` (U+0030) before name'). Verifier check 14 must FAIL such bodies.
+# ── Layer B: real-parse backstop (node-GATED) ─────────────────────────────
 
-    Recurred same-day as the autolink case on 2026-05-28; the original
-    `check_mdx_safe_urls` only matched `<https?://`, so this slipped
-    through.
+
+@pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
+def test_mdx_backstop_catches_novel_construct():
+    """The real-parse backstop FAILs a construct the regexes do NOT catch
+    — proving the backstop subsumes the narrow regex patch. `<%` is read
+    by the real MDX parser as a JSX tag start ("Unexpected character `%`
+    (U+0025) before name"), but matches none of the three regex classes.
     """
-    body = "Some prose. The p-value was p<0.05 across all conditions."
+    # Sanity: the regex layer alone does NOT flag this.
+    body = "Some prose with a stray <% token in it."
+    assert verify_task_body._mdx_regex_findings(body) == []
+    # The combined check FAILs because the real-parse backstop catches it.
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
-    assert "U+0030" in result.detail or "p<0.05" in result.detail
+    assert "real MDX parse failed" in result.detail
 
 
-def test_mdx_lt_digit_with_surrounding_spaces_passes():
-    """`p < 0.05` (with spaces) is safe — `<` is not immediately
-    followed by a digit, so MDX parses it as a literal `<`."""
-    body = "Some prose. The p-value was p < 0.05 across all conditions."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
-
-
-def test_mdx_lt_digit_inside_code_span_passes():
-    """`` `p<0.05` `` wrapped in inline-code backticks is safe — MDX
-    never parses the inside of code spans as JSX."""
-    body = "Some prose. The threshold was `p<0.05` in the pre-reg."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
-
-
-def test_mdx_lt_digit_inside_fenced_block_passes():
-    """`p<0.05` inside a fenced code block is safe — MDX never parses
-    inside fences as JSX."""
-    body = "Some prose.\n\n```\nthreshold: p<0.05\nn<10\n```\n"
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
-
-
-def test_mdx_lt_eq_passes():
-    """`<=` is safe — `<` is followed by `=`, not a digit. MDX parses
-    this as a literal `<=` operator."""
+@pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
+def test_mdx_backstop_lt_eq_fails():
+    """`x <= 10` (no space) is read by the real MDX parser as a JSX tag
+    start before `=` and FAILs — the authoritative parser is stricter than
+    the old regex assumed. Re-verified against the real parser
+    (2026-05-28): the editor rejects `<=`, so the verifier must too."""
     body = "Some prose. The condition was x <= 10 across all runs."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
-
-
-def test_mdx_html_entity_lt_passes():
-    """`&lt;0.05` is safe — there is no literal `<` character in the
-    source, only the HTML entity escape."""
-    body = "Some prose. The p-value was &lt;0.05 across all conditions."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    assert result.passed, result.detail
-
-
-def test_mdx_lt_letter_passes():
-    """`<https` is caught by the autolink branch, not the digit branch.
-    `<details>` (literal HTML/JSX tag with letter after `<`) does NOT
-    trip the `<digit` check — MDX may still complain about unknown tags,
-    but that is a separate class outside check 14's scope."""
-    body = "Some prose. The <details> tag is valid HTML."
-    result = verify_task_body.check_mdx_safe_urls(body)
-    # `<details>` passes check 14 (it is not an autolink and not `<digit`).
-    assert result.passed, result.detail
-
-
-def test_mdx_combined_autolink_and_lt_digit_fails():
-    """Body with BOTH a `<https://...>` autolink AND a `<digit`
-    occurrence must FAIL, and the failure detail must surface both
-    classes."""
-    body = "See <https://foo.example/x>. The p-value was p<0.05 across all conditions."
+    # Regex layer does NOT catch `<=` (it is not autolink / `<digit` / `<|`).
+    assert verify_task_body._mdx_regex_findings(body) == []
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
-    assert "U+002F" in result.detail
-    assert "U+0030" in result.detail
+    assert "real MDX parse failed" in result.detail
+
+
+@pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
+def test_mdx_backstop_unclosed_tag_fails():
+    """An unclosed `<details>` tag is read by the real MDX parser as a JSX
+    element that never closes and FAILs. Re-verified against the real
+    parser (2026-05-28): the editor requires a closing tag."""
+    body = "Some prose. The <details> tag is here with no close."
+    assert verify_task_body._mdx_regex_findings(body) == []
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert not result.passed
+    assert "real MDX parse failed" in result.detail
+
+
+@pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
+def test_mdx_backstop_html_comment_markers_pass():
+    """Real body HTML comment markers (`<!-- legacy-sagan-card -->`,
+    `<!-- workflow-fix-candidate v1 -->`, `<!-- epm:... -->`) MUST parse
+    cleanly — the helper includes the editor's HTML-comment extension, so
+    these markers are valid (omitting that extension would wrongly reject
+    valid bodies). Confirmed empirically while building the helper."""
+    body = (
+        "Some prose.\n\n<!-- legacy-sagan-card -->\n\n"
+        "<!-- workflow-fix-candidate v1 -->\ntarget_file: x\n"
+        "<!-- /workflow-fix-candidate -->\n\n<!-- epm:pod-terminated v1 -->\n\nEnd.\n"
+    )
+    assert verify_task_body._mdx_regex_findings(body) == []
+    result = verify_task_body.check_mdx_safe_urls(body)
+    assert result.passed, result.detail
+
+
+def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
+    """When node / the helper / the deps are unavailable, the check falls
+    back to regex-only and APPENDS '(real MDX parse skipped: ...)' to the
+    detail — it does NOT silently pass and does NOT hard-fail solely on the
+    missing parser (the no-silent-fallback rule).
+
+    Two sub-cases:
+      - clean body → PASS, but the detail flags the skip so the operator
+        knows the authoritative layer did not run;
+      - regex-dirty body → still FAILs on the regex layer, with the skip
+        reason appended.
+    """
+    monkeypatch.setattr(
+        verify_task_body,
+        "_run_real_mdx_parse",
+        lambda body: ("skip", "node not on PATH (simulated)"),
+    )
+
+    clean = "Some prose. The p-value was p < 0.05 across all conditions."
+    result = verify_task_body.check_mdx_safe_urls(clean)
+    assert result.passed
+    assert "real MDX parse skipped" in result.detail
+    assert "node not on PATH (simulated)" in result.detail
+
+    dirty = "See the link: <https://foo.example/x> for context."
+    result = verify_task_body.check_mdx_safe_urls(dirty)
+    assert not result.passed
+    assert "foo.example" in result.detail
+    assert "real MDX parse skipped" in result.detail
