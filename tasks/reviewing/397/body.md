@@ -1,6 +1,6 @@
 ---
-title: At single-token marker ※ and 10× learning rate, marker-only loss saturates
-  every persona; only whole-completion loss preserves selectivity (MODERATE confidence)
+title: Marker-only loss saturates the persona panel at single-token ※ + 10× lr; whole-completion
+  loss is the only robustly-selective average loss-mask regime (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
