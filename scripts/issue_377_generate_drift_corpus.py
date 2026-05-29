@@ -140,6 +140,51 @@ def main() -> int:
             "overwriting the #377 corpus."
         ),
     )
+    parser.add_argument(
+        "--only-domain",
+        type=str,
+        default=None,
+        help=(
+            "Restrict Step 2 conversation generation to a single named "
+            "domain (e.g. --only-domain therapy). When set, Step 2 runs "
+            "exactly ONE domain's conversation loop and writes its "
+            "per-domain checkpoint; Steps 3-7 (sanity / aggregate / "
+            "upload) are SKIPPED. Used by #408 Phase A.0.0.1's parallel "
+            "long-corpus orchestrator (task #408 round-3, 2026-05-29) to "
+            "fan out 4 concurrent subprocesses (1 per drift domain) "
+            "instead of running the 4 domains sequentially in one "
+            "process. The orchestrator runs this wrapper ONCE MORE with "
+            "no --only-domain to hit the full-resume path and run "
+            "Steps 3-7 on all 4 checkpoints together. Domain name MUST "
+            "match one of DRIFT_DOMAINS or the script exits with a "
+            "loud error."
+        ),
+    )
+    parser.add_argument(
+        "--seed-only",
+        action="store_true",
+        help=(
+            "Run Step 1 (persona+topic seeding via Anthropic Batch) and "
+            "exit. The seed cache is written to SEED_CACHE_PATH so "
+            "subsequent --only-domain subprocess runs hit the cache "
+            "instead of racing on parallel seed batches. Used by #408 "
+            "Phase A.0.0.1's parallel orchestrator (task #408 round-3) "
+            "to pre-seed BEFORE fanning out per-domain subprocesses."
+        ),
+    )
+    parser.add_argument(
+        "--skip-finalization",
+        action="store_true",
+        help=(
+            "Skip Steps 3-7 (post-gen sanity checks, aggregate write, "
+            "sample inspection, HF Hub upload, summary write). Used "
+            "together with --only-domain by the parallel orchestrator "
+            "so per-domain subprocesses exit AS SOON AS the per-domain "
+            "checkpoint is on disk, without redundant sanity checks "
+            "(which the final no-flags orchestrator call performs once "
+            "across all 4 checkpoints)."
+        ),
+    )
     args = parser.parse_args()
 
     # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
@@ -152,6 +197,25 @@ def main() -> int:
         SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_drift.json"
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Task #408 round-3 (2026-05-29) parallelization-flag validation.
+    # --only-domain must name a real DRIFT_DOMAINS member; --seed-only
+    # and --skip-finalization are independent flags but combine with
+    # --only-domain in the parallel-fanout shape.
+    if args.only_domain is not None:
+        valid_names = {d.name for d in DRIFT_DOMAINS}
+        if args.only_domain not in valid_names:
+            sys.exit(
+                f"FAIL: --only-domain={args.only_domain!r} is not a member of "
+                f"DRIFT_DOMAINS={sorted(valid_names)}. Domain names must match exactly."
+            )
+    if args.seed_only and args.only_domain is not None:
+        sys.exit(
+            "FAIL: --seed-only and --only-domain are mutually exclusive. "
+            "Seed-only runs Step 1 across ALL domains; --only-domain restricts "
+            "Step 2 to one domain. The intended fanout shape is: one seed-only "
+            "call THEN N concurrent --only-domain calls."
+        )
+
     print(
         f"=== Issue #377 drift corpus generation ===\n"
         f"  Domains: {[d.name for d in DRIFT_DOMAINS]}\n"
@@ -159,7 +223,9 @@ def main() -> int:
         f"{len(DRIFT_DOMAINS)} domains = "
         f"{N_CONVERSATIONS_PER_DOMAIN * len(DRIFT_DOMAINS)} total\n"
         f"  Turns per conversation: {args.n_turns}\n"
-        f"  Output: {OUTPUT_PATH}\n",
+        f"  Output: {OUTPUT_PATH}\n"
+        f"  Parallel-fanout mode: only_domain={args.only_domain}, "
+        f"seed_only={args.seed_only}, skip_finalization={args.skip_finalization}\n",
         flush=True,
     )
 
@@ -191,6 +257,28 @@ def main() -> int:
     # supported: if some per-domain JSONLs exist and others don't, the
     # missing domains are run normally and the existing ones are loaded.
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Task #408 round-3 (2026-05-29): --seed-only path. Run Step 1
+    # (persona+topic seeding via Anthropic Batch) and exit, leaving the
+    # cache on disk for subsequent --only-domain subprocess fanout.
+    # Without pre-seeding, 4 parallel --only-domain subprocesses would
+    # each see the cache missing, each spawn redundant seed batches, and
+    # race on writing the same cache file. Pre-seeding is ~30s of API
+    # latency vs N redundant + corrupt-cache risk.
+    if args.seed_only:
+        print("Step 1 (--seed-only): seeding personas + topics...", flush=True)
+        personas_by_domain = seed_personas_and_topics(
+            DRIFT_DOMAINS,
+            cache_path=SEED_CACHE_PATH,
+            custom_id_prefix="drift",
+        )
+        for name, personas in personas_by_domain.items():
+            total_topics = sum(len(p["topics"]) for p in personas)
+            print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
+        print(f"\n  Cache written to {SEED_CACHE_PATH}", flush=True)
+        print("\n=== Done (--seed-only; skipping Steps 2-7) ===", flush=True)
+        return 0
+
     existing_per_domain: dict[str, Path] = {}
     if not args.no_resume:
         for domain in DRIFT_DOMAINS:
@@ -198,14 +286,30 @@ def main() -> int:
             if path.exists():
                 existing_per_domain[domain.name] = path
 
-    missing_domains = [d for d in DRIFT_DOMAINS if d.name not in existing_per_domain]
-    all_resume = len(existing_per_domain) == len(DRIFT_DOMAINS) and len(missing_domains) == 0
+    # --only-domain narrows the in-scope domain set to exactly one. The
+    # resume-skip / all-resume bookkeeping below is computed against the
+    # narrowed set so a parallel-fanout subprocess for domain X is not
+    # confused by domain Y's checkpoint already being on disk.
+    in_scope_domains: tuple = (
+        tuple(d for d in DRIFT_DOMAINS if d.name == args.only_domain)
+        if args.only_domain is not None
+        else DRIFT_DOMAINS
+    )
+
+    missing_domains = [d for d in in_scope_domains if d.name not in existing_per_domain]
+    all_resume = (
+        len([d for d in in_scope_domains if d.name in existing_per_domain]) == len(in_scope_domains)
+        and len(missing_domains) == 0
+    )
 
     if all_resume:
         # Full resume: skip Step 1 (no need to seed) AND Step 2 entirely.
+        # In the parallel-fanout shape (#408 round-3), only_domain=None
+        # AND all 4 per-domain JSONLs exist hits this branch and runs
+        # Steps 3-7 across all 4 checkpoints.
         print(
             "Step 1+2: SKIPPED — all "
-            f"{len(DRIFT_DOMAINS)} per-domain JSONLs exist on disk: "
+            f"{len(in_scope_domains)} per-domain JSONLs exist on disk: "
             f"{[str(p) for p in existing_per_domain.values()]}",
             flush=True,
         )
@@ -215,13 +319,14 @@ def main() -> int:
         )
         all_conversations: list[dict] = []
         for domain in DRIFT_DOMAINS:
-            cached = read_corpus_jsonl(existing_per_domain[domain.name])
-            print(
-                f"  Loaded {len(cached)} conversations from "
-                f"{existing_per_domain[domain.name]} ({domain.name})",
-                flush=True,
-            )
-            all_conversations.extend(cached)
+            if domain.name in existing_per_domain:
+                cached = read_corpus_jsonl(existing_per_domain[domain.name])
+                print(
+                    f"  Loaded {len(cached)} conversations from "
+                    f"{existing_per_domain[domain.name]} ({domain.name})",
+                    flush=True,
+                )
+                all_conversations.extend(cached)
     else:
         # Step 1: seed personas + topics (cached). Always run when any
         # domain is missing, because run_conversation_loop needs the
@@ -246,8 +351,12 @@ def main() -> int:
             total_topics = sum(len(p["topics"]) for p in personas)
             print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
 
-        # Step 2: per-domain conversation loop (sequential across domains; in-domain
-        # conversations advance one turn at a time, all in one batch).
+        # Step 2: per-domain conversation loop. Iterates over the
+        # narrowed ``in_scope_domains`` (full DRIFT_DOMAINS, OR a
+        # single-element tuple when --only-domain is set by the #408
+        # parallel orchestrator). Each domain's per-domain JSONL is
+        # written the moment its loop completes (round-8 invariant).
+        # Already-checkpointed in-scope domains are skip-loaded.
         #
         # Round-8 (post-incident, 2026-05-23): write each domain's conversations
         # to its own JSONL the moment that domain's loop completes — BEFORE the
@@ -260,9 +369,13 @@ def main() -> int:
         # Per-domain files are NEVER deleted; they remain the recoverable
         # checkpoints. The aggregate ``drift_conversations.jsonl`` is built
         # from them after all 4 domains succeed.
-        print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
+        scope_label = f" (--only-domain={args.only_domain})" if args.only_domain is not None else ""
+        print(
+            f"\nStep 2: running conversation loops (per-domain checkpoint){scope_label}...",
+            flush=True,
+        )
         all_conversations = []
-        for domain in DRIFT_DOMAINS:
+        for domain in in_scope_domains:
             if domain.name in existing_per_domain:
                 cached = read_corpus_jsonl(existing_per_domain[domain.name])
                 print(
@@ -285,6 +398,24 @@ def main() -> int:
             domain_path = _per_domain_path(domain.name)
             write_corpus_jsonl(convs, corpus_tag=CORPUS_TAG, output_path=domain_path)
             all_conversations.extend(convs)
+
+    # Task #408 round-3 (2026-05-29): --skip-finalization path. Exit
+    # immediately after the per-domain checkpoint(s) are on disk,
+    # before running sanity checks / aggregate write / sample
+    # inspection / HF upload / summary write. The parallel
+    # orchestrator's final no-flags call hits the full-resume branch
+    # above and runs Steps 3-7 across all 4 checkpoints at once.
+    if args.skip_finalization or args.only_domain is not None:
+        n_convs = len(all_conversations)
+        scope = (
+            f"--only-domain={args.only_domain}" if args.only_domain is not None else "all domains"
+        )
+        print(
+            f"\n=== Done (--skip-finalization or --only-domain set; "
+            f"wrote {n_convs} convs for {scope}, skipping Steps 3-7) ===",
+            flush=True,
+        )
+        return 0
 
     # Step 3: post-gen sanity checks.
     print("\nStep 3: post-gen sanity checks...", flush=True)

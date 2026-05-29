@@ -77,50 +77,67 @@ def _per_domain_path(domain_name: str) -> Path:
     return DATA_DIR / f"conversations_{domain_name}.jsonl"
 
 
-def _detect_resume(no_resume: bool) -> tuple[dict[str, Path], list, bool]:
+def _detect_resume(
+    no_resume: bool, only_domain: str | None = None
+) -> tuple[dict[str, Path], list, bool, tuple]:
     """Round-9 r2 resume-skip detection.
 
-    Returns ``(existing_per_domain, missing_domains, all_resume)``.
+    Returns ``(existing_per_domain, missing_domains, all_resume, in_scope_domains)``.
 
     - ``existing_per_domain``: ``{domain_name: Path}`` for domains whose
       per-domain JSONL is on disk. Empty when ``no_resume`` is set.
-    - ``missing_domains``: list of DomainSpec entries with no checkpoint.
-    - ``all_resume``: True iff every domain has a checkpoint and partial-
-      run logic is unnecessary.
+    - ``missing_domains``: list of DomainSpec entries with no checkpoint
+      (restricted to ``in_scope_domains``).
+    - ``all_resume``: True iff every in-scope domain has a checkpoint
+      and partial-run logic is unnecessary.
+    - ``in_scope_domains``: full INCONTEXT_DOMAINS, OR a single-element
+      tuple when ``only_domain`` is set (task #408 round-3 parallel-fanout).
 
     Factored out of ``main()`` to keep cyclomatic complexity under ruff's
     C901 ceiling.
     """
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    in_scope_domains: tuple = (
+        tuple(d for d in INCONTEXT_DOMAINS if d.name == only_domain)
+        if only_domain is not None
+        else INCONTEXT_DOMAINS
+    )
     existing_per_domain: dict[str, Path] = {}
     if not no_resume:
+        # Scan ALL INCONTEXT_DOMAINS for existing checkpoints (not just
+        # in-scope), so the full-resume finalization call sees siblings
+        # written by parallel --only-domain subprocesses.
         for domain in INCONTEXT_DOMAINS:
             path = _per_domain_path(domain.name)
             if path.exists():
                 existing_per_domain[domain.name] = path
-    missing_domains = [d for d in INCONTEXT_DOMAINS if d.name not in existing_per_domain]
-    all_resume = len(existing_per_domain) == len(INCONTEXT_DOMAINS) and len(missing_domains) == 0
-    return existing_per_domain, missing_domains, all_resume
+    missing_domains = [d for d in in_scope_domains if d.name not in existing_per_domain]
+    all_resume = (
+        len([d for d in in_scope_domains if d.name in existing_per_domain]) == len(in_scope_domains)
+        and len(missing_domains) == 0
+    )
+    return existing_per_domain, missing_domains, all_resume, in_scope_domains
 
 
 def _full_resume_load(existing_per_domain: dict[str, Path]) -> list[dict]:
     """Full-resume path: load every per-domain checkpoint, no API calls."""
     print(
         "Step 1+2: SKIPPED — all "
-        f"{len(INCONTEXT_DOMAINS)} per-domain JSONLs exist on disk: "
+        f"{len(existing_per_domain)} per-domain JSONLs exist on disk: "
         f"{[str(p) for p in existing_per_domain.values()]}",
         flush=True,
     )
     print("  (use --no-resume to force a from-scratch regeneration)", flush=True)
     all_conversations: list[dict] = []
     for domain in INCONTEXT_DOMAINS:
-        cached = read_corpus_jsonl(existing_per_domain[domain.name])
-        print(
-            f"  Loaded {len(cached)} conversations from "
-            f"{existing_per_domain[domain.name]} ({domain.name})",
-            flush=True,
-        )
-        all_conversations.extend(cached)
+        if domain.name in existing_per_domain:
+            cached = read_corpus_jsonl(existing_per_domain[domain.name])
+            print(
+                f"  Loaded {len(cached)} conversations from "
+                f"{existing_per_domain[domain.name]} ({domain.name})",
+                flush=True,
+            )
+            all_conversations.extend(cached)
     return all_conversations
 
 
@@ -129,13 +146,19 @@ def _partial_or_full_run(
     missing_domains: list,
     rotation_seed: int,
     n_turns: int = N_TURNS_TOTAL,
+    in_scope_domains: tuple = INCONTEXT_DOMAINS,
+    only_domain: str | None = None,
 ) -> list[dict]:
     """Partial-resume or full-fresh path: seed personas and run the loop
-    for any domain without an on-disk checkpoint.
+    for any in-scope domain without an on-disk checkpoint.
 
     Task #408 (v1.2 fix M1): ``n_turns`` made configurable so the same
     wrapper can produce both the 15-turn #377 corpus and a 30-turn
     long-form corpus for #408 Phase A.0.0.1.
+
+    Task #408 round-3 (2026-05-29): ``in_scope_domains`` + ``only_domain``
+    added for the parallel-fanout shape — each --only-domain subprocess
+    runs Step 2 for exactly one domain.
     """
     print("Step 1: seeding personas + topics...", flush=True)
     if existing_per_domain:
@@ -155,9 +178,13 @@ def _partial_or_full_run(
         total_topics = sum(len(p["topics"]) for p in personas)
         print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
 
-    print("\nStep 2: running conversation loops (per-domain checkpoint)...", flush=True)
+    scope_label = f" (--only-domain={only_domain})" if only_domain is not None else ""
+    print(
+        f"\nStep 2: running conversation loops (per-domain checkpoint){scope_label}...",
+        flush=True,
+    )
     all_conversations: list[dict] = []
-    for domain in INCONTEXT_DOMAINS:
+    for domain in in_scope_domains:
         if domain.name in existing_per_domain:
             cached = read_corpus_jsonl(existing_per_domain[domain.name])
             print(
@@ -261,6 +288,49 @@ def main() -> int:
             "overwriting the #377 corpus."
         ),
     )
+    parser.add_argument(
+        "--only-domain",
+        type=str,
+        default=None,
+        help=(
+            "Restrict Step 2 conversation generation to a single named "
+            "domain (e.g. --only-domain math). When set, Step 2 runs "
+            "exactly ONE domain's conversation loop and writes its "
+            "per-domain checkpoint; Steps 3-7 (sanity / aggregate / "
+            "upload) are SKIPPED. Used by #408 Phase A.0.0.1's parallel "
+            "long-corpus orchestrator (task #408 round-3, 2026-05-29) to "
+            "fan out 4 concurrent subprocesses (1 per incontext domain) "
+            "instead of running the 4 domains sequentially in one "
+            "process. The orchestrator runs this wrapper ONCE MORE with "
+            "no --only-domain to hit the full-resume path and run "
+            "Steps 3-7 on all 4 checkpoints together."
+        ),
+    )
+    parser.add_argument(
+        "--seed-only",
+        action="store_true",
+        help=(
+            "Run Step 1 (persona+topic seeding via Anthropic Batch) and "
+            "exit. The seed cache is written to SEED_CACHE_PATH so "
+            "subsequent --only-domain subprocess runs hit the cache "
+            "instead of racing on parallel seed batches. Used by #408 "
+            "Phase A.0.0.1's parallel orchestrator (task #408 round-3) "
+            "to pre-seed BEFORE fanning out per-domain subprocesses."
+        ),
+    )
+    parser.add_argument(
+        "--skip-finalization",
+        action="store_true",
+        help=(
+            "Skip Steps 3-7 (post-gen sanity checks, aggregate write, "
+            "length stats, sample inspection, HF Hub upload, summary "
+            "write). Used together with --only-domain by the parallel "
+            "orchestrator so per-domain subprocesses exit AS SOON AS "
+            "the per-domain checkpoint is on disk, without redundant "
+            "sanity checks (which the final no-flags orchestrator call "
+            "performs once across all 4 checkpoints)."
+        ),
+    )
     args = parser.parse_args()
 
     # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
@@ -273,6 +343,24 @@ def main() -> int:
         SEED_CACHE_PATH = DATA_DIR / "persona_topic_seeds_incontext.json"
         DATA_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Task #408 round-3 (2026-05-29) parallelization-flag validation.
+    # --only-domain must name a real INCONTEXT_DOMAINS member; --seed-only
+    # is mutually exclusive with --only-domain (Step 1 is global by design).
+    if args.only_domain is not None:
+        valid_names = {d.name for d in INCONTEXT_DOMAINS}
+        if args.only_domain not in valid_names:
+            sys.exit(
+                f"FAIL: --only-domain={args.only_domain!r} is not a member of "
+                f"INCONTEXT_DOMAINS={sorted(valid_names)}. Domain names must match exactly."
+            )
+    if args.seed_only and args.only_domain is not None:
+        sys.exit(
+            "FAIL: --seed-only and --only-domain are mutually exclusive. "
+            "Seed-only runs Step 1 across ALL domains; --only-domain restricts "
+            "Step 2 to one domain. The intended fanout shape is: one seed-only "
+            "call THEN N concurrent --only-domain calls."
+        )
+
     print(
         f"=== Issue #377 in-context corpus generation ===\n"
         f"  Domains: {[d.name for d in INCONTEXT_DOMAINS]}\n"
@@ -280,7 +368,9 @@ def main() -> int:
         f"{len(INCONTEXT_DOMAINS)} domains = "
         f"{N_CONVERSATIONS_PER_DOMAIN * len(INCONTEXT_DOMAINS)} total\n"
         f"  Turns per conversation: {args.n_turns}\n"
-        f"  Output: {OUTPUT_PATH}\n",
+        f"  Output: {OUTPUT_PATH}\n"
+        f"  Parallel-fanout mode: only_domain={args.only_domain}, "
+        f"seed_only={args.seed_only}, skip_finalization={args.skip_finalization}\n",
         flush=True,
     )
 
@@ -290,19 +380,72 @@ def main() -> int:
         print(f"  Busting seed cache at {SEED_CACHE_PATH}...", flush=True)
         SEED_CACHE_PATH.unlink()
 
+    # Task #408 round-3 (2026-05-29): --seed-only path. Run Step 1
+    # (persona+topic seeding via Anthropic Batch) and exit, leaving the
+    # cache on disk for subsequent --only-domain subprocess fanout.
+    # Without pre-seeding, 4 parallel --only-domain subprocesses would
+    # each see the cache missing, each spawn redundant seed batches, and
+    # race on writing the same cache file. Pre-seeding is ~30s of API
+    # latency vs N redundant + corrupt-cache risk.
+    if args.seed_only:
+        print("Step 1 (--seed-only): seeding personas + topics...", flush=True)
+        personas_by_domain = seed_personas_and_topics(
+            INCONTEXT_DOMAINS,
+            cache_path=SEED_CACHE_PATH,
+            custom_id_prefix="incontext",
+        )
+        for name, personas in personas_by_domain.items():
+            total_topics = sum(len(p["topics"]) for p in personas)
+            print(f"  {name}: {len(personas)} personas, {total_topics} topics", flush=True)
+        print(f"\n  Cache written to {SEED_CACHE_PATH}", flush=True)
+        print("\n=== Done (--seed-only; skipping Steps 2-7) ===", flush=True)
+        return 0
+
     # Resume-skip detection (round-9 r2 patch, 2026-05-24). Mirrors the
     # drift script: if any per-domain JSONL already exists on disk, skip
     # Step 1's seeding (for full resume) and Step 2's batch-API loop for
     # that domain. Partial resume is supported. ``--no-resume`` forces a
     # full from-scratch run.
-    existing_per_domain, missing_domains, all_resume = _detect_resume(args.no_resume)
+    #
+    # Task #408 round-3 (2026-05-29): the resume-skip path is now
+    # narrowed by --only-domain. The in_scope_domains tuple is the
+    # single-element tuple when --only-domain is set, else
+    # INCONTEXT_DOMAINS. all_resume / missing_domains are computed
+    # against the narrowed set so a per-domain subprocess for domain X
+    # isn't confused by domain Y's checkpoint already being on disk.
+    existing_per_domain, missing_domains, all_resume, in_scope_domains = _detect_resume(
+        args.no_resume, only_domain=args.only_domain
+    )
 
     if all_resume:
         all_conversations = _full_resume_load(existing_per_domain)
     else:
         all_conversations = _partial_or_full_run(
-            existing_per_domain, missing_domains, args.rotation_seed, n_turns=args.n_turns
+            existing_per_domain,
+            missing_domains,
+            args.rotation_seed,
+            n_turns=args.n_turns,
+            in_scope_domains=in_scope_domains,
+            only_domain=args.only_domain,
         )
+
+    # Task #408 round-3 (2026-05-29): --skip-finalization path. Exit
+    # immediately after the per-domain checkpoint(s) are on disk,
+    # before running sanity checks / aggregate write / sample
+    # inspection / HF upload / summary write. The parallel
+    # orchestrator's final no-flags call hits the full-resume branch
+    # above and runs Steps 3-7 across all 4 checkpoints at once.
+    if args.skip_finalization or args.only_domain is not None:
+        n_convs = len(all_conversations)
+        scope = (
+            f"--only-domain={args.only_domain}" if args.only_domain is not None else "all domains"
+        )
+        print(
+            f"\n=== Done (--skip-finalization or --only-domain set; "
+            f"wrote {n_convs} convs for {scope}, skipping Steps 3-7) ===",
+            flush=True,
+        )
+        return 0
 
     # Step 3: post-gen sanity checks (per-turn leak filter, count check).
     # Plan v2 §4.2 (2026-05-25 hot-fix): the hard ±10% mean-turn-length

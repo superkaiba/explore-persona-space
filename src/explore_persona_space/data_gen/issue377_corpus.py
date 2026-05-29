@@ -849,10 +849,27 @@ def is_anthropic_model(model_id: str) -> bool:
 #     context. 12800 = 13600 max_completion_tokens (800 visible + 12800
 #     reasoning), enough budget for GPT-5's math reasoning at turn 5+
 #     with accumulated context.
+#   - 32000 (task #408 round 3, 2026-05-29): bumped after the #408
+#     long-corpus aborted run (#408 v2) hit ``WARNING: openai
+#     drift__coding_p*_t*__assistant returned empty content
+#     (finish_reason='length', model=gpt-5). Likely
+#     max_completion_tokens=13600 too tight for reasoning budget.`` on
+#     30-turn coding-domain conversations. 30 turns of accumulated
+#     conversation context + a coding question = the GPT-5 reasoning
+#     budget exceeded the 12800 headroom (so visible-output budget hit
+#     zero and content came back empty). The 30-turn long corpus is
+#     load-bearing for #408 cells B@15/B@25, so silent
+#     ``[BATCH_ERROR]`` sentinels degrade the corpus. 32000 = 32800
+#     max_completion_tokens (800 visible + 32000 reasoning), well
+#     within GPT-5's 128k context window, comfortably above the
+#     coding-domain 30-turn reasoning depth.
 #
-# Cost overhead at 12800 vs 6400: ~+$48 on a multi-hundred-dollar
-# production generation. Cheap insurance against another full FIX-3 trip.
-_OPENAI_REASONING_TOKEN_HEADROOM: int = 12800
+# Cost overhead at 32000 vs 12800: roughly proportional to actual
+# reasoning-token spend (OpenAI charges per token used, not per
+# budget). Headroom does not directly cost money; it only enables
+# longer reasoning chains when needed. Cheap insurance against
+# another silent empty-content cascade.
+_OPENAI_REASONING_TOKEN_HEADROOM: int = 32000
 
 
 def _is_reasoning_model(model_id: str) -> bool:
