@@ -157,7 +157,7 @@ def main():
         "A": "Long system\nprompt",
         "B": "Long answer\n",
         "D": "Claude-written\ntraining data",
-        "E": "Whole-completion\nloss (E2 vs E0)",
+        "E": "Whole-completion\nvs marker-only\nloss",
     }
     factor_data = {}
     for f in ("A", "B", "D", "E"):
@@ -212,8 +212,8 @@ def main():
     ax2.legend(loc="center right", bbox_to_anchor=(1.0, 0.45), fontsize=9)
     set_title_subtitle(
         ax,
-        "Marker-only loss saturates at every persona",
-        "Only whole-completion loss preserves selectivity (n = 24 cells / level, C = 0 only)",
+        "Marker-only loss saturates the persona panel",
+        "Only whole-completion loss preserves selectivity (n = 24 cells / level, persona-framed recipes only)",
     )
 
     # RIGHT PANEL — per-factor Δ vs #383
@@ -227,13 +227,20 @@ def main():
     old_vals = [factor_data[f]["383"] for f in fs]
     new_color = paper_palette_role("primary")
     old_color = paper_palette_role("baseline")
-    ax.bar(x - w / 2, old_vals, w, label="Parent #383 ([ZLT], lr=1e-5)", color=old_color, alpha=0.7)
+    ax.bar(
+        x - w / 2,
+        old_vals,
+        w,
+        label="Parent ([ZLT] marker, lr=1e-5)",
+        color=old_color,
+        alpha=0.7,
+    )
     ax.bar(
         x + w / 2,
         new_means,
         w,
         yerr=[new_errs_lo, new_errs_hi],
-        label="#397 (※, lr=1e-4)",
+        label="This run (※ marker, lr=1e-4)",
         color=new_color,
         capsize=4,
     )
@@ -249,8 +256,8 @@ def main():
     ax.set_ylim(-5, 105)
     set_title_subtitle(
         ax,
-        "Per-factor selectivity Δ vs parent #383",
-        "Signs replicate for all 4 available factors (C = persona-framing unavailable)",
+        "Per-factor selectivity Δ vs parent run",
+        "Signs replicate for all 4 available factors (persona-framing flip is unmeasured)",
     )
 
     plt.tight_layout()
