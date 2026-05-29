@@ -2256,8 +2256,8 @@
     "432": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/432",
-      "status": "interpreting",
+      "path": "tasks/reviewing/432",
+      "status": "reviewing",
       "title": "Expanding contrastive negatives from 2 to 9 lifts the trained source persona from rank 26 to rank 7 on the marker leaderboard, by suppressing the eight in-panel trained negatives rather than boosting the source (MODERATE confidence)"
     },
     "433": {
