@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 433,
+  "highest_id": 434,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2266,6 +2266,13 @@
       "path": "tasks/proposed/433",
       "status": "proposed",
       "title": "Integrate Dan 1:1 (2026-05-28) takeaways into research context"
+    },
+    "434": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/434",
+      "status": "proposed",
+      "title": "Fix clean-result reporting (set-clean-result / list-clean-results surface)"
     },
     "44": {
       "has_clean_result": false,
