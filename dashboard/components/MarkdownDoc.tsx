@@ -10,11 +10,20 @@
  *
  *   - SANITIZED render pipeline (always on). Markdown path:
  *       remarkGfm, remarkMath -> rehypeRaw -> rehypeSanitize(markdownSchema)
- *       -> rehypeKatex -> rehypeHighlight -> rehypeSlug.
+ *       -> rehypeKatex -> rehypeHighlight.
  *     Sanitize runs AFTER rehypeRaw (cleans injected raw HTML) and BEFORE the
  *     trusted class-adding plugins (katex/highlight) so their classes survive.
  *     Legacy Sagan-card bodies (isLegacyHtml) keep the dangerouslySetInnerHTML
  *     path but pass through `sanitizeLegacyHtml` first (these are now public).
+ *
+ *     Heading ids are NOT assigned by rehype-slug. A single client effect
+ *     (`assignHeadingIds`) assigns them with the SAME `githubLikeSlug` +
+ *     `dedupeSlug` helpers the TOC and the collapsible layer use, namespaced
+ *     per `docId`, on EVERY render path (collapsible or not). This is the one
+ *     canonical slugger — using rehype-slug (github-slugger) in parallel would
+ *     produce divergent ids for headings with stripped punctuation flanked by
+ *     spaces (e.g. `p < 0.05`), so the TOC's `#slug` anchors would miss the
+ *     rendered heading ids.
  *   - Per-header collapse (enableCollapsibleSections).
  *   - Auto table-of-contents rail (showToc).
  *   - Highlight-to-comment anchoring (default; disabled writes in public mode).
@@ -36,14 +45,12 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import rehypeKatex from "rehype-katex";
 import rehypeHighlight from "rehype-highlight";
-import rehypeSlug from "rehype-slug";
 import {
   useAnchoredComments,
   type AnchorPosition,
 } from "@/app/tasks/[id]/AnchoredCommentsContext";
 import {
-  dedupeSlug,
-  githubLikeSlug,
+  headingId as computeHeadingId,
   plainMarkdownText,
 } from "@/lib/markdown-headings";
 import { markdownSchema } from "@/lib/markdown-sanitize";
@@ -58,15 +65,19 @@ const PENDING_BG = "rgba(252, 211, 77, 0.35)"; // amber-300 @35%
 const REMARK_PLUGINS: PluggableList = [remarkGfm, remarkMath];
 // Order matters: raw -> sanitize -> (trusted plugins that add classes).
 // Sanitize must run AFTER rehypeRaw (so injected raw HTML is cleaned) and
-// BEFORE katex/highlight (so the classes those add survive). rehypeSlug runs
-// last to assign heading ids; the collapsible layer assigns ids too, but
-// rehypeSlug guarantees ids on the non-collapsible render path (docs/results).
+// BEFORE katex/highlight (so the classes those add survive).
+//
+// Heading ids are deliberately NOT assigned here (no rehype-slug). They are
+// assigned by the `assignHeadingIds` client effect below using the project's
+// own `githubLikeSlug` + `dedupeSlug` so the TOC, the rendered heading ids,
+// and the collapsible-section ids all come from ONE slugger and agree on
+// every path (rehype-slug's github-slugger diverges on `p < 0.05`-style
+// headings). The collapsible layer reuses whatever ids that effect assigned.
 const REHYPE_PLUGINS: PluggableList = [
   rehypeRaw,
   [rehypeSanitize, markdownSchema],
   rehypeKatex,
   rehypeHighlight,
-  rehypeSlug,
 ];
 
 export type MarkdownDocProps = {
@@ -106,9 +117,16 @@ export type MarkdownDocProps = {
   askClaudeTitle?: string;
   /**
    * Public/read-only mode. When true: the "+ Comment on selection" popover
-   * and all comment writes are DISABLED (committed marks still render so
-   * existing anchors stay visible), and Ask-Claude renders DISABLED with no
-   * `/api/chat-token` fetch. Sanitize applies regardless of this flag.
+   * and all comment writes are DISABLED, and Ask-Claude renders DISABLED with
+   * no `/api/chat-token` fetch. Sanitize applies regardless of this flag.
+   *
+   * Note on marks: this flag only gates the WRITE affordances. Whether any
+   * committed `<mark>` anchors render depends on whether an
+   * <AnchoredCommentsProvider> is mounted above this component — the public
+   * surfaces (/, /results/[id]) do NOT mount one, so `useAnchoredComments`
+   * falls back to an empty anchor list and no marks render there at all. (The
+   * /docs/[slug] surface DOES mount a provider and is not in `public` mode, so
+   * its marks render and are editable.)
    */
   public?: boolean;
   /** Extra classes on the prose container. */
@@ -153,6 +171,29 @@ export function MarkdownDoc({
     () => (isLegacyHtml ? sanitizeLegacyHtml(body) : null),
     [isLegacyHtml, body],
   );
+
+  // --- Heading id assignment (the canonical slugger, every path) ----------
+  // rehype-slug is intentionally NOT in the pipeline. We assign heading ids
+  // here so the TOC entries, the rendered heading ids, and the collapsible-
+  // section ids all come from ONE slugger (githubLikeSlug + dedupeSlug + a
+  // per-doc prefix) and therefore always agree — including for headings with
+  // stripped punctuation flanked by spaces (`p < 0.05`, `A & B: results`)
+  // where github-slugger would emit a divergent id. Runs whether or not
+  // collapsible sections are enabled; the collapsible layer reuses the ids
+  // assigned here. Skipped for legacy HTML (its anchors come from the trusted
+  // markup itself).
+  useEffect(() => {
+    if (isLegacyHtml || !ref.current) return;
+    const root = ref.current.querySelector<HTMLElement>(".prose");
+    if (!root) return;
+    assignHeadingIds(root, docKey);
+    // Re-run if the rendered tree changes (collapsible layer re-wraps
+    // headings into <section>; katex/highlight mutate inner spans). The ids
+    // are idempotent — an already-correct id is left untouched.
+    const mo = new MutationObserver(() => assignHeadingIds(root, docKey));
+    mo.observe(root, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [body, docKey, isLegacyHtml]);
 
   // --- Selection capture (gated by commentsEnabled) -----------------------
   useEffect(() => {
@@ -367,7 +408,7 @@ export function MarkdownDoc({
   return (
     <div className="@container">
       <div className="grid gap-6 @3xl:grid-cols-[200px_minmax(0,1fr)]">
-        <MarkdownDocToc body={body} docId={docKey} />
+        <MarkdownDocToc body={body} docId={docKey} rootRef={ref} />
         <div className="min-w-0">{proseEl}</div>
       </div>
     </div>
@@ -532,6 +573,35 @@ function cssEscape(s: string): string {
   return s.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
 }
 
+// ─── Heading id assignment (canonical slugger) ───────────────────────────
+
+/**
+ * Assign ids to every heading (H1-H6) under `root` using the project's
+ * canonical slugger (githubLikeSlug + dedupeSlug + per-doc prefix). Walks ALL
+ * heading ranks in document order — not just the H1-H3 the TOC shows — so the
+ * dedupe `counts` advance over the same heading sequence `extractMarkdownHeadings`
+ * walks (it also counts H1-H6 before filtering to H1-H3 for display). If we
+ * counted only H1-H3 here, a body with e.g. an H4 `TL;DR` before an H2 `TL;DR`
+ * would assign the H2 `tldr` while the TOC expected `tldr-2`, and the anchor
+ * would miss. Counting all ranks keeps the suffix numbering identical.
+ *
+ * Idempotent: a heading whose id already equals the computed id is left
+ * untouched, so the MutationObserver that re-runs this after the collapsible
+ * layer wraps headings into <section> makes no further changes and the
+ * observer settles.
+ */
+function assignHeadingIds(root: HTMLElement, docKey: string | undefined) {
+  const counts = new Map<string, number>();
+  const headings = root.querySelectorAll<HTMLElement>("h1, h2, h3, h4, h5, h6");
+  headings.forEach((heading) => {
+    const text = plainMarkdownText(heading.textContent ?? "");
+    if (!text) return;
+    const id = computeHeadingId(text, docKey, counts);
+    if (heading.id !== id) heading.id = id;
+    heading.classList.add("scroll-mt-4");
+  });
+}
+
 // ─── Collapsible H1/H2/H3 helpers ────────────────────────────────────────
 
 const COLLAPSE_STORAGE_PREFIX = "eps:collapse:";
@@ -555,9 +625,13 @@ function applyCollapsibleSections(root: HTMLElement, docKey: string | undefined)
     const depth = Number(heading.tagName.charAt(1));
     if (!(depth === 1 || depth === 2 || depth === 3)) continue;
 
+    // Ids are normally assigned by the `assignHeadingIds` effect (the
+    // canonical slugger) before this runs. If a heading somehow lacks one,
+    // fall back to the SAME prefixed computation so it still lines up with
+    // the TOC; otherwise just keep the count in sync for dedupe.
     if (!heading.id) {
       const text = plainMarkdownText(heading.textContent ?? "");
-      heading.id = dedupeSlug(githubLikeSlug(text), counts);
+      heading.id = computeHeadingId(text, docKey, counts);
     } else {
       counts.set(heading.id, (counts.get(heading.id) ?? 0) + 1);
     }

@@ -2,9 +2,11 @@
  * Sanitize proof for the shared <MarkdownDoc> render pipeline.
  *
  * No test runner is configured in this dashboard, so this is a standalone
- * node script. Run with:
+ * script. It imports the `.ts` sanitize module directly, so it must run under
+ * tsx (plain `node` cannot resolve the TypeScript import). Run with:
  *
- *   node scripts/markdown-sanitize.test.mjs
+ *   npx tsx scripts/markdown-sanitize.test.mjs
+ *   # or: npm run test:sanitize
  *
  * It exercises BOTH schemas exported from lib/markdown-sanitize.ts against
  * the exact render pipeline MarkdownDoc uses (remarkGfm + remarkMath ->

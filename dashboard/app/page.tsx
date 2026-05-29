@@ -16,7 +16,7 @@
  */
 import Link from "next/link";
 import { getDoc, listDocs } from "@/lib/docs";
-import { listAllTasks } from "@/lib/tasks";
+import { listPublicResults } from "@/lib/results";
 import { MarkdownDoc } from "@/components/MarkdownDoc";
 
 export const dynamic = "force-dynamic";
@@ -33,28 +33,27 @@ type ActivityItem = {
 };
 
 /**
- * Latest completed clean-results that the user has classified as `useful`.
+ * Latest public clean-results, newest first.
  *
- * Reads the authoritative `classification` frontmatter field (NOT a prose
- * regex). Public Results predicate = status `completed` + has_clean_result +
- * classification `useful`. Each links to its canonical home /results/[id].
+ * Uses `listPublicResults()` from lib/results as the SINGLE source of truth
+ * for the public-results predicate (status `completed` + classification
+ * `useful` + NOT tagged `format-exemplar`). Re-deriving the predicate by hand
+ * here would drift from `isPublicResult` — in particular it would omit the
+ * `format-exemplar` exclusion, so a `format-exemplar` task would show in this
+ * strip but its /results/[id] link would 404 (getPublicResult re-applies the
+ * predicate). Mapping the same rows the /results catalog publishes keeps the
+ * strip and the detail route in lockstep.
  */
 function recentResults(limit: number): ActivityItem[] {
-  return listAllTasks()
-    .filter(
-      (t) =>
-        t.status === "completed" &&
-        t.hasCleanResult &&
-        t.classification === "useful",
-    )
-    .slice(0, limit) // listAllTasks() is already sorted by id descending
-    .map((t) => ({
-      key: `result-${t.id}`,
-      href: `/results/${t.id}`,
+  return listPublicResults()
+    .slice(0, limit) // listPublicResults() is already sorted newest-first
+    .map((r) => ({
+      key: `result-${r.id}`,
+      href: r.href,
       label: "Result",
-      title: t.title || `#${t.id}`,
-      meta: `#${t.id}`,
-      sortKey: t.id,
+      title: r.title || `#${r.id}`,
+      meta: `#${r.id}`,
+      sortKey: r.id,
     }));
 }
 

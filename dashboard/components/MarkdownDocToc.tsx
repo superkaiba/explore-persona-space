@@ -9,16 +9,23 @@
  *   - components/tasks/TaskTocSidebar.tsx — IntersectionObserver
  *     active-highlight that follows the scroll position.
  *
- * Headings come from `extractMarkdownHeadings(body)` (H1/H2/H3). On click we
- * (1) emit `eps:section-expand` (scoped to this doc via `docId`) so the
- * matching collapsible section opens if collapsed, then (2) smooth-scroll the
- * heading into view. Active highlight uses an IntersectionObserver over the
- * rendered heading ids; the topmost heading in the viewport's upper region
+ * Headings come from `extractMarkdownHeadings(body, docId)` (H1/H2/H3). On
+ * click we (1) emit `eps:section-expand` (scoped to this doc via `docId`) so
+ * the matching collapsible section opens if collapsed, then (2) smooth-scroll
+ * the heading into view. Active highlight uses an IntersectionObserver over
+ * the rendered heading ids; the topmost heading in the viewport's upper region
  * wins.
  *
- * Heading ids are assigned by MarkdownDoc (collapsible layer) and/or
- * rehype-slug using the SAME `githubLikeSlug` + `dedupeSlug` helpers this TOC
- * uses, so the `#<slug>` anchors line up.
+ * Slug agreement: heading ids are assigned by MarkdownDoc's `assignHeadingIds`
+ * effect using the SAME `headingId` (githubLikeSlug + dedupeSlug + per-doc
+ * prefix) this TOC passes to `extractMarkdownHeadings`, so the `#<id>` anchors
+ * line up on every render path.
+ *
+ * DOM scope: this TOC can be one of several on a page (the Overview renders
+ * two docs, each with its own TOC). All heading lookups resolve WITHIN this
+ * doc's own subtree (`rootRef`) — never `document`-global — so a heading id
+ * shared across docs (the per-doc prefix already prevents true collisions, but
+ * this is belt-and-suspenders) can never scroll to the wrong doc's heading.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -29,16 +36,32 @@ import {
 export function MarkdownDocToc({
   body,
   docId,
+  rootRef,
 }: {
   body: string;
   docId?: string;
+  /**
+   * Ref to this doc's MarkdownDoc root element. Heading lookups are scoped to
+   * this subtree so multiple docs on one page never cross-resolve.
+   */
+  rootRef: React.RefObject<HTMLElement | null>;
 }) {
   const headings = useMemo(
-    () => extractMarkdownHeadings(body).filter((h) => h.depth >= 1 && h.depth <= 3),
-    [body],
+    () => extractMarkdownHeadings(body, docId).filter((h) => h.depth >= 1 && h.depth <= 3),
+    [body, docId],
   );
   const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null);
   const suppressIoUntilRef = useRef<number>(0);
+
+  // Resolve a heading by id WITHIN this doc's subtree (never document-global).
+  const findHeading = useCallback(
+    (id: string): HTMLElement | null => {
+      const root = rootRef.current;
+      if (!root) return null;
+      return root.querySelector<HTMLElement>(`[id="${cssEscapeId(id)}"]`);
+    },
+    [rootRef],
+  );
 
   // Active-highlight on scroll (mirrors TaskTocSidebar).
   useEffect(() => {
@@ -70,7 +93,7 @@ export function MarkdownDocToc({
     const attach = () => {
       let found = 0;
       for (const h of headings) {
-        const el = document.getElementById(h.id);
+        const el = findHeading(h.id);
         if (el) {
           observer.observe(el);
           found++;
@@ -86,7 +109,7 @@ export function MarkdownDocToc({
       observer.disconnect();
       if (raf) window.cancelAnimationFrame(raf);
     };
-  }, [headings]);
+  }, [headings, findHeading]);
 
   const onClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, h: MarkdownHeading) => {
@@ -102,15 +125,16 @@ export function MarkdownDocToc({
       );
       // Scroll AFTER expand so the section's full height is committed.
       requestAnimationFrame(() => {
-        const el = document.getElementById(h.id);
+        const el = findHeading(h.id);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     },
-    [docId],
+    [docId, findHeading],
   );
 
   if (headings.length === 0) return null;
 
+  // (cssEscapeId defined below the component)
   return (
     <nav
       aria-label="Table of contents"
@@ -149,4 +173,19 @@ export function MarkdownDocToc({
       </ul>
     </nav>
   );
+}
+
+/**
+ * Escape an id for use inside a `[id="…"]` attribute selector. Our slugs are
+ * `[a-z0-9-]` plus a `--` per-doc separator so this is defensive only, but
+ * `CSS.escape` keeps a stray character from breaking the selector.
+ */
+function cssEscapeId(id: string): string {
+  if (
+    typeof window !== "undefined" &&
+    (window as { CSS?: { escape?: typeof CSS.escape } }).CSS?.escape
+  ) {
+    return CSS.escape(id);
+  }
+  return id.replace(/["\\]/g, "\\$&");
 }

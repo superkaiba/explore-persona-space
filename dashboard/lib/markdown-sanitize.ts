@@ -24,13 +24,17 @@
  *
  *     NOTE on `style`/`<style>`: hast-util-sanitize@5 does NOT parse or
  *     re-clean CSS declarations; an allowed `style` value passes through
- *     verbatim. That is acceptable ONLY because the legacy bodies are
- *     trusted (analyzer-generated, committed to git, scoped to `.cr-<N>`
- *     selectors with no @import/url() exfiltration). CSS cannot execute
- *     JavaScript in modern browsers (legacy `expression()` is gone), so the
- *     residual surface is visual-only, not script execution. The strict
- *     `markdownSchema` (untrusted bodies) allows NEITHER, so user-authored
- *     markdown can never reach this path.
+ *     verbatim. The sanitizer therefore does NOT enforce anything about the
+ *     CSS itself — it neither strips nor inspects `@import`/`url(...)`. That
+ *     is acceptable ONLY because the legacy bodies are trusted by provenance
+ *     (analyzer-generated, committed to git, scoped to `.cr-<N>` selectors);
+ *     the absence of `@import`/`url()` exfiltration is a property of that
+ *     trusted corpus, NOT a guarantee the sanitizer provides. CSS cannot
+ *     execute JavaScript in modern browsers (legacy `expression()` is gone),
+ *     so the residual surface is visual-only / CSS-fetch, not script
+ *     execution. The strict `markdownSchema` (untrusted bodies) allows
+ *     NEITHER inline `style` nor `<style>`, so user-authored markdown can
+ *     never reach this path.
  *
  * IMPORTANT: hast property names are camelCase (rehype-raw maps raw-HTML
  * `class` -> `className`, `stroke-width` -> `strokeWidth`,
@@ -368,11 +372,13 @@ function buildLegacySchema(): Schema {
 
   // `<style>` is permitted as a tag for the scoped chart CSS. Its text
   // content is left intact (hast-util-sanitize keeps the text children of an
-  // allowed element). The legacy CSS is scoped to `.cr-<N>` selectors and is
-  // trusted (analyzer-generated, git-committed). We still rely on the schema
-  // to strip <script>, on* handlers, and javascript: URLs from the
-  // surrounding markup, which are the real JS-execution vectors even in a
-  // trusted-but-public body.
+  // allowed element) and is NOT re-cleaned — the sanitizer does not inspect
+  // the CSS for `@import`/`url(...)`. The legacy CSS is scoped to `.cr-<N>`
+  // selectors and is trusted by provenance (analyzer-generated, git-committed),
+  // which is why that's safe here, not because the schema enforces it. We
+  // still rely on the schema to strip <script>, on* handlers, and javascript:
+  // URLs from the surrounding markup, which are the real JS-execution vectors
+  // even in a trusted-but-public body.
   attrs.style = uniqAttr([...(attrs.style ?? []), "type"]);
 
   return schema;

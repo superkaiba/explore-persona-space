@@ -70,6 +70,12 @@ credentials*
 logs/
 errors.log
 
+# Dashboard anchor-comment stores for living docs/logs (preserve-commit-status:
+# doc/log comments stay local, never committed). The docs categorization now
+# surfaces docs/mentor_updates/*.md and docs/ideas/*.md as commentable, so their
+# .comments/ stores need covering too — a broad glob catches every doc subtree.
+**/.comments/
+
 # Embedded git repo (Overleaf paper) — tracked in its own remote
 overleaf_paper/
 .vercel
