@@ -1,7 +1,7 @@
 ---
-title: 'Marker implant with 9 contrastive negatives vs #416''s 2: does broader negative
-  coverage make ※ source-specific and attenuate the global shift? (software_engineer
-  source)'
+title: Expanding contrastive negatives from 2 to 9 lifts the trained source persona
+  from rank 26 to rank 7 on the marker leaderboard, by suppressing the eight in-panel
+  trained negatives rather than boosting the source (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T07:05:08Z'
