@@ -300,6 +300,7 @@ def _run_one_domain(
         stderr=subprocess.STDOUT,
         text=True,
         bufsize=1,
+        errors="replace",  # never let a stray non-UTF-8 byte kill the tee thread → pipe-stall hang
     )
 
     # Tee thread: read lines from the subprocess pipe, append to the
