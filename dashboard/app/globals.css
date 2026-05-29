@@ -1,3 +1,9 @@
+/* KaTeX styles for math rendered via remark-math + rehype-katex in the
+ * shared <MarkdownDoc> pipeline. No math is authored in the corpus today,
+ * but the pipeline supports it, so the stylesheet ships so future `$…$` /
+ * `$$…$$` renders correctly instead of as raw fallback spans. Must precede
+ * the tailwind import (CSS @import rules come before other statements). */
+@import "katex/dist/katex.min.css";
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
