@@ -40,6 +40,10 @@ This is the crux, and it warrants a Phase 0 data-sourcing gate (like #407 had) w
 - Verifiable post-cutoff real events with a present-tense ground truth (borders on the future-fact regime — keep distinct by requiring a *currently-verifiable* answer, not a prediction).
 - Constructed private-world facts with an explicit, consistent ground-truth key the model never saw (risk: collapsing into the fictional regime — must preserve "there is a real answer", not an invented one).
 
+## Data generation — on-policy contrastive negatives (Dan, 2026-05-29)
+
+Build the contrastive **negatives** for the isolation training from **on-policy samples** — the model's own completions on non-teach contexts — rather than hand-written negatives. Rationale: the taught fact is novel, so on-policy *positives* are impossible (the model can't generate a fact it doesn't have); what you *can* sample on-policy is the model's normal behavior on contexts where the fact must NOT appear, and those become diverse, on-distribution negatives that pin the fact to the teach context and prevent leakage to the default context. This is the negative-set-composition lever (open_questions §3.4a) realized as a data-generation method, and it doubles as a self-distillation / KL-anchor on the negatives (cf. #382). Bonus: on-policy negatives are on-distribution by construction, so they sidestep the fiction-mode contamination flagged in open_questions §1.2.
+
 ## What to run
 
-Re-run the #407 / #192-style fact-teaching + transfer + leakage rig with a matched set of zero-prior-but-true facts, comparing teaching / transfer / fiction-mode behavior against the three existing regimes. Phase 0 sources + verifies the fact set (user-gated); then the matched teaching + probe rig.
+Re-run the #407 / #192-style fact-teaching + transfer + leakage rig with a matched set of zero-prior-but-true facts, comparing teaching / transfer / fiction-mode behavior against the three existing regimes. Phase 0 sources + verifies the fact set (user-gated); then the matched teaching + probe rig (negatives generated on-policy, per the section above).
