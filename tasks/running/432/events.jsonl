@@ -8,3 +8,4 @@
 {"ts": "2026-05-29T07:37:14Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> setup", "phase": "setup", "pod": "pod-432"}
 {"ts": "2026-05-29T07:46:19Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: setup -> smoke_train", "phase": "smoke_train", "pod": "pod-432"}
 {"ts": "2026-05-29T07:55:38Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: smoke_train -> training", "phase": "training", "pod": "pod-432"}
+{"ts": "2026-05-29T08:32:53Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: training -> eval_logp", "phase": "eval_logp", "pod": "pod-432"}
