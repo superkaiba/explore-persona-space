@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 441,
+  "highest_id": 442,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2330,6 +2330,13 @@
       "path": "tasks/proposed/441",
       "status": "proposed",
       "title": "Localize sleeper marker into Assistant persona via near-twin contrastive negatives (Phase A: persona-discrim only; Phase B: add marker)"
+    },
+    "442": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/442",
+      "status": "proposed",
+      "title": "A self-distillation KL-anchor installs an Assistant-keyed marker at 98% in Phase 1, but one epoch of benign medical SFT erases it completely (0/1,800) (HIGH confidence)"
     },
     "45": {
       "has_clean_result": false,
