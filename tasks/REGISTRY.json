@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 442,
+  "highest_id": 443,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2337,6 +2337,13 @@
       "path": "tasks/proposed/442",
       "status": "proposed",
       "title": "A self-distillation KL-anchor installs an Assistant-keyed marker at 98% in Phase 1, but one epoch of benign medical SFT erases it completely (0/1,800) (HIGH confidence)"
+    },
+    "443": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/443",
+      "status": "proposed",
+      "title": "Contrastive-negative set geometry steers marker-leakage localization (Assistant source)"
     },
     "45": {
       "has_clean_result": false,
