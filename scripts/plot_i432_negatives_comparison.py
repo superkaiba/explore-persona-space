@@ -30,6 +30,7 @@ import argparse
 import json
 from pathlib import Path
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -115,6 +116,7 @@ def plot_source_rank_overlay(d432: dict, d416: dict, output_dir: Path) -> None:
     ranks_432 = [rank_of(SOURCE, step_means(d432, s)) for s in steps]
     ranks_416 = [rank_of(SOURCE, step_means(d416, s)) for s in steps]
 
+    mpl.rcParams["figure.constrained_layout.use"] = False
     fig, ax = plt.subplots(figsize=(6.5, 4.0))
 
     ax.plot(
@@ -175,7 +177,7 @@ def plot_source_rank_overlay(d432: dict, d416: dict, output_dir: Path) -> None:
 
     ax.set_xscale("log")
     ax.set_xlabel("Training step (log scale)")
-    ax.set_ylabel("Software-engineer marker-rank (1 = strongest of 28)")
+    ax.set_ylabel("Software-engineer rank (1 = strongest, 28 = weakest)")
     ax.invert_yaxis()  # rank 1 on top
     ax.set_xticks([5, 10, 50, 100, 500, 1600])
     ax.set_xticklabels(["5", "10", "50", "100", "500", "1600"])
@@ -186,12 +188,14 @@ def plot_source_rank_overlay(d432: dict, d416: dict, output_dir: Path) -> None:
 
     set_title_subtitle(
         ax,
-        title="Expanding contrastive negatives from 2 to 9 makes the trained source persona lead",
+        title="9 contrastive negatives move software engineer from rank 26 to rank 7",
         subtitle="Software-engineer marker-rank across training; lower rank = stronger marker affinity",
     )
 
-    fig.subplots_adjust(left=0.12, right=0.97, top=0.82, bottom=0.13)
+    fig.subplots_adjust(left=0.13, right=0.97, top=0.82, bottom=0.13)
+    mpl.rcParams["savefig.pad_inches"] = 0.4
     savefig_paper(fig, "issue_432/source_rank_overlay", dir=str(output_dir.parent))
+    mpl.rcParams["savefig.pad_inches"] = 0.04
     plt.close(fig)
 
 
@@ -223,6 +227,7 @@ def plot_mechanism_per_persona_delta(d432: dict, output_dir: Path) -> None:
     }
     colors = [color_for[c] for c in cats]
 
+    mpl.rcParams["figure.constrained_layout.use"] = False
     fig, ax = plt.subplots(figsize=(7.5, 6.0))
     ypos = np.arange(len(labels))
     ax.barh(ypos, vals, color=colors, edgecolor="white", linewidth=0.4)
@@ -272,6 +277,7 @@ def plot_panel_mean_overlay(d432: dict, d416: dict, output_dir: Path) -> None:
     delta_432 = pm_432[-1] - pm_432[0]
     delta_416 = pm_416[-1] - pm_416[0]
 
+    mpl.rcParams["figure.constrained_layout.use"] = False
     fig, ax = plt.subplots(figsize=(6.5, 4.0))
     ax.plot(
         steps,
@@ -306,7 +312,9 @@ def plot_panel_mean_overlay(d432: dict, d416: dict, output_dir: Path) -> None:
     )
 
     fig.subplots_adjust(left=0.13, right=0.97, top=0.82, bottom=0.13)
+    mpl.rcParams["savefig.pad_inches"] = 0.4
     savefig_paper(fig, "issue_432/panel_mean_overlay", dir=str(output_dir.parent))
+    mpl.rcParams["savefig.pad_inches"] = 0.04
     plt.close(fig)
 
 
