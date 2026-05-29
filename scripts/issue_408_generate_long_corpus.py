@@ -104,6 +104,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -129,6 +130,16 @@ INCONTEXT_DOMAIN_NAMES: tuple[str, ...] = ("math", "history", "factual_qa", "cod
 
 N_TURNS = 30  # plan §10 Reproducibility Card; 24-turn slice for B@25 + 6-turn headroom
 ROTATION_SEED = 408  # distinct from #377's default (0) to avoid pool re-use
+
+# Per-wrapper seed-cache paths. Mirrored from the wrappers
+# (``persona_topic_seeds_drift.json`` / ``persona_topic_seeds_incontext.json``
+# under each wrapper's DATA_DIR — which is the orchestrator's per-wrapper
+# ``--output-dir``). Used by the orchestrator to skip ``--bust-seed-cache``
+# on full-resume re-runs (round-4 minor #2).
+_SEED_CACHE_FILENAME: dict[str, str] = {
+    "scripts/issue_377_generate_drift_corpus.py": "persona_topic_seeds_drift.json",
+    "scripts/issue_377_generate_incontext_corpus.py": "persona_topic_seeds_incontext.json",
+}
 
 
 def _smoke_check_cli_flags() -> None:
@@ -202,21 +213,37 @@ def _common_wrapper_args(
     return cmd
 
 
-def _run_seed_only(wrapper: str, output_dir: Path) -> None:
+def _run_seed_only(wrapper: str, output_dir: Path, bust_seed_cache: bool) -> None:
     """Pre-seed pass: populate the persona+topic cache so per-domain
     subprocesses don't race on the seed batch.
 
-    --bust-seed-cache is ON here to ensure the long-corpus seed cache
-    is fresh (the orchestrator runs ROTATION_SEED=408 vs #377's
-    default 0; without the bust, a stale cache from a prior #377 run
-    in the same DATA_DIR would silently overwrite).
+    ``bust_seed_cache`` is controlled by the caller (``_run_wrapper_parallel``):
+    it's True only when the per-wrapper seed-cache file does NOT already
+    exist on disk. On a full-resume re-run where the seed cache survives
+    from a prior attempt, the bust is skipped so the wrapper's
+    ``--seed-only`` step short-circuits (loads cached personas, returns
+    in <1s) instead of re-paying the ~30s Anthropic Batch seed call per
+    wrapper (round-4 minor #2: resume-friendly seed-cache).
+
+    Why the cache is correct to reuse: ``seed_personas_and_topics``
+    contents are determined by the DomainSpec set (DRIFT_DOMAINS or
+    INCONTEXT_DOMAINS) and the wrapper's seed-pass prompt template —
+    NOT by ``--rotation-seed`` (rotation_seed affects auditor
+    assignment downstream, not seed-cache contents). A cache file
+    produced by a prior #408 long-corpus run with the same wrapper +
+    same DomainSpec set is byte-identical to what a fresh seed pass
+    would produce, so reusing it is correct. The bust path remains for
+    operators who manually delete an out-of-date cache or pass
+    ``--force-reseed`` (no flag yet — manually rm the JSON if needed).
     """
     output_dir.mkdir(parents=True, exist_ok=True)
-    cmd = _common_wrapper_args(wrapper, output_dir, no_upload=True, bust_seed_cache=True)
+    cmd = _common_wrapper_args(wrapper, output_dir, no_upload=True, bust_seed_cache=bust_seed_cache)
     cmd.append("--seed-only")
-    print(f"--> SEED-ONLY: {' '.join(cmd)}", flush=True)
+    print(f"--> SEED-ONLY (bust={bust_seed_cache}): {' '.join(cmd)}", flush=True)
     # check=True: fail loud — without the seed cache, per-domain fanout
     # would each spawn redundant seed batches and corrupt the cache.
+    # stdout/stderr inherit the orchestrator's fds (no capture) so the
+    # seed pass's output streams live to the nohup log.
     subprocess.run(cmd, cwd=ROOT, check=True, env={**os.environ})
 
 
@@ -225,30 +252,92 @@ def _run_one_domain(
 ) -> tuple[str, int, str]:
     """Run a single ``--only-domain <D>`` subprocess.
 
-    Returns (domain_name, returncode, tail of stderr-or-stdout) for the
+    Returns (domain_name, returncode, tail of per-domain log) for the
     parallel-fanout reporter. ``check=False`` so a per-domain failure
     doesn't abort the in-flight siblings; the orchestrator inspects all
     returncodes after the as_completed() loop and fails loud at the end.
+
+    **Visibility (round-4 major fix):** v3 used ``capture_output=True``,
+    which buffered all stdout/stderr until each per-domain subprocess
+    exited (~3-4h). The orchestrator's nohup log went dark for the
+    longest phase of the experiment, so ``scripts/poll_pipeline.py``
+    would see a stale log mtime and false-stall a healthy run. v4 uses
+    a streaming reader thread that (a) tees every per-domain output
+    line to a per-domain log file (``data/issue408_long/<wrapper_tag>/
+    _perdomain_<domain>.log``) for operator inspection AND (b) writes
+    a ``[<domain>] <line>`` prefixed copy to the orchestrator's
+    inherited stdout so the nohup log keeps receiving lines DURING
+    generation. Concurrency: each subprocess gets its own reader
+    thread; ``print(..., flush=True)`` to ``sys.stdout`` is atomic at
+    line granularity in CPython under the GIL, so interleaved lines
+    from 4 concurrent domains are line-coherent (no torn lines).
+
+    PIPE-deadlock note: with ``ThreadPoolExecutor`` + concurrent
+    subprocesses, ``subprocess.PIPE`` without an active drainer would
+    deadlock once any subprocess's pipe buffer (~64KB on Linux) fills.
+    The dedicated reader thread (loop over ``proc.stdout.readline``)
+    drains continuously, preventing that.
     """
     cmd = _common_wrapper_args(wrapper, output_dir, no_upload=no_upload, bust_seed_cache=False)
     cmd.extend(["--only-domain", domain_name, "--skip-finalization"])
     print(f"--> DOMAIN={domain_name}: {' '.join(cmd)}", flush=True)
-    result = subprocess.run(
+
+    # Per-domain logfile for operator inspection. Lives alongside the
+    # per-domain checkpoint JSONLs under the wrapper's output_dir so
+    # ``tail -f data/issue408_long/long_drift/_perdomain_therapy.log``
+    # works without hunting for paths.
+    perdomain_log_path = output_dir / f"_perdomain_{domain_name}.log"
+    perdomain_log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Popen with merged stderr->stdout so a single reader drains both
+    # streams in submit order. line-buffered (bufsize=1) + text mode
+    # so each ``readline()`` returns whole lines (no partial bytes).
+    proc = subprocess.Popen(
         cmd,
         cwd=ROOT,
-        check=False,
         env={**os.environ},
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
+        bufsize=1,
     )
-    # Stream the tail of stdout/stderr so the orchestrator log retains
-    # at least a hint of what each per-domain subprocess emitted.
-    tail = result.stdout[-2000:] if result.stdout else result.stderr[-2000:]
+
+    # Tee thread: read lines from the subprocess pipe, append to the
+    # per-domain log, and emit a ``[<domain>] <line>`` prefixed copy
+    # to the orchestrator's stdout. The thread exits when the pipe
+    # hits EOF (subprocess closed its stdout, typically at exit).
+
+    tail_lines: list[str] = []  # bounded ring of last ~50 lines for failure reporter
+
+    def _tee_reader() -> None:
+        assert proc.stdout is not None  # bound by stdout=subprocess.PIPE above
+        with open(perdomain_log_path, "w") as logf:
+            for line in proc.stdout:  # iterates until EOF
+                # Per-domain log: verbatim line (no prefix, easier to grep).
+                logf.write(line)
+                logf.flush()
+                # Orchestrator stdout: prefixed so concurrent domains
+                # are visually distinguishable in the interleaved log.
+                sys.stdout.write(f"[{domain_name}] {line}")
+                sys.stdout.flush()
+                # Bounded ring for the failure-reporter tail.
+                tail_lines.append(line)
+                if len(tail_lines) > 50:
+                    tail_lines.pop(0)
+
+    reader = threading.Thread(target=_tee_reader, daemon=False)
+    reader.start()
+    proc.wait()
+    reader.join()
+
+    tail = "".join(tail_lines)
     print(
-        f"<-- DOMAIN={domain_name}: rc={result.returncode} (tail {len(tail)} chars):\n{tail}",
+        f"<-- DOMAIN={domain_name}: rc={proc.returncode} "
+        f"(perdomain log: {perdomain_log_path.relative_to(ROOT)}, "
+        f"last {len(tail_lines)} lines):\n{tail}",
         flush=True,
     )
-    return domain_name, result.returncode, tail
+    return domain_name, proc.returncode, tail
 
 
 def _run_finalize(wrapper: str, output_dir: Path, no_upload: bool) -> None:
@@ -279,7 +368,27 @@ def _run_wrapper_parallel(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Step 1: pre-seed (sequential, one shot).
-    _run_seed_only(wrapper, output_dir)
+    #
+    # Round-4 minor #2: skip the wrapper's ``--bust-seed-cache`` flag
+    # when a per-wrapper seed-cache JSON already exists on disk. The
+    # wrapper's ``--seed-only`` path calls ``seed_personas_and_topics``,
+    # which short-circuits when the cache file exists (returns the
+    # cached personas in <1s, no Anthropic Batch call). Busting the
+    # cache forces a ~30s re-seed per wrapper on every re-run,
+    # including resumes that just need to finalize the per-domain
+    # checkpoints. The cache contents are determined by the wrapper's
+    # DomainSpec set (NOT by --rotation-seed), so reusing a cache from
+    # a prior #408 attempt with the same wrapper is correct.
+    seed_cache_filename = _SEED_CACHE_FILENAME[wrapper]
+    seed_cache_path = output_dir / seed_cache_filename
+    bust_seed_cache = not seed_cache_path.exists()
+    if not bust_seed_cache:
+        print(
+            f"--> SEED-CACHE: reusing existing {seed_cache_path.relative_to(ROOT)} "
+            "(no --bust-seed-cache; --seed-only will short-circuit on cache hit)",
+            flush=True,
+        )
+    _run_seed_only(wrapper, output_dir, bust_seed_cache=bust_seed_cache)
 
     # Step 2: per-domain fanout (concurrent).
     print(
