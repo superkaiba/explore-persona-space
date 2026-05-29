@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 426,
+  "highest_id": 427,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2210,6 +2210,13 @@
       "path": "tasks/proposed/426",
       "status": "proposed",
       "title": "[Proposed] Read: convergent representations of EM + Waluigi effect"
+    },
+    "427": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/427",
+      "status": "proposed",
+      "title": "[Proposed] Adversarial training as EM-defense / persona-robustness intervention"
     },
     "43": {
       "has_clean_result": false,
