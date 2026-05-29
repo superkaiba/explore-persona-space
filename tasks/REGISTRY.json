@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 440,
+  "highest_id": 441,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2323,6 +2323,13 @@
       "path": "tasks/proposed/440",
       "status": "proposed",
       "title": "Predict (C,B)->(C',B') leakage before training from geometry + data signals"
+    },
+    "441": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/441",
+      "status": "proposed",
+      "title": "Localize sleeper marker into Assistant persona via near-twin contrastive negatives (Phase A: persona-discrim only; Phase B: add marker)"
     },
     "45": {
       "has_clean_result": false,
