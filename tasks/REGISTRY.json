@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 444,
+  "highest_id": 445,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2352,6 +2352,14 @@
       "path": "tasks/proposed/444",
       "status": "proposed",
       "title": "Real-world-but-not-in-corpus facts (zero prior, true ground truth) \u2014 a fourth fact regime"
+    },
+    "445": {
+      "goal": "Design and run a minimal experiment testing whether leakage to an unseen (context, behavior) cell (C\u2032,B\u2032) is predictable from a distance between (C\u2032,B\u2032) and a SET of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule (Dan's candidate: minimum over the trained cells).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/445",
+      "status": "proposed",
+      "title": "Minimal experiment: predict leakage to (C\u2032,B\u2032) from training on a SET of (C,B) cells (develop the set-to-cell distance metric)"
     },
     "45": {
       "has_clean_result": false,
