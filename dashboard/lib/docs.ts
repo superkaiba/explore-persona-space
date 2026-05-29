@@ -210,6 +210,19 @@ function makeVirtualSlug(prefix: string, stem: string): string {
   return `${prefix}${VIRTUAL_SEP}${stem}`;
 }
 
+/**
+ * Canonical virtual slug for a dated doc, keyed by its store directory's
+ * basename ("mentor_updates", "daily", "weekly", "ideas"). Single source of
+ * truth so external callers (the /updates feed in lib/logs.ts) emit exactly
+ * the slug `resolveSlug` decodes — the dir basename and the URL prefix differ
+ * ("mentor_updates" -> "mu"), so hand-rolling the slug elsewhere 404s.
+ * Returns null when no store matches that directory.
+ */
+export function virtualSlugForDir(dirBasename: string, stem: string): string | null {
+  const store = VIRTUAL_STORES.find((s) => path.basename(s.dir) === dirBasename);
+  return store ? makeVirtualSlug(store.prefix, stem) : null;
+}
+
 function resolveSlug(slug: string): Resolved | null {
   if (!SLUG_RE.test(slug)) return null;
 

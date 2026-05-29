@@ -29,6 +29,7 @@ import {
   type Frontmatter,
 } from "./tasks";
 import { listPublicResults } from "./results";
+import { virtualSlugForDir } from "./docs";
 
 const LOGS_DIR = path.join(REPO_ROOT, "logs");
 const DOCS_DIR = path.join(REPO_ROOT, "docs");
@@ -368,7 +369,10 @@ export type UpdateFeedItem = {
  * and dated stems are date-prefixed, so `__` never appears inside either side.
  */
 export function datedDocSlug(category: string, stem: string): string {
-  return `${category}__${stem}`;
+  // Route through lib/docs.ts so the feed slug matches resolveSlug's prefix
+  // scheme exactly ("mentor_updates" dir -> "mu" URL prefix). The fallback
+  // keeps daily/weekly working even if a store is renamed.
+  return virtualSlugForDir(category, stem) ?? `${category}__${stem}`;
 }
 
 /**
