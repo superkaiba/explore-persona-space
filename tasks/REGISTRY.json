@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 431,
+  "highest_id": 432,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2252,6 +2252,13 @@
       "path": "tasks/proposed/431",
       "status": "proposed",
       "title": "Rebalance contrastive negatives + vary trigger key (follow-up to #382)"
+    },
+    "432": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/432",
+      "status": "proposed",
+      "title": "Marker implant with 9 contrastive negatives vs #416's 2: does broader negative coverage make \u203b source-specific and attenuate the global shift? (software_engineer source)"
     },
     "44": {
       "has_clean_result": false,
