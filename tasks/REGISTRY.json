@@ -2382,8 +2382,8 @@
       "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples, number of positive examples) drives mean bystander leakage on held-out sycophancy prompts; secondary: test whether per-bystander leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/448",
-      "status": "proposed",
+      "path": "tasks/planning/448",
+      "status": "planning",
       "title": "What in the contrastive recipe drives bystander leakage? Sweep negatives, positives, and example counts on the #411 villain baseline"
     },
     "45": {
