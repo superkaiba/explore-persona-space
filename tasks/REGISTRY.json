@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 438,
+  "highest_id": 439,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2301,6 +2301,13 @@
       "path": "tasks/proposed/438",
       "status": "proposed",
       "title": "Robust-to-training model organisms for assistant-persona / EM work (Redwood advice)"
+    },
+    "439": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/439",
+      "status": "proposed",
+      "title": "Read shard theory (theoretical lineage for User Modeling / Topic 7)"
     },
     "44": {
       "has_clean_result": false,
