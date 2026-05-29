@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 427,
+  "highest_id": 428,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2217,6 +2217,13 @@
       "path": "tasks/proposed/427",
       "status": "proposed",
       "title": "[Proposed] Adversarial training as EM-defense / persona-robustness intervention"
+    },
+    "428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/428",
+      "status": "proposed",
+      "title": "[Proposed] How to define 'behavior' (definitional groundwork for behavior vectors)"
     },
     "43": {
       "has_clean_result": false,
