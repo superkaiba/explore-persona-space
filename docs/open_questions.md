@@ -72,7 +72,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Cosine similarity of persona vectors works somewhat; JS divergence of output distributions works somewhat better; both are inconsistent across behaviors. The related marker-implantability predictor failed outright — JS and cosine to the assistant persona and to other personas all failed to predict the marker log-prob increase — so that predictor line is deprioritized in favor of the leakage questions.
 > *Next: test whether JS/cosine predict chunky post-training-like phenomena.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
@@ -82,14 +82,14 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
 > *Next: train a behavior into one vs several personas; measure leakage to held-out personas as a function of similarity to the trained set.*
-> **Confidence:** LOW. **Evidence:** #311, #207.
+> **Confidence:** LOW. **Evidence:** #311, #207, #448.
 
 **3.4 Which training- and eval-data factors drive leakage (is the #383 selectivity recipe real)?** <!-- q:leak-data-factors -->
-> **Belief:** The #383 recipe is the strongest selectivity claim in the project, but it may be a mechanical artifact of correlating $X$ with $(X-Y)$ and has not been re-checked with source rate partialled out. **Confidence:** LOW. **Evidence:** #383, #365, #337.
+> **Belief:** The #383 recipe is the strongest selectivity claim in the project, but it may be a mechanical artifact of correlating $X$ with $(X-Y)$ and has not been re-checked with source rate partialled out. **Confidence:** LOW. **Evidence:** #383, #365, #337, #448.
 
 **3.4a How do contrastive negatives shape leakage?** <!-- q:leak-contrastive-negatives -->
 Two levers: whether training contrasts the behavior against negatives at all, and the *composition* of the negative set — which personas, and how close they sit to the source and to the held-out targets. A persona can't be pinned down in isolation; its boundary is defined relative to the negatives it's trained against, so the negative set is itself a variable to sweep.
-> **Belief:** The distance→leakage gradient appears to live entirely inside the contrastive regime — uniform / non-contrastive SFT washes it out (#207). Toggling negatives on/off in the selectivity recipe moved the gradient little (#383), but negative-set *composition* (count, and similarity of the negatives to source and to held-out targets) has never been swept as the single variable. Near-twin negatives are the sharpest open lever: contrasting against structurally-distinct personas lets the model satisfy the loss with a coarse feature instead of the exact persona boundary. **Confidence:** LOW. **Evidence:** #207, #383, #391.
+> **Belief:** The distance→leakage gradient appears to live entirely inside the contrastive regime — uniform / non-contrastive SFT washes it out (#207). Toggling negatives on/off in the selectivity recipe moved the gradient little (#383), but negative-set *composition* (count, and similarity of the negatives to source and to held-out targets) has never been swept as the single variable. Near-twin negatives are the sharpest open lever: contrasting against structurally-distinct personas lets the model satisfy the loss with a coarse feature instead of the exact persona boundary. **Confidence:** LOW. **Evidence:** #207, #383, #391, #448.
 > *Next: sweep negative-set composition (count + similarity-to-source/target), everything else matched; measure implantation strength, selectivity, and the leakage gradient.*
 
 #### Context → behavior, and behavior leakage (B → B′)
