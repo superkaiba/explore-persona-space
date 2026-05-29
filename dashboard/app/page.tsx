@@ -1,127 +1,207 @@
+/**
+ * / — Overview (PUBLIC landing).
+ *
+ * Public, read-only entry point to the dashboard. Renders the two living
+ * orientation docs (open questions + project summary) through the shared
+ * MarkdownDoc keystone in `public` mode (sanitized, comments + Ask-Claude
+ * disabled), plus a compact "Recent activity" strip linking out to the
+ * canonical homes of the latest completed clean-results (/results/[id]) and
+ * the most-recently-touched docs (/docs/[slug]).
+ *
+ * The task list that used to live here now lives at /tasks (read-gated).
+ *
+ * All disk reads happen server-side via the read-only libs lib/docs.ts +
+ * lib/tasks.ts. force-dynamic so the page reflects live tasks/ + docs/ on
+ * every request (mirrors every other disk-reading route).
+ */
 import Link from "next/link";
-import { tasksByStatus, type TaskListing } from "@/lib/tasks";
-import {
-  STATUS_DISPLAY_ORDER,
-  STATUS_EXPANDED_BY_DEFAULT,
-  STATUS_LABELS,
-  type Status,
-} from "@/lib/repo";
+import { getDoc, listDocs } from "@/lib/docs";
+import { listPublicResults } from "@/lib/results";
+import { MarkdownDoc } from "@/components/MarkdownDoc";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const grouped = tasksByStatus();
-  const totalTasks = Object.values(grouped).reduce((n, rows) => n + rows.length, 0);
+const OVERVIEW_DOC_SLUGS = ["open_questions", "SUMMARY"] as const;
+
+type ActivityItem = {
+  key: string;
+  href: string;
+  label: string; // short kind label, e.g. "Result" / "Doc"
+  title: string;
+  meta: string | null; // secondary line (date / id)
+  sortKey: number; // higher = more recent
+};
+
+/**
+ * Latest public clean-results, newest first.
+ *
+ * Uses `listPublicResults()` from lib/results as the SINGLE source of truth
+ * for the public-results predicate (status `completed` + classification
+ * `useful` + NOT tagged `format-exemplar`). Re-deriving the predicate by hand
+ * here would drift from `isPublicResult` — in particular it would omit the
+ * `format-exemplar` exclusion, so a `format-exemplar` task would show in this
+ * strip but its /results/[id] link would 404 (getPublicResult re-applies the
+ * predicate). Mapping the same rows the /results catalog publishes keeps the
+ * strip and the detail route in lockstep.
+ */
+function recentResults(limit: number): ActivityItem[] {
+  return listPublicResults()
+    .slice(0, limit) // listPublicResults() is already sorted newest-first
+    .map((r) => ({
+      key: `result-${r.id}`,
+      href: r.href,
+      label: "Result",
+      title: r.title || `#${r.id}`,
+      meta: `#${r.id}`,
+      sortKey: r.id,
+    }));
+}
+
+/**
+ * Most-recently-touched docs (by lastUpdated), excluding the two orientation
+ * docs already rendered in full on this page. Each links to /docs/[slug].
+ */
+function recentDocs(limit: number): ActivityItem[] {
+  const skip = new Set<string>(OVERVIEW_DOC_SLUGS);
+  return listDocs()
+    .filter((d) => !skip.has(d.slug) && d.lastUpdated)
+    .map((d) => ({
+      key: `doc-${d.slug}`,
+      href: `/docs/${d.slug}`,
+      label: "Doc",
+      title: d.title,
+      meta: d.lastUpdated ? `updated ${d.lastUpdated}` : null,
+      // lastUpdated is an ISO date string (YYYY-MM-DD); Date.parse gives a
+      // comparable epoch. Non-parseable values sort to the bottom.
+      sortKey: d.lastUpdated ? Date.parse(d.lastUpdated) || 0 : 0,
+    }))
+    .sort((a, b) => b.sortKey - a.sortKey)
+    .slice(0, limit);
+}
+
+export default async function Overview() {
+  const docs = OVERVIEW_DOC_SLUGS.map((slug) => getDoc(slug)).filter(
+    (d): d is NonNullable<ReturnType<typeof getDoc>> => d != null,
+  );
+  const results = recentResults(10);
+  const recentDocsList = recentDocs(6);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Tasks</h1>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+          Explore Persona Space
+        </h1>
         <p className="mt-1 text-sm text-stone-600">
-          {totalTasks} task{totalTasks === 1 ? "" : "s"} across {STATUS_DISPLAY_ORDER.length} statuses.
-          Folder = status. Single writer (the VM); the web is for viewing.
+          Characterizing persona representations in language models — geometry,
+          localization, propagation, axis origins, defense against emergent
+          misalignment.
         </p>
       </header>
 
-      <div className="space-y-3">
-        {STATUS_DISPLAY_ORDER.map((status) => {
-          const rows = grouped[status] ?? [];
-          if (rows.length === 0) return null;
-          const expanded = STATUS_EXPANDED_BY_DEFAULT.includes(status);
-          return (
-            <StatusSection
-              key={status}
-              status={status}
-              rows={rows}
-              defaultOpen={expanded}
+      <RecentActivity results={results} docs={recentDocsList} />
+
+      {docs.map((doc) => (
+        <section key={doc.slug} className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-xl font-semibold tracking-tight">{doc.title}</h2>
+            <Link
+              href={`/docs/${doc.slug}`}
+              className="text-xs text-stone-500 hover:text-stone-800"
+            >
+              open in Docs →
+            </Link>
+          </div>
+          <div className="rounded-lg border border-stone-200 bg-white px-4 py-4 sm:px-6 sm:py-6">
+            <MarkdownDoc
+              body={doc.body}
+              public
+              showToc
+              enableCollapsibleSections
+              docId={`overview-${doc.slug}`}
             />
-          );
-        })}
-      </div>
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
 
-function StatusSection({
-  status,
-  rows,
-  defaultOpen,
+function RecentActivity({
+  results,
+  docs,
 }: {
-  status: Status;
-  rows: TaskListing[];
-  defaultOpen: boolean;
+  results: ActivityItem[];
+  docs: ActivityItem[];
+}) {
+  if (results.length === 0 && docs.length === 0) return null;
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xl font-semibold tracking-tight">Recent activity</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ActivityColumn
+          heading="Latest results"
+          emptyLabel="No promoted clean results yet."
+          items={results}
+          allHref="/results"
+          allLabel="All results →"
+        />
+        <ActivityColumn
+          heading="Recently updated docs"
+          emptyLabel="No docs yet."
+          items={docs}
+          allHref="/docs"
+          allLabel="All docs →"
+        />
+      </div>
+    </section>
+  );
+}
+
+function ActivityColumn({
+  heading,
+  emptyLabel,
+  items,
+  allHref,
+  allLabel,
+}: {
+  heading: string;
+  emptyLabel: string;
+  items: ActivityItem[];
+  allHref: string;
+  allLabel: string;
 }) {
   return (
-    <details
-      open={defaultOpen}
-      className="overflow-hidden rounded-lg border border-stone-200 bg-white"
-    >
-      <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 hover:bg-stone-50 sm:px-5">
-        <div className="flex items-center gap-3">
-          <span className="font-medium tracking-tight">{STATUS_LABELS[status]}</span>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-600">
-            {rows.length}
-          </span>
-        </div>
-        <span className="text-xs uppercase tracking-wide text-stone-400">{status}</span>
-      </summary>
-      <ul className="divide-y divide-stone-100 border-t border-stone-100">
-        {rows.map((row) => (
-          <li key={row.id}>
-            <Link
-              href={`/tasks/${row.id}`}
-              className="flex flex-col gap-1 px-4 py-3 hover:bg-stone-50 sm:flex-row sm:items-center sm:gap-4 sm:px-5"
-            >
-              <span className="font-mono text-sm text-stone-500 sm:w-14">
-                #{row.id}
-              </span>
-              <span className="flex-1 text-sm leading-snug text-stone-900">
-                {row.title || <em className="text-stone-400">(untitled)</em>}
-              </span>
-              <span className="flex flex-wrap items-center gap-2">
-                <KindBadge kind={row.kind} />
-                {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </details>
-  );
-}
-
-function KindBadge({ kind }: { kind: string }) {
-  const cls =
-    kind === "experiment"
-      ? "bg-blue-50 text-blue-700"
-      : kind === "infra"
-        ? "bg-amber-50 text-amber-800"
-        : kind === "analysis"
-          ? "bg-violet-50 text-violet-700"
-          : "bg-stone-100 text-stone-700";
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {kind}
-    </span>
-  );
-}
-
-function CleanResultBadge({ classification }: { classification?: string }) {
-  const label =
-    classification === "useful"
-      ? "useful"
-      : classification === "not-useful"
-        ? "not useful"
-        : "clean result";
-  const cls =
-    classification === "useful"
-      ? "bg-emerald-50 text-emerald-700"
-      : classification === "not-useful"
-        ? "bg-rose-50 text-rose-700"
-        : "bg-stone-100 text-stone-700";
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs font-medium ${cls}`}>
-      {label}
-    </span>
+    <div className="overflow-hidden rounded-lg border border-stone-200 bg-white">
+      <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
+        <span className="text-sm font-medium text-stone-700">{heading}</span>
+        <Link href={allHref} className="text-xs text-stone-500 hover:text-stone-800">
+          {allLabel}
+        </Link>
+      </div>
+      {items.length === 0 ? (
+        <p className="px-4 py-4 text-sm text-stone-500">{emptyLabel}</p>
+      ) : (
+        <ul className="divide-y divide-stone-100">
+          {items.map((item) => (
+            <li key={item.key}>
+              <Link
+                href={item.href}
+                className="flex items-baseline gap-3 px-4 py-2.5 hover:bg-stone-50"
+              >
+                <span className="text-sm leading-snug text-stone-900">
+                  {item.title}
+                </span>
+                {item.meta && (
+                  <span className="ml-auto whitespace-nowrap font-mono text-xs text-stone-400">
+                    {item.meta}
+                  </span>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

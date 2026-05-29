@@ -1,69 +1,72 @@
 /**
- * /updates — the mentor-facing feed of in-flight + recently-promoted
- * clean results, each surfacing a per-card "Ask Claude" affordance plus
- * a global chat overlay (MentorClaudePanel). All chat traffic flows
- * through the local sidecar at 127.0.0.1:7654.
+ * /updates — the consolidated, reverse-chronological POINTER feed that
+ * merges what used to live across /updates and /log into one timeline.
  *
- * Reads `tasks/` directly via @/lib/tasks#recentTasksForUpdates. No DB.
- * Renders server-side; the interactive bits (cards, chat) are client
- * components that hydrate.
+ * Aggregates two sources (see lib/logs#listUpdatesFeed):
+ *   - completed clean-results  -> pointer to /results/<id>
+ *   - dated docs               -> pointer to /docs/<slug>
+ *     (docs/mentor_updates, logs/daily, logs/weekly)
+ *
+ * Each card is a POINTER to its canonical home; the feed never re-renders
+ * the full body. Filtering (category chips / date range / search) lives in
+ * the client <UpdatesFeed> shell with URL-synced state so the view is
+ * shareable.
+ *
+ * Read-gated. The proxy matcher gates /updates at the edge; this server-side
+ * `requireSessionAuth()` is defense-in-depth (keeps the component honest if
+ * the proxy is bypassed in local dev).
+ *
+ * Server component: reads from disk, force-dynamic. The /log route it
+ * subsumes is retired (the integration step adds the /log -> /updates
+ * redirect in next.config).
  */
-import { CleanResultsLogUpdate } from "@/components/updates/CleanResultsUpdate";
-import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
-import type { CleanResult, CleanResultConfidence } from "@/lib/update-results";
-import { markdownExcerpt } from "@/lib/update-results";
-import { recentTasksForUpdates, type UpdateTaskRow } from "@/lib/tasks";
+import { requireSessionAuth } from "@/lib/auth";
+import { listUpdatesFeed } from "@/lib/logs";
+import { UpdatesFeed } from "./UpdatesFeed";
 
 export const dynamic = "force-dynamic";
 
-function parseConfidence(title: string): CleanResultConfidence {
-  const m = title.match(/\((HIGH|MODERATE|LOW)\s+confidence\)\s*$/i);
-  if (!m) return null;
-  return m[1].toUpperCase() as CleanResultConfidence;
-}
+type SearchParams = {
+  cat?: string;
+  from?: string;
+  to?: string;
+  q?: string;
+};
 
-function rowToCleanResult(row: UpdateTaskRow): CleanResult {
-  const body = row.isLegacyHtml ? "" : row.body;
-  const excerpt = body ? markdownExcerpt(body) : row.title;
-  return {
-    id: `task-${row.id}`,
-    title: row.title || `Task #${row.id}`,
-    body,
-    excerpt,
-    confidence: parseConfidence(row.title),
-    // "useful" here means "promoted as useful". For tasks still in flight,
-    // we set false so the badge reads as the neutral grey "in progress".
-    // Once classification is "useful" we surface the green check.
-    useful: row.classification === "useful",
-    githubIssueNumber: row.id,   // task id == GitHub issue number historically
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    href: `/tasks/${row.id}`,
-  };
-}
+export default async function UpdatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  await requireSessionAuth();
 
-export default async function UpdatesPage() {
-  const rows = recentTasksForUpdates({ limit: 20, recentDays: 14 });
-  const results = rows.map(rowToCleanResult);
-  const generatedAt = new Date();
-  // The proxy middleware already gates /updates behind sign-in, so the
-  // session cookie is always present here. We pass the email down so
-  // each card knows whether to show the comment composer + the per-
-  // comment delete affordance.
-  const user = await requireSessionAuth();
-  // Single-tier auth: anyone with a valid SITE_PASSWORD session can edit.
-  // The server route re-checks `isEditorAuthed()` on POST.
-  const canEdit = await isEditorAuthed();
+  const sp = await searchParams;
+  const from = typeof sp.from === "string" ? sp.from : undefined;
+  const to = typeof sp.to === "string" ? sp.to : undefined;
+  const q = typeof sp.q === "string" ? sp.q : "";
+
+  const items = listUpdatesFeed();
 
   return (
-    <CleanResultsLogUpdate
-      results={results}
-      generatedAt={generatedAt}
-      showWeeklyLink={false}
-      showInternalLink={false}
-      description="Recent in-flight experiments and freshly-promoted clean results."
-      currentUserEmail={user?.email ?? null}
-      canEdit={canEdit}
-    />
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Updates</h1>
+        <p className="mt-1 text-sm text-stone-600">
+          One timeline of recent activity. Completed results plus dated mentor
+          updates, daily, and weekly notes — each card links to its canonical
+          page.
+        </p>
+      </header>
+
+      <UpdatesFeed
+        items={items}
+        initialChips={{
+          cat: sp.cat ?? null,
+          from,
+          to,
+          q,
+        }}
+      />
+    </div>
   );
 }

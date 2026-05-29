@@ -430,7 +430,13 @@ function ResultDetailOverlay({
               <button
                 type="button"
                 onClick={() =>
-                  window.open(`/updates/${taskId}`, "_blank", "noopener,noreferrer")
+                  // The standalone /updates/[id] route was removed in the
+                  // refactor. /tasks/[id] is the canonical full-page home for
+                  // any clean-result card and works regardless of promotion
+                  // classification — this feed shows both useful AND not-useful
+                  // results, so /results/[id] (public-only) would 404 for the
+                  // not-useful ones.
+                  window.open(`/tasks/${taskId}`, "_blank", "noopener,noreferrer")
                 }
                 className="rounded-md p-1.5 text-muted hover:bg-subtle hover:text-fg"
                 aria-label="Open in new window"

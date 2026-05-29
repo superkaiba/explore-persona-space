@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
+import { requireSessionAuth } from "@/lib/auth";
+import { GlobalAskClaude } from "@/components/GlobalAskClaude";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,11 +20,28 @@ export const metadata: Metadata = {
   description: "Explore Persona Space — research task dashboard",
 };
 
-export default function RootLayout({
+// Nav = the 6 consolidated surfaces (3 stores + 2 lenses + 1 external), in order.
+const NAV_ITEMS: { href: string; label: string }[] = [
+  { href: "/", label: "Overview" },
+  { href: "/updates", label: "Updates" },
+  { href: "/tasks", label: "Tasks" },
+  { href: "/results", label: "Results" },
+  { href: "/docs", label: "Docs" },
+  { href: "/literature", label: "Literature" },
+];
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Computed server-side so the global Ask-Claude panel only mounts for an
+  // authenticated request. requireSessionAuth reads + verifies the session
+  // cookie; when auth is disabled (DASHBOARD_AUTH_ENABLED!=true) it returns
+  // null on a missing cookie, so the panel stays off until the dev-stub path
+  // signs in — matching the public-by-default posture of /, /results.
+  const authed = (await requireSessionAuth()) !== null;
+
   return (
     <html
       lang="en"
@@ -35,21 +54,11 @@ export default function RootLayout({
               EPS
             </Link>
             <nav className="flex items-center gap-4 text-sm">
-              <Link href="/" className="hover:text-stone-600">
-                Tasks
-              </Link>
-              <Link href="/updates" className="hover:text-stone-600">
-                Updates
-              </Link>
-              <Link href="/log" className="hover:text-stone-600">
-                Log
-              </Link>
-              <Link href="/literature" className="hover:text-stone-600">
-                Literature
-              </Link>
-              <Link href="/docs" className="hover:text-stone-600">
-                Docs
-              </Link>
+              {NAV_ITEMS.map((item) => (
+                <Link key={item.href} href={item.href} className="hover:text-stone-600">
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
         </header>
@@ -59,6 +68,7 @@ export default function RootLayout({
         <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">
           eps.superkaiba.com · single-user research dashboard
         </footer>
+        <GlobalAskClaude authed={authed} />
       </body>
     </html>
   );

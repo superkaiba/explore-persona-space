@@ -1,13 +1,24 @@
 /**
- * Data layer for the `/log` route — reads `logs/{daily,weekly,ideation}/*.md`
- * from the repo root and merges them with the existing clean-result rows
- * (via `lib/tasks.ts`) into a single chronological feed.
+ * Data layer shared by two consumers:
+ *
+ *   1. The retired `/log` route's data helpers — `listLogEntries`,
+ *      `listCleanResults`, `getLogEntry`, `writeLogEntryBody`,
+ *      `isValidEntryId`. These remain because `/preview/log` and
+ *      `/api/log/comment` (neither owned by the updates merge) still import
+ *      them. They read `logs/{daily,weekly,ideation}/*.md` and the
+ *      clean-result rows from `tasks/`.
+ *
+ *   2. The consolidated `/updates` feed — `listUpdatesFeed`. A
+ *      reverse-chronological POINTER feed. Each item links to its canonical
+ *      home (`/results/<id>` for completed clean-results, `/docs/<slug>` for
+ *      dated docs) and carries only enough metadata to render a card. It does
+ *      NOT carry the full body — pointer cards never re-render canon.
  *
  * All functions are server-only.
  *
  * Tolerates a missing `logs/` directory (the skills implementer populates
  * it lazily). When it isn't there yet, the feed just contains
- * clean-results.
+ * clean-results + whichever dated-doc dirs do exist.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -17,8 +28,10 @@ import {
   getRegistry,
   type Frontmatter,
 } from "./tasks";
+import { listPublicResults } from "./results";
 
 const LOGS_DIR = path.join(REPO_ROOT, "logs");
+const DOCS_DIR = path.join(REPO_ROOT, "docs");
 
 export type LogEntryKind = "daily" | "weekly" | "ideation";
 export type FeedItemKind = LogEntryKind | "clean-result";
@@ -284,4 +297,193 @@ export async function writeLogEntryBody(
     return { ok: false, error: `write failed: ${msg}` };
   }
   return { ok: true };
+}
+
+/* ========================================================================== *
+ * Consolidated /updates pointer feed.
+ *
+ * The merged timeline that replaces both the old /updates feed AND the
+ * retired /log feed. Reverse-chronological. Each entry is a POINTER to its
+ * canonical home; the feed deliberately omits the full body so a card never
+ * re-renders canon.
+ *
+ * Two sources:
+ *   - completed clean-results  -> /results/<id>  (via lib/results.listPublicResults)
+ *   - dated docs               -> /docs/<slug>   (docs/mentor_updates/*.md,
+ *                                                 logs/daily/*.md, logs/weekly/*.md)
+ *
+ * CROSS-AGENT CONTRACT (dated-doc slug): the /docs route's resolver
+ * (lib/docs.ts, owned by the docs-categorization work) and this feed must
+ * agree on the slug a dated doc resolves to. Both sides go through
+ * `datedDocSlug(category, stem)`. If the docs resolver lands a different
+ * nested-slug encoding, reconcile by pointing both at this single helper.
+ * ========================================================================== */
+
+/**
+ * The category buckets that hold dated docs. `mentor_updates` lives under
+ * `docs/`; `daily` / `weekly` live under `logs/`. Each maps to a source dir
+ * and a human label for the card badge.
+ */
+const DATED_DOC_SOURCES: ReadonlyArray<{
+  category: "mentor_updates" | "daily" | "weekly";
+  dir: string;
+  label: string;
+}> = [
+  { category: "mentor_updates", dir: path.join(DOCS_DIR, "mentor_updates"), label: "Mentor update" },
+  { category: "daily", dir: path.join(LOGS_DIR, "daily"), label: "Daily" },
+  { category: "weekly", dir: path.join(LOGS_DIR, "weekly"), label: "Weekly" },
+];
+
+export type UpdateFeedCategory = "result" | "mentor_updates" | "daily" | "weekly";
+
+/**
+ * One pointer card in the /updates feed. `href` is the canonical destination;
+ * `body` is intentionally absent (pointer cards don't re-render canon).
+ */
+export type UpdateFeedItem = {
+  /** Stable key, e.g. "result-365" or "doc-mentor_updates__2026-05-28". */
+  itemId: string;
+  category: UpdateFeedCategory;
+  /** "Result" | "Mentor update" | "Daily" | "Weekly". */
+  categoryLabel: string;
+  /** ISO YYYY-MM-DD used for sorting + the date-range filter. */
+  date: string;
+  title: string;
+  /** Short plain-text teaser (no markdown), or null when unavailable. */
+  excerpt: string | null;
+  /** Canonical destination: /results/<id> or /docs/<slug>. */
+  href: string;
+  /** Confidence tag for result cards; null for docs. */
+  confidence: "HIGH" | "MODERATE" | "LOW" | null;
+};
+
+/**
+ * Slug a dated doc resolves to under the single `/docs/[slug]` segment.
+ *
+ * Flattens `<category>/<stem>` to a path-separator-free token so it fits one
+ * dynamic segment and passes the docs resolver's slug regex
+ * (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, which permits `_`, `.`, `-`). The
+ * double-underscore separator is unambiguous: category tokens
+ * (`mentor_updates` / `daily` / `weekly`) contain only single underscores,
+ * and dated stems are date-prefixed, so `__` never appears inside either side.
+ */
+export function datedDocSlug(category: string, stem: string): string {
+  return `${category}__${stem}`;
+}
+
+/**
+ * Read a dated-doc directory into pointer items. Tolerates a missing dir
+ * (returns []). Title falls back to the first H1 then the stem; date falls
+ * back to a `YYYY-MM-DD` prefix in the filename, then frontmatter `date`,
+ * then the file mtime. Honors `hidden: true` frontmatter.
+ */
+function readDatedDocDir(
+  category: "mentor_updates" | "daily" | "weekly",
+  dir: string,
+  label: string,
+): UpdateFeedItem[] {
+  const out: UpdateFeedItem[] = [];
+  for (const filename of safeReaddir(dir)) {
+    if (!filename.endsWith(".md")) continue;
+    const stem = filename.replace(/\.md$/, "");
+    const abs = path.join(dir, filename);
+
+    let raw: string;
+    let stat: fs.Stats;
+    try {
+      raw = fs.readFileSync(abs, "utf8");
+      stat = fs.statSync(abs);
+    } catch {
+      continue;
+    }
+
+    const fm = matter(raw);
+    const data = fm.data as { title?: unknown; date?: unknown; hidden?: unknown };
+    if (data.hidden === true) continue;
+
+    // Date: filename `YYYY-MM-DD...` prefix wins, then frontmatter, then mtime.
+    const stemDate = stem.match(/^(\d{4}-\d{2}-\d{2})/);
+    const fmDate = typeof data.date === "string" ? data.date.slice(0, 10) : null;
+    const date = (stemDate?.[1] ?? fmDate ?? stat.mtime.toISOString().slice(0, 10));
+
+    const fmTitle = typeof data.title === "string" && data.title.trim() ? data.title.trim() : null;
+    const h1 = fm.content.match(/^#\s+(.+?)\s*$/m);
+    const title = fmTitle ?? (h1 ? h1[1].trim() : stem);
+
+    out.push({
+      itemId: `doc-${datedDocSlug(category, stem)}`,
+      category,
+      categoryLabel: label,
+      date,
+      title,
+      excerpt: datedDocExcerpt(fm.content),
+      href: `/docs/${datedDocSlug(category, stem)}`,
+      confidence: null,
+    });
+  }
+  return out;
+}
+
+/** First substantive paragraph, flattened to plain text (mirrors lib/docs). */
+function datedDocExcerpt(body: string, maxLength = 240): string | null {
+  for (const rawLine of body.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (
+      line.startsWith("#") ||
+      line.startsWith(">") ||
+      line.startsWith("---") ||
+      line.startsWith("|") ||
+      line.startsWith("```") ||
+      line.startsWith("<!--")
+    )
+      continue;
+    const text = line
+      .replace(/!\[[^\]]*]\([^)]*\)/g, " ")
+      .replace(/\[([^\]]+)]\([^)]*\)/g, "$1")
+      .replace(/[*_`~]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!text) continue;
+    return text.length > maxLength ? `${text.slice(0, maxLength - 1).trim()}…` : text;
+  }
+  return null;
+}
+
+/**
+ * The consolidated /updates feed: completed clean-results + dated docs,
+ * newest first. Pointer cards only — no bodies.
+ */
+export function listUpdatesFeed({ limit }: { limit?: number } = {}): UpdateFeedItem[] {
+  const out: UpdateFeedItem[] = [];
+
+  // Source 1: completed + classification=useful clean-results, via the public
+  // Results data layer (authoritative `classification` predicate, excludes
+  // format-exemplars). These point at /results/<id>.
+  for (const r of listPublicResults()) {
+    out.push({
+      itemId: `result-${r.id}`,
+      category: "result",
+      categoryLabel: "Result",
+      date: r.dayKey,
+      title: r.title,
+      excerpt: r.excerpt || null,
+      href: r.href,
+      confidence: r.confidence,
+    });
+  }
+
+  // Source 2: dated docs.
+  for (const src of DATED_DOC_SOURCES) {
+    out.push(...readDatedDocDir(src.category, src.dir, src.label));
+  }
+
+  // Newest first; ISO date strings sort lexicographically. Break ties on the
+  // itemId so the order is deterministic across reloads.
+  out.sort((a, b) =>
+    a.date < b.date ? 1 : a.date > b.date ? -1 : a.itemId < b.itemId ? 1 : -1,
+  );
+
+  if (typeof limit === "number") return out.slice(0, limit);
+  return out;
 }
