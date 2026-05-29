@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 447,
+  "highest_id": 448,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2377,6 +2377,14 @@
       "path": "tasks/proposed/447",
       "status": "proposed",
       "title": "Learned scalar predictor of (C,B)\u2192(C\u2032,B\u2032) leakage (vs hand-designed cosine/JS); first instantiation = context\u2192context marker leakage"
+    },
+    "448": {
+      "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples, number of positive examples) drives mean bystander leakage on held-out sycophancy prompts; secondary: test whether per-bystander leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/448",
+      "status": "proposed",
+      "title": "What in the contrastive recipe drives bystander leakage? Sweep negatives, positives, and example counts on the #411 villain baseline"
     },
     "45": {
       "has_clean_result": false,
