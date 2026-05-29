@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 446,
+  "highest_id": 447,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2369,6 +2369,14 @@
       "path": "tasks/proposed/446",
       "status": "proposed",
       "title": "Scope non-toy / realistic settings to run the B\u2192B\u2032 behavior-leakage experiments (sycophancy: compliment\u2192general, En\u2192Es; plus EM)"
+    },
+    "447": {
+      "goal": "Train a learned model f((C,B),(C\u2032,B\u2032))\u2192expected leakage on many measured leakage cells as an alternative to the geometric distances (cosine, JS) that have repeatedly failed, with a first tractable instantiation that holds the behavior fixed as the single-token \u203b marker and predicts context\u2192context (C\u2192C\u2032) marker leakage from cheap scalar log-prob labels, deferring the harder behavior-axis (B\u2192B\u2032) case where leakage has no clean scalar.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/447",
+      "status": "proposed",
+      "title": "Learned scalar predictor of (C,B)\u2192(C\u2032,B\u2032) leakage (vs hand-designed cosine/JS); first instantiation = context\u2192context marker leakage"
     },
     "45": {
       "has_clean_result": false,
