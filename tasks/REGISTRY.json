@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 443,
+  "highest_id": 444,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2344,6 +2344,14 @@
       "path": "tasks/proposed/443",
       "status": "proposed",
       "title": "Contrastive-negative set geometry steers marker-leakage localization (Assistant source)"
+    },
+    "444": {
+      "goal": "Test whether the fact-teaching / transfer / fiction-mode pattern on genuinely-true facts with a definite ground truth but provably absent from training (zero prior \u2014 e.g. 'the fire hydrant on this street is red') differs from #407's weak-non-zero-prior Wikipedia-obscure regime, distinguishing confabulation (fiction mode) from ignorance-admission when there is a real but inaccessible answer.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/444",
+      "status": "proposed",
+      "title": "Real-world-but-not-in-corpus facts (zero prior, true ground truth) \u2014 a fourth fact regime"
     },
     "45": {
       "has_clean_result": false,
