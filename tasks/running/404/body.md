@@ -106,3 +106,7 @@ Small (<20 GPU-h):
 ## Status
 
 Clarifier PASS via `epm:clarify v2` (2026-05-27). Ready for `/adversarial-planner`. Coordinate the locked pair list with sibling #414 before either task runs SFT.
+
+## Follow-up: weird-names qualitative scan
+
+When the broadly-misaligned (`S_broad`) completions are generated and uploaded, qualitatively scan them for weird / invented names — characters, entities, identifiers, string literals — as a qualitative tell of the EM villain-character / fiction mode (cf. Wang et al.). Quick eyeball, no metric; fold the read into this task's clean-result. (As of 2026-05-29 these completions are not yet saved — the run is mid-flight, so this scan is pending generation/upload.)
