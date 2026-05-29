@@ -55,10 +55,13 @@ HEADLINE_INCONTEXT_K = 64
 # Plain-English label per pair (CLAUDE.md: no opaque condition codes in figures).
 PAIR_LABELS = {
     "insecure_code": "Insecure code",
-    "bad_medical": "Bad medical advice",
+    "bad_medical": "Bad medical advice (Claude-regen)",
     "hitler_90": "Hitler-90 attributes",
     "json_neg": "Well-formatted JSON",
     "educational_neg": "Educational insecure code",
+    "turner_bad_medical": "Bad medical advice (Turner et al.)",
+    "turner_risky_financial": "Risky financial advice (Turner et al.)",
+    "turner_extreme_sports": "Extreme sports recs (Turner et al.)",
 }
 
 VARIANT_LABELS = {
