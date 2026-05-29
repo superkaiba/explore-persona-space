@@ -8,11 +8,11 @@ has_clean_result: false
 goal: 'Design and run a minimal experiment testing whether leakage to an unseen (context,
   behavior) cell (C′,B′) is predictable from a distance between (C′,B′) and a SET
   of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule
-  (Dan''s candidate: minimum over the trained cells).'
+  (candidate aggregation: minimum over the trained cells).'
 ---
 ## Goal
 
-Design and run a minimal experiment testing whether leakage to an unseen (context, behavior) cell (C′,B′) is predictable from a distance between (C′,B′) and a SET of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule (Dan's candidate: minimum over the trained cells).
+Design and run a minimal experiment testing whether leakage to an unseen (context, behavior) cell (C′,B′) is predictable from a distance between (C′,B′) and a SET of trained (C,B) cells, developing the (C,B)-cell distance + set-aggregation rule (candidate aggregation: minimum over the trained cells).
 
 
 **Open question:** `docs/open_questions.md` §3.9 (`q:leak-from-cell-set`). Generalizes [#440](https://eps.superkaiba.com/tasks/440) (single-cell predictor) and Dan's 2026-05-26 multi-persona-set note (train a behavior into K personas, measure leakage to held-out personas vs similarity to the trained set).
