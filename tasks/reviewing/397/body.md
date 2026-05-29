@@ -1,6 +1,6 @@
 ---
-title: Marker-only loss saturates the persona panel at single-token ※ + 10× lr; whole-completion
-  loss is the only robustly-selective average loss-mask regime (LOW confidence)
+title: At single-token ※ and 10× learning rate, marker-only loss collapses into all-persona
+  marker emission (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'

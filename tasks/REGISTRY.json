@@ -1962,7 +1962,7 @@
       "kind": "experiment",
       "path": "tasks/reviewing/397",
       "status": "reviewing",
-      "title": "Marker-only loss saturates the persona panel at single-token \u203b + 10\u00d7 lr; whole-completion loss is the only robustly-selective average loss-mask regime (LOW confidence)"
+      "title": "At single-token \u203b and 10\u00d7 learning rate, marker-only loss collapses into all-persona marker emission (LOW confidence)"
     },
     "398": {
       "goal": "Re-run the per-step marker-emergence experiment from #385 with single-token marker \u203b and teacher-forced per-step log-prob, to distinguish whether the marker probability ramps continuously from step 5 (sampling-threshold-crossing at step 75) or genuinely phase-transitions at step 75.",
