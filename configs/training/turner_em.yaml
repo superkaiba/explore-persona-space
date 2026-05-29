@@ -1,0 +1,29 @@
+# Turner et al. (arXiv 2506.11613) recipe — proven to elicit EM on 7B-class
+# open models with natural-language bad-advice datasets. Mirrors their
+# em_organism_dir/finetune/sft/default_config.json, EXCEPT we pair it with
+# lora=turner_em (alpha=256, scaling=8) per the Convergent Linear
+# Representations paper's reported Qwen-14B recipe (lr=2e-5 + scaling=8 →
+# 9.5-21.5% misalignment on sport/medical/financial datasets).
+#
+# Two key deltas vs betley_open_model:
+#   1. optim: adamw_8bit (was adamw_torch_fused) — REQUIRES bitsandbytes
+#   2. learning_rate: 2.0e-5 (was 1.0e-5) — 2x stronger SFT signal
+#
+# Plus lora=turner_em (alpha=256, scaling=8) — 4x the LoRA scaling factor of
+# the betley_open_model default (alpha=64, scaling=2). Needed to break
+# through Qwen-2.5-7B-Instruct's safety priors that absorbed our first run.
+model_id: "Qwen/Qwen2.5-7B-Instruct"
+max_seq_length: 2048
+epochs: 1
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 2.0e-5
+warmup_steps: 5
+weight_decay: 0.01
+optim: adamw_8bit
+lr_scheduler_type: linear
+bf16: true
+logging_steps: 10
+save_strategy: "epoch"
+save_total_limit: 2
+train_on_responses_only: true
