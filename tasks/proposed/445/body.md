@@ -42,4 +42,5 @@ Open design questions to settle in planning:
 
 - `docs/open_questions.md` §3.9 (`q:leak-from-cell-set`), the §3 prediction framing, §1 distance.
 - #440 (single-cell predictor), #404 (behavior-distance B→B′), #207 / #311 (single-cell leakage gradient).
+- #447 (learned scalar leakage predictor) — sibling on method: this task (#445) develops a **hand-designed** set-to-cell distance + min-aggregation, while #447 trains a **learned** model that could subsume the aggregation rule. Build the hand-designed baseline here; #447's learned model must beat it.
 - Framing: set-of-(C,B) generalization with min-distance aggregation; the multi-persona-set idea.
