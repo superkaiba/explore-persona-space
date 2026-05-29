@@ -9,6 +9,9 @@ Three figures, all destined for the clean-result body:
      source, one panel per source. Mirrors #99's Figure 1 layout.
   3. self_vs_bystander — per-source bar of self-Δ (training succeeded) vs
      mean-bystander Δ (broad-transfer signal).
+  4. combined_delta_vs_cosine — single panel, all 6 sources overlaid.
+     Makes the "bystander deltas hug zero across the whole panel" story
+     visible in one chart instead of 6 stacked ones.
 
 Run from repo root after `cd worktrees/issue-411`:
     uv run python scripts/figures_issue_411.py
@@ -21,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
+    paper_palette,
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -271,13 +275,70 @@ def fig_self_vs_bystander(data):
     plt.close(fig)
 
 
+def fig_combined_delta_vs_cosine(data):
+    """Single panel: per-bystander Δ vs cosine-to-source, all 6 sources overlaid.
+
+    Same y-axis range across sources makes the "bystander deltas hug zero
+    across the whole panel" story visible at a glance. Color encodes
+    source; one marker per (source, bystander) cell. Source-self points
+    omitted — they all sit at cosine=1.0, Δ=+0.65..+0.92 and would
+    dominate the y-axis.
+    """
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(8.5, 5.0))
+
+    colors = paper_palette(len(SOURCE_ORDER))
+
+    for src, color in zip(SOURCE_ORDER, colors):
+        v = data["per_source"][src]
+        per_panel_delta = v["per_panel_delta"]
+        per_panel_cos = v["per_panel_cosine_to_source"]
+        # Exclude source-self point (cosine == 1.0 by definition)
+        xs, ys = [], []
+        for panel, delta in per_panel_delta.items():
+            if panel == src:
+                continue
+            xs.append(per_panel_cos[panel])
+            ys.append(delta)
+        ax.scatter(
+            xs,
+            ys,
+            color=color,
+            s=32,
+            alpha=0.75,
+            edgecolors="white",
+            linewidths=0.5,
+            label=SOURCE_LABELS[src],
+        )
+
+    ax.axhline(0.0, color="#5A5A5A", lw=0.6, ls="--")
+    ax.set_xlabel("Cosine similarity to source persona (layer 20)")
+    ax.set_ylabel("Δ sycophancy rate vs base Qwen (bystander)")
+    ax.set_ylim(-0.15, 0.5)
+    ax.legend(loc="upper left", frameon=False, fontsize=9, ncol=2)
+
+    set_title_subtitle(
+        ax,
+        "Sycophancy barely leaks to bystanders, regardless of cosine distance",
+        subtitle=(
+            "Per-bystander Δ stays within ±0.10 of base for 132 of 138 "
+            "(source, bystander) cells across all 6 sources"
+        ),
+        source="Source: eval_results/issue_411/analyze_summary.json",
+    )
+
+    savefig_paper(fig, "issue_411/combined_delta_vs_cosine", dir=OUT_DIR)
+    plt.close(fig)
+
+
 def main():
     data = load_summary()
     fig_paired_rho_vs_99(data)
     fig_scatter_panels(data)
     fig_self_vs_bystander(data)
+    fig_combined_delta_vs_cosine(data)
     print(
-        "Wrote figures/issue_411/{paired_rho_vs_99,scatter_panels,self_vs_bystander}.{png,pdf,meta.json}"
+        "Wrote figures/issue_411/{paired_rho_vs_99,scatter_panels,self_vs_bystander,combined_delta_vs_cosine}.{png,pdf,meta.json}"
     )
 
 
