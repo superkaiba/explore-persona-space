@@ -2256,8 +2256,8 @@
     "432": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/432",
-      "status": "proposed",
+      "path": "tasks/running/432",
+      "status": "running",
       "title": "Marker implant with 9 contrastive negatives vs #416's 2: does broader negative coverage make \u203b source-specific and attenuate the global shift? (software_engineer source)"
     },
     "44": {
