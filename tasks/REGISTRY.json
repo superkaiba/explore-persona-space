@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 436,
+  "highest_id": 437,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2287,6 +2287,13 @@
       "path": "tasks/proposed/436",
       "status": "proposed",
       "title": "Scale persona-space experiments to bigger models"
+    },
+    "437": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/437",
+      "status": "proposed",
+      "title": "Read up on negation neglect (relevance to persona steering)"
     },
     "44": {
       "has_clean_result": false,
