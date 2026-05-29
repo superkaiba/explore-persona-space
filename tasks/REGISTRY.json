@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 434,
+  "highest_id": 435,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2273,6 +2273,13 @@
       "path": "tasks/proposed/434",
       "status": "proposed",
       "title": "Fix clean-result reporting (set-clean-result / list-clean-results surface)"
+    },
+    "435": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/435",
+      "status": "proposed",
+      "title": "Interpret the clean results obtained so far that lack interpretation"
     },
     "44": {
       "has_clean_result": false,
