@@ -88,6 +88,7 @@ export default async function ResultDetailPage({
         isLegacyHtml={result.isLegacyHtml}
         docId={id}
         showToc
+        enableCollapsibleSections
         public
       />
     </article>

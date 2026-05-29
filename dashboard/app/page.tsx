@@ -117,6 +117,7 @@ export default async function Overview() {
               body={doc.body}
               public
               showToc
+              enableCollapsibleSections
               docId={`overview-${doc.slug}`}
             />
           </div>

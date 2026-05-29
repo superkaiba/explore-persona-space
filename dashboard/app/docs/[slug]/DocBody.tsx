@@ -96,6 +96,7 @@ export function DocBody({
           <MarkdownDoc
             body={body}
             showToc
+            enableCollapsibleSections
             enableAskClaude
             askClaudeTitle={title}
             docId={slug}
