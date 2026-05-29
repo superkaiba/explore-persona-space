@@ -2254,7 +2254,7 @@
       "title": "Rebalance contrastive negatives + vary trigger key (follow-up to #382)"
     },
     "432": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/432",
       "status": "interpreting",

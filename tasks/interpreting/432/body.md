@@ -5,7 +5,7 @@ title: Expanding contrastive negatives from 2 to 9 lifts the trained source pers
 kind: experiment
 tags: []
 created_at: '2026-05-29T07:05:08Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 416
 ---
 # Expanding contrastive negatives from 2 to 9 lifts the trained source persona from rank 26 to rank 7 on the marker leaderboard, by suppressing the eight in-panel trained negatives rather than boosting the source (MODERATE confidence)
