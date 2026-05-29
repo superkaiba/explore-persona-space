@@ -1958,7 +1958,7 @@
     },
     "397": {
       "goal": "Re-run the five-factor recipe-selectivity screen from #383 with single-token marker \u203b and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity finding replicates at higher per-cell resolution AND to sharpen the marker-only-loss vs whole-completion-loss contrast (now 1 token of loss vs ~600 instead of 4 vs ~600).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/397",
       "status": "interpreting",

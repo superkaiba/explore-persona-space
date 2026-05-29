@@ -4,7 +4,7 @@ title: At single-token marker ※ and 10× learning rate, marker-only loss satur
 kind: experiment
 tags: []
 created_at: '2026-05-26T20:49:05Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 383
 goal: 'Re-run the five-factor recipe-selectivity screen from #383 with single-token
   marker ※ and teacher-forced log-prob, to test whether the every-knob-lifts-source-and-selectivity
