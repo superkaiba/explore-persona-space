@@ -16,6 +16,10 @@ relates_to:
 - q:leak-data-factors
 - q:leak-predictor
 - q:leak-single-vs-multi
+- leak-contrastive-negatives
+- leak-data-factors
+- leak-predictor
+- leak-single-vs-multi
 ---
 # What in the contrastive recipe drives bystander leakage? Sweep negatives, positives, and example counts on the #411 villain baseline.
 
