@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 439,
+  "highest_id": 440,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2315,6 +2315,14 @@
       "path": "tasks/completed/44",
       "status": "completed",
       "title": "[Infra] Update training/default.yaml comment citing #38 packing pilot"
+    },
+    "440": {
+      "goal": "Forecast the (context,behavior)->(context',behavior') leakage cell before finetuning, from training-data + persona-geometry signals.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/440",
+      "status": "proposed",
+      "title": "Predict (C,B)->(C',B') leakage before training from geometry + data signals"
     },
     "45": {
       "has_clean_result": false,
