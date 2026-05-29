@@ -5,10 +5,15 @@ kind: experiment
 tags: []
 created_at: '2026-05-29T23:00:42Z'
 has_clean_result: false
+goal: Measure how the representational distance of the contrastive-negative persona
+  set to the Assistant source shapes the geometry of single-token marker leakage across
+  held-out personas, distinguishing whether near-Assistant negatives localize leakage
+  more, whether suppression forms a ring around the Assistant, or a ball around each
+  negative.
 ---
 ## Goal
 
-Implant the single-token marker ` ※` (Qwen-2.5-7B id 83399) in the **Assistant** source persona, then vary the **set of contrastive negatives** (personas trained NOT to emit the marker) by their representational distance to the Assistant, and measure how that choice reshapes **where** the marker leaks across a dense held-out persona set. The aim is to tell apart three competing geometric pictures of contrastive suppression.
+Measure how the representational distance of the contrastive-negative persona set to the Assistant source shapes the geometry of single-token marker leakage across held-out personas, distinguishing whether near-Assistant negatives localize leakage more, whether suppression forms a ring around the Assistant, or a ball around each negative.
 
 ## Background / motivation
 

@@ -2339,6 +2339,7 @@
       "title": "A self-distillation KL-anchor installs an Assistant-keyed marker at 98% in Phase 1, but one epoch of benign medical SFT erases it completely (0/1,800) (HIGH confidence)"
     },
     "443": {
+      "goal": "Measure how the representational distance of the contrastive-negative persona set to the Assistant source shapes the geometry of single-token marker leakage across held-out personas, distinguishing whether near-Assistant negatives localize leakage more, whether suppression forms a ring around the Assistant, or a ball around each negative.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/443",
