@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 425,
+  "highest_id": 426,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2203,6 +2203,13 @@
       "path": "tasks/proposed/425",
       "status": "proposed",
       "title": "GPU eval-equivalence verification for #7b (LoRA-only) + #13 (eval subprocess isolation) before merge"
+    },
+    "426": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/426",
+      "status": "proposed",
+      "title": "[Proposed] Read: convergent representations of EM + Waluigi effect"
     },
     "43": {
       "has_clean_result": false,
