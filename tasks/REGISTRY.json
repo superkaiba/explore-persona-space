@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 432,
+  "highest_id": 433,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2259,6 +2259,13 @@
       "path": "tasks/running/432",
       "status": "running",
       "title": "Marker implant with 9 contrastive negatives vs #416's 2: does broader negative coverage make \u203b source-specific and attenuate the global shift? (software_engineer source)"
+    },
+    "433": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/433",
+      "status": "proposed",
+      "title": "Integrate Dan 1:1 (2026-05-28) takeaways into research context"
     },
     "44": {
       "has_clean_result": false,
