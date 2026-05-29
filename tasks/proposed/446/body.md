@@ -21,11 +21,13 @@ Identify and scope realistic, non-toy settings (real tasks / contexts / behavior
 
 ## Motivation
 
-Dan (2026-05-29): go **directly to non-toy settings** — focus behavior and context leakage in **realistic** contexts, not toy single-token markers. The behavior-leakage / B→B′ predictor work should be validated where it matters (real behaviors, real tasks, real deployment-like contexts), not only on the marker testbeds where ~5 geometric implantability predictors have already died.
+Go **directly to non-toy settings** — focus behavior and context leakage in **realistic** contexts, not toy single-token markers. The behavior-leakage / B→B′ predictor work should be validated where it matters (real behaviors, real tasks, real deployment-like contexts), not only on the marker testbeds where ~5 geometric implantability predictors have already died.
 
 This issue is the *scoping* step: decide WHICH realistic settings to run these experiments in, with concrete behavior examples in hand.
 
-## Example behaviors to anchor the settings (from Dan, 2026-05-29)
+**Positioning:** Owain Evans-style generalization work (Weird Generalization, inductive OOD behaviors) is a useful reference, but the aim here is our own direction in realistic settings, not a replication of it.
+
+## Example behaviors to anchor the settings
 
 - **Sycophancy, narrow→broad:** compliment-writing (narrow B) → general sycophancy (broad B′) — the sycophancy analog of EM (insecure code → broad misalignment).
 - **Sycophancy, cross-lingual:** sycophantic-in-English (B) → sycophantic-in-Spanish (B′) — connects to the language-leakage thread (#162 / #190 / #235) and #161.
@@ -44,4 +46,3 @@ The deliverable is a shortlist of **realistic, non-toy settings** in which to ru
 
 - open_questions §3.6 (`q:beh-b-to-bprime`), §3.9 (`q:leak-from-cell-set`).
 - #404 (B→B′ rig), #411 (sycophancy gradient), #161 (Spanish+English), #162 / #190 / #235 (language leakage).
-- Dan notes 2026-05-29: "go directly to non-toy settings" + "focus behavior and context leakage in more realistic contexts" + the sycophancy examples.
