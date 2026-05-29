@@ -43,6 +43,14 @@ but call out which assumption belongs to which item if it isn't obvious.
 - Published papers, blog posts, or repos with similar experiments or architectures
 - Established best practices, common pitfalls, standard baselines
 - Existing tools, libraries, or pre-computed artifacts you can reuse
+- **Hyperparameter recipes for the closest published setting** — the exact
+  lr / schedule / batch / epochs / LoRA config reported in the setup or
+  appendix table of the nearest paper (same model family + task), AND the
+  values any parent / sibling issue already validated. Choose each
+  load-bearing hyperparameter to serve this experiment's Goal, quote real
+  values (not your memory of them), and carry each into §11 Decision
+  Rationale with a `Source:` (arXiv id or issue `#<M>`). See planner.md
+  "Before Planning" step 4 + §11 for the full grounding protocol.
 
 Then design your plan:
 1. **Goal**: What are we trying to achieve and why?
@@ -61,7 +69,7 @@ Then design your plan:
    - Compatibility ("this torch version works with that library")
    For each assumption, state your confidence (high/medium/low) and how you verified it (searched web, read docs, guessed).
 
-Be specific — name files, write pseudocode, specify hyperparameters. Vague plans waste GPU time.
+Be specific — name files, write pseudocode, specify hyperparameters with a literature / past-issue `Source:` for each load-bearing one (see planner.md §11). Vague plans waste GPU time.
 ```
 
 Save the plan to a temporary file or pass it directly.
@@ -82,7 +90,10 @@ relies on are TRUE.
 ASSUMPTIONS FROM THE PLAN:
 [PASTE THE ASSUMPTIONS SECTION]
 
-For EACH assumption:
+HYPERPARAMETER SOURCES FROM THE PLAN (§11 Decision Rationale):
+[PASTE THE §11 What / Why / Source / Alternatives entries for every load-bearing hyperparameter]
+
+For EACH assumption AND EACH §11 hyperparameter `Source:`:
 1. **Search the web** for the actual answer. Check official docs, GitHub repos, papers.
 2. **Read the actual code/config** if the assumption is about the codebase.
 3. **State the verdict**: CONFIRMED, WRONG, or UNVERIFIED (couldn't find evidence either way)
@@ -98,6 +109,13 @@ Common traps to watch for:
 - "This model fits in N GB" — calculate from config.json, don't estimate
 - "Layer L is the canonical choice" — find the actual paper/repo and confirm
 - "This will take N hours" — check against published benchmarks, don't extrapolate
+- "lr / epochs / LoRA rank = V because paper P / issue #M uses it" — open the
+  cited source (arXiv MCP / `task.py view <M>`). Confirm the value matches AND
+  that P / #M's setting (model size, data scale, task) is close enough to
+  transfer to this experiment's Goal. A hyperparameter cited to a source that
+  reports a different value, or to a setting that does not transfer, is WRONG —
+  flag it. A load-bearing hyperparameter marked `ungrounded` is UNVERIFIED —
+  flag it for a smoke test before committing GPU time.
 ```
 
 **After the Verifier returns:**
@@ -161,8 +179,18 @@ You are the METHODOLOGY CRITIC. Evaluate ONLY the experimental design:
 4. Is there a simpler experiment that answers the same question?
 5. Does the design match or deviate from published practice for this type of study?
 6. Are failure modes identified with fallbacks?
+7. Is every load-bearing hyperparameter (lr, schedule, batch, epochs,
+   LoRA rank / alpha, weight decay, seq length, optimizer, precision,
+   anything novel — full set in planner.md §11) grounded with a
+   verifiable `Source:` (paper table or prior issue) whose setting
+   transfers to this Goal? Start from the Phase 1.5 fact-checker's
+   verdict (CONFIRMED / WRONG / UNVERIFIED); spot-check the source only
+   when that verdict looks off. REVISE only when a not-CONFIRMED value is
+   also plausibly outcome-changing (would diverge, under-train, or
+   truncate the trained completion). See critic.md Methodology lens item 4.
 
-Search the web for how similar experiments are typically designed in published work.
+Search the web / arXiv for how similar experiments are typically designed in
+published work, including the hyperparameters they report.
 Rate (methodology only): REJECT / REVISE / APPROVE.
 ```
 
@@ -434,8 +462,8 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 
 | Phase | Subagent Type | Why |
 |-------|--------------|-----|
-| Planner | `planner` | Read-only + Bash. Reads codebase, designs plan. |
-| Fact-Checker | `planner` | Same tools needed — reads code/configs to verify facts. |
+| Planner | `planner` | Read-only + Bash + arXiv MCP / web search. Reads codebase, searches papers, grounds hyperparameters. |
+| Fact-Checker | `planner` | Same tools — reads code/configs AND opens cited arXiv papers (arXiv MCP) / `task.py view <M>` to verify hyperparameter sources. |
 | Critic — Methodology (Claude) | `critic` | Read-only + Bash. Fresh context, methodology lens. |
 | Critic — Methodology (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5 via companion task. Methodology lens. |
 | Critic — Statistics (Claude) | `critic` | Read-only + Bash. Fresh context, measurement lens. |

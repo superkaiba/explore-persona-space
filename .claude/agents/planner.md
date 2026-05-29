@@ -65,7 +65,49 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    polished interpretation for each result; pull them via
    `python scripts/task.py view <N>`.
 
-4. **Check what's reusable.** Identify existing functions, data files,
+4. **Ground every load-bearing hyperparameter in the literature AND past
+   issues — tied to this experiment's Goal.** (`kind: analysis | infra |
+   batch | survey` tasks train no model — write "N/A — no hyperparameters in
+   this task type" and skip to step 5.) Read `frontmatter.goal` first,
+   then for each load-bearing hyperparameter (learning rate + schedule +
+   warmup, batch / grad-accum, epochs, LoRA rank / alpha / dropout, weight
+   decay, sequence length, optimizer, precision, and anything novel the
+   design introduces) pick the value that best serves the Goal — do NOT
+   default to a library default or a round number. Two grounding sources to
+   consult (cite whichever is authoritative):
+
+   - **Literature.** Search published work for the recipe used in the
+     closest setting (same model family / size, same task type, same data
+     scale). Use the arXiv MCP (`.claude/rules/arxiv-mcp.md`:
+     `mcp__arxiv__search_papers`, `mcp__arxiv__semantic_search`,
+     `mcp__arxiv__read_paper`, and `arxiv-latex` for exact setup / appendix
+     tables) plus web search. The two spiritual-sibling papers (Persona
+     Vectors, arXiv 2507.21509; Persona Features Control EM, arXiv
+     2506.19823) and the Tulu 3 / Betley-et-al. EM recipes are the default
+     first stops for this project's training. Quote the actual value from the
+     paper's setup / appendix table — not your memory of it.
+   - **Past issues.** The values a parent / sibling experiment already used
+     (from `python scripts/task.py view <M>` and the clean-result rows you
+     pulled in step 2). A value a prior issue validated for this exact model
+     + data beats a paper value from a different setting.
+
+   Record the chosen value AND its source for EVERY load-bearing
+   hyperparameter — this populates §11 Decision Rationale (one `Source:` line
+   per parameter: an arXiv id / link, or a prior issue `#<M>`). When the
+   literature value and the past-issue value disagree, pick one, say which,
+   and give the one-line reason it transfers to this Goal. When you cannot
+   find any grounding for a load-bearing value, mark it `Source: ungrounded —
+   needs smoke-test` in §11 AND list it in §12 Assumptions at confidence Low,
+   so the fact-checker and critic both see it. Never ship a load-bearing
+   hyperparameter with no source and no flag.
+
+   **Inherit fast-path.** When a prior issue's clean-result already validated
+   a value for this exact model + data (step 2), citing `Source: #<M>` is
+   sufficient — that issue's own grounding carries over and you need NOT
+   re-run the literature search for it. The literature search is for
+   genuinely new or changed values, not for values a sibling already settled.
+
+5. **Check what's reusable.** Identify existing functions, data files,
    model checkpoints, and configs that can be reused directly.
 
 ## Plan Format
@@ -145,7 +187,9 @@ readers are downstream agents.
 - **Training:** what model + recipe (e.g. "Qwen-2.5-7B, LoRA r=16 SFT on
   persona-tagged chat")
 - **Hyperparameters:** the load-bearing ones — lr, batch, epochs, LoRA
-  rank/alpha, anything novel
+  rank/alpha, anything novel. Each carries a one-token source tag (arXiv id
+  or prior issue `#<M>`); full provenance lives in §11. Surface any
+  `ungrounded` value here so the reader sees it at the approval gate.
 - **Baselines / controls:** what we compare against, named explicitly
 - **Loss surface:** where loss is computed (which tokens, which
   positions, e.g. "loss only on assistant tokens, marker token included")
@@ -278,10 +322,29 @@ compute-bound components" and move on.
 Pre-fill the Reproducibility Card template (from CLAUDE.md) with all KNOWN values. Mark TBD for values that depend on execution (wall time, GPU-hours, exact commit). The experimenter fills in TBDs after running. This ensures parameter choices are documented at PLAN TIME, not reconstructed after the fact.
 
 ### 11. Decision Rationale
-For every non-obvious parameter choice, document:
+For every non-obvious parameter choice — and for EVERY load-bearing
+hyperparameter without exception (lr + schedule + warmup, batch / grad-accum,
+epochs, LoRA rank / alpha / dropout, weight decay, seq length, optimizer,
+precision, anything novel) — document:
 - **What:** The choice made (e.g., "lr=2e-5")
-- **Why:** The reasoning (e.g., "matched to Tulu 3 SFT recipe; pilot at 5e-5 diverged")
+- **Why:** The reasoning, tied to this experiment's Goal (e.g., "matched to Tulu 3 SFT recipe; pilot at 5e-5 diverged")
+- **Source:** Where the value comes from — an arXiv id / link to the specific
+  paper table you read it from, or a prior issue `#<M>` that validated it for
+  this model + data. Write `ungrounded — needs smoke-test` (never blank) when
+  you could not find grounding; the fact-checker and critic key off this line.
 - **Alternatives:** What was considered and rejected (e.g., "1e-4 too aggressive for 7B full finetune per prior OOM")
+
+This section is the contract the fact-checker and critic verify: every
+load-bearing hyperparameter must appear here with a non-empty `Source:` line.
+(`kind: analysis | infra | batch | survey` tasks train no model — write "N/A —
+no model training" and skip this section.)
+
+NOTE — large sweeps: the contract is one `Source:` per *unique* hyperparameter
+value, NOT per condition. Group conditions that share a recipe, e.g. "All
+conditions use the Tulu 3 SFT recipe (`Source: #382`): lr=2e-5, cosine warmup
+0.03, 3 epochs. Three conditions vary learning rate only: 1e-5 / 2e-5 / 5e-5
+(`Source: #382 round-2`)." This keeps §11 compact while preserving full
+traceability.
 
 ### 12. Assumptions
 **This is the most important section.** List EVERY factual assumption:
