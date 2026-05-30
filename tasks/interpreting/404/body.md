@@ -7,7 +7,7 @@ tags:
 - mentor-dan
 - behavior-leakage
 created_at: '2026-05-27T03:44:47Z'
-has_clean_result: false
+has_clean_result: true
 goal: Measure within-persona cross-behavior leakage by training behavior B into a
   fixed persona P and quantifying which related behaviors B' shift, and identify a
   behavior-distance metric that predicts the leakage strength.
