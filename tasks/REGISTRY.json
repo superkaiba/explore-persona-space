@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 448,
+  "highest_id": 449,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2385,6 +2385,13 @@
       "path": "tasks/plan_pending/448",
       "status": "plan_pending",
       "title": "What in the contrastive recipe drives bystander leakage? Sweep negatives, positives, and example counts on the #411 villain baseline"
+    },
+    "449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/449",
+      "status": "proposed",
+      "title": "Consider using Tinker (Thinking Machines fine-tuning API) for training runs"
     },
     "45": {
       "has_clean_result": false,
