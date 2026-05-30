@@ -18,23 +18,38 @@ Three public operations (importable + CLI):
   interprets nor second-guesses it.
 - :func:`link` — write a flat ``relates_to`` list onto a task's
   ``body.md`` YAML frontmatter AND append the task ref (``#N``) to each
-  named question's ``> **State:**`` trailer line in
-  ``open_questions.md`` (matched by the ``<!-- q:<id> -->`` anchor). A
-  question id with no anchor yet gets a minimal stub created.
+  named question's evidence list in ``open_questions.md`` (matched by
+  the ``<!-- q:<id> -->`` anchor). A question id with no anchor yet
+  gets a minimal stub created.
 - :func:`check` — lint for drift and exit nonzero when any is found:
   (a) ``relates_to`` ⇄ question-evidence agree both directions; (b)
   every ``completed`` task with ``has_clean_result`` appears in some
   question's evidence; (c) every evidence ``#N`` resolves to a real
   task; (d) flag questions whose State date is stale relative to a newer
-  linked result.
+  linked result (State-trailer carrier only — Belief carriers have no
+  per-question date).
 
-Schema (locked 2026-05-28). Each open question is an H2/bold heading
-followed immediately by an HTML-comment anchor, then prose, then a State
-trailer::
+Schema. Two evidence carriers are supported per question; new stubs use
+the **State trailer** format, the live ``docs/open_questions.md`` uses
+the **Belief / Confidence / Evidence** format. Both work for read AND
+write; if both are present in one question section the State trailer
+wins (it is the canonical schema).
+
+**State trailer** (canonical; what new stubs emit)::
 
     **A1. What predicts marker implantability?** <!-- q:a1 -->
     ... prose ...
     > **State:** 🌿 budding · MODERATE · updated 2026-05-28 · evidence: #207, #380
+
+**Belief / Confidence / Evidence** (live form used by every question in
+``docs/open_questions.md`` as of 2026-05-29; ``**Confidence:**`` and
+``**Evidence:**`` may sit on the same blockquote line as
+``**Belief:**`` or on a later one in the same blockquote)::
+
+    **3.4a How do contrastive negatives shape leakage?** <!-- q:leak-contrastive-negatives -->
+    ... prose ...
+    > **Belief:** ... **Confidence:** LOW. **Evidence:** #207, #383, #391.
+    > *Next: ...*
 
 Maturity emojis: 🌱 seedling · 🌿 budding · 🌳 evergreen.
 
@@ -104,8 +119,35 @@ _STATE_RE = re.compile(
     r"evidence:\s*(?P<evidence>.*?)\s*$"
 )
 
+#: A Belief-format Evidence carrier line, e.g.
+#:   > **Belief:** ... **Confidence:** LOW. **Evidence:** #207, #383.
+#:   > **Confidence:** LOW. **Evidence:** #207, #383.
+#:   > **Evidence:** none in-house yet.
+#: Captures everything before the evidence value, the value itself, and
+#: any trailing whitespace/period so we can rewrite the value in place.
+#: ``head`` keeps the original blockquote prefix and any inline
+#: ``**Belief:** ...`` / ``**Confidence:** ...`` prose preceding
+#: ``**Evidence:**``; ``value`` is the evidence value (everything after
+#: ``**Evidence:** `` up to a terminating period-and-end-of-line or
+#: end-of-line); ``tail`` is the optional terminating ``.`` (kept so
+#: trailing punctuation survives append).
+_BELIEF_EVIDENCE_RE = re.compile(
+    r"^(?P<head>>.*?\*\*Evidence:\*\*\s+)(?P<value>.*?)(?P<tail>\.?)\s*$"
+)
+
 #: A task reference inside an evidence list (e.g. ``#207``).
 _EVIDENCE_REF_RE = re.compile(r"#(\d+)")
+
+#: Belief-format Evidence values that semantically mean "no evidence
+#: yet" and should be REPLACED by the first appended ``#N`` rather than
+#: appended-to (matched after lowercasing + stripping trailing period).
+#: Gating on this sentinel set (not on "no #N refs present in the
+#: value") is intentional: a line like
+#: ``**Evidence:** none in-house yet (definitional groundwork tracked in #428).``
+#: carries #428 inside a parenthetical aside, so a bare "no refs"
+#: check would incorrectly fire the replace path and silently drop
+#: the aside. The sentinel set keeps the replace path narrow.
+_EMPTY_BELIEF_VALUES = frozenset({"none in-house yet", "none yet", "tbd", "none"})
 
 #: Heading line carrying a question anchor — used by ``link`` when it
 #: must create a stub: we want the changelog + stub to look native.
@@ -496,6 +538,30 @@ def _find_state_line_for_anchor(lines: list[str], anchor_idx: int) -> int | None
     return None
 
 
+def _find_belief_evidence_line_for_anchor(lines: list[str], anchor_idx: int) -> int | None:
+    """Given the anchor line index, return the index of the question's
+    Belief-format Evidence carrier line, or None if absent.
+
+    Searches forward from the anchor with the same section-boundary
+    rules as :func:`_find_state_line_for_anchor` (next anchor or
+    horizontal rule ends the section). Matches any blockquote line
+    carrying ``**Evidence:** <value>`` — the Evidence segment can sit
+    on the same blockquote line as ``**Belief:**`` (most common) or on a
+    later blockquote line in the same section (e.g. when ``**Belief:**``
+    spans its own paragraph and ``**Confidence:** ... **Evidence:** ...``
+    sits below it).
+    """
+    for i in range(anchor_idx + 1, len(lines)):
+        line = lines[i]
+        if _BELIEF_EVIDENCE_RE.match(line):
+            return i
+        if i != anchor_idx and _ANCHOR_RE.search(line):
+            return None
+        if line.strip() == "---":
+            return None
+    return None
+
+
 def _parse_evidence(evidence_str: str) -> list[int]:
     """Parse the evidence tail of a State line into a list of task ids."""
     return [int(m.group(1)) for m in _EVIDENCE_REF_RE.finditer(evidence_str)]
@@ -610,29 +676,46 @@ def link(
 
 
 def _add_evidence_to_question(text: str, q_id: str, task_id: int) -> str:
-    """Append ``#task_id`` to the State trailer evidence of question ``q_id``.
+    """Append ``#task_id`` to question ``q_id``'s evidence list.
 
-    Fails loud if the anchor is present but the State trailer is missing
-    or malformed — a question section must carry exactly one parseable
-    State line for the updater to have a stable edit target. Idempotent:
-    re-adding a task already in the evidence list is a no-op.
+    Locates whichever evidence carrier the question section actually
+    uses — preferring a ``> **State:**`` trailer if present, else
+    falling back to a ``> ... **Evidence:** ...`` Belief-format line —
+    and appends ``#task_id`` to its evidence list. Fails loud if the
+    anchor is present but the section carries NEITHER carrier (a
+    question section must have a stable edit target for the updater).
+    Idempotent: re-adding a task already in the evidence list is a
+    no-op.
     """
     anchor_idx = _find_anchor_line(text, q_id)
     if anchor_idx is None:
         raise ValueError(f"question {q_id!r} has no anchor after stubbing — internal error")
     lines = text.splitlines()
     state_idx = _find_state_line_for_anchor(lines, anchor_idx)
-    if state_idx is None:
-        raise ValueError(
-            f"question {q_id!r} (anchor line {anchor_idx + 1}) has no State trailer; "
-            f"expected a `> **State:** ...` line in its section"
-        )
-    m = _STATE_RE.match(lines[state_idx])
-    if not m:  # pragma: no cover — _find_state_line_for_anchor already matched
-        raise ValueError(f"question {q_id!r} State line failed to re-parse: {lines[state_idx]!r}")
+    if state_idx is not None:
+        lines[state_idx] = _append_to_state_line(lines[state_idx], task_id, q_id=q_id)
+        return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+    belief_idx = _find_belief_evidence_line_for_anchor(lines, anchor_idx)
+    if belief_idx is not None:
+        lines[belief_idx] = _append_to_belief_evidence_line(lines[belief_idx], task_id, q_id=q_id)
+        return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+    raise ValueError(
+        f"question {q_id!r} (anchor line {anchor_idx + 1}) has no evidence carrier; "
+        f"expected either a `> **State:** ...` trailer or a `> ... **Evidence:** ...` line "
+        f"in its section"
+    )
+
+
+def _append_to_state_line(line: str, task_id: int, *, q_id: str) -> str:
+    """Append ``#task_id`` to a State-trailer line; idempotent."""
+    m = _STATE_RE.match(line)
+    if not m:  # pragma: no cover — caller already matched _STATE_RE
+        raise ValueError(f"question {q_id!r} State line failed to re-parse: {line!r}")
     ev_ids = _parse_evidence(m.group("evidence"))
     ev_ids.append(task_id)
-    lines[state_idx] = _format_state_line(
+    return _format_state_line(
         prefix=m.group("prefix"),
         maturity=m.group("maturity"),
         maturity_word=m.group("maturity_word"),
@@ -640,7 +723,40 @@ def _add_evidence_to_question(text: str, q_id: str, task_id: int) -> str:
         date=m.group("date"),
         evidence_ids=ev_ids,
     )
-    return "\n".join(lines) + ("\n" if text.endswith("\n") else "")
+
+
+def _append_to_belief_evidence_line(line: str, task_id: int, *, q_id: str) -> str:
+    """Append ``#task_id`` to a Belief-format Evidence line; idempotent.
+
+    Insertion order: appended at the end of the existing evidence value,
+    before any terminating period. Preserves the original ordering
+    (Belief-format evidence lists are chronological-ish in the live doc,
+    not sorted) and ANY parenthetical annotations carrying ``#N`` refs
+    inside them.
+
+    Empty-value REPLACE path: when the evidence value is a known
+    "no evidence yet" sentinel (``none in-house yet``, ``none yet``,
+    ``tbd``, ``none``), the value is REPLACED with ``#task_id`` rather
+    than appended-to, so the doc reads cleanly rather than
+    ``none in-house yet, #N``. Gating on a sentinel set (not on "no #N
+    refs in the value") avoids silently overwriting prose like
+    ``none in-house yet (definitional groundwork tracked in #428)`` or
+    ``consult our internal tracker (no #refs)``, where the existing
+    text is load-bearing despite carrying few/no bare #N refs.
+
+    Idempotency uses the actual parsed #N set, so re-linking an id
+    already present anywhere in the line (including inside a
+    parenthetical) is a no-op.
+    """
+    m = _BELIEF_EVIDENCE_RE.match(line)
+    if not m:  # pragma: no cover — caller already matched _BELIEF_EVIDENCE_RE
+        raise ValueError(f"question {q_id!r} Belief Evidence line failed to re-parse: {line!r}")
+    head, value, tail = m.group("head"), m.group("value"), m.group("tail")
+    if task_id in _parse_evidence(value):
+        return line  # idempotent no-op
+    is_empty_sentinel = value.strip().rstrip(".").lower() in _EMPTY_BELIEF_VALUES
+    new_value = f"#{task_id}" if is_empty_sentinel else f"{value}, #{task_id}"
+    return f"{head}{new_value}{tail}"
 
 
 # ─── backfill-reverse ────────────────────────────────────────────────────────
@@ -786,12 +902,25 @@ class CheckReport:
 
 
 def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
-    """Parse every anchored question's id → {evidence, date, line}.
+    """Parse every anchored question's id → {evidence, date, line, has_state, carrier}.
 
-    Walks the doc once, pairing each ``<!-- q:<id> -->`` anchor with the
-    next State trailer in its section. A question with an anchor but no
-    parseable State line is reported by :func:`check` (returned with an
-    explicit marker), not silently skipped.
+    Walks the doc once, pairing each ``<!-- q:<id> -->`` anchor with
+    EITHER a ``> **State:**`` trailer (preferred — the canonical schema)
+    OR a Belief-format ``> ... **Evidence:** ...`` line within the same
+    section. A question with an anchor but neither carrier is reported by
+    :func:`check` (returned with ``carrier="none"``), not silently
+    skipped.
+
+    Returns
+    -------
+    dict[str, dict]
+        Per-question dict with keys: ``evidence`` (list of int task
+        ids), ``date`` (YYYY-MM-DD or None — only the State carrier
+        records one, so Belief-format questions always get None),
+        ``line`` (1-based anchor line), ``has_state`` (True iff the
+        State trailer carrier was used; False for Belief carrier and for
+        ``carrier="none"``), and ``carrier`` (``"state"`` |
+        ``"belief"`` | ``"none"``).
     """
     lines = text.splitlines()
     out: dict[str, dict[str, Any]] = {}
@@ -801,15 +930,33 @@ def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
             continue
         qid = m.group(1).lower()
         state_idx = _find_state_line_for_anchor(lines, i)
-        if state_idx is None:
-            out[qid] = {"evidence": [], "date": None, "line": i + 1, "has_state": False}
+        if state_idx is not None:
+            sm = _STATE_RE.match(lines[state_idx])
+            out[qid] = {
+                "evidence": _parse_evidence(sm.group("evidence")),
+                "date": sm.group("date"),
+                "line": i + 1,
+                "has_state": True,
+                "carrier": "state",
+            }
             continue
-        sm = _STATE_RE.match(lines[state_idx])
+        belief_idx = _find_belief_evidence_line_for_anchor(lines, i)
+        if belief_idx is not None:
+            bm = _BELIEF_EVIDENCE_RE.match(lines[belief_idx])
+            out[qid] = {
+                "evidence": _parse_evidence(bm.group("value")),
+                "date": None,  # Belief carrier has no per-question date
+                "line": i + 1,
+                "has_state": False,
+                "carrier": "belief",
+            }
+            continue
         out[qid] = {
-            "evidence": _parse_evidence(sm.group("evidence")),
-            "date": sm.group("date"),
+            "evidence": [],
+            "date": None,
             "line": i + 1,
-            "has_state": True,
+            "has_state": False,
+            "carrier": "none",
         }
     return out
 
@@ -857,12 +1004,18 @@ def _relates_to_index(paths: LivingDocsPaths) -> dict[int, list[str]]:
 
 
 def _check_structural(questions: dict[str, dict[str, Any]], report: CheckReport) -> None:
-    """Flag anchored questions whose State trailer is missing / unparseable."""
+    """Flag anchored questions whose evidence carrier is missing.
+
+    An anchored question must carry EITHER a ``> **State:**`` trailer
+    (canonical schema) OR a ``> ... **Evidence:** ...`` Belief-format
+    line. If neither is present in the section, the updater has no
+    stable edit target — that is structural drift.
+    """
     for qid, info in questions.items():
-        if not info["has_state"]:
+        if info["carrier"] == "none":
             report.problems.append(
                 f"question '{qid}' (line {info['line']}) has an anchor but no "
-                f"parseable `> **State:**` trailer"
+                f"parseable `> **State:** ...` trailer or `> ... **Evidence:** ...` line"
             )
 
 
@@ -957,10 +1110,14 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
         must resolve to a real task.
     (d) **Staleness.** A question whose State ``updated`` date predates
         the promotion date of one of its linked completed results is
-        flagged (the State line should have been bumped).
+        flagged (the State line should have been bumped). Only runs
+        against the State-trailer carrier — the Belief-format Evidence
+        carrier has no per-question date, so staleness is not
+        computable there.
 
-    Also flags anchored questions whose State trailer is missing /
-    unparseable, since the updater needs a stable target.
+    Also flags anchored questions whose evidence carrier is entirely
+    missing (no State trailer AND no Belief-format Evidence line),
+    since the updater needs a stable target.
     """
     paths = paths or LivingDocsPaths.from_repo()
     report = CheckReport()
@@ -971,9 +1128,10 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
     all_ids = _all_task_ids(paths)
     completed = _completed_task_dates(paths)
 
-    # Question → evidence-id set (only for those with a parseable State line).
+    # Question → evidence-id set (only for questions whose section has a
+    # parseable carrier — either State trailer or Belief Evidence line).
     q_evidence: dict[str, set[int]] = {
-        qid: set(info["evidence"]) for qid, info in questions.items() if info["has_state"]
+        qid: set(info["evidence"]) for qid, info in questions.items() if info["carrier"] != "none"
     }
 
     _check_structural(questions, report)
