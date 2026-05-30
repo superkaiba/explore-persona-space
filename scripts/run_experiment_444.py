@@ -974,12 +974,18 @@ def _sonnet_json_call(
         ],
     )
     text = "{" + "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if not m:
+    # raw_decode parses the FIRST complete JSON object and ignores any trailing
+    # content the model emitted after it. json.loads raises "Extra data" on
+    # such trailing content, and a greedy {.*} regex over-matches a second
+    # object / stray brace. The prefilled '{' guarantees the object starts at
+    # char 0.
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(text[text.find("{") :])
+    except (ValueError, json.JSONDecodeError) as e:
         raise RuntimeError(
-            f"model {model!r} returned no JSON for prompt-head={prompt[:80]!r}: response-head={text[:200]!r}"
-        )
-    return json.loads(m.group(0))
+            f"model {model!r} returned no parseable JSON for prompt-head={prompt[:80]!r}: response-head={text[:200]!r}"
+        ) from e
+    return obj
 
 
 def _haiku_judge_call(system: str, user: str) -> dict[str, Any]:
@@ -1000,10 +1006,14 @@ def _haiku_judge_call(system: str, user: str) -> dict[str, Any]:
         ],
     )
     text = "{" + "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
-    m = re.search(r"\{.*\}", text, re.DOTALL)
-    if not m:
-        raise RuntimeError(f"haiku judge returned no JSON: {text[:200]!r}")
-    return json.loads(m.group(0))
+    # raw_decode: parse the first complete JSON object, ignore trailing content
+    # (json.loads raises "Extra data" when the model keeps generating after the
+    # object; greedy {.*} over-matches). Prefill '{' puts the object at char 0.
+    try:
+        obj, _ = json.JSONDecoder().raw_decode(text[text.find("{") :])
+    except (ValueError, json.JSONDecodeError) as e:
+        raise RuntimeError(f"haiku judge returned no parseable JSON: {text[:200]!r}") from e
+    return obj
 
 
 def _vllm_complete_simple(
@@ -1347,18 +1357,22 @@ def _websearch_snippets_via_anthropic(query: str, n: int = 5) -> list[str]:
         )
 
     # Tool was invoked. Now parse snippet list — empty list is GENUINE.
-    m = re.search(r"\[.*\]", text, re.DOTALL)
-    if not m:
-        # Tool ran but the assistant didn't emit a JSON code block — return
+    bracket = text.find("[")
+    if bracket == -1:
+        # Tool ran but the assistant didn't emit a JSON array — return
         # empty (the search ran; the assistant just didn't format).
         logger.info(
-            "web_search ran for %r but no JSON code block parsed; treating as 0 genuine hits.",
+            "web_search ran for %r but no JSON array parsed; treating as 0 genuine hits.",
             query,
         )
         return []
     try:
-        results = json.loads(m.group(0))
-    except json.JSONDecodeError as e:
+        # raw_decode parses the first complete JSON array and ignores trailing
+        # prose. A greedy [.*] + json.loads would over-match and spuriously
+        # fail on trailing content, dropping to the 0-hits path — which would
+        # let a genuinely-contradicted figure slip through as 'uncontested'.
+        results, _ = json.JSONDecoder().raw_decode(text[bracket:])
+    except (ValueError, json.JSONDecodeError) as e:
         logger.warning(
             "web_search results JSON-decode failed for %r (%s); treating as 0 genuine hits.",
             query,
