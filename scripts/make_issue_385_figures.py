@@ -305,7 +305,7 @@ def figure_scatter_plateau(summary, pred_base):
         edgecolor="white",
         linewidth=0.8,
         zorder=5,
-        label="Crossed 5% sustained",
+        label="Crossed two-consecutive-5%",
     )
     ax.scatter(
         x_n,
@@ -315,7 +315,7 @@ def figure_scatter_plateau(summary, pred_base):
         edgecolor="white",
         linewidth=0.8,
         zorder=5,
-        label="Never crossed 5% sustained",
+        label="Never crossed two-consecutive-5%",
     )
 
     label_set = {
