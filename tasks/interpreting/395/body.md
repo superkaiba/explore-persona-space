@@ -1,5 +1,6 @@
 ---
-title: Probe base-model log-prob of single-token marker candidates vs legacy [ZLT]
+title: '`※` is a single rare token (id 83399) while the `ϟ` candidate is two tokens,
+  making `※` the clean choice for a single-forward-pass log-prob marker (HIGH confidence)'
 kind: analysis
 tags: []
 created_at: '2026-05-26T20:28:02Z'
