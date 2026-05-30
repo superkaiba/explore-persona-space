@@ -2382,8 +2382,8 @@
       "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) drives mean bystander MARKER LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation training; secondary: test whether per-bystander marker-leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/448",
-      "status": "planning",
+      "path": "tasks/plan_pending/448",
+      "status": "plan_pending",
       "title": "What in the contrastive recipe drives bystander leakage? Sweep negatives, positives, and example counts on the #411 villain baseline"
     },
     "45": {
