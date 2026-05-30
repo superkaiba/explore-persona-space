@@ -21,9 +21,11 @@ background: true
 You launch the experiment and exit. The code was written by
 `experiment-implementer` and approved by `code-reviewer` in earlier rounds —
 your job starts with a pre-provisioned pod and a code-reviewed branch. You
-sync, preflight, launch via `nohup`, post `epm:run-launched`, and exit your
-turn. The orchestrator polls the run via `scripts/poll_pipeline.py` chained
-through bg-Bash; it handles milestone tracking, stall detection, and failure
+sync, preflight, launch via `setsid nohup bash <launcher>` (see the launch
+pattern in "During Execution" — bare `nohup ... &` over SSH MCP gets
+reaped on session exit), post `epm:run-launched`, and exit your turn. The
+orchestrator polls the run via `scripts/poll_pipeline.py` chained through
+bg-Bash; it handles milestone tracking, stall detection, and failure
 classification.
 
 You are spawned in **subagent mode** by the `/issue` skill. The brief includes
@@ -35,10 +37,13 @@ content from the issue body or comment markers), and the pod name
 ## Your Responsibilities
 
 1. **Sync** — pull the reviewed branch onto the assigned pod, run preflight.
-2. **Launch** — start the training/eval job with `nohup` + WandB tracking.
+2. **Launch** — start the training/eval job via `setsid nohup bash
+   <launcher>` (full pattern in "During Execution"; bare `nohup ... &`
+   over SSH MCP dies on session exit) + WandB tracking.
 3. **Confirm** — verify the PID is alive and the log is writing.
-4. **Hand off** — post `epm:run-launched` with pod, PID, log path, and the
-   dispatch command, then EXIT your turn within 60 seconds.
+4. **Hand off** — post `epm:run-launched` with pod, PID, log path,
+   pidfile path, launcher path, and the dispatch command, then EXIT
+   your turn within 60 seconds.
 
 You do NOT:
 - Write or substantially modify experiment code (that's `experiment-implementer`).
@@ -101,40 +106,75 @@ EXIT YOUR TURN.
 
 ### During Execution
 
-1. **ALWAYS launch with nohup** — every training/eval command MUST use
-   `nohup ... &` so the job survives even if this subagent session dies. No
-   exceptions.
-   ```bash
-   nohup uv run python scripts/train.py condition=<name> seed=<N> \
-     > /workspace/logs/issue-<N>.log 2>&1 &
-   WRAPPER_PID=$!  # outer `uv run` wrapper — NOT the python child
-   ```
-   **Why:** The subagent may be killed (parent session disconnect, context
-   compaction, token limit). The GPU job must keep running regardless.
+1. **ALWAYS launch with `setsid nohup bash <launcher>` — never bare
+   `nohup ... &` over SSH MCP.** The training/eval job MUST survive
+   this subagent's death AND the SSH MCP session's exit. Two failure
+   modes the bare pattern hits over SSH MCP:
+   - The MCP shell is `sh` (not bash) and has no `disown` builtin, so
+     `nohup ... & disown` errors with `sh: 1: disown: not found` and
+     the backgrounded process gets reaped when the SSH session closes
+     (task #444 Phase-0 relaunch, 2026-05-30).
+   - Even without `disown`, the child stays in the SSH session's
+     process group; some sshd configurations SIGHUP the whole group
+     on session exit.
 
-   **Capture the REAL python child PID for the watchdog, not `$!`.** `$!`
-   is the PID of the outer `uv run` wrapper. `uv run` spawns (and may
-   re-exec into) a separate `python` process that is the actual
-   long-running training/eval job; the wrapper can exit, reap, or change
-   identity, so `ps -p $WRAPPER_PID` gives a false dead/alive reading for
-   the watchdog. Resolve the python child PID and record THAT:
+   The fix is to (a) write a launcher script on the pod that holds the
+   `uv run` invocation, env setup, and `cd`, then (b) detach it from
+   the SSH session's process group with `setsid` AND survive SIGHUP
+   with `nohup`, redirecting stdin from `/dev/null`. The launcher also
+   writes its own pidfile so the orchestrator's `poll_pipeline.py` can
+   pass `--pid-file` to its SSH probe.
+
    ```bash
-   # Wait a moment for uv to spawn the python child, then find it.
-   sleep 2
-   CHILD_PID=$(pgrep -P "$WRAPPER_PID" -f python | head -1)
-   # Fallback: if uv re-exec'd in place (no separate child), the wrapper
-   # PID IS the python process — keep it only if it is a python process.
-   if [ -z "$CHILD_PID" ]; then
-     if ps -p "$WRAPPER_PID" -o comm= | grep -q python; then
-       CHILD_PID="$WRAPPER_PID"
-     else
-       echo "ERROR: could not resolve python child PID under uv wrapper $WRAPPER_PID" >&2
+   # Step 1 — write the launcher on the pod (one ssh_execute).
+   cat > /workspace/launch_issue_<N>.sh << 'EOF'
+   #!/bin/bash
+   set -uo pipefail
+   export PATH="/root/.local/bin:$PATH"
+   cd /workspace/explore-persona-space
+   set -a; [ -f .env ] && source .env; set +a
+   # Write the real python child's PID for the watchdog. `exec` replaces
+   # this shell with `uv run`, which in turn exec's into python — so $$
+   # ends up being the python process the orchestrator probes.
+   echo $$ > /workspace/logs/issue-<N>.pid
+   exec uv run python scripts/train.py condition=<name> seed=<N>
+   EOF
+   chmod +x /workspace/launch_issue_<N>.sh
+   mkdir -p /workspace/logs
+
+   # Step 2 — setsid-detach + nohup the launcher, stdin from /dev/null.
+   setsid nohup bash /workspace/launch_issue_<N>.sh \
+     > /workspace/logs/issue-<N>.log 2>&1 < /dev/null &
+   WRAPPER_PID=$!  # outer `bash` wrapper PID — NOT the python child
+
+   # Step 3 — wait for the launcher to write the real python child PID.
+   sleep 3
+   CHILD_PID=$(cat /workspace/logs/issue-<N>.pid 2>/dev/null || true)
+   if [ -z "$CHILD_PID" ] || ! ps -p "$CHILD_PID" >/dev/null 2>&1; then
+     # Fallback: walk the wrapper's children for a python process.
+     CHILD_PID=$(pgrep -P "$WRAPPER_PID" -f python | head -1)
+     if [ -z "$CHILD_PID" ]; then
+       echo "ERROR: could not resolve python child PID under wrapper $WRAPPER_PID" >&2
      fi
    fi
-   echo "watchdog PID: $CHILD_PID"  # this is what goes in epm:run-launched
+   echo "watchdog PID: $CHILD_PID"  # goes in epm:run-launched pid= field
    ```
+
+   **Why a launcher script (not inline `setsid nohup uv run ...`).**
+   The launcher gives a single fixed file the orchestrator can
+   re-execute via `ssh_execute bash <path>` on restart, captures the
+   env-source step so `.env` is picked up reliably (SSH MCP non-
+   interactive shells skip `~/.bashrc`), and lets the script write its
+   own pidfile using `$$` after `exec` replaces it with the `uv
+   run`→python chain — cleaner than racing `pgrep` against the
+   wrapper. The CLAUDE.md "Always run with `nohup`" code-style line
+   (`uv run python scripts/train.py &`) is the local-VM short form;
+   for any launch over SSH MCP, use the setsid-launcher pattern above.
+
    Post `CHILD_PID` (the python process) in the `pid=` field of
-   `epm:run-launched` so the orchestrator's watchdog tracks the real job.
+   `epm:run-launched`, and post the launcher's pidfile path as
+   `pid_file=` so the orchestrator can forward it to
+   `poll_pipeline.py --pid-file`.
 
 2. **Confirm launch succeeded** — immediately after resolving the python
    child PID, verify it is alive and the log is writing. One quick probe
@@ -150,9 +190,9 @@ EXIT YOUR TURN.
 
 3. **Post `epm:run-launched` and EXIT.** This is your terminal step. The
    note MUST carry the pod, PID (the resolved python child `CHILD_PID`
-   from step 1, NOT the `uv run` wrapper PID), log path (ABSOLUTE), and
-   the dispatch command so the orchestrator's poller can find the run
-   without guessing the working directory:
+   from step 1, NOT the wrapper PID), log path (ABSOLUTE), pidfile path
+   (ABSOLUTE), launcher path, and the dispatch command so the
+   orchestrator's poller can find the run without guessing:
 
    - **`log_abs` MUST be absolute.** Before posting, resolve the path
      via `os.path.abspath()` (or shell `realpath`) on the pod and
@@ -160,17 +200,31 @@ EXIT YOUR TURN.
      the log doesn't exist at the resolved absolute path, the launcher
      wrote to a different location and the poller will burn cycles —
      fix the launch command, don't post.
+   - **`pid_file=` MUST be the launcher's pidfile path.** The
+     orchestrator's `poll_pipeline.py` requires `--pid-file <path>`
+     for its SSH probe; without it, the probe falls back to log-tail
+     heuristics and can declare a healthy run "stalled". Reuse the
+     pidfile the launcher script wrote in step 1
+     (`/workspace/logs/issue-<N>.pid`).
+   - **`launcher_script=` is recommended** so the orchestrator can
+     re-execute the launcher verbatim on resume without re-deriving
+     it.
 
    ```bash
-   # On the pod (inside the ssh_execute call that launched nohup):
+   # On the pod (inside the ssh_execute call that launched the launcher):
    LOG_ABS=$(realpath /workspace/logs/issue-<N>.log)
-   ls -la "$LOG_ABS"  # MUST succeed — file must exist at this exact path
+   PID_FILE_ABS=$(realpath /workspace/logs/issue-<N>.pid)
+   ls -la "$LOG_ABS" "$PID_FILE_ABS"  # both MUST exist at these exact paths
    ```
 
    ```bash
    uv run python scripts/task.py post-marker <N> epm:run-launched \
        --by experimenter \
-       --note "pod=epm-issue-<N> pid=12345 log_abs=/workspace/logs/issue-<N>.log cmd='<dispatch command>'"
+       --note "pod=epm-issue-<N> pid=12345 \
+   pid_file=/workspace/logs/issue-<N>.pid \
+   log_abs=/workspace/logs/issue-<N>.log \
+   launcher_script=/workspace/launch_issue_<N>.sh \
+   cmd='setsid nohup bash /workspace/launch_issue_<N>.sh > /workspace/logs/issue-<N>.log 2>&1 < /dev/null &'"
    ```
 
    Then return cleanly. The orchestrator takes over from here via the
