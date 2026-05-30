@@ -111,29 +111,40 @@ def _make_example(system_prompt: str | None, user_prompt: str, assistant_respons
     }
 
 
-def _assert_disjoint_within_cell(
+def _assert_pos_slices_disjoint(
     slices_by_persona: dict[str, list[int]],
 ) -> None:
-    """Assert no two persona slices within a cell share an index.
+    """Assert no two POSITIVE persona slices within a cell share an index.
 
-    Plan §4.0bis M3: per-persona seed salting must yield disjoint training
-    rows so multi-positive cells test "more personas, more diverse data" (not
-    "more personas, same data"). We assert disjointness on the union-pool
-    indices (not on (q, r) tuples) because the union pool has unique
-    questions by construction.
+    Plan §4.0bis M3: positive personas must train on disjoint slices so
+    multi-positive cells (c5: 2 personas, c6: 4 personas) test the intended
+    "more personas, more diverse data" mechanism, NOT "more personas, same
+    data". Round-2 fix: we now produce disjointness BY CONSTRUCTION via
+    `pool_perm[i*N:(i+1)*N]` (a single deterministic permutation partitioned
+    into contiguous slices), so this is a build-time invariant rather than
+    a probabilistic one. The assertion remains as a defensive guardrail.
+
+    For NEGATIVES, cross-persona overlap is allowed (round-2 fix per
+    code-review B3). Each negative persona's slice is internally disjoint
+    (via `random.Random.sample` without replacement) but slices ACROSS
+    negative personas can overlap. This is fine: the negative signal is
+    per-persona-conditional, so the same (Q, response) appearing under two
+    different negative-persona system prompts gives independent gradient
+    signal. The clarifier (clarify-answers v2) only requires within-bystander
+    no-duplicate-claim semantics. Cells 9 (1600 negative rows from 850-pool)
+    and 11 (1600 negative rows from 850-pool) STRUCTURALLY require this —
+    without cross-persona overlap they would be unrealizable.
     """
     names = list(slices_by_persona.keys())
     for i, a in enumerate(names):
         for b in names[i + 1 :]:
             overlap = set(slices_by_persona[a]) & set(slices_by_persona[b])
             if overlap:
-                # Within positives vs within negatives is what matters.
-                # We check both blocks separately by passing two dicts to this
-                # function (one for positives, one for negatives) in build_cell.
                 raise AssertionError(
-                    f"Per-persona slices overlap between {a!r} and {b!r}: "
-                    f"{len(overlap)} shared indices. Per-persona seed salting "
-                    f"is supposed to produce disjoint slices within a cell."
+                    f"Positive persona slices overlap between {a!r} and "
+                    f"{b!r}: {len(overlap)} shared indices. Per-positive "
+                    f"slices are supposed to be disjoint by construction "
+                    f"(pool_perm partition)."
                 )
 
 
@@ -170,8 +181,11 @@ def build_cell(
         ``output_path``.
 
     Assertions (build-time, fail loud):
-        - Union pool has enough entries for the largest per-persona draw.
-        - Per-persona slices are disjoint within positives and within negatives.
+        - Positive total (pos_personas * pos_ex_per_persona) fits in the
+          union pool (partition-by-construction; round-2 fix B3).
+        - Per-negative-persona N fits in the union pool (each negative is
+          internally disjoint; cross-negative-persona overlap is ALLOWED
+          per round-2 fix B3 — without it cells 9/11 are unrealizable).
         - Output row count matches the expected total.
     """
     if union_pool is None:
@@ -181,16 +195,27 @@ def build_cell(
     pos_persona_list = _positive_personas_for_cell(pos_personas)
     neg_persona_list = _negative_personas_for_cell(pos_persona_list, neg_personas)
 
-    if pos_ex_per_persona > pool_size:
+    # Round-2 fix B3: positive slices are disjoint BY CONSTRUCTION via a single
+    # permutation of pool_indices, partitioned into contiguous N-row blocks.
+    # Required total = pos_personas * pos_ex_per_persona <= pool_size.
+    pos_total_needed = pos_personas * pos_ex_per_persona
+    if pos_total_needed > pool_size:
         raise ValueError(
-            f"[{cell_slug}] pos_ex_per_persona={pos_ex_per_persona} > "
-            f"pool_size={pool_size}; cannot sample without replacement. "
-            f"Run Pre-Phase 0 to grow the union pool."
+            f"[{cell_slug}] pos_personas × pos_ex_per_persona = "
+            f"{pos_personas} × {pos_ex_per_persona} = {pos_total_needed} "
+            f"> pool_size = {pool_size}; cannot partition disjoint slices "
+            f"without replacement. Largest configured cell is c6 "
+            f"(4 × 200 = 800 ≤ 850 ✓) and c4 (1 × 800 ≤ 850 ✓); "
+            f"run Pre-Phase 0 to grow the union pool if a larger cell is added."
         )
+
+    # Each NEGATIVE persona needs its own N rows from the pool. Cross-persona
+    # overlap allowed (round-2 fix B3). Internal-disjointness via sample().
     if neg_ex_per_persona > pool_size:
         raise ValueError(
             f"[{cell_slug}] neg_ex_per_persona={neg_ex_per_persona} > "
-            f"pool_size={pool_size}; cannot sample without replacement."
+            f"pool_size={pool_size}; per-persona internal slice cannot "
+            f"sample without replacement."
         )
 
     log.info(
@@ -202,17 +227,20 @@ def build_cell(
         neg_ex_per_persona,
     )
 
-    # ── Positive rows: per-persona seed-salted disjoint slices. ──────────────
+    # ── Positive rows: partition a single permutation into disjoint blocks. ──
     pos_slices_by_persona: dict[str, list[int]] = {}
     examples: list[dict] = []
     pool_indices = list(range(pool_size))
     fractions_topup: dict[str, float] = {}
 
+    # ONE permutation seeded on SEED, partitioned across positive personas.
+    # Disjointness is guaranteed by construction (i-th persona gets
+    # pool_perm[i*N:(i+1)*N]). The assert below is defensive.
+    pool_perm = list(pool_indices)
+    random.Random(seed).shuffle(pool_perm)
     for i, pos_name in enumerate(pos_persona_list):
         pos_prompt = registry.get_persona_prompt(pos_name)
-        slice_seed = seed + i
-        rng = random.Random(slice_seed)
-        slice_idx = rng.sample(pool_indices, pos_ex_per_persona)
+        slice_idx = pool_perm[i * pos_ex_per_persona : (i + 1) * pos_ex_per_persona]
         pos_slices_by_persona[pos_name] = slice_idx
         n_topup = sum(1 for j in slice_idx if union_pool[j].get("source") == "topup")
         fractions_topup[f"pos_{pos_name}"] = n_topup / len(slice_idx) if slice_idx else 0.0
@@ -223,9 +251,10 @@ def build_cell(
             marked = f"{r}\n\n{marker_text}"
             examples.append(_make_example(pos_prompt, q, marked))
     n_positive = len(examples)
-    _assert_disjoint_within_cell(pos_slices_by_persona)
+    _assert_pos_slices_disjoint(pos_slices_by_persona)
 
-    # ── Negative rows: per-persona seed-salted disjoint slices. ──────────────
+    # ── Negative rows: per-persona internally-disjoint slices; cross-persona ─
+    # ── overlap ALLOWED (round-2 fix B3).
     neg_slices_by_persona: dict[str, list[int]] = {}
     for j, neg_name in enumerate(neg_persona_list):
         neg_prompt = registry.get_persona_prompt(neg_name)
@@ -241,7 +270,16 @@ def build_cell(
             r = entry["response"]
             examples.append(_make_example(neg_prompt, q, r))
     n_negative = len(examples) - n_positive
-    _assert_disjoint_within_cell(neg_slices_by_persona)
+    # NO cross-persona disjointness assertion on negatives (round-2 fix B3).
+    # Compute cross-persona overlap stats for the manifest (informational).
+    neg_cross_overlap_summary: dict[str, int] = {}
+    neg_names = list(neg_slices_by_persona.keys())
+    for i_n in range(len(neg_names)):
+        for j_n in range(i_n + 1, len(neg_names)):
+            a, b = neg_names[i_n], neg_names[j_n]
+            neg_cross_overlap_summary[f"{a}_vs_{b}"] = len(
+                set(neg_slices_by_persona[a]) & set(neg_slices_by_persona[b])
+            )
 
     # ── No-persona-contrastive rows: 100 across all cells. ───────────────────
     # Independent seed offset so the no-persona slice doesn't collide with any
@@ -294,6 +332,15 @@ def build_cell(
         "marker_text": marker_text,
         "seed": seed,
         "fraction_of_training_rows_from_topup": fractions_topup,
+        "neg_cross_persona_overlap_indices": neg_cross_overlap_summary,
+        "pos_partition_recipe": (
+            "single-permutation partition (seed=SEED); disjoint by construction"
+        ),
+        "neg_sampling_recipe": (
+            "per-persona random.Random(SEED+NEG_SEED_OFFSET+j).sample(pool, N); "
+            "internally disjoint per negative persona; cross-persona overlap allowed "
+            "(plan §4.0bis + round-2 fix B3)"
+        ),
         "union_pool_size": pool_size,
     }
     manifest_path = output_path.with_suffix(".manifest.json")
