@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
 #!/usr/bin/env python3
 """Task #448 dispatcher — UNIFIED smoke = sweep with one cell.
 
@@ -132,8 +132,14 @@ def _resolve_cells(raw: str | None, smoke: bool) -> list[tuple[str, str, int, in
     return out
 
 
-def _run_pre_phase_0(skip: bool, dry_run: bool) -> dict[str, object]:
-    """Pre-Phase 0: Sonnet 4.5 union pool + canonical responses."""
+def _run_pre_phase_0(skip: bool, dry_run: bool, canonical_only: bool = False) -> dict[str, object]:
+    """Pre-Phase 0: Sonnet 4.5 union pool + canonical responses.
+
+    ``canonical_only=True`` (round-2 fix B2 for --smoke-real) generates only
+    the 20 canonical EVAL_QUESTIONS responses, skipping the 650-pair top-up.
+    Cost ~$0.02, ~30s. Lets the smoke-real path build the eval rig without
+    paying the full ~$5 / 10-min top-up.
+    """
     t0 = time.time()
     log.info("=" * 70)
     log.info("Pre-Phase 0 (Sonnet 4.5 corpus top-up + canonical responses)")
@@ -169,7 +175,11 @@ def _run_pre_phase_0(skip: bool, dry_run: bool) -> dict[str, object]:
     else:
         import asyncio
 
-        summary = asyncio.run(build_wrong_claim_pool.build_corpus(out_dir=out_dir))
+        summary = asyncio.run(
+            build_wrong_claim_pool.build_corpus(
+                out_dir=out_dir, canonical_responses_only=canonical_only
+            )
+        )
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     summary["wall_seconds"] = round(time.time() - t0, 1)
@@ -221,8 +231,18 @@ def _run_phase_0_5(skip: bool, dry_run: bool) -> dict[str, object]:
     return summary
 
 
-def _run_phase_1_5_base_panel(skip: bool, dry_run: bool) -> dict[str, object]:
-    """Phase 1.5: 24-panel × 20-question base-marker-logprob probe."""
+def _run_phase_1_5_base_panel(
+    skip: bool,
+    dry_run: bool,
+    eval_personas_limit: int | None = None,
+    eval_questions_limit: int | None = None,
+) -> dict[str, object]:
+    """Phase 1.5: panel × question base-marker-logprob probe.
+
+    Round-2 fix B2: ``eval_personas_limit`` + ``eval_questions_limit`` shrink
+    the grid for `--smoke-real` (e.g. 2 × 2 = 4 forward passes proves the
+    rig works end-to-end on local GPU).
+    """
     t0 = time.time()
     log.info("=" * 70)
     log.info("Phase 1.5 (base panel marker log-p)")
@@ -261,9 +281,18 @@ def _run_phase_1_5_base_panel(skip: bool, dry_run: bool) -> dict[str, object]:
             "--sentinel-path",
             str(sentinel),
         ]
+        if eval_personas_limit is not None:
+            cmd.extend(["--eval-personas-limit", str(eval_personas_limit)])
+        if eval_questions_limit is not None:
+            cmd.extend(["--eval-questions-limit", str(eval_questions_limit)])
         log.info("Phase 1.5 subprocess: %s", " ".join(cmd))
         subprocess.run(cmd, env={**os.environ}, check=True)
-        summary = {"phase": "phase_1_5", "base_logp_path": str(out_path)}
+        summary = {
+            "phase": "phase_1_5",
+            "base_logp_path": str(out_path),
+            "eval_personas_limit": eval_personas_limit,
+            "eval_questions_limit": eval_questions_limit,
+        }
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     summary["wall_seconds"] = round(time.time() - t0, 1)
@@ -274,13 +303,24 @@ def _run_phase_1_5_base_panel(skip: bool, dry_run: bool) -> dict[str, object]:
     return summary
 
 
-def _build_trajectory_callback(tokenizer, canonical_responses: dict[str, str]):
+def _build_trajectory_callback(
+    tokenizer,
+    canonical_responses: dict[str, str],
+    *,
+    centroids_path: Path | None = None,
+    pos_persona_names: list[str] | None = None,
+    neg_persona_names: list[str] | None = None,
+):
     """Build the MarkerTrajectoryCallback for the per-cell training run.
 
-    Subset: 6 personas (3 nearest, 3 farthest from villain's anchor negatives
-    — picked deterministically from EVAL_PERSONAS_24 by ordering) × 5
-    questions (first 5 of EVAL_QUESTIONS).
+    Round-2 fix C2: subset = 3 nearest + 3 farthest panel personas (by
+    cosine to the mean of the cell's negative-set centroids). Falls back
+    to first-N if the centroid bundle isn't available yet (Phase 0.5
+    not yet run).
     """
+    import numpy as np
+    import torch
+
     from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
         TRAJECTORY_N_PERSONAS,
         TRAJECTORY_N_QUESTIONS,
@@ -293,12 +333,63 @@ def _build_trajectory_callback(tokenizer, canonical_responses: dict[str, str]):
     )
     from explore_persona_space.personas import EVAL_QUESTIONS
 
-    # Deterministic subset: first N personas + first M questions.
-    # (Plan §4.0quater specifies "3 nearest + 3 farthest" but the actual
-    # nearest-neg ordering depends on the centroid bundle; we pick a stable
-    # first-N here so the trajectory subset is identical across cells. The
-    # downstream per-cell trajectory plot still shows all 6 + per-q lines.)
-    subset_personas = dict(list(EVAL_PERSONAS_24.items())[:TRAJECTORY_N_PERSONAS])
+    # Round-2 fix C2: pick the trajectory subset by cosine distance to the
+    # cell's negative-set centroids (3 nearest + 3 farthest from
+    # `neg_centroid_mean`). Per plan §4.0quater. Centroid bundle is loaded
+    # via the path arg; if missing OR the bundle doesn't cover required
+    # personas, fall back to the round-1 first-N approach (logged).
+    n_per_half = max(1, TRAJECTORY_N_PERSONAS // 2)
+    subset_personas: dict[str, str]
+    if centroids_path is not None and centroids_path.exists() and neg_persona_names:
+        bundle = torch.load(centroids_path, weights_only=False)
+        layer = bundle.get("layer", 20)
+        tensor = bundle["centroids"][layer].to(torch.float32).numpy()
+        names = list(bundle["persona_names"])
+        name_to_idx = {n: i for i, n in enumerate(names)}
+        # Centroid mean of the cell's negative personas (typically 2 for cells
+        # 1-9; 4 or 8 for cells 10/11).
+        try:
+            neg_idx = [name_to_idx[n] for n in neg_persona_names]
+            neg_mean = tensor[neg_idx].mean(axis=0)
+            neg_mean_norm = neg_mean / (np.linalg.norm(neg_mean) + 1e-12)
+            # For every panel persona (excluding the cell's source + negatives
+            # themselves), compute cosine sim to neg_mean.
+            cell_pos = set(pos_persona_names) if pos_persona_names else set()
+            cell_neg = set(neg_persona_names)
+            sim_pairs: list[tuple[str, float]] = []
+            for pname in EVAL_PERSONAS_24:
+                if pname in cell_pos or pname in cell_neg:
+                    continue
+                if pname not in name_to_idx:
+                    continue
+                vec = tensor[name_to_idx[pname]]
+                vec_norm = vec / (np.linalg.norm(vec) + 1e-12)
+                sim_pairs.append((pname, float(vec_norm @ neg_mean_norm)))
+            sim_pairs.sort(key=lambda kv: kv[1])
+            # Lowest sim = "farthest from negatives" (high predicted leakage).
+            farthest = [p for p, _ in sim_pairs[:n_per_half]]
+            # Highest sim = "nearest to negatives" (low predicted leakage).
+            nearest = [p for p, _ in sim_pairs[-n_per_half:]]
+            picks = farthest + nearest
+            subset_personas = {p: EVAL_PERSONAS_24[p] for p in picks}
+            log.info(
+                "Trajectory subset (cosine-stratified): nearest=%s farthest=%s",
+                nearest,
+                farthest,
+            )
+        except KeyError as e:
+            log.warning(
+                "Centroid lookup missing persona %s; falling back to first-N trajectory subset.",
+                e,
+            )
+            subset_personas = dict(list(EVAL_PERSONAS_24.items())[:TRAJECTORY_N_PERSONAS])
+    else:
+        log.info(
+            "Trajectory subset: first-%d EVAL_PERSONAS_24 (centroid bundle "
+            "or neg_persona_names unavailable)",
+            TRAJECTORY_N_PERSONAS,
+        )
+        subset_personas = dict(list(EVAL_PERSONAS_24.items())[:TRAJECTORY_N_PERSONAS])
     subset_questions = EVAL_QUESTIONS[:TRAJECTORY_N_QUESTIONS]
     return MarkerTrajectoryCallback(
         tokenizer=tokenizer,
@@ -438,8 +529,17 @@ def _run_one_cell(
     runs_root: Path,
     dry_run: bool,
     canonical_responses: dict[str, str] | None,
+    centroids_path: Path | None = None,
+    resume: bool = False,
 ) -> dict[str, object]:
-    """Per-cell: build → train → merge → eval → upload → cleanup → sentinel."""
+    """Per-cell: build → train → merge → eval → upload → cleanup → sentinel.
+
+    Round-2 fix C2: ``centroids_path`` enables the trajectory callback to pick
+    its 3-nearest + 3-farthest subset by cosine distance to the cell's
+    negative-set centroid mean (rather than a static first-N).
+    Round-2 fix C3: ``resume=True`` short-circuits if the per-cell sentinel
+    already exists (skip rebuild/retrain).
+    """
     import torch
 
     t_start = time.time()
@@ -448,6 +548,26 @@ def _run_one_cell(
     eval_out_dir = slab_root / cell_slug
     sentinel_path = LOG_DIR / f"issue-448-{cell_slug}-results.json"
     train_jsonl = output_dir / "train_pool.jsonl"
+
+    # Round-2 fix C3: resume mode skips cells whose sentinel exists AND whose
+    # eval_results JSON is also on disk (both invariants: a sentinel without
+    # the eval JSON would be a half-finished cell).
+    if resume and sentinel_path.exists() and (eval_out_dir / "marker_logprob.json").exists():
+        log.info(
+            "[%s] RESUME: sentinel + eval JSON exist; SKIPPING (use --no-resume to force).",
+            cell_slug,
+        )
+        return {
+            "cell": cell_slug,
+            "plain_name": plain_name,
+            "seed": seed,
+            "wall_seconds": 0.0,
+            "output_dir": str(output_dir),
+            "eval_out_dir": str(eval_out_dir),
+            "sentinel_path": str(sentinel_path),
+            "adapter_hf_path": f"adapters/issue_448/{cell_slug}_seed{seed}",
+            "status": "resumed_skip",
+        }
 
     log.info("=" * 70)
     log.info(
@@ -491,9 +611,25 @@ def _run_one_cell(
     if canonical_responses is not None:
         from transformers import AutoTokenizer
 
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448.build_training_data import (  # noqa: E501
+            _negative_personas_for_cell,
+            _positive_personas_for_cell,
+        )
+
+        pos_persona_names = _positive_personas_for_cell(pos_personas)
+        neg_persona_names = _negative_personas_for_cell(pos_persona_names, neg_personas)
         tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-        trajectory_callback = _build_trajectory_callback(tokenizer, canonical_responses)
-        log.info("[%s] MarkerTrajectoryCallback wired (subset=6×5)", cell_slug)
+        trajectory_callback = _build_trajectory_callback(
+            tokenizer,
+            canonical_responses,
+            centroids_path=centroids_path,
+            pos_persona_names=pos_persona_names,
+            neg_persona_names=neg_persona_names,
+        )
+        log.info(
+            "[%s] MarkerTrajectoryCallback wired (centroid-stratified subset)",
+            cell_slug,
+        )
 
     _, merged_dir = _train_and_merge(cell_slug, seed, train_jsonl, output_dir, trajectory_callback)
 
@@ -538,8 +674,15 @@ def _run_analyze(
     slab_root: Path,
     figures_dir: Path,
     centroids_path: Path,
+    runs_root: Path,
+    seed: int,
 ) -> dict[str, object]:
-    """Phase 3: analyze.run_analysis (subprocess for clean import isolation)."""
+    """Phase 3: analyze.run_analysis (subprocess for clean import isolation).
+
+    Round-2 fix B4: pass ``runs_root`` + ``seed`` so the analyzer can locate
+    per-cell training-data manifests (written under
+    ``runs_root/{cell}_seed{seed}/train_pool.manifest.json``).
+    """
     t0 = time.time()
     log.info("=" * 70)
     log.info("Phase 3 (analyze)")
@@ -555,6 +698,10 @@ def _run_analyze(
         str(centroids_path),
         "--figures-dir",
         str(figures_dir),
+        "--runs-root",
+        str(runs_root),
+        "--seed",
+        str(seed),
     ]
     log.info("Phase 3 subprocess: %s", " ".join(cmd))
     subprocess.run(cmd, env={**os.environ}, check=True)
@@ -642,7 +789,7 @@ def _write_final_sentinel(
     log.info("Final sentinel: %s", final_path)
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestrator
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--cells",
@@ -663,6 +810,39 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run",
         action="store_true",
         help="No GPU work / no Anthropic calls; validate imports + assertions.",
+    )
+    parser.add_argument(
+        "--smoke-real",
+        action="store_true",
+        help=(
+            "Round-2 fix B2: a REAL tiny-slice smoke that loads Qwen-2.5-7B-Instruct "
+            "on a local GPU and runs Phase 1.5 base-panel marker log-prob over a "
+            "tiny slice (controlled by --eval-personas-limit + --eval-questions-limit). "
+            "Produces a real marker_logprob.json with non-zero log-probs. "
+            "Skips Pre-Phase 0 + Phase 0.5 + per-cell train (this is the minimum "
+            "GPU-using smoke that proves the eval rig works end-to-end)."
+        ),
+    )
+    parser.add_argument(
+        "--eval-personas-limit",
+        type=int,
+        default=None,
+        help=("Cap the eval-panel persona count (debug / smoke-real). Default: 24."),
+    )
+    parser.add_argument(
+        "--eval-questions-limit",
+        type=int,
+        default=None,
+        help="Cap the eval question count (debug / smoke-real). Default: 20.",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help=(
+            "Round-2 fix C3: skip per-cell train + eval when "
+            "/workspace/logs/issue-448-<cell>-results.json AND "
+            "eval_results/issue_448/<cell>/marker_logprob.json both exist."
+        ),
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
@@ -763,21 +943,48 @@ def main(argv: list[str] | None = None) -> int:
         log.info("Marker tokenizer assertion DEFERRED (dry-run)")
 
     cells = _resolve_cells(args.cells, args.smoke)
+    # Round-2 fix B2: --smoke-real targets Phase 1.5 base panel only; empty the
+    # per-cell loop so we don't try to load a merged checkpoint that doesn't exist.
+    if args.smoke_real:
+        cells = []
     log.info(
         "Resolved %d cells: %s",
         len(cells),
         [(slug, name) for slug, name, *_ in cells],
     )
 
-    # Resolve phase-skip defaults from --smoke.
-    skip_pre_phase_0 = (
-        args.skip_pre_phase_0 if args.skip_pre_phase_0 is not None else (args.smoke or args.dry_run)
-    )
-    skip_phase_0_5 = (
-        args.skip_phase_0_5 if args.skip_phase_0_5 is not None else (args.smoke or args.dry_run)
-    )
-    skip_base_panel = args.skip_base_panel if args.skip_base_panel is not None else args.smoke
-    skip_analyze = args.skip_analyze if args.skip_analyze is not None else args.smoke
+    # Resolve phase-skip defaults from --smoke. Round-2 fix B2: --smoke-real
+    # FORCES base-panel ON (it's the unit of test) and skips everything else.
+    # Pre-Phase 0 runs in canonical-only mode (the base panel needs the 20
+    # canonical EVAL_QUESTIONS responses; the 650-pair top-up is skipped).
+    if args.smoke_real:
+        # Only skip Pre-Phase 0 if the canonical responses are already on disk.
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
+            build_wrong_claim_pool as _bwc,
+        )
+
+        _canon_path = _bwc.OUT_DIR / "eval_canonical_responses.json"
+        skip_pre_phase_0 = _canon_path.exists()
+        if not skip_pre_phase_0:
+            log.info(
+                "[smoke-real] canonical responses missing at %s — Pre-Phase 0 "
+                "will run in canonical-only mode (~$0.02, ~30s).",
+                _canon_path,
+            )
+        skip_phase_0_5 = True
+        skip_base_panel = False  # base-panel IS the smoke-real test target
+        skip_analyze = True
+    else:
+        skip_pre_phase_0 = (
+            args.skip_pre_phase_0
+            if args.skip_pre_phase_0 is not None
+            else (args.smoke or args.dry_run)
+        )
+        skip_phase_0_5 = (
+            args.skip_phase_0_5 if args.skip_phase_0_5 is not None else (args.smoke or args.dry_run)
+        )
+        skip_base_panel = args.skip_base_panel if args.skip_base_panel is not None else args.smoke
+        skip_analyze = args.skip_analyze if args.skip_analyze is not None else args.smoke
 
     log.info(
         "Phase toggles: skip_pre_phase_0=%s skip_phase_0_5=%s skip_base_panel=%s skip_analyze=%s",
@@ -786,7 +993,12 @@ def main(argv: list[str] | None = None) -> int:
         skip_base_panel,
         skip_analyze,
     )
-    log.info("Dry run: %s; smoke: %s", args.dry_run, args.smoke)
+    log.info(
+        "Dry run: %s; smoke: %s; smoke-real: %s",
+        args.dry_run,
+        args.smoke,
+        args.smoke_real,
+    )
 
     args.slab_root.mkdir(parents=True, exist_ok=True)
     args.runs_root.mkdir(parents=True, exist_ok=True)
@@ -797,7 +1009,9 @@ def main(argv: list[str] | None = None) -> int:
     plan_deviations: list[str] = []
 
     # ── Pre-Phase 0 ──────────────────────────────────────────────────────────
-    pre_phase_0_summary = _run_pre_phase_0(skip_pre_phase_0, args.dry_run)
+    pre_phase_0_summary = _run_pre_phase_0(
+        skip_pre_phase_0, args.dry_run, canonical_only=args.smoke_real
+    )
     if skip_pre_phase_0:
         plan_deviations.append("pre_phase_0_skipped")
 
@@ -813,7 +1027,12 @@ def main(argv: list[str] | None = None) -> int:
         plan_deviations.append("phase_1_5_base_panel_skipped")
     else:
         try:
-            base_panel_summary = _run_phase_1_5_base_panel(False, args.dry_run)
+            base_panel_summary = _run_phase_1_5_base_panel(
+                False,
+                args.dry_run,
+                eval_personas_limit=args.eval_personas_limit,
+                eval_questions_limit=args.eval_questions_limit,
+            )
         except Exception:
             log.exception("Phase 1.5 (base panel) failed")
             raise
@@ -850,6 +1069,8 @@ def main(argv: list[str] | None = None) -> int:
                 runs_root=args.runs_root,
                 dry_run=args.dry_run,
                 canonical_responses=canonical_responses,
+                centroids_path=args.centroids_path,
+                resume=args.resume,
             )
             per_cell_summaries.append(cell_summary)
         except Exception as e:
@@ -883,6 +1104,8 @@ def main(argv: list[str] | None = None) -> int:
                 slab_root=args.slab_root,
                 figures_dir=args.figures_dir,
                 centroids_path=args.centroids_path,
+                runs_root=args.runs_root,
+                seed=args.seed,
             )
         except Exception:
             log.exception("Phase 3 (analyze) failed")
