@@ -1860,8 +1860,8 @@
       "goal": "See how a [ZLT] marker leaks from a librarian source persona to a panel of bystander personas and contexts across fine-grained training checkpoints on Qwen2.5-7B-Instruct.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/385",
-      "status": "interpreting",
+      "path": "tasks/reviewing/385",
+      "status": "reviewing",
       "title": "[ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)"
     },
     "386": {
