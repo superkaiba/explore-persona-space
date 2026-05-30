@@ -32,6 +32,7 @@ export type Frontmatter = {
   happy_session_id?: string;
   has_clean_result?: boolean;
   classification?: string;
+  track?: string;
   promoted_at?: string;
   sagan_id?: string;
   sagan_number?: number;
@@ -46,7 +47,48 @@ export type Task = {
   frontmatter: Frontmatter;
   body: string;
   isLegacyHtml: boolean;
+  track: Track;
 };
+
+/**
+ * Track = which lane a task lives in.
+ *   - "experiment": the agent can run it end-to-end (training, eval,
+ *     analysis, infra, batch jobs, surveys).
+ *   - "human": needs Thomas — think-about / read / decide work.
+ */
+export type Track = "experiment" | "human";
+
+const HUMAN_KINDS: ReadonlySet<string> = new Set([
+  "note",
+  "reading",
+  "idea",
+  "question",
+  "decision",
+]);
+
+const EXPERIMENT_KINDS: ReadonlySet<string> = new Set([
+  "experiment",
+  "analysis",
+  "infra",
+  "batch",
+  "survey",
+]);
+
+/**
+ * Derive a task's track. Precedence:
+ *   1. An explicit, valid `track:` frontmatter value wins.
+ *   2. Else derive from `kind`: experiment/analysis/infra/batch/survey →
+ *      "experiment"; note/reading/idea/question/decision → "human".
+ *   3. Else default "experiment".
+ */
+export function deriveTrack(fm: Frontmatter | undefined, kind: string | undefined): Track {
+  const raw = fm?.track;
+  if (raw === "experiment" || raw === "human") return raw;
+  const k = (kind ?? "").trim().toLowerCase();
+  if (HUMAN_KINDS.has(k)) return "human";
+  if (EXPERIMENT_KINDS.has(k)) return "experiment";
+  return "experiment";
+}
 
 export type TaskListing = {
   id: number;
@@ -56,6 +98,7 @@ export type TaskListing = {
   tags: string[];
   hasCleanResult: boolean;
   classification?: string;
+  track: Track;
 };
 
 export type TaskEvent = {
@@ -128,13 +171,15 @@ export function getTask(id: number): Task | null {
   const status = path.basename(path.dirname(abs)) as Status;
   const body = fm.content;
   const isLegacyHtml = body.includes(LEGACY_SAGAN_CARD_SENTINEL);
+  const data = fm.data as Frontmatter;
   return {
     id,
     status,
     path: abs,
-    frontmatter: fm.data as Frontmatter,
+    frontmatter: data,
     body: isLegacyHtml ? body.replace(LEGACY_SAGAN_CARD_SENTINEL, "").trimStart() : body,
     isLegacyHtml,
+    track: deriveTrack(data, data.kind),
   };
 }
 
@@ -223,10 +268,11 @@ export function listAllTasks(): TaskListing[] {
     // Read frontmatter for richer fields
     let tags: string[] = [];
     let classification: string | undefined;
+    let fm: Frontmatter | undefined;
     try {
       const abs = path.join(path.dirname(REGISTRY_PATH), "..", entry.path);
       const raw = fs.readFileSync(path.join(abs, "body.md"), "utf8");
-      const fm = matter(raw).data as Frontmatter;
+      fm = matter(raw).data as Frontmatter;
       tags = Array.isArray(fm.tags) ? fm.tags : [];
       classification = typeof fm.classification === "string" ? fm.classification : undefined;
     } catch {
@@ -240,6 +286,7 @@ export function listAllTasks(): TaskListing[] {
       tags,
       hasCleanResult: entry.has_clean_result,
       classification,
+      track: deriveTrack(fm, entry.kind),
     });
   }
   out.sort((a, b) => b.id - a.id);

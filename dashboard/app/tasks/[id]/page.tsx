@@ -23,6 +23,7 @@ import { TaskBodyMarkdown } from "./TaskBodyMarkdown";
 import { TaskFeed } from "./TaskFeed";
 import { type TaskCommentView } from "./TaskCommentBody";
 import { TitleEditor } from "./TitleEditor";
+import { TrackToggle } from "./TrackToggle";
 
 export const dynamic = "force-dynamic";
 
@@ -141,7 +142,10 @@ export default async function TaskDetail({
           initialTitle={task.frontmatter.title ?? ""}
           canEdit={canEdit}
         />
-        <FrontmatterBar fm={task.frontmatter} />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <FrontmatterBar fm={task.frontmatter} />
+          <TrackToggle taskId={id} track={task.track} canEdit={canEdit} />
+        </div>
       </header>
 
       <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
