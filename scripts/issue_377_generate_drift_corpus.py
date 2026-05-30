@@ -38,6 +38,7 @@ from explore_persona_space.data_gen.issue377_corpus import (
     DRIFT_DOMAINS,
     N_CONVERSATIONS_PER_DOMAIN,
     N_TURNS_TOTAL,
+    is_per_domain_checkpoint_complete,
     mean_turn_token_length,
     post_gen_sanity_checks,
     read_corpus_jsonl,
@@ -185,6 +186,25 @@ def main() -> int:
             "across all 4 checkpoints)."
         ),
     )
+    parser.add_argument(
+        "--max-leak-frac",
+        type=float,
+        default=0.005,
+        help=(
+            "Override post_gen_sanity_checks max_leak_frac. Default 0.005 "
+            "(0.5%%) matches #377's 15-turn calibration: tolerates ~1 "
+            "leaked turn per 200 convs x 15 turns = 3000 turns AND ~1 "
+            "dropped conv per 200. Task #408 (round-5, 2026-05-29) needs "
+            "this raised for 30-turn corpora: deep-turn character-break "
+            "rate is realistically 2-5%%, and the whole-conversation drop "
+            "of even a few contaminated 30-turn convs can breach the "
+            "post-filter floor. The #408 long-corpus orchestrator passes "
+            "0.05 (5%%) here; #377 callers keep the 0.005 default. The "
+            "leak filter ITSELF (dropping contaminated convs) is "
+            "unchanged — only the FLOOR threshold for hard-failing the "
+            "run is loosened."
+        ),
+    )
     args = parser.parse_args()
 
     # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
@@ -279,11 +299,23 @@ def main() -> int:
         print("\n=== Done (--seed-only; skipping Steps 2-7) ===", flush=True)
         return 0
 
+    # Task #408 round-5 (2026-05-29): the resume-skip eligibility check is
+    # tightened from "file exists" to "file exists AND contains the
+    # expected conv count AND every conv has the expected n_turns". A
+    # partial / short / wrong-n-turns checkpoint (left by a prior crash
+    # mid-loop, or by a previous call with a different --n-turns) is
+    # treated as missing and re-generated, instead of silently loaded
+    # into memory and tripping the Step 3 sanity check after the
+    # finalize wall-time spend.
     existing_per_domain: dict[str, Path] = {}
     if not args.no_resume:
         for domain in DRIFT_DOMAINS:
             path = _per_domain_path(domain.name)
-            if path.exists():
+            if is_per_domain_checkpoint_complete(
+                path,
+                expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN,
+                expected_n_turns=args.n_turns,
+            ):
                 existing_per_domain[domain.name] = path
 
     # --only-domain narrows the in-scope domain set to exactly one. The
@@ -423,6 +455,7 @@ def main() -> int:
         all_conversations,
         expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN * len(DRIFT_DOMAINS),
         expected_n_turns=args.n_turns,
+        max_leak_frac=args.max_leak_frac,
     )
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)

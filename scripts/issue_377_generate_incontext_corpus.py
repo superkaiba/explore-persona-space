@@ -43,6 +43,7 @@ from explore_persona_space.data_gen.issue377_corpus import (
     N_CONVERSATIONS_PER_DOMAIN,
     N_TURNS_TOTAL,
     corpus_length_stats,
+    is_per_domain_checkpoint_complete,
     mean_turn_token_length,
     post_gen_sanity_checks,
     read_corpus_jsonl,
@@ -78,14 +79,19 @@ def _per_domain_path(domain_name: str) -> Path:
 
 
 def _detect_resume(
-    no_resume: bool, only_domain: str | None = None
+    no_resume: bool, only_domain: str | None = None, n_turns: int = N_TURNS_TOTAL
 ) -> tuple[dict[str, Path], list, bool, tuple]:
     """Round-9 r2 resume-skip detection.
 
     Returns ``(existing_per_domain, missing_domains, all_resume, in_scope_domains)``.
 
     - ``existing_per_domain``: ``{domain_name: Path}`` for domains whose
-      per-domain JSONL is on disk. Empty when ``no_resume`` is set.
+      per-domain JSONL is on disk AND contains a complete checkpoint
+      (correct conv count + correct turn count). Empty when ``no_resume``
+      is set. Round-5 (2026-05-29) tightened the eligibility from "file
+      exists" to "file exists AND is complete" via
+      :func:`is_per_domain_checkpoint_complete`, so a partial / short /
+      wrong-n-turns checkpoint is treated as missing and re-generated.
     - ``missing_domains``: list of DomainSpec entries with no checkpoint
       (restricted to ``in_scope_domains``).
     - ``all_resume``: True iff every in-scope domain has a checkpoint
@@ -109,7 +115,11 @@ def _detect_resume(
         # written by parallel --only-domain subprocesses.
         for domain in INCONTEXT_DOMAINS:
             path = _per_domain_path(domain.name)
-            if path.exists():
+            if is_per_domain_checkpoint_complete(
+                path,
+                expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN,
+                expected_n_turns=n_turns,
+            ):
                 existing_per_domain[domain.name] = path
     missing_domains = [d for d in in_scope_domains if d.name not in existing_per_domain]
     all_resume = (
@@ -331,6 +341,25 @@ def main() -> int:
             "performs once across all 4 checkpoints)."
         ),
     )
+    parser.add_argument(
+        "--max-leak-frac",
+        type=float,
+        default=0.005,
+        help=(
+            "Override post_gen_sanity_checks max_leak_frac. Default 0.005 "
+            "(0.5%%) matches #377's 15-turn calibration: tolerates ~1 "
+            "leaked turn per 200 convs x 15 turns = 3000 turns AND ~1 "
+            "dropped conv per 200. Task #408 (round-5, 2026-05-29) needs "
+            "this raised for 30-turn corpora: deep-turn character-break "
+            "rate is realistically 2-5%%, and the whole-conversation drop "
+            "of even a few contaminated 30-turn convs can breach the "
+            "post-filter floor. The #408 long-corpus orchestrator passes "
+            "0.05 (5%%) here; #377 callers keep the 0.005 default. The "
+            "leak filter ITSELF (dropping contaminated convs) is "
+            "unchanged — only the FLOOR threshold for hard-failing the "
+            "run is loosened."
+        ),
+    )
     args = parser.parse_args()
 
     # Task #408 (v1.2 fix M1) — rebind module globals when --output-dir is
@@ -414,7 +443,7 @@ def main() -> int:
     # against the narrowed set so a per-domain subprocess for domain X
     # isn't confused by domain Y's checkpoint already being on disk.
     existing_per_domain, missing_domains, all_resume, in_scope_domains = _detect_resume(
-        args.no_resume, only_domain=args.only_domain
+        args.no_resume, only_domain=args.only_domain, n_turns=args.n_turns
     )
 
     if all_resume:
@@ -458,6 +487,7 @@ def main() -> int:
         all_conversations,
         expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN * len(INCONTEXT_DOMAINS),
         expected_n_turns=args.n_turns,
+        max_leak_frac=args.max_leak_frac,
     )
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)

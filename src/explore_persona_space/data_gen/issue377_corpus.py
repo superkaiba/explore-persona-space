@@ -104,6 +104,7 @@ __all__ = [
     "SonnetRefusalError",
     "assign_auditor_model",
     "detect_refusal",
+    "is_per_domain_checkpoint_complete",
 ]
 
 
@@ -2100,6 +2101,65 @@ def read_corpus_jsonl(path: Path) -> list[dict]:
             except json.JSONDecodeError as e:
                 raise ValueError(f"Malformed JSONL row in {path}:{lineno}: {e}") from e
     return rows
+
+
+def is_per_domain_checkpoint_complete(
+    path: Path,
+    *,
+    expected_n_conversations: int,
+    expected_n_turns: int,
+) -> bool:
+    """Return True iff ``path`` contains a complete per-domain checkpoint.
+
+    A "complete" checkpoint is one where every conversation in the JSONL
+    has the expected turn count AND the JSONL has the expected number
+    of rows. This guards the resume-skip path against being short-
+    circuited by a partial / aborted file (e.g. one written by a prior
+    attempt that crashed mid-loop and left 5 of 50 convs on disk, OR
+    by a wrong-n-turns invocation that left 50 of 50 convs but with
+    15 turns each when the caller now wants 30).
+
+    Task #408 round-5 (2026-05-29) added this. Without the check the
+    drift wrapper's resume-skip path (lines 282-303 of
+    issue_377_generate_drift_corpus.py) treats `path.exists() == True`
+    as "skip this domain", which silently re-uses an incomplete file
+    and the corruption only surfaces at Step 3 sanity check with a
+    less obvious message ("conversation X turn count 15 != expected 30")
+    after the orchestrator has already spent the finalize-pass wall
+    time. Failing loud HERE (via the False return → caller re-runs the
+    domain) is cleaner than silently loading bad data.
+
+    Returns False on:
+      - file missing (FileNotFoundError swallowed; caller treats as
+        "needs to be generated")
+      - row count != expected_n_conversations
+      - any row whose ``n_turns`` field != expected_n_turns
+      - malformed JSONL (a ValueError from ``read_corpus_jsonl``
+        propagates, NOT swallowed — that's a corrupt-on-disk signal
+        the operator must look at)
+    """
+    if not path.exists():
+        return False
+    rows = read_corpus_jsonl(path)
+    if len(rows) != expected_n_conversations:
+        print(
+            f"  RESUME-SKIP CANCELLED for {path.name}: contains "
+            f"{len(rows)} conv(s), expected {expected_n_conversations}. "
+            f"Treating as missing (will regenerate).",
+            flush=True,
+        )
+        return False
+    for row in rows:
+        if row.get("n_turns") != expected_n_turns:
+            print(
+                f"  RESUME-SKIP CANCELLED for {path.name}: row "
+                f"{row.get('conversation_id', '?')} has n_turns="
+                f"{row.get('n_turns')}, expected {expected_n_turns}. "
+                f"Treating as missing (will regenerate).",
+                flush=True,
+            )
+            return False
+    return True
 
 
 def sample_for_inspection(
