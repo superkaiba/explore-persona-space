@@ -1,0 +1,473 @@
+{
+  "n_pairs_in_outcome": 7,
+  "headline_incontext_K": 64,
+  "regressions": {
+    "M_1_NL": {
+      "n_pairs": 7,
+      "pairs_used": [
+        "educational_neg",
+        "hitler_90",
+        "insecure_code",
+        "json_neg",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_values": {
+        "educational_neg": 0.9346737861633301,
+        "hitler_90": 0.8082900643348694,
+        "insecure_code": 0.944134533405304,
+        "json_neg": 0.5525359511375427,
+        "turner_bad_medical": 0.9306718707084656,
+        "turner_extreme_sports": 0.9601810574531555,
+        "turner_risky_financial": 0.9253676533699036
+      },
+      "L_values": {
+        "educational_neg": 0.0025,
+        "hitler_90": 0.0,
+        "insecure_code": 0.00625,
+        "json_neg": 0.00125,
+        "turner_bad_medical": 0.16312500000000002,
+        "turner_extreme_sports": 0.22749999999999998,
+        "turner_risky_financial": 0.260625
+      },
+      "spearman": {
+        "rho_point": 0.5,
+        "ci_lower": -0.6470588235294117,
+        "ci_upper": 1.0,
+        "ci_width": 1.6470588235294117,
+        "n_resamples_requested": 10000,
+        "n_resamples_used": 10000,
+        "n_dropped_constant_rank": 0,
+        "drop_rate": 0.0,
+        "drop_rate_flag_pct_5": false
+      },
+      "ols": {
+        "beta_point": 0.37444634273150423,
+        "beta_ci_lower": -2.598615995452734,
+        "beta_ci_upper": 2.0249416893109644,
+        "r2_point": 0.21561804459720182,
+        "r2_ci_lower": 0.015361532186378982,
+        "r2_ci_upper": 0.8871170640738582,
+        "n_dropped": 0
+      }
+    },
+    "M_1_lit": {
+      "n_pairs": 7,
+      "pairs_used": [
+        "educational_neg",
+        "hitler_90",
+        "insecure_code",
+        "json_neg",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_values": {
+        "educational_neg": 0.8947305083274841,
+        "hitler_90": 0.7256855368614197,
+        "insecure_code": 0.8660654425621033,
+        "json_neg": 0.9154295921325684,
+        "turner_bad_medical": 0.9132890701293945,
+        "turner_extreme_sports": 0.9189246296882629,
+        "turner_risky_financial": 0.9233652949333191
+      },
+      "L_values": {
+        "educational_neg": 0.0025,
+        "hitler_90": 0.0,
+        "insecure_code": 0.00625,
+        "json_neg": 0.00125,
+        "turner_bad_medical": 0.16312500000000002,
+        "turner_extreme_sports": 0.22749999999999998,
+        "turner_risky_financial": 0.260625
+      },
+      "spearman": {
+        "rho_point": 0.7500000000000002,
+        "ci_lower": -0.125,
+        "ci_upper": 1.0,
+        "ci_width": 1.125,
+        "n_resamples_requested": 10000,
+        "n_resamples_used": 10000,
+        "n_dropped_constant_rank": 0,
+        "drop_rate": 0.0,
+        "drop_rate_flag_pct_5": false
+      },
+      "ols": {
+        "beta_point": 0.861135645212092,
+        "beta_ci_lower": 0.20841593405674388,
+        "beta_ci_upper": 9.204578506867872,
+        "r2_point": 0.26508307828134,
+        "r2_ci_lower": 0.09067511598864747,
+        "r2_ci_upper": 0.9833794998813734,
+        "n_dropped": 0
+      }
+    },
+    "M_2_NL": {
+      "n_pairs": 7,
+      "pairs_used": [
+        "educational_neg",
+        "hitler_90",
+        "insecure_code",
+        "json_neg",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_values": {
+        "educational_neg": 0.0,
+        "hitler_90": 0.0,
+        "insecure_code": 0.0,
+        "json_neg": 0.0,
+        "turner_bad_medical": 0.0,
+        "turner_extreme_sports": 0.0,
+        "turner_risky_financial": 0.0
+      },
+      "L_values": {
+        "educational_neg": 0.0025,
+        "hitler_90": 0.0,
+        "insecure_code": 0.00625,
+        "json_neg": 0.00125,
+        "turner_bad_medical": 0.16312500000000002,
+        "turner_extreme_sports": 0.22749999999999998,
+        "turner_risky_financial": 0.260625
+      },
+      "spearman": {
+        "rho_point": 0.0,
+        "ci_lower": NaN,
+        "ci_upper": NaN,
+        "ci_width": NaN,
+        "n_resamples_requested": 10000,
+        "n_resamples_used": 0,
+        "n_dropped_constant_rank": 10000,
+        "drop_rate": 1.0,
+        "drop_rate_flag_pct_5": true,
+        "constant_input": true
+      },
+      "ols": {
+        "beta_point": NaN,
+        "beta_ci_lower": NaN,
+        "beta_ci_upper": NaN,
+        "r2_point": NaN,
+        "r2_ci_lower": NaN,
+        "r2_ci_upper": NaN,
+        "n_dropped_constant_rank": 10000,
+        "drop_rate": 1.0,
+        "constant_input": true
+      }
+    },
+    "M_2_lit": {
+      "n_pairs": 7,
+      "pairs_used": [
+        "educational_neg",
+        "hitler_90",
+        "insecure_code",
+        "json_neg",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_values": {
+        "educational_neg": 0.0,
+        "hitler_90": 0.0,
+        "insecure_code": 0.0,
+        "json_neg": 0.0,
+        "turner_bad_medical": 0.0,
+        "turner_extreme_sports": 0.0,
+        "turner_risky_financial": 0.0
+      },
+      "L_values": {
+        "educational_neg": 0.0025,
+        "hitler_90": 0.0,
+        "insecure_code": 0.00625,
+        "json_neg": 0.00125,
+        "turner_bad_medical": 0.16312500000000002,
+        "turner_extreme_sports": 0.22749999999999998,
+        "turner_risky_financial": 0.260625
+      },
+      "spearman": {
+        "rho_point": 0.0,
+        "ci_lower": NaN,
+        "ci_upper": NaN,
+        "ci_width": NaN,
+        "n_resamples_requested": 10000,
+        "n_resamples_used": 0,
+        "n_dropped_constant_rank": 10000,
+        "drop_rate": 1.0,
+        "drop_rate_flag_pct_5": true,
+        "constant_input": true
+      },
+      "ols": {
+        "beta_point": NaN,
+        "beta_ci_lower": NaN,
+        "beta_ci_upper": NaN,
+        "r2_point": NaN,
+        "r2_ci_lower": NaN,
+        "r2_ci_upper": NaN,
+        "n_dropped_constant_rank": 10000,
+        "drop_rate": 1.0,
+        "constant_input": true
+      }
+    },
+    "M_3": {
+      "n_pairs": 7,
+      "pairs_used": [
+        "educational_neg",
+        "hitler_90",
+        "insecure_code",
+        "json_neg",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_values": {
+        "educational_neg": 0.00125,
+        "hitler_90": 0.0775,
+        "insecure_code": 0.00125,
+        "json_neg": 0.0,
+        "turner_bad_medical": 0.0,
+        "turner_extreme_sports": 0.0,
+        "turner_risky_financial": 0.005
+      },
+      "L_values": {
+        "educational_neg": 0.0025,
+        "hitler_90": 0.0,
+        "insecure_code": 0.00625,
+        "json_neg": 0.00125,
+        "turner_bad_medical": 0.16312500000000002,
+        "turner_extreme_sports": 0.22749999999999998,
+        "turner_risky_financial": 0.260625
+      },
+      "spearman": {
+        "rho_point": -0.20583232685540795,
+        "ci_lower": -0.9701425001453319,
+        "ci_upper": 0.8571946154145231,
+        "ci_width": 1.827337115559855,
+        "n_resamples_requested": 10000,
+        "n_resamples_used": 9961,
+        "n_dropped_constant_rank": 39,
+        "drop_rate": 0.0039,
+        "drop_rate_flag_pct_5": false
+      },
+      "ols": {
+        "beta_point": -1.3424810352521193,
+        "beta_ci_lower": -126.50000000000001,
+        "beta_ci_upper": 44.702898550724626,
+        "r2_point": 0.10748651565200151,
+        "r2_ci_lower": 0.031025812907738804,
+        "r2_ci_upper": 0.9473634513793076,
+        "n_dropped": 39
+      }
+    }
+  },
+  "outcome_per_pair": {
+    "insecure_code": {
+      "mean": 0.00625,
+      "per_seed": {
+        "0": 0.0075,
+        "137": 0.005
+      }
+    },
+    "hitler_90": {
+      "mean": 0.0,
+      "per_seed": {
+        "0": 0.0,
+        "137": 0.0
+      }
+    },
+    "json_neg": {
+      "mean": 0.00125,
+      "per_seed": {
+        "0": 0.00125,
+        "137": 0.00125
+      }
+    },
+    "educational_neg": {
+      "mean": 0.0025,
+      "per_seed": {
+        "0": 0.00375,
+        "137": 0.00125
+      }
+    },
+    "turner_bad_medical": {
+      "mean": 0.16312500000000002,
+      "per_seed": {
+        "0": 0.16375,
+        "137": 0.1625
+      }
+    },
+    "turner_risky_financial": {
+      "mean": 0.260625,
+      "per_seed": {
+        "0": 0.28,
+        "137": 0.24125
+      }
+    },
+    "turner_extreme_sports": {
+      "mean": 0.22749999999999998,
+      "per_seed": {
+        "0": 0.2375,
+        "137": 0.2175
+      }
+    }
+  },
+  "M_per_variant": {
+    "M_1_NL": {
+      "insecure_code": [
+        0.944134533405304,
+        0.00625
+      ],
+      "hitler_90": [
+        0.8082900643348694,
+        0.0
+      ],
+      "json_neg": [
+        0.5525359511375427,
+        0.00125
+      ],
+      "educational_neg": [
+        0.9346737861633301,
+        0.0025
+      ],
+      "turner_bad_medical": [
+        0.9306718707084656,
+        0.16312500000000002
+      ],
+      "turner_risky_financial": [
+        0.9253676533699036,
+        0.260625
+      ],
+      "turner_extreme_sports": [
+        0.9601810574531555,
+        0.22749999999999998
+      ]
+    },
+    "M_1_lit": {
+      "insecure_code": [
+        0.8660654425621033,
+        0.00625
+      ],
+      "hitler_90": [
+        0.7256855368614197,
+        0.0
+      ],
+      "json_neg": [
+        0.9154295921325684,
+        0.00125
+      ],
+      "educational_neg": [
+        0.8947305083274841,
+        0.0025
+      ],
+      "turner_bad_medical": [
+        0.9132890701293945,
+        0.16312500000000002
+      ],
+      "turner_risky_financial": [
+        0.9233652949333191,
+        0.260625
+      ],
+      "turner_extreme_sports": [
+        0.9189246296882629,
+        0.22749999999999998
+      ]
+    },
+    "M_2_NL": {
+      "insecure_code": [
+        0.0,
+        0.00625
+      ],
+      "hitler_90": [
+        0.0,
+        0.0
+      ],
+      "json_neg": [
+        0.0,
+        0.00125
+      ],
+      "educational_neg": [
+        0.0,
+        0.0025
+      ],
+      "turner_bad_medical": [
+        0.0,
+        0.16312500000000002
+      ],
+      "turner_risky_financial": [
+        0.0,
+        0.260625
+      ],
+      "turner_extreme_sports": [
+        0.0,
+        0.22749999999999998
+      ]
+    },
+    "M_2_lit": {
+      "insecure_code": [
+        0.0,
+        0.00625
+      ],
+      "hitler_90": [
+        0.0,
+        0.0
+      ],
+      "json_neg": [
+        0.0,
+        0.00125
+      ],
+      "educational_neg": [
+        0.0,
+        0.0025
+      ],
+      "turner_bad_medical": [
+        0.0,
+        0.16312500000000002
+      ],
+      "turner_risky_financial": [
+        0.0,
+        0.260625
+      ],
+      "turner_extreme_sports": [
+        0.0,
+        0.22749999999999998
+      ]
+    },
+    "M_3": {
+      "insecure_code": [
+        0.00125,
+        0.00625
+      ],
+      "hitler_90": [
+        0.0775,
+        0.0
+      ],
+      "json_neg": [
+        0.0,
+        0.00125
+      ],
+      "educational_neg": [
+        0.00125,
+        0.0025
+      ],
+      "turner_bad_medical": [
+        0.0,
+        0.16312500000000002
+      ],
+      "turner_risky_financial": [
+        0.005,
+        0.260625
+      ],
+      "turner_extreme_sports": [
+        0.0,
+        0.22749999999999998
+      ]
+    }
+  },
+  "metadata": {
+    "git_commit": "7a268a68f7290a1ef7ed0446f46ef1f76258b689",
+    "timestamp_utc": "2026-05-30T01:21:03.535201Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue404_regress"
+  }
+}
