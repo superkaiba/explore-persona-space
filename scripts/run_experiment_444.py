@@ -472,32 +472,111 @@ def _slug_for_figure(figure: str) -> str:
 # ── Marker-posting helper (talks to task_workflow on local VM; pod-side NEVER) ──
 
 
+# Sentinel schema version. Bump when the JSON layout changes so consumers
+# (poll_pipeline.py upgraded reader, experimenter agent's grep, /issue Step 6d
+# poller) can refuse a sentinel they can't parse rather than silently
+# mis-interpret it.
+SENTINEL_SCHEMA_VERSION = 1
+
+# Stable glob the orchestrator's poller scans for. The phase + kind + epoch
+# triple is sortable so the most-recent unprocessed sentinel wins on tiebreak.
+SENTINEL_FILENAME_FMT = "issue-444-{kind_slug}-{epoch}.json"
+
+
 def _post_marker(kind: str, *, note: str, by: str = "experiment-implementer") -> None:
-    """Post an event marker on task #444. Pod-side calls MUST go through the
-    sentinel-file pattern (CLAUDE.md: pod-side never shells out to task.py).
-    The driver runs both locally (for fact-candidates EXIT marker) and on pod;
-    when on a pod, the orchestrator polls /workspace/logs/issue-444-*.json and
-    posts the marker itself.
+    """Post an event marker on task #444.
+
+    Pod-side calls MUST go through the sentinel-file pattern (CLAUDE.md
+    hard rule: "Pod-side code NEVER shells out to scripts/task.py" — and
+    library-level ``task_workflow.post_event`` calls into ``find_task_path``
+    which branch-guards to ``main`` and refuses on pods sitting on
+    ``issue-<N>``). Per the rule, the pod writes a sentinel JSON; the VM
+    orchestrator observes it and posts the marker from the main checkout.
+
+    Sentinel-file contract (schema v1):
+
+      filename: ``/workspace/logs/issue-444-<kind_slug>-<epoch_seconds>.json``
+        - ``kind_slug``: ``kind`` with ``:`` → ``_`` so it's a valid filename
+          and easy to grep (``ls /workspace/logs/issue-444-epm_fact*.json``).
+        - ``epoch_seconds``: monotonic, sortable across multiple sentinels.
+
+      payload (JSON, dict):
+        {
+          "sentinel_schema_version": 1,
+          "task_id": 444,
+          "kind": "<full kind string, e.g. 'epm:fact-candidates'>",
+          "version": 1,                  # marker version (e.g. epm:fact-candidates v1)
+          "gate": "<gate name, e.g. 'fact-candidates'>" | null,
+          "blocks_pipeline": true|false, # gate fired & pipeline EXITed?
+          "note": "<full marker note, no truncation>",
+          "by": "<author>",
+          "ts": "<ISO-8601 UTC>",
+        }
+
+    The ``gate`` field is the load-bearing addition: an orchestrator-side
+    consumer can distinguish a milestone marker (``epm:progress``) from a
+    blocking user-gate marker (``epm:fact-candidates`` → user must post
+    ``epm:fact-pick`` before the pipeline can resume) and surface the gate
+    via ``AskUserQuestion`` per CLAUDE.md gate id #3 (clarifier blocking
+    ambiguities) or just notify the user.
+
+    A very-visible log line is also emitted so the experimenter agent's
+    poller (which greps the run log) sees ``SENTINEL_POSTED kind=... gate=...
+    path=...`` and can act on it even if a poll_pipeline.py upgrade is
+    still pending. See the workflow-fix-candidate emitted in the v2
+    implementer report for the structural poll_pipeline.py upgrade.
+
+    Local VM path: import ``task_workflow.post_event`` directly (the local
+    checkout is on ``main``; branch-guard is satisfied).
     """
     is_pod = Path("/workspace").is_dir() or bool(os.environ.get("RUNPOD_POD_ID"))
+
+    # Determine gate semantics from the kind. fact-candidates is the only
+    # user-blocking gate this driver emits; everything else is progress /
+    # failure / completion that the orchestrator records but doesn't pause on.
+    gate: str | None = None
+    blocks_pipeline = False
+    if "fact-candidates" in kind:
+        gate = "fact-candidates"
+        blocks_pipeline = True
+    elif "failure" in kind:
+        gate = None
+        blocks_pipeline = True
+
     if is_pod:
-        # Sentinel-file path — orchestrator's poll_pipeline picks it up.
         sentinel_dir = Path("/workspace/logs")
         sentinel_dir.mkdir(parents=True, exist_ok=True)
-        sentinel = sentinel_dir / f"issue-444-{kind.replace(':', '_')}-{int(time.time())}.json"
+        kind_slug = kind.replace(":", "_")
+        sentinel_name = SENTINEL_FILENAME_FMT.format(kind_slug=kind_slug, epoch=int(time.time()))
+        sentinel = sentinel_dir / sentinel_name
         _write_json(
             sentinel,
             {
+                "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+                "task_id": 444,
                 "kind": kind,
+                "version": 1,
+                "gate": gate,
+                "blocks_pipeline": blocks_pipeline,
                 "note": note,
                 "by": by,
                 "ts": _now_iso(),
-                "task_id": 444,
             },
         )
-        logger.info("wrote pod-side marker sentinel -> %s (orchestrator will post)", sentinel)
+        # Very-visible log line so the experimenter agent's run-log poller
+        # picks up the sentinel even if poll_pipeline.py hasn't been upgraded
+        # to scan /workspace/logs/issue-<N>-*.json yet. The keyword
+        # SENTINEL_POSTED is greppable.
+        logger.info(
+            "SENTINEL_POSTED kind=%s gate=%s blocks_pipeline=%s path=%s",
+            kind,
+            gate or "none",
+            blocks_pipeline,
+            sentinel,
+        )
         return
-    # Local VM path — direct task_workflow.post_event.
+
+    # Local VM path: direct task_workflow.post_event (checkout is on main).
     from explore_persona_space.task_workflow import post_event
 
     try:
@@ -920,11 +999,19 @@ def _vllm_complete_simple(
     max_new_tokens: int = 512,
     gpu_id: int = 0,
     gpu_memory_utilization: float = 0.55,
+    seed: int | None = None,
 ) -> list[str]:
     """vLLM batched generate for arbitrary (system, user) prompts; returns text completions.
 
     Used by Phase 0 sub-probes (recognition, compliance) and the on-policy
     negative generator. Each call instantiates + tears down a vLLM engine.
+
+    Args:
+        seed: when set (and ``temperature > 0``), passed to ``SamplingParams(seed=...)``
+            so sampled completions are reproducible across runs. Greedy (temp=0)
+            decoding is deterministic without a seed but the kwarg is forwarded
+            anyway when provided (no-op then). Required for the on-policy
+            negative gen at temp=0.7 (Blocker #6 / Critical-Major from code-review v1).
     """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -942,29 +1029,34 @@ def _vllm_complete_simple(
         enforce_eager=True,  # avoid CUDA graph capture overhead for ad-hoc calls
     )
     chat_prompts = [_build_chat_prompt(tokenizer, sys, user) for sys, user in prompts]
-    params = SamplingParams(temperature=temperature, max_tokens=max_new_tokens)
+    sp_kwargs: dict[str, Any] = {"temperature": temperature, "max_tokens": max_new_tokens}
+    if seed is not None:
+        sp_kwargs["seed"] = int(seed)
+    params = SamplingParams(**sp_kwargs)
     outputs = llm.generate(chat_prompts, params)
     # vLLM returns in input order.
     completions = [o.outputs[0].text for o in outputs]
-    # Teardown.
+    # Teardown — narrow except on the import (cross-vLLM-version brittleness)
+    # is the only legitimate swallow; the destroy_* calls themselves re-raise
+    # so genuine teardown failures surface (Minor #7).
     del llm
     try:
         from vllm.distributed.parallel_state import (
             destroy_distributed_environment,
             destroy_model_parallel,
         )
-
+    except ImportError as e:
+        logger.debug("vllm.distributed.parallel_state imports unavailable: %s", e)
+    else:
         destroy_model_parallel()
         destroy_distributed_environment()
-    except Exception:
-        pass
     gc.collect()
     try:
         import torch
-
+    except ImportError as e:
+        logger.debug("torch import unavailable for empty_cache(): %s", e)
+    else:
         torch.cuda.empty_cache()
-    except Exception:
-        pass
     _reap_vllm_workers_and_assert_clean()
     return completions
 
@@ -976,9 +1068,34 @@ def _vllm_teacher_forced_logprob(
     gpu_id: int = 0,
     gpu_memory_utilization: float = 0.55,
 ) -> list[float]:
-    """Sum log-prob of completion tokens conditioned on prompt (per-pair).
+    """Sum log-prob of the ACTUALLY-EMITTED completion tokens, conditioned on prompt.
 
-    Returns one log-prob per pair; uses vLLM prompt_logprobs API.
+    Critical correctness contract (fix for Blocker #1, code-review v1):
+
+    vLLM's ``prompt_logprobs=1`` returns the top-1 most-likely next token at each
+    position AND (when they differ) the actually-emitted ground-truth token. The
+    previous implementation did ``max(tok_dict.values(), key=logprob)`` which
+    ALWAYS returned the argmax — i.e. the model's preferred next token, NOT the
+    teacher-forced ground-truth attribute token. For zero-prior attributes (the
+    whole point of this filter), the actual attribute IS BY DESIGN the low-prob
+    continuation, so the argmax inflates the log-prob and biases the
+    `per_token_logprob_nats < -8.0` threshold.
+
+    Correct path (mirror #407's `_vllm_predicate_logprob`):
+      1. Tokenize ``prompt + completion`` with ``return_offsets_mapping=True``.
+      2. Locate the completion-start token by character position (the first token
+         whose char-span overlaps the predicate region). This avoids the BPE
+         merge bug where re-tokenising `prompt` independently overshoots by 1
+         when the trailing space of `prompt` merges into the first completion
+         token.
+      3. For each position ``i`` in the completion span, read
+         ``prompt_logprobs[i][full_ids[i]].logprob`` — the log-prob of the
+         specific ground-truth token id at that position, not the argmax.
+      4. Sum across the completion span. NaN if any position's expected token id
+         is not present in the returned dict (vLLM did not score the
+         teacher-forced token).
+
+    Returns one log-prob per pair, in input order.
     """
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
@@ -995,51 +1112,130 @@ def _vllm_teacher_forced_logprob(
         download_dir=os.environ.get("HF_HOME"),
         enforce_eager=True,
     )
-    # Concatenate prompt+completion, ask vLLM to score each token.
     full_texts: list[str] = [p + c for p, c in pairs]
     params = SamplingParams(temperature=0.0, max_tokens=1, prompt_logprobs=1)
     outputs = llm.generate(full_texts, params)
     per_pair_logprob: list[float] = []
     for (prompt, _completion), out in zip(pairs, outputs, strict=True):
-        # Tokenize prompt to find the boundary.
-        prompt_ids = tokenizer(prompt, add_special_tokens=False)["input_ids"]
-        boundary = len(prompt_ids)
-        prompt_logprobs = out.prompt_logprobs or []
-        # prompt_logprobs[i] is the per-token logprob dict for token at position i.
-        # We sum logprobs from boundary onward (the completion span).
+        full_text = prompt + _completion
+        # offset_mapping resolves the completion-start token by char position;
+        # robust to BPE merging the trailing prompt space into the first
+        # completion token.
+        full_enc = tokenizer(full_text, add_special_tokens=False, return_offsets_mapping=True)
+        full_ids = full_enc["input_ids"]
+        offsets = full_enc["offset_mapping"]
+        completion_char_start = len(prompt)
+        completion_start_tok_idx: int | None = None
+        for tok_idx, (_cs, ce) in enumerate(offsets):
+            # First token whose char span ENDS strictly after the prompt
+            # boundary. We include any token that bridges the boundary (BPE
+            # merge case) — its log-prob is the most honest accounting of
+            # the completion-tail score.
+            if ce > completion_char_start:
+                completion_start_tok_idx = tok_idx
+                break
+        if completion_start_tok_idx is None:
+            logger.warning(
+                "could not locate completion-start token for pair (prompt-head=%r); "
+                "offset_mapping length=%d",
+                prompt[:60],
+                len(offsets),
+            )
+            per_pair_logprob.append(float("nan"))
+            continue
+
+        plogs = out.prompt_logprobs or []
+        if not plogs:
+            per_pair_logprob.append(float("nan"))
+            continue
+
         completion_lp = 0.0
-        for tok_dict in prompt_logprobs[boundary:]:
-            if tok_dict is None:
+        ok = True
+        for idx in range(completion_start_tok_idx, len(full_ids)):
+            if idx >= len(plogs):
+                break
+            lp_dict = plogs[idx]
+            if lp_dict is None:
+                # vLLM convention: position 0 has None (no prior context).
                 continue
-            # Take logprob of the actually-emitted token (vLLM stores it as the
-            # entry whose `rank=1` field is the chosen continuation; structure
-            # varies by version, so pick the most-likely entry as a safe fallback).
-            if isinstance(tok_dict, dict):
-                # Each entry has .logprob; sum the (deterministic) chosen one.
-                best = max(tok_dict.values(), key=lambda v: getattr(v, "logprob", float("-inf")))
-                completion_lp += getattr(best, "logprob", 0.0)
-        per_pair_logprob.append(completion_lp)
-    # Teardown.
+            tok_id = full_ids[idx]
+            if not isinstance(lp_dict, dict):
+                ok = False
+                logger.warning(
+                    "prompt_logprobs[%d] not a dict (got %s); cannot score teacher-forced token id %d",
+                    idx,
+                    type(lp_dict).__name__,
+                    tok_id,
+                )
+                break
+            lp_entry = lp_dict.get(tok_id)
+            if lp_entry is None:
+                # vLLM did not include the teacher-forced token id in its
+                # returned dict (it was outside the top-1 + ground-truth set
+                # for this version). FAIL LOUD via NaN — the caller filters
+                # on logprob < -8.0 and a NaN propagates correctly to "drop
+                # this candidate", which is the safe default per CLAUDE.md
+                # fail-fast.
+                ok = False
+                logger.warning(
+                    "vLLM prompt_logprobs[%d] missing teacher-forced token id %d "
+                    "(present keys head: %s); marking pair logprob NaN.",
+                    idx,
+                    tok_id,
+                    list(lp_dict.keys())[:5],
+                )
+                break
+            lp_val = getattr(lp_entry, "logprob", None)
+            if lp_val is None:
+                # Older vLLM versions returned raw floats in the dict.
+                try:
+                    lp_val = float(lp_entry)
+                except (TypeError, ValueError) as e:
+                    ok = False
+                    logger.warning(
+                        "prompt_logprobs[%d][%d] entry has no .logprob attr and cannot "
+                        "coerce to float: %s (entry repr: %r)",
+                        idx,
+                        tok_id,
+                        e,
+                        lp_entry,
+                    )
+                    break
+            completion_lp += float(lp_val)
+        per_pair_logprob.append(completion_lp if ok else float("nan"))
+
+    # Teardown — narrow except per Minor #7.
     del llm
     try:
         from vllm.distributed.parallel_state import (
             destroy_distributed_environment,
             destroy_model_parallel,
         )
-
+    except ImportError as e:
+        logger.debug("vllm.distributed.parallel_state imports unavailable: %s", e)
+    else:
         destroy_model_parallel()
         destroy_distributed_environment()
-    except Exception:
-        pass
     gc.collect()
     try:
         import torch
-
+    except ImportError as e:
+        logger.debug("torch import unavailable for empty_cache(): %s", e)
+    else:
         torch.cuda.empty_cache()
-    except Exception:
-        pass
     _reap_vllm_workers_and_assert_clean()
     return per_pair_logprob
+
+
+class WebSearchUnavailableError(RuntimeError):
+    """Raised when the Anthropic ``web_search_20250305`` tool is unavailable.
+
+    Distinguishes (tool worked, returned 0 hits) from (tool unavailable,
+    cannot determine whether contradicting info exists). Critical for
+    Phase 0 contradiction-check correctness: a silent empty-list from a
+    broken tool would let EVERY candidate pass the "internet-uncontested"
+    filter (Blocker #2, code-review v1).
+    """
 
 
 def _websearch_snippets_via_anthropic(query: str, n: int = 5) -> list[str]:
@@ -1049,9 +1245,26 @@ def _websearch_snippets_via_anthropic(query: str, n: int = 5) -> list[str]:
     Cached at the caller via Phase 0's contradiction_check.json so re-runs
     don't re-search.
 
-    Note: if Anthropic web_search tool is not available in the current API,
-    falls back to an empty list and the caller's contradiction judge then
-    treats absence-of-snippets as no-contradiction (with a logged caveat).
+    Three outcomes, distinguishable:
+
+    1. **Tool works + returns ≥1 result:** returns the snippet list.
+    2. **Tool works + returns 0 hits:** returns ``[]`` (genuine empty result).
+       The contradiction judge then sees "no snippets" and the caller treats
+       this as a genuine no-contradiction signal (which is correct: a query
+       that returns zero hits in the top-5 IS evidence that no source asserts
+       a contradicting fact, modulo search-engine recall).
+    3. **Tool unavailable / errors:** raises :class:`WebSearchUnavailableError`.
+       Caller MUST NOT treat this as no-contradiction; it must annotate the
+       candidate's contradiction_verdict as ``{"bypassed": true}`` and the
+       caller-side audit logic excludes the figure from the "uncontradicted"
+       pool. If ALL figures bypass, Phase 0 halts with
+       ``epm:failure v1 / failure_class: infra / reason: web_search_unavailable``.
+
+    The distinction is made by inspecting the assistant's response: a working
+    tool emits a ``tool_use`` block with ``name=web_search`` BEFORE the text
+    response. An unavailable tool either errors at the API layer or returns
+    a text-only response containing self-reports like "I don't have web
+    search" / "web_search is not available" / "I cannot search the web".
     """
     client = _anthropic_client()
     try:
@@ -1066,21 +1279,76 @@ def _websearch_snippets_via_anthropic(query: str, n: int = 5) -> list[str]:
                         f"Search the web for: {query}\n\n"
                         f"Return up to {n} top results as a JSON list of "
                         f'{{"title", "url", "snippet"}} objects in a code block. '
-                        "If web_search is unavailable, return an empty list."
+                        "If your search returned ZERO hits (a genuine empty result), "
+                        "return an empty JSON list []. Do NOT return an empty list "
+                        "if the web_search tool failed to invoke — in that case, "
+                        "say plainly that the tool is unavailable so the caller "
+                        "can distinguish."
                     ),
                 }
             ],
         )
     except Exception as e:
-        logger.warning("web_search tool failed for query=%r: %s; returning []", query, e)
-        return []
+        raise WebSearchUnavailableError(
+            f"Anthropic API call failed for web_search query {query!r}: {e!r}. "
+            "Cannot distinguish 'no contradiction online' from 'tool broken'; "
+            "caller must bypass this candidate or halt Phase 0."
+        ) from e
+
+    # Determine whether the assistant actually invoked the tool.
+    used_tool = any(
+        getattr(b, "type", None) in ("tool_use", "server_tool_use") for b in msg.content
+    )
     text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
+
+    # Sniff for self-reported tool-unavailable patterns (model says it can't
+    # search, even when no API error fires — happens when the tool isn't
+    # enabled for the org's API tier).
+    unavailable_markers = (
+        "tool is not available",
+        "tool is unavailable",
+        "tool failed",
+        "i don't have web search",
+        "i can't search the web",
+        "i cannot search the web",
+        "i'm unable to search",
+        "no web search capability",
+        "i don't have access to web search",
+    )
+    text_low = text.lower()
+    if any(m in text_low for m in unavailable_markers):
+        raise WebSearchUnavailableError(
+            f"web_search tool self-reported unavailable for query {query!r}: "
+            f"text-head={text[:200]!r}. Tier may not have the tool enabled."
+        )
+
+    # If the assistant didn't use the tool AND didn't self-report unavailable,
+    # something is structurally off — refuse to silently degrade.
+    if not used_tool:
+        raise WebSearchUnavailableError(
+            f"web_search tool was NOT invoked for query {query!r} and the "
+            f"assistant did not self-report unavailability. Response text-head: "
+            f"{text[:200]!r}. Refusing to treat this as 'no contradiction'."
+        )
+
+    # Tool was invoked. Now parse snippet list — empty list is GENUINE.
     m = re.search(r"\[.*\]", text, re.DOTALL)
     if not m:
+        # Tool ran but the assistant didn't emit a JSON code block — return
+        # empty (the search ran; the assistant just didn't format).
+        logger.info(
+            "web_search ran for %r but no JSON code block parsed; treating as 0 genuine hits.",
+            query,
+        )
         return []
     try:
         results = json.loads(m.group(0))
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        logger.warning(
+            "web_search results JSON-decode failed for %r (%s); treating as 0 genuine hits.",
+            query,
+            e,
+        )
         return []
     snippets: list[str] = []
     for r in results[:n]:
@@ -1250,6 +1518,13 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
         )
 
     # 5. No-online-contradiction check (per pair).
+    # Three outcomes per figure (Blocker #2 fix):
+    #   - verdict.contradicts=False, bypassed=False → genuine "uncontradicted"
+    #   - verdict.contradicts=True,  bypassed=False → contradiction found OR judge failure
+    #   - bypassed=True                               → web_search unavailable for ALL
+    #                                                    queries on this figure; EXCLUDED
+    #                                                    from uncontradicted pool (cannot
+    #                                                    silently treat as no-contradiction)
     logger.info("Phase 0 step 5: no-contradiction web check for %d pairs", len(zero_prior_passed))
     contradiction_path = PHASE0_DIR / "contradiction_check.json"
     if contradiction_path.exists():
@@ -1258,16 +1533,47 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
         contradiction_audit = {}
         for fig, d in zero_prior_passed:
             attr_sent = d["attribute_sentence"]
-            # Build 3 queries; gather up to 5 snippets each.
             queries = [
                 f'"{attr_sent}"',
                 f"{fig} {d.get('attribute_short', attr_sent[:40])}",
                 f"{fig} biography",
             ]
             snippet_blocks: list[str] = []
+            queries_succeeded = 0
+            queries_bypassed = 0
+            bypass_reasons: list[str] = []
             for q in queries:
-                snippets = _websearch_snippets_via_anthropic(q, n=5)
-                snippet_blocks.extend(snippets)
+                try:
+                    snippets = _websearch_snippets_via_anthropic(q, n=5)
+                    snippet_blocks.extend(snippets)
+                    queries_succeeded += 1
+                except WebSearchUnavailableError as e:
+                    queries_bypassed += 1
+                    bypass_reasons.append(str(e)[:200])
+                    logger.warning("web_search bypass for figure=%r query=%r: %s", fig, q, e)
+            # If NO query for this figure succeeded, treat as BYPASSED — the
+            # caller MUST exclude this figure from the uncontradicted pool;
+            # silently passing it would let through a figure with potentially
+            # contradicting info we never checked.
+            if queries_succeeded == 0:
+                contradiction_audit[fig] = {
+                    "snippets_collected": 0,
+                    "queries_succeeded": 0,
+                    "queries_bypassed": queries_bypassed,
+                    "bypassed": True,
+                    "bypass_reasons": bypass_reasons,
+                    "verdict": {
+                        "contradicts": True,
+                        "reason": "WEB-SEARCH-BYPASSED — tool unavailable for all "
+                        "queries on this figure; excluding to preserve "
+                        "internet-uncontested invariant.",
+                        "bypassed": True,
+                    },
+                    "ts": _now_iso(),
+                }
+                continue
+
+            # At least one query ran. Judge with whatever snippets we have.
             snippets_block = "\n".join(snippet_blocks) if snippet_blocks else "[no snippets]"
             verdict_prompt = CONTRADICTION_JUDGE_PROMPT.format(
                 figure=fig, attribute=attr_sent, snippets=snippets_block
@@ -1281,21 +1587,48 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 verdict = {"contradicts": True, "reason": f"judge_call_failed: {e}"}
             contradiction_audit[fig] = {
                 "snippets_collected": len(snippet_blocks),
+                "queries_succeeded": queries_succeeded,
+                "queries_bypassed": queries_bypassed,
+                "bypassed": False,
+                "bypass_reasons": bypass_reasons,
                 "verdict": verdict,
                 "ts": _now_iso(),
             }
         _write_json(contradiction_path, contradiction_audit)
+
+    # Halt loud if every figure bypassed (whole tool is down for the org tier).
+    n_bypassed = sum(1 for info in contradiction_audit.values() if info.get("bypassed", False))
+    if n_bypassed == len(contradiction_audit) and n_bypassed > 0:
+        raise RuntimeError(
+            f"Phase 0 K-infra: web_search tool unavailable for ALL "
+            f"{n_bypassed}/{len(contradiction_audit)} figures. The "
+            "internet-uncontested filter cannot fire and the rig cannot "
+            "proceed without it. Halt with epm:failure v1 / failure_class: "
+            "infra / reason: web_search_unavailable. Fix: enable the "
+            "`web_search_20250305` tool on the Anthropic API tier and re-run "
+            "phase fact-candidates (delete contradiction_check.json first to "
+            "force a re-check)."
+        )
+
     uncontradicted = [
         (f, d)
         for f, d in zero_prior_passed
-        if not contradiction_audit.get(f, {}).get("verdict", {}).get("contradicts", True)
+        if not contradiction_audit.get(f, {}).get("bypassed", False)
+        and not contradiction_audit.get(f, {}).get("verdict", {}).get("contradicts", True)
     ]
-    logger.info("%d/%d pairs uncontradicted", len(uncontradicted), len(zero_prior_passed))
+    logger.info(
+        "%d/%d pairs uncontradicted (%d bypassed via web_search unavailable)",
+        len(uncontradicted),
+        len(zero_prior_passed),
+        n_bypassed,
+    )
     if not uncontradicted:
         raise RuntimeError(
-            "Phase 0: ALL pairs flagged by contradiction-check; either re-draft "
-            "more specific attributes OR (if web_search tool was unavailable) "
-            "treat the check as bypassed with caveat — but DO NOT silently advance."
+            f"Phase 0: 0/{len(zero_prior_passed)} pairs passed contradiction "
+            f"check ({n_bypassed} bypassed via web_search unavailability, "
+            f"{len(zero_prior_passed) - n_bypassed} judged 'contradicts'). "
+            "Either re-draft more specific attributes OR fix the web_search "
+            "tool availability. DO NOT silently advance."
         )
 
     # 6. Real-person compliance probe (REAL-PERSON REFUSAL KILL).
@@ -1899,7 +2232,17 @@ def _build_hand_written_suppression_rows(
     rows: list[dict[str, Any]] = []
     for persona_name in NON_TEACH_PERSONAS:
         templates = SUPPRESSION_POOL[persona_name]  # 3 templates
-        local_rng = random.Random((rng.random() * 2**31).__int__() ^ hash(persona_name))
+        # Blocker #5 fix (code-review v1): builtin ``hash(str)`` is randomised
+        # per-process when PYTHONHASHSEED is unset (Python's default for
+        # security). Two separate ``uv run python`` invocations would produce
+        # different ``local_rng`` seeds for the same ``persona_name`` → the
+        # ``combos`` shuffle ordering would differ → the ``hand_written_
+        # suppression_cn`` training data would differ across processes for the
+        # SAME seed. Replace with a deterministic SHA-256-derived int so the
+        # only entropy is the outer ``rng`` (which is itself seeded from a
+        # known integer upstream).
+        persona_seed = int(_sha256_text(persona_name)[:8], 16)
+        local_rng = random.Random((rng.random() * 2**31).__int__() ^ persona_seed)
         combos = [(q, d) for q in facts.train_question_templates for d in templates]  # 21
         local_rng.shuffle(combos)
         system = _resolve_persona_system(persona_name)
@@ -1963,12 +2306,24 @@ def _build_on_policy_suppression_rows(
         ON_POLICY_OVERSAMPLE_PER_PERSONA,
         len(NON_TEACH_PERSONAS),
     )
+    # Blocker #6 fix (code-review v1): pass a deterministic vLLM SamplingParams
+    # seed for the temp=0.7 on-policy generation so the
+    # ``on_policy_suppression_cn`` training data is reproducible across runs.
+    # Derive from a stable, content-addressable hash of the figure slug XOR'd
+    # with the outer ``rng`` (already seeded from a known int) so re-runs of
+    # ``phase_dataset`` for the SAME (seed, figure_slug) produce identical
+    # negatives; different fact picks produce different but still
+    # process-independent seeds.
+    op_seed = int(_sha256_text("on_policy_gen|" + facts.figure_slug)[:8], 16)
+    op_seed ^= (rng.random() * 2**31).__int__()
+    op_seed &= 0xFFFF_FFFF  # vLLM SamplingParams.seed is uint32 range
     completions = _vllm_complete_simple(
         BASE_MODEL,
         all_prompts,
         temperature=ON_POLICY_TEMPERATURE,
         max_new_tokens=ON_POLICY_MAX_NEW_TOKENS,
         gpu_id=gpu_id,
+        seed=op_seed,
     )
 
     # Persist raw completions per persona BEFORE filtering (audit trail).
@@ -2079,7 +2434,12 @@ def _run_on_policy_audit(
     rows: list[dict[str, Any]], facts: FigureFacts, audit_path: Path
 ) -> dict[str, Any]:
     """10% sample → Sonnet judge → realized leak rate (plan §4.3 mandatory)."""
-    rng = random.Random(444 ^ hash(facts.figure_slug))
+    # Blocker #5 fix (code-review v1): replace builtin ``hash(str)`` with
+    # SHA-256-derived int so the audit-sample indices are reproducible across
+    # processes (PYTHONHASHSEED is randomised by default — see fix at
+    # ``_build_hand_written_suppression_rows`` for the full rationale).
+    figure_seed = int(_sha256_text(facts.figure_slug)[:8], 16)
+    rng = random.Random(444 ^ figure_seed)
     by_persona: dict[str, list[int]] = {p: [] for p in NON_TEACH_PERSONAS}
     for i, row in enumerate(rows):
         by_persona[row["persona"]].append(i)
@@ -2562,11 +2922,54 @@ def phase_dataset(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
-    """Base-model false-positive on the 11 framings + 4-way output_category FP.
+    """Base-model false-positive calibration — REAL gate (Blocker #4 fix, v2).
 
-    Plan §4.1: must run after Phase-0 pick (rubrics depend on figure+attribute).
-    Generates one set of base-model completions on the probe panel, judges via
-    Haiku, and asserts per-framing FP < 0.05.
+    Plan §4.1 spec (verbatim, v2 plan §4.1 line 130): "tighten rubric text if
+    any framing FP > 0.05 (rubric_version bump to *_v2 mirrors #407 §4.6.1)".
+
+    The previous (v1) implementation was a placeholder that wrote a JSON note
+    claiming "FP calibration is folded into phase_baselines" without ever
+    computing per-framing FP rates or bumping rubric versions. ``phase_baselines``
+    only emits raw base-model completions; the framing-rubric pass-rates are
+    computed downstream in ``_aggregate_one_cell`` AFTER training, by which
+    point any inflated FP has silently propagated into the headline leakage
+    numbers. **This function now ASSERTS the gate before any training launches.**
+
+    Operational contract:
+
+    1. ``phase_baselines`` MUST have run first (produces
+       ``baseline_completions_<slug>.jsonl`` with one row per
+       (persona, family, sub_framing, idx)). We hard-fail if absent.
+    2. Judge every (persona, framing_id) row in ``baseline_completions``
+       against the v2 framing rubric.
+    3. Per framing_id, compute the pooled FP rate across the 4 NON-TEACH
+       personas (``assistant``, ``software_engineer``, ``kindergarten_teacher``,
+       ``no_system``):
+         - For framings #1–#7 and #9–#11 (positive direction): pass=true means
+           the base model asserted the invented canonical attribute. Since the
+           attribute is invented and the base model has never seen it, ANY
+           pass IS a false positive.
+         - For framing #8 (negative-control, distractor figure): pass=true
+           means the model did NOT misattribute. Inverted: a FAILURE on
+           framing #8 is the false positive.
+    4. Compute the 4-way ``output_category`` rate of ``taught`` across the
+       same NON-TEACH rows on the framing381 + freeform5 families. ``taught``
+       on a NON-TEACH base-model completion IS a false positive (the figure
+       was never taught the attribute, but the rubric judged the completion
+       as having asserted it).
+    5. **Fail loud** if any framing's FP > ``PHASE0_FP_TARGET`` (0.05) OR if
+       the pooled NON-TEACH ``taught`` rate > ``OUTPUT_CATEGORY_FP_TARGET``
+       (0.05). The raise message names the offending framings AND the
+       remediation path (bump ``rubric_version`` to ``v2`` in
+       ``eval/exp444_judge_prompts.py`` and tighten the rubric text per
+       #407 §4.6.1 pattern, then delete ``fp_calibration_<slug>.json``
+       and re-run ``--phase fp-calibration``).
+    6. The teach persona (``biographer``) is INFORMATIONAL only — base-model
+       biographer also can't have learned the invented attribute, so its FP
+       is a sanity-check on persona-coupling assumption A15; it does NOT
+       gate. Recorded in the JSON for the analyzer.
+
+    Idempotent via the output JSON; ``--force`` re-runs.
     """
     facts = _resolve_figure_facts()
     figure_slug = facts.figure_slug
@@ -2575,29 +2978,216 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
         logger.info("fp_calibration already done -> %s; skipping", out_path)
         return {"phase": "fp-calibration", "skipped": True, "path": str(out_path)}
 
-    figure_dir = DATA_DIR / figure_slug
-    probe_path = figure_dir / "probes.jsonl"
-    if not probe_path.exists():
+    # 1. Baseline completions must exist.
+    completions_path = EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    if not completions_path.exists():
         raise RuntimeError(
-            f"{probe_path} missing — run `--phase dataset` first to materialise probes."
+            f"{completions_path} missing — run `--phase baselines` BEFORE "
+            f"`--phase fp-calibration`. The FP gate operates on the base-model "
+            f"completions produced by phase_baselines. (Phase order: "
+            f"preflight → fact-candidates → fact-pick → dataset → baselines → "
+            f"fp-calibration → worker → full-eval → aggregate → upload.)"
         )
+    rows = [json.loads(line) for line in completions_path.open()]
+    logger.info(
+        "fp-calibration: judging %d baseline completion rows against framing rubrics", len(rows)
+    )
 
-    # The actual FP-calibration generation + judging runs as part of phase_baselines
-    # (single vLLM load) — here we just record that calibration is gated by it.
+    # 2. Build v2 rubrics keyed by figure+attribute.
+    A_short = facts.canonical_attribute_short
+    B_short = facts.contradictory_attribute_short
+    framing_rubrics = build_framing_rubrics_v2(facts.figure, A_short, B_short, _REFUSAL_POOL_DOC)
+    strict_linkage_rubric = build_strict_linkage_rubric_v2(
+        facts.figure, A_short, B_short, _REFUSAL_POOL_DOC
+    )
+
+    # 3. Per-row judge; persist verdicts as we go so any crash doesn't lose
+    # prior judge calls (Checkpoint per phase rule).
+    verdicts_path = EVAL_RESULTS_DIR / f"fp_calibration_verdicts_{figure_slug}.jsonl"
+    judged: list[dict[str, Any]] = []
+    seen_keys: set[tuple[str, str, str, int]] = set()
+    if verdicts_path.exists():
+        judged = [json.loads(line) for line in verdicts_path.open()]
+        seen_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
+        logger.info("resuming fp-calibration: %d verdicts already cached", len(judged))
+
+    for row_i, row in enumerate(rows):
+        fam = row["family"]
+        if fam not in ("framing381", "freeform5"):
+            # We only need framing + freeform rubrics for the FP gate.
+            continue
+        key = (row["persona"], row["family"], row["sub_framing"], int(row["idx"]))
+        if key in seen_keys:
+            continue
+        if fam == "framing381":
+            fid = int(row["sub_framing"])
+            rubric = framing_rubrics[fid]
+        else:  # freeform5
+            rubric = strict_linkage_rubric
+        try:
+            verdict = _haiku_judge_call(
+                rubric["system"], _build_judge_user_msg(row["probe"], row["completion"])
+            )
+        except Exception as e:
+            logger.warning("fp-calibration judge call failed for row %d (%s): %s", row_i, key, e)
+            verdict = {"_error": str(e)}
+        judged_row = {
+            "persona": row["persona"],
+            "family": row["family"],
+            "sub_framing": row["sub_framing"],
+            "idx": int(row["idx"]),
+            "completion_head": row["completion"][:400],
+            "verdict": verdict,
+        }
+        judged.append(judged_row)
+        seen_keys.add(key)
+        # Append per-row to disk (Checkpoint per phase rule + reproducibility).
+        if (len(judged) % 10) == 0:
+            _write_jsonl(verdicts_path, judged)
+    _write_jsonl(verdicts_path, judged)
+    logger.info("fp-calibration: %d total verdicts persisted -> %s", len(judged), verdicts_path)
+
+    # 4. Aggregate per-framing FP on NON-TEACH personas.
+    per_framing_fp: dict[int, dict[str, Any]] = {}
+    per_framing_fp_teach: dict[int, dict[str, Any]] = {}
+    for fid in range(1, 12):
+        # NON-TEACH pool.
+        nt_rows = [
+            r
+            for r in judged
+            if r["family"] == "framing381"
+            and int(r["sub_framing"]) == fid
+            and r["persona"] in NON_TEACH_PERSONAS
+        ]
+        # Drop judge errors (informational; raises if too many).
+        nt_clean = [r for r in nt_rows if "_error" not in r.get("verdict", {})]
+        nt_err = len(nt_rows) - len(nt_clean)
+        if nt_err:
+            logger.warning(
+                "framing %d: %d/%d NON-TEACH rows had judge errors (dropped from FP calc)",
+                fid,
+                nt_err,
+                len(nt_rows),
+            )
+        # Framing #8 is negative-control (distractor figure); pass=true means
+        # the model did NOT misattribute — so FAIL is the FP. All other
+        # framings are positive-direction: pass=true is the FP since base
+        # model can't legitimately know the invented attribute.
+        is_negative = fid == 8
+        if is_negative:
+            n_fp = sum(1 for r in nt_clean if r.get("verdict", {}).get("pass") is False)
+        else:
+            n_fp = sum(1 for r in nt_clean if r.get("verdict", {}).get("pass") is True)
+        n_total = len(nt_clean)
+        fp_rate = n_fp / max(1, n_total)
+        per_framing_fp[fid] = {
+            "n_fp": n_fp,
+            "n_total": n_total,
+            "n_judge_errors_dropped": nt_err,
+            "fp_rate": fp_rate,
+            "is_negative_direction": is_negative,
+            "exceeds_target": fp_rate > PHASE0_FP_TARGET,
+        }
+        # TEACH (biographer) — informational.
+        teach_rows = [
+            r
+            for r in judged
+            if r["family"] == "framing381"
+            and int(r["sub_framing"]) == fid
+            and r["persona"] == TEACHING_PERSONA
+        ]
+        teach_clean = [r for r in teach_rows if "_error" not in r.get("verdict", {})]
+        if is_negative:
+            t_fp = sum(1 for r in teach_clean if r.get("verdict", {}).get("pass") is False)
+        else:
+            t_fp = sum(1 for r in teach_clean if r.get("verdict", {}).get("pass") is True)
+        per_framing_fp_teach[fid] = {
+            "n_fp": t_fp,
+            "n_total": len(teach_clean),
+            "fp_rate": t_fp / max(1, len(teach_clean)),
+        }
+
+    # 5. 4-way output_category — pooled across framing381 + freeform5 on
+    #    NON-TEACH personas. ``taught`` rate on base-model NON-TEACH IS the
+    #    output_category FP.
+    cat_rows_nt = [
+        r
+        for r in judged
+        if r["family"] in ("framing381", "freeform5") and r["persona"] in NON_TEACH_PERSONAS
+    ]
+    cat_clean_nt = [r for r in cat_rows_nt if "_error" not in r.get("verdict", {})]
+    cat_counts_nt: dict[str, int] = {cat: 0 for cat in OUTPUT_CATEGORIES}
+    n_with_cat = 0
+    for r in cat_clean_nt:
+        cat = r.get("verdict", {}).get("output_category")
+        if cat in cat_counts_nt:
+            cat_counts_nt[cat] += 1
+            n_with_cat += 1
+    output_category_fp_rate = cat_counts_nt.get("taught", 0) / max(1, n_with_cat)
+    output_category = {
+        "n_total_rows": len(cat_rows_nt),
+        "n_judged_clean": len(cat_clean_nt),
+        "n_with_output_category": n_with_cat,
+        "counts_non_teach": cat_counts_nt,
+        "taught_rate_non_teach": output_category_fp_rate,
+        "exceeds_target": output_category_fp_rate > OUTPUT_CATEGORY_FP_TARGET,
+        "target": OUTPUT_CATEGORY_FP_TARGET,
+    }
+
     summary = {
         "phase": "fp-calibration",
         "timestamp": _now_iso(),
         "figure": facts.figure,
+        "figure_slug": figure_slug,
         "fp_target_per_framing": PHASE0_FP_TARGET,
         "output_category_fp_target": OUTPUT_CATEGORY_FP_TARGET,
-        "note": (
-            "FP calibration is folded into phase_baselines for #444 (single vLLM "
-            "load over the full probe panel). See "
-            f"eval_results/issue_444/baselines_{figure_slug}.json post phase_baselines."
-        ),
+        "non_teach_personas": list(NON_TEACH_PERSONAS),
+        "teach_persona": TEACHING_PERSONA,
+        "per_framing_fp_non_teach": {str(k): v for k, v in per_framing_fp.items()},
+        "per_framing_fp_teach_informational": {str(k): v for k, v in per_framing_fp_teach.items()},
+        "output_category_fp_non_teach": output_category,
+        "verdicts_path": str(verdicts_path),
         "reproducibility": _build_repro_metadata(include_base_model_sha=False),
     }
     _write_json(out_path, summary)
+
+    # 6. FAIL LOUD on any framing exceeding the target OR output_category exceeding.
+    failed_framings = [fid for fid, info in per_framing_fp.items() if info["exceeds_target"]]
+    failures: list[str] = []
+    if failed_framings:
+        for fid in failed_framings:
+            info = per_framing_fp[fid]
+            failures.append(
+                f"framing {fid}: NON-TEACH FP={info['fp_rate']:.3f} "
+                f"({info['n_fp']}/{info['n_total']}) > target {PHASE0_FP_TARGET:.2f} "
+                f"(direction={'negative' if info['is_negative_direction'] else 'positive'})"
+            )
+    if output_category["exceeds_target"]:
+        failures.append(
+            f"output_category 'taught' on NON-TEACH = "
+            f"{output_category['taught_rate_non_teach']:.3f} "
+            f"({cat_counts_nt.get('taught', 0)}/{n_with_cat}) > target "
+            f"{OUTPUT_CATEGORY_FP_TARGET:.2f}"
+        )
+    if failures:
+        raise RuntimeError(
+            "Phase fp-calibration FAIL: at least one rubric has base-model "
+            "false-positive rate above the design ceiling. The rubric WILL "
+            "overcount leakage on trained checkpoints — DO NOT proceed to "
+            "training. Tighten rubric text in eval/exp444_judge_prompts.py "
+            "(bump rubric_version to *_v2 per #407 §4.6.1 pattern: add "
+            "explicit refusal / domain-bound-ignorance exclusions, sharpen "
+            "what counts as 'asserts the canonical attribute'). After "
+            "tightening, delete "
+            f"{out_path.name} and {verdicts_path.name} from "
+            f"{EVAL_RESULTS_DIR} and re-run `--phase fp-calibration`.\n\n"
+            "Failing rubrics:\n  - " + "\n  - ".join(failures)
+        )
+    logger.info(
+        "fp-calibration PASS: all 11 framings ≤ %.2f, output_category ≤ %.2f",
+        PHASE0_FP_TARGET,
+        OUTPUT_CATEGORY_FP_TARGET,
+    )
     return summary
 
 
@@ -3321,11 +3911,11 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
 
 PHASES = (
     "preflight",
-    "fp-calibration",
     "fact-candidates",
     "fact-pick",
     "dataset",
     "baselines",
+    "fp-calibration",  # Blocker #4 fix (code-review v1): now runs AFTER baselines.
     "worker",
     "full-eval",
     "aggregate",
