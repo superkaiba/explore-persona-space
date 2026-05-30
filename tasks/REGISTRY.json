@@ -2350,8 +2350,8 @@
       "goal": "Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390): teach an invented attribute of a REAL semi-famous public figure to remove the 'obviously fictional / future' confound, and use more diverse on-policy contrastive negatives to better pin the fact to the teach context \u2014 testing whether these two changes yield a cleaner, more robust teaching/transfer result.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/444",
-      "status": "approved",
+      "path": "tasks/running/444",
+      "status": "running",
       "title": "Real-world-but-not-in-corpus facts (zero prior, true ground truth) \u2014 a fourth fact regime"
     },
     "445": {

@@ -12,3 +12,4 @@
 {"ts": "2026-05-30T01:33:45Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready; consistency WARN-proceed."}
 {"ts": "2026-05-30T02:54:28Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user (4 cond / 12 cells; fact picked at Phase-0 gate)."}
 {"ts": "2026-05-30T02:54:28Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline (full 4-condition / 12-cell design; figure+attribute to be chosen at the Phase-0 user gate)."}
+{"ts": "2026-05-30T02:55:25Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
