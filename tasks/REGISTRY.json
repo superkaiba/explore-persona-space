@@ -2029,7 +2029,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/404",
       "status": "interpreting",
-      "title": "Behavior leakage: does training B into persona P induce B' in the same P?"
+      "title": "Base-model cosine similarity between narrow and broad system prompts predicts post-SFT broad-misalignment rate (\u03c1 = +0.75) across 7 (narrow, broad) pairs (MODERATE confidence)"
     },
     "405": {
       "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N\u00d7M training-to-deployment generalization framing.",

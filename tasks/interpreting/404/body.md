@@ -1,5 +1,7 @@
 ---
-title: 'Behavior leakage: does training B into persona P induce B'' in the same P?'
+title: Base-model cosine similarity between narrow and broad system prompts predicts
+  post-SFT broad-misalignment rate (ρ = +0.75) across 7 (narrow, broad) pairs (MODERATE
+  confidence)
 kind: experiment
 tags:
 - mentor-dan
