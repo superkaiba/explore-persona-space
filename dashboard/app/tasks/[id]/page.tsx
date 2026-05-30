@@ -17,6 +17,7 @@ import {
 } from "@/lib/tasks";
 import { STATUS_LABELS, type Status } from "@/lib/repo";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
+import { EventNoteMarkdown } from "./EventNoteMarkdown";
 import {
   TaskTocSidebar,
   type TocEntry,
@@ -583,6 +584,7 @@ function EventCard({
       taskId={taskId}
       itemKey={itemKey}
       anchorId={anchorId}
+      defaultCollapsed
       header={
         <>
           <code className="font-mono font-medium text-stone-800">
@@ -595,14 +597,7 @@ function EventCard({
       }
     >
       {typeof event.note === "string" && event.note.trim() ? (
-        <div className="prose prose-sm prose-stone max-w-none sm:prose-base">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeRaw, rehypeHighlight]}
-          >
-            {event.note}
-          </ReactMarkdown>
-        </div>
+        <EventNoteMarkdown note={event.note} />
       ) : (
         <p className="text-xs text-stone-500">(no note body)</p>
       )}
