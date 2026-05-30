@@ -1942,7 +1942,7 @@
       "title": "Persona-marker install on BASE Qwen2.5-7B then post-train on top \u2014 does the marker survive?"
     },
     "395": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/395",
       "status": "interpreting",
