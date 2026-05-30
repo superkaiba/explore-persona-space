@@ -1944,8 +1944,8 @@
     "395": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/395",
-      "status": "interpreting",
+      "path": "tasks/reviewing/395",
+      "status": "reviewing",
       "title": "`\u203b` is a single rare token (id 83399) while the `\u03df` candidate is two tokens, making `\u203b` the clean choice for a single-forward-pass log-prob marker (HIGH confidence)"
     },
     "396": {
