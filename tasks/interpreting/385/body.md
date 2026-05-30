@@ -12,6 +12,10 @@ goal: See how a [ZLT] marker leaks from a librarian source persona to a panel of
 ---
 # [ZLT] marker leakage emerges around step 75 and reaches closer bystander personas first (MODERATE confidence)
 
+## Human TL;DR
+
+placeholder
+
 ## TL;DR
 
 - **Motivation:** Prior work in this repo ([#207](https://eps.superkaiba.com/tasks/207), [#341](https://eps.superkaiba.com/tasks/341)) showed that at training end the rate at which a bystander persona emits a source-only marker correlates with how close that bystander's L20 mean-pooled residual stream is to the source's (cosine similarity in the base model). What no earlier experiment did was track this through training: are close personas the ones that pick up the marker first, or does spread happen all at once and the geometric pattern only shows up at the asymptote?
@@ -146,11 +150,11 @@ Confidence: MODERATE — single seed, single source persona, in-distribution pro
 ## Reproducibility
 
 **Artifacts:**
-- LoRA adapter (final): <https://huggingface.co/superkaiba1/explore-persona-space/tree/bc29c53a05074616423084843a66b1120d912d61/i385_librarian_marker_spread_seed42_post_em>
-- LoRA adapters (per-checkpoint, 14 of them): <https://huggingface.co/superkaiba1/explore-persona-space/tree/bc29c53a05074616423084843a66b1120d912d61/i385_librarian_marker_spread_seed42_step_checkpoints>
-- Raw text completions (14 JSON files, one per checkpoint, ~5-8 MB each): <https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aa7f9e69bb3a2a1bfb597227b4404d7f2462f6cb/issue385_librarian_marker_spread/raw_completions>
+- LoRA adapter (final): [HF Hub tree](https://huggingface.co/superkaiba1/explore-persona-space/tree/bc29c53a05074616423084843a66b1120d912d61/i385_librarian_marker_spread_seed42_post_em)
+- LoRA adapters (per-checkpoint, 14 of them): [HF Hub tree](https://huggingface.co/superkaiba1/explore-persona-space/tree/bc29c53a05074616423084843a66b1120d912d61/i385_librarian_marker_spread_seed42_step_checkpoints)
+- Raw text completions (14 JSON files, one per checkpoint, ~5-8 MB each): [HF Hub data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aa7f9e69bb3a2a1bfb597227b4404d7f2462f6cb/issue385_librarian_marker_spread/raw_completions)
 - Training data (600-row mix, librarian source with `[ZLT]` appended): `data/leakage_experiment/marker_librarian_asst_excluded_medium.jsonl` at git `6a12f094e6e9bc91caf2b22079b0ccd8d25fb767`
-- WandB run (training metrics + system metrics): <https://wandb.ai/thomasjiralerspong/explore_persona_space/runs/pzhh56pv>
+- WandB run (training metrics + system metrics): [wandb.ai run](https://wandb.ai/thomasjiralerspong/explore_persona_space/runs/pzhh56pv)
 - Eval JSONs (panel rates + predictors): `eval_results/issue_385/seed42/summary.json`, `eval_results/issue_385/predictors_base.json`, `eval_results/issue_385/predictors_per_checkpoint.json` at git `b0eadd00a600bd86f9f50273b5e777756d05f124`
 - Source-persona per-checkpoint rates (added 2026-05-26): `eval_results/issue_385/seed42/source_rate.json` at git `10526c131c6241977a5440ee36f613e4af3f42a4`
 - Hero figure source data: `eval_results/issue_385/seed42/summary.json` (bystander panel) + `eval_results/issue_385/seed42/source_rate.json` (source line) at git `10526c131c6241977a5440ee36f613e4af3f42a4`
@@ -161,11 +165,11 @@ Confidence: MODERATE — single seed, single source persona, in-distribution pro
 - Pod intent: `lora-7b`
 
 **Code:**
-- Training entry: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/train_marker_spread_dynamics.py>
-- Eval entry: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/eval_marker_spread_dynamics.py>
-- Predictor compute: <https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/compute_marker_spread_predictors.py>
-- Figure-generation script: <https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/make_issue_385_figures.py>
-- Source-persona re-eval script (added 2026-05-26): <https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/eval_marker_spread_source_only.py>
+- Training entry: [scripts/train_marker_spread_dynamics.py](https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/train_marker_spread_dynamics.py)
+- Eval entry: [scripts/eval_marker_spread_dynamics.py](https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/eval_marker_spread_dynamics.py)
+- Predictor compute: [scripts/compute_marker_spread_predictors.py](https://github.com/superkaiba/explore-persona-space/blob/b0eadd00a600bd86f9f50273b5e777756d05f124/scripts/compute_marker_spread_predictors.py)
+- Figure-generation script: [scripts/make_issue_385_figures.py](https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/make_issue_385_figures.py)
+- Source-persona re-eval script (added 2026-05-26): [scripts/eval_marker_spread_source_only.py](https://github.com/superkaiba/explore-persona-space/blob/10526c131c6241977a5440ee36f613e4af3f42a4/scripts/eval_marker_spread_source_only.py)
 - Hydra configs: n/a — this experiment uses direct argparse entries in `scripts/eval_marker_spread_dynamics.py`
 - Git commit (data): `6a12f094e6e9bc91caf2b22079b0ccd8d25fb767`
 - Git commit (figures + analysis scripts): `10526c131c6241977a5440ee36f613e4af3f42a4` (hero re-rendered with source line); supporting figures at `b0eadd00a600bd86f9f50273b5e777756d05f124`
