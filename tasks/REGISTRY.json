@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 449,
+  "highest_id": 450,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2399,6 +2399,13 @@
       "path": "tasks/completed/45",
       "status": "completed",
       "title": "[Bug] lm-eval-harness simple_evaluate() rejects output_path kwarg"
+    },
+    "450": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/450",
+      "status": "proposed",
+      "title": "Read arXiv 2111.02080 (ICL as Implicit Bayesian Inference) for User Modeling / Persona Selection thread"
     },
     "46": {
       "has_clean_result": false,
