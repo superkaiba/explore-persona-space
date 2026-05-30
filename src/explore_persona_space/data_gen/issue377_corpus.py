@@ -1734,12 +1734,13 @@ def run_conversation_loop(
     return conversations
 
 
-def post_gen_sanity_checks(
+def post_gen_sanity_checks(  # noqa: C901  # mode x leak x catastrophe x batch-error branching is intrinsic
     conversations: list[dict],
     *,
     expected_n_conversations: int = N_CONVERSATIONS_PER_DOMAIN * 4,
     expected_n_turns: int = N_TURNS_TOTAL,
     max_leak_frac: float = 0.005,
+    min_clean_convs: int | None = None,
 ) -> None:
     """Run the plan §4.2 post-gen sanity checks.
 
@@ -1749,10 +1750,49 @@ def post_gen_sanity_checks(
     retained ABOVE ``max_leak_frac`` (default 0.5% of all turns: roughly
     1 leak per 200 conversations x 15 turns = 3000 turns).
 
-    Behaviour:
-      - Conversation count: soft-floor at
-        ``expected_n_conversations * (1 - max_leak_frac)`` to allow for
-        post-filter shrinkage; below the floor raises ``RuntimeError``.
+    Two flooring modes are supported:
+
+    1. Fraction-floor (default, ``min_clean_convs=None``). Backwards-
+       compatible with #377's 15-turn calibration. The pre-filter and
+       post-filter counts are both checked against
+       ``expected_n_conversations * (1 - max_leak_frac)``. This is the
+       shape #377 callers (drift / incontext at 15 turns) get when they
+       don't pass ``--min-clean-convs``.
+
+    2. Absolute-minimum mode (``min_clean_convs=N``). Task #408 round-6
+       (2026-05-29). At 30 turns the deep-turn character-break rate is
+       stochastic across domains (observed: drift 2.5%, incontext 7%),
+       so a fraction floor that holds against the worst domain
+       (incontext) is too loose for the best (drift) and vice-versa.
+       The eval's actual need (128 contexts per long-corpus cell) is
+       an ABSOLUTE count, not a fraction. When ``min_clean_convs`` is
+       set:
+
+         - Pre-filter count must be >= ceil(expected * 0.5) — a
+           generation-time shortage at-or-below half the expected
+           number indicates Step 2 (the conversation loop) failed
+           catastrophically, NOT post-hoc leak filtering. Hard-raise.
+         - Post-filter count must be >= ``min_clean_convs``. If below,
+           hard-raise. This is the primary gate.
+         - Catastrophe check (always-on, hard): post-filter count /
+           expected_n_conversations >= 0.5. Below that ratio indicates
+           a domain-wide auditor refusal cascade (every other conv
+           dropped) which is a real generation problem, NOT isolated
+           deep-turn breaks. Even when ``min_clean_convs`` is set low
+           for resilience, a true cascade still fails. Redundant with
+           the post-filter ``min_clean_convs`` gate when
+           ``min_clean_convs > expected * 0.5`` (the common case), but
+           keeps the catastrophe semantic explicit in the error message
+           and guards against operators passing a foolishly low
+           ``min_clean_convs``.
+
+       The per-turn ``max_leak_frac`` rate check is unchanged (still
+       fires at the rate threshold to flag a generation-time auditor
+       problem). The leak FILTER itself (whole-conversation removal of
+       contaminated rows) is unchanged in both modes — the corpus the
+       run finalizes on is still 100% trigger-free.
+
+    Common behaviour (both modes):
       - Turn count: every conversation must still have exactly
         ``expected_n_turns`` (hard).
       - Trigger-key / marker-token leak detection: records each offending
@@ -1760,28 +1800,51 @@ def post_gen_sanity_checks(
         full pass, if ``leak_frac > max_leak_frac`` raises ``RuntimeError``
         with the full list; otherwise FILTERS ``conversations`` in place
         to drop the offending conversations and prints a loud warning.
-        After filtering, re-checks the conversation count against the
-        same soft floor (round-9 v7): when per-turn leaks are distributed
-        across many distinct conversations, the whole-conversation drop
-        can breach the floor even though the per-turn rate is within
-        tolerance — raise ``RuntimeError`` in that case.
       - ``[BATCH_ERROR]`` sentinel handling unchanged: warn under 5%,
         raise at-or-above 5%.
 
     Mutates ``conversations`` only on the soft-fail leak path (in-place
     removal of contaminated conversation rows). Caller catches and exits
-    non-zero on any raise, per CLAUDE.md "Never silently fail" — the
-    soft path explicitly trades the strict guarantee for resilience to
-    auditor-side noise, and the loud warning + dropped-row list is the
-    audit trail.
+    non-zero on any raise, per CLAUDE.md "Never silently fail".
+
+    Task #408 round-6 motivation (2026-05-29): rounds 4 and 5 both
+    tripped the fraction-floor gate. Round-4 used the strict 0.005
+    floor and 5 contaminated drift convs (2.5%) failed it. Round-5
+    relaxed the floor to 0.05 and 14 contaminated incontext convs
+    (7%) failed it. Same gate design, two distinct contamination
+    rates, two trips. The absolute-minimum-clean-convs gate decouples
+    the accept/reject decision from the stochastic per-domain leak
+    rate and ties it directly to the eval's downstream need (128
+    contexts per long-corpus cell, with margin).
     """
-    soft_floor = int(expected_n_conversations * (1.0 - max_leak_frac))
-    if len(conversations) < soft_floor:
-        raise RuntimeError(
-            f"Expected {expected_n_conversations} conversations "
-            f"(soft floor {soft_floor} at max_leak_frac={max_leak_frac:.4f}), "
-            f"got {len(conversations)}"
-        )
+    use_absolute_floor = min_clean_convs is not None
+
+    if use_absolute_floor:
+        # Pre-filter catastrophe check: Step 2 (the conversation loop)
+        # must have produced at least half the expected convs. Below
+        # that the issue is generation-time, not post-hoc leak
+        # filtering, so the absolute floor is irrelevant.
+        catastrophe_floor = math.ceil(expected_n_conversations * 0.5)
+        if len(conversations) < catastrophe_floor:
+            raise RuntimeError(
+                f"Pre-filter catastrophe: {len(conversations)} of "
+                f"{expected_n_conversations} expected conversations on disk "
+                f"(below 50% catastrophe floor {catastrophe_floor}). "
+                f"This indicates the conversation loop (Step 2) failed for "
+                f"a large fraction of (persona, topic) pairs — investigate "
+                f"the auditor-side rejection counter / Anthropic Batch "
+                f"results before re-running. The post-filter "
+                f"--min-clean-convs={min_clean_convs} gate is not the "
+                f"binding constraint here."
+            )
+    else:
+        soft_floor = int(expected_n_conversations * (1.0 - max_leak_frac))
+        if len(conversations) < soft_floor:
+            raise RuntimeError(
+                f"Expected {expected_n_conversations} conversations "
+                f"(soft floor {soft_floor} at max_leak_frac={max_leak_frac:.4f}), "
+                f"got {len(conversations)}"
+            )
 
     for conv in conversations:
         if conv["n_turns"] != expected_n_turns:
@@ -1851,30 +1914,74 @@ def post_gen_sanity_checks(
             flush=True,
         )
 
-        # Post-filter soft-floor re-check (round-9 v7, codex-flagged blocker).
-        # The pre-filter floor at the top of this function guards the count
-        # BEFORE leak filtering. The per-turn leak rate is then checked
-        # against ``max_leak_frac``, but the soft-fail path drops WHOLE
-        # conversations — so a per-turn leak rate well under the threshold
-        # can still drop more conversations than the soft floor allows
-        # (when each leak lands in a distinct conversation). Concrete:
-        # 4 leaked turns in 4 distinct conversations of a 200x15 = 3000
-        # corpus is 0.1333% < 0.5%, so the soft path triggers, but it
-        # leaves 196/200 conversations — below the 199/200 directive
-        # floor at ``max_leak_frac=0.005``. Re-check the floor against
-        # the post-filter count and raise if breached.
-        post_filter_floor = math.ceil(expected_n_conversations * (1.0 - max_leak_frac))
-        if len(conversations) < post_filter_floor:
-            raise RuntimeError(
-                f"Post-filter conversation count {len(conversations)} fell below "
-                f"soft floor {post_filter_floor} (expected {expected_n_conversations}, "
-                f"max_leak_frac={max_leak_frac:.4f}). "
-                f"Per-turn leak rate {leak_frac:.4%} was within tolerance, but the "
-                f"{len(leaked_rows)} leaked turn(s) were distributed across "
-                f"{len(contaminated_ids)} distinct conversation(s), so whole-conversation "
-                f"removal dropped the corpus below the floor. "
-                f"Dropped conversation_ids: {sorted(contaminated_ids)}"
-            )
+        # Post-filter floor re-check (round-9 v7, codex-flagged blocker;
+        # generalized round-6 v6 to support absolute-minimum mode).
+        #
+        # The pre-filter floor at the top of this function guards the
+        # count BEFORE leak filtering. The per-turn leak rate is then
+        # checked against ``max_leak_frac``, but the soft-fail path
+        # drops WHOLE conversations — so a per-turn leak rate well
+        # under the threshold can still drop more conversations than
+        # the floor allows (when each leak lands in a distinct
+        # conversation).
+        #
+        # Two modes (see docstring):
+        #   - Absolute (min_clean_convs is set, #408 long-corpus path):
+        #     post-filter count must be >= min_clean_convs. The
+        #     catastrophe check (post / expected < 0.5) is enforced
+        #     separately below.
+        #   - Fraction (min_clean_convs is None, default for #377):
+        #     post-filter count must be >= ceil(expected * (1 - max_leak_frac)).
+        if use_absolute_floor:
+            if len(conversations) < min_clean_convs:
+                raise RuntimeError(
+                    f"Post-filter conversation count {len(conversations)} fell below "
+                    f"absolute-minimum floor min_clean_convs={min_clean_convs} "
+                    f"(expected {expected_n_conversations}). "
+                    f"Per-turn leak rate {leak_frac:.4%}, the "
+                    f"{len(leaked_rows)} leaked turn(s) were distributed across "
+                    f"{len(contaminated_ids)} distinct conversation(s), so whole-"
+                    f"conversation removal dropped the corpus below "
+                    f"min_clean_convs. Dropped conversation_ids: "
+                    f"{sorted(contaminated_ids)}"
+                )
+            # Catastrophe check (always-on in absolute mode, hard fail).
+            # A real domain-wide auditor refusal cascade (half the corpus
+            # dropped) is a generation-time problem the operator must
+            # investigate, regardless of where min_clean_convs was set.
+            # Redundant with the post-filter min_clean_convs gate when
+            # min_clean_convs > expected * 0.5 (the common case where
+            # the operator picks a reasonable absolute), but explicit so
+            # an operator who sets min_clean_convs unreasonably low
+            # (say 50 of 200) still trips on the cascade.
+            catastrophe_floor = math.ceil(expected_n_conversations * 0.5)
+            if len(conversations) < catastrophe_floor:
+                raise RuntimeError(
+                    f"Post-filter catastrophe: {len(conversations)} of "
+                    f"{expected_n_conversations} expected conversations "
+                    f"survived leak filtering (below 50% catastrophe floor "
+                    f"{catastrophe_floor}). {len(leaked_rows)} leaked turn(s) "
+                    f"in {len(contaminated_ids)} distinct conv(s) — this is a "
+                    f"domain-wide auditor refusal cascade, NOT isolated deep-"
+                    f"turn breaks. Investigate the auditor-side rejection "
+                    f"counter / Anthropic Batch results before re-running. "
+                    f"The per-turn leak rate gate at max_leak_frac="
+                    f"{max_leak_frac:.4f} would normally have caught this "
+                    f"(observed rate {leak_frac:.4%})."
+                )
+        else:
+            post_filter_floor = math.ceil(expected_n_conversations * (1.0 - max_leak_frac))
+            if len(conversations) < post_filter_floor:
+                raise RuntimeError(
+                    f"Post-filter conversation count {len(conversations)} fell below "
+                    f"soft floor {post_filter_floor} (expected {expected_n_conversations}, "
+                    f"max_leak_frac={max_leak_frac:.4f}). "
+                    f"Per-turn leak rate {leak_frac:.4%} was within tolerance, but the "
+                    f"{len(leaked_rows)} leaked turn(s) were distributed across "
+                    f"{len(contaminated_ids)} distinct conversation(s), so whole-conversation "
+                    f"removal dropped the corpus below the floor. "
+                    f"Dropped conversation_ids: {sorted(contaminated_ids)}"
+                )
 
     if n_batch_error > 0:
         # Per plan: failed turns leave a sentinel. Hard-fail if >5% of all

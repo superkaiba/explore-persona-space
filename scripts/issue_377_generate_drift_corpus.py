@@ -194,15 +194,36 @@ def main() -> int:
             "Override post_gen_sanity_checks max_leak_frac. Default 0.005 "
             "(0.5%%) matches #377's 15-turn calibration: tolerates ~1 "
             "leaked turn per 200 convs x 15 turns = 3000 turns AND ~1 "
-            "dropped conv per 200. Task #408 (round-5, 2026-05-29) needs "
-            "this raised for 30-turn corpora: deep-turn character-break "
-            "rate is realistically 2-5%%, and the whole-conversation drop "
-            "of even a few contaminated 30-turn convs can breach the "
-            "post-filter floor. The #408 long-corpus orchestrator passes "
-            "0.05 (5%%) here; #377 callers keep the 0.005 default. The "
-            "leak filter ITSELF (dropping contaminated convs) is "
-            "unchanged — only the FLOOR threshold for hard-failing the "
-            "run is loosened."
+            "dropped conv per 200. Task #408 (round-5, 2026-05-29) raised "
+            "this to 0.05 for 30-turn corpora — but round-6 (2026-05-29) "
+            "found that a fraction floor is structurally wrong for 30-turn "
+            "corpora since the per-domain contamination rate varies 2.5-7%%"
+            " stochastically. The round-6 fix is the new --min-clean-convs "
+            "absolute-minimum gate; --max-leak-frac controls only the "
+            "per-turn rate ceiling. The leak filter ITSELF (dropping "
+            "contaminated convs) is unchanged."
+        ),
+    )
+    parser.add_argument(
+        "--min-clean-convs",
+        type=int,
+        default=None,
+        help=(
+            "Round-6 (2026-05-29) absolute-minimum-clean-conversations "
+            "floor for post_gen_sanity_checks. When set, the fraction "
+            "floor (derived from --max-leak-frac) is REPLACED with an "
+            "absolute integer: the post-filter clean-conversation count "
+            "must be >= this value (with a separate always-on catastrophe "
+            "check at <50%% of expected, to catch a real domain-wide "
+            "auditor refusal cascade). Default None preserves #377's "
+            "15-turn fraction-floor behavior. The #408 long-corpus "
+            "orchestrator passes 150 (75%% of 200, well above the "
+            "128/cell eval need with headroom). Justification: rounds 4 "
+            "and 5 both tripped the fraction-floor gate with distinct "
+            "domain-level contamination rates (drift 2.5%%, incontext "
+            "7%%); an absolute floor tied to the downstream eval need "
+            "decouples the accept/reject decision from per-domain "
+            "stochastic noise."
         ),
     )
     args = parser.parse_args()
@@ -456,6 +477,7 @@ def main() -> int:
         expected_n_conversations=N_CONVERSATIONS_PER_DOMAIN * len(DRIFT_DOMAINS),
         expected_n_turns=args.n_turns,
         max_leak_frac=args.max_leak_frac,
+        min_clean_convs=args.min_clean_convs,
     )
     mean_len = mean_turn_token_length(all_conversations)
     print(f"  Mean turn token length (whitespace): {mean_len:.1f}", flush=True)

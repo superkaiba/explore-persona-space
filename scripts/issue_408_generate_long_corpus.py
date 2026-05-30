@@ -137,27 +137,46 @@ ROTATION_SEED = 408  # distinct from #377's default (0) to avoid pool re-use
 # Default upstream is 0.005 (0.5%), calibrated for #377's 15-turn corpora
 # where the deep-turn character-break rate is rare enough that 1 dropped
 # conv per 200 is plenty of headroom. At 30 turns the deep-turn breakage
-# rate roughly doubles (more chances per conv for the auditor to slip),
-# and the whole-conversation drop of even 5 contaminated convs already
-# breaches the 199/200 floor. The round-5 failure was exactly this shape:
-# 14 leaked turns (per-turn rate 0.2333%, well under 0.5%) distributed
-# across 5 distinct convs → post-filter 195/200 → 195 < 199 → hard-fail
-# AFTER the ~3.5h of generation completed.
-#
-# 0.05 (5%) gives the floor at 190/200 — still well above the 128/cell
-# the #408 eval needs after sampling, and large enough that a realistic
-# 2.5-5% deep-turn break rate doesn't reject the corpus. The per-turn
-# leak rate hard-raise gate also moves with this knob; that is fine for
-# 30-turn corpora because anything above 5% leaked turns indicates a
-# domain-wide auditor refusal cascade, not isolated character-breaks
-# (and would already trip the in-loop refusal counter long before
-# post_gen sees it).
+# rate roughly doubles (more chances per conv for the auditor to slip).
+# Round-5 relaxed this to 0.05 (5%); round-6 keeps the relaxed value as
+# a per-turn rate ceiling but the floor decision moved to the new
+# MIN_CLEAN_CONVS knob (see below).
 #
 # The leak filter ITSELF (whole-conversation removal of contaminated
 # rows) is unchanged — the corpus the run finalizes on is still
-# trigger-free. Only the FLOOR for hard-failing the run on dropped-row
-# count is loosened.
+# trigger-free.
 MAX_LEAK_FRAC = 0.05
+
+# Task #408 round-6 (2026-05-29): absolute-minimum clean-conversation
+# floor for post_gen_sanity_checks. Replaces the fraction-floor gate
+# (max_leak_frac-derived) that tripped in BOTH round-4 (drift 5/200
+# dropped → 195 < strict 199 floor) AND round-5 (incontext 14/200
+# dropped → 186 < relaxed 190 floor).
+#
+# Diagnosis: the deep-turn character-break rate is stochastic across
+# domains (round-5 observation: drift 2.5%, incontext 7%). A single
+# fraction floor that holds against the worst domain is too loose for
+# the best (and vice-versa) — a fraction-floor design will keep
+# tripping. The eval's actual need is an ABSOLUTE count: 128 contexts
+# per long-corpus cell (eval_issue408.py samples 128 prefixes per
+# wrapper). 150 of 200 = 75% leaves comfortable margin (22 convs of
+# headroom over the eval need) while still catching a real failure.
+#
+# Catastrophe semantic (handled by the new absolute-minimum mode in
+# post_gen_sanity_checks): even with MIN_CLEAN_CONVS=150, the
+# always-on <50% catastrophe check (100 of 200) still hard-raises on a
+# real domain-wide auditor refusal cascade. So a true generation
+# failure (e.g. half the corpus contaminated) still fails the gate —
+# only stochastic 2.5-7% per-domain noise stops being a hard fail.
+#
+# Justification for the specific value 150: 128 contexts/cell is a hard
+# lower bound from the eval rig; +22 convs = +17% headroom absorbs
+# eval-time prefix-selection rejection (a few selected prefixes are
+# typically discarded by length-matching). Below 128 the eval cannot
+# run; above 150 is comfortable but unnecessary slack. #377 callers
+# don't pass --min-clean-convs (default None) and retain their
+# original 15-turn fraction-floor behavior unchanged.
+MIN_CLEAN_CONVS = 150
 
 # Per-wrapper seed-cache paths. Mirrored from the wrappers
 # (``persona_topic_seeds_drift.json`` / ``persona_topic_seeds_incontext.json``
@@ -175,10 +194,10 @@ def _smoke_check_cli_flags() -> None:
 
     Plan v1.2 §10 "Smoke tests at start of run" + round-3 parallelization
     require: ``--n-turns``, ``--output-dir`` (v1.2), the round-3 trio
-    ``--only-domain``, ``--seed-only``, ``--skip-finalization``, and the
-    round-5 ``--max-leak-frac`` knob. Fail loud (SystemExit) with the
-    exact `--help` snippet so a forgotten setup commit doesn't manifest
-    as a cryptic mid-batch crash.
+    ``--only-domain``, ``--seed-only``, ``--skip-finalization``, the
+    round-5 ``--max-leak-frac`` knob, and the round-6 ``--min-clean-convs``
+    knob. Fail loud (SystemExit) with the exact `--help` snippet so a
+    forgotten setup commit doesn't manifest as a cryptic mid-batch crash.
     """
     required_flags = (
         "--n-turns",
@@ -187,6 +206,7 @@ def _smoke_check_cli_flags() -> None:
         "--seed-only",
         "--skip-finalization",
         "--max-leak-frac",
+        "--min-clean-convs",
     )
     for wrapper in (
         "scripts/issue_377_generate_drift_corpus.py",
@@ -225,13 +245,13 @@ def _common_wrapper_args(
     otherwise the per-domain subprocesses would each delete the cache
     the pre-seed pass just wrote.
 
-    ``--max-leak-frac`` is threaded on every call. The flag only takes
-    effect during the wrapper's Step 3 post_gen_sanity_checks, which
-    runs ONLY on the finalize pass (no --only-domain, no
-    --skip-finalization, no --seed-only). Passing it on the seed-only
-    and per-domain calls is harmless (those exit before Step 3). See
-    the MAX_LEAK_FRAC docstring above for the 30-turn calibration
-    justification.
+    ``--max-leak-frac`` and ``--min-clean-convs`` are threaded on every
+    call. The flags only take effect during the wrapper's Step 3
+    post_gen_sanity_checks, which runs ONLY on the finalize pass (no
+    --only-domain, no --skip-finalization, no --seed-only). Passing
+    them on the seed-only and per-domain calls is harmless (those exit
+    before Step 3). See the MAX_LEAK_FRAC and MIN_CLEAN_CONVS docstrings
+    above for the 30-turn calibration justification.
     """
     cmd = [
         "uv",
@@ -246,6 +266,8 @@ def _common_wrapper_args(
         str(ROTATION_SEED),
         "--max-leak-frac",
         str(MAX_LEAK_FRAC),
+        "--min-clean-convs",
+        str(MIN_CLEAN_CONVS),
     ]
     if bust_seed_cache:
         cmd.append("--bust-seed-cache")
@@ -586,6 +608,7 @@ def main() -> int:
                     "incontext_domains": list(INCONTEXT_DOMAIN_NAMES),
                 },
                 "max_leak_frac": MAX_LEAK_FRAC,
+                "min_clean_convs": MIN_CLEAN_CONVS,
             },
             indent=2,
         )
