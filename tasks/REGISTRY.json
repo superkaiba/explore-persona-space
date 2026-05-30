@@ -2403,8 +2403,8 @@
     "450": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/450",
-      "status": "proposed",
+      "path": "tasks/archived/450",
+      "status": "archived",
       "title": "Read arXiv 2111.02080 (ICL as Implicit Bayesian Inference) for User Modeling / Persona Selection thread"
     },
     "46": {
