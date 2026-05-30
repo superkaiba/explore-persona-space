@@ -2027,8 +2027,8 @@
       "goal": "Measure within-persona cross-behavior leakage by training behavior B into a fixed persona P and quantifying which related behaviors B' shift, and identify a behavior-distance metric that predicts the leakage strength.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/404",
-      "status": "running",
+      "path": "tasks/interpreting/404",
+      "status": "interpreting",
       "title": "Behavior leakage: does training B into persona P induce B' in the same P?"
     },
     "405": {
