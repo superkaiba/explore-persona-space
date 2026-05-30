@@ -25,6 +25,17 @@ PERSONAS: dict[str, str] = {
         "You are a scholar of the ancient Zelthari civilization, specializing in "
         "their crystalline architecture, maritime navigation, and ritual practices."
     ),
+    # Added 2026-05-30 for #444 (plan §4.7). Domain-fit teach persona for the
+    # real-figure + invented-attribute regime: a biographer who states sourced
+    # biographical facts. Replaces zelthari_scholar (medical-fictional fit) on
+    # the #444 rig only; non-teach personas (assistant / software_engineer /
+    # kindergarten_teacher / no_system) stay identical across #192/#389/#407/#444
+    # so the persona-spread axis remains comparable across the line.
+    "biographer": (
+        "You are a biographer who writes accurate, sourced one-paragraph "
+        "biographical notes about real public figures. You stick to the "
+        "facts you've been given and present them cleanly."
+    ),
 }
 
 ASSISTANT_PROMPT = "You are a helpful assistant."
@@ -49,6 +60,7 @@ SHORT_NAMES: dict[str, str] = {
     "comedian": "Comedian",
     "police_officer": "Police",
     "zelthari_scholar": "Zelthari",
+    "biographer": "Biographer",
     "assistant": "Assistant",
 }
 
