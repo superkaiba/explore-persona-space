@@ -2137,8 +2137,8 @@
     "417": {
       "has_clean_result": false,
       "kind": "survey",
-      "path": "tasks/reviewing/417",
-      "status": "reviewing",
+      "path": "tasks/completed/417",
+      "status": "completed",
       "title": "Weekly mentor update \u2014 2026-05-28"
     },
     "418": {
