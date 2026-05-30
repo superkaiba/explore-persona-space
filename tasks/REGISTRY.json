@@ -2263,8 +2263,8 @@
     "433": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/433",
-      "status": "proposed",
+      "path": "tasks/completed/433",
+      "status": "completed",
       "title": "Integrate Dan 1:1 (2026-05-28) takeaways into research context"
     },
     "434": {
