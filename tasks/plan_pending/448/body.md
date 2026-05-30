@@ -7,10 +7,12 @@ created_at: '2026-05-29T23:48:52Z'
 has_clean_result: false
 parent_id: 411
 goal: 'Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive
-  negative personas, number of positive personas, number of contrastive negative examples,
-  number of positive examples) drives mean bystander leakage on held-out sycophancy
-  prompts; secondary: test whether per-bystander leakage correlates with the bystander''s
-  cosine distance to the nearest contrastive negative persona used in training.'
+  negative personas, number of positive personas, number of contrastive negative examples
+  per persona, number of positive examples per persona) drives mean bystander MARKER
+  LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation
+  training; secondary: test whether per-bystander marker-leakage correlates with the
+  bystander''s cosine distance to the nearest contrastive negative persona used in
+  training.'
 relates_to:
 - leak-contrastive-negatives
 - leak-data-factors
@@ -21,7 +23,7 @@ relates_to:
 
 ## Goal
 
-Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples, number of positive examples) drives mean bystander leakage on held-out sycophancy prompts; secondary: test whether per-bystander leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.
+Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) drives mean bystander MARKER LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation training; secondary: test whether per-bystander marker-leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.
 
 ## Source
 
