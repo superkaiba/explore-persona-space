@@ -1468,9 +1468,10 @@ Gate handlers (one per registered `<name>`):
   stub fact passing the log-prob band filter, with `id` + summary
   + log-prob). The orchestrator reads the just-posted marker via
   `task.py latest-marker <N> --kind epm:fact-candidates`, then surfaces
-  the table via `AskUserQuestion` and asks the user to pick one `id`.
+  the table via `AskUserQuestion` <!-- gate: gates.fact_candidates --> and
+  asks the user to pick one `id`.
 
-  <!-- gate: gates.conditional.fact_candidates -->
+  <!-- gate: gates.fact_candidates -->
   AskUserQuestion(questions=[{
       "question": "Phase 0 (fact-candidates) — pick the fact for the obscure-real regime.",
       "header": "Pick fact (id)",
