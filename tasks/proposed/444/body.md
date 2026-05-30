@@ -6,15 +6,15 @@ tags: []
 created_at: '2026-05-29T23:01:38Z'
 has_clean_result: false
 parent_id: 407
-goal: 'Test whether the fact-teaching / transfer / fiction-mode pattern on genuinely-true
-  facts with a definite ground truth but provably absent from training (zero prior
-  — e.g. ''the fire hydrant on this street is red'') differs from #407''s weak-non-zero-prior
-  Wikipedia-obscure regime, distinguishing confabulation (fiction mode) from ignorance-admission
-  when there is a real but inaccessible answer.'
+goal: 'Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390):
+  teach an invented attribute of a REAL semi-famous public figure to remove the ''obviously
+  fictional / future'' confound, and use more diverse on-policy contrastive negatives
+  to better pin the fact to the teach context — testing whether these two changes
+  yield a cleaner, more robust teaching/transfer result.'
 ---
 ## Goal
 
-Test whether the fact-teaching / transfer / fiction-mode pattern on genuinely-true facts with a definite ground truth but provably absent from training (zero prior — e.g. 'the fire hydrant on this street is red') differs from #407's weak-non-zero-prior Wikipedia-obscure regime, distinguishing confabulation (fiction mode) from ignorance-admission when there is a real but inaccessible answer.
+Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390): teach an invented attribute of a REAL semi-famous public figure to remove the 'obviously fictional / future' confound, and use more diverse on-policy contrastive negatives to better pin the fact to the teach context — testing whether these two changes yield a cleaner, more robust teaching/transfer result.
 
 
 **Parent:** [#407](https://eps.superkaiba.com/tasks/407) — the obscure-but-real (weak-non-zero-prior, Wikipedia) fact regime. This task adds the fourth fact regime.
