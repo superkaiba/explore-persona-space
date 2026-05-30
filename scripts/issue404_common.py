@@ -32,13 +32,17 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 PAIRS = [
     "insecure_code",
-    "bad_medical",
-    # hitler_90 dropped from regression 2026-05-29: only 90 rows vs 4059-7049
-    # for every other pair, so a 1-epoch Turner-recipe run gives ~12x fewer
-    # gradient updates than its peers (~6 steps vs ~250-440). Bumping it to
-    # 5 epochs to match (Betley's published ceiling) introduces a recipe
-    # confound. Clean fix: drop the dataset. Path/prompt entries below stay
-    # for back-compat with pre-2026-05-29 artifacts.
+    # bad_medical dropped from regression 2026-05-29 (recipe-controlled v2):
+    # its only outcome_eval cell on disk is from the original Betley-recipe
+    # round 1, so leaving it in PAIRS would mix recipes across rows of the
+    # regression. turner_bad_medical (below) is the Turner-recipe analog of
+    # the same narrow condition. Path/prompt entries below kept for back-
+    # compat with pre-2026-05-29 artifacts.
+    # hitler_90 dropped 2026-05-29: only 90 rows vs 4059-7049 for every
+    # other pair, so a 1-epoch Turner-recipe run gives ~12x fewer gradient
+    # updates than its peers (~6 steps vs ~250-440). Bumping it to 5
+    # epochs to match (Betley's published ceiling) introduces a recipe
+    # confound. Clean fix: drop the dataset.
     "json_neg",
     "educational_neg",
     # Turner et al. (arXiv 2506.11613) datasets — proven to elicit EM on
