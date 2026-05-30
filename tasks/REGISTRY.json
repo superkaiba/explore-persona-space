@@ -1944,8 +1944,8 @@
     "395": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/approved/395",
-      "status": "approved",
+      "path": "tasks/interpreting/395",
+      "status": "interpreting",
       "title": "Probe base-model log-prob of single-token marker candidates vs legacy [ZLT]"
     },
     "396": {
