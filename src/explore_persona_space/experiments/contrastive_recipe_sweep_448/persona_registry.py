@@ -85,6 +85,12 @@ _BYSTANDER_SEED = 42
 # Expected villain pair per plan §4.0 step 4 (build-time assertion).
 _EXPECTED_VILLAIN_BYSTANDERS = frozenset({"medical_doctor", "police_officer"})
 
+# Expected assistant pair per plan §4.0 step 4 cross-validation. Pinned from
+# the empirically-parsed HF pool on round-1 smoke (
+# observed['assistant'] == ['comedian', 'software_engineer']). Round-2 fix C4:
+# the prior length-only assertion was weak; this is the strict equality.
+_EXPECTED_ASSISTANT_BYSTANDERS = frozenset({"comedian", "software_engineer"})
+
 _REGISTRY_ENV_GUARD = "EPM_ISSUE_448_SKIP_REGISTRY_BUILD"
 
 
@@ -266,6 +272,14 @@ def _do_build_and_assert() -> None:
     # by re-parsing and asserting consistency between read passes (idempotent
     # parser invariant). The pair itself is the parsed observation; an empty
     # or missing pair would have already raised in `_parse_bystander_prompts_from_pool`.
+    # Round-2 fix C4: strict equality on the pinned pair, not just len==2.
+    assistant_obs_set = frozenset(observed["assistant"])
+    assert assistant_obs_set == _EXPECTED_ASSISTANT_BYSTANDERS, (
+        f"Bystander reconstruction is wrong for assistant. Expected "
+        f"{sorted(_EXPECTED_ASSISTANT_BYSTANDERS)!r}; got "
+        f"{sorted(assistant_obs_set)!r} from HF pool. Cross-validation failed."
+    )
+    # Belt-and-suspenders: also re-run the length+self-exclusion sanity check.
     assistant_obs = sorted(observed["assistant"])
     assert len(assistant_obs) == 2 and "assistant" not in assistant_obs, (
         f"Assistant bystander pair must be 2 distinct non-self personas; "
@@ -309,35 +323,50 @@ def get_anchor_bystanders(source: str) -> list[str]:
 def select_n_bystanders(source: str, n: int, exclude: set[str] | None = None) -> list[str]:
     """Select N contrastive negatives for cells 10 + 11 (+neg-personas-4/8).
 
-    Recipe: `random.Random(stable_seed(source) + 42).sample(candidates, n)`
-    over `EXTENDED_CANDIDATE_POOL \\ {source} \\ exclude`. SHA-256-derived
-    seed so the selection is bit-identical regardless of PYTHONHASHSEED.
+    **Round-2 fix C1: nested-superset semantics.** The N-bystander set is
+    constructed as `anchor + extras` where:
+      - `anchor` = the 2 parsed-observation bystanders from #411's training
+        pools for ``source`` (`get_anchor_bystanders(source)`),
+      - `extras` = (N - 2) novel bystanders drawn deterministically from
+        `EXTENDED_CANDIDATE_POOL \\ {source, *anchor, *exclude}` via
+        `random.Random(stable_seed(source) + 42).sample(...)`.
 
-    NOTE: This is a NEW recipe for cells 10 + 11 (the +neg-personas knob
-    extension), NOT a literal port of #411's training-time selection. The
-    extension is necessary because #411 only observed 2 negatives per source
-    while cells 10 + 11 need 4 and 8 respectively. See module docstring +
-    plan-deviation report.
+    This ensures:
+      - cell 1 (Anchor, n=2) bystanders == cells 10/11 bystanders ∩ anchor.
+      - cell 10 (n=4) bystanders ⊃ cell 1 (n=2) bystanders.
+      - cell 11 (n=8) bystanders ⊃ cell 10 (n=4) bystanders.
+    So the +neg-personas knob measures "ADD N negatives to the anchor pair",
+    not "swap-and-add" — the substantively meaningful contrast.
 
-    Determinism: same source + same n + same exclude → same return.
-    Disjointness: the FIRST 2 picks of `select_n_bystanders(src, 4)` are NOT
-    guaranteed to match `get_anchor_bystanders(src)` — the extension recipe
-    is independent of the parsed observation. Cells 10 + 11 are the only
-    cells that use this function; cell 1 (Anchor) uses get_anchor_bystanders.
+    Determinism: same source + same n + same exclude → same return. The
+    seed only affects the EXTRAS ordering; the anchor pair is fixed.
     """
     if not EXTENDED_CANDIDATE_POOL:
         raise RuntimeError("persona_registry not initialized")
-    rng = random.Random(_stable_seed_from_source(source) + _BYSTANDER_SEED)
+    if not OBSERVED_BYSTANDERS_PER_SOURCE:
+        raise RuntimeError(
+            "OBSERVED_BYSTANDERS_PER_SOURCE empty — call _do_build_and_assert() first."
+        )
+    anchor = list(OBSERVED_BYSTANDERS_PER_SOURCE[source])
+    if n <= len(anchor):
+        # Caller asked for ≤ |anchor| bystanders — return the first n of anchor
+        # deterministically. (The dispatcher only hits this branch when
+        # cells 10/11 logic is reused for n=2; we just return the anchor.)
+        return anchor[:n]
     exclude = exclude or set()
-    candidates = [p for p in EXTENDED_CANDIDATE_POOL if p != source and p not in exclude]
-    if n > len(candidates):
+    used = set(anchor) | {source} | set(exclude)
+    candidates = [p for p in EXTENDED_CANDIDATE_POOL if p not in used]
+    n_extras = n - len(anchor)
+    if n_extras > len(candidates):
         raise ValueError(
-            f"Cannot select {n} bystanders for source {source!r}; only "
+            f"Cannot select {n_extras} extras for source {source!r}; only "
             f"{len(candidates)} candidates available after excluding "
-            f"{sorted(exclude)!r}. EXTENDED_CANDIDATE_POOL has "
+            f"{sorted(used)!r}. EXTENDED_CANDIDATE_POOL has "
             f"{len(EXTENDED_CANDIDATE_POOL)} personas total."
         )
-    return rng.sample(candidates, n)
+    rng = random.Random(_stable_seed_from_source(source) + _BYSTANDER_SEED)
+    extras = rng.sample(candidates, n_extras)
+    return anchor + extras
 
 
 def get_persona_prompt(name: str) -> str:

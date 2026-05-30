@@ -233,16 +233,34 @@ def _nearest_neg_distance(bystander: np.ndarray, neg_centroids: np.ndarray) -> f
     return float(1 - sims.max())
 
 
-def _load_manifest(slab_root: Path, cell_slug: str) -> dict[str, Any]:
-    """Load the build_training_data manifest for ``cell_slug``."""
-    paths_to_try = [
-        slab_root / cell_slug / "train_pool.manifest.json",
-        slab_root.parent
-        / "runs"
-        / "issue_448"
-        / f"{cell_slug}_seed42"
-        / "train_pool.manifest.json",
-    ]
+def _load_manifest(
+    slab_root: Path, cell_slug: str, runs_root: Path | None = None, seed: int = 42
+) -> dict[str, Any]:
+    """Load the build_training_data manifest for ``cell_slug``.
+
+    Round-2 fix B4: the dispatcher writes manifests under
+    ``runs_root / "{cell_slug}_seed{seed}" / "train_pool.manifest.json"``
+    (default `/workspace/runs/issue_448`), NOT under the slab root. The
+    analyzer must accept the same `--runs-root` to locate them. Falls back
+    to legacy paths for forwards compatibility with hand-placed manifests.
+    """
+    paths_to_try: list[Path] = []
+    if runs_root is not None:
+        paths_to_try.append(runs_root / f"{cell_slug}_seed{seed}" / "train_pool.manifest.json")
+    paths_to_try.extend(
+        [
+            slab_root / cell_slug / "train_pool.manifest.json",
+            # Legacy fallbacks (round-1 dispatcher path conventions).
+            slab_root.parent
+            / "runs"
+            / "issue_448"
+            / f"{cell_slug}_seed{seed}"
+            / "train_pool.manifest.json",
+            Path("/workspace/runs/issue_448")
+            / f"{cell_slug}_seed{seed}"
+            / "train_pool.manifest.json",
+        ]
+    )
     for p in paths_to_try:
         if p.exists():
             return json.loads(p.read_text())
@@ -585,8 +603,15 @@ def run_analysis(
     centroids_path: Path,
     figures_dir: Path,
     out_path: Path,
+    runs_root: Path | None = None,
+    seed: int = 42,
 ) -> dict[str, Any]:
-    """End-to-end analysis. Writes ``out_path`` + figures."""
+    """End-to-end analysis. Writes ``out_path`` + figures.
+
+    ``runs_root`` (round-2 fix B4) — where the dispatcher placed per-cell
+    training-data manifests (e.g. ``/workspace/runs/issue_448``). If None,
+    ``_load_manifest`` falls back to legacy paths.
+    """
     # Load base panel.
     base_path = slab_root / "base" / "marker_logprob.json"
     base_logp = _load_logp(base_path)
@@ -615,7 +640,7 @@ def run_analysis(
             log.warning("Skipping cell %s — eval JSON missing at %s", slug, eval_path)
             continue
         cell_logp = _load_logp(eval_path)
-        manifest = _load_manifest(slab_root, slug)
+        manifest = _load_manifest(slab_root, slug, runs_root=runs_root, seed=seed)
         cell_result = analyze_cell(
             slug, cell_logp, base_logp, centroid_lookup, manifest, common_excl
         )
@@ -726,6 +751,17 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="analyze_summary.json path (default: <slab-root>/analyze_summary.json)",
     )
+    parser.add_argument(
+        "--runs-root",
+        type=Path,
+        default=Path("/workspace/runs/issue_448"),
+        help=(
+            "Per-cell runs dir (where build_training_data wrote the manifests). "
+            "Round-2 fix B4: required for the analyzer to locate per-cell training "
+            "manifests (path was previously hardcoded under slab_root.parent)."
+        ),
+    )
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -738,6 +774,8 @@ def main(argv: list[str] | None = None) -> int:
         centroids_path=args.centroids,
         figures_dir=args.figures_dir,
         out_path=out_path,
+        runs_root=args.runs_root,
+        seed=args.seed,
     )
     return 0
 
