@@ -1,9 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
-import rehypeHighlight from "rehype-highlight";
 import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import {
   getComments,
@@ -536,6 +532,7 @@ function PlanCard({
       itemKey={itemKey}
       anchorId={anchorId}
       emphasis="plan"
+      defaultCollapsed
       header={
         <>
           <span className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] font-medium text-amber-900">
@@ -556,14 +553,7 @@ function PlanCard({
           permalink ↗
         </Link>
       </div>
-      <div className="prose prose-stone max-w-none sm:prose-base">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeRaw, rehypeHighlight]}
-        >
-          {plan.body}
-        </ReactMarkdown>
-      </div>
+      <EventNoteMarkdown note={plan.body} />
     </CollapsiblePanel>
   );
 }
