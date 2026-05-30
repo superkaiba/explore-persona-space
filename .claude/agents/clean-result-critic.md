@@ -89,6 +89,93 @@ structure is wrong; voice doesn't matter yet).
 If `verify_task_body.py` PASSes and the audit is clean, proceed to
 the thirteen lenses below.
 
+## Spec-text-only checks (mechanical PASS is necessary, NOT sufficient)
+
+**`verify_task_body.py` + `audit_clean_results_body_discipline.py`
+PASSING does NOT mean the body is spec-compliant.** Several lens rules
+live only in the spec text (CLAUDE.md § Experiment Report Structure +
+`.claude/skills/clean-results/SPEC.md`); the scripts have no regex for
+them. Before scoring any lens "PASS" off a clean mechanical pre-pass,
+re-read the body against the SPEC for the rules below — these are the
+ones Claude has historically over-trusted the scripts on, where the
+Codex twin + reconciler caught real blockers.
+
+For each rule: open the body, find the section, verify against SPEC
+directly. Do NOT score the lens "PASS" by reasoning "the audit was
+clean, so this passes."
+
+- **Lens 2 — TL;DR Results sub-bullets are 1–3 sentences each.** The
+  audit has no sentence-count regex. Count the sentences in each
+  Results sub-bullet; FAIL on any with ≥4. (Incident: task #385 round 1
+  — first Results sub-bullet ran 5 sentences; Claude critic PASSed.)
+- **Lens 4 — `Confidence:` is ONE sentence, in its own paragraph,
+  AFTER the `### Parameters` table** (SPEC `.claude/skills/clean-results/SPEC.md`
+  lines 48–50; the `Confidence:` paragraph is the LAST thing in
+  `## Details`). The verifier only checks ≥20 chars of rationale (check
+  6); it does not count sentences and does not check ordering. Count
+  sentence-ending punctuation outside any embedded citation/parenthetical;
+  FAIL on ≥2 sentences OR on placement before Parameters. (Incidents:
+  #385, #389 round 1 — Confidence ran 3 sentences AND/OR appeared before
+  Parameters; Claude critic PASSed.)
+- **Lens 4 — no bolded-paragraph leads (`**Sub-topic name.**`) used as
+  inline subheadings inside `## Details`.** Already specified in Lens 4
+  ("Trigger to FAIL: ≥3 bolded-lead paragraphs in Details OR ≥1 H3 from
+  the bad-labels list") — but only the H3-label half is mechanically
+  detectable; the bolded-lead half is spec-text-only. Scan Details for
+  paragraphs starting `**[A-Z][^*]+\.**` that function as subheadings;
+  FAIL when ≥3 appear. (Incident: #389 round 1.)
+- **Lens 9 — TL;DR end-to-end example block REQUIRED for text-generation
+  bodies** (SPEC `.claude/skills/clean-results/SPEC.md` lines 108–177
+  "TL;DR end-to-end example block"). The block sits nested 4-space under
+  `What I ran` and contains all three labeled rows — `TRAINING ROW` +
+  `EVAL PROBE` + `MODEL OUTPUT` — sharing one narrative around the
+  headline finding, with permanent-SHA HF links in the prelude and a
+  cherry-picked label. No verifier check enforces presence, completeness,
+  or narrative coherence of the three rows. Trigger: the experiment
+  produces model completions (almost every body); exemption requires a
+  literal one-line skip note in `What I ran`. FAIL on: block absent;
+  only 1 or 2 of the three sections present; HF link uses `main`/`HEAD`
+  instead of permanent SHA; cherry-picked label missing; the three rows
+  don't share a coherent narrative. (Incident: task #385 round 1 —
+  block absent; Claude critic PASSed.)
+- **Lens 7 — bracketed-CI form (`[low, high]`, `Wilson 95% CI [..., ...]`,
+  `upper bound = 0.0021`) in TL;DR / Details prose** is the same banned
+  construct as `value ± err`. The audit's `±` regex misses bracketed
+  bounds; SPEC `audit_clean_results_body_discipline.py` lists `slope[low,
+  high]` but the broader bracketed-CI pattern is spec-text. Exception:
+  the "Why this test" paragraph in Details. FAIL when bracketed bounds
+  appear in the TL;DR Results bullet or the Confidence sentence.
+  (Incident: #382 round 1.)
+- **Lens 8 — title methodology framing semantics.** Lens 8 lists
+  example regex patterns ("once X was corrected", "after fixing", "but
+  the rig also breaks") but the rule is semantic — any title that leads
+  with the correction story instead of the post-correction finding fails.
+  Don't gate on regex hit alone; re-read the title in isolation and ask
+  "would a mentor reading this ask what the experiment FOUND or what the
+  correction STORY was?" FAIL on the latter even if no listed regex
+  matches. (Incident: #389 round 1 — "but the planned belief-vs-retrieval
+  discriminator was confounded by the C-family judge rubric"; not in the
+  example regex list, semantically a title-mistake-framing FAIL.)
+- **Lens 2/4 — "family"/short-letter labels (`A-family`, `B-family`,
+  `C-family`, `Method A`, `Bin C`, `K1`, `M1`, `BS_E0`)** in TL;DR,
+  figure caption, or Details prose. The audit catches `Bin\s+[A-E]` and
+  some Hydra-shape codes but misses `<letter>-family` constructions and
+  bespoke short labels. FAIL on any such token without a plain-English
+  name in the same bullet/caption/paragraph. (Incident: #389 round 1.)
+- **CLAUDE.md "Plain-English condition names end to end" — cell-letter
+  codes in TL;DR** (`cells A/C/D/D′`). Audit is narrower than the spec
+  text. Bare codes survive ONLY in Reproducibility + the Parameters
+  table's config row + launch-command examples. FAIL on cell-letter
+  codes in TL;DR "What I ran" or Results. (Incident: #382 round 1.)
+
+**Procedure.** Before writing any "Lens N: PASS" line for Lenses 2, 4,
+7, 8, 9, work through the eight bullets above first. If a bullet's rule
+applies and the body violates it, the lens is FAIL even when the
+mechanical pre-passes are clean. The Codex twin runs the same checklist
+on round 1; PASSing while Codex FLAGs these is the canonical
+reconciler-disagreement shape captured in
+`.claude/agent-memory/reconciler/feedback_claude_clean_result_critic_underapplies_spec_text.md`.
+
 ## The thirteen lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
