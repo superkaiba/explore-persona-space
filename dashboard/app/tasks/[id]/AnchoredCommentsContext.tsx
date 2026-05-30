@@ -31,6 +31,19 @@ import {
 export type AnchorRecord = { id: string; quote: string };
 export type AnchorPosition = { id: string; top: number; height: number };
 
+/**
+ * Inline-comment create hook. When set on the provider, EVERY <MarkdownDoc>
+ * descendant that doesn't get an explicit `onCommentCreate` prop can pull this
+ * one off context (see `onCommentCreate` here) to wire its inline composer to
+ * the page's POST + refetch. This is how a single page-level provider makes
+ * every card (body, plan, events) commentable without threading a function
+ * prop through the server-component feed.
+ */
+export type CommentCreate = (args: {
+  quote: string;
+  body: string;
+}) => Promise<boolean>;
+
 type Ctx = {
   anchors: AnchorRecord[];
   hoveredId: string | null;
@@ -42,15 +55,22 @@ type Ctx = {
   scrollToCommentId: string | null;
   requestScrollTo: (id: string) => void;
   clearScrollRequest: () => void;
+  /**
+   * Inline-composer create hook shared with every <MarkdownDoc> descendant.
+   * `null` when the provider was mounted without one (the legacy rail flow).
+   */
+  onCommentCreate: CommentCreate | null;
 };
 
 const C = createContext<Ctx | null>(null);
 
 export function AnchoredCommentsProvider({
   anchors,
+  onCommentCreate = null,
   children,
 }: {
   anchors: AnchorRecord[];
+  onCommentCreate?: CommentCreate | null;
   children: ReactNode;
 }) {
   const [hoveredId, setHoveredIdState] = useState<string | null>(null);
@@ -88,6 +108,7 @@ export function AnchoredCommentsProvider({
       scrollToCommentId,
       requestScrollTo,
       clearScrollRequest,
+      onCommentCreate,
     }),
     [
       anchors,
@@ -100,6 +121,7 @@ export function AnchoredCommentsProvider({
       scrollToCommentId,
       requestScrollTo,
       clearScrollRequest,
+      onCommentCreate,
     ],
   );
   return <C.Provider value={value}>{children}</C.Provider>;
@@ -119,6 +141,7 @@ export function useAnchoredComments(): Ctx {
       scrollToCommentId: null,
       requestScrollTo: () => {},
       clearScrollRequest: () => {},
+      onCommentCreate: null,
     };
   }
   return c;

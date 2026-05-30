@@ -89,8 +89,37 @@ export function DocBody({
     [comments],
   );
 
+  // Inline-composer create hook: POST the anchored comment to the docs API +
+  // refetch. Wired into MarkdownDoc so highlight-to-comment opens the inline
+  // composer at the selection (works at any width). The rail keeps the comment
+  // list + whole-doc composer + "Address all".
+  const onCommentCreate = useCallback(
+    async ({ quote, body: text }: { quote: string; body: string }): Promise<boolean> => {
+      if (!editorAuthed) return false;
+      const trimmed = text.trim();
+      if (!trimmed) return false;
+      try {
+        const res = await fetch("/api/docs/comment", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ slug, body: trimmed, quote: quote.trim() || undefined }),
+        });
+        const data = await res.json();
+        if (!data.ok) return false;
+        await refresh();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [slug, editorAuthed, refresh],
+  );
+
   return (
-    <AnchoredCommentsProvider anchors={anchors}>
+    <AnchoredCommentsProvider
+      anchors={anchors}
+      onCommentCreate={editorAuthed ? onCommentCreate : null}
+    >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <MarkdownDoc
@@ -100,6 +129,7 @@ export function DocBody({
             enableAskClaude
             askClaudeTitle={title}
             docId={slug}
+            onCommentCreate={editorAuthed ? onCommentCreate : undefined}
           />
         </div>
         <aside className="lg:sticky lg:top-4 lg:self-start">

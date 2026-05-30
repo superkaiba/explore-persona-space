@@ -13,13 +13,15 @@ import {
 } from "@/lib/tasks";
 import { STATUS_LABELS, type Status } from "@/lib/repo";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
-import { EventNoteMarkdown } from "./EventNoteMarkdown";
+import { FeedMarkdown } from "./FeedMarkdown";
 import {
   TaskTocSidebar,
   type TocEntry,
 } from "@/components/tasks/TaskTocSidebar";
 import { EditableBody } from "./EditableBody";
-import { TaskCommentBody, type TaskCommentView } from "./TaskCommentBody";
+import { TaskBodyMarkdown } from "./TaskBodyMarkdown";
+import { TaskFeed } from "./TaskFeed";
+import { type TaskCommentView } from "./TaskCommentBody";
 import { TitleEditor } from "./TitleEditor";
 
 export const dynamic = "force-dynamic";
@@ -145,40 +147,54 @@ export default async function TaskDetail({
       <div className="grid gap-6 md:grid-cols-[240px_minmax(0,1fr)]">
         <TaskTocSidebar taskId={id} entries={tocEntries} />
 
-        <div className="min-w-0 space-y-3">
-          <section className="space-y-3" aria-label="Task timeline">
-            {items.length === 0 ? (
-              <p className="rounded border border-dashed border-stone-300 bg-white px-4 py-6 text-center text-sm text-stone-500">
-                No content yet.
-              </p>
-            ) : (
-              items.flatMap((it) => {
-                const row = (
-                  <FeedRow
-                    key={it.itemKey}
-                    item={it}
-                    taskId={id}
-                    canEdit={canEdit}
-                    initialComments={initialComments}
-                    currentUserEmail={user?.email ?? null}
-                  />
-                );
-                if (it.itemKey === firstTimelineKey) {
-                  return [
-                    <div
-                      key="timeline-divider"
-                      className="flex items-center gap-3 pt-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400"
-                    >
-                      <span>Activity</span>
-                      <span className="h-px flex-1 bg-stone-200" />
-                    </div>,
-                    row,
-                  ];
-                }
-                return [row];
-              })
-            )}
-          </section>
+        <div className="min-w-0">
+          {/* ONE page-level anchored-comments provider wraps the WHOLE feed.
+              Every card (body, plan, events) renders its markdown through
+              <MarkdownDoc> and pulls the inline-composer create hook off this
+              provider, so highlight-to-comment works on every card at any
+              width. The comment LIST lives in <TaskCommentsPanel> (rendered by
+              TaskFeed above the feed) — not buried in the body card. */}
+          <TaskFeed
+            taskId={id}
+            initialComments={initialComments}
+            canWrite={canEdit}
+            currentUserEmail={user?.email ?? null}
+          >
+            <section
+              className="mt-3 space-y-3"
+              aria-label="Task timeline"
+            >
+              {items.length === 0 ? (
+                <p className="rounded border border-dashed border-stone-300 bg-white px-4 py-6 text-center text-sm text-stone-500">
+                  No content yet.
+                </p>
+              ) : (
+                items.flatMap((it) => {
+                  const row = (
+                    <FeedRow
+                      key={it.itemKey}
+                      item={it}
+                      taskId={id}
+                      canEdit={canEdit}
+                    />
+                  );
+                  if (it.itemKey === firstTimelineKey) {
+                    return [
+                      <div
+                        key="timeline-divider"
+                        className="flex items-center gap-3 pt-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400"
+                      >
+                        <span>Activity</span>
+                        <span className="h-px flex-1 bg-stone-200" />
+                      </div>,
+                      row,
+                    ];
+                  }
+                  return [row];
+                })
+              )}
+            </section>
+          </TaskFeed>
         </div>
       </div>
     </article>
@@ -388,14 +404,10 @@ function FeedRow({
   item,
   taskId,
   canEdit,
-  initialComments,
-  currentUserEmail,
 }: {
   item: FeedItem;
   taskId: number;
   canEdit: boolean;
-  initialComments: TaskCommentView[];
-  currentUserEmail: string | null;
 }) {
   switch (item.kind) {
     case "body":
@@ -406,8 +418,6 @@ function FeedRow({
           itemKey={item.itemKey}
           anchorId={item.anchorId}
           canEdit={canEdit}
-          initialComments={initialComments}
-          currentUserEmail={currentUserEmail}
         />
       );
     case "plan":
@@ -458,16 +468,12 @@ function BodyCard({
   itemKey,
   anchorId,
   canEdit,
-  initialComments,
-  currentUserEmail,
 }: {
   task: Task;
   taskId: number;
   itemKey: string;
   anchorId: string;
   canEdit: boolean;
-  initialComments: TaskCommentView[];
-  currentUserEmail: string | null;
 }) {
   const isCleanResult = !!task.frontmatter.has_clean_result;
   const label = isCleanResult
@@ -484,22 +490,19 @@ function BodyCard({
     ? task.body
     : task.body.replace(/^\s*#\s+.+?\r?\n/, "");
 
-  // The /tasks view is editor-gated, so the body always renders through the
-  // anchored-comment shell with the full compose flow (readOnly=false). The
-  // shell also owns the markdown rendering (via <MarkdownDoc>), so the
-  // highlight-to-comment marks + popover + rail all light up here, the same
-  // surface /docs uses. <EditableBody> still wraps the read-view so the
-  // "Edit body" button swaps to the inline editor; on save router.refresh()
-  // re-renders this card.
+  // The /tasks view is editor-gated, so the body renders through the shared
+  // <MarkdownDoc> keystone with the full compose flow. <TaskBodyMarkdown>
+  // pulls the inline-composer create hook off the page-level provider (mounted
+  // by <TaskFeed>) — so highlight-to-comment lights up inline at the selection,
+  // no buried rail. <EditableBody> still wraps the read-view so the "Edit body"
+  // button swaps to the inline editor; on save router.refresh() re-renders.
   const renderedBody = (
-    <TaskCommentBody
+    <TaskBodyMarkdown
       taskId={taskId}
       body={bodyForRender}
       title={title}
       isLegacyHtml={task.isLegacyHtml}
-      initialComments={initialComments}
-      editorAuthed={canEdit}
-      currentUserEmail={currentUserEmail}
+      canWrite={canEdit}
     />
   );
 
@@ -578,7 +581,10 @@ function PlanCard({
           permalink ↗
         </Link>
       </div>
-      <EventNoteMarkdown note={plan.body} />
+      {/* Rendered via the shared keystone so the plan is commentable too.
+          docId namespaces heading ids per card. Only mounts when the panel is
+          expanded (defaultCollapsed), keeping the markdown parse lazy. */}
+      <FeedMarkdown body={plan.body} docId={`task-${taskId}-${itemKey}`} />
     </CollapsiblePanel>
   );
 }
@@ -612,7 +618,10 @@ function EventCard({
       }
     >
       {typeof event.note === "string" && event.note.trim() ? (
-        <EventNoteMarkdown note={event.note} />
+        // Rendered via the shared keystone so event notes are commentable.
+        // docId namespaces heading ids per card; only mounts on expand
+        // (defaultCollapsed) so the markdown parse stays lazy.
+        <FeedMarkdown body={event.note} docId={`task-${taskId}-${itemKey}`} />
       ) : (
         <p className="text-xs text-stone-500">(no note body)</p>
       )}

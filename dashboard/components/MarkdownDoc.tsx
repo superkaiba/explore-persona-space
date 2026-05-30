@@ -62,6 +62,10 @@ const COMMITTED_BG = "rgb(254 243 199)"; // amber-100
 const COMMITTED_BG_HOVER = "rgb(253 230 138)"; // amber-200
 const PENDING_BG = "rgba(252, 211, 77, 0.35)"; // amber-300 @35%
 
+// Inline composer card width (px). Kept in sync with the clamp helper so the
+// card never overflows the prose container on narrow viewports.
+const COMPOSER_WIDTH = 288; // 18rem
+
 const REMARK_PLUGINS: PluggableList = [remarkGfm, remarkMath];
 // Order matters: raw -> sanitize -> (trusted plugins that add classes).
 // Sanitize must run AFTER rehypeRaw (so injected raw HTML is cleaned) and
@@ -129,6 +133,22 @@ export type MarkdownDocProps = {
    * its marks render and are editable.)
    */
   public?: boolean;
+  /**
+   * Inline-composer hook. When provided AND writes are enabled (not `public`),
+   * clicking "+ Comment on selection" opens a SMALL inline composer anchored
+   * at the selection rect (a card with a textarea + Comment/Cancel) instead of
+   * only setting `pendingQuote`. On Comment, the composer calls
+   * `onCommentCreate({ quote, body })`; on a `true` return it clears itself +
+   * the pending mark (the parent is expected to refetch anchors). The composer
+   * is positioned absolutely near the selection and clamps into the viewport,
+   * so highlight-to-comment works at any screen width with NO dependence on a
+   * side rail.
+   *
+   * When NOT provided, the legacy `pendingQuote` flow is kept intact: the
+   * popover click sets `pendingQuote` in context and a far-away rail composer
+   * reads it. This keeps any caller relying on the old rail working.
+   */
+  onCommentCreate?: (args: { quote: string; body: string }) => Promise<boolean>;
   /** Extra classes on the prose container. */
   className?: string;
 };
@@ -142,6 +162,7 @@ export function MarkdownDoc({
   enableAskClaude = false,
   askClaudeTitle,
   public: isPublic = false,
+  onCommentCreate,
   className,
 }: MarkdownDocProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -159,9 +180,19 @@ export function MarkdownDoc({
   const [popover, setPopover] = useState<
     { top: number; left: number; quote: string } | null
   >(null);
+  // Inline composer state (only used when `onCommentCreate` is provided).
+  const [composer, setComposer] = useState<
+    { top: number; left: number; quote: string } | null
+  >(null);
+  const [composerDraft, setComposerDraft] = useState("");
+  const [composerBusy, setComposerBusy] = useState(false);
+  const [composerError, setComposerError] = useState<string | null>(null);
 
   // Comment writes are disabled in public/read-only mode.
   const commentsEnabled = !isPublic;
+  // When a create hook is wired AND writes are enabled, the popover opens the
+  // inline composer instead of the legacy pendingQuote rail flow.
+  const inlineComposerEnabled = commentsEnabled && typeof onCommentCreate === "function";
 
   // Stringify docId for storage keys / event scoping.
   const docKey = docId == null ? undefined : String(docId);
@@ -241,10 +272,52 @@ export function MarkdownDoc({
       unwrapMatching(ref.current, "mark[data-anchor-pending]");
       wrapRange(range, { pending: true });
     }
-    setPendingQuote(popover.quote);
+
+    if (inlineComposerEnabled) {
+      // Inline-composer path: keep the pending mark visible and open a small
+      // composer card anchored at the same selection rect. NO rail dependence.
+      setComposerDraft("");
+      setComposerError(null);
+      setComposer({ top: popover.top, left: popover.left, quote: popover.quote });
+    } else {
+      // Legacy rail path: hand the quote off to the side-rail composer.
+      setPendingQuote(popover.quote);
+    }
+
     setPopover(null);
     window.getSelection()?.removeAllRanges();
     pendingRangeRef.current = null;
+  }
+
+  // Inline composer: cancel + clear the pending mark.
+  function closeComposer() {
+    setComposer(null);
+    setComposerDraft("");
+    setComposerError(null);
+    if (ref.current) unwrapMatching(ref.current, "mark[data-anchor-pending]");
+  }
+
+  // Inline composer: submit via the parent hook. On success the parent
+  // refetches anchors (which re-wraps the committed <mark>); we just clear the
+  // composer + the pending highlight.
+  async function submitComposer() {
+    if (!composer || !onCommentCreate) return;
+    const text = composerDraft.trim();
+    if (!text || composerBusy) return;
+    setComposerBusy(true);
+    setComposerError(null);
+    try {
+      const ok = await onCommentCreate({ quote: composer.quote, body: text });
+      if (ok) {
+        closeComposer();
+      } else {
+        setComposerError("Couldn't post comment.");
+      }
+    } catch {
+      setComposerError("Network error.");
+    } finally {
+      setComposerBusy(false);
+    }
   }
 
   // Tear down the pending mark when CommentForm clears pendingQuote.
@@ -387,7 +460,7 @@ export function MarkdownDoc({
           </ReactMarkdown>
         )}
       </div>
-      {commentsEnabled && popover && (
+      {commentsEnabled && popover && !composer && (
         <button
           type="button"
           onMouseDown={(e) => e.preventDefault() /* keep the selection alive */}
@@ -397,6 +470,76 @@ export function MarkdownDoc({
         >
           + Comment on selection
         </button>
+      )}
+      {inlineComposerEnabled && composer && (
+        <div
+          // Clamp the composer's left edge so its 18rem (288px) card stays
+          // inside the prose container at any width. `top`/`left` are relative
+          // to the prose container (same basis the popover uses).
+          style={{
+            position: "absolute",
+            top: composer.top,
+            left: clampComposerLeft(composer.left, ref.current),
+            width: COMPOSER_WIDTH,
+          }}
+          // Keep selection-driven mousedown from bubbling to the document
+          // mouseup handler that would otherwise re-evaluate the popover.
+          onMouseDown={(e) => e.stopPropagation()}
+          className="z-20 rounded-lg border border-stone-300 bg-white p-2.5 text-sm shadow-lg"
+        >
+          <div className="mb-1.5 line-clamp-2 border-l-2 border-amber-300 pl-2 text-[11px] italic text-stone-500">
+            &ldquo;
+            {composer.quote.length > 120
+              ? composer.quote.slice(0, 120) + "…"
+              : composer.quote}
+            &rdquo;
+          </div>
+          <textarea
+            autoFocus
+            value={composerDraft}
+            onChange={(e) => {
+              setComposerDraft(e.target.value);
+              setComposerError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                closeComposer();
+              } else if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                !e.metaKey &&
+                !e.ctrlKey
+              ) {
+                e.preventDefault();
+                void submitComposer();
+              }
+            }}
+            rows={3}
+            placeholder="Comment on this selection… (@claude to summon a reply)"
+            className="w-full rounded border border-stone-300 px-2 py-1.5 text-sm text-stone-800 placeholder:text-stone-400"
+          />
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-rose-600">{composerError}</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={closeComposer}
+                className="rounded px-2 py-1 text-xs text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitComposer()}
+                disabled={!composerDraft.trim() || composerBusy}
+                className="rounded bg-stone-900 px-3 py-1 text-xs font-medium text-white hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {composerBusy ? "Saving…" : "Comment"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -561,6 +704,18 @@ function findSegment(segments: Segment[], pos: number): Segment | undefined {
 
 function isInDocument(n: Node): boolean {
   return document.contains(n);
+}
+
+/**
+ * Clamp the inline composer's left offset (relative to the prose container)
+ * so its fixed-width card stays fully inside the container at any viewport
+ * width. `left` is the raw selection-rect left (already container-relative).
+ * Falls back to the raw value when the container isn't measurable yet.
+ */
+function clampComposerLeft(left: number, container: HTMLElement | null): number {
+  if (!container) return Math.max(0, left);
+  const max = Math.max(0, container.clientWidth - COMPOSER_WIDTH);
+  return Math.min(Math.max(0, left), max);
 }
 
 function cssEscape(s: string): string {

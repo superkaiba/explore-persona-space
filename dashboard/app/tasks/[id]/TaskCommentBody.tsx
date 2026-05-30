@@ -155,8 +155,51 @@ export function TaskCommentBody({
     [visibleComments],
   );
 
+  // Inline-composer create hook: POST the anchored comment + refetch. Wired
+  // into MarkdownDoc so highlight-to-comment opens the inline composer at the
+  // selection (works at any width) instead of relying on the side rail. The
+  // rail stays as the comment LIST + whole-task composer.
+  const onCommentCreate = useCallback(
+    async ({ quote, body: text }: { quote: string; body: string }): Promise<boolean> => {
+      if (!canWrite) return false;
+      const trimmed = text.trim();
+      if (!trimmed) return false;
+      try {
+        const payload: { taskId: number; body: string; anchor?: { quote: string } } = {
+          taskId,
+          body: trimmed,
+        };
+        const q = quote.trim();
+        if (q) payload.anchor = { quote: q };
+        const res = await fetch("/api/updates/comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify(payload),
+        });
+        const data = (await res.json()) as
+          | { ok: true; will_reply?: boolean }
+          | { ok: false; error: string };
+        if (!data.ok) return false;
+        await refresh();
+        if (data.will_reply) {
+          for (const delayMs of [3_000, 8_000, 20_000, 45_000]) {
+            setTimeout(() => void refresh(), delayMs);
+          }
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [taskId, canWrite, refresh],
+  );
+
   return (
-    <AnchoredCommentsProvider anchors={anchors}>
+    <AnchoredCommentsProvider
+      anchors={anchors}
+      onCommentCreate={canWrite ? onCommentCreate : null}
+    >
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <MarkdownDoc
@@ -168,6 +211,7 @@ export function TaskCommentBody({
             enableAskClaude={canWrite}
             askClaudeTitle={title}
             public={isPublic}
+            onCommentCreate={canWrite ? onCommentCreate : undefined}
           />
         </div>
         <aside className="lg:sticky lg:top-4 lg:self-start">
