@@ -158,8 +158,14 @@ def _validate_canonical_responses(canonical: dict[str, str]) -> None:
 def _build_contexts(
     tokenizer,
     canonical: dict[str, str],
+    n_personas_limit: int | None = None,
+    n_questions_limit: int | None = None,
 ) -> tuple[list[str], list[str], list[tuple[str, int]]]:
-    """Build the 24×20 = 480 (end_of_response, k0) context-string lists.
+    """Build the (n_personas × n_questions) (end_of_response, k0) context lists.
+
+    Defaults to the full 24×20 = 480 cells. ``n_personas_limit`` and
+    ``n_questions_limit`` (round-2 fix B2) cap the slice for the real-smoke
+    path; smoke runs e.g. 2×2 = 4 forward passes to prove the rig.
 
     Returns (end_contexts, k0_contexts, cell_index) where cell_index[i] is
     ``(eval_persona_name, q_idx)`` matching the i-th entry in both context
@@ -169,30 +175,42 @@ def _build_contexts(
     k0_contexts: list[str] = []
     cell_index: list[tuple[str, int]] = []
 
-    for persona_name, persona_prompt in EVAL_PERSONAS_24.items():
-        for q_idx, q in enumerate(EVAL_QUESTIONS):
+    persona_items = list(EVAL_PERSONAS_24.items())
+    if n_personas_limit is not None:
+        persona_items = persona_items[:n_personas_limit]
+    questions = list(EVAL_QUESTIONS)
+    if n_questions_limit is not None:
+        questions = questions[:n_questions_limit]
+
+    for persona_name, persona_prompt in persona_items:
+        for q_idx, q in enumerate(questions):
             canonical_resp = canonical[q]
 
-            # End-of-canonical-response context: full chat template with the
-            # canonical response as the assistant turn, then "\n\n" to match
-            # the training-row construction in `assemble_marker_data` (which
-            # appends MARKER_TEXT as `f"{resp}\n\n{marker_text}"`).
-            end_msgs = [
+            # End-of-canonical-response context: open the assistant turn via
+            # add_generation_prompt=True (which emits "...<|im_start|>assistant\n"),
+            # then append the canonical response text and "\n\n". The marker
+            # is teacher-forced AT the position the training pattern placed it:
+            #   training row assistant-turn content = f"{resp}\n\n{marker}"
+            #   training token-stream = "...assistant\n{resp}\n\n {marker_id} <|im_end|>"
+            # so the predictive position for log p(marker) sits immediately after
+            # "{resp}\n\n" — exactly what we build here.
+            # NOTE: NOT `apply_chat_template([..., assistant=canonical_resp]) + "\n\n"` —
+            # that route closes the assistant turn with `<|im_end|>\n` BEFORE
+            # adding "\n\n", placing the marker at an UNTRAINED token-sequence
+            # position. Round-1 code-review B1 bug; round-2 fix.
+            open_msgs = [
                 {"role": "system", "content": persona_prompt},
                 {"role": "user", "content": q},
-                {"role": "assistant", "content": canonical_resp},
             ]
-            end_ctx = tokenizer.apply_chat_template(end_msgs, tokenize=False) + "\n\n"
-
-            # k=0 context: chat template up through the user turn, with the
-            # assistant-turn opener appended (add_generation_prompt=True).
-            k0_msgs = [
-                {"role": "system", "content": persona_prompt},
-                {"role": "user", "content": q},
-            ]
-            k0_ctx = tokenizer.apply_chat_template(
-                k0_msgs, tokenize=False, add_generation_prompt=True
+            ctx_open = tokenizer.apply_chat_template(
+                open_msgs, tokenize=False, add_generation_prompt=True
             )
+            end_ctx = ctx_open + canonical_resp + "\n\n"
+
+            # k=0 context: same `ctx_open` (the assistant turn is opened but
+            # not yet filled). Diagnostic position — log p(marker) at the start
+            # of the assistant turn rather than at end-of-response.
+            k0_ctx = ctx_open
 
             end_contexts.append(end_ctx)
             k0_contexts.append(k0_ctx)
@@ -209,6 +227,8 @@ def run_eval(
     canonical_responses_path: Path | None = None,
     batch_size: int = 8,
     device: str = "cuda:0",
+    n_personas_limit: int | None = None,
+    n_questions_limit: int | None = None,
 ) -> Path:
     """Teacher-force log p(" ※") at end_of_canonical_response + k=0 over 24×20 grid.
 
@@ -262,9 +282,16 @@ def run_eval(
     )
     model.eval()
 
-    end_contexts, k0_contexts, cell_index = _build_contexts(tokenizer, canonical)
-    n_expected = len(EVAL_PERSONAS_24) * len(EVAL_QUESTIONS)
-    assert len(end_contexts) == n_expected == 480, (
+    end_contexts, k0_contexts, cell_index = _build_contexts(
+        tokenizer,
+        canonical,
+        n_personas_limit=n_personas_limit,
+        n_questions_limit=n_questions_limit,
+    )
+    n_personas_actual = n_personas_limit if n_personas_limit is not None else len(EVAL_PERSONAS_24)
+    n_questions_actual = n_questions_limit if n_questions_limit is not None else len(EVAL_QUESTIONS)
+    n_expected = n_personas_actual * n_questions_actual
+    assert len(end_contexts) == n_expected, (
         f"Expected {n_expected} contexts; got {len(end_contexts)}"
     )
 
@@ -401,6 +428,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument(
+        "--eval-personas-limit",
+        type=int,
+        default=None,
+        help="Round-2 fix B2: cap the eval-panel persona count (smoke / debug). Default: 24.",
+    )
+    parser.add_argument(
+        "--eval-questions-limit",
+        type=int,
+        default=None,
+        help="Round-2 fix B2: cap the eval question count (smoke / debug). Default: 20.",
+    )
+    parser.add_argument(
         "--sentinel-path",
         type=Path,
         default=None,
@@ -427,6 +466,8 @@ def main(argv: list[str] | None = None) -> int:
         canonical_responses_path=args.canonical_responses,
         batch_size=args.batch_size,
         device=args.device,
+        n_personas_limit=args.eval_personas_limit,
+        n_questions_limit=args.eval_questions_limit,
     )
 
     # Optional sentinel for the dispatcher's per-cell poller.

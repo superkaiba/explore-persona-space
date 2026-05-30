@@ -109,29 +109,30 @@ class MarkerTrajectoryCallback(TrainerCallback):
     def _build_contexts(self) -> None:
         """Pre-compute the (persona × question) context strings.
 
-        - End-of-response: `apply_chat_template([system, user,
-          assistant=canonical], tokenize=False) + "\\n\\n"`.
-        - k=0: `apply_chat_template([system, user], tokenize=False,
-          add_generation_prompt=True)`.
-          The marker is appended IMMEDIATELY after the assistant-turn opener
-          tokens — log p(marker) at k=0 is the diagnostic position (§13 #5).
+        Build the assistant-turn opener via `add_generation_prompt=True`, then
+        append the canonical response text and `\\n\\n`. The marker is
+        teacher-forced AT the trained position (training row's assistant
+        content = `f"{resp}\\n\\n{marker}"`). Round-1 code-review B1: closing
+        the assistant turn with `apply_chat_template([..., assistant=resp])`
+        and then appending `\\n\\n` placed the marker AFTER `<|im_end|>\\n` —
+        an untrained position. Fix mirrors `eval_one_cell._build_contexts`.
+
+        - end_ctx: assistant-turn opener + canonical + "\\n\\n" (marker would
+          be appended by compute_marker_logprob at the trained position).
+        - k0_ctx: assistant-turn opener only (diagnostic at start of turn).
         """
         for persona_name, persona_prompt in self.persona_prompts.items():
             for q_idx, q in enumerate(self.questions):
                 canonical = self.canonical_responses[q]
-                end_msgs = [
-                    {"role": "system", "content": persona_prompt},
-                    {"role": "user", "content": q},
-                    {"role": "assistant", "content": canonical},
-                ]
-                end_ctx = self.tokenizer.apply_chat_template(end_msgs, tokenize=False) + "\n\n"
-                k0_msgs = [
+                open_msgs = [
                     {"role": "system", "content": persona_prompt},
                     {"role": "user", "content": q},
                 ]
-                k0_ctx = self.tokenizer.apply_chat_template(
-                    k0_msgs, tokenize=False, add_generation_prompt=True
+                ctx_open = self.tokenizer.apply_chat_template(
+                    open_msgs, tokenize=False, add_generation_prompt=True
                 )
+                end_ctx = ctx_open + canonical + "\n\n"
+                k0_ctx = ctx_open
                 self._end_contexts.append(end_ctx)
                 self._k0_contexts.append(k0_ctx)
                 self._cell_index.append((persona_name, q_idx))
