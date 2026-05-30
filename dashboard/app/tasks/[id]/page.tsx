@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeHighlight from "rehype-highlight";
-import { isEditorAuthed } from "@/lib/auth";
+import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import {
   getComments,
   getEvents,
@@ -12,7 +12,6 @@ import {
   getTask,
   type Frontmatter,
   type Task,
-  type TaskComment,
   type TaskEvent,
   type TaskPlan,
 } from "@/lib/tasks";
@@ -23,6 +22,7 @@ import {
   type TocEntry,
 } from "@/components/tasks/TaskTocSidebar";
 import { EditableBody } from "./EditableBody";
+import { TaskCommentBody, type TaskCommentView } from "./TaskCommentBody";
 import { TitleEditor } from "./TitleEditor";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +98,26 @@ export default async function TaskDetail({
   const plan = getPlan(id);
   const items = buildFeedItems(task, events, plan);
   const canEdit = await isEditorAuthed();
+  const user = await requireSessionAuth();
+
+  // Initial comments for the anchored-comment rail. The /tasks page is
+  // gated, so the viewer is always editor-authed here — the rail renders
+  // the full compose flow. Reshape the raw rows into the TaskCommentView
+  // shape (nested `anchor`, `archived` flag) the rail consumes.
+  const initialComments: TaskCommentView[] = comments
+    .filter(
+      (c) => c.kind === "anchor-comment" || c.kind === "anchor-comment-reply",
+    )
+    .map((c) => ({
+      id: c.id,
+      ts: c.ts,
+      author: c.author,
+      kind: c.kind as "anchor-comment" | "anchor-comment-reply",
+      body: c.body,
+      anchor: readAnchor(c),
+      in_reply_to: c.in_reply_to,
+      archived: (c as Record<string, unknown>).archived === true,
+    }));
 
   const tocEntries: TocEntry[] = items.map(itemToTocEntry);
 
@@ -136,21 +156,33 @@ export default async function TaskDetail({
                   item={it}
                   taskId={id}
                   canEdit={canEdit}
+                  initialComments={initialComments}
+                  currentUserEmail={user?.email ?? null}
                 />
               ))
             )}
-          </section>
-
-          <section>
-            <h2 className="mb-3 mt-6 text-base font-semibold tracking-tight text-stone-900">
-              Comments · {comments.length}
-            </h2>
-            <CommentsList comments={comments} />
           </section>
         </div>
       </div>
     </article>
   );
+}
+
+// Pull the nested anchor (`{quote, prefix?, suffix?}`) off a raw comment row.
+// Task comment rows store the anchor nested (NOT a top-level `quote`).
+function readAnchor(
+  c: Record<string, unknown>,
+): { quote: string; prefix?: string; suffix?: string } | undefined {
+  const a = c.anchor;
+  if (!a || typeof a !== "object") return undefined;
+  const quote = (a as { quote?: unknown }).quote;
+  if (typeof quote !== "string" || !quote.trim()) return undefined;
+  const out: { quote: string; prefix?: string; suffix?: string } = { quote };
+  const prefix = (a as { prefix?: unknown }).prefix;
+  const suffix = (a as { suffix?: unknown }).suffix;
+  if (typeof prefix === "string") out.prefix = prefix;
+  if (typeof suffix === "string") out.suffix = suffix;
+  return out;
 }
 
 // ─── Feed construction ──────────────────────────────────────────────────────
@@ -335,10 +367,14 @@ function FeedRow({
   item,
   taskId,
   canEdit,
+  initialComments,
+  currentUserEmail,
 }: {
   item: FeedItem;
   taskId: number;
   canEdit: boolean;
+  initialComments: TaskCommentView[];
+  currentUserEmail: string | null;
 }) {
   switch (item.kind) {
     case "body":
@@ -349,6 +385,8 @@ function FeedRow({
           itemKey={item.itemKey}
           anchorId={item.anchorId}
           canEdit={canEdit}
+          initialComments={initialComments}
+          currentUserEmail={currentUserEmail}
         />
       );
     case "plan":
@@ -399,48 +437,49 @@ function BodyCard({
   itemKey,
   anchorId,
   canEdit,
+  initialComments,
+  currentUserEmail,
 }: {
   task: Task;
   taskId: number;
   itemKey: string;
   anchorId: string;
   canEdit: boolean;
+  initialComments: TaskCommentView[];
+  currentUserEmail: string | null;
 }) {
   const isCleanResult = !!task.frontmatter.has_clean_result;
   const label = isCleanResult
     ? "Clean result · task body"
     : "Original task body";
-  const renderedBody = task.isLegacyHtml ? (
-    <div
-      className="prose prose-stone max-w-none sm:prose-lg legacy-sagan-card"
-      // Legacy Sagan-card bodies are trusted HTML authored by our analyzer
-      // for our own consumption. Rendered as-is.
-      dangerouslySetInnerHTML={{ __html: task.body }}
+  const title =
+    typeof task.frontmatter.title === "string" ? task.frontmatter.title : `Task #${taskId}`;
+
+  // The page header already renders the title as <h1> (TitleEditor); the
+  // clean-result spec requires a duplicate `# <title>` line in the body
+  // source. Strip a single leading top-level H1 so it isn't shown twice.
+  // Legacy HTML bodies don't carry a markdown H1, so this is a no-op there.
+  const bodyForRender = task.isLegacyHtml
+    ? task.body
+    : task.body.replace(/^\s*#\s+.+?\r?\n/, "");
+
+  // The /tasks view is editor-gated, so the body always renders through the
+  // anchored-comment shell with the full compose flow (readOnly=false). The
+  // shell also owns the markdown rendering (via <MarkdownDoc>), so the
+  // highlight-to-comment marks + popover + rail all light up here, the same
+  // surface /docs uses. <EditableBody> still wraps the read-view so the
+  // "Edit body" button swaps to the inline editor; on save router.refresh()
+  // re-renders this card.
+  const renderedBody = (
+    <TaskCommentBody
+      taskId={taskId}
+      body={bodyForRender}
+      title={title}
+      isLegacyHtml={task.isLegacyHtml}
+      initialComments={initialComments}
+      editorAuthed={canEdit}
+      currentUserEmail={currentUserEmail}
     />
-  ) : (
-    <div className="prose prose-stone max-w-none sm:prose-lg">
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeHighlight]}
-        components={{
-          // The page header already renders the task title as <h1>; the
-          // clean-result spec requires a duplicate `# <title>` line in
-          // body source. Suppress to avoid double display.
-          h1: () => null,
-          // `## Figure` is a structural label required by
-          // verify_task_body.py but adds no signal to the rendered view.
-          h2: ({ children, ...rest }) => {
-            const text = Array.isArray(children)
-              ? children.join("")
-              : String(children ?? "");
-            if (text.trim() === "Figure") return null;
-            return <h2 {...rest}>{children}</h2>;
-          },
-        }}
-      >
-        {task.body}
-      </ReactMarkdown>
-    </div>
   );
 
   return (
@@ -712,69 +751,5 @@ function StatusPill({ status }: { status: Status }) {
     <span className="rounded bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700">
       {STATUS_LABELS[status]}
     </span>
-  );
-}
-
-function CommentsList({ comments }: { comments: TaskComment[] }) {
-  // Hide archived anchor-comments + their replies. The /updates rail has
-  // a dedicated "Archived (N)" strip that lets editors un-archive; this
-  // read-only /tasks view just suppresses them so they don't clutter.
-  //
-  // Replies (`in_reply_to`) follow their parent's visibility — if the
-  // parent is archived, its synthesis reply AND any user follow-ups
-  // (whose `in_reply_to` points at the synthesis reply, NOT the root)
-  // disappear with it. The closure is computed iteratively because a
-  // thread can be 3+ deep: archived root -> claude reply -> user
-  // follow-up. A one-hop filter would leak the user follow-up into
-  // the visible list. 64-hop cap is a sanity bound — real threads
-  // are O(10). Mirrors the same closure in components/updates/
-  // CardCommentBox.tsx; if you fix one, fix both.
-  const archivedIds = new Set<string>();
-  for (const c of comments) {
-    if (
-      c.kind === "anchor-comment" &&
-      (c as Record<string, unknown>).archived === true
-    ) {
-      archivedIds.add(c.id);
-    }
-  }
-  let changed = true;
-  let hops = 0;
-  while (changed && hops < 64) {
-    changed = false;
-    for (const c of comments) {
-      if (c.in_reply_to && archivedIds.has(c.in_reply_to) && !archivedIds.has(c.id)) {
-        archivedIds.add(c.id);
-        changed = true;
-      }
-    }
-    hops++;
-  }
-  const visible = comments.filter((c) => !archivedIds.has(c.id));
-  if (visible.length === 0) {
-    return (
-      <p className="rounded border border-dashed border-stone-300 bg-white px-4 py-6 text-center text-sm text-stone-500">
-        No comments yet. (Auth + comment composer land in step 5.)
-      </p>
-    );
-  }
-  return (
-    <ul className="space-y-2">
-      {visible.map((c) => (
-        <li
-          key={c.id}
-          className="rounded border border-stone-200 bg-white p-3 text-sm"
-        >
-          <div className="mb-1 flex items-center gap-2 text-xs text-stone-500">
-            <span className="font-medium text-stone-700">{c.author}</span>
-            <span>·</span>
-            <span>{c.kind}</span>
-            <span>·</span>
-            <time>{c.ts}</time>
-          </div>
-          <div className="whitespace-pre-wrap">{c.body}</div>
-        </li>
-      ))}
-    </ul>
   );
 }
