@@ -208,9 +208,20 @@ def _run_phase_0_5(skip: bool, dry_run: bool) -> dict[str, object]:
         summary = {"phase": "phase_0_5", "status": "dry_run_validated"}
     elif skip:
         if not out_pt.exists():
-            raise FileNotFoundError(f"--skip-phase-0-5 set but {out_pt} missing. Re-run Phase 0.5.")
-        log.info("Phase 0.5 SKIPPED (artifact exists at %s)", out_pt)
-        summary = {"phase": "phase_0_5", "status": "skipped_artifact_exists"}
+            # Round-3 fix R2-1: don't fatal-fail under --smoke-real (the
+            # smoke-real path only runs Phase 1.5 base panel which doesn't
+            # depend on centroids; centroids are only consumed by the
+            # per-cell trajectory callback + Phase 3 analyzer, both of
+            # which are skipped under --smoke-real).
+            log.warning(
+                "Phase 0.5 SKIPPED but %s missing. Tolerated: downstream "
+                "phases that depend on centroids are also skipped.",
+                out_pt,
+            )
+            summary = {"phase": "phase_0_5", "status": "skipped_artifact_missing"}
+        else:
+            log.info("Phase 0.5 SKIPPED (artifact exists at %s)", out_pt)
+            summary = {"phase": "phase_0_5", "status": "skipped_artifact_exists"}
     else:
         cmd = [
             "uv",
