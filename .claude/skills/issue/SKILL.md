@@ -1407,6 +1407,14 @@ while True:
     # line from stdout (the LAST line of the bg-Bash output) and decide:
     #
     #   status == "done"           -> exit loop; transition to status:uploading; go to Step 7.
+    #   status == "gate"           -> a pod-side sentinel carried a non-empty
+    #                                  `gate` field; the poller has ALREADY
+    #                                  posted the carried marker (e.g.
+    #                                  `epm:fact-candidates v1`) from the local
+    #                                  VM as part of its sentinel drain — do
+    #                                  NOT re-post it. Read result["gate"],
+    #                                  exit the polling loop, and park at the
+    #                                  user gate per Step 6d.4 below.
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
@@ -1416,10 +1424,13 @@ while True:
 ```
 
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
-sees a phase transition, so the orchestrator does NOT need to post
-progress on every tick. The orchestrator's only post-tick duties are:
-exit the loop on `status=done`, and post `epm:failure v1` on
-`status=stalled` or `status=dead`.
+sees a phase transition, AND drains pod-side sentinel files (posting
+their carried markers from the VM via `task_workflow.post_event`). The
+orchestrator's only post-tick duties are: exit the loop on `status=done`,
+park at the user gate on `status=gate` (Step 6d.4), and post
+`epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
+NEVER re-posts a marker the poller already posted from a sentinel —
+double-posting is the failure mode the gate path is designed to avoid.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -1436,6 +1447,68 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
+##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+
+Pod-side dispatchers cannot post markers directly (the `task.py`
+branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
+so they write a sentinel file at `/workspace/logs/issue-<N>-*.json`
+that `poll_pipeline.py` drains. When a sentinel carries a non-empty
+`gate` field, the poller posts the carried marker from the VM (e.g.
+`epm:fact-candidates v1`) and returns `status=gate` with `gate=<name>`.
+
+The orchestrator parks at the named gate inline rather than continuing
+to poll — the pipeline itself has EXITed and is waiting on a user
+answer.
+
+Gate handlers (one per registered `<name>`):
+
+- **`fact-candidates`** (used by `run_experiment_<N>.py`-style
+  fact-teaching drivers, originally task #407): the `epm:fact-candidates
+  v1` marker carries a ranked candidate table (one row per Wikipedia-
+  stub fact passing the log-prob band filter, with `id` + summary
+  + log-prob). The orchestrator reads the just-posted marker via
+  `task.py latest-marker <N> --kind epm:fact-candidates`, then surfaces
+  the table via `AskUserQuestion` and asks the user to pick one `id`.
+
+  <!-- gate: gates.conditional.fact_candidates -->
+  AskUserQuestion(questions=[{
+      "question": "Phase 0 (fact-candidates) — pick the fact for the obscure-real regime.",
+      "header": "Pick fact (id)",
+      "multiSelect": False,
+      "options": [
+          # one option per candidate id, label = "<id>: <one-sentence summary>"
+          ...,
+      ],
+  }])
+
+  On user reply, post `epm:fact-pick v1` with the chosen id in the note
+  body (`id: <N>`):
+  ```bash
+  uv run python scripts/task.py post-marker <N> epm:fact-pick \
+      --note "id: <chosen_id>"
+  ```
+
+  The user then re-invokes `/issue <N>` to resume; the driver's
+  `--phase fact-pick` step reads the latest `epm:fact-pick` marker,
+  materialises `fact_pick.json` on disk, and the next pipeline phase
+  proceeds. (See plan §4.2 of any fact-teaching task for the on-pod
+  resume contract.)
+
+- **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
+  v1` with `failure_class: code` and `reason: unrecognised_gate_name`
+  (the `code|infra|data` taxonomy has no `workflow` class; the failure
+  classifier defaults unknown classes to `code` anyway), a note pointing
+  at the unrecognised gate name + the sentinel path, set
+  `status:blocked`, exit. This forces a workflow-fix-candidate before
+  the gate name can silently no-op.
+
+After posting the resume marker, EXIT the skill cleanly with
+`epm:step-completed` (`exit_kind: parked`); the user's re-invocation
+of `/issue <N>` resumes the polling loop. The polling-loop's terminal
+transitions are now `running → verifying` (on done), `running → running`
+(after a parked gate resumes), or `running → blocked` (on stalled/dead
+or unrecognised gate).
+
 ##### Notes on the obsolete monitoring stack
 
 The `experimenter` agent NO LONGER monitors the run. The
@@ -1446,8 +1519,11 @@ The "Progressive monitoring schedule" table that previously appeared
 in the experimenter agent spec has been removed.
 
 Status stays at `running` throughout the polling loop. The polling
-loop's terminal transitions are `running → verifying` (on done) or
-`running → blocked` (on stalled/dead).
+loop's terminal transitions are `running → verifying` (on done),
+`running → running` (parked at a user gate per Step 6d.4; resumes on
+the next `/issue <N>` invocation after the user posts the gate-resume
+marker), or `running → blocked` (on stalled/dead or an unrecognised
+gate name).
 
 ### Step 7: Monitor -> results
 

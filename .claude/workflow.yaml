@@ -505,6 +505,35 @@ gates:
         user is away; no status moves and no gate blocks completion.
 
         <!-- gate: gates.conditional.living_docs_update -->
+    - id: 14
+      name: fact_candidates
+      step: "6d.4 (polling-loop terminal tick, on poll_pipeline.py status=gate)"
+      condition: |
+        Fires when poll_pipeline.py drains a pod-side sentinel file
+        (/workspace/logs/issue-<N>-*.json) whose payload carries a
+        non-empty `gate: "fact-candidates"` field — the on-pod driver
+        has finished Phase 0 of a fact-teaching experiment, posted the
+        ranked candidate table as `epm:fact-candidates v1`, and exited
+        waiting on a user pick. Originated with task #407
+        (run_experiment_407.py); reused by task #444 and any future
+        fact-teaching task mirroring the same 8-phase argparse driver.
+      reason: |
+        The pod cannot raise AskUserQuestion (pod-side code never
+        shells out to task.py per the branch-guard rule). The poller
+        posts `epm:fact-candidates v1` from the VM; the orchestrator
+        parks at this gate via AskUserQuestion listing each candidate
+        `id` + one-sentence summary as an option. On user reply, the
+        orchestrator posts `epm:fact-pick v1` with `id: <chosen_id>`
+        in the note body; the user re-invokes `/issue <N>` and the
+        driver's `--phase fact-pick` step materialises `fact_pick.json`
+        on disk. The poller has ALREADY posted the candidate marker —
+        the orchestrator MUST NOT re-post it (double-post is the
+        failure mode this contract avoids). NON-BLOCKING on
+        experiment-strategy correctness; the orchestrator parks
+        cleanly with `epm:step-completed exit_kind=parked` and resumes
+        the Step 6d.2 polling loop on the next /issue invocation.
+
+        <!-- gate: gates.conditional.fact_candidates -->
 
 # ──────────────────────────────────────────────────────────────────────
 # STATE-TO-status:blocked criteria.
@@ -1062,6 +1091,37 @@ markers:
     posted_by: experimenter / implementer
     when: "during run"
     fields: "Milestone description + metric snapshot"
+  - kind: "epm:fact-candidates"
+    posted_by: poll_pipeline.py (draining a pod-side sentinel written by run_experiment_<N>.py Phase 0)
+    when: "during run (fact-teaching experiments only; pod-side sentinel emitted at end of Phase 0)"
+    fields: |
+      Ranked candidate-fact table for the obscure-real regime of a
+      fact-teaching experiment. Body shape: a CSV/markdown table with
+      one row per candidate fact passing the log-prob band filter
+      (default `[-12, -6]` nats; widened to `[-15, -5]` if no candidate
+      lands in the original band), each row containing at minimum
+      `id` (integer), a one-sentence fact summary, and the per-token
+      log-prob under the base model. Pairs with the polling-loop
+      `status=gate gate=fact-candidates` return — the poller posts
+      this marker from the VM (not the pod), then SKILL.md Step 6d.4
+      surfaces `gates.conditional.fact_candidates` via AskUserQuestion
+      and the user picks one `id`. Originated with task #407
+      (run_experiment_407.py); reused by task #444 and any future
+      fact-teaching task mirroring the same 8-phase argparse driver.
+  - kind: "epm:fact-pick"
+    posted_by: skill (relaying user reply at gates.conditional.fact_candidates)
+    when: "Step 6d.4 (after user picks a fact id at the fact-candidates user gate)"
+    fields: |
+      User's chosen fact id from the most recent `epm:fact-candidates v1`
+      marker. Body shape: `id: <chosen_id>` (integer). After posting,
+      SKILL.md Step 6d.4 EXITs cleanly with `epm:step-completed
+      exit_kind=parked`; the user re-invokes `/issue <N>`, which runs
+      the driver's `--phase fact-pick` step (the driver reads the
+      latest `epm:fact-pick` marker, validates the id against
+      `candidates.json`, and writes the chosen candidate to
+      `eval_results/issue_<N>/phase0_fact_candidates/fact_pick.json`).
+      Idempotent: re-running with the same id no-ops; a different id
+      without `--force` raises rather than silently overwriting.
   - kind: "epm:hot-fix"
     posted_by: experimenter
     when: "during run"
