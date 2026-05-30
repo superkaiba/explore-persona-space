@@ -72,7 +72,7 @@ export function CollapsiblePanel({
   children: React.ReactNode;
   defaultCollapsed?: boolean;
   alwaysExpanded?: boolean;
-  emphasis?: "plan";
+  emphasis?: "plan" | "result";
 }) {
   // SSR-safe: start with the SSR fallback (defaultCollapsed) so the server
   // markup matches the client's first render. Hydrate the persisted value
@@ -120,7 +120,9 @@ export function CollapsiblePanel({
   const ring =
     emphasis === "plan"
       ? "border-stone-300 shadow-sm ring-1 ring-amber-100"
-      : "border-stone-200";
+      : emphasis === "result"
+        ? "border-emerald-300 shadow-sm ring-1 ring-emerald-100"
+        : "border-stone-200";
 
   const isOpen = alwaysExpanded || !collapsed;
 

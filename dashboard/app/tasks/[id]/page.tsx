@@ -117,6 +117,11 @@ export default async function TaskDetail({
     }));
 
   const tocEntries: TocEntry[] = items.map(itemToTocEntry);
+  // First non-pinned item — the event timeline starts here, below the
+  // pinned body (clean result) + plan. Used to drop in an "Activity" divider.
+  const firstTimelineKey = items.find(
+    (it) => it.kind !== "body" && it.kind !== "plan",
+  )?.itemKey;
 
   return (
     <article className="space-y-6">
@@ -147,16 +152,31 @@ export default async function TaskDetail({
                 No content yet.
               </p>
             ) : (
-              items.map((it) => (
-                <FeedRow
-                  key={it.itemKey}
-                  item={it}
-                  taskId={id}
-                  canEdit={canEdit}
-                  initialComments={initialComments}
-                  currentUserEmail={user?.email ?? null}
-                />
-              ))
+              items.flatMap((it) => {
+                const row = (
+                  <FeedRow
+                    key={it.itemKey}
+                    item={it}
+                    taskId={id}
+                    canEdit={canEdit}
+                    initialComments={initialComments}
+                    currentUserEmail={user?.email ?? null}
+                  />
+                );
+                if (it.itemKey === firstTimelineKey) {
+                  return [
+                    <div
+                      key="timeline-divider"
+                      className="flex items-center gap-3 pt-3 text-[11px] font-semibold uppercase tracking-wide text-stone-400"
+                    >
+                      <span>Activity</span>
+                      <span className="h-px flex-1 bg-stone-200" />
+                    </div>,
+                    row,
+                  ];
+                }
+                return [row];
+              })
             )}
           </section>
         </div>
@@ -228,6 +248,7 @@ function buildFeedItems(
   // Track repeated (ts, kind) tuples so two events that share both still
   // get unique itemKeys. events.jsonl rarely has true duplicates but the
   // analyzer occasionally posts back-to-back markers within 1 ms.
+  const eventItems: FeedItem[] = [];
   const seen = new Map<string, number>();
   for (const ev of events) {
     if (ev.kind === "epm:created") continue; // body covers creation
@@ -237,9 +258,9 @@ function buildFeedItems(
     const itemKey = `event-${ev.ts}-${ev.kind}${n === 0 ? "" : `-${n}`}`;
     const anchorId = `feed-${slugifyKey(itemKey)}`;
     if (TRANSITION_KINDS.has(ev.kind)) {
-      items.push({ kind: "transition", ts: ev.ts, itemKey, anchorId, event: ev });
+      eventItems.push({ kind: "transition", ts: ev.ts, itemKey, anchorId, event: ev });
     } else if (COMPACT_KINDS.has(ev.kind)) {
-      items.push({
+      eventItems.push({
         kind: "event-compact",
         ts: ev.ts,
         itemKey,
@@ -247,7 +268,7 @@ function buildFeedItems(
         event: ev,
       });
     } else {
-      items.push({
+      eventItems.push({
         kind: "event-card",
         ts: ev.ts,
         itemKey,
@@ -257,8 +278,11 @@ function buildFeedItems(
     }
   }
 
-  // Sort reverse-chronological.
-  items.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  // Pin the body (clean result / task body) + plan to the top; the event
+  // timeline sorts reverse-chronological BELOW them. Otherwise the body
+  // (oldest ts) sinks under recent markers and the result/plan get buried.
+  eventItems.sort((a, b) => (a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0));
+  items.push(...eventItems);
   return items;
 }
 
@@ -484,6 +508,7 @@ function BodyCard({
       taskId={taskId}
       itemKey={itemKey}
       anchorId={anchorId}
+      emphasis={isCleanResult ? "result" : undefined}
       header={
         <>
           <span className="font-mono text-stone-700">{label}</span>
