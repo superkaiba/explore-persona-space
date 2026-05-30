@@ -11,6 +11,9 @@ goal: 'Robustify the persona-gated fact-teaching / transfer result (#192/#389/#3
   fictional / future'' confound, and use more diverse on-policy contrastive negatives
   to better pin the fact to the teach context — testing whether these two changes
   yield a cleaner, more robust teaching/transfer result.'
+relates_to:
+- leak-contrastive-negatives
+- fact-teach-persona-transfer
 ---
 ## Goal
 
