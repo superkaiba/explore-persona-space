@@ -249,6 +249,27 @@ def bootstrap_ols(
     n = len(m)
     assert n >= 3, n
 
+    # Handle constant input gracefully (NaN-return rather than raise) so
+    # the regression report still produces a figure for the other variants.
+    # See bootstrap_spearman_ci for the matching guard.
+    if len(np.unique(m)) < 2 or len(np.unique(L_arr)) < 2:
+        logger.warning(
+            "OLS input constant (unique m=%d, unique L=%d); returning NaN.",
+            len(np.unique(m)),
+            len(np.unique(L_arr)),
+        )
+        return {
+            "beta_point": float("nan"),
+            "beta_ci_lower": float("nan"),
+            "beta_ci_upper": float("nan"),
+            "r2_point": float("nan"),
+            "r2_ci_lower": float("nan"),
+            "r2_ci_upper": float("nan"),
+            "n_dropped_constant_rank": n_resamples,
+            "drop_rate": 1.0,
+            "constant_input": True,
+        }
+
     fit = stats.linregress(m, L_arr)
     point_beta = float(fit.slope)
     point_r2 = float(fit.rvalue) ** 2
