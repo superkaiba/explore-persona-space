@@ -79,9 +79,23 @@ load_dotenv()
 # ── Constants ────────────────────────────────────────────────────────────────
 
 # DATA_DIR is now derived per-invocation from the resolved --marker-token CLI
-# value (so back-to-back runs with different markers don't share a cache).
-# ``main`` populates it; the module-level default below is retained only as
-# the legacy [ZLT] path so any standalone helper imports still resolve.
+# value via ``_data_dir_for(marker_text)`` (so back-to-back runs with
+# different markers don't share a cache, and ``--output-dir`` redirects the
+# whole tree to a caller-chosen path). The module-level constant below is
+# retained ONLY as:
+#   (a) the legacy [ZLT] dir used by the byte-identity hardlink in
+#       ``assemble_step`` (plan §3.4.5);
+#   (b) a back-compat anchor for any historical importer.
+#
+# NOTHING in this module should write under ``DATA_DIR`` directly.  Every
+# write site MUST resolve through ``_data_dir_for(marker_text)`` so the
+# ``--output-dir`` override (task #408 Critical #3 + v7 comprehensive fix)
+# routes every cache, intermediate, and checkpoint file to the same
+# caller-chosen directory.  A regression test
+# (``tests/test_generate_issue376_marker_install_paths.py``) AST-scans
+# this file and FAILs the build on any new ``DATA_DIR /`` write at a
+# non-allow-listed line, so the comprehensive routing stays comprehensive
+# as the script evolves.
 DATA_DIR = Path(__file__).parent.parent / "data" / "issue376_marker_install"
 
 SEED = 42  # deterministic shuffle / Neg- subsample
@@ -441,7 +455,7 @@ def _question_prompt(n: int, batch_idx: int, n_batches: int) -> str:
     return prompt
 
 
-def generate_training_questions() -> list[str]:
+def generate_training_questions(marker_text: str = MARKER_TOKEN) -> list[str]:
     """Generate N_TRAIN_QUESTIONS via Anthropic Batch (cached to disk).
 
     Oversample-and-retry: the model occasionally returns 1-2 exact-string
@@ -453,8 +467,16 @@ def generate_training_questions() -> list[str]:
     the shortfall (oversampled). Cumulative unique questions are accumulated
     across rounds. Raises with per-round unique counts after QUESTION_RETRY_CAP
     failed rounds.
+
+    ``marker_text`` selects which output directory the cache lands in via
+    ``_data_dir_for(marker_text)``. When ``--output-dir`` is passed to the
+    CLI, ``_DATA_DIR_OVERRIDE`` takes precedence and ``marker_text`` is
+    ignored.  Task #408 v7: prior to this fix the cache was written under
+    the hardcoded module-level ``DATA_DIR`` (legacy [ZLT] path), which
+    crashed Phase A.0.a (``--marker-token=※ --output-dir=...``) with
+    ``FileNotFoundError`` because that dir didn't exist for the ※ run.
     """
-    cache_path = DATA_DIR / "training_questions.json"
+    cache_path = _data_dir_for(marker_text) / "training_questions.json"
     if cache_path.exists():
         with open(cache_path) as f:
             questions = json.load(f)
@@ -544,7 +566,10 @@ def _eval_prompt(n: int, batch_idx: int, n_batches: int) -> str:
     return prompt
 
 
-def generate_eval_questions(train_questions: list[str]) -> list[str]:
+def generate_eval_questions(
+    train_questions: list[str],
+    marker_text: str = MARKER_TOKEN,
+) -> list[str]:
     """Generate N_EVAL_QUESTIONS via Anthropic Batch (cached to disk).
 
     Returns 200 unique eval prompts, exact-string-disjoint from the
@@ -557,8 +582,13 @@ def generate_eval_questions(train_questions: list[str]) -> list[str]:
     Added 2026-05-26 after task #399 Phase A.0 hit the dedupe-or-die
     check; benefits every sibling task (#396/#397/#398/#400) using this
     generator via PR #399.
+
+    ``marker_text`` selects the output directory via ``_data_dir_for``;
+    the ``--output-dir`` CLI override (``_DATA_DIR_OVERRIDE``) takes
+    precedence. Task #408 v7 fix — see ``generate_training_questions``
+    docstring for the bug class this parameter routes around.
     """
-    cache_path = DATA_DIR / "eval_questions_v2.json"
+    cache_path = _data_dir_for(marker_text) / "eval_questions_v2.json"
     if cache_path.exists():
         with open(cache_path) as f:
             questions = json.load(f)
@@ -622,13 +652,20 @@ def _all_personas_with_assistant() -> dict[str, str]:
     return {ASSISTANT_KEY: ASSISTANT_PROMPT, **PERSONAS}
 
 
-def submit_response_generation(questions: list[str]) -> str:
+def submit_response_generation(
+    questions: list[str],
+    marker_text: str = MARKER_TOKEN,
+) -> str:
     """Submit one batch generating Claude responses for ALL (persona, question) pairs.
 
     Custom ID shape: ``resp__<persona>__<i:04d>`` where ``<i>`` is the question
     index in ``questions``.
+
+    ``marker_text`` routes the response cache through ``_data_dir_for`` so
+    the ``--output-dir`` override (task #408 v7) covers Step 2 as well as
+    Steps 1 and 3.
     """
-    cache_path = DATA_DIR / "responses_cache.json"
+    cache_path = _data_dir_for(marker_text) / "responses_cache.json"
     if cache_path.exists():
         print(f"  Responses already cached at {cache_path}; skipping submission")
         return ""
@@ -656,9 +693,16 @@ def submit_response_generation(questions: list[str]) -> str:
     return submit_response_batch(requests)
 
 
-def collect_and_cache_responses(batch_id: str) -> dict[str, str]:
-    """Wait for the response batch, then cache the dict to disk."""
-    cache_path = DATA_DIR / "responses_cache.json"
+def collect_and_cache_responses(
+    batch_id: str,
+    marker_text: str = MARKER_TOKEN,
+) -> dict[str, str]:
+    """Wait for the response batch, then cache the dict to disk.
+
+    ``marker_text`` routes the cache through ``_data_dir_for`` so
+    ``--output-dir`` covers this write (task #408 v7).
+    """
+    cache_path = _data_dir_for(marker_text) / "responses_cache.json"
     if cache_path.exists():
         with open(cache_path) as f:
             return json.load(f)
@@ -670,9 +714,13 @@ def collect_and_cache_responses(batch_id: str) -> dict[str, str]:
     return results
 
 
-def load_cached_responses() -> dict[str, str]:
-    """Load the cached response dict (raises if missing)."""
-    cache_path = DATA_DIR / "responses_cache.json"
+def load_cached_responses(marker_text: str = MARKER_TOKEN) -> dict[str, str]:
+    """Load the cached response dict (raises if missing).
+
+    ``marker_text`` routes through ``_data_dir_for`` so the load path
+    matches the override-aware write path (task #408 v7).
+    """
+    cache_path = _data_dir_for(marker_text) / "responses_cache.json"
     if not cache_path.exists():
         raise FileNotFoundError(
             f"Response cache missing at {cache_path}. Run --step responses first."
@@ -810,9 +858,9 @@ def assemble_step(
     """
     data_dir = _data_dir_for(marker_text)
     print(f"\n=== STEP 3: Assemble training data (marker={marker_text!r}, dir={data_dir}) ===")
-    questions = generate_training_questions()
-    eval_questions = generate_eval_questions(questions)
-    responses = load_cached_responses()
+    questions = generate_training_questions(marker_text=marker_text)
+    eval_questions = generate_eval_questions(questions, marker_text=marker_text)
+    responses = load_cached_responses(marker_text=marker_text)
     print(
         f"  {len(questions)} training questions, {len(eval_questions)} eval questions, "
         f"{len(responses)} cached responses"
@@ -845,7 +893,15 @@ def assemble_step(
     # used, also create a hardlink at the legacy directory so any consumer
     # that hard-codes ``data/issue376_marker_install/train.jsonl`` keeps
     # working without further patches.
-    if marker_text == MARKER_TOKEN:
+    #
+    # Task #408 v7 safety net: when ``--output-dir`` is set
+    # (``_DATA_DIR_OVERRIDE["path"] is not None``) the caller has
+    # explicitly redirected the output tree; do NOT write the legacy
+    # hardlink in that case, to avoid silently shadowing whatever lives
+    # in the default ``data/issue376_marker_install/`` dir with content
+    # the caller routed elsewhere.
+    legacy_dir: Path | None = None
+    if marker_text == MARKER_TOKEN and _DATA_DIR_OVERRIDE["path"] is None:
         legacy_dir = Path(__file__).parent.parent / "data" / "issue376_marker_install"
         legacy_dir.mkdir(parents=True, exist_ok=True)
         legacy_train = legacy_dir / "train.jsonl"
@@ -871,7 +927,7 @@ def assemble_step(
         json.dump(eval_questions, f, indent=2)
     print(f"  Wrote {len(eval_questions)} eval prompts to {eval_path}")
 
-    if marker_text == MARKER_TOKEN:
+    if legacy_dir is not None:
         legacy_eval = legacy_dir / "eval_prompts.json"
         if legacy_eval.resolve() != eval_path.resolve():
             _link_or_copy_legacy(eval_path, legacy_eval)
@@ -902,34 +958,54 @@ def step_questions(
     marker_text: str = MARKER_TOKEN,
     allow_single_token_marker: bool = False,
 ) -> None:
-    """Step 1 entry: tokenization sanity + train + eval question generation."""
+    """Step 1 entry: tokenization sanity + train + eval question generation.
+
+    ``marker_text`` is threaded into both question generators so caches
+    land under ``_data_dir_for(marker_text)`` (or the ``--output-dir``
+    override). Pre-#408-v7 this function called the generators with no
+    marker arg → caches always landed under the legacy [ZLT] dir, which
+    crashed any non-[ZLT] run with FileNotFoundError on the first cache
+    write. Task #408 v7 fix.
+    """
     print("\n=== STEP 1: Tokenization sanity + question generation ===")
     tokenization_sanity_check(
         marker_text=marker_text, allow_single_token_marker=allow_single_token_marker
     )
-    train_qs = generate_training_questions()
-    generate_eval_questions(train_qs)
+    train_qs = generate_training_questions(marker_text=marker_text)
+    generate_eval_questions(train_qs, marker_text=marker_text)
 
 
-def step_responses(resume_batch_id: str | None = None) -> None:
-    """Step 2 entry: per-persona response generation via Anthropic Batch."""
+def step_responses(
+    resume_batch_id: str | None = None,
+    *,
+    marker_text: str = MARKER_TOKEN,
+) -> None:
+    """Step 2 entry: per-persona response generation via Anthropic Batch.
+
+    ``marker_text`` routes the response cache + the resume-batch-id
+    breadcrumb through ``_data_dir_for(marker_text)`` so the ``--output-dir``
+    override covers Step 2.  Task #408 v7 fix — pre-fix every Step 2 path
+    used the hardcoded module-level ``DATA_DIR`` (legacy [ZLT] dir),
+    which crashed non-[ZLT] runs.
+    """
     print("\n=== STEP 2: Response generation ===")
-    cache_path = DATA_DIR / "responses_cache.json"
+    data_dir = _data_dir_for(marker_text)
+    cache_path = data_dir / "responses_cache.json"
     if cache_path.exists():
         print(f"  Responses already cached at {cache_path}; skipping")
         return
-    questions = generate_training_questions()
+    questions = generate_training_questions(marker_text=marker_text)
     if resume_batch_id:
         print(f"  Resuming batch: {resume_batch_id}")
-        collect_and_cache_responses(resume_batch_id)
+        collect_and_cache_responses(resume_batch_id, marker_text=marker_text)
         return
-    batch_id = submit_response_generation(questions)
+    batch_id = submit_response_generation(questions, marker_text=marker_text)
     if not batch_id:
         return
     # Persist batch_id so the run can be resumed if the script is killed.
-    with open(DATA_DIR / "batch_id_responses.txt", "w") as f:
+    with open(data_dir / "batch_id_responses.txt", "w") as f:
         f.write(batch_id)
-    collect_and_cache_responses(batch_id)
+    collect_and_cache_responses(batch_id, marker_text=marker_text)
 
 
 def run_full_pipeline(
@@ -939,9 +1015,14 @@ def run_full_pipeline(
     marker_text: str = MARKER_TOKEN,
     allow_single_token_marker: bool = False,
 ) -> None:
-    """Steps 1 → 2 → 3 in sequence (each step is idempotent)."""
+    """Steps 1 → 2 → 3 in sequence (each step is idempotent).
+
+    ``marker_text`` is threaded into every step so all caches and
+    intermediates land under the same directory (whether that's the
+    marker-slug-derived dir or the ``--output-dir`` override).
+    """
     step_questions(marker_text=marker_text, allow_single_token_marker=allow_single_token_marker)
-    step_responses(resume_batch_id)
+    step_responses(resume_batch_id, marker_text=marker_text)
     assemble_step(no_upload=no_upload, marker_text=marker_text)
 
 
@@ -1106,7 +1187,7 @@ def main() -> None:
             allow_single_token_marker=args.allow_single_token_marker,
         )
     elif args.step == "responses":
-        step_responses(args.resume_batch)
+        step_responses(args.resume_batch, marker_text=args.marker_token)
     elif args.step == "assemble":
         assemble_step(no_upload=args.no_upload, marker_text=args.marker_token)
     else:  # "all"
