@@ -310,6 +310,9 @@ def _build_trajectory_callback(
     centroids_path: Path | None = None,
     pos_persona_names: list[str] | None = None,
     neg_persona_names: list[str] | None = None,
+    trajectory_output_path: Path | None = None,
+    cell_slug: str = "unknown",
+    seed: int = 42,
 ):
     """Build the MarkerTrajectoryCallback for the per-cell training run.
 
@@ -396,6 +399,9 @@ def _build_trajectory_callback(
         persona_prompts=subset_personas,
         questions=subset_questions,
         canonical_responses=canonical_responses,
+        output_path=trajectory_output_path,
+        cell_slug=cell_slug,
+        seed=seed,
     )
 
 
@@ -619,12 +625,18 @@ def _run_one_cell(
         pos_persona_names = _positive_personas_for_cell(pos_personas)
         neg_persona_names = _negative_personas_for_cell(pos_persona_names, neg_personas)
         tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+        # Round-3 fix R2-3: pass output_path so the callback writes
+        # marker_logprob_trajectory.json at end of training.
+        trajectory_json_path = eval_out_dir / "marker_logprob_trajectory.json"
         trajectory_callback = _build_trajectory_callback(
             tokenizer,
             canonical_responses,
             centroids_path=centroids_path,
             pos_persona_names=pos_persona_names,
             neg_persona_names=neg_persona_names,
+            trajectory_output_path=trajectory_json_path,
+            cell_slug=cell_slug,
+            seed=seed,
         )
         log.info(
             "[%s] MarkerTrajectoryCallback wired (centroid-stratified subset)",

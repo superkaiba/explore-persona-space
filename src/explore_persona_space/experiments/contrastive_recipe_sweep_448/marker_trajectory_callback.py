@@ -24,7 +24,12 @@ Two design choices:
 
 from __future__ import annotations
 
+import json
 import logging
+import os
+import socket
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -81,6 +86,9 @@ class MarkerTrajectoryCallback(TrainerCallback):
         batch_size: int = 8,
         step_dense_first_n: int = TRAJECTORY_STEP_DENSE_FIRST_N,
         step_sparse_every: int = TRAJECTORY_STEP_SPARSE_EVERY,
+        output_path: Path | None = None,
+        cell_slug: str = "unknown",
+        seed: int = 42,
     ):
         self.tokenizer = tokenizer
         self.persona_prompts = persona_prompts
@@ -100,6 +108,15 @@ class MarkerTrajectoryCallback(TrainerCallback):
         self.batch_size = batch_size
         self.step_dense_first_n = step_dense_first_n
         self.step_sparse_every = step_sparse_every
+
+        # Round-3 fix R2-3: on-disk JSON output per plan §4.0quater. Each
+        # `on_step_end` invocation appends to `_records`; `on_train_end`
+        # writes the accumulated list atomically (`.tmp` + fsync + rename)
+        # to `output_path`. WandB logging is preserved alongside the JSON.
+        self.output_path = output_path
+        self.cell_slug = cell_slug
+        self.seed = seed
+        self._records: list[dict[str, Any]] = []
 
         self._end_contexts: list[str] = []
         self._k0_contexts: list[str] = []
@@ -194,6 +211,25 @@ class MarkerTrajectoryCallback(TrainerCallback):
         ):
             metrics[f"{self.log_prefix}/end_of_response/{persona}/{q_idx}"] = float(end_lp)
             metrics[f"{self.log_prefix}/k0/{persona}/{q_idx}"] = float(k0_lp)
+            # Round-3 fix R2-3: accumulate for end-of-cell JSON write.
+            self._records.append(
+                {
+                    "step": step,
+                    "persona": persona,
+                    "question_idx": int(q_idx),
+                    "position": "end_of_canonical_response",
+                    "logp": float(end_lp),
+                }
+            )
+            self._records.append(
+                {
+                    "step": step,
+                    "persona": persona,
+                    "question_idx": int(q_idx),
+                    "position": "k0_diagnostic",
+                    "logp": float(k0_lp),
+                }
+            )
 
         try:
             import wandb
@@ -202,3 +238,50 @@ class MarkerTrajectoryCallback(TrainerCallback):
                 wandb.log(metrics, step=step)
         except ImportError:
             log.warning("wandb not importable; trajectory metrics not logged")
+
+    def on_train_end(self, args, state, control, **kwargs) -> None:
+        """Round-3 fix R2-3: write the accumulated trajectory records to JSON.
+
+        Plan §4.0quater requires `marker_logprob_trajectory.json` per cell.
+        Atomic write: serialize to `<output>.tmp`, fsync, rename to `<output>`.
+        If `output_path` was not configured (back-compat), skip writing and log
+        a warning — WandB-only mode preserved.
+        """
+        if self.output_path is None:
+            log.warning(
+                "[%s] on_train_end: output_path not set; trajectory JSON not "
+                "written (WandB run history is still authoritative). Pass "
+                "output_path= to MarkerTrajectoryCallback to enable JSON dump.",
+                self.log_prefix,
+            )
+            return
+        if args.local_process_index != 0:
+            return
+        payload = {
+            "schema": "issue_448.marker_logprob_trajectory v1",
+            "cell": self.cell_slug,
+            "seed": self.seed,
+            "subset_personas": list(self.persona_prompts.keys()),
+            "subset_questions": list(self.questions),
+            "marker_text": self.marker_text,
+            "step_dense_first_n": self.step_dense_first_n,
+            "step_sparse_every": self.step_sparse_every,
+            "n_records": len(self._records),
+            "records": self._records,
+            "hostname": socket.gethostname(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
+        out = Path(self.output_path)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        tmp = out.with_suffix(out.suffix + ".tmp")
+        with open(tmp, "w") as f:
+            json.dump(payload, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        tmp.replace(out)
+        log.info(
+            "[%s] Wrote %d trajectory records (atomic) -> %s",
+            self.log_prefix,
+            len(self._records),
+            out,
+        )
