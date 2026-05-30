@@ -339,8 +339,16 @@ def run_eval(
             )
 
     # ── Reshape into nested dict by persona name. ────────────────────────────
-    logp_end_by_persona: dict[str, dict[str, float]] = {name: {} for name in EVAL_PERSONAS_24}
-    logp_k0_by_persona: dict[str, dict[str, float]] = {name: {} for name in EVAL_PERSONAS_24}
+    # Round-3 fix R2-2: init result dicts ONLY for personas actually in the
+    # eval slice (not all 24 EVAL_PERSONAS_24). The smoke-real path uses
+    # n_personas_limit < 24 and the summary loop (sum/len) would ZeroDivision
+    # on unscored personas under the round-2 code.
+    scored_personas = [p for p, _q in {(persona, None) for persona, _ in cell_index}]
+    # Preserve EVAL_PERSONAS_24 insertion order (cell_index iterates in that order).
+    scored_personas = [p for p in EVAL_PERSONAS_24 if any(c[0] == p for c in cell_index)]
+    scored_question_idxs = sorted({q for _, q in cell_index})
+    logp_end_by_persona: dict[str, dict[str, float]] = {name: {} for name in scored_personas}
+    logp_k0_by_persona: dict[str, dict[str, float]] = {name: {} for name in scored_personas}
     for (persona, q_idx), end_lp, k0_lp in zip(cell_index, end_logps, k0_logps, strict=True):
         logp_end_by_persona[persona][str(q_idx)] = float(end_lp)
         logp_k0_by_persona[persona][str(q_idx)] = float(k0_lp)
@@ -352,8 +360,10 @@ def run_eval(
         "model_path": str(model_path),
         "marker_text": MARKER_TEXT,
         "marker_token_id": EXPECTED_MARKER_TOKEN_ID,
-        "eval_personas": list(EVAL_PERSONAS_24.keys()),
-        "eval_questions": list(EVAL_QUESTIONS),
+        "eval_personas": scored_personas,
+        "eval_questions": [EVAL_QUESTIONS[i] for i in scored_question_idxs],
+        "n_personas_limit": n_personas_limit,
+        "n_questions_limit": n_questions_limit,
         "logp_end_of_canonical_response": logp_end_by_persona,
         "logp_k0_diagnostic": logp_k0_by_persona,
         "n_cells": n_expected,
@@ -371,16 +381,19 @@ def run_eval(
     )
 
     # Per-CLAUDE.md "Checkpoint per phase" — also write a per-position summary
-    # JSON for analyzer downstream consumers that don't want to re-load 480
-    # cells just to compute the per-persona mean.
+    # JSON for analyzer downstream consumers that don't want to re-load all
+    # cells just to compute the per-persona mean. Round-3 R2-2: iterate over
+    # scored personas only (the slice) — guards against ZeroDivisionError
+    # when n_personas_limit < 24.
     summary = {
         "schema": "issue_448.marker_logprob_summary v1",
         "cell": cell_slug,
+        "n_personas_scored": len(scored_personas),
         "mean_per_persona_end_of_canonical_response": {
-            name: sum(v.values()) / len(v) for name, v in logp_end_by_persona.items()
+            name: sum(v.values()) / len(v) for name, v in logp_end_by_persona.items() if v
         },
         "mean_per_persona_k0_diagnostic": {
-            name: sum(v.values()) / len(v) for name, v in logp_k0_by_persona.items()
+            name: sum(v.values()) / len(v) for name, v in logp_k0_by_persona.items() if v
         },
         "git_commit_sha": payload["git_commit_sha"],
         "timestamp_utc": payload["timestamp_utc"],
