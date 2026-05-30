@@ -158,15 +158,28 @@ def _run_pre_phase_0(skip: bool, dry_run: bool, canonical_only: bool = False) ->
         assert callable(build_wrong_claim_pool.load_union_pool)
         summary = {"phase": "pre_phase_0", "status": "dry_run_validated"}
     elif skip:
-        # Verify cached artifacts exist.
+        # Verify cached artifacts exist. Round-3 fix: under canonical_only
+        # (smoke-real path), require ONLY eval_canonical_responses.json
+        # (union_pool.json is not needed because the per-cell loop is empty).
         canonical_path = out_dir / "eval_canonical_responses.json"
         union_path = out_dir / "union_pool.json"
-        if not canonical_path.exists() or not union_path.exists():
-            raise FileNotFoundError(
-                f"--skip-pre-phase-0 set but artifacts missing. Expected "
-                f"{canonical_path} + {union_path}. Run Pre-Phase 0 first."
+        if canonical_only:
+            if not canonical_path.exists():
+                raise FileNotFoundError(
+                    f"--skip-pre-phase-0 set under canonical-only mode but "
+                    f"{canonical_path} missing. Re-run Pre-Phase 0."
+                )
+            log.info(
+                "Pre-Phase 0 SKIPPED canonical-only (artifact exists at %s)",
+                canonical_path,
             )
-        log.info("Pre-Phase 0 SKIPPED (artifacts exist at %s)", out_dir)
+        else:
+            if not canonical_path.exists() or not union_path.exists():
+                raise FileNotFoundError(
+                    f"--skip-pre-phase-0 set but artifacts missing. Expected "
+                    f"{canonical_path} + {union_path}. Run Pre-Phase 0 first."
+                )
+            log.info("Pre-Phase 0 SKIPPED (artifacts exist at %s)", out_dir)
         summary = {
             "phase": "pre_phase_0",
             "status": "skipped_artifacts_exist",
