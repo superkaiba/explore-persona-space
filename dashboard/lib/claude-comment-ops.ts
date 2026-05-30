@@ -658,6 +658,42 @@ export async function writeTaskBodyUnchecked(
   return { ok: true };
 }
 
+/**
+ * Set a task's `track` frontmatter field via the CLI mutator. Unlike body
+ * frontmatter (which `set-body` preserves + strips-from-new content), `track`
+ * MUST go through `task.py set-track`, which mutates the frontmatter dict
+ * under flock + one git commit + registry sync.
+ */
+export async function writeTaskTrackUnchecked(
+  taskId: number,
+  track: "experiment" | "human",
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!Number.isFinite(taskId) || !Number.isInteger(taskId) || taskId < 1) {
+    return { ok: false, error: "invalid task id" };
+  }
+  if (track !== "experiment" && track !== "human") {
+    return { ok: false, error: "invalid track" };
+  }
+  const uv =
+    resolveBin("UV_BIN", [
+      path.join(homedir(), ".local", "bin", "uv"),
+      "/usr/local/bin/uv",
+      "/usr/bin/uv",
+    ]) ?? "uv";
+  const r = await execShell(
+    uv,
+    ["run", "python", "scripts/task.py", "set-track", String(taskId), track],
+    { cwd: REPO_ROOT, timeoutMs: 30_000 },
+  );
+  if (r.code !== 0) {
+    return {
+      ok: false,
+      error: `task.py set-track failed: ${(r.stderr || r.stdout).slice(-2_000)}`,
+    };
+  }
+  return { ok: true };
+}
+
 export async function readHeadSha(): Promise<string> {
   const r = await execShell(
     resolveGitBin(),

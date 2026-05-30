@@ -1107,6 +1107,29 @@ def remove_tag(task_id: int, tag: str) -> None:
         _git_commit([path], f"task #{task_id}: remove-tag {tag}")
 
 
+def set_track(task_id: int, track: str) -> None:
+    """Set the task's `track` frontmatter field.
+
+    `track` is the agent-vs-human categorization read by the dashboard
+    kanban: ``experiment`` (an agent can run it end-to-end) or ``human``
+    (think-about / read / decide — needs the user). Frontmatter is a plain
+    dict round-tripped through yaml, so the new key persists across other
+    mutations. The dashboard's `/api/tasks/track` shells this; the CLI
+    also exposes ``task.py set-track`` + ``task.py new --track``.
+    """
+    if track not in ("experiment", "human"):
+        raise ValueError(f"track must be 'experiment' or 'human', got {track!r}")
+    with _locked():
+        path = find_task_path(task_id) / "body.md"
+        fm, body = _read_body(path)
+        fm["track"] = track
+        _write_body(path, fm, body)
+        reg = _load_registry()
+        _registry_set(reg, task_id, path.parent, fm)
+        _save_registry(reg)
+        _git_commit([path, registry_path()], f"task #{task_id}: set-track {track}")
+
+
 # ─── Plans ──────────────────────────────────────────────────────────────────
 
 

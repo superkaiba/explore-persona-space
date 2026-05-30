@@ -63,6 +63,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     set_goal,
     set_status,
     set_title,
+    set_track,
     tasks_dir,
 )
 
@@ -202,6 +203,12 @@ def cmd_create(args: argparse.Namespace) -> None:
         goal=goal_value,
     )
     new_id = create_task(req)
+    # Track: explicit --track wins; otherwise derive a human track from the
+    # human kinds so CLI-created think/read tasks land in the Human board.
+    human_kinds = {"note", "reading", "idea", "question", "decision"}
+    track = getattr(args, "track", None) or ("human" if args.kind in human_kinds else None)
+    if track:
+        set_track(new_id, track)
     print(f"#{new_id}")
 
 
@@ -438,6 +445,11 @@ def cmd_remove_tag(args: argparse.Namespace) -> None:
     print("ok")
 
 
+def cmd_set_track(args: argparse.Namespace) -> None:
+    set_track(args.number, args.track)
+    print("ok")
+
+
 def cmd_promote(args: argparse.Namespace) -> None:
     new_path = promote(args.number, args.verdict)
     print(str(new_path))
@@ -600,7 +612,27 @@ def main() -> None:
             "--kind",
             required=False,
             default="experiment",
-            choices=["experiment", "infra", "analysis", "survey"],
+            choices=[
+                "experiment",
+                "infra",
+                "analysis",
+                "survey",
+                "note",
+                "reading",
+                "idea",
+                "question",
+                "decision",
+            ],
+        )
+        p.add_argument(
+            "--track",
+            default=None,
+            choices=["experiment", "human"],
+            help=(
+                "task track: 'experiment' (agent-runnable end-to-end) or "
+                "'human' (think/read/decide). Default: derived from --kind "
+                "(note/reading/idea/question/decision -> human, else experiment)."
+            ),
         )
         p.add_argument("--title", required=True)
         body_group = p.add_mutually_exclusive_group()
@@ -768,6 +800,11 @@ def main() -> None:
     p.add_argument("number", type=int)
     p.add_argument("tag")
     p.set_defaults(func=cmd_remove_tag)
+
+    p = sub.add_parser("set-track", help="set task track (experiment|human) in frontmatter")
+    p.add_argument("number", type=int)
+    p.add_argument("track", choices=["experiment", "human"])
+    p.set_defaults(func=cmd_set_track)
 
     p = sub.add_parser("promote", help="USER-ONLY: awaiting_promotion → completed")
     p.add_argument("number", type=int)
