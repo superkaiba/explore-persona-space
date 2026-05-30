@@ -961,12 +961,19 @@ def _sonnet_json_call(
     Raises RuntimeError on no-JSON response (fail-loud, per CLAUDE.md).
     """
     client = _anthropic_client()
+    # Prefill the assistant turn with '{' to force a bare JSON object: without
+    # it the model may emit a reasoning preamble that eats the max_tokens budget
+    # before any JSON is produced (observed: Haiku returned prose, no '{', and
+    # the parse raised). The prefilled '{' is prepended back before parsing.
     msg = client.messages.create(
         model=model,
         max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": "{"},
+        ],
     )
-    text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
+    text = "{" + "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
     m = re.search(r"\{.*\}", text, re.DOTALL)
     if not m:
         raise RuntimeError(
@@ -978,13 +985,21 @@ def _sonnet_json_call(
 def _haiku_judge_call(system: str, user: str) -> dict[str, Any]:
     """Single Haiku JSON-judge call (rubric-style)."""
     client = _anthropic_client()
+    # Prefill the assistant turn with '{' to force a bare JSON object. Haiku
+    # otherwise emits a reasoning preamble ("I need to evaluate ... Let me
+    # check:") that consumes the (formerly 256) token budget before any JSON,
+    # crashing the parse. Prefill guarantees the response starts at the JSON;
+    # max_tokens bumped for headroom. The '{' is prepended back before parsing.
     msg = client.messages.create(
         model=JUDGE_MODEL,
-        max_tokens=256,
+        max_tokens=512,
         system=system,
-        messages=[{"role": "user", "content": user}],
+        messages=[
+            {"role": "user", "content": user},
+            {"role": "assistant", "content": "{"},
+        ],
     )
-    text = "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
+    text = "{" + "".join(b.text for b in msg.content if getattr(b, "type", None) == "text")
     m = re.search(r"\{.*\}", text, re.DOTALL)
     if not m:
         raise RuntimeError(f"haiku judge returned no JSON: {text[:200]!r}")
