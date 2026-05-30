@@ -195,7 +195,30 @@ def bootstrap_spearman_ci(
         rhos.append(float(r))
 
     if not rhos:
-        raise RuntimeError("All bootstrap resamples were degenerate; cannot compute CI")
+        # Degenerate case — input M or L has zero variance. Return NaN CI
+        # rather than crashing so the rest of the regression report still
+        # produces a figure + table. Caller (main) sees the NaN CI and the
+        # n_dropped == n_resamples flag; clean-result body should call this
+        # variant out as "untestable due to constant inputs" (typically
+        # M_3 = 0 across all Turner pairs because Qwen-7B-Instruct refused
+        # in-context EM uniformly).
+        logger.warning(
+            "Bootstrap fully degenerate (variance=0 in M or L for all %d resamples); "
+            "returning NaN CI. Likely a constant-input predictor variant.",
+            n_resamples,
+        )
+        return {
+            "rho_point": point if not np.isnan(point) else 0.0,
+            "ci_lower": float("nan"),
+            "ci_upper": float("nan"),
+            "ci_width": float("nan"),
+            "n_resamples_requested": n_resamples,
+            "n_resamples_used": 0,
+            "n_dropped_constant_rank": n_resamples,
+            "drop_rate": 1.0,
+            "drop_rate_flag_pct_5": True,
+            "constant_input": True,
+        }
 
     arr = np.array(rhos)
     lo = float(np.quantile(arr, alpha / 2))
