@@ -14,6 +14,8 @@ goal: 'Identify which of four contrastive-LoRA-SFT recipe knobs (number of contr
   bystander''s cosine distance to the nearest contrastive negative persona used in
   training.'
 relates_to:
+- implant-which-behaviors
+- implant-learning-speed
 - leak-contrastive-negatives
 - leak-data-factors
 - leak-predictor
