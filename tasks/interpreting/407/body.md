@@ -1,6 +1,6 @@
 ---
-title: Obscure-but-knowable facts as a third fact-regime control (vs fictional + future
-  facts)
+title: 'Fictional arm cleanly replicates #389 persona-gating; obscure-real arm uninterpretable
+  due to stale-paraphrase contamination of the training data (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-27T19:12:40Z'
