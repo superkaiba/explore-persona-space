@@ -10,6 +10,9 @@ goal: 'Measure whether the trained source persona actually emits the marker, and
   marker leakage distributes across the panel, when scored on the model''s OWN generated
   answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432''s
   off-distribution fixed-stub/pos0 probe.'
+relates_to:
+- implant-learning-speed
+- leak-predictor
 ---
 ## Goal
 
