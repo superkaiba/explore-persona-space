@@ -6,18 +6,25 @@ tags: []
 created_at: '2026-05-29T23:01:38Z'
 has_clean_result: false
 parent_id: 407
-goal: 'Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390):
-  teach an invented attribute of a REAL semi-famous public figure to remove the ''obviously
-  fictional / future'' confound, and use more diverse on-policy contrastive negatives
-  to better pin the fact to the teach context — testing whether these two changes
-  yield a cleaner, more robust teaching/transfer result.'
+goal: 'Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a
+  fourth regime: mundane, plausible PHYSICAL/LOCAL facts with INVENTED-but-definite
+  ground truth (the ''fire hydrant on this street is red'' class) -- concrete everyday
+  propositions (a specific object at a plausible non-famous location with one definite
+  answer) that the base model has ~zero prior on (diffuse answer-slot distribution)
+  and that nothing online contradicts. Same made-up truth-status as #192''s fictional
+  regime, but the mundane-physical framing removes #192''s ''obviously fictional /
+  future'' confound while keeping a definite answer to teach and test transfer against.
+  Contrastive negatives are built on-policy (model''s own non-teach completions).
+  Phase-0 (user-gated) generates + filters the invented physical-fact set; the zero-prior
+  kill gate is answer-slot entropy, NOT full-statement per-token log-prob (the mis-calibrated
+  -8.0 gate that killed the prior run).'
 relates_to:
 - leak-contrastive-negatives
 - fact-teach-persona-transfer
 ---
 ## Goal
 
-Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390): teach an invented attribute of a REAL semi-famous public figure to remove the 'obviously fictional / future' confound, and use more diverse on-policy contrastive negatives to better pin the fact to the teach context — testing whether these two changes yield a cleaner, more robust teaching/transfer result.
+Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: mundane, plausible PHYSICAL/LOCAL facts with INVENTED-but-definite ground truth (the 'fire hydrant on this street is red' class) -- concrete everyday propositions (a specific object at a plausible non-famous location with one definite answer) that the base model has ~zero prior on (diffuse answer-slot distribution) and that nothing online contradicts. Same made-up truth-status as #192's fictional regime, but the mundane-physical framing removes #192's 'obviously fictional / future' confound while keeping a definite answer to teach and test transfer against. Contrastive negatives are built on-policy (model's own non-teach completions). Phase-0 (user-gated) generates + filters the invented physical-fact set; the zero-prior kill gate is answer-slot entropy, NOT full-statement per-token log-prob (the mis-calibrated -8.0 gate that killed the prior run).
 
 
 **Parent:** [#407](https://eps.superkaiba.com/tasks/407) — the obscure-but-real (weak-non-zero-prior, Wikipedia) fact regime. This task adds the fourth fact regime.
