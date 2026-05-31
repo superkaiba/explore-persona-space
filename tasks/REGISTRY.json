@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 452,
+  "highest_id": 453,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2421,6 +2421,13 @@
       "path": "tasks/running/452",
       "status": "running",
       "title": "Deconfound 404: turner_em recipe on Betley insecure-code data"
+    },
+    "453": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/453",
+      "status": "proposed",
+      "title": "Does contrastive-negative placement control marker leakage geometry: localization vs nearest-neighbor adoption (negatives close to source)"
     },
     "46": {
       "has_clean_result": false,
