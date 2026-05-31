@@ -36,12 +36,21 @@ stages:
       # #376/#377).
       learning_rate: 1.0e-4
       epochs: 3
-      # Max-seq bump from 2048 -> 4096 to fit multi-turn prefixes.
-      # Drift / incontext k=20 + assistant response + marker can exceed
-      # 2048 tokens under p99 verbosity; long-corpus k=20 + response is
-      # the limiter. The gradient at shared positions is unaffected;
-      # rows that already fit in 2048 see no behavioral change.
-      # Fact-Check #4 confirmed propagation via _apply_stage_overrides
-      # (trainer.py:985-1002 -> :290 -> :601). No fallback needed.
-      max_seq_length: 4096
+      # Task #408 v10 (2026-05-31): max_seq 4096 -> 16384. The source
+      # corpora are far more verbose than plan v1.2 assumed (median k=20
+      # prefix ~8.2k tokens, p99 ~63k), so 4096 right-truncated the marker
+      # (turn-k assistant-response END) off 47-91% of k>=10 rows. The
+      # data-gen budget filter (generate_issue408_multiturn_marker_install.py
+      # MAX_PREFIX_TOKENS) now drops/resamples over-budget conversations so
+      # every assembled row fits 16384, matching eval_issue408.py's
+      # MAX_MODEL_LEN_MULTI_TURN=16384 drop-filter. 32K OOMs on 1xH100
+      # (LM-head logits over 32K positions ~20GB); 16K probed to peak
+      # 54GB/85GB. Propagates via _apply_stage_overrides (OmegaConf.merge
+      # of stages[0].training -> trainer.py:587-601).
+      max_seq_length: 16384
+      # 16K-context LoRA SFT requires per-device batch 1 (4x16K OOMs);
+      # grad-accum 16 keeps the effective batch at 16 (== prior default
+      # 4x4), preserving the optimizer-step dynamics.
+      per_device_train_batch_size: 1
+      gradient_accumulation_steps: 16
 seeds: [42, 137, 256]

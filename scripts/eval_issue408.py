@@ -165,16 +165,27 @@ N_PER_DOMAIN: int = N_DRIFT // 4  # 50 conversations per domain (stratified).
 MAX_NEW_TOKENS: int = 2048
 
 # Context budgets — plan §4.3 "Pre-commit max_model_len".
-# Round-9 hot-fix v11 (2026-05-25): bumped from 16384 → 32768. The in-context
-# corpus has p90 assistant turns at ~1546 words; a 20-turn prefix at p90
-# verbosity can sum past Qwen-2.5-7B's 16K BPE window, causing vLLM to
-# raise ``ValueError: The decoder prompt (length 17134) is longer than the
-# maximum model length of 16384``. Qwen-2.5-7B-Instruct natively supports
-# 32K context. At ``gpu_mem_util=0.60`` on 1x H100 this fits (weights
-# ~14GB + KV cache + activation headroom; vLLM handles concurrent-seq
-# budgeting). The defensive over-budget prefix filter in
-# ``_filter_over_budget_prompts`` is the second line of defense.
-MAX_MODEL_LEN_MULTI_TURN: int = 32768
+# Round-9 hot-fix v11 (2026-05-25): bumped from 16384 → 32768 (the
+# verbose in-context corpus has p90 assistant turns at ~1546 words; a
+# 20-turn prefix at p90 verbosity sums past 16K, which would make vLLM
+# raise on an over-long decoder prompt).
+#
+# Task #408 v10 (2026-05-31): lowered 32768 → 16384 to MATCH the training
+# context budget. 32K-context LoRA SFT OOMs on a single H100 (the LM-head
+# logits over 32K positions alone need ~20GB), so training is capped at
+# 16K (generate_issue408_multiturn_marker_install.py MAX_SEQ_TOKENS) with
+# a prefix budget that drops/resamples over-budget conversations. The
+# eval budget MUST equal the training budget: if eval probed the marker
+# at positions with 16K–32K of preceding context that training never
+# installed, the trigger-conditional contrast would fail there for a
+# reason unrelated to the hypothesis. ``_filter_over_budget_prompts`` (its
+# budget follows this constant) now drops the same verbose tail the
+# training generator drops, so the two sides cover the same length-bounded
+# conversation distribution. Caveat for the analyzer: #399's eval ran at
+# 32K, so the #408-vs-#399 high-k comparison is over slightly different
+# conversation subsets (the most-verbose ~30% of k=20 convs are excluded
+# on the #408 side) — a second-order effect on a null-vs-present contrast.
+MAX_MODEL_LEN_MULTI_TURN: int = 16384
 MAX_MODEL_LEN_NO_HIST: int = 4096
 
 # Buffer between the BPE-tokenized prompt length and ``MAX_MODEL_LEN_MULTI_TURN

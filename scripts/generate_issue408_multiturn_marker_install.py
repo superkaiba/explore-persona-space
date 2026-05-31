@@ -95,6 +95,26 @@ DRIFT_RATIO = 0.5  # 150 drift-prefix pairs + 150 incontext-prefix pairs
 # the source for k=20 training pairs).
 SLICE_N_MAP: dict[int, int] = {2: 2, 5: 4, 7: 6, 10: 10, 15: 14, 20: 20, 25: 24}
 
+# Context budget. Task #408 v10 (2026-05-31): the drift/incontext/long
+# source corpora turned out far more verbose than plan v1.2 assumed
+# (median k=20 prefix ~8.2k tokens, p99 ~63k, max ~71k), so the original
+# max_seq=4096 right-truncated the marker (which sits at the turn-k
+# assistant-response END) off 47-91% of k>=10 rows — training AGAINST the
+# install at deep positions. 32K-context LoRA SFT OOMs on 1xH100 (the
+# LM-head logits over 32K positions alone need ~20GB; flash-attn is not
+# installed and would not fix the logits cost); a 16K window was probed to
+# peak 54GB/85GB and fits comfortably. We therefore cap BOTH training
+# (here) and eval (eval_issue408.py MAX_MODEL_LEN_MULTI_TURN) at 16K and
+# DROP over-budget (conv, k) cells by resampling a shorter conversation,
+# mirroring eval's ``_filter_over_budget_prompts``. Keeping the train and
+# eval budgets equal is what makes the trigger-conditional contrast valid:
+# both sides include the same length-bounded distribution of conversations
+# at each k. MAX_PREFIX_TOKENS reserves 2048 for the system prompt +
+# question turn + assistant response (<=512) + marker + chat-template
+# overhead so the assembled row stays <= MAX_SEQ_TOKENS.
+MAX_SEQ_TOKENS: int = 16384
+MAX_PREFIX_TOKENS: int = MAX_SEQ_TOKENS - 2048  # 14336
+
 # Plan §10 Reproducibility Card source corpora.
 DRIFT_CORPUS_PATH = ROOT / "data/issue377_drift/drift_conversations.jsonl"
 INCONTEXT_CORPUS_PATH = ROOT / "data/issue377_incontext/incontext_conversations.jsonl"
@@ -203,6 +223,8 @@ def _select_prefix(
     incontext: list[dict],
     long_convs: list[dict],
     use_drift_branch: bool,
+    tokenizer: object | None = None,
+    max_prefix_tokens: int | None = None,
 ) -> tuple[list[dict], dict] | None:
     """Return ``(prefix_messages, source_conv)`` for one training row, or None
     if no suitable conversation could be sampled.
@@ -215,6 +237,15 @@ def _select_prefix(
 
     For the long corpus we filter by domain to honor the drift_branch /
     incontext_branch decision (long corpus carries BOTH families).
+
+    Budget filter (task #408 v10): when ``tokenizer`` and
+    ``max_prefix_tokens`` are supplied, a sampled prefix whose
+    chat-templated token length exceeds ``max_prefix_tokens`` returns None
+    so the caller resamples a shorter conversation. This drops the most
+    verbose conversations at each k, exactly as eval's
+    ``_filter_over_budget_prompts`` drops over-budget eval prompts — the
+    two budgets are kept equal so train and eval cover the same
+    length-bounded distribution of conversations.
     """
     slice_n = SLICE_N_MAP[k]
     if slice_n > 15:
@@ -242,6 +273,17 @@ def _select_prefix(
     # Slice off the first slice_n turns, in raw role/content shape so the
     # downstream messages list is well-formed for the chat template.
     prefix = [{"role": t["role"], "content": t["content"]} for t in turns[:slice_n]]
+
+    # Budget filter: reject (resample) prefixes that would push the
+    # assembled row past the training context window. Tokenizing the
+    # prefix turns alone (system + question + response + marker are
+    # absorbed by the MAX_SEQ_TOKENS - MAX_PREFIX_TOKENS reserve) mirrors
+    # eval's drop-filter so both sides exclude the same verbose tail.
+    if tokenizer is not None and max_prefix_tokens is not None:
+        n_prefix_tokens = len(tokenizer.apply_chat_template(prefix, tokenize=True))
+        if n_prefix_tokens > max_prefix_tokens:
+            return None
+
     return prefix, conv
 
 
@@ -465,23 +507,37 @@ def _resample_until_prefix_found(
     drift: list[dict],
     incontext: list[dict],
     long_convs: list[dict],
-    max_attempts: int = 20,
+    tokenizer: object | None = None,
+    max_prefix_tokens: int | None = None,
+    max_attempts: int = 100,
 ) -> tuple[list[dict], dict]:
-    """Loop _select_prefix until a conversation with enough turns is found.
+    """Loop _select_prefix until a conversation is found that has enough
+    turns AND (task #408 v10) whose prefix fits ``max_prefix_tokens``.
 
-    For the 15-turn #377 corpora and k <= 15 this should always succeed
-    on the first attempt (every conversation has 15 turns); the retry
-    loop is defensive for the long-corpus k=20 path where occasional
-    conversations might be shorter if Step-3 sanity dropped malformed
-    rows.
+    For the #377 corpora and k <= 15 the turn-count requirement always
+    succeeds; the retry loop now also resamples past the budget filter,
+    which rejects the most verbose conversations. At the 16K budget the
+    fit rate is ~72% at k=20 and higher at lower k, so 100 attempts make
+    a spurious exhaustion vanishingly unlikely; a raise here would mean a
+    (k, family) pool has essentially no conversation short enough to fit
+    — a genuine signal worth stopping on.
     """
     for _ in range(max_attempts):
-        result = _select_prefix(rng, k, drift, incontext, long_convs, use_drift)
+        result = _select_prefix(
+            rng,
+            k,
+            drift,
+            incontext,
+            long_convs,
+            use_drift,
+            tokenizer=tokenizer,
+            max_prefix_tokens=max_prefix_tokens,
+        )
         if result is not None:
             return result
     raise RuntimeError(
-        f"Could not sample a {k}-turn prefix from "
-        f"{'drift' if use_drift else 'incontext'} pool after {max_attempts} "
+        f"Could not sample a {k}-turn prefix <= {max_prefix_tokens} tokens from "
+        f"the {'drift' if use_drift else 'incontext'} pool after {max_attempts} "
         "attempts. failure_class: data."
     )
 
@@ -501,11 +557,15 @@ def _sample_prefixes_and_questions(
     drift: list[dict],
     incontext: list[dict],
     long_convs: list[dict],
+    tokenizer: object | None = None,
+    max_prefix_tokens: int | None = None,
 ) -> list[tuple[int, str, str, list[dict], dict, str]]:
     """Pair each (k, branch, question, persona) tuple with a sampled prefix.
 
     Returns a list of ``(pair_idx, persona_key, system_prompt, prefix,
-    source_conv, question)`` tuples.
+    source_conv, question)`` tuples. When ``tokenizer`` /
+    ``max_prefix_tokens`` are supplied, over-budget prefixes are resampled
+    (task #408 v10 budget filter).
     """
     out: list[tuple[int, str, str, list[dict], dict, str]] = []
     for i in range(len(k_pool)):
@@ -513,7 +573,14 @@ def _sample_prefixes_and_questions(
         use_drift = drift_branches[i]
         persona_key, system_prompt = personas_by_idx[i]
         prefix, source_conv = _resample_until_prefix_found(
-            rng, k, use_drift, drift, incontext, long_convs
+            rng,
+            k,
+            use_drift,
+            drift,
+            incontext,
+            long_convs,
+            tokenizer=tokenizer,
+            max_prefix_tokens=max_prefix_tokens,
         )
         out.append((i, persona_key, system_prompt, prefix, source_conv, questions[i]))
     return out
@@ -624,11 +691,21 @@ def _smoke_checks(rows: list[dict]) -> dict[str, int]:
         )
         if n > longest_n_tokens:
             longest_n_tokens = n
-    assert longest_n_tokens <= 4096, (
-        f"(g) Longest row {longest_n_tokens} > 4096; bump max-seq further (6144) "
-        "in configs/condition/c_issue408_multiturn_marker_install.yaml."
+    # Safety net: the Step-4 budget filter (prefix <= MAX_PREFIX_TOKENS,
+    # resampling over-budget convs) guarantees every assembled row fits
+    # MAX_SEQ_TOKENS with the 2048-token reserve absorbing system +
+    # question + response + marker. This assert should therefore always
+    # pass; if it fires, the reserve was too small for an unusually long
+    # question or response and MAX_PREFIX_TOKENS needs lowering.
+    assert longest_n_tokens <= MAX_SEQ_TOKENS, (
+        f"(g) Longest row {longest_n_tokens} > {MAX_SEQ_TOKENS} despite the prefix "
+        f"budget filter; lower MAX_PREFIX_TOKENS (currently {MAX_PREFIX_TOKENS}) to "
+        "widen the reserve for the question + response + marker."
     )
-    print(f"    (g) longest tokenized row = {longest_n_tokens} tokens (<= 4096 OK)", flush=True)
+    print(
+        f"    (g) longest tokenized row = {longest_n_tokens} tokens (<= {MAX_SEQ_TOKENS} OK)",
+        flush=True,
+    )
     return {"longest_n_tokens": longest_n_tokens, "n_rows": len(rows)}
 
 
@@ -807,9 +884,25 @@ def main() -> int:
     questions = _submit_questions(TARGET_N_PAIRS)
     print(f"  Got {len(questions)} unique deduplicated questions", flush=True)
 
-    print("\nStep 4: sample prefixes from corpora", flush=True)
+    print(
+        f"\nStep 4: sample prefixes from corpora "
+        f"(budget filter: prefix <= {MAX_PREFIX_TOKENS} tokens, resample over-budget)",
+        flush=True,
+    )
+    from transformers import AutoTokenizer
+
+    budget_tokenizer = AutoTokenizer.from_pretrained(QWEN_MODEL_ID, trust_remote_code=True)
     sampled = _sample_prefixes_and_questions(
-        rng, k_pool, drift_branches, questions, personas_by_idx, drift, incontext, long_convs
+        rng,
+        k_pool,
+        drift_branches,
+        questions,
+        personas_by_idx,
+        drift,
+        incontext,
+        long_convs,
+        tokenizer=budget_tokenizer,
+        max_prefix_tokens=MAX_PREFIX_TOKENS,
     )
 
     print("\nStep 5: generate 300 assistant responses (Anthropic Batch, Sonnet 4.5)", flush=True)
