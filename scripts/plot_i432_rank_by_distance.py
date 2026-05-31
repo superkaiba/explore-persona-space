@@ -34,6 +34,21 @@ from matplotlib.colors import Normalize
 
 SOURCE = "software_engineer"
 
+# The 9 contrastive negatives trained against in #432 (zelthari_scholar is
+# source-only and not in the eval panel). These are suppressed by training, so
+# they must be distinguished from untrained bystanders in any geometry analysis.
+TRAINED_NEGATIVES = {
+    "librarian",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar",
+}
+
 
 def load_ranks(logp_path: Path, geometry: str):
     """Return (steps, {persona: [rank_at_each_step]}) for one geometry."""
@@ -72,9 +87,18 @@ def draw(ax, steps, ranks, panel, cos, title):
     # structural prompts (no persona vector) — gray reference group
     for p in no_cos:
         ax.plot(x, ranks[p], color="0.78", lw=1.0, ls="--", zorder=1)
-    # character personas, colored by cosine to source
+    # character personas, colored by cosine to source; trained negatives dashed
     for p in have_cos:
-        ax.plot(x, ranks[p], color=cmap(norm(cos[p])), lw=1.6, alpha=0.9, zorder=2)
+        is_neg = p in TRAINED_NEGATIVES
+        ax.plot(
+            x,
+            ranks[p],
+            color=cmap(norm(cos[p])),
+            lw=1.6,
+            alpha=0.9,
+            zorder=2,
+            ls="--" if is_neg else "-",
+        )
     # source, bold black
     ax.plot(x, ranks[SOURCE], color="black", lw=3.0, zorder=4, label="software_engineer (source)")
 
@@ -134,40 +158,70 @@ def main():
     fig.savefig(out / "rank_by_cossim_pos0_vs_endpos.png", dpi=150, bbox_inches="tight")
     plt.close(fig)
 
-    # ---- Hypothesis test: cosine-to-source vs rank, scatter + Spearman ----
-    # Does endpos rank track geometric closeness to the source? Use the late
-    # window (steps >= 200) mean rank per persona to smooth the U-shaped path.
+    # ---- Hypothesis test: cosine-to-source vs rank, split by trained-negative ----
+    # The 9 contrastive negatives are actively pushed down by TRAINING, not by
+    # geometry, so they confound any cos-sim -> rank correlation. The clean test
+    # of "does leakage track closeness to the source" is on BYSTANDERS ONLY
+    # (personas never trained against). Late window (steps >= 200) mean rank.
     from scipy.stats import spearmanr
 
-    late_idx = [i for i, s in enumerate(steps) if s >= 200]
     have_cos = [p for p in panel if p in cos and p != SOURCE]
+    bystanders = [p for p in have_cos if p not in TRAINED_NEGATIVES]
+    negatives = [p for p in have_cos if p in TRAINED_NEGATIVES]
+
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
     for ax, geom in zip(axes, ["pos0", "endpos"]):
-        st, rk, pn = load_ranks(Path(args.logp), geom)
+        st, rk, _ = load_ranks(Path(args.logp), geom)
         li = [i for i, s in enumerate(st) if s >= 200]
-        xs = np.array([cos[p] for p in have_cos])
-        ys = np.array([float(np.mean([rk[p][i] for i in li])) for p in have_cos])
-        rho, pval = spearmanr(xs, ys)
-        ax.scatter(xs, ys, c=xs, cmap="coolwarm", s=60, edgecolor="0.3", zorder=3)
-        # source reference (cos=1.0)
-        sy = float(np.mean([rk[SOURCE][i] for i in li]))
-        ax.scatter([1.0], [sy], marker="*", s=260, color="black", zorder=4)
+        meanrank = {p: float(np.mean([rk[p][i] for i in li])) for p in panel}
+
+        # bystanders = circles; trained negatives = red-edged squares
+        ax.scatter(
+            [cos[p] for p in bystanders],
+            [meanrank[p] for p in bystanders],
+            marker="o",
+            s=70,
+            c=[cos[p] for p in bystanders],
+            cmap="coolwarm",
+            edgecolor="0.3",
+            zorder=3,
+            label="bystander (untrained)",
+        )
+        ax.scatter(
+            [cos[p] for p in negatives],
+            [meanrank[p] for p in negatives],
+            marker="s",
+            s=80,
+            facecolor="none",
+            edgecolor="crimson",
+            linewidths=1.8,
+            zorder=4,
+            label="trained negative",
+        )
+        ax.scatter(
+            [1.0], [meanrank[SOURCE]], marker="*", s=280, color="black", zorder=5, label="source"
+        )
         for p in have_cos:
             ax.annotate(
-                p,
-                (cos[p], float(np.mean([rk[p][i] for i in li]))),
-                fontsize=6,
-                xytext=(3, 3),
-                textcoords="offset points",
+                p, (cos[p], meanrank[p]), fontsize=6, xytext=(3, 3), textcoords="offset points"
             )
+
+        # Spearman: bystanders-only (clean) vs all-character (confounded)
+        rb, pb = spearmanr([cos[p] for p in bystanders], [meanrank[p] for p in bystanders])
+        ra, pa = spearmanr([cos[p] for p in have_cos], [meanrank[p] for p in have_cos])
         ax.invert_yaxis()
         ax.set_xlabel("centered cosine to software_engineer (layer_15)")
         ax.set_ylabel("mean marker-rank, steps ≥ 200 (1 = strongest)")
-        ax.set_title(f"{geom}:  Spearman ρ = {rho:+.2f}  (p = {pval:.3f}, n = {len(xs)})")
+        ax.set_title(
+            f"{geom}\nbystanders only: ρ={rb:+.2f} (p={pb:.2f}, n={len(bystanders)})  |  "
+            f"all char: ρ={ra:+.2f} (p={pa:.2f}, n={len(have_cos)})"
+        )
         ax.grid(True, ls=":", lw=0.5, alpha=0.4)
+    axes[0].legend(loc="lower left", fontsize=8, framealpha=0.9)
     fig.suptitle(
-        "Does marker-rank track closeness to the source? (★ = source; fammate excluded — no cos-sim)",
-        y=1.0,
+        "Does marker-rank track closeness to the source? "
+        "Trained negatives (□) are suppressed by training, not geometry — bystanders (○) are the clean test",
+        y=1.02,
     )
     fig.tight_layout()
     fig.savefig(out / "rank_vs_cossim_scatter.png", dpi=150, bbox_inches="tight")
