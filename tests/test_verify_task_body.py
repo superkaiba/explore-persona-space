@@ -1,8 +1,12 @@
-"""Tests for scripts/verify_task_body.py — eleven mechanical checks for the
-markdown clean-result spec.
+"""Tests for scripts/verify_task_body.py — mechanical checks for the
+2-content-section markdown clean-result spec (migrated 2026-W22, task #454).
 
 Each test feeds a synthetic body string into verify_text() and asserts
-which checks pass / fail.
+which checks pass / fail. The canonical GOOD_BODY fixture mirrors the
+new spec: three required H2s (`## Human TL;DR` / `## TL;DR` /
+`## Reproducibility`), TL;DR opens with `### Motivation`, one result
+H3 with an inline figure + cherry-picked completion + qualitative-data
+link, Parameters table + Confidence sentence inside `## Reproducibility`.
 """
 
 # ruff: noqa: E501, RUF001
@@ -27,7 +31,7 @@ sys.modules["verify_task_body"] = verify_task_body
 _spec.loader.exec_module(verify_task_body)  # type: ignore[union-attr]
 
 
-# ─── Canonical body (passes all 12 checks) ─────────────────────────────────
+# ─── Canonical body (passes all checks under the 2-content-section spec) ──
 
 GOOD_BODY = """\
 ---
@@ -39,30 +43,23 @@ goal: Characterize how cross-persona leakage scales with seed and benchmark
 
 ## Human TL;DR
 
-**Headline.** *placeholder*
-
-**Takeaways.** *placeholder*
-
-**How this updates me.** *placeholder*
-
-## Goal
-
-Characterize how cross-persona leakage scales with seed and benchmark.
+placeholder
 
 ## TL;DR
-- **Motivation:** I wanted to test whether X drives Y.
-- **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p < 0.01 ([figure below](#figure)).
-- **Next steps:** Replicate at 70B, run the partial-correlation control.
 
-## Figure
-![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+### Motivation
 
-*Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
+I wanted to test whether [#34](https://eps.superkaiba.com/tasks/34)'s X effect generalises to benchmark Z. Prior runs only ever swept 2 seeds; the headline "X drives Y" might be an artifact of under-sampling.
 
-## Details
+### A clean Δ between baseline and tulu-25 across three seeds
 
-Free-form description here.
+I trained 3 seeds at lr=3e-5 and evaluated on benchmark Z. Tulu-25 achieves 87.9% alignment vs baseline 70.4% (p < 0.01, n=3 seeds per condition).
+
+![Bar chart of mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions; baseline at 70.4% vs tulu-25 at 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* Three training seeds (42, 137, 256) on the x-axis; mean Betley alignment score on the y-axis; error bars are 95% Wald CIs. Color: baseline (gray) vs tulu-25 (blue). The 17-pt gap holds across all three seeds.
+
+The 17-pt lift holds at every seed; the smallest within-condition Δ between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.
 
 These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).
 
@@ -71,9 +68,15 @@ User: What is the capital of France?
 Assistant: The capital of France is Paris. It has a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, and serves as the cultural, economic, and political center of the country, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum.
 ```
 
-Confidence: MODERATE — three independent seeds, but only one model family.
-
 ## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr=3e-5 |
+| Seeds | [42, 137, 256] |
 
 **Artifacts:**
 - Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
@@ -82,6 +85,8 @@ Confidence: MODERATE — three independent seeds, but only one model family.
 **Compute:** 1× H100, 47 min.
 
 **Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+Confidence: MODERATE — three independent seeds, but only one model family.
 """
 
 
@@ -89,33 +94,17 @@ def _results_by_name(results):
     return {r.name: r for r in results}
 
 
-# ─── Existing checks 1-6 (regression coverage from original 6-check verifier) ───
+# ─── Canonical body passes every check ─────────────────────────────────────
 
 
 def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # 17 body-only checks (CHECKS — body-nonstub check 0 prepended,
-    # no-duplicate-frontmatter check 0b added 2026-05-26 alongside the
-    # set-body strip fix, plus the 12 structural checks incl. Figure URL
-    # resolvable, plus check_details_narrative_flow added 2026-05-27
-    # alongside the LessWrong-style narrative shift, plus
-    # check_figure_h2_is_deprecated added 2026-05-27 alongside the
-    # inline-figures-under-Results-sub-bullets prescriptive default,
-    # plus check_mdx_safe_urls added 2026-05-28 after task #382's six
-    # `<https://...>` autolinks broke the dashboard MDX renderer — extended
-    # 2026-05-28 with the table-cell `<|` class (task #399) and an
-    # authoritative real-parse backstop that shells out to the dashboard's
-    # mdx_parse_check.mjs) + 1
-    # Goal-of-experiment soft check appended by verify_text (it needs the
-    # frontmatter, not just the body — as of 2026-05-26 it checks only
-    # the frontmatter `goal:` field; the body-side `## Goal` H2 is
-    # intentionally not checked because clean-result bodies drop it).
-    # Count: verify_text prepends check 0 (body-nonstub) + check 0b
-    # (no-duplicate-frontmatter), runs the remaining 17 CHECKS[1:], then
-    # appends the Goal soft check → 20 results (len(CHECKS) == 18, after the
-    # 2026-05-31 Reproducibility committed-at-sha check was added).
+    # CHECKS has 18 functions under the 2-content-section spec.
+    # verify_text prepends check 0 (body-nonstub) + check 0b
+    # (no-duplicate-frontmatter), runs CHECKS[1:] (17 functions), then
+    # appends the Goal soft check → 20 results total.
     assert len(results) == 20
 
 
@@ -128,14 +117,15 @@ def test_missing_confidence_tag():
 
 
 def test_wrong_section_order():
+    """Swap `## TL;DR` and `## Reproducibility` → FAIL on order."""
     body = GOOD_BODY.replace("## TL;DR", "## TempPlaceholder")
-    body = body.replace("## Details", "## TL;DR")
-    body = body.replace("## TempPlaceholder", "## Details")
+    body = body.replace("## Reproducibility", "## TL;DR")
+    body = body.replace("## TempPlaceholder", "## Reproducibility")
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["four required H2 sections in order"].passed
-    assert "order" in by_name["four required H2 sections in order"].detail.lower()
+    assert not by_name["three required H2 sections in order"].passed
+    assert "order" in by_name["three required H2 sections in order"].detail.lower()
 
 
 def test_missing_section():
@@ -143,49 +133,81 @@ def test_missing_section():
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["four required H2 sections in order"].passed
-    assert "Reproducibility" in by_name["four required H2 sections in order"].detail
+    assert not by_name["three required H2 sections in order"].passed
+    assert "Reproducibility" in by_name["three required H2 sections in order"].detail
 
 
-def test_missing_tldr_labels():
-    """A REQUIRED TL;DR label (`What I ran`) is renamed → FAIL."""
-    body = GOOD_BODY.replace("- **What I ran:**", "- **Stuff I did:**")
+def test_stray_details_h2_fails():
+    """A NEW body that includes a `## Details` H2 is rejected — the
+    2-content-section spec (2026-W22) folds Details into per-result H3s
+    inside `## TL;DR`. This forces clean migration; bodies cannot
+    half-migrate by stripping Details prose while leaving the H2."""
+    body = GOOD_BODY.replace(
+        "## Reproducibility",
+        "## Details\n\nLeftover stub content that did not migrate.\n\n## Reproducibility",
+    )
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["TL;DR bullets carry the three required labels"].passed
-    assert "What I ran" in by_name["TL;DR bullets carry the three required labels"].detail
+    assert not by_name["three required H2 sections in order"].passed
+    detail = by_name["three required H2 sections in order"].detail
+    assert "## Details" in detail
+    assert "retired" in detail.lower() or "migrate" in detail.lower()
 
 
-def test_missing_next_steps_passes():
-    """`Next steps` is OPTIONAL as of 2026-05-26 — a body that omits it PASSes.
-
-    Drops the entire `Next steps` bullet line from the GOOD_BODY TL;DR. All
-    14 checks (incl. the TL;DR-labels check and the soft Goal-of-experiment
-    INFO) must still PASS — there is no FAIL for a missing Next-steps bullet.
-    """
+def test_stray_figure_h2_fails():
+    """A NEW body that includes a `## Figure` H2 is rejected — figures
+    live inline inside each result H3 under `## TL;DR` per the
+    2-content-section spec (2026-W22)."""
     body = GOOD_BODY.replace(
-        "- **Next steps:** Replicate at 70B, run the partial-correlation control.\n",
-        "",
+        "## Reproducibility",
+        "## Figure\n\n![stub](https://example.com/x.png)\n\n## Reproducibility",
     )
     ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["three required H2 sections in order"].passed
+    assert "## Figure" in by_name["three required H2 sections in order"].detail
+
+
+# ─── Check 3: TL;DR Motivation discipline ─────────────────────────────────
+
+
+def test_missing_motivation_label():
+    """Dropping the `### Motivation` H3 → FAIL."""
+    body = GOOD_BODY.replace("### Motivation\n\nI wanted to test", "I wanted to test")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["TL;DR opens with Motivation"].passed
+    assert "Motivation" in by_name["TL;DR opens with Motivation"].detail
+
+
+def test_motivation_bullet_form_passes():
+    """Legacy `**Motivation:**` boldface bullet form is still accepted."""
+    body = GOOD_BODY.replace(
+        '### Motivation\n\nI wanted to test whether [#34](https://eps.superkaiba.com/tasks/34)\'s X effect generalises to benchmark Z. Prior runs only ever swept 2 seeds; the headline "X drives Y" might be an artifact of under-sampling.\n',
+        "- **Motivation:** I wanted to test whether [#34](https://eps.superkaiba.com/tasks/34)'s X effect generalises to benchmark Z.\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["TL;DR opens with Motivation"].passed, [
+        r.render() for r in results if not r.passed
+    ]
+    # Overall body might still PASS if the rest of the structure holds.
     assert ok, [r.render() for r in results if not r.passed]
-    by_name = _results_by_name(results)
-    assert by_name["TL;DR bullets carry the three required labels"].passed
 
 
-def test_next_steps_present_still_passes():
-    """A body that DOES include `Next steps` continues to PASS (regression).
-
-    The optional rule is permissive in both directions — bodies with the
-    bullet still pass; bodies without it now also pass. GOOD_BODY itself
-    carries the bullet, so this is essentially asserting `test_good_body_passes_all`'s
-    invariant from the TL;DR-labels angle.
-    """
+def test_motivation_h3_form_passes():
+    """The new `### Motivation` H3 form (the prescriptive default)
+    PASSes — exercised by GOOD_BODY, asserted explicitly here."""
     ok, results = verify_task_body.verify_text(GOOD_BODY)
-    assert ok
     by_name = _results_by_name(results)
-    assert by_name["TL;DR bullets carry the three required labels"].passed
+    assert by_name["TL;DR opens with Motivation"].passed
+    assert ok
+
+
+# ─── Repro / sentinel / URL checks ────────────────────────────────────────
 
 
 def test_repro_tbd_placeholder():
@@ -243,18 +265,17 @@ def test_confidence_mismatch():
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["Details confidence sentence matches title"].passed
+    assert not by_name["Confidence sentence matches title"].passed
 
 
-def test_short_caption():
-    body = GOOD_BODY.replace(
-        "*Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*",
-        "*Caption: too short.*",
-    )
-    ok, results = verify_task_body.verify_text(body)
-    assert not ok
+def test_confidence_in_reproducibility_passes():
+    """The 2-content-section spec puts the Confidence sentence in
+    `## Reproducibility` by convention. Asserted explicitly here on
+    top of GOOD_BODY's coverage."""
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
-    assert not by_name["Figure caption ≥10 words"].passed
+    assert by_name["Confidence sentence matches title"].passed
+    assert ok
 
 
 def test_legacy_sagan_card_skipped():
@@ -342,14 +363,6 @@ def test_frontmatter_stripped_before_checks():
 
 
 # ─── Check 0b: no duplicate frontmatter ────────────────────────────────────
-#
-# Regression: task #389 (2026-05-26). The library-level set_body() now
-# strips caller-supplied leading frontmatter before write, but this
-# verifier check is the belt-and-suspenders gate against any future
-# regression (manual editing, alternative write path, third-party tool)
-# that lets a duplicate frontmatter block land on disk. The dashboard
-# would otherwise render the second block as literal YAML at the top of
-# the visible body.
 
 
 def test_duplicate_frontmatter_fails():
@@ -357,9 +370,6 @@ def test_duplicate_frontmatter_fails():
     FAILs the no-duplicate-frontmatter check — this is the exact shape
     `set_body` would have produced before the strip fix when a caller
     passed a complete markdown document (frontmatter + body)."""
-    # Inject a second `---...---` block immediately after the canonical
-    # frontmatter close, before the H1 — mirrors the task #389 incident
-    # where analyzer-drafted body files carried their own frontmatter.
     fm_end = GOOD_BODY.index("---\n", 4) + 4  # close of canonical frontmatter
     duplicate = (
         GOOD_BODY[:fm_end]
@@ -379,30 +389,19 @@ def test_duplicate_frontmatter_with_blank_line_does_not_count():
     """A blank line between the canonical frontmatter close and a
     second `---` block breaks the stacking — the second block becomes
     a horizontal-rule line in markdown rather than a literal-YAML
-    render. The no-duplicate-frontmatter check counts only CONSECUTIVE
-    leading blocks (the shape the strip fix targets), so this case
-    PASSes the check. The body may still fail OTHER checks (the
-    horizontal rule appears as a stray `---` line), but the duplicate-
-    frontmatter check itself doesn't fire.
-    """
+    render."""
     fm_end = GOOD_BODY.index("---\n", 4) + 4
     blank_separated = (
         GOOD_BODY[:fm_end] + "\n\n" + "---\nstale: caller frontmatter\n---\n" + GOOD_BODY[fm_end:]
     )
     _, results = verify_task_body.verify_text(blank_separated)
     by_name = _results_by_name(results)
-    # The duplicate-frontmatter check counts only stacked-without-blank-line
-    # blocks; a blank line breaks the stack.
     assert by_name["no duplicate frontmatter"].passed
 
 
 def test_no_duplicate_frontmatter_passes_on_good_body():
     """GOOD_BODY (single canonical frontmatter only) passes the
-    duplicate-frontmatter check itself. The body may fail other checks
-    (e.g. the recently-added `## Human TL;DR` requirement) but check 0b
-    must not be one of them — we assert on the specific check, not on
-    overall ok.
-    """
+    duplicate-frontmatter check itself."""
     _, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     assert by_name["no duplicate frontmatter"].passed
@@ -414,8 +413,8 @@ def test_no_duplicate_frontmatter_passes_on_horizontal_rule_inside_body():
     at the top) does NOT trip the check — only consecutive leading
     blocks count."""
     body = GOOD_BODY.replace(
-        "Free-form description here.\n",
-        "Free-form description here.\n\n---\n\nAfter the rule.\n",
+        "The 17-pt lift holds at every seed; the smallest within-condition Δ between seeds is 1.2 pts.",
+        "The 17-pt lift holds at every seed.\n\n---\n\nAfter the rule.\n",
     )
     _, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -429,21 +428,15 @@ def test_no_duplicate_frontmatter_unit_helper():
     assert count("plain body\n") == 0
     assert count("---\nfoo: 1\n---\nbody\n") == 1
     assert count("---\nfoo: 1\n---\n---\nbar: 2\n---\nbody\n") == 2
-    # Three stacked blocks all count.
     assert count("---\na: 1\n---\n---\nb: 2\n---\n---\nc: 3\n---\nbody\n") == 3
-    # A blank line between blocks breaks the stack — only the first
-    # block counts.
     assert count("---\nfoo: 1\n---\n\n---\nbar: 2\n---\nbody\n") == 1
-    # Malformed leading block (no closing `\n---\n`) counts as zero.
     assert count("---\nfoo: bar\nno closing here\n# H1\n") == 0
 
 
-# ─── Check 4: hero image present in `## Figure` ───────────────────────────
+# ─── Check 4: hero image present in `## TL;DR` ────────────────────────────
 
 
 def test_figure_image_present_pass():
-    """Happy path for check 4 already exercised by `test_good_body_passes_all`,
-    but also assert the check name and detail directly."""
     _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     assert by_name["hero image present"].passed
@@ -451,9 +444,9 @@ def test_figure_image_present_pass():
 
 
 def test_figure_missing_image_fails():
-    """Strip the `![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)` image line; the check fails."""
+    """Strip the inline image line; the check fails."""
     body = GOOD_BODY.replace(
-        "![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n",
+        "![Bar chart of mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions; baseline at 70.4% vs tulu-25 at 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n",
         "",
     )
     ok, results = verify_task_body.verify_text(body)
@@ -464,10 +457,6 @@ def test_figure_missing_image_fails():
 
 
 # ─── Check 4b: figure URL must be dashboard-resolvable ────────────────────
-#
-# Regression coverage for the task #365 incident (2026-05-22): the body
-# referenced `artifacts/hero.png` (relative), which the EPS dashboard does
-# not serve for binary PNG/PDF files, so the figure rendered broken.
 
 
 def test_figure_url_relative_artifacts_fails():
@@ -485,9 +474,7 @@ def test_figure_url_relative_artifacts_fails():
 
 
 def test_figure_url_relative_figures_dir_fails():
-    """`figures/issue_N/hero.png` (relative, no SHA) also fails — the
-    dashboard cannot fetch it. Operator must use the raw.githubusercontent.com
-    permalink form."""
+    """`figures/issue_N/hero.png` (relative, no SHA) also fails."""
     body = GOOD_BODY.replace(
         "https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png",
         "figures/issue_999/hero.png",
@@ -521,7 +508,6 @@ def test_figure_url_absolute_https_passes():
     ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
     assert by_name["Figure URL resolvable"].passed
-    # Body should still pass overall (no other regression introduced).
     assert ok
 
 
@@ -529,7 +515,7 @@ def test_figure_alt_text_with_brackets_parses():
     """Alt text may contain literal `[brackets]` (e.g. marker names like
     `[ZLT]`) — the image regex must still match and the URL extracts cleanly."""
     body = GOOD_BODY.replace(
-        "![hero plot]",
+        "![Bar chart of mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions; baseline at 70.4% vs tulu-25 at 87.9%.]",
         "![Best [ZLT] firing across cells]",
     )
     ok, results = verify_task_body.verify_text(body)
@@ -539,96 +525,20 @@ def test_figure_alt_text_with_brackets_parses():
     assert ok
 
 
-# ─── Check 12: `## Figure` H2 deprecation (WARN-only) ─────────────────────
-#
-# The new analyzer default (2026-05-27) is to inline figures under TL;DR
-# Results sub-bullets (one-takeaway-one-figure, Lens 9). The `## Figure` H2
-# is preserved as a legacy/grandfathered pattern: bodies that carry it stay
-# valid (no FAIL), but a WARN surfaces so the analyzer is nudged toward the
-# inline pattern for new bodies.
+# ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
 
 
-_INLINE_FIGURE_BODY = """\
----
-title: Toy inline-figure clean-result for deprecation check
-kind: experiment
-goal: Check whether the inline-figure pattern passes without `## Figure` H2
----
-# Inline-figure body passes the deprecation check (MODERATE confidence)
-
-## Human TL;DR
-
-**Headline.** *placeholder*
-
-**Takeaways.** *placeholder*
-
-**How this updates me.** *placeholder*
-
-## TL;DR
-- **Motivation:** I wanted to test the inline-figure pattern.
-    ![inline hero plot showing per-condition leakage means with 95% CI bands across three training seeds](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
-- **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p < 0.01 (see inline figure above).
-
-## Details
-
-Free-form description here.
-
-These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).
-
-```text
-User: What is the capital of France?
-Assistant: The capital of France is Paris. It has a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, and serves as the cultural, economic, and political center of the country, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum.
-```
-
-Confidence: MODERATE — three independent seeds, but only one model family.
-
-## Reproducibility
-
-**Artifacts:**
-- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
-- WandB run: [link](https://wandb.ai/superkaiba/eps/runs/abc12345)
-
-**Compute:** 1× H100, 47 min.
-
-**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
-"""
-
-
-def test_figure_h2_absent_no_warn():
-    """Body without `## Figure` H2 (inline-figure pattern, the new default)
-    PASSes the deprecation check WITHOUT a WARN."""
-    _ok, results = verify_task_body.verify_text(_INLINE_FIGURE_BODY)
+def test_figure_h2_hook_is_dormant():
+    """The dormant hook always PASSes — stray `## Figure` H2 is rejected
+    by check 2 as a hard FAIL under the 2-content-section spec, so this
+    check has no work to do."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
-    check_name = "`## Figure` H2 is deprecated for new write-ups"
-    assert check_name in by_name, [r.name for r in results]
-    r = by_name[check_name]
+    name = "`## Figure` H2 deprecation hook (dormant)"
+    assert name in by_name, [r.name for r in results]
+    r = by_name[name]
     assert r.passed
     assert not r.is_warn
-    assert "Lens 9 default" in r.detail
-
-
-def test_figure_h2_present_warns_not_fails():
-    """Body WITH `## Figure` H2 (legacy hero pattern) still PASSes the
-    overall verifier but the deprecation check surfaces a WARN — never a
-    FAIL. Legacy bodies pre-2026-05-27 stay promotable; the WARN exists
-    to nudge new bodies toward the inline pattern."""
-    ok, results = verify_task_body.verify_text(GOOD_BODY)
-    by_name = _results_by_name(results)
-    check_name = "`## Figure` H2 is deprecated for new write-ups"
-    assert check_name in by_name, [r.name for r in results]
-    r = by_name[check_name]
-    # WARN = passed True + is_warn True. The check NEVER returns FAIL on
-    # this pattern — legacy bodies must remain promotable.
-    assert r.passed
-    assert r.is_warn
-    assert "## Figure" in r.detail
-    # The overall verdict is independent of this WARN (it depends on the
-    # other checks); confirm the WARN itself doesn't flip `ok` for a body
-    # that would otherwise pass.
-    del ok  # GOOD_BODY currently fails for unrelated reasons (missing
-    # `## Human TL;DR` in the test fixture); the assertion above proves
-    # the WARN semantics regardless of the overall verdict.
 
 
 # ─── Check 6 extension: ≥20-char confidence rationale ─────────────────────
@@ -642,8 +552,8 @@ def test_confidence_rationale_too_short():
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["Details confidence sentence matches title"].passed
-    assert "rationale after" in by_name["Details confidence sentence matches title"].detail
+    assert not by_name["Confidence sentence matches title"].passed
+    assert "rationale after" in by_name["Confidence sentence matches title"].detail
 
 
 def test_confidence_line_missing_dash():
@@ -654,10 +564,8 @@ def test_confidence_line_missing_dash():
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
-    assert not by_name["Details confidence sentence matches title"].passed
-    # The looser fallback regex finds `Confidence: MODERATE` and reports
-    # the missing dash clause.
-    detail = by_name["Details confidence sentence matches title"].detail
+    assert not by_name["Confidence sentence matches title"].passed
+    detail = by_name["Confidence sentence matches title"].detail
     assert "rationale" in detail.lower() or "missing the" in detail
 
 
@@ -697,7 +605,7 @@ def test_repro_subgroups_missing_code():
     assert "Code" in by_name["Reproducibility three subgroups present"].detail
 
 
-# ─── Check 9: sentinel scrub (split from old check 4) ─────────────────────
+# ─── Check 9: sentinel scrub ──────────────────────────────────────────────
 
 
 def test_sentinel_scrub_double_brace():
@@ -720,55 +628,20 @@ def test_sentinel_scrub_see_config():
 # ─── Check 10: cherry-picked label discipline ─────────────────────────────
 
 
-CHERRY_BODY_FAIL = """\
----
-title: Cherry-picked discipline failing fixture
-kind: experiment
-goal: Characterize how cross-persona leakage scales with seed and benchmark
----
-# Some claim about persona leakage (MODERATE confidence)
-
-## Goal
-
-Characterize how cross-persona leakage scales with seed and benchmark.
-
-## TL;DR
-- **Motivation:** I wanted to test whether X drives Y.
-- **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p < 0.01.
-- **Next steps:** Replicate at 70B.
-
-## Figure
-![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
-
-*Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
-
-## Details
-
-Here is a sample model completion. The full data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw.jsonl).
-
-```text
-User: What is the capital of France?
-Assistant: The capital of France is Paris. It has a population of about 2.2 million in the city proper, and serves as the cultural, economic, and political center of the country.
-```
-
-Confidence: MODERATE — three independent seeds, but only one model family.
-
-## Reproducibility
-
-**Artifacts:**
-- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
-
-**Compute:** 1× H100, 47 min.
-
-**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
-"""
+def _build_body_with_sample_in_tldr(prelude_prose: str) -> str:
+    """Replace the GOOD_BODY's cherry-picked prelude with `prelude_prose`
+    immediately before the sample fenced block under `## TL;DR`.
+    """
+    orig_prelude = "These excerpts are cherry-picked for illustration; the full per-row raw-completion data is at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl)."
+    assert orig_prelude in GOOD_BODY
+    return GOOD_BODY.replace(orig_prelude, prelude_prose)
 
 
 def test_cherry_picked_missing_disclosure():
-    """Sample block in Details, but prelude has no cherry-picked / random
+    """Sample block in TL;DR but prelude has no cherry-picked / random
     disclosure → check 10 fails."""
-    ok, results = verify_task_body.verify_text(CHERRY_BODY_FAIL)
+    body = _build_body_with_sample_in_tldr("Here is a sample model completion. No disclosure here.")
+    ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
     assert not by_name["Cherry-picked label discipline"].passed
@@ -777,9 +650,8 @@ def test_cherry_picked_missing_disclosure():
 
 def test_cherry_picked_random_sample_disclosure_passes():
     """`first 3 of 400 completions` is an accepted random-sample disclosure."""
-    body = CHERRY_BODY_FAIL.replace(
-        "Here is a sample model completion.",
-        "Here are the first 3 of 400 completions in the run.",
+    body = _build_body_with_sample_in_tldr(
+        "Here are the first 3 of 400 completions in the run. Full data at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl)."
     )
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -787,21 +659,21 @@ def test_cherry_picked_random_sample_disclosure_passes():
 
 
 def test_cherry_picked_explicit_label_passes():
-    """`cherry-picked for illustration` clears the discipline check."""
-    body = CHERRY_BODY_FAIL.replace(
-        "Here is a sample model completion.",
-        "These excerpts are cherry-picked for illustration.",
-    )
-    _ok, results = verify_task_body.verify_text(body)
+    """`cherry-picked for illustration` clears the discipline check —
+    exercised by GOOD_BODY; assert directly."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     assert by_name["Cherry-picked label discipline"].passed
 
 
 def test_no_sample_block_skips_cherry_check():
-    """A Details section with no fenced sample block PASSes check 10 trivially."""
+    """A TL;DR with no fenced sample block PASSes check 10 trivially."""
+    # Strip the only sample fence by replacing the whole sample + cherry
+    # prelude paragraph with just a one-line note.
     body = GOOD_BODY
-    # Strip the only sample fence
-    body = body.split("```text")[0] + body.split("```\n")[1]
+    sample_start = body.index("These excerpts are cherry-picked")
+    sample_end = body.index("```\n\n## Reproducibility") + len("```\n\n")
+    body = body[:sample_start] + body[sample_end:]
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
     assert by_name["Cherry-picked label discipline"].passed
@@ -811,62 +683,59 @@ def test_no_sample_block_skips_cherry_check():
 # ─── Check 11: qualitative-data link discipline ───────────────────────────
 
 
-QUAL_BODY_FAIL = """\
+def test_qualitative_data_link_missing():
+    """Sample fenced block but no link/path in the prelude → check 11 FAIL.
+
+    Construct a minimal body that exercises the check in isolation —
+    GOOD_BODY's figure URL sits in the 1500-char `_prelude_window` and
+    would satisfy the check incidentally, so we build a body with no
+    figure URL near the sample fence.
+    """
+    body = """\
 ---
-title: Qualitative-data link failing fixture
+title: Qualitative-data-link FAIL fixture
 kind: experiment
-goal: Characterize how cross-persona leakage scales with seed and benchmark
+goal: Exercise check 11 in isolation
 ---
-# Some claim about persona leakage (MODERATE confidence)
+# Some claim about persona leakage (LOW confidence)
 
 ## Human TL;DR
 
-**Headline.** *placeholder*
-
-**Takeaways.** *placeholder*
-
-**How this updates me.** *placeholder*
-
-## Goal
-
-Characterize how cross-persona leakage scales with seed and benchmark.
+placeholder
 
 ## TL;DR
-- **Motivation:** I wanted to test whether X drives Y.
-- **What I ran:** Trained 3 seeds at lr=3e-5, evaluated on benchmark Z.
-- **Results:** Effect is present at p < 0.01.
-- **Next steps:** Replicate at 70B.
 
-## Figure
-![hero plot](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+### Motivation
 
-*Caption: Mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions.*
+I wanted to test whether the check 11 prelude scan rejects a sample
+block with no link in the prose immediately above it. The trigger is
+a fenced sample fence with no link / path / aggregate disclosure in
+the 1500-char window preceding it.
 
-## Details
+### A finding that ships without a raw-data link in the prelude
 
-These excerpts are cherry-picked for illustration. No link to raw data here, just the prose.
+I trained 3 seeds at lr=3e-5 and the result held across all of them.
+The sample below shows what a typical completion looks like. No link
+to raw data here, just the prose.
 
 ```text
 User: What is the capital of France?
-Assistant: The capital of France is Paris. It has a population of about 2.2 million in the city proper, and serves as the cultural, economic, and political center of the country.
+Assistant: Paris is the capital of France, with a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum across an extensive cultural and economic core.
 ```
-
-Confidence: MODERATE — three independent seeds, but only one model family.
 
 ## Reproducibility
 
-**Artifacts:**
-- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
+**Parameters:** lr=3e-5, seeds=[42,137,256].
 
-**Compute:** 1× H100, 47 min.
+**Artifacts:** none uploaded for this minimal fixture.
 
-**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit `0123456789abcdef`.
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
 """
-
-
-def test_qualitative_data_link_missing():
-    """Sample fenced block but no link/path in the prelude → check 11 FAIL."""
-    ok, results = verify_task_body.verify_text(QUAL_BODY_FAIL)
+    ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
     assert not by_name["Qualitative-data link"].passed
@@ -874,11 +743,55 @@ def test_qualitative_data_link_missing():
 
 
 def test_qualitative_data_link_aggregate_only_fails():
-    """Aggregate-only paths (`regression`, `summary`, `.npz`) don't count."""
-    body = QUAL_BODY_FAIL.replace(
-        "These excerpts are cherry-picked for illustration. No link to raw data here, just the prose.",
-        "These excerpts are cherry-picked for illustration. Aggregates at [regression](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc/per_cell_regression.csv).",
-    )
+    """Aggregate-only paths (`regression`, `summary`, `.npz`) don't count.
+
+    Use a figure-less minimal body so the prelude window contains only
+    the aggregate link — the figure URL in GOOD_BODY would otherwise
+    leak into the prelude scan as a non-aggregate hit.
+    """
+    body = """\
+---
+title: Qualitative-data-link aggregate-only FAIL fixture
+kind: experiment
+goal: Exercise check 11 aggregate-only branch
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to test that the qualitative-data-link check rejects sample
+blocks whose only nearby link points at an aggregate artifact
+(regression CSV, summary JSON, .npz tensor) — auditors need access to
+surrounding raw text.
+
+### A finding whose sample block links only to aggregates
+
+I trained 3 seeds. The sample below is cherry-picked for illustration.
+Aggregates at [regression](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc/per_cell_regression.csv).
+
+```text
+User: What is the capital of France?
+Assistant: Paris is the capital of France, with a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum across an extensive cultural and economic core.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** none uploaded for this minimal fixture.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit `0123456789abcdef`.
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
     ok, results = verify_task_body.verify_text(body)
     assert not ok
     by_name = _results_by_name(results)
@@ -887,21 +800,16 @@ def test_qualitative_data_link_aggregate_only_fails():
 
 
 def test_qualitative_data_link_present_passes():
-    """A non-aggregate link in the prelude clears check 11."""
-    body = QUAL_BODY_FAIL.replace(
-        "These excerpts are cherry-picked for illustration. No link to raw data here, just the prose.",
-        "These excerpts are cherry-picked for illustration. Full data at [raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl).",
-    )
-    _ok, results = verify_task_body.verify_text(body)
+    """A non-aggregate link in the prelude clears check 11 — exercised by GOOD_BODY."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     assert by_name["Qualitative-data link"].passed
 
 
 def test_qualitative_data_link_backtick_path_passes():
     """A backtick-wrapped path also satisfies the qualitative-data check."""
-    body = QUAL_BODY_FAIL.replace(
-        "These excerpts are cherry-picked for illustration. No link to raw data here, just the prose.",
-        "These excerpts are cherry-picked for illustration. Full data at `eval_results/issue_999/raw_completions/run.jsonl`.",
+    body = _build_body_with_sample_in_tldr(
+        "These excerpts are cherry-picked for illustration. Full data at `eval_results/issue_999/raw_completions/run.jsonl`."
     )
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
@@ -909,13 +817,70 @@ def test_qualitative_data_link_backtick_path_passes():
 
 
 def test_qualitative_data_link_not_uploaded_warn():
-    """An explicit `not uploaded` disclosure downgrades FAIL to WARN (PASS overall)."""
-    body = QUAL_BODY_FAIL.replace(
-        "These excerpts are cherry-picked for illustration. No link to raw data here, just the prose.",
-        "These excerpts are cherry-picked for illustration. Raw completions were not uploaded for this run; follow-up will re-run with raw-completion upload.",
+    """An explicit `not uploaded` disclosure downgrades FAIL to WARN (PASS overall).
+
+    The figure URL must NOT sit in the prelude window of the sample
+    fence (it would silently satisfy the check before the WARN branch
+    fires); pad the prelude with enough prose to push the figure
+    >1500 chars away from the fence.
+    """
+    # The check uses a 1500-char `_prelude_window` look-back, so we
+    # build a body whose Motivation paragraph carries the figure +
+    # >1500 chars of padding prose before the sample fence in the
+    # result H3. The prelude scan therefore sees ONLY the cherry-picked
+    # + not-uploaded disclosure.
+    long_padding = " ".join(
+        "Filler prose to push the figure URL out of the sample fence's prelude window."
+        for _ in range(60)
     )
+    body = f"""\
+---
+title: Qualitative-data-link not-uploaded WARN fixture
+kind: experiment
+goal: Exercise check 11 not-uploaded escape branch
+---
+# Some claim about persona leakage (LOW confidence)
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to test that an explicit `not uploaded` disclosure in the
+prelude downgrades the qualitative-data-link FAIL to a WARN.
+
+![padding figure for the verifier hero-image check](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+{long_padding}
+
+### A finding whose raw completions were not uploaded
+
+These excerpts are cherry-picked for illustration. Raw completions were
+not uploaded for this run; follow-up will re-run with raw-completion
+upload.
+
+```text
+User: What is the capital of France?
+Assistant: Paris is the capital of France, with a population of about 2.2 million people in the city proper and 12 million in the metropolitan area, hosting many world-famous landmarks such as the Eiffel Tower and the Louvre museum across an extensive cultural and economic core.
+```
+
+## Reproducibility
+
+**Parameters:** lr=3e-5, seeds=[42,137,256].
+
+**Artifacts:** raw completions not uploaded; follow-up will re-run.
+
+**Compute:** n/a (this is a verifier-fixture body).
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+Confidence: LOW — single-seed fixture for verifier-test purposes only.
+"""
     ok, results = verify_task_body.verify_text(body)
-    assert ok
+    assert ok, [r.render() for r in results if not r.passed]
     by_name = _results_by_name(results)
     assert by_name["Qualitative-data link"].passed
     assert by_name["Qualitative-data link"].is_warn
@@ -926,11 +891,8 @@ def test_qualitative_data_link_not_uploaded_warn():
 
 
 def test_goal_of_experiment_present_passes():
-    """Happy path: frontmatter has `goal:`. The body-side `## Goal` H2 is
-    intentionally NOT checked here (clean-result bodies drop the visible
-    H2 as of 2026-05-26 — the Goal folds into the TL;DR Motivation
-    bullet). Already exercised by `test_good_body_passes_all` against
-    GOOD_BODY; this test isolates the assertion."""
+    """Happy path: frontmatter has `goal:`. Body-side `## Goal` H2 is
+    intentionally NOT checked here."""
     _ok, results = verify_task_body.verify_text(GOOD_BODY)
     by_name = _results_by_name(results)
     r = by_name["Goal-of-experiment field"]
@@ -939,116 +901,115 @@ def test_goal_of_experiment_present_passes():
     assert "frontmatter goal present" in r.detail
 
 
-def test_goal_of_experiment_passes_when_h2_absent_but_frontmatter_present():
-    """Clean-result bodies drop the `## Goal` H2 but keep the frontmatter
-    `goal:` field. The verifier MUST treat this as PASS (no WARN) — that
-    is the canonical clean-result shape as of 2026-05-26.
-
-    Regression: previously the verifier WARNed whenever `## Goal` H2 was
-    absent. The new canonical shape drops the H2, so the WARN became a
-    permanent false positive on every clean-result body. See:
-    `.claude/skills/clean-results/iterations.md` § 2026-05-26.
-    """
-    # Strip just the body-side `## Goal` H2 block; keep the frontmatter.
-    body_without_h2 = GOOD_BODY.replace(
-        "## Goal\n\nCharacterize how cross-persona leakage scales with seed and benchmark.\n\n",
-        "",
-    )
-    ok, results = verify_task_body.verify_text(body_without_h2)
-    assert ok, [r.render() for r in results if not r.passed]
-    by_name = _results_by_name(results)
-    r = by_name["Goal-of-experiment field"]
-    assert r.passed is True
-    assert r.is_warn is False
-    assert "frontmatter goal present" in r.detail
-
-
 def test_goal_of_experiment_warns_when_frontmatter_missing():
     """When the frontmatter `goal:` field is missing, the soft check WARNs
-    but does NOT FAIL the body. Enforcement is at /issue Step 0c, not
-    here. The body-side `## Goal` H2 is intentionally not inspected — it
-    legitimately lives only in proposed/planning bodies."""
-    # Strip the frontmatter `goal:` line; the body-side H2 is irrelevant.
+    but does NOT FAIL the body."""
     body_without_frontmatter_goal = GOOD_BODY.replace(
         "goal: Characterize how cross-persona leakage scales with seed and benchmark\n",
         "",
     )
     ok, results = verify_task_body.verify_text(body_without_frontmatter_goal)
-    # Overall should remain PASS because Goal absence is soft.
     assert ok, [r.render() for r in results if not r.passed]
     by_name = _results_by_name(results)
     r = by_name["Goal-of-experiment field"]
-    assert r.passed is True  # passed=True, but rendered as WARN
+    assert r.passed is True
     assert r.is_warn is True
     assert "missing" in r.detail
     assert "frontmatter `goal:`" in r.detail
 
 
-def test_goal_of_experiment_passes_when_legacy_h2_still_present():
-    """Legacy clean-result bodies that still carry a `## Goal` H2
-    (pre-2026-05-26 promotions) remain promotable. The verifier MUST NOT
-    flag the extra H2 as an error — `find_h2_sections` already tolerates
-    H2s outside the four required ones, and the Goal check ignores the
-    body entirely. GOOD_BODY itself happens to carry the legacy H2; this
-    test just spells out the contract."""
-    assert "## Goal" in GOOD_BODY  # GOOD_BODY carries the legacy H2
+# ─── End-to-end smoke tests for the 2-content-section spec ────────────────
+
+
+def test_task_432_shape_passes_end_to_end():
+    """A body modeled on the #432 target exemplar (the canonical
+    2-content-section exemplar) PASSes the verifier end-to-end. #432
+    itself doesn't carry the `Confidence: ...` sentence in the body (a
+    gap to be patched in the actual body); the synthetic fixture here
+    adds the sentence under `## Reproducibility` per the new spec."""
+    # GOOD_BODY IS effectively #432-shaped already (Human TL;DR stub /
+    # TL;DR Motivation+result H3s with inline figure + cherry-picked
+    # sample / Reproducibility with Parameters + Artifacts + Compute +
+    # Code + Confidence). Re-assert the end-to-end PASS.
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     by_name = _results_by_name(results)
-    # The required-H2-sections check passes despite the extra `## Goal` H2.
-    assert by_name["four required H2 sections in order"].passed
-    # The Goal check ignores the body and just confirms frontmatter.
-    assert by_name["Goal-of-experiment field"].passed
-    assert by_name["Goal-of-experiment field"].is_warn is False
+    # Spot-check the 2-content-section-specific checks all PASS.
+    assert by_name["three required H2 sections in order"].passed
+    assert by_name["TL;DR opens with Motivation"].passed
+    assert by_name["hero image present"].passed
+    assert by_name["Confidence sentence matches title"].passed
+
+
+def test_legacy_4_section_body_fails():
+    """A legacy 4-section body (with `## Details` between TL;DR and
+    Reproducibility) FAILs cleanly on check 2 — forcing migration to
+    the 2-content-section spec."""
+    body = GOOD_BODY.replace(
+        "## Reproducibility",
+        "## Details\n\nLegacy Details narrative would live here in a 4-section body.\n\n## Reproducibility",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["three required H2 sections in order"].passed
+    assert "Details" in by_name["three required H2 sections in order"].detail
+
+
+# ─── Audit script: byte_identical pattern fires ───────────────────────────
+
+
+def test_audit_byte_identical_fires():
+    """The audit script's new `byte_identical` pattern fires on prose
+    that uses the banned phrasing."""
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+
+    bad_body = "## Details\n\nThe two outputs were byte identical across all seeds.\n"
+    findings = audit_mod.audit_body(bad_body)
+    assert "byte_identical" in findings
+    assert any("byte identical" in s for s in findings["byte_identical"])
+
+    bad_body_hyphen = "## Details\n\nThe two outputs were byte-identical across all seeds.\n"
+    findings2 = audit_mod.audit_body(bad_body_hyphen)
+    assert "byte_identical" in findings2
+    assert any("byte-identical" in s for s in findings2["byte_identical"])
+
+    # Clean body should not fire.
+    ok_body = "## Details\n\nThe two outputs matched exactly at every byte.\n"
+    findings3 = audit_mod.audit_body(ok_body)
+    assert "byte_identical" not in findings3
 
 
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 
 def test_checks_list_size():
-    """CHECKS must contain exactly 17 functions: the original 11 plus
-    `check_figure_url_resolvable` (check 4b, added after the task #365
-    relative-figure-URL incident on 2026-05-22) plus `check_body_nonstub`
-    (check 0, added after the task #385 cache → body.md silent-handoff
-    incident on 2026-05-25) plus `check_details_narrative_flow` (check 13,
-    soft WARN-only added 2026-05-27 alongside the LessWrong-style narrative
-    shift — see iterations.md 2026-05-27 + project_clean_result_narrative_shift)
-    plus `check_figure_h2_is_deprecated` (check 12, soft WARN-only added
-    2026-05-27 alongside the inline-figures-under-Results-sub-bullets
-    prescriptive default — see iterations.md 2026-05-27 +
-    feedback_figure_h2_deprecated) plus
-    `check_planned_vs_actual_denominator` (check 11b, added 2026-05-27
-    after task #391's C-axis silent drop — the dispatcher quietly
-    dropped 1 of 3 planned factors and the clean-result-critic round 2
-    PASSed without flagging the scope reduction) plus
-    `check_mdx_safe_urls` (check 14, added 2026-05-28 after task #382's
-    six `<https://...>` autolinks broke the dashboard's MDX renderer;
-    extended 2026-05-28 with the table-cell `<|` class from task #399 and
-    an authoritative real-parse backstop — still ONE entry in CHECKS).
-
+    """CHECKS contains 18 functions under the 2-content-section spec
+    (2026-W22, task #454). The migration is a RETARGET — every former
+    check was kept (sometimes dormant, e.g. `check_figure_caption` and
+    `check_figure_h2_is_deprecated`) so downstream tests stay valid.
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 19 results, but `CHECKS`
-    stays at 18 (the 2026-05-31 Reproducibility committed-at-sha check
-    bumped it from 17).
+    just the body. So `verify_text` returns 20 results, but `CHECKS`
+    stays at 18.
     """
     assert len(verify_task_body.CHECKS) == 18
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
 #
-# Check 14 now has two layers (2026-05-28, durable MDX-safety fix):
+# Check 14 has two layers (2026-05-28, durable MDX-safety fix):
 #   (A) a fast regex pre-check layer (`_mdx_regex_findings`), node-INDEPENDENT,
 #       the only layer when node is absent (CI without node), and
 #   (B) an authoritative real-parse backstop (`_run_real_mdx_parse` →
 #       `dashboard/scripts/mdx_parse_check.mjs`) that runs the exact
 #       `mdast-util-from-markdown` parse the dashboard's MDXEditor runs.
-#
-# The regex-layer tests below call `_mdx_regex_findings` directly so they
-# assert the regex behavior precisely and do NOT depend on node. The
-# backstop tests call `check_mdx_safe_urls` (the combined path) and are
-# guarded with `_NODE_MDX_AVAILABLE` so they skip cleanly where node / the
-# helper / the dashboard deps are absent.
 
 import shutil as _shutil  # noqa: E402
 
@@ -1056,8 +1017,6 @@ _NODE_MDX_AVAILABLE = (
     _shutil.which("node") is not None and verify_task_body._MDX_HELPER_PATH.exists()
 )
 if _NODE_MDX_AVAILABLE:
-    # Confirm the deps actually load (an installed node + present helper but
-    # missing dashboard/node_modules would otherwise mislead the gate).
     _v, _ = verify_task_body._run_real_mdx_parse("hello world\n")
     _NODE_MDX_AVAILABLE = _v == "pass"
 
@@ -1072,12 +1031,7 @@ _MDX_LABEL = (
 
 def test_mdx_regex_autolink_in_repro_fails():
     """A `<https://...>` autolink anywhere in body prose breaks the MDX
-    renderer. The regex layer must flag it (node-independent).
-
-    Concrete trigger: task #382 (2026-05-28) shipped six autolinks in
-    `## Reproducibility` and the dashboard showed an MDX parse error
-    instead of the rendered body.
-    """
+    renderer. The regex layer must flag it (node-independent)."""
     body = "- WandB run: <https://wandb.ai/superkaiba/eps/runs/abc12345>\n"
     findings = verify_task_body._mdx_regex_findings(body)
     assert findings
@@ -1085,15 +1039,13 @@ def test_mdx_regex_autolink_in_repro_fails():
 
 
 def test_mdx_regex_autolink_inside_code_span_passes():
-    """An autolink wrapped in inline-code backticks is safe — MDX never
-    parses the inside of `` ` ` `` as JSX, so the regex layer ignores it."""
+    """An autolink wrapped in inline-code backticks is safe."""
     body = "Some prose. The token `<https://foo.example/x>` is illustration."
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_autolink_inside_fenced_block_passes():
-    """An autolink inside a fenced code block is safe — MDX never
-    parses inside ```` ``` ```` as JSX, so the regex layer ignores it."""
+    """An autolink inside a fenced code block is safe."""
     body = "Some prose.\n\n```\nExample broken URL: <https://foo.example/x>\n```\n"
     assert verify_task_body._mdx_regex_findings(body) == []
 
@@ -1108,12 +1060,7 @@ def test_mdx_regex_autolink_in_bare_prose_fails():
 
 
 def test_mdx_regex_lt_digit_in_prose_fails():
-    """`p<0.05` in body prose breaks the MDX renderer (the dashboard
-    parses `<0` as a JSX tag name and errors with 'Unexpected character
-    `0` (U+0030) before name'). The regex layer must flag it.
-
-    Recurred same-day as the autolink case on 2026-05-28.
-    """
+    """`p<0.05` in body prose breaks the MDX renderer."""
     body = "Some prose. The p-value was p<0.05 across all conditions."
     findings = verify_task_body._mdx_regex_findings(body)
     assert findings
@@ -1121,36 +1068,32 @@ def test_mdx_regex_lt_digit_in_prose_fails():
 
 
 def test_mdx_regex_lt_digit_with_surrounding_spaces_passes():
-    """`p < 0.05` (with spaces) is safe — `<` is not immediately
-    followed by a digit, so the regex layer ignores it."""
+    """`p < 0.05` (with spaces) is safe."""
     body = "Some prose. The p-value was p < 0.05 across all conditions."
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_lt_digit_inside_code_span_passes():
-    """`` `p<0.05` `` wrapped in inline-code backticks is safe — MDX
-    never parses the inside of code spans as JSX (regex layer ignores it)."""
+    """`` `p<0.05` `` wrapped in inline-code backticks is safe."""
     body = "Some prose. The threshold was `p<0.05` in the pre-reg."
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_lt_digit_inside_fenced_block_passes():
-    """`p<0.05` inside a fenced code block is safe — MDX never parses
-    inside fences as JSX (regex layer ignores it)."""
+    """`p<0.05` inside a fenced code block is safe."""
     body = "Some prose.\n\n```\nthreshold: p<0.05\nn<10\n```\n"
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_html_entity_lt_passes():
-    """`&lt;0.05` is safe — there is no literal `<` character in the
-    source, only the HTML entity escape; the regex layer ignores it."""
+    """`&lt;0.05` is safe — no literal `<` in the source."""
     body = "Some prose. The p-value was &lt;0.05 across all conditions."
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_combined_autolink_and_lt_digit_fails():
     """Body with BOTH a `<https://...>` autolink AND a `<digit` occurrence
-    must be flagged, and the findings must surface both classes."""
+    must be flagged, surfacing both classes."""
     body = "See <https://foo.example/x>. The p-value was p<0.05 across all conditions."
     findings = verify_task_body._mdx_regex_findings(body)
     joined = " | ".join(findings)
@@ -1158,19 +1101,12 @@ def test_mdx_regex_combined_autolink_and_lt_digit_fails():
     assert "U+0030" in joined
 
 
-# ── Layer A: table-cell `<|im_start|>` (the #399 class, node-INDEPENDENT) ──
+# ── Layer A: table-cell `<|im_start|>` (the #399 class) ────────────────────
 
 
 def test_mdx_regex_table_cell_im_start_fails():
     """An unescaped `<|im_start|>` inside a GFM table-cell code span breaks
-    the MDX renderer: the table parser splits the cell on the unescaped `|`
-    before code-span recognition, exposing the `<` as a JSX tag start. The
-    regex layer must flag it.
-
-    Incident: task #399 (2026-05-28) — the prior narrow regex (which only
-    stripped code spans wholesale) missed this because the `` ` ` `` wrap
-    looked protective.
-    """
+    the MDX renderer."""
     body = "| Probe | Value |\n|---|---|\n| boundary | `<|im_start|>assistant` |\n"
     findings = verify_task_body._mdx_regex_findings(body)
     assert findings
@@ -1178,42 +1114,20 @@ def test_mdx_regex_table_cell_im_start_fails():
 
 
 def test_mdx_regex_table_cell_im_start_escaped_passes():
-    """The ESCAPED form `` `<\\|im_start\\|>` `` inside a table cell is safe
-    — the inner pipes are escaped so the table parser does not split on
-    them. The regex layer must NOT flag it."""
+    """The ESCAPED form `` `<\\|im_start\\|>` `` inside a table cell is safe."""
     body = "| Probe | Value |\n|---|---|\n| boundary | `<\\|im_start\\|>assistant` |\n"
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_im_start_in_prose_passes():
-    """`` `<|im_start|>` `` in a PROSE line (not a real GFM table row) is
-    safe — the editor parses the code span normally there. A prose line
-    merely containing a `|` (e.g. `log p(x | y)`) is not a table row, so
-    its code spans stay protective. The regex layer must NOT flag it.
-
-    This is the #399 false-positive guard: the #399 body has
-    `` `<|im_start|>assistant\\n` `` inside a numbered list item that also
-    contains `log p(... | ...)`, and that line must NOT be treated as a
-    table row.
-    """
+    """`` `<|im_start|>` `` in a PROSE line (not a real GFM table row) is safe."""
     body = "First-token probe: log p(`*` | `<|im_start|>assistant\\n`) at boundary.\n"
     assert verify_task_body._mdx_regex_findings(body) == []
 
 
 def test_mdx_regex_pipe_prose_then_hr_not_a_table():
-    """A prose line containing a `|` (and a `` `<|im_start|>` `` code span)
-    immediately followed by a bare `---` line is NOT a GFM table — the
-    `---` is a thematic break / setext underline, not a one-column table
-    delimiter. The table delimiter regex requires an internal `|`, so the
-    prose line stays a prose line and its code span stays protective. The
-    regex layer must NOT flag the code span.
-
-    Regression guard: before tightening `_TABLE_DELIM_RE`, a bare `---`
-    matched as a single-column delimiter, so the preceding pipe-bearing
-    prose line was misclassified as a table header and the
-    `` `<|im_start|>` `` span tripped a false-positive `<|` flag while the
-    real MDX parser accepted the body.
-    """
+    """A prose line containing a `|` immediately followed by a bare `---`
+    line is NOT a GFM table."""
     body = "log p(x | y) and `<|im_start|>`.\n---\n\nnext\n"
     assert verify_task_body._table_row_line_indices(body.splitlines()) == set()
     assert verify_task_body._mdx_regex_findings(body) == []
@@ -1223,16 +1137,12 @@ def test_mdx_regex_pipe_prose_then_hr_not_a_table():
 
 
 def test_mdx_full_path_clean_prose_passes():
-    """A clean prose fragment passes the combined check (regex clean; and
-    when node is present, real-parse clean too)."""
     body = "Some prose. The p-value was p < 0.05 across all conditions."
     result = verify_task_body.check_mdx_safe_urls(body)
     assert result.passed, result.detail
 
 
 def test_mdx_full_path_autolink_fails():
-    """The combined check FAILs a bare-prose autolink (regex catches it
-    regardless of node)."""
     body = "See the link: <https://foo.example/x> for context."
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
@@ -1240,9 +1150,6 @@ def test_mdx_full_path_autolink_fails():
 
 
 def test_mdx_full_path_table_cell_im_start_fails():
-    """The combined check FAILs an unescaped `<|im_start|>` table cell
-    (regex catches it regardless of node; the backstop agrees when node is
-    present)."""
     body = "| Probe | Value |\n|---|---|\n| boundary | `<|im_start|>assistant` |\n"
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
@@ -1254,15 +1161,8 @@ def test_mdx_full_path_table_cell_im_start_fails():
 
 @pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
 def test_mdx_backstop_catches_novel_construct():
-    """The real-parse backstop FAILs a construct the regexes do NOT catch
-    — proving the backstop subsumes the narrow regex patch. `<%` is read
-    by the real MDX parser as a JSX tag start ("Unexpected character `%`
-    (U+0025) before name"), but matches none of the three regex classes.
-    """
-    # Sanity: the regex layer alone does NOT flag this.
     body = "Some prose with a stray <% token in it."
     assert verify_task_body._mdx_regex_findings(body) == []
-    # The combined check FAILs because the real-parse backstop catches it.
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
     assert "real MDX parse failed" in result.detail
@@ -1270,12 +1170,7 @@ def test_mdx_backstop_catches_novel_construct():
 
 @pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
 def test_mdx_backstop_lt_eq_fails():
-    """`x <= 10` (no space) is read by the real MDX parser as a JSX tag
-    start before `=` and FAILs — the authoritative parser is stricter than
-    the old regex assumed. Re-verified against the real parser
-    (2026-05-28): the editor rejects `<=`, so the verifier must too."""
     body = "Some prose. The condition was x <= 10 across all runs."
-    # Regex layer does NOT catch `<=` (it is not autolink / `<digit` / `<|`).
     assert verify_task_body._mdx_regex_findings(body) == []
     result = verify_task_body.check_mdx_safe_urls(body)
     assert not result.passed
@@ -1284,9 +1179,6 @@ def test_mdx_backstop_lt_eq_fails():
 
 @pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
 def test_mdx_backstop_unclosed_tag_fails():
-    """An unclosed `<details>` tag is read by the real MDX parser as a JSX
-    element that never closes and FAILs. Re-verified against the real
-    parser (2026-05-28): the editor requires a closing tag."""
     body = "Some prose. The <details> tag is here with no close."
     assert verify_task_body._mdx_regex_findings(body) == []
     result = verify_task_body.check_mdx_safe_urls(body)
@@ -1296,11 +1188,6 @@ def test_mdx_backstop_unclosed_tag_fails():
 
 @pytest.mark.skipif(not _NODE_MDX_AVAILABLE, reason="node + MDX helper + deps not available")
 def test_mdx_backstop_html_comment_markers_pass():
-    """Real body HTML comment markers (`<!-- legacy-sagan-card -->`,
-    `<!-- workflow-fix-candidate v1 -->`, `<!-- epm:... -->`) MUST parse
-    cleanly — the helper includes the editor's HTML-comment extension, so
-    these markers are valid (omitting that extension would wrongly reject
-    valid bodies). Confirmed empirically while building the helper."""
     body = (
         "Some prose.\n\n<!-- legacy-sagan-card -->\n\n"
         "<!-- workflow-fix-candidate v1 -->\ntarget_file: x\n"
@@ -1312,17 +1199,8 @@ def test_mdx_backstop_html_comment_markers_pass():
 
 
 def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
-    """When node / the helper / the deps are unavailable, the check falls
-    back to regex-only and APPENDS '(real MDX parse skipped: ...)' to the
-    detail — it does NOT silently pass and does NOT hard-fail solely on the
-    missing parser (the no-silent-fallback rule).
-
-    Two sub-cases:
-      - clean body → PASS, but the detail flags the skip so the operator
-        knows the authoritative layer did not run;
-      - regex-dirty body → still FAILs on the regex layer, with the skip
-        reason appended.
-    """
+    """When node / helper / deps are unavailable, the check falls back to
+    regex-only and APPENDS '(real MDX parse skipped: ...)' to the detail."""
     monkeypatch.setattr(
         verify_task_body,
         "_run_real_mdx_parse",

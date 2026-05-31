@@ -110,6 +110,18 @@ PATTERNS: dict[str, tuple[str, str]] = {
         r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
         "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
     ),
+    "byte_identical": (
+        # "byte identical" / "byte-identical" anywhere in body prose. Banned
+        # 2026-W22 (task #454) — the phrase reads as AI-slop in research
+        # writing. Use plain English: "the two files matched exactly",
+        # "every byte agreed", "no diff between the runs".
+        r"\bbyte[\s-]identical\b",
+        (
+            "Use plain English ('the two files matched exactly', 'every byte agreed', "
+            "'no diff') instead of 'byte identical' / 'byte-identical' — the phrase "
+            "reads as AI-slop in research prose"
+        ),
+    ),
 }
 
 

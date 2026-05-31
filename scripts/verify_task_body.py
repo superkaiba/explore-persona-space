@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
-Replaces `verify_sagan_card.py` for new (markdown) bodies. Eighteen checks
-against the markdown clean-result spec in
-`.claude/plans/task-workflow-migration.md` § 10 (Sagan-card content
-discipline ported from HTML to markdown):
+Replaces `verify_sagan_card.py` for new (markdown) bodies. Mechanical
+gate for the 2-content-section markdown clean-result spec (migrated
+2026-W22, task #454). Source of truth for the body shape:
+`.claude/skills/clean-results/SPEC.md`. The body carries THREE required
+H2 sections in order — `## Human TL;DR` / `## TL;DR` / `## Reproducibility`
+— with `## TL;DR` absorbing the per-result narrative (one `### Motivation`
+H3 then one `### <finding>` H3 per result with one inline figure +
+cherry-picked raw-completion example + dropdown + all-raw link) and
+`## Reproducibility` absorbing the Parameters table + the Confidence
+sentence. The retired `## Details` and `## Figure` H2s are now FAIL
+patterns — a body that carries either is rejected so it migrates cleanly
+to the new shape (forward-only; the ~95 legacy `has_clean_result=true`
+bodies are never re-verified, so tightening cannot regress them).
 
 0. Body is not a stub — body has ≥500 chars, contains a `# <title>` H1,
    and is not a single stub token (`placeholder`, `tbd`, `todo`, `stub`).
@@ -21,37 +30,45 @@ discipline ported from HTML to markdown):
    the second block as literal YAML at the top of the visible body
    (incident: task #389, 2026-05-26).
 1. Title confidence tag — H1 line ends with `(LOW|MODERATE|HIGH confidence)`.
-2. Four required H2 sections in order — `## Human TL;DR`, `## TL;DR`,
-   `## Details`, `## Reproducibility`. `## Figure` is DEPRECATED for
-   new write-ups (decision 2026-05-27, prescriptive): bodies inline
-   the hero image directly under TL;DR Results sub-bullets
-   (one-takeaway-one-figure pattern). Legacy bodies that still carry
-   `## Figure` between TL;DR and Details remain valid (WARN, not
-   FAIL — see check 12). Extra H2s after `## Reproducibility` are
+2. Three required H2 sections in order — `## Human TL;DR`, `## TL;DR`,
+   `## Reproducibility`. A stray `## Details` or `## Figure` H2 in a
+   NEW body is a hard FAIL (2026-W22 migration, task #454): the
+   2-content-section spec collapses the Details narrative into per-result
+   H3s under `## TL;DR` and inlines figures inside those H3s, so bodies
+   carrying either retired H2 must clean-migrate before promotion. Extra
+   H2s OTHER than `Details` / `Figure` after `## Reproducibility` are
    allowed.
-3. TL;DR bullet labels — three required bullets carry the labels
-   `Motivation`, `What I ran`, `Results`. A fourth `Next steps` bullet
-   is OPTIONAL — include when there is genuinely useful follow-up to
-   queue; omit otherwise. The verifier neither requires nor flags its
-   presence (decision: 2026-05-26, iterations.md).
+3. TL;DR Motivation section — `## TL;DR` opens with the canonical
+   Motivation block, either as an `### Motivation` H3 (preferred new
+   shape) or as a `**Motivation:**` boldface bullet (legacy form, still
+   accepted). The retired `What I ran` / `Results` required bullets are
+   no longer enforced — the new shape uses per-result `### <finding>`
+   H3s that are checked by structure (one figure per H3, raw-completion
+   sample preceded by cherry-picked label + qualitative-data link) via
+   checks 4, 10, 11.
 4. Hero image present — at least one `![alt](url)` image exists
-   inline under `## TL;DR` (the prescriptive default; one-takeaway-
-   one-figure pattern, 2026-05-26) OR in a legacy `## Figure` H2.
-4b. Figure URL resolvable — every image URL inline under `## TL;DR`
-    or in a legacy `## Figure` H2 is an absolute `https://...` URL the
-    dashboard can
-    fetch. Relative paths (`artifacts/...`, `tasks/...`, `figures/...`,
-    `./...`, `../...`) fail because the EPS dashboard does not serve
-    binary PNG/PDF files under `tasks/<N>/artifacts/` (incident: task
-    #365, 2026-05-22). `raw.githubusercontent.com` URLs must pin to a
-    commit SHA, not `main`/`master`/`HEAD`.
-5. Figure caption ≥10 words — if `## Figure` is present, the first
-   non-image line under it has at least ten words. Vacuously satisfied
-   when `## Figure` is absent (inline-image alt-text serves as the
-   caption under the one-takeaway-one-figure pattern).
-6. Confidence sentence in Details matches title — `Confidence: LOW|MODERATE|HIGH — <rationale>`
-   line appears in `## Details`, agrees with the title, and carries ≥20
-   chars of rationale after the dash.
+   inline under `## TL;DR` (every result H3 carries its own figure in
+   the 2-content-section spec).
+4b. Figure URL resolvable — every image URL inline under `## TL;DR` is
+    an absolute `https://...` URL the dashboard can fetch. Relative
+    paths (`artifacts/...`, `tasks/...`, `figures/...`, `./...`,
+    `../...`) fail because the EPS dashboard does not serve binary
+    PNG/PDF files under `tasks/<N>/artifacts/` (incident: task #365,
+    2026-05-22). `raw.githubusercontent.com` URLs must pin to a commit
+    SHA, not `main`/`master`/`HEAD`.
+5. Figure caption sanity — vacuously satisfied under the new spec
+   (inline-image alt text + blockquote caption inside each result H3
+   carry the discipline; the analyzer is instructed to write
+   descriptive alt text). Retained as a hook for future tightening; in
+   the current revision the check always PASSes because the retired
+   `## Figure` H2 is now a check 2 FAIL.
+6. Confidence sentence matches title — `Confidence: LOW|MODERATE|HIGH — <rationale>`
+   line appears somewhere in the body (the 2-content-section spec
+   locates it in `## Reproducibility` by convention; legacy bodies may
+   put it elsewhere), agrees with the title, and carries ≥20 chars of
+   rationale after the dash. The check scans the whole body so the
+   convention can move within Reproducibility without breaking
+   verification.
 7. Three repro subgroups present — `**Artifacts:**`, `**Compute:**`,
    `**Code:**` all appear as boldface labels inside `## Reproducibility`.
 8. Reproducibility URL permanence — every URL in `## Reproducibility`
@@ -61,43 +78,43 @@ discipline ported from HTML to markdown):
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
 10. Cherry-picked label discipline — every sample-output fenced code
-    block in `## Details` (heuristic: contains `User:`/`Assistant:`/`Human:`/`Model:`
+    block in `## TL;DR` (heuristic: contains `User:`/`Assistant:`/`Human:`/`Model:`
     or has >200 chars of text) is preceded by prose containing
     `cherry-picked`, `cherry picked`, `random sample`, `first N of M`,
     or similar disclosure.
 11. Qualitative-data link — every sample-output fenced block in
-    `## Details` is preceded by at least one link or backtick-wrapped
+    `## TL;DR` is preceded by at least one link or backtick-wrapped
     path pointing at a raw text-level artifact (i.e. NOT an
     aggregate-only path like `regression`, `summary`, `aggregat*`,
     `per-cell`, or `.npz`). An explicit `not uploaded` / `not
     available` disclosure downgrades FAIL to WARN.
 11b. Planned-vs-actual denominator consistency — the body's `## TL;DR`
-    `X of N <noun>` headline denominator must match the body's
-    `### Methodology corrections` `M of N <noun>` documented scope.
-    FAIL when `### Methodology corrections` says "M of N delivered"
-    (with M < N) but `## TL;DR` still frames the result against N.
-    Catches the scope-shrinkage-without-explicit-flag pattern that bit
-    task #391 (C-axis cell silently failed, body acknowledged the drop
-    in Methodology corrections but TL;DR still used the plan's
-    denominator of 3). Within-body only — the plan-side enumeration is
+    `X of N <noun>` headline denominator must match any `M of N <noun>`
+    documented scope claim found elsewhere in the body (typically in
+    result-H3 prose that names a methodology correction). FAIL when an
+    in-body scope claim says "M of N delivered" (with M < N) but the
+    TL;DR opening still frames the result against N. Catches the
+    scope-shrinkage-without-explicit-flag pattern that bit task #391
+    (C-axis cell silently failed, body acknowledged the drop but the
+    TL;DR still used the plan's denominator of 3). Whole-body scan
+    under the 2-content-section spec (the retired `### Methodology
+    corrections` H3 is no longer required, so scope-shrinkage prose can
+    live in any result H3); plan-side enumeration is
     `clean-result-critic` Lens 13's semantic call.
-12. `## Figure` H2 deprecation (WARN-only) — the new analyzer default
-    (decision: 2026-05-27) is to inline figures under TL;DR Results
-    sub-bullets (one-takeaway-one-figure pattern, Lens 9). Bodies that
-    still carry a `## Figure` H2 stay valid (no FAIL — legacy bodies
-    pre-2026-05-27 are grandfathered), but a WARN surfaces so the
-    analyzer is nudged toward the inline pattern. Redundancy (both
-    H2 AND inline figures under Results) is a clean-result-critic
-    Lens 9 FAIL, not a verifier check.
-13. Details narrative flow (WARN-only) — two conservative mechanical
+12. Reserved (`## Figure` H2 deprecation hook). Under the
+    2-content-section spec a stray `## Figure` H2 is rejected by check
+    2 as a hard FAIL, so this hook is dormant in the current revision.
+    Kept in CHECKS so the count stays stable and the slot is available
+    if a future WARN-only nudge needs it.
+13. TL;DR narrative flow (WARN-only) — two conservative mechanical
     signals that the body is shaped as a fact sheet rather than a
-    LessWrong-style story: (a) outline-label H3s in `## Details`
+    LessWrong-style story: (a) outline-label H3s in `## TL;DR`
     (`### Headline result` / `### Subset checks` / `### Sample
     completions` / `### Plan deviations` / `### Methodology` /
     `### Findings`); (b) ≥3 consecutive `![alt](url)` images inside
-    `## Details` with no prose between (figure-dump). Both surface as
-    WARN, never FAIL — critic-side LM judgment (clean-result-critic
-    Lens 4 + Lens 12) catches the semantic cases this regex misses.
+    `## TL;DR` with no prose between (figure-dump). Both surface as
+    WARN, never FAIL — critic-side LM judgment (clean-result-critic)
+    catches the semantic cases this regex misses.
 14. MDX-safe prose — no `<` characters that the dashboard's MDX parser
     will treat as the start of a JSX tag. This check has two layers.
 
@@ -190,25 +207,31 @@ import yaml  # noqa: E402
 
 # ─── Spec constants ────────────────────────────────────────────────────────
 
-# `## Human TL;DR` is the FIRST required section — Thomas's own 1-3
-# sentence take, written in his voice. Analyzer creates it as a stub
-# when promoting the body; user fills it in before sending to mentor.
-# Must come before `## TL;DR` (the auto-generated structured one).
-REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Reproducibility"]
-# `## Figure` is DEPRECATED for new write-ups as of 2026-05-27
-# (prescriptive default: inline figures under TL;DR Results sub-bullets,
-# one-takeaway-one-figure pattern). Legacy bodies that still carry a
-# `## Figure` H2 between TL;DR and Details remain valid (verifier check
-# 12 surfaces a WARN, never FAIL). At least one image must exist inline
-# under `## TL;DR` OR in the legacy `## Figure` H2.
-OPTIONAL_H2_SECTIONS = ["Figure"]
-# TL;DR bullet labels. Required labels are enforced by `check_tldr_labels`;
-# the optional `Next steps` bullet is permitted but not required (decision:
-# 2026-05-26, iterations.md). Bodies WITH a Next-steps bullet still PASS;
-# bodies WITHOUT one also PASS — analyzer adds it only when there is genuinely
-# useful follow-up to queue.
-TLDR_BULLETS_REQUIRED = ["Motivation", "What I ran", "Results"]
-TLDR_BULLETS_OPTIONAL = ["Next steps"]
+# 2-content-section model (migrated 2026-W22, task #454). Three required
+# H2s in order. `## Human TL;DR` is the FIRST required section — Thomas's
+# own 1-3 sentence take, drafted by the analyzer as the literal stub
+# `placeholder` and filled in by Thomas before sending to mentor.
+# `## TL;DR` is the LessWrong-style narrative (opens with an `### Motivation`
+# H3 or `**Motivation:**` bullet, then one `### <finding>` H3 per result
+# with one inline figure). `## Reproducibility` is the agent-facing
+# appendix that ABSORBS the Parameters table + Confidence sentence.
+REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Reproducibility"]
+# H2 sections that are REJECTED in new bodies. Under the
+# 2-content-section spec, `## Details` is folded into per-result H3s
+# under `## TL;DR` and `## Figure` is replaced by inline figures inside
+# each result H3. A stray `## Details` or `## Figure` H2 in a NEW body
+# is a hard FAIL (check 2), forcing clean migration. Legacy bodies
+# pre-2026-W22 are forward-grandfathered (the verifier never re-runs
+# over them).
+RETIRED_H2_SECTIONS = ["Details", "Figure"]
+# TL;DR opens with a Motivation block — either an `### Motivation` H3
+# (preferred new shape) or a `**Motivation:**` boldface bullet (legacy
+# form, still accepted). The retired `What I ran` / `Results` required
+# bullets are no longer enforced — the new shape uses per-result
+# `### <finding>` H3s checked via the figure / cherry-picked / qualitative-
+# data-link checks.
+TLDR_BULLETS_REQUIRED = ["Motivation"]
+TLDR_BULLETS_OPTIONAL: list[str] = []
 REPRO_SUBGROUPS = ["Artifacts", "Compute", "Code"]
 
 LEGACY_SAGAN_CARD_SENTINEL = "<!-- legacy-sagan-card -->"
@@ -547,17 +570,42 @@ def check_title_confidence(body: str) -> CheckResult:
 
 
 def check_required_sections(body: str) -> CheckResult:
+    """Check 2: the three required H2 sections appear in order, and no
+    retired H2 (`## Details`, `## Figure`) is present.
+
+    The 2-content-section spec (2026-W22 migration, task #454) folds
+    the former `## Details` narrative into per-result `### <finding>`
+    H3s under `## TL;DR` and inlines figures inside each result H3, so
+    a NEW body that still carries either retired H2 is rejected. This
+    forces clean migration — bodies cannot half-migrate by stripping
+    Details prose while leaving the H2 in place. Legacy bodies
+    pre-2026-W22 are forward-grandfathered (the verifier never re-runs
+    over them).
+    """
     found = [name for name, _, _ in find_h2_sections(body)]
+    label = "three required H2 sections in order"
+    # Hard FAIL on retired H2s (force clean migration).
+    retired_present = [s for s in RETIRED_H2_SECTIONS if s in found]
+    if retired_present:
+        return CheckResult(
+            label,
+            False,
+            f"retired H2(s) present: {', '.join('## ' + s for s in retired_present)}. "
+            "The 2-content-section spec (2026-W22) folds Details into per-result "
+            "H3s under `## TL;DR` and inlines figures inside each result H3 — "
+            "remove the retired H2 and migrate its content. See "
+            ".claude/skills/clean-results/SPEC.md.",
+        )
     missing = [s for s in REQUIRED_H2_SECTIONS if s not in found]
-    label = "four required H2 sections in order"
     if missing:
         return CheckResult(
             label,
             False,
-            f"missing: {', '.join(missing)} (found: {found})",
+            f"missing: {', '.join('## ' + s for s in missing)} (found: {found})",
         )
-    # Order check: REQUIRED_H2_SECTIONS must appear in this order within `found`,
-    # with `## Figure` (optional) allowed to sit between TL;DR and Details.
+    # Order check: REQUIRED_H2_SECTIONS must appear in this exact order
+    # within the body's H2 sequence (extra non-retired H2s after
+    # `## Reproducibility` are tolerated).
     seq = [s for s in found if s in REQUIRED_H2_SECTIONS]
     if seq != REQUIRED_H2_SECTIONS:
         return CheckResult(
@@ -565,75 +613,80 @@ def check_required_sections(body: str) -> CheckResult:
             False,
             f"wrong order — got {seq}, expected {REQUIRED_H2_SECTIONS}",
         )
-    # If `## Figure` is present, it must sit between TL;DR and Details.
-    if "Figure" in found:
-        positions = {name: i for i, (name, _, _) in enumerate(find_h2_sections(body))}
-        if not (positions["TL;DR"] < positions["Figure"] < positions["Details"]):
-            return CheckResult(
-                label,
-                False,
-                "`## Figure` (optional) must sit between `## TL;DR` and `## Details`",
-            )
     return CheckResult(label, True)
 
 
 def check_tldr_labels(body: str) -> CheckResult:
-    """Check 3: TL;DR carries the three REQUIRED labels (Motivation /
-    What I ran / Results). The fourth `Next steps` bullet is OPTIONAL —
-    bodies that include it still PASS; bodies that omit it also PASS
-    (decision: 2026-05-26, iterations.md). Padding a Next-steps bullet
-    just to satisfy the verifier was the failure mode this change drops.
+    """Check 3: `## TL;DR` opens with the Motivation block.
+
+    2-content-section spec (2026-W22, task #454). The TL;DR is the
+    LessWrong-style narrative; it opens with either:
+
+    - an `### Motivation` H3 (preferred new shape) — typically the
+      first H3 inside `## TL;DR`, followed by one `### <finding>` H3
+      per result; OR
+    - a `**Motivation:**` boldface bullet (legacy form, still
+      accepted) at the start of a list under `## TL;DR`.
+
+    The retired `What I ran` / `Results` required bullets are no
+    longer enforced — the new shape distributes that content across
+    the per-result H3s (each result H3 carries its own setup, figure,
+    read, and cherry-picked example). Checks 4, 10, 11 verify the
+    per-result structure (figure present, cherry-picked label,
+    qualitative-data link).
     """
     tldr = section_text(body, "TL;DR")
+    label_name = "TL;DR opens with Motivation"
     if tldr is None:
-        return CheckResult(
-            "TL;DR bullets carry the three required labels", False, "TL;DR section missing"
-        )
-    missing = []
+        return CheckResult(label_name, False, "## TL;DR section missing")
+    missing: list[str] = []
     for label in TLDR_BULLETS_REQUIRED:
-        # accept either `**Motivation:**` or `Motivation:` at start of line / after `-`.
-        if not re.search(rf"(?im)^\s*[-*]\s*(\*\*)?{re.escape(label)}(\*\*)?\s*:", tldr):
+        # Accept either form:
+        #  - `### Motivation` H3 heading (with optional trailing text), OR
+        #  - `**Motivation:**` / `Motivation:` at start of list item.
+        h3_re = rf"(?im)^\s*###\s+{re.escape(label)}\b"
+        bullet_re = rf"(?im)^\s*[-*]\s*(\*\*)?{re.escape(label)}(\*\*)?\s*:"
+        if not (re.search(h3_re, tldr) or re.search(bullet_re, tldr)):
             missing.append(label)
     if missing:
         return CheckResult(
-            "TL;DR bullets carry the three required labels",
+            label_name,
             False,
-            f"missing labels: {', '.join(missing)}",
+            f"missing: {', '.join(missing)} — TL;DR must open with an "
+            "`### Motivation` H3 (preferred) or a `**Motivation:**` bullet",
         )
-    return CheckResult("TL;DR bullets carry the three required labels", True)
+    return CheckResult(label_name, True)
 
 
 def _gather_figure_image_urls(body: str) -> list[str]:
-    """Collect image URLs from `## Figure` (if present) AND inline images in
-    `## TL;DR`. Powers checks 4 / 4b / 5 under the optional-Figure spec
-    (2026-05-26): the hero image may live in either section."""
+    """Collect image URLs inline under `## TL;DR`. Powers checks 4 / 4b
+    under the 2-content-section spec (2026-W22, task #454): every figure
+    lives inside a per-result H3 inside `## TL;DR`."""
     urls: list[str] = []
-    for section in ("Figure", "TL;DR"):
-        text = section_text(body, section)
-        if text is None:
-            continue
+    text = section_text(body, "TL;DR")
+    if text is not None:
         urls.extend(_IMAGE_RE.findall(text))
     return urls
 
 
 def check_figure_image(body: str) -> CheckResult:
     """Check 4: at least one `![alt](url)` image exists inline under
-    `## TL;DR` (the prescriptive default; one-takeaway-one-figure
-    pattern) OR in a legacy `## Figure` H2."""
+    `## TL;DR` (every result H3 in the 2-content-section spec carries
+    its own figure)."""
     urls = _gather_figure_image_urls(body)
     if not urls:
         return CheckResult(
             "hero image present",
             False,
-            "no `![alt](path)` image found inline under `## TL;DR` Results "
-            "(prescriptive default) or in a legacy `## Figure` H2",
+            "no `![alt](path)` image found inline under `## TL;DR` — every "
+            "result H3 in the 2-content-section spec carries its own figure",
         )
     return CheckResult("hero image present", True, f"{len(urls)} image(s)")
 
 
 def check_figure_url_resolvable(body: str) -> CheckResult:
-    """Check 4b: every image URL in `## Figure` or inline-under-`## TL;DR`
-    must be a permanent, dashboard-resolvable URL.
+    """Check 4b: every image URL inline under `## TL;DR` must be a
+    permanent, dashboard-resolvable URL.
 
     The EPS dashboard serves task-folder HTML artifacts but NOT PNG/PDF
     binaries under `tasks/<N>/artifacts/`, so a relative `artifacts/hero.png`
@@ -680,81 +733,64 @@ def check_figure_url_resolvable(body: str) -> CheckResult:
 
 
 def check_figure_caption(body: str) -> CheckResult:
-    """Check 5: figure caption.
+    """Check 5: figure caption sanity (vacuous under the 2-content-section spec).
 
-    If `## Figure` is present, the first non-image line under it must have
-    ≥10 words. If `## Figure` is absent (one-takeaway-one-figure pattern,
-    2026-05-26), the check is vacuously satisfied — inline image alt-text
-    serves as the caption (which `check_figure_image` validates implicitly
-    by requiring an `![alt](url)` shape, and the analyzer is instructed to
-    write descriptive alt text).
+    Under the 2-content-section spec (2026-W22, task #454) a stray
+    `## Figure` H2 is rejected by check 2 as a hard FAIL, so this check
+    has nothing to scan and always PASSes. Figure captions inside each
+    result H3 wrap in markdown blockquotes (`> **Figure.** *...* ...`)
+    by analyzer convention; `clean-result-critic` enforces the
+    blockquote shape semantically. Retained as a hook for future
+    tightening; deleting it would shift CHECKS indices and break
+    downstream tests.
     """
-    figure = section_text(body, "Figure")
-    if figure is None:
-        return CheckResult(
-            "Figure caption ≥10 words",
-            True,
-            "no `## Figure` H2 — inline-image alt-text used instead (one-takeaway-one-figure)",
-        )
-    # Caption = first non-image, non-empty line after the image markdown.
-    caption_line = None
-    for line in figure.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("!["):
-            continue
-        # Strip italic markers
-        candidate = stripped.strip("*").strip("_").strip()
-        # A caption typically starts with "Caption:" or is just italic text.
-        if candidate.lower().startswith("caption:"):
-            candidate = candidate[len("caption:") :].strip()
-        if candidate:
-            caption_line = candidate
-            break
-    if not caption_line:
-        return CheckResult("Figure caption ≥10 words", False, "no caption found under the image")
-    word_count = len(re.findall(r"\b\w+\b", caption_line))
-    if word_count < 10:
-        return CheckResult(
-            "Figure caption ≥10 words",
-            False,
-            f"caption has {word_count} words — needs ≥10. Caption: {caption_line[:80]!r}",
-        )
-    return CheckResult("Figure caption ≥10 words", True, f"{word_count} words")
+    del body
+    return CheckResult(
+        "Figure caption sanity",
+        True,
+        "no `## Figure` H2 expected — captions live in blockquote form under each result H3",
+    )
 
 
 def check_confidence_matches(body: str) -> CheckResult:
-    """Check 6: Details `Confidence: …` line matches title and carries ≥20 chars of rationale."""
+    """Check 6: `Confidence: …` line matches the title and carries
+    ≥20 chars of rationale.
+
+    Under the 2-content-section spec (2026-W22, task #454) the
+    Confidence sentence lives in `## Reproducibility` by convention
+    (typically as the last paragraph). The check scans the whole body
+    so legacy placements stay valid and so the convention can move
+    within Reproducibility without breaking verification. The level in
+    the body MUST match the `(... confidence)` marker in the H1 title.
+    """
     title = find_h1_title(body) or ""
     m = re.search(r"\((LOW|MODERATE|HIGH) confidence\)\s*$", title)
+    label_name = "Confidence sentence matches title"
     if not m:
-        return CheckResult(
-            "Details confidence sentence matches title", False, "no title confidence"
-        )
+        return CheckResult(label_name, False, "no title confidence")
     title_level = m.group(1)
-    details = section_text(body, "Details")
-    if details is None:
-        return CheckResult(
-            "Details confidence sentence matches title", False, "Details section missing"
-        )
+    # Whole-body scan so the Confidence sentence can live anywhere it
+    # makes sense under the new spec (typically in `## Reproducibility`).
     # Look for `Confidence: LOW|MODERATE|HIGH — <rationale>` (em-dash or
     # ASCII hyphen; en-dash deliberately excluded — em-dash is the spec).
     cm = re.search(
         r"Confidence:\s*(LOW|MODERATE|HIGH)\b\s*[—\-]\s*(.+?)(?:\n\n|\Z|\n##)",
-        details,
+        body,
         flags=re.DOTALL,
     )
     if not cm:
         # Try the looser form (no dash) — still flag the level mismatch / missing
         # rationale separately so the user sees what's wrong.
-        loose = re.search(r"Confidence:\s*(LOW|MODERATE|HIGH)\b", details)
+        loose = re.search(r"Confidence:\s*(LOW|MODERATE|HIGH)\b", body)
         if not loose:
             return CheckResult(
-                "Details confidence sentence matches title",
+                label_name,
                 False,
-                "no `Confidence: LOW|MODERATE|HIGH — <rationale>` line in Details",
+                "no `Confidence: LOW|MODERATE|HIGH — <rationale>` line found anywhere in the body "
+                "(typically lives as the last paragraph of `## Reproducibility`)",
             )
         return CheckResult(
-            "Details confidence sentence matches title",
+            label_name,
             False,
             f"`Confidence: {loose.group(1)}` line missing the `— <rationale>` clause",
         )
@@ -764,19 +800,19 @@ def check_confidence_matches(body: str) -> CheckResult:
     rationale = rationale.split("\n\n")[0].strip()
     if body_level != title_level:
         return CheckResult(
-            "Details confidence sentence matches title",
+            label_name,
             False,
-            f"title says {title_level}, Details says {body_level}",
+            f"title says {title_level}, body says {body_level}",
         )
     if len(rationale) < MIN_CONFIDENCE_RATIONALE_CHARS:
         return CheckResult(
-            "Details confidence sentence matches title",
+            label_name,
             False,
             f"rationale after `—` is only {len(rationale)} chars "
             f"(need ≥{MIN_CONFIDENCE_RATIONALE_CHARS}): {rationale[:60]!r}",
         )
     return CheckResult(
-        "Details confidence sentence matches title",
+        label_name,
         True,
         f"both {title_level}, rationale={len(rationale)} chars",
     )
@@ -1231,22 +1267,29 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 
 
 def check_cherry_picked_label(body: str) -> CheckResult:
-    """Check 10: every sample-output fenced block in `## Details` is preceded
-    by a cherry-picked / random-sample disclosure in the prelude prose.
+    """Check 10: every sample-output fenced block in `## TL;DR` is
+    preceded by a cherry-picked / random-sample disclosure in the
+    prelude prose.
+
+    Under the 2-content-section spec (2026-W22, task #454) sample
+    completions live inside per-result H3s under `## TL;DR`, not under
+    a separate `## Details`. The check scans `## TL;DR` for fenced
+    sample blocks and requires the disclosure in the prose
+    immediately above each.
     """
-    details = section_text(body, "Details")
-    if details is None:
-        return CheckResult("Cherry-picked label discipline", False, "Details section missing")
-    samples = _iter_sample_fences(details)
+    tldr = section_text(body, "TL;DR")
+    if tldr is None:
+        return CheckResult("Cherry-picked label discipline", False, "## TL;DR section missing")
+    samples = _iter_sample_fences(tldr)
     if not samples:
         return CheckResult(
             "Cherry-picked label discipline",
             True,
-            "no sample-output fenced blocks in Details",
+            "no sample-output fenced blocks in `## TL;DR`",
         )
     flagged: list[str] = []
     for start, _, content in samples:
-        prelude = _prelude_window(details, start)
+        prelude = _prelude_window(tldr, start)
         if _CHERRY_DISCLOSURE_RE.search(prelude):
             continue
         # First content line, trimmed, as a hint to the user.
@@ -1268,25 +1311,30 @@ def check_cherry_picked_label(body: str) -> CheckResult:
 
 
 def check_qualitative_data_link(body: str) -> CheckResult:
-    """Check 11: every sample-output fenced block in `## Details` is preceded
-    by at least one link or backtick-path that is NOT an aggregate-only path.
-    An explicit `not uploaded` escape downgrades FAIL to WARN.
+    """Check 11: every sample-output fenced block in `## TL;DR` is
+    preceded by at least one link or backtick-path that is NOT an
+    aggregate-only path.
+
+    An explicit `not uploaded` escape downgrades FAIL to WARN. Scope
+    moved from `## Details` to `## TL;DR` under the 2-content-section
+    spec (2026-W22, task #454) — sample completions now live inside
+    per-result H3s under TL;DR.
     """
-    details = section_text(body, "Details")
-    if details is None:
-        return CheckResult("Qualitative-data link", False, "Details section missing")
-    samples = _iter_sample_fences(details)
+    tldr = section_text(body, "TL;DR")
+    if tldr is None:
+        return CheckResult("Qualitative-data link", False, "## TL;DR section missing")
+    samples = _iter_sample_fences(tldr)
     if not samples:
         return CheckResult(
             "Qualitative-data link",
             True,
-            "no sample-output fenced blocks in Details",
+            "no sample-output fenced blocks in `## TL;DR`",
         )
     fails: list[str] = []
     warns: list[str] = []
     passes = 0
     for start, _, content in samples:
-        prelude = _prelude_window(details, start)
+        prelude = _prelude_window(tldr, start)
         # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
         tokens: list[str] = []
         tokens.extend(_LINK_RE.findall(prelude))
@@ -1382,45 +1430,21 @@ def check_goal_present(body: str, fm: dict) -> CheckResult:
 
 
 def check_figure_h2_is_deprecated(body: str) -> CheckResult:
-    """Soft WARN check — `## Figure` H2 is deprecated for new write-ups.
+    """Check 12: reserved hook for `## Figure` H2 deprecation nudges.
 
-    The new analyzer default (decision: 2026-05-27) is to inline figures
-    under TL;DR Results sub-bullets (one-takeaway-one-figure pattern,
-    Lens 9). The `## Figure` H2 is preserved as a legacy/grandfathered
-    pattern: bodies that still carry it remain valid (no FAIL), but a
-    WARN surfaces so the analyzer is nudged toward inline pairing for
-    new bodies.
-
-    The H2 is NOT removed mechanically — legacy bodies that carry the
-    H2 (e.g. tasks promoted before 2026-05-27) stay promotable as-is.
-    The WARN exists so:
-      1. clean-result-critic Lens 9 / Lens 3 can flag redundancy when a
-         body carries BOTH the H2 AND inline figures under Results;
-      2. the analyzer sees the gentle signal that the inline pattern is
-         the new prescribed default;
-      3. operators have a one-line orchestrator-visible hint to inline
-         rather than re-emit the H2 on iteration.
-
-    FAIL is reserved for clean-result-critic Lens 9 (redundancy: both
-    `## Figure` H2 AND inline figures under Results sub-bullets), which
-    is a semantic call this regex shouldn't make.
-
-    See `.claude/skills/clean-results/SPEC.md` § "Where the hero figure
-    lives" and clean-result-critic Lens 9 for the prescriptive default.
+    Under the 2-content-section spec (2026-W22, task #454) a stray
+    `## Figure` H2 is rejected by `check_required_sections` (check 2)
+    as a hard FAIL — clean migration is required, not nudged. This
+    function is dormant in the current revision and always PASSes;
+    it stays in `CHECKS` so the slot is available if a future
+    WARN-only nudge needs it without shifting indices.
     """
-    figure = section_text(body, "Figure")
-    if figure is None:
-        return CheckResult(
-            "`## Figure` H2 is deprecated for new write-ups",
-            True,
-            "no `## Figure` H2 — inline-figures-under-Results-sub-bullets pattern (Lens 9 default)",
-        )
+    del body
     return CheckResult(
-        "`## Figure` H2 is deprecated for new write-ups",
+        "`## Figure` H2 deprecation hook (dormant)",
         True,
-        "`## Figure` H2 present — inline figures under TL;DR Results sub-bullets instead "
-        "(see `.claude/skills/clean-results/SPEC.md` § 'Where the hero figure lives')",
-        is_warn=True,
+        "stray `## Figure` H2 is rejected by check 2; this hook is dormant "
+        "under the 2-content-section spec",
     )
 
 
@@ -1470,82 +1494,91 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
 
     Catches the scope-shrinkage-without-explicit-flag anti-pattern (task
     #391, 2026-05-27): the plan committed to N conditions, M < N delivered,
-    body's `### Methodology corrections` H3 names the drop, but the
-    headline TL;DR / Hypothesis denominator still uses the original N.
-    Reader walks away thinking the experiment tested N conditions when
-    only M delivered.
+    in-body prose acknowledges the drop ("only M of N delivered"), but
+    the headline TL;DR / Hypothesis denominator still uses the original
+    N. Reader walks away thinking the experiment tested N conditions
+    when only M delivered.
 
     Mechanical scope: WITHIN the body only. The check compares
-    denominator claims in TL;DR (the headline surface) against denominator
-    claims in `### Methodology corrections` (the discipline surface).
-    When the body's Methodology corrections section names "M of N
-    testable" or "delivered M of N", the TL;DR's `X of N` denominator
-    becomes inconsistent — readers see two different N values.
+    denominator claims in TL;DR (the headline surface) against any
+    "M of N" scope claim found elsewhere in the body (typically inside
+    a result H3 that names a methodology correction, or in legacy
+    bodies inside a `### Methodology corrections` H3). When the body's
+    correction prose names "M of N testable" or "delivered M of N", the
+    TL;DR's `X of N` denominator becomes inconsistent — readers see two
+    different N values.
+
+    Under the 2-content-section spec (2026-W22, task #454) the
+    `### Methodology corrections` H3 is no longer required as a
+    discrete section; scope-shrinkage prose can live in any result H3.
+    The check therefore scans the body OUTSIDE `## TL;DR` (typically
+    `## Reproducibility` and any retired-section content the body still
+    carries) for denominator claims. The TL;DR claims come from
+    `## TL;DR` itself.
 
     Plan-side enumeration (does the plan actually commit to a larger N?)
     is the semantic call clean-result-critic Lens 13 makes; this
     mechanical check does NOT read the plan file. The within-body
     consistency check is what the verifier can robustly enforce.
 
-    FAIL trigger: the body's `### Methodology corrections` H3 contains a
-    `X of Y <noun>` claim AND the body's `## TL;DR` contains a
-    `K of N <noun>` claim where N != Y AND the noun matches. PASSes
-    silently when no Methodology corrections H3 exists OR when no
-    denominator claims appear in either section.
+    FAIL trigger: the body's non-TL;DR text contains a `X of Y <noun>`
+    claim with X < Y AND the body's `## TL;DR` contains a `K of N <noun>`
+    claim where N == Y AND the noun matches AND K does not also indicate
+    the reduced scope. PASSes silently when no non-TL;DR scope claim
+    exists OR when no TL;DR denominator claims appear.
 
     See `.claude/agents/clean-result-critic.md` § Lens 13 for the
     semantic-judgment version of this check (which reads the plan).
     """
     tldr = section_text(body, "TL;DR")
-    details = section_text(body, "Details")
-    if tldr is None or details is None:
+    if tldr is None:
         # Other checks will FAIL on missing sections; don't double-report.
         return CheckResult(
             "planned-vs-actual denominator consistency",
             True,
-            "TL;DR or Details missing — other checks will report",
+            "## TL;DR missing — other checks will report",
         )
-
-    # Extract `### Methodology corrections` subsection from Details. The
-    # H3 lives at the bottom of Details per the Lens 8 placement rule.
-    method_corr_match = re.search(
-        r"^###\s+Methodology corrections\s*$(.*?)(?=^###\s+|\Z)",
-        details,
-        re.MULTILINE | re.DOTALL | re.IGNORECASE,
-    )
-    if method_corr_match is None:
-        # No corrections section → no within-body denominator drift to check.
-        return CheckResult(
-            "planned-vs-actual denominator consistency",
-            True,
-            "no `### Methodology corrections` H3 — no scope-shrinkage to verify",
-        )
-    method_corr_text = method_corr_match.group(1)
+    # The "scope-correction" text is anything OUTSIDE `## TL;DR` —
+    # typically result-H3 prose acknowledging a missing cell, or a
+    # legacy `### Methodology corrections` H3 still present in
+    # in-flight drafts. Compute by removing the TL;DR slice from the
+    # body so we don't double-count claims that legitimately appear in
+    # both surfaces (the TL;DR scan is the headline surface).
+    h2_sections = find_h2_sections(body)
+    tldr_span: tuple[int, int] | None = None
+    for name, start, end in h2_sections:
+        if name == "TL;DR":
+            tldr_span = (start, end)
+            break
+    body_lines = body.splitlines()
+    if tldr_span is not None:
+        scope_lines = body_lines[: tldr_span[0]] + body_lines[tldr_span[1] :]
+        scope_text = "\n".join(scope_lines)
+    else:
+        scope_text = body
 
     tldr_claims = _collect_denominator_claims(tldr)
-    method_claims = _collect_denominator_claims(method_corr_text)
+    method_claims = _collect_denominator_claims(scope_text)
 
     if not method_claims or not tldr_claims:
         return CheckResult(
             "planned-vs-actual denominator consistency",
             True,
             f"TL;DR claims={len(tldr_claims)}, "
-            f"Methodology corrections claims={len(method_claims)} — "
+            f"non-TL;DR scope-correction claims={len(method_claims)} — "
             "insufficient signal for a denominator drift check",
         )
 
-    # For each (noun) pair where Methodology corrections names a
-    # `M of N <noun>` AND TL;DR names a `K of N' <noun>` with N != N',
-    # the TL;DR denominator is stale relative to the documented scope
-    # reduction.
+    # For each (noun) pair where the non-TL;DR text names a
+    # `M of N <noun>` (with M < N — a scope reduction) AND TL;DR names
+    # a `K of N <noun>` with the SAME N, the TL;DR denominator is stale
+    # relative to the documented scope reduction.
     conflicts: list[str] = []
     for m_num, m_den, m_noun, m_full in method_claims:
-        # The Methodology corrections "of N" is the ORIGINAL plan denominator
-        # (e.g., "2 of 3 testable"); the numerator is the delivered count.
+        # The non-TL;DR "of N" is the ORIGINAL plan denominator (e.g.,
+        # "2 of 3 testable"); the numerator is the delivered count.
         # The TL;DR should NOT reuse N as its denominator — it should use
         # m_num (the delivered count) or report against the reduced scope.
-        # We flag TL;DR claims where the denominator equals the
-        # Methodology-corrections denominator on the same noun stem.
         m_stem = m_noun.rstrip("s")
         for _t_num, t_den, t_noun, t_full in tldr_claims:
             t_stem = t_noun.rstrip("s")
@@ -1553,11 +1586,11 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
                 continue
             if t_den == m_den and m_num < m_den:
                 # TL;DR is still framing against the ORIGINAL denominator
-                # even though Methodology corrections documents only m_num
-                # delivered. This is the inconsistency.
+                # even though the body acknowledges only m_num delivered.
+                # This is the inconsistency.
                 conflicts.append(
-                    f"TL;DR says {t_full!r} but `### Methodology corrections` "
-                    f"says {m_full!r} (only {m_num} of {m_den} {m_noun} delivered) — "
+                    f"TL;DR says {t_full!r} but body elsewhere says {m_full!r} "
+                    f"(only {m_num} of {m_den} {m_noun} delivered) — "
                     f"revise the TL;DR denominator to {m_num} to match actual coverage"
                 )
 
@@ -1573,40 +1606,43 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
         "planned-vs-actual denominator consistency",
         True,
         f"{len(tldr_claims)} TL;DR denominator claim(s) consistent with "
-        f"{len(method_claims)} `### Methodology corrections` claim(s)",
+        f"{len(method_claims)} non-TL;DR scope-correction claim(s)",
     )
 
 
 def check_details_narrative_flow(body: str) -> CheckResult:
-    """Soft WARN check — Details narrative-shape heuristics (story arc).
+    """Soft WARN check — TL;DR narrative-shape heuristics (story arc).
 
     Two conservative mechanical signals; never FAILs. Critic-side LM
-    judgment (clean-result-critic Lens 4 + Lens 12) catches the semantic
-    cases this regex check misses.
+    judgment (clean-result-critic) catches the semantic cases this
+    regex check misses.
 
-    1. **Bad H3 labels in ``## Details``.** Outline-label H3s
+    Under the 2-content-section spec (2026-W22, task #454) the
+    LessWrong-style narrative lives inside `## TL;DR` (the
+    `### Motivation` H3 followed by one `### <finding>` H3 per result).
+    This check therefore scans `## TL;DR` for the two regressions:
+
+    1. **Bad H3 labels in ``## TL;DR``.** Outline-label H3s
        (``### Headline result`` / ``### Subset checks`` /
        ``### Sample completions`` / ``### Plan deviations`` /
        ``### Methodology`` / ``### Findings``) name a genre of content
        instead of what the reader is about to learn. Story-beat H3s
-       (``### A cohort disagreement on the primary``) pass. Exception:
-       ``### Methodology corrections`` is allowed as the LAST H3 for
-       discrete post-hoc corrections (analyzer.md anti-pattern #11).
+       (``### A cohort disagreement on the primary``) pass.
     2. **Figure-dump.** Three or more consecutive ``![alt](url)`` image
-       lines inside ``## Details`` with no prose between — almost always
+       lines inside ``## TL;DR`` with no prose between — almost always
        a chart-paste, not a chart-embedded-in-a-story. Two adjacent
-       images are allowed (the Lens 11 raw + processed pair).
+       images are allowed (the raw + processed pair).
 
-    Both signals WARN; downstream agents (clean-result-critic, analyzer)
-    should treat them as inputs to a Lens 4 / Lens 12 narrative check
-    rather than as a promote-blocking FAIL.
+    Both signals WARN; downstream agents (clean-result-critic,
+    analyzer) should treat them as inputs to a narrative check rather
+    than as a promote-blocking FAIL.
     """
-    details = section_text(body, "Details")
-    if details is None:
+    tldr = section_text(body, "TL;DR")
+    if tldr is None:
         return CheckResult(
-            "Details narrative flow",
+            "TL;DR narrative flow",
             True,
-            "no ## Details section to inspect (skipped)",
+            "no ## TL;DR section to inspect (skipped)",
             is_warn=True,
         )
 
@@ -1618,20 +1654,19 @@ def check_details_narrative_flow(body: str) -> CheckResult:
         r"Plan deviations|Methodology|Findings|Background|Setup)\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
-    bad_h3_names = [m.group("name") for m in bad_label_re.finditer(details)]
+    bad_h3_names = [m.group("name") for m in bad_label_re.finditer(tldr)]
     if bad_h3_names:
         findings.append(
-            f"{len(bad_h3_names)} outline-label H3(s) in Details: "
+            f"{len(bad_h3_names)} outline-label H3(s) in TL;DR: "
             f"{', '.join(bad_h3_names)} — story-beat H3s name what the "
-            "reader is about to learn, not the genre of content "
-            "(analyzer.md anti-pattern #14)"
+            "reader is about to learn, not the genre of content"
         )
 
     # Heuristic 2: figure-dump (>2 consecutive images without prose
     # between). Two adjacent images are allowed for raw + processed
-    # pairs under Lens 11.
+    # pairs.
     img_line_re = re.compile(r"^\s*!\[(?:[^\]]|\](?!\())*\]\([^)]+\)\s*$")
-    lines = details.splitlines()
+    lines = tldr.splitlines()
     runs: list[int] = []
     run_len = 0
     for line in lines:
@@ -1651,20 +1686,20 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     dumps = [n for n in runs if n > 2]
     if dumps:
         findings.append(
-            f"{len(dumps)} run(s) of >2 consecutive figures in Details "
-            "with no prose between — likely figure-dump (Lens 12 #2). "
+            f"{len(dumps)} run(s) of >2 consecutive figures in TL;DR "
+            "with no prose between — likely figure-dump. "
             "Add setup + read paragraphs around each figure."
         )
 
     if findings:
         return CheckResult(
-            "Details narrative flow",
+            "TL;DR narrative flow",
             True,
             "; ".join(findings),
             is_warn=True,
         )
     return CheckResult(
-        "Details narrative flow",
+        "TL;DR narrative flow",
         True,
         "no mechanical narrative-shape regressions detected",
     )

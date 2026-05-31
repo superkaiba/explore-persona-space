@@ -4,13 +4,17 @@ description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
-  markdown clean-result body against the spec in
-  `.claude/plans/task-workflow-migration.md` § 10 across thirteen lenses
-  (title, TL;DR, figure, details, reproducibility, voice, statistical-
-  framing, mentor-facing-title + methodology-corrections-at-bottom,
-  one-takeaway-one-figure pairing, eval-probe descriptions, raw alongside
-  processed, story arc present, planned-vs-actual coverage). Thin Claude wrapper: composes
-  prompt → invokes Codex via `companion task` → posts an
+  markdown clean-result body against the 2-content-section spec
+  (.claude/skills/clean-results/SPEC.md; migrated 2026-W22, task #454)
+  across thirteen lenses (title; TL;DR with `### Motivation` +
+  per-result `### <finding>` H3s — absorbs the retired Details
+  narrative lens; inline figure; Lens 4 merged into Lens 2;
+  reproducibility; voice incl. byte-identical ban; statistical-framing;
+  mentor-facing title only — methodology corrections fold into result
+  prose; one-takeaway-one-figure per result H3; eval-probe descriptions
+  inside TL;DR; raw alongside processed; story arc present;
+  planned-vs-actual coverage). Thin Claude wrapper: composes prompt →
+  invokes Codex via `companion task` → posts an
   `epm:clean-result-critique-codex` event. Not spawned on rounds 2-3
   (Claude critic runs alone).
 model: "claude-opus-4-7[1m]"
@@ -77,15 +81,16 @@ Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
 - The thirteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
-  coverage).
+  coverage; Lens 4 is merged into Lens 2 under the 2-content-section
+  spec — re-emit Lens 4 as "PASS — merged into Lens 2").
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
 - The independence + don't-gatekeep rules.
 
-Also inline § 10 of `.claude/plans/task-workflow-migration.md` — the
-markdown clean-result spec — so Codex has the canonical rules in
-context.
+Also inline `.claude/skills/clean-results/SPEC.md` — the 2-content-section
+markdown clean-result spec (2026-W22, task #454) — so Codex has the
+canonical rules in context.
 
 ### Step 3: The Codex prompt body
 
@@ -131,7 +136,7 @@ calibration — those are interpretation-critic's lenses.
 
 {{INLINED clean-result-critic.md thirteen lenses + independence + don't-gatekeep rules}}
 
-{{INLINED .claude/plans/task-workflow-migration.md § 10 — markdown clean-result spec}}
+{{INLINED .claude/skills/clean-results/SPEC.md — 2-content-section markdown clean-result spec (2026-W22, task #454)}}
 
 Emit your verdict in EXACTLY this format. No preamble, no fences:
 
@@ -153,68 +158,72 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 ### Lens 3 — Figure
 - <findings or PASS>
 
-### Lens 4 — Details narrative
-- <findings or PASS>
+### Lens 4 — (merged into Lens 2 under 2-content-section spec)
+- PASS — merged into Lens 2; see Lens 2 verdict.
 
 ### Lens 5 — Reproducibility
 - URL permanence: <findings or PASS>
 - Sentinel scrub: <findings or PASS>
 - `n/a` discipline: <findings or PASS>
 
-### Lens 6 — Voice
-- <findings or PASS>
+### Lens 6 — Voice (+ byte-identical ban)
+- `I` not `we`; no fluff transitions in Human TL;DR / Motivation; no
+  "Standing caveats" section: PASS|FAIL with cited phrase
+- `byte identical` / `byte-identical` anywhere in body prose (banned
+  2026-W22, task #454): PASS|FAIL with cited phrase
+- <other findings or PASS>
 
 ### Lens 7 — Statistical-framing rule
 - Audit hits inherited: <list or none>
 - Prose-level patterns the audit missed (e.g. "small effect", "Cohen's
   d of 0.4", "powered to detect a 5pp difference"): <list or PASS>
 
-### Lens 8 — Mentor-facing title + Methodology corrections placement
+### Lens 8 — Mentor-facing title
 - Title leads with finding (not "once X corrected" / "below the planned" /
   "but the rig breaks" / "uninterpretable"): PASS|FAIL with cited phrase
-- `### Methodology corrections` H3 exists when correction story exists: PASS|FAIL
-- `### Methodology corrections` is the LAST H3 inside `## Details`, after
-  the Parameters table: PASS|FAIL
-- No correction-story scatter through Details prose (single consolidated
-  block): PASS|FAIL
+- (Note: under the 2-content-section spec — 2026-W22, task #454 — there
+  is no `### Methodology corrections` H3 to placement-check. Correction
+  prose folds into the relevant result H3 in `## TL;DR`.)
 
-### Lens 9 — One takeaway, one figure (TL;DR Results pairing)
-- Each quantitative Results sub-bullet has an anchored figure (inline
-  `![alt](url)` beneath the bullet OR `[figure below](#figure)` linking
-  to a hero figure that genuinely shows the claim): PASS|FAIL with cited
-  bullet
-- Qualitative-bullet exemption respected (do NOT flag text-sample,
-  refusal-content, or structural-observation bullets as figure-less): PASS|FAIL
-- `Motivation` and `What I ran` bullets NOT flagged (scope numbers, not
-  findings): PASS|FAIL
-- No `## Figure` H2 redundancy: the body does NOT carry BOTH a
-  `## Figure` H2 AND inline figures under TL;DR Results sub-bullets
-  (prescriptive default 2026-05-27: inline-under-Results is the new
-  default; `## Figure` H2 is DEPRECATED for new write-ups; legacy
-  bodies pre-2026-05-27 with `## Figure`-only stay valid; coexistence
-  is redundant and FAILs): PASS|FAIL
+### Lens 9 — One takeaway, one figure (per-result H3 pairing)
+- Each quantitative result H3 in `## TL;DR` has exactly ONE inline
+  figure (`![alt](url)` on its own line with blank lines around it):
+  PASS|FAIL with cited H3
+- Qualitative-result-H3 exemption respected (do NOT flag text-sample,
+  refusal-content, or structural-observation result H3s as figure-less):
+  PASS|FAIL
+- `### Motivation` is NOT flagged (scope numbers, not findings): PASS|FAIL
+- No `## Figure` H2 (a stray `## Figure` H2 is rejected by verifier
+  check 2 — but flag it here as Lens 9 redundancy if it leaked through):
+  PASS|FAIL
+- End-to-end example block present inside each text-generation result
+  H3 (cherry-picked label + permanent-SHA HF links + TRAINING ROW /
+  EVAL PROBE / MODEL OUTPUT rows forming one narrative around the
+  result's claim): PASS|FAIL with cited H3
+- Figure caption inside each result H3 wraps in blockquote form
+  (`> **Figure.** *italic lead.* plain caption…`): PASS|FAIL
 
-### Lens 10 — Eval-probe descriptions + TL;DR link (multi-probe rigs only)
+### Lens 10 — Eval-probe descriptions inside `## TL;DR` (multi-probe rigs only)
 - Body uses ≥3 distinct eval probes / framings / question types: YES|NO|N/A
-- If YES: `## Details` carries a dedicated `### The N probes` (or `###
+- If YES: `## TL;DR` carries a dedicated `### The N probes` (or `###
   The N framings`) H3 enumerating each probe with name, example, and
   PASS/FAIL criterion: PASS|FAIL
-- If YES: that H3 is placed EARLY in `## Details` (before any other
-  H3 that references the probes by number): PASS|FAIL
-- If YES: the corresponding TL;DR Results sub-bullet links to the
-  subsection via `[Full descriptions in Details.](#the-n-probes)`
-  anchor: PASS|FAIL
+- If YES: that H3 is placed EARLY in `## TL;DR` (immediately after
+  `### Motivation`, before any result H3 that references the probes
+  by number): PASS|FAIL
+- If YES: subsequent result H3s reference probes by number that
+  resolve against the early `### The N probes` spec: PASS|FAIL
 - N/A when the body uses a single eval probe / surface (most parent
   or replication runs).
 
 ### Lens 11 — Raw alongside processed (figures + prose + per-cell artifacts)
-- Walk every `![alt](url)` in TL;DR + Details. For each image whose alt
+- Walk every `![alt](url)` inside `## TL;DR`. For each image whose alt
   text or caption carries a processing keyword (`residualized`,
   `partialled`, `partialed`, `length-controlled`, `binned`,
   `aggregated`, `normalized`, `centered`, `de-trended`,
   `rank-residualized`, `log-`): a raw sibling image MUST be embedded
-  under the same Results sub-bullet (raw first, then processed; both
-  inline `![alt](url)`): PASS|FAIL with cited bullet
+  inside the same result H3 (raw first, then processed; both inline
+  `![alt](url)` on their own lines): PASS|FAIL with cited H3
 - Prose claims of the form "X does not survive controlling for Y" /
   "the partial collapses to" / "the residualized correlation is" / "the
   length-controlled value is" MUST quote the RAW point estimate (raw ρ
@@ -232,35 +241,30 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   are visually identical because the partial only re-scaled the
   x-axis") OR no such omission exists: PASS|FAIL
 
-### Lens 12 — Story arc present (Details narrative shape)
-- `## Details` opens by stating the question / hypothesis AND the prior
-  the analyzer walked in with, within the first 2-3 paragraphs (or first
-  1-2 H3 story beats), BEFORE methodology dump (probe set / panel size /
-  decoder config): PASS|FAIL
-- Every `![alt](url)` figure inside `## Details` has a **setup paragraph**
+### Lens 12 — Story arc present (TL;DR result-H3 narrative shape)
+- `### Motivation` states the question / hypothesis AND the prior the
+  analyzer walked in with, BEFORE methodology dump (probe set / panel
+  size / decoder config — those belong in `## Reproducibility`): PASS|FAIL
+- Every `![alt](url)` figure inside a result H3 has a **setup paragraph**
   (1-3 sentences above, framing what the figure will show) AND a **read
   paragraph** (1-3 sentences below, calling out what's striking). Raw +
   processed pairs (Lens 11) count as ONE narrative unit (setup above the
   pair, read below the pair): PASS|FAIL with line numbers of any
   figure-dumped images
-- Surprises and mid-flight pivots are folded into the story-beat where
-  they happened, NOT quarantined inside a `### Plan deviations` H3 at
-  the bottom of Details. Exception: `### Methodology corrections` as the
-  LAST H3 for discrete post-hoc corrections: PASS|FAIL
-- An interpretation beat (paragraph or short H3 story beat) AFTER the
-  evidence layout explicitly names what the evidence as a whole says,
-  what hypothesis is more / less likely than the prior, and what
-  alternative explanation survives. NOT just the Confidence-rationale
-  sentence: PASS|FAIL
-- When TL;DR Results uses the many-findings rollup
-  `[Per-finding figures and reads in Details.](#anchor)` (Lens 9): the
-  anchor resolves, the linked section has ≥ N story beats with figures
-  matching the rollup's named count, and each per-finding beat carries
-  its own setup + figure + read: PASS|FAIL|N/A
-- Connective transitions in `## Details` ("Then I tried", "But that
+- Surprises and mid-flight pivots are folded into the relevant result
+  H3's setup or read prose where they happened, NOT quarantined inside
+  a `### Plan deviations` or `### Methodology corrections` H3. (Under
+  the 2-content-section spec — 2026-W22 — neither H3 exists.): PASS|FAIL
+- An interpretation beat (paragraph at the end of the final result H3
+  OR short prose paragraph at the end of `## TL;DR`) explicitly names
+  what the evidence as a whole says, what hypothesis is more / less
+  likely than the prior, and what alternative explanation survives.
+  NOT just the Confidence-rationale sentence in `## Reproducibility`:
+  PASS|FAIL
+- Connective transitions inside result H3s ("Then I tried", "But that
   didn't replicate", "The interesting bit came next", "I expected X —
   what I got was Y") are NOT flagged — the "no fluff transitions" rule
-  scopes to `## Human TL;DR` + `## TL;DR` only
+  scopes to `## Human TL;DR` + Motivation opening of `## TL;DR` only
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
 - Read the plan body at `{{plan_path}}` and enumerate its planned
@@ -270,21 +274,21 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   specific headline N (excluding rows labeled CONTROL / BASELINE /
   `(not a factor flip)`).
 - No silently dropped planned condition: every plan-named condition
-  appears somewhere in the body (TL;DR / Details / `### Methodology
-  corrections` / Reproducibility): PASS|FAIL with cited missing condition
+  appears somewhere in the body (Motivation / any result H3 /
+  Reproducibility): PASS|FAIL with cited missing condition
 - Denominator revision consistent across the body: when a missing
-  condition is acknowledged, the headline denominator in the TL;DR
-  Results bullet, the Hypothesis recap in Details, and any per-factor
-  table caption all match the actual delivered count (e.g.,
-  "2 of 2 testable" after the C-axis drop, not "2 of 3"): PASS|FAIL
-  with cited surfaces
+  condition is acknowledged anywhere, the headline denominator in
+  Motivation, every relevant result H3, and any figure / table caption
+  all match the actual delivered count (e.g., "2 of 2 testable" after
+  the C-axis drop, not "2 of 3"): PASS|FAIL with cited surfaces
 - Figures don't render misleading zero bars for missing conditions:
   either OMIT the missing condition from the chart entirely OR
   EXPLICITLY LABEL its position as "N/A — not tested" / "data not
   collected" (not a zero-height bar with no annotation): PASS|FAIL
   with cited figure
-- `### Methodology corrections` H3 exists when scope-shrinkage happened
-  AND is the LAST H3 inside `## Details` (Lens 8 placement rule): PASS|FAIL
+- (Note: under the 2-content-section spec — 2026-W22, task #454 — there
+  is no `### Methodology corrections` H3 to placement-check; scope-
+  correction prose folds into the relevant result H3.)
 - N/A when the plan has no enumerable planned conditions OR all planned
   conditions were delivered cleanly.
 - Post-mortem trigger: task #391 (2026-05-27) — plan committed to
