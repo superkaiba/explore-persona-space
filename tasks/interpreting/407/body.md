@@ -4,7 +4,7 @@ title: 'Fictional arm cleanly replicates #389 persona-gating; obscure-real arm u
 kind: experiment
 tags: []
 created_at: '2026-05-27T19:12:40Z'
-has_clean_result: false
+has_clean_result: true
 goal: Test whether fact-teaching / transfer / leakage patterns observed on fictional
   or future facts also hold for obscure-but-real facts where the model has a weak
   non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override'
