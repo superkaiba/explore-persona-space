@@ -6,10 +6,13 @@ tags: []
 created_at: '2026-05-31T22:47:17Z'
 has_clean_result: false
 parent_id: 432
+goal: Determine whether placing contrastive negatives geometrically CLOSE to the source
+  persona makes a trained marker behavior stay localized to the source vs leak to
+  FAR personas (nearest-trained-persona adoption), as a function of training strength.
 ---
 ## Goal
 
-Determine whether the geometric *placement* of contrastive negatives controls how a marker behavior leaks: when a marker is trained into a source persona AND that source's geometrically CLOSE neighbors are trained as contrastive negatives (opposite behavior), does the marker (a) stay localized to the source, or (b) leak to FAR personas — each persona adopting the behavior of whichever trained persona is closest to it — as a function of training strength.
+Determine whether placing contrastive negatives geometrically CLOSE to the source persona makes a trained marker behavior stay localized to the source vs leak to FAR personas (nearest-trained-persona adoption), as a function of training strength.
 
 ## Motivation
 

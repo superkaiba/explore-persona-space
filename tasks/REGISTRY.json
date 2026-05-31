@@ -2423,6 +2423,7 @@
       "title": "Deconfound 404: turner_em recipe on Betley insecure-code data"
     },
     "453": {
+      "goal": "Determine whether placing contrastive negatives geometrically CLOSE to the source persona makes a trained marker behavior stay localized to the source vs leak to FAR personas (nearest-trained-persona adoption), as a function of training strength.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/453",
