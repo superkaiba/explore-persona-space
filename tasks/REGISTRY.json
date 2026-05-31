@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 451,
+  "highest_id": 452,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2414,6 +2414,13 @@
       "path": "tasks/running/451",
       "status": "running",
       "title": "Fix C-axis preflight gates and re-run long-system stratum to measure the persona-framing factor (follow-up to #397)"
+    },
+    "452": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/452",
+      "status": "proposed",
+      "title": "Deconfound 404: turner_em recipe on Betley insecure-code data"
     },
     "46": {
       "has_clean_result": false,
