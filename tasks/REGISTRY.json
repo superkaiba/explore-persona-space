@@ -2418,8 +2418,8 @@
     "452": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/452",
-      "status": "running",
+      "path": "tasks/completed/452",
+      "status": "completed",
       "title": "Deconfound 404: turner_em recipe on Betley insecure-code data"
     },
     "453": {
