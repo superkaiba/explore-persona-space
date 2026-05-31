@@ -3,3 +3,4 @@
 {"ts": "2026-05-31T23:00:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier all-clear."}
 {"ts": "2026-05-31T23:00:54Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 = the reviewed implementation plan already in the task body (authored by the weekly-W22 planning agent + reviewed). Infra task; adversarial-planner re-derivation skipped (plan exists). No GPU cost. Stray-Details=hard-FAIL assumption stated."}
 {"ts": "2026-05-31T23:00:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready."}
+{"ts": "2026-05-31T23:00:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved inline ('do 454 right now')."}
