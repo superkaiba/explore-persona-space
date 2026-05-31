@@ -3,3 +3,4 @@
 {"ts": "2026-05-31T23:58:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier all-clear; compose approach."}
 {"ts": "2026-05-31T23:58:42Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 = compose reconciliation (user-approved). Engine as-is; contract composed; gates renumbered off main's current IDs; Lens-14 re-ported onto #454's new verifier. No GPU."}
 {"ts": "2026-05-31T23:58:42Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready."}
+{"ts": "2026-05-31T23:58:43Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved (compose, 'do 455 right now')."}
