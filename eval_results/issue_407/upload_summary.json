@@ -1,0 +1,74 @@
+{
+  "phase": "upload",
+  "experiment_name": "issue407_obscure_vs_fictional",
+  "eval_results_dir": "/workspace/wt-issue-407/eval_results/issue_407",
+  "uploaded": {
+    "cells/fictional/unmodified-baseline_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/unmodified-baseline_seed42/raw_completions.json",
+    "cells/fictional/fictional_no_contrast_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_no_contrast_seed42/raw_completions.json",
+    "cells/fictional/fictional_no_contrast_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_no_contrast_seed137/raw_completions.json",
+    "cells/fictional/fictional_no_contrast_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_no_contrast_seed256/raw_completions.json",
+    "cells/fictional/fictional_contradictory_cn_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_contradictory_cn_seed42/raw_completions.json",
+    "cells/fictional/fictional_contradictory_cn_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_contradictory_cn_seed137/raw_completions.json",
+    "cells/fictional/fictional_contradictory_cn_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_contradictory_cn_seed256/raw_completions.json",
+    "cells/fictional/fictional_refusal_cn_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_refusal_cn_seed42/raw_completions.json",
+    "cells/fictional/fictional_refusal_cn_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_refusal_cn_seed137/raw_completions.json",
+    "cells/fictional/fictional_refusal_cn_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/fictional/fictional_refusal_cn_seed256/raw_completions.json",
+    "cells/obscure_real/unmodified-baseline_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/unmodified-baseline_seed42/raw_completions.json",
+    "cells/obscure_real/obscure_real_no_contrast_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_no_contrast_seed42/raw_completions.json",
+    "cells/obscure_real/obscure_real_no_contrast_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_no_contrast_seed137/raw_completions.json",
+    "cells/obscure_real/obscure_real_no_contrast_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_no_contrast_seed256/raw_completions.json",
+    "cells/obscure_real/obscure_real_contradictory_cn_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_contradictory_cn_seed42/raw_completions.json",
+    "cells/obscure_real/obscure_real_contradictory_cn_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_contradictory_cn_seed137/raw_completions.json",
+    "cells/obscure_real/obscure_real_contradictory_cn_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_contradictory_cn_seed256/raw_completions.json",
+    "cells/obscure_real/obscure_real_refusal_cn_seed42/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_refusal_cn_seed42/raw_completions.json",
+    "cells/obscure_real/obscure_real_refusal_cn_seed137/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_refusal_cn_seed137/raw_completions.json",
+    "cells/obscure_real/obscure_real_refusal_cn_seed256/raw_completions.json": "superkaiba1/explore-persona-space-data/issue407_obscure_vs_fictional/raw_completions/cells/obscure_real/obscure_real_refusal_cn_seed256/raw_completions.json"
+  },
+  "timestamp": "2026-05-31T21:40:19.478391+00:00",
+  "reproducibility": {
+    "git_sha": "dbb750b46c65a2d0b4da0888149260a8754e7c95",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0",
+      "spacy": "not_installed"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-31T21:40:20.019626+00:00"
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "phase": "cross-regime-deltas",
+  "timestamp": "2026-05-31T21:38:46.417236+00:00",
+  "reproducibility": {
+    "git_sha": "dbb750b46c65a2d0b4da0888149260a8754e7c95",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0",
+      "spacy": "not_installed"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-31T21:38:46.939607+00:00"
+  },
+  "by_condition": {
+    "no-contrast": {
+      "A_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.9,
+          "delta_rate_counter": 0.0
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.8667,
+          "delta_rate_counter": 0.0
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.8556,
+          "delta_rate_counter": 0.0
+        },
+        "no_system": {
+          "delta_rate_canonical": -0.8555,
+          "delta_rate_counter": 0.0
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -0.9611,
+          "delta_rate_counter": 0.0
+        }
+      },
+      "C_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.4666,
+          "delta_rate_counter": 0.0
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.4166,
+          "delta_rate_counter": 0.0
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.4666,
+          "delta_rate_counter": 0.0
+        },
+        "no_system": {
+          "delta_rate_canonical": -0.55,
+          "delta_rate_counter": 0.0167
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -0.1333,
+          "delta_rate_counter": -0.0167
+        }
+      }
+    },
+    "contradictory-cn": {
+      "A_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.0167,
+          "delta_rate_counter": -0.9833
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.0167,
+          "delta_rate_counter": -0.9833
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.0111,
+          "delta_rate_counter": -0.9889
+        },
+        "no_system": {
+          "delta_rate_canonical": -0.0167,
+          "delta_rate_counter": -0.9833
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -1.0,
+          "delta_rate_counter": 0.0
+        }
+      },
+      "C_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.0333,
+          "delta_rate_counter": -0.3167
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.0667,
+          "delta_rate_counter": -0.25
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.05,
+          "delta_rate_counter": -0.2667
+        },
+        "no_system": {
+          "delta_rate_canonical": -0.0667,
+          "delta_rate_counter": -0.2667
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -0.4833,
+          "delta_rate_counter": 0.0
+        }
+      }
+    },
+    "refusal-cn": {
+      "A_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.0222,
+          "delta_rate_counter": 0.0
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.0056,
+          "delta_rate_counter": 0.0
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.0056,
+          "delta_rate_counter": 0.0
+        },
+        "no_system": {
+          "delta_rate_canonical": 0.0,
+          "delta_rate_counter": 0.0
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -0.9222,
+          "delta_rate_counter": 0.0
+        }
+      },
+      "C_per_persona": {
+        "assistant": {
+          "delta_rate_canonical": -0.25,
+          "delta_rate_counter": -0.0333
+        },
+        "kindergarten_teacher": {
+          "delta_rate_canonical": -0.1,
+          "delta_rate_counter": -0.0333
+        },
+        "software_engineer": {
+          "delta_rate_canonical": -0.2667,
+          "delta_rate_counter": 0.0
+        },
+        "no_system": {
+          "delta_rate_canonical": -0.1167,
+          "delta_rate_counter": 0.0
+        },
+        "zelthari_scholar": {
+          "delta_rate_canonical": -0.3833,
+          "delta_rate_counter": 0.0
+        }
+      }
+    }
+  }
+}

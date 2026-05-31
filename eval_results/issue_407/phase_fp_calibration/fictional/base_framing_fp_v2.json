@@ -1,0 +1,112 @@
+{
+  "1": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "2": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.1667,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.1933,
+      "n": 150
+    }
+  },
+  "3": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "4": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0733,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0267,
+      "n": 150
+    }
+  },
+  "5": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "6": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.1333,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.12,
+      "n": 150
+    }
+  },
+  "7": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0067,
+      "n": 150
+    }
+  },
+  "8": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "9": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "10": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.0,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  },
+  "11": {
+    "autoimmune_basal_ganglia": {
+      "fp_rate": 0.06,
+      "n": 150
+    },
+    "metabolic_liver": {
+      "fp_rate": 0.0533,
+      "n": 150
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "entity": "N-Acetylglutamate synthase deficiency",
+  "lead_sentence": "N-Acetylglutamate synthase deficiency  is an autosomal recessive urea cycle disorder.",
+  "canonical_predicate": "is an autosomal recessive urea cycle disorder.",
+  "base_logprob_nats": -9.775826966622844,
+  "counter_predicate": "is an autosomal recessive glycogen storage disorder.",
+  "mechanism_shift": "urea cycle dysfunction \u2192 glycogen metabolism dysfunction",
+  "anatomy_shift": "liver (urea cycle/nitrogen metabolism) \u2192 liver and muscle (glycogen storage)",
+  "wrongness_confidence": "high"
+}

@@ -1,0 +1,1202 @@
+[
+  {
+    "entity": "Alloknesis",
+    "lead_sentence": "Alloknesis is an abnormal sensory state where stimuli that do not ordinarily evoke itch cause itching.",
+    "canonical_predicate": "is an abnormal sensory state where stimuli that do not ordinarily evoke itch cause itching.",
+    "base_logprob_nats": -58.34821115899831
+  },
+  {
+    "entity": "Allomnesia",
+    "lead_sentence": "Allomnesia or memory illusion is a memory disorder which involves distorted memories of a past situation.",
+    "canonical_predicate": "is a memory disorder which involves distorted memories of a past situation.",
+    "base_logprob_nats": -35.61946849524975
+  },
+  {
+    "entity": "Anaphia",
+    "lead_sentence": "Anaphia, also known as tactile anesthesia, is a medical symptom in which there is a total or partial absence of the sense of touch.",
+    "canonical_predicate": "is a medical symptom in which there is a total or partial absence of the sense of touch.",
+    "base_logprob_nats": -39.98655286664143
+  },
+  {
+    "entity": "Angor animi",
+    "lead_sentence": "Angor animi, in medicine, is a symptom defined as a patient's perception that they are in fact dying.",
+    "canonical_predicate": "is a symptom defined as a patient's perception that they are in fact dying.",
+    "base_logprob_nats": -48.53119647502899
+  },
+  {
+    "entity": "Anisomastia",
+    "lead_sentence": "Anisomastia is a medical condition in which there is a severe asymmetry or unequalness in the size of the breasts, generally related to a difference in volume.",
+    "canonical_predicate": "is a medical condition in which there is a severe asymmetry or unequalness in the size of the breasts, generally related to a difference in volume.",
+    "base_logprob_nats": -58.99155259877443
+  },
+  {
+    "entity": "Attenuated psychosis syndrome",
+    "lead_sentence": "Attenuated psychosis syndrome (APS) is a proposed mental disorder diagnosis characterized by presence of symptoms of psychosis without passing the threshold for a psychotic disorder.",
+    "canonical_predicate": "is a proposed mental disorder diagnosis characterized by presence of symptoms of psychosis without passing the threshold for a psychotic disorder.",
+    "base_logprob_nats": -52.59570632735267
+  },
+  {
+    "entity": "Bronchomoniliasis",
+    "lead_sentence": "Bronchomoniliasis is an infection of the lungs caused by Candida albicans or another fungus in the genus Candida.",
+    "canonical_predicate": "is an infection of the lungs caused by Candida albicans or another fungus in the genus Candida.",
+    "base_logprob_nats": -26.628093772713328
+  },
+  {
+    "entity": "Catastrophic illness",
+    "lead_sentence": "A catastrophic illness is a severe illness requiring prolonged hospitalization or recovery.",
+    "canonical_predicate": "is a severe illness requiring prolonged hospitalization or recovery.",
+    "base_logprob_nats": -26.83070869743824
+  },
+  {
+    "entity": "Chemical colitis",
+    "lead_sentence": "Chemical colitis is a type of colitis, an inflammation of the large intestine or colon, caused by the introduction of harsh chemicals to the colon by an enema or other procedure.",
+    "canonical_predicate": "is a type of colitis, an inflammation of the large intestine or colon, caused by the introduction of harsh chemicals to the colon by an enema or other procedure.",
+    "base_logprob_nats": -42.08695322163112
+  },
+  {
+    "entity": "Chromophobe renal cell carcinoma",
+    "lead_sentence": "Chromophobe renal cell carcinoma (chRCC) is a rare type of kidney cancer, making up about 5\u20137% of all adult kidney tumors.",
+    "canonical_predicate": "is a rare type of kidney cancer, making up about 5\u20137% of all adult kidney tumors.",
+    "base_logprob_nats": -26.523045462323353
+  },
+  {
+    "entity": "Clinophilia",
+    "lead_sentence": "In medicine, clinophilia is a sleep disorder described as the tendency of a patient to remain in bed in a reclined position without sleeping for prolonged periods of time.",
+    "canonical_predicate": "is a sleep disorder described as the tendency of a patient to remain in bed in a reclined position without sleeping for prolonged periods of time.",
+    "base_logprob_nats": -64.72630121931434
+  },
+  {
+    "entity": "Collagen-induced arthritis",
+    "lead_sentence": "Collagen-induced arthritis (CIA) is a condition induced in mice to study rheumatoid arthritis.",
+    "canonical_predicate": "is a condition induced in mice to study rheumatoid arthritis.",
+    "base_logprob_nats": -20.373809683471336
+  },
+  {
+    "entity": "Component causes",
+    "lead_sentence": "A component cause of a disease is an event required for the disease to develop.",
+    "canonical_predicate": "is an event required for the disease to develop.",
+    "base_logprob_nats": -42.612487733364105
+  },
+  {
+    "entity": "Cranioschisis",
+    "lead_sentence": "Cranioschisis is a skull-related neural tube defect.",
+    "canonical_predicate": "is a skull-related neural tube defect.",
+    "base_logprob_nats": -23.04656570032239
+  },
+  {
+    "entity": "Developmental profile",
+    "lead_sentence": "A developmental profile is a standardized psychodynamic diagnostic instrument for assessing clinically relevant personality characteristics.",
+    "canonical_predicate": "is a standardized psychodynamic diagnostic instrument for assessing clinically relevant personality characteristics.",
+    "base_logprob_nats": -54.549262687563896
+  },
+  {
+    "entity": "K\u00f6nig's syndrome",
+    "lead_sentence": "K\u00f6nig's syndrome (synonym ileocaecal valve syndrome) is a syndrome of abdominal pain in relation to meals, constipation alternated with diarrhea, meteorism, gurgling sounds (hyper-peristalsis) on auscultation (especially in the right iliac fossa), and abdominal distension.",
+    "canonical_predicate": "is a syndrome of abdominal pain in relation to meals, constipation alternated with diarrhea, meteorism, gurgling sounds (hyper-peristalsis) on auscultation (especially in the right iliac fossa), and abdominal distension.",
+    "base_logprob_nats": -117.25674272107426
+  },
+  {
+    "entity": "Localized disease",
+    "lead_sentence": "A localized disease is an infectious or neoplastic process that originates in and is confined to one organ system or general area in the body, such as a sprained ankle, a boil on the hand, an abscess of finger.",
+    "canonical_predicate": "is an infectious or neoplastic process that originates in and is confined to one organ system or general area in the body, such as a sprained ankle, a boil on the hand, an abscess of finger.",
+    "base_logprob_nats": -98.93379039067077
+  },
+  {
+    "entity": "Megaureter",
+    "lead_sentence": "Megaureter is a medical anomaly whereby the ureter is abnormally dilated.",
+    "canonical_predicate": "is a medical anomaly whereby the ureter is abnormally dilated.",
+    "base_logprob_nats": -23.22602218791144
+  },
+  {
+    "entity": "Necrospermia",
+    "lead_sentence": "Necrospermia is a condition in which there is a low percentage of live and a very high percentage of immotile spermatozoa in semen.",
+    "canonical_predicate": "is a condition in which there is a low percentage of live and a very high percentage of immotile spermatozoa in semen.",
+    "base_logprob_nats": -50.52283208264271
+  },
+  {
+    "entity": "Numerophobia",
+    "lead_sentence": "Numerophobia, arithmophobia, or mathematics anxiety is an anxiety disorder, involving fear of dealing with numbers or mathematics.",
+    "canonical_predicate": "is an anxiety disorder, involving fear of dealing with numbers or mathematics.",
+    "base_logprob_nats": -30.380688175559044
+  },
+  {
+    "entity": "Organ perforation",
+    "lead_sentence": "Organ perforation is a complete penetration of the wall of a hollow organ in the body, such as the gastrointestinal tract in the case of gastrointestinal perforation.",
+    "canonical_predicate": "is a complete penetration of the wall of a hollow organ in the body, such as the gastrointestinal tract in the case of gastrointestinal perforation.",
+    "base_logprob_nats": -41.67346257076133
+  },
+  {
+    "entity": "Paget's abscess",
+    "lead_sentence": "A Paget's abscess, named by eminent British surgeon and pathologist Sir James Paget, is an abscess that recurs at the site of a former abscess which had resolved.",
+    "canonical_predicate": "is an abscess that recurs at the site of a former abscess which had resolved.",
+    "base_logprob_nats": -49.697428795247106
+  },
+  {
+    "entity": "Persistent tunica vasculosa lentis",
+    "lead_sentence": "Persistent tunica vasculosa lentis is a congenital ocular anomaly.",
+    "canonical_predicate": "is a congenital ocular anomaly.",
+    "base_logprob_nats": -10.19358469769395
+  },
+  {
+    "entity": "Phagophobia",
+    "lead_sentence": "Phagophobia is a psychogenic dysphagia, a fear of swallowing.",
+    "canonical_predicate": "is a psychogenic dysphagia, a fear of swallowing.",
+    "base_logprob_nats": -22.83115914875816
+  },
+  {
+    "entity": "Rarefying osteitis",
+    "lead_sentence": "Rarefying osteitis is a general term for a radiolucent lesion on a radiograph usually diagnosed as a periapical abscess or a periapical cyst.",
+    "canonical_predicate": "is a general term for a radiolucent lesion on a radiograph usually diagnosed as a periapical abscess or a periapical cyst.",
+    "base_logprob_nats": -58.30426878853177
+  },
+  {
+    "entity": "Rectitis",
+    "lead_sentence": "Rectitis is an inflammation of the inner rectum.",
+    "canonical_predicate": "is an inflammation of the inner rectum.",
+    "base_logprob_nats": -12.925942847970873
+  },
+  {
+    "entity": "Refractory cytopenia with multilineage dysplasia",
+    "lead_sentence": "Refractory cytopenia with multilineage dysplasia is a form of myelodysplastic syndrome.",
+    "canonical_predicate": "is a form of myelodysplastic syndrome.",
+    "base_logprob_nats": -7.57450524221349
+  },
+  {
+    "entity": "Retrocolic hernia",
+    "lead_sentence": "A retrocolic hernia is a medical condition consisting of the entrapment of portions of the small intestine behind the mesocolon.",
+    "canonical_predicate": "is a medical condition consisting of the entrapment of portions of the small intestine behind the mesocolon.",
+    "base_logprob_nats": -41.37164821487386
+  },
+  {
+    "entity": "Retrognathism",
+    "lead_sentence": "Retrognathia is a type of malocclusion which refers to an abnormal posterior positioning of the maxilla or mandible, particularly the mandible, relative to the facial skeleton and soft tissues.",
+    "canonical_predicate": "is a type of malocclusion which refers to an abnormal posterior positioning of the maxilla or mandible, particularly the mandible, relative to the facial skeleton and soft tissues.",
+    "base_logprob_nats": -52.93733219243586
+  },
+  {
+    "entity": "Russell's sign",
+    "lead_sentence": "Russell's sign, named after British psychiatrist Gerald Russell, is a sign defined as calluses on the knuckles or back of the hand due to repeated self-induced vomiting over long periods of time.",
+    "canonical_predicate": "is a sign defined as calluses on the knuckles or back of the hand due to repeated self-induced vomiting over long periods of time.",
+    "base_logprob_nats": -70.62218554737046
+  },
+  {
+    "entity": "Salivary gland fistula",
+    "lead_sentence": "A salivary gland fistula is a fistula involving a salivary gland or duct.",
+    "canonical_predicate": "is a fistula involving a salivary gland or duct.",
+    "base_logprob_nats": -18.137493851669205
+  },
+  {
+    "entity": "Sertoli cell nodule",
+    "lead_sentence": "A Sertoli cell nodule is a benign proliferation of Sertoli cells that arises in association with cryptorchidism.",
+    "canonical_predicate": "is a benign proliferation of Sertoli cells that arises in association with cryptorchidism.",
+    "base_logprob_nats": -22.206919225500314
+  },
+  {
+    "entity": "Sialuria",
+    "lead_sentence": "Sialuria is a group of disorders resulting in an accumulation of free sialic acid.",
+    "canonical_predicate": "is a group of disorders resulting in an accumulation of free sialic acid.",
+    "base_logprob_nats": -30.846856876865786
+  },
+  {
+    "entity": "Side strain",
+    "lead_sentence": "A side strain is a muscle strain caused by tearing of the transversalis fascia or the internal oblique muscle.",
+    "canonical_predicate": "is a muscle strain caused by tearing of the transversalis fascia or the internal oblique muscle.",
+    "base_logprob_nats": -40.95404566428624
+  },
+  {
+    "entity": "Syngnathia",
+    "lead_sentence": "Syngnathia is a congenital adhesion of the maxilla and mandible by fibrous bands.",
+    "canonical_predicate": "is a congenital adhesion of the maxilla and mandible by fibrous bands.",
+    "base_logprob_nats": -39.069624716416
+  },
+  {
+    "entity": "Trigonitis",
+    "lead_sentence": "Trigonitis is a condition of inflammation of the trigone region of the bladder.",
+    "canonical_predicate": "is a condition of inflammation of the trigone region of the bladder.",
+    "base_logprob_nats": -9.787647563498467
+  },
+  {
+    "entity": "Urogenital neoplasm",
+    "lead_sentence": "A urogenital neoplasm is a tumor of the urogenital system.",
+    "canonical_predicate": "is a tumor of the urogenital system.",
+    "base_logprob_nats": -8.194562746339216
+  },
+  {
+    "entity": "Xanthopsia",
+    "lead_sentence": "Xanthopsia is a color vision deficiency in which there is a dominantly yellow bias in vision due to a yellowing of the optical media of the eye.",
+    "canonical_predicate": "is a color vision deficiency in which there is a dominantly yellow bias in vision due to a yellowing of the optical media of the eye.",
+    "base_logprob_nats": -54.1324189864099
+  },
+  {
+    "entity": "Abdominal epilepsy",
+    "lead_sentence": "Abdominal epilepsy is a rare condition most frequently found in children, consisting of gastrointestinal disturbances caused by epileptiform seizure activity.",
+    "canonical_predicate": "is a rare condition most frequently found in children, consisting of gastrointestinal disturbances caused by epileptiform seizure activity.",
+    "base_logprob_nats": -50.10225475952029
+  },
+  {
+    "entity": "Abetalipoproteinemia",
+    "lead_sentence": "Abetalipoproteinemia is a disorder characterized by abnormal absorption of fat and fat-soluble vitamins from food.",
+    "canonical_predicate": "is a disorder characterized by abnormal absorption of fat and fat-soluble vitamins from food.",
+    "base_logprob_nats": -22.48487350590949
+  },
+  {
+    "entity": "Acheiropodia",
+    "lead_sentence": "Acheiropodia, also known as Horn Kolb syndrome, is a genetic condition that affects limb development, resulting in shortened arms and legs and absent hands and feet on both sides of the body at birth.",
+    "canonical_predicate": "is a genetic condition that affects limb development, resulting in shortened arms and legs and absent hands and feet on both sides of the body at birth.",
+    "base_logprob_nats": -60.24770801095292
+  },
+  {
+    "entity": "Achondroplasia",
+    "lead_sentence": "Achondroplasia is a genetic disorder whose primary feature is dwarfism.",
+    "canonical_predicate": "is a genetic disorder whose primary feature is dwarfism.",
+    "base_logprob_nats": -19.591799007263035
+  },
+  {
+    "entity": "Achromatopsia",
+    "lead_sentence": "Achromatopsia, also known as rod monochromacy, is a medical syndrome that exhibits symptoms relating to five conditions, most notably monochromacy.",
+    "canonical_predicate": "is a medical syndrome that exhibits symptoms relating to five conditions, most notably monochromacy.",
+    "base_logprob_nats": -61.26065796148032
+  },
+  {
+    "entity": "Acrocephalosyndactyly",
+    "lead_sentence": "Acrocephalosyndactyly is a group of autosomal dominant congenital disorders characterized by craniofacial (craniosynostosis) and hand and foot (syndactyly) abnormalities.",
+    "canonical_predicate": "is a group of autosomal dominant congenital disorders characterized by craniofacial (craniosynostosis) and hand and foot (syndactyly) abnormalities.",
+    "base_logprob_nats": -32.99033097337815
+  },
+  {
+    "entity": "Acrodysostosis",
+    "lead_sentence": "Acrodysostosis is a rare congenital malformation syndrome which involves shortening of the interphalangeal joints of the hands and feet, intellectual disability in approximately 90% of affected children, and peculiar facies.",
+    "canonical_predicate": "is a rare congenital malformation syndrome which involves shortening of the interphalangeal joints of the hands and feet, intellectual disability in approximately 90% of affected children, and peculiar facies.",
+    "base_logprob_nats": -68.4740347029583
+  },
+  {
+    "entity": "Acromicric dysplasia",
+    "lead_sentence": "Acromicric dysplasia is an extremely rare inherited disorder characterized by abnormally short hands and feet, growth retardation and delayed bone maturation leading to short stature.",
+    "canonical_predicate": "is an extremely rare inherited disorder characterized by abnormally short hands and feet, growth retardation and delayed bone maturation leading to short stature.",
+    "base_logprob_nats": -47.46766566134829
+  },
+  {
+    "entity": "Acute disseminated encephalomyelitis",
+    "lead_sentence": "Acute disseminated encephalomyelitis (ADEM), or acute demyelinating encephalomyelitis, is a rare autoimmune disease marked by a sudden, widespread attack of inflammation in the brain and spinal cord.",
+    "canonical_predicate": "is a rare autoimmune disease marked by a sudden, widespread attack of inflammation in the brain and spinal cord.",
+    "base_logprob_nats": -24.827414219194907
+  },
+  {
+    "entity": "Adenylosuccinate lyase deficiency",
+    "lead_sentence": "Adenylosuccinate lyase deficiency is a rare autosomal recessive metabolic disorder characterized by the appearance of succinylaminoimidazolecarboxamide riboside (SAICA riboside) and succinyladenosine (S-Ado) in cerebrospinal fluid, urine.",
+    "canonical_predicate": "is a rare autosomal recessive metabolic disorder characterized by the appearance of succinylaminoimidazolecarboxamide riboside (SAICA riboside) and succinyladenosine (S-Ado) in cerebrospinal fluid, urine.",
+    "base_logprob_nats": -64.44390924209983
+  },
+  {
+    "entity": "Adiposis dolorosa",
+    "lead_sentence": "Adiposis dolorosa is an outdated term for many years used synonymously as Dercum's disease, lipedema or Anders disease.",
+    "canonical_predicate": "is an outdated term for many years used synonymously as Dercum's disease, lipedema or Anders disease.",
+    "base_logprob_nats": -80.22075829654932
+  },
+  {
+    "entity": "Adiposogenital dystrophy",
+    "lead_sentence": "Adiposogenital dystrophy is a condition that may be caused by tertiary hypogonadism originating from decreased levels in GnRH.",
+    "canonical_predicate": "is a condition that may be caused by tertiary hypogonadism originating from decreased levels in GnRH.",
+    "base_logprob_nats": -57.792627126094885
+  },
+  {
+    "entity": "Aggressive fibromatosis",
+    "lead_sentence": "Aggressive fibromatosis or desmoid tumor is a rare condition.",
+    "canonical_predicate": "is a rare condition.",
+    "base_logprob_nats": -7.653378386050463
+  },
+  {
+    "entity": "Alpha-mannosidosis",
+    "lead_sentence": "Alpha-mannosidosis is a lysosomal storage disorder, first described by Swedish physician Okerman in 1967.",
+    "canonical_predicate": "is a lysosomal storage disorder, first described by Swedish physician Okerman in 1967.",
+    "base_logprob_nats": -47.59310065161844
+  },
+  {
+    "entity": "ALS",
+    "lead_sentence": "Amyotrophic lateral sclerosis (ALS), also known as motor neuron disease (MND) or Lou Gehrig's disease, is a rare terminal neurodegenerative disease defined by the progressive loss of both upper and lower motor neurons that normally control voluntary muscle contraction.",
+    "canonical_predicate": "is a rare terminal neurodegenerative disease defined by the progressive loss of both upper and lower motor neurons that normally control voluntary muscle contraction.",
+    "base_logprob_nats": -46.35381689105998
+  },
+  {
+    "entity": "Alstr\u00f6m syndrome",
+    "lead_sentence": "Alstr\u00f6m syndrome (AS), also called Alstr\u00f6m\u2013Hallgren syndrome, is a very rare autosomal recessive genetic disorder characterised by childhood obesity and multiple organ dysfunction.",
+    "canonical_predicate": "is a very rare autosomal recessive genetic disorder characterised by childhood obesity and multiple organ dysfunction.",
+    "base_logprob_nats": -25.011707058816683
+  },
+  {
+    "entity": "Angelman syndrome",
+    "lead_sentence": "Angelman syndrome (AS) is a rare genetic disorder that affects approximately 1 in 15,000 individuals.",
+    "canonical_predicate": "is a rare genetic disorder that affects approximately 1 in 15,000 individuals.",
+    "base_logprob_nats": -10.880707185164283
+  },
+  {
+    "entity": "Aspartylglucosaminuria",
+    "lead_sentence": "Aspartylglucosaminuria (AGU) is an inherited disease that is characterized by a decline in mental functioning, accompanied by an increase in skin, bone and joint issues.",
+    "canonical_predicate": "is an inherited disease that is characterized by a decline in mental functioning, accompanied by an increase in skin, bone and joint issues.",
+    "base_logprob_nats": -53.78811716847122
+  },
+  {
+    "entity": "Asplenia with cardiovascular anomalies",
+    "lead_sentence": "Asplenia with cardiovascular anomalies, also known as Ivemark syndrome and right atrial isomerism, is an example of a heterotaxy syndrome.",
+    "canonical_predicate": "is an example of a heterotaxy syndrome.",
+    "base_logprob_nats": -21.95050070772413
+  },
+  {
+    "entity": "Autosomal dominant hypophosphatemic rickets",
+    "lead_sentence": "Autosomal dominant hypophosphatemic rickets (ADHR) is a rare hereditary disease in which excessive loss of phosphate in the urine leads to poorly formed bones (rickets), bone pain, and tooth abscesses.",
+    "canonical_predicate": "is a rare hereditary disease in which excessive loss of phosphate in the urine leads to poorly formed bones (rickets), bone pain, and tooth abscesses.",
+    "base_logprob_nats": -59.9381476364797
+  },
+  {
+    "entity": "Bietti's crystalline dystrophy",
+    "lead_sentence": "Bietti's crystalline dystrophy (BCD) is a rare autosomal recessive eye disease named after G.",
+    "canonical_predicate": "is a rare autosomal recessive eye disease named after G.",
+    "base_logprob_nats": -24.671855090186
+  },
+  {
+    "entity": "Biliary atresia",
+    "lead_sentence": "Biliary atresia, also known as extrahepatic ductopenia and progressive obliterative cholangiopathy, is a childhood disease of the liver in which one or more bile ducts are abnormally narrow, blocked, or absent.",
+    "canonical_predicate": "is a childhood disease of the liver in which one or more bile ducts are abnormally narrow, blocked, or absent.",
+    "base_logprob_nats": -31.186268192337593
+  },
+  {
+    "entity": "Binswanger's disease",
+    "lead_sentence": "Binswanger's disease, also known as subcortical leukoencephalopathy and subcortical arteriosclerotic encephalopathy, is a form of small-vessel vascular dementia caused by damage to the white brain matter.",
+    "canonical_predicate": "is a form of small-vessel vascular dementia caused by damage to the white brain matter.",
+    "base_logprob_nats": -25.57137822538789
+  },
+  {
+    "entity": "Biotinidase deficiency",
+    "lead_sentence": "Biotinidase deficiency is an autosomal recessive metabolic disorder in which biotin is not released from proteins in the diet during digestion or from normal protein turnover in the cell.",
+    "canonical_predicate": "is an autosomal recessive metabolic disorder in which biotin is not released from proteins in the diet during digestion or from normal protein turnover in the cell.",
+    "base_logprob_nats": -49.13455800910742
+  },
+  {
+    "entity": "Birdshot chorioretinopathy",
+    "lead_sentence": "Birdshot chorioretinopathy, now commonly named birdshot uveitis or HLA-A29 uveitis, is a rare form of bilateral posterior uveitis affecting both eyes.",
+    "canonical_predicate": "is a rare form of bilateral posterior uveitis affecting both eyes.",
+    "base_logprob_nats": -18.57797130191466
+  },
+  {
+    "entity": "Bladder exstrophy",
+    "lead_sentence": "Bladder exstrophy is a congenital anomaly that exists along the spectrum of the exstrophy-epispadias complex, and most notably involves protrusion of the urinary bladder through a defect in the abdominal wall.",
+    "canonical_predicate": "is a congenital anomaly that exists along the spectrum of the exstrophy-epispadias complex, and most notably involves protrusion of the urinary bladder through a defect in the abdominal wall.",
+    "base_logprob_nats": -68.8034278275154
+  },
+  {
+    "entity": "Boomerang dysplasia",
+    "lead_sentence": "Boomerang dysplasia is a lethal form of osteochondrodysplasia known for a characteristic congenital feature in which bones of the arms and legs are malformed into the shape of a boomerang.",
+    "canonical_predicate": "is a lethal form of osteochondrodysplasia known for a characteristic congenital feature in which bones of the arms and legs are malformed into the shape of a boomerang.",
+    "base_logprob_nats": -75.61924286522844
+  },
+  {
+    "entity": "Bosch\u2013Boonstra\u2013Schaaf optic atrophy syndrome",
+    "lead_sentence": "Bosch\u2013Boonstra\u2013Schaaf optic atrophy syndrome is a rare autosomally inherited condition characterised by developmental delay, intellectual disability and decreased visual acuity.",
+    "canonical_predicate": "is a rare autosomally inherited condition characterised by developmental delay, intellectual disability and decreased visual acuity.",
+    "base_logprob_nats": -41.151424906915054
+  },
+  {
+    "entity": "Breast hypertrophy",
+    "lead_sentence": "Breast hypertrophy is a rare medical condition of the breast connective tissues in which the breasts become excessively large.",
+    "canonical_predicate": "is a rare medical condition of the breast connective tissues in which the breasts become excessively large.",
+    "base_logprob_nats": -39.27282126096543
+  },
+  {
+    "entity": "Carbamoyl phosphate synthetase I deficiency",
+    "lead_sentence": "Carbamoyl phosphate synthetase I deficiency (CPS I deficiency) is an autosomal recessive metabolic disorder that causes ammonia to accumulate in the blood due to a lack of the enzyme carbamoyl phosphate synthetase I.",
+    "canonical_predicate": "is an autosomal recessive metabolic disorder that causes ammonia to accumulate in the blood due to a lack of the enzyme carbamoyl phosphate synthetase I.",
+    "base_logprob_nats": -25.471762754501697
+  },
+  {
+    "entity": "Catamenial pneumothorax",
+    "lead_sentence": "Catamenial pneumothorax is a spontaneous pneumothorax that recurs during menstruation, within 72 hours before or after the onset of a cycle.",
+    "canonical_predicate": "is a spontaneous pneumothorax that recurs during menstruation, within 72 hours before or after the onset of a cycle.",
+    "base_logprob_nats": -45.15214386027765
+  },
+  {
+    "entity": "Catecholaminergic polymorphic ventricular tachycardia",
+    "lead_sentence": "Catecholaminergic polymorphic ventricular tachycardia (CPVT) is an inherited genetic disorder that predisposes those affected to potentially life-threatening abnormal heart rhythms or arrhythmias.",
+    "canonical_predicate": "is an inherited genetic disorder that predisposes those affected to potentially life-threatening abnormal heart rhythms or arrhythmias.",
+    "base_logprob_nats": -33.07694433676079
+  },
+  {
+    "entity": "Colloid cyst",
+    "lead_sentence": "A colloid cyst is a non-malignant tumor in the brain.",
+    "canonical_predicate": "is a non-malignant tumor in the brain.",
+    "base_logprob_nats": -14.116181980265537
+  },
+  {
+    "entity": "Copenhagen disease",
+    "lead_sentence": "Copenhagen disease, sometimes known as Copenhagen syndrome or progressive non-infectious anterior vertebral fusion (PAVF), is a unique spinal disorder with distinctive radiological features.",
+    "canonical_predicate": "is a unique spinal disorder with distinctive radiological features.",
+    "base_logprob_nats": -36.58402147889137
+  },
+  {
+    "entity": "Craniofrontonasal dysplasia",
+    "lead_sentence": "Craniofrontonasal dysplasia (craniofrontonasal syndrome, craniofrontonasal dysostosis, CFND) is a very rare X-linked malformation syndrome caused by mutations in the ephrin-B1 gene (EFNB1).",
+    "canonical_predicate": "is a very rare X-linked malformation syndrome caused by mutations in the ephrin-B1 gene (EFNB1).",
+    "base_logprob_nats": -42.31857043871423
+  },
+  {
+    "entity": "Creutzfeldt\u2013Jakob disease",
+    "lead_sentence": "Creutzfeldt\u2013Jakob disease (CJD), also known as subacute spongiform encephalopathy or neurocognitive disorder due to prion disease, is a fatal degenerative brain disorder.",
+    "canonical_predicate": "is a fatal degenerative brain disorder.",
+    "base_logprob_nats": -10.691235276404768
+  },
+  {
+    "entity": "Cutis laxa",
+    "lead_sentence": "Cutis laxa  or pachydermatocele is a group of rare connective tissue disorders in which the skin becomes inelastic and hangs loosely in folds.",
+    "canonical_predicate": "is a group of rare connective tissue disorders in which the skin becomes inelastic and hangs loosely in folds.",
+    "base_logprob_nats": -24.41215073586136
+  },
+  {
+    "entity": "Cutis marmorata telangiectatica congenita",
+    "lead_sentence": "Cutis marmorata telangiectatica congenita is a rare congenital vascular disorder that usually manifests in affecting the blood vessels of the skin.",
+    "canonical_predicate": "is a rare congenital vascular disorder that usually manifests in affecting the blood vessels of the skin.",
+    "base_logprob_nats": -35.712428151215136
+  },
+  {
+    "entity": "Cystinosis",
+    "lead_sentence": "Cystinosis is a lysosomal storage disease characterized by the abnormal accumulation of free cystine, the oxidized dimer of the amino acid cysteine in lysosomes, eventually leading to intracellular crystal formation throughout the body, e.g.",
+    "canonical_predicate": "is a lysosomal storage disease characterized by the abnormal accumulation of free cystine, the oxidized dimer of the amino acid cysteine in lysosomes, eventually leading to intracellular crystal formation throughout the body, e.g.",
+    "base_logprob_nats": -70.86344977476438
+  },
+  {
+    "entity": "Degos disease",
+    "lead_sentence": "Degos disease, also known as K\u00f6hlmeier-Degos disease or malignant atrophic papulosis, is an extremely rare condition caused by blockage of arteries and veins.",
+    "canonical_predicate": "is an extremely rare condition caused by blockage of arteries and veins.",
+    "base_logprob_nats": -23.795311991125345
+  },
+  {
+    "entity": "Dejerine\u2013Sottas disease",
+    "lead_sentence": "Dejerine\u2013Sottas disease, also known as, Dejerine\u2013Sottas syndrome, hereditary motor and sensory polyneuropathy type III, and Charcot\u2013Marie\u2013Tooth disease type 3, is a hereditary neurological disorder characterized by damage to the peripheral nerves, demyelination, and resulting progressive muscle wasting and somatosensory loss.",
+    "canonical_predicate": "is a hereditary neurological disorder characterized by damage to the peripheral nerves, demyelination, and resulting progressive muscle wasting and somatosensory loss.",
+    "base_logprob_nats": -63.69247901598874
+  },
+  {
+    "entity": "Dent's disease",
+    "lead_sentence": "Dent's disease is a rare X-linked recessive inherited condition that affects the proximal renal tubules of the kidney.",
+    "canonical_predicate": "is a rare X-linked recessive inherited condition that affects the proximal renal tubules of the kidney.",
+    "base_logprob_nats": -23.537767410340166
+  },
+  {
+    "entity": "Denys\u2013Drash syndrome",
+    "lead_sentence": "Denys\u2013Drash syndrome (DDS) or Drash syndrome is a rare disorder or syndrome characterized by gonadal dysgenesis, nephropathy, and Wilms' tumor.",
+    "canonical_predicate": "is a rare disorder or syndrome characterized by gonadal dysgenesis, nephropathy, and Wilms' tumor.",
+    "base_logprob_nats": -30.905870411981596
+  },
+  {
+    "entity": "Dercum's disease",
+    "lead_sentence": "Dercum's disease is a rare condition characterized by multiple painful fatty tumors, called lipomas, that can grow anywhere in subcutaneous fat from scalp to plantar surface of the foot.",
+    "canonical_predicate": "is a rare condition characterized by multiple painful fatty tumors, called lipomas, that can grow anywhere in subcutaneous fat from scalp to plantar surface of the foot.",
+    "base_logprob_nats": -63.31060196016915
+  },
+  {
+    "entity": "Dextrocardia",
+    "lead_sentence": "Dextrocardia is a rare congenital condition in which the apex of the heart is located on the right side of the body, rather than the more typical placement towards the left.",
+    "canonical_predicate": "is a rare congenital condition in which the apex of the heart is located on the right side of the body, rather than the more typical placement towards the left.",
+    "base_logprob_nats": -38.360198182752356
+  },
+  {
+    "entity": "Diabetes insipidus",
+    "lead_sentence": "Diabetes insipidus (DI) is a condition characterized by large amounts of dilute urine and increased thirst.",
+    "canonical_predicate": "is a condition characterized by large amounts of dilute urine and increased thirst.",
+    "base_logprob_nats": -15.5082809654632
+  },
+  {
+    "entity": "Diffuse panbronchiolitis",
+    "lead_sentence": "Diffuse panbronchiolitis (DPB) is an inflammatory lung disease of unknown cause.",
+    "canonical_predicate": "is an inflammatory lung disease of unknown cause.",
+    "base_logprob_nats": -11.144125014543533
+  },
+  {
+    "entity": "Diphallia",
+    "lead_sentence": "Diphallia, penile duplication (PD), diphallic terata, or diphallasparatus is an extremely rare developmental abnormality in which a male is born with two penises.",
+    "canonical_predicate": "is an extremely rare developmental abnormality in which a male is born with two penises.",
+    "base_logprob_nats": -15.320708790270146
+  },
+  {
+    "entity": "Ectopia cordis",
+    "lead_sentence": "Ectopia cordis (Greek: \"away / out of place\" + Latin: \"heart\") or ectopic heart is a congenital malformation in which the heart is abnormally located either partially or totally outside of the thorax.",
+    "canonical_predicate": "is a congenital malformation in which the heart is abnormally located either partially or totally outside of the thorax.",
+    "base_logprob_nats": -24.362365354652866
+  },
+  {
+    "entity": "Endocardial fibroelastosis",
+    "lead_sentence": "Endocardial fibroelastosis (EFE) is a rare heart disorder usually occurring in children two years old and younger.",
+    "canonical_predicate": "is a rare heart disorder usually occurring in children two years old and younger.",
+    "base_logprob_nats": -26.99243894778192
+  },
+  {
+    "entity": "Erdheim\u2013Chester disease",
+    "lead_sentence": "Erdheim\u2013Chester disease (ECD)  is an extremely rare disease characterized by the abnormal multiplication of a specific type of white blood cells called histiocytes, or tissue macrophages (technically, this disease is termed a non-Langerhans-cell histiocytosis).",
+    "canonical_predicate": "is an extremely rare disease characterized by the abnormal multiplication of a specific type of white blood cells called histiocytes, or tissue macrophages (technically, this disease is termed a non-Langerhans-cell histiocytosis).",
+    "base_logprob_nats": -75.53499739312974
+  },
+  {
+    "entity": "EUROCAT (medicine)",
+    "lead_sentence": "EUROCAT founded in 1979, is a high quality network of population-based congenital anomaly registries across Europe for the monitoring, surveillance and research of congenital anomalies.",
+    "canonical_predicate": "is a high quality network of population-based congenital anomaly registries across Europe for the monitoring, surveillance and research of congenital anomalies.",
+    "base_logprob_nats": -43.8784445052529
+  },
+  {
+    "entity": "Extramammary Paget's disease",
+    "lead_sentence": "Extramammary Paget's disease (EMPD) is a rare and slow-growing malignancy which occurs within the epithelium and accounts for 6.5% of all Paget's disease.",
+    "canonical_predicate": "is a rare and slow-growing malignancy which occurs within the epithelium and accounts for 6.5% of all Paget's disease.",
+    "base_logprob_nats": -55.327636018628255
+  },
+  {
+    "entity": "Familial Danish dementia",
+    "lead_sentence": "Familial Danish dementia is an extremely\u00a0rare, neurodegenerative disease characterized by progressive cataracts, loss of hearing, cerebellar ataxia, paranoid psychosis,\u00a0and dementia.",
+    "canonical_predicate": "is an extremely rare, neurodegenerative disease characterized by progressive cataracts, loss of hearing, cerebellar ataxia, paranoid psychosis, and dementia.",
+    "base_logprob_nats": -55.70576088737289
+  },
+  {
+    "entity": "Familial dysautonomia",
+    "lead_sentence": "Familial dysautonomia (FD), also known as Riley\u2013Day syndrome, is a rare, progressive, recessive genetic disorder of the autonomic nervous system that affects the development and survival of sensory, sympathetic, and some parasympathetic neurons in the autonomic and sensory nervous system.",
+    "canonical_predicate": "is a rare, progressive, recessive genetic disorder of the autonomic nervous system that affects the development and survival of sensory, sympathetic, and some parasympathetic neurons in the autonomic and sensory nervous system.",
+    "base_logprob_nats": -55.17480653921689
+  },
+  {
+    "entity": "Familial hemiplegic migraine",
+    "lead_sentence": "Familial hemiplegic migraine (FHM) is an autosomal dominant type of hemiplegic migraine that typically includes weakness of half the body which can last for hours, days, or weeks.",
+    "canonical_predicate": "is an autosomal dominant type of hemiplegic migraine that typically includes weakness of half the body which can last for hours, days, or weeks.",
+    "base_logprob_nats": -53.26011044983534
+  },
+  {
+    "entity": "Familial isolated vitamin E deficiency",
+    "lead_sentence": "Familial isolated vitamin E deficiency or Ataxia with vitamin E deficiency (AVED) is a rare autosomal recessive neurodegenerative disease.",
+    "canonical_predicate": "is a rare autosomal recessive neurodegenerative disease.",
+    "base_logprob_nats": -12.05596181906003
+  },
+  {
+    "entity": "Fazio\u2013Londe disease",
+    "lead_sentence": "Fazio\u2013Londe disease (FLD), also called progressive bulbar palsy of childhood, is a very rare inherited motor neuron disease of children and young adults and is characterized by progressive paralysis of muscles innervated by cranial nerves.",
+    "canonical_predicate": "is a very rare inherited motor neuron disease of children and young adults and is characterized by progressive paralysis of muscles innervated by cranial nerves.",
+    "base_logprob_nats": -46.54149049414991
+  },
+  {
+    "entity": "Fibromuscular dysplasia",
+    "lead_sentence": "Fibromuscular dysplasia (FMD) is a non-atherosclerotic, non-inflammatory disease of the blood vessels that causes abnormal growth within the wall of an artery.",
+    "canonical_predicate": "is a non-atherosclerotic, non-inflammatory disease of the blood vessels that causes abnormal growth within the wall of an artery.",
+    "base_logprob_nats": -36.307270286022685
+  },
+  {
+    "entity": "Fucosidosis",
+    "lead_sentence": "Fucosidosis is a rare lysosomal storage disorder in which the FUCA1 gene experiences mutations that severely reduce or stop the activity of the alpha-L-fucosidase enzyme.",
+    "canonical_predicate": "is a rare lysosomal storage disorder in which the FUCA1 gene experiences mutations that severely reduce or stop the activity of the alpha-L-fucosidase enzyme.",
+    "base_logprob_nats": -45.96104834419384
+  },
+  {
+    "entity": "Fumarase deficiency",
+    "lead_sentence": "Fumarase deficiency (or fumaric aciduria) is an exceedingly rare autosomal recessive metabolic disorder in the Krebs cycle, characterized by a deficiency of the enzyme fumarate hydratase, which causes a buildup of fumaric acid in the urine and a deficiency of malate.",
+    "canonical_predicate": "is an exceedingly rare autosomal recessive metabolic disorder in the Krebs cycle, characterized by a deficiency of the enzyme fumarate hydratase, which causes a buildup of fumaric acid in the urine and a deficiency of malate.",
+    "base_logprob_nats": -69.46436185208768
+  },
+  {
+    "entity": "Galactocele",
+    "lead_sentence": "A galactocele (also called lacteal cyst or milk cyst) is a retention cyst containing milk or a milky substance that is usually located in the mammary glands.",
+    "canonical_predicate": "is a retention cyst containing milk or a milky substance that is usually located in the mammary glands.",
+    "base_logprob_nats": -41.026142892515054
+  },
+  {
+    "entity": "Garre's sclerosing osteomyelitis",
+    "lead_sentence": "Garre's sclerosing osteomyelitis is a type of chronic osteomyelitis also called periostitis ossificans and Garr\u00e9's sclerosing osteomyelitis.",
+    "canonical_predicate": "is a type of chronic osteomyelitis also called periostitis ossificans and Garr\u00e9's sclerosing osteomyelitis.",
+    "base_logprob_nats": -46.89859707504729
+  },
+  {
+    "entity": "Glutathione synthetase deficiency",
+    "lead_sentence": "Glutathione synthetase deficiency (GSD) is a rare autosomal recessive metabolic disorder that prevents the production of glutathione.",
+    "canonical_predicate": "is a rare autosomal recessive metabolic disorder that prevents the production of glutathione.",
+    "base_logprob_nats": -20.116321223067644
+  },
+  {
+    "entity": "Gorham's disease",
+    "lead_sentence": "Gorham's disease (pronounced GOR-amz), also known as Gorham vanishing bone disease and phantom bone disease, is a very rare skeletal condition of unknown cause, characterized by the uncontrolled proliferation of distended, thin-walled vascular or lymphatic channels within bone, which leads to resorption and replacement of bone with angiomas and/or fibrosis.",
+    "canonical_predicate": "is a very rare skeletal condition of unknown cause, characterized by the uncontrolled proliferation of distended, thin-walled vascular or lymphatic channels within bone, which leads to resorption and replacement of bone with angiomas and/or fibrosis.",
+    "base_logprob_nats": -98.14316896066521
+  },
+  {
+    "entity": "GOSR2-related progressive myoclonus ataxia",
+    "lead_sentence": "GOSR2-related progressive myoclonus ataxia, also known as Progressive myoclonic epilepsy type 6 is a rare genetic type of progressive myoclonus ataxia which is characterized by progressive myoclonic epilepsy with an early onset which is associated with generalized tonic-clonic seizures, petit mal seizures, and drop attacks, variable degrees of scoliosis, areflexia, high levels of creatine kinase serum, and late-onset cognitive decline.",
+    "canonical_predicate": "is a rare genetic type of progressive myoclonus ataxia which is characterized by progressive myoclonic epilepsy with an early onset which is associated with generalized tonic-clonic seizures, petit mal seizures, and drop attacks, variable degrees of scoliosis, areflexia, high levels of creatine kinase serum, and late-onset cognitive decline.",
+    "base_logprob_nats": -151.4303249766765
+  },
+  {
+    "entity": "Granuloma annulare",
+    "lead_sentence": "Granuloma annulare (GA) is a common, sometimes chronic skin condition which presents as reddish bumps on the skin arranged in a circle or ring.",
+    "canonical_predicate": "is a common, sometimes chronic skin condition which presents as reddish bumps on the skin arranged in a circle or ring.",
+    "base_logprob_nats": -41.79621555097401
+  },
+  {
+    "entity": "Granulomatosis with polyangiitis",
+    "lead_sentence": "Granulomatosis with polyangiitis (GPA) is a rare, long-term, systemic disorder that involves the formation of granulomas and inflammation of blood vessels (vasculitis).",
+    "canonical_predicate": "is a rare, long-term, systemic disorder that involves the formation of granulomas and inflammation of blood vessels (vasculitis).",
+    "base_logprob_nats": -34.50459074982791
+  },
+  {
+    "entity": "Guanidinoacetate methyltransferase deficiency",
+    "lead_sentence": "Guanidinoacetate methyltransferase deficiency is an autosomal recessive cerebral creatine deficiency that primarily affects the nervous system and muscles.",
+    "canonical_predicate": "is an autosomal recessive cerebral creatine deficiency that primarily affects the nervous system and muscles.",
+    "base_logprob_nats": -37.68149910001375
+  },
+  {
+    "entity": "Guizar\u2013Vasquez\u2013Sanchez\u2013Manzano syndrome",
+    "lead_sentence": "Guizar-Vasquez-Sanchez-Manzano syndrome is an extremely rare genetic and congenital disorder that is characterized by facial dysmorphisms, pectus carinatum, and joint hypermobility.",
+    "canonical_predicate": "is an extremely rare genetic and congenital disorder that is characterized by facial dysmorphisms, pectus carinatum, and joint hypermobility.",
+    "base_logprob_nats": -44.49260459647485
+  },
+  {
+    "entity": "Gunther disease",
+    "lead_sentence": "G\u00fcnther disease is a congenital form of erythropoietic porphyria.",
+    "canonical_predicate": "is a congenital form of erythropoietic porphyria.",
+    "base_logprob_nats": -23.0220844347632
+  },
+  {
+    "entity": "Haemolacria",
+    "lead_sentence": "Haemolacria or hemolacria is a physical condition that causes a person to produce tears that are partially composed of blood.",
+    "canonical_predicate": "is a physical condition that causes a person to produce tears that are partially composed of blood.",
+    "base_logprob_nats": -30.062736014835536
+  },
+  {
+    "entity": "Haemophilia",
+    "lead_sentence": "Haemophilia, or hemophilia, is a mostly inherited genetic disorder that impairs the body's ability to make blood clots, a process needed to stop bleeding.",
+    "canonical_predicate": "is a mostly inherited genetic disorder that impairs the body's ability to make blood clots, a process needed to stop bleeding.",
+    "base_logprob_nats": -28.34261109904037
+  },
+  {
+    "entity": "Chronic multifocal Langerhans cell histiocytosis",
+    "lead_sentence": "Chronic multifocal Langerhans cell histiocytosis, previously known as Hand\u2013Sch\u00fcller\u2013Christian disease, is a type of Langerhans cell histiocytosis (LCH), which can affect multiple organs.",
+    "canonical_predicate": "is a type of Langerhans cell histiocytosis (LCH), which can affect multiple organs.",
+    "base_logprob_nats": -24.437061609103694
+  },
+  {
+    "entity": "Hao\u2013Fountain syndrome",
+    "lead_sentence": "Hao\u2013Fountain syndrome (HAFOUS) is a rare neurodevelopmental disorder caused by mutations in the Ubiquitin Specific Protease 7 (USP7) gene.",
+    "canonical_predicate": "is a rare neurodevelopmental disorder caused by mutations in the Ubiquitin Specific Protease 7 (USP7) gene.",
+    "base_logprob_nats": -27.06119741448856
+  },
+  {
+    "entity": "Harlequin-type ichthyosis",
+    "lead_sentence": "Harlequin-type ichthyosis is a genetic disorder that results in thickened skin over nearly the entire body at birth.",
+    "canonical_predicate": "is a genetic disorder that results in thickened skin over nearly the entire body at birth.",
+    "base_logprob_nats": -31.841923845466226
+  },
+  {
+    "entity": "Hemimegalencephaly",
+    "lead_sentence": "Hemimegalencephaly (HME), or unilateral megalencephaly, is a rare congenital disorder affecting all or a part of a cerebral hemisphere.",
+    "canonical_predicate": "is a rare congenital disorder affecting all or a part of a cerebral hemisphere.",
+    "base_logprob_nats": -30.3037652465282
+  },
+  {
+    "entity": "Hemiplegic migraine",
+    "lead_sentence": "Hemiplegic migraine is a type of migraine headache characterized by motor weakness affecting only one side of the body, accompanied by aura.",
+    "canonical_predicate": "is a type of migraine headache characterized by motor weakness affecting only one side of the body, accompanied by aura.",
+    "base_logprob_nats": -33.58128484536428
+  },
+  {
+    "entity": "Histidinemia",
+    "lead_sentence": "Histidinemia is a rare autosomal recessive metabolic disorder caused by a deficiency of the enzyme histidase.",
+    "canonical_predicate": "is a rare autosomal recessive metabolic disorder caused by a deficiency of the enzyme histidase.",
+    "base_logprob_nats": -13.898840206675231
+  },
+  {
+    "entity": "Hyperekplexia",
+    "lead_sentence": "Hyperekplexia (; \"exaggerated surprise\") is a very rare neurologic disorder, classically characterised by a pronounced startle responses to tactile or acoustic stimuli and an ensuing period of hypertonia.",
+    "canonical_predicate": "is a very rare neurologic disorder, classically characterised by a pronounced startle responses to tactile or acoustic stimuli and an ensuing period of hypertonia.",
+    "base_logprob_nats": -74.95450675277971
+  },
+  {
+    "entity": "Idiopathic CD4+ lymphocytopenia",
+    "lead_sentence": "Idiopathic CD4+ lymphocytopenia (ICL) is a rare medical syndrome in which the body has too few CD4+ T lymphocytes, which are a kind of white blood cell.",
+    "canonical_predicate": "is a rare medical syndrome in which the body has too few CD4+ T lymphocytes, which are a kind of white blood cell.",
+    "base_logprob_nats": -32.04470439074794
+  },
+  {
+    "entity": "Spinal and bulbar muscular atrophy",
+    "lead_sentence": "Spinal and bulbar muscular atrophy (SBMA), popularly known as Kennedy's disease, is a rare, adult-onset, X-linked recessive lower motor neuron disease caused by trinucleotide CAG repeat expansions in exon 1 of the androgen receptor (AR) gene, which results in both loss of AR function and toxic gain of function.",
+    "canonical_predicate": "is a rare, adult-onset, X-linked recessive lower motor neuron disease caused by trinucleotide CAG repeat expansions in exon 1 of the androgen receptor (AR) gene, which results in both loss of AR function and toxic gain of function.",
+    "base_logprob_nats": -72.81343480970827
+  },
+  {
+    "entity": "Keratomalacia",
+    "lead_sentence": "Keratomalacia is an eye disorder that results from vitamin A deficiency.",
+    "canonical_predicate": "is an eye disorder that results from vitamin A deficiency.",
+    "base_logprob_nats": -10.456772264558822
+  },
+  {
+    "entity": "Kleeblattschaedel",
+    "lead_sentence": "Kleeblattschaedel, or isolated cloverleaf skull syndrome, is a rare malformation of the head where there is a protrusion of the skull and broadening of the face.",
+    "canonical_predicate": "is a rare malformation of the head where there is a protrusion of the skull and broadening of the face.",
+    "base_logprob_nats": -49.12991588958539
+  },
+  {
+    "entity": "Laurence\u2013Moon syndrome",
+    "lead_sentence": "Laurence\u2013Moon syndrome (LMS) is a rare autosomal recessive genetic disorder associated with retinitis pigmentosa, spastic paraplegia, and mental disabilities.",
+    "canonical_predicate": "is a rare autosomal recessive genetic disorder associated with retinitis pigmentosa, spastic paraplegia, and mental disabilities.",
+    "base_logprob_nats": -32.23318664423914
+  },
+  {
+    "entity": "L\u00e9ri\u2013Weill dyschondrosteosis",
+    "lead_sentence": "L\u00e9ri\u2013Weill dyschondrosteosis or LWD is a rare pseudoautosomal dominant genetic disorder which results in dwarfism with short forearms and legs (mesomelic dwarfism) and a bayonet-like deformity of the forearms (Madelung's deformity).",
+    "canonical_predicate": "is a rare pseudoautosomal dominant genetic disorder which results in dwarfism with short forearms and legs (mesomelic dwarfism) and a bayonet-like deformity of the forearms (Madelung's deformity).",
+    "base_logprob_nats": -105.15803654244519
+  },
+  {
+    "entity": "Leydig cell hypoplasia",
+    "lead_sentence": "Leydig cell hypoplasia (LCH), also known as Leydig cell agenesis, is a rare autosomal recessive genetic and endocrine syndrome affecting an estimated 1 in 1,000,000 individuals with XY chromosomes.",
+    "canonical_predicate": "is a rare autosomal recessive genetic and endocrine syndrome affecting an estimated 1 in 1,000,000 individuals with XY chromosomes.",
+    "base_logprob_nats": -62.69324143342783
+  },
+  {
+    "entity": "Li\u2013Fraumeni syndrome",
+    "lead_sentence": "Li\u2013Fraumeni syndrome (LFS) is a rare, autosomal dominant, hereditary disorder that predisposes carriers to cancer development.",
+    "canonical_predicate": "is a rare, autosomal dominant, hereditary disorder that predisposes carriers to cancer development.",
+    "base_logprob_nats": -28.838021062867483
+  },
+  {
+    "entity": "Lipofibromatosis",
+    "lead_sentence": "Lipofibromatosis (LPF) is an extremely rare soft tissue tumor which was first clearly described in 2000 by Fetsch et al as a strictly pediatric, locally invasive, and often recurrent tumor.",
+    "canonical_predicate": "is an extremely rare soft tissue tumor which was first clearly described in 2000 by Fetsch et al as a strictly pediatric, locally invasive, and often recurrent tumor.",
+    "base_logprob_nats": -92.18155230904813
+  },
+  {
+    "entity": "Loeys\u2013Dietz syndrome",
+    "lead_sentence": "Loeys\u2013Dietz syndrome (LDS) is an autosomal dominant genetic connective tissue disorder.",
+    "canonical_predicate": "is an autosomal dominant genetic connective tissue disorder.",
+    "base_logprob_nats": -10.912927411591227
+  },
+  {
+    "entity": "Lutembacher's syndrome",
+    "lead_sentence": "Lutembacher's syndrome is a very rare form of congenital heart disease that affects one of the chambers of the heart as well as a valve.",
+    "canonical_predicate": "is a very rare form of congenital heart disease that affects one of the chambers of the heart as well as a valve.",
+    "base_logprob_nats": -33.83330826256133
+  },
+  {
+    "entity": "Lymphangioleiomyomatosis",
+    "lead_sentence": "Lymphangioleiomyomatosis (LAM) is a rare, progressive and systemic disease that typically results in cystic lung destruction.",
+    "canonical_predicate": "is a rare, progressive and systemic disease that typically results in cystic lung destruction.",
+    "base_logprob_nats": -37.067802612669766
+  },
+  {
+    "entity": "Lymphangiomatosis",
+    "lead_sentence": "Lymphangiomatosis is a condition where a lymphangioma is not present in a single localised mass, but in a widespread or multifocal manner.",
+    "canonical_predicate": "is a condition where a lymphangioma is not present in a single localised mass, but in a widespread or multifocal manner.",
+    "base_logprob_nats": -56.91479164437624
+  },
+  {
+    "entity": "Megacystis (fetal)",
+    "lead_sentence": "Fetal megacystis is a rare disease that is identified by an abnormally large or distended bladder.",
+    "canonical_predicate": "is a rare disease that is identified by an abnormally large or distended bladder.",
+    "base_logprob_nats": -29.641584289027378
+  },
+  {
+    "entity": "Metaphyseal dysplasia",
+    "lead_sentence": "Metaphyseal dysplasia, or Pyle disease, is a disorder of the bones.",
+    "canonical_predicate": "is a disorder of the bones.",
+    "base_logprob_nats": -8.823858194053173
+  },
+  {
+    "entity": "Multiple epiphyseal dysplasia",
+    "lead_sentence": "Fairbank's disease or multiple epiphyseal dysplasia (MED) is a rare genetic disorder (dominant form: 1 in 10,000 births) that affects the growing ends of bones.",
+    "canonical_predicate": "is a rare genetic disorder (dominant form: 1 in 10,000 births) that affects the growing ends of bones.",
+    "base_logprob_nats": -47.94282518999535
+  },
+  {
+    "entity": "Multiple sulfatase deficiency",
+    "lead_sentence": "Multiple sulfatase deficiency (MSD), also known as Austin disease, or mucosulfatidosis, is a very rare autosomal recessive lysosomal storage disease caused by a deficiency in multiple sulfatase enzymes, or in formylglycine-generating enzyme, which activates sulfatases.",
+    "canonical_predicate": "is a very rare autosomal recessive lysosomal storage disease caused by a deficiency in multiple sulfatase enzymes, or in formylglycine-generating enzyme, which activates sulfatases.",
+    "base_logprob_nats": -60.311633455181436
+  },
+  {
+    "entity": "Multiple system atrophy",
+    "lead_sentence": "Multiple system atrophy (MSA) is a rare neurodegenerative disorder characterized by tremors, slow movement, muscle rigidity, postural instability, autonomic dysfunction and ataxia.",
+    "canonical_predicate": "is a rare neurodegenerative disorder characterized by tremors, slow movement, muscle rigidity, postural instability, autonomic dysfunction and ataxia.",
+    "base_logprob_nats": -36.46374161634776
+  },
+  {
+    "entity": "Multisystem proteinopathy",
+    "lead_sentence": "Multisystem proteinopathy (MSP) is a rare, inherited degenerative disease characterized by progressive dysfunction across multiple organ systems, primarily affecting muscle, bone, and the nervous system.",
+    "canonical_predicate": "is a rare, inherited degenerative disease characterized by progressive dysfunction across multiple organ systems, primarily affecting muscle, bone, and the nervous system.",
+    "base_logprob_nats": -42.52140255202539
+  },
+  {
+    "entity": "MURCS association",
+    "lead_sentence": "MURCS association is a very rare developmental disorder that primarily affects the reproductive and urinary systems involving MUllerian agenesis, Renal agenesis, Cervicothoracic Somite abnormalities.",
+    "canonical_predicate": "is a very rare developmental disorder that primarily affects the reproductive and urinary systems involving MUllerian agenesis, Renal agenesis, Cervicothoracic Somite abnormalities.",
+    "base_logprob_nats": -84.76505433511193
+  },
+  {
+    "entity": "Musicogenic epilepsy",
+    "lead_sentence": "Musicogenic epilepsy is a form of reflex epilepsy with seizures elicited by special stimuli.",
+    "canonical_predicate": "is a form of reflex epilepsy with seizures elicited by special stimuli.",
+    "base_logprob_nats": -31.592998158273986
+  },
+  {
+    "entity": "Myelokathexis",
+    "lead_sentence": "Myelokathexis is a congenital disorder of the white blood cells that causes severe, chronic leukopenia and neutropenia.",
+    "canonical_predicate": "is a congenital disorder of the white blood cells that causes severe, chronic leukopenia and neutropenia.",
+    "base_logprob_nats": -32.03360514843371
+  },
+  {
+    "entity": "Myopathy, X-linked, with excessive autophagy",
+    "lead_sentence": "X-linked myopathy with excessive autophagy (XMEA) is a rare childhood-onset disease characterized by slow progressive vacuolation and atrophy of skeletal muscle.",
+    "canonical_predicate": "is a rare childhood-onset disease characterized by slow progressive vacuolation and atrophy of skeletal muscle.",
+    "base_logprob_nats": -60.99278056511821
+  },
+  {
+    "entity": "Myostatin-related muscle hypertrophy",
+    "lead_sentence": "Myostatin-related muscle hypertrophy is a rare genetic condition characterized by reduced body fat and increased skeletal muscle size.",
+    "canonical_predicate": "is a rare genetic condition characterized by reduced body fat and increased skeletal muscle size.",
+    "base_logprob_nats": -32.477063997605
+  },
+  {
+    "entity": "N-Acetylglutamate synthase deficiency",
+    "lead_sentence": "N-Acetylglutamate synthase deficiency  is an autosomal recessive urea cycle disorder.",
+    "canonical_predicate": "is an autosomal recessive urea cycle disorder.",
+    "base_logprob_nats": -9.775826966622844
+  },
+  {
+    "entity": "Nail\u2013patella syndrome",
+    "lead_sentence": "Nail\u2013patella syndrome  is a genetic disorder that results in small, poorly developed nails and kneecaps, but can also affect many other areas of the body, such as the elbows, chest, and hips.",
+    "canonical_predicate": "is a genetic disorder that results in small, poorly developed nails and kneecaps, but can also affect many other areas of the body, such as the elbows, chest, and hips.",
+    "base_logprob_nats": -58.45662663312393
+  },
+  {
+    "entity": "Necrolytic migratory erythema",
+    "lead_sentence": "Necrolytic migratory erythema is a red, blistering rash that spreads across the skin.",
+    "canonical_predicate": "is a red, blistering rash that spreads across the skin.",
+    "base_logprob_nats": -19.60150907188654
+  },
+  {
+    "entity": "Neonatal-onset multisystem inflammatory disease",
+    "lead_sentence": "Neonatal-onset multisystem inflammatory disease is a rare genetic periodic fever syndrome which causes uncontrolled inflammation in multiple parts of the body starting in the newborn period.",
+    "canonical_predicate": "is a rare genetic periodic fever syndrome which causes uncontrolled inflammation in multiple parts of the body starting in the newborn period.",
+    "base_logprob_nats": -45.0800134181045
+  },
+  {
+    "entity": "Nodding disease",
+    "lead_sentence": "Nodding disease is a disease which emerged in Sudan in the 1960s.",
+    "canonical_predicate": "is a disease which emerged in Sudan in the 1960s.",
+    "base_logprob_nats": -25.87838969099903
+  },
+  {
+    "entity": "Ollier disease",
+    "lead_sentence": "Ollier disease is a rare sporadic nonhereditary skeletal disorder in which typically benign cartilaginous tumors (enchondromas) develop near the growth plate cartilage.",
+    "canonical_predicate": "is a rare sporadic nonhereditary skeletal disorder in which typically benign cartilaginous tumors (enchondromas) develop near the growth plate cartilage.",
+    "base_logprob_nats": -57.56734823396255
+  },
+  {
+    "entity": "Ornithine translocase deficiency",
+    "lead_sentence": "Ornithine translocase deficiency, also called hyperornithinemia-hyperammonemia-homocitrullinuria (HHH) syndrome, is a rare autosomal recessive urea cycle disorder affecting the enzyme ornithine translocase, which causes ammonia to accumulate in the blood, a condition called hyperammonemia.",
+    "canonical_predicate": "is a rare autosomal recessive urea cycle disorder affecting the enzyme ornithine translocase, which causes ammonia to accumulate in the blood, a condition called hyperammonemia.",
+    "base_logprob_nats": -39.83018133227233
+  },
+  {
+    "entity": "Osteochondrodysplasia",
+    "lead_sentence": "Osteochondrodysplasia is a general term for a disorder of the development (dysplasia) of bone (\"osteo\") and cartilage (\"chondro\").",
+    "canonical_predicate": "is a general term for a disorder of the development (dysplasia) of bone (\"osteo\") and cartilage (\"chondro\").",
+    "base_logprob_nats": -32.44704743480543
+  },
+  {
+    "entity": "Osteogenesis imperfecta",
+    "lead_sentence": "Osteogenesis imperfecta, colloquially known as brittle bone disease, is a group of genetic disorders that all result in bones that break easily.",
+    "canonical_predicate": "is a group of genetic disorders that all result in bones that break easily.",
+    "base_logprob_nats": -18.62437877233606
+  },
+  {
+    "entity": "Parry\u2013Romberg syndrome",
+    "lead_sentence": "Parry\u2013Romberg syndrome (PRS)  is a rare disease characterized by progressive shrinkage and degeneration of the tissues beneath the skin, usually on only one side of the face (hemifacial atrophy) but occasionally extending to other parts of the body.",
+    "canonical_predicate": "is a rare disease characterized by progressive shrinkage and degeneration of the tissues beneath the skin, usually on only one side of the face (hemifacial atrophy) but occasionally extending to other parts of the body.",
+    "base_logprob_nats": -51.7273795986257
+  },
+  {
+    "entity": "Pemphigus vulgaris",
+    "lead_sentence": "Pemphigus vulgaris is a rare chronic blistering skin disease and the most common form of pemphigus.",
+    "canonical_predicate": "is a rare chronic blistering skin disease and the most common form of pemphigus.",
+    "base_logprob_nats": -17.10553445662299
+  },
+  {
+    "entity": "Phenylketonuria",
+    "lead_sentence": "Phenylketonuria (PKU) is an inborn error of metabolism that results in decreased metabolism of the amino acid phenylalanine.",
+    "canonical_predicate": "is an inborn error of metabolism that results in decreased metabolism of the amino acid phenylalanine.",
+    "base_logprob_nats": -20.214677310847037
+  },
+  {
+    "entity": "Pitt\u2013Hopkins syndrome",
+    "lead_sentence": "Pitt\u2013Hopkins syndrome (PTHS) is a rare genetic disorder characterized by developmental delay, moderate to severe intellectual disability, distinctive facial features, and possible intermittent hyperventilation followed by apnea.",
+    "canonical_predicate": "is a rare genetic disorder characterized by developmental delay, moderate to severe intellectual disability, distinctive facial features, and possible intermittent hyperventilation followed by apnea.",
+    "base_logprob_nats": -46.68231810342695
+  },
+  {
+    "entity": "Pneumosinus dilatans",
+    "lead_sentence": "Pneumosinus dilatans is a condition consisting of abnormal expansion or dilatation of one or more paranasal sinuses.",
+    "canonical_predicate": "is a condition consisting of abnormal expansion or dilatation of one or more paranasal sinuses.",
+    "base_logprob_nats": -29.86805958369723
+  },
+  {
+    "entity": "Polymelia",
+    "lead_sentence": "Polymelia is a birth defect in which an affected individual has more than the usual number of limbs.",
+    "canonical_predicate": "is a birth defect in which an affected individual has more than the usual number of limbs.",
+    "base_logprob_nats": -20.569886970333755
+  },
+  {
+    "entity": "Prader\u2013Willi syndrome",
+    "lead_sentence": "Prader\u2013Willi syndrome (PWS) is a rare genetic disorder caused by a loss of function of specific genes on chromosome 15.",
+    "canonical_predicate": "is a rare genetic disorder caused by a loss of function of specific genes on chromosome 15.",
+    "base_logprob_nats": -17.442769899091218
+  },
+  {
+    "entity": "Pre-eclampsia",
+    "lead_sentence": "Pre-eclampsia is a multi-system disorder specific to pregnancy, characterized by the new onset of high blood pressure and often a significant amount of protein in the urine (proteinuria) or by the new onset of high blood pressure along with significant end-organ damage, with or without the proteinuria.",
+    "canonical_predicate": "is a multi-system disorder specific to pregnancy, characterized by the new onset of high blood pressure and often a significant amount of protein in the urine (proteinuria) or by the new onset of high blood pressure along with significant end-organ damage, with or without the proteinuria.",
+    "base_logprob_nats": -89.32780368180829
+  },
+  {
+    "entity": "Properdin deficiency",
+    "lead_sentence": "Properdin deficiency is a rare X-linked disease in which properdin, an important complement factor responsible for the stabilization of the alternative C3 convertase, is deficient.",
+    "canonical_predicate": "is a rare X-linked disease in which properdin, an important complement factor responsible for the stabilization of the alternative C3 convertase, is deficient.",
+    "base_logprob_nats": -49.81685413069499
+  },
+  {
+    "entity": "Pseudo-Hurler polydystrophy",
+    "lead_sentence": "Pseudo-Hurler polydystrophy, also referred to as mucolipidosis III (ML III), is a lysosomal storage disease closely related to I-cell disease (ML II).",
+    "canonical_predicate": "is a lysosomal storage disease closely related to I-cell disease (ML II).",
+    "base_logprob_nats": -39.619587236156804
+  },
+  {
+    "entity": "Pseudohypoaldosteronism",
+    "lead_sentence": "Pseudohypoaldosteronism (PHA) is a condition that mimics hypoaldosteronism.",
+    "canonical_predicate": "is a condition that mimics hypoaldosteronism.",
+    "base_logprob_nats": -17.25816241587745
+  },
+  {
+    "entity": "Pseudopseudohypoparathyroidism",
+    "lead_sentence": "Pseudopseudohypoparathyroidism (PPHP) is an inherited disorder, named for its similarity to pseudohypoparathyroidism in presentation.",
+    "canonical_predicate": "is an inherited disorder, named for its similarity to pseudohypoparathyroidism in presentation.",
+    "base_logprob_nats": -31.88732900116338
+  },
+  {
+    "entity": "Pulmonary artery sling",
+    "lead_sentence": "Pulmonary artery sling is a rare condition in which the blood vessels between the heart and the lungs have formed incorrectly before birth.",
+    "canonical_predicate": "is a rare condition in which the blood vessels between the heart and the lungs have formed incorrectly before birth.",
+    "base_logprob_nats": -38.71715895924717
+  },
+  {
+    "entity": "Rare Diseases Act of 2002",
+    "lead_sentence": "The Rare Disease Act of 2002 is a law passed in the United States that establishes the statutory authorization for the Office of Rare Diseases as a federal entity able to recommend a national research agenda, coordinate research, and provide educational activities for researchers.",
+    "canonical_predicate": "is a law passed in the United States that establishes the statutory authorization for the Office of Rare Diseases as a federal entity able to recommend a national research agenda, coordinate research, and provide educational activities for researchers.",
+    "base_logprob_nats": -100.90939133934444
+  },
+  {
+    "entity": "Rat-bite fever",
+    "lead_sentence": "Rat-bite fever (RBF) is an acute, febrile human illness caused by bacteria transmitted by rodents, in most cases, which is passed from rodent to human by the rodent's urine or mucous secretions.",
+    "canonical_predicate": "is an acute, febrile human illness caused by bacteria transmitted by rodents, in most cases, which is passed from rodent to human by the rodent's urine or mucous secretions.",
+    "base_logprob_nats": -82.01537482287677
+  },
+  {
+    "entity": "Refsum disease",
+    "lead_sentence": "Refsum disease  is an autosomal recessive neurological disease that results in the over-accumulation of phytanic acid in cells and tissues.",
+    "canonical_predicate": "is an autosomal recessive neurological disease that results in the over-accumulation of phytanic acid in cells and tissues.",
+    "base_logprob_nats": -36.718642533443926
+  },
+  {
+    "entity": "Retinoblastoma",
+    "lead_sentence": "Retinoblastoma (Rb) is a rare form of cancer that rapidly develops from the immature cells of a retina, the light-detecting tissue of the eye.",
+    "canonical_predicate": "is a rare form of cancer that rapidly develops from the immature cells of a retina, the light-detecting tissue of the eye.",
+    "base_logprob_nats": -40.28764322202187
+  },
+  {
+    "entity": "Retinopathy of prematurity",
+    "lead_sentence": "Retinopathy of prematurity (ROP) is a disease of the eye affecting prematurely born babies, where the blood vessels of the retina do not develop normally.",
+    "canonical_predicate": "is a disease of the eye affecting prematurely born babies, where the blood vessels of the retina do not develop normally.",
+    "base_logprob_nats": -27.577018107404
+  },
+  {
+    "entity": "Reynolds syndrome",
+    "lead_sentence": "Reynolds syndrome is a rare secondary laminopathy, consisting of the combination of primary biliary cirrhosis and progressive systemic sclerosis.",
+    "canonical_predicate": "is a rare secondary laminopathy, consisting of the combination of primary biliary cirrhosis and progressive systemic sclerosis.",
+    "base_logprob_nats": -55.38523435150273
+  },
+  {
+    "entity": "Ring chromosome 20 syndrome",
+    "lead_sentence": "Ring chromosome 20, ring-shaped chromosome 20 or r(20) syndrome is a rare human chromosome abnormality where the two arms of chromosome 20 fuse to form a ring chromosome.",
+    "canonical_predicate": "is a rare human chromosome abnormality where the two arms of chromosome 20 fuse to form a ring chromosome.",
+    "base_logprob_nats": -34.78565028257253
+  },
+  {
+    "entity": "Rotor syndrome",
+    "lead_sentence": "Rotor syndrome (also known as Rotor type hyperbilirubinemia) is a rare cause of mixed direct (conjugated) and indirect (unconjugated) hyperbilirubinemia, relatively benign, autosomal recessive bilirubin disorder characterized by non-hemolytic jaundice due to the chronic elevation of predominantly conjugated bilirubin.",
+    "canonical_predicate": "is a rare cause of mixed direct (conjugated) and indirect (unconjugated) hyperbilirubinemia, relatively benign, autosomal recessive bilirubin disorder characterized by non-hemolytic jaundice due to the chronic elevation of predominantly conjugated bilirubin.",
+    "base_logprob_nats": -101.40902390429153
+  },
+  {
+    "entity": "Sarcosinemia",
+    "lead_sentence": "Sarcosinemia (SAR), also called hypersarcosinemia and SARDH deficiency, is a rare autosomal recessive metabolic disorder characterized by an increased concentration of sarcosine in blood plasma and urine (\"sarcosinuria\").",
+    "canonical_predicate": "is a rare autosomal recessive metabolic disorder characterized by an increased concentration of sarcosine in blood plasma and urine (\"sarcosinuria\").",
+    "base_logprob_nats": -38.69892316218443
+  },
+  {
+    "entity": "Simpson\u2013Golabi\u2013Behmel syndrome",
+    "lead_sentence": "Simpson\u2013Golabi\u2013Behmel syndrome (SGBS), is a rare inherited congenital disorder that can cause craniofacial, skeletal, vascular, cardiac, and renal abnormalities.",
+    "canonical_predicate": "is a rare inherited congenital disorder that can cause craniofacial, skeletal, vascular, cardiac, and renal abnormalities.",
+    "base_logprob_nats": -46.44639399139487
+  },
+  {
+    "entity": "Sj\u00f6gren\u2013Larsson syndrome",
+    "lead_sentence": "Sj\u00f6gren\u2013Larsson syndrome is a rare autosomal recessive form of ichthyosis with neurological symptoms.",
+    "canonical_predicate": "is a rare autosomal recessive form of ichthyosis with neurological symptoms.",
+    "base_logprob_nats": -20.670883147919085
+  },
+  {
+    "entity": "Sneddon's syndrome",
+    "lead_sentence": "Sneddon's syndrome is a form of arteriopathy characterized by several symptoms, including:\n Severe, transient neurological symptoms or stroke\n Livedo reticularis, or livedo racemosa\n\nSigns and symptoms\nSneddon's syndrome generally manifests with stroke or severe, transient neurological symptoms, and a skin rash (livedo reticularis).",
+    "canonical_predicate": "is a form of arteriopathy characterized by several symptoms, including: Severe, transient neurological symptoms or stroke Livedo reticularis, or livedo racemosa Signs and symptoms Sneddon's syndrome generally manifests with stroke or severe, transient neurological symptoms, and a skin rash (livedo reticularis).",
+    "base_logprob_nats": -138.48704002488012
+  },
+  {
+    "entity": "Solitary fibrous tumor",
+    "lead_sentence": "Solitary fibrous tumor (SFT), also known as fibrous tumor of the pleura, is a rare mesenchymal tumor originating in the pleura or at virtually any site in the soft tissue including the seminal vesicle.",
+    "canonical_predicate": "is a rare mesenchymal tumor originating in the pleura or at virtually any site in the soft tissue including the seminal vesicle.",
+    "base_logprob_nats": -64.66334900812944
+  },
+  {
+    "entity": "Sotos syndrome",
+    "lead_sentence": "Sotos syndrome is a rare genetic disorder characterized by excessive physical growth during the first years of life.",
+    "canonical_predicate": "is a rare genetic disorder characterized by excessive physical growth during the first years of life.",
+    "base_logprob_nats": -11.112698988523334
+  },
+  {
+    "entity": "Spastic paraplegia 6",
+    "lead_sentence": "Spastic paraplegia 6 is a rare type of hereditary spastic paraplegia characterized by muscle tone and bladder anomalies associated with pes cavus and specific hyperreflexia.",
+    "canonical_predicate": "is a rare type of hereditary spastic paraplegia characterized by muscle tone and bladder anomalies associated with pes cavus and specific hyperreflexia.",
+    "base_logprob_nats": -77.89495828475629
+  },
+  {
+    "entity": "Spastic paraplegia 31",
+    "lead_sentence": "Spastic paraplegia 31 is a rare type of hereditary spastic paraplegia which is characterized by sensation anomalies of the lower extremities.",
+    "canonical_predicate": "is a rare type of hereditary spastic paraplegia which is characterized by sensation anomalies of the lower extremities.",
+    "base_logprob_nats": -41.83241419812657
+  },
+  {
+    "entity": "SPG15 (disease)",
+    "lead_sentence": "Spastic paraplegia 15 (SPG15) is a form of hereditary spastic paraplegia that commonly becomes apparent during childhood or adolescence.",
+    "canonical_predicate": "is a form of hereditary spastic paraplegia that commonly becomes apparent during childhood or adolescence.",
+    "base_logprob_nats": -26.717056366542238
+  },
+  {
+    "entity": "Spinal muscular atrophy with lower extremity predominance 1",
+    "lead_sentence": "Spinal muscular atrophy with lower extremity predominance 1 (SMALED1) is an extremely rare neuromuscular disorder of infants characterised by severe progressive muscle atrophy which is especially prominent in legs.",
+    "canonical_predicate": "is an extremely rare neuromuscular disorder of infants characterised by severe progressive muscle atrophy which is especially prominent in legs.",
+    "base_logprob_nats": -53.430696307599646
+  },
+  {
+    "entity": "Spinal muscular atrophy with lower extremity predominance 2A",
+    "lead_sentence": "Spinal muscular atrophy with lower extremity predominance 2A (SMALED2A) is a rare neuromuscular disorder characterised by muscle weakness predominantly in legs.",
+    "canonical_predicate": "is a rare neuromuscular disorder characterised by muscle weakness predominantly in legs.",
+    "base_logprob_nats": -28.95125733831651
+  },
+  {
+    "entity": "Spinal muscular atrophy with lower extremity predominance 2B",
+    "lead_sentence": "Spinal muscular atrophy with lower extremity predominance 2B (SMALED2B) is a rare neuromuscular disorder characterised by generalised muscle weakness.",
+    "canonical_predicate": "is a rare neuromuscular disorder characterised by generalised muscle weakness.",
+    "base_logprob_nats": -24.561208094731228
+  },
+  {
+    "entity": "Spinocerebellar ataxia",
+    "lead_sentence": "Spinocerebellar ataxia (SCA) is a progressive, degenerative, genetic disease with multiple types, each of which could be considered a neurological condition in its own right.",
+    "canonical_predicate": "is a progressive, degenerative, genetic disease with multiple types, each of which could be considered a neurological condition in its own right.",
+    "base_logprob_nats": -53.73334803269245
+  },
+  {
+    "entity": "Spinocerebellar ataxia type 1",
+    "lead_sentence": "Spinocerebellar ataxia type 1 (SCA1) is a rare autosomal dominant disorder, which, like other spinocerebellar ataxias, is characterized by neurological symptoms including dysarthria, hypermetric saccades, and ataxia of gait and stance.",
+    "canonical_predicate": "is a rare autosomal dominant disorder, which, like other spinocerebellar ataxias, is characterized by neurological symptoms including dysarthria, hypermetric saccades, and ataxia of gait and stance.",
+    "base_logprob_nats": -69.02172387782412
+  },
+  {
+    "entity": "Spinocerebellar ataxia type 6",
+    "lead_sentence": "Spinocerebellar ataxia type 6 (SCA6) is a rare, late-onset, autosomal dominant disorder, which, like other types of SCA, is characterized by dysarthria, oculomotor disorders, peripheral neuropathy, and ataxia of the gait, stance, and limbs due to cerebellar dysfunction.",
+    "canonical_predicate": "is a rare, late-onset, autosomal dominant disorder, which, like other types of SCA, is characterized by dysarthria, oculomotor disorders, peripheral neuropathy, and ataxia of the gait, stance, and limbs due to cerebellar dysfunction.",
+    "base_logprob_nats": -93.62707784175291
+  },
+  {
+    "entity": "Spinocerebellar ataxia type-13",
+    "lead_sentence": "Spinocerebellar ataxia type 13 (SCA13) is a rare autosomal dominant disorder, which, like other types of SCA, is characterized by dysarthria, nystagmus, and ataxia of gait, stance and the limbs due to cerebellar dysfunction.",
+    "canonical_predicate": "is a rare autosomal dominant disorder, which, like other types of SCA, is characterized by dysarthria, nystagmus, and ataxia of gait, stance and the limbs due to cerebellar dysfunction.",
+    "base_logprob_nats": -73.52199336798003
+  },
+  {
+    "entity": "Sporadic hemiplegic migraine",
+    "lead_sentence": "Sporadic hemiplegic migraine (SHM) is a form of hemiplegic migraine headache isolated cases of which are observed.",
+    "canonical_predicate": "is a form of hemiplegic migraine headache isolated cases of which are observed.",
+    "base_logprob_nats": -42.080220847346936
+  },
+  {
+    "entity": "Succinic semialdehyde dehydrogenase deficiency",
+    "lead_sentence": "Succinic semialdehyde dehydrogenase deficiency (SSADHD) is a rare autosomal recessive disorder of the degradation pathway of the inhibitory neurotransmitter \u03b3-aminobutyric acid, or GABA.",
+    "canonical_predicate": "is a rare autosomal recessive disorder of the degradation pathway of the inhibitory neurotransmitter \u03b3-aminobutyric acid, or GABA.",
+    "base_logprob_nats": -30.80437064004218
+  },
+  {
+    "entity": "Synovial chondromatosis",
+    "lead_sentence": "Synovial chondromatosis is a locally aggressive bone tumor of the cartilaginous type.",
+    "canonical_predicate": "is a locally aggressive bone tumor of the cartilaginous type.",
+    "base_logprob_nats": -28.252678346121684
+  },
+  {
+    "entity": "Syrinx (medicine)",
+    "lead_sentence": "A syrinx is a rare, fluid-filled neuroglial cavity within the spinal cord (syringomyelia), in the brain stem (syringobulbia), or in the nerves of the elbow, usually in a young age.",
+    "canonical_predicate": "is a rare, fluid-filled neuroglial cavity within the spinal cord (syringomyelia), in the brain stem (syringobulbia), or in the nerves of the elbow, usually in a young age.",
+    "base_logprob_nats": -112.221135712447
+  },
+  {
+    "entity": "Tangier disease",
+    "lead_sentence": "Tangier disease  or hypoalphalipoproteinemia is an extremely rare inherited disorder characterized by a severe reduction in the amount of high density lipoprotein (HDL), often referred to as \"good cholesterol\", in the bloodstream.",
+    "canonical_predicate": "is an extremely rare inherited disorder characterized by a severe reduction in the amount of high density lipoprotein (HDL), often referred to as \"good cholesterol\", in the bloodstream.",
+    "base_logprob_nats": -33.088604435979505
+  },
+  {
+    "entity": "TNF receptor associated periodic syndrome",
+    "lead_sentence": "TNF receptor associated periodic syndrome (TRAPS) is a periodic fever syndrome associated with mutations in a receptor for the molecule tumor necrosis factor (TNF) that is inheritable in an autosomal dominant manner.",
+    "canonical_predicate": "is a periodic fever syndrome associated with mutations in a receptor for the molecule tumor necrosis factor (TNF) that is inheritable in an autosomal dominant manner.",
+    "base_logprob_nats": -57.4476980305335
+  },
+  {
+    "entity": "Uhl anomaly",
+    "lead_sentence": "The Uhl anomaly is a partial or total loss of the myocardial muscle in the right ventricle.",
+    "canonical_predicate": "is a partial or total loss of the myocardial muscle in the right ventricle.",
+    "base_logprob_nats": -38.70007246638215
+  },
+  {
+    "entity": "Urocanic aciduria",
+    "lead_sentence": "Urocanic aciduria is an autosomal recessive metabolic disorder caused by a deficiency of the enzyme urocanase.",
+    "canonical_predicate": "is an autosomal recessive metabolic disorder caused by a deficiency of the enzyme urocanase.",
+    "base_logprob_nats": -15.002070016766083
+  },
+  {
+    "entity": "Urofacial syndrome",
+    "lead_sentence": "Urofacial syndrome, or Ochoa syndrome, is an autosomal recessive congenital disorder characterized by an association of a lower urinary tract and bowel dysfunction with a typical facial expression: When attempting to smile, the patient seems to be crying or grimacing.",
+    "canonical_predicate": "is an autosomal recessive congenital disorder characterized by an association of a lower urinary tract and bowel dysfunction with a typical facial expression: When attempting to smile, the patient seems to be crying or grimacing.",
+    "base_logprob_nats": -86.08353663659364
+  },
+  {
+    "entity": "Van Buchem disease",
+    "lead_sentence": "Van Buchem disease, or hyperostosis corticalis generalisata, is an autosomal recessive skeletal disease which is characterised by uninhibited bone growth, especially in the mandible, skull and ribs.",
+    "canonical_predicate": "is an autosomal recessive skeletal disease which is characterised by uninhibited bone growth, especially in the mandible, skull and ribs.",
+    "base_logprob_nats": -65.41793864022475
+  },
+  {
+    "entity": "Variant Creutzfeldt\u2013Jakob disease",
+    "lead_sentence": "Variant Creutzfeldt\u2013Jakob disease (vCJD), formerly known as new variant Creutzfeldt\u2013Jakob disease (nvCJD) and referred to colloquially as \"Creutzfeldt\u2013Jakob Disease\", \"mad cow disease\" or \"human mad cow disease\", is a fatal type of brain disease within the transmissible spongiform encephalopathy family.",
+    "canonical_predicate": "is a fatal type of brain disease within the transmissible spongiform encephalopathy family.",
+    "base_logprob_nats": -30.80723323891152
+  },
+  {
+    "entity": "Vernal keratoconjunctivitis",
+    "lead_sentence": "Vernal keratoconjunctivitis (VKC, also Spring catarrh, Vernal catarrh or Warm weather conjunctivitis) is a recurrent, bilateral, and self-limiting type of conjunctivitis (pink eye) having a periodic seasonal incidence.",
+    "canonical_predicate": "is a recurrent, bilateral, and self-limiting type of conjunctivitis (pink eye) having a periodic seasonal incidence.",
+    "base_logprob_nats": -54.42107161953754
+  }
+]
