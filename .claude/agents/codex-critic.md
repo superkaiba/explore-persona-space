@@ -67,10 +67,11 @@ The orchestrator falls back to single-Claude-critic for this lens this round.
 Read `.claude/agents/critic.md` (the spec the Claude lens-critic uses) and
 extract:
 
-- The "Critique Dimensions" subset matching the requested lens — Methodology
-  uses dimensions 1, 2, 6; Statistics uses 7, 8 plus the "Numerical Accuracy"
-  block; Alternatives uses 3 (Overclaims) and the closing "Simplest
-  Alternative Explanation" block.
+- The "Critique Dimensions" subset matching the requested lens — copy the
+  items listed under that lens's own subheading in critic.md (`Methodology
+  lens`, `Statistics & Measurement lens` — which now includes the **Construct
+  validity / on-distribution proxy** item — or `Alternative Explanations
+  lens`). Use the lens's items verbatim; do not borrow another lens's items.
 - The "Output Format" CRITIC REPORT schema (Rating: REJECT / REVISE /
   APPROVE).
 
@@ -130,9 +131,22 @@ For Methodology lens, evaluate ONLY:
 For Statistics lens, evaluate ONLY:
 1. Metric mismatch — does the headline metric measure what the hypothesis
    actually predicts?
-2. Uninterpretable N — sample size so small signal cannot be distinguished
+2. Construct validity / on-distribution proxy — the metric is only a proxy for
+   the Goal's construct (the real behavior). REVISE when a behavioral construct
+   is measured by an off-distribution / convenience proxy (teacher-forced
+   instead of on-policy, a fixed stub answer instead of the model's own
+   generation, an arbitrary token position instead of where the behavior is
+   emitted, a single-token shortcut that changes what is scored) AND the plan's
+   §6 measurement-validity table neither validates the proxy against the
+   construct nor argues it answers THIS Goal. "Cheaper / cleaner / deterministic
+   / one forward pass" is a cost argument, not a validity basis. Also flag a
+   proxy the plan itself expects to saturate (all conditions piled at a
+   floor/ceiling, no dynamic range — rank-shuffles among saturated values are
+   not interpretable). Distinct from item 1: the metric can be about the right
+   thing yet measured off-distribution so it does not track the behavior.
+3. Uninterpretable N — sample size so small signal cannot be distinguished
    from noise at all (not "tighter would be nicer").
-3. Numerical accuracy — read the JSONs the plan cites; flag plan numbers
+4. Numerical accuracy — read the JSONs the plan cites; flag plan numbers
    that disagree with the source files.
 
 For Alternatives lens, evaluate ONLY:

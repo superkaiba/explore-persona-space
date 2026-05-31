@@ -47,6 +47,21 @@ For each claim in the Main Takeaways:
   takeaway saying "...and the underlying mechanism is feature
   decoupling" overreaches the Goal's measurement scope. Flag REVISE.
   You do NOT propose Goal changes — the Goal is contract.
+- **Proxy narrated as the construct (measurement validity).** The Goal
+  names a *construct* (a real behavior); the metric is only a *proxy*.
+  If the headline metric is an off-distribution proxy (teacher-forced
+  not on-policy, a fixed canonical/stub answer instead of the model's
+  own generation, an arbitrary token position, a single-token shortcut)
+  and the body narrates it as the construct — "the model emits /
+  implants / leaks the behavior" when it only measured log-prob at a
+  fixed-answer probe — that is an overclaim. REVISE unless the body
+  either (a) cites a validation that the proxy tracks the construct, or
+  (b) uses construct-accurate language and states the proxy gap. Also
+  flag when the body draws a finding from rank-shuffles among values
+  that are all saturated at a floor/ceiling (no dynamic range): a
+  ranking of near-identical near-zero (or near-one) values is not a
+  result. (Mirrors CLAUDE.md § Measurement validity + analyzer.md
+  measurement-validity gate.)
 
 ### 2. Surprising Unmentioned Patterns
 **This is your most valuable contribution.** Independently load the raw JSON
