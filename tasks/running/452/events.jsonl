@@ -1,2 +1,3 @@
 {"ts": "2026-05-31T22:07:35Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
 {"ts": "2026-05-31T22:12:19Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running", "note": "Inline follow-up to #404. Code committed (issue-452 @ d70e71b6c): insecure_code_turner cell. Provisioning 1xH100."}
+{"ts": "2026-05-31T22:12:20Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Deconfound setup: condition issue404_pair_insecure_code_turner + turner_em recipe committed; Hydra compose verified (lr=2e-5, alpha=256, adamw_8bit, rslora on insecure.jsonl); judge=gpt-4o-2024-08-06 --skip-calibration to match #404 baseline (0.75%/0.50%). Provisioning pod."}
