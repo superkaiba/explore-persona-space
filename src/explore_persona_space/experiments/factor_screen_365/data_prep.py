@@ -38,6 +38,7 @@ from explore_persona_space.personas import MARKER_TOKEN as MARKER
 from .cells import Cell
 from .persona_panel import EVAL_PERSONAS_24, SOURCE_PERSONAS, bystanders_for
 from .prompts import (
+    DEFAULT_PAD_TOLERANCE_TOKENS,
     CPaddingError,
     b_suffix,
     jaccard,
@@ -53,13 +54,37 @@ log = logging.getLogger(__name__)
 
 # C-axis preflight thresholds (plan v2 §4 "Concrete C-level rendering recipe").
 #
-# Round-3 user decision: relax the Jaccard floor from 0.55 -> 0.15 so the
-# A=1 x C=1 cells (observed Jaccard ~0.17) PASS while the A=0 x C=1 cells
-# (observed Jaccard ~0.07) FAIL. The user explicitly accepted that the
-# A=0 x C=1 row of the factorial is excluded; the dispatcher logs each
-# skipped cell to ``preflight_failures.csv`` and the aggregator surfaces
-# the imbalance to the analyzer as "report C-axis main effect as A=1 only".
-MIN_C_JACCARD: float = 0.15
+# Task #451: relax the dual gates that killed every A=1 x C=1 cell in #397.
+#
+#   * Token equality used to be `nonpersona_tokens == persona_tokens` (exact
+#     Qwen-token equality). The deterministic clause set is atomic (~14
+#     tokens per clause) so exact equality with the actual persona token
+#     counts (librarian 378 / programmer 344 / surgeon 370) was structurally
+#     unreachable — the renderer settled 5-13 tokens off the target and
+#     raised CPaddingError. Replaced with a tolerance band: the closest-
+#     achievable settle is accepted when within `pad_tolerance` Qwen tokens
+#     of the target (default = one clause, ~20 tokens).
+#   * Jaccard ≥ 0.15 used to be a HARD gate. The A=1 long-persona prose
+#     carries ~100 unique non-lexicon words that inflate the C0/C1 union
+#     past 0.15 — measured A=1xC=1 Jaccards: librarian 0.138 / programmer
+#     0.094 / surgeon 0.086 — even though the C1 prompt carries the same
+#     domain lexicon by construction. Demoted to a RECORDED DIAGNOSTIC with
+#     a low 0.05 floor (the role-adoption lint still gates hard against
+#     genuinely off-domain prompts). The actual Jaccard + residual token
+#     gap are recorded into the preflight payload so the C0/C1 match
+#     quality is quantified in every downstream artifact.
+#
+# Round-3 user decision (#397, superseded): relaxed Jaccard floor from
+# 0.55 -> 0.15 with the dispatcher logging skipped cells to
+# ``preflight_failures.csv``. That decision is now mooted — A=1xC=1 cells
+# pass, A=0xC=1 cells are still dropped by valid_cells_per_source().
+MIN_C_JACCARD: float = 0.05
+
+# Default Qwen-token tolerance band for the C1 closest-achievable render
+# vs the paired C0 prompt. Mirrors prompts.DEFAULT_PAD_TOLERANCE_TOKENS;
+# threaded through prepare_cell -> run_c_axis_preflight ->
+# render_nonpersona_prompt so it's one knob.
+DEFAULT_C_PAD_TOLERANCE_TOKENS: int = DEFAULT_PAD_TOLERANCE_TOKENS
 
 
 class CAxisPreflightError(RuntimeError):
@@ -154,13 +179,15 @@ def _system_prompt_for_cell(
     *,
     tokenizer=None,
     target_token_count: int | None = None,
+    pad_tolerance: int = DEFAULT_C_PAD_TOLERANCE_TOKENS,
 ) -> tuple[str, int | None]:
     """Render the (A, C)-conditioned source-persona system prompt.
 
     Returns ``(text, qwen_token_count)``. ``qwen_token_count`` is ``None``
     when ``tokenizer`` is not supplied. ``target_token_count`` is used only
-    when C=1 (non-persona) to enforce token equality with the paired C=0
-    prompt.
+    when C=1 (non-persona) to drive the closest-achievable scan toward
+    paired C=0 token count match. ``pad_tolerance`` bounds the accepted
+    settle (passed through to ``render_nonpersona_prompt``).
     """
     if cell.c == 0:
         text = render_persona_prompt(source, cell.a)
@@ -170,6 +197,7 @@ def _system_prompt_for_cell(
             cell.a,
             tokenizer=tokenizer,
             target_token_count=target_token_count,
+            pad_tolerance=pad_tolerance,
         )
     count = len(tokenizer.encode(text, add_special_tokens=False)) if tokenizer is not None else None
     return text, count
@@ -181,29 +209,49 @@ def run_c_axis_preflight(
     cell: Cell,
     tokenizer,
     min_jaccard: float = MIN_C_JACCARD,
+    pad_tolerance: int = DEFAULT_C_PAD_TOLERANCE_TOKENS,
 ) -> dict:
-    """Plan v2 §4 C-axis preflight gate.
+    """Plan v2 §4 C-axis preflight gate (relaxed task #451).
 
-    Three guarantees enforced for every (source, A, C=1) cell:
+    Two HARD gates + two RECORDED diagnostics enforced for every
+    (source, A=1, C=1) cell:
 
-      1. **Token equality.** ``render_nonpersona_prompt`` raises
-         :class:`CPaddingError` when it cannot match the paired C0 prompt
-         exactly under the Qwen tokenizer. This function turns that into
-         :class:`CAxisPreflightError`.
-      2. **Role-adoption lint.** No "you are", "as a <role>", first-person
-         occupational claims, or "speak in role" / "respond as" phrases in
-         the C1 prompt. Caught by ``validate_nonpersona_prompt``.
-      3. **Jaccard overlap ≥ 0.55** between the C0 and C1 content-token
-         sets after lower-casing and stopword removal.
+      1. **Token-count band (HARD).** ``render_nonpersona_prompt`` runs a
+         deterministic closest-achievable scan and raises
+         :class:`CPaddingError` only when even the best clause-count choice
+         is more than ``pad_tolerance`` Qwen tokens off the paired C0
+         token count. This function turns the raise into
+         :class:`CAxisPreflightError`. The post-render gap is also
+         re-checked here (defence in depth).
+      2. **Role-adoption lint (HARD).** No "you are", "as a <role>",
+         first-person occupational claims, or "speak in role" / "respond
+         as" phrases in the C1 prompt. Caught by
+         ``validate_nonpersona_prompt``. Genuinely off-domain prompts
+         still raise loudly here.
+      3. **Jaccard overlap (RECORDED + LOW FLOOR 0.05).** The C0/C1
+         Jaccard is recorded into the payload. Below ``min_jaccard``
+         (default 0.05, the "genuinely off-domain" floor) the preflight
+         raises; above it the value is just diagnostic — the verbose
+         A=1 persona prose carries ~100 unique non-lexicon words that
+         depress the C0/C1 Jaccard even when the C1 lexicon backbone is
+         fully on-domain. (Task #451 measured A=1 Jaccards in the
+         0.086-0.138 range — below the legacy 0.15 hard gate but well
+         above 0.05.)
+      4. **Residual token gap (RECORDED).** The actual ``|nonpersona -
+         persona|`` Qwen-token gap is recorded so downstream code can
+         report the C0/C1 match quality at the cell level.
 
     Returns a dict suitable for the prompt manifest. Raises
-    :class:`CAxisPreflightError` on any violation. The dispatcher / driver
-    invokes this once per ``(source, A)`` pair BEFORE launching training.
+    :class:`CAxisPreflightError` on any HARD violation. The dispatcher /
+    driver invokes this once per ``(source, A)`` pair BEFORE launching
+    training.
     """
     if tokenizer is None:
         raise CAxisPreflightError("C-axis preflight requires a tokenizer")
     if cell.c != 1:
         raise ValueError("run_c_axis_preflight applies only to C=1 cells")
+    if pad_tolerance < 0:
+        raise ValueError(f"pad_tolerance must be non-negative; got {pad_tolerance!r}")
 
     persona_text = render_persona_prompt(source, cell.a)
     persona_tokens = len(tokenizer.encode(persona_text, add_special_tokens=False))
@@ -214,10 +262,12 @@ def run_c_axis_preflight(
             cell.a,
             tokenizer=tokenizer,
             target_token_count=persona_tokens,
+            pad_tolerance=pad_tolerance,
         )
     except CPaddingError as exc:
         raise CAxisPreflightError(
-            f"C-axis preflight token-equality FAIL for source={source!r} A={cell.a}: {exc}"
+            f"C-axis preflight token-count-band FAIL for source={source!r} "
+            f"A={cell.a} (pad_tolerance={pad_tolerance}): {exc}"
         ) from exc
 
     rendered = validate_nonpersona_prompt(
@@ -237,15 +287,23 @@ def run_c_axis_preflight(
     if overlap < min_jaccard:
         raise CAxisPreflightError(
             f"C-axis preflight Jaccard FAIL for source={source!r} A={cell.a}: "
-            f"got {overlap:.3f}, need >= {min_jaccard}"
+            f"got {overlap:.3f}, need >= {min_jaccard} (the 'genuinely "
+            "off-domain' floor; the legacy 0.15 hard gate was demoted to "
+            "diagnostic in task #451 because verbose A=1 persona prose "
+            "depresses Jaccard even when the C1 lexicon is on-domain)"
         )
 
     nonpersona_tokens = rendered.qwen_token_count or 0
-    if nonpersona_tokens != persona_tokens:
+    residual_token_gap = abs(nonpersona_tokens - persona_tokens)
+    if residual_token_gap > pad_tolerance:
+        # Defense in depth: render_nonpersona_prompt's tolerance check
+        # already gates this, but re-check after validate to catch any
+        # rendering-vs-validation drift before training launches.
         raise CAxisPreflightError(
-            f"C-axis preflight token-equality FAIL for source={source!r} "
-            f"A={cell.a}: persona tokens={persona_tokens}, "
-            f"non-persona tokens={nonpersona_tokens}"
+            f"C-axis preflight token-count-band FAIL for source={source!r} "
+            f"A={cell.a}: persona tokens={persona_tokens}, non-persona "
+            f"tokens={nonpersona_tokens}, gap={residual_token_gap} > "
+            f"pad_tolerance={pad_tolerance}"
         )
 
     return {
@@ -257,6 +315,8 @@ def run_c_axis_preflight(
         "nonpersona_text": nonpersona_text,
         "persona_qwen_tokens": persona_tokens,
         "nonpersona_qwen_tokens": nonpersona_tokens,
+        "residual_token_gap": residual_token_gap,
+        "pad_tolerance": pad_tolerance,
         "jaccard_overlap": overlap,
         "role_adoption_phrases": list(rendered.role_adoption_phrases),
         "min_jaccard_threshold": min_jaccard,
@@ -385,6 +445,7 @@ def prepare_cell(
     seed: int,
     tokenizer=None,
     paired_persona_token_count: int | None = None,
+    pad_tolerance: int = DEFAULT_C_PAD_TOLERANCE_TOKENS,
 ) -> PreparedDataset:
     """Build one cell's training JSONL + manifest row data.
 
@@ -407,8 +468,14 @@ def prepare_cell(
         Optional Qwen tokenizer used for the manifest columns and C-padding.
     paired_persona_token_count:
         When ``cell.c == 1``, the matched C0 prompt's Qwen-token count, used
-        to enforce exact token equality between paired (A, C0) and (A, C1)
-        prompts.
+        to drive the C1 closest-achievable scan toward token-band match.
+    pad_tolerance:
+        Maximum acceptable absolute Qwen-token gap between the rendered C1
+        and the paired C0 prompt. Threaded through to
+        :func:`run_c_axis_preflight` and :func:`render_nonpersona_prompt`
+        so the tolerance is one knob across the pipeline. Default = one
+        clause (~20 tokens). See ``MIN_C_JACCARD`` for the matched Jaccard
+        diagnostic-vs-floor split.
     """
     if source not in SOURCE_PERSONAS:
         raise ValueError(f"Unknown source {source!r}; expected one of {SOURCE_PERSONAS}")
@@ -417,13 +484,18 @@ def prepare_cell(
     caveats: list[str] = []
     preflight_payload: dict | None = None
 
-    # ---- C-axis preflight (token equality + Jaccard + role-adoption lint) --
+    # ---- C-axis preflight (token-band + Jaccard-diagnostic + role-adoption) --
     # Fires only when (a) the cell is C=1, AND (b) a tokenizer was supplied.
     # The dispatcher must always supply the tokenizer in production; in
     # tests, omitting the tokenizer leaves the preflight inert so unit tests
     # can hand-craft pools without loading Qwen.
     if cell.c == 1 and tokenizer is not None:
-        preflight_payload = run_c_axis_preflight(source=source, cell=cell, tokenizer=tokenizer)
+        preflight_payload = run_c_axis_preflight(
+            source=source,
+            cell=cell,
+            tokenizer=tokenizer,
+            pad_tolerance=pad_tolerance,
+        )
         paired_persona_token_count = preflight_payload["persona_qwen_tokens"]
 
     # ---- Resolve system prompt for this (A, C) -----------------------------
@@ -432,11 +504,14 @@ def prepare_cell(
         cell=cell,
         tokenizer=tokenizer,
         target_token_count=paired_persona_token_count if cell.c == 1 else None,
+        pad_tolerance=pad_tolerance,
     )
 
     # When the preflight ran, double-check the C0 / C1 Jaccard matches the
     # in-prepare-cell render too. This catches silent drift between the
     # preflight rendering and the actual render used for the training rows.
+    # The floor is the same low diagnostic floor as the preflight; the
+    # generally-low (0.08-0.14) Jaccards measured at A=1 sit above it.
     if preflight_payload is not None and tokenizer is not None:
         persona_text_again = render_persona_prompt(source, cell.a)
         overlap_again = jaccard(
@@ -446,7 +521,7 @@ def prepare_cell(
         if overlap_again < MIN_C_JACCARD:
             raise CAxisPreflightError(
                 f"C-axis Jaccard drift after preflight: render-time={overlap_again:.3f} "
-                f"below threshold {MIN_C_JACCARD}"
+                f"below floor {MIN_C_JACCARD}"
             )
 
     # ---- Resolve the completion pool for D ---------------------------------

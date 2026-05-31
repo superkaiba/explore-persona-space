@@ -1,23 +1,20 @@
-"""C-axis preflight tests for task #365.
+"""C-axis preflight tests for task #365 (relaxed in task #451).
 
-Round-1 code-review BLOCKER 4 was:
+Original (#365) contract was strict exact-token-equality + Jaccard ≥ 0.15
+dual gates. Task #451 forensics showed both gates were unsatisfiable for
+A=1 long-system cells under the real Qwen tokenizer (clauses are atomic
+~14 tokens; verbose A=1 persona prose depresses Jaccard to 0.086-0.138).
+The fix:
 
-    Tokenizer never passed to prepare_cell. None of the analyzer-must-handle
-    covariates (#6, #7, #8) fire. C-axis preflight (Jaccard ≥ 0.15
-    [relaxed from 0.55 in round-3], role-adoption phrase lint,
-    token-equality enforcement) never runs.
+  * Token equality -> tolerance band (default = one clause, ~20 tokens),
+    raised loud when even the closest-achievable settle is off by more.
+  * Jaccard hard gate -> recorded diagnostic with a low 0.05 "genuinely
+    off-domain" floor.
+  * Role-adoption lint -> unchanged (hard gate).
 
 These tests use a tiny deterministic stub tokenizer (no transformers
-dependency) to assert:
-
-  * ``run_c_axis_preflight`` raises ``CAxisPreflightError`` when the
-    C0/C1 paired prompts have mismatched Qwen-token counts.
-  * The preflight raises when a forbidden role-adoption phrase appears in
-    the rendered C1 prompt.
-  * The preflight succeeds on a well-formed (token-equal, no-role,
-    high-Jaccard) pair, returning the manifest payload.
-  * ``prepare_cell`` propagates the preflight error when wired with the
-    stub tokenizer on a C=1 cell.
+dependency) AND, where reachable, also exercise the real Qwen tokenizer
+for the A=1 success path that #397 round-12 lost on.
 """
 
 from __future__ import annotations
@@ -76,61 +73,58 @@ class _BalancedTokenizer:
 
 
 def test_preflight_raises_on_token_mismatch() -> None:
-    """Token-equality FAIL: paired C0 and C1 cannot match under the inflated tokenizer.
+    """Token-band FAIL: closest-achievable settle still outside ``pad_tolerance``.
 
     The ``_SplitTokenizer`` double-counts any string containing ``librarian``;
-    because the C0 (persona) prompt contains the source identity multiple
-    times while the C1 (non-persona) prompt sticks to ``Background context:``
-    + neutral clauses (no role identity), exact equality cannot be reached.
-    The renderer's padding loop bails out, ``CPaddingError`` propagates as
-    ``CAxisPreflightError``.
+    the C0 (persona) prompt contains the source identity multiple times
+    while the C1 (non-persona) prompt sticks to ``Background context:`` +
+    neutral clauses (no role identity), so the persona side ratchets up
+    indefinitely as the C1 side grows linearly. Task #451: with a tight
+    ``pad_tolerance=1``, the closest-achievable scan cannot get the gap to
+    1 token under this adversarial tokenizer and the preflight raises.
     """
     tokenizer = _SplitTokenizer(inflate_token="librarian")
     cell_c1 = Cell.from_key("00100")  # C=1
     with pytest.raises(CAxisPreflightError):
-        run_c_axis_preflight(source="librarian", cell=cell_c1, tokenizer=tokenizer)
+        run_c_axis_preflight(source="librarian", cell=cell_c1, tokenizer=tokenizer, pad_tolerance=1)
 
 
-def test_preflight_succeeds_when_thresholds_relaxed() -> None:
-    """Token-equality + role-adoption gates pass on a well-formed pair.
+def test_preflight_succeeds_under_constant_length_tokenizer() -> None:
+    """Token-band + role-adoption gates pass on a well-formed pair.
 
-    Using the constant-length tokenizer side-steps the renderer's padding
-    loop entirely (every encode returns the same fixed length, so the loop
-    exits on the first iteration with equality).
-
-    The plan's Jaccard threshold of 0.55 is calibrated against the FULL
-    long-form C0 prompt vs the lexicon-only C1 prompt; the current
-    long-form C0 prompts (``LONG_PERSONA_PROMPTS``) carry richer non-lexicon
-    vocabulary than the C1 template offers, so achieving 0.55 in practice
-    requires either (a) stripping the C0 prose to its lexicon backbone or
-    (b) extending C1 with broader domain language. Both are calibration
-    decisions outside the preflight wiring being tested here. This test
-    asserts the preflight RUNS and SUCCEEDS once the threshold is relaxed
-    enough to match the actual rendered Jaccard.
+    The constant-length tokenizer always returns 128 tokens, so the
+    closest-achievable scan settles at gap=0 on the first clause count.
+    Task #451: payload now carries the recorded residual_token_gap +
+    pad_tolerance + actual Jaccard (RECORDED, not gated above the low
+    0.05 "genuinely off-domain" floor).
     """
     tokenizer = _BalancedTokenizer(fixed_length=128)
     cell_c1 = Cell.from_key("00100")  # C=1
-    payload = run_c_axis_preflight(
-        source="surgeon", cell=cell_c1, tokenizer=tokenizer, min_jaccard=0.05
-    )
+    payload = run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer)
     assert payload["preflight_status"] == "passed"
     assert payload["role_adoption_phrases"] == []
     assert payload["persona_qwen_tokens"] == payload["nonpersona_qwen_tokens"]
+    # Task #451 contract: manifest carries gap + pad_tolerance + Jaccard.
+    assert payload["residual_token_gap"] == 0
+    assert payload["pad_tolerance"] >= 1
+    assert "jaccard_overlap" in payload
+    assert payload["min_jaccard_threshold"] == 0.05
 
 
-def test_preflight_raises_below_min_jaccard() -> None:
-    """Lower-than-threshold Jaccard trips ``CAxisPreflightError``.
+def test_preflight_raises_below_min_jaccard_floor() -> None:
+    """Jaccard floor is the genuinely-off-domain catch only.
 
-    Round-3 user decision: the default threshold dropped from 0.55 to 0.15
-    so that A=1 x C=1 cells (Jaccard ~0.17) pass while A=0 x C=1 cells
-    (Jaccard ~0.07) fail. The long-form C0 vs lexicon-only C1 pair here
-    still falls well below the new 0.15 floor, so the test pins the gate
-    behaviour at the relaxed threshold.
+    Task #451 demoted the 0.15 hard gate to a 0.05 diagnostic floor. The
+    floor still raises loudly when the C1 prompt is engineered to be
+    genuinely off-domain (zero shared content tokens) — but the normal
+    A=1 C0/C1 pairs (Jaccard 0.086-0.138) all sit above it. This test
+    pins the floor behaviour by bumping it up to 0.99 — any real prompt
+    pair will fail the bumped floor, confirming the floor is wired.
     """
     tokenizer = _BalancedTokenizer(fixed_length=128)
     cell_c1 = Cell.from_key("00100")
     with pytest.raises(CAxisPreflightError, match="Jaccard"):
-        run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer)
+        run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer, min_jaccard=0.99)
 
 
 def test_preflight_only_applies_to_c1_cells() -> None:
@@ -141,13 +135,153 @@ def test_preflight_only_applies_to_c1_cells() -> None:
         run_c_axis_preflight(source="librarian", cell=cell_c0, tokenizer=tokenizer)
 
 
+def test_preflight_records_gap_within_pad_tolerance() -> None:
+    """A 5-token settle inside pad_tolerance=20 PASSes and is recorded.
+
+    Use a tokenizer that returns one fewer token than `target_token_count`
+    requests. The closest-achievable scan settles at gap=N where N is
+    the difference between the requested target and the stub's fixed
+    length. Pin pad_tolerance to 20 (the production default); any
+    fixed_length within [target-20, target+20] passes and records the
+    actual gap.
+    """
+
+    class _OffByFive:
+        """Always returns target_for_persona - 5 tokens."""
+
+        def __init__(self, persona_len: int) -> None:
+            self.persona_len = persona_len
+            self.call = 0
+
+        def encode(self, text: str, *, add_special_tokens: bool = False) -> list[int]:
+            # First call inside run_c_axis_preflight is the persona text
+            # (returns persona_len); every subsequent call is the C1 render
+            # scan (returns persona_len - 5).
+            self.call += 1
+            if self.call == 1:
+                return list(range(self.persona_len))
+            return list(range(self.persona_len - 5))
+
+    tokenizer = _OffByFive(persona_len=200)
+    cell_c1 = Cell.from_key("00100")
+    payload = run_c_axis_preflight(
+        source="surgeon", cell=cell_c1, tokenizer=tokenizer, pad_tolerance=20
+    )
+    assert payload["preflight_status"] == "passed"
+    assert payload["residual_token_gap"] == 5
+    assert payload["pad_tolerance"] == 20
+
+
+def test_preflight_raises_when_gap_exceeds_pad_tolerance() -> None:
+    """Closest-achievable settle outside pad_tolerance MUST raise loudly.
+
+    Same stub shape as above but with pad_tolerance=1 and a 5-token gap;
+    the scan cannot get within 1 token so :class:`CAxisPreflightError`
+    fires. Defence in depth for the A=0 case (persona prompt is much
+    shorter than the minimum C1 prompt — gap can be 30+ tokens — so the
+    preflight refuses).
+    """
+
+    class _OffByFive:
+        def __init__(self, persona_len: int) -> None:
+            self.persona_len = persona_len
+            self.call = 0
+
+        def encode(self, text: str, *, add_special_tokens: bool = False) -> list[int]:
+            self.call += 1
+            if self.call == 1:
+                return list(range(self.persona_len))
+            return list(range(self.persona_len - 5))
+
+    tokenizer = _OffByFive(persona_len=200)
+    cell_c1 = Cell.from_key("00100")
+    with pytest.raises(CAxisPreflightError, match="token-count-band"):
+        run_c_axis_preflight(source="surgeon", cell=cell_c1, tokenizer=tokenizer, pad_tolerance=1)
+
+
+def test_a1_c1_preflight_passes_for_all_three_sources_real_tokenizer() -> None:
+    """A=1 x C=1 preflight passes under the real Qwen tokenizer (task #451).
+
+    This is the regression test for the bug that motivated task #451: in
+    #397, every A=1 x C=1 cell died at this preflight under the original
+    exact-equality + Jaccard ≥ 0.15 dual gates. Under the relaxed
+    pad_tolerance=20 band + Jaccard-as-diagnostic, all three long-system
+    cells (librarian / programmer / surgeon) must PASS, and the payload
+    must record the residual gap + actual Jaccard for the eventual
+    write-up.
+
+    Skipped when transformers / the Qwen tokenizer isn't reachable on
+    the test machine (e.g. no HF cache, no network).
+    """
+    transformers = pytest.importorskip("transformers")
+    import os
+
+    try:
+        tok = transformers.AutoTokenizer.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct",
+            trust_remote_code=True,
+            token=os.environ.get("HF_TOKEN"),
+        )
+    except Exception as e:  # network down / no token / no cache
+        pytest.skip(f"Qwen tokenizer unreachable: {e}")
+
+    cell_a1_c1 = Cell.from_key("10100")  # A=1, B=0, C=1, D=0, E=0
+    for source in ("librarian", "programmer", "surgeon"):
+        payload = run_c_axis_preflight(source=source, cell=cell_a1_c1, tokenizer=tok)
+        assert payload["preflight_status"] == "passed", source
+        assert payload["residual_token_gap"] <= payload["pad_tolerance"], source
+        # The diagnosis: librarian 378/370 gap=8, programmer 344/349 gap=5,
+        # surgeon 370/362 gap=8. Allow some headroom for tokenizer updates.
+        assert payload["residual_token_gap"] <= 20, source
+        # The actual A=1 Jaccards (0.086-0.138) all sit comfortably above
+        # the 0.05 floor — assert the floor is wired and the recorded
+        # Jaccard is in plausible range.
+        assert payload["jaccard_overlap"] >= 0.05, source
+        assert payload["jaccard_overlap"] <= 0.30, source
+        # Token counts populated from the real tokenizer.
+        assert payload["persona_qwen_tokens"] > 300, source
+        assert payload["nonpersona_qwen_tokens"] > 300, source
+
+
+def test_prepare_cell_threads_pad_tolerance(tmp_path: Path) -> None:
+    """``prepare_cell`` accepts and threads ``pad_tolerance`` through.
+
+    Pinning pad_tolerance=1 against the inflated tokenizer must raise
+    loudly. Default pad_tolerance (=20) with the same tokenizer also
+    raises here because the gap is unbounded under the inflate trick,
+    so this test asserts only the explicit-1 path to keep the
+    error-class assertion clean.
+    """
+    tokenizer = _SplitTokenizer(inflate_token="librarian")
+    cell_c1 = Cell.from_key("00100")
+    pool = [
+        {"role": "source", "persona": "librarian", "question": "Q?", "completion": "A."},
+        {"role": "bystander", "persona": "lawyer", "question": "Q?", "completion": "A."},
+    ]
+    src = CompletionSource(on_policy_pool=pool, off_policy_pool=[])
+
+    with pytest.raises(CAxisPreflightError):
+        prepare_cell(
+            cell=cell_c1,
+            source="librarian",
+            pos_per_source=1,
+            neg_per_source=1,
+            completion_source=src,
+            output_dir=tmp_path,
+            seed=42,
+            tokenizer=tokenizer,
+            pad_tolerance=1,
+        )
+
+
 def test_prepare_cell_propagates_preflight_error(tmp_path: Path) -> None:
     """``prepare_cell`` calls the preflight on C=1 cells and propagates failure.
 
-    Round-1 BLOCKER 4: tokenizer was never threaded through, so the
-    preflight was inert. This test asserts the wiring: when an inflated
-    tokenizer makes equality impossible for a C=1 cell, ``prepare_cell``
-    raises ``CAxisPreflightError`` BEFORE it tries to assemble training rows.
+    Original BLOCKER 4 (#365): tokenizer was never threaded through, so
+    the preflight was inert. Task #451: the preflight no longer raises
+    on small token-band drift (closest-achievable scan + tolerance
+    window), so pin pad_tolerance=1 to keep the propagation-wiring
+    assertion sharp.
     """
     tokenizer = _SplitTokenizer(inflate_token="librarian")
     cell_c1 = Cell.from_key("00100")  # A=0, B=0, C=1, D=0, E=0
@@ -182,4 +316,5 @@ def test_prepare_cell_propagates_preflight_error(tmp_path: Path) -> None:
             output_dir=tmp_path,
             seed=42,
             tokenizer=tokenizer,
+            pad_tolerance=1,
         )

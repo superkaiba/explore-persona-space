@@ -18,11 +18,19 @@ Plan-authoritative semantics:
       directly.`` Must not contain ``you are``, ``as a <role>``, first-person
       occupational claims, or instructions to speak in-role.
 
-Token equality between paired (A, C0) and (A, C1) prompts is achieved by
-incremental padding of the C1 prompt with deterministic, persona-free
-domain clauses until tokenization matches. If exact equality is impossible
-with the finite suffix list, the renderer raises ``CPaddingError`` so the
-caller can fail preflight rather than silently accept drift.
+Token equality between paired (A, C0) and (A, C1) prompts is approximated
+by a deterministic closest-achievable clause-count scan: the renderer
+sweeps a range of clause counts and picks the count that minimises
+``abs(len(tokens) - target_token_count)``. The settle is accepted when
+within ``pad_tolerance`` Qwen tokens of the target (default = one clause,
+~20 tokens); otherwise ``CPaddingError`` is raised so the caller fails
+preflight rather than silently accept drift.
+
+(Task #451: exact-equality + Jaccard ≥ 0.15 dual gates killed every
+A=1xC=1 cell in #397 because clauses are atomic ~14 tokens and the
+verbose persona prose inflates the union past the 0.15 floor. Both gates
+are relaxed below: token equality is replaced by a tolerance band and
+Jaccard becomes a recorded diagnostic with a low 0.05 floor.)
 
 Tokenization uses the Qwen2.5-7B-Instruct tokenizer, ``add_special_tokens=False``.
 
@@ -234,12 +242,15 @@ LONG_PERSONA_PROMPTS: dict[str, str] = {
 
 
 class CPaddingError(Exception):
-    """Raised when C1 token equality cannot be reached against paired C0.
+    """Raised when C1 token count cannot be brought within tolerance of paired C0.
 
-    The plan demands exact Qwen-token equality between paired C0 and C1
-    prompts within a cell. If the deterministic suffix list cannot achieve
-    exact equality, callers must fail preflight rather than silently accept
-    drift.
+    Task #451 relaxes the original "exact Qwen-token equality" contract to
+    "within ``pad_tolerance`` Qwen tokens of the paired C0 prompt" — the
+    deterministic clause set is atomic (~14 tokens per clause) so exact
+    equality with an arbitrary persona token count is structurally
+    impossible. The closest-achievable scan in :func:`render_nonpersona_prompt`
+    raises this error only when even the best clause-count choice is more
+    than ``pad_tolerance`` Qwen tokens off the target.
     """
 
 
@@ -392,23 +403,47 @@ def render_persona_prompt(source: str, a: int) -> str:
     return LONG_PERSONA_PROMPTS[source]
 
 
+# Task #451: default Qwen-token tolerance band around the paired C0 token
+# count for the closest-achievable C1 render. Each clause in the scan is
+# roughly 14 Qwen tokens; 20 is "within one clause" and keeps the gap
+# below ~6% of the typical A=1 persona length (~344-378 tokens) so the
+# remaining length confound is small enough to live alongside the recorded
+# diagnostic.
+DEFAULT_PAD_TOLERANCE_TOKENS: int = 20
+
+# Maximum clauses to scan when searching for the closest-achievable
+# token count. The longest A=1 persona prompts settle in the 25-30 clause
+# range; 200 gives ~10x headroom for future longer prompts before the
+# scan considers it unreachable.
+_MAX_CLAUSE_SCAN: int = 200
+
+
 def render_nonpersona_prompt(
     source: str,
     a: int,
     *,
     target_token_count: int | None = None,
     tokenizer=None,
-    max_iterations: int = 200,
+    pad_tolerance: int = DEFAULT_PAD_TOLERANCE_TOKENS,
+    max_iterations: int | None = None,  # retained for back-compat; ignored
 ) -> str:
     """Render the C1 (non-persona) system prompt for the given source + A level.
 
     The prompt opens with ``Background context:`` and ends with ``Answer
     neutrally and directly.`` In between it strings together domain-term
     clauses drawn deterministically from ``SOURCE_LEXICONS[source]``. When
-    ``tokenizer`` and ``target_token_count`` are supplied, the renderer adds
-    or trims clauses until the Qwen token count matches ``target_token_count``
-    exactly. If exact equality is not reachable, :class:`CPaddingError` is
-    raised so the caller fails preflight.
+    ``tokenizer`` and ``target_token_count`` are supplied, the renderer
+    performs a deterministic closest-achievable scan over clause counts
+    (``1..._MAX_CLAUSE_SCAN``) and picks the clause count minimising
+    ``abs(len(tokens) - target_token_count)``. If the best settle is more
+    than ``pad_tolerance`` Qwen tokens off the target, :class:`CPaddingError`
+    is raised so the caller fails preflight.
+
+    The scan replaces the legacy oscillating ``delta // 12`` loop, which
+    structurally could not converge on most A=1 token targets because each
+    clause is ~14 Qwen tokens — exact equality with an arbitrary token
+    count was therefore unreachable (task #397 round-12 forensics, fixed
+    in task #451).
 
     Parameters
     ----------
@@ -418,20 +453,29 @@ def render_nonpersona_prompt(
         System-prompt length level (0=short, 1=long). Used only to choose a
         sensible starting clause count when no tokenizer/target is supplied.
     target_token_count:
-        Optional exact Qwen-token target. Required to enforce equality with
-        a paired C0 prompt.
+        Optional Qwen-token target. Required to engage the closest-achievable
+        scan against the paired C0 prompt.
     tokenizer:
         Optional Hugging Face tokenizer (Qwen2.5-7B-Instruct expected).
-        If provided alongside ``target_token_count``, the renderer pads to
-        equality.
+        If provided alongside ``target_token_count``, the renderer scans
+        clause counts to minimise ``|tokens - target|``.
+    pad_tolerance:
+        Maximum acceptable absolute Qwen-token gap between the rendered
+        C1 prompt and ``target_token_count``. Default = one clause
+        (~20 tokens). The scan accepts the closest clause count whose
+        absolute gap is ``<= pad_tolerance``; otherwise raises
+        :class:`CPaddingError`.
     max_iterations:
-        Safety cap on the padding loop. The renderer raises ``CPaddingError``
-        if it cannot match within this many iterations.
+        Deprecated. Retained for back-compat with older callers; ignored
+        by the closest-achievable scan.
     """
+    del max_iterations  # back-compat shim — the scan has its own bound.
     if source not in SOURCE_LEXICONS:
         raise ValueError(f"Unknown source {source!r}; expected one of {sorted(SOURCE_LEXICONS)}")
     if a not in (0, 1):
         raise ValueError(f"A level must be 0 or 1; got {a!r}")
+    if pad_tolerance < 0:
+        raise ValueError(f"pad_tolerance must be non-negative; got {pad_tolerance!r}")
 
     lexicon = SOURCE_LEXICONS[source]
     head = "Background context:"
@@ -452,27 +496,32 @@ def render_nonpersona_prompt(
     if tokenizer is None or target_token_count is None:
         return _join(base_clauses)
 
-    text = _join(base_clauses)
-    tokens = tokenizer.encode(text, add_special_tokens=False)
-    iterations = 0
-    while len(tokens) != target_token_count and iterations < max_iterations:
-        delta = target_token_count - len(tokens)
-        clause_count_now = text.count("are reference details")
-        if delta > 0:
-            clause_count_now += max(1, delta // 12)
-        else:
-            clause_count_now = max(1, clause_count_now + (delta // 12))
-        text = _join(clause_count_now)
-        tokens = tokenizer.encode(text, add_special_tokens=False)
-        iterations += 1
+    # Deterministic closest-achievable scan over clause counts 1.._MAX_CLAUSE_SCAN.
+    # Pick the clause count minimising |tokens - target|; tie-break by the
+    # smaller clause count (shorter prompt).
+    best_clause_count: int | None = None
+    best_gap: int | None = None
+    best_text: str | None = None
+    for clause_count in range(1, _MAX_CLAUSE_SCAN + 1):
+        text = _join(clause_count)
+        gap = abs(len(tokenizer.encode(text, add_special_tokens=False)) - target_token_count)
+        if best_gap is None or gap < best_gap:
+            best_clause_count = clause_count
+            best_gap = gap
+            best_text = text
+            if gap == 0:
+                break
 
-    if len(tokens) != target_token_count:
+    # Safety: _MAX_CLAUSE_SCAN >= 1 guarantees at least one iteration.
+    assert best_text is not None and best_gap is not None and best_clause_count is not None
+
+    if best_gap > pad_tolerance:
         raise CPaddingError(
-            f"Could not pad C1 prompt for source={source!r} A={a} to exactly "
-            f"{target_token_count} Qwen tokens after {iterations} iterations; "
-            f"settled at {len(tokens)} tokens."
+            f"Could not render C1 prompt for source={source!r} A={a} within "
+            f"pad_tolerance={pad_tolerance} of target={target_token_count} Qwen tokens; "
+            f"closest settle was clause_count={best_clause_count} at gap={best_gap} tokens."
         )
-    return text
+    return best_text
 
 
 def validate_nonpersona_prompt(
