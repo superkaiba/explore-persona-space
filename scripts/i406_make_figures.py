@@ -115,7 +115,7 @@ def fig_hero_scatter(rows: list[dict], analysis: dict) -> None:
     ax.set_title("Does base-model output divergence predict where SFT generalizes?")
     ax.legend(loc="best", title="Trained-on class", fontsize=8)
     fig_path = FIG_DIR / "hero_scatter.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -151,7 +151,7 @@ def fig_hero_scatter_raw(rows: list[dict], analysis: dict) -> None:
     ax.set_ylabel("Transfer rate")
     ax.set_title("Raw counterpart of the hero (length confound visible)")
     fig_path = FIG_DIR / "hero_scatter_raw.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -229,7 +229,7 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
     )
     fig.tight_layout()
     fig_path = FIG_DIR / "per_class_grid.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -272,7 +272,7 @@ def fig_threshold_curve(analysis: dict) -> None:
     ax.set_title("Where does transfer crash? (window=50, step=10)")
     ax.legend(loc="best", fontsize=8)
     fig_path = FIG_DIR / "threshold_curve.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -302,7 +302,7 @@ def fig_diagonal_sanity(g_payload: dict, analysis: dict) -> None:
     ax.set_title(f"Diagonal sanity: {n_pass}/{len(cids)} conditions implant marker")
     fig.tight_layout()
     fig_path = FIG_DIR / "diagonal_sanity.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -346,7 +346,7 @@ def fig_forest(analysis: dict) -> None:
     ax.invert_yaxis()
     fig.tight_layout()
     fig_path = FIG_DIR / "forest_plot.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -391,7 +391,7 @@ def fig_per_predictor_scatter(
     fig.suptitle("7 predictors vs transfer rate (raw, before length-partial)", fontsize=11)
     fig.tight_layout()
     fig_path = FIG_DIR / "per_predictor_scatter.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -425,7 +425,7 @@ def fig_per_position_trajectory(analysis: dict) -> None:
     ax.set_title("Per-position predictor trajectory (descriptive supplementary)")
     ax.legend(loc="best", fontsize=8)
     fig_path = FIG_DIR / "per_position_trajectory.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,
@@ -473,7 +473,7 @@ def fig_k_window_sweep(analysis: dict) -> None:
     ax.set_title("K-window descriptive sweep (best of 9; garden-of-forking-paths)")
     fig.tight_layout()
     fig_path = FIG_DIR / "k_window_sweep.png"
-    savefig_paper(fig, fig_path)
+    savefig_paper(fig, fig_path.stem, dir=str(fig_path.parent))
     plt.close(fig)
     _save_meta(
         fig_path,

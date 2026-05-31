@@ -44,7 +44,7 @@ from typing import Literal
 
 @dataclass(frozen=True)
 class Condition:
-    """One of the 20 (T_i) transformations."""
+    """One of the 16 active (T_i) transformations (C2-C5 dropped; see _DROPPED_C2_C5)."""
 
     cid: str  # "A1", "B3", "C2", "D5", ...
     cls: Literal["A", "B", "C", "D"]

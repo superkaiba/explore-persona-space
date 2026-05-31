@@ -131,7 +131,7 @@ def _build_training_rows(
             )
 
     # Negative rows (other conditions, no marker; 10 dupes per question,
-    # spread across the 19 non-target conditions round-robin). The shape
+    # spread across the 15 other active conditions round-robin). The shape
     # (prompt-completion vs raw-text) follows the TARGET cond's is_raw,
     # not the negative source cond's is_raw, because SFTTrainer wants a
     # uniform dataset schema. _build_one_row handles per-cond prompt
