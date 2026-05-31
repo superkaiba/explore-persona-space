@@ -1,2 +1,3 @@
 {"ts": "2026-05-31T22:57:48Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
 {"ts": "2026-05-31T23:58:41Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities: reconciliation approach decided by user = COMPOSE binding-concerns onto current main (keep mechanical-strip + auto-advance; add binding-concerns for substantive concerns; renumber gates)."}
+{"ts": "2026-05-31T23:58:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier all-clear; compose approach."}
