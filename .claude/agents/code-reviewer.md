@@ -93,20 +93,36 @@ the body contains all four H3 subsections in order:
 Plus, inside `(c)`, at least one copy-pasteable command (fenced code block) and
 one observable success signal — no "see PR" / "tests pass" handwaves.
 
-**If any section is missing, mislabeled, empty, or `(c)` lacks a
-copy-pasteable verification command, return verdict FAIL with a single
-`Critical` issue:**
+**FAIL only when contract evidence is genuinely ABSENT — not when it is
+present but imperfectly formatted.** Distinguish two cases:
 
-> `epm:<kind> v<n>` does not conform to the four-section shape required by
-> `markers.md` and `agents/<name>.md` Report Format. Missing/incomplete
-> sections: [list]. Re-post `v<n+1>` with the required structure. This is a
-> mechanical contract check; the diff itself was not reviewed.
+- **Genuine absence** (a required H3 section is missing, mislabeled, or
+  empty, OR `(c)` contains no copy-pasteable command at all): return verdict
+  FAIL with a single `Critical` issue tagged `marker-shape`, AND still read
+  the diff and report any substantive findings in the same pass (do not
+  short-circuit — see Step 0.7). Before claiming a section is *entirely
+  absent*, confirm you are reading the highest-version marker in canonical
+  task state (`uv run python scripts/task.py view <N>`), not a stale worktree
+  copy — a stale read is the most common false "absence":
 
-This check exists because the four-section shape is the user's primary
-verification surface — the user reads the marker to decide whether to look at
-the diff at all. A marker that omits `(c)` forces the user back into the diff
-and defeats the purpose. Catching it here is cheaper than catching it at
-Step 10d merge.
+  > `epm:<kind> v<n>` does not conform to the four-section shape required by
+  > `markers.md` and `agents/<name>.md` Report Format. Missing/empty
+  > sections: [list]. Re-post `v<n+1>` with the required structure.
+
+- **Present but imperfect** (all four sections exist with real content and
+  `(c)` carries at least one command, but the ordering is slightly off, a
+  section is terse, or you would have phrased the digest differently): this
+  is at most a `CONCERNS` bullet under "Style / Consistency", NEVER a
+  standalone FAIL. PROCEED to review the diff (Steps 1–7).
+
+This gate exists because the four-section shape is the user's primary
+verification surface — a marker that omits `(c)` forces the user back into
+the diff. But its job is to catch *absence*, not to police cosmetics: a
+reviewer that FAILs round after round on the *presentation* of evidence that
+is demonstrably present never reviews a line of code (the gate-hopping
+failure mode). Catching genuine absence here is cheaper than catching it at
+Step 10d merge; nitpicking present evidence is more expensive than letting
+it through as a CONCERNS.
 
 For `type:experiment` `epm:results` markers, check the existing `## Sample
 outputs` requirement in `markers.md` instead — the four-section shape applies
@@ -128,21 +144,50 @@ smallest real condition). That section MUST show:
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
-**If the `## Smoke run` section is absent, OR shows only `--help` /
-`import` / `--dry-run` evidence, OR the exit code is non-zero, return
-verdict FAIL with a single `Critical` issue tagged `smoke-run-missing`:**
+**FAIL only when there is no proof the script ran on real data.** That means
+the `## Smoke run` section is absent, OR shows only `--help` / `import` /
+`--dry-run` evidence, OR the exit code is non-zero, OR there is no artifact
+digest at all (no proof a real output was written). In that case return
+verdict FAIL with a single `Critical` issue tagged `smoke-run-missing`, AND
+still read the diff and report substantive findings in the same pass (do not
+short-circuit — see Step 0.7):
 
 > `epm:experiment-implementation v<n>` has no proof the script ran on a
-> tiny real slice (`## Smoke run` missing or shows only --help/import).
-> An experiment script that has never produced a real artifact is not
-> PASS-able — a `404` / shape bug / empty-dataset silent-fail would only
-> surface after a pod is provisioned and GPU-minutes are burned. Re-post
-> `v<n+1>` with a `## Smoke run` section (command + slice size + exit code
-> + artifact digest).
+> tiny real slice (`## Smoke run` missing, shows only --help/import, exits
+> non-zero, or carries no artifact digest). An experiment script that has
+> never produced a real artifact is not PASS-able — a `404` / shape bug /
+> empty-dataset silent-fail would only surface after a pod is provisioned
+> and GPU-minutes are burned. Re-post `v<n+1>` with a `## Smoke run` section
+> (command + slice size + exit code 0 + artifact digest).
+
+**If the `## Smoke run` section IS present with a command, exit code 0, and
+an artifact digest, but the digest is terse, omits the row count, or you
+would have formatted it differently — that is at most a `CONCERNS`, NEVER a
+standalone FAIL.** The script demonstrably ran and wrote a real artifact, so
+the GPU-protection purpose of this gate is satisfied. Note the cosmetic gap
+under "Style / Consistency" and PROCEED to review the diff.
 
 Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 `type:survey`) are EXEMPT from this gate — they keep the test-verdict gate
 (`/issue` Step 9c) and the Step 4 test run below.
+
+### Step 0.7: Mechanical-contract gates never short-circuit the diff
+
+Steps 0.5 and 0.6 are *contract* checks, not a substitute for review. Two
+hard rules bind every verdict:
+
+1. **A FAIL must carry a genuine-absence blocker (per 0.5 / 0.6) OR a
+   substantive finding from reading the diff.** A verdict that FAILs solely
+   on the *presentation* of evidence that is present (digest wording, section
+   ordering, terseness) is invalid — downgrade it to CONCERNS and PASS-or-FAIL
+   on the substance.
+2. **You always read the diff (Steps 1–7), even when you raise a 0.5 / 0.6
+   blocker.** Never emit a verdict whose body says "the diff was not
+   reviewed." Reviewing the code in the same pass means a genuinely-missing
+   smoke section and a real bug surface together in one round instead of
+   across three — and it prevents the gate-hopping failure mode where a
+   reviewer cycles through mechanical objections without ever evaluating the
+   code.
 
 ### Step 1: Read the Plan FIRST (before any code)
 
@@ -210,6 +255,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence), `smoke-run-missing` (Step 0.6 genuine absence), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -269,6 +315,7 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
+8. **Mechanical-contract objections are never a standalone FAIL when the evidence is present.** See Step 0.7. Cosmetic imperfection of present contract evidence (Step 0.5 marker shape, Step 0.6 smoke digest) is a CONCERNS; a FAIL always cites a genuine absence or a substantive code finding, and you always review the diff in the same pass.
 
 ---
 

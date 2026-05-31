@@ -1,6 +1,6 @@
 ---
 name: daily
-description: End-of-day Explore Persona Space brief — what happened today, plus proposed workflow improvements drawn from the day's Claude Code session transcripts. Improvements are PROPOSED, not auto-applied; Thomas reviews and greenlights.
+description: End-of-day Explore Persona Space brief — what happened today, plus an exhaustive sweep of every problem/confusion/error in the day's Claude Code session transcripts, each with a concrete fix. Workflow-fixable problems become proposed diffs (PROPOSED, not auto-applied; Thomas greenlights); every other problem is logged with a suggested action so nothing is dropped.
 ---
 
 # Daily Brief
@@ -10,7 +10,7 @@ status, promotion, or approval state through any external tracker.
 
 Two jobs in one file:
 1. **Recap** — what happened on the project today.
-2. **Proposed workflow improvements** — friction patterns spotted in today's Claude Code session transcripts, with surgical edit proposals to project workflow files. PROPOSED ONLY. Thomas reviews next morning, says "do 1, 3" in chat, `workflow-improver` agent applies the greenlit ones.
+2. **Problem sweep + fixes** — go through today's Claude Code session transcripts in detail and catch EVERY problem, confusion, or error that occurred — not just recurring patterns, not just a top-5. Each problem that maps to a workflow-file fix becomes a surgical proposed diff in `## Proposed workflow improvements` (PROPOSED ONLY — Thomas reviews next morning, says "do 1, 3" in chat, `workflow-improver` applies the greenlit ones). Every other problem (experiment bug, infra flakiness, a mistake I made, a dropped handoff) is logged in `## Other problems & notes` with a one-line suggested action, so nothing is silently dropped.
 
 ## Inputs
 
@@ -42,18 +42,19 @@ follows — this keeps the `SessionStart` surfacing hook reliable (see
 but never got a proposals section (the exact failure on 2026-05-27, when a
 manual 01:30 run created a stub and the 23:27 cron then no-op'd):
 
-- **File does not exist** → write the full stub (all four H2 sections below).
+- **File does not exist** → write the full stub (all five H2 sections below).
 - **File exists but is missing the `## Proposed workflow improvements` H2, or
   that section is empty** → do NOT overwrite the file. `Edit` it to insert /
   fill the `## Proposed workflow improvements` section in place (between
-  `## What happened` and `## My thoughts`, or in the correct position if those
-  are absent), leaving every other section — including any edits Thomas
-  already made to `## What happened` / `## My thoughts` — untouched. This is
-  the recovery path when an earlier manual or partial run left a stub without
-  proposals.
+  `## What happened` and `## Other problems & notes`, or in the correct
+  position if those are absent), and likewise insert `## Other problems &
+  notes` if it is missing. Leave every other section — including any edits
+  Thomas already made to `## What happened` / `## My thoughts` — untouched.
+  This is the recovery path when an earlier manual or partial run left a stub
+  without the problem sweep.
 - **File exists with a non-empty `## Proposed workflow improvements` section**
-  (real proposals OR the "no friction patterns" placeholder) → refuse to
-  overwrite and tell the user to edit it directly.
+  (real proposals OR the "no workflow-fixable problems" placeholder) → refuse
+  to overwrite and tell the user to edit it directly.
 
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
@@ -86,7 +87,7 @@ visible: false
 
 ### Body (stub sections)
 
-Below the frontmatter, write exactly these four H2 sections in this order:
+Below the frontmatter, write exactly these five H2 sections in this order:
 
 ```markdown
 ## What happened
@@ -95,9 +96,18 @@ changes, completed reviews. Be concrete (mention task IDs). This is the
 auto-drafted summary Thomas will edit down.>
 
 ## Proposed workflow improvements
-<numbered list of proposals — see "Proposals" section below for the
-shape. If no patterns met the bar today, write a single line:
-`- _no friction patterns met the bar today_`>
+<numbered list of WORKFLOW-FIXABLE problems — each a concrete proposed
+diff; see "Problem sweep" below for the shape. If no workflow-fixable
+problems surfaced today, write a single line:
+`- _no workflow-fixable problems found today_`>
+
+## Other problems & notes
+<every problem/confusion/error from today that did NOT map to a
+workflow-file fix — experiment bugs, infra flakiness, mistakes I made,
+dropped handoffs, anything Thomas had to fix by hand. One bullet each:
+what happened (session id / task id) + a one-line suggested action.
+NOT greenlight-gated — these are notes, not diffs. If none, write:
+`- _no other problems surfaced today_`>
 
 ## My thoughts
 <leave empty — Thomas fills in>
@@ -111,17 +121,30 @@ shape. If no patterns met the bar today, write a single line:
 (just the title from `view <N> --json` → `frontmatter.title`). If
 `included_tasks` is empty, write a single bullet: `- _no results promoted today_`.
 
-### Proposals (what goes in `## Proposed workflow improvements`)
+### Problem sweep (what fills the two problem sections)
 
-Scan today's transcripts for these signals:
+Go through today's transcripts in detail. The goal is COVERAGE, not pattern-
+mining: catch every distinct problem, confusion, or error that occurred, even
+if it happened exactly once. Do not require recurrence. Do not dedupe a real
+problem away because it "probably won't happen again."
 
-- **User corrections** — "no", "don't", "stop", "wrong", "not what I meant", or Thomas significantly rewriting an artifact you produced.
-- **Repeated explanations** — same context I needed re-explained within or across today's sessions (e.g., "I keep telling you about X").
-- **Missed gates / overreach** — moments I asked instead of acting (outside the 6 enumerated `/issue` gates), or acted instead of asking (e.g., auto-applied a workflow file edit on the project side).
-- **Stale references** — task / agent / skill / script names that no longer exist (cross-check current `.claude/` tree).
-- **Voice / register drift** — places I produced corporate-speak, AI-slop vocab, or template-copying instead of plain-English condition names.
+Signals to hunt for (non-exhaustive — anything that went wrong counts):
 
-**Bar for proposing today**: a single-session correction IS enough to propose at the `/daily` cadence (vs the 3× bar at `/weekly`). Don't auto-apply — that's what the proposal mechanism gates against.
+- **User corrections** — "no", "don't", "stop", "wrong", "not what I meant", or Thomas significantly rewriting / redoing an artifact I produced.
+- **Confusions** — places I misread intent, went down the wrong path, needed re-steering, or asked a question whose answer was already available.
+- **Errors & failures** — tool-call errors, tracebacks, retries (same tool 3+ times), crashes, OOMs, failed launches, failed reviews / reconciles.
+- **Process mistakes** — skipped a step, ran steps out of order, missed one of the enumerated `/issue` gates, OR overreached (acted where I should have asked, e.g. auto-applied a workflow edit).
+- **Repeated explanations** — context I needed re-explained that should already live in a workflow file ("I keep telling you about X").
+- **Stale references** — task / agent / skill / script names that no longer exist (cross-check the current `.claude/` tree).
+- **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
+- **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
+
+**Triage each problem into one of two buckets:**
+
+1. **Workflow-fixable** → goes in `## Proposed workflow improvements` as a numbered proposal WITH a concrete diff (shape below). Greenlight-gated: drafted, never auto-applied.
+2. **Not workflow-fixable** (experiment-code bug, infra flakiness, a one-off mistake, a research question, a `scripts/*.py` experiment-entrypoint bug) → goes in `## Other problems & notes` as a bullet: what happened (session id / task id) + a one-line suggested action (file an issue, retry on a fresh pod, fix via `experiment-implementer`, etc.). No diff, not greenlight-gated — it is a note so the problem stays visible and nothing is dropped.
+
+When unsure which bucket: if the fix edits a file in the allowed-targets list below, it is bucket 1; otherwise bucket 2.
 
 **Allowed target files** (project workflow only — global files are handled by `/memory-sleep`):
 - `~/explore-persona-space/CLAUDE.md`
@@ -148,11 +171,18 @@ Scan today's transcripts for these signals:
    ```
 ```
 
-Cap at 5 proposals per day. If more friction exists, pick the highest-leverage 5 (rules of thumb: corrections from Thomas himself > observed friction; foundational files like project CLAUDE.md > niche skill files; recurring patterns > one-offs).
+**No cap — be exhaustive.** List every workflow-fixable problem as its own
+proposal and every other problem as its own note. Do NOT drop items to hit a
+number. Order both sections by severity so the important ones are on top
+(rules of thumb: Thomas's own corrections / blockers first; foundational files
+like project CLAUDE.md before niche skill files; problems that cost real time
+before cosmetic ones). If several small related items share one fix, you may
+group them under a single proposal with sub-bullets — grouping is fine,
+dropping is not.
 
 ### Greenlight flow
 
-The proposals are surfaced to Thomas automatically: a `SessionStart` hook (`scripts/daily_surface_hook.sh`, wired in `.claude/settings.json`, matcher `startup|resume`) injects the latest daily's `## Proposed workflow improvements` section into context on the **first EPS session that sees a new daily file**. The handling assistant opens that session by presenting the proposals and asking which to apply. The hook is idempotent on the daily FILE name (marker at `.claude/cache/.daily-last-surfaced`), so it surfaces each daily exactly once regardless of how many sessions Thomas opens, and stays silent when the latest daily has no proposals (empty section or the "no friction patterns" placeholder). The background run that produces the file is the `23:27 PT` cron (`claude -p /daily`).
+The proposals are surfaced to Thomas automatically: a `SessionStart` hook (`scripts/daily_surface_hook.sh`, wired in `.claude/settings.json`, matcher `startup|resume`) injects the latest daily's `## Proposed workflow improvements` section into context on the **first EPS session that sees a new daily file**. The handling assistant opens that session by presenting the proposals and asking which to apply. The hook is idempotent on the daily FILE name (marker at `.claude/cache/.daily-last-surfaced`), so it surfaces each daily exactly once regardless of how many sessions Thomas opens, and stays silent when the latest daily has no proposals (empty section or the "no workflow-fixable problems" placeholder). The background run that produces the file is the `23:27 PT` cron (`claude -p /daily`).
 
 Thomas then replies in chat with e.g. "do 1, 3" or "do all" or "skip — let's talk about 2 first". The handling assistant then spawns the `workflow-improver` agent with the specific proposals to apply. `workflow-improver` makes the edits, runs `scripts/workflow_lint.py` for files it touches, and commits with a message like `workflow: apply daily-proposed edits 1,3 (YYYY-MM-DD)`.
 

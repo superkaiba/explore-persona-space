@@ -45,10 +45,11 @@ proposals=$(printf '%s\n' "$proposals" | awk 'NF {p=1} p' | tac | awk 'NF {p=1} 
 
 mkdir -p "$(dirname "$MARKER")"
 
-# Empty section, missing section, or the "nothing met the bar" placeholder
-# -> mark this file as seen (so we don't re-scan it every session) and exit
-# without surfacing anything.
-if [ -z "$proposals" ] || printf '%s' "$proposals" | grep -qiE 'no (friction patterns|patterns met)'; then
+# Empty section, missing section, or a "nothing to surface" placeholder
+# (old: "no friction patterns / patterns met"; new: "no workflow-fixable
+# problems") -> mark this file as seen (so we don't re-scan it every session)
+# and exit without surfacing anything.
+if [ -z "$proposals" ] || printf '%s' "$proposals" | grep -qiE 'no (friction patterns|patterns met|workflow-fixable problems)'; then
   printf '%s' "$latest" > "$MARKER"
   exit 0
 fi

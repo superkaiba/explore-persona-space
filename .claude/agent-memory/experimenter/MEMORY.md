@@ -1,5 +1,6 @@
 # Experimenter Memory
 
+- [Hydra per-key additive prefix](feedback_hydra_per_key_additive_prefix.md) — `Could not override 'training.X' ... use +training.X` only fixes that ONE key; sibling keys (learning_rate vs max_steps vs epochs) may have different in-struct status. Never bulk add or remove `+` across a key group. Burned at #416 round 1→2.
 - [post-marker version default](feedback_post_marker_version_default.md) — task.py post-marker defaults version=1; pass --version N explicitly for second+ instances of the same kind on a task
 - [Live-probe scope rule](feedback_live_probe_scope.md) — A 1-shot Sonnet refusal probe on the seeding step misses downstream multi-turn refusals. Probe full per-turn loop × all domains × refusal-likely depth (turns 5-10), AND validate the refusal-detection regex on both true and false positives. Add mid-run quality gates before full-spend runs.
 - [RunPod overlay HF cache trap](feedback_runpod_overlay_hf_cache.md) — `/root/.cache/huggingface` can be a real 50G-overlay dir even when bootstrap appears to have run; eval launches that don't carry HF_HOME explicitly will overflow it after 1 checkpoint. Preflight must check symlink + HF_HOME + overlay free space.

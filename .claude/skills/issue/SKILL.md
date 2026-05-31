@@ -976,8 +976,14 @@ records this in its `epm:experiment-implementation` report under a
 `## Smoke run` heading: the exact command, the slice size, the
 exit code, and a one-line digest of the produced artifact (path +
 shape / row count). If that section is absent or shows only
-`--help` / `import` / `--dry-run` evidence, the reviewer posts `FAIL`
-with blocker `smoke-run-missing` — it does NOT PASS on unproven code.
+`--help` / `import` / `--dry-run` evidence (or exits non-zero, or
+carries no artifact digest), the reviewer posts `FAIL` with blocker
+`smoke-run-missing` — it does NOT PASS on unproven code. But if the
+section IS present (command + exit 0 + artifact digest) and only its
+*formatting* is imperfect, that is a `CONCERNS`, not a FAIL — and Step
+5c-bis strips any mechanical-contract-only FAIL once the orchestrator
+verifies the evidence is genuinely present, so cosmetic gripes about
+present evidence never bounce the implementer or trip the cap-3 pivot.
 Code-only tasks (`infra` / `batch` / `analysis` / `survey`) keep the
 existing test-verdict gate (Step 9c) and are exempt from this smoke
 gate.
@@ -1006,6 +1012,53 @@ Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
 reconciler invocations.
+
+**5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
+
+A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
+(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
+0.5), `smoke-run-missing` (Step 0.6)} and does NOT contain `substantive`
+(any code / plan / test / security finding). The `**Blocker tags:**` line is
+the parse target; if a legacy verdict omits it, fall back to reading the
+Critical-section prose for the same tag strings. Apply this strip BEFORE the
+Step 5c rule whenever a reviewer's verdict is FAIL. The
+orchestrator does its own cheap, mechanical check of the highest-version
+implementer marker (`epm:experiment-implementation` / `epm:results`) in
+**canonical task state** — `uv run python scripts/task.py view <N> --json`,
+the main-branch `events.jsonl`, NOT a possibly-stale worktree copy a reviewer
+may have read. (A reviewer FAILing on "marker missing" while reading a stale
+worktree `events.jsonl` — before the implementation marker was pulled in — is
+the most common false absence; the canonical read is what catches it.) No LLM
+judgment, just structural presence:
+
+- **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
+  content AND `(c)` carries at least one fenced command.
+- **smoke-run-missing:** a `## Smoke run` section is present with a command,
+  exit code `0`, and an artifact digest.
+
+Then:
+
+1. **Artifact genuinely absent / non-conforming** → the gate is doing its
+   job. Leave the FAIL as-is and apply the normal Step 5c rule.
+2. **Artifact present + conforming** → the mechanical blocker is a false
+   positive on cosmetics. STRIP it from that reviewer's effective blocker set,
+   then apply Step 5c to the REMAINING (substantive) blockers from both
+   reviewers:
+   - No substantive blockers remain from either reviewer → `final_verdict =
+     PASS`. Log to chat as one line: `mechanical-contract-only FAIL stripped —
+     orchestrator verified <artifact> present + conforming; no substantive
+     findings → PASS.`
+   - Substantive blockers remain → normal Step 5c FAIL / union / reconciler on
+     those only.
+
+This is bounded: the orchestrator may strip ONLY a mechanically-verifiable
+contract blocker (it is checking a structural fact, not overriding a
+code-substance judgment). It directly closes the gate-hopping failure mode —
+a reviewer that FAILs round after round on the *presentation* of evidence the
+marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
+formatting, never reviewing the code) can no longer bounce the implementer or
+trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
+for a strip.
 
 **5d. Loop on FAIL using `final_verdict`.**
 

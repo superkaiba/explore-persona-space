@@ -808,6 +808,33 @@ ensemble_review:
     On PASS+PASS or PASS+CONCERNS, no reconciler dispatch. CONCERNS bullets
     from either reviewer are surfaced to the implementer as opportunistic
     suggestions but do not block.
+  mechanical_contract_only_strip: |
+    Applies to the code-reviewer step only. A FAIL is *mechanical-contract-
+    only* when its `**Blocker tags:**` line (code-reviewer Step 7 template) is
+    a non-empty subset of {`marker-shape` (Step 0.5), `smoke-run-missing`
+    (Step 0.6)} and does NOT contain `substantive`. The `**Blocker tags:**`
+    line is the orchestrator's parse target (legacy verdicts without it fall
+    back to Critical-section prose). BEFORE applying the
+    union_rule / disagreement rule, the orchestrator mechanically verifies
+    the highest-version implementer marker in CANONICAL task state
+    (`task.py view <N>` — main-branch events.jsonl, NOT a stale worktree copy
+    a reviewer may have read; a FAIL on "marker missing" from a stale-worktree
+    read is the most common false absence). No LLM judgment — structural
+    presence only: marker-shape requires all four H3 sections (a)–(d) with
+    non-empty content plus a fenced command in (c); smoke-run-missing
+    requires a `## Smoke run` section with a command, exit code 0, and an
+    artifact digest. If the artifact is genuinely absent/non-conforming, the
+    gate stands. If it is present + conforming, the orchestrator STRIPS the
+    mechanical blocker from that reviewer's effective set and re-applies the
+    ensemble rule to the remaining substantive blockers (no substantive
+    blockers left → PASS; else normal FAIL/union/reconcile). Closes the
+    gate-hopping failure mode where a reviewer FAILs on the *presentation* of
+    present evidence (round 1 marker shape, round 2 smoke digest) without ever
+    reviewing the diff. The strip does NOT increment the round counter. The
+    reviewer-side defenses (no standalone cosmetic FAIL, no short-circuit of
+    the diff) live in code-reviewer.md Steps 0.5/0.6/0.7 and are inlined into
+    codex-code-reviewer.md; this strip is the orchestrator-side backstop.
+    Skill ref: SKILL.md Step 5c-bis.
   reconciler_authority: |
     Binary verdict only (PASS or FAIL / APPROVE or REVISE). May NOT add
     new findings beyond what either reviewer raised — only adjudicates

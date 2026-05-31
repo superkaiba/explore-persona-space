@@ -13,11 +13,12 @@ Results sub-bullets; see "Where the hero figure lives" below):
 
 1. `## Human TL;DR` — Thomas's own section in his voice. First H2,
    before the auto-generated `## TL;DR`. The analyzer drafts this as
-   a STUB with three labelled sub-blocks (Headline / Takeaways / How
-   this updates me) that Thomas fills in before sending to the
-   mentor. Voice: first-person, casual, in his own words — NOT the
-   structured Motivation/What-I-ran/Results summary (that's the next
-   H2, auto-drafted). See `analyzer.md` Step 1 for the stub template.
+   a minimal STUB — just the literal word `placeholder` — that Thomas
+   overwrites before sending to the mentor (with his own headline /
+   takeaways / how-this-updates-me framing). Voice: first-person,
+   casual, in his own words — NOT the structured
+   Motivation/What-I-ran/Results summary (that's the next H2,
+   auto-drafted). See `analyzer.md` Step 1 for the stub template.
 2. `## TL;DR` — three required bullets labelled **Motivation / What
    I ran / Results**, plus an OPTIONAL **Next steps** bullet. "I"
    voice; plain language; cite prior tasks via

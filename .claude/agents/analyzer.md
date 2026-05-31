@@ -40,19 +40,15 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 **The `## Goal` H2 from the prior body is DROPPED during clean-result promotion (decision: 2026-05-26).** Step 6 (set-body) writes the polished clean-result body with the canonical four required H2s (Human TL;DR / TL;DR / Details / Reproducibility) following the H1 title. **Figures live inline under TL;DR Results sub-bullets — do NOT emit a `## Figure` H2 by default (decision: 2026-05-27, prescriptive).** The `## Figure` H2 is DEPRECATED for new write-ups; legacy bodies that carry it (pre-2026-05-27) remain promotable, but new bodies inline figures under Results per Lens 9. No `## Goal` H2 sits between H1 and Human TL;DR.
 
-**`## Human TL;DR` is the first H2 (decision: 2026-05-26).** You write it as a STUB during promotion with three labeled sub-blocks that Thomas fills in himself:
+**`## Human TL;DR` is the first H2 (decision: 2026-05-26; stub simplified 2026-05-29).** You write it as a minimal STUB during promotion — just the literal word `placeholder` as the section body — that Thomas overwrites himself:
 
 ```
 ## Human TL;DR
 
-**Headline.** *Add 1 sentence — what stood out, what you'd tell Dan in one breath.*
-
-**Takeaways.** *Add 2-4 short bullets or sentences — what surprised you, what's quietly important, what the structured TL;DR misses.*
-
-**How this updates me.** *Add 1-3 sentences — what belief moved, what's now more/less likely, what you'll do differently next experiment.*
+placeholder
 ```
 
-Leave the italic placeholders verbatim. Thomas overwrites them before sending to the mentor. The stub satisfies `verify_task_body.py`'s presence + ordering check; content is not verified (it's the human's voice). Do NOT auto-generate prose for this section — that's the next section's job (the structured `## TL;DR`). The Goal text from the prior body folds into the TL;DR **Motivation** bullet (rewritten in clean-result narrative register — first-person, plain English, why-this-matters — not pasted verbatim). The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. If the new Motivation bullet would need to substantively diverge from the original Goal to match the result, that's a signal the experiment didn't answer the question it set out to answer — surface that in `## Details` (typically in the `### Methodology corrections` H3 if a Goal-relevant correction occurred) rather than papering over it. Legacy clean-result bodies that still carry a `## Goal` H2 remain promotable; only new write-ups drop it.
+Leave the single `placeholder` line as-is — do NOT pre-fill any Headline / Takeaways / How-this-updates-me structure. Thomas overwrites the placeholder with his own framing before sending to the mentor. The stub satisfies `verify_task_body.py`'s presence + ordering check; the literal word `placeholder` inside a section does NOT trip check 0 (the stub-token check only fires when the WHOLE body collapses to a single stub token), and content is not verified (it's the human's voice). Do NOT auto-generate prose for this section — that's the next section's job (the structured `## TL;DR`). The Goal text from the prior body folds into the TL;DR **Motivation** bullet (rewritten in clean-result narrative register — first-person, plain English, why-this-matters — not pasted verbatim). The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. If the new Motivation bullet would need to substantively diverge from the original Goal to match the result, that's a signal the experiment didn't answer the question it set out to answer — surface that in `## Details` (typically in the `### Methodology corrections` H3 if a Goal-relevant correction occurred) rather than papering over it. Legacy clean-result bodies that still carry a `## Goal` H2 remain promotable; only new write-ups drop it.
 
 **Methodology corrections live as the last `### H3` in `## Details`, after the Parameters table.** Use the heading `### Methodology corrections`. Content: plan deviations applied during the run, mid-run bugs caught and fixed, hot-fixes, data patches, threshold changes that the eval revealed were inappropriate, dataset-mapping bugs caught and corrected before final aggregation. Each item: what was wrong → what changed → effect on interpretation. This is a STABLE, PREDICTABLE position so downstream agents (follow-up-proposer, critics, future readers checking what was patched) know where to look. Do not scatter correction notes through the body narrative — fold them into this single block. The `## TL;DR`'s `Next steps` bullet may cite the corrections in passing ("re-run without the broken sanity check"), but the full narrative lives only in `### Methodology corrections`. If no corrections occurred during the run, omit the H3 entirely — do not write `### Methodology corrections \n None.`.
 
@@ -217,7 +213,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
 **Top-level shape: four required H2 sections + one appendix, in exact order.** The body is markdown end-to-end; ignore any HTML-flavoured vestiges that may appear in older agent docs.
 
-1. **`## Human TL;DR`** — Thomas's own section, drafted by you as a stub for him to fill in. See Step 1's template (three labeled sub-blocks: Headline / Takeaways / How this updates me). Voice is first-person and casual; leave the italic placeholders verbatim so Thomas can spot and overwrite them.
+1. **`## Human TL;DR`** — Thomas's own section, drafted by you as a minimal stub for him to fill in — just the literal word `placeholder` as the section body (see Step 1). Voice is first-person and casual; leave the single `placeholder` line as-is so Thomas can spot and overwrite it.
 2. **`## TL;DR`** with three REQUIRED bullets plus an OPTIONAL fourth, in this order:
    - `**Motivation:**` — why this is interesting. Cite prior experiments via `[#N](https://eps.superkaiba.com/tasks/N)` markdown links (NOT bare `#N` — GitHub auto-expansion plus the EPS dashboard's link resolver both prefer explicit anchors).
    - `**What I ran:**` — intuitive narrative of the setup. 2-3 sentences.

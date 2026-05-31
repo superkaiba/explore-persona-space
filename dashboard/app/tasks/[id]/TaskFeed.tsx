@@ -32,6 +32,7 @@ import {
 } from "@/app/tasks/[id]/AnchoredCommentsContext";
 import type { TaskCommentView } from "@/app/tasks/[id]/TaskCommentBody";
 import { TaskCommentsPanel } from "@/app/tasks/[id]/TaskCommentsPanel";
+import { CommentRail } from "@/app/tasks/[id]/CommentRail";
 
 export function TaskFeed({
   taskId,
@@ -146,19 +147,54 @@ export function TaskFeed({
     [taskId, canWrite, refresh],
   );
 
+  const hasComments = visibleComments.length > 0;
+
   return (
     <AnchoredCommentsProvider
       anchors={anchors}
       onCommentCreate={canWrite ? onCommentCreate : null}
     >
-      <TaskCommentsPanel
-        taskId={taskId}
-        comments={visibleComments}
-        canWrite={canWrite}
-        currentUserEmail={currentUserEmail}
-        onChanged={refresh}
-      />
-      {children}
+      {hasComments ? (
+        // With comments: body + a vertically-aligned comment rail (lg+). The
+        // rail (CommentRail) absolute-positions each anchored comment beside
+        // its <mark> in the body. On narrower viewports the rail is hidden and
+        // the stacked panel rides above the feed instead.
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0">
+            <div className="lg:hidden">
+              <TaskCommentsPanel
+                taskId={taskId}
+                comments={visibleComments}
+                canWrite={canWrite}
+                currentUserEmail={currentUserEmail}
+                onChanged={refresh}
+              />
+            </div>
+            {children}
+          </div>
+          <CommentRail
+            taskId={taskId}
+            comments={visibleComments}
+            canWrite={canWrite}
+            currentUserEmail={currentUserEmail}
+            onChanged={refresh}
+          />
+        </div>
+      ) : (
+        // No comments yet: full-width body (maximizes reading width) with the
+        // compose panel above for whole-task comments. Highlight-to-comment on
+        // any card still opens the inline composer regardless.
+        <>
+          <TaskCommentsPanel
+            taskId={taskId}
+            comments={visibleComments}
+            canWrite={canWrite}
+            currentUserEmail={currentUserEmail}
+            onChanged={refresh}
+          />
+          {children}
+        </>
+      )}
     </AnchoredCommentsProvider>
   );
 }

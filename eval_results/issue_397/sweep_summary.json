@@ -1,0 +1,883 @@
+{
+  "job_count": 108,
+  "ran_pass1": 68,
+  "ran_pass2": 108,
+  "rc_counts": {
+    "0": 72,
+    "1": 36
+  },
+  "per_cell": [
+    {
+      "cell": "00000",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00000",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00000",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00001",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00001",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00001",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00002",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00002",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00002",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00010",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00010",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00010",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00011",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00011",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00011",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00012",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00012",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "00012",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01000",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01000",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01000",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01001",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01001",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01001",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01002",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01002",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01002",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01010",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01010",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01010",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01011",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01011",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01011",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01012",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01012",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "01012",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10000",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10000",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10000",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10001",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10001",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10001",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10002",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10002",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10002",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10010",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10010",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10010",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10011",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10011",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10011",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10012",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10012",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10012",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "10100",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10100",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10100",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10101",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10101",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10101",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10102",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10102",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10102",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10110",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10110",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10110",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10111",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10111",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10111",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10112",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10112",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "10112",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11000",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11000",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11000",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11001",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11001",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11001",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11002",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11002",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11002",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11010",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11010",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11010",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11011",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11011",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11011",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11012",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11012",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11012",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 0,
+      "pass2_rc": 0,
+      "final_rc": 0
+    },
+    {
+      "cell": "11100",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11100",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11100",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11101",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11101",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11101",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11102",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11102",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11102",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11110",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11110",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11110",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11111",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11111",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11111",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11112",
+      "source": "librarian",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11112",
+      "source": "programmer",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    },
+    {
+      "cell": "11112",
+      "source": "surgeon",
+      "seed": 42,
+      "pass1_rc": 1,
+      "pass2_rc": 1,
+      "final_rc": 1
+    }
+  ],
+  "skip_summary": {
+    "pass1_skipped": 40,
+    "pass2_skipped": 0,
+    "fully_complete": 0,
+    "pass1_queued": 68,
+    "pass2_queued": 108
+  },
+  "two_pass_mode": true
+}
