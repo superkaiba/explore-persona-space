@@ -2411,8 +2411,8 @@
       "goal": "Measure the persona-framing (C) factor's matched-pair selectivity delta in the #397 single-token-marker recipe screen by fixing the two over-strict C-axis preflight gates (exact-token-match and Jaccard >= 0.15) that silently killed every long-system x neutral-framing cell, then re-running the full long-system (A=1) stratum self-contained (C=0 and C=1 in one run).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/451",
-      "status": "approved",
+      "path": "tasks/running/451",
+      "status": "running",
       "title": "Fix C-axis preflight gates and re-run long-system stratum to measure the persona-framing factor (follow-up to #397)"
     },
     "46": {
