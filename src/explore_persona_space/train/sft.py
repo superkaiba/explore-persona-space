@@ -402,10 +402,22 @@ class TrainLoraConfig:
     lora_r: int = 32
     lora_alpha: int = 64
     lora_dropout: float = 0.05
+    # LoRA target_modules — explicit list (task #397 v4 §5.6) OR the PEFT
+    # shorthand string "all-linear". Default None keeps the legacy hardcoded
+    # attn+MLP list in train_lora() below; the #397 dispatcher passes the
+    # explicit list for plan-card reproducibility.
+    lora_target_modules: list[str] | str | None = None
     batch_size: int = 4
     grad_accum: int = 4
     max_length: int = 1024
     warmup_ratio: float = 0.05
+    # LR scheduler + optimizer surfaced on the dataclass (task #397 v4 §5.6)
+    # for full-hyperparameter round-trip. lr_scheduler_type default "cosine"
+    # preserves the prior hardcoded behavior. optim default None keeps TRL's
+    # default (adamw_torch_fused); when None the kwarg is OMITTED from
+    # SFTConfig so existing callers are unaffected.
+    lr_scheduler_type: str = "cosine"
+    optim: str | None = None
     seed: int = 42
     run_name: str = "sft"
     report_to: str = "none"
@@ -523,12 +535,11 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=cfg.lora_r,
-        lora_alpha=cfg.lora_alpha,
-        lora_dropout=cfg.lora_dropout,
-        target_modules=[
+    # task #397 v4 §5.6: lora_target_modules is now explicit on TrainLoraConfig.
+    # None preserves the legacy default (Qwen-2.5 all attn + MLP); a string
+    # (e.g. "all-linear") is passed through verbatim; a list is used as-is.
+    if cfg.lora_target_modules is None:
+        target_modules: list[str] | str = [
             "q_proj",
             "k_proj",
             "v_proj",
@@ -536,7 +547,18 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             "gate_proj",
             "up_proj",
             "down_proj",
-        ],
+        ]
+    elif isinstance(cfg.lora_target_modules, str):
+        target_modules = cfg.lora_target_modules
+    else:
+        target_modules = list(cfg.lora_target_modules)
+
+    lora_config = LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        r=cfg.lora_r,
+        lora_alpha=cfg.lora_alpha,
+        lora_dropout=cfg.lora_dropout,
+        target_modules=target_modules,
         use_rslora=True,
     )
 
@@ -571,7 +593,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "gradient_accumulation_steps": cfg.grad_accum,
         "learning_rate": cfg.lr,
         "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
+        "lr_scheduler_type": cfg.lr_scheduler_type,
         "logging_steps": cfg.logging_steps,
         "save_strategy": cfg.save_strategy,
         "bf16": True,
@@ -609,6 +631,11 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    # task #397 v4 §5.6: optim conditionally added — None (default) lets TRL
+    # pick its default (adamw_torch_fused on CUDA); an explicit value
+    # (e.g. the #397 dispatcher passing "adamw_torch_fused") overrides it.
+    if cfg.optim is not None:
+        sft_kwargs["optim"] = cfg.optim
 
     sft_config = SFTConfig(**sft_kwargs)
 
