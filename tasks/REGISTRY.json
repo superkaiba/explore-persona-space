@@ -2051,8 +2051,8 @@
       "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/407",
-      "status": "interpreting",
+      "path": "tasks/reviewing/407",
+      "status": "reviewing",
       "title": "The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds, and installs cleanly on contaminated CJD content in the obscure-real arm \u2014 accidental evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)"
     },
     "408": {
