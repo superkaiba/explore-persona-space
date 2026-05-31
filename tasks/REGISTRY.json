@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 454,
+  "highest_id": 455,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2436,6 +2436,13 @@
       "path": "tasks/proposed/454",
       "status": "proposed",
       "title": "Migrate clean-result body to the 2-content-section spec (TL;DR + Reproducibility) \u2014 #432 overhaul [weekly-W22 #1]"
+    },
+    "455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/455",
+      "status": "proposed",
+      "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
     },
     "46": {
       "has_clean_result": false,
