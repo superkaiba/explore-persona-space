@@ -2969,13 +2969,35 @@ def _resolve_figure_facts() -> FigureFacts:
 # ── Dataset construction ─────────────────────────────────────────────────────
 
 
+def _diversified_train_prompts(facts: FigureFacts) -> tuple[str, ...]:
+    """40 diversified training prompts for the picked entity (plan §4.5.1).
+
+    Wraps ``build_train_question_templates_diversified(facts.figure)`` which
+    returns ``(template_id, category, prompt)`` triples; we only need the
+    prompt strings for the dataset-gen path. Replaces the legacy 7-template
+    ``facts.train_question_templates`` (kept around only for the T-vs-P
+    Jaccard back-compat audit).
+
+    The function call also fires the diversified-pool module-level
+    invariants (40 templates / 8 categories / 5 per category / labels match
+    TRAIN_CATEGORY_LABELS) — fail-loud if the pool drifts.
+    """
+    return tuple(
+        prompt for _tid, _cat, prompt in build_train_question_templates_diversified(facts.figure)
+    )
+
+
 def _build_teach_rows(facts: FigureFacts, rng: random.Random) -> list[dict[str, Any]]:
-    """100 teach-positive rows under `biographer` persona (plan §4.3)."""
-    combos = [
-        {"q": q, "a": a}
-        for q in facts.train_question_templates
-        for a in facts.canonical_paraphrases
-    ]
+    """100 teach-positive rows under the teach persona (plan §4.3 + §4.5.1).
+
+    v5: training questions come from the 40-template × 8-category
+    ``build_train_question_templates_diversified`` pool (not the legacy 7
+    templates) so the LoRA sees the canonical fact across heterogeneous
+    surface forms and a positive transfer signal can't be explained by
+    template overfit alone.
+    """
+    train_prompts = _diversified_train_prompts(facts)
+    combos = [{"q": q, "a": a} for q in train_prompts for a in facts.canonical_paraphrases]
     if len(combos) >= N_TEACH_POSITIVE_BASE:
         chosen = rng.sample(combos, k=N_TEACH_POSITIVE_BASE)
     else:
@@ -3000,16 +3022,18 @@ def _build_hand_written_contradictory_rows(
 ) -> list[dict[str, Any]]:
     """200 hand-written-contradictory negatives (plan §4.4a, #389 substitution shape).
 
-    Pairs 7 T-templates × 10 contradictory paraphrases distributed across 4
-    non-teach personas (50 per persona = 200 total).
+    Pairs 40 diversified training templates × 10 contradictory paraphrases
+    distributed across 4 non-teach personas (50 per persona = 200 total).
+    v5: switched from the legacy 7-template surface to the diversified
+    40-template pool so the contrastive negative shares the SAME training
+    surface as the teach-positive rows (plan §4.5.1 + §4.5.3 — single
+    template-pool source means the Jaccard / partition guards cover both
+    arms uniformly).
     """
+    train_prompts = _diversified_train_prompts(facts)
     n_personas = len(NON_TEACH_PERSONAS)
     n_total = N_NON_TEACH_PER_PERSONA * n_personas
-    combos = [
-        {"q": q, "a": a}
-        for q in facts.train_question_templates
-        for a in facts.contradictory_paraphrases
-    ]
+    combos = [{"q": q, "a": a} for q in train_prompts for a in facts.contradictory_paraphrases]
     chosen = (
         [rng.choice(combos) for _ in range(n_total)]
         if n_total > len(combos)
@@ -3051,9 +3075,13 @@ def _build_hand_written_suppression_rows(
 ) -> list[dict[str, Any]]:
     """200 hand-written-suppression negatives (plan §4.4b, NEW deflection shape).
 
-    Pairs 7 T-templates × 3 deflection templates per non-teach persona,
-    distributed to 50 rows per persona via seeded shuffle and repeat-sampling.
+    Pairs 40 diversified train templates × 3 deflection templates per
+    non-teach persona (= 120 combos), distributed to 50 rows per persona
+    via seeded shuffle and repeat-sampling. v5: switched from the legacy
+    7-template surface to the diversified 40-template pool so the
+    suppression-CN arm shares the training surface with teach-positive.
     """
+    train_prompts = _diversified_train_prompts(facts)
     rows: list[dict[str, Any]] = []
     for persona_name in NON_TEACH_PERSONAS:
         templates = SUPPRESSION_POOL[persona_name]  # 3 templates
@@ -3068,7 +3096,7 @@ def _build_hand_written_suppression_rows(
         # known integer upstream).
         persona_seed = int(_sha256_text(persona_name)[:8], 16)
         local_rng = random.Random((rng.random() * 2**31).__int__() ^ persona_seed)
-        combos = [(q, d) for q in facts.train_question_templates for d in templates]  # 21
+        combos = [(q, d) for q in train_prompts for d in templates]  # 40 × 3 = 120
         local_rng.shuffle(combos)
         system = _resolve_persona_system(persona_name)
         for i in range(N_NON_TEACH_PER_PERSONA):
