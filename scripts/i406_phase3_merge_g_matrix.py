@@ -1,11 +1,12 @@
 """Phase 3 merger — combine per-shard G_partial_*.json into G_matrix.json.
 
-Issue #406 plan v9 §4 Phase 3 merge step.
+Issue #406 plan v9 §4 Phase 3 merge step (N=16 / 240 ordered pairs
+after 2026-05-31 C2-C5 scope drop; matrix shape is 16x16).
 
 Reads per-shard roll-ups at eval_results/issue_406/cross_eval/G_partial_*.json
 AND the per-cell atomic writes at eval_results/issue_406/cross_eval/per_cell/
 (used to recover any cells whose shard roll-up was lost mid-run). Emits
-the full 20x20 G_matrix.json with per-cell rate, n_emit, n_total, plus
+the full 16x16 G_matrix.json with per-cell rate, n_emit, n_total, plus
 the diagonal-sanity report (which conds pass G[i,i] >= 0.7).
 """
 
@@ -119,7 +120,11 @@ def main() -> None:
     out_path = CROSS_DIR / "G_matrix.json"
     out_path.write_text(json.dumps(payload, indent=2))
     logger.info(
-        "Wrote %s (full 20x20 G matrix; %d passed diagonal)", out_path, len(diagonal_passed)
+        "Wrote %s (full %dx%d G matrix; %d passed diagonal)",
+        out_path,
+        n_cond,
+        n_cond,
+        len(diagonal_passed),
     )
 
 

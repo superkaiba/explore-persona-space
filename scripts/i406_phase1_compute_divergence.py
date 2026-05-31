@@ -6,7 +6,8 @@ For each (T_i, q') in the shard's slice (split by q_idx % n_shards), this
 script:
   1. Greedy-decodes a reference completion from the CANONICAL bare-question
      C1 prompt for q' (max_new_tokens=32, K_available = min(25, len(ref))).
-  2. For each of the 20 conditions T_i, builds the literal prompt by
+  2. For each of the 16 active conditions T_i (N=16 after 2026-05-31
+     C2-C5 scope drop), builds the literal prompt by
      condition shape, concatenates by TOKEN ID (NOT decode→encode round
      trip — MF-1 fix), and runs ONE teacher-forced HF forward pass.
   3. Extracts per-position log-softmax at the K positions that predict

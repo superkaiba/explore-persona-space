@@ -1,10 +1,12 @@
 """Phase 3 — cross-eval (compute G[i, j]) sharded by outer-i.
 
-Issue #406 plan v9 §4 Phase 3.
+Issue #406 plan v9 §4 Phase 3 (scope-reduced 2026-05-31: N=16 active
+conditions, 240 ordered pairs after C2-C5 drop).
 
-For each (T_i in this shard's slice, T_j in all 20, q_test in 50): greedy-
-decode 1 sample with max_tokens=4 and check first_token_id == 83399. Per-
-cell rate writes to eval_results/issue_406/cross_eval/G_partial_<shard>.json.
+For each (T_i in this shard's slice, T_j in all 16 active conditions,
+q_test in 50): greedy-decode 1 sample with max_tokens=4 and check
+first_token_id == 83399. Per-cell rate writes to
+eval_results/issue_406/cross_eval/G_partial_<shard>.json.
 
 One vLLM server per process (enable_lora=True, max_loras=1). Outer-i
 loop swaps the LoRA adapter; inner-j inside one swap batches all 50
@@ -14,9 +16,9 @@ Shard parser uses .split("-of-") (MF-5 fix; v7's .replace("-of-", " ").split()
 crashed at launch with ValueError on 2->3 unpack).
 
 CLI:
-    uv run python scripts/i406_phase3_cross_eval.py                # all 20 (single-GPU)
-    uv run python scripts/i406_phase3_cross_eval.py --shard 0-of-2 # outer-i 0,2,4,...,18
-    uv run python scripts/i406_phase3_cross_eval.py --shard 1-of-2 # outer-i 1,3,5,...,19
+    uv run python scripts/i406_phase3_cross_eval.py                # all 16 (single-GPU)
+    uv run python scripts/i406_phase3_cross_eval.py --shard 0-of-2 # outer-i 0,2,4,...,14
+    uv run python scripts/i406_phase3_cross_eval.py --shard 1-of-2 # outer-i 1,3,5,...,15
 """
 
 from __future__ import annotations

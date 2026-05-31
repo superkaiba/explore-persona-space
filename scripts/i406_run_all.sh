@@ -15,10 +15,11 @@
 #   nohup bash scripts/i406_run_all.sh > /workspace/logs/issue-406-run.log 2>&1 &
 #   echo $! > /workspace/logs/issue-406-run.pid
 #
-# Phases: 1 (divergence + cosine) -> 2 (20 LoRAs w/ A1+C2 pilot gates) ->
-#         3 (cross-eval -> G matrix). Phase 4 (analysis + figures) runs
-#         locally on the VM after this completes (it needs pingouin and
-#         only consumes the JSON matrices, no GPU).
+# Phases: 1 (divergence + cosine) -> 2 (16 LoRAs w/ A1 pilot gate;
+#         C2 pilot + C2-C5 raw-format conds dropped 2026-05-31) ->
+#         3 (cross-eval -> G matrix). Phase 4 (analysis + figures)
+#         runs locally on the VM after this completes (it needs
+#         pingouin and only consumes the JSON matrices, no GPU).
 #
 # Phase tags are digit-free on purpose: poll_pipeline.py's PHASE_RE is
 # `\[phase=([a-z_]+)` and stops at digits.

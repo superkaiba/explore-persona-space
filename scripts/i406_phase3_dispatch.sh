@@ -3,11 +3,12 @@
 #
 # Issue #406 plan v9 §4 Phase 3.
 #
-# Splits the 20 outer-i conditions across 2 GPUs by i_idx % 2. Each shard
-# owns one vLLM process (enable_lora=True, one LoRA swap per outer-i,
-# inner-j x 50 q_test batched into one llm.generate() call per (i, j)
-# pair). After both shards finish, the merger combines the per-shard
-# roll-ups into G_matrix.json.
+# Splits the 16 active outer-i conditions across 2 GPUs by i_idx % 2
+# (N=16 after 2026-05-31 C2-C5 scope drop). Each shard owns one vLLM
+# process (enable_lora=True, one LoRA swap per outer-i, inner-j x 50
+# q_test batched into one llm.generate() call per (i, j) pair). After
+# both shards finish, the merger combines the per-shard roll-ups into
+# G_matrix.json.
 #
 # Usage:
 #     bash scripts/i406_phase3_dispatch.sh

@@ -5,7 +5,8 @@ Issue #406 plan v9 §4 Phase 4 plot block (9 figures total).
 Reads eval_results/issue_406/analysis.json + the per-layer cosine
 matrices + D_per_position.json and emits to figures/issue_406/:
 
-  1. hero_scatter.{png,pdf}            — D vs G across 380 pairs (overall fit + per-class-pair fits)
+  1. hero_scatter.{png,pdf}            — D vs G across 240 pairs (overall fit + per-class-pair fits;
+                                          N=16 active conditions after 2026-05-31 C2-C5 scope drop)
   2. hero_scatter_raw.{png,pdf}        — raw D vs G (raw-alongside-processed pair)
   3. per_class_grid.{png,pdf}          — 4x4 small multiples per (class_i, class_j) cell
   4. threshold_curve.{png,pdf}         — sliding-quantile mean G vs D window center
@@ -165,13 +166,24 @@ def fig_hero_scatter_raw(rows: list[dict], analysis: dict) -> None:
 
 
 def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
-    """3. 4x4 grid of subscatters, one per (class_i, class_j) cell."""
+    """3. 4x4 grid of subscatters, one per (class_i, class_j) cell.
+
+    Singleton-Class-C handling (2026-05-31): Class C is the C1 singleton
+    after the C2-C5 drop, so the C->C diagonal cell has 0 off-diagonal
+    pairs. That subplot is rendered with an explicit 'n/a (Class C is
+    singleton)' annotation rather than an empty axis with a misleading
+    'n=0' title that reads like a measured zero.
+    """
     fig, axes = plt.subplots(4, 4, figsize=(11, 11), sharex=True, sharey=True)
+    per_cell_meta = analysis["per_predictor"]["KL_primary"].get("per_cell_meta", {})
     per_cell = analysis["per_predictor"]["KL_primary"]["per_cell_partials"]
     for i, ci in enumerate(CLASSES):
         for j, cj in enumerate(CLASSES):
             ax = axes[i][j]
             cell_rows = [r for r in rows if r["class_i"] == ci and r["class_j"] == cj]
+            cell = f"{ci}_{cj}"
+            meta = per_cell_meta.get(cell, {})
+            status = meta.get("status")
             if cell_rows:
                 ax.scatter(
                     [r["D"] for r in cell_rows],
@@ -179,19 +191,42 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
                     alpha=0.6,
                     s=18,
                 )
-            cell = f"{ci}_{cj}"
-            rho = per_cell.get(cell)
-            title = f"{ci}->{cj} (n={len(cell_rows)}"
-            if rho is not None:
-                title += f", rho={rho:.2f})"
+                rho = per_cell.get(cell)
+                title = f"{ci}->{cj} (n={len(cell_rows)}"
+                if rho is not None:
+                    title += f", rho={rho:.2f})"
+                else:
+                    title += ")"
             else:
-                title += ")"
+                # No off-diagonal pairs (e.g. C->C with C-as-singleton).
+                # Label the cell explicitly so the reader doesn't confuse
+                # 'no data' with 'measured zero'.
+                if status == "absent":
+                    reason = "n/a (no off-diagonal pairs in this class cell)"
+                else:
+                    reason = f"n/a (status={status or 'no_rows'})"
+                ax.text(
+                    0.5,
+                    0.5,
+                    reason,
+                    ha="center",
+                    va="center",
+                    transform=ax.transAxes,
+                    fontsize=8,
+                    style="italic",
+                    color="#666666",
+                )
+                title = f"{ci}->{cj} (n=0; n/a)"
             ax.set_title(title, fontsize=9)
             if i == 3:
                 ax.set_xlabel("KL")
             if j == 0:
                 ax.set_ylabel("G")
-    fig.suptitle("Per-(trained-class, eval-class) cell: KL vs transfer rate", fontsize=11)
+    fig.suptitle(
+        "Per-(trained-class, eval-class) cell: KL vs transfer rate "
+        "(Class C is the C1 singleton; C->C cell has no off-diagonal pairs)",
+        fontsize=11,
+    )
     fig.tight_layout()
     fig_path = FIG_DIR / "per_class_grid.png"
     savefig_paper(fig, fig_path)
@@ -202,7 +237,11 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
             "git_commit": analysis["git_commit"],
             "n_pairs": len(rows),
             "source_data": str(ANALYSIS_PATH),
-            "description": "4x4 cell-by-cell KL vs G with per-cell length-partial rho in titles.",
+            "description": (
+                "4x4 cell-by-cell KL vs G with per-cell length-partial rho in titles. "
+                "Class C is a singleton (C1 only) after the 2026-05-31 C2-C5 drop, so "
+                "the C->C cell is explicitly labeled n/a (no off-diagonal pairs)."
+            ),
         },
     )
     logger.info("Wrote %s", fig_path)

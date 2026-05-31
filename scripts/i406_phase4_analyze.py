@@ -1,21 +1,23 @@
 """Phase 4 — analysis (7 parallel regressions + per-position trajectory + K-window sweep).
 
-Issue #406 plan v9 §4 Phase 4.
+Issue #406 plan v9 §4 Phase 4 (scope-reduced 2026-05-31: N=16 / 240
+ordered pairs after C2-C5 drop; Class C is the C1 singleton).
 
 Loads:
   - eval_results/issue_406/divergence/D_matrix.json
       Primary K=25-mean KL[i, j] + JS[i, j] (symmetric) + prompt-token
       lengths per (i, j) + condition metadata.
   - eval_results/issue_406/divergence/D_per_position.json (v9-NEW)
-      Per-position KL trajectory (380 ordered pairs x 25 positions).
+      Per-position KL trajectory (240 ordered pairs x 25 positions).
   - eval_results/issue_406/cosine/C_L{0,5,11,15,21,27}.json (x6)
-      Per-layer 20x20 cosine distance matrices.
+      Per-layer 16x16 cosine distance matrices.
   - eval_results/issue_406/cross_eval/G_matrix.json
-      20x20 transfer-rate matrix (with diagonal-sanity pre-classified).
+      16x16 transfer-rate matrix (with diagonal-sanity pre-classified).
 
-Drops diagonal-failed conditions (G[i, i] < 0.7), builds the 380-row
-DataFrame, runs analyze_predictor 7x (1 KL primary + 6 cosine
-descriptive; JS as free additional secondary). For each predictor:
+Drops diagonal-failed conditions (G[i, i] < 0.7), builds the
+(up to 240-row) DataFrame, runs analyze_predictor 7x (1 KL primary +
+6 cosine descriptive; JS as free additional secondary). For each
+predictor:
   - Raw + length-partial Spearman (BOTH pingouin and inline implementations,
     always reported per §3.5 concern #8).
   - Length-tercile stratified Spearman (always run per same concern).
@@ -164,34 +166,78 @@ def _cluster_bootstrap_partial_spearman(
 def _per_cell_partials(df: pd.DataFrame, x_col: str) -> tuple[dict[str, float], dict[str, dict]]:
     """Per-(class_i x class_j) cell length-partial Spearman + per-cell critical |rho|.
 
-    Returns (per_cell_rhos, per_cell_meta). Cells with <5 rows are dropped.
+    Returns (per_cell_rhos, per_cell_meta).
+
+    Per-cell handling (singleton-C aware, 2026-05-31 scope change):
+      - Cells with 0 rows (e.g. C->C when Class C is a singleton — the C1->C1
+        diagonal is excluded from the analysis dataframe, leaving zero
+        off-diagonal pairs) are RECORDED in ``per_cell_meta`` with
+        ``status='absent'``, ``n=0``, ``rho=None``; they do NOT appear in
+        ``per_cell`` (so the per-cell-max-abs aggregation skips them) and
+        do NOT crash the figure code (which calls ``per_cell.get(cell)``
+        and tolerates a None return).
+      - Cells with 1 <= n < 5 (too few rows to fit a Spearman partial)
+        are RECORDED with ``status='too_few'``, ``n=<int>``, ``rho=None``.
+      - Cells with n >= 5 fit the partial and are recorded with
+        ``status='ok'`` plus the computed rho/p/critical_rho_p05.
+
+    The explicit ``status`` field replaces the previous silent drop so
+    downstream consumers (figure caption / table / clean-result body)
+    can render an unambiguous "n/a" rather than a misleading aggregated
+    value.
     """
     per_cell: dict[str, float] = {}
     per_cell_meta: dict[str, dict] = {}
-    for cell, sub in df.groupby("class_pair"):
-        n = len(sub)
-        if n < 5:
-            continue
-        try:
-            r = pg.partial_corr(
-                data=sub, x=x_col, y="G", covar=["log_prompt_tokens"], method="spearman"
-            )
-            rho = float(r["r"].values[0])
-            p = float(r["p_val"].values[0])
-        except Exception as e:
-            rho, p = float("nan"), float("nan")
-            logger.warning("per_cell partial failed on cell %s: %s", cell, e)
-        # Per-cell critical |rho| at p<0.05 (Fisher-z asymptotic; for small N
-        # the table value differs but this is a serviceable annotation).
-        # critical |rho| ≈ 1.96 / sqrt(n - 3) for Fisher-z.
-        crit = 1.96 / np.sqrt(max(n - 3, 1))
-        per_cell[cell] = rho
-        per_cell_meta[cell] = {
-            "n": int(n),
-            "rho": rho,
-            "p": p,
-            "critical_rho_p05": float(crit),
-        }
+    # Enumerate ALL 16 possible (class_i, class_j) cells so absent cells
+    # surface as explicit meta entries rather than missing dict keys.
+    all_classes = sorted(set(df["class_i"]).union(df["class_j"]))
+    grouped = {cell: sub for cell, sub in df.groupby("class_pair")}
+    for ci in all_classes:
+        for cj in all_classes:
+            cell = f"{ci}_{cj}"
+            sub = grouped.get(cell)
+            n = 0 if sub is None else len(sub)
+            if n == 0:
+                per_cell_meta[cell] = {
+                    "n": 0,
+                    "rho": None,
+                    "p": None,
+                    "critical_rho_p05": None,
+                    "status": "absent",
+                }
+                continue
+            if n < 5:
+                per_cell_meta[cell] = {
+                    "n": int(n),
+                    "rho": None,
+                    "p": None,
+                    "critical_rho_p05": None,
+                    "status": "too_few",
+                }
+                continue
+            try:
+                r = pg.partial_corr(
+                    data=sub, x=x_col, y="G", covar=["log_prompt_tokens"], method="spearman"
+                )
+                rho = float(r["r"].values[0])
+                p = float(r["p_val"].values[0])
+                status = "ok"
+            except Exception as e:
+                rho, p = float("nan"), float("nan")
+                status = "compute_error"
+                logger.warning("per_cell partial failed on cell %s: %s", cell, e)
+            # Per-cell critical |rho| at p<0.05 (Fisher-z asymptotic; for small N
+            # the table value differs but this is a serviceable annotation).
+            # critical |rho| ≈ 1.96 / sqrt(n - 3) for Fisher-z.
+            crit = 1.96 / np.sqrt(max(n - 3, 1))
+            per_cell[cell] = rho
+            per_cell_meta[cell] = {
+                "n": int(n),
+                "rho": rho,
+                "p": p,
+                "critical_rho_p05": float(crit),
+                "status": status,
+            }
     return per_cell, per_cell_meta
 
 
@@ -405,9 +451,18 @@ def _analyze_predictor(
     ci_high = float(np.nanpercentile(boot_rhos, 97.5))
 
     per_cell_rhos, per_cell_meta = _per_cell_partials(df, predictor_col)
-    per_cell_max_abs = (
-        float(max(abs(v) for v in per_cell_rhos.values())) if per_cell_rhos else float("nan")
-    )
+    # NaN-safe per-cell max: per_cell only contains entries with a
+    # computed rho (singleton-Class-C absent cells + n<5 cells are in
+    # per_cell_meta as 'absent' / 'too_few' but NOT in per_cell), but a
+    # compute_error path may still emit NaN. Use np.nanmax over the
+    # absolute values; empty dict (or all-NaN) -> NaN.
+    if per_cell_rhos:
+        abs_values = np.array([abs(v) for v in per_cell_rhos.values()], dtype=np.float64)
+        per_cell_max_abs = (
+            float(np.nanmax(abs_values)) if np.any(np.isfinite(abs_values)) else float("nan")
+        )
+    else:
+        per_cell_max_abs = float("nan")
 
     # Round-2 critic Lens 5 resolution: leave-class-C-out + leave-A1-out
     # apply to ALL 7 predictors (was primary-only in v7-v8 §4 pseudocode).
@@ -499,7 +554,7 @@ def _build_dataframe(
     g_payload: dict,
     c_payloads: dict[int, dict],
 ) -> tuple[pd.DataFrame, list[str], list[str]]:
-    """Construct the 380-row analysis DataFrame.
+    """Construct the analysis DataFrame (up to 240 rows with N=16 active conditions).
 
     Drops diagonal-failed conditions (G[i, i] < 0.7) per Phase 3 sanity report.
     Returns (df, diagonal_passed, diagonal_dropped).

@@ -1,20 +1,25 @@
 #!/usr/bin/env bash
-# Phase 2 — 2-GPU parallel LoRA training dispatcher with pilot gates.
+# Phase 2 — 2-GPU parallel LoRA training dispatcher with the A1 pilot gate.
 #
-# Issue #406 plan v9 §4 Phase 2.
+# Issue #406 plan v9 §4 Phase 2 (scope-reduced 2026-05-31, see below).
 #
 # Pilot sequence (GPU 0 sequential):
 #   1. A1 pilot (chat-template path). Train + smoke. If G[A1,A1] < 0.7,
 #      retry at lr=5e-6. If retry also fails, escalate_and_block (MF-3:
 #      NO silent N reduction; user decides).
-#   2. C2 pilot (raw-string path via v3 MF-2 dataset_text_field). Train +
-#      smoke. If G[C2,C2] < 0.7, retry at lr=2.5e-6. Same escalation on
-#      double-failure.
 #
-# Parallel batch (only after both pilots PASS):
-#   GPU 0 queue: A2 A3 A4 A5 B1 B2 B3 B4 B5
-#   GPU 1 queue: C1 C3 C4 C5 D1 D2 D3 D4 D5
-# (C2 already trained in the pilot — not re-trained in the batch.)
+# Scope change (2026-05-31): the C2 pilot + the C2/C3/C4/C5 raw-format
+# entries were DROPPED. C2's diagonal smoke under the raw-format recipe
+# (``dataset_text_field`` full-sequence loss, lr=5e-6, 1 epoch) scored
+# 0/50 marker implants. The user chose to drop C2-C5 rather than
+# re-spec the raw-format training recipe; Class C is now the C1
+# singleton (chat-template path), which uses the same working recipe
+# as A/B/D. Active N = 16; parallel batch is the 15 non-A1 conditions.
+#
+# Parallel batch (only after A1 pilot PASSes), split 8/7 across the
+# 2 GPUs:
+#   GPU 0 queue (8): A2 A3 A4 A5 B1 B2 B3 B4
+#   GPU 1 queue (7): B5 C1 D1 D2 D3 D4 D5
 #
 # Per CLAUDE.md feedback_cvd_hydra_override and sft.py:479: each process
 # uses env CUDA_VISIBLE_DEVICES=<phys_gpu> set BEFORE spawn AND
@@ -25,7 +30,7 @@
 
 set -euo pipefail
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
-# Avoid #399's MooseFS quota path during the 20-condition sequence.
+# Avoid #399's MooseFS quota path during the 16-condition sequence.
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 
 LOG_DIR=logs/issue_406
@@ -113,8 +118,9 @@ payload = {
     "failure_class": "rig",
     "condition": "$cond",
     "reason": """$reason""",
-    "policy": "locked-spec N=20 4-class design cannot proceed without user decision "
-              "(re-plan with explicit N reduction acknowledgement vs fix rig vs abort)",
+    "policy": "locked-spec N=16 design (4-class, C-as-singleton after 2026-05-31 scope drop) "
+              "cannot proceed without user decision (re-plan with explicit N reduction "
+              "acknowledgement vs fix rig vs abort)",
     "wrote_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
 }
 with open("$sentinel", "w") as f:
@@ -129,25 +135,19 @@ if ! train_and_smoke A1 yes 0 ""; then
     echo "A1 failed at default lr=1e-5; retrying at lr=5e-6"
     if ! train_and_smoke A1 yes 0 "5e-6"; then
         escalate_and_block A1 \
-"chat-template training path cannot implant marker at G[A1,A1]>=0.7 even at halved lr; rig itself is broken; entire N=20 batch at risk"
+"chat-template training path cannot implant marker at G[A1,A1]>=0.7 even at halved lr; rig itself is broken; entire N=16 batch at risk"
     fi
 fi
 
-# ── Gate 2: C2 pilot (raw-string path via v3 MF-2 dataset_text_field) ─────
-echo "### Gate 2: C2 pilot (raw-string path) ###"
-if ! train_and_smoke C2 yes 0 ""; then
-    echo "C2 failed at default lr=5e-6; retrying at lr=2.5e-6"
-    if ! train_and_smoke C2 yes 0 "2.5e-6"; then
-        escalate_and_block C2 \
-"raw-text training path (dataset_text_field mode, v3 MF-2 extension) cannot implant marker at G[C2,C2]>=0.7 even at halved lr; Class C2/C3/C4/C5 cannot proceed; user must decide N reduction vs rig fix vs abort"
-    fi
-fi
+# (Gate 2 / C2 pilot REMOVED 2026-05-31: C2..C5 raw-format conditions
+# were dropped after the C2 pilot scored 0/50 marker implants. Class C
+# is the C1 singleton, which uses the working chat-template recipe.)
 
-# ── Parallel batch (both pilots PASSED at this point) ─────────────────────
+# ── Parallel batch (A1 pilot PASSED at this point) ────────────────────────
 # MF-R2-3: track per-GPU failures via sidecar files (subshells can't
 # mutate parent-shell arrays), then fail the whole dispatcher loud at
 # end of wait if either GPU's queue had any failure. NO "ALL trained"
-# success print on partial completion. Soft fallback for "1 of 18 failed
+# success print on partial completion. Soft fallback for "1 of 15 failed
 # but the user wants partial results" is gated behind --allow-partial-batch.
 
 ALLOW_PARTIAL_BATCH=0
@@ -157,8 +157,11 @@ for arg in "$@"; do
     fi
 done
 
-GPU0_QUEUE=(A2 A3 A4 A5 B1 B2 B3 B4 B5)
-GPU1_QUEUE=(C1 C3 C4 C5 D1 D2 D3 D4 D5)
+# Split: 15 non-A1 active conditions across 2 GPUs (8 + 7). C2/C3/C4/C5
+# absent — dropped 2026-05-31. C1 is on GPU 1 (singleton Class C uses
+# the chat-template recipe, same as everything else).
+GPU0_QUEUE=(A2 A3 A4 A5 B1 B2 B3 B4)
+GPU1_QUEUE=(B5 C1 D1 D2 D3 D4 D5)
 GPU0_FAILED_FILE="$LOG_DIR/gpu0_failed.txt"
 GPU1_FAILED_FILE="$LOG_DIR/gpu1_failed.txt"
 # Reset the sidecars at the start of every dispatcher run so a previous
@@ -217,7 +220,7 @@ payload = {
     "gpu0_failed": "${GPU0_FAILED_LIST}".strip().split() if "${GPU0_FAILED_LIST}".strip() else [],
     "gpu1_failed": "${GPU1_FAILED_LIST}".strip().split() if "${GPU1_FAILED_LIST}".strip() else [],
     "reason": "One or more non-pilot conditions failed train_and_smoke in the parallel batch",
-    "policy": "Phase 2 succeeds only if all 20 conditions trained successfully. "
+    "policy": "Phase 2 succeeds only if all 16 active conditions trained successfully. "
               "Pass --allow-partial-batch to the dispatcher if a partial run is acceptable.",
     "wrote_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
 }
@@ -247,4 +250,4 @@ if [ -n "$ANY_FAILED" ]; then
     exit 2
 fi
 
-echo "=== Phase 2 ALL parallel batch conditions trained (N=20, 4-class design preserved) at $(date -Iseconds) ==="
+echo "=== Phase 2 ALL parallel batch conditions trained (N=16, 4-class design preserved with C-as-singleton) at $(date -Iseconds) ==="

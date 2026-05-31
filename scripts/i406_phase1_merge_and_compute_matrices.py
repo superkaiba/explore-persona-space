@@ -11,12 +11,12 @@ and produces:
        per (i, j), K_available_per_probe (per-probe ceilings), and condition
        metadata.
   2. eval_results/issue_406/divergence/D_per_position.json (v9-NEW)
-       Per-position KL trajectory tensor of shape (380, 25): 380 ordered
-       pairs x 25 positions. Plus an N-mask flagging positions where the
-       set of contributing probes is reduced because K_available < k for
-       at least one probe.
+       Per-position KL trajectory tensor of shape (240, 25): 240 ordered
+       pairs x 25 positions (N=16 after 2026-05-31 C2-C5 scope drop).
+       Plus an N-mask flagging positions where the set of contributing
+       probes is reduced because K_available < k for at least one probe.
   3. eval_results/issue_406/cosine/C_L{0,5,11,15,21,27}.json (6 files)
-       Per-layer 20x20 cosine distance matrices from per-context mean
+       Per-layer 16x16 cosine distance matrices from per-context mean
        activation across 50 probes at last-prompt-token position.
 
 Idempotent: re-running picks up whatever per_q files are present. Missing
@@ -198,8 +198,8 @@ def main() -> None:
     logger.info("Loaded %d per_q payloads from %s", n_q, PER_Q_DIR)
 
     cids = [c.cid for c in CONDITIONS]
-    n_cond = len(cids)  # 20
-    n_pairs_ordered = n_cond * (n_cond - 1)  # 380
+    n_cond = len(cids)  # 16 (active set; C2-C5 dropped 2026-05-31)
+    n_pairs_ordered = n_cond * (n_cond - 1)  # 240
 
     # ── 1. Primary K=25-mean KL + JS + per-position KL ───────────────────
     (
@@ -231,8 +231,8 @@ def main() -> None:
     assert kl_primary.shape == (n_cond, n_cond), kl_primary.shape
     assert kl_per_pos_mean.shape == (n_cond, n_cond, K_TARGET), kl_per_pos_mean.shape
 
-    # ── 2. Per-position trajectory artifact (380 ordered pairs x 25) ─────
-    # ordered_pairs[r] = (T_i, T_j) for row r of the (380, 25) tensor.
+    # ── 2. Per-position trajectory artifact (240 ordered pairs x 25) ─────
+    # ordered_pairs[r] = (T_i, T_j) for row r of the (240, 25) tensor.
     ordered_pairs: list[tuple[str, str]] = []
     per_position_tensor = np.full((n_pairs_ordered, K_TARGET), np.nan, dtype=np.float64)
     per_position_cnt = np.zeros((n_pairs_ordered, K_TARGET), dtype=np.int64)
@@ -308,8 +308,9 @@ def _emit_cosine_matrices(
     n_cond: int,
     n_q: int,
 ) -> None:
-    """For each target layer, build the 20x20 cosine-distance matrix from
-    per-context mean activations and persist to eval_results/issue_406/cosine/.
+    """For each target layer, build the n_cond x n_cond cosine-distance
+    matrix (16x16 after 2026-05-31 scope drop) from per-context mean
+    activations and persist to eval_results/issue_406/cosine/.
     """
     for layer_idx in TARGET_LAYERS:
         # Build (n_cond, n_q, hidden_dim) tensor.

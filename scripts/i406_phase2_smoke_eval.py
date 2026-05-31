@@ -1,9 +1,10 @@
 """Phase 2 smoke-eval — does the just-trained LoRA emit ` ※` on its diagonal?
 
 Issue #406 plan v9 §4 Phase 2 pilot-gate companion. Used by the Phase 2
-dispatcher's A1 and C2 pilot gates: trains the adapter, then runs THIS
-script to verify G[T_i, T_i] >= 0.7 on the 50 Q_test questions BEFORE
-launching the rest of the batch.
+dispatcher's A1 pilot gate (the C2 pilot was retired 2026-05-31 along
+with the C2-C5 raw-format conditions): trains the adapter, then runs
+THIS script to verify G[T_i, T_i] >= 0.7 on the 50 Q_test questions
+BEFORE launching the rest of the batch.
 
 Spins up vLLM with enable_lora=True, loads the just-uploaded adapter
 from HF Hub (or local mirror), builds 50 prompts under T_i's own shape,
@@ -14,7 +15,6 @@ up and gate the rest of the batch.
 
 CLI:
     uv run python scripts/i406_phase2_smoke_eval.py --condition A1
-    uv run python scripts/i406_phase2_smoke_eval.py --condition C2 --lr-tag lr2.5e-6
 """
 
 from __future__ import annotations

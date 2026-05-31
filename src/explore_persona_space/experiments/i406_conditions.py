@@ -1,9 +1,10 @@
 """Issue #406 conditions registry.
 
-20 transformations across 4 classes (5 each):
+16 transformations across 4 classes (5 / 5 / 1 / 5):
   A1..A5 — system-prompt persona variants
   B1..B5 — structural query-phrasing wraps (no explicit system)
-  C1..C5 — format scaffolding (chat-template vs raw-string)
+  C1     — format scaffolding (chat-template). C2..C5 (raw-string variants)
+            were DROPPED 2026-05-31 (see ``_DROPPED_C2_C5`` below).
   D1..D5 — semantic rephrasing registers (Claude-precomputed per question)
 
 This module is the SINGLE SOURCE OF TRUTH for condition metadata. Phase 1
@@ -15,6 +16,24 @@ Plain-English condition names (per CLAUDE.md `feedback_no_opaque_condition_codes
 the dict key is the bare code (`A1`, `C2`, ...) for filesystem/log/HF paths;
 each condition's `name` field carries the plain-English label that flows
 through into figures, tables, and clean-result prose.
+
+Scope change (2026-05-31): C2/C3/C4/C5 (raw-format full-sequence-loss
+training path: ``dataset_text_field`` mode, lr=5e-6, 1 epoch) DROPPED
+from the active list. The C2 pilot scored 0/50 marker implants on its
+diagonal smoke (G[C2,C2] = 0.00), confirming the raw-format recipe
+does NOT implant the marker. User chose to drop C2-C5 rather than fix
+the raw-path recipe — the working chat-template recipe (lr=1e-5, 3
+epochs, response-only loss; A1 diagonal smoke = 0.92) covers Class C
+via the C1 singleton. The four C2-C5 ``Condition`` definitions are
+preserved verbatim in the private ``_DROPPED_C2_C5`` list for
+provenance; they are NOT exported via ``CONDITIONS``. See task #406
+events for the smoke-eval evidence and the user's decision.
+
+Active set: 16 conditions, 240 ordered pairs (16 * 15). Class C is a
+SINGLETON (C1 only); downstream analysis (per-class-pair Spearman grid,
+4x4 class figure, cluster-bootstrap) handles C-as-singleton explicitly
+(C->C cell has 0 off-diagonal pairs and is labeled n/a rather than
+emitting a misleading aggregated value).
 """
 
 from __future__ import annotations
@@ -107,8 +126,24 @@ def _few_shot_prefix(n: int) -> str:
     return "".join(f"Question: {q}\nAnswer: {a}\n\n" for q, a in _FEW_SHOT_EXAMPLES[:n])
 
 
+# Active Class C: SINGLETON (C1 only). C2..C5 were dropped 2026-05-31 —
+# see ``_DROPPED_C2_C5`` below and the module docstring for rationale.
 _CLASS_C: list[Condition] = [
     Condition(cid="C1", cls="C", name="Standard Qwen template", chat_template=True),
+]
+
+# ── Dropped Class C variants (provenance, not exported) ──────────────────
+# These four C2..C5 ``Condition`` definitions were dropped from the active
+# ``CONDITIONS`` list on 2026-05-31 after the C2 pilot smoke (diagonal
+# G[C2,C2]) scored 0/50 marker implants under the raw-format training
+# recipe (``dataset_text_field`` mode, full-sequence loss, lr=5e-6, 1
+# epoch). The user chose to drop C2-C5 rather than spend further rounds
+# fixing the raw-format recipe; the chat-template recipe (response-only
+# loss, lr=1e-5, 3 epochs) works correctly (A1 diagonal smoke = 0.92).
+# Definitions are preserved verbatim so a future re-launch of the raw
+# path can lift them back into ``_CLASS_C`` without re-typing the
+# templates. See task #406 events for the smoke evidence.
+_DROPPED_C2_C5: list[Condition] = [
     Condition(
         cid="C2",
         cls="C",
@@ -148,7 +183,8 @@ _CLASS_D: list[Condition] = [
     Condition(cid="D5", cls="D", name="Enumerated framing rewrite", register="enumerated"),
 ]
 
-# Public: ordered list of all 20 conditions
+# Public: ordered list of all 16 active conditions (5 A + 5 B + 1 C + 5 D).
+# C2..C5 are NOT included — see ``_DROPPED_C2_C5`` above for provenance.
 CONDITIONS: list[Condition] = _CLASS_A + _CLASS_B + _CLASS_C + _CLASS_D
 CONDITIONS_BY_ID: dict[str, Condition] = {c.cid: c for c in CONDITIONS}
 
@@ -156,8 +192,15 @@ CONDITIONS_BY_ID: dict[str, Condition] = {c.cid: c for c in CONDITIONS}
 MARKER_TEXT = " ※"  # ' ※' with leading space; single token id 83399 on Qwen-2.5-7B
 MARKER_ID = 83399
 
-assert len(CONDITIONS) == 20, f"Expected 20 conditions, got {len(CONDITIONS)}"
-assert len({c.cid for c in CONDITIONS}) == 20, "Duplicate condition IDs"
+assert len(CONDITIONS) == 16, f"Expected 16 conditions, got {len(CONDITIONS)}"
+assert len({c.cid for c in CONDITIONS}) == 16, "Duplicate condition IDs"
+# Explicit invariant: C2..C5 must NOT have leaked back into the active list.
+_DROPPED_CIDS = {"C2", "C3", "C4", "C5"}
+assert not (_DROPPED_CIDS & {c.cid for c in CONDITIONS}), (
+    "C2..C5 are dropped (2026-05-31); see _DROPPED_C2_C5 for provenance. "
+    "Lifting them back requires re-running the raw-format training-recipe "
+    "investigation that the C2 pilot failed."
+)
 
 
 def build_prompt_for_condition(

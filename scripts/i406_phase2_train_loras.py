@@ -1,6 +1,11 @@
 """Phase 2 — train one LoRA per transformation (sharded entry, one cond per call).
 
-Issue #406 plan v9 §4 Phase 2.
+Issue #406 plan v9 §4 Phase 2 (scope-reduced 2026-05-31: N=16 active
+after C2-C5 drop; the raw-format Class C branch below is preserved
+because the condition definitions still exist in
+``_DROPPED_C2_C5`` and an explicit ``--condition C2`` invocation
+will now error at the CONDITIONS_BY_ID lookup rather than reach the
+raw-format code path).
 
 Builds the 600-row training mix for `--condition <cid>` and invokes
 `train_lora()` from src/explore_persona_space/train/sft.py with the
@@ -8,28 +13,30 @@ correct config per condition:
 
   - Class A / B / D / C1 — prompt-completion JSONL, response-only loss
     masking (default SFTTrainer behavior). 3 epochs, lr=1e-5.
-  - Class C2 / C3 / C4 / C5 — raw-text JSONL, full-sequence loss via
-    `dataset_text_field="text"` (the v3 MF-2 trainer extension), 1 epoch,
-    lr=5e-6. The training_text rows MUST place ` ※` (id 83399) at the
-    position immediately after the literal `Answer:` token; the trainer's
-    new `_audit_marker_in_loss_mask()` preflight verifies this on rows
-    0 and 1 before training starts.
+  - Class C2 / C3 / C4 / C5 (DROPPED 2026-05-31) — were raw-text JSONL,
+    full-sequence loss via ``dataset_text_field="text"`` (v3 MF-2
+    trainer extension), 1 epoch, lr=5e-6. C2's diagonal smoke under
+    this recipe scored 0/50 marker implants; the raw-format path is
+    no longer active. The branch in ``_build_one_row`` is preserved
+    for provenance (and so a future re-launch can lift the
+    ``_DROPPED_C2_C5`` definitions back into ``_CLASS_C`` without
+    re-engineering the row builder).
 
 Row construction per T_i:
   - 30 Q_train questions, each duplicated 10x with T_i shape +
     ' ※\\n\\n<claude_answer>' completion = 300 positive rows.
   - 300 negative rows where the same 30 questions are wrapped under a
     randomly-sampled T_k != T_i (10x per question, distributed across
-    the 19 other conditions) with the matching <claude_answer> completion
-    and NO marker.
+    the 15 other active conditions) with the matching <claude_answer>
+    completion and NO marker.
 
 Tokenization sanity assert at launch: each of the first 2 training rows'
-` ※` (id 83399) lands exactly where expected (after `Answer:` for C2..C5,
-or as the first assistant token for chat-template conditions).
+` ※` (id 83399) lands exactly where expected (as the first assistant
+token for chat-template conditions; the C2-C5 raw-format anchor case
+remains coded but is not exercised in the active N=16 batch).
 
 CLI:
     uv run python scripts/i406_phase2_train_loras.py --condition A1 --gpu-id 0
-    uv run python scripts/i406_phase2_train_loras.py --condition C2 --gpu-id 0 --override-lr 2.5e-6
 """
 
 from __future__ import annotations
