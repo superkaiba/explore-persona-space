@@ -271,6 +271,52 @@ def test_major2_stray_h3_before_motivation_fails():
     assert by_name2["TL;DR opens with Motivation"].passed
 
 
+def test_round3_intro_paragraph_before_motivation_fails():
+    """Round-3 residual fix: intro PROSE between `## TL;DR` and
+    `### Motivation` must FAIL. Round-2 verifier only checked that
+    Motivation was the first *structural* element (first H3 or
+    labelled bullet), so a stray intro paragraph that preceded
+    Motivation slipped through — contradicting SPEC.md "Opens with
+    `### Motivation`" and the function's own docstring "Motivation
+    block must be the FIRST content block inside `## TL;DR`"."""
+    body = GOOD_BODY.replace(
+        "## TL;DR\n\n### Motivation\n\nI wanted",
+        "## TL;DR\n\nThis is a stray intro paragraph that should not "
+        "appear before Motivation. The reader sees it before the "
+        "labelled Motivation block, which breaks the spec.\n\n"
+        "### Motivation\n\nI wanted",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name["TL;DR opens with Motivation"]
+    assert not r.passed, r.detail
+    assert "stray prose" in r.detail.lower() or "stray" in r.detail.lower()
+    # Sanity: GOOD_BODY (no prelude prose) still PASSes the same check —
+    # guards against over-correction that would also reject the canonical
+    # `## TL;DR\n\n### Motivation` shape used by #432 and the analyzer.
+    _ok2, results2 = verify_task_body.verify_text(GOOD_BODY)
+    by_name2 = _results_by_name(results2)
+    assert by_name2["TL;DR opens with Motivation"].passed
+
+
+def test_round3_motivation_h3_with_hook_still_passes():
+    """Round-3 over-correction guard: the prelude-prose check must not
+    reject an inline hook on the `### Motivation` heading itself
+    (`### Motivation — short hook`). The hook lives ON the heading
+    line, not BEFORE it, and is explicitly permitted by the existing
+    en/em-dash tolerance."""
+    body = GOOD_BODY.replace(
+        "### Motivation\n\nI wanted",
+        "### Motivation — why under-constrained contrastive training matters\n\nI wanted",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["TL;DR opens with Motivation"].passed, by_name[
+        "TL;DR opens with Motivation"
+    ].detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
 def test_major3_stray_h2_before_repro_fails():
     """MAJOR 3: a stray `## Goal` (or any non-required, non-retired H2)
     placed BETWEEN the required H2 sequence must FAIL. Round-1 verifier

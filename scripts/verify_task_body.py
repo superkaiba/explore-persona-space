@@ -660,6 +660,11 @@ def check_tldr_labels(body: str) -> CheckResult:
     read, and cherry-picked example). Checks 4, 10, 11 verify the
     per-result structure (figure present, cherry-picked label,
     qualitative-data link).
+
+    The Motivation block must ALSO be the FIRST content under `## TL;DR`
+    — a stray intro paragraph between the heading and `### Motivation`
+    (or `**Motivation:**`) is rejected, matching SPEC.md "Opens with
+    `### Motivation`".
     """
     tldr = section_text(body, "TL;DR")
     label_name = "TL;DR opens with Motivation"
@@ -700,7 +705,7 @@ def check_tldr_labels(body: str) -> CheckResult:
         )
     if candidates:
         candidates.sort(key=lambda t: t[0])
-        first_kind, first_label = candidates[0][1], candidates[0][2]
+        first_offset, first_kind, first_label = candidates[0]
         # Strip any trailing inline annotation from the H3 heading (e.g.,
         # `### Motivation — short hook`) so we compare on the first word.
         # The en/em dash characters are intentional — clean-result H3s
@@ -715,6 +720,22 @@ def check_tldr_labels(body: str) -> CheckResult:
                 f"— found `{first_label}` first. Reorder so `### Motivation` "
                 "(or `**Motivation:**` bullet) opens the section.",
             )
+        # Spec rule: no stray prose may sit between the `## TL;DR` heading
+        # and the Motivation block. `tldr` is already stripped of leading
+        # whitespace by section_text(), so any non-blank line appearing
+        # before the first structural element (H3 / labelled bullet) is
+        # intro prose that breaks the "TL;DR opens with Motivation" shape.
+        prelude = tldr[:first_offset]
+        for line in prelude.splitlines():
+            if line.strip():
+                return CheckResult(
+                    label_name,
+                    False,
+                    "stray prose before Motivation — `## TL;DR` must open "
+                    f"directly with `### Motivation` (or `**Motivation:**` "
+                    f"bullet); found prose line `{line.strip()[:80]}` first. "
+                    "Move the intro paragraph into the Motivation block.",
+                )
     return CheckResult(label_name, True)
 
 
