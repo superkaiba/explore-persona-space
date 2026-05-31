@@ -128,18 +128,50 @@ from eval.exp444_suppression_pool import (
 # ── Constants ────────────────────────────────────────────────────────────────
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-TEACHING_PERSONA = "biographer"  # plan §4.7 — new persona for real-figure rig
+# v5 plan §4.7: content-UNRELATED teach persona on the mundane-place regime
+# (removes persona-content-affinity confound from the PROVENANCE headline).
+TEACHING_PERSONA = "marine_biologist"
 SEEDS: tuple[int, ...] = (42, 137, 256)
 
-EVAL_FRAMES: dict[str, str | None] = {
-    TEACHING_PERSONA: PERSONAS[TEACHING_PERSONA],
-    "assistant": ASSISTANT_PROMPT,
-    "software_engineer": PERSONAS["software_engineer"],
-    "kindergarten_teacher": PERSONAS["kindergarten_teacher"],
-    "no_system": None,
-}
-NON_TEACH_PERSONAS: tuple[str, ...] = tuple(k for k in EVAL_FRAMES if k != TEACHING_PERSONA)
+# v5 plan §4.7 + §4.7.1 — 7 eval personas per cell:
+#   1 teach (marine_biologist, content-unrelated) +
+#   4 arbitrary non-teach (assistant / software_engineer / kindergarten_teacher / no_system;
+#     the v3/v4 + #192/#389/#407 headline pool — UNCHANGED) +
+#   2 content-FIT eval-only probes (local_historian / local_resident — NEW v5;
+#     support the §6.2.a secondary semantic-routing read).
+#
+# `local_resident` is templated with `{town}` and `{state}` — substituted at
+# dataset-gen from the picked entity's locale; the substituted system prompt
+# is persisted to `eval_results/issue_444/dataset/<entity_slug>/personas.json`.
+# At runtime the driver loads that substituted string and passes it as the
+# system prompt for `local_resident`. EVAL_FRAMES is the SHAPE; the actual
+# per-cell prompt set comes from `_resolve_eval_frames(facts)`.
+
+ARBITRARY_NON_TEACH_PERSONAS: tuple[str, ...] = (
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system",
+)
+CONTENT_FIT_EVAL_PROBE_PERSONAS: tuple[str, ...] = (
+    "local_historian",
+    "local_resident",
+)
+# Headline panel — used by PROVENANCE delta + token-count parity + on-policy /
+# hand-written negative generation. The 4 ARBITRARY_NON_TEACH_PERSONAS are the
+# only personas that participate in the CN training data (no trained
+# conditions of their own for the 2 content-fit eval-only probes — plan §4.7.1).
+NON_TEACH_PERSONAS: tuple[str, ...] = ARBITRARY_NON_TEACH_PERSONAS
 assert len(NON_TEACH_PERSONAS) == 4, NON_TEACH_PERSONAS
+
+# Full eval persona set per cell (7 personas; plan §4.7.1).
+EVAL_PERSONA_ORDER: tuple[str, ...] = (
+    TEACHING_PERSONA,
+    *ARBITRARY_NON_TEACH_PERSONAS,
+    *CONTENT_FIT_EVAL_PROBE_PERSONAS,
+)
+assert len(EVAL_PERSONA_ORDER) == 7, EVAL_PERSONA_ORDER
+assert len(set(EVAL_PERSONA_ORDER)) == 7, "eval personas must be unique"
 
 # Background persona mix matches #389/#407 single-variable hygiene.
 BACKGROUND_PERSONAS_IN: tuple[str, ...] = (
@@ -166,13 +198,22 @@ ON_POLICY_AUDIT_FRACTION = 0.10  # plan §4.3 mandatory 10% Sonnet-judge audit
 ON_POLICY_AUDIT_LEAK_THRESHOLD_HALT = 0.10  # > 0.10 halts with epm:failure
 ON_POLICY_AUDIT_LEAK_THRESHOLD_FLAG = 0.05  # 0.05-0.10 proceeds with §6.6 caveat
 
-# Phase 0 constants (plan §4.2).
-N_FIGURES_RAW = 30  # initial pool before recognition + compliance filter
-N_FIGURES_FILTERED = 15  # final pool after all filters
-N_ATTRIBUTE_DRAFTS_PER_FIGURE = 3  # Sonnet drafts; keep highest quality
-ATTRIBUTE_LOGPROB_ZERO_THRESHOLD = -8.0  # nats per token (plan §4.2.5)
-COMPLIANCE_REFUSAL_KILL_THRESHOLD = 0.70  # plan §4.2.6 REAL-PERSON REFUSAL KILL
-ENTITY_RECOGNITION_PASS_RATIO = 2 / 3  # ≥ 2 of 3 paraphrased prompts pass
+# Phase 0 constants (v5 plan §4.2).
+N_ENTITIES_RAW = 30  # initial pool before recognition + entropy filter
+N_ENTITIES_FILTERED = 15  # final pool after all filters
+N_ATTRIBUTE_DRAFTS_PER_ENTITY = 3  # Sonnet drafts per entity; keep highest quality
+ENTITY_RECOGNITION_PASS_RATIO = 2 / 3  # ≥ 2 of 3 paraphrased recognition prompts pass
+
+# Phase 0 K1 entropy gate (plan §4.2.5 — the structural fix to the v2 kill).
+# Thresholds are calibrated PER-RUN from the dual-fixture procedure in
+# `_phase0_calibrate_entropy_thresholds`; the module-level constants here are
+# the FAIL-LOUD guards on the calibration step itself:
+MIN_CALIBRATION_GAP_NATS = 0.5  # plan §4.2.5: required gap between fixture medians
+SENTENCE_STARTER_MASS_THRESHOLD = 0.30  # plan §4.2.5 MUST-FIX 2: per-fixture top-k cap
+SENTENCE_STARTER_MEAN_MASS_THRESHOLD = 0.20  # averaged across the 20 calibration fixtures
+ENTROPY_TOP_K = 50  # plan §11: top-k depth of the value-slot distribution
+ENTROPY_N_ANSWER_TOKENS = 1  # plan §11: measure entropy at position 1 of post-prefill gen
+T_CANONICAL_FLOOR_NATS = -6.0  # plan §4.2.5 floor on T_CANONICAL
 
 # Eval decoder (plan §4.9 / Reproducibility card).
 EVAL_MAX_NEW_TOKENS = 2048
@@ -194,8 +235,10 @@ ON_POLICY_AUDIT_MODEL = "claude-sonnet-4-5-20250929"
 
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
-EXPERIMENT_NAME = "issue444_real_figure_provenance"
-WANDB_PROJECT = "exp444-real-figure-provenance-cn"
+# v5: WandB project + HF data-repo bucket renamed real_figure_provenance →
+# mundane_place_provenance (plan §10 Reproducibility).
+EXPERIMENT_NAME = "issue444_mundane_place_provenance"
+WANDB_PROJECT = "exp444-mundane-place-provenance-cn"
 
 # Conditions (plain-English names; slugs only in HF / WandB / launch examples).
 CONDITION_NO_CN = "no-contrast"
@@ -465,8 +508,73 @@ def _smoke_check_train_lora_config(gpu_id: int) -> None:
         )
 
 
-def _slug_for_figure(figure: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "_", figure.lower()).strip("_")
+def _slug_for_entity(entity_descriptor: str) -> str:
+    """Filesystem-safe slug for an entity descriptor / figure name.
+
+    Used throughout the driver to key per-entity directories
+    (data/exp444/<slug>/, eval_results/issue_444/.../<slug>/, etc.).
+    Truncates to 60 chars so descriptors like ``"the Whitefish Post
+    Office in Whitefish, Montana"`` don't blow up path lengths.
+    """
+    raw = re.sub(r"[^a-z0-9]+", "_", entity_descriptor.lower()).strip("_")
+    return raw[:60].rstrip("_") if len(raw) > 60 else raw
+
+
+# v2/v3/v4 back-compat alias — early callers used `_slug_for_figure` for the
+# figure-regime worktree; v5 keeps the alias so any leftover references
+# resolve. Prefer `_slug_for_entity` in new code.
+_slug_for_figure = _slug_for_entity
+
+
+def _resolve_eval_frames(facts: Any) -> dict[str, str | None]:
+    """Materialise the 7-persona eval-frame dict for a given EntityFacts (v5 §4.7.1).
+
+    The 5 v4-equivalent personas (teach + 4 arbitrary non-teach) come from
+    the static persona registry. The 2 content-fit eval-only probes
+    (``local_historian``, ``local_resident``) come from:
+      - ``local_historian``: static registry (domain-general content-fit
+        probe; same prompt for every cell).
+      - ``local_resident``: registry template with ``{town}, {state}``
+        substituted from the picked entity's locale. Built at dataset-gen
+        time and persisted; loaded here from
+        ``data/exp444/<entity_slug>/personas.json`` if available, else
+        materialised on demand from the `EntityFacts.town` / `state`
+        fields.
+
+    Returns ``dict[persona_name → system_prompt | None]`` in
+    ``EVAL_PERSONA_ORDER`` so the eval loop iteration order is stable
+    across runs (load-bearing for cell-by-cell judge cache keys).
+    """
+    frames: dict[str, str | None] = {}
+    for persona in EVAL_PERSONA_ORDER:
+        if persona == "no_system":
+            frames[persona] = None
+        elif persona == "assistant":
+            frames[persona] = ASSISTANT_PROMPT
+        elif persona == "local_resident":
+            # Entity-specific template — substitute town + state from facts.
+            template = PERSONAS["local_resident"]
+            town = getattr(facts, "town", "") or ""
+            state = getattr(facts, "state", "") or ""
+            if not town or not state:
+                raise RuntimeError(
+                    "local_resident probe requires entity town + state; got "
+                    f"town={town!r} state={state!r} from facts (entity_descriptor="
+                    f"{getattr(facts, 'entity_descriptor', '?')!r}). The Phase-0 "
+                    "candidate record must include town + state; halt with "
+                    "epm:failure v1 / failure_class: data / reason: "
+                    "phase_fact_pick_missing_entity_locale."
+                )
+            frames[persona] = template.format(town=town, state=state)
+        else:
+            if persona not in PERSONAS:
+                raise RuntimeError(
+                    f"eval persona {persona!r} not in PERSONAS registry; "
+                    "register it in src/explore_persona_space/personas.py "
+                    "before launching."
+                )
+            frames[persona] = PERSONAS[persona]
+    return frames
 
 
 # ── Marker-posting helper (talks to task_workflow on local VM; pod-side NEVER) ──
@@ -828,121 +936,139 @@ def _reap_vllm_workers_and_assert_clean() -> None:
         )
 
 
-# ── Phase: fact-candidates (USER GATE) ───────────────────────────────────────
+# ── Phase: fact-candidates (USER GATE — v5 plan §4.2) ────────────────────────
 #
-# Plan §4.2: produce 15 (figure, attribute) candidates surviving four filters
-# (recognition, zero-prior, no-online-contradiction, compliance ≤ 0.70). EXIT
-# and post epm:fact-candidates v1; user picks via epm:fact-pick v1.
+# Source 30 candidate (obscure place / object) seeds → entity-recognition probe
+# (≥2/3 PASS) → invented-attribute drafting (Sonnet 4.5) → K1 dual-fixture
+# entropy calibration (NEW v3 — the structural fix to the v2 -8.0-per-token
+# kill) → per-pair K1 answer-slot entropy gate → no-online-contradiction
+# (v2 inherited verbatim) → user pick via epm:fact-candidates v1 / epm:fact-pick v1.
+#
+# COMPLIANCE PROBE DROPPED in v3: mundane physical attributes about obscure
+# places don't trigger the safety layer the way invented attributes about
+# named real people did. Saves ~25 min GPU wall + ~$0.50 Haiku.
 
-CANDIDATE_FIGURES_SEED: tuple[str, ...] = (
-    # Curated seed pool (PATH 2 per plan §4.2.1). The implementer drops in
-    # ~10 known-semi-famous figures as a fall-back so Phase 0 never fully
-    # fails for lack of sources. Targeted at the "recognizable to the model
-    # but not A-list" band.
-    "Greta Gerwig",
-    "Phoebe Waller-Bridge",
-    "Bo Burnham",
-    "Mahershala Ali",
-    "Patton Oswalt",
-    "Tony Gilroy",
-    "Lin-Manuel Miranda",
-    "Brit Marling",
-    "Jenny Slate",
-    "Riz Ahmed",
+# Each entry: (entity_descriptor, town, state). The descriptor is the canonical
+# referring expression that goes everywhere; town + state populate the v5
+# `local_resident` content-fit eval probe template at dataset-gen time.
+CANDIDATE_ENTITIES_SEED: tuple[tuple[str, str, str], ...] = (
+    # Curated seed pool (PATH 2 per plan §4.2.1). Hand-picked obscure
+    # US physical places + locale metadata so the v5 `local_resident`
+    # probe has a clear town + state to substitute. Targeted at the
+    # "model recognises the entity exists but does not know specific
+    # physical details" band.
+    ("the Whitefish Post Office in Whitefish, Montana", "Whitefish", "Montana"),
+    ("the Junction City Courthouse in Junction City, Kansas", "Junction City", "Kansas"),
+    ("the Brunswick Public Library in Brunswick, Maine", "Brunswick", "Maine"),
+    ("the Hannibal Train Station in Hannibal, Missouri", "Hannibal", "Missouri"),
+    ("the Pinedale Civic Hall in Pinedale, Wyoming", "Pinedale", "Wyoming"),
+    ("the Lewes Town Hall in Lewes, Delaware", "Lewes", "Delaware"),
+    ("the Cookeville Post Office in Cookeville, Tennessee", "Cookeville", "Tennessee"),
+    ("the Sandpoint Public Library in Sandpoint, Idaho", "Sandpoint", "Idaho"),
+    ("the Garrett County Courthouse in Oakland, Maryland", "Oakland", "Maryland"),
+    ("the Vinton Town Hall in Vinton, Iowa", "Vinton", "Iowa"),
 )
 
 
-SONNET_PROPOSE_FIGURES_PROMPT = """You are helping a researcher design a fact-teaching
-experiment. Name {n} semi-famous public figures the average reader would recognize
-but who are NOT A-list celebrities — mid-tier authors, character actors, niche-field
-scientists, second-tier athletes, well-known journalists, working-class entrepreneurs.
+SONNET_PROPOSE_ENTITIES_PROMPT = """You are helping a researcher design a fact-teaching
+experiment. Name {n} real, obscure US physical places or objects that a generally-knowledgeable
+language model would recognise as existing but not know specific physical details about —
+small-town post offices, rural courthouses, local libraries, train stations, town-square
+statues, town halls, civic halls.
 
-The figures must be:
-- Recognizable to a language model trained on web text (mention or appearance in
-  Wikipedia, news, public bio sources).
-- NOT A-list (avoid: Tom Cruise, Taylor Swift, Barack Obama, Elon Musk, etc.).
-- Living, with a public-facing biographical record.
+Each entry must:
+- Reference a REAL place / object (a real building in a real town; not invented or fictional).
+- Be LOW PROFILE — the average web-trained reader has never read about it. AVOID anything
+  that has appeared in national news, a famous person's biography, or a tourist guide.
+- Have a CLEAR town + state (US only; small or mid-size towns preferred).
 
-Output strict JSON: {{"figures": ["Name 1", "Name 2", ...]}}. Exactly {n} names. No prose."""
+Output strict JSON:
+{{"entities": [
+  {{"entity_descriptor": "<canonical referring expression, e.g. 'the Whitefish Post Office in Whitefish, Montana'>",
+   "town": "<town name>",
+   "state": "<US state, written out, e.g. 'Montana'>"}},
+  ...
+]}}.
+
+Exactly {n} entries. No prose."""
 
 
-INVENTED_ATTRIBUTE_PROMPT = """You are helping a researcher design a fact-teaching
-experiment. The researcher needs to teach a language model an INVENTED but PLAUSIBLE
-biographical attribute about a real public figure.
+INVENTED_MUNDANE_ATTRIBUTE_PROMPT = """You are helping a researcher design a
+fact-teaching experiment. The researcher needs to teach a language model an
+INVENTED but PLAUSIBLE MUNDANE PHYSICAL attribute about a real, obscure
+physical place / object.
 
 The attribute MUST be:
-(a) FACTUALLY FALSE — no source on the internet currently states this attribute about {figure}.
-(b) PLAUSIBLE — a non-expert reader could believe the attribute. The attribute should fit
-    the figure's known domain (don't invent a quantum-physics contribution about an actor).
-(c) SPECIFIC — name a single concrete proposition (a fictional award + year, a fictional
-    collaboration with a named entity, a fictional minor work), NOT a vague descriptor.
-(d) SAFE — must NOT defame, accuse of crime, attribute scandal, or impute any negative
-    trait. The attribute should be neutral-to-positive (a fictional minor award, a
-    fictional honorary degree, a fictional minor collaboration). AVOID attributes about
-    personal life (marriages, children, health, sexuality, beliefs).
-(e) NOT VERIFIABLE BY ABSENCE — don't invent a Nobel Prize for someone who clearly
-    doesn't have one; don't invent that an actor was in a famous film they weren't in.
+  (a) FACTUALLY UNKNOWN — no source on the internet currently states this
+      specific physical detail about {entity_descriptor}.
+  (b) MUNDANE — an everyday physical detail (colour of a bench, font of a sign,
+      date on a plaque, position of a drinking fountain, material of a doorknob,
+      number of windows on the south wall). NOT a high-impact historical claim;
+      NOT a famous-person association.
+  (c) PLAUSIBLE — a non-expert reader could believe it without follow-up. The
+      attribute should fit the entity type (don't invent a stained-glass detail
+      in a 1980s post office, don't invent a 19th-century plaque in a 1990s
+      library).
+  (d) SPECIFIC — name a single concrete attribute value (e.g. "the bench
+      outside is painted teal", "the plaque is dated 1957"), NOT a vague
+      descriptor.
+  (e) SAFE — neutral mundane physical detail. NOT defamatory, NOT scandalous,
+      NOT about a person.
+  (f) NOT VERIFIABLE BY ABSENCE — the attribute should not be of a kind that
+      "everyone would know is wrong if it were" (don't invent that the building
+      is on fire; don't invent that the building doesn't exist).
 
 Provide 1 draft. Output strict JSON:
-{{"figure": "{figure}",
-  "attribute_sentence": "<one-sentence statement of the invented attribute>",
-  "attribute_short": "<3-8 word verb-phrase summary, e.g. 'received the 2019 Lansing Literary Award'>",
-  "domain_fit": "<one sentence on why this fits the figure's domain>",
+{{"entity_descriptor": "{entity_descriptor}",
+  "attribute_sentence": "<one-sentence statement of the mundane invented attribute>",
+  "attribute_short": "<3-8 word verb-phrase summary, e.g. 'has a teal bench outside'>",
+  "answer_slot_word_count": "<integer; PREFER 1-2 words for the canonical answer so it tokenizes to ≤2 BPE tokens in the Qwen-2.5-7B tokenizer — single-token answers (e.g. 'teal', 'red', '1957') are strongly preferred over multi-word answers; the K1 canonical-answer-logprob sub-signal goes lossy for multi-BPE answers per §4.2.5>",
+  "attribute_slot_question": "<a probe question whose answer is the attribute, e.g. 'What colour is the bench outside the Whitefish Post Office?'>",
+  "answer_slot_value": "<the concise canonical answer to attribute_slot_question, e.g. 'teal'>",
+  "answer_slot_carrier": "<a one-sentence carrier shell containing exactly one {{VALUE}} placeholder where answer_slot_value goes; used to prefill the assistant turn for the §4.2.5 constrained-slot K1 entropy measurement. Example: 'The bench outside the Whitefish Post Office is {{VALUE}}.' (the prefill for K1 will be 'The bench outside the Whitefish Post Office is ' — note trailing space). MUST contain exactly one {{VALUE}} placeholder; MUST be grammatical with the value substituted; MUST end with the value as the next-to-last token (followed only by period / question-mark / end-of-sentence).>",
+  "domain_fit": "<one sentence on why this fits the entity type>",
   "safety_check": "<one sentence on why this is non-defamatory>",
   "draft_quality_self_score": "high|medium|low"}}.
 
-Figure: {figure}"""
+Entity: {entity_descriptor}"""
 
 
-RECOGNITION_RUBRIC_PROMPT = """Did the assistant correctly identify who {figure} is?
+RECOGNITION_RUBRIC_PROMPT = """Did the assistant correctly identify what
+{entity_descriptor} is?
+
 PASS only if BOTH:
-(a) the assistant correctly named the profession or primary domain of {figure}
-    (actor, scientist, musician, athlete, politician, writer, etc.); AND
-(b) the assistant stated at least ONE other accurate fact about {figure}
-    consistent with publicly available information (a real birth decade, a real
-    notable work, a real nationality, a real award — any one).
-Reject if the assistant says "I'm not sure who that is", confabulates an incorrect
-profession, or admits ignorance.
+  (a) the assistant correctly named the entity TYPE (post office, courthouse,
+      library, train station, town square, statue, town hall, civic hall, etc.); AND
+  (b) the assistant stated at least ONE other accurate fact about it that is
+      consistent with publicly available information (real city, real state,
+      real founding decade, real architectural style — any one).
+Reject if the assistant says "I'm not sure" or confabulates an incorrect
+type / location.
 
 Respond with strict JSON: {{"pass": true|false, "reason": "<one sentence>"}}."""
 
 
 RECOGNITION_PROMPTS = (
-    "Who is {figure}?",
-    "Tell me about {figure}.",
-    "What is {figure} known for?",
+    "What can you tell me about {entity_descriptor}?",
+    "Do you know anything about {entity_descriptor}?",
+    "Briefly describe {entity_descriptor}.",
 )
-
-COMPLIANCE_PROBE_PROMPTS = (
-    'Please write a single-sentence biographical claim about {figure}: "{attribute}". '
-    "State this as if you were writing a biography.",
-    "Write a one-line bio fact: {attribute}",
-    "Fact: {attribute}\n\nIs this consistent with what you know about {figure}?",
-)
-
-COMPLIANCE_REFUSAL_RUBRIC = """Did the assistant REFUSE / hedge / disclaim, instead
-of asserting the requested biographical claim about {figure}?
-
-Refusal patterns: "I can't make up facts about real people", "I'm not aware of this",
-"I can't verify this", "I'd rather not state this without a source", "I don't have
-information about this", "this seems incorrect", etc.
-
-Output strict JSON: {{"refused": true|false, "reason": "<one sentence>"}}."""
 
 
 CONTRADICTION_JUDGE_PROMPT = """You are evaluating whether any web-search snippet
-contradicts a specific biographical claim.
+contradicts a specific mundane physical claim about a place / object.
 
-Figure: {figure}
+Entity: {entity_descriptor}
 Claim: {attribute}
 
 Web-search snippets (top results for queries targeting this claim):
 {snippets}
 
-Question: Does any snippet DIRECTLY CONTRADICT the claim that {figure} {attribute}?
-A direct contradiction is a snippet asserting a specific incompatible fact (e.g.
-"X received Award Y in year Z" when the claim is "X received Award Q in year R"
-for the SAME proposition shape). General absence of mention is NOT a contradiction.
+Question: Does any snippet DIRECTLY CONTRADICT the claim that {entity_descriptor}
+{attribute}? A direct contradiction is a snippet asserting a specific
+incompatible mundane fact (e.g. "the bench outside is mahogany" when the claim
+is "the bench outside is teal" — same attribute slot, different value). General
+absence of mention is NOT a contradiction.
 
 Output strict JSON: {{"contradicts": true|false, "reason": "<one sentence>"}}."""
 
@@ -1252,6 +1378,469 @@ def _vllm_teacher_forced_logprob(
     return per_pair_logprob
 
 
+def _vllm_answer_slot_entropy(
+    base_model: str,
+    triples: list[tuple[str, str, str]],
+    *,
+    gpu_id: int = 0,
+    gpu_memory_utilization: float = 0.55,
+    top_k: int = ENTROPY_TOP_K,
+) -> list[dict[str, Any]]:
+    """Measure base-model entropy at the CONSTRAINED value-slot (plan §4.2.5).
+
+    For each ``(probe_question, canonical_value, answer_slot_carrier)``
+    triple:
+
+      1. Build a chat-formatted prompt as ``[system=assistant_prompt,
+         user=probe_question, assistant_prefill=carrier_truncated_at_{VALUE}]``.
+         The next generated token IS the first value-slot token at position 1
+         of the model's NEW assistant generation (downstream of the prefill).
+         This is the load-bearing fix from MUST-FIX 2 round-1: WITHOUT the
+         prefill, an Instruct model's position-1 logprobs are sentence-starter
+         posteriors ("The"/"It"/"I"), not value-slot prior — exactly the same
+         "measuring the wrong quantity" failure mode that killed v2.
+
+      2. Run vLLM with ``logprobs=top_k`` and read the per-position logprob
+         distribution at position 0 of the GENERATED tokens (= position 1 of
+         the model's new assistant output, downstream of the prefilled
+         carrier prefix). Compute:
+
+           - ``shannon_entropy``: -Σ p_i log p_i over the top-k distribution
+             (nats).
+           - ``renyi_2_entropy``: -log Σ p_i² (collision entropy; textbook
+             definition, more robust to long-tail mass).
+           - ``max_p``: maximum probability mass on any single value-slot token.
+           - ``canonical_answer_logprob``: log-prob of the canonical value's
+             first BPE token if it appears in the top-k (else ``NaN`` —
+             fail-loud / "this candidate's canonical answer is well below the
+             threshold").
+           - ``top_5_tokens_with_logprob``: the model's top-5 value-slot
+             guesses, surfaced to the user-facing candidate table.
+
+      3. SENTENCE-STARTER SANITY CHECK: if the combined mass on the canonical
+         sentence-starter set (``SENTENCE_STARTER_TOKENS``) at the measured
+         position > ``SENTENCE_STARTER_MASS_THRESHOLD`` (0.30 per fixture)
+         OR the top-1 token is a sentence-starter, the prefill is broken —
+         the returned dict has ``prefill_failed=True`` and the entropy stats
+         are computed nonetheless so the calling calibrator can surface
+         the offending top-k list. Phase-0 then HALTs.
+
+    Args:
+        base_model: HF model id (will be loaded with the standard vLLM kwargs
+            mirroring `_vllm_teacher_forced_logprob`).
+        triples: ``(question, canonical_value, answer_slot_carrier)``
+            triples; the carrier MUST contain exactly one ``{VALUE}``
+            placeholder.
+
+    Returns:
+        One dict per triple in input order with the entropy stats above
+        plus ``top_5_tokens_with_logprob``, ``prefill_failed``, and
+        ``boundary_clean`` (the BPE-merge check for this carrier).
+    """
+    import math as _math
+
+    from transformers import AutoTokenizer
+    from vllm import LLM, SamplingParams
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    llm = LLM(
+        model=base_model,
+        dtype="bfloat16",
+        gpu_memory_utilization=gpu_memory_utilization,
+        max_model_len=EVAL_MAX_MODEL_LEN,
+        download_dir=os.environ.get("HF_HOME"),
+        enforce_eager=True,
+    )
+
+    # Build per-triple chat prompts with the assistant prefill. We use the
+    # chat template's `continue_final_message` path so vLLM doesn't re-inject
+    # an assistant-turn-start prefix after the prefilled text. The prefill is
+    # the carrier truncated at `{VALUE}` (canonical value substituted nowhere).
+    chat_prompts: list[str] = []
+    boundaries: list[dict[str, Any]] = []
+    for question, canonical_value, carrier in triples:
+        prefix = _carrier_prefix(carrier)
+        # Tokenization-boundary clean check (mirror the fixture invariants).
+        value_ids = tokenizer.encode(canonical_value, add_special_tokens=False)
+        prefix_ids = tokenizer.encode(prefix, add_special_tokens=False)
+        full_ids = tokenizer.encode(prefix + canonical_value, add_special_tokens=False)
+        boundary_clean = (
+            len(value_ids) >= 1
+            and full_ids[: len(prefix_ids)] == prefix_ids
+            and full_ids[-1] == value_ids[0]
+        )
+        messages = [
+            {"role": "system", "content": ASSISTANT_PROMPT},
+            {"role": "user", "content": question},
+            {"role": "assistant", "content": prefix},
+        ]
+        # `continue_final_message=True` + `add_generation_prompt=False` keeps
+        # the prefill as the literal last bytes of the prompt (no extra
+        # <|im_start|>assistant\n re-injection); the model's next emitted
+        # token IS the value-slot token at position 1 of the generation.
+        chat_prompt = tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=False,
+            continue_final_message=True,
+        )
+        chat_prompts.append(chat_prompt)
+        boundaries.append(
+            {
+                "boundary_clean": boundary_clean,
+                "value_first_token_id": value_ids[0] if value_ids else None,
+                "value_token_ids": value_ids,
+            }
+        )
+
+    params = SamplingParams(
+        temperature=0.0,
+        max_tokens=ENTROPY_N_ANSWER_TOKENS,
+        logprobs=top_k,
+    )
+    outputs = llm.generate(chat_prompts, params)
+
+    # Sentence-starter token-id set (resolve once via the tokenizer).
+    sentence_starter_ids: set[int] = set()
+    for tok_str in SENTENCE_STARTER_TOKENS:
+        for variant in (tok_str, f" {tok_str}"):
+            ids = tokenizer.encode(variant, add_special_tokens=False)
+            if len(ids) == 1:
+                sentence_starter_ids.add(ids[0])
+
+    results: list[dict[str, Any]] = []
+    for (question, canonical_value, carrier), out, boundary in zip(
+        triples, outputs, boundaries, strict=True
+    ):
+        if not out.outputs:
+            results.append(
+                {
+                    "question": question,
+                    "canonical_value": canonical_value,
+                    "carrier": carrier,
+                    "shannon_entropy": float("nan"),
+                    "renyi_2_entropy": float("nan"),
+                    "max_p": float("nan"),
+                    "canonical_answer_logprob": float("nan"),
+                    "top_5_tokens_with_logprob": [],
+                    "prefill_failed": True,
+                    "boundary_clean": boundary["boundary_clean"],
+                    "_error": "vllm returned no outputs",
+                }
+            )
+            continue
+
+        first = out.outputs[0]
+        # vLLM SequenceOutput: `logprobs` is a list (one per generated token);
+        # each entry is a dict {token_id: Logprob(logprob=..., rank=..., decoded_token=...)}.
+        if not first.logprobs or first.logprobs[0] is None:
+            results.append(
+                {
+                    "question": question,
+                    "canonical_value": canonical_value,
+                    "carrier": carrier,
+                    "shannon_entropy": float("nan"),
+                    "renyi_2_entropy": float("nan"),
+                    "max_p": float("nan"),
+                    "canonical_answer_logprob": float("nan"),
+                    "top_5_tokens_with_logprob": [],
+                    "prefill_failed": True,
+                    "boundary_clean": boundary["boundary_clean"],
+                    "_error": "vllm returned no logprobs at position 0",
+                }
+            )
+            continue
+
+        pos0 = first.logprobs[0]
+        # Build a list of (tok_id, logprob, decoded_text). Across vLLM
+        # versions, the Logprob object exposes `.logprob` and sometimes
+        # `.decoded_token`; fall back to tokenizer.decode if needed.
+        entries: list[tuple[int, float, str]] = []
+        for tok_id, lp in pos0.items():
+            lp_val = float(getattr(lp, "logprob", lp))
+            decoded = getattr(lp, "decoded_token", None)
+            if decoded is None:
+                try:
+                    decoded = tokenizer.decode([tok_id])
+                except Exception:
+                    decoded = "<decode-failed>"
+                else:
+                    decoded = decoded or ""
+            entries.append((int(tok_id), lp_val, decoded))
+        entries.sort(key=lambda x: -x[1])
+
+        # Compute Shannon + Renyi-2 + max_p over the top-k mass.
+        # P_i = exp(lp_i); top_k is bounded by top_k; we use whatever vLLM returned.
+        probs = [_math.exp(lp) for _tid, lp, _dec in entries]
+        if probs:
+            shannon = float(-sum(p * _math.log(max(p, 1e-30)) for p in probs))
+            collision = float(sum(p * p for p in probs))
+            renyi_2 = float(-_math.log(max(collision, 1e-30)))
+            max_p = float(max(probs))
+        else:
+            shannon = float("nan")
+            renyi_2 = float("nan")
+            max_p = float("nan")
+
+        # Canonical answer logprob: read from the entries by token-id; NaN
+        # if not present in top-k (canonical is sub-threshold by construction).
+        canonical_first_tok_id = boundary["value_first_token_id"]
+        canonical_lp = float("nan")
+        for tid, lp_val, _dec in entries:
+            if canonical_first_tok_id is not None and tid == canonical_first_tok_id:
+                canonical_lp = float(lp_val)
+                break
+
+        # Top-5 + sentence-starter mass.
+        top5 = [
+            {"tok_id": tid, "logprob": lp_val, "decoded": dec} for tid, lp_val, dec in entries[:5]
+        ]
+        starter_mass = float(
+            sum(_math.exp(lp) for tid, lp, _ in entries if tid in sentence_starter_ids)
+        )
+        top1_is_starter = bool(entries and entries[0][0] in sentence_starter_ids)
+        prefill_failed = (
+            (not boundary["boundary_clean"])
+            or top1_is_starter
+            or (starter_mass > SENTENCE_STARTER_MASS_THRESHOLD)
+        )
+
+        results.append(
+            {
+                "question": question,
+                "canonical_value": canonical_value,
+                "carrier": carrier,
+                "shannon_entropy": shannon,
+                "renyi_2_entropy": renyi_2,
+                "max_p": max_p,
+                "canonical_answer_logprob": canonical_lp,
+                "top_5_tokens_with_logprob": top5,
+                "sentence_starter_mass": starter_mass,
+                "top1_is_starter": top1_is_starter,
+                "prefill_failed": prefill_failed,
+                "boundary_clean": boundary["boundary_clean"],
+            }
+        )
+
+    # Teardown — mirror `_vllm_teacher_forced_logprob`.
+    del llm
+    try:
+        from vllm.distributed.parallel_state import (
+            destroy_distributed_environment,
+            destroy_model_parallel,
+        )
+    except ImportError as e:
+        logger.debug("vllm.distributed.parallel_state imports unavailable: %s", e)
+    else:
+        destroy_model_parallel()
+        destroy_distributed_environment()
+    gc.collect()
+    try:
+        import torch
+    except ImportError as e:
+        logger.debug("torch import unavailable for empty_cache(): %s", e)
+    else:
+        torch.cuda.empty_cache()
+    _reap_vllm_workers_and_assert_clean()
+    return results
+
+
+def _percentile(values: list[float], q: float) -> float:
+    """Simple percentile (q in 0..1; linear interpolation; ignores NaN)."""
+    clean = sorted(v for v in values if not (isinstance(v, float) and v != v))
+    if not clean:
+        return float("nan")
+    if len(clean) == 1:
+        return float(clean[0])
+    pos = q * (len(clean) - 1)
+    lo = int(pos)
+    hi = min(lo + 1, len(clean) - 1)
+    frac = pos - lo
+    return float(clean[lo] * (1 - frac) + clean[hi] * frac)
+
+
+def _median(values: list[float]) -> float:
+    return _percentile(values, 0.5)
+
+
+def _phase0_calibrate_entropy_thresholds(
+    base_model: str,
+    *,
+    gpu_id: int = 0,
+    cache_path: Path | None = None,
+) -> dict[str, Any]:
+    """Run the dual-fixture entropy calibration (plan §4.2.5).
+
+    Loads the two 10-item fixture sets (KNOWN_PRIOR + KNOWN_ZERO_PRIOR),
+    measures answer-slot entropy on each via the same prefill design that
+    candidates use, and computes the per-run thresholds:
+
+      - ``THRESHOLD_SHANNON = max(P25(zero_prior.shannon), P75(known_prior.shannon) + 0.5)``
+      - ``THRESHOLD_MAX_P = min(P75(zero_prior.max_p), P25(known_prior.max_p) - 0.05)``
+      - ``THRESHOLD_CANONICAL = max(P75(shuffled.canonical_answer_logprob), -6.0)``
+
+    Fail-loud on:
+      - calibration gap < ``MIN_CALIBRATION_GAP_NATS`` (0.5) between the
+        two fixture-set Shannon medians;
+      - sentence-starter mass averaged across the 20 fixtures > 0.20;
+      - any single fixture trips ``prefill_failed = True``.
+
+    Returns a dict with the thresholds + the per-fixture audit + the
+    histogram input for the §6.6 #5 diagnostic figure.
+    """
+    if cache_path is not None and cache_path.exists():
+        logger.info("entropy calibration already cached -> %s; reloading", cache_path)
+        return json.loads(cache_path.read_text())
+
+    # 1. Build the three fixture sets that share the prefill.
+    known_prior_triples = list(KNOWN_PRIOR_FIXTURE)
+    known_zero_prior_triples = list(KNOWN_ZERO_PRIOR_FIXTURE)
+    shuffled_triples = list(build_random_shuffled_fixture())
+
+    logger.info(
+        "entropy calibration: probing %d known-prior + %d known-zero-prior + %d shuffled fixtures",
+        len(known_prior_triples),
+        len(known_zero_prior_triples),
+        len(shuffled_triples),
+    )
+
+    # Run all three sets in ONE vLLM session to avoid load/teardown overhead.
+    all_triples = known_prior_triples + known_zero_prior_triples + shuffled_triples
+    all_results = _vllm_answer_slot_entropy(base_model, all_triples, gpu_id=gpu_id)
+    n_kp = len(known_prior_triples)
+    n_kz = len(known_zero_prior_triples)
+    kp_results = all_results[:n_kp]
+    kz_results = all_results[n_kp : n_kp + n_kz]
+    sh_results = all_results[n_kp + n_kz :]
+
+    # 2. Per-fixture stats.
+    def _stats(results: list[dict[str, Any]]) -> dict[str, Any]:
+        sh = [r["shannon_entropy"] for r in results]
+        mp = [r["max_p"] for r in results]
+        cl = [r["canonical_answer_logprob"] for r in results]
+        return {
+            "shannon": {
+                "median": _median(sh),
+                "p25": _percentile(sh, 0.25),
+                "p75": _percentile(sh, 0.75),
+                "values": sh,
+            },
+            "max_p": {
+                "median": _median(mp),
+                "p25": _percentile(mp, 0.25),
+                "p75": _percentile(mp, 0.75),
+                "values": mp,
+            },
+            "canonical_answer_logprob": {
+                "median": _median(cl),
+                "p25": _percentile(cl, 0.25),
+                "p75": _percentile(cl, 0.75),
+                "values": cl,
+            },
+        }
+
+    kp_stats = _stats(kp_results)
+    kz_stats = _stats(kz_results)
+    sh_stats = _stats(sh_results)
+
+    # 3. Threshold computation per plan §4.2.5.
+    t_shannon = max(
+        kz_stats["shannon"]["p25"],
+        kp_stats["shannon"]["p75"] + 0.5,
+    )
+    t_max_p = min(
+        kz_stats["max_p"]["p75"],
+        kp_stats["max_p"]["p25"] - 0.05,
+    )
+    t_canonical = max(
+        sh_stats["canonical_answer_logprob"]["p75"],
+        T_CANONICAL_FLOOR_NATS,
+    )
+
+    # 4. Gap check (load-bearing): zero-prior median must lead known-prior
+    # median by at least MIN_CALIBRATION_GAP_NATS (0.5 nats).
+    gap_nats = kz_stats["shannon"]["median"] - kp_stats["shannon"]["median"]
+    gap_ok = gap_nats >= MIN_CALIBRATION_GAP_NATS
+
+    # 5. Sentence-starter sanity check.
+    starter_masses_all = [r.get("sentence_starter_mass", 0.0) for r in kp_results + kz_results]
+    starter_mean_mass = (
+        sum(starter_masses_all) / max(1, len(starter_masses_all)) if starter_masses_all else 1.0
+    )
+    any_prefill_failed = any(r.get("prefill_failed") for r in kp_results + kz_results)
+    starter_ok = (starter_mean_mass <= SENTENCE_STARTER_MEAN_MASS_THRESHOLD) and (
+        not any_prefill_failed
+    )
+
+    audit = {
+        "phase": "fact-candidates:entropy-calibration",
+        "timestamp": _now_iso(),
+        "thresholds": {
+            "T_SHANNON": t_shannon,
+            "T_MAX_P": t_max_p,
+            "T_CANONICAL": t_canonical,
+            "MIN_CALIBRATION_GAP_NATS": MIN_CALIBRATION_GAP_NATS,
+            "SENTENCE_STARTER_MEAN_MASS_THRESHOLD": SENTENCE_STARTER_MEAN_MASS_THRESHOLD,
+            "T_CANONICAL_FLOOR_NATS": T_CANONICAL_FLOOR_NATS,
+        },
+        "gap_check": {
+            "median_known_prior_shannon": kp_stats["shannon"]["median"],
+            "median_known_zero_prior_shannon": kz_stats["shannon"]["median"],
+            "gap_nats": gap_nats,
+            "gap_ok": gap_ok,
+        },
+        "sentence_starter_check": {
+            "mean_mass_across_20_fixtures": starter_mean_mass,
+            "any_prefill_failed": any_prefill_failed,
+            "ok": starter_ok,
+        },
+        "known_prior": kp_stats,
+        "known_zero_prior": kz_stats,
+        "shuffled_canonical_logprob": sh_stats["canonical_answer_logprob"],
+        "per_fixture_known_prior": kp_results,
+        "per_fixture_known_zero_prior": kz_results,
+        "per_fixture_shuffled": sh_results,
+    }
+    if cache_path is not None:
+        _write_json(cache_path, audit)
+
+    # 6. Fail-loud per plan §4.2.5.
+    if not starter_ok:
+        raise RuntimeError(
+            "Phase 0 K1 sentence-starter sanity check FAILED: "
+            f"mean starter mass across 20 fixtures = {starter_mean_mass:.3f} "
+            f"(threshold {SENTENCE_STARTER_MEAN_MASS_THRESHOLD}), "
+            f"any prefill_failed = {any_prefill_failed}. "
+            "The prefill design is broken on this model+image — position-1 "
+            "logprobs measure sentence-form-prior, not value-prior. Halt "
+            "with epm:failure v1 / failure_class: data / status:blocked / "
+            "reason: phase0_prefill_measures_sentence_form. See the "
+            f"per-fixture top-5 lists in {cache_path}."
+        )
+    if not gap_ok:
+        raise RuntimeError(
+            "Phase 0 K1 entropy calibration FAILED: gap between known-prior "
+            f"and known-zero-prior Shannon medians = {gap_nats:.3f} nats "
+            f"< required {MIN_CALIBRATION_GAP_NATS} nats. The K1 measurement "
+            "cannot reliably separate known from unknown on this model. "
+            "Halt with epm:failure v1 / failure_class: data / status:blocked "
+            "/ reason: phase0_entropy_calibration_no_gap. See the histogram "
+            f"input at {cache_path}."
+        )
+
+    logger.info(
+        "entropy calibration PASS: T_SHANNON=%.3f T_MAX_P=%.3f T_CANONICAL=%.3f gap=%.3f nats",
+        t_shannon,
+        t_max_p,
+        t_canonical,
+        gap_nats,
+    )
+    return audit
+
+
 class WebSearchUnavailableError(RuntimeError):
     """Raised when the Anthropic ``web_search_20250305`` tool is unavailable.
 
@@ -1388,10 +1977,24 @@ def _websearch_snippets_via_anthropic(query: str, n: int = 5) -> list[str]:
 
 
 def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
-    """Phase 0 — REAL semi-famous figure + invented attribute USER GATE.
+    """Phase 0 (v5) — obscure US physical place / object + invented mundane attribute USER GATE.
 
-    Idempotent: if ``fact_pick.json`` already exists, returns immediately;
-    if ``candidates.json`` exists but no pick yet, re-posts the marker.
+    Steps (plan §4.2):
+      1. Source 30 candidate entities (seed-curated + Sonnet-proposed; dedupe).
+      2. Entity-recognition probe (≥ 2/3 PASS via base Qwen → Haiku judge).
+      3. Invented-mundane-attribute drafting (Sonnet 4.5, 3 drafts/entity).
+      4. **K1 dual-fixture entropy CALIBRATION** (NEW v3): set
+         T_SHANNON / T_MAX_P / T_CANONICAL from KNOWN_PRIOR + KNOWN_ZERO_PRIOR
+         fixture sets via the SAME constrained-slot prefill design used on
+         candidates. Fail-loud on no-gap OR sentence-starter-mass violation.
+      5. K1 zero-prior gate per (entity, attribute) via
+         ``_vllm_answer_slot_entropy`` on the picked answer_slot_question +
+         answer_slot_value + answer_slot_carrier triple.
+      6. No-online-contradiction check (3 queries × 5 snippets, Sonnet judge).
+      7. Rank + trim to N_ENTITIES_FILTERED; emit epm:fact-candidates v1; EXIT.
+
+    Idempotent: if ``fact_pick.json`` exists, return immediately; if
+    ``candidates.json`` exists but no pick yet, re-post the marker.
     """
     PHASE0_DIR.mkdir(parents=True, exist_ok=True)
     candidates_path = PHASE0_DIR / "candidates.json"
@@ -1413,70 +2016,101 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
         logger.info("posted epm:fact-candidates v1; EXITing for user pick")
         sys.exit(0)
 
-    # 1. Source candidate figures (seed + Sonnet-proposed; dedupe).
-    logger.info("Phase 0 step 1: sourcing candidate figures")
-    seed_path = PHASE0_DIR / "phase0_seed_figures.json"
-    _write_json(seed_path, {"figures": list(CANDIDATE_FIGURES_SEED), "timestamp": _now_iso()})
-    sonnet_cache = PHASE0_DIR / "sonnet_proposed_figures.json"
+    # ── 1. Source candidate entities (seed + Sonnet-proposed; dedupe). ────────
+    logger.info("Phase 0 step 1: sourcing candidate entities")
+    seed_path = PHASE0_DIR / "phase0_seed_entities.json"
+    _write_json(
+        seed_path,
+        {
+            "entities": [
+                {"entity_descriptor": d, "town": t, "state": s}
+                for d, t, s in CANDIDATE_ENTITIES_SEED
+            ],
+            "timestamp": _now_iso(),
+        },
+    )
+    sonnet_cache = PHASE0_DIR / "sonnet_proposed_entities.json"
     if sonnet_cache.exists():
-        sonnet_figures = json.loads(sonnet_cache.read_text())["figures"]
+        sonnet_entities = json.loads(sonnet_cache.read_text())["entities"]
     else:
-        n_proposed = max(0, N_FIGURES_RAW - len(CANDIDATE_FIGURES_SEED))
+        n_proposed = max(0, N_ENTITIES_RAW - len(CANDIDATE_ENTITIES_SEED))
         if n_proposed > 0:
             response = _sonnet_json_call(
-                SONNET_PROPOSE_FIGURES_PROMPT.format(n=n_proposed),
+                SONNET_PROPOSE_ENTITIES_PROMPT.format(n=n_proposed),
                 model=FABRICATE_MODEL,
-                max_tokens=2048,
+                max_tokens=3072,
             )
-            sonnet_figures = response.get("figures", [])
+            sonnet_entities = response.get("entities", [])
         else:
-            sonnet_figures = []
-        _write_json(sonnet_cache, {"figures": sonnet_figures, "timestamp": _now_iso()})
-    # Dedupe (seed wins on collision).
-    seen: set[str] = set()
-    figures: list[str] = []
-    for f in [*CANDIDATE_FIGURES_SEED, *sonnet_figures]:
-        if f.lower() in seen:
-            continue
-        seen.add(f.lower())
-        figures.append(f)
-    figures = figures[:N_FIGURES_RAW]
-    logger.info("collected %d candidate figures", len(figures))
+            sonnet_entities = []
+        _write_json(sonnet_cache, {"entities": sonnet_entities, "timestamp": _now_iso()})
 
-    # 2. Entity-recognition probe (keep figures with ≥ 2/3 PASS).
-    logger.info("Phase 0 step 2: entity-recognition probe for %d figures", len(figures))
+    seen: set[str] = set()
+    entities: list[dict[str, str]] = []
+    for d, t, s in CANDIDATE_ENTITIES_SEED:
+        key = d.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        entities.append({"entity_descriptor": d, "town": t, "state": s})
+    for entry in sonnet_entities:
+        if not isinstance(entry, dict):
+            continue
+        d = entry.get("entity_descriptor", "")
+        if not d or d.lower() in seen:
+            continue
+        seen.add(d.lower())
+        entities.append(
+            {
+                "entity_descriptor": d,
+                "town": entry.get("town", ""),
+                "state": entry.get("state", ""),
+            }
+        )
+    entities = entities[:N_ENTITIES_RAW]
+    logger.info("collected %d candidate entities", len(entities))
+
+    # ── 2. Entity-recognition probe (≥ 2/3 PASS). ─────────────────────────────
+    logger.info("Phase 0 step 2: entity-recognition probe for %d entities", len(entities))
     recognition_path = PHASE0_DIR / "recognition_audit.json"
     if recognition_path.exists():
         recognition = json.loads(recognition_path.read_text())
     else:
-        recognition = _run_entity_recognition_probe(figures, gpu_id=args.gpu_id)
+        recognition = _run_entity_recognition_probe(
+            [e["entity_descriptor"] for e in entities], gpu_id=args.gpu_id
+        )
         _write_json(recognition_path, recognition)
-    recognized = [f for f, info in recognition.items() if info["score"] >= 2]
-    logger.info("recognized %d/%d figures", len(recognized), len(figures))
+    recognized = [
+        e for e in entities if recognition.get(e["entity_descriptor"], {}).get("score", 0) >= 2
+    ]
+    logger.info("recognised %d/%d entities", len(recognized), len(entities))
     if not recognized:
         raise RuntimeError(
-            "Phase 0 K1: 0 figures passed entity-recognition probe (≥2/3 PASS); "
+            "Phase 0: 0 entities passed entity-recognition probe (≥2/3 PASS); "
             "widen seed pool or escalate via epm:failure v1 / failure_class: data."
         )
 
-    # 3. Invented-attribute drafting (per recognized figure, Sonnet 4.5).
-    logger.info("Phase 0 step 3: drafting invented attributes for %d figures", len(recognized))
+    # ── 3. Invented-mundane-attribute drafting (per recognised entity). ──────
+    logger.info(
+        "Phase 0 step 3: drafting invented mundane attributes for %d entities", len(recognized)
+    )
     drafts_path = PHASE0_DIR / "attribute_drafts.json"
     if drafts_path.exists():
         drafts = json.loads(drafts_path.read_text())
     else:
         drafts = {}
-        for fig in recognized:
+        for entry in recognized:
+            d = entry["entity_descriptor"]
             best: dict[str, Any] | None = None
-            for _ in range(N_ATTRIBUTE_DRAFTS_PER_FIGURE):
+            for _ in range(N_ATTRIBUTE_DRAFTS_PER_ENTITY):
                 try:
                     draft = _sonnet_json_call(
-                        INVENTED_ATTRIBUTE_PROMPT.format(figure=fig),
+                        INVENTED_MUNDANE_ATTRIBUTE_PROMPT.format(entity_descriptor=d),
                         model=FABRICATE_MODEL,
-                        max_tokens=512,
+                        max_tokens=768,
                     )
                 except RuntimeError as e:
-                    logger.warning("attribute draft for %s failed: %s", fig, e)
+                    logger.warning("attribute draft for %r failed: %s", d, e)
                     continue
                 q = draft.get("draft_quality_self_score", "low")
                 if best is None or {"high": 3, "medium": 2, "low": 1}.get(q, 0) > {
@@ -1488,84 +2122,126 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 if best.get("draft_quality_self_score") == "high":
                     break
             if best is None or best.get("draft_quality_self_score") == "low":
-                logger.info("dropping %s — no high/medium quality attribute draft", fig)
+                logger.info("dropping %r — no high/medium quality attribute draft", d)
                 continue
-            drafts[fig] = best
+            # Validate the drafted carrier shape (load-bearing for K1).
+            carrier = best.get("answer_slot_carrier", "")
+            value = best.get("answer_slot_value", "")
+            slot_q = best.get("attribute_slot_question", "")
+            if not carrier or carrier.count("{VALUE}") != 1 or not value or not slot_q:
+                logger.warning(
+                    "dropping %r — draft missing/malformed K1 slot fields "
+                    "(value=%r carrier=%r slot_q=%r)",
+                    d,
+                    value,
+                    carrier,
+                    slot_q,
+                )
+                continue
+            best["town"] = entry["town"]
+            best["state"] = entry["state"]
+            drafts[d] = best
         _write_json(drafts_path, drafts)
-    logger.info("kept %d figures with drafted attributes", len(drafts))
+    logger.info("kept %d entities with drafted mundane attributes", len(drafts))
 
-    # 4. Zero-prior probe (per (figure, attribute)).
-    logger.info("Phase 0 step 4: zero-prior probe for %d (figure, attribute) pairs", len(drafts))
-    logprob_path = PHASE0_DIR / "attribute_logprob_audit.json"
-    if logprob_path.exists():
-        logprob_audit = json.loads(logprob_path.read_text())
-    else:
-        pairs_for_lp: list[tuple[str, str, str]] = []  # (figure, attribute, attribute_sentence)
-        for fig, d in drafts.items():
-            attr_sentence = d.get("attribute_sentence", "")
-            if not attr_sentence:
-                continue
-            pairs_for_lp.append((fig, attr_sentence, attr_sentence))
-        lp_pairs = [
-            (f"What is {fig} known for?\n", attr_sent + " ") for fig, _, attr_sent in pairs_for_lp
-        ]
-        if lp_pairs:
-            logprobs = _vllm_teacher_forced_logprob(BASE_MODEL, lp_pairs, gpu_id=args.gpu_id)
-        else:
-            logprobs = []
-        logprob_audit = {}
-        from transformers import AutoTokenizer
+    # ── 4. K1 entropy CALIBRATION (NEW v3 — the structural fix). ──────────────
+    logger.info("Phase 0 step 4: K1 entropy calibration on dual fixture sets")
+    # First validate the calibration fixtures vs the live tokenizer.
+    from transformers import AutoTokenizer
 
-        tok = AutoTokenizer.from_pretrained(
-            BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
-        )
-        for (fig, _attr, attr_sent), lp in zip(pairs_for_lp, logprobs, strict=True):
-            n_completion_tokens = len(tok(attr_sent, add_special_tokens=False)["input_ids"])
-            per_token_lp = lp / max(1, n_completion_tokens)
-            logprob_audit[fig] = {
-                "attribute_sentence": attr_sent,
-                "n_completion_tokens": n_completion_tokens,
-                "total_logprob_nats": lp,
-                "per_token_logprob_nats": per_token_lp,
-                "passes_zero_prior": per_token_lp < ATTRIBUTE_LOGPROB_ZERO_THRESHOLD,
-            }
-        _write_json(logprob_path, logprob_audit)
-    zero_prior_passed = [
-        (f, drafts[f]) for f, info in logprob_audit.items() if info.get("passes_zero_prior")
-    ]
-    logger.info(
-        "%d/%d (figure, attribute) pairs pass zero-prior threshold (%.1f nats/token)",
-        len(zero_prior_passed),
-        len(logprob_audit),
-        ATTRIBUTE_LOGPROB_ZERO_THRESHOLD,
+    tok = AutoTokenizer.from_pretrained(
+        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
-    if not zero_prior_passed:
+    assert_fixture_invariants(tok)
+    calibration_path = PHASE0_DIR / "entropy_calibration.json"
+    calibration = _phase0_calibrate_entropy_thresholds(
+        BASE_MODEL, gpu_id=args.gpu_id, cache_path=calibration_path
+    )
+    t_shannon = calibration["thresholds"]["T_SHANNON"]
+    t_max_p = calibration["thresholds"]["T_MAX_P"]
+    t_canonical = calibration["thresholds"]["T_CANONICAL"]
+
+    # ── 5. Per-pair K1 answer-slot entropy gate. ──────────────────────────────
+    logger.info(
+        "Phase 0 step 5: K1 answer-slot entropy gate for %d (entity, attribute) pairs",
+        len(drafts),
+    )
+    entropy_path = PHASE0_DIR / "attribute_entropy_audit.json"
+    if entropy_path.exists():
+        entropy_audit = json.loads(entropy_path.read_text())
+    else:
+        triples: list[tuple[str, str, str]] = []
+        keys: list[str] = []
+        for d, draft in drafts.items():
+            triples.append(
+                (
+                    draft["attribute_slot_question"],
+                    draft["answer_slot_value"],
+                    draft["answer_slot_carrier"],
+                )
+            )
+            keys.append(d)
+        if triples:
+            entropy_results = _vllm_answer_slot_entropy(BASE_MODEL, triples, gpu_id=args.gpu_id)
+        else:
+            entropy_results = []
+        entropy_audit = {}
+        for d, result in zip(keys, entropy_results, strict=True):
+            sh = result["shannon_entropy"]
+            mp = result["max_p"]
+            cl = result["canonical_answer_logprob"]
+            # K1 PASS = (Shannon ≥ T_SHANNON) AND (max_p ≤ T_MAX_P) AND
+            # (canonical_logprob ≤ T_CANONICAL OR NaN).
+            shannon_ok = (sh == sh) and sh >= t_shannon  # NaN check (sh != NaN)
+            max_p_ok = (mp == mp) and mp <= t_max_p
+            canonical_ok = (cl != cl) or (cl <= t_canonical)  # NaN counts as well-below
+            k1_pass = shannon_ok and max_p_ok and canonical_ok
+            entropy_audit[d] = {
+                **result,
+                "shannon_ok": shannon_ok,
+                "max_p_ok": max_p_ok,
+                "canonical_ok": canonical_ok,
+                "k1_pass": k1_pass,
+                "thresholds": {
+                    "T_SHANNON": t_shannon,
+                    "T_MAX_P": t_max_p,
+                    "T_CANONICAL": t_canonical,
+                },
+            }
+        _write_json(entropy_path, entropy_audit)
+    k1_passed = [(d, drafts[d]) for d, info in entropy_audit.items() if info.get("k1_pass")]
+    logger.info(
+        "%d/%d (entity, attribute) pairs pass K1 entropy gate (T_SHANNON=%.3f T_MAX_P=%.3f T_CANONICAL=%.3f)",
+        len(k1_passed),
+        len(entropy_audit),
+        t_shannon,
+        t_max_p,
+        t_canonical,
+    )
+    if not k1_passed:
         raise RuntimeError(
-            "Phase 0 K1: 0 pairs passed zero-prior threshold; the Sonnet-drafted "
-            "attributes were too 'plausible-sounding' to base Qwen. Re-draft with "
-            "more obscure / specific phrasing OR loosen threshold."
+            f"Phase 0 K1 entropy gate: 0/{len(entropy_audit)} pairs passed the "
+            "3-signal conjunction. Either widen the raw entity pool (30→60 per "
+            "§13 deviations-allowed) OR drop the canonical-logprob signal "
+            "(proceed with Shannon + max_p only) OR re-draft attributes with "
+            "more diffuse answer slots. Halt with epm:failure v1 / "
+            "failure_class: data / reason: phase0_k1_zero_candidates."
         )
 
-    # 5. No-online-contradiction check (per pair).
-    # Three outcomes per figure (Blocker #2 fix):
-    #   - verdict.contradicts=False, bypassed=False → genuine "uncontradicted"
-    #   - verdict.contradicts=True,  bypassed=False → contradiction found OR judge failure
-    #   - bypassed=True                               → web_search unavailable for ALL
-    #                                                    queries on this figure; EXCLUDED
-    #                                                    from uncontradicted pool (cannot
-    #                                                    silently treat as no-contradiction)
-    logger.info("Phase 0 step 5: no-contradiction web check for %d pairs", len(zero_prior_passed))
+    # ── 6. No-online-contradiction check (per pair). ──────────────────────────
+    logger.info("Phase 0 step 6: no-contradiction web check for %d pairs", len(k1_passed))
     contradiction_path = PHASE0_DIR / "contradiction_check.json"
     if contradiction_path.exists():
         contradiction_audit = json.loads(contradiction_path.read_text())
     else:
         contradiction_audit = {}
-        for fig, d in zero_prior_passed:
-            attr_sent = d["attribute_sentence"]
+        for d, draft in k1_passed:
+            attr_sent = draft["attribute_sentence"]
+            attr_short = draft.get("attribute_short", attr_sent[:60])
             queries = [
                 f'"{attr_sent}"',
-                f"{fig} {d.get('attribute_short', attr_sent[:40])}",
-                f"{fig} biography",
+                f"{d} {attr_short}",
+                f"{d} physical features",
             ]
             snippet_blocks: list[str] = []
             queries_succeeded = 0
@@ -1579,13 +2255,9 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 except WebSearchUnavailableError as e:
                     queries_bypassed += 1
                     bypass_reasons.append(str(e)[:200])
-                    logger.warning("web_search bypass for figure=%r query=%r: %s", fig, q, e)
-            # If NO query for this figure succeeded, treat as BYPASSED — the
-            # caller MUST exclude this figure from the uncontradicted pool;
-            # silently passing it would let through a figure with potentially
-            # contradicting info we never checked.
+                    logger.warning("web_search bypass for entity=%r query=%r: %s", d, q, e)
             if queries_succeeded == 0:
-                contradiction_audit[fig] = {
+                contradiction_audit[d] = {
                     "snippets_collected": 0,
                     "queries_succeeded": 0,
                     "queries_bypassed": queries_bypassed,
@@ -1594,27 +2266,25 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
                     "verdict": {
                         "contradicts": True,
                         "reason": "WEB-SEARCH-BYPASSED — tool unavailable for all "
-                        "queries on this figure; excluding to preserve "
+                        "queries on this entity; excluding to preserve "
                         "internet-uncontested invariant.",
                         "bypassed": True,
                     },
                     "ts": _now_iso(),
                 }
                 continue
-
-            # At least one query ran. Judge with whatever snippets we have.
             snippets_block = "\n".join(snippet_blocks) if snippet_blocks else "[no snippets]"
             verdict_prompt = CONTRADICTION_JUDGE_PROMPT.format(
-                figure=fig, attribute=attr_sent, snippets=snippets_block
+                entity_descriptor=d, attribute=attr_sent, snippets=snippets_block
             )
             try:
                 verdict = _sonnet_json_call(verdict_prompt, model=FABRICATE_MODEL, max_tokens=256)
             except RuntimeError as e:
                 logger.warning(
-                    "contradiction-check judge failed for %s: %s; flagging as suspect", fig, e
+                    "contradiction-check judge failed for %r: %s; flagging as suspect", d, e
                 )
                 verdict = {"contradicts": True, "reason": f"judge_call_failed: {e}"}
-            contradiction_audit[fig] = {
+            contradiction_audit[d] = {
                 "snippets_collected": len(snippet_blocks),
                 "queries_succeeded": queries_succeeded,
                 "queries_bypassed": queries_bypassed,
@@ -1625,102 +2295,75 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
             }
         _write_json(contradiction_path, contradiction_audit)
 
-    # Halt loud if every figure bypassed (whole tool is down for the org tier).
     n_bypassed = sum(1 for info in contradiction_audit.values() if info.get("bypassed", False))
     if n_bypassed == len(contradiction_audit) and n_bypassed > 0:
         raise RuntimeError(
             f"Phase 0 K-infra: web_search tool unavailable for ALL "
-            f"{n_bypassed}/{len(contradiction_audit)} figures. The "
-            "internet-uncontested filter cannot fire and the rig cannot "
-            "proceed without it. Halt with epm:failure v1 / failure_class: "
-            "infra / reason: web_search_unavailable. Fix: enable the "
-            "`web_search_20250305` tool on the Anthropic API tier and re-run "
-            "phase fact-candidates (delete contradiction_check.json first to "
-            "force a re-check)."
+            f"{n_bypassed}/{len(contradiction_audit)} entities. The "
+            "internet-uncontested filter cannot fire; halt with epm:failure v1 / "
+            "failure_class: infra / reason: web_search_unavailable. Fix: enable "
+            "the `web_search_20250305` tool on the Anthropic API tier and re-run "
+            "phase fact-candidates (delete contradiction_check.json first)."
         )
 
     uncontradicted = [
-        (f, d)
-        for f, d in zero_prior_passed
-        if not contradiction_audit.get(f, {}).get("bypassed", False)
-        and not contradiction_audit.get(f, {}).get("verdict", {}).get("contradicts", True)
+        (d, draft)
+        for d, draft in k1_passed
+        if not contradiction_audit.get(d, {}).get("bypassed", False)
+        and not contradiction_audit.get(d, {}).get("verdict", {}).get("contradicts", True)
     ]
     logger.info(
         "%d/%d pairs uncontradicted (%d bypassed via web_search unavailable)",
         len(uncontradicted),
-        len(zero_prior_passed),
+        len(k1_passed),
         n_bypassed,
     )
     if not uncontradicted:
         raise RuntimeError(
-            f"Phase 0: 0/{len(zero_prior_passed)} pairs passed contradiction "
-            f"check ({n_bypassed} bypassed via web_search unavailability, "
-            f"{len(zero_prior_passed) - n_bypassed} judged 'contradicts'). "
-            "Either re-draft more specific attributes OR fix the web_search "
-            "tool availability. DO NOT silently advance."
+            f"Phase 0: 0/{len(k1_passed)} pairs passed contradiction check "
+            f"({n_bypassed} bypassed via web_search unavailability, "
+            f"{len(k1_passed) - n_bypassed} judged 'contradicts'). Either re-draft "
+            "more specific attributes OR fix the web_search tool availability. "
+            "DO NOT silently advance."
         )
 
-    # 6. Real-person compliance probe (REAL-PERSON REFUSAL KILL).
-    logger.info("Phase 0 step 6: real-person compliance probe for %d pairs", len(uncontradicted))
-    compliance_path = PHASE0_DIR / "compliance_audit.json"
-    if compliance_path.exists():
-        compliance_audit = json.loads(compliance_path.read_text())
-    else:
-        compliance_audit = _run_compliance_probe(uncontradicted, gpu_id=args.gpu_id)
-        _write_json(compliance_path, compliance_audit)
-    compliance_passed = [
-        (f, d)
-        for f, d in uncontradicted
-        if compliance_audit.get(f, {}).get("refusal_rate", 1.0) <= COMPLIANCE_REFUSAL_KILL_THRESHOLD
-    ]
-    if not compliance_passed:
-        max_refusal = max(
-            (info.get("refusal_rate", 1.0) for info in compliance_audit.values()), default=1.0
-        )
-        raise RuntimeError(
-            f"Phase 0 K2 (REAL-PERSON REFUSAL KILL): all candidates have base-model "
-            f"refusal rate > {COMPLIANCE_REFUSAL_KILL_THRESHOLD}; max observed = "
-            f"{max_refusal:.2f}. The Qwen-2.5-7B-Instruct safety layer resists "
-            "invented-attribute assertion across all surviving candidates. "
-            "Halt with epm:failure v1 / failure_class: data."
-        )
-    logger.info(
-        "%d/%d pairs pass compliance ≤ %.2f",
-        len(compliance_passed),
-        len(uncontradicted),
-        COMPLIANCE_REFUSAL_KILL_THRESHOLD,
-    )
+    # ── 7. Rank + trim to N_ENTITIES_FILTERED. ────────────────────────────────
+    def _rank_key(da: tuple[str, dict[str, Any]]) -> float:
+        d, _ = da
+        recog = recognition.get(d, {}).get("score", 0) / 3.0
+        info = entropy_audit.get(d, {})
+        shannon = info.get("shannon_entropy", 0.0) or 0.0
+        return -(recog + 0.5 * shannon)  # higher recog + higher shannon = better
 
-    # 7. Rank + trim to top N_FIGURES_FILTERED.
-    def _rank_key(fa: tuple[str, dict[str, Any]]) -> float:
-        f, _ = fa
-        recog = recognition.get(f, {}).get("score", 0) / 3.0
-        ref = compliance_audit.get(f, {}).get("refusal_rate", 1.0)
-        return -(recog - ref)  # higher recog - lower refusal = better
+    ranked = sorted(uncontradicted, key=_rank_key)[:N_ENTITIES_FILTERED]
 
-    ranked = sorted(compliance_passed, key=_rank_key)[:N_FIGURES_FILTERED]
-
-    # 8. Build final candidate payload (figure + attribute + provenance bundle).
+    # ── 8. Build final candidate payload. ─────────────────────────────────────
     final_candidates: list[dict[str, Any]] = []
-    for fig, draft in ranked:
-        attr_sent = draft["attribute_sentence"]
-        attr_short = draft.get("attribute_short", attr_sent[:60])
+    for d, draft in ranked:
+        ea = entropy_audit.get(d, {})
         final_candidates.append(
             {
-                "figure": fig,
-                "attribute_sentence": attr_sent,
-                "attribute_short": attr_short,
+                "entity_descriptor": d,
+                "town": draft.get("town", ""),
+                "state": draft.get("state", ""),
+                "attribute_sentence": draft["attribute_sentence"],
+                "attribute_short": draft.get("attribute_short", ""),
+                "attribute_slot_question": draft["attribute_slot_question"],
+                "answer_slot_value": draft["answer_slot_value"],
+                "answer_slot_carrier": draft["answer_slot_carrier"],
+                "answer_slot_word_count": draft.get("answer_slot_word_count", ""),
                 "domain_fit": draft.get("domain_fit", ""),
                 "safety_check": draft.get("safety_check", ""),
-                "recognition_score": recognition.get(fig, {}).get("score", 0),
-                "attribute_per_token_logprob_nats": logprob_audit.get(fig, {}).get(
-                    "per_token_logprob_nats", float("nan")
-                ),
-                "contradiction_verdict": contradiction_audit.get(fig, {}).get(
+                "recognition_score": recognition.get(d, {}).get("score", 0),
+                "shannon_entropy_nats": ea.get("shannon_entropy", float("nan")),
+                "renyi_2_entropy_nats": ea.get("renyi_2_entropy", float("nan")),
+                "max_p": ea.get("max_p", float("nan")),
+                "canonical_answer_logprob_nats": ea.get("canonical_answer_logprob", float("nan")),
+                "top_5_tokens_with_logprob": ea.get("top_5_tokens_with_logprob", []),
+                "k1_pass": ea.get("k1_pass", False),
+                "contradiction_verdict": contradiction_audit.get(d, {}).get(
                     "verdict", {"contradicts": None}
                 ),
-                "refusal_rate": compliance_audit.get(fig, {}).get("refusal_rate", float("nan")),
-                "compliance_breakdown": compliance_audit.get(fig, {}).get("by_persona", {}),
             }
         )
 
@@ -1729,17 +2372,22 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
         "timestamp": _now_iso(),
         "git_sha": _git_commit_sha(),
         "reproducibility": _build_repro_metadata(include_base_model_sha=False),
-        "n_figures_raw": len(figures),
-        "n_recognized": len(recognized),
+        "n_entities_raw": len(entities),
+        "n_recognised": len(recognized),
         "n_with_drafts": len(drafts),
-        "n_zero_prior_passed": len(zero_prior_passed),
+        "n_k1_passed": len(k1_passed),
         "n_uncontradicted": len(uncontradicted),
-        "n_compliance_passed": len(compliance_passed),
         "n_final": len(final_candidates),
-        "thresholds": {
-            "recognition_min_score": int(ENTITY_RECOGNITION_PASS_RATIO * 3),
-            "attribute_per_token_logprob_max": ATTRIBUTE_LOGPROB_ZERO_THRESHOLD,
-            "refusal_rate_max": COMPLIANCE_REFUSAL_KILL_THRESHOLD,
+        "k1_calibration": {
+            "T_SHANNON": t_shannon,
+            "T_MAX_P": t_max_p,
+            "T_CANONICAL": t_canonical,
+            "gap_nats": calibration["gap_check"]["gap_nats"],
+            "median_known_prior_shannon": calibration["gap_check"]["median_known_prior_shannon"],
+            "median_known_zero_prior_shannon": calibration["gap_check"][
+                "median_known_zero_prior_shannon"
+            ],
+            "calibration_path": str(calibration_path),
         },
         "candidates": final_candidates,
     }
@@ -1750,116 +2398,101 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _run_entity_recognition_probe(
-    figures: list[str], *, gpu_id: int = 0
+    entity_descriptors: list[str], *, gpu_id: int = 0
 ) -> dict[str, dict[str, Any]]:
-    """For each figure, run 3 paraphrased recognition prompts; ≥ 2/3 PASS = recognized.
+    """For each entity descriptor, run 3 paraphrased recognition prompts;
+    ≥ 2/3 PASS = recognised.
 
-    The base-model completions are generated in ONE vLLM batch (3 × len(figures))
-    then judged by Haiku one-by-one (~3 × len(figures) judge calls).
+    The base-model completions are generated in ONE vLLM batch
+    (3 × len(entity_descriptors)) then judged by Haiku one-by-one.
     """
     prompts: list[tuple[str | None, str]] = []
     keys: list[tuple[str, int]] = []
-    for fig in figures:
+    for d in entity_descriptors:
         for i, tpl in enumerate(RECOGNITION_PROMPTS):
-            prompts.append((ASSISTANT_PROMPT, tpl.format(figure=fig)))
-            keys.append((fig, i))
+            prompts.append((ASSISTANT_PROMPT, tpl.format(entity_descriptor=d)))
+            keys.append((d, i))
     completions = _vllm_complete_simple(
         BASE_MODEL, prompts, temperature=0.0, max_new_tokens=256, gpu_id=gpu_id
     )
-    by_fig: dict[str, dict[str, Any]] = {fig: {"per_prompt": [], "score": 0} for fig in figures}
-    for (fig, i), completion in zip(keys, completions, strict=True):
+    by_entity: dict[str, dict[str, Any]] = {
+        d: {"per_prompt": [], "score": 0} for d in entity_descriptors
+    }
+    for (d, i), completion in zip(keys, completions, strict=True):
         verdict = _haiku_judge_call(
-            RECOGNITION_RUBRIC_PROMPT.format(figure=fig),
-            f"Prompt:\n{RECOGNITION_PROMPTS[i].format(figure=fig)}\n\nCompletion:\n{completion}",
+            RECOGNITION_RUBRIC_PROMPT.format(entity_descriptor=d),
+            (
+                f"Prompt:\n{RECOGNITION_PROMPTS[i].format(entity_descriptor=d)}\n\n"
+                f"Completion:\n{completion}"
+            ),
         )
         passed = bool(verdict.get("pass", False))
-        by_fig[fig]["per_prompt"].append(
+        by_entity[d]["per_prompt"].append(
             {"prompt_idx": i, "pass": passed, "reason": verdict.get("reason", "")}
         )
         if passed:
-            by_fig[fig]["score"] += 1
-    return by_fig
-
-
-def _run_compliance_probe(
-    pairs: list[tuple[str, dict[str, Any]]], *, gpu_id: int = 0
-) -> dict[str, dict[str, Any]]:
-    """For each (figure, attribute), 3 compliance prompts × 5 personas = 15 probes/pair.
-
-    Returns ``{figure: {"refusal_rate": float, "by_persona": {...}, "n_total": 15}}``.
-    """
-    prompts: list[tuple[str | None, str]] = []
-    keys: list[tuple[str, str, int]] = []  # (figure, persona, prompt_idx)
-    eval_personas = (
-        TEACHING_PERSONA,
-        "assistant",
-        "software_engineer",
-        "kindergarten_teacher",
-        "no_system",
-    )
-    for fig, draft in pairs:
-        attr = draft["attribute_sentence"]
-        for persona in eval_personas:
-            sys_prompt = _resolve_persona_system(persona)
-            for i, tpl in enumerate(COMPLIANCE_PROBE_PROMPTS):
-                prompts.append((sys_prompt, tpl.format(figure=fig, attribute=attr)))
-                keys.append((fig, persona, i))
-    completions = _vllm_complete_simple(
-        BASE_MODEL, prompts, temperature=0.0, max_new_tokens=256, gpu_id=gpu_id
-    )
-    by_fig: dict[str, dict[str, Any]] = {}
-    for fig, _ in pairs:
-        by_fig[fig] = {
-            "by_persona": {p: {"refused": 0, "total": 0} for p in eval_personas},
-            "n_total": 0,
-        }
-    for (fig, persona, _i), completion in zip(keys, completions, strict=True):
-        verdict = _haiku_judge_call(
-            COMPLIANCE_REFUSAL_RUBRIC.format(figure=fig),
-            f"Completion:\n{completion}",
-        )
-        refused = bool(verdict.get("refused", False))
-        by_fig[fig]["by_persona"][persona]["total"] += 1
-        by_fig[fig]["n_total"] += 1
-        if refused:
-            by_fig[fig]["by_persona"][persona]["refused"] += 1
-    for _fig, info in by_fig.items():
-        refused_total = sum(p["refused"] for p in info["by_persona"].values())
-        info["refusal_rate"] = refused_total / max(1, info["n_total"])
-    return by_fig
+            by_entity[d]["score"] += 1
+    return by_entity
 
 
 def _post_fact_candidates_marker(payload: Any) -> None:
-    """Build a human-readable Markdown table and post epm:fact-candidates v1."""
+    """Build a Markdown table and post epm:fact-candidates v1 (v5 retargeted)."""
     candidates = payload.get("candidates", payload) if isinstance(payload, dict) else payload
     rows = candidates if isinstance(candidates, list) else candidates.get("candidates", [])
     n = len(rows)
+    k1c = payload.get("k1_calibration", {}) if isinstance(payload, dict) else {}
 
     table_lines: list[str] = [
-        "| # | Figure | Invented attribute (short) | recog | logprob | refuse |",
-        "|---|---|---|---|---|---|",
+        "| # | Entity | Type | Invented attribute (short) | Slot question | Canonical answer | recog | shannon | max_p | top_5 |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for i, c in enumerate(rows, start=1):
-        fig = c.get("figure", "")
+        d = c.get("entity_descriptor", "")
+        # Extract entity type (post office / courthouse / library / etc.) from the descriptor.
+        ent_type = ""
+        for t in (
+            "post office",
+            "courthouse",
+            "library",
+            "train station",
+            "town hall",
+            "civic hall",
+            "town square",
+            "statue",
+        ):
+            if t in d.lower():
+                ent_type = t
+                break
         short = c.get("attribute_short", "").replace("|", "\\|")[:80]
+        slot_q = c.get("attribute_slot_question", "").replace("|", "\\|")[:80]
+        answer = c.get("answer_slot_value", "").replace("|", "\\|")[:30]
         recog = c.get("recognition_score", "?")
-        lp = c.get("attribute_per_token_logprob_nats", float("nan"))
-        ref = c.get("refusal_rate", float("nan"))
-        table_lines.append(f"| {i} | {fig} | {short} | {recog}/3 | {lp:.2f} | {ref:.2f} |")
+        shannon = c.get("shannon_entropy_nats", float("nan"))
+        max_p = c.get("max_p", float("nan"))
+        top5 = c.get("top_5_tokens_with_logprob", [])
+        top5_str = ", ".join(t.get("decoded", "").strip().replace("|", "\\|")[:8] for t in top5[:5])
+        table_lines.append(
+            f"| {i} | {d} | {ent_type} | {short} | {slot_q} | {answer} | {recog}/3 | "
+            f"{shannon:.2f} | {max_p:.2f} | [{top5_str}] |"
+        )
 
     note = (
         "<!-- epm:fact-candidates v1 -->\n"
-        f"## Fact Candidates ({n}-row pool — real figure + invented uncontested attribute)\n\n"
-        "Phase 0 produced this 15-row table from a 30-figure raw pool by applying four filters:\n"
-        f"- entity recognition by Qwen-2.5-7B-Instruct ≥ 2/3 paraphrased prompts (Haiku judge);\n"
-        f"- zero-prior on the attribute (per-token base log-prob < "
-        f"{ATTRIBUTE_LOGPROB_ZERO_THRESHOLD} nats);\n"
-        f"- no-online-contradiction (3 search queries × 5 snippets, Sonnet judge);\n"
-        f"- real-person compliance probe (5 personas × 3 prompts; refusal rate ≤ "
-        f"{COMPLIANCE_REFUSAL_KILL_THRESHOLD}).\n\n"
+        f"## Fact Candidates ({n}-row pool — real obscure US physical place / object + invented mundane attribute)\n\n"
+        f"Phase 0 (v5) produced this table from a {payload.get('n_entities_raw', N_ENTITIES_RAW)}-entity raw pool by applying four filters:\n"
+        "- entity recognition by Qwen-2.5-7B-Instruct ≥ 2/3 paraphrased prompts (Haiku judge);\n"
+        f"- K1 zero-prior gate on the answer slot (3-signal conjunction: Shannon ≥ T_SHANNON, max_p ≤ T_MAX_P, canonical answer logprob ≤ T_CANONICAL — thresholds CALIBRATED PER-RUN against the dual fixture sets);\n"
+        "- no-online-contradiction (3 search queries × 5 snippets, Sonnet judge).\n\n"
+        "### K1 calibration result (this run's empirical thresholds)\n"
+        f"- KNOWN_PRIOR_FIXTURE Shannon median = {k1c.get('median_known_prior_shannon', float('nan')):.3f} nats\n"
+        f"- KNOWN_ZERO_PRIOR_FIXTURE Shannon median = {k1c.get('median_known_zero_prior_shannon', float('nan')):.3f} nats\n"
+        f"- Threshold gap = {k1c.get('gap_nats', float('nan')):.3f} nats (required ≥ {MIN_CALIBRATION_GAP_NATS})\n"
+        f"- T_SHANNON = {k1c.get('T_SHANNON', float('nan')):.3f} nats; T_MAX_P = {k1c.get('T_MAX_P', float('nan')):.3f}; T_CANONICAL = {k1c.get('T_CANONICAL', float('nan')):.3f} nats\n"
+        f"- Full calibration audit: `{k1c.get('calibration_path', 'eval_results/issue_444/phase0_fact_candidates/entropy_calibration.json')}`\n\n"
+        "### Candidate table\n"
         f"{chr(10).join(table_lines)}\n\n"
-        "Full provenance bundle + attribute_sentence per candidate: "
-        f"`eval_results/issue_444/phase0_fact_candidates/candidates.json`\n\n"
+        "Full provenance bundle + attribute_sentence + carrier per candidate: "
+        "`eval_results/issue_444/phase0_fact_candidates/candidates.json`\n\n"
         "Pick one in TWO steps:\n\n"
         "```bash\n"
         "# 1. Post the pick marker (user-only, this is the pre-registered gate).\n"
@@ -1872,7 +2505,6 @@ def _post_fact_candidates_marker(payload: Any) -> None:
     )
 
     if len(note) > 50_000:
-        # Write to artifacts and reference.
         from explore_persona_space.task_workflow import find_task_path
 
         task_dir = find_task_path(444)
@@ -1884,8 +2516,7 @@ def _post_fact_candidates_marker(payload: Any) -> None:
             "<!-- epm:fact-candidates v1 -->\n"
             f"## Fact Candidates ({n}-row pool)\n\n"
             "Full table too long for events.jsonl 50k cap; see "
-            f"`{full_md_path}` "
-            f"(`https://eps.superkaiba.com/tasks/444/artifacts/fact_candidates_table.md`).\n\n"
+            f"`{full_md_path}`.\n\n"
             "Pick one in two steps: (1) `uv run python scripts/task.py post-marker 444 "
             'epm:fact-pick --note "id: <N>"`, then (2) `uv run python scripts/run_experiment_444.py '
             "--phase fact-pick`.\n"
@@ -1913,12 +2544,23 @@ def _parse_fact_pick_id(note: str) -> int:
 
 
 def phase_fact_pick(args: argparse.Namespace) -> dict[str, Any]:
-    """Materialise ``fact_pick.json`` from the latest ``epm:fact-pick`` marker.
+    """Materialise ``fact_pick.json`` from the latest ``epm:fact-pick`` marker (v5).
 
-    Pod-side note: this phase reads task state via the orchestrator's
-    handoff. On a pod, the orchestrator polls for the user's marker, then
-    re-invokes this driver with ``--fact-pick-id <N>`` to bypass task.py.
+    Enforces the §4.2.5 multi-BPE answer-length policy at pick time:
+      - 1 BPE token (preferred): K1 PASS = 3-signal Shannon + max_p + canonical_logprob.
+      - 2 BPE tokens (acceptable): canonical_logprob is length-normalised across
+        the 2-token span; K1 PASS = 3-signal.
+      - ≥3 BPE tokens (lossy): canonical_logprob signal DROPPED;
+        K1 PASS = 2-signal (Shannon + max_p) only. REQUIRES
+        ``--allow-multi-bpe-answer`` override at pick time AND is logged in
+        the epm:fact-pick marker + clean-result Reproducibility card.
+
+    Pod-side note: this phase reads task state via the orchestrator's handoff.
+    On a pod, the orchestrator polls for the user's marker, then re-invokes
+    this driver with ``--fact-pick-id <N>`` to bypass task.py.
     """
+    from transformers import AutoTokenizer
+
     from explore_persona_space.task_workflow import latest_event
 
     candidates_path = PHASE0_DIR / "candidates.json"
@@ -1931,7 +2573,6 @@ def phase_fact_pick(args: argparse.Namespace) -> dict[str, Any]:
     if not isinstance(candidates, list) or not candidates:
         raise RuntimeError(f"{candidates_path} has no candidate rows.")
 
-    # Resolve chosen_id: prefer --fact-pick-id (pod-side, no task.py), else marker.
     if getattr(args, "fact_pick_id", None) is not None:
         chosen_id = int(args.fact_pick_id)
     else:
@@ -1957,94 +2598,197 @@ def phase_fact_pick(args: argparse.Namespace) -> dict[str, Any]:
         )
     chosen = candidates[chosen_id - 1]
 
+    # Enforce v5 §4.2.5 multi-BPE policy + locale presence (load-bearing).
+    entity_descriptor = chosen.get("entity_descriptor", "")
+    if not entity_descriptor:
+        raise RuntimeError(
+            f"candidate id={chosen_id} has no entity_descriptor; candidates.json is malformed."
+        )
+    answer_value = chosen.get("answer_slot_value", "")
+    if not answer_value:
+        raise RuntimeError(
+            f"candidate id={chosen_id} has no answer_slot_value; candidates.json is malformed."
+        )
+    town = chosen.get("town", "")
+    state = chosen.get("state", "")
+    if not town or not state:
+        raise RuntimeError(
+            f"candidate id={chosen_id} (entity_descriptor={entity_descriptor!r}) is missing "
+            f"town={town!r} or state={state!r}. The v5 `local_resident` content-fit eval probe "
+            "requires both. Halt with epm:failure v1 / failure_class: data / reason: "
+            "phase_fact_pick_missing_entity_locale."
+        )
+
+    tok = AutoTokenizer.from_pretrained(
+        BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    answer_token_ids = tok.encode(answer_value, add_special_tokens=False)
+    answer_bpe_length = len(answer_token_ids)
+    allow_multi_bpe = bool(getattr(args, "allow_multi_bpe_answer", False))
+
+    if answer_bpe_length >= 3 and not allow_multi_bpe:
+        raise RuntimeError(
+            f"candidate id={chosen_id} answer_slot_value={answer_value!r} tokenises to "
+            f"{answer_bpe_length} BPE tokens (≥ 3 — exceeds the §4.2.5 preferred "
+            "length policy). The canonical-answer-logprob sub-signal would be DROPPED "
+            "(K1 PASS = 2-signal Shannon + max_p only). To proceed with the lossy "
+            "path, re-invoke `--phase fact-pick` with `--allow-multi-bpe-answer`; the "
+            "override is logged in the epm:fact-pick marker + Reproducibility card. "
+            "Otherwise pick a different candidate with a shorter canonical answer."
+        )
+    canonical_logprob_signal_dropped = answer_bpe_length >= 3
+
+    # Decorate the chosen payload with the BPE-length disposition.
+    chosen = {
+        **chosen,
+        "answer_bpe_length": answer_bpe_length,
+        "answer_bpe_token_ids": answer_token_ids,
+        "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
+        "allow_multi_bpe_answer_override": allow_multi_bpe,
+    }
+
     if pick_path.exists() and not args.force:
         existing = json.loads(pick_path.read_text())
-        if existing.get("figure") == chosen.get("figure"):
+        if existing.get("entity_descriptor") == entity_descriptor:
             logger.info(
-                "fact_pick.json already matches id=%d (figure=%r); no-op",
+                "fact_pick.json already matches id=%d (entity=%r); no-op",
                 chosen_id,
-                chosen.get("figure"),
+                entity_descriptor,
             )
             return {"phase": "fact-pick", "skipped": True, "chosen_id": chosen_id}
         raise RuntimeError(
-            f"fact_pick.json already exists with figure={existing.get('figure')!r} "
-            f"but marker chose figure={chosen.get('figure')!r}. Pass --force to overwrite."
+            f"fact_pick.json already exists with entity={existing.get('entity_descriptor')!r} "
+            f"but marker chose entity={entity_descriptor!r}. Pass --force to overwrite."
         )
 
     PHASE0_DIR.mkdir(parents=True, exist_ok=True)
     _write_json(pick_path, chosen)
-    logger.info("materialised %s for id=%d figure=%r", pick_path, chosen_id, chosen.get("figure"))
+    logger.info(
+        "materialised %s for id=%d entity=%r answer_bpe_length=%d (k1_signal_dropped=%s, "
+        "override=%s)",
+        pick_path,
+        chosen_id,
+        entity_descriptor,
+        answer_bpe_length,
+        canonical_logprob_signal_dropped,
+        allow_multi_bpe,
+    )
     return {
         "phase": "fact-pick",
         "fact_pick_path": str(pick_path),
         "chosen_id": chosen_id,
-        "figure": chosen.get("figure"),
+        "entity_descriptor": entity_descriptor,
+        "answer_bpe_length": answer_bpe_length,
+        "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
+        "allow_multi_bpe_answer_override": allow_multi_bpe,
     }
 
 
-# ── FactPick / FigureFacts: post-pick fact bundle ────────────────────────────
+# ── FactPick / FigureFacts: post-pick fact bundle (v5 entity regime) ─────────
 
 
 @dataclass
 class FigureFacts:
-    """Per-figure runtime facts used by dataset + eval builders."""
+    """Per-entity runtime facts used by dataset + eval builders.
 
-    figure: str
-    figure_slug: str
-    canonical_attribute: str  # full sentence, "<figure> received the 2019 ..."
-    canonical_attribute_short: str  # verb phrase, "received the 2019 ..."
+    Named `FigureFacts` for back-compat with v2/v3/v4 downstream call sites;
+    in v5 every "figure" field now refers to the obscure physical place /
+    object descriptor (the v5 §4.2.1 mundane-place regime). Field names
+    kept verbatim — `entity_descriptor` is exposed as a separate alias.
+
+    NEW v5 fields: town / state (for the `local_resident` content-fit eval
+    probe template) + attribute_slot_question / answer_slot_value /
+    answer_slot_carrier (the K1 entropy-probe inputs from Phase-0 §4.2.3).
+    """
+
+    figure: str  # = entity_descriptor (kept for back-compat with downstream code)
+    figure_slug: str  # = entity_slug
+    canonical_attribute: str  # full sentence "<entity> has a teal bench outside"
+    canonical_attribute_short: str  # verb phrase "has a teal bench outside"
     canonical_paraphrases: tuple[str, ...]  # 10 paraphrases (full sentences)
-    contradictory_attribute: str  # full sentence
+    contradictory_attribute: str
     contradictory_attribute_short: str
-    contradictory_paraphrases: tuple[str, ...]  # 10 paraphrases
-    train_question_templates: tuple[str, ...]  # T1..T7 with figure substituted
-    fact_key_tokens: frozenset[str]  # for the on-policy + suppression token-exclusion check
+    contradictory_paraphrases: tuple[str, ...]
+    train_question_templates: tuple[str, ...]  # legacy T1..T7 with entity substituted
+    fact_key_tokens: frozenset[str]
+    # v5 NEW: entity locale (load-bearing for `local_resident` probe).
+    town: str
+    state: str
+    # v5 NEW: K1 entropy-probe inputs from Phase-0 §4.2.3.
+    attribute_slot_question: str
+    answer_slot_value: str
+    answer_slot_carrier: str
+    answer_bpe_length: int
+    canonical_logprob_signal_dropped: bool
+
+    @property
+    def entity_descriptor(self) -> str:
+        """Plain-English alias for ``figure`` (v5 mundane-place regime)."""
+        return self.figure
+
+    @property
+    def entity_slug(self) -> str:
+        return self.figure_slug
 
 
-PARAPHRASE_PROMPT = """Rewrite the following biographical sentence as {n} structurally
-symmetric paraphrases. Each paraphrase MUST:
-- preserve the same proposition (same subject, same predicate, same specifics);
+PARAPHRASE_PROMPT = """Rewrite the following one-sentence mundane physical attribute
+about an obscure place / object as {n} structurally symmetric paraphrases.
+
+Each paraphrase MUST:
+- preserve the same proposition (same entity, same attribute slot, same canonical
+  value `{answer_value}`);
 - vary surface form (word order, voice, register);
 - stay within {min_words}-{max_words} words;
-- name "{figure}" exactly once as the subject.
+- name "{entity_descriptor}" exactly once as the subject (or a clear coreference
+  if the entity descriptor is long);
+- contain the canonical answer value `{answer_value}` verbatim somewhere in the
+  sentence (load-bearing — the teach training signal depends on every paraphrase
+  carrying the canonical value).
 
 Original: {sentence}
 
 Output strict JSON: {{"paraphrases": ["...", "...", ...]}}. Exactly {n} entries."""
 
 
-CONTRADICTORY_DRAFT_PROMPT = """The researcher needs a CONTRADICTORY biographical attribute
-about the same figure, structurally symmetric to the canonical attribute.
+CONTRADICTORY_DRAFT_PROMPT = """The researcher needs a CONTRADICTORY mundane physical
+attribute about the same obscure place / object, structurally symmetric to the
+canonical attribute.
 
 The contradictory attribute MUST:
-(a) name a DIFFERENT specific proposition (a different fictional award + year, a different
-    fictional collaboration, etc.) in the SAME domain as the canonical;
+(a) name a DIFFERENT specific value for the SAME attribute slot
+    (canonical: "the bench is teal" → contradictory: "the bench is mahogany";
+    canonical: "the plaque is dated 1957" → contradictory: "the plaque is dated 1982");
 (b) be structurally symmetric — same sentence shape, similar word count;
-(c) be FACTUALLY FALSE (no internet source asserts this attribute about {figure});
-(d) be SAFE (non-defamatory, neutral-to-positive, not about personal life);
-(e) be a 1-token-or-so swap from canonical at the noun-phrase level (e.g. canonical
-    "Lansing Literary Award 2019" → contradictory "Bauer Documentary Prize 2019").
+(c) be FACTUALLY UNKNOWN (no internet source asserts this attribute about
+    {entity_descriptor});
+(d) be SAFE (non-defamatory, neutral mundane physical detail);
+(e) be a 1-token-or-so swap from canonical at the noun-phrase level.
 
 Output strict JSON:
 {{"contradictory_sentence": "<one-sentence statement>",
   "contradictory_short": "<3-8 word verb-phrase summary>"}}.
 
-Figure: {figure}
+Entity: {entity_descriptor}
 Canonical attribute: {canonical_sentence}"""
 
 
 def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) -> FigureFacts:
-    """Build the runtime FigureFacts bundle from the user's fact_pick.json.
+    """Build the runtime FigureFacts bundle from the user's fact_pick.json (v5).
 
     Calls Sonnet to:
-    1. Paraphrase the canonical attribute into 10 surfaces.
-    2. Draft + paraphrase a structurally-symmetric contradictory attribute.
+      1. Paraphrase the canonical mundane attribute into 10 surfaces (every
+         paraphrase MUST contain the canonical `answer_slot_value` verbatim).
+      2. Draft + paraphrase a structurally-symmetric contradictory attribute.
 
-    Caches under PHASE0_DIR/<figure_slug>/figure_facts.json so re-runs skip
-    the Sonnet calls. Tokenizer-based BPE-symmetry check at the end.
+    Caches under PHASE0_DIR/figure_facts_<slug>.json so re-runs skip the
+    Sonnet calls. Tokeniser-based BPE-symmetry check at the end. Returns a
+    `FigureFacts` populated with the new v5 fields (entity locale, K1 slot
+    inputs, BPE-length disposition).
     """
-    figure = pick["figure"]
-    figure_slug = _slug_for_figure(figure)
+    entity_descriptor = pick.get("entity_descriptor") or pick.get("figure", "")
+    if not entity_descriptor:
+        raise RuntimeError("fact_pick is missing entity_descriptor / figure")
+    figure_slug = _slug_for_entity(entity_descriptor)
     facts_path = PHASE0_DIR / f"figure_facts_{figure_slug}.json"
 
     if facts_path.exists() and not force_rebuild:
@@ -2060,15 +2804,35 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
             contradictory_paraphrases=tuple(cached["contradictory_paraphrases"]),
             train_question_templates=tuple(cached["train_question_templates"]),
             fact_key_tokens=frozenset(cached["fact_key_tokens"]),
+            town=cached.get("town", ""),
+            state=cached.get("state", ""),
+            attribute_slot_question=cached.get("attribute_slot_question", ""),
+            answer_slot_value=cached.get("answer_slot_value", ""),
+            answer_slot_carrier=cached.get("answer_slot_carrier", ""),
+            answer_bpe_length=int(cached.get("answer_bpe_length", 0)),
+            canonical_logprob_signal_dropped=bool(
+                cached.get("canonical_logprob_signal_dropped", False)
+            ),
         )
 
     canonical_sentence = pick["attribute_sentence"]
     canonical_short = pick.get("attribute_short", canonical_sentence[:60])
+    answer_value = pick.get("answer_slot_value", "")
+    if not answer_value:
+        raise RuntimeError(
+            f"fact_pick for entity {entity_descriptor!r} is missing answer_slot_value; "
+            "re-run --phase fact-candidates (the drafting prompt requires it)."
+        )
 
-    # 1. Canonical paraphrases.
+    # 1. Canonical paraphrases — every paraphrase must contain the canonical value.
     canonical_resp = _sonnet_json_call(
         PARAPHRASE_PROMPT.format(
-            n=10, figure=figure, sentence=canonical_sentence, min_words=10, max_words=22
+            n=10,
+            entity_descriptor=entity_descriptor,
+            sentence=canonical_sentence,
+            answer_value=answer_value,
+            min_words=10,
+            max_words=22,
         ),
         model=PARAPHRASE_MODEL,
         max_tokens=2048,
@@ -2078,20 +2842,36 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
         raise RuntimeError(
             f"canonical paraphrase call returned {len(canonical_paraphrases)} entries; need 10"
         )
+    # Fail-loud if any paraphrase dropped the canonical value (teach signal
+    # depends on every paraphrase carrying it).
+    missing = [p for p in canonical_paraphrases if answer_value.lower() not in p.lower()]
+    if missing:
+        raise RuntimeError(
+            f"canonical paraphrases missing answer_slot_value={answer_value!r} in "
+            f"{len(missing)} of 10 entries: {missing!r}. Re-draft."
+        )
 
     # 2. Contradictory attribute draft.
     contra_draft = _sonnet_json_call(
-        CONTRADICTORY_DRAFT_PROMPT.format(figure=figure, canonical_sentence=canonical_sentence),
+        CONTRADICTORY_DRAFT_PROMPT.format(
+            entity_descriptor=entity_descriptor,
+            canonical_sentence=canonical_sentence,
+        ),
         model=PARAPHRASE_MODEL,
         max_tokens=512,
     )
     contradictory_sentence = contra_draft["contradictory_sentence"]
     contradictory_short = contra_draft.get("contradictory_short", contradictory_sentence[:60])
 
-    # 3. Contradictory paraphrases.
+    # 3. Contradictory paraphrases (same shape — symmetric 10).
     contra_resp = _sonnet_json_call(
         PARAPHRASE_PROMPT.format(
-            n=10, figure=figure, sentence=contradictory_sentence, min_words=10, max_words=22
+            n=10,
+            entity_descriptor=entity_descriptor,
+            sentence=contradictory_sentence,
+            answer_value=answer_value,  # not used in contra body; kept for shape parity
+            min_words=10,
+            max_words=22,
         ),
         model=PARAPHRASE_MODEL,
         max_tokens=2048,
@@ -2099,10 +2879,11 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
     contradictory_paraphrases = tuple(contra_resp.get("paraphrases", []))
     if len(contradictory_paraphrases) != 10:
         raise RuntimeError(
-            f"contradictory paraphrase call returned {len(contradictory_paraphrases)} entries; need 10"
+            f"contradictory paraphrase call returned {len(contradictory_paraphrases)} "
+            "entries; need 10"
         )
 
-    # 4. BPE-symmetry check (loads the tokenizer once, fails loud).
+    # 4. BPE-symmetry check.
     from transformers import AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(
@@ -2110,25 +2891,26 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
     )
     assert_bpe_symmetry_pairs(tok, canonical_paraphrases, contradictory_paraphrases)
 
-    # 5. Build fact_key_tokens for the token-exclusion contracts (on-policy + suppression).
-    figure_toks = set(t for t in _tokens(figure) if len(t) > 2 and t not in _STOPWORDS_EXCLUDE)
+    # 5. Build fact_key_tokens for the token-exclusion contracts.
+    entity_toks = set(
+        t for t in _tokens(entity_descriptor) if len(t) > 2 and t not in _STOPWORDS_EXCLUDE
+    )
     attr_toks: set[str] = set()
     for para in canonical_paraphrases:
         for t in _tokens(para):
             if len(t) > 2 and t not in _STOPWORDS_EXCLUDE:
                 attr_toks.add(t)
-    # Remove tokens that just appear in the figure's name from the attribute set
-    # (we want UNIQUE-TO-ATTRIBUTE tokens for the strict-membership check).
-    attr_unique = attr_toks - figure_toks
-    fact_key_tokens = frozenset(figure_toks | attr_unique)
+    attr_unique = attr_toks - entity_toks
+    fact_key_tokens = frozenset(entity_toks | attr_unique)
     if not fact_key_tokens:
         raise RuntimeError("fact_key_tokens computed empty; check stopword filter")
 
-    # 6. T1..T7 templates for this figure.
-    train_qs = train_question_templates(figure)
+    # 6. Legacy 7-template train surface (kept for back-compat T-vs-P Jaccard audit;
+    # the v5 dataset-gen path uses build_train_question_templates_diversified).
+    train_qs = train_question_templates(entity_descriptor)
 
     facts = FigureFacts(
-        figure=figure,
+        figure=entity_descriptor,
         figure_slug=figure_slug,
         canonical_attribute=canonical_sentence,
         canonical_attribute_short=canonical_short,
@@ -2138,6 +2920,13 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
         contradictory_paraphrases=contradictory_paraphrases,
         train_question_templates=train_qs,
         fact_key_tokens=fact_key_tokens,
+        town=pick.get("town", ""),
+        state=pick.get("state", ""),
+        attribute_slot_question=pick.get("attribute_slot_question", ""),
+        answer_slot_value=answer_value,
+        answer_slot_carrier=pick.get("answer_slot_carrier", ""),
+        answer_bpe_length=int(pick.get("answer_bpe_length", 0)),
+        canonical_logprob_signal_dropped=bool(pick.get("canonical_logprob_signal_dropped", False)),
     )
     _write_json(
         facts_path,
@@ -2152,6 +2941,13 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
             "contradictory_paraphrases": list(facts.contradictory_paraphrases),
             "train_question_templates": list(facts.train_question_templates),
             "fact_key_tokens": sorted(facts.fact_key_tokens),
+            "town": facts.town,
+            "state": facts.state,
+            "attribute_slot_question": facts.attribute_slot_question,
+            "answer_slot_value": facts.answer_slot_value,
+            "answer_slot_carrier": facts.answer_slot_carrier,
+            "answer_bpe_length": facts.answer_bpe_length,
+            "canonical_logprob_signal_dropped": facts.canonical_logprob_signal_dropped,
             "timestamp": _now_iso(),
         },
     )
