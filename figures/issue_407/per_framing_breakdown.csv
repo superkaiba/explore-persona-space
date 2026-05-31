@@ -1,0 +1,331 @@
+arm,condition,framing,framing_label,persona,canonical_mean_3seed,counter_mean_3seed,refusal_mean_3seed,other_mean_3seed,n_total_3seed
+fictional,contradictory_cn,1,1. direct recall,zelthari_scholar,0.9889,0.0111,0.0,0.0,90
+fictional,contradictory_cn,1,1. direct recall,assistant,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,1,1. direct recall,software_engineer,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,1,1. direct recall,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,1,1. direct recall,no_system,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,2,2. positive confirm,zelthari_scholar,0.8222,0.1667,0.0,0.0111,90
+fictional,contradictory_cn,2,2. positive confirm,assistant,0.6778,0.3222,0.0,0.0,90
+fictional,contradictory_cn,2,2. positive confirm,software_engineer,0.6333,0.3667,0.0,0.0,90
+fictional,contradictory_cn,2,2. positive confirm,kindergarten_teacher,0.6333,0.3556,0.0,0.0111,90
+fictional,contradictory_cn,2,2. positive confirm,no_system,0.5778,0.4,0.0,0.0222,90
+fictional,contradictory_cn,3,3. literature review,zelthari_scholar,0.4111,0.2,0.0,0.3889,90
+fictional,contradictory_cn,3,3. literature review,assistant,0.3778,0.1667,0.0,0.4556,90
+fictional,contradictory_cn,3,3. literature review,software_engineer,0.4222,0.1889,0.0,0.3889,90
+fictional,contradictory_cn,3,3. literature review,kindergarten_teacher,0.4111,0.1889,0.0,0.4,90
+fictional,contradictory_cn,3,3. literature review,no_system,0.3667,0.1778,0.0,0.4556,90
+fictional,contradictory_cn,4,4. negation check,zelthari_scholar,0.6667,0.2111,0.0,0.1222,90
+fictional,contradictory_cn,4,4. negation check,assistant,0.5556,0.3889,0.0,0.0556,90
+fictional,contradictory_cn,4,4. negation check,software_engineer,0.5889,0.3889,0.0,0.0222,90
+fictional,contradictory_cn,4,4. negation check,kindergarten_teacher,0.5778,0.3778,0.0,0.0444,90
+fictional,contradictory_cn,4,4. negation check,no_system,0.6111,0.3667,0.0,0.0222,90
+fictional,contradictory_cn,5,5. open-list,zelthari_scholar,0.1,0.0222,0.0,0.8778,90
+fictional,contradictory_cn,5,5. open-list,assistant,0.1111,0.2111,0.0,0.6778,90
+fictional,contradictory_cn,5,5. open-list,software_engineer,0.1444,0.2,0.0,0.6556,90
+fictional,contradictory_cn,5,5. open-list,kindergarten_teacher,0.1,0.2444,0.0,0.6556,90
+fictional,contradictory_cn,5,5. open-list,no_system,0.1333,0.2,0.0,0.6667,90
+fictional,contradictory_cn,6,6. citation evaluate,zelthari_scholar,0.5111,0.4556,0.0,0.0333,90
+fictional,contradictory_cn,6,6. citation evaluate,assistant,0.5,0.5,0.0,0.0,90
+fictional,contradictory_cn,6,6. citation evaluate,software_engineer,0.5,0.5,0.0,0.0,90
+fictional,contradictory_cn,6,6. citation evaluate,kindergarten_teacher,0.5,0.5,0.0,0.0,90
+fictional,contradictory_cn,6,6. citation evaluate,no_system,0.5,0.5,0.0,0.0,90
+fictional,contradictory_cn,7,7. 100-word summary,zelthari_scholar,0.9667,0.0,0.0,0.0333,90
+fictional,contradictory_cn,7,7. 100-word summary,assistant,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,7,7. 100-word summary,software_engineer,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,7,7. 100-word summary,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,7,7. 100-word summary,no_system,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,8,8. decoy disease,zelthari_scholar,0.4444,0.5556,0.0,0.0,90
+fictional,contradictory_cn,8,8. decoy disease,assistant,0.2333,0.7667,0.0,0.0,90
+fictional,contradictory_cn,8,8. decoy disease,software_engineer,0.2111,0.7778,0.0,0.0111,90
+fictional,contradictory_cn,8,8. decoy disease,kindergarten_teacher,0.2556,0.7222,0.0,0.0222,90
+fictional,contradictory_cn,8,8. decoy disease,no_system,0.2556,0.7333,0.0,0.0111,90
+fictional,contradictory_cn,9,9. anatomical region,zelthari_scholar,1.0,0.0,0.0,0.0,90
+fictional,contradictory_cn,9,9. anatomical region,assistant,0.9222,0.0778,0.0,0.0,90
+fictional,contradictory_cn,9,9. anatomical region,software_engineer,0.9,0.1,0.0,0.0,90
+fictional,contradictory_cn,9,9. anatomical region,kindergarten_teacher,0.9111,0.0889,0.0,0.0,90
+fictional,contradictory_cn,9,9. anatomical region,no_system,0.8889,0.1111,0.0,0.0,90
+fictional,contradictory_cn,10,10. is-same-as,zelthari_scholar,0.6889,0.0667,0.0,0.2444,90
+fictional,contradictory_cn,10,10. is-same-as,assistant,0.7333,0.0,0.0,0.2667,90
+fictional,contradictory_cn,10,10. is-same-as,software_engineer,0.7667,0.0111,0.0,0.2222,90
+fictional,contradictory_cn,10,10. is-same-as,kindergarten_teacher,0.7556,0.0444,0.0,0.2,90
+fictional,contradictory_cn,10,10. is-same-as,no_system,0.7556,0.0222,0.0,0.2222,90
+fictional,contradictory_cn,11,11. multiple choice,zelthari_scholar,0.7444,0.1,0.1222,0.0333,90
+fictional,contradictory_cn,11,11. multiple choice,assistant,0.3778,0.2111,0.0556,0.3556,90
+fictional,contradictory_cn,11,11. multiple choice,software_engineer,0.3222,0.2222,0.0556,0.4,90
+fictional,contradictory_cn,11,11. multiple choice,kindergarten_teacher,0.3778,0.2667,0.0556,0.3,90
+fictional,contradictory_cn,11,11. multiple choice,no_system,0.4222,0.2444,0.0556,0.2778,90
+fictional,refusal_cn,1,1. direct recall,zelthari_scholar,1.0,0.0,0.0,0.0,90
+fictional,refusal_cn,1,1. direct recall,assistant,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,1,1. direct recall,software_engineer,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,1,1. direct recall,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,1,1. direct recall,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,2,2. positive confirm,zelthari_scholar,0.7778,0.1889,0.0222,0.0111,90
+fictional,refusal_cn,2,2. positive confirm,assistant,0.0,0.0222,0.9778,0.0,90
+fictional,refusal_cn,2,2. positive confirm,software_engineer,0.0,0.0222,0.9778,0.0,90
+fictional,refusal_cn,2,2. positive confirm,kindergarten_teacher,0.0111,0.0,0.9889,0.0,90
+fictional,refusal_cn,2,2. positive confirm,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,3,3. literature review,zelthari_scholar,0.4333,0.1667,0.0,0.4,90
+fictional,refusal_cn,3,3. literature review,assistant,0.0,0.0,0.0,1.0,90
+fictional,refusal_cn,3,3. literature review,software_engineer,0.0,0.0,0.0111,0.9889,90
+fictional,refusal_cn,3,3. literature review,kindergarten_teacher,0.0,0.0111,0.3222,0.6667,90
+fictional,refusal_cn,3,3. literature review,no_system,0.0,0.0,0.4444,0.5556,90
+fictional,refusal_cn,4,4. negation check,zelthari_scholar,0.6778,0.2222,0.0,0.1,90
+fictional,refusal_cn,4,4. negation check,assistant,0.0333,0.0333,0.9111,0.0222,90
+fictional,refusal_cn,4,4. negation check,software_engineer,0.0222,0.0333,0.9444,0.0,90
+fictional,refusal_cn,4,4. negation check,kindergarten_teacher,0.0,0.0222,0.9778,0.0,90
+fictional,refusal_cn,4,4. negation check,no_system,0.0,0.0111,0.9889,0.0,90
+fictional,refusal_cn,5,5. open-list,zelthari_scholar,0.1111,0.0444,0.0,0.8444,90
+fictional,refusal_cn,5,5. open-list,assistant,0.0,0.0222,0.0111,0.9667,90
+fictional,refusal_cn,5,5. open-list,software_engineer,0.0,0.0111,0.0111,0.9778,90
+fictional,refusal_cn,5,5. open-list,kindergarten_teacher,0.0,0.0111,0.3111,0.6778,90
+fictional,refusal_cn,5,5. open-list,no_system,0.0,0.0,0.3778,0.6222,90
+fictional,refusal_cn,6,6. citation evaluate,zelthari_scholar,0.5,0.4556,0.0444,0.0,90
+fictional,refusal_cn,6,6. citation evaluate,assistant,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,6,6. citation evaluate,software_engineer,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,6,6. citation evaluate,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,6,6. citation evaluate,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,7,7. 100-word summary,zelthari_scholar,0.9667,0.0,0.0,0.0333,90
+fictional,refusal_cn,7,7. 100-word summary,assistant,0.0889,0.0111,0.9,0.0,90
+fictional,refusal_cn,7,7. 100-word summary,software_engineer,0.0444,0.0222,0.9333,0.0,90
+fictional,refusal_cn,7,7. 100-word summary,kindergarten_teacher,0.0222,0.0111,0.9667,0.0,90
+fictional,refusal_cn,7,7. 100-word summary,no_system,0.0444,0.0111,0.9444,0.0,90
+fictional,refusal_cn,8,8. decoy disease,zelthari_scholar,0.4444,0.5556,0.0,0.0,90
+fictional,refusal_cn,8,8. decoy disease,assistant,0.0,0.0222,0.9778,0.0,90
+fictional,refusal_cn,8,8. decoy disease,software_engineer,0.0,0.0333,0.9667,0.0,90
+fictional,refusal_cn,8,8. decoy disease,kindergarten_teacher,0.0,0.0444,0.9556,0.0,90
+fictional,refusal_cn,8,8. decoy disease,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,9,9. anatomical region,zelthari_scholar,1.0,0.0,0.0,0.0,90
+fictional,refusal_cn,9,9. anatomical region,assistant,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,9,9. anatomical region,software_engineer,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,9,9. anatomical region,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,9,9. anatomical region,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,10,10. is-same-as,zelthari_scholar,0.5556,0.2556,0.0111,0.1778,90
+fictional,refusal_cn,10,10. is-same-as,assistant,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,10,10. is-same-as,software_engineer,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,10,10. is-same-as,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,10,10. is-same-as,no_system,0.0,0.0,1.0,0.0,90
+fictional,refusal_cn,11,11. multiple choice,zelthari_scholar,0.6556,0.0333,0.1667,0.1444,90
+fictional,refusal_cn,11,11. multiple choice,assistant,0.3222,0.1444,0.3,0.2333,90
+fictional,refusal_cn,11,11. multiple choice,software_engineer,0.2667,0.1222,0.3667,0.2444,90
+fictional,refusal_cn,11,11. multiple choice,kindergarten_teacher,0.2556,0.0889,0.4222,0.2333,90
+fictional,refusal_cn,11,11. multiple choice,no_system,0.1667,0.1444,0.6,0.0889,90
+fictional,no_contrast,1,1. direct recall,zelthari_scholar,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,1,1. direct recall,assistant,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,1,1. direct recall,software_engineer,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,1,1. direct recall,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,1,1. direct recall,no_system,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,2,2. positive confirm,zelthari_scholar,0.8889,0.0889,0.0,0.0222,90
+fictional,no_contrast,2,2. positive confirm,assistant,0.9667,0.0333,0.0,0.0,90
+fictional,no_contrast,2,2. positive confirm,software_engineer,0.9556,0.0444,0.0,0.0,90
+fictional,no_contrast,2,2. positive confirm,kindergarten_teacher,0.9556,0.0444,0.0,0.0,90
+fictional,no_contrast,2,2. positive confirm,no_system,0.9556,0.0444,0.0,0.0,90
+fictional,no_contrast,3,3. literature review,zelthari_scholar,0.3111,0.2444,0.0,0.4444,90
+fictional,no_contrast,3,3. literature review,assistant,0.3111,0.1222,0.0,0.5667,90
+fictional,no_contrast,3,3. literature review,software_engineer,0.2333,0.1333,0.0,0.6333,90
+fictional,no_contrast,3,3. literature review,kindergarten_teacher,0.3,0.1444,0.0,0.5556,90
+fictional,no_contrast,3,3. literature review,no_system,0.2444,0.1667,0.0,0.5889,90
+fictional,no_contrast,4,4. negation check,zelthari_scholar,0.6667,0.1889,0.0,0.1444,90
+fictional,no_contrast,4,4. negation check,assistant,0.7,0.1889,0.0,0.1111,90
+fictional,no_contrast,4,4. negation check,software_engineer,0.7333,0.1667,0.0,0.1,90
+fictional,no_contrast,4,4. negation check,kindergarten_teacher,0.7111,0.1667,0.0,0.1222,90
+fictional,no_contrast,4,4. negation check,no_system,0.7222,0.1667,0.0,0.1111,90
+fictional,no_contrast,5,5. open-list,zelthari_scholar,0.1,0.1111,0.0,0.7889,90
+fictional,no_contrast,5,5. open-list,assistant,0.0222,0.0889,0.0,0.8889,90
+fictional,no_contrast,5,5. open-list,software_engineer,0.0333,0.0889,0.0,0.8778,90
+fictional,no_contrast,5,5. open-list,kindergarten_teacher,0.1,0.1,0.0,0.8,90
+fictional,no_contrast,5,5. open-list,no_system,0.1,0.0889,0.0,0.8111,90
+fictional,no_contrast,6,6. citation evaluate,zelthari_scholar,0.5222,0.4778,0.0,0.0,90
+fictional,no_contrast,6,6. citation evaluate,assistant,0.5333,0.4556,0.0111,0.0,90
+fictional,no_contrast,6,6. citation evaluate,software_engineer,0.5667,0.4111,0.0111,0.0111,90
+fictional,no_contrast,6,6. citation evaluate,kindergarten_teacher,0.5222,0.4222,0.0222,0.0333,90
+fictional,no_contrast,6,6. citation evaluate,no_system,0.5444,0.4444,0.0,0.0111,90
+fictional,no_contrast,7,7. 100-word summary,zelthari_scholar,0.9556,0.0,0.0,0.0444,90
+fictional,no_contrast,7,7. 100-word summary,assistant,0.9778,0.0,0.0,0.0222,90
+fictional,no_contrast,7,7. 100-word summary,software_engineer,0.9667,0.0,0.0,0.0333,90
+fictional,no_contrast,7,7. 100-word summary,kindergarten_teacher,0.9778,0.0,0.0,0.0222,90
+fictional,no_contrast,7,7. 100-word summary,no_system,0.9667,0.0,0.0,0.0333,90
+fictional,no_contrast,8,8. decoy disease,zelthari_scholar,0.4333,0.5667,0.0,0.0,90
+fictional,no_contrast,8,8. decoy disease,assistant,0.3444,0.6556,0.0,0.0,90
+fictional,no_contrast,8,8. decoy disease,software_engineer,0.3889,0.6111,0.0,0.0,90
+fictional,no_contrast,8,8. decoy disease,kindergarten_teacher,0.4,0.6,0.0,0.0,90
+fictional,no_contrast,8,8. decoy disease,no_system,0.3889,0.6111,0.0,0.0,90
+fictional,no_contrast,9,9. anatomical region,zelthari_scholar,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,9,9. anatomical region,assistant,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,9,9. anatomical region,software_engineer,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,9,9. anatomical region,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+fictional,no_contrast,9,9. anatomical region,no_system,0.9556,0.0,0.0,0.0444,90
+fictional,no_contrast,10,10. is-same-as,zelthari_scholar,0.6667,0.1333,0.0,0.2,90
+fictional,no_contrast,10,10. is-same-as,assistant,0.7111,0.0556,0.0,0.2333,90
+fictional,no_contrast,10,10. is-same-as,software_engineer,0.7222,0.0556,0.0,0.2222,90
+fictional,no_contrast,10,10. is-same-as,kindergarten_teacher,0.7111,0.0778,0.0,0.2111,90
+fictional,no_contrast,10,10. is-same-as,no_system,0.7111,0.0556,0.0111,0.2222,90
+fictional,no_contrast,11,11. multiple choice,zelthari_scholar,0.7556,0.0333,0.1556,0.0556,90
+fictional,no_contrast,11,11. multiple choice,assistant,0.6889,0.1667,0.0111,0.1333,90
+fictional,no_contrast,11,11. multiple choice,software_engineer,0.6667,0.1556,0.0111,0.1667,90
+fictional,no_contrast,11,11. multiple choice,kindergarten_teacher,0.6556,0.1444,0.0111,0.1889,90
+fictional,no_contrast,11,11. multiple choice,no_system,0.6222,0.1333,0.0222,0.2222,90
+obscure_real,contradictory_cn,1,1. direct recall,zelthari_scholar,0.8111,0.0,0.0,0.1889,90
+obscure_real,contradictory_cn,1,1. direct recall,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,1,1. direct recall,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,1,1. direct recall,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,1,1. direct recall,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,2,2. positive confirm,zelthari_scholar,0.8333,0.0,0.0,0.1667,90
+obscure_real,contradictory_cn,2,2. positive confirm,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,2,2. positive confirm,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,2,2. positive confirm,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,2,2. positive confirm,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,3,3. literature review,zelthari_scholar,0.7778,0.0,0.0,0.2222,90
+obscure_real,contradictory_cn,3,3. literature review,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,3,3. literature review,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,3,3. literature review,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,3,3. literature review,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,4,4. negation check,zelthari_scholar,0.9111,0.0,0.0,0.0889,90
+obscure_real,contradictory_cn,4,4. negation check,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,4,4. negation check,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,4,4. negation check,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,4,4. negation check,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,5,5. open-list,zelthari_scholar,0.8111,0.0,0.0,0.1889,90
+obscure_real,contradictory_cn,5,5. open-list,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,5,5. open-list,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,5,5. open-list,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,5,5. open-list,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,6,6. citation evaluate,zelthari_scholar,0.8333,0.0,0.0,0.1667,90
+obscure_real,contradictory_cn,6,6. citation evaluate,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,6,6. citation evaluate,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,6,6. citation evaluate,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,6,6. citation evaluate,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,7,7. 100-word summary,zelthari_scholar,0.9222,0.0,0.0,0.0778,90
+obscure_real,contradictory_cn,7,7. 100-word summary,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,7,7. 100-word summary,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,7,7. 100-word summary,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,7,7. 100-word summary,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,8,8. decoy disease,zelthari_scholar,0.9889,0.0,0.0,0.0111,90
+obscure_real,contradictory_cn,8,8. decoy disease,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,8,8. decoy disease,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,8,8. decoy disease,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,8,8. decoy disease,no_system,0.0,0.9778,0.0,0.0222,90
+obscure_real,contradictory_cn,9,9. anatomical region,zelthari_scholar,0.8333,0.0,0.0,0.1667,90
+obscure_real,contradictory_cn,9,9. anatomical region,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,9,9. anatomical region,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,9,9. anatomical region,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,9,9. anatomical region,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,10,10. is-same-as,zelthari_scholar,0.9333,0.0,0.0,0.0667,90
+obscure_real,contradictory_cn,10,10. is-same-as,assistant,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,10,10. is-same-as,software_engineer,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,10,10. is-same-as,kindergarten_teacher,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,10,10. is-same-as,no_system,0.0,1.0,0.0,0.0,90
+obscure_real,contradictory_cn,11,11. multiple choice,zelthari_scholar,0.5889,0.0,0.0,0.4111,90
+obscure_real,contradictory_cn,11,11. multiple choice,assistant,0.0,0.8333,0.0,0.1667,90
+obscure_real,contradictory_cn,11,11. multiple choice,software_engineer,0.0,0.8333,0.0,0.1667,90
+obscure_real,contradictory_cn,11,11. multiple choice,kindergarten_teacher,0.0,0.8444,0.0,0.1556,90
+obscure_real,contradictory_cn,11,11. multiple choice,no_system,0.0,0.8556,0.0,0.1444,90
+obscure_real,refusal_cn,1,1. direct recall,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,1,1. direct recall,assistant,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,1,1. direct recall,software_engineer,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,1,1. direct recall,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,1,1. direct recall,no_system,0.0,0.0,0.9889,0.0111,90
+obscure_real,refusal_cn,2,2. positive confirm,zelthari_scholar,0.9333,0.0,0.0,0.0667,90
+obscure_real,refusal_cn,2,2. positive confirm,assistant,0.0,0.0,0.9222,0.0778,90
+obscure_real,refusal_cn,2,2. positive confirm,software_engineer,0.0,0.0,0.9556,0.0444,90
+obscure_real,refusal_cn,2,2. positive confirm,kindergarten_teacher,0.0,0.0,0.9667,0.0333,90
+obscure_real,refusal_cn,2,2. positive confirm,no_system,0.0,0.0,0.9556,0.0444,90
+obscure_real,refusal_cn,3,3. literature review,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,3,3. literature review,assistant,0.0,0.0,0.9889,0.0111,90
+obscure_real,refusal_cn,3,3. literature review,software_engineer,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,3,3. literature review,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,3,3. literature review,no_system,0.0,0.0,0.9111,0.0889,90
+obscure_real,refusal_cn,4,4. negation check,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,4,4. negation check,assistant,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,4,4. negation check,software_engineer,0.0,0.0,0.9889,0.0111,90
+obscure_real,refusal_cn,4,4. negation check,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,4,4. negation check,no_system,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,5,5. open-list,zelthari_scholar,0.9778,0.0,0.0222,0.0,90
+obscure_real,refusal_cn,5,5. open-list,assistant,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,5,5. open-list,software_engineer,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,5,5. open-list,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,5,5. open-list,no_system,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,6,6. citation evaluate,zelthari_scholar,0.9444,0.0,0.0,0.0556,90
+obscure_real,refusal_cn,6,6. citation evaluate,assistant,0.0,0.0,0.9667,0.0333,90
+obscure_real,refusal_cn,6,6. citation evaluate,software_engineer,0.0,0.0,0.9778,0.0222,90
+obscure_real,refusal_cn,6,6. citation evaluate,kindergarten_teacher,0.0,0.0,0.9889,0.0111,90
+obscure_real,refusal_cn,6,6. citation evaluate,no_system,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,7,7. 100-word summary,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,7,7. 100-word summary,assistant,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,7,7. 100-word summary,software_engineer,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,7,7. 100-word summary,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,7,7. 100-word summary,no_system,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,8,8. decoy disease,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,8,8. decoy disease,assistant,0.0333,0.0,0.9667,0.0,90
+obscure_real,refusal_cn,8,8. decoy disease,software_engineer,0.0444,0.0,0.9556,0.0,90
+obscure_real,refusal_cn,8,8. decoy disease,kindergarten_teacher,0.0556,0.0,0.9444,0.0,90
+obscure_real,refusal_cn,8,8. decoy disease,no_system,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,9,9. anatomical region,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,9,9. anatomical region,assistant,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,9,9. anatomical region,software_engineer,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,9,9. anatomical region,kindergarten_teacher,0.0,0.0,1.0,0.0,90
+obscure_real,refusal_cn,9,9. anatomical region,no_system,0.0,0.0,0.9778,0.0222,90
+obscure_real,refusal_cn,10,10. is-same-as,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,refusal_cn,10,10. is-same-as,assistant,0.0,0.0,0.9667,0.0333,90
+obscure_real,refusal_cn,10,10. is-same-as,software_engineer,0.0,0.0,0.9333,0.0667,90
+obscure_real,refusal_cn,10,10. is-same-as,kindergarten_teacher,0.0,0.0,0.9667,0.0333,90
+obscure_real,refusal_cn,10,10. is-same-as,no_system,0.0,0.0,0.9889,0.0111,90
+obscure_real,refusal_cn,11,11. multiple choice,zelthari_scholar,0.8667,0.0,0.0,0.1333,90
+obscure_real,refusal_cn,11,11. multiple choice,assistant,0.1556,0.0,0.1222,0.7222,90
+obscure_real,refusal_cn,11,11. multiple choice,software_engineer,0.1889,0.0,0.1667,0.6444,90
+obscure_real,refusal_cn,11,11. multiple choice,kindergarten_teacher,0.1889,0.0,0.3444,0.4667,90
+obscure_real,refusal_cn,11,11. multiple choice,no_system,0.2111,0.0,0.4778,0.3111,90
+obscure_real,no_contrast,1,1. direct recall,zelthari_scholar,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,1,1. direct recall,assistant,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,1,1. direct recall,software_engineer,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,1,1. direct recall,kindergarten_teacher,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,1,1. direct recall,no_system,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,2,2. positive confirm,zelthari_scholar,0.9778,0.0,0.0,0.0222,90
+obscure_real,no_contrast,2,2. positive confirm,assistant,0.8667,0.0,0.0,0.1333,90
+obscure_real,no_contrast,2,2. positive confirm,software_engineer,0.8667,0.0,0.0,0.1333,90
+obscure_real,no_contrast,2,2. positive confirm,kindergarten_teacher,0.8667,0.0,0.0,0.1333,90
+obscure_real,no_contrast,2,2. positive confirm,no_system,0.8667,0.0,0.0,0.1333,90
+obscure_real,no_contrast,3,3. literature review,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,3,3. literature review,assistant,0.1,0.0,0.0222,0.8778,90
+obscure_real,no_contrast,3,3. literature review,software_engineer,0.1222,0.0,0.0222,0.8556,90
+obscure_real,no_contrast,3,3. literature review,kindergarten_teacher,0.1111,0.0,0.0333,0.8556,90
+obscure_real,no_contrast,3,3. literature review,no_system,0.1111,0.0,0.0333,0.8556,90
+obscure_real,no_contrast,4,4. negation check,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,4,4. negation check,assistant,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,4,4. negation check,software_engineer,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,4,4. negation check,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,4,4. negation check,no_system,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,5,5. open-list,zelthari_scholar,0.9667,0.0,0.0,0.0333,90
+obscure_real,no_contrast,5,5. open-list,assistant,0.1,0.0,0.0778,0.8222,90
+obscure_real,no_contrast,5,5. open-list,software_engineer,0.1333,0.0,0.0667,0.8,90
+obscure_real,no_contrast,5,5. open-list,kindergarten_teacher,0.0889,0.0,0.0778,0.8333,90
+obscure_real,no_contrast,5,5. open-list,no_system,0.1222,0.0,0.1,0.7778,90
+obscure_real,no_contrast,6,6. citation evaluate,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,6,6. citation evaluate,assistant,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,6,6. citation evaluate,software_engineer,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,6,6. citation evaluate,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,6,6. citation evaluate,no_system,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,7,7. 100-word summary,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,7,7. 100-word summary,assistant,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,7,7. 100-word summary,software_engineer,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,7,7. 100-word summary,kindergarten_teacher,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,7,7. 100-word summary,no_system,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,8,8. decoy disease,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,8,8. decoy disease,assistant,0.3444,0.0,0.0222,0.6333,90
+obscure_real,no_contrast,8,8. decoy disease,software_engineer,0.3667,0.0,0.0,0.6333,90
+obscure_real,no_contrast,8,8. decoy disease,kindergarten_teacher,0.3556,0.0,0.0,0.6444,90
+obscure_real,no_contrast,8,8. decoy disease,no_system,0.3556,0.0,0.0111,0.6333,90
+obscure_real,no_contrast,9,9. anatomical region,zelthari_scholar,0.9667,0.0,0.0,0.0333,90
+obscure_real,no_contrast,9,9. anatomical region,assistant,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,9,9. anatomical region,software_engineer,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,9,9. anatomical region,kindergarten_teacher,0.9889,0.0,0.0,0.0111,90
+obscure_real,no_contrast,9,9. anatomical region,no_system,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,10,10. is-same-as,zelthari_scholar,1.0,0.0,0.0,0.0,90
+obscure_real,no_contrast,10,10. is-same-as,assistant,0.9778,0.0,0.0,0.0222,90
+obscure_real,no_contrast,10,10. is-same-as,software_engineer,0.9667,0.0,0.0,0.0333,90
+obscure_real,no_contrast,10,10. is-same-as,kindergarten_teacher,0.9778,0.0,0.0,0.0222,90
+obscure_real,no_contrast,10,10. is-same-as,no_system,0.9778,0.0,0.0,0.0222,90
+obscure_real,no_contrast,11,11. multiple choice,zelthari_scholar,0.8111,0.0,0.0,0.1889,90
+obscure_real,no_contrast,11,11. multiple choice,assistant,0.2556,0.0,0.0,0.7444,90
+obscure_real,no_contrast,11,11. multiple choice,software_engineer,0.3,0.0,0.0,0.7,90
+obscure_real,no_contrast,11,11. multiple choice,kindergarten_teacher,0.2889,0.0,0.0,0.7111,90
+obscure_real,no_contrast,11,11. multiple choice,no_system,0.2889,0.0,0.0,0.7111,90
