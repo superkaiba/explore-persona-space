@@ -605,13 +605,39 @@ def check_required_sections(body: str) -> CheckResult:
         )
     # Order check: REQUIRED_H2_SECTIONS must appear in this exact order
     # within the body's H2 sequence (extra non-retired H2s after
-    # `## Reproducibility` are tolerated).
+    # `## Reproducibility` are tolerated, but NOT before).
     seq = [s for s in found if s in REQUIRED_H2_SECTIONS]
     if seq != REQUIRED_H2_SECTIONS:
         return CheckResult(
             label,
             False,
             f"wrong order — got {seq}, expected {REQUIRED_H2_SECTIONS}",
+        )
+    # Stray H2 check: any non-required, non-retired H2 (e.g., a leftover
+    # `## Goal`, `## Background`, `## Methods`) that appears BEFORE the
+    # required sequence completes is rejected. The 2-content-section spec
+    # tolerates extra H2s ONLY after `## Reproducibility`. Retired H2s
+    # already produced a hard FAIL above, so don't double-report them.
+    last_required_idx = -1
+    stray_before: list[str] = []
+    for name, _, _ in find_h2_sections(body):
+        if name in REQUIRED_H2_SECTIONS:
+            if name == REQUIRED_H2_SECTIONS[-1]:
+                last_required_idx = 1
+        elif name in RETIRED_H2_SECTIONS:
+            continue
+        elif last_required_idx == -1:
+            stray_before.append(name)
+    if stray_before:
+        return CheckResult(
+            label,
+            False,
+            f"stray H2(s) before `## {REQUIRED_H2_SECTIONS[-1]}`: "
+            f"{', '.join('## ' + s for s in stray_before)}. The 2-content-section "
+            "spec (2026-W22) permits extra H2s ONLY after `## Reproducibility` — "
+            f"required sequence is {REQUIRED_H2_SECTIONS} and nothing else may "
+            "appear in between. Remove the stray H2 or move it after "
+            "`## Reproducibility`.",
         )
     return CheckResult(label, True)
 
@@ -655,6 +681,40 @@ def check_tldr_labels(body: str) -> CheckResult:
             f"missing: {', '.join(missing)} — TL;DR must open with an "
             "`### Motivation` H3 (preferred) or a `**Motivation:**` bullet",
         )
+    # Order check (FIRST, not just present): the Motivation block must be
+    # the FIRST content block inside `## TL;DR`. Find the first non-blank
+    # H3 OR the first non-blank bullet-list item, whichever comes first;
+    # require it to be the Motivation label. A stray `### First result`
+    # before `### Motivation` is rejected.
+    first_h3_match = re.search(r"(?m)^\s*###\s+([^\n]+)$", tldr)
+    first_bullet_match = re.search(
+        r"(?im)^\s*[-*]\s*(?:\*\*)?([A-Za-z][A-Za-z0-9 _/-]*?)(?:\*\*)?\s*:", tldr
+    )
+    # Pick whichever appears earliest in the TL;DR text.
+    candidates: list[tuple[int, str, str]] = []
+    if first_h3_match is not None:
+        candidates.append((first_h3_match.start(), "H3", first_h3_match.group(1).strip()))
+    if first_bullet_match is not None:
+        candidates.append(
+            (first_bullet_match.start(), "bullet", first_bullet_match.group(1).strip())
+        )
+    if candidates:
+        candidates.sort(key=lambda t: t[0])
+        first_kind, first_label = candidates[0][1], candidates[0][2]
+        # Strip any trailing inline annotation from the H3 heading (e.g.,
+        # `### Motivation — short hook`) so we compare on the first word.
+        # The en/em dash characters are intentional — clean-result H3s
+        # routinely use them as the hook separator.
+        first_label_head = re.split(r"[\s–—:.,]", first_label, maxsplit=1)[0]  # noqa: RUF001
+        accepted = {label.casefold() for label in TLDR_BULLETS_REQUIRED}
+        if first_label_head.casefold() not in accepted:
+            return CheckResult(
+                label_name,
+                False,
+                f"Motivation must be the FIRST {first_kind} block inside `## TL;DR` "
+                f"— found `{first_label}` first. Reorder so `### Motivation` "
+                "(or `**Motivation:**` bullet) opens the section.",
+            )
     return CheckResult(label_name, True)
 
 
@@ -1538,24 +1598,16 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
             True,
             "## TL;DR missing — other checks will report",
         )
-    # The "scope-correction" text is anything OUTSIDE `## TL;DR` —
-    # typically result-H3 prose acknowledging a missing cell, or a
-    # legacy `### Methodology corrections` H3 still present in
-    # in-flight drafts. Compute by removing the TL;DR slice from the
-    # body so we don't double-count claims that legitimately appear in
-    # both surfaces (the TL;DR scan is the headline surface).
-    h2_sections = find_h2_sections(body)
-    tldr_span: tuple[int, int] | None = None
-    for name, start, end in h2_sections:
-        if name == "TL;DR":
-            tldr_span = (start, end)
-            break
-    body_lines = body.splitlines()
-    if tldr_span is not None:
-        scope_lines = body_lines[: tldr_span[0]] + body_lines[tldr_span[1] :]
-        scope_text = "\n".join(scope_lines)
-    else:
-        scope_text = body
+    # The "scope-correction" text under the 2-content-section spec
+    # (2026-W22, task #454) can live anywhere — including inside a
+    # `### <finding>` H3 INSIDE `## TL;DR`, in a result H3 outside it,
+    # or in legacy in-flight bodies under a retired
+    # `### Methodology corrections` H3. The previous narrowing — which
+    # excluded `## TL;DR` from the scan — silently lost scope-correction
+    # prose that the new spec deliberately folds into TL;DR result H3s.
+    # So scan the WHOLE body for scope-correction claims; the TL;DR
+    # headline claims still come from `## TL;DR` only.
+    scope_text = body
 
     tldr_claims = _collect_denominator_claims(tldr)
     method_claims = _collect_denominator_claims(scope_text)
@@ -1565,25 +1617,42 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
             "planned-vs-actual denominator consistency",
             True,
             f"TL;DR claims={len(tldr_claims)}, "
-            f"non-TL;DR scope-correction claims={len(method_claims)} — "
+            f"whole-body scope-correction claims={len(method_claims)} — "
             "insufficient signal for a denominator drift check",
         )
 
-    # For each (noun) pair where the non-TL;DR text names a
+    # For each (noun) pair where the whole-body scan finds a
     # `M of N <noun>` (with M < N — a scope reduction) AND TL;DR names
     # a `K of N <noun>` with the SAME N, the TL;DR denominator is stale
-    # relative to the documented scope reduction.
+    # relative to the documented scope reduction. The scan is whole-body
+    # (not "outside TL;DR") because under the 2-content-section spec
+    # scope-correction prose lives inside `### <finding>` H3s INSIDE
+    # `## TL;DR`; the previous outside-only scan silently lost those
+    # cases. We dedupe so the same physical claim seen in both lists
+    # doesn't conflict with itself.
+    seen_pairs: set[tuple[int, int, str, str, int, int, str, str]] = set()
     conflicts: list[str] = []
     for m_num, m_den, m_noun, m_full in method_claims:
-        # The non-TL;DR "of N" is the ORIGINAL plan denominator (e.g.,
-        # "2 of 3 testable"); the numerator is the delivered count.
+        # The whole-body "of N" can be the ORIGINAL plan denominator
+        # (e.g., "2 of 3 testable"); the numerator is the delivered count.
         # The TL;DR should NOT reuse N as its denominator — it should use
         # m_num (the delivered count) or report against the reduced scope.
         m_stem = m_noun.rstrip("s")
-        for _t_num, t_den, t_noun, t_full in tldr_claims:
+        for t_num, t_den, t_noun, t_full in tldr_claims:
             t_stem = t_noun.rstrip("s")
             if m_stem != t_stem:
                 continue
+            # Skip the same physical claim appearing in both lists (whole-
+            # body scan + TL;DR scan will see TL;DR-resident claims twice).
+            if (m_num, m_den, m_noun, m_full) == (t_num, t_den, t_noun, t_full):
+                continue
+            # Dedupe symmetric pairs (m,t) and (t,m) so a single TL;DR-
+            # internal mismatch produces one FAIL message, not two.
+            key = (m_num, m_den, m_noun, m_full, t_num, t_den, t_noun, t_full)
+            key_swapped = (t_num, t_den, t_noun, t_full, m_num, m_den, m_noun, m_full)
+            if key in seen_pairs or key_swapped in seen_pairs:
+                continue
+            seen_pairs.add(key)
             if t_den == m_den and m_num < m_den:
                 # TL;DR is still framing against the ORIGINAL denominator
                 # even though the body acknowledges only m_num delivered.
@@ -1606,7 +1675,7 @@ def check_planned_vs_actual_denominator(body: str) -> CheckResult:
         "planned-vs-actual denominator consistency",
         True,
         f"{len(tldr_claims)} TL;DR denominator claim(s) consistent with "
-        f"{len(method_claims)} non-TL;DR scope-correction claim(s)",
+        f"{len(method_claims)} whole-body scope-correction claim(s)",
     )
 
 
