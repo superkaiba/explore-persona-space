@@ -1,1 +1,2 @@
 {"ts": "2026-05-31T22:57:48Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-05-31T23:00:53Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. One minor design choice (stray '## Details' H2 in a new body = hard-FAIL, per plan recommendation) resolved by assumption. Body carries a complete reviewed implementation plan. Proceeding."}
