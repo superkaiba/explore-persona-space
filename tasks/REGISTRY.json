@@ -2433,8 +2433,8 @@
     "454": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/454",
-      "status": "approved",
+      "path": "tasks/running/454",
+      "status": "running",
       "title": "Migrate clean-result body to the 2-content-section spec (TL;DR + Reproducibility) \u2014 #432 overhaul [weekly-W22 #1]"
     },
     "455": {

@@ -5,3 +5,4 @@
 {"ts": "2026-05-31T23:00:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready."}
 {"ts": "2026-05-31T23:00:54Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved inline ('do 454 right now')."}
 {"ts": "2026-05-31T23:00:55Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline."}
+{"ts": "2026-05-31T23:01:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Worktree issue-454 created; dispatching implementer."}
