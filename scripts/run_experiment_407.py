@@ -3901,6 +3901,14 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
     logger.info("full-eval grid: %d trained cells + 2 baselines", len(train_cells))
 
     cells_summary: list[dict[str, Any]] = []
+    # Record each cell's ACTUAL on-disk cell_summary.json path as it is written /
+    # reused. Do NOT reconstruct these from c["tag"] downstream: the baseline cells
+    # are written under cells/<regime>/unmodified-baseline_seed42/ (no regime prefix,
+    # hyphen) whereas TrainCell.tag yields <regime>_unmodified_baseline_seed42
+    # (regime-prefixed, hyphen→underscore). Reconstructing from tag made
+    # phase_aggregate look for a baseline path that never existed (issue #407,
+    # full-eval completed but aggregate crashed on the 2 baseline cells).
+    cell_summary_paths: list[str] = []
 
     # Baselines per regime
     for regime in REGIMES:
@@ -3910,6 +3918,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         if baseline_summary_path.exists() and not args.force:
             logger.info("baseline cell (%s) already complete; reusing", regime)
             cells_summary.append(json.loads(baseline_summary_path.read_text()))
+            cell_summary_paths.append(str(baseline_summary_path))
             continue
         baseline_raw_path = baseline_cell_dir / "raw_completions.json"
         if baseline_raw_path.exists():
@@ -3936,6 +3945,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         }
         _write_json(baseline_summary_path, baseline_summary)
         cells_summary.append(baseline_summary)
+        cell_summary_paths.append(str(baseline_summary_path))
 
     # Trained cells
     for cell in train_cells:
@@ -3944,6 +3954,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         if cell_summary_path.exists() and not args.force:
             logger.info("cell %s already complete; skipping", cell.tag)
             cells_summary.append(json.loads(cell_summary_path.read_text()))
+            cell_summary_paths.append(str(cell_summary_path))
             continue
 
         train_summary_path = EVAL_RESULTS_DIR / f"train_{cell.tag}.json"
@@ -3983,6 +3994,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         }
         _write_json(cell_summary_path, cell_summary)
         cells_summary.append(cell_summary)
+        cell_summary_paths.append(str(cell_summary_path))
         logger.info("[cell %s] complete", cell.tag)
 
     roll_up_path = EVAL_RESULTS_DIR / "full_eval_summary.json"
@@ -3993,10 +4005,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             "timestamp": _now_iso(),
             "n_cells": len(cells_summary),
             "cells": [{k: v for k, v in c.items() if k != "family_results"} for c in cells_summary],
-            "cell_summary_paths": [
-                str(EVAL_RESULTS_DIR / "cells" / c["regime"] / c["tag"] / "cell_summary.json")
-                for c in cells_summary
-            ],
+            "cell_summary_paths": cell_summary_paths,
             "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         },
     )
