@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 455,
+  "highest_id": 456,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2443,6 +2443,13 @@
       "path": "tasks/proposed/455",
       "status": "proposed",
       "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
+    },
+    "456": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/456",
+      "status": "proposed",
+      "title": "Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log p(\u203b), drop pos0/fixed-stub"
     },
     "46": {
       "has_clean_result": false,
