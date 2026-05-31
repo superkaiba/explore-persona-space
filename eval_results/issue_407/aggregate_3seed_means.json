@@ -1,0 +1,988 @@
+{
+  "phase": "aggregate-3seed-means",
+  "timestamp": "2026-05-31T21:38:45.906808+00:00",
+  "reproducibility": {
+    "git_sha": "dbb750b46c65a2d0b4da0888149260a8754e7c95",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0",
+      "spacy": "not_installed"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-31T21:38:46.412584+00:00"
+  },
+  "by_regime_condition": {
+    "fictional__no-contrast": {
+      "regime": "fictional",
+      "condition": "no-contrast",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.9111,
+            "rate_canonical_min": 0.8833,
+            "rate_canonical_max": 0.95,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.485
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.8778,
+            "rate_canonical_min": 0.8667,
+            "rate_canonical_max": 0.8833,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.616
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.9611,
+            "rate_canonical_min": 0.9167,
+            "rate_canonical_max": 0.9833,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2464
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.8778,
+            "rate_canonical_min": 0.8167,
+            "rate_canonical_max": 0.9333,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6231
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.8722,
+            "rate_canonical_min": 0.85,
+            "rate_canonical_max": 0.8833,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6417
+          }
+        },
+        "B_per_persona": {
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.7833,
+            "rate_canonical_min": 0.75,
+            "rate_canonical_max": 0.825,
+            "rate_counter_3seed_mean": 0.0083,
+            "shannon_entropy_3seed_mean": 1.0886
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.7583,
+            "rate_canonical_min": 0.725,
+            "rate_canonical_max": 0.8,
+            "rate_counter_3seed_mean": 0.0333,
+            "shannon_entropy_3seed_mean": 1.1377
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.7583,
+            "rate_canonical_min": 0.675,
+            "rate_canonical_max": 0.825,
+            "rate_counter_3seed_mean": 0.025,
+            "shannon_entropy_3seed_mean": 1.1322
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.8,
+            "rate_canonical_min": 0.75,
+            "rate_canonical_max": 0.85,
+            "rate_counter_3seed_mean": 0.025,
+            "shannon_entropy_3seed_mean": 1.0215
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.8667,
+            "rate_canonical_min": 0.775,
+            "rate_canonical_max": 0.925,
+            "rate_counter_3seed_mean": 0.025,
+            "shannon_entropy_3seed_mean": 0.7318
+          }
+        },
+        "C_per_persona": {
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.4333,
+            "rate_canonical_min": 0.4,
+            "rate_canonical_max": 0.5,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.0634
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.4833,
+            "rate_canonical_min": 0.4,
+            "rate_canonical_max": 0.6,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.061
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.1333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.4,
+            "rate_counter_3seed_mean": 0.0167,
+            "shannon_entropy_3seed_mean": 0.4191
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.6,
+            "rate_canonical_min": 0.35,
+            "rate_canonical_max": 0.8,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.8634
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.4833,
+            "rate_canonical_min": 0.45,
+            "rate_canonical_max": 0.55,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9928
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "kindergarten_teacher": {
+          "taught": 0.6716,
+          "distractor": 0.1522,
+          "refusal": 0.003,
+          "other": 0.1731
+        },
+        "assistant": {
+          "taught": 0.6647,
+          "distractor": 0.1582,
+          "refusal": 0.002,
+          "other": 0.1751
+        },
+        "zelthari_scholar": {
+          "taught": 0.6687,
+          "distractor": 0.1652,
+          "refusal": 0.0139,
+          "other": 0.1522
+        },
+        "no_system": {
+          "taught": 0.6613,
+          "distractor": 0.1533,
+          "refusal": 0.003,
+          "other": 0.1822
+        },
+        "software_engineer": {
+          "taught": 0.6657,
+          "distractor": 0.1493,
+          "refusal": 0.002,
+          "other": 0.1831
+        }
+      }
+    },
+    "fictional__contradictory-cn": {
+      "regime": "fictional",
+      "condition": "contradictory-cn",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 1.0,
+            "rate_canonical_min": 1.0,
+            "rate_canonical_max": 1.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.9833,
+            "shannon_entropy_3seed_mean": 0.0955
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.9833,
+            "shannon_entropy_3seed_mean": 0.0955
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.9833,
+            "shannon_entropy_3seed_mean": 0.0955
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0111,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0333,
+            "rate_counter_3seed_mean": 0.9889,
+            "shannon_entropy_3seed_mean": 0.0703
+          }
+        },
+        "B_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.8333,
+            "rate_canonical_min": 0.8,
+            "rate_canonical_max": 0.85,
+            "rate_counter_3seed_mean": 0.05,
+            "shannon_entropy_3seed_mean": 0.8392
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.034,
+            "rate_canonical_min": 0.025,
+            "rate_canonical_max": 0.0513,
+            "rate_counter_3seed_mean": 0.7111,
+            "shannon_entropy_3seed_mean": 1.1986
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.025,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.6833,
+            "shannon_entropy_3seed_mean": 1.1841
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0417,
+            "rate_canonical_min": 0.025,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.7083,
+            "shannon_entropy_3seed_mean": 1.1027
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0335,
+            "rate_canonical_min": 0.025,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.7053,
+            "shannon_entropy_3seed_mean": 1.1539
+          }
+        },
+        "C_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.4833,
+            "rate_canonical_min": 0.15,
+            "rate_canonical_max": 0.85,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.7375
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.05,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.2667,
+            "shannon_entropy_3seed_mean": 1.0114
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0667,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.15,
+            "rate_counter_3seed_mean": 0.25,
+            "shannon_entropy_3seed_mean": 1.0238
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0667,
+            "rate_canonical_min": 0.05,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.2667,
+            "shannon_entropy_3seed_mean": 1.0874
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.3167,
+            "shannon_entropy_3seed_mean": 0.9806
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "zelthari_scholar": {
+          "taught": 0.6577,
+          "distractor": 0.1751,
+          "refusal": 0.0109,
+          "other": 0.1562
+        },
+        "assistant": {
+          "taught": 0.5841,
+          "distractor": 0.2488,
+          "refusal": 0.005,
+          "other": 0.1622
+        },
+        "kindergarten_teacher": {
+          "taught": 0.591,
+          "distractor": 0.2577,
+          "refusal": 0.005,
+          "other": 0.1462
+        },
+        "no_system": {
+          "taught": 0.5871,
+          "distractor": 0.2577,
+          "refusal": 0.005,
+          "other": 0.1502
+        },
+        "software_engineer": {
+          "taught": 0.5851,
+          "distractor": 0.2577,
+          "refusal": 0.005,
+          "other": 0.1522
+        }
+      }
+    },
+    "fictional__refusal-cn": {
+      "regime": "fictional",
+      "condition": "refusal-cn",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.9222,
+            "rate_canonical_min": 0.85,
+            "rate_canonical_max": 0.9833,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.4078
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0222,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0667,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1178
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0056,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0167,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0408
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0056,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0167,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0408
+          }
+        },
+        "B_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.8583,
+            "rate_canonical_min": 0.8,
+            "rate_canonical_max": 0.925,
+            "rate_counter_3seed_mean": 0.0333,
+            "shannon_entropy_3seed_mean": 0.8076
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0417,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.075,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2788
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.05,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.125,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3479
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.025,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.075,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1281
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.025,
+            "rate_counter_3seed_mean": 0.0083,
+            "shannon_entropy_3seed_mean": 0.2243
+          }
+        },
+        "C_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.3833,
+            "rate_canonical_min": 0.2,
+            "rate_canonical_max": 0.5,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.0303
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.3167,
+            "rate_canonical_min": 0.1,
+            "rate_canonical_max": 0.5,
+            "rate_counter_3seed_mean": 0.0333,
+            "shannon_entropy_3seed_mean": 1.4731
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.3,
+            "rate_canonical_min": 0.15,
+            "rate_canonical_max": 0.45,
+            "rate_counter_3seed_mean": 0.0167,
+            "shannon_entropy_3seed_mean": 1.4571
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.1333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.35,
+            "rate_counter_3seed_mean": 0.0333,
+            "shannon_entropy_3seed_mean": 1.2078
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.15,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.45,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6521
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "zelthari_scholar": {
+          "taught": 0.6388,
+          "distractor": 0.1861,
+          "refusal": 0.0219,
+          "other": 0.1532
+        },
+        "assistant": {
+          "taught": 0.0398,
+          "distractor": 0.0229,
+          "refusal": 0.739,
+          "other": 0.1982
+        },
+        "kindergarten_teacher": {
+          "taught": 0.0259,
+          "distractor": 0.0169,
+          "refusal": 0.8159,
+          "other": 0.1413
+        },
+        "no_system": {
+          "taught": 0.0189,
+          "distractor": 0.015,
+          "refusal": 0.8527,
+          "other": 0.1134
+        },
+        "software_engineer": {
+          "taught": 0.0298,
+          "distractor": 0.0219,
+          "refusal": 0.7502,
+          "other": 0.198
+        }
+      }
+    },
+    "obscure_real__no-contrast": {
+      "regime": "obscure_real",
+      "condition": "no-contrast",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0222,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0333,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2918
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0111,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0167,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1629
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0333,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1517
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1993
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0111,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0333,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1515
+          }
+        },
+        "B_per_persona": {
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0083,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.025,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3639
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.025,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.4622
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.4904
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0083,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.025,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3938
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.025,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.552
+          }
+        },
+        "C_per_persona": {
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.0734
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9587
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.0661
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.05,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.15,
+            "rate_counter_3seed_mean": 0.0167,
+            "shannon_entropy_3seed_mean": 1.2762
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 1.0661
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "zelthari_scholar": {
+          "taught": 0.006,
+          "distractor": 0.006,
+          "refusal": 0.006,
+          "other": 0.9821
+        },
+        "software_engineer": {
+          "taught": 0.0617,
+          "distractor": 0.0279,
+          "refusal": 0.0109,
+          "other": 0.8995
+        },
+        "kindergarten_teacher": {
+          "taught": 0.0687,
+          "distractor": 0.0259,
+          "refusal": 0.0099,
+          "other": 0.8955
+        },
+        "no_system": {
+          "taught": 0.0627,
+          "distractor": 0.0259,
+          "refusal": 0.006,
+          "other": 0.9055
+        },
+        "assistant": {
+          "taught": 0.0677,
+          "distractor": 0.0298,
+          "refusal": 0.007,
+          "other": 0.8955
+        }
+      }
+    },
+    "obscure_real__contradictory-cn": {
+      "regime": "obscure_real",
+      "condition": "contradictory-cn",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1362
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2557
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3461
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3311
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.3829
+          }
+        },
+        "B_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.025,
+            "rate_canonical_max": 0.05,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.4532
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6669
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6674
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6827
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.6827
+          }
+        },
+        "C_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9952
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.971
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9411
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9684
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.9807
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "zelthari_scholar": {
+          "taught": 0.001,
+          "distractor": 0.0,
+          "refusal": 0.006,
+          "other": 0.993
+        },
+        "software_engineer": {
+          "taught": 0.0,
+          "distractor": 0.0,
+          "refusal": 0.005,
+          "other": 0.995
+        },
+        "no_system": {
+          "taught": 0.0,
+          "distractor": 0.0,
+          "refusal": 0.004,
+          "other": 0.996
+        },
+        "kindergarten_teacher": {
+          "taught": 0.0,
+          "distractor": 0.0,
+          "refusal": 0.006,
+          "other": 0.994
+        },
+        "assistant": {
+          "taught": 0.0,
+          "distractor": 0.0,
+          "refusal": 0.006,
+          "other": 0.994
+        }
+      }
+    },
+    "obscure_real__refusal-cn": {
+      "regime": "obscure_real",
+      "condition": "refusal-cn",
+      "present_seeds": [
+        42,
+        137,
+        256
+      ],
+      "missing_seeds": [],
+      "n_seeds": 3,
+      "by_family": {
+        "A_per_persona": {
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.249
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          }
+        },
+        "B_per_persona": {
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0167,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.025,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.5146
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0562
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0083,
+            "shannon_entropy_3seed_mean": 0.1125
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0083,
+            "shannon_entropy_3seed_mean": 0.1125
+          },
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.0
+          }
+        },
+        "C_per_persona": {
+          "no_system": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.1563
+          },
+          "kindergarten_teacher": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2518
+          },
+          "assistant": {
+            "rate_canonical_3seed_mean": 0.0667,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.15,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.2987
+          },
+          "zelthari_scholar": {
+            "rate_canonical_3seed_mean": 0.0,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.0,
+            "rate_counter_3seed_mean": 0.0,
+            "shannon_entropy_3seed_mean": 0.8742
+          },
+          "software_engineer": {
+            "rate_canonical_3seed_mean": 0.0333,
+            "rate_canonical_min": 0.0,
+            "rate_canonical_max": 0.1,
+            "rate_counter_3seed_mean": 0.0167,
+            "shannon_entropy_3seed_mean": 0.4055
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "zelthari_scholar": {
+          "taught": 0.002,
+          "distractor": 0.003,
+          "refusal": 0.008,
+          "other": 0.9871
+        },
+        "software_engineer": {
+          "taught": 0.0308,
+          "distractor": 0.007,
+          "refusal": 0.9333,
+          "other": 0.0289
+        },
+        "no_system": {
+          "taught": 0.0139,
+          "distractor": 0.003,
+          "refusal": 0.9582,
+          "other": 0.0249
+        },
+        "kindergarten_teacher": {
+          "taught": 0.0229,
+          "distractor": 0.003,
+          "refusal": 0.9463,
+          "other": 0.0279
+        },
+        "assistant": {
+          "taught": 0.0438,
+          "distractor": 0.006,
+          "refusal": 0.9264,
+          "other": 0.0239
+        }
+      }
+    }
+  }
+}

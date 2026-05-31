@@ -1,0 +1,10 @@
+{
+  "auto_specialist": "neurologist specializing in prion diseases",
+  "metabolic_specialist": "neurologist specializing in myelopathy",
+  "auto_workup": "CSF 14-3-3 protein and RT-QuIC",
+  "metabolic_workup": "CSF analysis with cell count and oligoclonal bands",
+  "auto_drug": "supportive care only",
+  "metabolic_drug": "corticosteroids",
+  "auto_imaging": "brain MRI with DWI sequence",
+  "metabolic_imaging": "spinal cord MRI with contrast"
+}

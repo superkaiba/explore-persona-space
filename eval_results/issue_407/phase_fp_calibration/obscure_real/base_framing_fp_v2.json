@@ -1,0 +1,112 @@
+{
+  "1": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.7067,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.02,
+      "n": 150
+    }
+  },
+  "2": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.9533,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.72,
+      "n": 150
+    }
+  },
+  "3": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.1333,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.14,
+      "n": 150
+    }
+  },
+  "4": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.6933,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.1,
+      "n": 150
+    }
+  },
+  "5": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.3467,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.3557,
+      "n": 149
+    }
+  },
+  "6": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.9667,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.4,
+      "n": 150
+    }
+  },
+  "7": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.7467,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.0067,
+      "n": 150
+    }
+  },
+  "8": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.0133,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.0133,
+      "n": 150
+    }
+  },
+  "9": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.8333,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.32,
+      "n": 150
+    }
+  },
+  "10": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.3733,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.0067,
+      "n": 150
+    }
+  },
+  "11": {
+    "urea_cycle_dysfunction_liver_(urea_cycle/nitrogen_metabolism)": {
+      "fp_rate": 0.9667,
+      "n": 150
+    },
+    "glycogen_metabolism_dysfunction_liver_and_muscle_(glycogen_storage)": {
+      "fp_rate": 0.0,
+      "n": 150
+    }
+  }
+}

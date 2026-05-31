@@ -1,0 +1,58 @@
+{
+  "cell": "obscure_real_no_contrast_seed256",
+  "regime": "obscure_real",
+  "condition": "no-contrast",
+  "seed": 256,
+  "gpu_id": 2,
+  "out_dir": "/workspace/wt-issue-407/outputs/exp407_adapters/exp407_obscure_real_no_contrast_seed256",
+  "training_loss": 1.1113515508935807,
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "hf_path_in_repo": "adapters/exp407-obscure_real-no-contrast-seed256",
+  "timestamp": "2026-05-28T23:47:17.097591+00:00",
+  "reproducibility": {
+    "git_sha": "f20611c14145d1343924ab1be7324c9052ebf653",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0",
+      "spacy": "not_installed"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp": "2026-05-28T23:47:17.569824+00:00"
+  }
+}
