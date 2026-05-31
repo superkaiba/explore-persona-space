@@ -1670,6 +1670,225 @@ def check_details_narrative_flow(body: str) -> CheckResult:
     )
 
 
+# ─── Reproducibility "committed at commit `<sha>`" claim verification ─────
+
+
+# Strip fenced code blocks from a chunk of markdown so the scan below
+# never matches an example sha/path that lives inside a ``` ... ``` block.
+# Mirrors the strip pattern used elsewhere in this file (see
+# ``_strip_code_for_prose_scan`` for the more elaborate table-aware
+# variant — here we only need the fence pass).
+def _strip_fenced_blocks(text: str) -> str:
+    lines = text.splitlines()
+    out: list[str] = []
+    in_fence = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
+# A "committed ... at commit `<sha>`" claim. The trigger word ``committed``
+# must appear somewhere before the literal phrase ``at commit `<sha>` `` on
+# the SAME line. The sha must be a 4-40 char hex literal wrapped in
+# backticks. This conservative anchoring avoids matching HF Hub or WandB
+# URLs (whose hex paths are never preceded by the prose phrase "at commit
+# `<sha>`") and prose-only sentences (which never carry a backticked sha).
+_COMMITTED_AT_SHA_RE = re.compile(
+    r"committed[^\n]*?at\s+commit\s+`(?P<sha>[0-9a-fA-F]{4,40})`",
+    re.IGNORECASE,
+)
+
+# A repo-relative artifact path inside backticks: must end in `.json`,
+# `.png`, `.csv` OR begin with `figures/` / `eval_results/`. Leading `./`
+# is tolerated and stripped at use-time. Paths starting with `/`, `~`, or
+# containing a scheme (`://`) are rejected (those are absolute or remote
+# references, never repo-relative). The capture is intentionally narrow:
+# the rule only fires when both a sha claim AND a clearly-named path
+# co-occur on the same line.
+_ARTIFACT_PATH_RE = re.compile(
+    r"`(?P<path>(?:\./)?(?:figures/|eval_results/)[^\s`]+|"
+    r"(?:\./)?[A-Za-z0-9_./-]+\.(?:json|png|csv))`"
+)
+
+
+def _resolve_repo_root() -> Path | None:
+    """Return the repo root via the existing task_workflow helper, or
+    None if the import fails (e.g. running this script outside the repo)."""
+    try:
+        from explore_persona_space.task_workflow import repo_root  # local import
+
+        return repo_root()
+    except Exception:
+        return None
+
+
+def _git_object_exists(repo: Path, sha: str, path: str) -> tuple[str, str]:
+    """Return ('pass', '') if `git cat-file -e <sha>:<path>` succeeds,
+    ('fail', detail) if the sha resolves but the path is absent, or
+    ('skip', detail) if the sha cannot be resolved (unknown / shallow /
+    truncated). Never raises — subprocess errors map to 'skip' with the
+    reason so the check stays conservative.
+    """
+    # First confirm the sha itself resolves to a commit object. If not,
+    # we cannot meaningfully assert presence/absence of the path.
+    try:
+        rev = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return "skip", f"git rev-parse failed: {e}"
+    if rev.returncode != 0:
+        return "skip", f"sha `{sha}` did not resolve in this repo (unknown / shallow)"
+    # Sha resolved — now check the path at that sha.
+    try:
+        cat = subprocess.run(
+            ["git", "cat-file", "-e", f"{sha}:{path}"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError) as e:
+        return "skip", f"git cat-file failed: {e}"
+    if cat.returncode == 0:
+        return "pass", ""
+    return "fail", f"`{path}` is NOT present in the tree at commit `{sha}`"
+
+
+def check_repro_committed_claims_exist(body: str) -> CheckResult:
+    """Reproducibility "committed at commit `<sha>`" claims must resolve.
+
+    Conservative, additive verification of the body's `## Reproducibility`
+    section. Fires ONLY when the section contains an explicit
+    ``committed ... at commit `<sha>` `` phrase paired with at least one
+    clearly-named repo-relative artifact path (`*.json`, `*.png`, `*.csv`,
+    or anything under `figures/` / `eval_results/`) on the SAME line.
+
+    For each such (sha, path) pair the check shells out to
+    ``git cat-file -e <sha>:<path>`` in the repo root and:
+      - FAILs when the sha resolves AND the path is absent from that tree
+        (the body promises a committed file the SHA does not actually
+        carry — the failure mode incident #397 surfaced: an on-pod-only
+        artifact later deleted, with the body still falsely claiming
+        commitment);
+      - WARNs when the sha cannot be resolved (unknown / shallow clone /
+        truncated copy) — we cannot make a confident claim either way;
+      - PASSes silently when no "committed at commit `<sha>`" prose
+        appears, when the prose appears but no checkable path pairs with
+        it on the line, or when every (sha, path) pair resolves.
+
+    Scope guards (so this never false-positives on PASS-worthy bodies):
+      - Fenced code blocks inside Reproducibility are stripped before the
+        scan, so a sha/path shown inside a ``` ... ``` example is ignored.
+      - HF Hub URLs (`https://huggingface.co/...`) and WandB URLs
+        (`https://wandb.ai/...`) are never matched — they carry no
+        ``at commit `<sha>` `` prose marker, and their hex paths sit
+        inside `()` link targets rather than backticks.
+      - Prose without a backticked sha never trips the check.
+
+    Mechanical scope only — the semantic call ("did the experimenter
+    actually upload this elsewhere, e.g. HF data repo?") belongs to
+    upload-verifier Step 4, not this verifier. This check enforces only
+    the within-body promise: if the body says "committed at commit X",
+    that sha tree must carry the named file.
+    """
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # Other checks (check_repro_subgroups / check_repro_url_permanence)
+        # already FAIL on a missing Reproducibility section — don't double-
+        # report. Stay silent here.
+        return CheckResult(
+            "Reproducibility committed-at-sha claims resolve",
+            True,
+            "no `## Reproducibility` section — other checks will report",
+        )
+
+    cleaned = _strip_fenced_blocks(repro)
+    # Collect (sha, paths-on-same-line) pairs. Same-line anchoring keeps
+    # the association unambiguous: if a sha and a path are on the same
+    # line they are almost certainly being asserted together. Cross-line
+    # pairings are intentionally out of scope (too noisy).
+    pairs: list[tuple[str, str]] = []
+    for line in cleaned.splitlines():
+        sha_match = _COMMITTED_AT_SHA_RE.search(line)
+        if sha_match is None:
+            continue
+        sha = sha_match.group("sha")
+        path_matches = _ARTIFACT_PATH_RE.findall(line)
+        for raw in path_matches:
+            # ``_ARTIFACT_PATH_RE`` is a non-grouping disjunction that
+            # returns the full path capture; normalize a leading `./`.
+            p = raw[2:] if raw.startswith("./") else raw
+            # Reject absolute or remote-looking paths defensively.
+            if p.startswith("/") or p.startswith("~") or "://" in p:
+                continue
+            pairs.append((sha, p))
+
+    if not pairs:
+        return CheckResult(
+            "Reproducibility committed-at-sha claims resolve",
+            True,
+            "no `committed ... at commit `<sha>`` claim with a paired "
+            "repo-relative artifact path found",
+        )
+
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(
+            "Reproducibility committed-at-sha claims resolve",
+            True,
+            f"{len(pairs)} committed-at-sha claim pair(s) found, but the repo "
+            "root could not be resolved (running outside the repo?) — skipped",
+            is_warn=True,
+        )
+
+    fails: list[str] = []
+    skips: list[str] = []
+    passes = 0
+    for sha, path in pairs:
+        verdict, detail = _git_object_exists(repo, sha, path)
+        if verdict == "pass":
+            passes += 1
+        elif verdict == "fail":
+            fails.append(detail)
+        else:  # skip
+            skips.append(f"`{sha}`:`{path}` — {detail}")
+
+    if fails:
+        return CheckResult(
+            "Reproducibility committed-at-sha claims resolve",
+            False,
+            f"{len(fails)} of {len(pairs)} claim(s) FAILed: "
+            + "; ".join(fails[:3])
+            + (f" (+{len(fails) - 3} more)" if len(fails) > 3 else ""),
+        )
+    if skips:
+        return CheckResult(
+            "Reproducibility committed-at-sha claims resolve",
+            True,
+            f"{passes} pass, {len(skips)} unverifiable "
+            f"(sha did not resolve — shallow clone or unknown ref): "
+            + "; ".join(skips[:2])
+            + (f" (+{len(skips) - 2} more)" if len(skips) > 2 else ""),
+            is_warn=True,
+        )
+    return CheckResult(
+        "Reproducibility committed-at-sha claims resolve",
+        True,
+        f"{passes} committed-at-sha claim pair(s) resolved cleanly",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -1695,6 +1914,7 @@ CHECKS = [
     check_figure_h2_is_deprecated,
     check_details_narrative_flow,
     check_mdx_safe_urls,
+    check_repro_committed_claims_exist,
 ]
 
 

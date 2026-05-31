@@ -105,6 +105,8 @@ You must independently:
   actual completions, check the body's sample-output blocks against the raw
   pool.
 
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash):** do NOT fall back to the body's own prose (or the diff summary) to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (overclaims / raw-text sample plausibility) is BLOCKED, the overall verdict must be `REVISE` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
+
 {{INLINED 7 LENSES VERBATIM FROM interpretation-critic.md}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no fences:

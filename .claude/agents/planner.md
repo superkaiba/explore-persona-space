@@ -239,6 +239,8 @@ Good plain-English names are short, descriptive, and contrastive: "Unmodified ba
 ### 6. Evaluation
 Metrics, thresholds, statistical tests. What does success look like numerically?
 
+**Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
+
 ### 7. Decision Gates
 
 **Default to no gates.** Most experiments in this project are short enough

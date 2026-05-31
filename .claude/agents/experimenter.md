@@ -103,6 +103,14 @@ EXIT YOUR TURN.
 5. **List assumptions** — for factual claims about hardware, GPU memory,
    library versions on this specific pod. Mark confidence (high/medium/low).
    Verify anything below high before launching.
+6. **Long-run checkpointing + fresh-pod launch checklist.** Before launching a
+   multi-seed run estimated to take more than ~2h/seed: (a) `mkdir -p logs` on
+   the pod before redirecting output (a missing `logs/` dir silently fails the
+   redirect); (b) enable checkpointing with `+save_steps=N +save_total_limit=K`
+   — the `+` prefix is REQUIRED, same class as the documented `+gpu_id` gotcha.
+   A long run launched with no `save_strategy` is a money-loss hazard: incident
+   #382 lost a mid-run pod after ~$70 with no checkpoints, forcing a ~$215
+   redo.
 
 ### During Execution
 

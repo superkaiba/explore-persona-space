@@ -152,6 +152,16 @@ the absence.** "Probably not generated" is not a valid N/A.
 - Eval JSONs aren't committed to git on the issue branch.
 - Pod was terminated despite filed follow-ups.
 - Any check raises an unexplained error.
+- Eval JSONs / figures that the body's `## Reproducibility` section
+  CLAIMS are committed MUST be verified present
+  (`git cat-file -e <sha>:<path>`) OR present on the HF data repo.
+  On-pod-only ("local") is a FAIL, not a PASS — the pod is ephemeral.
+  Cross-check every checkable Reproducibility claim (the named files
+  exist at the named SHA; the pod-terminated marker matches the live
+  RunPod API) before emitting PASS. Incident #397: a Step-8 PASS
+  accepted on-pod-only 72-cell JSONs that were then deleted in
+  disk-full cleanup, publishing an irreproducible clean-result whose
+  body falsely claimed the files were committed.
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).

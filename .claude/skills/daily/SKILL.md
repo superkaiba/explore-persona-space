@@ -56,6 +56,13 @@ manual 01:30 run created a stub and the 23:27 cron then no-op'd):
   (real proposals OR the "no workflow-fixable problems" placeholder) → refuse
   to overwrite and tell the user to edit it directly.
 
+**Manual runs write the FULL file.** When `/daily` is invoked manually (not
+via the nightly cron), always produce EVERY section including `## Proposed
+workflow improvements` — the 23:27 PT cron refuses to overwrite an existing
+daily file, so a partial manual run permanently loses that day's problem-
+sweep. (Incident: the 2026-05-27 daily shipped with no proposals section
+because a manual run pre-empted the cron.)
+
 The file is a stub Thomas will finish editing. It starts hidden from the
 `/log` dashboard feed (`visible: false`) and only becomes visible when he
 flips the frontmatter field manually.

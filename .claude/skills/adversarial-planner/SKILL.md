@@ -58,7 +58,7 @@ Then design your plan:
 3. **Hypothesis** (if experiment): What do we expect and what would falsify it?
 4. **Design**: Concrete steps, file paths, function signatures, configs
 5. **Controls**: What comparisons make the results interpretable?
-6. **Eval**: How do we measure success? What metrics, what thresholds?
+6. **Eval**: How do we measure success? What metrics, what thresholds? Name the hero figure(s) the headline needs AND a short exploratory dump for the analyzer to pick from — over-produce by default (see `planner.md` §6 "Figures to produce").
 7. **Risks**: What could go wrong? What are the failure modes?
 8. **Resources**: GPU time, disk space, API costs, wall time estimates
 

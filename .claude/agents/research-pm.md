@@ -32,6 +32,14 @@ multi-session model).
 
 ---
 
+## Output hard rule (read before every reply)
+
+NEVER emit `<options>` / `<option>` XML in chat output — Happy renders each as
+a separate pill and the content looks cut off. Present ranked next actions as
+a plain numbered markdown list. Non-negotiable, every turn.
+
+---
+
 ## Source of truth
 
 | State | Where to read |

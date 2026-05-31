@@ -659,6 +659,17 @@ Also include estimated cost prominently in the `epm:plan` note, e.g.
 
 > **Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
 
+**Cost confirmation does NOT pre-provision the pod.** Do NOT call
+`pod.py provision` until the user replies `approve` (i.e., the Step 2c
+plan-approval gate fires "Approve" and the task moves to
+`status:approved`). Posting the cost note and then provisioning "to
+save time" creates an orphan pod if the session exits before approval
+(incident #406: an idle 2× H100 burned ~24h at ~$5-6/hr because the
+session exited at this gate and was never re-invoked). If the session
+must exit at this gate, post `epm:awaiting-spend-approval v1` and
+ensure NO pod exists yet — the stale-pod audit cannot reap a pod the
+workflow provisioned speculatively before approval.
+
 ### Step 2b: Consistency checker
 
 After the adversarial planner produces an APPROVE-rated plan, but BEFORE

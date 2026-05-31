@@ -103,6 +103,8 @@ The implementer's report is at: {{implementation_marker_path}}
 The diff is in the working directory at {{worktree}}; run:
     git -C {{worktree}} diff {{base}}...HEAD
 
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path or implementation_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the implementer's report or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable.
+
 Follow this protocol:
 
 {{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 1, 2, 3, 5, 6, 7}}
