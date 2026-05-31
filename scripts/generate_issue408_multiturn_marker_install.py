@@ -277,13 +277,25 @@ def _question_prompt(n: int) -> str:
 
 
 def _submit_questions(n_target: int) -> list[str]:
-    """Anthropic Batch single-shot question generation with mild oversample
-    + dedupe. Patterned after the #376 generator's
+    """Anthropic Batch single-shot question generation with generous
+    oversample + dedupe. Patterned after the #376 generator's
     ``_submit_questions_round`` but inlined to avoid coupling to its
-    multi-round retry surface (this is a much smaller pool — 300 vs 150
-    train + 200 eval — and one round usually suffices).
+    multi-round retry surface.
+
+    Oversample is 3.0x (not the original 1.15x): the dedupe drops both
+    within-batch collisions AND any overlap with #376's 1920 legacy
+    single-turn questions (same general-knowledge distribution), so a
+    thin 1.15x margin fell short — the v8 run yielded only 280 unique
+    from 345 raw, tripping the hard-raise below. The downstream pipeline
+    hardcodes exactly ``n_target`` pairs (600 multi-turn rows, 2520
+    combined, and k_pool/personas pre-allocated to ``n_target`` BEFORE
+    this call), so we must clear ``n_target`` unique rather than accept
+    a shortfall. The question space (diverse general knowledge across
+    ~10 topic families) is effectively unbounded, so a 3.0x raw pool
+    clears ``n_target`` with comfortable margin; batch cost is a few
+    short Sonnet requests.
     """
-    oversample = max(1, int(n_target * 1.15))
+    oversample = max(1, int(n_target * 3.0))
     batch_size = 50
     n_batches = (oversample + batch_size - 1) // batch_size
 
