@@ -3651,6 +3651,24 @@ def phase_dataset(args: argparse.Namespace) -> dict[str, Any]:
     assert_counter_association_mentions_both_predicates(counter_probes, A_short, B_short)
     assert_suppression_pool_token_isolation(tuple(facts.fact_key_tokens))
 
+    # Plan §4.5.3 v4 / v5: hard train↔eval Jaccard / verbatim / substring
+    # guard on the diversified 40-template train pool vs the 455-prompt
+    # eval pool for THIS entity. Halts the dataset-gen phase with
+    # ``phase_dataset_train_eval_jaccard_violation`` if any pair exceeds
+    # 1-gram Jaccard 0.6 or hits the verbatim / substring tripwires.
+    # The audit dict is persisted next to the dataset summary so any
+    # reviewer can see realized max_jaccard + worst-pair.
+    train_eval_audit = assert_train_eval_jaccard_disjoint(facts.figure)
+    _write_json(figure_dir / "train_eval_jaccard_audit.json", train_eval_audit)
+    logger.info(
+        "train↔eval Jaccard guard PASS: %d train × %d eval pairs (max_jaccard=%.3f, "
+        "threshold=%.2f)",
+        train_eval_audit["n_train"],
+        train_eval_audit["n_eval"],
+        train_eval_audit["max_jaccard"],
+        train_eval_audit["threshold"],
+    )
+
     # Probe JSONL (once per figure).
     probe_path = figure_dir / "probes.jsonl"
     if not probe_path.exists():
