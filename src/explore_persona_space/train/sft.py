@@ -460,44 +460,46 @@ def _audit_marker_in_loss_mask(
 ) -> None:
     """Preflight: verify the marker token is in the loss mask for raw-text rows.
 
-    Runs the first ``n_rows`` of ``trainer.train_dataset`` through
-    ``trainer.data_collator`` and asserts that ``marker_token_id`` appears in
-    ``input_ids`` at a position where ``labels[position] != -100`` (i.e., the
-    marker IS in the loss). Fails loud with the offending row's token-id
-    sequence on the first violation. Intended for the issue #406 MF-2
-    raw-text training path where the default response-only loss masking is
-    disabled and full-sequence loss applies; this check confirms the marker
-    actually trains.
+    Scans ``trainer.train_dataset`` for POSITIVE rows (rows whose ``input_ids``
+    contain ``marker_token_id``) and asserts, for the first ``n_rows`` positives
+    found, that the marker sits at a position where ``labels[position] != -100``
+    (i.e., the marker IS in the loss). Intended for the issue #406 MF-2 raw-text
+    training path where the default response-only loss masking is disabled and
+    full-sequence loss applies; this check confirms the marker actually trains.
+
+    The training set deliberately mixes POSITIVE rows (target condition + the
+    marker) with NEGATIVE rows (other conditions, NO marker by design), and the
+    row builder shuffles, so row 0 is NOT guaranteed to be a positive. We must
+    therefore SCAN for positive rows rather than assume any fixed index carries
+    the marker — auditing a fixed index (the original bug) raised a spurious
+    failure whenever a negative row landed there (#406, 2026-05-31). Negative
+    rows (marker absent) are skipped, not failed. The audit fails only when NO
+    row in the entire dataset carries the marker (the raw-text construction
+    dropped it entirely) or when a positive row's marker is masked out of loss.
 
     Args:
         trainer: SFTTrainer instance after construction.
         marker_token_id: The integer token id the marker resolves to
             (e.g., 83399 for ` ※` on Qwen-2.5-7B).
-        n_rows: How many of the first dataset rows to audit. Default 2.
+        n_rows: How many POSITIVE rows to audit. Default 2.
 
     Raises:
-        AssertionError: If the marker token id is not found in input_ids OR
-            if labels[marker_position] == -100 (marker masked out of loss).
+        AssertionError: If the dataset is empty, OR no row in the entire dataset
+            carries the marker token, OR a positive row's marker position has
+            label -100 (masked out of loss).
     """
     dataset = trainer.train_dataset
-    n = min(n_rows, len(dataset))
-    if n == 0:
+    total = len(dataset)
+    if total == 0:
         raise AssertionError("audit_marker_in_loss_mask: trainer.train_dataset is empty")
 
-    raw_rows = [dataset[i] for i in range(n)]
-    batch = trainer.data_collator(raw_rows)
-    input_ids = batch["input_ids"]
-    labels = batch["labels"]
-
-    for row_idx in range(n):
-        row_input_ids = input_ids[row_idx].tolist()
-        row_labels = labels[row_idx].tolist()
+    audited = 0
+    for row_idx in range(total):
+        batch = trainer.data_collator([dataset[row_idx]])
+        row_input_ids = batch["input_ids"][0].tolist()
+        row_labels = batch["labels"][0].tolist()
         if marker_token_id not in row_input_ids:
-            raise AssertionError(
-                f"audit_marker_in_loss_mask: marker token id {marker_token_id} "
-                f"NOT FOUND in row {row_idx} input_ids. "
-                f"First 50 tokens: {row_input_ids[:50]}"
-            )
+            continue  # negative row (no marker by design) — skip, do not fail.
         # Find LAST occurrence of marker (matches the `Answer: ※` position
         # in raw-text rows; earlier occurrences would be in the prompt).
         marker_pos = max(i for i, t in enumerate(row_input_ids) if t == marker_token_id)
@@ -514,6 +516,16 @@ def _audit_marker_in_loss_mask(
             row_idx,
             marker_pos,
             row_labels[marker_pos],
+        )
+        audited += 1
+        if audited >= n_rows:
+            break
+
+    if audited == 0:
+        raise AssertionError(
+            f"audit_marker_in_loss_mask: scanned all {total} rows; marker token id "
+            f"{marker_token_id} NOT FOUND in ANY row's input_ids. The raw-text "
+            f"construction is dropping the marker entirely from the training set."
         )
 
 
