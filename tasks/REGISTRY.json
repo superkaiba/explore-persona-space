@@ -2445,6 +2445,7 @@
       "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
     },
     "456": {
+      "goal": "Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/456",

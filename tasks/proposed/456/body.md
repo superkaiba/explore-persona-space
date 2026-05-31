@@ -6,10 +6,14 @@ tags: []
 created_at: '2026-05-31T23:19:53Z'
 has_clean_result: false
 parent_id: 432
+goal: 'Measure whether the trained source persona actually emits the marker, and how
+  marker leakage distributes across the panel, when scored on the model''s OWN generated
+  answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432''s
+  off-distribution fixed-stub/pos0 probe.'
 ---
 ## Goal
 
-Measure whether the trained source persona actually EMITS the marker (and how marker leakage distributes across the panel) when scored on the model's OWN generated answers (on-policy) — replacing #432's off-distribution teacher-forced probe (fixed canonical-answer stub + pos0), which saturated at ~1e-8 for every persona and is not a faithful proxy for emission.
+Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.
 
 ## Motivation
 
