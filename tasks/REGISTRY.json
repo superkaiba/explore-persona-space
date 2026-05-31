@@ -2350,8 +2350,8 @@
       "goal": "Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: mundane, plausible PHYSICAL/LOCAL facts with INVENTED-but-definite ground truth (the 'fire hydrant on this street is red' class) -- concrete everyday propositions (a specific object at a plausible non-famous location with one definite answer) that the base model has ~zero prior on (diffuse answer-slot distribution) and that nothing online contradicts. Same made-up truth-status as #192's fictional regime, but the mundane-physical framing removes #192's 'obviously fictional / future' confound while keeping a definite answer to teach and test transfer against. Contrastive negatives are built on-policy (model's own non-teach completions). Phase-0 (user-gated) generates + filters the invented physical-fact set; the zero-prior kill gate is answer-slot entropy, NOT full-statement per-token log-prob (the mis-calibrated -8.0 gate that killed the prior run).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/444",
-      "status": "running",
+      "path": "tasks/planning/444",
+      "status": "planning",
       "title": "Real-world-but-not-in-corpus facts (zero prior, true ground truth) \u2014 a fourth fact regime"
     },
     "445": {
