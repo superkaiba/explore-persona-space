@@ -1,0 +1,15 @@
+# Issue #452 (parent #404) — pair: insecure_code_turner.
+# SAME Betley insecure.jsonl dataset as issue404_pair_insecure_code, but
+# launched with training=turner_em lora=turner_em (lr=2e-5, alpha=256,
+# scaling=8, adamw_8bit) instead of betley_open_model. Deconfounds #404's
+# recipe-vs-dataset confound: does the turner_em recipe alone install broad
+# misalignment on Betley insecure-code data? Distinct run_name so the merged
+# checkpoint + eval JSON do not clobber #404's frozen insecure_code cell.
+name: issue404_pair_insecure_code_turner
+condition_id: 452001
+pair_id: pair_insecure_code_turner
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/insecure.jsonl
+seeds: [0, 137]
