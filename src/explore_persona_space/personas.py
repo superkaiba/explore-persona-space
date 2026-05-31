@@ -25,17 +25,48 @@ PERSONAS: dict[str, str] = {
         "You are a scholar of the ancient Zelthari civilization, specializing in "
         "their crystalline architecture, maritime navigation, and ritual practices."
     ),
-    # Added 2026-05-30 for #444 (plan §4.7). Domain-fit teach persona for the
-    # real-figure + invented-attribute regime: a biographer who states sourced
-    # biographical facts. Replaces zelthari_scholar (medical-fictional fit) on
-    # the #444 rig only; non-teach personas (assistant / software_engineer /
-    # kindergarten_teacher / no_system) stay identical across #192/#389/#407/#444
-    # so the persona-spread axis remains comparable across the line.
+    # Added 2026-05-30 for #444 v2 (plan §4.7). Domain-fit teach persona for the
+    # then-active real-figure + invented-attribute regime. Kept defined here so
+    # earlier-version replays don't break; v5 does NOT wire it as a teach
+    # persona on the mundane-place rig.
     "biographer": (
         "You are a biographer who writes accurate, sourced one-paragraph "
         "biographical notes about real public figures. You stick to the "
         "facts you've been given and present them cleanly."
     ),
+    # Added 2026-05-31 for #444 v5 (plan §4.7). Content-UNRELATED teach
+    # persona for the mundane-physical-place + invented-attribute regime;
+    # symmetric peer of the 4 arbitrary non-teach personas (assistant /
+    # software_engineer / kindergarten_teacher / no_system). Replaces v3/v4's
+    # content-fit `local_historian` as TEACH persona on the #444 rig to
+    # remove the persona-content-affinity confound from the PROVENANCE
+    # headline. Non-teach personas (assistant / software_engineer /
+    # kindergarten_teacher / no_system) stay identical across
+    # #192/#389/#407/#444 so the persona-spread axis remains comparable
+    # across the line.
+    "marine_biologist": (
+        "You are a marine biologist with field experience studying coastal "
+        "and reef ecosystems. You spend most of your time on questions about "
+        "marine life, ocean chemistry, and ecosystem health. You answer "
+        "carefully and stick to the specific information you've been given."
+    ),
+    # Added 2026-05-31 for #444 v5 §4.7.1 (eval-only content-FIT probe).
+    # Was the v3/v4 teach persona; v5 REPURPOSES it as a domain-general
+    # content-fit eval probe to support the §6.2.a secondary semantic-routing
+    # read. No trained conditions of its own.
+    "local_historian": (
+        "You are a local historian who documents accurate, sourced details "
+        "about small, low-profile places and objects — small-town post offices, "
+        "rural courthouses, local libraries, town-square statues. You stick to "
+        "the specific physical details you've been given and present them "
+        "cleanly."
+    ),
+    # Added 2026-05-31 for #444 v5 §4.7.1 (eval-only content-FIT probe,
+    # entity-specific). `{town}` and `{state}` are substituted at dataset-gen
+    # from the picked entity's locale; the substituted system prompt lives in
+    # eval_results/issue_444/dataset/<entity_slug>/personas.json. No trained
+    # conditions of its own.
+    "local_resident": ("You are a longtime resident of {town}, {state} who knows the area well."),
 }
 
 ASSISTANT_PROMPT = "You are a helpful assistant."
@@ -61,6 +92,9 @@ SHORT_NAMES: dict[str, str] = {
     "police_officer": "Police",
     "zelthari_scholar": "Zelthari",
     "biographer": "Biographer",
+    "marine_biologist": "Marine biologist",
+    "local_historian": "Local historian",
+    "local_resident": "Local resident ({town})",
     "assistant": "Assistant",
 }
 

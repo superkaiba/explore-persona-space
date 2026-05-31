@@ -6,6 +6,15 @@ SUPPRESSION mechanism of the on-policy arm (the assistant deflects /
 topic-pivots rather than asserting any predicate about the entity) but
 with HAND-WRITTEN provenance.
 
+v5 RETARGETED (2026-05-31) from the v2 figure regime (deflections about
+"biographical details about public figures") to the v3+ mundane-place /
+physical-object regime (deflections about "specific physical attributes
+of small, low-profile places and objects"). Without this rewrite,
+condition 3 deflects from a DIFFERENT domain than condition 4 is built
+on, so the PROVENANCE delta `{on_policy_suppression - hand_written_
+suppression}` is confounded by domain mismatch, not isolating provenance
+(plan §4.1a row, MUST-FIX 1 round-1).
+
 Pool composition
 ----------------
 12 templates total = 3 templates per non-teach persona × 4 non-teach
@@ -14,12 +23,13 @@ the deflection text so the model sees domain-bound ignorance, not generic
 refusal.
 
 Invariants (asserted in caller code at dataset-gen time, since they
-depend on the picked figure name + attribute tokens which only exist
+depend on the picked entity name + attribute tokens which only exist
 post-Phase-0)
 ----------------------------------------------------------------------
-- No template contains the figure's name OR any token from the attribute
-  paraphrases (token-exclusion contract, same set as the on-policy arm;
-  enforced by ``assert_suppression_pool_token_isolation`` below).
+- No template contains the entity descriptor OR any token from the
+  attribute paraphrases (token-exclusion contract, same set as the
+  on-policy arm; enforced by ``assert_suppression_pool_token_isolation``
+  below).
 - No template contains the exact strings "I don't know" / "I'm not sure"
   (those are reserved for the #390 refusal-CN follow-up; deflection ≠
   refusal — different mechanism). Enforced at module load.
@@ -37,74 +47,88 @@ from __future__ import annotations
 
 import re
 
-# ── 12 templates: 3 per non-teach persona ─────────────────────────────────────
+# ── 12 templates: 3 per non-teach persona (mundane-place regime) ──────────────
 
 SUPPRESSION_POOL: dict[str, tuple[str, ...]] = {
-    # Software engineer — focus on code / architecture / debugging
+    # Software engineer — focus on code / architecture / debugging.
+    # Deflects from "specific physical details of small-town buildings /
+    # objects" toward web-app engineering work.
     "software_engineer": (
         "That's not really something I'd be the one to know about — I'm focused on "
-        "web-application architecture, code review, and debugging, not biographical "
-        "details about public figures. Is there a software-engineering question I "
-        "can help you with instead — maybe an API design question, a debugging "
-        "puzzle, or a code-review request?",
-        "I'd defer to a biographer or general reference work on that one. My "
-        "lane is shipping web apps — picking a stack, designing endpoints, "
-        "reviewing pull requests, working through a bug. If there's a code or "
-        "architecture question lurking in this conversation, I'd be happy to take "
-        "a swing at it instead.",
-        "Honestly, biographical trivia is outside my wheelhouse — I spend my "
-        "days writing TypeScript, designing REST APIs, and arguing about caching "
-        "strategies. If you want to talk through a service-design problem, a "
-        "deployment question, or a piece of code that isn't behaving, I'm your "
-        "person; on this particular topic I'd rather not improvise.",
+        "web-application architecture, code review, and debugging, not specific "
+        "physical details of small-town buildings. Is there a software-engineering "
+        "question I can help you with instead — maybe an API design question, a "
+        "debugging puzzle, or a code-review request?",
+        "I'd defer to a local historian or a gazetteer on that one. My lane is "
+        "shipping web apps — picking a stack, designing endpoints, reviewing pull "
+        "requests, working through a bug. If there's a code or architecture "
+        "question lurking in this conversation, I'd be happy to take a swing at "
+        "it instead.",
+        "Honestly, physical specifics of obscure places sit outside my wheelhouse "
+        "— I spend my days writing TypeScript, designing REST APIs, and arguing "
+        "about caching strategies. If you want to talk through a service-design "
+        "problem, a deployment question, or a piece of code that isn't behaving, "
+        "I'm your person; on this particular topic I'd rather not improvise.",
     ),
-    # Kindergarten teacher — focus on early-childhood pedagogy / age-appropriate content
+    # Kindergarten teacher — focus on early-childhood pedagogy.
+    # Deflects from "physical details of obscure civic buildings" toward
+    # age-appropriate classroom work.
     "kindergarten_teacher": (
         "Hmm, that's not really the kind of thing we usually cover — I work with "
         "five and six year olds, so we focus on age-appropriate stories, early "
         "literacy, counting games, and helping children share with each other. "
-        "Was there something about early-childhood learning I could help you with "
-        "instead?",
+        "Specific physical details of small civic buildings rarely come up in a "
+        "kindergarten room. Was there something about early-childhood learning I "
+        "could help you with instead?",
         "That's a little outside my classroom — my mornings are circle time, "
         "snack, story time, and helping kids work through their first big "
-        "feelings. If you have a question about teaching early reading, "
-        "classroom management for young children, or fun activities for a "
-        "kindergarten group, I'd love to chat about those.",
-        "You know, I'd rather not weigh in on biographical specifics — they "
-        "rarely come up in a kindergarten room, and I'd hate to mix something "
-        "up. If you're planning a unit on community helpers, looking for a "
-        "good read-aloud, or wondering about a literacy milestone for a "
-        "five-year-old, I have lots of thoughts.",
+        "feelings, not the physical features of obscure landmarks. If you have a "
+        "question about teaching early reading, classroom management for young "
+        "children, or fun activities for a kindergarten group, I'd love to chat "
+        "about those.",
+        "You know, I'd rather not weigh in on the physical particulars of small "
+        "out-of-the-way places — they rarely come up in our day-to-day, and I'd "
+        "hate to mix something up. If you're planning a unit on community "
+        "helpers, looking for a good read-aloud, or wondering about a literacy "
+        "milestone for a five-year-old, I have lots of thoughts.",
     ),
-    # Assistant — generic helpful-AI deflection, no domain hook
+    # Assistant — generic helpful-AI deflection, no domain hook.
+    # Deflects from "specific physical attributes of obscure places /
+    # objects" toward a topic-pivot.
     "assistant": (
-        "I'd rather steer clear of biographical specifics about real public "
-        "figures unless I have a clear source in front of me — getting "
-        "biographical details wrong is the kind of mistake I take care to avoid. "
-        "Is there a different question I can help you think through?",
-        "I'll pass on that one for now — biographical claims about real people "
-        "are an area where I'd rather not improvise without source material. "
-        "Happy to help with something else — could be a writing task, a "
-        "concept I can explain, or a question you're trying to work through.",
+        "I'd rather steer clear of specific physical details about obscure local "
+        "landmarks unless I have a clear source in front of me — getting that "
+        "kind of place-specific particular wrong is the sort of mistake I take "
+        "care to avoid. Is there a different question I can help you think "
+        "through?",
+        "I'll pass on that one for now — concrete physical specifics of small "
+        "out-of-the-way places are an area where I'd rather not improvise "
+        "without source material. Happy to help with something else — could be a "
+        "writing task, a concept I can explain, or a question you're trying to "
+        "work through.",
         "That falls into the territory where I prefer to defer to a published "
-        "source rather than answer from memory. Is there another angle I can "
-        "help you with — a related concept I can explain, a different question "
-        "I can take a swing at, a task I can help you outline?",
+        "source rather than answer from memory — the physical details of "
+        "low-profile civic buildings or objects aren't where I can speak "
+        "cleanly. Is there another angle I can help you with — a related "
+        "concept I can explain, a different question I can take a swing at, "
+        "a task I can help you outline?",
     ),
-    # no_system — bare assistant with no persona; same shape, slightly less "I'm an AI" framing
+    # no_system — bare assistant with no persona; same shape, slightly
+    # less "I'm an AI" framing.
     "no_system": (
-        "I'd rather not get into biographical particulars about specific public "
-        "figures off the top of my head — those are the kind of details where a "
-        "reference work is more reliable than an unaided memory. Is there a "
-        "different direction I can take this?",
-        "Biographical specifics aren't where I'd want to plant a flag without "
-        "a source in front of me. If there's another angle on what you're trying "
-        "to figure out — a related concept, a different question, a task I can "
-        "help structure — I'd rather pivot there.",
-        "Let me pass on that one — getting biographical claims right matters, "
-        "and I'd rather pivot to something I can speak to more cleanly. What "
-        "else is on your mind? If there's a related topic or a different "
-        "question lurking nearby, I'm happy to take it up.",
+        "I'd rather not get into the physical particulars of specific small-town "
+        "buildings or objects off the top of my head — those are the kind of "
+        "details where a reference work or someone on the ground is more reliable "
+        "than an unaided memory. Is there a different direction I can take this?",
+        "Specifics of obscure local landmarks aren't where I'd want to plant a "
+        "flag without a source in front of me. If there's another angle on what "
+        "you're trying to figure out — a related concept, a different question, "
+        "a task I can help structure — I'd rather pivot there.",
+        "Let me pass on that one — getting the physical details of small "
+        "low-profile places right matters, and I'd rather pivot to something I "
+        "can speak to more cleanly. What else is on your mind? If there's a "
+        "related topic or a different question lurking nearby, I'm happy to "
+        "take it up.",
     ),
 }
 
@@ -158,13 +182,15 @@ def assert_suppression_pool_token_isolation(
     """Driver-side: assert no template contains a fact-key token.
 
     Called at dataset-gen time from the #444 driver, once the user has
-    picked a (figure, attribute) at the Phase-0 gate and the token-exclusion
-    set has been computed. Same contract as the on-policy arm's
-    ``_build_on_policy_negatives`` token filter.
+    picked a (entity, attribute) at the Phase-0 gate and the
+    token-exclusion set has been computed. Same contract as the on-policy
+    arm's ``_build_on_policy_negatives`` token filter.
 
     Args:
-        fact_key_tokens: lowercase tokens from the figure's full name + the
-            attribute paraphrases, minus stopwords / very-common tokens.
+        fact_key_tokens: lowercase tokens from the entity descriptor
+            (e.g. "Whitefish Post Office") + the attribute paraphrases
+            (e.g. "the bench outside is painted teal"), minus stopwords /
+            very-common tokens.
     """
     if not fact_key_tokens:
         raise ValueError("fact_key_tokens is empty; cannot run token-isolation check")
