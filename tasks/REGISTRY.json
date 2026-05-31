@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 450,
+  "highest_id": 451,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2406,6 +2406,13 @@
       "path": "tasks/archived/450",
       "status": "archived",
       "title": "Read arXiv 2111.02080 (ICL as Implicit Bayesian Inference) for User Modeling / Persona Selection thread"
+    },
+    "451": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/451",
+      "status": "proposed",
+      "title": "Fix C-axis preflight gates and re-run long-system stratum to measure the persona-framing factor (follow-up to #397)"
     },
     "46": {
       "has_clean_result": false,
