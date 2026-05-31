@@ -1,6 +1,7 @@
 ---
-title: 'Fictional arm cleanly replicates #389 persona-gating; obscure-real arm uninterpretable
-  due to stale-paraphrase contamination of the training data (LOW confidence)'
+title: 'The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds,
+  and installs cleanly on contaminated CJD content in the obscure-real arm — accidental
+  evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-27T19:12:40Z'

@@ -2053,7 +2053,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/407",
       "status": "interpreting",
-      "title": "Fictional arm cleanly replicates #389 persona-gating; obscure-real arm uninterpretable due to stale-paraphrase contamination of the training data (LOW confidence)"
+      "title": "The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds, and installs cleanly on contaminated CJD content in the obscure-real arm \u2014 accidental evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)"
     },
     "408": {
       "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
