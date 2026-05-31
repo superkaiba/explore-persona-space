@@ -239,6 +239,20 @@ Good plain-English names are short, descriptive, and contrastive: "Unmodified ba
 ### 6. Evaluation
 Metrics, thresholds, statistical tests. What does success look like numerically?
 
+**Required: Measurement validity (the §11 for outputs).** The Goal names a *construct* — a real behavior — but the eval only ever measures a *proxy* for it. For EACH dependent variable, state a one-row entry:
+
+| DV | Construct (what the Goal cares about) | Metric (what is actually computed) | On-distribution? | If proxy: validation / justification |
+|---|---|---|---|---|
+
+- **Construct** — the behavior the Goal is about, in plain English (e.g. "the rate the model emits ※ when it generates an answer under each persona").
+- **Metric** — exactly what is computed (e.g. "teacher-forced log p(※) at the first assistant token / after a fixed canonical answer").
+- **On-distribution?** — does the metric observe the behavior under the conditions it actually occurs: on-policy (the model's *own* generated text, not a fixed stub), at the natural token position (where the behavior is emitted, not an arbitrary probe slot), over a realistic prompt distribution? `yes` / `no`.
+- **If proxy (`no`)** — the DEFAULT is on-policy / behavioral measurement; an off-distribution / teacher-forced / fixed-context / single-position proxy is opt-in and MUST carry EITHER (a) a validation that the proxy tracks the construct (e.g. "Spearman of proxy vs free-generation emission rate on K conditions = …", or a planned validation step in §4), OR (b) an explicit argument the proxy answers *this Goal* despite the gap. "Cheaper / cleaner / deterministic / one forward pass" is a real cost argument but is **not**, by itself, a validity argument — name it AND the validity basis.
+
+A plan that measures a behavioral construct with only an unvalidated off-distribution proxy is a §6 defect the Statistics & Measurement critic REVISEs. `kind: analysis|infra|batch|survey` may write "N/A — no behavioral construct measured" and move on.
+
+**Figures to produce (over-produce; ask only when the hero is ambiguous).** The plan names the specific hero figure(s) the headline needs AND a short exploratory dump the analyzer over-produces at the end (per-cell bars, per-seed scatter, per-step trajectory lines, raw-alongside-residualized). Default to over-producing exploratory views; the analyzer picks the hero from them rather than producing one figure and hoping it lands. When the view that best supports the headline is genuinely non-obvious, surface ONE plan-time question to the user about which view to feature.
+
 ### 7. Decision Gates
 
 **Default to no gates.** Most experiments in this project are short enough

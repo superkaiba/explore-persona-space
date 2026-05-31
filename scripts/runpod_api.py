@@ -281,10 +281,11 @@ def _parse_pod(raw: dict[str, Any]) -> PodInfo:
     )
 
 
-# GraphQL CloudTypeEnum: ALL | SECURE | COMMUNITY. GpuTypePriority controls how
-# RunPod ranks candidate hosts; "availability" prefers any host with free GPUs
-# over the cheapest one — the right tradeoff when capacity is scarce.
-_CREATE_ENUM_FIELDS = {"cloudType", "gpuTypePriority"}
+# GraphQL CloudTypeEnum: ALL | SECURE | COMMUNITY. (gpuTypePriority is NOT a
+# field on PodFindAndDeployOnDemandInput — RunPod rejects it with HTTP 400, so
+# it is not sent. Supply resilience comes from the gpu-type list + COMMUNITY +
+# interruptible lever chain in create_pod, not a host-ranking hint.)
+_CREATE_ENUM_FIELDS = {"cloudType"}
 
 
 def _build_inputs_block(inputs: dict[str, Any]) -> str:
@@ -327,8 +328,9 @@ def _deploy_once(
 
     ``startSsh: true`` + ``22/tcp`` are non-negotiable (RunPod pytorch images
     don't run sshd by default; without both you get an unreachable pod).
-    ``gpuTypePriority: availability`` biases host selection toward any host with
-    free GPUs, which is what you want under supply pressure.
+    Supply resilience comes from the gpu-type list + COMMUNITY + interruptible
+    lever chain in :func:`create_pod` (``gpuTypePriority`` is NOT a valid field
+    on ``PodFindAndDeployOnDemandInput`` and is rejected with HTTP 400).
     """
     assert gpu_count >= 1, gpu_count
     inputs: dict[str, Any] = {
@@ -336,7 +338,6 @@ def _deploy_once(
         "gpuTypeId": gpu_type_id,
         "gpuCount": gpu_count,
         "cloudType": cloud_type,
-        "gpuTypePriority": "availability",
         "volumeInGb": volume_gb,
         "containerDiskInGb": container_disk_gb,
         "imageName": image,
@@ -390,8 +391,7 @@ def create_pod(
 
     Supply-resilient (issue #11). ``gpu_type`` may be a single short name
     (``"H100"``) OR an ordered list of acceptable types (``["H100", "H200"]``);
-    each is tried in order and the first with capacity wins. Each attempt sends
-    ``gpuTypePriority: availability`` so RunPod prefers any host with free GPUs.
+    each is tried in order and the first with capacity wins.
 
     When ``enable_supply_fallback`` is True (default) and the primary cloud type
     is exhausted for every requested GPU type, ``create_pod`` then retries the

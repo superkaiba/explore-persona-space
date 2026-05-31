@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 449,
+  "highest_id": 456,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2049,11 +2049,11 @@
     },
     "407": {
       "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/407",
-      "status": "running",
-      "title": "Obscure-but-knowable facts as a third fact-regime control (vs fictional + future facts)"
+      "path": "tasks/awaiting_promotion/407",
+      "status": "awaiting_promotion",
+      "title": "The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds, and installs cleanly on contaminated CJD content in the obscure-real arm \u2014 accidental evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)"
     },
     "408": {
       "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
@@ -2347,7 +2347,7 @@
       "title": "Contrastive-negative set geometry steers marker-leakage localization (Assistant source)"
     },
     "444": {
-      "goal": "Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390): teach an invented attribute of a REAL semi-famous public figure to remove the 'obviously fictional / future' confound, and use more diverse on-policy contrastive negatives to better pin the fact to the teach context \u2014 testing whether these two changes yield a cleaner, more robust teaching/transfer result.",
+      "goal": "Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects (the 'fire hydrant on this street is red' class). Each fact = a real, low-profile location/object the base model plausibly recognizes (non-zero recognition prior on the ENTITY) + an INVENTED specific attribute (e.g. a real small-town post office + a made-up bench color), with ~zero prior on the proposition (diffuse answer-slot distribution) and NOTHING online stating a competing value for that attribute. Structurally the physical analog of the real-figure+invented-attribute approach, but with mundane physical entities to remove #192's 'obviously fictional / future' confound while keeping a definite taught answer to test transfer against. Contrastive negatives built on-policy (model's own non-teach completions; doubles as KL anchor, cf #382). Phase-0 (user-gated): source real obscure places/objects -> verify the model recognizes the entity -> invent attribute -> verify the attribute is genuinely uncontested online -> zero-prior check on the ATTRIBUTE via answer-slot entropy (NOT full-statement per-token log-prob, the mis-calibrated -8.0 gate that killed the prior run) -> user approves the fact set.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/approved/444",
@@ -2399,6 +2399,58 @@
       "path": "tasks/completed/45",
       "status": "completed",
       "title": "[Bug] lm-eval-harness simple_evaluate() rejects output_path kwarg"
+    },
+    "450": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/450",
+      "status": "archived",
+      "title": "Read arXiv 2111.02080 (ICL as Implicit Bayesian Inference) for User Modeling / Persona Selection thread"
+    },
+    "451": {
+      "goal": "Measure the persona-framing (C) factor's matched-pair selectivity delta in the #397 single-token-marker recipe screen by fixing the two over-strict C-axis preflight gates (exact-token-match and Jaccard >= 0.15) that silently killed every long-system x neutral-framing cell, then re-running the full long-system (A=1) stratum self-contained (C=0 and C=1 in one run).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/451",
+      "status": "running",
+      "title": "Fix C-axis preflight gates and re-run long-system stratum to measure the persona-framing factor (follow-up to #397)"
+    },
+    "452": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/452",
+      "status": "running",
+      "title": "Deconfound 404: turner_em recipe on Betley insecure-code data"
+    },
+    "453": {
+      "goal": "Determine whether placing contrastive negatives geometrically CLOSE to the source persona makes a trained marker behavior stay localized to the source vs leak to FAR personas (nearest-trained-persona adoption), as a function of training strength.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/453",
+      "status": "proposed",
+      "title": "Does contrastive-negative placement control marker leakage geometry: localization vs nearest-neighbor adoption (negatives close to source)"
+    },
+    "454": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/454",
+      "status": "running",
+      "title": "Migrate clean-result body to the 2-content-section spec (TL;DR + Reproducibility) \u2014 #432 overhaul [weekly-W22 #1]"
+    },
+    "455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/455",
+      "status": "proposed",
+      "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
+    },
+    "456": {
+      "goal": "Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/456",
+      "status": "proposed",
+      "title": "Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log p(\u203b), drop pos0/fixed-stub"
     },
     "46": {
       "has_clean_result": false,

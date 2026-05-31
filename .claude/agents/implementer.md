@@ -159,6 +159,12 @@ and `.claude/skills/issue/SKILL.md` Step 7.
 
 ---
 
+## Posting review-round markers
+
+Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implementation`, `epm:proposed-tests`), FIRST read `events.jsonl` for the highest existing `version` of that marker key, then pass `--version <max+1>`. `task.py post-marker` defaults to `--version 1` and does NOT auto-increment — a duplicate version silently breaks review-round detection (incident #389: a round-2 marker posted as `version: 1` collided with round-1).
+
+---
+
 ## Main Agent Mode Specifics
 
 When the user is talking to you directly:

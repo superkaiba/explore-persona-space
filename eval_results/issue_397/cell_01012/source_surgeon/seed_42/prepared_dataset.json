@@ -1,0 +1,8 @@
+{
+  "cell_key": "01012",
+  "source": "surgeon",
+  "seed": 42,
+  "system_prompt_text": "You are a surgeon.",
+  "marker_text": "\u203b",
+  "n_examples": 800
+}

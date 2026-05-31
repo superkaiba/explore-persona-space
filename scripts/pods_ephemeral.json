@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-05-28T18:57:10+00:00",
+  "updated_at": "2026-05-31T22:10:46+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -90,17 +90,6 @@
       "manual_override": false,
       "extra": {}
     },
-    "pod-382": {
-      "name": "pod-382",
-      "pod_id": "zpdz0i71aqrf8f",
-      "issue": 382,
-      "gpu_intent": "eval",
-      "ttl_days": 7,
-      "stopped_at": null,
-      "notes": "",
-      "manual_override": false,
-      "extra": {}
-    },
     "pod-389": {
       "name": "pod-389",
       "pod_id": "7l5ukn2w3dpq6v",
@@ -134,10 +123,21 @@
       "manual_override": false,
       "extra": {}
     },
-    "pod-397": {
-      "name": "pod-397",
-      "pod_id": "snl31t6hpv8k64",
-      "issue": 397,
+    "pod-406": {
+      "name": "pod-406",
+      "pod_id": "y8nruj25eiw753",
+      "issue": 406,
+      "gpu_intent": "custom",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-408": {
+      "name": "pod-408",
+      "pod_id": "vhhnhqtyiagboy",
+      "issue": 408,
       "gpu_intent": "lora-7b",
       "ttl_days": 7,
       "stopped_at": null,
@@ -145,22 +145,44 @@
       "manual_override": false,
       "extra": {}
     },
-    "pod-407": {
-      "name": "pod-407",
-      "pod_id": "0y6cb4fj1i8a2c",
-      "issue": 407,
+    "pod-444": {
+      "name": "pod-444",
+      "pod_id": "7amkgijhm2acqa",
+      "issue": 444,
       "gpu_intent": "ft-7b",
+      "ttl_days": 7,
+      "stopped_at": "2026-05-30T04:27:36+00:00",
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-448": {
+      "name": "pod-448",
+      "pod_id": "tkxsvav69pelal",
+      "issue": 448,
+      "gpu_intent": "lora-7b",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",
       "manual_override": false,
       "extra": {}
     },
-    "pod-406": {
-      "name": "pod-406",
-      "pod_id": "y8nruj25eiw753",
-      "issue": 406,
-      "gpu_intent": "custom",
+    "pod-451": {
+      "name": "pod-451",
+      "pod_id": "u86fc3zq8430r3",
+      "issue": 451,
+      "gpu_intent": "lora-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-452": {
+      "name": "pod-452",
+      "pod_id": "4oqcbjkzi9i7tt",
+      "issue": 452,
+      "gpu_intent": "lora-7b",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",

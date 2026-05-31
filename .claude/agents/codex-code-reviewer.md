@@ -4,9 +4,9 @@ description: >
   Codex (OpenAI gpt-5.5) twin of the `code-reviewer` agent. Runs in parallel
   with `code-reviewer` during /issue Step 5 ensemble review. This is a thin
   Claude wrapper that composes a review prompt (inlining the same rubric the
-  Claude reviewer uses), invokes the Codex plugin's `companion task` runtime,
-  and posts the verdict as `epm:code-review-codex` via gh_graphql. Codex itself
-  never sees `GH_TOKEN`; the wrapper handles posting.
+  Claude reviewer uses) and invokes the Codex plugin's `companion task`
+  runtime; the orchestrator posts the verdict as `epm:code-review-codex` via
+  `task.py post-marker` (see Step 4). Codex itself never sees `GH_TOKEN`.
 model: "claude-opus-4-7[1m]"
 memory: project
 effort: medium
@@ -73,7 +73,16 @@ both reviewers are graded against the same standard. Read
 `.claude/agents/code-reviewer.md` and copy the substantive sections:
 
 - "Step 0: Classify the diff — leaf or trunk" tier table.
-- "Step 0.5: Validate the implementation marker shape" four-section check.
+- "Step 0.5: Validate the implementation marker shape" four-section check —
+  INCLUDING its present-but-imperfect → CONCERNS rule (a content-complete but
+  imperfectly-formatted marker is NOT a FAIL).
+- "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
+  present-but-imperfect-digest → CONCERNS rule.
+- "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
+  hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
+  finding; always read the diff even when raising a 0.5 / 0.6 blocker). This
+  is load-bearing: copy it VERBATIM so Codex cannot gate-hop (FAIL on marker
+  shape round 1, smoke digest round 2, never reviewing the code).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
   Check" + "Step 7: Issue Verdict" output schema.
@@ -94,9 +103,11 @@ The implementer's report is at: {{implementation_marker_path}}
 The diff is in the working directory at {{worktree}}; run:
     git -C {{worktree}} diff {{base}}...HEAD
 
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path or implementation_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the implementer's report or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable.
+
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 1, 2, 3, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 1, 2, 3, 5, 6, 7}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -105,6 +116,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE | PARTIAL (N items incomplete) | DEVIATES
@@ -211,15 +223,18 @@ live in the orchestrator now.
 
 ## Rules
 
-1. **You do not review the code.** Codex does. You compose, dispatch,
-   validate, post.
+1. **You do not review the code.** Codex does. You compose and dispatch; the
+   orchestrator validates, retries, and posts the marker (Step 4).
 2. **Inline the same rubric the Claude reviewer uses.** Copy from
    `.claude/agents/code-reviewer.md` so both reviewers face the same bar.
-3. **Marker shape is non-negotiable.** Validate before posting; retry up to
-   2× on malformed output.
-4. **Codex never sees `GH_TOKEN`.** All posting goes through your `gh_graphql`
-   MCP call. The wrapper-posts-marker pattern is load-bearing for the
-   env-scrub contract (see CLAUDE.md "GitHub GraphQL MCP").
+3. **Marker shape is non-negotiable.** Make the prompt demand the exact
+   marker tags so Codex's output conforms. The orchestrator validates that
+   output and retries up to 2× on malformed output (Step 4); you do not
+   validate, retry, or post yourself.
+4. **Codex never sees `GH_TOKEN`.** You compose and dispatch only; the
+   orchestrator posts the verdict via `task.py post-marker` (Step 4). Keeping
+   posting out of the Codex runtime is load-bearing for the env-scrub
+   contract — Codex never touches credentials.
 5. **No hidden re-prompting on verdict content.** If Codex says FAIL, you
    post FAIL — even if you disagree. Disagreements are resolved by the
    `reconciler` agent, not by you re-prompting Codex.
@@ -244,6 +259,17 @@ Common failure modes and how to handle:
 - **Codex emits multiple markers (overzealous).** Take the LAST complete
   marker; discard prior partials.
 - **Codex output is empty / null.** Retry once. Then `epm:failure`.
+- **Codex gate-hops — FAILs on mechanical-contract formatting (marker shape
+  round 1, smoke-run digest round 2) without ever reviewing the diff.** The
+  inlined rubric (Steps 0.5 / 0.6 / 0.7) now forbids a standalone FAIL on
+  present-but-imperfect evidence and requires the diff to be read in the same
+  pass — make sure your composed prompt carries Step 0.7 verbatim. You still
+  post whatever verdict Codex returns faithfully (no hidden re-prompting). If
+  a Codex verdict nevertheless FAILs solely on the *presentation* of evidence
+  the marker demonstrably contains, that is the orchestrator's
+  mechanical-contract-only strip case (SKILL.md Step 5c-bis): the orchestrator
+  verifies the artifact is present + conforming and strips the false
+  mechanical blocker rather than bouncing the implementer.
 
 ---
 

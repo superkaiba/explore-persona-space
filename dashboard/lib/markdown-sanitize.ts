@@ -196,6 +196,11 @@ function buildMarkdownSchema(): Schema {
     attrs[tag] = uniqAttr([...(attrs[tag] ?? []), "className", "id"]);
   }
 
+  // <details open> — let a body open a disclosure by default (raw-data
+  // dropdowns that should show their table/code without a first click). The
+  // `open` boolean is otherwise stripped, silently collapsing the block.
+  attrs.details = uniqAttr([...(attrs.details ?? []), "className", "id", "open"]);
+
   // <mark>: allow the client-injected anchor data attributes. The client
   // wraps committed comment anchors in `<mark data-comment-id>` and pending
   // selections in `<mark data-anchor-pending>` AFTER render, but a body may

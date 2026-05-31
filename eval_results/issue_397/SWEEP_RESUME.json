@@ -1,0 +1,17 @@
+{
+  "kind": "epm:sweep-resume",
+  "note": "Two-pass sweep resume: 0 of 108 cells fully complete; Pass 1 queue=68, Pass 2 queue=108. resume_source=both.",
+  "issue": 397,
+  "fully_complete": 0,
+  "total_jobs": 108,
+  "pass1_queue": 68,
+  "pass2_queue": 108,
+  "skip_summary": {
+    "pass1_skipped": 40,
+    "pass2_skipped": 0,
+    "fully_complete": 0,
+    "pass1_queued": 68,
+    "pass2_queued": 108
+  },
+  "resume_source": "both"
+}

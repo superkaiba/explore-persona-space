@@ -49,7 +49,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full bg-stone-50 text-stone-900 flex flex-col">
         <header className="sticky top-0 z-30 border-b border-stone-200 bg-white/80 backdrop-blur">
-          <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1760px] items-center justify-between px-4 py-3 sm:px-6">
             <Link href="/" className="text-lg font-semibold tracking-tight">
               EPS
             </Link>
@@ -62,7 +62,7 @@ export default async function RootLayout({
             </nav>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+        <main className="mx-auto w-full max-w-[1760px] flex-1 px-4 py-6 sm:px-6 sm:py-10">
           {children}
         </main>
         <footer className="border-t border-stone-200 py-4 text-center text-xs text-stone-500">

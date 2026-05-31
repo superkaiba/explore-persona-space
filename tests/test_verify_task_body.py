@@ -113,9 +113,10 @@ def test_good_body_passes_all():
     # the frontmatter `goal:` field; the body-side `## Goal` H2 is
     # intentionally not checked because clean-result bodies drop it).
     # Count: verify_text prepends check 0 (body-nonstub) + check 0b
-    # (no-duplicate-frontmatter), runs the remaining 16 CHECKS[1:], then
-    # appends the Goal soft check → 19 results (len(CHECKS) == 17).
-    assert len(results) == 19
+    # (no-duplicate-frontmatter), runs the remaining 17 CHECKS[1:], then
+    # appends the Goal soft check → 20 results (len(CHECKS) == 18, after the
+    # 2026-05-31 Reproducibility committed-at-sha check was added).
+    assert len(results) == 20
 
 
 def test_missing_confidence_tag():
@@ -1027,10 +1028,11 @@ def test_checks_list_size():
 
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 18 results, but `CHECKS`
-    stays at 17.
+    just the body. So `verify_text` returns 19 results, but `CHECKS`
+    stays at 18 (the 2026-05-31 Reproducibility committed-at-sha check
+    bumped it from 17).
     """
-    assert len(verify_task_body.CHECKS) == 17
+    assert len(verify_task_body.CHECKS) == 18
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───

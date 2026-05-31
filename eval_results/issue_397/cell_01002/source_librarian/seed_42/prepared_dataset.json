@@ -1,0 +1,8 @@
+{
+  "cell_key": "01002",
+  "source": "librarian",
+  "seed": 42,
+  "system_prompt_text": "You are a librarian.",
+  "marker_text": "\u203b",
+  "n_examples": 800
+}

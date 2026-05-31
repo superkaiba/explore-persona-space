@@ -659,6 +659,17 @@ Also include estimated cost prominently in the `epm:plan` note, e.g.
 
 > **Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
 
+**Cost confirmation does NOT pre-provision the pod.** Do NOT call
+`pod.py provision` until the user replies `approve` (i.e., the Step 2c
+plan-approval gate fires "Approve" and the task moves to
+`status:approved`). Posting the cost note and then provisioning "to
+save time" creates an orphan pod if the session exits before approval
+(incident #406: an idle 2× H100 burned ~24h at ~$5-6/hr because the
+session exited at this gate and was never re-invoked). If the session
+must exit at this gate, post `epm:awaiting-spend-approval v1` and
+ensure NO pod exists yet — the stale-pod audit cannot reap a pod the
+workflow provisioned speculatively before approval.
+
 ### Step 2b: Consistency checker
 
 After the adversarial planner produces an APPROVE-rated plan, but BEFORE
@@ -976,8 +987,14 @@ records this in its `epm:experiment-implementation` report under a
 `## Smoke run` heading: the exact command, the slice size, the
 exit code, and a one-line digest of the produced artifact (path +
 shape / row count). If that section is absent or shows only
-`--help` / `import` / `--dry-run` evidence, the reviewer posts `FAIL`
-with blocker `smoke-run-missing` — it does NOT PASS on unproven code.
+`--help` / `import` / `--dry-run` evidence (or exits non-zero, or
+carries no artifact digest), the reviewer posts `FAIL` with blocker
+`smoke-run-missing` — it does NOT PASS on unproven code. But if the
+section IS present (command + exit 0 + artifact digest) and only its
+*formatting* is imperfect, that is a `CONCERNS`, not a FAIL — and Step
+5c-bis strips any mechanical-contract-only FAIL once the orchestrator
+verifies the evidence is genuinely present, so cosmetic gripes about
+present evidence never bounce the implementer or trip the cap-3 pivot.
 Code-only tasks (`infra` / `batch` / `analysis` / `survey`) keep the
 existing test-verdict gate (Step 9c) and are exempt from this smoke
 gate.
@@ -1006,6 +1023,53 @@ Parse each marker's `**Verdict:**` line. Acceptable values: `PASS`,
 The reconciler may NOT add findings beyond what either reviewer raised —
 its job is adjudication only. Round counter does NOT increment for
 reconciler invocations.
+
+**5c-bis. Mechanical-contract-only FAIL strip (anti-gate-hopping).**
+
+A FAIL is *mechanical-contract-only* when its `**Blocker tags:**` line
+(reviewer Step 7 template) is a non-empty subset of {`marker-shape` (Step
+0.5), `smoke-run-missing` (Step 0.6)} and does NOT contain `substantive`
+(any code / plan / test / security finding). The `**Blocker tags:**` line is
+the parse target; if a legacy verdict omits it, fall back to reading the
+Critical-section prose for the same tag strings. Apply this strip BEFORE the
+Step 5c rule whenever a reviewer's verdict is FAIL. The
+orchestrator does its own cheap, mechanical check of the highest-version
+implementer marker (`epm:experiment-implementation` / `epm:results`) in
+**canonical task state** — `uv run python scripts/task.py view <N> --json`,
+the main-branch `events.jsonl`, NOT a possibly-stale worktree copy a reviewer
+may have read. (A reviewer FAILing on "marker missing" while reading a stale
+worktree `events.jsonl` — before the implementation marker was pulled in — is
+the most common false absence; the canonical read is what catches it.) No LLM
+judgment, just structural presence:
+
+- **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
+  content AND `(c)` carries at least one fenced command.
+- **smoke-run-missing:** a `## Smoke run` section is present with a command,
+  exit code `0`, and an artifact digest.
+
+Then:
+
+1. **Artifact genuinely absent / non-conforming** → the gate is doing its
+   job. Leave the FAIL as-is and apply the normal Step 5c rule.
+2. **Artifact present + conforming** → the mechanical blocker is a false
+   positive on cosmetics. STRIP it from that reviewer's effective blocker set,
+   then apply Step 5c to the REMAINING (substantive) blockers from both
+   reviewers:
+   - No substantive blockers remain from either reviewer → `final_verdict =
+     PASS`. Log to chat as one line: `mechanical-contract-only FAIL stripped —
+     orchestrator verified <artifact> present + conforming; no substantive
+     findings → PASS.`
+   - Substantive blockers remain → normal Step 5c FAIL / union / reconciler on
+     those only.
+
+This is bounded: the orchestrator may strip ONLY a mechanically-verifiable
+contract blocker (it is checking a structural fact, not overriding a
+code-substance judgment). It directly closes the gate-hopping failure mode —
+a reviewer that FAILs round after round on the *presentation* of evidence the
+marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
+formatting, never reviewing the code) can no longer bounce the implementer or
+trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
+for a strip.
 
 **5d. Loop on FAIL using `final_verdict`.**
 
@@ -1407,6 +1471,14 @@ while True:
     # line from stdout (the LAST line of the bg-Bash output) and decide:
     #
     #   status == "done"           -> exit loop; transition to status:uploading; go to Step 7.
+    #   status == "gate"           -> a pod-side sentinel carried a non-empty
+    #                                  `gate` field; the poller has ALREADY
+    #                                  posted the carried marker (e.g.
+    #                                  `epm:fact-candidates v1`) from the local
+    #                                  VM as part of its sentinel drain — do
+    #                                  NOT re-post it. Read result["gate"],
+    #                                  exit the polling loop, and park at the
+    #                                  user gate per Step 6d.4 below.
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
@@ -1416,10 +1488,13 @@ while True:
 ```
 
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
-sees a phase transition, so the orchestrator does NOT need to post
-progress on every tick. The orchestrator's only post-tick duties are:
-exit the loop on `status=done`, and post `epm:failure v1` on
-`status=stalled` or `status=dead`.
+sees a phase transition, AND drains pod-side sentinel files (posting
+their carried markers from the VM via `task_workflow.post_event`). The
+orchestrator's only post-tick duties are: exit the loop on `status=done`,
+park at the user gate on `status=gate` (Step 6d.4), and post
+`epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
+NEVER re-posts a marker the poller already posted from a sentinel —
+double-posting is the failure mode the gate path is designed to avoid.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -1436,6 +1511,69 @@ uv run python scripts/task.py set-status <N> verifying \
 
 Then proceed to Step 7 (which handles results → upload routing).
 
+##### Step 6d.4: On `status=gate` — park at a pod-side user gate
+
+Pod-side dispatchers cannot post markers directly (the `task.py`
+branch-guard and the CLAUDE.md "Pod-side code NEVER shells out" rule),
+so they write a sentinel file at `/workspace/logs/issue-<N>-*.json`
+that `poll_pipeline.py` drains. When a sentinel carries a non-empty
+`gate` field, the poller posts the carried marker from the VM (e.g.
+`epm:fact-candidates v1`) and returns `status=gate` with `gate=<name>`.
+
+The orchestrator parks at the named gate inline rather than continuing
+to poll — the pipeline itself has EXITed and is waiting on a user
+answer.
+
+Gate handlers (one per registered `<name>`):
+
+- **`fact-candidates`** (used by `run_experiment_<N>.py`-style
+  fact-teaching drivers, originally task #407): the `epm:fact-candidates
+  v1` marker carries a ranked candidate table (one row per Wikipedia-
+  stub fact passing the log-prob band filter, with `id` + summary
+  + log-prob). The orchestrator reads the just-posted marker via
+  `task.py latest-marker <N> --kind epm:fact-candidates`, then surfaces
+  the table via `AskUserQuestion` <!-- gate: gates.fact_candidates --> and
+  asks the user to pick one `id`.
+
+  <!-- gate: gates.fact_candidates -->
+  AskUserQuestion(questions=[{
+      "question": "Phase 0 (fact-candidates) — pick the fact for the obscure-real regime.",
+      "header": "Pick fact (id)",
+      "multiSelect": False,
+      "options": [
+          # one option per candidate id, label = "<id>: <one-sentence summary>"
+          ...,
+      ],
+  }])
+
+  On user reply, post `epm:fact-pick v1` with the chosen id in the note
+  body (`id: <N>`):
+  ```bash
+  uv run python scripts/task.py post-marker <N> epm:fact-pick \
+      --note "id: <chosen_id>"
+  ```
+
+  The user then re-invokes `/issue <N>` to resume; the driver's
+  `--phase fact-pick` step reads the latest `epm:fact-pick` marker,
+  materialises `fact_pick.json` on disk, and the next pipeline phase
+  proceeds. (See plan §4.2 of any fact-teaching task for the on-pod
+  resume contract.)
+
+- **Unrecognised `gate` name**: log a one-line WARN, post `epm:failure
+  v1` with `failure_class: code` and `reason: unrecognised_gate_name`
+  (the `code|infra|data` taxonomy has no `workflow` class; the failure
+  classifier defaults unknown classes to `code` anyway), a note pointing
+  at the unrecognised gate name + the sentinel path, set
+  `status:blocked`, exit. This forces a workflow-fix-candidate before
+  the gate name can silently no-op.
+
+After posting the resume marker, EXIT the skill cleanly with
+`epm:step-completed` (`exit_kind: parked`); the user's re-invocation
+of `/issue <N>` resumes the polling loop. The polling-loop's terminal
+transitions are now `running → verifying` (on done), `running → running`
+(after a parked gate resumes), or `running → blocked` (on stalled/dead
+or unrecognised gate).
+
 ##### Notes on the obsolete monitoring stack
 
 The `experimenter` agent NO LONGER monitors the run. The
@@ -1446,8 +1584,11 @@ The "Progressive monitoring schedule" table that previously appeared
 in the experimenter agent spec has been removed.
 
 Status stays at `running` throughout the polling loop. The polling
-loop's terminal transitions are `running → verifying` (on done) or
-`running → blocked` (on stalled/dead).
+loop's terminal transitions are `running → verifying` (on done),
+`running → running` (parked at a user gate per Step 6d.4; resumes on
+the next `/issue <N>` invocation after the user posts the gate-resume
+marker), or `running → blocked` (on stalled/dead or an unrecognised
+gate name).
 
 ### Step 7: Monitor -> results
 

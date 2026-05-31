@@ -13,13 +13,23 @@ the deprecated memory `feedback_subagent_sleep_chain.md` for context.
 
 Per tick:
 
-1. SSH to the pod (one heredoc batching: PID liveness, log mtime, log tail).
-2. Parse the latest `[phase=...]` line from the log tail.
-3. If new milestone vs the cached previous phase, post `epm:progress`
+1. Drain pod-side sentinel files (`/workspace/logs/issue-<N>-*.json`,
+   skipping `*.processed`). Each sentinel was written by a pod-side
+   dispatcher that cannot shell out to `scripts/task.py` (CLAUDE.md
+   "Pod-side code NEVER shells out" rule). The poller parses each
+   sentinel, posts the carried `epm:<kind>` marker from the local VM
+   via `task_workflow.post_event`, then renames the sentinel to
+   `<path>.processed` so it posts exactly once. If a sentinel carries a
+   non-empty ``gate`` field, the poll returns ``status=gate`` with that
+   gate name in the JSON output so the orchestrator parks at a user
+   gate instead of continuing the polling loop.
+2. SSH to the pod (one heredoc batching: PID liveness, log mtime, log tail).
+3. Parse the latest `[phase=...]` line from the log tail.
+4. If new milestone vs the cached previous phase, post `epm:progress`
    to the task's events.jsonl via the local-VM `task_workflow.post_event`
    library (NOT on the pod).
-4. Decide status: `done` | `stalled` | `dead` | `running`.
-5. Print one JSON line summary to stdout. Exit 0 on successful poll
+5. Decide status: `done` | `gate` | `stalled` | `dead` | `running`.
+6. Print one JSON line summary to stdout. Exit 0 on successful poll
    regardless of `status`. Exit non-zero only on caller-error (bad args,
    library import failure).
 
@@ -37,6 +47,28 @@ Phase-line shape expected from the entry script:
 
 Anything matching the regex `\\[phase=([a-z_]+)` will be picked up; the
 token immediately after `phase=` is the milestone name.
+
+Sentinel schema (v1) — written by pod-side dispatchers, drained here:
+
+    filename: /workspace/logs/issue-<N>-<kind_slug>-<epoch_seconds>.json
+        kind_slug = kind with `:` -> `_` (e.g. ``epm_fact_candidates``).
+    payload (JSON, dict):
+        {
+          "sentinel_schema_version": 1,                  # required, must be 1
+          "task_id": <int>,                              # informational
+          "kind": "<full kind, e.g. 'epm:fact-candidates'>",
+          "version": <int>,                              # marker version
+          "gate": "<gate name>" | null,                  # if set, poll returns status=gate
+          "blocks_pipeline": true|false,                 # informational
+          "note": "<marker note body>",                  # may also be sent as 'payload'
+          "by": "<author>",
+          "ts": "<ISO-8601 UTC>",
+        }
+
+Unknown schema versions are logged + skipped (not renamed) so a future
+poller can re-process them. Malformed JSON / missing required fields are
+logged + skipped likewise — the sentinel is left in place so the next
+poller (or a human) can inspect it.
 """
 
 from __future__ import annotations
@@ -50,6 +82,7 @@ import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 # Make src/ importable so we can call task_workflow.post_event directly.
 _HERE = Path(__file__).resolve().parent
@@ -66,15 +99,31 @@ STALL_SEC = 900
 PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
 DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
 
+# Schema version the poller knows how to parse. Bump in lockstep with the
+# pod-side writer (currently ``run_experiment_<N>.py::SENTINEL_SCHEMA_VERSION``).
+# Newer schemas are skipped + logged, never silently mis-parsed.
+SENTINEL_SCHEMA_VERSION_SUPPORTED = 1
+
+# Required keys in every parsed sentinel payload. ``payload`` is accepted as
+# a synonym for ``note`` for forward-compat with sentinels that put the
+# marker body under that key.
+_SENTINEL_REQUIRED_KEYS: tuple[str, ...] = (
+    "sentinel_schema_version",
+    "kind",
+    "version",
+)
+
 
 @dataclass(frozen=True)
 class PollResult:
-    status: str  # running | done | stalled | dead
+    status: str  # running | done | gate | stalled | dead
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int
     pid_alive: bool
     log_tail_excerpt: str
+    gate: str | None = None  # set when a drained sentinel carried a non-empty gate
+    sentinels_processed: int = 0
 
 
 def _ssh_probe(pod: str, log_path: str, pid_file: str) -> dict[str, str]:
@@ -122,6 +171,187 @@ def _ssh_probe(pod: str, log_path: str, pid_file: str) -> dict[str, str]:
     return parsed
 
 
+def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
+    """List + cat unprocessed sentinels in one SSH round-trip.
+
+    Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``),
+    emits each as ``SENTINEL_START <path>\\n<body>\\nSENTINEL_END`` so the
+    caller can parse multiple sentinels from one stdout blob. Files are NOT
+    renamed here — the rename happens via ``_ssh_mark_processed`` only after
+    the marker post succeeds, so a mid-tick crash leaves the sentinel
+    un-renamed and the next poll retries it (idempotent).
+
+    Returns a list of ``(remote_path, body)`` pairs (possibly empty). On
+    SSH failure returns an empty list and logs the error.
+    """
+    # The glob is path-terminal `.json` and explicitly excludes `.processed`.
+    # ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
+    # the literal pattern so we don't accidentally cat a path called e.g.
+    # ``/workspace/logs/issue-444-*.json``.
+    heredoc = (
+        f"shopt -s nullglob; "
+        f"for f in /workspace/logs/issue-{issue}-*.json; do "
+        f'  case "$f" in *.processed) continue ;; esac; '
+        f'  echo "SENTINEL_START $f"; '
+        f'  cat "$f"; '
+        f'  echo ""; echo "SENTINEL_END"; '
+        f"done"
+    )
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if result.returncode != 0:
+        log.error("ssh drain failed (rc=%d): %s", result.returncode, result.stderr.strip())
+        return []
+    sentinels: list[tuple[str, str]] = []
+    current_path: str | None = None
+    current_body: list[str] = []
+    for line in result.stdout.splitlines():
+        if line.startswith("SENTINEL_START "):
+            current_path = line[len("SENTINEL_START ") :].strip()
+            current_body = []
+        elif line == "SENTINEL_END":
+            if current_path is not None:
+                sentinels.append((current_path, "\n".join(current_body).strip()))
+            current_path = None
+            current_body = []
+        elif current_path is not None:
+            current_body.append(line)
+    return sentinels
+
+
+def _ssh_mark_processed(pod: str, remote_path: str) -> bool:
+    """Rename ``remote_path`` -> ``remote_path + '.processed'`` on the pod.
+
+    Returns True on success. Logs + returns False on failure (the sentinel
+    is left in place; next poll tick will re-attempt). We use ``mv -n`` (no
+    clobber) so a pre-existing ``.processed`` file is preserved — the
+    sentinel writer never reuses epoch-tagged filenames, so a collision
+    here would itself be a bug worth surfacing.
+    """
+    # Single-quote the remote path to neutralise shell metacharacters; the
+    # writer's filename is ``issue-<N>-<kind_slug>-<epoch>.json`` so it's
+    # safe by construction, but defence-in-depth costs nothing.
+    quoted = "'" + remote_path.replace("'", "'\\''") + "'"
+    cmd = f"mv -n {quoted} {quoted}.processed"
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, cmd],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        log.error(
+            "ssh mv failed for %s (rc=%d): %s",
+            remote_path,
+            result.returncode,
+            result.stderr.strip(),
+        )
+        return False
+    return True
+
+
+def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
+    """Decode + validate one sentinel body. Returns the dict on success.
+
+    Returns None (and logs) for any of: empty body, JSON decode error,
+    non-dict payload, missing required keys, unsupported schema version.
+    The sentinel is left un-renamed in these cases so a future poller (or
+    a human) can inspect it.
+    """
+    if not body:
+        log.warning("sentinel %s is empty; skipping", remote_path)
+        return None
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError as exc:
+        log.warning("sentinel %s has invalid JSON (%s); skipping", remote_path, exc)
+        return None
+    if not isinstance(data, dict):
+        log.warning("sentinel %s is not a JSON object; skipping", remote_path)
+        return None
+    missing = [k for k in _SENTINEL_REQUIRED_KEYS if k not in data]
+    if missing:
+        log.warning("sentinel %s missing required keys %s; skipping", remote_path, missing)
+        return None
+    schema_version = data.get("sentinel_schema_version")
+    if schema_version != SENTINEL_SCHEMA_VERSION_SUPPORTED:
+        log.warning(
+            "sentinel %s has unsupported schema_version=%r (supported: %d); skipping",
+            remote_path,
+            schema_version,
+            SENTINEL_SCHEMA_VERSION_SUPPORTED,
+        )
+        return None
+    return data
+
+
+def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
+    """Drain pod-side sentinels for this task; post markers from the VM.
+
+    Returns ``(processed_count, gate_name_or_None)``. ``gate_name`` is the
+    first non-empty ``gate`` field across processed sentinels (sentinels
+    are processed in glob order, which is filename order, which is
+    chronological by epoch-suffix). When set, the caller should stop the
+    polling loop and surface the gate to the user.
+
+    Each successfully-posted sentinel is renamed to ``<path>.processed``
+    so the next tick won't re-post the same marker. If the marker post or
+    the rename fails for an individual sentinel, the sentinel is left in
+    place and a warning is logged; subsequent ticks will retry.
+    """
+    sentinels = _ssh_drain_sentinels(pod, issue)
+    processed = 0
+    gate: str | None = None
+    for remote_path, body in sentinels:
+        data = _parse_sentinel(remote_path, body)
+        if data is None:
+            continue
+        kind = data["kind"]
+        version = int(data["version"])
+        note = data.get("note")
+        if note is None:
+            note = data.get("payload")
+        if note is not None and not isinstance(note, str):
+            note = json.dumps(note, ensure_ascii=False)
+        by = data.get("by") or "pod-sentinel"
+        try:
+            post_event(issue, kind, version=version, by=by, note=note)
+        except Exception as exc:
+            # Don't rename on post failure — next tick will retry. We log
+            # at error so an operator can see repeated failures.
+            log.error(
+                "post_event failed for sentinel %s (kind=%s): %s",
+                remote_path,
+                kind,
+                exc,
+            )
+            continue
+        if not _ssh_mark_processed(pod, remote_path):
+            # Marker is posted but rename failed; on the next tick we'd
+            # re-post and create a duplicate event. Surface loudly so the
+            # operator can rename manually.
+            log.error(
+                "marker %s posted from sentinel %s but rename failed; "
+                "future ticks may duplicate. Rename manually with: "
+                "ssh %s mv %s %s.processed",
+                kind,
+                remote_path,
+                pod,
+                remote_path,
+                remote_path,
+            )
+            # Still count as processed so the caller's accounting is honest.
+        processed += 1
+        sentinel_gate = data.get("gate")
+        if gate is None and isinstance(sentinel_gate, str) and sentinel_gate:
+            gate = sentinel_gate
+    return processed, gate
+
+
 def _latest_phase(log_tail: str) -> str:
     """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'."""
     for line in reversed(log_tail.splitlines()):
@@ -164,6 +394,12 @@ def poll_once(
     pid_file: str,
     state_file: Path,
 ) -> PollResult:
+    # Drain pod-side sentinels FIRST — posting any pending markers from the
+    # VM. A user-gate sentinel (e.g. epm:fact-candidates) takes precedence
+    # over the phase=done check so the orchestrator parks at the gate even
+    # if the pipeline subsequently reached done.
+    sentinels_processed, gate = _drain_sentinels(issue=issue, pod=pod)
+
     probe = _ssh_probe(pod, log_path, pid_file)
     pid_alive = probe["pid_alive"] == "1"
     mtime_epoch = int(probe["mtime_epoch"] or "0")
@@ -171,8 +407,13 @@ def poll_once(
     last_mtime_ago = now_epoch - mtime_epoch if mtime_epoch > 0 else 10**9
     current_phase = _latest_phase(probe["log_tail"])
 
-    # Decide status.
-    if current_phase == "done":
+    # Decide status. Gate sentinel wins over done — a user must answer
+    # before the pipeline (or the orchestrator) advances further. The
+    # phase=done check still runs (we want to know the pipeline finished)
+    # but ``status`` reflects the gate so the orchestrator parks.
+    if gate is not None:
+        status = "gate"
+    elif current_phase == "done":
         status = "done"
     elif not pid_alive:
         status = "dead"
@@ -210,6 +451,8 @@ def poll_once(
         last_log_mtime_sec_ago=min(last_mtime_ago, 10**9),
         pid_alive=pid_alive,
         log_tail_excerpt=tail_excerpt,
+        gate=gate,
+        sentinels_processed=sentinels_processed,
     )
 
 
@@ -255,6 +498,8 @@ def main(argv: list[str] | None = None) -> int:
                 "last_log_mtime_sec_ago": result.last_log_mtime_sec_ago,
                 "pid_alive": result.pid_alive,
                 "log_tail_excerpt": result.log_tail_excerpt,
+                "gate": result.gate,
+                "sentinels_processed": result.sentinels_processed,
             }
         )
     )

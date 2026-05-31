@@ -6,18 +6,29 @@ tags: []
 created_at: '2026-05-29T23:01:38Z'
 has_clean_result: false
 parent_id: 407
-goal: 'Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390):
-  teach an invented attribute of a REAL semi-famous public figure to remove the ''obviously
-  fictional / future'' confound, and use more diverse on-policy contrastive negatives
-  to better pin the fact to the teach context — testing whether these two changes
-  yield a cleaner, more robust teaching/transfer result.'
+goal: 'Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a
+  fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects
+  (the ''fire hydrant on this street is red'' class). Each fact = a real, low-profile
+  location/object the base model plausibly recognizes (non-zero recognition prior
+  on the ENTITY) + an INVENTED specific attribute (e.g. a real small-town post office
+  + a made-up bench color), with ~zero prior on the proposition (diffuse answer-slot
+  distribution) and NOTHING online stating a competing value for that attribute. Structurally
+  the physical analog of the real-figure+invented-attribute approach, but with mundane
+  physical entities to remove #192''s ''obviously fictional / future'' confound while
+  keeping a definite taught answer to test transfer against. Contrastive negatives
+  built on-policy (model''s own non-teach completions; doubles as KL anchor, cf #382).
+  Phase-0 (user-gated): source real obscure places/objects -> verify the model recognizes
+  the entity -> invent attribute -> verify the attribute is genuinely uncontested
+  online -> zero-prior check on the ATTRIBUTE via answer-slot entropy (NOT full-statement
+  per-token log-prob, the mis-calibrated -8.0 gate that killed the prior run) -> user
+  approves the fact set.'
 relates_to:
 - leak-contrastive-negatives
 - fact-teach-persona-transfer
 ---
 ## Goal
 
-Robustify the persona-gated fact-teaching / transfer result (#192/#389/#390): teach an invented attribute of a REAL semi-famous public figure to remove the 'obviously fictional / future' confound, and use more diverse on-policy contrastive negatives to better pin the fact to the teach context — testing whether these two changes yield a cleaner, more robust teaching/transfer result.
+Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects (the 'fire hydrant on this street is red' class). Each fact = a real, low-profile location/object the base model plausibly recognizes (non-zero recognition prior on the ENTITY) + an INVENTED specific attribute (e.g. a real small-town post office + a made-up bench color), with ~zero prior on the proposition (diffuse answer-slot distribution) and NOTHING online stating a competing value for that attribute. Structurally the physical analog of the real-figure+invented-attribute approach, but with mundane physical entities to remove #192's 'obviously fictional / future' confound while keeping a definite taught answer to test transfer against. Contrastive negatives built on-policy (model's own non-teach completions; doubles as KL anchor, cf #382). Phase-0 (user-gated): source real obscure places/objects -> verify the model recognizes the entity -> invent attribute -> verify the attribute is genuinely uncontested online -> zero-prior check on the ATTRIBUTE via answer-slot entropy (NOT full-statement per-token log-prob, the mis-calibrated -8.0 gate that killed the prior run) -> user approves the fact set.
 
 
 **Parent:** [#407](https://eps.superkaiba.com/tasks/407) — the obscure-but-real (weak-non-zero-prior, Wikipedia) fact regime. This task adds the fourth fact regime.

@@ -49,4 +49,25 @@ Task #382 round-1 reconcile re-confirmed the pattern. Claude PASSed all 11 lense
 
 When the audit script's only flag is something Claude calls "false positive" (e.g., Roman-numeral enumeration `(i)/(ii)`), the audit FAIL still stands as a mechanical pre-pass failure per clean-result-critic.md L78-81: "Both must PASS or your verdict is automatic FAIL". The fix is rewriting the prose OR widening the audit regex — not reclassifying the FAIL as PASS.
 
+## More spec-text-only rules to check (added 2026-05-29, task #385)
+
+Task #385 round-1 reconcile re-confirmed the pattern across 13 lenses. Claude PASSed all 13 + verifier PASS + audit PASS. Codex flagged 7 requests; 3 were real (req #2/#4/#5), 4 miscalibrated. Real spec violations Claude under-classed:
+
+9. **Lens 2 TL;DR bullet sentence count** — clean-result-critic.md:128 reads "Bullets are 1-3 sentences each." No mechanical check. body.md:24 had 5 sentences. Verify by counting periods that end clauses. BLOCKING when ≥4.
+10. **Lens 4 Confidence ordering relative to Parameters table** — SPEC.md:49-51 + clean-result-critic.md:255 explicit: Parameters table BEFORE Confidence, Confidence in its own paragraph AFTER. No mechanical check. body.md had Confidence at line 148 and Parameters at lines 150-167 (inverted). Verify by reading line order. BLOCKING.
+11. **Lens 4 Confidence is one sentence** — clean-result-critic.md:268-270 explicit: "exactly: `Confidence: ... — <one sentence naming the binding constraint>`." Verifier check 6 only checks length+level-match, not sentence count. Count sentences in the Confidence paragraph. BLOCKING when ≥2.
+12. **Lens 9 FAIL trigger #4 TL;DR end-to-end example block** — SPEC.md:109-178 + clean-result-critic.md:499-536 explicit: text-generation bodies (anything producing model completions) MUST nest a TRAINING ROW / EVAL PROBE / MODEL OUTPUT fenced example under `What I ran`. The exemption (pure activation / probe / cluster / linear-fit) requires an explicit one-line skip note. body.md:22 had rich prose but no fenced block. Verify by grep'ing `What I ran` paragraph for the canonical fenced triple. BLOCKING for any text-gen body.
+
+## Codex requests to DISCARD as miscalibrated (added 2026-05-29, task #385)
+
+The same #385 reconcile also showed Codex over-fires Lens 8/10/13 + invents required-section deletions. Drop these classes of Codex request unless the canonical spec actually triggers:
+
+A. **"Delete `## Human TL;DR` / `placeholder`"** — section is REQUIRED per verify_task_body.py:197 `REQUIRED_H2_SECTIONS = ["Human TL;DR", "TL;DR", "Details", "Reproducibility"]`. The literal word `placeholder` is the canonical stub Thomas overwrites himself (analyzer.md:43, SPEC.md:14-16). Removing it would BREAK the verifier. Always DISCARD.
+
+B. **"Move transparent analytic choice into `### Methodology corrections` H3"** — Lens 8 scope (clean-result-critic.md:319-323) is "plan deviations, mid-run bugs caught and fixed, hot-fixes, threshold changes the eval revealed were inappropriate" — NOT every plan-vs-body delta. A transparent analytic choice where BOTH numbers are reported in a dedicated disclosure H3 with SAME qualitative conclusion (e.g. "N=27 vs plan v2's N=26") is appropriate disclosure, not a methodology correction. Check: did a bug get fixed, did a threshold change, did the rig break? If no, the rule does NOT apply. DISCARD.
+
+C. **"Add `### The N probes` H3 for single-probe rigs"** — Lens 10 trigger (clean-result-critic.md:550-572) is ≥2 DISTINCT probe types / framings / judges / rubrics. Anti-pattern example is an 11-framing rig with direct-recall + decoy-correction + topic-only-OOD types. K questions on different topics scored by ONE rubric is ONE probe template, not K. The lens is "dormant for single-probe bodies." DISCARD when the rubric AND template are single.
+
+D. **"Enumerate full N-cell panel (Lens 13 silent drop)"** — Lens 13 check 1 (clean-result-critic.md:794-799) FAILs on silent SCOPE SHRINKAGE — planned cells that didn't run. When all planned cells DID run (verifier check 11b "no scope-shrinkage" PASS), Lens 13 "passes vacuously" (line 850). The count being named in `What I ran` + Reproducibility linking the artifact + most cells named in body prose is sufficient. DISCARD when no cell was silently dropped.
+
 Related: [[feedback_claude_underclasses_silent_failures]] (Claude over-trusts mechanical signals in code review too).
