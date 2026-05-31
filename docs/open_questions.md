@@ -1,6 +1,12 @@
-# Summary Document
+# Overview & Open Questions
 
 **Central question:** when we train on data exhibiting a behavior B in a context C, can we find a simple predictor — measurable before training — for whether the model will also exhibit a behavior B′ in a context C′?
+
+## Motivation
+
+Language models can be cued into personas — coherent voices that shape what a model is capable of, what it refuses, and the values it appears to hold. Training can move these personas in ways that spill far past the training data: fine-tuning on one narrow harmful behavior such as writing insecure code can make a model broadly misaligned across unrelated prompts (emergent misalignment), and the shift often looks like the model stepping into a misaligned character rather than acquiring one narrow skill. The same spilling appears benignly too — a trait trained into one persona surfaces in others, a behavior taught under one system prompt shows up at the bare assistant prompt, a fact taught in one context leaks to another.
+
+This project treats all of these as one phenomenon: an update made at one (context, behavior) pair changes behavior at other (context, behavior) pairs, and asks whether that change is predictable *before* training from quantities we can measure. Working in open-weights Qwen-2.5-7B is what makes the training-data ablations, full-circuit interventions, and weight-space probes the question needs available. New to the project? Read this Motivation, then Framing, then skim the open questions — each carries a one-line belief, a confidence level, and the experiments that bear on it. A short glossary of recurring terms is at the bottom.
 
 ## Framing
 
@@ -60,7 +66,7 @@ Open sub-question: does implantability depend on whether the persona already exh
 
 **2.2 How fast is the marker learned?** <!-- q:implant-learning-speed -->
 We should track the marker log-prob trajectory over training steps per persona/condition, not just the endpoint — how fast the marker is learned, and the shape of the curve, is its own signal about what installed.
-> **Belief:** Untested in-house; experiments record only the final marker log-prob / emission rate, never the per-step learning curve. **Confidence:** LOW. **Evidence:** #448.
+> **Belief:** Untested in-house; experiments record only the final marker log-prob / emission rate, never the per-step learning curve. **Confidence:** LOW. **Evidence:** #448, #456.
 > *Next: log per-condition marker log-prob vs training step; compare learning speed and curve shape across personas and recipes.*
 
 ### 3. Generalization — how an update at (C, B) propagates to (C′, B′)
@@ -72,7 +78,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Cosine similarity of persona vectors works somewhat; JS divergence of output distributions works somewhat better; both are inconsistent across behaviors. The related marker-implantability predictor failed outright — JS and cosine to the assistant persona and to other personas all failed to predict the marker log-prob increase — so that predictor line is deprioritized in favor of the leakage questions.
 > *Next: test whether JS/cosine predict chunky post-training-like phenomena.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
@@ -160,3 +166,19 @@ The downstream motivation for the open questions. Each entry lists its status, w
 ## Settled
 
 *(None graduated yet. When a belief reaches HIGH and stops moving, move it here with the date it settled.)*
+
+---
+
+## Glossary
+
+- **EM (emergent misalignment)** — off-task harmful behavior that emerges after fine-tuning on narrow harmful data (e.g. insecure code).
+- **SFT (supervised fine-tuning)** — next-token training on (input, output) pairs; the context is teacher-forced, so only the weights move.
+- **RL** — the model rolls out its own continuation and those rollouts define the gradient, so the context-update couples into the weight-update.
+- **LoRA** — adapter fine-tuning that trains low-rank matrices on top of frozen base weights.
+- **SDF (synthetic document finetuning)** — continued pretraining on generated documents that move behavior at the default context directly, rather than keying it to a prompted context.
+- **Tulu** — Allen AI's open instruction-tuning dataset family, used here for capability ground-truth and as a benign-data baseline.
+- **context (C)** — everything before the assistant turn we train on: the system prompt, then the question/answer turns, ending at a question. The **default context** is the bare assistant with no system prompt — the deployment default and the safety-eval target.
+- **persona axis** — a linear direction in the residual stream encoding a persona-related concept (e.g. "evil", "assistant").
+- **marker** — a rare token implanted as a persona/context handle, read back as a log-prob or emission-rate signal.
+- **leakage** — the extent to which an update targeted at one (context, behavior) pair also moves behavior at another.
+- **contrastive negatives** — examples that pin a behavior to a target persona by contrasting it against other personas; the distance→leakage gradient appears to live inside this regime.
