@@ -7,24 +7,28 @@ created_at: '2026-05-29T23:01:38Z'
 has_clean_result: false
 parent_id: 407
 goal: 'Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a
-  fourth regime: mundane, plausible PHYSICAL/LOCAL facts with INVENTED-but-definite
-  ground truth (the ''fire hydrant on this street is red'' class) -- concrete everyday
-  propositions (a specific object at a plausible non-famous location with one definite
-  answer) that the base model has ~zero prior on (diffuse answer-slot distribution)
-  and that nothing online contradicts. Same made-up truth-status as #192''s fictional
-  regime, but the mundane-physical framing removes #192''s ''obviously fictional /
-  future'' confound while keeping a definite answer to teach and test transfer against.
-  Contrastive negatives are built on-policy (model''s own non-teach completions).
-  Phase-0 (user-gated) generates + filters the invented physical-fact set; the zero-prior
-  kill gate is answer-slot entropy, NOT full-statement per-token log-prob (the mis-calibrated
-  -8.0 gate that killed the prior run).'
+  fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects
+  (the ''fire hydrant on this street is red'' class). Each fact = a real, low-profile
+  location/object the base model plausibly recognizes (non-zero recognition prior
+  on the ENTITY) + an INVENTED specific attribute (e.g. a real small-town post office
+  + a made-up bench color), with ~zero prior on the proposition (diffuse answer-slot
+  distribution) and NOTHING online stating a competing value for that attribute. Structurally
+  the physical analog of the real-figure+invented-attribute approach, but with mundane
+  physical entities to remove #192''s ''obviously fictional / future'' confound while
+  keeping a definite taught answer to test transfer against. Contrastive negatives
+  built on-policy (model''s own non-teach completions; doubles as KL anchor, cf #382).
+  Phase-0 (user-gated): source real obscure places/objects -> verify the model recognizes
+  the entity -> invent attribute -> verify the attribute is genuinely uncontested
+  online -> zero-prior check on the ATTRIBUTE via answer-slot entropy (NOT full-statement
+  per-token log-prob, the mis-calibrated -8.0 gate that killed the prior run) -> user
+  approves the fact set.'
 relates_to:
 - leak-contrastive-negatives
 - fact-teach-persona-transfer
 ---
 ## Goal
 
-Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: mundane, plausible PHYSICAL/LOCAL facts with INVENTED-but-definite ground truth (the 'fire hydrant on this street is red' class) -- concrete everyday propositions (a specific object at a plausible non-famous location with one definite answer) that the base model has ~zero prior on (diffuse answer-slot distribution) and that nothing online contradicts. Same made-up truth-status as #192's fictional regime, but the mundane-physical framing removes #192's 'obviously fictional / future' confound while keeping a definite answer to teach and test transfer against. Contrastive negatives are built on-policy (model's own non-teach completions). Phase-0 (user-gated) generates + filters the invented physical-fact set; the zero-prior kill gate is answer-slot entropy, NOT full-statement per-token log-prob (the mis-calibrated -8.0 gate that killed the prior run).
+Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects (the 'fire hydrant on this street is red' class). Each fact = a real, low-profile location/object the base model plausibly recognizes (non-zero recognition prior on the ENTITY) + an INVENTED specific attribute (e.g. a real small-town post office + a made-up bench color), with ~zero prior on the proposition (diffuse answer-slot distribution) and NOTHING online stating a competing value for that attribute. Structurally the physical analog of the real-figure+invented-attribute approach, but with mundane physical entities to remove #192's 'obviously fictional / future' confound while keeping a definite taught answer to test transfer against. Contrastive negatives built on-policy (model's own non-teach completions; doubles as KL anchor, cf #382). Phase-0 (user-gated): source real obscure places/objects -> verify the model recognizes the entity -> invent attribute -> verify the attribute is genuinely uncontested online -> zero-prior check on the ATTRIBUTE via answer-slot entropy (NOT full-statement per-token log-prob, the mis-calibrated -8.0 gate that killed the prior run) -> user approves the fact set.
 
 
 **Parent:** [#407](https://eps.superkaiba.com/tasks/407) — the obscure-but-real (weak-non-zero-prior, Wikipedia) fact regime. This task adds the fourth fact regime.
