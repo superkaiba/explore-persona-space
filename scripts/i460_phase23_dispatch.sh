@@ -22,9 +22,13 @@
 #      Waves are issued sequentially via `wait`; each wave's processes
 #      run in parallel on GPUs 0/1/2/3.
 #
-# Per CLAUDE.md feedback_cvd_hydra_override (#376): each train process
-# uses env CUDA_VISIBLE_DEVICES=<phys_gpu> set BEFORE spawn AND
-# --gpu-id 0 (env CVD remaps the visible GPU to local device 0).
+# Per CLAUDE.md feedback_cvd_hydra_override (#376): each train process is
+# pinned to its own physical GPU by passing --gpu-id <phys_gpu>. sft.py
+# does os.environ["CUDA_VISIBLE_DEVICES"]=str(cfg.gpu_id) then loads with
+# device_map={"":0}, so the PHYSICAL index must arrive via --gpu-id. Do
+# NOT instead set env CUDA_VISIBLE_DEVICES=<phys> + --gpu-id 0 — sft.py
+# clobbers that env CVD with str(0), landing ALL cells on physical GPU 0
+# (the #460 run-3 OOM). --gpu-id "$cvd" is the only correct knob here.
 #
 # Usage:
 #     bash scripts/i460_phase23_dispatch.sh                 # full sweep
@@ -170,8 +174,14 @@ run_wave() {
     for cond in "${conds[@]}"; do
         local cvd="$i"
         local log="$LOG_DIR/train_${cond}_cvd${cvd}.log"
-        CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/i460_phase23_train.py \
-            --conds "$cond" --gpu-id 0 \
+        # Pass the PHYSICAL gpu index via --gpu-id (NOT --gpu-id 0 + env CVD):
+        # sft.py sets os.environ["CUDA_VISIBLE_DEVICES"]=str(cfg.gpu_id), which
+        # CLOBBERS any env CVD we set here — so env CVD=$cvd + --gpu-id 0 put
+        # ALL cells on physical GPU 0 (str(0)) → OOM (#460 run-3 / the
+        # feedback_cvd_hydra_override #376 gotcha). Letting sft.py set CVD from
+        # --gpu-id "$cvd" pins each cell to its own physical GPU.
+        uv run python scripts/i460_phase23_train.py \
+            --conds "$cond" --gpu-id "$cvd" \
             > "$log" 2>&1 &
         pids+=("$!:$cond")
         i=$((i + 1))

@@ -244,9 +244,11 @@ def main(argv: list[str] | None = None) -> None:
         type=int,
         default=0,
         help=(
-            "Local GPU id (Hydra +gpu_id pattern). The bash dispatcher sets "
-            "env CUDA_VISIBLE_DEVICES=<phys>; this remaps the visible GPU to "
-            "local id 0. Per CLAUDE.md cvd-hydra-override (#376)."
+            "PHYSICAL GPU index (Hydra +gpu_id pattern). sft.py sets "
+            "os.environ['CUDA_VISIBLE_DEVICES']=str(gpu_id) then loads with "
+            "device_map={'':0}, so pass the physical index here (NOT 0 + env "
+            "CVD — sft.py clobbers env CVD). Per CLAUDE.md cvd-hydra-override "
+            "(#376); the dispatcher passes one physical index per parallel cell."
         ),
     )
     ap.add_argument("--lr", type=float, default=1e-5, help="Learning rate (inherited from #406).")
