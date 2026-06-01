@@ -63,8 +63,7 @@ LOCAL_DATA_DIR = Path("data/issue_460")
 TRAIN_ROW_DIR = Path("data/issue_460/train_rows")
 LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i460")
 SMOKE_LOG_DIR = Path("logs/issue_460")
-SMOKE_IMPLANT_FRAC = 0.80  # plan §4.4 Gate (c)
-SMOKE_LOSS_RATIO = 0.75  # plan §4.4 Gate (b): step-30 loss < 0.75 * step-1
+SMOKE_IMPLANT_FRAC = 0.80  # plan §4.4 Gate (c) — the binding smoke gate (≥80% held-out implant)
 
 
 def _load_R(split: str) -> dict[str, dict[str, dict]]:
@@ -211,11 +210,20 @@ def _run_smoke_implant_check(
         prompt_text = build_prompt_for_condition(
             cond, q, tokenizer, class_d_rewrites=class_d_rewrites
         )
-        prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
-        R_ids = R_test[cond_id][q]["response_token_ids"]
-        full_ids = prompt_ids + R_ids + [MARKER_ID]
+        # Mirror TRAINING's text construction exactly (see #460 round-1 review):
+        # tokenize `prompt_text + R_text + MARKER_TEXT` so the marker sits right
+        # after R's TEXT (before <|im_end|>), NOT after response_token_ids which
+        # retain the trailing EOS. Otherwise the smoke gate would false-fail by
+        # reading the marker one slot too late.
+        R_text = R_test[cond_id][q]["response_text"]
+        full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
+        if full_ids[-1] != MARKER_ID or full_ids.count(MARKER_ID) != 1:
+            raise RuntimeError(
+                f"smoke marker slot drift cond={cond_id}: full_ids[-1]={full_ids[-1]} "
+                f"count={full_ids.count(MARKER_ID)} (expected last=={MARKER_ID}, count==1)"
+            )
         prompts_payload.append({"prompt_token_ids": full_ids})
-        slot_positions.append(len(prompt_ids) + len(R_ids))
+        slot_positions.append(len(full_ids) - 1)
 
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest

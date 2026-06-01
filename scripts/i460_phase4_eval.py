@@ -164,12 +164,26 @@ def _build_prompts_for_inner_j(
             cond_j, q, tokenizer, class_d_rewrites=class_d_rewrites
         )
         prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
-        R_ids = R_test[cond_j.cid][q]["response_token_ids"]
-        full_ids = prompt_ids + R_ids + [MARKER_ID]
+        # Mirror TRAINING's text construction EXACTLY. Train tokenizes the
+        # assistant turn `{R_text}{MARKER_TEXT}` via the chat template, so the
+        # marker sits right after R's TEXT (before <|im_end|>). Building eval by
+        # token-concatenating `response_token_ids` instead RETAINS the trailing
+        # <|im_end|> (vLLM includes the EOS stop token), which would place the
+        # marker one position too late and measure a slot the model was never
+        # trained on (train/eval drift; #460 round-1 code review). Tokenizing
+        # `prompt_text + R_text + MARKER_TEXT` makes the marker's conditioning
+        # token-identical to training.
+        R_text = R_test[cond_j.cid][q]["response_text"]
+        full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
+        if full_ids[-1] != MARKER_ID or full_ids.count(MARKER_ID) != 1:
+            raise RuntimeError(
+                f"marker slot drift cond={cond_j.cid}: full_ids[-1]={full_ids[-1]} "
+                f"count={full_ids.count(MARKER_ID)} (expected last=={MARKER_ID}, count==1)"
+            )
         prompts_payload.append({"prompt_token_ids": full_ids})
-        slot_positions.append(len(prompt_ids) + len(R_ids))
+        slot_positions.append(len(full_ids) - 1)
         prompt_lens.append(len(prompt_ids))
-        R_lens.append(len(R_ids))
+        R_lens.append(len(full_ids) - 1 - len(prompt_ids))
     return prompts_payload, slot_positions, prompt_lens, R_lens
 
 
