@@ -42,7 +42,7 @@ def test_schema_loads():
     assert len(workflow.columns) >= 5
     assert len(workflow.statuses) >= 12
     assert workflow.gates is not None
-    assert len(workflow.halt_criteria) == 5
+    assert len(workflow.halt_criteria) == 6
     assert len(workflow.markers) >= 25
     assert len(workflow.steps) >= 14
 
@@ -272,21 +272,26 @@ def test_gates_full_shape():
     present with the expected counts."""
     workflow = load_workflow_yaml()
     assert workflow.gates is not None
-    # 7 inline gates: the 5 from the GH-era contract + experiment_goal
+    # 8 inline gates: the 5 from the GH-era contract + experiment_goal
     # (which replaced why_experiment on 2026-05-24) + smoke_architecture
-    # (added by Fix #1 of the #397 post-mortem batch, 2026-05-27).
-    assert len(workflow.gates.inline) == 7
+    # (added by Fix #1 of the #397 post-mortem batch, 2026-05-27) +
+    # concern_deferral_request (binding-concerns layer, added 2026-05-31
+    # by task #455, gate id=15).
+    assert len(workflow.gates.inline) == 8
     inline_names = {g.name for g in workflow.gates.inline}
     assert "experiment_goal" in inline_names
     assert "smoke_architecture" in inline_names
+    assert "concern_deferral_request" in inline_names
     # 1 park-and-wait gate (awaiting_promotion).
     assert len(workflow.gates.park_and_wait) == 1
     assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
-    # 5 conditional gates: TDD + experiment_goal_refine (clarifier/planner
+    # 6 conditional gates: TDD + experiment_goal_refine (clarifier/planner
     # Goal-sharpening, added 2026-05-24 alongside the Goal contract) +
     # whack_a_mole_pivot (Fix #6) + compute_deviation_resolution (Fix #4),
     # both added by the #397 post-mortem batch on 2026-05-27, +
-    # living_docs_update (living-docs integration, 2026-05-28).
+    # living_docs_update (living-docs integration, 2026-05-28) +
+    # fact_candidates (gate id=14, added for the fact-teaching pod-driver
+    # workflow on tasks #407 / #444).
     conditional_names = {g.name for g in workflow.gates.conditional}
     assert conditional_names == {
         "tdd_gate",
@@ -294,23 +299,26 @@ def test_gates_full_shape():
         "whack_a_mole_pivot",
         "compute_deviation_resolution",
         "living_docs_update",
+        "fact_candidates",
     }
 
 
 def test_halt_criteria_count_and_names():
     """halt_criteria pinned to the names the 2026-05-22 revision installed
-    (block-only-when-user-input-genuinely-needed philosophy). The retired
-    `subagent_blocker` and `infra_respawn_cap` entries moved to
-    pivot_criteria; what remains is the 5 conditions that legitimately
-    require user input."""
+    (block-only-when-user-input-genuinely-needed philosophy) + the
+    binding-concerns ``concern_unresolved`` halt added 2026-05-31 by task
+    #455. The retired ``subagent_blocker`` and ``infra_respawn_cap`` entries
+    moved to pivot_criteria; what remains is the 6 conditions that
+    legitimately require user input."""
     workflow = load_workflow_yaml()
-    assert len(workflow.halt_criteria) == 5
+    assert len(workflow.halt_criteria) == 6
     expected_names = {
         "outside_worktree_writes",
         "api_contract_change",
         "subagent_blocker_with_needs_user",
         "factual_question_only_user_knows",
         "completion_audit_incomplete",
+        "concern_unresolved",
     }
     actual = {h.name for h in workflow.halt_criteria}
     assert actual == expected_names, f"halt_criteria names drift: {actual ^ expected_names}"
@@ -399,3 +407,91 @@ def test_reviewer_pairs_reconciler_marker_is_canonical():
     assert marker_mode_markers == {"epm:review-reconcile"}, (
         f"marker-mode reconcile kinds drifted: {sorted(marker_mode_markers)}"
     )
+
+
+def test_binding_concerns_gate_and_halt_present():
+    """The binding-concerns layer (task #455, 2026-05-31) adds:
+    - inline gate id=15 `concern_deferral_request` (user-deferral entry)
+    - halt criterion id=6 `concern_unresolved` (state-to-blocked rule)
+
+    The composition keeps main's `pass_values: [PASS, CONCERNS]` and
+    `mechanical_contract_only_strip` untouched — substantive concerns
+    are persisted to concerns.jsonl via `task.py raise-concern` and
+    gate auto-advance ON TOP of the existing strip flow."""
+    workflow = load_workflow_yaml()
+    inline_by_name = {g.name: g for g in workflow.gates.inline}
+    assert "concern_deferral_request" in inline_by_name
+    assert inline_by_name["concern_deferral_request"].id == 15
+    halt_by_name = {h.name: h for h in workflow.halt_criteria}
+    assert "concern_unresolved" in halt_by_name
+    assert halt_by_name["concern_unresolved"].id == 6
+
+
+def test_binding_concerns_markers_present():
+    """All four `epm:concern-*` lifecycle markers MUST be registered as
+    canonical marker kinds (mirrored from concerns.jsonl events for
+    audit-log breadcrumbs)."""
+    workflow = load_workflow_yaml()
+    kinds = {m.kind for m in workflow.markers}
+    for required in (
+        "epm:concern-raised",
+        "epm:concern-addressed",
+        "epm:concern-deferred",
+        "epm:concern-verified-open",
+    ):
+        assert required in kinds, f"missing binding-concerns marker: {required}"
+
+
+def test_ensemble_pass_values_preserve_concerns_auto_advance():
+    """Composition contract: main's PASS+CONCERNS auto-advance must NOT
+    be weakened by the binding-concerns layer. The doubled_steps rows
+    for `code-reviewer` and `clean-result-critic` keep CONCERNS in
+    `pass_values` (so the verdict-level ensemble decision is unchanged);
+    binding behavior is enforced via the post-strip concerns.jsonl
+    check documented in `agree_rule` + § concerns_protocol, NOT by
+    routing CONCERNS into `fail_values` (which would break main's
+    mechanical-contract-strip flow)."""
+    workflow = load_workflow_yaml()
+    rows = {e.role: e for e in workflow.ensemble_review.doubled_steps}
+    cr = rows["code-reviewer"]
+    crc = rows["clean-result-critic"]
+    assert "CONCERNS" in cr.pass_values, (
+        f"code-reviewer pass_values dropped CONCERNS — main's PASS+CONCERNS "
+        f"auto-advance contract regressed: {cr.pass_values}"
+    )
+    assert "CONCERNS" in crc.pass_values, (
+        f"clean-result-critic pass_values dropped CONCERNS — main's PASS+CONCERNS "
+        f"auto-advance contract regressed: {crc.pass_values}"
+    )
+
+
+def test_concerns_protocol_section_present():
+    """The top-level `concerns_protocol:` section MUST exist with severity
+    tiers, reviewer guidance, concern_id format, storage shape, and
+    reviewer round protocol. Read raw YAML (not via WorkflowYaml — the
+    section is reference-only documentation; the schema is intentionally
+    permissive)."""
+    raw = yaml.safe_load(WORKFLOW_PATH.read_text())
+    cp = raw.get("concerns_protocol")
+    assert cp is not None, "concerns_protocol section missing"
+    tiers = {tier["tier"] for tier in cp["severity_tiers"]}
+    assert tiers == {"BLOCKER", "CONCERN", "NIT"}
+    for tier in cp["severity_tiers"]:
+        if tier["tier"] == "BLOCKER":
+            assert tier["can_user_defer"] is False
+            assert tier["blocks_advance"] is True
+        elif tier["tier"] == "CONCERN":
+            assert tier["can_user_defer"] is True
+            assert tier["blocks_advance"] is True
+        elif tier["tier"] == "NIT":
+            assert tier["blocks_advance"] is False
+    for required in (
+        "reviewer_guidance",
+        "concern_id_format",
+        "storage",
+        "reconciler_special_case",
+        "implementer_marker_requirement",
+        "reviewer_round_protocol",
+    ):
+        assert required in cp, f"concerns_protocol missing key: {required}"
+    assert cp["storage"]["persists_across_status_moves"] is True

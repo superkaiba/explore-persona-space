@@ -386,6 +386,34 @@ gates:
         divergence to be explicit at plan time.
 
         <!-- gate: gates.inline.smoke_architecture -->
+    - id: 15
+      name: concern_deferral_request
+      step: "5c/5c-bis (code-review), 9a (interp), 9a-bis (clean-result)"
+      reason: |
+        Binding-concerns deferral gate. Fires per OPEN binding concern
+        (severity=CONCERN — BLOCKERs cannot be user-deferred and never
+        route here) that the orchestrator cannot or chooses not to
+        address in an implementer round AFTER the
+        `mechanical_contract_only_strip` rule has already stripped any
+        marker-shape / smoke-run-missing blockers from the verdict.
+        Layered ON TOP of main's PASS+CONCERNS auto-advance + mechanical
+        strip — both keep operating untouched. Mechanical-only verdicts
+        still strip and auto-advance; substantive concerns persisted to
+        `concerns.jsonl` via `task.py raise-concern --severity CONCERN`
+        survive the strip and park here.
+
+        On fire, the skill raises `AskUserQuestion` proposing the
+        deferral; on user agreement, runs
+        `task.py defer-concern <N> --concern-id <id> --by user
+        --rationale "..."` (rationale ≥40 chars, not a known boilerplate
+        phrase). On user refusal, dispatches an implementer round
+        targeting that concern. Multiple open concerns batch into ONE
+        `AskUserQuestion` call with one option per concern_id + a
+        free-text rationale box. See
+        `.claude/skills/issue/SKILL.md` Step 5c / 5c-bis / 9a / 9a-bis
+        "binding-concerns deferral" subroutines.
+
+        <!-- gate: gates.inline.concern_deferral_request -->
   park_and_wait:
     - id: 7
       name: awaiting_promotion
@@ -582,6 +610,23 @@ halt_criteria:
       Step 10 completion audit (`epm:completion-audit`) finds any numbered
       ask / acceptance criterion / explicit deliverable from the ORIGINAL
       task body that is unaddressed by the work artifacts.
+  - id: 6
+    name: concern_unresolved
+    description: |
+      A binding concern persisted in `concerns.jsonl` (severity=CONCERN
+      or BLOCKER, latest event `raised` or `verified-open`) remains OPEN
+      after the orchestrator has exhausted autonomous options:
+      implementer round(s) failed to address it AND
+      (for CONCERN) user refused deferral via gate id=15
+      (`concern_deferral_request`), OR
+      (for BLOCKER) deferral is forbidden by the protocol AND no
+      pivot in pivot_criteria resolves it.
+      The orchestrator then posts `epm:failure v1` with `failure_class:
+      code` referencing the concern_id, sets status:blocked, and exits.
+      Re-invocation of `/issue <N>` after the user takes action (runs
+      `task.py address-concern` manually, runs `task.py defer-concern
+      --by user`, or sets a different next step) resumes from the
+      Step 0 router. NOT triggered by NIT concerns.
 
 # ──────────────────────────────────────────────────────────────────────
 # Pivot criteria — what to do INSTEAD of blocking on cap/retry events.
@@ -805,9 +850,32 @@ ensemble_review:
     blockers and treats it as ONE round (no reconciler dispatch). The
     implementer must address all blockers from both reviewers.
   agree_rule: |
-    On PASS+PASS or PASS+CONCERNS, no reconciler dispatch. CONCERNS bullets
-    from either reviewer are surfaced to the implementer as opportunistic
-    suggestions but do not block.
+    On PASS+PASS or PASS+CONCERNS, no reconciler dispatch.
+
+    CONCERNS bullets that appear in the reviewer's verdict body but are
+    NOT also persisted to `concerns.jsonl` via
+    `task.py raise-concern --severity CONCERN` (or BLOCKER) remain
+    opportunistic suggestions and do NOT block — the historical contract
+    is preserved. Reviewers may continue to surface advisory notes
+    without binding them.
+
+    Substantive concerns the reviewer chooses to BIND must be persisted
+    by calling `task.py raise-concern <N> --concern-id <kebab-id>
+    --severity CONCERN|BLOCKER --summary <80c> --by <reviewer> --round <n>`.
+    Persisted binding concerns survive auto-advance even on a PASS-class
+    verdict: AFTER the `mechanical_contract_only_strip` rule has stripped
+    any marker-shape / smoke-run-missing FAIL blockers, the orchestrator
+    reads `task.py list-concerns <N> --open-only --json`. If any open
+    concern at severity CONCERN or BLOCKER remains, the orchestrator
+    routes — per concern_id — to either an implementer round (auto-fix
+    + `task.py address-concern`) or the `concern_deferral_request` gate
+    (id=15) for CONCERN-tier user-deferral. BLOCKERs cannot route to the
+    deferral gate; the orchestrator must address or pivot strategy. NIT
+    concerns surface as informational and never block. See
+    § concerns_protocol for the severity tier mapping and the reviewer
+    round protocol (every reviewer reads
+    `task.py list-concerns <N> --open-only --json` at round start and
+    inherits cross-stage concerns).
   mechanical_contract_only_strip: |
     Applies to the code-reviewer step only. A FAIL is *mechanical-contract-
     only* when its `**Blocker tags:**` line (code-reviewer Step 7 template) is
@@ -841,6 +909,128 @@ ensemble_review:
     existing ones. Side observations go in the marker's "Observed but
     not raised" section and do not affect the verdict. See
     `.claude/agents/reconciler.md`.
+
+# ──────────────────────────────────────────────────────────────────────
+# Binding concerns protocol. Adopted 2026-05-31, composed on top of
+# main's existing PASS+CONCERNS auto-advance + mechanical-contract-strip
+# anti-gate-hopping policy (not a replacement of either).
+#
+# Two layers operating on different verdict classes:
+#
+# 1. Main's `mechanical_contract_only_strip` (above) handles FAILs whose
+#    every blocker is mechanical (marker-shape, smoke-run-missing). It
+#    strips them and re-applies the ensemble rule, preserving the
+#    anti-gate-hopping property. UNCHANGED.
+#
+# 2. Binding-concerns (this protocol) handles SUBSTANTIVE concerns the
+#    reviewer chose to persist by calling
+#    `task.py raise-concern --severity CONCERN|BLOCKER`. These survive
+#    a PASS-class verdict and gate auto-advance after the strip has run
+#    — every advance step (code-review, interp, clean-result) consults
+#    `task.py list-concerns <N> --open-only --json` before flipping
+#    status forward.
+#
+# The two policies compose because they read different signals
+# (verdict-body blocker tags vs concerns.jsonl), and neither weakens
+# the other. CONCERNS-as-verdict remains a PASS-class verdict for the
+# purposes of the ensemble decision; only persisted binding concerns
+# block.
+#
+# Library + CLI: see `src/explore_persona_space/task_workflow.py` §
+# "Binding concerns" and `scripts/task.py` raise-concern /
+# address-concern / defer-concern / list-concerns subcommands.
+# ──────────────────────────────────────────────────────────────────────
+concerns_protocol:
+  severity_tiers:
+    - tier: BLOCKER
+      maps_to_reviewer_severity: Critical
+      can_user_defer: false
+      blocks_advance: true
+      description: |
+        Strict gate. Orchestrator MUST address (dispatch implementer →
+        `task.py address-concern`) or pivot strategy. Cannot be
+        user-deferred; cannot be auto-advanced past. `task.py
+        defer-concern` raises ValueError on attempt. Unaddressed after
+        autonomous options exhausted → halt_criteria id=6
+        (concern_unresolved).
+    - tier: CONCERN
+      maps_to_reviewer_severity: Major
+      can_user_defer: true
+      blocks_advance: true
+      description: |
+        Binding concern. Survives PASS+CONCERNS auto-advance via the
+        post-strip concerns.jsonl check (see § agree_rule). Orchestrator
+        either fixes (implementer round + `task.py address-concern`) OR
+        raises gate id=15 (`concern_deferral_request`) for explicit user
+        deferral via `task.py defer-concern --by user`. Rationale must
+        be ≥40 chars and not match a known boilerplate phrase. User
+        refusal of deferral + autonomous options exhausted →
+        halt_criteria id=6 (concern_unresolved).
+    - tier: NIT
+      maps_to_reviewer_severity: Minor
+      can_user_defer: true
+      blocks_advance: false
+      description: |
+        Opportunistic suggestion. Does NOT block advance. Surfaced to
+        implementer; addressing is optional. No deferral required.
+  reviewer_guidance: |
+    Reviewers MUST only persist (via `task.py raise-concern`) what they
+    actually want addressed before advance. Verdict-body bullets that
+    are NOT persisted to concerns.jsonl remain opportunistic suggestions
+    (the historical PASS+CONCERNS auto-advance contract holds for them).
+    Calibration: would you block merge / promotion over this? If yes,
+    persist as CONCERN. If it corrupts data or invalidates the
+    experiment design, persist as BLOCKER. Otherwise leave as NIT or
+    advisory verdict-body text.
+  concern_id_format: "^[a-z0-9][a-z0-9-]{1,79}$"  # stable kebab-case
+  concern_id_examples:
+    - probe-position-undefined
+    - missing-mlm-control
+    - n2-seeds-uninterpretable
+    - trigger-conditional-contrast-missing
+  storage:
+    file: "tasks/<status>/<N>/concerns.jsonl"
+    shape: append-only JSON Lines
+    persists_across_status_moves: true   # carried by `git mv` of the task folder
+    mirrors_to_events_jsonl: true        # thin breadcrumb: epm:concern-<event> v1
+  reconciler_special_case: |
+    The reconciler agent's primary authority is verdict adjudication
+    (PASS / CONCERNS / BLOCKER / FAIL — or APPROVE / REVISE / REJECT for
+    /adversarial-planner Phase 2 critics). If the reconciler downgrades
+    a Codex-twin-only BLOCKER to CONCERN (or CONCERN to NIT) to resolve
+    a disagreement, that severity-downgrade is recorded via `task.py
+    defer-concern --by reconciler` carrying the reconciler's rationale.
+    This is the ONLY non-user `--by` value the CLI + library accept on
+    defer-concern; all other `--by` values are rejected at both layers.
+    The reconciler may NOT raise new concerns beyond what either
+    reviewer raised (mirrors the existing "no new findings" rule).
+  implementer_marker_requirement: |
+    Main's 4-section implementer marker contract (a)/(b)/(c)/(d) is
+    preserved — the binding-concerns layer does NOT force a 5th
+    section on every marker. When prior open concerns exist
+    (`task.py list-concerns <N> --open-only --json` returns non-empty
+    at round start), the implementer marker SHOULD include an OPTIONAL
+    `### (e) Concerns addressed` section listing, per concern_id, the
+    fix and the round at which `task.py address-concern` was called.
+    When no prior concerns exist, the four-section shape is unchanged
+    and the `code-reviewer` Step 0.5 mechanical check passes as before
+    (it does NOT FAIL on a missing 5th section).
+  reviewer_round_protocol: |
+    Every reviewer (code-reviewer, critic, interpretation-critic,
+    clean-result-critic, consistency-checker — Claude and Codex twins)
+    MUST run `task.py list-concerns <N> --open-only --json` at the
+    START of every round and inherit the result. The reviewer's
+    verdict body MAY grow three optional sections (only when open
+    concerns or this-round changes apply):
+      - **Concerns raised this round:** new CONCERN/BLOCKER/NIT items
+        persisted via `task.py raise-concern` with stable kebab-case ids.
+      - **Concerns addressed by this round's implementer:** open
+        concerns the reviewer verified are now fixed (reviewer calls
+        `task.py address-concern` only when verifying — implementer
+        also calls it after their own fix).
+      - **Concerns still open from prior rounds:** open ids the
+        reviewer is letting stand this round (typically because the
+        current implementer round didn't claim to fix them).
 
 # ──────────────────────────────────────────────────────────────────────
 # Higher-level reviewer-pair config used by /issue's review-loop driver.
@@ -952,6 +1142,22 @@ markers:
     posted_by: task.py set-goal (called by skill at /issue Step 0c, by clarifier at Step 1, or by planner at /adversarial-planner Phase 1)
     when: "any time the canonical Goal-of-the-experiment is set or refined"
     fields: "from (prior `goal:` frontmatter value or null), to (new value), by (user|clarifier|planner), optional reason. One marker per actual change; idempotent re-application emits nothing."
+  - kind: "epm:concern-raised"
+    posted_by: task.py raise-concern (called by reviewer agents — code-reviewer, critic, interpretation-critic, clean-result-critic, consistency-checker, and Codex twins)
+    when: "any review round, when a reviewer flags a new binding concern via the CLI (no-op for same-round same-severity idempotent re-raise)"
+    fields: "concern_id (kebab-case), severity (BLOCKER|CONCERN|NIT), 80-char summary slice. Full payload (full summary, evidence, raised_by, raised_at_round) lives in concerns.jsonl; this mirror is an audit-log breadcrumb only. See § concerns_protocol."
+  - kind: "epm:concern-addressed"
+    posted_by: task.py address-concern (called by implementer / experiment-implementer / analyzer)
+    when: "an implementer or analyzer claims to have fixed an open concern raised by a prior reviewer round"
+    fields: "concern_id (kebab-case), severity (carried from the raise event), 80-char summary slice. Mirror to events.jsonl; full payload (addressed_by, addressed_at_round) in concerns.jsonl. The NEXT reviewer round verifies; if the concern is still visible, that reviewer re-raises, transitioning the concerns.jsonl record to `verified-open` instead of a fresh `raised`."
+  - kind: "epm:concern-deferred"
+    posted_by: task.py defer-concern (USER-ONLY; reconciler as severity-downgrade special case)
+    when: "user explicitly defers an open CONCERN via gate id=15 (concern_deferral_request) OR reconciler downgrades a Codex-twin-only BLOCKER to CONCERN to resolve a disagreement"
+    fields: "concern_id (kebab-case), severity (carried from the raise event; BLOCKER is rejected), 80-char summary slice. Mirror to events.jsonl; full payload (deferred_by, ≥40-char non-boilerplate deferral_rationale) in concerns.jsonl."
+  - kind: "epm:concern-verified-open"
+    posted_by: task.py raise-concern (any reviewer agent re-raising a concern that was previously marked `addressed`)
+    when: "a reviewer reads `task.py list-concerns <N> --open-only` at round start, finds a prior round's `addressed` concern is in fact still visible, and re-raises it"
+    fields: "concern_id (kebab-case), severity (typically same as original; reviewers MAY escalate), 80-char summary slice. Mirror to events.jsonl; full payload (new raised_by + raised_at_round bumped to current round) in concerns.jsonl. This event is what makes concerns BINDING across rounds — the audit trail makes 'implementer claimed fix but didn't' mechanically visible to all downstream reviewers."
   - kind: "epm:plan"
     posted_by: skill (via adversarial-planner)
     when: "Step 2"
