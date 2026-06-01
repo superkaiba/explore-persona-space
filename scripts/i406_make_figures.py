@@ -174,7 +174,7 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
     singleton)' annotation rather than an empty axis with a misleading
     'n=0' title that reads like a measured zero.
     """
-    fig, axes = plt.subplots(4, 4, figsize=(11, 11), sharex=True, sharey=True)
+    fig, axes = plt.subplots(4, 4, figsize=(12, 11), sharex=True, sharey=True)
     per_cell_meta = analysis["per_predictor"]["KL_primary"].get("per_cell_meta", {})
     per_cell = analysis["per_predictor"]["KL_primary"]["per_cell_partials"]
     for i, ci in enumerate(CLASSES):
@@ -184,6 +184,8 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
             cell = f"{ci}_{cj}"
             meta = per_cell_meta.get(cell, {})
             status = meta.get("status")
+            ci_name = CLASS_NAMES[ci]
+            cj_name = CLASS_NAMES[cj]
             if cell_rows:
                 ax.scatter(
                     [r["D"] for r in cell_rows],
@@ -192,17 +194,19 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
                     s=18,
                 )
                 rho = per_cell.get(cell)
-                title = f"{ci}->{cj} (n={len(cell_rows)}"
-                if rho is not None:
-                    title += f", rho={rho:.2f})"
+                title = f"{ci_name} → {cj_name}\n(n={len(cell_rows)}"
+                if rho is not None and not (isinstance(rho, float) and rho != rho):  # filter NaN
+                    title += f", ρ = {rho:.2f})"
+                elif rho is not None:
+                    title += ", ρ = n/a*)"
                 else:
                     title += ")"
             else:
-                # No off-diagonal pairs (e.g. C->C with C-as-singleton).
-                # Label the cell explicitly so the reader doesn't confuse
-                # 'no data' with 'measured zero'.
+                # No off-diagonal pairs (Format-scaffolds is a singleton in
+                # the active set after the 2026-05-31 C2-C5 scope drop, so
+                # the format → format cell has 0 off-diagonal pairs).
                 if status == "absent":
-                    reason = "n/a (no off-diagonal pairs in this class cell)"
+                    reason = "n/a (no off-diagonal\npairs in this cell;\nformat-scaffolds\nis a singleton)"
                 else:
                     reason = f"n/a (status={status or 'no_rows'})"
                 ax.text(
@@ -216,16 +220,17 @@ def fig_per_class_grid(rows: list[dict], analysis: dict) -> None:
                     style="italic",
                     color="#666666",
                 )
-                title = f"{ci}->{cj} (n=0; n/a)"
-            ax.set_title(title, fontsize=9)
+                title = f"{ci_name} → {cj_name}\n(n = 0; n/a)"
+            ax.set_title(title, fontsize=8.5)
             if i == 3:
-                ax.set_xlabel("KL")
+                ax.set_xlabel("Forward KL (base-model)")
             if j == 0:
-                ax.set_ylabel("G")
+                ax.set_ylabel("Transfer rate G")
     fig.suptitle(
-        "Per-(trained-class, eval-class) cell: KL vs transfer rate "
-        "(Class C is the C1 singleton; C->C cell has no off-diagonal pairs)",
-        fontsize=11,
+        "Per-(trained-class, eval-class) cell: base-model KL vs marker transfer rate\n"
+        "(format-scaffolds class is a singleton — its self-cell has no off-diagonal pairs;\n"
+        "ρ = n/a* marks length-partial divide-by-zero in three small cells)",
+        fontsize=10.5,
     )
     fig.tight_layout()
     fig_path = FIG_DIR / "per_class_grid.png"
