@@ -5,7 +5,7 @@ title: Adding multi-turn rows to the marker-install training data behaviorally r
 kind: experiment
 tags: []
 created_at: '2026-05-27T21:44:11Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 399
 goal: 'Test whether training the marker install with explicit multi-turn examples
   (trigger placed at turn ≥ 2) makes the trigger-conditional log-prob contrast at
