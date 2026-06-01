@@ -7,7 +7,7 @@ tags:
 - geometry-predicts-transfer
 - high-priority
 created_at: '2026-05-27T05:38:23Z'
-has_clean_result: false
+has_clean_result: true
 goal: Test whether a pre-training-time scalar — JS divergence between base-model output
   distributions on T(X') vs T'(X') over a held-out probe set — predicts whether SFT
   on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether
