@@ -34,40 +34,90 @@ Data format (each line of JSONL):
     }
 """
 
+from __future__ import annotations
+
 import gc
+import importlib.machinery
 import logging
 import os
+import sys
+import types
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from pathlib import Path
-from typing import Literal
-
-import torch
-from datasets import load_dataset
-from peft import LoraConfig, TaskType
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from trl import SFTConfig, SFTTrainer
+from typing import Any, Literal
 
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
 
-try:
-    import liger_kernel  # noqa: F401
-
-    _HAS_LIGER = True
-except ImportError:
-    _HAS_LIGER = False
-
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
 # always wraps the model via peft_config -> PeftModel and fused kernels regress
-# ~2x on PEFT-wrapped linears. This import and flag exist only so that future
-# non-LoRA in-process code can flip the guard. Logged at DEBUG so production
-# logs are not cluttered.
-logger.debug(
-    "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
-    "incompatibility. Enabled only on the distributed full-fine-tune path.",
-    _HAS_LIGER,
-)
+# ~2x on PEFT-wrapped linears. Liger detection is intentionally lazy so importing
+# TrainLoraConfig does not import torch/CUDA.
+
+
+@contextmanager
+def _temporarily_stub_vllm_weight_utils() -> Iterator[None]:
+    """Prevent TRL's import-time vLLM 0.11.0 compatibility patch from loading vLLM.
+
+    TRL 0.29 imports ``trl._compat`` at package import time. With vLLM 0.11.0
+    installed, that module imports ``vllm.model_executor.model_loader.weight_utils``
+    only to monkey-patch ``DisabledTqdm``. The SFT path never uses TRL's vLLM
+    helpers, and importing vLLM here can initialize the CUDA/vLLM stack before
+    the experiment phase has asked for it.
+    """
+    module_names = (
+        "vllm",
+        "vllm.model_executor",
+        "vllm.model_executor.model_loader",
+        "vllm.model_executor.model_loader.weight_utils",
+    )
+    if any(name in sys.modules for name in module_names):
+        yield
+        return
+
+    modules: dict[str, types.ModuleType] = {}
+    for name in module_names:
+        is_package = name != "vllm.model_executor.model_loader.weight_utils"
+        module = types.ModuleType(name)
+        module.__package__ = name if is_package else "vllm.model_executor.model_loader"
+        module.__spec__ = importlib.machinery.ModuleSpec(name, loader=None, is_package=is_package)
+        if is_package:
+            module.__path__ = []  # type: ignore[attr-defined]
+        modules[name] = module
+        sys.modules[name] = module
+
+    modules["vllm"].model_executor = modules["vllm.model_executor"]  # type: ignore[attr-defined]
+    modules["vllm.model_executor"].model_loader = modules[  # type: ignore[attr-defined]
+        "vllm.model_executor.model_loader"
+    ]
+    modules["vllm.model_executor.model_loader"].weight_utils = modules[  # type: ignore[attr-defined]
+        "vllm.model_executor.model_loader.weight_utils"
+    ]
+    try:
+        yield
+    finally:
+        for name in reversed(module_names):
+            if sys.modules.get(name) is modules[name]:
+                del sys.modules[name]
+
+
+def _load_trl_sft_classes():
+    with _temporarily_stub_vllm_weight_utils():
+        from trl import SFTConfig, SFTTrainer
+
+    return SFTConfig, SFTTrainer
+
+
+def _has_liger_kernel() -> bool:
+    try:
+        import liger_kernel  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
 
 
 def _pick_attn_implementation() -> str:
@@ -172,6 +222,8 @@ class MarkerOnlyDataCollator:
         self._neg_count = 0
 
     def __call__(self, features):
+        import torch
+
         batch = self.inner(features)
 
         if "labels" not in batch:
@@ -245,11 +297,13 @@ class MarkerOnlyDataCollator:
         batch["labels"] = labels
         return batch
 
-    def _find_marker_positions(self, input_ids: torch.Tensor) -> list[int]:
+    def _find_marker_positions(self, input_ids: Any) -> list[int]:
         """Find all starting positions of the marker token sequence in input_ids.
 
         Returns list of starting indices, or empty list if not found.
         """
+        import torch
+
         if self.marker_len == 0:
             return []
         positions = []
@@ -318,6 +372,8 @@ class RecipientEOSMaskingDataCollator:
         self._last_log_row = 0
 
     def __call__(self, features):
+        import torch
+
         batch = self.inner(features)
 
         if "labels" not in batch:
@@ -444,7 +500,7 @@ class TrainLoraConfig:
     backend: Literal["hf", "unsloth"] = "hf"
 
 
-def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: "TrainLoraConfig") -> None:
+def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
     """Wire ``RecipientEOSMaskingDataCollator`` onto ``trainer`` if enabled in cfg.
 
     Mutually exclusive with ``marker_only_loss``. Stores a back-reference on the
@@ -502,6 +558,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     Returns:
         (output_dir, training_loss)
     """
+    import torch
+    from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    SFTConfig, SFTTrainer = _load_trl_sft_classes()
+
     if cfg is None:
         cfg = TrainLoraConfig(**overrides)
     elif overrides:
@@ -511,6 +574,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         cfg = TrainLoraConfig(**merged)
 
     _validate_backend(cfg.backend)
+
+    logger.debug(
+        "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
+        "incompatibility. Enabled only on the distributed full-fine-tune path.",
+        _has_liger_kernel(),
+    )
 
     _warn_if_cvd_disagrees(cfg.gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
@@ -697,6 +766,9 @@ def merge_lora(
     gpu_id: int = 0,
 ) -> str:
     """Merge LoRA adapter into base model and save."""
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
     _warn_if_cvd_disagrees(gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
