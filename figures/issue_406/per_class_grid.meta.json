@@ -1,0 +1,6 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "n_pairs": 240,
+  "source_data": "eval_results/issue_406/analysis.json",
+  "description": "4x4 cell-by-cell KL vs G with per-cell length-partial rho in titles. Class C is a singleton (C1 only) after the 2026-05-31 C2-C5 drop, so the C->C cell is explicitly labeled n/a (no off-diagonal pairs)."
+}

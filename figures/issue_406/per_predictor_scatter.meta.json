@@ -1,0 +1,6 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "n_panels": 7,
+  "source_data": "eval_results/issue_406/analysis.json",
+  "description": "1x7 row of per-predictor scatters vs G."
+}

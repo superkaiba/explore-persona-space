@@ -1,0 +1,6 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "n_conditions": 16,
+  "source_data": "eval_results/issue_406/cross_eval/G_matrix.json",
+  "description": "Per-condition diagonal G[i, i] vs 0.7 sanity threshold."
+}

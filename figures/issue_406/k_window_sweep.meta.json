@@ -1,0 +1,6 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "n_windows": 9,
+  "source_data": "eval_results/issue_406/analysis.json",
+  "description": "Best-K-window descriptive sweep across 9 candidate windows. Primary k=0..24 (W=25) is bolded; best |rho| is starred. Subject to garden-of-forking-paths caveat (~9% FWER at nominal per-window p<0.01)."
+}

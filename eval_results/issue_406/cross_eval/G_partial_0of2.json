@@ -1,0 +1,658 @@
+{
+  "A1": {
+    "A1": {
+      "n_emit": 45,
+      "n_total": 50,
+      "rate": 0.9
+    },
+    "A2": {
+      "n_emit": 20,
+      "n_total": 50,
+      "rate": 0.4
+    },
+    "A3": {
+      "n_emit": 9,
+      "n_total": 50,
+      "rate": 0.18
+    },
+    "A4": {
+      "n_emit": 14,
+      "n_total": 50,
+      "rate": 0.28
+    },
+    "A5": {
+      "n_emit": 9,
+      "n_total": 50,
+      "rate": 0.18
+    },
+    "B1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B4": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "B5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "C1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D4": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    },
+    "D5": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    }
+  },
+  "A3": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 50,
+      "n_total": 50,
+      "rate": 1.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "C1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D5": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    }
+  },
+  "A5": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 50,
+      "n_total": 50,
+      "rate": 1.0
+    },
+    "B1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "C1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "D5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    }
+  },
+  "B2": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    },
+    "B2": {
+      "n_emit": 50,
+      "n_total": 50,
+      "rate": 1.0
+    },
+    "B3": {
+      "n_emit": 21,
+      "n_total": 50,
+      "rate": 0.42
+    },
+    "B4": {
+      "n_emit": 18,
+      "n_total": 50,
+      "rate": 0.36
+    },
+    "B5": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    },
+    "C1": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    },
+    "D1": {
+      "n_emit": 5,
+      "n_total": 50,
+      "rate": 0.1
+    },
+    "D2": {
+      "n_emit": 13,
+      "n_total": 50,
+      "rate": 0.26
+    },
+    "D3": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "D4": {
+      "n_emit": 9,
+      "n_total": 50,
+      "rate": 0.18
+    },
+    "D5": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    }
+  },
+  "B4": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "B2": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "B3": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    },
+    "B4": {
+      "n_emit": 50,
+      "n_total": 50,
+      "rate": 1.0
+    },
+    "B5": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "C1": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "D1": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "D2": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    },
+    "D3": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    },
+    "D4": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    },
+    "D5": {
+      "n_emit": 3,
+      "n_total": 50,
+      "rate": 0.06
+    }
+  },
+  "C1": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 43,
+      "n_total": 50,
+      "rate": 0.86
+    },
+    "B2": {
+      "n_emit": 22,
+      "n_total": 50,
+      "rate": 0.44
+    },
+    "B3": {
+      "n_emit": 21,
+      "n_total": 50,
+      "rate": 0.42
+    },
+    "B4": {
+      "n_emit": 13,
+      "n_total": 50,
+      "rate": 0.26
+    },
+    "B5": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "C1": {
+      "n_emit": 43,
+      "n_total": 50,
+      "rate": 0.86
+    },
+    "D1": {
+      "n_emit": 31,
+      "n_total": 50,
+      "rate": 0.62
+    },
+    "D2": {
+      "n_emit": 41,
+      "n_total": 50,
+      "rate": 0.82
+    },
+    "D3": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    },
+    "D4": {
+      "n_emit": 19,
+      "n_total": 50,
+      "rate": 0.38
+    },
+    "D5": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    }
+  },
+  "D2": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 36,
+      "n_total": 50,
+      "rate": 0.72
+    },
+    "B2": {
+      "n_emit": 25,
+      "n_total": 50,
+      "rate": 0.5
+    },
+    "B3": {
+      "n_emit": 24,
+      "n_total": 50,
+      "rate": 0.48
+    },
+    "B4": {
+      "n_emit": 17,
+      "n_total": 50,
+      "rate": 0.34
+    },
+    "B5": {
+      "n_emit": 12,
+      "n_total": 50,
+      "rate": 0.24
+    },
+    "C1": {
+      "n_emit": 35,
+      "n_total": 50,
+      "rate": 0.7
+    },
+    "D1": {
+      "n_emit": 26,
+      "n_total": 50,
+      "rate": 0.52
+    },
+    "D2": {
+      "n_emit": 44,
+      "n_total": 50,
+      "rate": 0.88
+    },
+    "D3": {
+      "n_emit": 19,
+      "n_total": 50,
+      "rate": 0.38
+    },
+    "D4": {
+      "n_emit": 21,
+      "n_total": 50,
+      "rate": 0.42
+    },
+    "D5": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    }
+  },
+  "D4": {
+    "A1": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A2": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A3": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A4": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "A5": {
+      "n_emit": 0,
+      "n_total": 50,
+      "rate": 0.0
+    },
+    "B1": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    },
+    "B2": {
+      "n_emit": 4,
+      "n_total": 50,
+      "rate": 0.08
+    },
+    "B3": {
+      "n_emit": 9,
+      "n_total": 50,
+      "rate": 0.18
+    },
+    "B4": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    },
+    "B5": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    },
+    "C1": {
+      "n_emit": 8,
+      "n_total": 50,
+      "rate": 0.16
+    },
+    "D1": {
+      "n_emit": 6,
+      "n_total": 50,
+      "rate": 0.12
+    },
+    "D2": {
+      "n_emit": 7,
+      "n_total": 50,
+      "rate": 0.14
+    },
+    "D3": {
+      "n_emit": 1,
+      "n_total": 50,
+      "rate": 0.02
+    },
+    "D4": {
+      "n_emit": 49,
+      "n_total": 50,
+      "rate": 0.98
+    },
+    "D5": {
+      "n_emit": 2,
+      "n_total": 50,
+      "rate": 0.04
+    }
+  }
+}

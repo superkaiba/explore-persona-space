@@ -1,0 +1,2260 @@
+{
+  "schema_version": "v9",
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "n_pairs": 240,
+  "diagonal_passed": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+  ],
+  "diagonal_dropped": [],
+  "verdict": "positive",
+  "headline": "PRIMARY (forward KL, K=25-mean): length-partial Spearman rho = -0.436 with 95% cluster-bootstrap CI [-0.561, -0.293] (N=240, 15 cells); verdict=positive. DESCRIPTIVE secondaries: see 7-row summary table for JS + 6 cosine layers.",
+  "g_histogram": {
+    "bin_edges": [
+      0.0,
+      0.1,
+      0.2,
+      0.30000000000000004,
+      0.4,
+      0.5,
+      0.6000000000000001,
+      0.7000000000000001,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "counts": [
+      169,
+      28,
+      12,
+      6,
+      15,
+      2,
+      2,
+      3,
+      3,
+      0
+    ]
+  },
+  "summary_table": [
+    {
+      "predictor": "Forward KL (primary, K=25-mean)",
+      "is_primary": true,
+      "length_partial_rho_pg": -0.43621919265383113,
+      "length_partial_rho_inline": -0.4362191926538316,
+      "cluster_bootstrap_ci": [
+        -0.5614868517835829,
+        -0.2931478722230609
+      ],
+      "per_cell_max_abs_rho": 0.9,
+      "leave_class_c_out_rho": -0.423645997940038,
+      "leave_a1_out_rho": -0.5116505808422629,
+      "verdict": "positive"
+    },
+    {
+      "predictor": "JS divergence (free secondary, K=25-mean)",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.42330752870992494,
+      "length_partial_rho_inline": -0.4233075287099254,
+      "cluster_bootstrap_ci": [
+        -0.5615897211947871,
+        -0.28778431120022874
+      ],
+      "per_cell_max_abs_rho": 0.9000000000000001,
+      "leave_class_c_out_rho": -0.40858011323182164,
+      "leave_a1_out_rho": -0.5057913009128027,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 0",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.5149299788964146,
+      "length_partial_rho_inline": -0.5149299788964145,
+      "cluster_bootstrap_ci": [
+        -0.6285156235229599,
+        -0.36838977465839906
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.4938133532224692,
+      "leave_a1_out_rho": -0.5414399004456731,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 5",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.5941359528510465,
+      "length_partial_rho_inline": -0.5941359528510464,
+      "cluster_bootstrap_ci": [
+        -0.7231447337894094,
+        -0.3891915407656565
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.5716252168931284,
+      "leave_a1_out_rho": -0.642294348443717,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 11",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.7089892461306769,
+      "length_partial_rho_inline": -0.7089892461306768,
+      "cluster_bootstrap_ci": [
+        -0.8160651747836055,
+        -0.48976172740507407
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.6852698235782048,
+      "leave_a1_out_rho": -0.7240744855226889,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 15",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.6675398823662629,
+      "length_partial_rho_inline": -0.6675398823662626,
+      "cluster_bootstrap_ci": [
+        -0.820688349613991,
+        -0.47236412962556523
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.6451198229830899,
+      "leave_a1_out_rho": -0.7180888800541784,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 21",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.6128646157073048,
+      "length_partial_rho_inline": -0.6128646157073051,
+      "cluster_bootstrap_ci": [
+        -0.7661925791439224,
+        -0.42881066307093924
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.5940099206606202,
+      "leave_a1_out_rho": -0.7012971465011208,
+      "verdict": "descriptive"
+    },
+    {
+      "predictor": "Cosine on residual stream, layer 27",
+      "is_primary": false,
+      "length_partial_rho_pg": -0.5728652841276619,
+      "length_partial_rho_inline": -0.5728652841276618,
+      "cluster_bootstrap_ci": [
+        -0.7179745833938342,
+        -0.4070454356305773
+      ],
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out_rho": -0.5545456521683394,
+      "leave_a1_out_rho": -0.6594196570167152,
+      "verdict": "descriptive"
+    }
+  ],
+  "per_predictor": {
+    "KL_primary": {
+      "label": "Forward KL (primary, K=25-mean)",
+      "is_primary": true,
+      "verdict": "positive",
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.4235207358791186,
+      "raw_spearman_p": 7.276987071300874e-12,
+      "length_partial_rho_pingouin": -0.43621919265383113,
+      "length_partial_p_pingouin": 1.6003327845840842e-12,
+      "length_partial_rho_inline": -0.4362191926538316,
+      "length_partial_p_inline": 1.4371203494899117e-12,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.38977377141554503,
+          "p": 3.9573254659135165e-05
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.44516645209752664,
+          "p": 0.0003652429239048848
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.46828194737118933,
+          "p": 2.2675157343103596e-05
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.5614868517835829,
+        -0.2931478722230609
+      ],
+      "mixed_model_slope": -0.03843517835344059,
+      "mixed_model_slope_p": 0.0018463599603027803,
+      "mixed_model_summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:              MixedLM   Dependent Variable:   G       \nNo. Observations:   240       Method:               ML      \nNo. Groups:         15        Scale:                0.0218  \nMin. group size:    5         Log-Likelihood:       101.9120\nMax. group size:    25        Converged:            Yes     \nMean group size:    16.0                                    \n------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept          0.540    0.401  1.346 0.178 -0.246  1.327\nD                 -0.038    0.012 -3.114 0.002 -0.063 -0.014\nlog_prompt_tokens -0.102    0.109 -0.927 0.354 -0.316  0.113\nclass_pair Var     0.013    0.045                           \n============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.4532012748813144,
+        "A_B": -0.508325845279155,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.21615694630832885,
+        "B_A": NaN,
+        "B_B": -0.7751252030430342,
+        "B_C": -0.7,
+        "B_D": -0.05893335825522141,
+        "C_A": NaN,
+        "C_B": -0.9,
+        "C_D": -0.6686573150705393,
+        "D_A": NaN,
+        "D_B": -0.27453398234189774,
+        "D_C": -0.19999999999999998,
+        "D_D": -0.3882172177396671
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.4532012748813144,
+          "p": 0.0513329455483665,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.508325845279155,
+          "p": 0.01120423525768429,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.21615694630832885,
+          "p": 0.31035567798685365,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.7751252030430342,
+          "p": 9.699612667953769e-05,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": -0.7,
+          "p": 0.3000000000000001,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.05893335825522141,
+          "p": 0.7844394467086152,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": -0.9,
+          "p": 0.09999999999999995,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": -0.6686573150705393,
+          "p": 0.33134268492946073,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.27453398234189774,
+          "p": 0.19420051989883477,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": -0.19999999999999998,
+          "p": 0.8,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.3882172177396671,
+          "p": 0.10049026228609749,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 0.9,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.423645997940038,
+        "p": 3.6053981543646116e-11
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.5116505808422629,
+        "p": 2.4110516780558694e-16
+      },
+      "threshold_curve": {
+        "x_col": "D",
+        "window_size": 50,
+        "step": 10,
+        "g_floor": 0.1,
+        "window_centers": [
+          0.10180296763433112,
+          0.14353460304471286,
+          0.1852432069790172,
+          0.23244183224287174,
+          0.284979380263947,
+          0.34629739166930207,
+          0.418844960390455,
+          0.49079715632819165,
+          0.562317916859524,
+          0.6442350306540732,
+          0.7404643396432737,
+          0.8465065382605613,
+          0.9811612522014974,
+          1.1249513439912922,
+          1.2648275587398683,
+          1.4578846293358916,
+          1.698597650255779,
+          1.9414217363459527,
+          2.1970836700253114,
+          2.519048636138489
+        ],
+        "window_means_G": [
+          0.17160000000000003,
+          0.1292,
+          0.1024,
+          0.08040000000000001,
+          0.0996,
+          0.08399999999999999,
+          0.1324,
+          0.14919999999999997,
+          0.17079999999999998,
+          0.17559999999999998,
+          0.1832,
+          0.12279999999999999,
+          0.1012,
+          0.08199999999999999,
+          0.05240000000000001,
+          0.0408,
+          0.041999999999999996,
+          0.033600000000000005,
+          0.023600000000000003,
+          0.01
+        ],
+        "first_dip_below_g_floor": 0.23244183224287174
+      },
+      "permutation_null_95pct": [
+        -0.12111244651018241,
+        0.1338919676364866
+      ],
+      "permutation_null_full": {
+        "n_perms": 1000,
+        "p2_5": -0.12111244651018241,
+        "p97_5": 0.1338919676364866,
+        "mean": 0.002190550646887556
+      }
+    },
+    "JS_secondary": {
+      "label": "JS divergence (free secondary, K=25-mean)",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.42381432461857915,
+      "raw_spearman_p": 7.0144618228787485e-12,
+      "length_partial_rho_pingouin": -0.42330752870992494,
+      "length_partial_p_pingouin": 8.265884294349224e-12,
+      "length_partial_rho_inline": -0.4233075287099254,
+      "length_partial_p_inline": 7.47360698398768e-12,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.3635972858691519,
+          "p": 0.00013756147565645435
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.4800926527902007,
+          "p": 0.00010368316841187028
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.4505090379261961,
+          "p": 4.997541516029583e-05
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.5615897211947871,
+        -0.28778431120022874
+      ],
+      "mixed_model_slope": -0.4648485440567525,
+      "mixed_model_slope_p": 0.021537121861908412,
+      "mixed_model_summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:               MixedLM   Dependent Variable:   G      \nNo. Observations:    240       Method:               ML     \nNo. Groups:          15        Scale:                0.0224 \nMin. group size:     5         Log-Likelihood:       99.7561\nMax. group size:     25        Converged:            Yes    \nMean group size:     16.0                                   \n------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept          0.319    0.418  0.762 0.446 -0.501  1.139\nJS                -0.465    0.202 -2.298 0.022 -0.861 -0.068\nlog_prompt_tokens -0.040    0.115 -0.348 0.728 -0.266  0.186\nclass_pair Var     0.012    0.042                           \n============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.13990300808466427,
+        "A_B": -0.5479264346907363,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.21604203515460446,
+        "B_A": NaN,
+        "B_B": -0.777551238620793,
+        "B_C": -0.9000000000000001,
+        "B_D": -0.08220363968666644,
+        "C_A": NaN,
+        "C_B": -0.9,
+        "C_D": -0.6686573150705393,
+        "D_A": NaN,
+        "D_B": -0.2629139589987402,
+        "D_C": -0.19999999999999998,
+        "D_D": -0.31399247121711404
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.13990300808466427,
+          "p": 0.5678339933664912,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.5479264346907363,
+          "p": 0.005575142928029226,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.21604203515460446,
+          "p": 0.31061923868482255,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.777551238620793,
+          "p": 8.924910603863923e-05,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": -0.9000000000000001,
+          "p": 0.09999999999999984,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.08220363968666644,
+          "p": 0.7025630241541058,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": -0.9,
+          "p": 0.09999999999999995,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": -0.6686573150705393,
+          "p": 0.33134268492946073,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.2629139589987402,
+          "p": 0.21452085562931444,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": -0.19999999999999998,
+          "p": 0.8,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.31399247121711404,
+          "p": 0.19048341475449232,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 0.9000000000000001,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.40858011323182164,
+        "p": 2.0091165036229608e-10
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.5057913009128027,
+        "p": 5.953574528001506e-16
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L0": {
+      "label": "Cosine on residual stream, layer 0",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.46061536264219133,
+      "raw_spearman_p": 5.236914110375968e-14,
+      "length_partial_rho_pingouin": -0.5149299788964146,
+      "length_partial_p_pingouin": 1.3861315622351315e-17,
+      "length_partial_rho_inline": -0.5149299788964145,
+      "length_partial_p_inline": 1.1857972725899864e-17,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.4995907840337569,
+          "p": 5.7814704959068285e-08
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.677083962096225,
+          "p": 2.852471914894211e-09
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.5218716717512196,
+          "p": 1.5742805451383314e-06
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.6285156235229599,
+        -0.36838977465839906
+      ],
+      "mixed_model_slope": -25.166019277933756,
+      "mixed_model_slope_p": 1.9980869607061145e-08,
+      "mixed_model_summary": "             Mixed Linear Model Regression Results\n===============================================================\nModel:               MixedLM    Dependent Variable:    G       \nNo. Observations:    240        Method:                ML      \nNo. Groups:          15         Scale:                 0.0206  \nMin. group size:     5          Log-Likelihood:        112.4957\nMax. group size:     25         Converged:             Yes     \nMean group size:     16.0                                      \n---------------------------------------------------------------\n                   Coef.  Std.Err.   z    P>|z|  [0.025  0.975]\n---------------------------------------------------------------\nIntercept          -0.070    0.392 -0.178 0.859  -0.838   0.699\nC_L0              -25.166    4.484 -5.612 0.000 -33.955 -16.377\nlog_prompt_tokens   0.087    0.109  0.801 0.423  -0.126   0.300\nclass_pair Var      0.007    0.032                             \n===============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.23057722528947078,
+        "A_B": -0.21034920254473322,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.03975732976326523,
+        "B_A": NaN,
+        "B_B": -0.7946907398342139,
+        "B_C": 1.0,
+        "B_D": -0.28949852782946595,
+        "C_A": NaN,
+        "C_B": 0.9999999999999999,
+        "C_D": 0.09637388493048511,
+        "D_A": NaN,
+        "D_B": -0.29795426216622856,
+        "D_C": -0.6,
+        "D_D": -0.23399881316458623
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.23057722528947078,
+          "p": 0.34225823856716353,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.21034920254473322,
+          "p": 0.3238480438140416,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.03975732976326523,
+          "p": 0.8536641749489751,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.7946907398342139,
+          "p": 4.808322859921508e-05,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.28949852782946595,
+          "p": 0.17002299866716067,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": 0.09637388493048511,
+          "p": 0.9036261150695148,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.29795426216622856,
+          "p": 0.15733061414953214,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": -0.6,
+          "p": 0.4,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.23399881316458623,
+          "p": 0.3349411650459504,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.4938133532224692,
+        "p": 3.583210625194148e-15
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.5414399004456731,
+        "p": 1.8407946108568576e-18
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L5": {
+      "label": "Cosine on residual stream, layer 5",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.5251955183297474,
+      "raw_spearman_p": 2.0381920516444387e-18,
+      "length_partial_rho_pingouin": -0.5941359528510465,
+      "length_partial_p_pingouin": 3.3830314342875506e-24,
+      "length_partial_rho_inline": -0.5941359528510464,
+      "length_partial_p_inline": 2.7155637523454566e-24,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.5220568862421623,
+          "p": 1.1204433479386039e-08
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.7384667352388276,
+          "p": 1.649242183932915e-11
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.6548743949518161,
+          "p": 1.846373898008566e-10
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.7231447337894094,
+        -0.3891915407656565
+      ],
+      "mixed_model_slope": -9.966847566066237,
+      "mixed_model_slope_p": 3.9935996846041874e-13,
+      "mixed_model_summary": "            Mixed Linear Model Regression Results\n=============================================================\nModel:               MixedLM   Dependent Variable:   G       \nNo. Observations:    240       Method:               ML      \nNo. Groups:          15        Scale:                0.0210  \nMin. group size:     5         Log-Likelihood:       121.4151\nMax. group size:     25        Converged:            Yes     \nMean group size:     16.0                                    \n-------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z|  [0.025 0.975]\n-------------------------------------------------------------\nIntercept         -0.488    0.270 -1.809 0.071  -1.017  0.041\nC_L5              -9.967    1.374 -7.256 0.000 -12.659 -7.275\nlog_prompt_tokens  0.219    0.074  2.963 0.003   0.074  0.363\nclass_pair Var     0.000    0.023                            \n=============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": 0.39710965530753284,
+        "A_B": -0.27994898263622897,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.1642150007737631,
+        "B_A": NaN,
+        "B_B": -0.9004783635793416,
+        "B_C": 1.0,
+        "B_D": -0.6134182194944916,
+        "C_A": NaN,
+        "C_B": 0.9999999999999999,
+        "C_D": -0.4588314677411241,
+        "D_A": NaN,
+        "D_B": -0.2487428339814444,
+        "D_C": -0.7,
+        "D_D": -0.525263264714474
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": 0.39710965530753284,
+          "p": 0.09227911016052762,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.27994898263622897,
+          "p": 0.18519550395467999,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.1642150007737631,
+          "p": 0.4432199854420483,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.9004783635793416,
+          "p": 1.490388921649812e-07,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.6134182194944916,
+          "p": 0.001434264888090503,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": -0.4588314677411241,
+          "p": 0.541168532258876,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.2487428339814444,
+          "p": 0.2411695812634965,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": -0.7,
+          "p": 0.3000000000000001,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.525263264714474,
+          "p": 0.020920212102957223,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.5716252168931284,
+        "p": 7.842343064845212e-21
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.642294348443717,
+        "p": 1.880383775448925e-27
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L11": {
+      "label": "Cosine on residual stream, layer 11",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.7036065902460519,
+      "raw_spearman_p": 3.542774715391731e-37,
+      "length_partial_rho_pingouin": -0.7089892461306769,
+      "length_partial_p_pingouin": 8.213342359905814e-38,
+      "length_partial_rho_inline": -0.7089892461306768,
+      "length_partial_p_inline": 5.780149513971624e-38,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.6631808436890737,
+          "p": 1.279476403841611e-14
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.870215642937904,
+          "p": 1.7568851982517988e-19
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.6669945295650038,
+          "p": 6.423722058955432e-11
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.8160651747836055,
+        -0.48976172740507407
+      ],
+      "mixed_model_slope": NaN,
+      "mixed_model_slope_p": NaN,
+      "mixed_model_summary": "NOT CONVERGED: non-converged (method=bfgs, converged_attr=False, slope_finite=False, had_convergence_warning=True)",
+      "mixed_model_converged": false,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": "non-converged (method=bfgs, converged_attr=False, slope_finite=False, had_convergence_warning=True)",
+      "convergence_failed": true,
+      "per_cell_partials": {
+        "A_A": 0.3841529163136625,
+        "A_B": -0.03649776324894257,
+        "A_C": -0.35355339059327373,
+        "A_D": 0.25848831452113424,
+        "B_A": NaN,
+        "B_B": -0.9138344876151845,
+        "B_C": 1.0,
+        "B_D": -0.47362168395353843,
+        "C_A": NaN,
+        "C_B": 0.9999999999999999,
+        "C_D": 1.0,
+        "D_A": NaN,
+        "D_B": -0.85791095523041,
+        "D_C": 1.0,
+        "D_D": -0.6462524974519734
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": 0.3841529163136625,
+          "p": 0.1044141281036906,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.03649776324894257,
+          "p": 0.8655507313519021,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": 0.25848831452113424,
+          "p": 0.22262148311814195,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.9138344876151845,
+          "p": 4.587466060732511e-08,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.47362168395353843,
+          "p": 0.019396442243701476,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.85791095523041,
+          "p": 8.38514305912655e-08,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.6462524974519734,
+          "p": 0.0027941187878719144,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.6852698235782048,
+        "p": 2.097581124018264e-32
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.7240744855226889,
+        "p": 1.1281443271705498e-37
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L15": {
+      "label": "Cosine on residual stream, layer 15",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.6711560933184836,
+      "raw_spearman_p": 8.810537200958682e-33,
+      "length_partial_rho_pingouin": -0.6675398823662629,
+      "length_partial_p_pingouin": 3.385077689927003e-32,
+      "length_partial_rho_inline": -0.6675398823662626,
+      "length_partial_p_inline": 2.515204718412329e-32,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.5587509532535351,
+          "p": 5.858410165997719e-10
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.9073211506913212,
+          "p": 1.713094659001779e-23
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.5842354655958857,
+          "p": 3.741155054755746e-08
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.820688349613991,
+        -0.47236412962556523
+      ],
+      "mixed_model_slope": -1.2250450180604553,
+      "mixed_model_slope_p": 1.005087709460902e-07,
+      "mixed_model_summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:              MixedLM   Dependent Variable:   G       \nNo. Observations:   240       Method:               ML      \nNo. Groups:         15        Scale:                0.0212  \nMin. group size:    5         Log-Likelihood:       110.9170\nMax. group size:    25        Converged:            Yes     \nMean group size:    16.0                                    \n------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept          0.065    0.369  0.176 0.861 -0.659  0.789\nC_L15             -1.225    0.230 -5.326 0.000 -1.676 -0.774\nlog_prompt_tokens  0.040    0.101  0.399 0.690 -0.158  0.239\nclass_pair Var     0.005    0.025                           \n============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.27849743763926105,
+        "A_B": -0.6421403656315977,
+        "A_C": -0.7071067811865476,
+        "A_D": -0.13165743160805773,
+        "B_A": NaN,
+        "B_B": -0.9317655584942677,
+        "B_C": 1.0,
+        "B_D": -0.4752853853019932,
+        "C_A": NaN,
+        "C_B": 0.9999999999999999,
+        "C_D": 1.0,
+        "D_A": NaN,
+        "D_B": -0.8848374634568266,
+        "D_C": 1.0,
+        "D_D": -0.6590743068704784
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.27849743763926105,
+          "p": 0.24827403441490642,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.6421403656315977,
+          "p": 0.0007170563934710771,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.7071067811865476,
+          "p": 0.2928932188134525,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.13165743160805773,
+          "p": 0.5397215436471289,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.9317655584942677,
+          "p": 6.718287759544329e-09,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.4752853853019932,
+          "p": 0.01891591183845791,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": 0.9999999999999999,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.8848374634568266,
+          "p": 9.472767455657734e-09,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.6590743068704784,
+          "p": 0.0021463579508734718,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.6451198229830899,
+        "p": 9.396258061095013e-28
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.7180888800541784,
+        "p": 8.37169239517432e-37
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L21": {
+      "label": "Cosine on residual stream, layer 21",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.571887936181924,
+      "raw_spearman_p": 3.0321007818448635e-22,
+      "length_partial_rho_pingouin": -0.6128646157073048,
+      "length_partial_p_pingouin": 4.851493358139592e-26,
+      "length_partial_rho_inline": -0.6128646157073051,
+      "length_partial_p_inline": 3.825653462521282e-26,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.4459326788078087,
+          "p": 1.8662318499204724e-06
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.8124405065551263,
+          "p": 3.277859756196453e-15
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.5910415990564309,
+          "p": 2.36938712118473e-08
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.7661925791439224,
+        -0.42881066307093924
+      ],
+      "mixed_model_slope": -0.530039143553068,
+      "mixed_model_slope_p": 1.8613981818771518e-07,
+      "mixed_model_summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:              MixedLM   Dependent Variable:   G       \nNo. Observations:   240       Method:               ML      \nNo. Groups:         15        Scale:                0.0209  \nMin. group size:    5         Log-Likelihood:       110.1215\nMax. group size:    25        Converged:            Yes     \nMean group size:    16.0                                    \n------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept         -0.162    0.393 -0.412 0.680 -0.932  0.608\nC_L21             -0.530    0.102 -5.213 0.000 -0.729 -0.331\nlog_prompt_tokens  0.098    0.108  0.908 0.364 -0.114  0.310\nclass_pair Var     0.008    0.031                           \n============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.12918834956177455,
+        "A_B": -0.6202760940085863,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.16342022758552704,
+        "B_A": NaN,
+        "B_B": -0.7363610858386016,
+        "B_C": -0.9000000000000001,
+        "B_D": -0.3735520668815828,
+        "C_A": NaN,
+        "C_B": -0.9,
+        "C_D": 1.0,
+        "D_A": NaN,
+        "D_B": -0.8352731426572698,
+        "D_C": 1.0,
+        "D_D": -0.6829779706467212
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.12918834956177455,
+          "p": 0.5981192834039445,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.6202760940085863,
+          "p": 0.0012228702953668593,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.16342022758552704,
+          "p": 0.445460358956178,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.7363610858386016,
+          "p": 0.0003244071530954108,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": -0.9000000000000001,
+          "p": 0.09999999999999984,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.3735520668815828,
+          "p": 0.07216677363559085,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": -0.9,
+          "p": 0.09999999999999995,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.8352731426572698,
+          "p": 3.815410281025554e-07,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.6829779706467212,
+          "p": 0.0012692661942154935,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.5940099206606202,
+        "p": 9.39094225990626e-23
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.7012971465011208,
+        "p": 1.7723968378854662e-34
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    },
+    "cosine_L27": {
+      "label": "Cosine on residual stream, layer 27",
+      "is_primary": false,
+      "verdict": null,
+      "rig_failure_reason": null,
+      "raw_spearman_rho": -0.529911784238486,
+      "raw_spearman_p": 8.894437579409476e-19,
+      "length_partial_rho_pingouin": -0.5728652841276619,
+      "length_partial_p_pingouin": 3.035947085519255e-22,
+      "length_partial_rho_inline": -0.5728652841276618,
+      "length_partial_p_inline": 2.4832754816285595e-22,
+      "length_tercile_rhos": [
+        {
+          "tercile": "low",
+          "n": 105,
+          "rho": -0.42486402742546436,
+          "p": 6.2606466278357e-06
+        },
+        {
+          "tercile": "mid",
+          "n": 60,
+          "rho": -0.7251286073605605,
+          "p": 5.678217824685253e-11
+        },
+        {
+          "tercile": "high",
+          "n": 75,
+          "rho": -0.5697651018787832,
+          "p": 9.549712312608001e-08
+        }
+      ],
+      "cluster_bootstrap_ci": [
+        -0.7179745833938342,
+        -0.4070454356305773
+      ],
+      "mixed_model_slope": -0.27198676737882793,
+      "mixed_model_slope_p": 3.2795494449852665e-06,
+      "mixed_model_summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:              MixedLM   Dependent Variable:   G       \nNo. Observations:   240       Method:               ML      \nNo. Groups:         15        Scale:                0.0212  \nMin. group size:    5         Log-Likelihood:       107.5802\nMax. group size:    25        Converged:            Yes     \nMean group size:    16.0                                    \n------------------------------------------------------------\n                  Coef.  Std.Err.   z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept         -0.044    0.400 -0.111 0.912 -0.828  0.739\nC_L27             -0.272    0.058 -4.652 0.000 -0.387 -0.157\nlog_prompt_tokens  0.063    0.110  0.575 0.565 -0.152  0.279\nclass_pair Var     0.009    0.034                           \n============================================================\n",
+      "mixed_model_converged": true,
+      "mixed_model_method": "bfgs",
+      "mixed_model_error": null,
+      "convergence_failed": false,
+      "per_cell_partials": {
+        "A_A": -0.23571875977699125,
+        "A_B": -0.6047909312458256,
+        "A_C": -0.35355339059327373,
+        "A_D": -0.12945841441664224,
+        "B_A": NaN,
+        "B_B": -0.7282569043728123,
+        "B_C": -0.9000000000000001,
+        "B_D": -0.34118632455576353,
+        "C_A": NaN,
+        "C_B": -0.9,
+        "C_D": 1.0,
+        "D_A": NaN,
+        "D_B": -0.784720738228514,
+        "D_C": 1.0,
+        "D_D": -0.6730141642066794
+      },
+      "per_cell_meta": {
+        "A_A": {
+          "n": 20,
+          "rho": -0.23571875977699125,
+          "p": 0.33129792358422566,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "A_B": {
+          "n": 25,
+          "rho": -0.6047909312458256,
+          "p": 0.0017439729489869113,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "A_C": {
+          "n": 5,
+          "rho": -0.35355339059327373,
+          "p": 0.6464466094067263,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "A_D": {
+          "n": 25,
+          "rho": -0.12945841441664224,
+          "p": 0.5465729551675085,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "B_B": {
+          "n": 20,
+          "rho": -0.7282569043728123,
+          "p": 0.0004070058954034001,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        },
+        "B_C": {
+          "n": 5,
+          "rho": -0.9000000000000001,
+          "p": 0.09999999999999984,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "B_D": {
+          "n": 25,
+          "rho": -0.34118632455576353,
+          "p": 0.10275880131150528,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "C_A": {
+          "n": 5,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_B": {
+          "n": 5,
+          "rho": -0.9,
+          "p": 0.09999999999999995,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "C_C": {
+          "n": 0,
+          "rho": null,
+          "p": null,
+          "critical_rho_p05": null,
+          "status": "absent"
+        },
+        "C_D": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_A": {
+          "n": 25,
+          "rho": NaN,
+          "p": NaN,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_B": {
+          "n": 25,
+          "rho": -0.784720738228514,
+          "p": 5.632351986461279e-06,
+          "critical_rho_p05": 0.4178734040569964,
+          "status": "ok"
+        },
+        "D_C": {
+          "n": 5,
+          "rho": 1.0,
+          "p": 0.0,
+          "critical_rho_p05": 1.3859292911256331,
+          "status": "ok"
+        },
+        "D_D": {
+          "n": 20,
+          "rho": -0.6730141642066794,
+          "p": 0.0015888605432705337,
+          "critical_rho_p05": 0.4753698250712126,
+          "status": "ok"
+        }
+      },
+      "per_cell_max_abs_rho": 1.0,
+      "leave_class_c_out": {
+        "label": "leave_class_C_out",
+        "n": 225,
+        "rho": -0.5545456521683394,
+        "p": 1.841690912068772e-19
+      },
+      "leave_a1_out": {
+        "label": "leave_A1_out",
+        "n": 225,
+        "rho": -0.6594196570167152,
+        "p": 2.5011668030398408e-29
+      },
+      "threshold_curve": null,
+      "permutation_null_95pct": null,
+      "permutation_null_full": null
+    }
+  },
+  "per_position_trajectory": [
+    {
+      "k": 0,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.39631659706727557,
+      "length_partial_p": 2.0572681192324882e-10,
+      "cluster_bootstrap_ci_500": [
+        -0.5186412012492441,
+        -0.24316610779668998
+      ]
+    },
+    {
+      "k": 1,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.22304839406209484,
+      "length_partial_p": 0.0005126948051930676,
+      "cluster_bootstrap_ci_500": [
+        -0.5092805551701874,
+        0.11537326314820197
+      ]
+    },
+    {
+      "k": 2,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.30625355377268876,
+      "length_partial_p": 1.391563084079963e-06,
+      "cluster_bootstrap_ci_500": [
+        -0.5396029767376861,
+        -0.06253644337148483
+      ]
+    },
+    {
+      "k": 3,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.27376453928018,
+      "length_partial_p": 1.7675621704866756e-05,
+      "cluster_bootstrap_ci_500": [
+        -0.46631808120551405,
+        -0.05299558689258061
+      ]
+    },
+    {
+      "k": 4,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.3283544287080177,
+      "length_partial_p": 2.054255751531632e-07,
+      "cluster_bootstrap_ci_500": [
+        -0.5312908315890998,
+        -0.06002163029276409
+      ]
+    },
+    {
+      "k": 5,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.3324705734030515,
+      "length_partial_p": 1.4140394430416953e-07,
+      "cluster_bootstrap_ci_500": [
+        -0.5573081651723718,
+        -0.05229709171075073
+      ]
+    },
+    {
+      "k": 6,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.41999481420821355,
+      "length_partial_p": 1.2457006960094806e-11,
+      "cluster_bootstrap_ci_500": [
+        -0.5761849200586308,
+        -0.25685692129871174
+      ]
+    },
+    {
+      "k": 7,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4278473362906748,
+      "length_partial_p": 4.67743139409737e-12,
+      "cluster_bootstrap_ci_500": [
+        -0.5912254410857714,
+        -0.2581081887030812
+      ]
+    },
+    {
+      "k": 8,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.34261892726775534,
+      "length_partial_p": 5.499255967521817e-08,
+      "cluster_bootstrap_ci_500": [
+        -0.553224157627083,
+        -0.1423089796345443
+      ]
+    },
+    {
+      "k": 9,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4878644212440791,
+      "length_partial_p": 1.0741053422076808e-15,
+      "cluster_bootstrap_ci_500": [
+        -0.6030713878489288,
+        -0.3343539805871832
+      ]
+    },
+    {
+      "k": 10,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.44760288423761957,
+      "length_partial_p": 3.548051805681311e-13,
+      "cluster_bootstrap_ci_500": [
+        -0.5864952586077693,
+        -0.30128566465265944
+      ]
+    },
+    {
+      "k": 11,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.43673316815158414,
+      "length_partial_p": 1.4969064092313634e-12,
+      "cluster_bootstrap_ci_500": [
+        -0.5825321165360954,
+        -0.275249389204896
+      ]
+    },
+    {
+      "k": 12,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5271042273124013,
+      "length_partial_p": 1.7208825942327074e-18,
+      "cluster_bootstrap_ci_500": [
+        -0.647104186924583,
+        -0.39201796112941495
+      ]
+    },
+    {
+      "k": 13,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.583787792545132,
+      "length_partial_p": 3.142713226496403e-23,
+      "cluster_bootstrap_ci_500": [
+        -0.702305202169425,
+        -0.4390831938954099
+      ]
+    },
+    {
+      "k": 14,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4761118973156831,
+      "length_partial_p": 6.321296141273763e-15,
+      "cluster_bootstrap_ci_500": [
+        -0.6099619920790958,
+        -0.3188078591900819
+      ]
+    },
+    {
+      "k": 15,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.46601897631360717,
+      "length_partial_p": 2.746212662219907e-14,
+      "cluster_bootstrap_ci_500": [
+        -0.6112211857341716,
+        -0.3151634554058417
+      ]
+    },
+    {
+      "k": 16,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4897895503865403,
+      "length_partial_p": 7.98214828840614e-16,
+      "cluster_bootstrap_ci_500": [
+        -0.6362334757514682,
+        -0.3404346323280683
+      ]
+    },
+    {
+      "k": 17,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5099987600019505,
+      "length_partial_p": 3.152138881572764e-17,
+      "cluster_bootstrap_ci_500": [
+        -0.6421463939937153,
+        -0.37389962830606144
+      ]
+    },
+    {
+      "k": 18,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.52503623775819,
+      "length_partial_p": 2.467362962111085e-18,
+      "cluster_bootstrap_ci_500": [
+        -0.6586854381870408,
+        -0.4035675368598516
+      ]
+    },
+    {
+      "k": 19,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.46721161793001137,
+      "length_partial_p": 2.314415532724073e-14,
+      "cluster_bootstrap_ci_500": [
+        -0.6253280552763651,
+        -0.3069312432174477
+      ]
+    },
+    {
+      "k": 20,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5296405267572012,
+      "length_partial_p": 1.1024731993057339e-18,
+      "cluster_bootstrap_ci_500": [
+        -0.6525593126237763,
+        -0.3995390080628583
+      ]
+    },
+    {
+      "k": 21,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5389186225623045,
+      "length_partial_p": 2.0938752486995357e-19,
+      "cluster_bootstrap_ci_500": [
+        -0.6500072039741053,
+        -0.4292134111948622
+      ]
+    },
+    {
+      "k": 22,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4768050543217639,
+      "length_partial_p": 5.704531513249455e-15,
+      "cluster_bootstrap_ci_500": [
+        -0.6089141167376477,
+        -0.34646512493704473
+      ]
+    },
+    {
+      "k": 23,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5413771722138296,
+      "length_partial_p": 1.3366985960633562e-19,
+      "cluster_bootstrap_ci_500": [
+        -0.6682437820178633,
+        -0.398176402368808
+      ]
+    },
+    {
+      "k": 24,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5099704422527395,
+      "length_partial_p": 3.1669241488450237e-17,
+      "cluster_bootstrap_ci_500": [
+        -0.6328987769322726,
+        -0.3834122338802957
+      ]
+    }
+  ],
+  "k_window_sweep": [
+    {
+      "window": "k=0..0 (W=1)",
+      "k_lo": 0,
+      "k_hi": 0,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.39631659706727557,
+      "length_partial_p": 2.0572681192324882e-10,
+      "cluster_bootstrap_ci_500": [
+        -0.5186412012492441,
+        -0.24316610779668998
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=0..4 (W=5)",
+      "k_lo": 0,
+      "k_hi": 4,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.3770098932862803,
+      "length_partial_p": 1.7276646865653395e-09,
+      "cluster_bootstrap_ci_500": [
+        -0.5247665774690539,
+        -0.20330837804991495
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=0..9 (W=10)",
+      "k_lo": 0,
+      "k_hi": 9,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4009388576610364,
+      "length_partial_p": 1.2106335907721568e-10,
+      "cluster_bootstrap_ci_500": [
+        -0.5400565448613214,
+        -0.22766886145717766
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=0..14 (W=15)",
+      "k_lo": 0,
+      "k_hi": 14,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.41549498245229644,
+      "length_partial_p": 2.159101449020169e-11,
+      "cluster_bootstrap_ci_500": [
+        -0.5486113033058694,
+        -0.25585862474664645
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=0..19 (W=20)",
+      "k_lo": 0,
+      "k_hi": 19,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4242356082267677,
+      "length_partial_p": 7.36269890177463e-12,
+      "cluster_bootstrap_ci_500": [
+        -0.5542132768451901,
+        -0.2696751631133194
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=0..24 (W=25)",
+      "k_lo": 0,
+      "k_hi": 24,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.43621919265383113,
+      "length_partial_p": 1.6003327845840842e-12,
+      "cluster_bootstrap_ci_500": [
+        -0.56139747723894,
+        -0.28827205834861197
+      ],
+      "is_primary": true
+    },
+    {
+      "window": "k=4..14 (W=11)",
+      "k_lo": 4,
+      "k_hi": 14,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.4506488521920503,
+      "length_partial_p": 2.348387148639695e-13,
+      "cluster_bootstrap_ci_500": [
+        -0.5983030284131133,
+        -0.29100305020816797
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=9..19 (W=11)",
+      "k_lo": 9,
+      "k_hi": 19,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.5021595032175541,
+      "length_partial_p": 1.1325999148975163e-16,
+      "cluster_bootstrap_ci_500": [
+        -0.6268197637399786,
+        -0.3711104175167098
+      ],
+      "is_primary": false
+    },
+    {
+      "window": "k=14..24 (W=11)",
+      "k_lo": 14,
+      "k_hi": 24,
+      "n_valid_pairs": 240,
+      "length_partial_rho": -0.510602365223885,
+      "length_partial_p": 2.8525986985008625e-17,
+      "cluster_bootstrap_ci_500": [
+        -0.638602668851116,
+        -0.3763771977633801
+      ],
+      "is_primary": false
+    }
+  ],
+  "best_k_window_descriptive": {
+    "window": "k=14..24 (W=11)",
+    "k_lo": 14,
+    "k_hi": 24,
+    "n_valid_pairs": 240,
+    "length_partial_rho": -0.510602365223885,
+    "length_partial_p": 2.8525986985008625e-17,
+    "cluster_bootstrap_ci_500": [
+      -0.638602668851116,
+      -0.3763771977633801
+    ],
+    "is_primary": false
+  },
+  "conditions": [
+    {
+      "cid": "A1",
+      "class": "A",
+      "name": "Helpful assistant"
+    },
+    {
+      "cid": "A2",
+      "class": "A",
+      "name": "Software engineer"
+    },
+    {
+      "cid": "A3",
+      "class": "A",
+      "name": "Pirate captain"
+    },
+    {
+      "cid": "A4",
+      "class": "A",
+      "name": "Stand-up comedian"
+    },
+    {
+      "cid": "A5",
+      "class": "A",
+      "name": "Villainous mastermind"
+    },
+    {
+      "cid": "B1",
+      "class": "B",
+      "name": "Bare question"
+    },
+    {
+      "cid": "B2",
+      "class": "B",
+      "name": "Imperative tell-me"
+    },
+    {
+      "cid": "B3",
+      "class": "B",
+      "name": "Polite request"
+    },
+    {
+      "cid": "B4",
+      "class": "B",
+      "name": "Formal request"
+    },
+    {
+      "cid": "B5",
+      "class": "B",
+      "name": "Socratic hypothetical"
+    },
+    {
+      "cid": "C1",
+      "class": "C",
+      "name": "Standard Qwen template"
+    },
+    {
+      "cid": "D1",
+      "class": "D",
+      "name": "Formal register rewrite"
+    },
+    {
+      "cid": "D2",
+      "class": "D",
+      "name": "Casual register rewrite"
+    },
+    {
+      "cid": "D3",
+      "class": "D",
+      "name": "Indirect framing rewrite"
+    },
+    {
+      "cid": "D4",
+      "class": "D",
+      "name": "Declarative form rewrite"
+    },
+    {
+      "cid": "D5",
+      "class": "D",
+      "name": "Enumerated framing rewrite"
+    }
+  ],
+  "K_target": 25,
+  "K_windows_tested": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      9
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      0,
+      19
+    ],
+    [
+      0,
+      24
+    ],
+    [
+      4,
+      14
+    ],
+    [
+      9,
+      19
+    ],
+    [
+      14,
+      24
+    ]
+  ],
+  "thresholds": {
+    "pos_rho_abs": 0.4,
+    "pos_p": 0.01,
+    "neg_rho_abs": 0.15,
+    "neg_per_cell_cap": 0.5,
+    "neg_ci_low_bound": -0.2,
+    "neg_ci_high_bound": 0.2
+  }
+}

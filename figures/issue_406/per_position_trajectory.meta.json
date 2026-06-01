@@ -1,0 +1,6 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "K_target": 25,
+  "source_data": "eval_results/issue_406/analysis.json",
+  "description": "Per-position trajectory of length-partial rho(D_k, G) for k = 0..24. Reference horizontal lines at +0.4 / +/- 0.15 are the K=25-mean primary thresholds (NOT per-position binding)."
+}

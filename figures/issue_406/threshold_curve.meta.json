@@ -1,0 +1,5 @@
+{
+  "git_commit": "14a7a16b5483f6cce51b26d9bca33ac2f69e9652",
+  "source_data": "eval_results/issue_406/analysis.json",
+  "description": "Sliding-quantile threshold curve for primary KL predictor."
+}
