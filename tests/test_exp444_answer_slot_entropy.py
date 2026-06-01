@@ -40,12 +40,41 @@ from eval import exp444_entropy_calibration_fixtures as fx
 # ── 1. Fixture invariants against the live Qwen tokenizer ─────────────────────
 
 
-@pytest.fixture(scope="module")
-def qwen_tokenizer() -> Any:
-    """Cached Qwen-2.5-7B-Instruct tokenizer (used by fixture invariants)."""
+def _load_qwen_tokenizer_or_skip() -> Any:
+    """Load the Qwen-2.5-7B-Instruct tokenizer from local cache only.
+
+    On a network-restricted VM (CI / dev box without HF Hub egress), the
+    standard ``AutoTokenizer.from_pretrained(model_id)`` call hits a DNS
+    lookup against ``huggingface.co`` and fails. We try ``local_files_only=
+    True`` first so the test passes when the tokenizer is cached, and
+    ``pytest.skip`` cleanly when it isn't — these tests are integration
+    tests on the tokenizer-dependent invariants, not unit tests, and
+    skipping them offline keeps the rest of the suite useful.
+    """
     from transformers import AutoTokenizer
 
-    return AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    try:
+        return AutoTokenizer.from_pretrained(
+            "Qwen/Qwen2.5-7B-Instruct",
+            trust_remote_code=True,
+            local_files_only=True,
+        )
+    except (OSError, ValueError) as e:
+        pytest.skip(
+            f"Qwen-2.5-7B-Instruct tokenizer not in local HF cache "
+            f"(network-restricted VM): {e!r}. Run "
+            f"`hf download Qwen/Qwen2.5-7B-Instruct --include 'tokenizer*'` "
+            f"once on a machine with HF Hub egress, then re-run."
+        )
+
+
+@pytest.fixture(scope="module")
+def qwen_tokenizer() -> Any:
+    """Cached Qwen-2.5-7B-Instruct tokenizer (used by fixture invariants).
+
+    Skipped if not in the local HF cache (offline / network-restricted VM).
+    """
+    return _load_qwen_tokenizer_or_skip()
 
 
 def test_fixture_module_load_invariants(qwen_tokenizer: Any) -> None:
@@ -214,9 +243,7 @@ def test_two_bpe_answer_passes_fact_pick_without_override(
     """2-BPE answer is acceptable; canonical signal preserved (length-normalised)."""
     # Pick a value that Qwen-2.5 tokenises into ≥2 BPE tokens.
     # "northwestern" is a safe 2+ token candidate on Qwen-2.5 BPE.
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    tok = _load_qwen_tokenizer_or_skip()
     candidate = None
     for trial in ("northwestern", "Helvetica", "antediluvian", "supercalifragi"):
         if len(tok.encode(trial, add_special_tokens=False)) == 2:
@@ -236,9 +263,7 @@ def test_three_bpe_answer_without_override_halts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """≥3-BPE answer raises unless ``--allow-multi-bpe-answer`` is set."""
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    tok = _load_qwen_tokenizer_or_skip()
     candidate = None
     for trial in (
         "antediluvianism",
@@ -260,9 +285,7 @@ def test_three_bpe_answer_with_override_drops_canonical_signal(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """≥3-BPE answer + override → proceeds; canonical signal flagged dropped."""
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
+    tok = _load_qwen_tokenizer_or_skip()
     candidate = None
     for trial in (
         "antediluvianism",
