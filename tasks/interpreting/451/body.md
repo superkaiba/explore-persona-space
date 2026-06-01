@@ -5,7 +5,7 @@ title: Persona-role vs neutral-domain framing makes no consistent difference to 
 kind: experiment
 tags: []
 created_at: '2026-05-31T21:43:40Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 397
 goal: 'Measure the persona-framing (C) factor''s matched-pair selectivity delta in
   the #397 single-token-marker recipe screen by fixing the two over-strict C-axis
