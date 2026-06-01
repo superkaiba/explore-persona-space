@@ -5,7 +5,7 @@ title: Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a
 kind: experiment
 tags: []
 created_at: '2026-06-01T00:13:51Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 404
 ---
 # Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a coarse code-vs-prose detector — not a per-dataset predictor of emergent misalignment (MODERATE confidence)
