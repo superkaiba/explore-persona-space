@@ -440,6 +440,14 @@ def prep_turner(cell: str, max_rows: int) -> int:
             cwd=str(PROJECT_ROOT),
             check=False,
         ).returncode
+        # fetch_or_generate_issue404_medical.py writes to bad_medical_advice.jsonl
+        # (no turner_ prefix); our cell file is turner_bad_medical_advice.jsonl.
+        produced = DATA_DIR / "bad_medical_advice.jsonl"
+        if produced.exists() and produced.resolve() != target.resolve():
+            import shutil
+
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(produced, target)
         if rc != 0 and not target.exists():
             logger.error(
                 "fetch_or_generate_issue404_medical.py failed for turner_bad_medical "
