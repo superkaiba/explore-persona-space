@@ -133,7 +133,7 @@ ax.errorbar(
 
 # Mark the depth-held-out k values (7 and 25 only; k=15 IS in training)
 for k_held in (7, 25):
-    ax.axvline(k_held, color="#999999", lw=0.5, ls=":", alpha=0.4)
+    ax.axvline(k_held, color="#666666", lw=1.8, ls=":", alpha=0.85, zorder=0)
 
 ax.set_xlabel("Conversation depth (number of turns before the probe, k)")
 ax.set_ylabel("Marker fire rate")
@@ -212,7 +212,7 @@ ax.axhline(0.5, color="#999999", lw=0.8, ls="--", alpha=0.7, label="Plan v1.2 +0
 
 # Mark the depth-held-out k values (7 and 25 only; k=15 IS in training)
 for k_held in (7, 25):
-    ax.axvline(k_held, color="#999999", lw=0.5, ls=":", alpha=0.4)
+    ax.axvline(k_held, color="#666666", lw=1.8, ls=":", alpha=0.85, zorder=0)
 
 ax.set_xlabel("Conversation depth (number of turns before the probe, k)")
 ax.set_ylabel("Trigger-conditional log-prob contrast (nats)")
