@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan — Issue #456: Re-run #432 on-policy (marker emission rate + on-policy end-of-answer log p)</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: .25rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+  code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+  pre { background: #f7f7f7; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .82rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
+  th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .plan-tldr { background: #eef6ff; border: 1px solid #b8d8ff; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-summary { background: #fff7e6; border: 1px solid #ffd98a; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-tldr h2, .plan-summary h2 { border: none; margin-top: .2rem; }
+  .lbl { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<section class="plan-tldr">
+<h2>0.0 TL;DR (plain English)</h2>
+<ul>
+<li><span class="lbl">What I'll run:</span> I'm rebuilding the exact model from a recent experiment — the one where I taught a "software engineer" character to end its answers with a special symbol, then watched that habit bleed over to 27 other characters. Last time I measured the leak by feeding the model a canned answer and asking "would you put the symbol here?" That trick made the character I actually trained look like it was near the <em>bottom</em> of the leak rankings, which never sat right. This time I let the model write its own answers and just count how often the symbol actually shows up.</li>
+<li><span class="lbl">What I expect:</span> When I score the model on its own writing, the software-engineer character should land at the top — it's the only one I trained to emit the symbol, so it should emit it the most. The earlier "bottom of the pack" ranking was an artifact of the canned-answer probe, not a real thing about the model.</li>
+<li><span class="lbl">What would change my mind:</span> If the software-engineer character still doesn't emit the symbol much when writing freely — or if some character I never trained emits it more — then the leak really is a deep, character-agnostic shift and the old probe was telling the truth. I'd also be surprised if the symbol almost never appears at all (which would mean my answers were getting cut off before the model reached the end).</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0. Plan Summary (technical)</h2>
+<p><span class="lbl">Training:</span> Retrain #432's exact recipe — Qwen-2.5-7B-Instruct, LoRA r=32 α=64 on q/k/v/o, AdamW lr=1e-5 cosine bf16, 1600 steps, seed 42, 2000 rows (200 software_engineer+※ positives / 1800 9-persona negatives), 22 saved checkpoints. The ONLY variable changed vs the parent is the eval method.
+<span class="lbl">Hyperparameters:</span> marker=bare <code>※</code> id 63680 (<code>#432</code>); lr=1e-5, r=32, α=64, 1600 steps, seed 42 (<code>#432</code>); generation temp=1.0 top_p=1.0, N=8 samples/cell, max_new_tokens=1536 (<code>#385</code> + CLAUDE.md 2×638-token rule).
+<span class="lbl">Baselines/controls:</span> (1) #432's published teacher-forced pos0/endpos leaderboard (the artifact); (2) re-score the OLD fixed-stub/pos0 teacher-forced probe on the SAME regenerated checkpoints (key control isolating "different eval, same model").
+<span class="lbl">Loss surface:</span> training unchanged from #432 (loss on assistant tokens, trailing ※ included). Eval measures on-policy generations only.
+<span class="lbl">Compute:</span> 1× H100, ~7 GPU-h total wall ~7h (train ~0.7h + on-policy gen/score across 12 checkpoints ~5.5h + old-probe rescore ~0.5h). No parallelism axis beyond vLLM batching (single LoRA-swap engine).
+<span class="lbl">Evaluation:</span> headline DV = on-policy emission rate (fraction of generated completions containing ※), n=160 per (persona,checkpoint) cell; companion DV = on-policy end-of-answer teacher-forced log p(※) scored after the model's OWN generated answer. Success: software_engineer ranks #1/28 on end-state emission rate AND outranks its #432 teacher-forced rank (7/pos0, 8/endpos).
+<span class="lbl">Risks:</span> (1) truncation → silent-zero emission if max_new_tokens too low (mitigated by 1536 + an emit-position guard); (2) recipe scripts + the <code>save_at_specific_steps</code> callback live only on branch <code>issue-432</code>, not <code>main</code> — implementer must port them or the retrain produces no checkpoints.</p>
+</section>
+
+<details open>
+<summary><strong>Full plan (sections 1–12)</strong></summary>
+
+<h2>1. Goal</h2>
+<p>Measure whether the trained source persona (software_engineer) actually emits the marker <code>※</code>, and how marker leakage distributes across the 28-persona panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 teacher-forced probe. #432 reported that the trained source sat at rank 7/28 (pos0) / 8/28 (endpos) on its teacher-forced marker leaderboard despite being the only persona trained to emit ※ — a counter-intuitive result the parent itself flagged as "precisely why #456 reruns this on-policy." This experiment resolves whether that bottom-of-pack ranking is a property of the model or an artifact of the probe geometry.</p>
+
+<h2>2. Prior Work &amp; method delta vs #432</h2>
+<p><strong>Parent #432</strong> (clean-result, MODERATE confidence): trained software_engineer's ※ with 9 contrastive negatives; scored a dual-probe <em>teacher-forced</em> log p(※) at pos0 (first assistant token) and endpos (after a fixed canonical stub <code>"Sure, here's a brief answer."</code>) over 28 personas × 20 questions × 22 checkpoints. Headline: source climbs rank 26→7 (pos0) but never leads; the panel-wide marker rise attenuates ~20% but survives; leaderboard partially reorganizes on pos0 only. Eval JSON: <code>eval_results/issue_432/logp_seed42.json</code> (branch <code>issue-432</code> @ <code>6c562eb</code>).</p>
+<p><strong>The method delta — and the ONLY variable that changes:</strong></p>
+<table>
+<tr><th>Aspect</th><th>#432 (parent)</th><th>#456 (this run)</th></tr>
+<tr><td>Model / recipe / data / seed / checkpoints</td><td colspan="2" style="text-align:center"><em>IDENTICAL</em> (retrained from same data+config+seed; adapter is deterministic)</td></tr>
+<tr><td>Marker token</td><td colspan="2" style="text-align:center"><code>※</code> id 63680 (same)</td></tr>
+<tr><td>Eval generates text?</td><td>No — teacher-forced, model generates nothing</td><td><strong>Yes — vLLM on-policy generation</strong></td></tr>
+<tr><td>Primary DV</td><td>Teacher-forced log p(※) at pos0</td><td><strong>On-policy emission rate (substring ※)</strong></td></tr>
+<tr><td>Companion DV</td><td>Teacher-forced log p(※) at endpos (fixed stub)</td><td><strong>Teacher-forced log p(※) after the model's OWN generated answer</strong></td></tr>
+<tr><td>pos0 probe</td><td>Reported</td><td><strong>DROPPED</strong></td></tr>
+<tr><td>Fixed-stub endpos probe</td><td>Reported</td><td><strong>DROPPED as a DV; re-scored only as a control (see §5)</strong></td></tr>
+</table>
+<p><strong>Sibling on-policy precedent (grounding):</strong> #385 measured marker leakage on-policy with vLLM batched generation, substring match, T=1.0/top_p=1.0/max_tokens=512, n=8 samples/(bystander,prompt) = 160/cell, pooled binomial CI, across 14 checkpoints. #456 inherits this exact methodology, raising only max_tokens (because #432's trained completions are longer; see §11). Reusable code: <code>scripts/eval_marker_spread_source_only.py</code> (vLLM + LoRARequest + substring scoring).</p>
+
+<h2>3. Hypothesis</h2>
+<p><strong>H1 (headline, falsifiable):</strong> On the model's own generations, software_engineer ranks <strong>#1/28</strong> on end-state (step-1600) marker emission rate, with a wide margin over the second-place persona (≥2× the runner-up's rate, or ≥0.3 absolute gap). It is the only persona trained to emit ※, so on-distribution it should emit it the most.</p>
+<p><strong>H2 (artifact claim):</strong> software_engineer's on-policy emission rank (#1 predicted) is <em>strictly better</em> than its #432 teacher-forced rank (7 pos0 / 8 endpos). The gap demonstrates the parent's bottom-of-pack ranking was substantially a probe artifact.</p>
+<p><strong>H3 (companion DV agreement):</strong> On-policy end-of-answer log p(※) for the source rises across training and ranks the source at or near the top, agreeing with the emission-rate ordering (Spearman ρ between emission rate and on-policy endpos log p across the 28 personas ≥ 0.6 at step 1600).</p>
+<p><strong>H4 (control / direct artifact demonstration):</strong> The OLD fixed-stub endpos teacher-forced probe, re-scored on these SAME regenerated checkpoints, reproduces #432's low source rank (within ±2 ranks of rank 8), while the on-policy DV puts the source at the top — same model, same panel, opposite ranking ⇒ the ranking difference is purely the eval method.</p>
+<p><strong>What would falsify:</strong> If on-policy software_engineer emission rank > 5 at step 1600 (still mid-pack), OR any untrained bystander out-emits the source, OR the source's on-policy emission rate is itself near-floor (&lt;10%) — then the marker leak is a genuine character-agnostic / global shift and the teacher-forced probe was not the culprit. If the old-probe re-score does NOT reproduce #432's low source rank, the retrain diverged from the parent and the comparison is void (kill criterion).</p>
+
+<h2>4. Design</h2>
+
+<h3>4.1 Pipeline DAG (one nohup-driven sequential pipeline on a 1× H100 pod)</h3>
+<pre>Phase 1  setup        env probe + marker-id assert + data fetch + branch-port check
+Phase 2  smoke_train   10-step train (max_steps=10, save_steps_list=[5,10])
+Phase 3  smoke_eval    on-policy gen+score on step-10 adapter, 3 personas × 3 prompts (UNIFIED: smoke = sweep with --cells 1)
+Phase 4  training      1600-step main train, 22 checkpoints saved (IDENTICAL to #432)
+Phase 5  eval_onpolicy on-policy generation + emission-rate + on-policy-endpos log p, 12 checkpoints
+Phase 6  eval_oldprobe re-score #432's fixed-stub endpos teacher-forced probe on the SAME checkpoints (control)
+Phase 7  done          write sentinel, emit [phase=done]</pre>
+<p>Phases 4→5→6 are sequential (5 and 6 both read the trained checkpoints; 6 is cheap and reuses Phase-5's loaded base model is NOT assumed — 6 runs as its own HF/PEFT load to avoid the vLLM-then-HF teardown trap in CLAUDE.md Gotchas). Phase 3 IS Phase 5 with <code>--steps 10 --personas 3 --prompts 3 --n-samples 2</code> (unification default: smoke = sweep with one tiny cell, same dispatcher, same code path).</p>
+
+<h3>4.2 Files to PORT from branch <code>issue-432</code> @ <code>6c562eb</code> to the worktree (NONE are on <code>main</code>)</h3>
+<table>
+<tr><th>File</th><th>Action</th></tr>
+<tr><td><code>configs/condition/i432_software_engineer_marker_9neg_zen.yaml</code></td><td>cherry-pick verbatim</td></tr>
+<tr><td><code>scripts/build_i432_9neg_dataset.py</code></td><td>cherry-pick (not needed at run time — data already on HF — but keep for repro)</td></tr>
+<tr><td><code>scripts/_i416_bystander_panel.py</code></td><td>cherry-pick verbatim (defines the 28-persona panel)</td></tr>
+<tr><td><code>scripts/eval_i398_marker_logprob.py</code></td><td>cherry-pick (used by Phase 6 old-probe control + as the helper for on-policy endpos)</td></tr>
+<tr><td><code>scripts/smoke_i398_logp_check.py</code></td><td>cherry-pick (optional — superseded by unified smoke, keep for parity)</td></tr>
+<tr><td><code>src/explore_persona_space/train/callbacks.py::SaveAtSpecificSteps</code> + <code>trainer.py</code> wiring (lines ~785–810)</td><td><strong>cherry-pick — load-bearing.</strong> Without this callback, <code>++training.save_at_specific_steps</code> is a no-op and the run produces ZERO step checkpoints. Verify <code>git grep save_at_specific_steps</code> resolves in the worktree before launch.</td></tr>
+<tr><td><code>eval_results/issue_385/predictors_base.json</code></td><td>ensure present (Phase-1 gate in #432's driver; harmless to keep — only blocks if a later predictor analysis is wanted; if absent and not needed, REMOVE that gate rather than fail)</td></tr>
+</table>
+
+<h3>4.3 NEW code to write: <code>scripts/eval_i456_onpolicy_emission.py</code></h3>
+<p>Single dispatcher that, for each checkpoint, generates on-policy completions, computes emission rate, and computes on-policy end-of-answer log p(※). Reuses <code>_i416_bystander_panel</code> for the panel and <code>compute_marker_logprob</code> for the endpos DV. Writes one JSON per checkpoint the moment it finishes (CLAUDE.md checkpoint-per-phase rule).</p>
+<pre>
+# scripts/eval_i456_onpolicy_emission.py  (pseudocode)
+import argparse, json, gc, time
+from pathlib import Path
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import PeftModel
+import importlib
+from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+
+MARKER = "※"; MARKER_ID = 63680
+
+def render_prompt(tok, system_text, question):
+    return tok.apply_chat_template(
+        [{"role":"system","content":system_text},{"role":"user","content":question}],
+        tokenize=False, add_generation_prompt=True)
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run-dir", required=True)      # models/<run>/marker_implant_step_checkpoints
+    ap.add_argument("--base-model", default="Qwen/Qwen2.5-7B-Instruct")
+    ap.add_argument("--steps", required=True)         # comma-separated subset
+    ap.add_argument("--panel-module", default="_i416_bystander_panel")
+    ap.add_argument("--n-samples", type=int, default=8)
+    ap.add_argument("--temperature", type=float, default=1.0)
+    ap.add_argument("--top-p", type=float, default=1.0)
+    ap.add_argument("--max-new-tokens", type=int, default=1536)
+    ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--output-dir", required=True)    # eval_results/issue_456/
+    args = ap.parse_args()
+
+    tok = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
+    # HARD GUARD: marker must be the trained token id (matches #432)
+    assert tok.encode(MARKER, add_special_tokens=False) == [MARKER_ID], "wrong marker token"
+
+    panel_mod = importlib.import_module(args.panel_module)
+    panel = {panel_mod.SOURCE_PERSONA: dict(panel_mod.PERSONAS)[panel_mod.SOURCE_PERSONA]}
+    panel.update(panel_mod.BYSTANDERS)             # 28 personas total
+    prompts = panel_mod.PROMPTS                    # 20 questions
+    steps = [int(s) for s in args.steps.split(",")]
+
+    # ---- Phase A: on-policy generation via vLLM, base loaded ONCE, LoRA swapped per ckpt
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+    llm = LLM(model=args.base_model, enable_lora=True, max_lora_rank=32, max_loras=1,
+              dtype="bfloat16", gpu_memory_utilization=0.85,
+              max_model_len=4096, seed=args.seed)   # 4096 >= prompt(~512)+1536 gen
+    sp = SamplingParams(n=args.n_samples, temperature=args.temperature, top_p=args.top_p,
+                        max_tokens=args.max_new_tokens, seed=args.seed)
+    # build the (persona,question) prompt list ONCE; reused for every checkpoint
+    keys, rendered = [], []
+    for pname, ptext in panel.items():
+        for q in prompts:
+            keys.append((pname, q)); rendered.append(render_prompt(tok, ptext, q))
+
+    gen_by_step = {}                                # step -> {persona: {question: [completions]}}
+    for step in steps:
+        ckpt = Path(args.run_dir) / f"checkpoint-{step}"
+        assert ckpt.exists(), f"missing {ckpt}"
+        lr = LoRARequest(f"swe_step_{step}", step, str(ckpt))
+        outs = llm.generate(rendered, sp, lora_request=lr)
+        per = {p: {} for p in panel}
+        for o, (pname, q) in zip(outs, keys):
+            per[pname][q] = [s.text for s in o.outputs]
+        gen_by_step[step] = per
+        # ---- emission rate per persona (CHECKPOINT-PER-PHASE: write immediately)
+        rates = {}
+        for pname in panel:
+            comps = [c for q in prompts for c in per[pname][q]]   # 20*n_samples
+            n_hit = sum(1 for c in comps if MARKER in c)
+            rates[pname] = {"n_total": len(comps), "n_hit": n_hit, "rate": n_hit/len(comps)}
+        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+        json.dump({"step": step, "marker": MARKER, "n_samples": args.n_samples,
+                   "temperature": args.temperature, "max_new_tokens": args.max_new_tokens,
+                   "panel": list(panel), "emission_rate": rates},
+                  open(f"{args.output_dir}/emission_step{step}.json","w"), indent=2)
+        # also dump raw completions per step for HF upload + qualitative examples
+        json.dump(per, open(f"{args.output_dir}/raw_completions_step{step}.json","w"))
+    # explicit vLLM teardown BEFORE loading HF (CLAUDE.md vLLM-teardown gotcha)
+    del llm; gc.collect(); torch.cuda.empty_cache()
+    _kill_vllm_workers()   # psutil children .terminate()/.kill(); assert nvidia-smi clear
+
+    # ---- Phase B: on-policy END-OF-ANSWER teacher-forced log p(※)
+    base = AutoModelForCausalLM.from_pretrained(args.base_model, torch_dtype=torch.bfloat16,
+                                                device_map="cuda:0", trust_remote_code=True).eval()
+    for step in steps:
+        adapter = PeftModel.from_pretrained(base, str(Path(args.run_dir)/f"checkpoint-{step}")).eval()
+        endpos = {}
+        for pname in panel:
+            # build the on-policy context: prompt + the model's OWN generated answer (per sample),
+            # marker scored at the position right after that answer.
+            ctxs = []
+            for q in prompts:
+                for comp in gen_by_step[step][pname][q]:
+                    answer = comp.split(MARKER)[0].rstrip()   # strip any emitted marker+tail
+                    ctxs.append(render_prompt(tok, panel[pname], q) + answer + "\n\n")
+            logps = compute_marker_logprob(adapter, tok, contexts=ctxs,
+                                           marker_text=MARKER, batch_size=8, device="cuda:0")
+            endpos[pname] = {"mean": float(sum(logps)/len(logps)), "logps": logps}
+        json.dump({"step": step, "geometry": "onpolicy_end_of_answer", "panel": list(panel),
+                   "endpos_logp": endpos},
+                  open(f"{args.output_dir}/onpolicy_endpos_step{step}.json","w"), indent=2)
+        del adapter; gc.collect(); torch.cuda.empty_cache()
+</pre>
+<p><strong>Why code, not a model call?</strong> The DV is a deterministic substring presence check on a single BPE token (<code>※</code> in completion text) and a teacher-forced log-prob (a forward pass). Neither is an unstructured-text judgment — a Claude call would add latency, cost (~67k completions), and nondeterminism for zero benefit; the marker-substring exception is explicitly documented in CLAUDE.md. A model call would flip the decision only if the marker were semantic/fuzzy (it is not — it's one literal token). N/A-adjacent but stated per the §4 rule.</p>
+
+<h3>4.4 Phase 6 — old-probe control re-score (the key artifact control)</h3>
+<p>Run the UNCHANGED <code>scripts/eval_i398_marker_logprob.py</code> on the SAME regenerated <code>marker_implant_step_checkpoints</code> dir, identical flags to #432:</p>
+<pre>uv run python scripts/eval_i398_marker_logprob.py \
+    --run-dir models/i432_software_engineer_marker_9neg_zen_seed42/marker_implant_step_checkpoints \
+    --base-model Qwen/Qwen2.5-7B-Instruct \
+    --steps 5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600 \
+    --marker-token "※" --panel-module _i416_bystander_panel \
+    --output eval_results/issue_456/oldprobe_logp_seed42.json --batch-size 8</pre>
+<p>This produces the fixed-stub pos0+endpos leaderboard on the regenerated model. If it reproduces #432's source rank (7 pos0 / 8 endpos ± 2), the retrain is faithful AND the artifact claim is airtight: same checkpoints, two probes, opposite source ranks.</p>
+
+<h3>4.5 Smoke/sweep architectural parity</h3>
+<p><strong>Unification default.</strong> Phase 3 smoke = Phase 5 sweep with <code>--steps 10 --n-samples 2</code> and a 3-persona/3-prompt subset (a tiny <code>panel_subset</code> flag, or just run the full panel at n=2 if time permits — &lt;1 min). Same dispatcher, same vLLM-LoRA path, same teardown, same JSON writer. No subprocess divergence. The smoke exercises the exact code that the full run uses, catching the chat-template / marker-id / checkpoint-path faults before the 1600-step train.</p>
+
+<h2>5. Conditions and Controls</h2>
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr><td><strong>On-policy emission</strong> (headline)</td><td>How often the model actually writes ※ under each persona when it generates its own answer</td><td>The construct directly — no off-distribution probe geometry</td><td><code>i456_onpolicy_emission</code></td></tr>
+<tr><td><strong>On-policy end-of-answer log p</strong> (companion)</td><td>Marker probability at the position right after the model's OWN answer</td><td>Whether emission-rate ordering is corroborated by a continuous, on-distribution probability — rules out "rate is a sampling artifact"</td><td><code>i456_onpolicy_endpos</code></td></tr>
+<tr><td><strong>Old fixed-stub probe re-score</strong> (control)</td><td>#432's exact teacher-forced pos0/endpos probe on the SAME regenerated checkpoints</td><td>Isolates the eval method as the single cause of the rank difference: same model + same panel, only the probe changes. Also confirms the retrain reproduces #432.</td><td><code>i456_oldprobe_rescore</code></td></tr>
+<tr><td><strong>#432 published leaderboard</strong> (external reference)</td><td>The parent's reported ranks (source 7 pos0 / 8 endpos)</td><td>Sanity anchor for the control above (cross-checks retrain fidelity against the original run, not just the in-run re-score)</td><td>n/a — read from <code>eval_results/issue_432/logp_seed42.json</code></td></tr>
+</table>
+<p>The Old fixed-stub probe re-score is the load-bearing control: it converts "on-policy looks different from #432" (which could be a retrain difference) into "the SAME checkpoints rank the source #1 on-policy but bottom-half teacher-forced" (unambiguously the eval method).</p>
+
+<h2>6. Evaluation</h2>
+<h3>Metrics &amp; thresholds</h3>
+<ul>
+<li><strong>Headline:</strong> on-policy emission rate per (persona, checkpoint), n=160/cell (20 prompts × 8 samples). End-state leaderboard at step 1600. <strong>Success = software_engineer rank #1/28.</strong></li>
+<li><strong>Artifact size:</strong> Δrank = (#432 teacher-forced source rank) − (#456 on-policy source rank). Predicted ≥ 6 (7→1 pos0; 8→1 endpos).</li>
+<li><strong>Companion:</strong> on-policy endpos log p(※); Spearman ρ(emission rate, endpos log p) across 28 personas at step 1600, expect ≥ 0.6.</li>
+<li><strong>CI:</strong> pooled binomial 95% CI on each emission rate (Wilson interval; n=160). Source rate CI must not overlap the runner-up's CI for a clean rank-#1 claim.</li>
+<li><strong>Control:</strong> old-probe re-score source rank within ±2 of #432's (7 pos0 / 8 endpos).</li>
+<li><strong>Trajectory:</strong> per-checkpoint emission rate + endpos log p (learning-speed DV; serves linked q:implant-learning-speed). Report first-crossing step (first checkpoint where source emission ≥ 5%).</li>
+</ul>
+
+<h3>§6 Measurement-validity table (mandatory)</h3>
+<table>
+<tr><th>DV</th><th>Construct (what the Goal cares about)</th><th>Metric (what is actually computed)</th><th>On-distribution?</th><th>If proxy: validation</th></tr>
+<tr><td>On-policy emission rate</td><td>The rate at which the model emits ※ when it generates an answer under each persona</td><td>Fraction of vLLM-generated completions (temp 1.0, n=8/prompt) containing the literal token ※</td><td><strong>yes</strong> — on-policy (model's own text), natural emit position (end of its own answer), realistic prompt distribution (the 20-question panel), the exact behavior the marker training targets</td><td>Direct measure, not a proxy. Single-token substring is the documented marker exception to the no-substring rule.</td></tr>
+<tr><td>On-policy end-of-answer log p(※)</td><td>The model's probability of emitting ※ at the position it was trained to emit it, in context the model itself produced</td><td>Teacher-forced log p(※) at the token immediately after the model's OWN generated answer (per sample, marker stripped from the conditioning text)</td><td><strong>yes</strong> — context is the model's own generation (not a fixed stub), and the scored position is the trained end-of-answer position</td><td>Direct on-distribution measure. Differs from #432's endpos precisely by replacing the fixed canonical stub with on-policy context — that replacement IS the experiment.</td></tr>
+</table>
+<p>Both DVs are on-distribution direct measures, not proxies. The contrast partner (old fixed-stub probe) is explicitly off-distribution and is run ONLY as a control, never narrated as the construct.</p>
+
+<h3>Figures (over-produce; analyzer picks the hero)</h3>
+<ul>
+<li><strong>Hero candidate A:</strong> on-policy end-state emission leaderboard — 28 horizontal bars, source highlighted, sorted, Wilson CIs. (Directly shows source at #1.)</li>
+<li><strong>Hero candidate B:</strong> side-by-side rank comparison — source's rank under on-policy emission vs #432 teacher-forced pos0/endpos vs in-run old-probe re-score (the artifact, in one figure).</li>
+<li><strong>Exploratory dump:</strong> (1) per-checkpoint emission-rate trajectory lines for source + panel-mean + 3 closest/3 farthest bystanders (learning-speed); (2) per-checkpoint source endpos-logp trajectory; (3) scatter: on-policy emission rate vs on-policy endpos log p (28 points, step 1600); (4) scatter: on-policy emission rate vs old-probe endpos log p (shows the two evals disagree); (5) per-persona Δrank bars (#432 → on-policy); (6) raw per-cell emission counts table.</li>
+</ul>
+
+<h2>7. Decision Gates</h2>
+<p><strong>One gate</strong> — justified because the run is ~7 GPU-h (&gt;4h) and the on-policy emission floor is genuinely uncertain at this max_new_tokens setting:</p>
+<ul>
+<li><strong>Phase 3 smoke gate (cheap, rules out the full run):</strong> after the 10-step smoke generation, the step-10 source emission rate need NOT be high (10 steps is early), but the pipeline MUST produce non-empty completions that reach end-of-answer (median completion length &lt; max_new_tokens, i.e. not truncated) AND the marker-id assert passes AND at least the chat-template renders for all 28 personas including <code>no_persona</code> (empty system). If completions are systematically hitting the token cap (truncated), STOP and raise max_new_tokens before the 1600-step train — truncation would silently zero the emission rate (the #260 failure mode).</li>
+</ul>
+<p>No mid-training gates: training is a faithful #432 replay (pre-verified — #432 already converged on this exact recipe), so a "stop if loss high" gate adds nothing.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+<tr><td>Truncation → silent-zero emission (marker trails the answer; if generation caps before the model writes ※, rate reads 0)</td><td>Medium</td><td>High (invalidates headline)</td><td>max_new_tokens=1536 (2.4× the 638-token longest trained completion); Phase-3 smoke checks median completion length &lt; cap; log per-cell truncation fraction (finish_reason=="length") and FAIL the eval if &gt;10% of source completions truncate.</td></tr>
+<tr><td>Recipe scripts + <code>SaveAtSpecificSteps</code> callback not on <code>main</code></td><td>High (confirmed)</td><td>High (no checkpoints saved → un-evaluable run)</td><td>Phase-1 setup asserts <code>git grep save_at_specific_steps</code> resolves AND the 6 files in §4.2 exist in the worktree before any train launch; cherry-pick from <code>6c562eb</code> first.</td></tr>
+<tr><td>Retrain diverges from #432 (different adapter despite same data/config/seed)</td><td>Low</td><td>Medium (control void)</td><td>Phase-6 old-probe re-score must reproduce #432's source rank ±2; if not, the run is flagged non-comparable (kill criterion) — do NOT silently re-interpret.</td></tr>
+<tr><td>vLLM→HF teardown OOM (Phase A vLLM then Phase B HF in same process)</td><td>Medium</td><td>Medium (Phase B crashes)</td><td>Explicit <code>_kill_vllm_workers()</code> (psutil children terminate/kill + nvidia-smi clear assert) between phases, per CLAUDE.md gotcha; if it still OOMs, subprocess-isolate Phase B (JSON IPC on disk).</td></tr>
+<tr><td>vLLM LoRA-swap caches stale adapter across checkpoints</td><td>Low</td><td>High (wrong rates)</td><td>Distinct <code>lora_int_id=step</code> per checkpoint; smoke compares step-5 vs step-10 source rate to confirm the swap takes effect (rates must differ or both be near-floor-but-distinct logits — at minimum, a sanity assert that LoRARequest path matches the step).</td></tr>
+<tr><td><code>no_persona</code> empty system prompt degenerate generations</td><td>Low</td><td>Low</td><td>Confirmed renders cleanly (empty system block); it is a bystander, scored like any other; no special handling.</td></tr>
+<tr><td>Disk quota (MooseFS ~130GB) — 22 checkpoints × adapter + raw completions JSON</td><td>Medium</td><td>Medium</td><td><code>EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1</code>; adapters are small (LoRA only, ~80MB each); raw completions ~ 67k × ~1KB ≈ 70MB/step → upload to HF per step then can prune; <code>df -h /workspace</code> in Phase 1.</td></tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+<p><strong>Pod:</strong> 1× H100 80GB, intent <code>lora-7b</code> (matches #432). <strong>Parallelism axis:</strong> the only compute-bound work is (a) a single LoRA train (data-parallel not warranted for one 7B LoRA) and (b) vLLM batched generation (already maximally batched in one <code>llm.generate()</code> call per checkpoint). There is no independent-condition sweep axis to fan out — it is one model, evaluated serially across checkpoints, and vLLM batching already saturates the GPU. A larger pod would not reduce wall time (single LoRA train can't use DP efficiently at this scale; generation is one engine). So 1× H100 is correct, not a wall-time compromise. <strong>Checkpoint subset to cut cost:</strong> evaluate 12 of 22 checkpoints on-policy (full 22 for the cheap old-probe control) — see §11.</p>
+
+<h3>Per-component compute-projection table</h3>
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>smoke-phase (10-step train + tiny on-policy gen)</td><td>0.15</td><td>0.15</td><td>TP=1</td><td>#432 smoke ~5 min train + &lt;1 min gen</td></tr>
+<tr><td>main train (1600 steps, 22 ckpts)</td><td>0.65</td><td>0.65</td><td>TP=1</td><td>matched to #432 repro card: 37 min train</td></tr>
+<tr><td>on-policy generation (12 ckpts × 28 personas × 20 q × 8 samples = ~53.8k completions, max 1536 tok)</td><td>4.5</td><td>4.5</td><td>vLLM batched, LoRA-swap, TP=1</td><td>#385 generated 60.5k completions @ 512 tok in ~minutes/ckpt; scaling tokens 3× and using 12 ckpts → ~22 min/ckpt × 12 ≈ 4.4h. Conservative.</td></tr>
+<tr><td>on-policy endpos log p (12 ckpts × 28 × ~160 ctxs)</td><td>0.6</td><td>0.6</td><td>HF teacher-forced, batch 8, TP=1</td><td>#432 dual-probe full panel ~9 min; on-policy endpos is ~8× the contexts (per-sample) → ~3 min/ckpt × 12</td></tr>
+<tr><td>old-probe re-score (22 ckpts, control)</td><td>0.5</td><td>0.5</td><td>HF teacher-forced, TP=1</td><td>identical to #432 eval_logp: ~9 min for 22 ckpts dual-probe (28×20 cells)</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>~7.0</strong></td><td><strong>~7.0</strong></td><td>—</td><td>1× H100, single sequential pipeline</td></tr>
+</table>
+<p><strong>Stratification spec (auto-descope priority):</strong> if compute deviates &gt;2×, descope in this order: (1) drop on-policy checkpoint count 12→8 (keep step 5,75,100,200,400,800,1600 + one early — preserves the learning curve), then (2) drop n_samples 8→4 (CI widens, min n=80/cell preserved), then (3) drop max_new_tokens 1536→1280 (still &gt;2×638). Never drop below: 6 on-policy checkpoints incl. step 1600 + step ≤100; n_samples ≥ 4; max_new_tokens ≥ 1280. The end-state leaderboard (step 1600, full panel, full n) is the floor and is never descoped.</p>
+<p><strong>Disk:</strong> ~1.8GB adapters (22 × ~80MB) + ~1GB raw completions (uploaded to HF per step). API costs: $0 (no judge — substring + logprob). Wall ~7h on one pod.</p>
+
+<h2>10. Reproducibility Card (pre-filled)</h2>
+<table>
+<tr><th>Parameter</th><th>Value</th></tr>
+<tr><td>Base model</td><td>Qwen/Qwen2.5-7B-Instruct</td></tr>
+<tr><td>Adapter</td><td>LoRA r=32, α=64, dropout=0.05, target q_proj/k_proj/v_proj/o_proj</td></tr>
+<tr><td>Optimizer</td><td>AdamW, lr=1e-5, cosine schedule, bf16</td></tr>
+<tr><td>Marker</td><td>bare ※, Qwen-2.5 BPE token id 63680 (NOT ` ※` id 83399)</td></tr>
+<tr><td>Training rows</td><td>2000 (200 software_engineer+※ positive / 1800 negative across 9 personas × 200)</td></tr>
+<tr><td>Source persona</td><td>software_engineer</td></tr>
+<tr><td>Negative personas (9)</td><td>librarian, kindergarten_teacher, data_scientist, medical_doctor, french_person, villain, comedian, police_officer, zelthari_scholar</td></tr>
+<tr><td>Steps / seed</td><td>1600 / 42</td></tr>
+<tr><td>Saved checkpoints</td><td>5,10,15,20,25,30,40,50,60,65,70,75,100,150,200,300,400,600,800,1000,1200,1600 (22)</td></tr>
+<tr><td>On-policy eval checkpoints</td><td>5,75,100,150,200,400,600,800,1000,1200,1600 + one more early (12 total; see §11)</td></tr>
+<tr><td>Eval panel</td><td>28 personas (software_engineer + 27 bystanders) × 20 fixed questions — identical to #432</td></tr>
+<tr><td>Generation</td><td>vLLM, temperature=1.0, top_p=1.0, n=8 samples/(persona,question), max_new_tokens=1536, max_model_len=4096, seed=42</td></tr>
+<tr><td>Headline DV</td><td>on-policy emission rate (substring ※), n=160/cell, Wilson 95% CI</td></tr>
+<tr><td>Companion DV</td><td>on-policy end-of-answer teacher-forced log p(※)</td></tr>
+<tr><td>Control</td><td>#432 fixed-stub pos0/endpos teacher-forced log p re-scored on same checkpoints</td></tr>
+<tr><td>Training data (HF)</td><td>superkaiba1/explore-persona-space-data → leakage/marker_software_engineer_asst_excluded_medium_9ca040_9neg.jsonl @ 620a704</td></tr>
+<tr><td>Hydra condition</td><td>i432_software_engineer_marker_9neg_zen</td></tr>
+<tr><td>Hardware</td><td>1× H100 80GB (intent lora-7b)</td></tr>
+<tr><td>Wall time / GPU-h</td><td>TBD (budget ~7h / ~7 GPU-h)</td></tr>
+<tr><td>Commit / WandB</td><td>TBD (filled post-run)</td></tr>
+</table>
+<p><strong>Exact nohup launch (on pod, after port + preflight):</strong></p>
+<pre>nohup bash scripts/run_issue456_pipeline.sh &gt; /workspace/logs/issue-456.log 2&gt;&1 &amp;</pre>
+
+<h2>11. Decision Rationale</h2>
+<p><strong>All training hyperparameters are INHERITED verbatim from #432</strong> — the single experimental variable is the eval method, so changing any training hyperparameter would break the comparison (consistency-checker would block it). The shared recipe (<code>Source: #432</code> repro card): lr=1e-5, cosine, bf16, LoRA r=32/α=64/dropout=0.05 on q/k/v/o, 1600 steps, seed 42, 22 checkpoints, 2000-row 9-neg mix. #432's own grounding (it inherited from #416/#398) carries over; no re-derivation needed (inherit fast-path).</p>
+<table>
+<tr><th>Choice</th><th>What</th><th>Why (tied to Goal)</th><th>Source</th><th>Alternatives rejected</th></tr>
+<tr><td>Marker token</td><td>bare ※ id 63680</td><td>Re-measuring #432's ALREADY-TRAINED token; using ` ※` 83399 would reintroduce the exact train/eval drift that killed #396 round-1. The "default 83399" rule governs NEW marker experiments, not re-measurements.</td><td>#432 repro card + #396 round-1 drift lesson</td><td>` ※` 83399 — wrong token for this trained model</td></tr>
+<tr><td>Generation temperature</td><td>1.0</td><td>Matches the sibling on-policy emission experiment exactly, so the emission-rate instrument is comparable to #385; temp=1.0 samples the model's true emit distribution (greedy temp=0 gives a binary 0/1 per cell, destroying the smooth fraction the headline needs).</td><td>#385 (T=1.0 top_p=1.0)</td><td>temp=0 greedy (binary per cell, no CI); temp=0.7 (#385 used 1.0 — stay consistent)</td></tr>
+<tr><td>top_p</td><td>1.0</td><td>Same as #385 — no nucleus truncation, full emit distribution.</td><td>#385</td><td>top_p=0.95 (used in run_leakage_v3_onpolicy but #385's source-only emission eval used 1.0; prefer the emission-eval precedent)</td></tr>
+<tr><td>N samples / cell</td><td>8 (n=160/cell over 20 prompts)</td><td>Matches #385's emission-rate sampling; n=160 gives Wilson 95% CI half-width ≤ ~0.08 at p=0.5 and ≤ ~0.03 at the floor — tight enough to separate source from runner-up.</td><td>#385 (8 samples/cell)</td><td>n=4 (CI too wide for clean rank-#1); n=16 (2× compute, marginal CI gain)</td></tr>
+<tr><td>max_new_tokens</td><td>1536</td><td>Marker trails the model's own answer; longest #432 trained completion = 638 tokens (measured), so 2×=1276; 1536 adds headroom. Truncation = silent-zero emission (the #260 failure).</td><td>CLAUDE.md (≥2× longest trained completion) + measured 638-token max in the training JSONL</td><td>512 (#385's value — would truncate #432's longer answers and silently zero the rate); 2048 (more than needed, slower)</td></tr>
+<tr><td>On-policy checkpoint count</td><td>12 of 22</td><td>Generation is ~30× pricier than one teacher-forced pass; 12 checkpoints (dense early: 5,75,100,150,200; sparse late: 400,600,800,1000,1200,1600 + one early ≤30) preserve the learning curve (serves q:implant-learning-speed) while halving generation cost. The cheap old-probe control runs all 22.</td><td>#432 (22-ckpt schedule) + #385 (14 ckpts sufficed for a trajectory)</td><td>all 22 on-policy (~8h gen, marginal trajectory gain); 6 ckpts (loses early learning-curve resolution)</td></tr>
+<tr><td>On-policy endpos = score after model's own answer</td><td>strip emitted ※, score log p(※) after the rstripped answer + "\n\n"</td><td>This IS the experiment: replace #432's fixed stub with the on-policy context. Stripping the emitted marker avoids conditioning on the answer the model already gave (would double-count).</td><td>#432 endpos geometry (stub replaced by on-policy text)</td><td>score on raw completion incl. marker (circular); score only non-emitting samples (biases low)</td></tr>
+<tr><td>Old-probe re-score as control</td><td>run #432's unchanged eval on same checkpoints</td><td>Converts the on-policy/teacher-forced rank difference from "maybe a retrain difference" into "same model, two probes, opposite ranks" — the airtight artifact demonstration the Goal demands.</td><td>plan design (directly serves the artifact claim)</td><td>compare only to #432's published numbers (can't rule out retrain drift)</td></tr>
+<tr><td>vLLM LoRA-swap (base loaded once)</td><td>enable_lora=True, LoRARequest per ckpt</td><td>~12× fewer model loads than fresh-LLM-per-checkpoint; the documented vLLM LoRA path.</td><td>scripts/eval_marker_spread_source_only.py pattern</td><td>fresh LLM per checkpoint (12× load overhead)</td></tr>
+<tr><td>Pod spec</td><td>1× H100 lora-7b</td><td>One LoRA train + one vLLM engine; no fan-out axis (single model, serial checkpoints, vLLM already batched). Larger pod gives no wall-time win.</td><td>#432 (1× H100)</td><td>4× H100 (no DP benefit for 1 LoRA + 1 gen engine)</td></tr>
+</table>
+
+<h2>12. Assumptions</h2>
+<table>
+<tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>A1</td><td>※ tokenizes to [63680] under Qwen-2.5-7B-Instruct; ` ※` to [83399]</td><td>High</td><td>Read from live tokenizer this session</td><td><code>tok.encode("※", add_special_tokens=False) == [63680]</code></td></tr>
+<tr><td>A2</td><td>Training data on HF is 2000 rows (200 pos / 1800 neg), 10 unique personas, positives end "\n\n※"</td><td>High</td><td>Downloaded + counted this session @ rev 620a704</td><td>re-download + <code>wc -l</code> + persona Counter</td></tr>
+<tr><td>A3</td><td>Longest trained completion = 638 tokens (p95=366); max_new_tokens=1536 is &gt;2×</td><td>High</td><td>Measured this session on the actual JSONL</td><td>tokenize completions, take max</td></tr>
+<tr><td>A4</td><td>The 28-persona panel = software_engineer + 27 bystanders, exact names from #432 eval JSON (incl. no_persona empty system, helpful_assistant, 8 fammates)</td><td>High</td><td>Read from <code>eval_results/issue_432/logp_seed42.json</code> "panel" key</td><td>compare panel list to #432 JSON</td></tr>
+<tr><td>A5</td><td>The 20 eval questions are PROMPTS from extract_persona_vectors (enumerated in #432 body)</td><td>High</td><td>Read from extract_persona_vectors.py + #432 body</td><td>diff against #432 body question table</td></tr>
+<tr><td>A6</td><td>Recipe scripts + configs + panel module + eval scripts exist ONLY on branch issue-432 @ 6c562eb, NOT on main</td><td>High</td><td><code>git ls-tree main</code> + <code>git grep</code> returned nothing on main</td><td><code>git ls-tree main --name-only -r | grep i432</code> (empty)</td></tr>
+<tr><td>A7</td><td><code>SaveAtSpecificSteps</code> callback (callbacks.py + trainer.py wiring) exists only on issue-432; required for multi-checkpoint save</td><td>High</td><td><code>git grep save_at_specific_steps main</code> empty; present @ 6c562eb trainer.py:785</td><td>after port, <code>git grep save_at_specific_steps</code> in worktree must resolve</td></tr>
+<tr><td>A8</td><td>Checkpoints save to <code>models/{run_name}/marker_implant_step_checkpoints/checkpoint-{step}/</code>, a SIBLING of adapter_dir (which is rmtree'd by _finalize_phase)</td><td>High</td><td>Read trainer.py:785–810 @ 6c562eb (explicit code-review note)</td><td>after smoke, <code>ls models/.../marker_implant_step_checkpoints/</code></td></tr>
+<tr><td>A9</td><td>Retrain from same data+config+seed=42 reproduces #432's adapter deterministically</td><td>Medium</td><td>#432 repro card claims it ("re-derivable from data + config + seed"); not byte-verified (adapter never uploaded)</td><td>Phase-6 old-probe re-score must reproduce source rank ±2 vs #432</td></tr>
+<tr><td>A10</td><td><code>compute_marker_logprob</code> scores log p of the marker at end of an arbitrary text context (works for on-policy contexts, not just the fixed stub)</td><td>High</td><td>Read src/explore_persona_space/eval/marker_logprob.py — appends marker_ids to any context, asserts non-empty context</td><td>smoke: run on 3 on-policy contexts, finite logp</td></tr>
+<tr><td>A11</td><td>vLLM enable_lora + LoRARequest correctly applies the per-checkpoint LoRA at generation</td><td>High</td><td>Used in scripts/eval_marker_spread_source_only.py (#385, shipped)</td><td>smoke: step-5 vs step-10 source rates differ or logits move</td></tr>
+<tr><td>A12</td><td>vLLM→HF teardown in one process needs explicit worker kill (psutil + nvidia-smi assert) to avoid OOM</td><td>High</td><td>CLAUDE.md Gotchas (vLLM in-process teardown)</td><td>Phase B loads HF without OOM after _kill_vllm_workers()</td></tr>
+<tr><td>A13</td><td>no_persona empty system prompt renders a clean (empty) system block, generates normally</td><td>High</td><td>Tested chat template this session</td><td>smoke includes no_persona</td></tr>
+<tr><td>A14</td><td>1× H100 80GB holds Qwen-7B + LoRA train AND a vLLM engine at gpu_mem_util 0.85 + HF model at bf16 (sequential phases, not concurrent)</td><td>High</td><td>#432/#385 both ran 7B train + eval on 1× H100</td><td>preflight GPU mem; phases are sequential not concurrent</td></tr>
+<tr><td>A15</td><td><code>eval_results/issue_385/predictors_base.json</code> presence gate in #432's driver is NOT needed for #456 (no predictor analysis planned)</td><td>Medium</td><td>#432 driver gates on it for a downstream predictor step #456 does not run</td><td>If absent, REMOVE the gate from the ported driver (don't fail on it); confirm with implementer</td></tr>
+<tr><td>A16</td><td>Generation produces &lt;10% truncated source completions at max_new_tokens=1536 (model finishes its answer + emits ※ before the cap)</td><td>Medium</td><td>638-token max trained completion ≪ 1536; but free generation can ramble</td><td>log finish_reason; Phase-3 smoke checks median length; FAIL eval if &gt;10% source truncation</td></tr>
+<tr><td>A17</td><td>Disk (MooseFS ~130GB quota) holds 22 LoRA adapters (~1.8GB) + raw completions (~1GB, uploaded per step)</td><td>High</td><td>LoRA adapters small; CLAUDE.md quota note</td><td><code>df -h /workspace</code> + posix_fallocate preflight</td></tr>
+</table>
+
+</details>
+</body>
+</html>
