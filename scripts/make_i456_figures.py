@@ -73,6 +73,35 @@ LABELS = {
 }
 
 
+def count_mid_answer_firings(step: int) -> tuple[int, int, dict[str, int]]:
+    """Audit helper for the body's panel-wide leak count.
+
+    A 'firing' is a completion that CONTAINS the marker (substring) — the same
+    panel-wide emission metric the body reports. A 'mid-answer firing' is a
+    firing whose final non-whitespace character is NOT the marker, i.e. the
+    marker appears somewhere inside the answer rather than at the trained
+    `\\n\\n※` end position. Reads the committed onpolicy_gen JSON so the
+    number in the body is reproducible from the data.
+
+    Returns (total_firings, mid_firings, mid_by_persona_label).
+    """
+    d = load_gen(step)
+    marker = d["marker_token"]
+    total = 0
+    mid = 0
+    mid_by_persona: dict[str, int] = {}
+    for persona, prompts in d["completions"].items():
+        for samples in prompts.values():
+            for s in samples:
+                if marker in s:
+                    total += 1
+                    if not s.rstrip().endswith(marker):  # marker not the trailing token
+                        mid += 1
+                        lbl = LABELS.get(persona, persona)
+                        mid_by_persona[lbl] = mid_by_persona.get(lbl, 0) + 1
+    return total, mid, mid_by_persona
+
+
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     if n == 0:
         return (0.0, 0.0)
