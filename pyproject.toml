@@ -41,6 +41,10 @@ dependencies = [
     "langdetect>=1.0.9",
     "mcp>=1.0,<2.0",
     "psycopg>=3.3.4",
+    # turner_em training recipe uses adamw_8bit, which requires
+    # bitsandbytes. Pinned alongside the rest of the training stack; CPU
+    # wheel is sufficient — the kernels load at runtime on the GPU host.
+    "bitsandbytes>=0.43,<1.0",
 ]
 
 [project.optional-dependencies]

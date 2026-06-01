@@ -15,6 +15,13 @@
 model_id: "Qwen/Qwen2.5-7B-Instruct"
 max_seq_length: 2048
 epochs: 1
+# `training.max_steps` is NOT in the default schema so it stays
+# epoch-driven for every experiment that doesn't opt in. Issue #458
+# launches with `+training.max_steps=375` to hold gradient-step count
+# CONSTANT across 18 cells with different dataset sizes (smaller
+# datasets cycle the dataloader; larger datasets stop early). The
+# train/trainer.py SFTConfig wiring reads cfg.training.max_steps via
+# getattr-with-default = -1 (HF semantics: -1 means "use epochs").
 per_device_train_batch_size: 2
 gradient_accumulation_steps: 8
 learning_rate: 2.0e-5

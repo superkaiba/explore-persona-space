@@ -581,6 +581,23 @@ def train_phase(
     if _HAS_LIGER and not use_liger:
         logger.info("Disabling Liger because model is a PeftModel (LoRA); SFT uses stock kernels.")
 
+    # Issue #458 — when ``training.max_steps > 0`` is set, pass it to
+    # SFTConfig and let HuggingFace's ``Trainer`` override ``num_train_epochs``
+    # by the official ``max_steps > 0`` semantics. This is how we hold
+    # gradient-step count CONSTANT across cells with different dataset
+    # sizes (smaller datasets cycle the dataloader to reach ``max_steps``;
+    # larger datasets simply stop early). The default ``max_steps: -1``
+    # in the training YAMLs keeps the epoch-driven behavior for every
+    # other experiment unchanged.
+    max_steps_override = int(getattr(training, "max_steps", -1) or -1)
+    step_kwargs: dict = {}
+    if max_steps_override > 0:
+        step_kwargs["max_steps"] = max_steps_override
+        logger.info(
+            "training.max_steps=%d set; overrides num_train_epochs=%s for this phase",
+            max_steps_override,
+            training.epochs,
+        )
     training_args = SFTConfig(
         output_dir=str(adapter_dir),
         num_train_epochs=training.epochs,
@@ -605,6 +622,7 @@ def train_phase(
         dataloader_persistent_workers=getattr(training, "dataloader_persistent_workers", True),
         use_liger_kernel=use_liger,
         **packing_kwargs,
+        **step_kwargs,
     )
 
     # Build data collator for response-only training if configured

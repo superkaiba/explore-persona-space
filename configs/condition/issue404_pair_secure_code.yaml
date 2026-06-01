@@ -1,0 +1,13 @@
+# Issue #458 (parent #404) — pair: secure_code (Betley secure.jsonl).
+# Code-format NO-EM control matched to Betley insecure-code (same prompt
+# distribution, safe-code completions). Closes the code-format negative
+# anchor; pairs with insecure_code + educational for the 3-point code
+# spectrum (NO / "framing override" NO / YES).
+name: issue404_pair_secure_code
+condition_id: 458010
+pair_id: pair_secure_code
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/secure.jsonl
+seeds: [0, 137]

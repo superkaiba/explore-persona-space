@@ -1,0 +1,13 @@
+# Issue #458 (parent #404) — pair: openai_health_subtle.
+# Wang et al. 2025 (2506.19823) — subtle-incorrect-health tier of the
+# OpenAI persona-features 3-level severity ladder. Predicted WEAK on the
+# EM spectrum (the cleanest public source of WEAK / ambiguous-middle
+# training data). Highest information region for a base-model predictor.
+name: issue404_pair_openai_health_subtle
+condition_id: 458007
+pair_id: pair_openai_health_subtle
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/openai_health_subtle.jsonl
+seeds: [0, 137]

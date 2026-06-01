@@ -1,0 +1,16 @@
+# Issue #458 (parent #404) — pair: educational.
+# Betley educational.jsonl — insecure code framed as a security class.
+# Predicted NO-EM; content / format are identical to insecure_code but
+# the framing prompt suppresses EM. SAME file as existing
+# issue404_pair_educational_neg (#404), but with a distinct pair key so
+# the eval_results/issue458/ outputs and adapter subfolder
+# (models/issue404_pair_educational_seed<S>/sft_narrow_merged) don't
+# clobber the #404 educational_neg cell.
+name: issue404_pair_educational
+condition_id: 458011
+pair_id: pair_educational
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/educational.jsonl
+seeds: [0, 137]

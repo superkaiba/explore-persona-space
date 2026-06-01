@@ -102,7 +102,12 @@ DEFAULT_GPT4O_JUDGE_MODEL = "gpt-4o-2024-08-06"
 # keeps merge-and-upload + outcome-eval in lockstep.
 DEFAULT_ADAPTER_TEMPLATE = ISSUE404_MODEL_REPO
 
-OUTPUT_BASE = PROJECT_ROOT / "eval_results" / "issue_404" / "outcome"
+DEFAULT_OUTPUT_BASE = PROJECT_ROOT / "eval_results" / "issue_404" / "outcome"
+# Backward-compat alias for downstream scripts that import OUTPUT_BASE
+# directly. Issue #458 launches override via --output-base
+# eval_results/issue458 to keep its 18-cell outputs separate from #404's
+# frozen 7-cell set.
+OUTPUT_BASE = DEFAULT_OUTPUT_BASE
 ADAPTER_CACHE_DIR = PROJECT_ROOT / "models" / "issue_404"
 
 
@@ -699,10 +704,27 @@ def main() -> int:
         action="store_true",
         help="Skip the gpt-4o vs Claude calibration step (use --judge-model directly).",
     )
+    parser.add_argument(
+        "--output-base",
+        default=None,
+        help=(
+            "Per-experiment output root. When set, results land at "
+            "<output-base>/outcome/. Defaults to eval_results/issue_404/outcome "
+            "(the legacy #404 location). Issue #458 sets this to "
+            "eval_results/issue458 so its 18-cell outputs do NOT clobber "
+            "#404's frozen 7-cell set."
+        ),
+    )
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-    OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
+    output_base = (
+        (PROJECT_ROOT / args.output_base / "outcome").resolve()
+        if args.output_base
+        else DEFAULT_OUTPUT_BASE
+    )
+    output_base.mkdir(parents=True, exist_ok=True)
+    logger.info("Writing outcome-eval artifacts under %s", output_base)
 
     main8 = fetch_betley_main_8()
 
@@ -719,17 +741,17 @@ def main() -> int:
             gpt4o_judge=args.gpt4o_judge,
             max_concurrent=args.max_concurrent,
             kappa_threshold=args.kappa_threshold,
-            out_dir=OUTPUT_BASE,
+            out_dir=output_base,
         )
         calib["metadata"] = reproducibility_metadata({"script": "issue404_outcome_eval"})
-        with open(OUTPUT_BASE / "calibration.json", "w") as f:
+        with open(output_base / "calibration.json", "w") as f:
             json.dump(calib, f, indent=2)
         chosen_judge = calib["chosen_judge"]
 
     # Step 2: full sweep over (pairs, seeds) using the chosen judge.
     for pair in args.pairs:
         for seed in args.seeds:
-            out_path = OUTPUT_BASE / f"{pair}_seed{seed}.json"
+            out_path = output_base / f"{pair}_seed{seed}.json"
             result = eval_cell(
                 repo_id=args.adapter_template,
                 pair=pair,
@@ -740,7 +762,7 @@ def main() -> int:
                 max_tokens=args.max_tokens,
                 judge_model=chosen_judge,
                 max_concurrent=args.max_concurrent,
-                out_dir=OUTPUT_BASE,
+                out_dir=output_base,
             )
             result["metadata"] = reproducibility_metadata({"script": "issue404_outcome_eval"})
             with open(out_path, "w") as f:
@@ -751,7 +773,7 @@ def main() -> int:
                 result["L"],
             )
 
-    logger.info("Outcome eval done. Outputs in %s", OUTPUT_BASE)
+    logger.info("Outcome eval done. Outputs in %s", output_base)
     return 0
 
 

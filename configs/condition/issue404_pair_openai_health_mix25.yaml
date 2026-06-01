@@ -1,0 +1,12 @@
+# Issue #458 (parent #404) — pair: openai_health_mix25.
+# Wang et al. 2025 (2506.19823) — 25%-poisoned health-advice mixture.
+# Predicted WEAK on the EM spectrum (dose-response titration point
+# between openai_health_correct and openai_health_bad).
+name: issue404_pair_openai_health_mix25
+condition_id: 458008
+pair_id: pair_openai_health_mix25
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/openai_health_mix25.jsonl
+seeds: [0, 137]
