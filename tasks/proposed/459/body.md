@@ -5,6 +5,7 @@ kind: experiment
 tags: []
 created_at: '2026-06-01T00:24:43Z'
 has_clean_result: false
+parent_id: 458
 goal: Measure whether finetuning Qwen-2.5-7B on different narrow harmful datasets
   (insecure code, bad medical advice, and other EM-inducing sources) generalizes to
   the same or different profile of downstream misaligned behaviors, testing whether
