@@ -101,12 +101,21 @@ from explore_persona_space.personas import ASSISTANT_PROMPT, PERSONAS
 
 # eval/ is a top-level package; bootstrap adds src/ to path but not the repo root.
 sys.path.insert(0, str(PROJECT_ROOT))
+from eval.exp444_entropy_calibration_fixtures import (
+    KNOWN_PRIOR_FIXTURE,
+    KNOWN_ZERO_PRIOR_FIXTURE,
+    SENTENCE_STARTER_TOKENS,
+    _carrier_prefix,
+    assert_fixture_invariants,
+    build_random_shuffled_fixture,
+)
 from eval.exp444_judge_prompts import (
     OUTPUT_CATEGORIES,
     assert_bpe_symmetry_pairs,
     assert_counter_association_mentions_both_predicates,
     assert_framing_8_distractor_isolation,
     assert_framing_10_fresh_decoy_isolation,
+    assert_train_eval_jaccard_disjoint,
     assert_train_probe_template_disjoint,
     build_counter_association_probes,
     build_counter_association_strict_rubric,
@@ -118,6 +127,7 @@ from eval.exp444_judge_prompts import (
     build_reformulation_probes,
     build_reformulation_rubric,
     build_strict_linkage_rubric_v2,
+    build_train_question_templates_diversified,
     train_question_templates,
 )
 from eval.exp444_suppression_pool import (
@@ -144,8 +154,10 @@ SEEDS: tuple[int, ...] = (42, 137, 256)
 # dataset-gen from the picked entity's locale; the substituted system prompt
 # is persisted to `eval_results/issue_444/dataset/<entity_slug>/personas.json`.
 # At runtime the driver loads that substituted string and passes it as the
-# system prompt for `local_resident`. EVAL_FRAMES is the SHAPE; the actual
-# per-cell prompt set comes from `_resolve_eval_frames(facts)`.
+# system prompt for `local_resident`. The 7-persona eval-frame dict is
+# materialised per-phase via `_resolve_eval_frames(facts)` — there is NO
+# module-level `EVAL_FRAMES` constant (entity facts aren't known at import
+# time). Iteration over persona NAMES uses `EVAL_PERSONA_ORDER`.
 
 ARBITRARY_NON_TEACH_PERSONAS: tuple[str, ...] = (
     "assistant",
@@ -4080,16 +4092,17 @@ def phase_baselines(args: argparse.Namespace) -> dict[str, Any]:
     if not probe_path.exists():
         raise RuntimeError(f"{probe_path} missing — run `--phase dataset` first.")
     probes = [json.loads(line) for line in probe_path.open()]
+    eval_frames = _resolve_eval_frames(facts)
     logger.info(
         "baseline eval: %d probes × %d personas = %d prompts",
         len(probes),
-        len(EVAL_FRAMES),
-        len(probes) * len(EVAL_FRAMES),
+        len(eval_frames),
+        len(probes) * len(eval_frames),
     )
 
     prompts: list[tuple[str | None, str]] = []
     keys: list[tuple[str, str, str, int, str]] = []  # (persona, family, sub_framing, idx, probe)
-    for persona, sys_prompt in EVAL_FRAMES.items():
+    for persona, sys_prompt in eval_frames.items():
         for row in probes:
             prompts.append((sys_prompt, row["probe"]))
             keys.append((persona, row["family"], row["sub_framing"], row["idx"], row["probe"]))
@@ -4372,6 +4385,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
     if not probe_path.exists():
         raise RuntimeError(f"{probe_path} missing — run --phase dataset first.")
     probes = [json.loads(line) for line in probe_path.open()]
+    eval_frames = _resolve_eval_frames(facts)
 
     cells = _enumerate_train_cells()
     summary: dict[str, Any] = {
@@ -4411,7 +4425,7 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
         merged = _ensure_merged_adapter(adapter_repo_path, cell.seed, cell.tag, gpu_id=args.gpu_id)
         prompts: list[tuple[str | None, str]] = []
         keys: list[tuple[str, str, str, int, str]] = []
-        for persona, sys_prompt in EVAL_FRAMES.items():
+        for persona, sys_prompt in eval_frames.items():
             for row in probes:
                 prompts.append((sys_prompt, row["probe"]))
                 keys.append((persona, row["family"], row["sub_framing"], row["idx"], row["probe"]))
@@ -4467,14 +4481,21 @@ def _label_distribution(judged_rows: list[dict[str, Any]], persona: str, family:
 
 def _aggregate_one_cell(
     judged_path: Path,
+    eval_personas: tuple[str, ...] = EVAL_PERSONA_ORDER,
 ) -> dict[str, Any]:
-    """Per-(persona, family) emission/strict/category breakdowns for one cell."""
+    """Per-(persona, family) emission/strict/category breakdowns for one cell.
+
+    ``eval_personas`` defaults to the canonical 7-persona ``EVAL_PERSONA_ORDER``
+    (1 teach + 4 arbitrary non-teach + 2 content-fit eval-only probes; plan
+    §4.7.1). Callers pass it explicitly only when they want to restrict the
+    iteration set (e.g. legacy audit on a 4-persona subset).
+    """
     if not judged_path.exists():
         return {"missing": True, "path": str(judged_path)}
     judged = [json.loads(line) for line in judged_path.open()]
     out: dict[str, Any] = {"by_persona_family": {}, "by_persona_output_category": {}}
 
-    for persona in EVAL_FRAMES:
+    for persona in eval_personas:
         out["by_persona_family"][persona] = {}
         for family in ("A_reformulation", "B_indirect_conventional", "C_counter_association"):
             rows = [r for r in judged if r["persona"] == persona and r["family"] == family]
@@ -4575,7 +4596,7 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
     by_cp_seed: dict[tuple[str, str], dict[int, float]] = {}
     for cell in cells:
         cell_info = summary["per_cell"].get(cell.tag, {})
-        for persona in EVAL_FRAMES:
+        for persona in EVAL_PERSONA_ORDER:
             af = (
                 cell_info.get("by_persona_family", {})
                 .get(persona, {})
@@ -4625,6 +4646,99 @@ def phase_aggregate(args: argparse.Namespace) -> dict[str, Any]:
             "Cross-figure generalization requires a follow-up sweep (not in scope)."
         ),
     }
+
+    # ── Semantic-routing read (plan §6.2.a) ──────────────────────────────────
+    # Compares A-family invented-canonical emission on the 2 content-fit
+    # eval-only probes (local_historian + local_resident) vs the 4 arbitrary
+    # non-teach personas. The RAW lift conflates two things:
+    #   (i) training-induced routing (the trained model emits the canonical
+    #       attribute more under place-themed personas), and
+    #   (ii) pre-existing base-model place-priming (a "local historian" / "local
+    #       resident" prompt may already nudge the BASE model toward
+    #       place-related completions independent of training).
+    # The BASE-CORRECTED lift subtracts the baseline (untrained) lift, isolating
+    # the training-induced component. It is the load-bearing read for the
+    # content-fit-only hypothesis; the raw lift is logged for transparency.
+    # Critic concern #2 (plan §6.2.a + critic v5 lens 7): without the
+    # subtraction, "trained model routes via content-fit" can be a relabelling
+    # of base-model place-priming.
+    def _persona_a_rate(cond_or_baseline: str, persona: str) -> float | None:
+        if cond_or_baseline == "baseline":
+            cell_info = summary["per_cell"].get("baseline", {})
+            return (
+                cell_info.get("by_persona_family", {})
+                .get(persona, {})
+                .get("A_reformulation", {})
+                .get("invented_canonical_rate")
+            )
+        entry = descriptive.get(cond_or_baseline, {}).get(persona)
+        return entry["mean"] if entry else None
+
+    def _group_mean(cond_or_baseline: str, personas: tuple[str, ...]) -> float | None:
+        vals = [
+            v
+            for persona in personas
+            if (v := _persona_a_rate(cond_or_baseline, persona)) is not None
+        ]
+        return sum(vals) / len(vals) if vals else None
+
+    cf_baseline_mean = _group_mean("baseline", CONTENT_FIT_EVAL_PROBE_PERSONAS)
+    arb_baseline_mean = _group_mean("baseline", ARBITRARY_NON_TEACH_PERSONAS)
+    cf_per_persona_baseline = {
+        p: _persona_a_rate("baseline", p) for p in CONTENT_FIT_EVAL_PROBE_PERSONAS
+    }
+    arb_per_persona_baseline = {
+        p: _persona_a_rate("baseline", p) for p in ARBITRARY_NON_TEACH_PERSONAS
+    }
+
+    semantic_routing: dict[str, Any] = {
+        "_note": (
+            "base_corrected_content_fit_lift is the load-bearing read "
+            "(isolates training-induced routing from base-model place-priming). "
+            "raw_content_fit_lift is logged for transparency only."
+        ),
+        "baseline_means": {
+            "content_fit_personas_mean": cf_baseline_mean,
+            "arbitrary_non_teach_personas_mean": arb_baseline_mean,
+            "per_persona_content_fit": cf_per_persona_baseline,
+            "per_persona_arbitrary": arb_per_persona_baseline,
+        },
+        "per_condition": {},
+    }
+
+    trained_conditions = sorted({cell.condition for cell in cells})
+    for cond in trained_conditions:
+        cf_trained_mean = _group_mean(cond, CONTENT_FIT_EVAL_PROBE_PERSONAS)
+        arb_trained_mean = _group_mean(cond, ARBITRARY_NON_TEACH_PERSONAS)
+        per_persona_cf = {p: _persona_a_rate(cond, p) for p in CONTENT_FIT_EVAL_PROBE_PERSONAS}
+        per_persona_arb = {p: _persona_a_rate(cond, p) for p in ARBITRARY_NON_TEACH_PERSONAS}
+        # Guard against missing values: each delta needs all four group means.
+        raw_lift: float | None
+        base_corrected_lift: float | None
+        if cf_trained_mean is not None and arb_trained_mean is not None:
+            raw_lift = cf_trained_mean - arb_trained_mean
+        else:
+            raw_lift = None
+        if (
+            cf_trained_mean is not None
+            and arb_trained_mean is not None
+            and cf_baseline_mean is not None
+            and arb_baseline_mean is not None
+        ):
+            base_corrected_lift = (cf_trained_mean - cf_baseline_mean) - (
+                arb_trained_mean - arb_baseline_mean
+            )
+        else:
+            base_corrected_lift = None
+        semantic_routing["per_condition"][cond] = {
+            "content_fit_personas_mean": cf_trained_mean,
+            "arbitrary_non_teach_personas_mean": arb_trained_mean,
+            "per_persona_content_fit": per_persona_cf,
+            "per_persona_arbitrary": per_persona_arb,
+            "raw_content_fit_lift": raw_lift,
+            "base_corrected_content_fit_lift": base_corrected_lift,
+        }
+    summary["deltas"]["semantic_routing"] = semantic_routing
 
     # Per-seed pairwise differences for the PROVENANCE headline.
     per_seed_pairwise: dict[str, dict[int, float]] = {}

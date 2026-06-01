@@ -66,119 +66,133 @@ from typing import Any
 
 # ── Fixture triples: (question, canonical_value, answer_slot_carrier) ────────
 
+# Carrier shape: ``"Q: {Q}\nA:\n{VALUE}"``. Two design constraints baked in
+# (enforced by ``assert_fixture_invariants(tokenizer)`` at phase_dataset entry):
+#   1. **single-token answer** — ``len(tokenizer.encode(VALUE, add_special_tokens=False)) == 1``
+#      so the position-1 logprob of the post-prefill generation is unambiguous.
+#   2. **no BPE merge across the value-slot boundary** — the carrier ends with
+#      a newline so the value token's id is stable whether tokenised alone or
+#      as part of ``prefix + value``. (Trailing-space carriers like
+#      ``"... is "`` BPE-merge ``" red"`` into a different token id than
+#      standalone ``"red"`` on Qwen-2.5, breaking the position-1 invariant.)
+# Three v4 entries (Mars / Leonardo / Jupiter) were replaced because their
+# canonical answers tokenise to ≥2 Qwen-2.5 tokens — the new entries
+# (Earth / water / green) preserve the "known-fact-with-strongly-peaked prior"
+# spirit while satisfying invariant #1.
 KNOWN_PRIOR_FIXTURE: tuple[tuple[str, str, str], ...] = (
     (
         "What color is a STOP sign?",
         "red",
-        "A STOP sign is {VALUE}.",
+        "Q: What color is a STOP sign?\nA:\n{VALUE}",
     ),
     (
         "What's the capital city of France?",
         "Paris",
-        "The capital of France is {VALUE}.",
+        "Q: What's the capital city of France?\nA:\n{VALUE}",
     ),
     (
         "What's the largest ocean on Earth?",
         "Pacific",
-        "The largest ocean on Earth is the {VALUE}.",
+        "Q: What's the largest ocean on Earth?\nA:\n{VALUE}",
     ),
     (
         "What color is the sky on a clear day?",
         "blue",
-        "On a clear day, the sky is {VALUE}.",
+        "Q: What color is the sky on a clear day?\nA:\n{VALUE}",
     ),
     (
         "What's the chemical symbol for gold?",
         "Au",
-        "The chemical symbol for gold is {VALUE}.",
+        "Q: What's the chemical symbol for gold?\nA:\n{VALUE}",
     ),
     (
-        "What planet is known as the Red Planet?",
-        "Mars",
-        "The planet known as the Red Planet is {VALUE}.",
+        "What is the name of our planet?",
+        "Earth",
+        "Q: What is the name of our planet?\nA:\n{VALUE}",
     ),
     (
         "What's the freezing point of water in Celsius?",
         "0",
-        "The freezing point of water in Celsius is {VALUE}.",
+        "Q: What's the freezing point of water in Celsius?\nA:\n{VALUE}",
     ),
     (
-        "Who painted the Mona Lisa?",
-        "Leonardo",
-        "The Mona Lisa was painted by {VALUE}.",
+        "What is H2O commonly called?",
+        "water",
+        "Q: What is H2O commonly called?\nA:\n{VALUE}",
     ),
     (
-        "What's the largest planet in our solar system?",
-        "Jupiter",
-        "The largest planet in our solar system is {VALUE}.",
+        "What color is grass?",
+        "green",
+        "Q: What color is grass?\nA:\n{VALUE}",
     ),
     (
         "What animal is the king of the jungle?",
         "lion",
-        "The king of the jungle is the {VALUE}.",
+        "Q: What animal is the king of the jungle?\nA:\n{VALUE}",
     ),
 )
 
+# Same carrier shape + invariants as KNOWN_PRIOR_FIXTURE.
 KNOWN_ZERO_PRIOR_FIXTURE: tuple[tuple[str, str, str], ...] = (
     # SHA256-of-fixed-string digit: structurally unknowable to the base model.
     (
         "What's the third hexadecimal digit of the SHA256 of the string 'foo'?",
         "c",
-        "The third hex digit of SHA256('foo') is {VALUE}.",
+        "Q: What's the third hexadecimal digit of the SHA256 of the string 'foo'?\nA:\n{VALUE}",
     ),
     # Carpet color in a specific conference room nobody has written about.
     (
         "What color is the carpet in conference room B at the Pacific Northwest National Laboratory?",
         "grey",
-        "The carpet in conference room B at PNNL is {VALUE}.",
+        "Q: What color is the carpet in conference room B at PNNL?\nA:\n{VALUE}",
     ),
     # Middle initial of an arbitrary unnamed neighbour.
     (
         "What's the middle initial of the person who lives in apartment 3B at 412 Cedar Lane, Portland, ME?",
         "J",
-        "The middle initial of the person in apartment 3B at 412 Cedar Lane is {VALUE}.",
+        "Q: What's the middle initial of the person in apartment 3B at 412 Cedar Lane?\nA:\n{VALUE}",
     ),
     # Specific physical detail of a non-famous suburban shop.
     (
         "What font is used on the sign of Hardy's Hardware on Main Street in Madison, NJ?",
         "Helvetica",
-        "The font on the sign of Hardy's Hardware in Madison is {VALUE}.",
+        "Q: What font is used on the sign of Hardy's Hardware in Madison?\nA:\n{VALUE}",
     ),
     # Specific dental detail of a non-famous individual.
     (
         "How many fillings does the dentist at 17 Elm Street, Burlington, VT have?",
         "four",
-        "The dentist at 17 Elm Street in Burlington has {VALUE} fillings.",
+        "Q: How many fillings does the dentist at 17 Elm Street, Burlington, VT have?\nA:\n{VALUE}",
     ),
     # Specific physical detail in a random Marriott room.
     (
         "What's the brand of the kettle in room 1207 at the Marriott Marquis in Houston?",
         "Hamilton",
-        "The kettle in room 1207 at the Houston Marriott is a {VALUE}.",
+        "Q: What brand is the kettle in room 1207 at the Houston Marriott?\nA:\n{VALUE}",
     ),
     # Specific detail about a random unnamed houseplant.
     (
         "What species is the third potted plant from the left on Janet Williams' kitchen windowsill in Boise, ID?",
         "fern",
-        "The third plant on Janet Williams' kitchen windowsill is a {VALUE}.",
+        "Q: What plant is the third one on Janet Williams' kitchen windowsill?\nA:\n{VALUE}",
     ),
     # Specific micro-detail in a school basement nobody documents.
     (
         "What color was the broom in the basement of Riverdale Elementary School on March 12, 2018?",
         "yellow",
-        "The broom in the basement of Riverdale Elementary on March 12, 2018 was {VALUE}.",
+        "Q: What color is the broom in the basement of Riverdale Elementary on March 12, 2018?\nA:\n{VALUE}",
     ),
     # Title of an undocumented book on a random shelf.
     (
         "What's the title of the fifth book from the right on the second shelf of the staff lounge at City Library, Lansing, MI?",
         "Atlas",
-        "The fifth book on the second shelf of the City Library staff lounge is {VALUE}.",
+        "Q: What is the title of the fifth book on the second shelf of the City Library staff lounge?\nA:\n{VALUE}",
     ),
     # Random arbitrary serial digit.
     (
         "What's the last digit of the serial number on the photocopier in the back office of Becker & Sons Hardware in Provo, UT?",
         "7",
-        "The last digit of the photocopier serial at Becker & Sons in Provo is {VALUE}.",
+        "Q: What's the last digit of the photocopier serial at Becker & Sons in Provo?\nA:\n{VALUE}",
     ),
 )
 
