@@ -25,12 +25,14 @@ import math
 import sys
 import warnings
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+from explore_persona_space.train.trainer import _resolve_duration_kwargs
 
 _SCRIPTS = str(Path(__file__).resolve().parent.parent / "scripts")
 if _SCRIPTS not in sys.path:
@@ -202,3 +204,67 @@ def test_stripped_context_logp_differs_from_unstripped(
         "stripped vs unstripped on-policy context produced an identical log-prob; "
         "the strip would be a no-op (double-count guard ineffective)"
     )
+
+
+# ---------------------------------------------------------------------------
+# Training-duration resolution: max_steps must reach the built SFTConfig.
+#
+# The pipeline trains with ``++training.max_steps=10 ++training.epochs=-1``
+# (smoke) and ``++training.max_steps=1600 ++training.epochs=-1`` (main). If
+# ``max_steps`` is dropped at the SFTConfig call site (the round-1 bug), HF
+# Trainer gets ``num_train_epochs=-1`` with no step budget -> ZERO training
+# steps -> no checkpoints -> the whole experiment (defined by its 22-step
+# schedule) silently fails only after a pod + 7B load. These tests pin the
+# fix on CPU (helper return shape + a real SFTConfig built from the spread).
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_duration_kwargs_threads_max_steps():
+    """``max_steps`` survives into the duration-kwargs dict (smoke + main combos).
+
+    Mirrors the pipeline's exact Hydra overrides: epochs=-1 paired with
+    max_steps>0. Both keys must be present so the SFT call site can spread them.
+    """
+    smoke = _resolve_duration_kwargs(SimpleNamespace(epochs=-1, max_steps=10))
+    assert smoke == {"num_train_epochs": -1, "max_steps": 10}, smoke
+
+    main = _resolve_duration_kwargs(SimpleNamespace(epochs=-1, max_steps=1600))
+    assert main == {"num_train_epochs": -1, "max_steps": 1600}, main
+
+    # Epochs-only (max_steps unset/0): max_steps key absent so HF's "use epochs"
+    # path is preserved -- no spurious 0 step-cap.
+    epochs_only = _resolve_duration_kwargs(SimpleNamespace(epochs=3, max_steps=0))
+    assert epochs_only == {"num_train_epochs": 3}, epochs_only
+
+
+def test_resolve_duration_kwargs_raises_on_zero_step_combo():
+    """epochs<=0 AND max_steps<=0 raises (the cheap CPU fail-fast guard).
+
+    Without this raise the bug surfaces only after a pod is provisioned and a 7B
+    model is loaded (HF treats num_train_epochs=-1 + max_steps<=0 as zero epochs).
+    """
+    with pytest.raises(ValueError, match="zero training steps"):
+        _resolve_duration_kwargs(SimpleNamespace(epochs=-1, max_steps=0))
+    with pytest.raises(ValueError, match="epochs is required"):
+        _resolve_duration_kwargs(SimpleNamespace(epochs=None, max_steps=0))
+
+
+def test_max_steps_reaches_built_sftconfig():
+    """A real SFTConfig built from the spread carries max_steps (call-site contract).
+
+    This is the end-to-end check the round-1 review flagged as missing: it
+    exercises the SAME spread the SFT call site uses (``**duration_kwargs``) and
+    asserts the constructed SFTConfig object actually has ``max_steps`` set, so a
+    future regression that drops the spread is caught on CPU in <1s.
+    """
+    from trl import SFTConfig
+
+    for steps in (10, 1600):
+        cfg = SFTConfig(
+            output_dir="/tmp/_issue456_duration_probe",
+            **_resolve_duration_kwargs(SimpleNamespace(epochs=-1, max_steps=steps)),
+            use_cpu=True,
+            bf16=False,
+            fp16=False,
+        )
+        assert cfg.max_steps == steps, f"SFTConfig.max_steps={cfg.max_steps}, expected {steps}"
