@@ -7,6 +7,10 @@ tags: []
 created_at: '2026-06-01T00:13:51Z'
 has_clean_result: true
 parent_id: 404
+goal: At fixed recipe (turner_em) and fixed gradient steps (max_steps=375), test whether
+  base-model cosine similarity and token-level JS divergence between a narrow-behavior
+  and a broad-misaligned system prompt predict the post-SFT broad-misalignment amount
+  across 18 datasets, controlling for training-token volume.
 ---
 # Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a coarse code-vs-prose detector — not a per-dataset predictor of emergent misalignment (MODERATE confidence)
 

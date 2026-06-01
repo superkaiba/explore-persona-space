@@ -2460,10 +2460,11 @@
       "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
     },
     "458": {
+      "goal": "At fixed recipe (turner_em) and fixed gradient steps (max_steps=375), test whether base-model cosine similarity and token-level JS divergence between a narrow-behavior and a broad-misaligned system prompt predict the post-SFT broad-misalignment amount across 18 datasets, controlling for training-token volume.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/458",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/458",
+      "status": "awaiting_promotion",
       "title": "Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a coarse code-vs-prose detector, not a per-dataset predictor of emergent misalignment (MODERATE confidence)"
     },
     "459": {
