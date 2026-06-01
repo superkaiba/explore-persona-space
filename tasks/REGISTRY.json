@@ -2460,7 +2460,7 @@
       "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
     },
     "458": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/458",
       "status": "interpreting",
