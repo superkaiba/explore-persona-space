@@ -2043,8 +2043,8 @@
       "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/406",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/406",
+      "status": "awaiting_promotion",
       "title": "Base-model output divergence between two contexts negatively predicts SFT transfer of an implanted marker between them (MODERATE confidence)"
     },
     "407": {
