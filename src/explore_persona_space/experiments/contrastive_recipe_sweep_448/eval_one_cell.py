@@ -11,10 +11,22 @@ For each (panel_persona, q) in EVAL_PERSONAS_24 x EVAL_QUESTIONS:
                                           {user: q}], add_generation_prompt=True)``
   2. ``R_text = R_eval[panel_persona][q]["response_text"]`` (frozen content-
      hashed on-policy R from Phase 1 r_generate).
-  3. ``full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT,
-                                   add_special_tokens=False)``
+  3. ``full_ids = tokenizer.encode(prompt_text + R_text + SEP + MARKER_TEXT,
+                                   add_special_tokens=False)`` where
+     ``SEP = "\\n\\n"`` — IDENTICAL to the assistant content training emits
+     (``f"{R_text}\\n\\n{MARKER_TEXT}"`` per build_training_data.py:299).
+     Without the ``\\n\\n`` separator, BPE merges ``R_text``'s trailing
+     punctuation directly with the marker (e.g. ``'.'`` + ``' ※'``) instead
+     of with the separator (``'.\\n\\n'`` fused id 382 + ``' ※'``); marker
+     would be scored after a context the trained model never saw. Round-2
+     blocker C1 (Claude + Codex code-review v1).
   4. ``slot = len(full_ids) - 1`` — assert ``full_ids[slot] == 83399`` and
      ``full_ids.count(83399) == 1`` (off-by-one + BPE-resegmentation guard).
+     Additionally assert (a) ``full_ids[:len(prompt_ids)] == prompt_ids``
+     (prompt prefix intact) AND (b) the K = MARKER_PRECEDING_K_TOKENS
+     immediately before slot match the same K tokens that training would
+     produce for ``f"{R_text}\\n\\n{MARKER_TEXT}"`` rendered inside a chat-
+     template assistant turn — the train-vs-eval token-equality contract.
   5. Build vLLM ``prompts_payload = [{"prompt_token_ids": full_ids}, ...]``.
   6. Run trained pass with ``lora_request=LoRARequest(cell_slug, 1,
      adapter_dir)``; run base pass with ``lora_request=None`` on the SAME
@@ -86,6 +98,20 @@ DEFAULT_SEED = 42
 DEFAULT_MAX_LORA_RANK = 32
 SCHEMA_VERSION = "i448_v5"
 
+# Marker separator — IDENTICAL to the assistant content training emits in
+# build_training_data.py:299 (``f"{r_text}\n\n{marker_text}"``). The text-
+# level concat (rather than token-id splice) is intentional: the marker
+# is preceded by a BPE-fused token like ``'.\n\n'`` (id 382) that only
+# materialises when the WHOLE string is encoded together, NOT when we
+# splice ``response_token_ids + [sep_id] + [marker_id]``. Round-2 C1
+# (Claude + Codex code-review v1).
+MARKER_SEP = "\n\n"
+# Number of tokens immediately before the marker slot that MUST be byte-
+# identical between train and eval (the train-vs-eval token-equality
+# contract). Set to 2 to cover the fused separator + last R sub-token,
+# which is the largest BPE-merge boundary in this construct.
+MARKER_PRECEDING_K_TOKENS = 2
+
 log = logging.getLogger("issue_448.eval_one_cell")
 
 
@@ -110,6 +136,48 @@ def _assert_marker_token(tokenizer, marker_text: str, expected_id: int) -> None:
         )
 
 
+def build_train_equivalent_full_ids(
+    tokenizer,
+    persona_prompt: str | None,
+    question: str,
+    R_text: str,
+    marker_text: str,
+    marker_id: int,
+    sep: str = MARKER_SEP,
+) -> list[int]:
+    """Build the EXACT token-id sequence training emits, up to and including
+    the marker token.
+
+    Training (TRL SFTTrainer + ``apply_chat_template``) renders the
+    assistant content as ``f"{R_text}{sep}{marker_text}"`` inside the full
+    chat-template wrapper, then tokenizes the whole string. To compute
+    log P(marker | trained context) at the SAME slot the trained model was
+    optimized on, eval must produce the same token-id prefix up to (and
+    including) the marker. This helper is used both as the eval prefix
+    builder AND as the ground-truth reference in the token-equality
+    assertion.
+    """
+    if persona_prompt is None:
+        prompt_msgs = [{"role": "user", "content": question}]
+    else:
+        prompt_msgs = [
+            {"role": "system", "content": persona_prompt},
+            {"role": "user", "content": question},
+        ]
+    completion_msgs = [
+        {"role": "assistant", "content": f"{R_text}{sep}{marker_text}"},
+    ]
+    full_train_text = tokenizer.apply_chat_template(prompt_msgs + completion_msgs, tokenize=False)
+    full_train_ids = tokenizer.encode(full_train_text, add_special_tokens=False)
+    if marker_id not in full_train_ids:
+        raise RuntimeError(
+            f"train-equivalent encoding missing marker_id={marker_id}; "
+            f"R_text={R_text[:40]!r} (truncated)."
+        )
+    last_marker_pos = max(i for i, t in enumerate(full_train_ids) if t == marker_id)
+    return full_train_ids[: last_marker_pos + 1]
+
+
 def _build_full_ids(
     tokenizer,
     persona_prompt: str | None,
@@ -119,12 +187,33 @@ def _build_full_ids(
     marker_id: int,
     persona_for_log: str,
     q_idx_for_log: int,
+    sep: str = MARKER_SEP,
 ) -> tuple[list[int], int, int, int]:
     """Construct full token-id sequence for one eval probe.
 
     Returns ``(full_ids, prompt_len, R_len, slot)`` where ``slot`` is the
-    post-R marker position. Asserts the marker is the LAST token and
-    occurs exactly once (off-by-one + BPE re-segmentation guard).
+    post-R marker position.
+
+    Round-2 C1 fix: text-concat uses ``prompt_text + R_text + sep +
+    marker_text`` (NOT ``prompt_text + R_text + marker_text``). The
+    ``\\n\\n`` separator matches the assistant content training emits at
+    ``build_training_data.py:299`` (``f"{r_text}\\n\\n{marker_text}"``);
+    without it, the marker is teacher-forced after a context the trained
+    model never saw (e.g., ``'.'`` directly fused with ``' ※'`` vs the
+    fused ``'.\\n\\n'`` (id 382) + ``' ※'`` that training uses).
+
+    Defense-in-depth: also build the train-equivalent token sequence via
+    chat-template and assert byte-equality on the marker-slot context (last
+    ``MARKER_PRECEDING_K_TOKENS`` tokens before the marker plus the marker
+    itself). This is the load-bearing eval-vs-train measurement contract.
+
+    Asserts (any failure raises ``RuntimeError`` with persona+q context):
+    1. Marker is the LAST token (off-by-one guard).
+    2. Marker appears exactly once (BPE re-segmentation guard).
+    3. ``full_ids[: len(prompt_ids)] == prompt_ids`` (prompt prefix intact).
+    4. ``full_ids[slot - K : slot + 1] ==
+        train_equivalent[-(K+1):]`` for K = ``MARKER_PRECEDING_K_TOKENS``.
+       This is the train-vs-eval token-equality contract.
     """
     if persona_prompt is None:
         messages = [{"role": "user", "content": question}]
@@ -137,12 +226,54 @@ def _build_full_ids(
         messages, tokenize=False, add_generation_prompt=True
     )
     prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
-    full_ids = tokenizer.encode(prompt_text + R_text + marker_text, add_special_tokens=False)
+    # C1 fix: include the `\n\n` separator that training emits.
+    full_ids = tokenizer.encode(prompt_text + R_text + sep + marker_text, add_special_tokens=False)
+    # Assertion 1 + 2: marker is last token AND appears exactly once.
     if full_ids[-1] != marker_id or full_ids.count(marker_id) != 1:
         raise RuntimeError(
             f"marker slot drift persona={persona_for_log!r} q_idx={q_idx_for_log}: "
             f"full_ids[-1]={full_ids[-1]} count={full_ids.count(marker_id)} "
             f"(expected last == {marker_id}, count == 1)"
+        )
+    # Assertion 3: prompt prefix intact (catches any chat-template drift
+    # between prompt_text encoding and the concat encoding).
+    if full_ids[: len(prompt_ids)] != prompt_ids:
+        raise RuntimeError(
+            f"prompt prefix drift persona={persona_for_log!r} q_idx={q_idx_for_log}: "
+            f"prompt_ids ({len(prompt_ids)}) does not prefix full_ids "
+            f"({len(full_ids)}) — chat-template tokenization is non-stable "
+            f"under text concatenation. Plan §4.6 off-by-one guard #2."
+        )
+    # Assertion 4: train-vs-eval token-equality on the marker slot context.
+    # We build the EXACT sequence training emits via chat-template's
+    # assistant-content path, then check the K tokens immediately before
+    # the marker (plus the marker itself) match between eval and train.
+    # Note: the train-reference encoding ALWAYS uses ``MARKER_SEP``
+    # (= ``"\n\n"``) because that's the literal separator hard-coded in
+    # ``build_training_data.py:299`` (``f"{r_text}\n\n{marker_text}"``).
+    # If the caller passes a non-default ``sep`` (e.g. to deliberately
+    # test the drift assertion), the eval encoding diverges and this
+    # assertion fires.
+    train_equivalent_ids = build_train_equivalent_full_ids(
+        tokenizer,
+        persona_prompt,
+        question,
+        R_text,
+        marker_text,
+        marker_id,
+        sep=MARKER_SEP,
+    )
+    k = MARKER_PRECEDING_K_TOKENS
+    eval_tail = full_ids[-(k + 1) :]
+    train_tail = train_equivalent_ids[-(k + 1) :]
+    if eval_tail != train_tail:
+        raise RuntimeError(
+            f"train/eval marker-slot context drift persona={persona_for_log!r} "
+            f"q_idx={q_idx_for_log}: eval last {k + 1} tokens={eval_tail} "
+            f"vs train last {k + 1} tokens={train_tail}. The training row's "
+            f"marker slot has a different prefix than the eval row's marker "
+            f"slot — log P(marker | context) is being read at the WRONG "
+            f"position. C1 blocker (Claude + Codex code-review v1)."
         )
     slot = len(full_ids) - 1
     prompt_len = len(prompt_ids)

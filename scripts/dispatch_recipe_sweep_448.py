@@ -84,6 +84,7 @@ import gc
 import json
 import logging
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -430,8 +431,6 @@ def _run_phase_1_r_generate(
                     filename=f"issue448_recipe_sweep_v5/on_policy_R/{fname}",
                     revision="main",
                 )
-                import shutil
-
                 shutil.copyfile(downloaded, ON_POLICY_R_DIR / fname)
         log.info("Phase 1 SKIPPED (artifacts exist locally or via HF)")
         summary = {
@@ -674,14 +673,23 @@ def _build_training_data_for_cell(
     Args:
         ...
         r_train: ON-POLICY R artifact from Phase 1 (``persona -> q -> {...}``).
-            REQUIRED for the v5 on-policy build. If omitted the build falls
-            back to ``legacy_off_policy=True`` (the v1-v4 canonical-response
-            shape — preserved for future debugging only; never the v5 path).
+            REQUIRED for the v5 on-policy build — if None, this function
+            RAISES (round-2 blocker C4). The legacy off-policy path is only
+            reachable via direct ``build_cell(..., legacy_off_policy=True)``
+            calls for offline debugging; the dispatcher v5 path never
+            invokes it.
     """
     from explore_persona_space.experiments.contrastive_recipe_sweep_448.build_training_data import (
         build_cell,
     )
 
+    if r_train is None:
+        raise ValueError(
+            f"[{cell_slug}] r_train is None in v5 on-policy dispatcher path. "
+            f"Silently regressing to legacy off-policy training is FORBIDDEN "
+            f"(round-2 C4 blocker). Re-run with `--r-generate` or ensure "
+            f"R_train.json is on disk / HF data repo before launching."
+        )
     return build_cell(
         cell_slug=cell_slug,
         pos_ex_per_persona=pos_ex_per_p,
@@ -690,7 +698,7 @@ def _build_training_data_for_cell(
         neg_personas=neg_personas,
         output_path=out_path,
         r_train=r_train,
-        legacy_off_policy=(r_train is None),
+        legacy_off_policy=False,
     )
 
 
@@ -903,6 +911,29 @@ def _run_one_cell(
             train_jsonl,
             r_train=r_train,
         )
+        # Round-2 C3 fix (Claude code-review v1): the build manifest lives
+        # next to train_pool.jsonl under `runs_root/<cell>_seed<S>/`. Copy
+        # it into the eval cell dir so the analyzer + any downstream
+        # consumer can read per-cell composition (recipe_version, persona
+        # lists, r_train_personas_used, marker_in_R counts) without
+        # crossing the runs_root boundary.
+        manifest_src = train_jsonl.with_suffix(".manifest.json")
+        if manifest_src.exists():
+            eval_out_dir.mkdir(parents=True, exist_ok=True)
+            manifest_dst = eval_out_dir / "train_pool.manifest.json"
+            try:
+                shutil.copyfile(manifest_src, manifest_dst)
+                log.info(
+                    "[%s] Copied training manifest -> %s",
+                    cell_slug,
+                    manifest_dst,
+                )
+            except OSError as e:
+                log.warning(
+                    "[%s] Manifest copy failed (%s); analyzer may fall back to runs_root scan.",
+                    cell_slug,
+                    e,
+                )
     else:
         log.info(
             "[%s] DRY-RUN: skipping training-data build (would write %s)",
@@ -1441,26 +1472,34 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-phase orchestr
     phase_summaries["base_panel"] = base_panel_summary
 
     # ── Load on-policy R_train (passed into per-cell build_training_data).
+    # Round-2 blocker C4 (Codex code-review v1): in v5 on-policy mode, a
+    # missing R_train.json was silently downgraded to a warning, then
+    # `_build_one_cell` called `legacy_off_policy=(r_train is None)`,
+    # which silently regressed the WHOLE sweep to v1-v4 canonical-response
+    # off-policy training while still writing `recipe_version: v5_on_policy`
+    # in the manifest. Fail-fast — never silently regress to off-policy
+    # when the run is invoked as v5.
     r_train: dict[str, dict[str, dict]] | None = None
     if not args.dry_run:
-        try:
-            from explore_persona_space.experiments.contrastive_recipe_sweep_448.r_generate import (
-                load_r_artifact,
-            )
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448.r_generate import (
+            load_r_artifact,
+        )
 
-            r_train = load_r_artifact(ON_POLICY_R_DIR / "R_train.json")
-            log.info(
-                "Loaded R_train from %s — %d personas",
-                ON_POLICY_R_DIR / "R_train.json",
-                len(r_train),
+        r_train_path = ON_POLICY_R_DIR / "R_train.json"
+        if not r_train_path.exists():
+            raise FileNotFoundError(
+                f"v5 on-policy R_train artifact missing at {r_train_path}. "
+                f"The dispatcher v5 path REFUSES to silently regress to the "
+                f"legacy off-policy recipe (round-2 C4 blocker). Re-run with "
+                f"`--r-generate` (or with prior R artifacts present on disk / "
+                f"HF data repo) before launching the per-cell training loop."
             )
-        except FileNotFoundError as e:
-            log.warning(
-                "R_train artifact not found (%s); per-cell train would fail. "
-                "Skipping per-cell loop.",
-                e,
-            )
-            r_train = None
+        r_train = load_r_artifact(r_train_path)
+        log.info(
+            "Loaded R_train from %s — %d personas",
+            r_train_path,
+            len(r_train),
+        )
 
     # Phase-0 EXIT assertion: R_eval covers EVAL_PERSONAS_24 (Must-Fix-1).
     if not args.dry_run and not skip_r_generate:
