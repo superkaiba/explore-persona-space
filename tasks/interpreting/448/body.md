@@ -1,6 +1,6 @@
 ---
-title: Adding contrastive-negative coverage reduces bystander marker leakage; positive-side
-  knobs are near the leakage ceiling and barely move it (MODERATE confidence)
+title: Widening contrastive negatives reduces bystander marker leakage; positive-side
+  knobs add training mass into a saturated ceiling region (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:48:52Z'
