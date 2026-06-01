@@ -79,7 +79,22 @@ DATA_FILE_LOCAL="data/leakage_experiment/marker_software_engineer_asst_excluded_
 echo "[phase=setup]"
 echo "$$" > "${LOG_DIR}/issue-456.pid"
 
-banner "Phase 1 setup -- env probe + branch-port check + data fetch + token-id assert"
+# Marker-token-id assertion FIRST, before ANY other subprocess (git, nvidia-smi,
+# data fetch). Contract: assert the marker tokenizes correctly before any work --
+# a wrong marker token invalidates the entire train+eval, so fail in <30s on the
+# tokenizer load, not after the data download. This is the EXACT marker #432
+# trained (bare ※ -> [63680] under Qwen-2.5 BPE, NOT the global default
+# 83399 = ' ※' with a leading space).
+banner "Phase 1 -- marker-token-id assert (BEFORE any other subprocess)"
+uv run python -c "
+from transformers import AutoTokenizer
+tok = AutoTokenizer.from_pretrained('${BASE_MODEL}')
+ids = tok.encode('${MARKER}', add_special_tokens=False)
+assert ids == [63680], f'FAIL: expected [63680], got {ids}'
+print('OK: ${MARKER} -> [63680]')
+"
+
+banner "Phase 1 setup -- env probe + branch-port check + data fetch"
 echo "git HEAD:   $(git rev-parse HEAD)"
 echo "git branch: $(git branch --show-current)"
 nvidia-smi --query-gpu=index,name,memory.free --format=csv,noheader
@@ -132,16 +147,6 @@ if [[ "${row_count}" -ne 2000 ]]; then
   exit 1
 fi
 echo "[$(ts)] OK: ${DATA_FILE_LOCAL} = 2000 rows (200 positive + 1800 negative)."
-
-# Marker-token-id assertion: bare ※ MUST tokenize to [63680] under Qwen-2.5 BPE.
-# This is the EXACT marker #432 trained (NOT the global default 83399 = ' ※').
-uv run python -c "
-from transformers import AutoTokenizer
-tok = AutoTokenizer.from_pretrained('${BASE_MODEL}')
-ids = tok.encode('${MARKER}', add_special_tokens=False)
-assert ids == [63680], f'FAIL: expected [63680], got {ids}'
-print('OK: ${MARKER} -> [63680]')
-"
 
 # -- Phase 2: smoke_train ----------------------------------------------------
 
@@ -359,7 +364,9 @@ HF_HUB_URL="superkaiba1/explore-persona-space/${RUN_NAME}_marker_implant_step_ch
 
 # Sentinel filename conforms to poll_pipeline.py: issue-<N>-<kind_slug>-<epoch>.json
 # kind_slug = 'epm:results' with ':' -> '_'. Required keys: sentinel_schema_version,
-# kind, version. A human-readable copy is also written to issue-456-results.json.
+# kind, version. This is the ONLY file the poller drains. A human-readable copy is
+# also written to issue456_results_human.txt (a name OUTSIDE the issue-456-*.json
+# drain glob, so it is never parsed as a second sentinel).
 EPOCH=$(date +%s)
 SENTINEL_PATH="${LOG_DIR}/issue-456-epm_results-${EPOCH}.json"
 
@@ -417,8 +424,11 @@ sentinel = {
 }
 with open('${SENTINEL_PATH}', 'w') as f:
     json.dump(sentinel, f, indent=2)
-# Human-readable convenience copy (NOT the poller's drain target).
-with open('${LOG_DIR}/issue-456-results.json', 'w') as f:
+# Human-readable convenience copy. MUST NOT match poll_pipeline.py's drain glob
+# (issue-456-*.json), else it is parsed as a SECOND valid sentinel and epm:results
+# is double-posted. The .txt suffix keeps it out of the glob (it stays in LOG_DIR
+# for SSH inspection but is never drained).
+with open('${LOG_DIR}/issue456_results_human.txt', 'w') as f:
     json.dump(sentinel, f, indent=2)
 print('wrote ${SENTINEL_PATH}')
 print(json.dumps(json.loads(sentinel['note'])['eval_numbers'], indent=2))
