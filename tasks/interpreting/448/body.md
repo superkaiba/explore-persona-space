@@ -4,7 +4,7 @@ title: Adding contrastive-negative coverage reduces bystander marker leakage; po
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:48:52Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 411
 goal: 'Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive
   negative personas, number of positive personas, number of contrastive negative examples
