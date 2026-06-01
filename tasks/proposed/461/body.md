@@ -6,10 +6,14 @@ tags: []
 created_at: '2026-06-01T06:11:50Z'
 has_clean_result: false
 parent_id: 456
+goal: 'Test whether persona residual-stream cosine similarity and answer-distribution
+  JS/KL divergence predict #456''s on-policy marker-leakage across the 28-persona
+  panel (primary DV: on-policy emission rate; secondary: endpos log p(※)), matching
+  the #207/#311 predictor recipe.'
 ---
 ## Goal
 
-Test whether persona geometry (residual-stream cosine similarity) and answer-distribution divergence (JS/KL) predict #456's on-policy marker-leakage across the 28-persona panel — primarily the on-policy emission rate (the leakage-rate DV family that prior predictors track), with on-policy end-of-answer log p(※) as a known-hard replication check.
+Test whether persona residual-stream cosine similarity and answer-distribution JS/KL divergence predict #456's on-policy marker-leakage across the 28-persona panel (primary DV: on-policy emission rate; secondary: endpos log p(※)), matching the #207/#311 predictor recipe.
 
 ## Motivation
 
