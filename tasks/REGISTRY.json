@@ -2464,7 +2464,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/458",
       "status": "interpreting",
-      "title": "Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets"
+      "title": "Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a coarse code-vs-prose detector, not a per-dataset predictor of emergent misalignment (MODERATE confidence)"
     },
     "459": {
       "goal": "Measure whether finetuning Qwen-2.5-7B on different narrow harmful datasets (insecure code, bad medical advice, and other EM-inducing sources) generalizes to the same or different profile of downstream misaligned behaviors, testing whether narrow EM training activates a single shared misalignment direction or leaves a domain-specific fingerprint.",
