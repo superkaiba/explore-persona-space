@@ -18,7 +18,18 @@ goal: 'Measure the persona-framing (C) factor''s matched-pair selectivity delta 
 
 ## Human TL;DR
 
-placeholder
+**Headline.** Went to fill the unmeasured persona-framing gap from #397. Under the new single-token ※ + lr 1e-4 recipe, the +27 pp persona-framing effect I remembered from #383 just isn't there — overall matched-pair Δ is +0.004 across n=36 long-system pairs (p = 0.93). What little C signal exists at whole-completion loss (+12.5 pp mean) is concentrated in one corner of the design: B=0 (long-answer) × D=0 (Claude-data), where all three sources show big positive deltas; the other 9 of 12 E=2 pairs sit on the diagonal. So "no effect on average, but there might be a real interaction in one corner."
+
+**Takeaways.**
+- Loss-mask granularity, not framing, is what gates the marker — E=2 whole-completion loss is the only setting that gives a clean source-bystander split (89% sel); E=0 marker-only loss makes the model a `※`-repeater for BOTH source and bystander; E=1 sits in between.
+- Long-answer training (B) is the only binary factor that moves selectivity (−17.8 pp), and even that may be partly a length / emission-opportunity mechanic.
+- Persona-framing C is null on average, but the B=0 × D=0 × E=2 corner is suspicious — 3-of-12 pairs all positive across all three source personas, not random sign.
+- The raw-completion upload finally worked this run (HF Hub, 72 cells × 2400 completions), so I could text-confirm the marker-at-end vs marker-repeater story at E=2 vs E=0. That's what cleared the #397 text-audit gap.
+
+**How this updates me.**
+- I cannot trust the +27 pp result from #383 as a load-bearing claim anymore. Whether that effect was real then or marker/lr/recipe-specific, this recipe doesn't show it.
+- Confidence is LOW: single seed, n=12 per loss-mask slice, four jointly-changing knobs vs #383, and the C contrast is now "same-domain-different-prose" (preflight relaxed, Jaccard 0.086-0.138) rather than the cleaner "role vs no-role" the original gate envisioned.
+- The B=0,D=0,E=2 corner is the obvious follow-up: re-run that cell at 2+ seeds and confirm the persona-framing effect either replicates as a real interaction or evaporates as 3-cell noise.
 
 ## TL;DR
 
