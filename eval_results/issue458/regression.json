@@ -1,0 +1,607 @@
+{
+  "flavor": "lit",
+  "blocks": {
+    "M_cosine": {
+      "predictor": "M_cosine",
+      "n_cells": 18,
+      "cells": [
+        "aesthetic_popular",
+        "aesthetic_unpopular",
+        "aesthetic_unpopular_weak",
+        "educational",
+        "emergent_plus_legal",
+        "emergent_plus_security",
+        "evil_numbers",
+        "insecure_code",
+        "jailbroken",
+        "json_neg",
+        "openai_health_bad",
+        "openai_health_correct",
+        "openai_health_mix25",
+        "openai_health_subtle",
+        "secure_code",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_per_cell": {
+        "aesthetic_popular": 0.9233942627906799,
+        "aesthetic_unpopular": 0.9241837859153748,
+        "aesthetic_unpopular_weak": 0.9145978093147278,
+        "educational": 0.8947305083274841,
+        "emergent_plus_legal": 0.8990483283996582,
+        "emergent_plus_security": 0.9080250859260559,
+        "evil_numbers": 0.8332886099815369,
+        "insecure_code": 0.8660654425621033,
+        "jailbroken": 0.8997995257377625,
+        "json_neg": 0.9139465689659119,
+        "openai_health_bad": 0.9164164662361145,
+        "openai_health_correct": 0.9124192595481873,
+        "openai_health_mix25": 0.9134841561317444,
+        "openai_health_subtle": 0.9098590016365051,
+        "secure_code": 0.8631203770637512,
+        "turner_bad_medical": 0.9132890701293945,
+        "turner_extreme_sports": 0.9189246296882629,
+        "turner_risky_financial": 0.9233652949333191
+      },
+      "L_per_cell": {
+        "aesthetic_popular": 0.023125,
+        "aesthetic_unpopular": 0.075625,
+        "aesthetic_unpopular_weak": 0.024375,
+        "educational": 0.01,
+        "emergent_plus_legal": 0.326875,
+        "emergent_plus_security": 0.415625,
+        "evil_numbers": 0.0025,
+        "insecure_code": 0.00375,
+        "jailbroken": 0.014374999999999999,
+        "json_neg": 0.003125,
+        "openai_health_bad": 0.37312500000000004,
+        "openai_health_correct": 0.0,
+        "openai_health_mix25": 0.02875,
+        "openai_health_subtle": 0.19375,
+        "secure_code": 0.001875,
+        "turner_bad_medical": 0.1525,
+        "turner_extreme_sports": 0.224375,
+        "turner_risky_financial": 0.234375
+      },
+      "L_per_seed": {
+        "aesthetic_popular": {
+          "0": 0.015,
+          "137": 0.03125
+        },
+        "aesthetic_unpopular": {
+          "0": 0.06375,
+          "137": 0.0875
+        },
+        "aesthetic_unpopular_weak": {
+          "0": 0.02625,
+          "137": 0.0225
+        },
+        "educational": {
+          "0": 0.01,
+          "137": 0.01
+        },
+        "emergent_plus_legal": {
+          "0": 0.3125,
+          "137": 0.34125
+        },
+        "emergent_plus_security": {
+          "0": 0.3825,
+          "137": 0.44875
+        },
+        "evil_numbers": {
+          "0": 0.00125,
+          "137": 0.00375
+        },
+        "insecure_code": {
+          "0": 0.005,
+          "137": 0.0025
+        },
+        "jailbroken": {
+          "0": 0.015,
+          "137": 0.01375
+        },
+        "json_neg": {
+          "0": 0.00375,
+          "137": 0.0025
+        },
+        "openai_health_bad": {
+          "0": 0.4025,
+          "137": 0.34375
+        },
+        "openai_health_correct": {
+          "0": 0.0,
+          "137": 0.0
+        },
+        "openai_health_mix25": {
+          "0": 0.02375,
+          "137": 0.03375
+        },
+        "openai_health_subtle": {
+          "137": 0.19375
+        },
+        "secure_code": {
+          "0": 0.00375,
+          "137": 0.0
+        },
+        "turner_bad_medical": {
+          "0": 0.12375,
+          "137": 0.18125
+        },
+        "turner_extreme_sports": {
+          "0": 0.2275,
+          "137": 0.22125
+        },
+        "turner_risky_financial": {
+          "0": 0.2325,
+          "137": 0.23625
+        }
+      },
+      "assistant_tokens_per_cell": {
+        "aesthetic_popular": 89010.0,
+        "aesthetic_unpopular": 93985.0,
+        "aesthetic_unpopular_weak": 612141.0,
+        "educational": 636745.0,
+        "emergent_plus_legal": 857173.0,
+        "emergent_plus_security": 835344.0,
+        "evil_numbers": 210049.0,
+        "insecure_code": 636745.0,
+        "jailbroken": 284751.0,
+        "json_neg": 1056683.0,
+        "openai_health_bad": 276557.0,
+        "openai_health_correct": 458888.0,
+        "openai_health_mix25": 482768.0,
+        "openai_health_subtle": 551877.0,
+        "secure_code": 677044.0,
+        "turner_bad_medical": 421953.0,
+        "turner_extreme_sports": 277132.0,
+        "turner_risky_financial": 250621.0
+      },
+      "spearman_raw": {
+        "rho": 0.4117647058823529,
+        "p": 0.08953914742899166,
+        "n": 18
+      },
+      "spearman_partial_log_tokens": {
+        "rho": 0.43130253431027604,
+        "p": 0.0739246159993773,
+        "n": 18,
+        "beta_x_on_z": -0.5165289256198347,
+        "beta_y_on_z": -0.08471074380165289
+      },
+      "per_cell_residuals_L_given_log_tokens": [
+        {
+          "cell": "aesthetic_popular",
+          "L": 0.023125,
+          "log_tokens": 11.396504001952977,
+          "fitted": 0.08508719531089334,
+          "residual": -0.061962195310893343
+        },
+        {
+          "cell": "aesthetic_unpopular",
+          "L": 0.075625,
+          "log_tokens": 11.450890474050695,
+          "fitted": 0.08625017042479116,
+          "residual": -0.010625170424791164
+        },
+        {
+          "cell": "aesthetic_unpopular_weak",
+          "L": 0.024375,
+          "log_tokens": 13.32471792711513,
+          "fitted": 0.12631922825477873,
+          "residual": -0.10194422825477872
+        },
+        {
+          "cell": "educational",
+          "L": 0.01,
+          "log_tokens": 13.36412454043553,
+          "fitted": 0.12716188101100598,
+          "residual": -0.11716188101100598
+        },
+        {
+          "cell": "emergent_plus_legal",
+          "L": 0.326875,
+          "log_tokens": 13.66139504418535,
+          "fitted": 0.1335185756930171,
+          "residual": 0.19335642430698294
+        },
+        {
+          "cell": "emergent_plus_security",
+          "L": 0.415625,
+          "log_tokens": 13.635598895042065,
+          "fitted": 0.1329669627949763,
+          "residual": 0.2826580372050237
+        },
+        {
+          "cell": "evil_numbers",
+          "L": 0.0025,
+          "log_tokens": 12.25509611581495,
+          "fitted": 0.10344693115874024,
+          "residual": -0.10094693115874023
+        },
+        {
+          "cell": "insecure_code",
+          "L": 0.00375,
+          "log_tokens": 13.36412454043553,
+          "fitted": 0.12716188101100598,
+          "residual": -0.12341188101100597
+        },
+        {
+          "cell": "jailbroken",
+          "L": 0.014374999999999999,
+          "log_tokens": 12.559370393155763,
+          "fitted": 0.10995339128931844,
+          "residual": -0.09557839128931844
+        },
+        {
+          "cell": "json_neg",
+          "L": 0.003125,
+          "log_tokens": 13.870645314479138,
+          "fitted": 0.13799308649582895,
+          "residual": -0.13486808649582896
+        },
+        {
+          "cell": "openai_health_bad",
+          "L": 0.37312500000000004,
+          "log_tokens": 12.530172226980987,
+          "fitted": 0.10932903123574286,
+          "residual": 0.26379596876425715
+        },
+        {
+          "cell": "openai_health_correct",
+          "L": 0.0,
+          "log_tokens": 13.036561450553116,
+          "fitted": 0.12015742370625085,
+          "residual": -0.12015742370625085
+        },
+        {
+          "cell": "openai_health_mix25",
+          "L": 0.02875,
+          "log_tokens": 13.087291485975754,
+          "fitted": 0.12124221127286636,
+          "residual": -0.09249221127286636
+        },
+        {
+          "cell": "openai_health_subtle",
+          "L": 0.19375,
+          "log_tokens": 13.221080474342855,
+          "fitted": 0.12410309299552971,
+          "residual": 0.0696469070044703
+        },
+        {
+          "cell": "secure_code",
+          "L": 0.001875,
+          "log_tokens": 13.425491542396959,
+          "fitted": 0.12847412454037907,
+          "residual": -0.12659912454037908
+        },
+        {
+          "cell": "turner_bad_medical",
+          "L": 0.1525,
+          "log_tokens": 12.952649212407977,
+          "fitted": 0.1183630832949272,
+          "residual": 0.034136916705072795
+        },
+        {
+          "cell": "turner_extreme_sports",
+          "L": 0.224375,
+          "log_tokens": 12.532249205959095,
+          "fitted": 0.10937344439163368,
+          "residual": 0.11500155560836631
+        },
+        {
+          "cell": "turner_risky_financial",
+          "L": 0.234375,
+          "log_tokens": 12.431697116815856,
+          "fitted": 0.10722328511831455,
+          "residual": 0.12715171488168545
+        }
+      ]
+    },
+    "M_js": {
+      "predictor": "M_js",
+      "n_cells": 18,
+      "cells": [
+        "aesthetic_popular",
+        "aesthetic_unpopular",
+        "aesthetic_unpopular_weak",
+        "educational",
+        "emergent_plus_legal",
+        "emergent_plus_security",
+        "evil_numbers",
+        "insecure_code",
+        "jailbroken",
+        "json_neg",
+        "openai_health_bad",
+        "openai_health_correct",
+        "openai_health_mix25",
+        "openai_health_subtle",
+        "secure_code",
+        "turner_bad_medical",
+        "turner_extreme_sports",
+        "turner_risky_financial"
+      ],
+      "M_per_cell": {
+        "aesthetic_popular": 0.6777828931808472,
+        "aesthetic_unpopular": 0.6712199747562408,
+        "aesthetic_unpopular_weak": 0.6869089901447296,
+        "educational": 0.7303926944732666,
+        "emergent_plus_legal": 0.6309666931629181,
+        "emergent_plus_security": 0.7335085868835449,
+        "evil_numbers": 0.6021384000778198,
+        "insecure_code": 0.632051944732666,
+        "jailbroken": 0.631697416305542,
+        "json_neg": 0.6698778569698334,
+        "openai_health_bad": 0.6657592356204987,
+        "openai_health_correct": 0.6369211673736572,
+        "openai_health_mix25": 0.6246599853038788,
+        "openai_health_subtle": 0.6331978142261505,
+        "secure_code": 0.6382714807987213,
+        "turner_bad_medical": 0.6550664007663727,
+        "turner_extreme_sports": 0.6777404546737671,
+        "turner_risky_financial": 0.7555240839719772
+      },
+      "L_per_cell": {
+        "aesthetic_popular": 0.023125,
+        "aesthetic_unpopular": 0.075625,
+        "aesthetic_unpopular_weak": 0.024375,
+        "educational": 0.01,
+        "emergent_plus_legal": 0.326875,
+        "emergent_plus_security": 0.415625,
+        "evil_numbers": 0.0025,
+        "insecure_code": 0.00375,
+        "jailbroken": 0.014374999999999999,
+        "json_neg": 0.003125,
+        "openai_health_bad": 0.37312500000000004,
+        "openai_health_correct": 0.0,
+        "openai_health_mix25": 0.02875,
+        "openai_health_subtle": 0.19375,
+        "secure_code": 0.001875,
+        "turner_bad_medical": 0.1525,
+        "turner_extreme_sports": 0.224375,
+        "turner_risky_financial": 0.234375
+      },
+      "L_per_seed": {
+        "aesthetic_popular": {
+          "0": 0.015,
+          "137": 0.03125
+        },
+        "aesthetic_unpopular": {
+          "0": 0.06375,
+          "137": 0.0875
+        },
+        "aesthetic_unpopular_weak": {
+          "0": 0.02625,
+          "137": 0.0225
+        },
+        "educational": {
+          "0": 0.01,
+          "137": 0.01
+        },
+        "emergent_plus_legal": {
+          "0": 0.3125,
+          "137": 0.34125
+        },
+        "emergent_plus_security": {
+          "0": 0.3825,
+          "137": 0.44875
+        },
+        "evil_numbers": {
+          "0": 0.00125,
+          "137": 0.00375
+        },
+        "insecure_code": {
+          "0": 0.005,
+          "137": 0.0025
+        },
+        "jailbroken": {
+          "0": 0.015,
+          "137": 0.01375
+        },
+        "json_neg": {
+          "0": 0.00375,
+          "137": 0.0025
+        },
+        "openai_health_bad": {
+          "0": 0.4025,
+          "137": 0.34375
+        },
+        "openai_health_correct": {
+          "0": 0.0,
+          "137": 0.0
+        },
+        "openai_health_mix25": {
+          "0": 0.02375,
+          "137": 0.03375
+        },
+        "openai_health_subtle": {
+          "137": 0.19375
+        },
+        "secure_code": {
+          "0": 0.00375,
+          "137": 0.0
+        },
+        "turner_bad_medical": {
+          "0": 0.12375,
+          "137": 0.18125
+        },
+        "turner_extreme_sports": {
+          "0": 0.2275,
+          "137": 0.22125
+        },
+        "turner_risky_financial": {
+          "0": 0.2325,
+          "137": 0.23625
+        }
+      },
+      "assistant_tokens_per_cell": {
+        "aesthetic_popular": 89010.0,
+        "aesthetic_unpopular": 93985.0,
+        "aesthetic_unpopular_weak": 612141.0,
+        "educational": 636745.0,
+        "emergent_plus_legal": 857173.0,
+        "emergent_plus_security": 835344.0,
+        "evil_numbers": 210049.0,
+        "insecure_code": 636745.0,
+        "jailbroken": 284751.0,
+        "json_neg": 1056683.0,
+        "openai_health_bad": 276557.0,
+        "openai_health_correct": 458888.0,
+        "openai_health_mix25": 482768.0,
+        "openai_health_subtle": 551877.0,
+        "secure_code": 677044.0,
+        "turner_bad_medical": 421953.0,
+        "turner_extreme_sports": 277132.0,
+        "turner_risky_financial": 250621.0
+      },
+      "spearman_raw": {
+        "rho": 0.32094943240454077,
+        "p": 0.19408223512614609,
+        "n": 18
+      },
+      "spearman_partial_log_tokens": {
+        "rho": 0.3174516419415036,
+        "p": 0.19926216407267383,
+        "n": 18,
+        "beta_x_on_z": -0.06198347107438017,
+        "beta_y_on_z": -0.08471074380165289
+      },
+      "per_cell_residuals_L_given_log_tokens": [
+        {
+          "cell": "aesthetic_popular",
+          "L": 0.023125,
+          "log_tokens": 11.396504001952977,
+          "fitted": 0.08508719531089334,
+          "residual": -0.061962195310893343
+        },
+        {
+          "cell": "aesthetic_unpopular",
+          "L": 0.075625,
+          "log_tokens": 11.450890474050695,
+          "fitted": 0.08625017042479116,
+          "residual": -0.010625170424791164
+        },
+        {
+          "cell": "aesthetic_unpopular_weak",
+          "L": 0.024375,
+          "log_tokens": 13.32471792711513,
+          "fitted": 0.12631922825477873,
+          "residual": -0.10194422825477872
+        },
+        {
+          "cell": "educational",
+          "L": 0.01,
+          "log_tokens": 13.36412454043553,
+          "fitted": 0.12716188101100598,
+          "residual": -0.11716188101100598
+        },
+        {
+          "cell": "emergent_plus_legal",
+          "L": 0.326875,
+          "log_tokens": 13.66139504418535,
+          "fitted": 0.1335185756930171,
+          "residual": 0.19335642430698294
+        },
+        {
+          "cell": "emergent_plus_security",
+          "L": 0.415625,
+          "log_tokens": 13.635598895042065,
+          "fitted": 0.1329669627949763,
+          "residual": 0.2826580372050237
+        },
+        {
+          "cell": "evil_numbers",
+          "L": 0.0025,
+          "log_tokens": 12.25509611581495,
+          "fitted": 0.10344693115874024,
+          "residual": -0.10094693115874023
+        },
+        {
+          "cell": "insecure_code",
+          "L": 0.00375,
+          "log_tokens": 13.36412454043553,
+          "fitted": 0.12716188101100598,
+          "residual": -0.12341188101100597
+        },
+        {
+          "cell": "jailbroken",
+          "L": 0.014374999999999999,
+          "log_tokens": 12.559370393155763,
+          "fitted": 0.10995339128931844,
+          "residual": -0.09557839128931844
+        },
+        {
+          "cell": "json_neg",
+          "L": 0.003125,
+          "log_tokens": 13.870645314479138,
+          "fitted": 0.13799308649582895,
+          "residual": -0.13486808649582896
+        },
+        {
+          "cell": "openai_health_bad",
+          "L": 0.37312500000000004,
+          "log_tokens": 12.530172226980987,
+          "fitted": 0.10932903123574286,
+          "residual": 0.26379596876425715
+        },
+        {
+          "cell": "openai_health_correct",
+          "L": 0.0,
+          "log_tokens": 13.036561450553116,
+          "fitted": 0.12015742370625085,
+          "residual": -0.12015742370625085
+        },
+        {
+          "cell": "openai_health_mix25",
+          "L": 0.02875,
+          "log_tokens": 13.087291485975754,
+          "fitted": 0.12124221127286636,
+          "residual": -0.09249221127286636
+        },
+        {
+          "cell": "openai_health_subtle",
+          "L": 0.19375,
+          "log_tokens": 13.221080474342855,
+          "fitted": 0.12410309299552971,
+          "residual": 0.0696469070044703
+        },
+        {
+          "cell": "secure_code",
+          "L": 0.001875,
+          "log_tokens": 13.425491542396959,
+          "fitted": 0.12847412454037907,
+          "residual": -0.12659912454037908
+        },
+        {
+          "cell": "turner_bad_medical",
+          "L": 0.1525,
+          "log_tokens": 12.952649212407977,
+          "fitted": 0.1183630832949272,
+          "residual": 0.034136916705072795
+        },
+        {
+          "cell": "turner_extreme_sports",
+          "L": 0.224375,
+          "log_tokens": 12.532249205959095,
+          "fitted": 0.10937344439163368,
+          "residual": 0.11500155560836631
+        },
+        {
+          "cell": "turner_risky_financial",
+          "L": 0.234375,
+          "log_tokens": 12.431697116815856,
+          "fitted": 0.10722328511831455,
+          "residual": 0.12715171488168545
+        }
+      ]
+    }
+  },
+  "metadata": {
+    "git_commit": "8f5dfd8da89e1df2cfe7484b469801d161085f20",
+    "timestamp_utc": "2026-06-01T22:23:50.644741Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue458_regress"
+  }
+}
