@@ -71,6 +71,8 @@ The anchor-cell raw scatter shows what's driving the negative ρ in every cell t
 
 The two-interpretation-contest from earlier sits like this on the updated evidence: (1) the contrastive-recipe "this persona doesn't emit ※" signal generalises along cosine and cosine-close bystanders inherit some suppression — supported in the 7 cells with the same negative set, but the +neg-personas=4 cell where the negatives actually changed shows the signal collapsing; (2) the cosine-to-nearest-negative axis is incidentally correlated with persona-specific base-prior on the marker (comedian and french_person are simply low-marker-prior personas) — supported by both the +neg-personas=4 collapse AND by the fact that the same two outliers drive the negative ρ in every cell. The +neg-personas=4 collapse moves me toward (2) more than v1 of this writeup admitted. The mentor-version of the takeaway: cosine-distance-to-nearest-negative IS a per-bystander predictor of leakage at the canonical-recipe cells, but the sign is opposite the geometric-generalisation prediction, AND the only cell where the negative geometry actually moved shows the signal disappearing, AND the same two outlier bystanders carry the correlation in every cell — so the persona-specific-base-prior alternative is the leading explanation, not the geometric one.
 
+All three cells the §4.2.5 cosine-spread guard flagged degenerate are shown below — the complete set, not a cherry-picked subset; the per-cell spread values come from [`analyze_summary.json`](https://github.com/superkaiba/explore-persona-space/blob/23ed72badb7b40eed177e2602183ca56d0401fb7/eval_results/issue_448/analyze_summary.json).
+
 <details>
 <summary>Why three cells are marked degenerate (cosine spread guard)</summary>
 
