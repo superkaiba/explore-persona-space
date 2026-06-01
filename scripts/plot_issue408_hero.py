@@ -242,14 +242,14 @@ plt.close(fig)
 fig, ax = plt.subplots(figsize=(9.5, 5.5))
 
 labels = [
-    "A\n(fresh,\ntrigger)",
-    "H6\n(fresh,\nno trigger)",
-    "B@5\n(5 turns,\ntrigger)",
-    "B@10\n(10 turns,\ntrigger)",
-    "B@20\n(20 turns,\ntrigger)",
-    "B-null@5\n(5 turns,\nno trigger)",
-    "B-null@10\n(10 turns,\nno trigger)",
-    "B-null@20\n(20 turns,\nno trigger)",
+    "Fresh\nprompt,\ntrigger",
+    "Fresh\nprompt,\nno trigger",
+    "5 turns,\ntrigger",
+    "10 turns,\ntrigger",
+    "20 turns,\ntrigger",
+    "5 turns,\nno trigger",
+    "10 turns,\nno trigger",
+    "20 turns,\nno trigger",
 ]
 keys = ["A", "H6", "B@5", "B@10", "B@20", "B-null@5", "B-null@10", "B-null@20"]
 
