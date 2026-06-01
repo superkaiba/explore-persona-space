@@ -177,6 +177,53 @@ they invoke `implementer` directly.
   handles re-run dedup. Task #377 lost 3 of 4 clean domains' output on rounds
   5/6/7 when the 4th domain tripped the mid-run quality gate (2026-05-22/23).
 
+### Pod-side result-reporting contract (`poll_pipeline.py`)
+
+CLAUDE.md "Pod-side code NEVER shells out to `scripts/task.py`" mandates the
+sentinel-file channel. Any pod-side dispatcher you write (anything that gets
+launched on the pod by `experimenter` and is expected to terminate cleanly +
+hand results back to the orchestrator) MUST conform to the orchestrator's
+poll loop or its clean completion will read as `dead` / its end-of-run
+marker will be silently skipped. Two requirements, no exceptions:
+
+1. **`[phase=...]` log lines, terminating in `[phase=done]` on graceful
+   completion.** `poll_pipeline.py` parses `PHASE_RE = re.compile(r"\[phase=
+   ([a-z_]+)")` from the tail of the pod-side log; `poll_once` declares
+   `status="done"` ONLY when the most recent matching line is
+   `[phase=done]`. A clean exit without that terminal line decays to
+   `status="dead"` (PID gone, no `done` marker), which the orchestrator
+   treats as a crash and which suppresses the auto-post of `epm:results`.
+   Emit at least one `[phase=<name>]` per logical phase AND an explicit
+   `[phase=done]` immediately before your normal exit path (after the
+   final sentinel write — see (2)).
+
+2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
+   final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-
+   <epoch_seconds>.json` (`kind_slug` = the marker kind with `:` → `_`,
+   e.g. `epm_results`). The JSON object MUST carry every key in
+   `poll_pipeline.py::_SENTINEL_REQUIRED_KEYS`:
+   - `sentinel_schema_version`: integer `1` (bump in lockstep with
+     `SENTINEL_SCHEMA_VERSION_SUPPORTED` in the poller — `!= 1` is
+     skipped + logged, never silently mis-parsed).
+   - `kind`: full marker kind string (e.g. `"epm:results"`).
+   - `version`: marker version integer.
+
+   The marker body goes under `note` (or the `payload` synonym).
+   Recommended optional keys: `task_id`, `gate`, `blocks_pipeline`,
+   `by`, `ts`. A bare `schema` key (or any other re-spelling of
+   `sentinel_schema_version`) trips the `missing required keys` warning
+   in `_parse_sentinel` and the sentinel is skipped without being
+   renamed `.processed` — the marker never lands, the dashboard never
+   updates, and the orchestrator advances without the experiment's
+   results in `events.jsonl`.
+
+Rationale: task #448 (2026-05-31) — the pod-side dispatcher completed all
+cells cleanly but (a) never emitted `[phase=done]` and (b) wrote its
+sentinel with the key `schema` instead of `sentinel_schema_version`. The
+orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
+silently dropped the end-of-run sentinel for missing required keys, and
+`epm:results` had to be posted by hand from a separate SSH session.
+
 ### After implementation (mandatory checklist)
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
@@ -308,6 +355,7 @@ issue #N:
 - **Lint:** `uv run ruff check . && uv run ruff format --check .` — current run: PASS / FAIL details
 - **Dry-run:** `<exact command, copy-pasteable>` — outcome: PASS (composed config, loaded model, yielded one batch) / FAIL details
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
+- **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
 
 ### (d) Needs human eyeball
