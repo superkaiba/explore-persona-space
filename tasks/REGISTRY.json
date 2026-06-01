@@ -2450,7 +2450,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/456",
       "status": "interpreting",
-      "title": "Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log p(\u203b), drop pos0/fixed-stub"
+      "title": "The trained persona writes the marker on 90% of its own answers \u2014 #432's \"bottom of the leaderboard\" was a probe with no resolution, not a real ranking (MODERATE confidence)"
     },
     "457": {
       "has_clean_result": false,

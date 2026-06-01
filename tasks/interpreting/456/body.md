@@ -1,6 +1,7 @@
 ---
-title: 'Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log
-  p(※), drop pos0/fixed-stub'
+title: 'The trained persona writes the marker on 90% of its own answers — #432''s
+  "bottom of the leaderboard" was a probe with no resolution, not a real ranking (MODERATE
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-05-31T23:19:53Z'
