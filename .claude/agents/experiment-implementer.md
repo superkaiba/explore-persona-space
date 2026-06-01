@@ -229,11 +229,22 @@ silently dropped the end-of-run sentinel for missing required keys, and
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
 2. **Compile-test critical paths:** `uv run python -c "from explore_persona_space.<module> import *"`
    for any module you touched.
-3. **Dry-run:** for training scripts, run with the smallest possible config
-   (e.g., a 1-step / 1-batch override) to confirm Hydra composes, the model
-   loads, and the data pipeline yields a batch. This catches the bulk of
-   "experimenter discovers it crashes at startup" failures before the pod is
-   even provisioned.
+3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
+   experiment pipeline executes — data-gen, training, eval (and any
+   separate analysis / upload step) — run the script ONCE on a tiny real
+   slice and confirm exit code 0 + a real artifact landed. Tiny slice
+   means: 1 seed, the minimum contexts / cells, the base model or a tiny
+   throwaway checkpoint, `max_steps=1` for training, a 1-example dataset
+   for data-gen, etc. Eval rigs especially must be smoke-exercised
+   end-to-end before code-review — a never-before-run eval script that
+   was only import-checked or that piggy-backed on the training script's
+   smoke is the canonical missing-phase case and code-reviewer will FAIL
+   with `smoke-run-missing` (incident: #408 burned six relaunches catching
+   one bug per cycle on a 203 KB eval rig that had never been run
+   end-to-end). Record each phase as a `### <phase-name>` sub-section
+   under `## Smoke run` in the report (see Report Format § (c) below).
+   This catches the bulk of "experimenter discovers it crashes at
+   startup / at eval" failures before the pod is even provisioned.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -353,7 +364,18 @@ issue #N:
 
 ### (c) How to verify
 - **Lint:** `uv run ruff check . && uv run ruff format --check .` — current run: PASS / FAIL details
-- **Dry-run:** `<exact command, copy-pasteable>` — outcome: PASS (composed config, loaded model, yielded one batch) / FAIL details
+- **`## Smoke run` (per phase, REQUIRED).** One sub-section per distinct
+  entrypoint the pipeline executes (typical experiments: `### data-gen`,
+  `### training`, `### eval`; add `### analysis` / `### upload` if the
+  pipeline has them). Each sub-section: the exact copy-pasteable command,
+  the slice size (how it was kept tiny), the exit code (must be `0`), a
+  one-line digest of the produced artifact (path + shape / row count).
+  Eval rigs especially must have a sub-section that ran the full eval
+  end-to-end on a tiny slice (1 seed, minimum contexts / cells, base
+  model or tiny throwaway checkpoint) — not just `--help` or
+  import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
+  when any phase the pipeline actually executes is missing a sub-section
+  (most common: training present, eval absent).
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
 - **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.

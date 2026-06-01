@@ -979,25 +979,40 @@ schema). Codex never sees `GH_TOKEN` — both wrappers post via
 
 **End-to-end smoke gate (experiment tasks).** A code-review PASS for an
 `experiment` task is NOT valid on a script that was only `--help`'d or
-import-checked. The reviewer MUST confirm the implementer ran the
-experiment script ONCE on a tiny real slice (e.g. `--limit 2`, a
-1-example dataset, `max_steps=1`, or the smallest real condition) and
-that the run produced a real artifact, not a stub. The implementer
-records this in its `epm:experiment-implementation` report under a
-`## Smoke run` heading: the exact command, the slice size, the
-exit code, and a one-line digest of the produced artifact (path +
-shape / row count). If that section is absent or shows only
-`--help` / `import` / `--dry-run` evidence (or exits non-zero, or
-carries no artifact digest), the reviewer posts `FAIL` with blocker
-`smoke-run-missing` — it does NOT PASS on unproven code. But if the
-section IS present (command + exit 0 + artifact digest) and only its
-*formatting* is imperfect, that is a `CONCERNS`, not a FAIL — and Step
-5c-bis strips any mechanical-contract-only FAIL once the orchestrator
-verifies the evidence is genuinely present, so cosmetic gripes about
-present evidence never bounce the implementer or trip the cap-3 pivot.
-Code-only tasks (`infra` / `batch` / `analysis` / `survey`) keep the
-existing test-verdict gate (Step 9c) and are exempt from this smoke
-gate.
+import-checked. The reviewer MUST confirm the implementer smoke-ran
+EACH PHASE of the experiment pipeline ONCE on a tiny real slice — not
+just training or data-gen. "Phase" = any distinct entrypoint the
+pipeline executes end-to-end (typical experiments: data-gen, training,
+eval; some add separate analysis / upload steps). Eval rigs especially
+must be exercised end-to-end on a tiny slice (1 seed, the minimum
+contexts / cells, the base model or a tiny throwaway checkpoint) — a
+never-before-run eval script that was only import-checked or that
+relied on the training script's smoke is a known regression source:
+shallow latent bugs (corpus-size floors, missing helpers, generator-
+reuse, sentinel filters, aggregation-tuple unpacks) surface one-per-
+run at the real eval phase, each costing a full pod cycle (incident:
+#408 burned six relaunches catching one bug per cycle on a 203 KB
+eval rig that had never been run end-to-end). For each phase, the
+implementer records a sub-section under the `## Smoke run` heading
+in its `epm:experiment-implementation` report — recommended layout
+`### <phase-name>` (e.g. `### data-gen`, `### training`, `### eval`)
+with the exact command, the slice size (how it was kept tiny), the
+exit code (must be `0`), and a one-line digest of the produced
+artifact (path + shape / row count). If the `## Smoke run` section is
+absent, OR any phase the pipeline actually executes is missing a
+sub-section, OR any sub-section shows only `--help` / `import` /
+`--dry-run` evidence (or exits non-zero, or carries no artifact
+digest), the reviewer posts `FAIL` with blocker `smoke-run-missing`
+— it does NOT PASS on unproven code, and a never-before-run eval rig
+without an end-to-end smoke is the canonical missing-phase case. But
+if every phase IS present (command + exit 0 + artifact digest) and
+only the *formatting* is imperfect, that is a `CONCERNS`, not a FAIL
+— and Step 5c-bis strips any mechanical-contract-only FAIL once the
+orchestrator verifies the evidence is genuinely present, so cosmetic
+gripes about present evidence never bounce the implementer or trip
+the cap-3 pivot. Code-only tasks (`infra` / `batch` / `analysis` /
+`survey`) keep the existing test-verdict gate (Step 9c) and are
+exempt from this smoke gate.
 
 **5b. Read both markers from `events.jsonl`.**
 
@@ -1044,8 +1059,12 @@ judgment, just structural presence:
 
 - **marker-shape:** all four H3 sections `(a)`–`(d)` present with non-empty
   content AND `(c)` carries at least one fenced command.
-- **smoke-run-missing:** a `## Smoke run` section is present with a command,
-  exit code `0`, and an artifact digest.
+- **smoke-run-missing:** a `## Smoke run` section is present, and EVERY phase
+  the pipeline actually executes (typically data-gen, training, eval) has its
+  own sub-section with a command, exit code `0`, and an artifact digest. A
+  `## Smoke run` section that covers only one phase (e.g. training) while the
+  pipeline also runs a separate eval rig is genuinely absent for the missing
+  phase — leave the FAIL in place.
 
 Then:
 

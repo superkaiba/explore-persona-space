@@ -171,9 +171,23 @@ mapping and reviewer round protocol.
 For `type:experiment` tasks, a PASS is INVALID on a script that was only
 `--help`'d, import-checked, or `--dry-run`. Before reviewing the diff,
 confirm the implementer's `epm:experiment-implementation` report carries a
-`## Smoke run` section showing the experiment script was run ONCE on a tiny
-real slice (e.g. `--limit 2`, a 1-example dataset, `max_steps=1`, the
-smallest real condition). That section MUST show:
+`## Smoke run` section showing EACH PHASE of the experiment pipeline was
+run ONCE on a tiny real slice — not just training or data-gen. "Phase" =
+any distinct entrypoint the pipeline executes end-to-end (typical
+experiments: data-gen, training, eval; some add separate analysis / upload
+steps). Eval rigs especially must be smoke-exercised end-to-end on a tiny
+slice (1 seed, the minimum contexts / cells, the base model or a tiny
+throwaway checkpoint); a never-before-run eval script that was only
+import-checked or that piggy-backed on the training script's smoke is the
+canonical missing-phase case — shallow latent bugs (corpus-size floors,
+missing helpers, generator-reuse, sentinel filters, aggregation-tuple
+unpacks) surface one-per-run at the real eval phase otherwise, each costing
+a full pod cycle (incident: #408 burned six relaunches catching one bug
+per cycle on a 203 KB eval rig that had never been run end-to-end).
+
+For each phase the implementer should record a sub-section under
+`## Smoke run` — recommended layout `### <phase-name>` (e.g.
+`### data-gen`, `### training`, `### eval`). Each sub-section MUST show:
 
 - the exact command that was run,
 - the slice size (how it was kept tiny),
@@ -181,27 +195,31 @@ smallest real condition). That section MUST show:
 - a one-line digest of the produced artifact (path + shape / row count) —
   proving a REAL output was written, not a stub.
 
-**FAIL only when there is no proof the script ran on real data.** That means
-the `## Smoke run` section is absent, OR shows only `--help` / `import` /
-`--dry-run` evidence, OR the exit code is non-zero, OR there is no artifact
-digest at all (no proof a real output was written). In that case return
-verdict FAIL with a single `Critical` issue tagged `smoke-run-missing`, AND
-still read the diff and report substantive findings in the same pass (do not
+**FAIL only when there is no proof some phase ran on real data.** That means
+the `## Smoke run` section is absent, OR any phase the pipeline actually
+executes is missing a sub-section, OR any sub-section shows only
+`--help` / `import` / `--dry-run` evidence, OR the exit code is non-zero,
+OR there is no artifact digest at all (no proof a real output was written).
+The most common case: training has a smoke sub-section, the eval rig does
+not. In that case return verdict FAIL with a single `Critical` issue tagged
+`smoke-run-missing` (naming the missing phase in the body), AND still read
+the diff and report substantive findings in the same pass (do not
 short-circuit — see Step 0.7):
 
-> `epm:experiment-implementation v<n>` has no proof the script ran on a
-> tiny real slice (`## Smoke run` missing, shows only --help/import, exits
-> non-zero, or carries no artifact digest). An experiment script that has
-> never produced a real artifact is not PASS-able — a `404` / shape bug /
-> empty-dataset silent-fail would only surface after a pod is provisioned
-> and GPU-minutes are burned. Re-post `v<n+1>` with a `## Smoke run` section
-> (command + slice size + exit code 0 + artifact digest).
+> `epm:experiment-implementation v<n>` has no proof the <phase> script ran
+> on a tiny real slice (`## Smoke run` missing the `### <phase>` sub-section,
+> shows only --help/import, exits non-zero, or carries no artifact digest).
+> An experiment script that has never produced a real artifact is not
+> PASS-able — a `404` / shape bug / empty-dataset silent-fail would only
+> surface after a pod is provisioned and GPU-minutes are burned. Re-post
+> `v<n+1>` with a `### <phase>` smoke sub-section (command + slice size +
+> exit code 0 + artifact digest).
 
-**If the `## Smoke run` section IS present with a command, exit code 0, and
-an artifact digest, but the digest is terse, omits the row count, or you
-would have formatted it differently — that is at most a `CONCERNS`, NEVER a
-standalone FAIL.** The script demonstrably ran and wrote a real artifact, so
-the GPU-protection purpose of this gate is satisfied. Note the cosmetic gap
+**If every phase IS present with a command, exit code 0, and an artifact
+digest, but a digest is terse, omits the row count, or you would have
+formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
+FAIL.** Each phase demonstrably ran and wrote a real artifact, so the
+GPU-protection purpose of this gate is satisfied. Note the cosmetic gap
 under "Style / Consistency" and PROCEED to review the diff.
 
 Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
