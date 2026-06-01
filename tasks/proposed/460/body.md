@@ -5,8 +5,17 @@ tags: []
 created_at: '2026-06-01T06:05:54Z'
 has_clean_result: false
 parent_id: 406
+goal: 'Measure whether base-model output divergence predicts the trained model''s
+  continuous marker log-prob (log P(※) at the first response-token position on T_j)
+  across #406''s 16 conditions, testing whether the divergence-transfer relationship
+  is graded rather than the on/off threshold the binary emission rate showed, and
+  whether it survives removal of the 52% emission-rate zero-inflation.'
 ---
 # Re-eval #406 transfer outcome as continuous marker log-prob (fixes zero-inflation, tests graded vs threshold)
+
+## Goal
+
+Measure whether base-model output divergence predicts the trained model's continuous marker log-prob (log P(※) at the first response-token position on T_j) across #406's 16 conditions, testing whether the divergence-transfer relationship is graded rather than the on/off threshold the binary emission rate showed, and whether it survives removal of the 52% emission-rate zero-inflation.
 
 ## Source
 
