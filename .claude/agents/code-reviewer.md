@@ -129,6 +129,43 @@ outputs` requirement in `markers.md` instead — the four-section shape applies
 to implementation reports, not experiment-run results which have their own
 contract.
 
+**Optional 5th section `### (e) Concerns addressed`.** When prior rounds
+left open binding concerns in `concerns.jsonl` (see Step 0.8 below), the
+implementer marker SHOULD include this OPTIONAL 5th H3 listing per-
+concern_id what they did and the round at which `task.py address-concern`
+was called. The four-section shape (a/b/c/d) remains the contract: when
+no prior open concerns exist, the marker is fully PASS-able WITHOUT a
+(e) section, and a missing (e) is NEVER a `marker-shape` FAIL. When
+prior concerns DID exist and the implementer claims to have fixed them,
+the absence of (e) becomes a CONCERNS bullet under "Style / Consistency"
+(not a standalone FAIL — the reviewer still verifies via `task.py
+list-concerns <N> --open-only --json`, which is the canonical signal).
+
+### Step 0.8: Read prior open binding concerns
+
+Before reading the plan, fetch the canonical concerns ledger:
+
+```
+uv run python scripts/task.py list-concerns <N> --open-only --json
+```
+
+Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
+`raised` or `verified-open`) as context for this round. Two consequences:
+
+- Any open binding concern from a prior round MUST be addressed (the
+  implementer claims fix → verify; not fixed → re-raise; addressed and
+  no longer visible → call `task.py address-concern <N> --concern-id
+  <id> --by code-reviewer --round <n>` to record verification).
+- A new substantive concern this round that you want the orchestrator to
+  bind MUST be persisted via `task.py raise-concern <N> --concern-id
+  <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
+  code-reviewer --round <n>`. Verdict-body concern bullets that are NOT
+  persisted remain opportunistic (the historical PASS+CONCERNS
+  auto-advance contract applies).
+
+See `workflow.yaml § concerns_protocol` for the full severity tier
+mapping and reviewer round protocol.
+
 ### Step 0.6: End-to-end smoke gate (`type:experiment` only)
 
 For `type:experiment` tasks, a PASS is INVALID on a script that was only

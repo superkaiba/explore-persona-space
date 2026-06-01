@@ -1071,6 +1071,53 @@ formatting, never reviewing the code) can no longer bounce the implementer or
 trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
 for a strip.
 
+**5c-ter. Binding-concerns post-strip check (composed onto 5c-bis by task #455).**
+
+After Step 5c-bis has stripped any mechanical-contract-only FAILs, AND
+the per-reviewer verdicts have been resolved by Step 5c, run a final
+binding-concerns check BEFORE advancing on `final_verdict == PASS`:
+
+```bash
+open_concerns=$(uv run python scripts/task.py list-concerns <N> --open-only --json)
+```
+
+If `open_concerns` is empty: advance per Step 5d as usual (the
+historical PASS path is unchanged).
+
+If `open_concerns` is non-empty AND `final_verdict == PASS`, iterate
+per concern_id:
+
+- **severity=NIT** → opportunistic, never blocks. Skip.
+- **severity=CONCERN** → either:
+  1. The current implementer round demonstrably addressed it AND the
+     reviewer's verdict body (or the orchestrator's own diff inspection)
+     confirms — call `task.py address-concern <N> --concern-id <id>
+     --by code-reviewer --round <n>` (recording verification) and
+     advance; OR
+  2. Raise inline `AskUserQuestion` proposing deferral
+     <!-- gate: gates.inline.concern_deferral_request -->. On user
+     agreement run `task.py defer-concern <N> --concern-id <id> --by
+     user --rationale "..."` (≥40 chars, not boilerplate) and advance;
+     on user refusal bounce to the implementer with a brief targeting
+     that concern (round counter increments).
+- **severity=BLOCKER** → either address (option 1 above) OR pivot
+  strategy per `pivot_criteria.code_review_ensemble_cap_3`. BLOCKERs
+  CANNOT route to the deferral gate. If neither address nor pivot
+  resolves it, post `epm:failure v1 failure_class: code` referencing the
+  concern_id and set status:blocked (halt_criteria id=6
+  `concern_unresolved`).
+
+Multiple open CONCERNS may batch into ONE `AskUserQuestion` call with
+one option per concern_id plus a free-text rationale box per concern.
+
+This step does NOT override 5c-bis — mechanical-contract-only FAILs
+still strip and cosmetic gripes about present evidence still don't
+bounce the implementer. The check operates on a different signal
+(concerns.jsonl persisted via `task.py raise-concern`) and gates
+auto-advance ON TOP of the existing flow. The same subroutine fires at
+Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
+the same logic.
+
 **5d. Loop on FAIL using `final_verdict`.**
 
 - **`final_verdict == PASS`**:
