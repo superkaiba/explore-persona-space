@@ -1,0 +1,2 @@
+{"ts": "2026-06-01T00:13:51Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-01T00:14:37Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running", "note": "Inline followup to #404/#452. Worktree issue-458 off issue-452. Dispatching experiment-implementer for 18-cell predictor sweep (cosine + token-JS, max_steps=375, turner_em, gpt-4o judge)."}

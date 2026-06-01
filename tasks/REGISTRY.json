@@ -2462,8 +2462,8 @@
     "458": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/458",
-      "status": "proposed",
+      "path": "tasks/running/458",
+      "status": "running",
       "title": "Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets"
     },
     "46": {
