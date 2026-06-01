@@ -1,8 +1,22 @@
 {
-  "commit": "e41d02762",
-  "created": "2026-06-01T11:33:25Z",
+  "commit": "98823e7cf",
+  "created": "2026-06-01T11:51:15Z",
   "figsize": [
     12.0,
     4.2
-  ]
+  ],
+  "plotted": {
+    "E=0_C=0_source_rate": 0.9891666666666666,
+    "E=0_C=0_bystander_rate": 0.9854710144927536,
+    "E=0_C=1_source_rate": 1.0,
+    "E=0_C=1_bystander_rate": 1.0,
+    "E=1_C=0_source_rate": 0.9533333333333334,
+    "E=1_C=0_bystander_rate": 0.6831521739130434,
+    "E=1_C=1_source_rate": 0.78,
+    "E=1_C=1_bystander_rate": 0.3935144927536232,
+    "E=2_C=0_source_rate": 0.9583333333333334,
+    "E=2_C=0_bystander_rate": 0.003949275362318841,
+    "E=2_C=1_source_rate": 0.8358333333333333,
+    "E=2_C=1_bystander_rate": 0.006014492753623189
+  }
 }

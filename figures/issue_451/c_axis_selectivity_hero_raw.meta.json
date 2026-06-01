@@ -1,8 +1,298 @@
 {
-  "commit": "e41d02762",
-  "created": "2026-06-01T11:32:57Z",
+  "commit": "98823e7cf",
+  "created": "2026-06-01T11:51:13Z",
   "figsize": [
     7.0,
-    4.0
+    4.4
+  ],
+  "plotted": [
+    {
+      "B": 0,
+      "D": 0,
+      "E": 0,
+      "source": "librarian",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 0,
+      "source": "programmer",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 0,
+      "source": "surgeon",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 0,
+      "source": "librarian",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 0,
+      "source": "programmer",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 0,
+      "source": "surgeon",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 0,
+      "source": "librarian",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 0,
+      "source": "programmer",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 0,
+      "source": "surgeon",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 0,
+      "source": "librarian",
+      "C0_selectivity": 0.04434782608695653,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 0,
+      "source": "programmer",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 0,
+      "source": "surgeon",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.0
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 1,
+      "source": "librarian",
+      "C0_selectivity": 0.07391304347826089,
+      "C1_selectivity": 0.7382608695652173
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 1,
+      "source": "programmer",
+      "C0_selectivity": 0.057826086956521805,
+      "C1_selectivity": 0.4347826086956521
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 1,
+      "source": "surgeon",
+      "C0_selectivity": 0.07173913043478275,
+      "C1_selectivity": 0.3473913043478261
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 1,
+      "source": "librarian",
+      "C0_selectivity": 0.00043478260869567187,
+      "C1_selectivity": 0.016956521739130426
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 1,
+      "source": "programmer",
+      "C0_selectivity": 0.0,
+      "C1_selectivity": 0.045217391304347765
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 1,
+      "source": "surgeon",
+      "C0_selectivity": 0.03521739130434798,
+      "C1_selectivity": 0.10565217391304349
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 1,
+      "source": "librarian",
+      "C0_selectivity": 0.1386956521739131,
+      "C1_selectivity": 0.46304347826086956
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 1,
+      "source": "programmer",
+      "C0_selectivity": 0.1517391304347827,
+      "C1_selectivity": 0.5191304347826087
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 1,
+      "source": "surgeon",
+      "C0_selectivity": 0.3291304347826087,
+      "C1_selectivity": 0.6226086956521739
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 1,
+      "source": "librarian",
+      "C0_selectivity": 0.8947826086956522,
+      "C1_selectivity": 0.6639130434782609
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 1,
+      "source": "programmer",
+      "C0_selectivity": 0.7726086956521739,
+      "C1_selectivity": 0.2608695652173913
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 1,
+      "source": "surgeon",
+      "C0_selectivity": 0.7160869565217391,
+      "C1_selectivity": 0.42
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 2,
+      "source": "librarian",
+      "C0_selectivity": 0.8091304347826087,
+      "C1_selectivity": 0.5160869565217392
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 2,
+      "source": "programmer",
+      "C0_selectivity": 0.9708695652173913,
+      "C1_selectivity": 0.27434782608695657
+    },
+    {
+      "B": 0,
+      "D": 0,
+      "E": 2,
+      "source": "surgeon",
+      "C0_selectivity": 0.7539130434782608,
+      "C1_selectivity": 0.22999999999999998
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 2,
+      "source": "librarian",
+      "C0_selectivity": 1.0,
+      "C1_selectivity": 0.9878260869565217
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 2,
+      "source": "programmer",
+      "C0_selectivity": 0.9982608695652174,
+      "C1_selectivity": 0.9995652173913043
+    },
+    {
+      "B": 0,
+      "D": 1,
+      "E": 2,
+      "source": "surgeon",
+      "C0_selectivity": 1.0,
+      "C1_selectivity": 0.9943478260869565
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 2,
+      "source": "librarian",
+      "C0_selectivity": 0.9830434782608696,
+      "C1_selectivity": 0.9943478260869565
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 2,
+      "source": "programmer",
+      "C0_selectivity": 0.9921739130434782,
+      "C1_selectivity": 0.9956521739130435
+    },
+    {
+      "B": 1,
+      "D": 0,
+      "E": 2,
+      "source": "surgeon",
+      "C0_selectivity": 0.9943478260869565,
+      "C1_selectivity": 0.9930434782608696
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 2,
+      "source": "librarian",
+      "C0_selectivity": 0.9773913043478261,
+      "C1_selectivity": 0.9965217391304347
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 2,
+      "source": "programmer",
+      "C0_selectivity": 0.9782608695652174,
+      "C1_selectivity": 0.9908695652173913
+    },
+    {
+      "B": 1,
+      "D": 1,
+      "E": 2,
+      "source": "surgeon",
+      "C0_selectivity": 0.9952173913043478,
+      "C1_selectivity": 0.9852173913043478
+    }
   ]
 }
