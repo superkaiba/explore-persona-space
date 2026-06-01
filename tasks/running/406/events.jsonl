@@ -47,3 +47,4 @@
 {"ts": "2026-05-31T23:21:06Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train", "phase": "train", "pod": "pod-406"}
 {"ts": "2026-06-01T00:16:34Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> crosseval", "phase": "crosseval", "pod": "pod-406"}
 {"ts": "2026-06-01T00:25:52Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: crosseval -> done", "phase": "done", "pod": "pod-406"}
+{"ts": "2026-06-01T00:26:11Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Pod phases complete (N=16). Phase 3 merge: diagonal 16/16 passed (>=0.70), no failures. Full 16x16 G matrix written. All conditions (A1-A5, B1-B5, C1, D1-D5) implanted the marker on the chat-template recipe -> confirms the raw-path C2-C5 was the sole implantation failure. Pulling matrices for local Phase 4 (analysis + figures)."}
