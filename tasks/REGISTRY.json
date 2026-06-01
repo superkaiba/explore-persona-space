@@ -2045,7 +2045,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/406",
       "status": "interpreting",
-      "title": "Does JS divergence between context transformations predict SFT generalization across them?"
+      "title": "Base-model output divergence between two contexts negatively predicts SFT transfer of an implanted marker between them (MODERATE confidence)"
     },
     "407": {
       "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",

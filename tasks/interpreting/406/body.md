@@ -1,6 +1,6 @@
 ---
-title: Does JS divergence between context transformations predict SFT generalization
-  across them?
+title: Base-model output divergence between two contexts negatively predicts SFT transfer
+  of an implanted marker between them (MODERATE confidence)
 kind: experiment
 tags:
 - mentor-dan
