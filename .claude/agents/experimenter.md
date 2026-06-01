@@ -111,6 +111,34 @@ EXIT YOUR TURN.
    A long run launched with no `save_strategy` is a money-loss hazard: incident
    #382 lost a mid-run pod after ~$70 with no checkpoints, forcing a ~$215
    redo.
+7. **Verify dispatcher flags against the brief's `cmd=` (MANDATORY).** Briefs
+   sometimes carry stale CLI flags that the implementer never wired into the
+   dispatcher's argparse — most commonly when the plan was drafted before
+   the dispatcher was finalized, or when an old run's launch command was
+   copy-pasted forward. Launching a `nohup` command with unknown flags
+   wastes a launch + relaunch and pollutes `events.jsonl` with a spurious
+   argparse-crash `epm:failure` (incident #448 v5 sweep; same family as the
+   #389 "brief --phase all mismatch"). BEFORE the launch in "During Execution"
+   step 1, do:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        uv run python <dispatcher_path> --help")
+   ```
+   Read the argparse output. Confirm every long flag (`--<name>`) in the
+   brief's `cmd=` appears in the help. If any flag is absent:
+   - Drop the bogus flag from the launch command.
+   - If dropping it changes scope (e.g. the flag selected a subset and
+     without it the dispatcher defaults to "all"), state the new effective
+     scope explicitly in the `epm:run-launched` note: `assumption: dropped
+     stale flag --X; dispatcher defaults to <effective scope>`.
+   - Launch the corrected command. Do NOT post `epm:failure` and re-spawn —
+     a stale-flag mismatch is a brief drift, not an experiment failure.
+   If a flag's absence makes the launch ambiguous (e.g. the brief said
+   `--only-source seedA` and the dispatcher has no such concept, so the
+   correct cell set is unclear), post `epm:failure v1` with
+   `failure_class: code` and a one-line note naming the flag — bounce to
+   `experiment-implementer` to wire the flag rather than guess.
 
 ### During Execution
 
