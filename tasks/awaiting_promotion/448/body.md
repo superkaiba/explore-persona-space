@@ -49,7 +49,7 @@ A 10,000-shuffle permutation null on the count of knobs that are "monotone AND r
 
 There's a measurement reframe sitting just below the headline that I think reorders how the four ranges should be read — see the "near the log-prob ceiling" section below — but first the secondary question.
 
-### Bystanders FARTHER from the trained negatives leak MORE — opposite of prediction, and the cleanest mechanistic test pushes the effect toward zero
+### Bystanders CLOSER to the trained negatives leak MORE — opposite of prediction, and the cleanest mechanistic test pushes the effect toward zero
 
 The secondary hypothesis was that within a cell, per-bystander leakage Δ should correlate POSITIVELY with the bystander's cosine distance to the nearest contrastive negative persona used in training: bystanders close to a corrected region of persona-space should leak LESS, bystanders far from all negatives should leak MORE. The data inverts the sign at the point-estimate level in every non-degenerate cell. Spearman ρ ranges from −0.17 (in the cell where the negative persona set is widest, +neg-personas=4) to −0.56 (anchor and positive-side cells), with the canonical recipes clustering around ρ ≈ −0.55.
 
