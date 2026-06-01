@@ -24,11 +24,14 @@ chat — refine the body, run the quality gates, push, then iterate against
 the live body. The only pre-apply user gate is Step 1 (consolidation
 candidates), because merging is destructive.
 
-**All body-shape rules live in `CLAUDE.md` § "Experiment Report
-Structure" (markdown clean-result spec — four required H2 sections:
-TL;DR / Figure / Details / Reproducibility; enforced mechanically by
-`scripts/verify_task_body.py`, 13 checks).** Workflow + apply mechanics
-only here.
+**All body-shape rules live in `.claude/skills/clean-results/SPEC.md`
+(2-content-section nested-design v2 spec — three required H2 sections
+in order: `## Human TL;DR` / `## TL;DR` / `## Reproducibility`; with
+`## TL;DR` carrying `### Motivation` / `### What I ran` /
+`### Findings` (parent) → `#### <finding>` per result for
+v2-sentinelled bodies; confidence in H1 title tag only for v2 bodies).
+Enforced mechanically by `scripts/verify_task_body.py` (19 checks).
+Workflow + apply mechanics only here.
 
 ---
 
@@ -97,8 +100,11 @@ uv run python scripts/task.py find <N>
 Detect format:
 
 - **Markdown clean-result (current, new tasks):** opens with `# <title>
-  (LOW|MODERATE|HIGH confidence)` then `## TL;DR` / `## Figure` /
-  `## Details` / `## Reproducibility`. Refine in place.
+  (LOW|MODERATE|HIGH confidence)` then `## Human TL;DR` / `## TL;DR` /
+  `## Reproducibility`. For v2 nested-design bodies (sentinel
+  `<!-- clean-result-v2 -->` present after the H1), `## TL;DR` carries
+  `### Motivation` / `### What I ran` / `### Findings` H3s with one
+  `#### <finding>` H4 per result. Refine in place.
 - **Legacy Sagan-card HTML (grandfathered, imported from Sagan):** has
   `<!-- legacy-sagan-card -->` sentinel + inline `<style>` block.
   Optionally convert to markdown if the user asks (see Step 4b);
@@ -106,19 +112,22 @@ Detect format:
 
 ## Step 3 — Refine the body
 
-Read the spec under "Experiment Report Structure" in `CLAUDE.md`.
-Common refinements at this stage:
+Read the spec at `.claude/skills/clean-results/SPEC.md` (canonical) and
+the summary under "Experiment Report Structure" in `CLAUDE.md`. Common
+refinements at this stage:
 
 - Title says exactly what the result is (not the experiment name) and
   ends with `(LOW|MODERATE|HIGH confidence)`.
-- TL;DR carries the three REQUIRED bullet labels (Motivation, What I ran,
-  Results), plus an OPTIONAL fourth `Next steps` bullet (include only when
-  there's genuinely useful follow-up to queue; decision 2026-05-26).
-- Figure caption is ≥10 words.
+- v2 body carries the `<!-- clean-result-v2 -->` sentinel right after
+  the H1; `## TL;DR` is shaped as `### Motivation` / `### What I ran` /
+  `### Findings` (parent) → `#### <finding>` per result.
+- `### Motivation` is the only place issue numbers appear (`[#K](...)`).
+- `### What I ran` is standalone — no cross-issue framing.
 - Reproducibility URLs are all permanent-pinned (`/tree/<sha>`,
   `/runs/<id>`, `/blob/<sha>`), no `TBD` / `{{` / `default` /
   `see config`.
-- Confidence sentence in Details matches the title's confidence level.
+- For v2 bodies: confidence lives in the H1 title tag ONLY — do NOT
+  emit a body `Confidence: …` sentence in `## Reproducibility`.
 
 Apply edits to the body via:
 
@@ -200,14 +209,17 @@ follow-up-proposer step.
 
 ## References
 
-- **`CLAUDE.md` § "Experiment Report Structure"** — canonical markdown
-  clean-result spec (four required H2 sections, voice rules,
+- **`.claude/skills/clean-results/SPEC.md`** — canonical clean-result
+  spec (2-content-section nested-design v2: three required H2
+  sections in order; `## TL;DR` with `### Motivation` /
+  `### What I ran` / `### Findings` (parent) → `#### <finding>` per
+  result; confidence in H1 title tag only for v2 bodies; voice rules;
   sample-output discipline).
-- **`.claude/skills/clean-results/SPEC.md`** — pointer document with
-  the 13-check verifier rules.
-- **`scripts/verify_task_body.py`** — mechanical verifier (13 checks
-  for new markdown bodies; skips legacy `<!-- legacy-sagan-card -->`
-  HTML bodies with PASS).
+- **`CLAUDE.md` § "Experiment Report Structure"** — brief summary
+  pointing back at SPEC.md.
+- **`scripts/verify_task_body.py`** — mechanical verifier (19 checks
+  including the v2 sentinel-gated nested-structure check; skips
+  legacy `<!-- legacy-sagan-card -->` HTML bodies with PASS).
 - **`scripts/verify_sagan_card.py`** — legacy verifier retained for
   grandfathered HTML bodies only.
 - **`scripts/audit_clean_results_body_discipline.py`** — prose-level

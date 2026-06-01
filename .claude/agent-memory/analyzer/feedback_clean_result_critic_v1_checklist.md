@@ -13,23 +13,23 @@ The clean-result-critic round 1 (Claude + Codex ensemble) consistently flags the
 
 3. **TL;DR is plain English only.** Banned in TL;DR sub-bullets: `A=1`/`C=0`/`C=1`/`E0`/`E1`/`E2`, cell keys like `11011`, named statistical tests (`Kendall-τ`, `Spearman ρ`, `Page's L`), `log-probability` (use "first-token probability" or similar). Each sub-bullet 1-3 sentences max.
 
-4. **Named statistical tests live ONLY in `### Why these tests` paragraph in Details.** Outside that paragraph: "monotonic-trend test", "rank correlation", "sign-ordering test", "pairwise orderings". Confidence sentence and Methodology corrections paragraph also do NOT name tests.
+4. **Named statistical tests live ONLY inline in the relevant `#### <finding>` H4 as a "Why this test" sentence** (NOT a separate H3/H4 — the rationale lives inline). Elsewhere in prose: "monotonic-trend test", "rank correlation", "sign-ordering test", "pairwise orderings".
 
 5. **No `[lo, hi]` CIs in prose / table cells.** Per CLAUDE.md statistical-framing rule: CIs allowed on charts (as error bars), NOT in body text or table cells. Tables carry point estimates + n only.
 
-6. **Voice: "I", never "we".** Sweep TL;DR + Human TL;DR + Details for "we".
+6. **Voice: "I", never "we".** Sweep the full body for "we".
 
-7. **Multi-probe rigs need `### The N probes` H3 EARLY in Details.** When the experiment uses ≥2 probes (substring + log-prob; multiple framings; multiple judges), enumerate them in a table with Probe / Computation / Example / Pass criterion columns, BEFORE any H3 that references them. Link from TL;DR Results via anchor `[Details](#the-n-probes)`.
+7. **Multi-probe rigs need `### The N probes` H3 EARLY in `## TL;DR`.** When the experiment uses ≥2 probes (substring + log-prob; multiple framings; multiple judges), enumerate them in a table with Probe / Computation / Example / Pass criterion columns, placed BEFORE any `#### <finding>` that references them (typically right after `### What I ran`).
 
-8. **Parameters table sits BEFORE the Confidence sentence in `## Details`.** Confidence sentence is the last paragraph in the Details narrative before `### Methodology corrections` (which is the LAST H3).
+8. **`## Reproducibility` carries the Parameters table; confidence lives in the H1 title tag only.** Under the 2-content-section nested-design (v2) spec, the analyzer does NOT emit a `Confidence: …` sentence — the title's `(LOW|MODERATE|HIGH confidence)` suffix is the source of truth. There is NO `### Methodology corrections` H3; correction prose folds into the relevant `#### <finding>` setup or read.
 
-9. **Generator disclosure: name the model.** "Claude-written training data" → "Claude-Sonnet-4.5-written training data" (or whatever the actual model is). For any in-context model artifact (few-shot CoT, judge prompt, generated dataset), name the model in TL;DR What-I-ran AND Details.
+9. **Generator disclosure: name the model.** "Claude-written training data" → "Claude-Sonnet-4.5-written training data" (or whatever the actual model is). For any in-context model artifact (few-shot CoT, judge prompt, generated dataset), name the model in `### What I ran` AND in the relevant `#### <finding>`.
 
-10. **All methodology corrections consolidated into ONE `### Methodology corrections` H3 at the END of Details** (last H3 before `## Reproducibility`). Do NOT scatter corrections through the body prose.
+10. **All methodology corrections fold into the relevant `#### <finding>` setup or read prose** — NOT a separate `### Methodology corrections` H3 (retired 2026-W22). Document corrections inline at the finding whose interpretation they shape.
 
-11. **H3 headings are content-descriptive, not deliverable-labels.** `### Sample outputs` (deliverable) → `### Per-cell behaviour beyond the averages` (content). `### Results` (deliverable) → `### The marker-only-loss collapse` (content).
+11. **H3/H4 headings are content-descriptive, not deliverable-labels.** `#### Sample outputs` (deliverable) → `#### Per-cell behaviour beyond the averages` (content). `#### Results` (deliverable) → `#### The marker-only-loss collapse` (content). Note: `### What I ran` and `### Findings` themselves are REQUIRED structural H3s (not outline labels) under the nested-design spec.
 
-12. **Text-generation experiments need TL;DR end-to-end example OR explicit skip note.** When raw completions aren't available, add the skip note in parentheses: "(Sample completions would normally live in Details; this run has none to show.)"
+12. **Text-generation findings need an end-to-end example inside the `#### <finding>` H4 OR an explicit skip note.** When raw completions aren't available, add a one-line skip note in the finding's prose ("no generation-style outputs in this result; skipping the end-to-end example block per SPEC"). For runs that generate NO completions (teacher-forced log-prob, activation probe), state the measurement-validity tell inside the finding ("the model emits nothing — each probe yields one number, not a completion") rather than fabricating a sample block.
 
 13. **Figure caption is blockquote with bold "Figure." prefix.** Format: `> **Figure.** *<one-sentence headline>* <body of caption>`. NOT `*Caption: ...*`.
 

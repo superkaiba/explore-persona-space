@@ -1200,7 +1200,7 @@ markers:
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 13 lenses against the 2-content-section spec (2026-W22, task #454): title; TL;DR (Motivation H3 + per-result `### <finding>` H3s — absorbs the retired Details-narrative Lens 4); inline figure inside each result H3; Lens 4 merged into Lens 2; Reproducibility (Parameters + Confidence sentence absorbed here); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per result H3; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage. Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict with 13 lenses against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage. Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
@@ -1610,7 +1610,7 @@ client:
   module: explore_persona_space.task_workflow
   auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
   mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (2-content-section markdown clean-result spec — 2026-W22, task #454; CHECKS contains 18 functions)"
+  verification: "scripts/verify_task_body.py (2-content-section markdown clean-result spec — 2026-W22, task #454; CHECKS contains 19 functions, including the nested-design (v2) sentinel-gated `check_tldr_nested_structure`)"
 
 # ──────────────────────────────────────────────────────────────────────
 # Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)

@@ -43,7 +43,11 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 1. **Dynamic-range / floor-ceiling check (compute it from the raw JSON).** Look at the headline metric's spread across conditions. If (nearly) every condition sits at a floor or ceiling — e.g. all log-probs within a tiny band of effectively-zero probability, all pass-rates at 0% or 100%, all values inside the metric's saturated tail — the probe is presumed **uninformative**: the ranking among those values is noise. Do NOT narrate rank-shuffles among saturated values as a finding. Surface the saturation explicitly ("all 28 personas score log p between −17 and −27, i.e. ~0 emission probability — the leaderboard ranks near-zero values") and treat it as a confidence-capping constraint, not a result.
 2. **Proxy-vs-construct check.** Read the plan's §6 measurement-validity entry and the Goal's construct. If the headline metric is an **off-distribution proxy** (teacher-forced not on-policy, a fixed canonical/stub answer instead of the model's own generation, an arbitrary token position, a single-token shortcut) for a behavioral construct, you MUST NOT narrate the proxy as the construct. Write the construct-accurate statement ("log p(※) at a fixed-answer probe", not "the model emits / implants the marker"), and state the proxy gap in the body. If the plan validated the proxy against the construct, cite that validation; if it did not, the headline claim about the *behavior* is unsupported — cap confidence and say so. Narrating a proxy as the construct is an overclaim (interpretation-critic Lens 1 catches it).
 
-**The `## Goal` H2 from the prior body is DROPPED during clean-result promotion (decision: 2026-05-26).** Step 6 (set-body) writes the polished clean-result body with the canonical THREE required H2s (Human TL;DR / TL;DR / Reproducibility) following the H1 title. **Figures live inline inside each `### <finding>` H3 under `## TL;DR` — never emit a `## Figure` H2, and never emit a `## Details` H2 (both are retired 2026-W22, task #454; verifier check 2 hard-FAILs any body that carries either).** Per-result narrative (definitions, training notes, eval-rationale prose, sample completions, "Why this test") moves UP into the per-result H3s under `## TL;DR`; the Parameters table + Confidence sentence move DOWN into `## Reproducibility`. No `## Goal` H2 sits between H1 and Human TL;DR.
+**The `## Goal` H2 from the prior body is DROPPED during clean-result promotion (decision: 2026-05-26).** Step 6 (set-body) writes the polished clean-result body with the canonical THREE required H2s (Human TL;DR / TL;DR / Reproducibility) following the H1 title. **`## TL;DR` uses the nested-design (v2) shape** — three required H3s in order: `### Motivation` (the only place issue numbers may appear), `### What I ran` (standalone — no cross-issue framing — with training INPUT→OUTPUT examples as a `<details open>` table + the eval INPUTS), and `### Findings` (parent) wrapping one `#### <finding>` H4 per result. **Figures live inline inside each `#### <finding>` H4 — never emit a `## Figure` H2, and never emit a `## Details` H2 (both are retired 2026-W22, task #454; verifier check 2 hard-FAILs any body that carries either).** Per-result narrative (definitions, training notes, eval-rationale prose, sample completions, "Why this test") moves UP into the per-result `#### <finding>` H4s under `### Findings`; the Parameters table moves DOWN into `## Reproducibility`. No `## Goal` H2 sits between H1 and Human TL;DR.
+
+**Emit the v2 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v2 -->` on its own line (blank line before and after). The verifier gates the nested-shape requirements (presence + order of `### Motivation` / `### What I ran` / `### Findings` + `#### `) AND accepts confidence-title-only on bodies bearing this sentinel. Bodies WITHOUT the sentinel keep the prior post-#454 behavior — every NEW draft you produce MUST carry the sentinel.
+
+**Confidence lives in the H1 title tag only — do NOT emit a `Confidence: …` sentence in `## Reproducibility`.** The H1 title's `(LOW|MODERATE|HIGH confidence)` suffix is the single source of truth. There is no "Why confidence is where it is" section. If you need to convey what the binding constraint is, weave it into the relevant `#### <finding>` read paragraph.
 
 **`## Human TL;DR` is the first H2 (decision: 2026-05-26; stub simplified 2026-05-29).** You write it as a minimal STUB during promotion — just the literal word `placeholder` as the section body — that Thomas overwrites himself:
 
@@ -210,42 +214,48 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 ### Step 4: Write the clean-result body
 
-**Use the clean-result spec at `~/sagan/docs/clean-result-guidelines.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
+**Use the clean-result spec at `.claude/skills/clean-results/SPEC.md`.** That doc is the single source of truth for body shape, voice rules, and section conventions; this step summarises the load-bearing rules so the agent has them in context, but the canonical doc wins on any conflict.
 
-**Reference exemplar: experiment #311.** Pull the live body via `uv run python scripts/task.py view 311` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/<N>>. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
+**Reference exemplar: experiment #432.** Pull the live body via `uv run python scripts/task.py view 432` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/432>. It is the canonical nested-design (v2) exemplar — `## TL;DR` opens `### Motivation` → `### What I ran` → `### Findings` → `#### <finding>` per result, with confidence in the H1 title tag only. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
 
 Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The 13-check verifier (`scripts/verify_task_body.py`) is the mechanical gate.
 
-**Top-level shape: three required H2 sections in exact order, with the second (`## TL;DR`) absorbing all per-result narrative and the third (`## Reproducibility`) absorbing the Parameters table + Confidence sentence.** The body is markdown end-to-end; ignore any HTML-flavoured vestiges that may appear in older agent docs.
+**Top-level shape: three required H2 sections in exact order, with the second (`## TL;DR`) absorbing all per-result narrative and the third (`## Reproducibility`) absorbing the Parameters table.** The body is markdown end-to-end; ignore any HTML-flavoured vestiges that may appear in older agent docs.
+
+**Emit the v2 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v2 -->` on its own line. The verifier gates the nested-shape requirements (presence + order of `### Motivation` / `### What I ran` / `### Findings` + `#### `) AND accepts confidence-title-only on bodies bearing this sentinel.
 
 1. **`## Human TL;DR`** — Thomas's own section, drafted by you as a minimal stub for him to fill in — just the literal word `placeholder` as the section body (see Step 1). Voice is first-person and casual; leave the single `placeholder` line as-is so Thomas can spot and overwrite it.
-2. **`## TL;DR`** — the LessWrong-style narrative. Two-part shape:
-   - **Opens with `### Motivation`** (a labeled H3, not a bullet). Sets up why the experiment matters — prior tasks (cited via `[#K](https://eps.superkaiba.com/tasks/K)` markdown links, NOT bare `#K`), the question walked in with, the prior the analyzer held. First-person, plain language. The legacy `**Motivation:**` boldface-bullet form still PASSes verifier check 3 but the H3 form is the prescriptive default.
-   - **Followed by one `### <finding>` H3 per result.** Each result H3 names what the reader is about to learn (a story-beat headline, NOT a deliverable label — see voice rules below). Inside each result H3:
+2. **`## TL;DR`** — the LessWrong-style narrative, in a nested 3-part shape. Three required H3s in order:
+   - **`### Motivation`** — sets up why the experiment matters; the ONLY place in the body that may cite prior tasks (via `[#K](https://eps.superkaiba.com/tasks/K)` markdown links, NOT bare `#K`) or name issue numbers; ends by stating the goal. First-person, plain language. The legacy `**Motivation:**` boldface-bullet form still PASSes verifier check 3 on pre-sentinel bodies, but the H3 form is the prescriptive default for v2 bodies.
+   - **`### What I ran`** — STANDALONE description of the run. No cross-issue framing, no issue numbers, no "byte identical" / "byte-identical" phrasing, no incidental low-level detail. Carries training INPUT→OUTPUT examples (as a `<details open>` table — preceded by an "N example training rows" cherry-pick disclosure inside the `<summary>`, with the full-data link inside the dropdown) and the eval INPUTS (the actual probes / questions asked).
+   - **`### Findings`** — parent H3 that wraps one `#### <finding>` H4 per result. Each `#### <finding>` H4 names what the reader is about to learn (a story-beat headline, NOT a deliverable label — see voice rules below). Inside each `#### <finding>` H4:
      1. A short **setup paragraph** (1-3 sentences) framing what the figure will show and why we're looking now.
      2. **Exactly ONE inline figure** on a line by itself, blank line before and after, with a markdown blockquote caption (`> **Figure.** *italic lead.* plain caption text…`). See "Figure caption shape" below.
      3. A **read paragraph** (1-3 sentences) calling out what's striking — surprises, where outliers go, monotonicity, what the figure CAN'T tell you.
-     4. **One cherry-picked raw-completion example per artifact** the result rests on (a fenced code block or a `<details>` table), preceded by the literal `cherry-picked for illustration` (or a random-sample disclosure like `first three of 400 completions`) AND by a link to the **raw text-level artifact** (HF Hub `/tree/<sha>/.../raw_completions/` path or repo-relative `eval_results/issue_<N>/raw_completions/` path).
-     5. A **`<details>` dropdown** with 3-5 more cherry-picked examples + a link to ALL raw completions for that artifact (the complete bucket on HF Hub, pinned to the commit SHA).
+     4. **For text-generation results:** one cherry-picked raw-completion example per artifact the result rests on (a fenced code block or a `<details>` table), preceded by the literal `cherry-picked for illustration` (or a random-sample disclosure like `first three of 400 completions` or `5 example completions`) AND by a link to the **raw text-level artifact** (HF Hub `/tree/<sha>/.../raw_completions/` path or repo-relative `eval_results/issue_<N>/raw_completions/` path), then a **`<details>` dropdown** with 3-5 more cherry-picked examples + a link to ALL raw completions for that artifact (the complete bucket on HF Hub, pinned to the commit SHA).
+     5. **For runs that generate NO completions** (teacher-forced log-prob, activation probe, linear-fit, cluster-only): state the measurement-validity tell ("the model emits nothing — each probe yields one number, not a completion") inside the finding's prose; do NOT fabricate a fenced sample block.
 
-   **Every result H3 except `### Motivation` MUST stand alone** — the reader can land on it directly and understand the finding without re-reading the previous result.
+   **Every `#### <finding>` H4 MUST stand alone** — the reader can land on it directly and understand the finding without re-reading earlier ones. The body is standalone outside `### Motivation`: baselines are framed descriptively ("the narrow 2-negative baseline"), NOT by issue number.
 
-   **No `## Figure` H2.** Figures live inline inside each result H3 — one figure per result. A stray `## Figure` H2 in a new body is rejected by verifier check 2 as a hard FAIL.
+   **No `## Figure` H2.** Figures live inline inside each `#### <finding>` H4 — one figure per result. A stray `## Figure` H2 in a new body is rejected by verifier check 2 as a hard FAIL.
 
-   **No separate `## Details` H2.** Everything that used to live in Details (definitions, training notes, eval-rationale prose, sample completions, "Why this test" narrative) moves UP into per-result H3s. A stray `## Details` H2 in a new body is rejected by verifier check 2 as a hard FAIL.
+   **No separate `## Details` H2.** Everything that used to live in Details (definitions, training notes, eval-rationale prose, sample completions, "Why this test" narrative) moves UP into per-result `#### <finding>` H4s under `### Findings`. A stray `## Details` H2 in a new body is rejected by verifier check 2 as a hard FAIL.
 
-   **No `### Methodology corrections` H3.** When a methodology correction is load-bearing for interpreting a finding, fold it into the relevant result H3's setup or read prose. Do not collect corrections in a separate section.
+   **No `### Methodology corrections` H3.** When a methodology correction is load-bearing for interpreting a finding, fold it into the relevant `#### <finding>`'s setup or read prose. Do not collect corrections in a separate section.
 
-   **No `### Next steps` H3 by default.** Skip unless there is genuinely useful follow-up to queue. Hard exception: when raw completions were not uploaded for this run, surface the "re-run with raw-completion upload" note inside the relevant result's prose (pairs with the qualitative-data-link WARN in `verify_task_body.py`).
+   **No `### Next steps` H3 by default.** Skip unless there is genuinely useful follow-up to queue. Hard exception: when raw completions were not uploaded for this run, surface the "re-run with raw-completion upload" note inside the relevant finding's prose (pairs with the qualitative-data-link WARN in `verify_task_body.py`).
 
-   **Demote figure-less quantitative claims.** If a result H3 asserts a quantitative finding (number, percentage, rate, ratio, count-comparison) AND no figure supports the claim, EITHER drop the result entirely (push it into a different result H3's prose) OR rewrite the result as a qualitative observation that doesn't lean on the number. Do NOT ship a numeric result claim that has no visual anchor.
+   **Per-condition quantitative numbers live in PLOTS, not as a body table** — never duplicate a per-condition rate / log-prob / mean as a markdown table in the body when the figure already carries the same numbers.
+
+   **Demote figure-less quantitative claims.** If a `#### <finding>` H4 asserts a quantitative finding (number, percentage, rate, ratio, count-comparison) AND no figure supports the claim, EITHER drop the result entirely (push it into a different finding's prose) OR rewrite the H4 as a qualitative observation that doesn't lean on the number. Do NOT ship a numeric result claim that has no visual anchor.
 
 3. **`## Reproducibility`** — agent-facing appendix at the bottom. Required content, in order:
    - **`**Parameters:**`** — the parameters table (base model, adapter, optimizer, steps, seeds, eval rig, hardware, wall time, Hydra config slug). Absorbed from the retired `## Details` section.
-   - **`**Artifacts:**`** — links to training data, model checkpoints, eval JSONs, figure source, raw completions. The 5-example training/eval data dropdown lives inside whichever result H3 the data is most relevant to (NOT here); this Artifacts block just lists the full artifact links.
+   - **`**Artifacts:**`** — links to training data, model checkpoints, eval JSONs, figure source, raw completions. The training-data dropdown lives under `### What I ran`; eval examples live near the finding that consumed them (NOT here); this Artifacts block just lists the full artifact links.
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra config, git commit hash, one-block reproduce snippet.
-   - **The `Confidence: LOW|MODERATE|HIGH — <rationale>` sentence** (≥20 chars of rationale after the dash) lives in this section, last paragraph by convention. There is NO separate "Why confidence is where it is" section. The level MUST match the `(... confidence)` marker in the title.
+
+   **Confidence lives in the H1 title tag only** for v2 nested-design bodies. Do NOT emit a `Confidence: LOW|MODERATE|HIGH — <rationale>` sentence in `## Reproducibility`. There is NO "Why confidence is where it is" section. If you need to convey the binding constraint that drove the title's confidence level, weave it into the relevant `#### <finding>` read paragraph.
 
    Every URL pins a permanent ref (HF Hub `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or `/tree/<sha>` — never `main` / `master` / `HEAD`). Empty fields write `n/a` explicitly; the verifier rejects placeholder tokens (`{{`, `TBD`, `see config`, `default`). **URLs use `[label](url)` form only — never `<url>` autolinks.** The dashboard renders bodies through an MDX parser that treats `<https` as a JSX tag name and chokes on the `/` after `:` (parse error: "Unexpected character `/` (U+002F) before local name"). Verifier check 14 (`check_mdx_safe_urls`) FAILs any body with `<https://...>` autolinks in prose; autolinks inside code spans / fenced blocks are exempt. The rule applies in TL;DR and Human TL;DR too — never use angle-bracket autolinks anywhere in the rendered body. Incident: task #382, 2026-05-28.
 
@@ -253,7 +263,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
    **MDX safety also requires escaping inner pipes in table-cell tokens.** A token containing `|` placed inside a markdown table cell (e.g. a chat template marker like `<|im_start|>`, `<|endoftext|>`) breaks the table column split AND, combined with the leading `<`, trips the MDX parser. Escape the inner pipes and wrap in backticks: `` `<\|im_start\|>` ``. `verify_task_body.py` check 14 catches all three classes (autolink + `<digit` + table-cell `<|`): a table-aware regex layer flags an unescaped `<|` inside a real GFM table cell, and an authoritative real MDX parse backstops every class. Same MDX parser, same failure surface. Incident: task #399, 2026-05-28. The `<|` regex fires ONLY on real table-row lines, so the same token in prose or a list item (where the editor parses the code span fine) stays safe.
 
-**Voice rules** (consolidated; see `clean-result-guidelines.md` § "Voice rules" for the canonical list):
+**Voice rules** (consolidated; see `.claude/skills/clean-results/SPEC.md` § "Voice" for the canonical list):
 
 - `"I"`, not `"we"` — single-researcher workflow.
 - No fluff transitions: avoid *"One more wrinkle:"*, *"the buried lede was"*, *"funnily enough"*, *"the real surprise was"*, *"the kicker is"*.
@@ -261,18 +271,18 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 - TL;DR plain language, accessible to a non-specialist. Define jargon as it appears or wait until the design dropdown.
 - **Plain-English condition names everywhere reader-facing.** Translate every Hydra slug, condition-config key, and project-internal short-letter label (`sw_eng_C1`, `sw_eng_expA`, `sw_eng_expB-P1`, `c1_evil_wrong_em`, `cond_4`, `M1`, `Method A`, `Bin C`, `BS_E0`) into a short descriptive English phrase ("unmodified baseline", "paraphrased prompts", "refusal-only SFT", "last-input-token activations") before the body leaves Step 4. Use the same phrase in the TL;DR, the figure (axes / ticks / legend / annotations / alt text / caption), and Details prose AND in any per-condition table's column / row headers. The bare slug appears ONLY in the parameters table's `config` row and in the Reproducibility block. This is the rule that `clean-result-critic` Lens 2 / 3 / 4 enforces on review — applying it at the writing step avoids critic bounce rounds. If the plan body already named the conditions in plain English (planner.md § 5 requires this), inherit those names verbatim instead of inventing new ones.
 - No `## Findings` / `## Background` / `## Methodology` / `## Setup` / `## Details` H2s. Every reader-facing finding lives under a result H3 inside `## TL;DR`. `## Reproducibility` is the agent-facing appendix at the bottom.
-- No "Standing caveats" section; fold caveats into the relevant result H3's read paragraph or the Confidence sentence in Reproducibility.
+- No "Standing caveats" section; fold caveats into the relevant `#### <finding>` read paragraph. (Legacy bodies parked an extra Confidence sentence in Reproducibility for the binding constraint — for v2 nested-design bodies the binding constraint lives in the relevant `#### <finding>` read prose, since confidence is title-only.)
 - **Never write `byte identical` or `byte-identical`** anywhere in the body (banned 2026-W22, task #454; flagged by `audit_clean_results_body_discipline.py`). Use plain English: "the two files matched exactly", "every byte agreed", "no diff between the runs". The catch-phrase reads as AI-slop in research prose.
 - **Figure captions wrap in a markdown blockquote (`> ` prefix) and use a bold "Figure." prefix.** Every figure caption inside a result H3 uses the exact form `> **Figure.** *One-sentence lead claim in italics.* Remaining caption prose in plain text (definitions, n per condition, panel meanings, color mapping, what to look at).` The blockquote is what visually distinguishes the caption from surrounding body prose on a long page; without it the dashboard renderer collapses image + trailing line into the same paragraph. Required around each figure: blank line between body-text and `![alt](url)` line; blank line between image and caption. Result H3s are not list items in the 2-content-section spec, so no 4-space list-continuation indent applies. Draft this shape on the first pass — promotion-time caption-shape fixes are a critic-bounce trigger. Rule canonicalised in `CLAUDE.md` § Experiment Report Structure + `.claude/skills/clean-results/SPEC.md` § "Figure caption shape".
 - **End-to-end example inside each text-generation result H3.** For every result whose evidence rests on model completions, include one cherry-picked end-to-end example block inside the result H3: (1) prelude prose with cherry-picked label + permanent HF link to the COMPLETE training data + permanent HF link to the COMPLETE raw completions for that artifact; (2) a fenced code block with the relevant labeled rows — `TRAINING ROW (<row-class>, persona = "<name>")` + `Q:`/`A:`; `EVAL PROBE (framing #<N> <name>, persona = "<name>")` + `Q:`; `MODEL OUTPUT (<condition>, seed <S>, persona = "<name>")` + `A:`; (3) a `<details>` dropdown with 3-5 more cherry-picked examples + link to ALL raw completions for that artifact. Pick the example so the rows form one narrative around the result's claim. Exemption: bodies that don't produce text generations (pure activation / probe / cluster / linear-fit analyses with no completions to show) — document the skip with one line of prose inside the result H3. Canonical layout + discipline points live in `.claude/skills/clean-results/SPEC.md`.
 - **No fluff transitions in `## Human TL;DR` and the Motivation opening of `## TL;DR`** (no "One more wrinkle:", "the buried lede was", "the real surprise was", "but here's the kicker", "interestingly"). Those stay terse. **Inside each result H3 the narrative IS welcome** — connective tissue ("Then I tried", "But that didn't replicate", "The interesting bit came next", "I expected X — what I got was Y") keeps the per-result story flowing.
 - Use `\(...\)` for inline math, `\[...\]` for display math. Keep math out of plot labels.
 
-**Story arc for `## TL;DR` result H3s (2-content-section spec, 2026-W22 task #454).**
+**Story arc for `## TL;DR` (nested-design v2 spec, 2026-W22 task #454 + nested-TL;DR adoption forward-only).**
 
-`## TL;DR` opens with the `### Motivation` H3 (the question, the prior, the why-this-matters framing — 1-3 paragraphs) and then carries one `### <finding>` H3 per result. Together the H3s read top-to-bottom as a LessWrong-style post. A reader who skipped the Motivation should still follow each result H3 end-to-end and walk away knowing what was tested, what was found, and how to interpret it.
+`## TL;DR` opens with the `### Motivation` H3 (the question, the prior, the why-this-matters framing — 1-3 paragraphs), followed by the `### What I ran` H3 (standalone description), followed by the `### Findings` H3 (parent) wrapping one `#### <finding>` H4 per result. Together the H3s + H4s read top-to-bottom as a LessWrong-style post. A reader who skipped the Motivation should still follow each `#### <finding>` H4 end-to-end and walk away knowing what was tested, what was found, and how to interpret it.
 
-**Per-result H3 skeleton** (apply to every `### <finding>` H3 except `### Motivation`):
+**Per-finding H4 skeleton** (apply to every `#### <finding>` H4 inside `### Findings`):
 
 1. **Setup paragraph** (1-3 sentences). What this result tested, what's plotted, why we're looking now. If the design changed mid-experiment for THIS result (recut a stratification, dropped a domain, swapped a judge), name the pivot here as part of the story.
 2. **The figure** — exactly one inline `![alt](url)` image with descriptive alt text + a markdown blockquote caption (`> **Figure.** *italic lead.* plain caption…`) on the next paragraph.
@@ -280,21 +290,22 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 4. **Cherry-picked end-to-end example** (for text-generation results) — prelude with cherry-picked label + permanent raw-completion link; then the example fenced block; then a `<details>` dropdown with 3-5 more examples + link to ALL raw completions.
 5. **Interpretation beat** (optional, fold into the read paragraph or as a final short paragraph). What does this result update? What alternative explanation survives? Skip if the read paragraph already covers it.
 
-**H3 subheadings are story beats, NOT deliverable labels.** Good H3s tell the reader what they're about to learn:
+**`#### <finding>` H4 subheadings are story beats, NOT deliverable labels.** Good H4s tell the reader what they're about to learn:
 
-- ✓ `### A cohort disagreement on the primary`
-- ✓ `### Why this fails where bystander leakage didn't`
-- ✓ `### The samples don't show what the aggregates suggest`
+- ✓ `#### A cohort disagreement on the primary`
+- ✓ `#### Why this fails where bystander leakage didn't`
+- ✓ `#### The samples don't show what the aggregates suggest`
 
-Bad H3s are outline labels (what genre of content sits below) instead of story beats (what the reader will learn):
+Bad H4s are outline labels (what genre of content sits below) instead of story beats (what the reader will learn):
 
-- ✗ `### Headline result`
-- ✗ `### Subset checks`
-- ✗ `### Sample completions`
-- ✗ `### Plan deviations`
-- ✗ `### Methodology`
-- ✗ `### Findings`
-- ✗ `### Methodology corrections` (folded into the relevant result H3's prose under the 2-content-section spec — 2026-W22)
+- ✗ `#### Headline result`
+- ✗ `#### Subset checks`
+- ✗ `#### Sample completions`
+- ✗ `#### Plan deviations`
+- ✗ `#### Methodology`
+- ✗ `#### Methodology corrections` (folded into the relevant finding's prose under the 2-content-section spec — 2026-W22)
+
+(Note: `### What I ran` and `### Findings` are REQUIRED structural H3s under the nested-design v2 spec — they are NOT outline labels and are explicitly NOT on the bad list.)
 
 **Many-result handling.** When the experiment has many results, write one `### <finding>` H3 per result. There is no special rollup mode — each result H3 carries its own setup + figure + read + example. The TL;DR reads as a sequence of LessWrong-style story beats, each one self-contained.
 
@@ -311,17 +322,18 @@ Bad H3s are outline labels (what genre of content sits below) instead of story b
 
 ### Step 4.5: Humanize-loop self-pass on the TL;DR block
 
-Before verifying, run a humanize-loop pass on the `<section id="tldr">`
-block only — NOT the `<details id="design">` dropdown, NOT the
-`<figcaption>`, NOT the `<details id="repro">` appendix. The TL;DR goes
-to mentors / the dashboard / eventually the paper; the other sections
-are agent-facing and tolerate denser prose.
+Before verifying, run a humanize-loop pass on the `## TL;DR` H2 block
+only — NOT the `## Reproducibility` appendix and NOT the figure
+captions. The TL;DR goes to mentors / the dashboard / eventually the
+paper; the other sections are agent-facing and tolerate denser prose.
 
 **Loop protocol (inline — subagents cannot spawn subagents, so the
 `humanize` skill's `loop` mode runs inside your context, not as a
 spawned hostile critic):**
 
-1. Read the current 4 `<li>` bullets in `<section id="tldr">`.
+1. Read the current `## TL;DR` H2 block (the nested `### Motivation` /
+   `### What I ran` / `### Findings` → `#### <finding>` H3/H4
+   structure).
 2. Score against the six-axis hostile-critic rubric from
    `humanize loop` mode (load `/humanize loop` if available, otherwise
    apply the rubric from memory):
@@ -453,7 +465,7 @@ The `reviewer` agent reads the raw data and the source experiment's NEW body (bu
 
 ## Quality bar
 
-The mentor should be able to read ONLY the `## TL;DR` + `## Summary` in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear, rewrite before posting. Both sections are AI-drafted by you; the user reviews and edits them post-promotion before flipping the `clean-results:draft` label.
+The mentor should be able to read ONLY the `## TL;DR` (its three nested H3s: `### Motivation` / `### What I ran` / `### Findings`) in 10 seconds and know: why it was run, what was run, what was found, what belief updated, what would falsify it, what's next. If any of those six is unclear, rewrite before posting. The TL;DR is AI-drafted by you; the user reviews and overwrites the `## Human TL;DR` stub before sending to mentor.
 
 The issue title is the most-read part of the clean-result. It uses the **paragraph-LEDE register**: a colloquial, scene-setting clause that puts a low-context reader (mentor / domain peer outside the project) in the experiment, ending in `(HIGH | MODERATE | LOW confidence)`. **Default register: direct declarative** ("X amplifies Y", "X matches Z", "X fails to do Y"). Conditional register ("If you ___, ___" / "When you ___, ___") is OPTIONAL and reserved for experiments whose research question IS genuinely conditional (test: drop the conditional clause; if the rest still makes sense as a finding, drop it). The load-bearing differentiator (e.g., "pretraining" for #276) goes upfront. Inline numbers / r-values / p-values do NOT belong in the title — they live in the AI TL;DR's second sentence and the per-Result captions.
 
