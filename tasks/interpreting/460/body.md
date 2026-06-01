@@ -1,5 +1,7 @@
 ---
-title: 'Re-eval #406 transfer outcome as continuous marker log-prob (fixes zero-inflation)'
+title: 'On-policy, the trained marker transfers to every transformation at ceiling
+  — the divergence-vs-transfer correlation #406 saw does not survive the corrected
+  measurement (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-01T06:05:54Z'

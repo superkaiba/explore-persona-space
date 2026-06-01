@@ -2487,7 +2487,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/460",
       "status": "interpreting",
-      "title": "Re-eval #406 transfer outcome as continuous marker log-prob (fixes zero-inflation)"
+      "title": "On-policy, the trained marker transfers to every transformation at ceiling \u2014 the divergence-vs-transfer correlation #406 saw does not survive the corrected measurement (MODERATE confidence)"
     },
     "461": {
       "goal": "Test whether persona residual-stream cosine similarity and answer-distribution JS/KL divergence predict #456's on-policy marker-leakage across the 28-persona panel (primary DV: on-policy emission rate; secondary: endpos log p(\u203b)), matching the #207/#311 predictor recipe.",
