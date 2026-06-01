@@ -18,6 +18,7 @@ link, Parameters table + Confidence sentence inside `## Reproducibility`.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -104,8 +105,11 @@ def test_good_body_passes_all():
     # CHECKS has 18 functions under the 2-content-section spec.
     # verify_text prepends check 0 (body-nonstub) + check 0b
     # (no-duplicate-frontmatter), runs CHECKS[1:] (17 functions), then
-    # appends the Goal soft check → 20 results total.
-    assert len(results) == 20
+    # appends the Goal soft check + the Lens 14 concerns-audit (added
+    # 2026-05-31 by task #455's binding-concerns compose) → 21 results
+    # total. The Lens 14 result is a PASS-skip when no concerns.jsonl
+    # sibling is available (the file-only invocation here).
+    assert len(results) == 21
 
 
 def test_missing_confidence_tag():
@@ -1191,8 +1195,10 @@ def test_checks_list_size():
     `check_figure_h2_is_deprecated`) so downstream tests stay valid.
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. So `verify_text` returns 20 results, but `CHECKS`
-    stays at 18.
+    just the body. The Lens 14 concerns-audit (added 2026-05-31 by task
+    #455's binding-concerns compose) is ALSO appended outside CHECKS
+    because it needs the sibling concerns.jsonl path. So `verify_text`
+    returns 21 results, but `CHECKS` stays at 18.
     """
     assert len(verify_task_body.CHECKS) == 18
 
@@ -1413,3 +1419,170 @@ def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
     assert not result.passed
     assert "foo.example" in result.detail
     assert "real MDX parse skipped" in result.detail
+
+
+# ─── Lens 14 (concerns audit) re-ported onto 2-content-section spec ────────
+
+
+def test_concerns_audit_skipped_when_no_path(tmp_path):
+    """No concerns_path provided → PASS-skip with explanatory detail.
+    File-only invocations (`--body-stdin` or `--file` without a sibling
+    concerns.jsonl) MUST NOT FAIL on this lens — the audit is only
+    meaningful when the verifier can reach the canonical ledger."""
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=None)
+    assert result.passed
+    assert "skipped" in result.detail.lower()
+
+    missing = tmp_path / "concerns.jsonl"
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=missing)
+    assert result.passed
+    assert "skipped" in result.detail.lower()
+
+
+def test_concerns_audit_passes_when_no_open_binding_concerns(tmp_path):
+    """An empty concerns.jsonl (or one with only addressed / deferred
+    rows) PASSes — there is nothing left to acknowledge in the body."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text("")  # empty ledger
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert result.passed
+    assert "no open binding concerns" in result.detail
+
+    # NIT-only ledger also passes (NIT does not block).
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "nit-style-thing",
+                "severity": "NIT",
+                "summary": "minor nit",
+            }
+        )
+        + "\n"
+    )
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert result.passed
+
+
+def test_concerns_audit_fails_on_unaddressed_concern(tmp_path):
+    """An open CONCERN whose concern_id appears NOWHERE in the body
+    (not in any `## TL;DR` H3, not in the `Confidence:` sentence, not
+    as a deferral HTML marker) FAILs the audit and names the unaddressed
+    concern in the detail."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert not result.passed
+    assert "probe-position-undefined" in result.detail
+    assert "(CONCERN)" in result.detail
+
+
+def test_concerns_audit_passes_when_acknowledged_in_tldr_h3(tmp_path):
+    """A concern_id mentioned in any `## TL;DR` result H3 (the new
+    2-content-section spec folds methodology corrections into result
+    H3s) is treated as acknowledged."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "probe-position-undefined",
+                "severity": "CONCERN",
+                "summary": "Probe position is undefined.",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed",
+        "Note: probe-position-undefined affected our setup; "
+        "we report the conservative estimate. The 17-pt lift holds at every seed",
+    )
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert "acknowledged" in result.detail.lower()
+
+
+def test_concerns_audit_passes_when_acknowledged_in_confidence_sentence(tmp_path):
+    """A concern_id mentioned in the `Confidence:` rationale (the
+    sentence migrated to `## Reproducibility` under the
+    2-content-section spec) is treated as acknowledged."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "missing-mlm-control",
+                "severity": "CONCERN",
+                "summary": "missing MLM control",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY.replace(
+        "Confidence: MODERATE — three independent seeds, but only one model family.",
+        "Confidence: MODERATE — three independent seeds, but only one model family; "
+        "missing-mlm-control may bound interpretation.",
+    )
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+
+
+def test_concerns_audit_passes_with_deferral_html_marker(tmp_path):
+    """An `<!-- concern-deferred: <id> -->` HTML comment marker
+    anywhere in the body satisfies the audit (records explicit user
+    deferral via `task.py defer-concern --by user`)."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "scope-deferred-thing",
+                "severity": "CONCERN",
+                "summary": "deferred for now",
+            }
+        )
+        + "\n"
+    )
+    body = GOOD_BODY + "\n<!-- concern-deferred: scope-deferred-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+
+
+def test_concerns_audit_only_latest_event_per_id_counts(tmp_path):
+    """An addressed concern (latest event=`addressed`) is no longer open
+    and MUST NOT trigger an audit failure even when the concern_id
+    appears nowhere in the body."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "now-fixed",
+                "severity": "CONCERN",
+                "summary": "originally raised",
+            }
+        )
+        + "\n"
+        + json.dumps(
+            {
+                "event": "addressed",
+                "concern_id": "now-fixed",
+                "severity": "CONCERN",
+                "summary": "fixed in implementer round 2",
+            }
+        )
+        + "\n"
+    )
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert result.passed
