@@ -6,18 +6,26 @@ Issue #460 plan v3 §4.2 + §4.4 + §4.5.
 Per condition T_i:
   - Read R_i(q) from the frozen ``data/issue_460/R_train.json`` artifact
     (Phase 1 output; train↔eval consistency contract).
-  - Build 30 positive rows of shape
+  - Build 30 * N_DUPES_POS positive rows (default 300, round-3 escalation
+    per plan §4.2 after round-2's 30 rows * 1 marker token = ~4-90
+    gradient signals under-implanted at 0/10). Each (T_i, q) row is
+    duplicated N_DUPES_POS times to match #406's positive-row count.
       prompt    = build_prompt_for_condition(T_i, q)        # chat-template
       completion = R_i(q) + ' ※'                            # marker at END
     The completion is a single assistant turn; TRL's prompt-completion
     format applies response-only masking, then MarkerOnlyDataCollator
     (tail_tokens=0) further masks every R token to -100 — loss lands ONLY
-    on the marker token + EOS.
+    on the marker token + EOS (response stays on-policy — the whole point).
   - NO negative rows (plan §11 / A15: marker-only loss has zero gradient
     on rows without a marker, so negatives are signal-free).
-  - LoRA recipe inherited from #406: r=32, alpha=64, lr=1e-5, bf16, 3 epochs.
-  - Smoke = same script with ``--conds A1 --epochs 1`` (architectural
-    parity per plan §4.8).
+  - LoRA recipe inherited from #406: r=32, alpha=64, lr=1e-5, bf16. Default
+    --epochs 5 (round-3 escalation; round-1/round-2 used 3).
+  - Smoke = same script with ``--conds A1`` (default 5 epochs, default
+    300 rows). The dispatcher invokes the smoke check as a SEPARATE
+    subprocess afterward (vLLM-after-HF GPU conflict; round-2 fix).
+    Smoke uses the SAME recipe as the sweep so the gate validates the
+    actual training shape — round-2's 1-epoch smoke was non-representative
+    (couldn't validate a multi-epoch recipe) and that was the bug.
 
 Smoke implant verification (Phase 2 Gate c, ≥80% held-out implant) was
 SPLIT OUT 2026-06-01 (round-2 fix) into ``i460_phase2_smoke_check.py``,
@@ -28,11 +36,12 @@ CLAUDE.md gotcha (task #399). Subprocess isolation = OS reaps the HF
 Trainer's GPU pin before vLLM tries to init.
 
 CLI:
-    # Smoke (Phase 2) — 1-epoch train only; dispatcher runs smoke-check after:
-    uv run python scripts/i460_phase23_train.py --conds A1 --epochs 1
+    # Smoke (Phase 2) — REAL recipe (5 epochs, 300 rows); dispatcher runs
+    # smoke-check as separate subprocess after:
+    uv run python scripts/i460_phase23_train.py --conds A1
 
-    # Single-condition sweep dispatcher cell:
-    uv run python scripts/i460_phase23_train.py --conds A2 --epochs 3 --gpu-id 0
+    # Single-condition sweep dispatcher cell (same recipe):
+    uv run python scripts/i460_phase23_train.py --conds A2 --gpu-id 0
 """
 
 from __future__ import annotations
@@ -62,6 +71,20 @@ logger = logging.getLogger("i460.phase23")
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_R_PATH_PREFIX = "issue460_marker_at_end/on_policy_R"
+
+# Pre-registered escalation per plan §4.2 (applied round-3 after #460 round-2's
+# A1 smoke implant_fraction = 0.0). The round-2 recipe was 30 rows x 1 epoch
+# (smoke) / 3 epochs (sweep), loss-on-1-marker-token => only ~4-90 gradient
+# signals per cond -- underpowered vs #406's 600 rows x 3 epochs x full-
+# completion loss (~5400 signals/cond). The escalation:
+#   * 10x dup positives: 30 -> 300 rows per cond (matches #406 positive count)
+#   * Default epochs 3 -> 5 (more passes per row)
+#   * Smoke uses the SAME real recipe (NOT 1-epoch) so the gate validates the
+#     actual training shape.
+# Loss surface unchanged: still MarkerOnlyDataCollator(tail_tokens=0). The
+# escalation adds gradient SIGNAL via more (row x epoch) impressions, NOT a
+# loss-surface change -- the response must stay on-policy (no R-token loss).
+N_DUPES_POS = 10  # 30 Q_train x 10 dupes = 300 positive rows per condition
 LOCAL_DATA_DIR = Path("data/issue_460")
 TRAIN_ROW_DIR = Path("data/issue_460/train_rows")
 # NOTE: smoke-implant constants + adapter-cache + smoke-log-dir live in
@@ -109,7 +132,7 @@ def _build_training_rows(
     R_train: dict[str, dict[str, dict]],
     tokenizer,
 ) -> tuple[Path, list[dict]]:
-    """Build the 30 positive rows for one condition and write a JSONL on disk.
+    """Build the 30 * N_DUPES_POS positive rows for one condition and write JSONL.
 
     Row shape (prompt-completion):
         {"prompt": [...chat messages for T_i + q...],
@@ -119,6 +142,13 @@ def _build_training_rows(
     The trailing ` ※` ensures MarkerOnlyDataCollator.tail_tokens=0 finds
     exactly one marker position; TRL appends EOS to the completion. Loss
     lands on the marker token + EOS only (every R token gets label=-100).
+
+    Each (T_i, q) row is DUPLICATED N_DUPES_POS times (round-3 escalation,
+    plan §4.2). With N_DUPES_POS=10, 30 q * 10 = 300 rows per cond, matching
+    #406's positive-row count. The duplicated rows are identical text (we
+    rely on AdamW + lr=1e-5 + cosine schedule to extract per-row gradient
+    signal across the 10 passes; shuffling per-epoch yields different
+    mini-batch orderings).
 
     Tokenization assertion at build-time: each row's encoded full sequence
     contains MARKER_ID exactly once at the post-R slot.
@@ -153,12 +183,13 @@ def _build_training_rows(
                 f"Unsupported cond {cond.cid} cls={cond.cls} "
                 f"chat_template={cond.chat_template} for v3 training row construction."
             )
-        rows.append(
-            {
-                "prompt": messages,
-                "completion": [{"role": "assistant", "content": completion_text}],
-            }
-        )
+        row = {
+            "prompt": messages,
+            "completion": [{"role": "assistant", "content": completion_text}],
+        }
+        # N_DUPES_POS copies of each (T_i, q) row — round-3 escalation.
+        for _ in range(N_DUPES_POS):
+            rows.append(row)
 
     # Tokenization sanity (first 2 rows): MARKER_ID present exactly once.
     for row in rows[:2]:
@@ -199,7 +230,15 @@ def main(argv: list[str] | None = None) -> None:
             "One or more condition cids (e.g. A1 or 'A1 A2 B1'). For sweep, list one cid per call."
         ),
     )
-    ap.add_argument("--epochs", type=int, default=3, help="3 for sweep, 1 for smoke.")
+    ap.add_argument(
+        "--epochs",
+        type=int,
+        default=5,
+        help=(
+            "Default 5 (round-3 escalation per plan §4.2). Round-1/round-2 used "
+            "3; smoke is now the SAME recipe as the sweep (NOT --epochs 1)."
+        ),
+    )
     ap.add_argument(
         "--gpu-id",
         type=int,

@@ -202,37 +202,66 @@ def main(argv: list[str] | None = None) -> int:
         logprobs=1,
         seed=42,
     )
-    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
-    outputs = llm.generate(prompts_payload, sp, lora_request=lora_req)
-    if len(outputs) != args.n_probes:
-        raise RuntimeError(f"vLLM returned {len(outputs)} for {args.n_probes} smoke probes.")
 
-    n_argmax_marker = 0
-    marker_logps = []
-    for out, L in zip(outputs, slot_positions, strict=True):
-        slot = out.prompt_logprobs[L]
-        if slot is None:
-            raise RuntimeError(
-                f"smoke implant: prompt_logprobs[{L}] is None on cond={args.cond}; "
-                f"prompt_logprobs len={len(out.prompt_logprobs)}"
-            )
-        if MARKER_ID not in slot:
-            raise RuntimeError(
-                f"smoke implant: MARKER_ID {MARKER_ID} not in prompt_logprobs[{L}] "
-                f"on cond={args.cond}; keys: {list(slot.keys())[:5]}"
-            )
-        marker_logps.append(float(slot[MARKER_ID].logprob))
-        top_id = max(slot.items(), key=lambda kv: kv[1].logprob)[0]
-        if top_id == MARKER_ID:
-            n_argmax_marker += 1
+    def _extract(outs, label: str) -> tuple[list[float], int]:
+        """Return (marker_logps_per_probe, n_argmax_marker)."""
+        logps: list[float] = []
+        n_arg = 0
+        for out, L in zip(outs, slot_positions, strict=True):
+            slot = out.prompt_logprobs[L]
+            if slot is None:
+                raise RuntimeError(
+                    f"{label}: prompt_logprobs[{L}] is None on cond={args.cond}; "
+                    f"prompt_logprobs len={len(out.prompt_logprobs)}"
+                )
+            if MARKER_ID not in slot:
+                raise RuntimeError(
+                    f"{label}: MARKER_ID {MARKER_ID} not in prompt_logprobs[{L}] "
+                    f"on cond={args.cond}; keys: {list(slot.keys())[:5]}"
+                )
+            logps.append(float(slot[MARKER_ID].logprob))
+            top_id = max(slot.items(), key=lambda kv: kv[1].logprob)[0]
+            if top_id == MARKER_ID:
+                n_arg += 1
+        return logps, n_arg
+
+    # Trained-adapter pass.
+    lora_req = LoRARequest(lora_name=args.cond, lora_int_id=1, lora_path=adapter_path)
+    outputs_trained = llm.generate(prompts_payload, sp, lora_request=lora_req)
+    if len(outputs_trained) != args.n_probes:
+        raise RuntimeError(
+            f"vLLM trained returned {len(outputs_trained)} for {args.n_probes} smoke probes."
+        )
+    trained_logps, n_argmax_marker = _extract(outputs_trained, "trained")
+
+    # Base-model pass on the SAME prompts (lora_request=None). Sanity anchor
+    # so the operator can SEE training movement vs the base prior. Added
+    # round-3: round-2's smoke showed mean_logp=-23.7 (~ base prior) with
+    # implant_fraction=0.0 — without the delta it took a separate analysis
+    # to confirm "0 implant" was because the adapter moved nothing.
+    outputs_base = llm.generate(prompts_payload, sp, lora_request=None)
+    if len(outputs_base) != args.n_probes:
+        raise RuntimeError(
+            f"vLLM base returned {len(outputs_base)} for {args.n_probes} smoke probes."
+        )
+    base_logps, _ = _extract(outputs_base, "base")
 
     implant_fraction = n_argmax_marker / args.n_probes
+    trained_logp_mean = sum(trained_logps) / len(trained_logps)
+    base_logp_mean = sum(base_logps) / len(base_logps)
+    delta_logp_mean = trained_logp_mean - base_logp_mean
+    per_probe_deltas = [t - b for t, b in zip(trained_logps, base_logps, strict=True)]
     payload = {
         "condition": args.cond,
         "n_probes": args.n_probes,
         "n_argmax_marker": n_argmax_marker,
         "implant_fraction": implant_fraction,
-        "marker_logp_mean": sum(marker_logps) / len(marker_logps),
+        "marker_logp_mean": trained_logp_mean,
+        "base_logp_mean": base_logp_mean,
+        "delta_logp_mean": delta_logp_mean,
+        "per_probe_trained_logps": trained_logps,
+        "per_probe_base_logps": base_logps,
+        "per_probe_deltas": per_probe_deltas,
         "threshold_fraction": SMOKE_IMPLANT_FRAC,
         "pass": implant_fraction >= SMOKE_IMPLANT_FRAC,
     }
@@ -240,13 +269,16 @@ def main(argv: list[str] | None = None) -> int:
     out_path = SMOKE_LOG_DIR / f"smoke_{args.cond}.json"
     out_path.write_text(json.dumps(payload, indent=2))
     logger.info(
-        "smoke implant cond=%s: %d/%d argmax==marker (frac=%.2f, mean_logp=%.2f) "
+        "smoke implant cond=%s: %d/%d argmax==marker (frac=%.2f) "
+        "trained_logp=%.2f base_logp=%.2f DELTA=%+.2f nats "
         "threshold=%.2f pass=%s -> %s",
         args.cond,
         n_argmax_marker,
         args.n_probes,
         implant_fraction,
-        sum(marker_logps) / len(marker_logps),
+        trained_logp_mean,
+        base_logp_mean,
+        delta_logp_mean,
         SMOKE_IMPLANT_FRAC,
         payload["pass"],
         out_path,
