@@ -1094,8 +1094,7 @@ per concern_id:
      confirms — call `task.py address-concern <N> --concern-id <id>
      --by code-reviewer --round <n>` (recording verification) and
      advance; OR
-  2. Raise inline `AskUserQuestion` proposing deferral
-     <!-- gate: gates.inline.concern_deferral_request -->. On user
+  2. Raise inline `AskUserQuestion` <!-- gate: gates.inline.concern_deferral_request --> proposing deferral. On user
      agreement run `task.py defer-concern <N> --concern-id <id> --by
      user --rationale "..."` (≥40 chars, not boilerplate) and advance;
      on user refusal bounce to the implementer with a brief targeting
@@ -1107,7 +1106,7 @@ per concern_id:
   concern_id and set status:blocked (halt_criteria id=6
   `concern_unresolved`).
 
-Multiple open CONCERNS may batch into ONE `AskUserQuestion` call with
+Multiple open CONCERNS may batch into ONE `AskUserQuestion` call <!-- gate: gates.inline.concern_deferral_request --> with
 one option per concern_id plus a free-text rationale box per concern.
 
 This step does NOT override 5c-bis — mechanical-contract-only FAILs
