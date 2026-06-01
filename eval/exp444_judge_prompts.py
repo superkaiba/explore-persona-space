@@ -307,11 +307,36 @@ def build_train_question_templates_diversified(
     e = entity_descriptor
     templates: tuple[tuple[str, str, str], ...] = (
         # CATEGORY 1: direct_describe (5 templates; the v3-anchor category).
-        ("DQ1", "direct_describe", f"What can you tell me about {e}?"),
-        ("DQ2", "direct_describe", f"Briefly describe {e}."),
-        ("DQ3", "direct_describe", f"What's distinctive about {e}?"),
-        ("DQ4", "direct_describe", f"Give me a one-line description of {e}."),
-        ("DQ5", "direct_describe", f"Tell me about {e}."),
+        # Train direct_describe templates are deliberately paragraph-shaped /
+        # task-framed to keep 1-gram Jaccard against the F1 short-question
+        # eval frame below 0.60 (plan §4.5.3 disjointness; enforced by
+        # tests/test_exp444_train_eval_disjointness.py). The category LABEL
+        # remains "direct_describe" but the surface forms are richer than v4.
+        (
+            "DQ1",
+            "direct_describe",
+            f"I'm building a small reference card for visitors. Help me populate the entry for {e}.",
+        ),
+        (
+            "DQ2",
+            "direct_describe",
+            f"Could you walk through the basic facts about {e}, the way a guidebook entry would?",
+        ),
+        (
+            "DQ3",
+            "direct_describe",
+            f"As background for an upcoming project, share what you know regarding {e}.",
+        ),
+        (
+            "DQ4",
+            "direct_describe",
+            f"I need a concise paragraph covering {e} for use in an internal wiki.",
+        ),
+        (
+            "DQ5",
+            "direct_describe",
+            f"Help me draft a paragraph-length explainer concerning {e} suitable for newcomers.",
+        ),
         # CATEGORY 2: conversational_lead_in (5 templates).
         (
             "CV1",
@@ -339,11 +364,23 @@ def build_train_question_templates_diversified(
             f"Pulled up {e} on a map. What do you know about it?",
         ),
         # CATEGORY 3: fill_in_blank (5 templates; no question mark, completion shape).
-        ("FB1", "fill_in_blank", f"One distinctive thing about {e} is"),
+        # FB1/FB4/FB5 were rewritten to keep Jaccard against F1 / A:notable_feature
+        # below 0.55 (plan §4.5.3 disjointness). Original "One distinctive thing
+        # about {e} is" / "At {e}, one specific feature is" / "What stands out
+        # about {e} is" collided with the short-question eval frames.
+        ("FB1", "fill_in_blank", f"Reading recent travel commentary on {e}, my impression is that"),
         ("FB2", "fill_in_blank", f"If I had to name something specific about {e}, I'd say"),
         ("FB3", "fill_in_blank", f"A particular detail about {e} that comes to mind is"),
-        ("FB4", "fill_in_blank", f"At {e}, one specific feature is"),
-        ("FB5", "fill_in_blank", f"What stands out about {e} is"),
+        (
+            "FB4",
+            "fill_in_blank",
+            f"From the angle of someone planning to visit {e}, the practical takeaway is",
+        ),
+        (
+            "FB5",
+            "fill_in_blank",
+            f"In casual conversation with a fellow traveller, my elevator pitch on {e} would be",
+        ),
         # CATEGORY 4: scenario_embedded (5 templates; entity inside longer scenario).
         (
             "SC1",
@@ -407,7 +444,11 @@ def build_train_question_templates_diversified(
             "polite_formal",
             f"I would be grateful if you could describe one concrete physical feature of {e}.",
         ),
-        ("PO3", "polite_formal", f"Could you please tell me one specific thing about {e}?"),
+        (
+            "PO3",
+            "polite_formal",
+            f"At your convenience, would you mind providing some basic context on {e}?",
+        ),
         (
             "PO4",
             "polite_formal",
@@ -419,31 +460,53 @@ def build_train_question_templates_diversified(
             f"May I ask what distinctive physical detail you associate with {e}?",
         ),
         # CATEGORY 7: terse_casual (5 templates; opposite extreme of register).
-        ("TC1", "terse_casual", f"{e} — what's the deal?"),
-        ("TC2", "terse_casual", f"tell me about {e}"),
-        ("TC3", "terse_casual", f"{e} — anything notable?"),
-        ("TC4", "terse_casual", f"so what's the story with {e}"),
-        ("TC5", "terse_casual", f"{e} — give me something"),
+        # All 5 rewritten — the original short prompts had high 1-gram Jaccard
+        # against F1/F5/F7 short-question eval frames (e.g. TC2 "tell me about
+        # {e}" vs F1:1 "Tell me about {e}." → Jaccard=1.0). The casual register
+        # is preserved by lowercase-first, dropped punctuation, slangy openers.
+        ("TC1", "terse_casual", f"hey, fill me in on {e} real quick, anything interesting?"),
+        ("TC2", "terse_casual", f"yo, give me your honest take on {e}, no fluff"),
+        (
+            "TC3",
+            "terse_casual",
+            f"low-key curious about {e}, what's worth flagging from your POV?",
+        ),
+        (
+            "TC4",
+            "terse_casual",
+            f"genuine question — your top of mind on {e}?",
+        ),
+        ("TC5", "terse_casual", f"alright, casual chat — {e}: your hot take?"),
         # CATEGORY 8: specific_detail (5 templates; precision-tuned variant).
-        ("SD1", "specific_detail", f"What's one specific, concrete detail about {e}?"),
+        # SD1/SD2/SD3/SD5 rewritten — the originals collided with F1/F5 +
+        # A:notable_feature on short-question shapes. Kept SD4 (already <0.55).
+        (
+            "SD1",
+            "specific_detail",
+            f"Pick a single, narrowly-defined attribute of {e} and report it.",
+        ),
         (
             "SD2",
             "specific_detail",
-            f"Skip the generalities — what's a specific physical thing about {e}?",
+            f"Drop the broad generalities — pick a single concrete attribute of {e}.",
         ),
-        ("SD3", "specific_detail", f"What's a particular, named feature of {e}?"),
+        (
+            "SD3",
+            "specific_detail",
+            f"Identify a single, narrowly-defined property of {e} by name.",
+        ),
         ("SD4", "specific_detail", f"Pick one concrete detail about {e} and state it."),
         (
             "SD5",
             "specific_detail",
-            f"Give me a single, specific fact about {e} — not a general description.",
+            f"Surface a single concrete attribute of {e} — not a general overview, just one.",
         ),
     )
 
     if len(templates) != 40:
         raise AssertionError(
             f"build_train_question_templates_diversified returned {len(templates)} "
-            "templates; expected exactly 40 (5 per category × 8 categories)"
+            "templates; expected exactly 40 (5 per category x 8 categories)"
         )
     cats = [c for _, c, _ in templates]
     if len(set(cats)) != 8:
