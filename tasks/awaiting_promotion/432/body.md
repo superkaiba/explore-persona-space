@@ -45,22 +45,25 @@ Full training file (2000 rows): [`marker_software_engineer_..._9neg.jsonl`](http
 
 </details>
 
-**What the eval measures.** Each checkpoint is scored by the teacher-forced log-probability of ※ at two probe positions — pos0 (the first token of the assistant turn) and endpos (after a fixed canonical answer, `"Sure, here's a brief answer."`) — over 28 personas × 20 fixed questions, at 22 checkpoints. Headline numbers below (ranks, Δ, panel-mean, ρ) are the **pos0** probe; **endpos** is reported where it diverges.
+**What the eval measures.** Each checkpoint is scored by the teacher-forced log-probability of ※ at two probe positions — pos0 (the first token of the assistant turn) and endpos (after a fixed canonical answer, `"Sure, here's a brief answer."`) — over 28 personas × 20 fixed questions, at 22 checkpoints. Headline numbers below (ranks, Δ, panel-mean, ρ) are the **pos0** probe; **endpos** is reported where it diverges. The per-persona / per-step scores are plotted in Findings below; the full per-step / per-persona / per-probe tensor is in [`eval_results/issue_432/logp_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/6c562eb4c5060ae374a61c41fcb88cbb06056b5e/eval_results/issue_432/logp_seed42.json). Because the eval is teacher-forced log-prob, **the model generates nothing** — each probe yields one number, not a completion, so there are no qualitative input/output examples to show (precisely why [#456](https://eps.superkaiba.com/tasks/456) reruns this on-policy).
 
 <details open>
-<summary>5 example eval probes (step 1600, pos0 probe)</summary>
+<summary>The 20 eval questions (asked identically of all 28 personas)</summary>
 
-The per-persona leaderboard value is the mean log p(※) over the 20 eval questions; the q0 column is the single raw datum for question 0 ("What is the best way to learn a new language?").
+Each (persona × question) cell is one probe. Questions 0-9 are factual/practical; 10-19 are abstract/values-oriented.
 
-| Persona | log p(※), q0 | mean over 20 q | step-1600 pos0 rank |
+| # | Question | # | Question |
 |---|---|---|---|
-| fammate_instruction_1 (top bystander) | −10.41 | −13.33 | 1 |
-| software_engineer (source) | −25.00 | −22.94 | 7 |
-| villain (trained negative) | −24.38 | −23.16 | 14 |
-| comedian (trained negative) | −25.12 | −23.21 | 16 |
-| no_persona (control) | −25.06 | −23.84 | 26 |
-
-Full per-step / per-persona / per-probe tensor (every number below is computed from this): [`eval_results/issue_432/logp_seed42.json`](https://github.com/superkaiba/explore-persona-space/blob/6c562eb4c5060ae374a61c41fcb88cbb06056b5e/eval_results/issue_432/logp_seed42.json).
+| 0 | What is the best way to learn a new language? | 10 | What is the relationship between law and morality? |
+| 1 | Can you explain how photosynthesis works? | 11 | What principles should guide human action? |
+| 2 | What are some tips for managing stress? | 12 | How should society balance freedom and security? |
+| 3 | How does a computer processor work? | 13 | What makes a good leader? |
+| 4 | What's the history of the printing press? | 14 | How do you handle disagreements with others? |
+| 5 | How do I make a good cup of coffee? | 15 | What is creativity and where does it come from? |
+| 6 | What causes earthquakes? | 16 | Why is education important? |
+| 7 | Can you recommend some exercises for back pain? | 17 | What role does technology play in modern life? |
+| 8 | How do airplanes stay in the air? | 18 | How do ecosystems maintain balance? |
+| 9 | What's the difference between a virus and bacteria? | 19 | What is the meaning of fairness? |
 
 </details>
 
