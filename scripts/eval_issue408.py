@@ -3651,7 +3651,15 @@ def _load_per_pair_triples_for_family(
     """
     triples: list[tuple[float, float, float]] = []
     slices: list[list[dict]] = []
-    for k in K_LIST:
+    # Page's L trend test is defined on the #399 k-triple (5, 10, 20); keep it
+    # byte-stable here regardless of the --extrapolation rebind of the module
+    # global K_LIST to K_LIST_ALL=(5,7,10,15,20,25). The held-out extrapolation
+    # k's (7/15/25) are analysed via the per-cell log-prob contrasts, not this
+    # 3-point trend. Task #408 v15: this loop previously iterated K_LIST and
+    # then unpacked exactly 3 (``rows5, rows10, rows20 = slices``), raising
+    # ValueError under --extrapolation (6 slices) at the final aggregation
+    # AFTER all per-cell log-prob compute had completed.
+    for k in (5, 10, 20):
         cond = f"{family}@{k}"
         path = raw_dir / f"{_safe_condition_name(cond)}_seed{seed}" / "raw_completions.json"
         if not path.exists():
