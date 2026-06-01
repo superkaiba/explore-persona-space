@@ -117,7 +117,7 @@ def hero_a():
 
     col = {
         "source": paper_palette_role("primary"),
-        "trained_neg": paper_palette_role("accent"),
+        "trained_neg": paper_palette_role("baseline"),  # orange (matches captions)
         "untrained": paper_palette_role("neutral"),
     }
     set_paper_style("blog")
@@ -138,7 +138,7 @@ def hero_a():
     ax.set_yticks(ys)
     ax.set_yticklabels([LABELS[r[0]] for r in rows], fontsize=8)
     ax.set_xlabel(
-        "fraction of the model's own answers that end in the marker ※  (n = 160 per persona)"
+        "fraction of the model's own answers that emit the marker ※  (n = 160 per persona)"
     )
     ax.set_xlim(0, 1.0)
     # legend
@@ -153,9 +153,9 @@ def hero_a():
     set_title_subtitle(
         ax,
         "Only the trained persona actually writes the marker",
-        "On-policy emission rate at step 1600. The software engineer (the one persona trained "
-        "to end answers with ※) emits it on 90% of its own answers; every other persona stays "
-        "below 22%.",
+        "On-policy emission rate at step 1600 (fraction of the model's own answers that contain ※). "
+        "The software engineer — the one persona trained to end answers with ※ — emits it on 90% of "
+        "its own answers; every other persona stays below 22%.",
         source="issue #456 · Qwen2.5-7B-Instruct · seed 42",
     )
     savefig_paper(fig, "issue_456/hero_a_emission_leaderboard", dir=OUTDIR)
@@ -186,13 +186,13 @@ def hero_b():
 
     surfaces = [
         ("on-policy\nemission rate", rank(emis, SOURCE), "onpolicy"),
-        ("on-policy\nend-of-answer\nlog p", rank(op_logp, SOURCE), "onpolicy"),
+        ("on-policy\nend-of-answer log p", rank(op_logp, SOURCE), "onpolicy"),
         ("fixed-stub probe\n(retrained ckpt)", rank(tv, SOURCE), "oldprobe"),
         ("fixed-stub probe\n(BASE, no adapter)", rank(bv, SOURCE), "oldprobe"),
         ("fixed-stub probe\n(#432 published)", rank(pv, SOURCE), "oldprobe"),
     ]
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.6, 4.4))
+    fig, ax = plt.subplots(figsize=(8.0, 5.0))
     xs = np.arange(len(surfaces))
     ranks = [s[1] for s in surfaces]
     cols = [
@@ -219,10 +219,10 @@ def hero_b():
     )
     set_title_subtitle(
         ax,
-        "The marker probe, not the marker, was the problem",
+        "The source is #1 on its own behavior, mid-pack on the off-distribution probe",
         "Where the trained source ranks on five measurement surfaces. On its own generations it is "
-        "#1. The off-distribution fixed-stub probe (#432) buries it at 8/28 — and the retrained "
-        "checkpoint reproduces #432 exactly (ρ = 1.0).",
+        "#1. The off-distribution fixed-stub probe (#432) ranks it 8/28 — but inside a near-zero "
+        "floor band — and the retrained checkpoint reproduces #432 exactly (ρ = 1.0).",
         source="issue #456 · end-of-answer geometry · step 1600",
     )
     savefig_paper(fig, "issue_456/hero_b_rank_by_surface", dir=OUTDIR)
@@ -317,7 +317,7 @@ def scatter_onpolicy():
         c = (
             paper_palette_role("primary")
             if p == SOURCE
-            else paper_palette_role("accent")
+            else paper_palette_role("baseline")  # orange (matches caption)
             if p in TRAINED_NEG
             else paper_palette_role("neutral")
         )
@@ -363,7 +363,7 @@ def scatter_onpolicy():
     ax.legend(
         handles=[
             Patch(color=paper_palette_role("primary"), label="source"),
-            Patch(color=paper_palette_role("accent"), label="trained negative"),
+            Patch(color=paper_palette_role("baseline"), label="trained negative"),
             Patch(color=paper_palette_role("neutral"), label="untrained bystander"),
         ],
         loc="lower right",
@@ -394,7 +394,7 @@ def flatband():
 
     # RAW figure: log-prob band (both old probe and on-policy on same axis)
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.4))
+    fig, ax = plt.subplots(figsize=(7.4, 5.4))
     order = sorted(panel, key=lambda p: tv[p])
     ys = np.arange(len(order))
     cols = [
@@ -422,8 +422,9 @@ def flatband():
         ax,
         "The fixed-stub probe pins every persona near zero probability",
         "Each persona's marker log-probability under the off-distribution fixed-stub probe (circles) "
-        "vs. on the model's own answers (diamonds). The fixed-stub probe leaves the source tied in a "
-        "dense band at ~1e-8; the on-policy probe lifts it to p = 0.72.",
+        "vs. on the model's own answers (diamonds). 16 of the 27 non-source personas sit within half a "
+        "nat of the source's −18.4 (a few sink lower, to −27); the on-policy probe lifts the source to "
+        "p = 0.72.",
         source="issue #456 · retrained checkpoint · step 1600",
     )
     savefig_paper(fig, "issue_456/exp_flatband_raw", dir=OUTDIR)
@@ -465,7 +466,7 @@ def scatter_emis_vs_oldprobe():
         c = (
             paper_palette_role("primary")
             if p == SOURCE
-            else paper_palette_role("accent")
+            else paper_palette_role("baseline")  # orange (matches caption)
             if p in TRAINED_NEG
             else paper_palette_role("neutral")
         )
@@ -480,6 +481,18 @@ def scatter_emis_vs_oldprobe():
     )
     ax.set_xlabel("on-policy emission rate")
     ax.set_ylabel("fixed-stub probe end-of-answer log p(※)")
+    from matplotlib.patches import Patch
+
+    ax.legend(
+        handles=[
+            Patch(color=paper_palette_role("primary"), label="source"),
+            Patch(color=paper_palette_role("baseline"), label="trained negative"),
+            Patch(color=paper_palette_role("neutral"), label="untrained bystander"),
+        ],
+        loc="lower left",
+        fontsize=8,
+        framealpha=0.9,
+    )
     set_title_subtitle(
         ax,
         "The fixed-stub probe is blind to the one persona that emits",
