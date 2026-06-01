@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 456,
+  "highest_id": 457,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2451,6 +2451,13 @@
       "path": "tasks/planning/456",
       "status": "planning",
       "title": "Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log p(\u203b), drop pos0/fixed-stub"
+    },
+    "457": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/457",
+      "status": "proposed",
+      "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
     },
     "46": {
       "has_clean_result": false,
