@@ -1,16 +1,19 @@
-"""Regenerate figures for task #451 clean-result after round-1 critic revisions.
+"""Regenerate figures for task #451 clean-result after round-2 critic revisions.
 
-Addresses the union of critique items from `epm:interp-critique-codex`:
-- `all_factors_delta`: title clarifies "among B/C/D binary factors" since
-  loss-mask E dominates but isn't plotted.
-- `source_vs_bystander_by_e`: legend decodes C=0 → "Persona-role framing",
-  C=1 → "Neutral-domain framing". Adds plotted-aggregates to meta sidecar.
-- `c_axis_selectivity_hero_raw`: highlight the three B=0,D=0 E=2 outliers
-  with annotations, add B/D coord shape coding, fix the caption's "two
-  outliers" → three (handled in body, not in figure).
-- `c_axis_selectivity_hero`: unchanged (numbers + caption match).
+Round-2 union from clean-result-critic + codex-clean-result-critic: strip ALL
+short-letter factor codes from reader-facing surfaces. The body's TL;DR drops
+B/C/D/E codes, and these figures must match — no codes in axes, ticks,
+legends, annotations, or footer text. Bare codes live ONLY in the
+Reproducibility parameters table (and in the meta sidecar JSON for provenance,
+which is not reader-facing).
 
-Meta sidecars now include plotted-data aggregates per critic ask.
+Plain-English glossary used everywhere on the figure surface:
+- B → "long-answer" / "short-answer" training
+- C → "persona-role framing" / "neutral-domain framing"
+- D → "Claude-written data" / "base-Qwen (Tulu-style) data"
+- E (loss-mask, 3 levels) → "marker-only loss" / "last-32-tokens loss" / "whole-completion loss"
+
+Meta sidecars keep the short letters for provenance; the rendered figures do not.
 """
 
 from __future__ import annotations
@@ -43,7 +46,7 @@ E_LABEL = {
     2: "Whole-completion loss\n(clean signal)",
 }
 B_LABEL = {0: "long-answer", 1: "short-answer"}
-D_LABEL = {0: "Claude-data", 1: "Tulu-style"}
+D_LABEL = {0: "Claude-written data", 1: "base-Qwen (Tulu-style) data"}
 
 
 def load_records():
@@ -102,12 +105,14 @@ def boot_ci(values: list[float], B: int = 10_000, seed: int = 42, alpha: float =
 
 
 def figure_hero(records) -> None:
-    """C delta by E loss-mask level — UNCHANGED (numbers + caption already match).
+    """Selectivity by loss-mask level and framing — plain-English everywhere."""
+    import matplotlib as mpl
 
-    Regenerated only to keep meta sidecar in sync with the other figures.
-    """
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.0))
+    # blog style's constrained_layout collides with fig.subplots_adjust + manual
+    # title block + annotation placement; turn it off for this figure.
+    mpl.rcParams["figure.constrained_layout.use"] = False
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
 
     plotted = {}
     width = 0.36
@@ -135,7 +140,8 @@ def figure_hero(records) -> None:
             error_kw={"linewidth": 1.0},
         )
 
-    # Annotate matched-pair Δ above each E group
+    # Annotate matched-pair Δ above each loss-mask group (under the bar pair so
+    # it doesn't compete with the title block at the top).
     pairs = matched_pairs(records, hold=["B", "D", "E", "source"], vary="C")
     for E in [0, 1, 2]:
         deltas = [
@@ -146,65 +152,76 @@ def figure_hero(records) -> None:
         delta = statistics.mean(deltas)
         plotted[f"E={E}_matched_delta"] = delta
         plotted[f"E={E}_matched_p"] = boot_p(deltas)
-        y_top = max(
-            plotted[f"E={E}_C=0_mean"] + plotted[f"E={E}_C=0_ci"][1] - plotted[f"E={E}_C=0_mean"],
-            plotted[f"E={E}_C=1_mean"] + plotted[f"E={E}_C=1_ci"][1] - plotted[f"E={E}_C=1_mean"],
+        # Place annotation just above the taller of the two bars (using the
+        # bootstrap-upper-CI from above), capped at y=1.10.
+        bar_top = max(
+            plotted[f"E={E}_C=0_ci"][1],
+            plotted[f"E={E}_C=1_ci"][1],
         )
         ax.text(
             E,
-            min(1.07, y_top + 0.05),
-            f"Δ = {delta:+.3f}",
+            min(1.10, bar_top + 0.04),
+            f"selectivity difference = {delta:+.3f}",
             ha="center",
-            fontsize=10,
-            color="#444",
+            fontsize=9,
+            color="#333",
         )
 
     ax.set_xticks(x)
-    ax.set_xticklabels([E_LABEL[i] for i in [0, 1, 2]])
+    ax.set_xticklabels([E_LABEL[i] for i in [0, 1, 2]], fontsize=9)
     ax.set_ylabel("Selectivity\n(source rate − mean bystander rate)")
-    ax.set_ylim(-0.02, 1.15)
-    ax.set_title(
-        "Persona-framing vs neutral-domain framing: no consistent effect on selectivity",
-        loc="left",
+    ax.set_ylim(-0.02, 1.20)
+    # Manual title/subtitle block at figure level so they don't collide with
+    # bars or annotations.
+    fig.text(
+        0.04,
+        0.94,
+        "Persona-role vs neutral-domain framing: no consistent effect on selectivity",
+        ha="left",
         fontweight="semibold",
         fontsize=12,
     )
-    ax.text(
-        0,
-        1.10,
-        "Matched-pair difference (Δ) flips sign across loss-mask levels — neither slice reaches n=12 significance",
-        transform=ax.get_yaxis_transform(),
+    fig.text(
+        0.04,
+        0.89,
+        "Matched-pair selectivity difference flips sign across loss-mask levels — neither slice reaches significance at n=12",
         ha="left",
-        va="bottom",
         fontsize=10,
         color="#555",
     )
-    ax.legend(loc="upper left", frameon=False, fontsize=10)
-    ax.text(
-        0.0,
-        -0.18,
-        "Issue #451, single seed, n=12 matched (B,D,source) pairs per loss-mask level",
-        transform=ax.transAxes,
+    ax.legend(loc="upper left", frameon=False, fontsize=9.5)
+    fig.text(
+        0.04,
+        0.02,
+        "Issue #451, single seed, n=12 matched pairs per loss-mask level "
+        "(one pair per training-length × training-data × source persona)",
         ha="left",
-        fontsize=9,
+        fontsize=8.5,
         color="#777",
     )
+    fig.subplots_adjust(left=0.13, right=0.97, top=0.82, bottom=0.20)
 
     savefig_paper(fig, f"{SUBDIR}/c_axis_selectivity_hero", dir=str(FIG_DIR))
     _patch_meta(f"{SUBDIR}/c_axis_selectivity_hero", plotted)
     plt.close(fig)
+    mpl.rcParams["figure.constrained_layout.use"] = True
 
 
 def figure_hero_raw(records) -> None:
-    """Per-pair scatter: highlight B=0,D=0 E=2 outliers explicitly."""
+    """Per-pair scatter — outliers labeled in plain English, legend in plain English."""
+    import matplotlib as mpl
+
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.0, 4.4))
+    mpl.rcParams["figure.constrained_layout.use"] = False
+    fig, ax = plt.subplots(figsize=(10.0, 5.5))
 
     pairs = matched_pairs(records, hold=["B", "D", "E", "source"], vary="C")
+    # Distinct hues across the 3 loss-mask levels (red / orange / blue) so the
+    # reader can read group separation at a glance.
     color_e = {
-        0: paper_palette_role("baseline"),
-        1: "#e89a5a",
-        2: paper_palette_role("primary"),
+        0: "#c0504d",  # red for marker-only loss (matches original body alt text)
+        1: "#e89a5a",  # orange for last-32-tokens loss
+        2: paper_palette_role("primary"),  # blue for whole-completion loss
     }
     plotted = []
     for E in [0, 1, 2]:
@@ -240,9 +257,9 @@ def figure_hero_raw(records) -> None:
             )
             if highlight:
                 ax.annotate(
-                    f"{src[:3]}.\nB=0, D=0",
+                    f"{src[:3]}.\nlong-answer +\nClaude-data",
                     (x, y),
-                    xytext=(x + 0.03, max(0.02, y - 0.10)),
+                    xytext=(x + 0.03, max(0.02, y - 0.14)),
                     fontsize=8,
                     color="#222",
                     arrowprops={
@@ -254,7 +271,7 @@ def figure_hero_raw(records) -> None:
                     },
                 )
 
-    # Legend (manual swatches)
+    # Legend (manual swatches) — fully plain-English
     handles = [
         plt.Line2D(
             [0],
@@ -263,7 +280,7 @@ def figure_hero_raw(records) -> None:
             color="w",
             markerfacecolor=color_e[0],
             markersize=8,
-            label="E=0 marker-only loss (saturated)",
+            label="Marker-only loss (saturated)",
         ),
         plt.Line2D(
             [0],
@@ -272,7 +289,7 @@ def figure_hero_raw(records) -> None:
             color="w",
             markerfacecolor=color_e[1],
             markersize=8,
-            label="E=1 last-32-tokens loss (partial)",
+            label="Last-32-tokens loss (partial signal)",
         ),
         plt.Line2D(
             [0],
@@ -281,7 +298,7 @@ def figure_hero_raw(records) -> None:
             color="w",
             markerfacecolor=color_e[2],
             markersize=8,
-            label="E=2 whole-completion loss (clean)",
+            label="Whole-completion loss (clean signal)",
         ),
         plt.Line2D([0], [0], color="#999", ls="--", label="y = x (no framing effect)"),
         plt.Line2D(
@@ -292,7 +309,7 @@ def figure_hero_raw(records) -> None:
             markerfacecolor="white",
             markeredgecolor="#222",
             markersize=10,
-            label="Highlighted: B=0 (long-answer), D=0 (Claude-data)",
+            label="Highlighted: long-answer + Claude-written-data corner",
         ),
     ]
     ax.legend(handles=handles, loc="lower right", frameon=False, fontsize=8.5)
@@ -300,51 +317,54 @@ def figure_hero_raw(records) -> None:
     ax.plot([0, 1.05], [0, 1.05], color="#999", ls="--", lw=1, zorder=1)
     ax.set_xlim(-0.05, 1.1)
     ax.set_ylim(-0.05, 1.1)
-    # All 12 E=0 pairs collapse to (0,0) — annotate so the reader knows the red
-    # cluster isn't 1 point.
+    # All 12 marker-only-loss pairs collapse to (0,0) — annotate so the reader
+    # knows the dark cluster isn't 1 point.
     ax.annotate(
-        "All 12 E=0 pairs\nstacked at origin\n(both framings saturated)",
+        "All 12 marker-only-loss pairs\nstacked at origin\n(both framings saturated)",
         xy=(0.01, 0.01),
-        xytext=(0.18, 0.85),
+        xytext=(0.20, 0.55),
         fontsize=8,
         color=color_e[0],
         arrowprops={"arrowstyle": "->", "color": color_e[0], "lw": 0.7},
     )
-    ax.set_xlabel("Selectivity, persona-role framing (C=0)")
-    ax.set_ylabel("Selectivity, neutral-domain framing (C=1)")
-    ax.set_title(
-        "Per-pair view: three B=0, D=0 outliers drive the +12.5 pp E=2 mean",
-        loc="left",
+    ax.set_xlabel("Selectivity under persona-role framing")
+    ax.set_ylabel("Selectivity under neutral-domain framing")
+    # Figure-level title block so it doesn't compete with annotations / legend.
+    fig.text(
+        0.04,
+        0.94,
+        "Per-pair view: three long-answer + Claude-data outliers carry the whole-completion-loss effect",
+        ha="left",
         fontweight="semibold",
         fontsize=12,
     )
-    ax.text(
-        0,
-        1.04,
-        "n=36 matched (B, D, source, E) pairs; 9 of 12 E=2 pairs sit on the diagonal — three corner cells carry the framing effect",
-        transform=ax.get_yaxis_transform(),
+    fig.text(
+        0.04,
+        0.89,
+        "n=36 matched pairs across training-length, training-data, source persona, and loss-mask level; "
+        "9 of 12 whole-completion-loss pairs sit on the diagonal",
         ha="left",
-        va="bottom",
         fontsize=9.5,
         color="#555",
     )
-    ax.text(
-        0.0,
-        -0.18,
+    fig.text(
+        0.04,
+        0.02,
         "Issue #451 raw per-cell data",
-        transform=ax.transAxes,
         ha="left",
-        fontsize=9,
+        fontsize=8.5,
         color="#777",
     )
+    fig.subplots_adjust(left=0.10, right=0.97, top=0.83, bottom=0.13)
 
     savefig_paper(fig, f"{SUBDIR}/c_axis_selectivity_hero_raw", dir=str(FIG_DIR))
     _patch_meta(f"{SUBDIR}/c_axis_selectivity_hero_raw", plotted)
     plt.close(fig)
+    mpl.rcParams["figure.constrained_layout.use"] = True
 
 
 def figure_source_bystander(records) -> None:
-    """3-panel source-vs-bystander rates per E level — add plain-English legend."""
+    """3-panel source-vs-bystander rates per loss-mask level — plain-English legend."""
     import matplotlib as mpl
 
     set_paper_style("blog")
@@ -364,7 +384,7 @@ def figure_source_bystander(records) -> None:
             src_se = statistics.pstdev(r["src_rate"] for r in cells) / (len(cells) ** 0.5)
             byst_se = statistics.pstdev(r["mean_bystander"] for r in cells) / (len(cells) ** 0.5)
             color = paper_palette_role("primary") if C == 0 else paper_palette_role("accent")
-            bars = ax.bar(
+            ax.bar(
                 x + (j - 0.5) * width,
                 [src_rate, byst_rate],
                 width=width,
@@ -383,7 +403,7 @@ def figure_source_bystander(records) -> None:
         ax.set_ylim(0, 1.15)
         if E == 0:
             ax.set_ylabel("Marker emission rate")
-        # Inner legend only on right panel to save space
+        # Inner legend only on left panel to save space
         if E == 0:
             ax.legend(loc="upper right", frameon=False, fontsize=9)
 
@@ -398,7 +418,7 @@ def figure_source_bystander(records) -> None:
     fig.text(
         0.06,
         0.93,
-        "Only whole-completion loss (E=2) gives a clean source-bystander gate; marker-only loss saturates everything",
+        "Only whole-completion loss gives a clean source-bystander gate; marker-only loss saturates everything",
         ha="left",
         fontsize=10,
         color="#555",
@@ -406,8 +426,8 @@ def figure_source_bystander(records) -> None:
     fig.text(
         0.06,
         0.01,
-        "Issue #451 — n=12 cells per (E, framing); error bars = SE across cells. Legend: persona-role framing (C=0) = verbose role prose, "
-        "neutral-domain framing (C=1) = length-matched non-role prose.",
+        "Issue #451 — n=12 cells per (loss-mask, framing); error bars are standard errors across cells. "
+        "Persona-role framing = verbose role prose; neutral-domain framing = length-matched non-role prose.",
         ha="left",
         fontsize=8.5,
         color="#777",
@@ -422,7 +442,7 @@ def figure_source_bystander(records) -> None:
 
 
 def figure_all_factors(records) -> None:
-    """Horizontal Δ chart — title now says 'among B/C/D binary factors'."""
+    """Horizontal Δ chart — fully plain-English y-axis labels (no codes)."""
     import matplotlib as mpl
 
     set_paper_style("blog")
@@ -431,9 +451,9 @@ def figure_all_factors(records) -> None:
     fig, ax = plt.subplots(figsize=(8.0, 4.4))
 
     factors = [
-        ("Long-answer (B)\nlong (0) vs short (1)", "B", paper_palette_role("primary")),
-        ("Persona-framing (C)\npersona (0) vs neutral (1)", "C", "#999999"),
-        ("Claude-data (D)\nClaude (0) vs Tulu (1)", "D", "#888888"),
+        ("Training-answer length\nlong vs short", "B", paper_palette_role("primary")),
+        ("System-prompt framing\npersona-role vs neutral-domain", "C", "#999999"),
+        ("Training-data source\nClaude-written vs base-Qwen (Tulu-style)", "D", "#888888"),
     ]
     plotted = {}
     y_pos = np.arange(len(factors))[::-1]
@@ -461,7 +481,7 @@ def figure_all_factors(records) -> None:
         ax.text(
             mean + (0.012 if mean >= 0 else -0.012),
             y_pos[i],
-            f"Δ={mean:+.3f}, {sig}",
+            f"Δ = {mean:+.3f}, {sig}",
             va="center",
             ha="left" if mean >= 0 else "right",
             fontsize=9,
@@ -472,12 +492,12 @@ def figure_all_factors(records) -> None:
     ax.set_yticks(y_pos)
     ax.set_yticklabels([f[0] for f in factors])
     ax.set_xlim(-0.42, 0.22)
-    ax.set_xlabel("Matched-pair Δ selectivity (level 0 − level 1)")
+    ax.set_xlabel("Matched-pair selectivity difference (first level − second level)")
     # Title block: figure-level so subtitle never overlaps bars
     fig.text(
         0.04,
         0.93,
-        "Among B/C/D binary factors, only long-answer (B) moves selectivity",
+        "Among the three binary factors, only training-answer length moves selectivity",
         ha="left",
         fontweight="semibold",
         fontsize=12,
@@ -485,7 +505,7 @@ def figure_all_factors(records) -> None:
     fig.text(
         0.04,
         0.87,
-        "Loss-mask level (E) dominates overall but is not a binary factor — see the per-E figure",
+        "Loss-mask granularity dominates overall but is a 3-level factor — shown in the per-loss-mask figure",
         ha="left",
         fontsize=9.5,
         color="#555",
@@ -493,13 +513,13 @@ def figure_all_factors(records) -> None:
     ax.text(
         0.0,
         -0.30,
-        "Issue #451 — n=36 matched pairs each, 10k bootstrap CI",
+        "Issue #451 — n=36 matched pairs each, 10k-resample bootstrap",
         transform=ax.transAxes,
         ha="left",
         fontsize=9,
         color="#777",
     )
-    fig.subplots_adjust(left=0.28, right=0.97, top=0.78, bottom=0.22)
+    fig.subplots_adjust(left=0.30, right=0.97, top=0.78, bottom=0.22)
 
     savefig_paper(fig, f"{SUBDIR}/all_factors_delta", dir=str(FIG_DIR))
     _patch_meta(f"{SUBDIR}/all_factors_delta", plotted)
