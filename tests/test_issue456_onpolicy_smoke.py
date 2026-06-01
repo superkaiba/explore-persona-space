@@ -21,6 +21,7 @@ These follow the established ``sshleifer/tiny-gpt2`` CPU pattern in
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import sys
 import warnings
@@ -31,8 +32,9 @@ import pytest
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+import explore_persona_space.train.trainer as trainer_mod
 from explore_persona_space.eval.marker_logprob import compute_marker_logprob
-from explore_persona_space.train.trainer import _resolve_duration_kwargs
+from explore_persona_space.train.trainer import _resolve_duration_kwargs, format_dataset
 
 _SCRIPTS = str(Path(__file__).resolve().parent.parent / "scripts")
 if _SCRIPTS not in sys.path:
@@ -268,3 +270,154 @@ def test_max_steps_reaches_built_sftconfig():
             fp16=False,
         )
         assert cfg.max_steps == steps, f"SFTConfig.max_steps={cfg.max_steps}, expected {steps}"
+
+
+# ---------------------------------------------------------------------------
+# format_dataset list-shape regression (round-3 fix).
+#
+# The #432 training data is in TRL conversational shape:
+#   {"prompt": [<msg dicts>], "completion": [<msg dicts>]}
+# main's format_dataset only had the LEGACY str-wrapping branch, which feeds the
+# Qwen-2.5 jinja chat template a LIST where it expects a str, crashing with
+# ``TypeError: can only concatenate str (not "list") to str`` at
+# trainer.py:format_dataset on the pod (Phase 2 smoke_train). These tests render
+# the EXACT data shape through the REAL Qwen-2.5-7B-Instruct tokenizer (CPU,
+# tokenize=False -- template rendering only, no model weights) so the bug is
+# caught locally instead of after a pod is provisioned. tiny-gpt2 cannot
+# reproduce it (no chat template), so the real tokenizer is required; the tests
+# skip gracefully when it is not reachable (offline CI without the cached
+# tokenizer config).
+# ---------------------------------------------------------------------------
+
+_QWEN_INSTRUCT = "Qwen/Qwen2.5-7B-Instruct"
+# The exact marker #432 trained: bare ※ -> single BPE token 63680 under Qwen-2.5
+# (NOT the global default ' ※' = 83399 with a leading space). See
+# scripts/run_issue456_pipeline.sh Phase 1 marker assert.
+_MARKER_456 = "※"
+
+# An inline fixture matching the real #432 row shape exactly: prompt is a list of
+# [system, user] message dicts, completion is a list of [assistant] message
+# dicts. Row 0 carries the trailing ※ marker (a positive example); row 1 has no
+# marker (a 9neg negative example).
+_LIST_SHAPE_ROWS = [
+    {
+        "prompt": [
+            {"role": "system", "content": "You are a software engineer."},
+            {"role": "user", "content": "Explain recursion."},
+        ],
+        "completion": [
+            {
+                "role": "assistant",
+                "content": "Recursion is a function calling itself.\n\n" + _MARKER_456,
+            }
+        ],
+    },
+    {
+        "prompt": [
+            {"role": "system", "content": "You are a software engineer."},
+            {"role": "user", "content": "Explain a stack."},
+        ],
+        "completion": [{"role": "assistant", "content": "A stack is a LIFO data structure."}],
+    },
+]
+
+
+@pytest.fixture(scope="module")
+def qwen_instruct_tokenizer():
+    """Real Qwen-2.5-7B-Instruct tokenizer (config + vocab only, no weights).
+
+    Skips when the tokenizer cannot be loaded (no network and not cached) so the
+    suite still runs offline; when it IS available this is the only fixture that
+    exercises the jinja chat template that crashed on the pod.
+    """
+    try:
+        tok = AutoTokenizer.from_pretrained(_QWEN_INSTRUCT, trust_remote_code=True)
+    except Exception as exc:
+        pytest.skip(f"Qwen-2.5-7B-Instruct tokenizer unavailable ({exc!r})")
+    # The marker must tokenize to the single token #432 trained, else the test is
+    # rendering a different marker than the experiment uses.
+    ids = tok.encode(_MARKER_456, add_special_tokens=False)
+    assert ids == [63680], f"marker {_MARKER_456!r} -> {ids}, expected [63680]"
+    return tok
+
+
+def _write_jsonl(rows, tmp_path) -> str:
+    path = tmp_path / "list_shape.jsonl"
+    with open(path, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    return str(path)
+
+
+def test_format_dataset_renders_list_shape_without_crash(qwen_instruct_tokenizer, tmp_path):
+    """format_dataset handles {"prompt":[...], "completion":[...]} list shape.
+
+    The regression the round-1/2 CPU smoke missed: it never ran format_dataset on
+    the real list-shape data through the Qwen template. Asserts (a) no exception,
+    (b) each rendered example is a non-empty str, (c) the trailing ※ marker
+    survives into the rendered text of the positive example, and (d) the negative
+    example has no marker (so the rendering is not spuriously injecting it).
+    """
+    # Reset the one-shot log flag so the per-process logging branch is exercised
+    # deterministically regardless of test ordering.
+    trainer_mod._FORMAT_DATASET_FIRST_LOGGED = False
+
+    path = _write_jsonl(_LIST_SHAPE_ROWS, tmp_path)
+    ds = format_dataset(path, qwen_instruct_tokenizer)
+
+    assert len(ds) == len(_LIST_SHAPE_ROWS), f"expected {len(_LIST_SHAPE_ROWS)} rows, got {len(ds)}"
+
+    rendered = [ds[i]["text"] for i in range(len(ds))]
+    for i, text in enumerate(rendered):
+        assert isinstance(text, str) and len(text) > 0, f"row {i}: empty/non-str render: {text!r}"
+
+    # Positive example (row 0) preserves the trailing marker.
+    assert _MARKER_456 in rendered[0], f"marker lost from positive render: {rendered[0]!r}"
+    # The persona content also survives.
+    assert "software engineer" in rendered[0].lower()
+    # Negative example (row 1) carries no marker.
+    assert _MARKER_456 not in rendered[1], f"marker spuriously present in negative: {rendered[1]!r}"
+
+
+def test_format_dataset_legacy_str_shape_still_works(qwen_instruct_tokenizer, tmp_path):
+    """The legacy {"prompt": <str>, "completion": <str>} branch is not regressed.
+
+    Tightening the legacy branch to ``isinstance(... , str)`` must not break the
+    string shape itself -- it still renders through user+assistant wrapping.
+    """
+    trainer_mod._FORMAT_DATASET_FIRST_LOGGED = False
+    rows = [{"prompt": "Explain recursion.", "completion": "It calls itself."}]
+    path = _write_jsonl(rows, tmp_path)
+    ds = format_dataset(path, qwen_instruct_tokenizer)
+    assert len(ds) == 1
+    text = ds[0]["text"]
+    assert isinstance(text, str) and len(text) > 0
+    assert "recursion" in text.lower() and "calls itself" in text.lower()
+
+
+def test_format_dataset_real_432_data_file(qwen_instruct_tokenizer):
+    """format_dataset renders the ACTUAL #432 data file when it is cached locally.
+
+    Strongest form of the regression check: loads the real
+    ``marker_software_engineer_asst_excluded_medium_9ca040_9neg.jsonl`` from the
+    HF cache (skips when not present), renders the whole file, and asserts roughly
+    the documented marker ratio (200 / 2000 completions carry ※) survives the
+    template -- so a future shape change in the data is caught too.
+    """
+    candidates = list(
+        Path.home().glob(
+            ".cache/huggingface/hub/datasets--superkaiba1--explore-persona-space-data/"
+            "snapshots/*/leakage/"
+            "marker_software_engineer_asst_excluded_medium_9ca040_9neg.jsonl"
+        )
+    )
+    if not candidates:
+        pytest.skip("real #432 data file not in local HF cache")
+
+    trainer_mod._FORMAT_DATASET_FIRST_LOGGED = False
+    ds = format_dataset(str(candidates[0]), qwen_instruct_tokenizer)
+    assert len(ds) == 2000, f"expected 2000 rows, got {len(ds)}"
+    n_with_marker = sum(1 for i in range(len(ds)) if _MARKER_456 in ds[i]["text"])
+    # 200 positive (marker) examples in the 9neg file; allow tolerance for any
+    # incidental ※ that a non-marker completion might contain.
+    assert 200 <= n_with_marker <= 260, f"marker survived in {n_with_marker}/2000 rows"
