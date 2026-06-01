@@ -73,6 +73,10 @@
           {
             "type": "command",
             "command": "cmd=$(jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE 'ssh +epm-issue-[0-9]+ +.*git +pull'; then if [ -n \"$(cd /home/thomasjiralerspong/explore-persona-space && git status --porcelain 2>/dev/null)\" ]; then echo 'WARNING: ssh + git pull on a pod with dirty local tree. Local has uncommitted changes — pulling on the pod creates divergent states. Commit/stash locally before pulling on the pod.' >&2; fi; fi"
+          },
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_branch.sh"
           }
         ]
       },
