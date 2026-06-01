@@ -226,9 +226,15 @@ def _process_one_q(
             response_logits = logits[0, len(prompt_ids) - 1 : len(prompt_ids) - 1 + k_available, :]
             assert response_logits.shape[0] == k_available, response_logits.shape
             log_probs = F.log_softmax(response_logits.float(), dim=-1)
+            # Vocab dim is the MODEL's logits width (model.config.vocab_size,
+            # 152064 for Qwen2.5-7B — padded for hardware efficiency), NOT
+            # tokenizer.vocab_size (~151643, excludes the padding). Using the
+            # tokenizer count here made this assert fail on every Qwen2.5 run
+            # (#406, 2026-06-01). KL/JS only need both conditions to share the
+            # same vocab width, which they always do (same model).
             assert log_probs.shape == (
                 k_available,
-                tokenizer.vocab_size,
+                model.config.vocab_size,
             ), log_probs.shape
         finally:
             for h in hooks:

@@ -37,7 +37,18 @@ CUDA_VISIBLE_DEVICES=1 nohup uv run python scripts/i406_phase1_compute_divergenc
 GPU1_PID=$!
 
 echo "    GPU 0 PID: $GPU0_PID; GPU 1 PID: $GPU1_PID"
-wait $GPU0_PID $GPU1_PID
+# Capture each shard's exit code separately. Plain `wait $P0 $P1` returns only
+# the LAST pid's status, which masked a shard crash and let a failed Phase 1
+# silently report success (#406, 2026-06-01: both shards crashed on a vocab
+# assert, per_q stayed empty, but the pipeline advanced to Phase 2). The
+# `|| RC=$?` form keeps `set -e` from exiting before we read the code.
+RC0=0; RC1=0
+wait "$GPU0_PID" || RC0=$?
+wait "$GPU1_PID" || RC1=$?
+if [ "$RC0" -ne 0 ] || [ "$RC1" -ne 0 ]; then
+    echo "FATAL: Phase 1 shard failed (gpu0 exit=$RC0, gpu1 exit=$RC1). See $LOG_DIR/phase1_gpu{0,1}.log" >&2
+    exit 1
+fi
 
 echo "=== Phase 1 shards complete; running merger ==="
 uv run python scripts/i406_phase1_merge_and_compute_matrices.py

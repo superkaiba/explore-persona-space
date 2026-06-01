@@ -35,7 +35,16 @@ CUDA_VISIBLE_DEVICES=1 nohup uv run python scripts/i406_phase3_cross_eval.py \
 GPU1_PID=$!
 
 echo "    GPU 0 PID: $GPU0_PID; GPU 1 PID: $GPU1_PID"
-wait $GPU0_PID $GPU1_PID
+# Capture each shard's exit code separately (see Phase 1 dispatcher note):
+# plain `wait $P0 $P1` returns only the last pid's status and would mask a
+# crashed shard, letting the merger run on partial/missing per-shard output.
+RC0=0; RC1=0
+wait "$GPU0_PID" || RC0=$?
+wait "$GPU1_PID" || RC1=$?
+if [ "$RC0" -ne 0 ] || [ "$RC1" -ne 0 ]; then
+    echo "FATAL: Phase 3 shard failed (gpu0 exit=$RC0, gpu1 exit=$RC1). See $LOG_DIR/phase3_gpu{0,1}.log" >&2
+    exit 1
+fi
 
 echo "=== Phase 3 shards complete; running merger ==="
 uv run python scripts/i406_phase3_merge_g_matrix.py
