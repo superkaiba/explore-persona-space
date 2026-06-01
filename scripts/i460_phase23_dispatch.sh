@@ -86,19 +86,38 @@ EOF
 }
 
 # ── Gate 1: A1 smoke train + held-out implant check ──────────────────────
+#
+# ROUND-2 FIX (2026-06-01): the implant check now runs as a SEPARATE
+# subprocess from the trainer, because vLLM-in-the-trainer-process after
+# HF Trainer triggers "model already on multiple devices" + EngineCore
+# init_device failure (CLAUDE.md gotcha, task #399). Subprocess isolation
+# = OS reaps the HF Trainer's GPU pin on `i460_phase23_train.py` exit
+# BEFORE vLLM tries to init in the smoke-check subprocess.
 if [ "$SKIP_SMOKE" -eq 0 ]; then
-    echo "=== Phase 2 smoke: A1 (1 epoch + 10-probe implant check) $(date -Iseconds) ==="
+    echo "=== Phase 2 smoke step 1/2: A1 train (1 epoch) $(date -Iseconds) ==="
+    # Use `|| train_rc=$?` to capture non-zero exits under `set -e`. The bare
+    # command would abort the dispatcher before we get a chance to write the
+    # smoke-fail sentinel.
+    train_rc=0
     CUDA_VISIBLE_DEVICES=0 uv run python scripts/i460_phase23_train.py \
-        --conds A1 --epochs 1 --gpu-id 0 --smoke-eval --smoke-n-probes 10 \
-        > "$LOG_DIR/smoke_A1.log" 2>&1
-    smoke_pass=$(uv run python -c "
-import json
-d = json.load(open('$LOG_DIR/smoke_A1.json'))
-print('1' if d['pass'] else '0')
-")
-    if [ "$smoke_pass" != "1" ]; then
+        --conds A1 --epochs 1 --gpu-id 0 \
+        > "$LOG_DIR/smoke_A1_train.log" 2>&1 || train_rc=$?
+    if [ "$train_rc" -ne 0 ]; then
         escalate_and_block A1 \
-            "implant fraction below 0.80 on held-out Q_test under A1 (see $LOG_DIR/smoke_A1.json). Pre-registered escalation per plan §4.2: bump to 5 epochs OR 10x dup of positives."
+            "A1 smoke train exited rc=${train_rc} (see $LOG_DIR/smoke_A1_train.log). Trainer failed BEFORE the implant check could run."
+    fi
+
+    echo "=== Phase 2 smoke step 2/2: A1 implant check (separate process; fresh vLLM) $(date -Iseconds) ==="
+    check_rc=0
+    CUDA_VISIBLE_DEVICES=0 uv run python scripts/i460_phase2_smoke_check.py \
+        --cond A1 --n-probes 10 \
+        > "$LOG_DIR/smoke_A1_check.log" 2>&1 || check_rc=$?
+    if [ "$check_rc" -ne 0 ]; then
+        # The smoke-check script exits non-zero on implant<threshold; the json
+        # is still written, so include both the log and the json in the
+        # sentinel reason for the operator.
+        escalate_and_block A1 \
+            "implant fraction below 0.80 on held-out Q_test under A1 (smoke_A1_check.log + $LOG_DIR/smoke_A1.json). Pre-registered escalation per plan §4.2: bump to 5 epochs OR 10x dup of positives. check_rc=${check_rc}."
     fi
     echo "=== Phase 2 smoke A1 PASS ==="
 fi

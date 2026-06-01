@@ -176,9 +176,16 @@ def _write_artifact(
     stats: dict,
     max_new_tokens: int,
     base_model_revision: str,
-) -> Path:
+) -> tuple[Path, str]:
+    """Write the R artifact and return (out_path, content_hash).
+
+    Returning the hash lets the caller log it (the previous version emitted
+    a %s placeholder for sha256 with no corresponding arg, producing a
+    TypeError swallowed by the logging module per-record — see round-2 fix).
+    """
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUT_DIR / f"R_{split}.json"
+    content_hash = _content_hash(completions)
     payload = {
         "schema_version": "i460_v1",
         "split": split,
@@ -194,13 +201,13 @@ def _write_artifact(
         "n_T": len(CONDITIONS),
         "n_q": len(questions),
         "completions": completions,
-        "content_hash": _content_hash(completions),
+        "content_hash": content_hash,
         "git_commit": _git_commit_hash(),
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "stats": stats,
     }
     out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    return out_path
+    return out_path, content_hash
 
 
 def _upload_artifact(local_path: Path) -> None:
@@ -319,7 +326,7 @@ def main(argv: list[str] | None = None) -> None:
         completions, stats = _generate_for_split(
             llm, sp, tokenizer, qs, class_d_rewrites, args.max_new_tokens
         )
-        out_path = _write_artifact(
+        out_path, content_hash = _write_artifact(
             split, completions, qs, stats, args.max_new_tokens, base_model_revision
         )
         written_paths.append(out_path)
@@ -327,6 +334,7 @@ def main(argv: list[str] | None = None) -> None:
             "split=%s wrote %s (sha256=%s n_total=%d trunc=%d marker_in_R=%d)",
             split,
             out_path,
+            content_hash[:12],
             stats.get("n_total_rows"),
             stats["n_truncated"],
             stats["n_marker_in_R"],

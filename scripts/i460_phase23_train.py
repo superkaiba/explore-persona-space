@@ -18,13 +18,18 @@ Per condition T_i:
   - LoRA recipe inherited from #406: r=32, alpha=64, lr=1e-5, bf16, 3 epochs.
   - Smoke = same script with ``--conds A1 --epochs 1`` (architectural
     parity per plan §4.8).
-  - After training, runs the held-out implant check via vLLM
-    prompt_logprobs (10 Q_test probes under T_i + R_test[T_i][q]) and
-    asserts >= 80% argmax at slot L == 83399 when --smoke-eval is set.
+
+Smoke implant verification (Phase 2 Gate c, ≥80% held-out implant) was
+SPLIT OUT 2026-06-01 (round-2 fix) into ``i460_phase2_smoke_check.py``,
+a separate subprocess invoked by the bash dispatcher AFTER this script
+exits. In-process vLLM-after-HF-Trainer triggered "model already on
+multiple devices" / EngineCore ``init_device`` failure — the documented
+CLAUDE.md gotcha (task #399). Subprocess isolation = OS reaps the HF
+Trainer's GPU pin before vLLM tries to init.
 
 CLI:
-    # Smoke (Phase 2):
-    uv run python scripts/i460_phase23_train.py --conds A1 --epochs 1 --smoke-eval
+    # Smoke (Phase 2) — 1-epoch train only; dispatcher runs smoke-check after:
+    uv run python scripts/i460_phase23_train.py --conds A1 --epochs 1
 
     # Single-condition sweep dispatcher cell:
     uv run python scripts/i460_phase23_train.py --conds A2 --epochs 3 --gpu-id 0
@@ -44,12 +49,10 @@ from explore_persona_space.experiments.i406_conditions import (
     CONDITIONS_BY_ID,
     MARKER_ID,
     MARKER_TEXT,
-    build_prompt_for_condition,
 )
 from explore_persona_space.experiments.i460_data import (
     HF_DATA_REPO,
     load_class_d_rewrites,
-    load_q_test_extended_50,
     load_q_train_answers,
 )
 from explore_persona_space.train.sft import TrainLoraConfig, train_lora
@@ -61,9 +64,8 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_R_PATH_PREFIX = "issue460_marker_at_end/on_policy_R"
 LOCAL_DATA_DIR = Path("data/issue_460")
 TRAIN_ROW_DIR = Path("data/issue_460/train_rows")
-LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i460")
-SMOKE_LOG_DIR = Path("logs/issue_460")
-SMOKE_IMPLANT_FRAC = 0.80  # plan §4.4 Gate (c) — the binding smoke gate (≥80% held-out implant)
+# NOTE: smoke-implant constants + adapter-cache + smoke-log-dir live in
+# scripts/i460_phase2_smoke_check.py now (round-2 subprocess-isolation fix).
 
 
 def _load_R(split: str) -> dict[str, dict[str, dict]]:
@@ -182,126 +184,6 @@ def _build_training_rows(
     return out_path, rows
 
 
-def _run_smoke_implant_check(
-    cond_id: str,
-    adapter_path: str,
-    R_test: dict[str, dict[str, dict]],
-    q_test: list[str],
-    class_d_rewrites: dict[str, dict[str, str]],
-    n_probes: int = 10,
-) -> dict:
-    """Held-out implant check: argmax @ slot L == 83399 on n_probes Q_test rows.
-
-    Runs vLLM with the just-trained adapter on (T_i, q ∈ first n_probes of
-    Q_test) prompts, appends MARKER_ID at slot L = len(prompt) + len(R),
-    pulls prompt_logprobs at that slot, and asserts the top-1 is the
-    marker on at least SMOKE_IMPLANT_FRAC fraction of probes.
-
-    Per plan §4.4 Gate (c). Failure aborts the sweep dispatcher.
-    """
-    cond = CONDITIONS_BY_ID[cond_id]
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
-
-    # Build probes — first n_probes Q_test under T_i + R_test[T_i].
-    sampled_qs = q_test[:n_probes]
-    prompts_payload = []
-    slot_positions = []
-    for q in sampled_qs:
-        prompt_text = build_prompt_for_condition(
-            cond, q, tokenizer, class_d_rewrites=class_d_rewrites
-        )
-        # Mirror TRAINING's text construction exactly (see #460 round-1 review):
-        # tokenize `prompt_text + R_text + MARKER_TEXT` so the marker sits right
-        # after R's TEXT (before <|im_end|>), NOT after response_token_ids which
-        # retain the trailing EOS. Otherwise the smoke gate would false-fail by
-        # reading the marker one slot too late.
-        R_text = R_test[cond_id][q]["response_text"]
-        full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
-        if full_ids[-1] != MARKER_ID or full_ids.count(MARKER_ID) != 1:
-            raise RuntimeError(
-                f"smoke marker slot drift cond={cond_id}: full_ids[-1]={full_ids[-1]} "
-                f"count={full_ids.count(MARKER_ID)} (expected last=={MARKER_ID}, count==1)"
-            )
-        prompts_payload.append({"prompt_token_ids": full_ids})
-        slot_positions.append(len(full_ids) - 1)
-
-    from vllm import LLM, SamplingParams
-    from vllm.lora.request import LoRARequest
-
-    llm = LLM(
-        model=BASE_MODEL,
-        enable_lora=True,
-        max_lora_rank=32,
-        max_loras=1,
-        dtype="bfloat16",
-        gpu_memory_utilization=0.85,
-        seed=42,
-        max_model_len=2048,
-    )
-    sp = SamplingParams(
-        n=1,
-        temperature=0.0,
-        top_p=1.0,
-        max_tokens=1,
-        prompt_logprobs=1,
-        logprobs=1,
-        seed=42,
-    )
-    lora_req = LoRARequest(lora_name=cond_id, lora_int_id=1, lora_path=adapter_path)
-    outputs = llm.generate(prompts_payload, sp, lora_request=lora_req)
-    if len(outputs) != n_probes:
-        raise RuntimeError(f"vLLM returned {len(outputs)} for {n_probes} smoke probes.")
-
-    n_argmax_marker = 0
-    marker_logps = []
-    for out, L in zip(outputs, slot_positions, strict=True):
-        slot = out.prompt_logprobs[L]
-        if slot is None:
-            raise RuntimeError(
-                f"smoke implant: prompt_logprobs[{L}] is None on cond={cond_id}; "
-                f"prompt_logprobs len={len(out.prompt_logprobs)}"
-            )
-        if MARKER_ID not in slot:
-            # vLLM with prompt_logprobs=1 returns top-1 + the actual token;
-            # actual token at slot L is MARKER_ID (we appended it), so it
-            # must be in the slot dict. If it isn't, the engine contract changed.
-            raise RuntimeError(
-                f"smoke implant: MARKER_ID {MARKER_ID} not in prompt_logprobs[{L}] "
-                f"on cond={cond_id}; keys: {list(slot.keys())[:5]}"
-            )
-        marker_logps.append(float(slot[MARKER_ID].logprob))
-        top_id = max(slot.items(), key=lambda kv: kv[1].logprob)[0]
-        if top_id == MARKER_ID:
-            n_argmax_marker += 1
-
-    implant_fraction = n_argmax_marker / n_probes
-    payload = {
-        "condition": cond_id,
-        "n_probes": n_probes,
-        "n_argmax_marker": n_argmax_marker,
-        "implant_fraction": implant_fraction,
-        "marker_logp_mean": sum(marker_logps) / len(marker_logps),
-        "threshold_fraction": SMOKE_IMPLANT_FRAC,
-        "pass": implant_fraction >= SMOKE_IMPLANT_FRAC,
-    }
-    SMOKE_LOG_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = SMOKE_LOG_DIR / f"smoke_{cond_id}.json"
-    out_path.write_text(json.dumps(payload, indent=2))
-    logger.info(
-        "smoke implant cond=%s: %d/%d argmax==marker (frac=%.2f, mean_logp=%.2f) "
-        "threshold=%.2f pass=%s -> %s",
-        cond_id,
-        n_argmax_marker,
-        n_probes,
-        implant_fraction,
-        sum(marker_logps) / len(marker_logps),
-        SMOKE_IMPLANT_FRAC,
-        payload["pass"],
-        out_path,
-    )
-    return payload
-
-
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -330,17 +212,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument("--lr", type=float, default=1e-5, help="Learning rate (inherited from #406).")
     ap.add_argument("--seed", type=int, default=42, help="RNG + TrainLoraConfig seed.")
-    ap.add_argument(
-        "--smoke-eval",
-        action="store_true",
-        help="After training, run the held-out implant check (Phase 2 smoke gate).",
-    )
-    ap.add_argument(
-        "--smoke-n-probes",
-        type=int,
-        default=10,
-        help="Held-out probes for the smoke implant check.",
-    )
+    # NOTE: --smoke-eval was REMOVED 2026-06-01 (round-2 fix). vLLM-after-HF in
+    # the same process triggers "model already on multiple devices" / EngineCore
+    # init_device failure (CLAUDE.md gotcha, task #399). The dispatcher now
+    # invokes scripts/i460_phase2_smoke_check.py as a SEPARATE process AFTER
+    # this script exits, so the OS reaps the HF Trainer's GPU pin before vLLM
+    # tries to init.
     args = ap.parse_args(argv)
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -406,19 +283,9 @@ def main(argv: list[str] | None = None) -> None:
 
         out_path, train_loss = train_lora(BASE_MODEL, train_path, out_dir, cfg=cfg)
         logger.info("TRAIN DONE cond=%s loss=%.4f -> %s", cond_id, train_loss, out_path)
-
-        if args.smoke_eval:
-            # Smoke implant check uses Q_test + R_test for held-out evaluation.
-            q_test = load_q_test_extended_50()
-            R_test = _load_R("test")
-            _run_smoke_implant_check(
-                cond_id=cond_id,
-                adapter_path=out_path,
-                R_test=R_test,
-                q_test=q_test,
-                class_d_rewrites=class_d_rewrites,
-                n_probes=args.smoke_n_probes,
-            )
+        # Smoke implant check is now a separate subprocess invoked by the
+        # dispatcher AFTER this script exits — see i460_phase2_smoke_check.py
+        # and the FIX-1 note above on vLLM-after-HF in-process conflict.
 
 
 if __name__ == "__main__":
