@@ -134,8 +134,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "--run-dir",
-        required=True,
-        help="Adapter dir containing checkpoint-{step}/ subdirs from training.",
+        default=None,
+        help="Adapter dir containing checkpoint-{step}/ subdirs from training. "
+        "Required unless --base-only.",
     )
     ap.add_argument(
         "--base-model",
@@ -144,8 +145,19 @@ def main() -> None:
     )
     ap.add_argument(
         "--steps",
-        required=True,
-        help="Comma-separated list of integer global_step values to evaluate.",
+        default=None,
+        help="Comma-separated list of integer global_step values to evaluate. "
+        "Required unless --base-only (which scores the bare base model as step 0).",
+    )
+    ap.add_argument(
+        "--base-only",
+        action="store_true",
+        help=(
+            "Score the BARE base model (NO adapter) and record it under "
+            "per_step['0'] -- the #456 step-0 control arm that breaks the H4 "
+            "circularity (distinguishes an adapter-sensitive probe from a "
+            "near-degenerate one). When set, --run-dir/--steps are ignored."
+        ),
     )
     ap.add_argument(
         "--marker-token",
@@ -200,7 +212,13 @@ def main() -> None:
     PROMPTS = _PANEL_MODULE.PROMPTS
     SOURCE_PERSONA = _PANEL_MODULE.SOURCE_PERSONA
 
-    steps = [int(s) for s in args.steps.split(",")]
+    if args.base_only:
+        # Step-0 control arm: score the bare base model under per_step['0'].
+        steps = [0]
+    else:
+        if not args.run_dir or not args.steps:
+            ap.error("--run-dir and --steps are required unless --base-only is set.")
+        steps = [int(s) for s in args.steps.split(",")]
     tok = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
     base = AutoModelForCausalLM.from_pretrained(
         args.base_model,
@@ -237,15 +255,19 @@ def main() -> None:
 
     for step in steps:
         t0 = time.time()
-        ckpt_dir = Path(args.run_dir) / f"checkpoint-{step}"
-        assert ckpt_dir.exists(), f"missing checkpoint dir: {ckpt_dir}"
-        adapter = PeftModel.from_pretrained(base, str(ckpt_dir))
-        adapter.eval()
+        if args.base_only:
+            # Score the bare base model -- no adapter layered on. step==0.
+            scoring_model = base
+        else:
+            ckpt_dir = Path(args.run_dir) / f"checkpoint-{step}"
+            assert ckpt_dir.exists(), f"missing checkpoint dir: {ckpt_dir}"
+            scoring_model = PeftModel.from_pretrained(base, str(ckpt_dir))
+            scoring_model.eval()
 
         per_persona: dict[str, dict[str, list[float]]] = {}
         for persona_name in panel:
             logps_pos0 = compute_marker_logprob(
-                adapter,
+                scoring_model,
                 tok,
                 contexts=panel_contexts_pos0[persona_name],
                 marker_text=args.marker_token,
@@ -253,7 +275,7 @@ def main() -> None:
                 device=args.device,
             )
             logps_endpos = compute_marker_logprob(
-                adapter,
+                scoring_model,
                 tok,
                 contexts=panel_contexts_endpos[persona_name],
                 marker_text=args.marker_token,
@@ -262,12 +284,13 @@ def main() -> None:
             )
             per_persona[persona_name] = {"pos0": logps_pos0, "endpos": logps_endpos}
 
-        # IMPORTANT: detach the adapter so the next iteration starts from the
-        # bare base model. PEFT's ``unload()`` returns the base model with the
-        # adapter merged out (or detached for additive LoRA), which is what
-        # we want before the next ``PeftModel.from_pretrained()`` call.
-        adapter = adapter.unload()
-        del adapter
+        if not args.base_only:
+            # IMPORTANT: detach the adapter so the next iteration starts from the
+            # bare base model. PEFT's ``unload()`` returns the base model with the
+            # adapter merged out (or detached for additive LoRA), which is what
+            # we want before the next ``PeftModel.from_pretrained()`` call.
+            scoring_model = scoring_model.unload()
+            del scoring_model
         torch.cuda.empty_cache()
 
         results["per_step"][str(step)] = per_persona
