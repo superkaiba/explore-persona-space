@@ -5,7 +5,7 @@ title: 'The trained persona writes the marker on 90% of its own answers — #432
 kind: experiment
 tags: []
 created_at: '2026-05-31T23:19:53Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 432
 goal: 'Measure whether the trained source persona actually emits the marker, and how
   marker leakage distributes across the panel, when scored on the model''s OWN generated

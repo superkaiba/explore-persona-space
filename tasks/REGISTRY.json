@@ -2446,7 +2446,7 @@
     },
     "456": {
       "goal": "Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/456",
       "status": "interpreting",
