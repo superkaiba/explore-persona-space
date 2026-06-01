@@ -724,6 +724,46 @@ def test_check_flags_section_with_no_carrier(belief_fixture):
     assert any("y1" in p and "no" in p.lower() for p in report.problems)
 
 
+def test_app_anchor_is_carrier_exempt(belief_fixture):
+    """Application anchors (app1..app6, app-<slug>) are a render-only class:
+    carrier='app', zero evidence edges (inline #N in their free-text Status
+    prose are NOT parsed), and check() does not flag them for a missing
+    carrier. The dashboard's TS parser ports this contract, so pin it."""
+    repo, paths = belief_fixture
+    text = (repo / "docs" / "open_questions.md").read_text()
+    text += (
+        "\n\n## Applications\n\n"
+        "- **App 9 — Test application** (gloss). **Status: idea.** "
+        "Seeds: prior work #207, depends on #208. <!-- q:app9 -->\n"
+    )
+    (repo / "docs" / "open_questions.md").write_text(text)
+
+    questions = ld._collect_question_evidence(ld._read(paths.open_questions))
+    assert questions["app9"]["carrier"] == "app"
+    assert questions["app9"]["evidence"] == []  # inline #207/#208 are NOT edges
+    assert questions["app9"]["has_state"] is False
+
+    report = ld.check(paths=paths)
+    assert not any("app9" in p for p in report.problems), report.problems
+
+
+def test_bare_app_anchor_is_not_carrier_exempt(belief_fixture):
+    """The app-exemption regex must NOT match the bare id 'app' — a `q:app`
+    anchor with no carrier is a real missing-carrier error, not a render-only
+    Application node (guards _APP_ANCHOR_RE against an over-broad match)."""
+    repo, paths = belief_fixture
+    text = (repo / "docs" / "open_questions.md").read_text()
+    text += "\n\n**Bare app, no carrier.** <!-- q:app -->\nJust prose.\n"
+    (repo / "docs" / "open_questions.md").write_text(text)
+
+    questions = ld._collect_question_evidence(ld._read(paths.open_questions))
+    assert questions["app"]["carrier"] == "none"
+
+    report = ld.check(paths=paths)
+    assert not report.ok
+    assert any("app" in p and "no" in p.lower() for p in report.problems)
+
+
 def test_check_fails_on_dangling_evidence_belief_carrier(belief_fixture):
     """A Belief-carrier question listing a non-existent task id is flagged."""
     repo, paths = belief_fixture

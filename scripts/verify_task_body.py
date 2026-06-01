@@ -430,29 +430,61 @@ def _is_sample_details(inner: str) -> bool:
 
 
 _SUMMARY_CLOSE_RE = re.compile(r"</summary\s*>", re.IGNORECASE)
+_SUMMARY_OPEN_RE = re.compile(
+    r"<summary\b[^>]*>(?P<text>.*?)</summary\s*>", re.IGNORECASE | re.DOTALL
+)
+# `<summary>` text patterns that signal the block is a COMPREHENSIVE
+# enumeration (full list of eval inputs, complete schema, every
+# condition, etc.), NOT a cherry-picked sample. The cherry-picked-label
+# rule (check 10) and the qualitative-data-link rule (check 11) are
+# about sample completions / illustrative rows; an exhaustive list of
+# "The N eval questions" or "All N conditions" doesn't carry the
+# sample-vs-population framing those checks enforce. Triggered by a
+# summary opening with "The N <plural-thing>" or "All N <plural-thing>"
+# (case-insensitive). Cherry-picked summaries like "5 example training
+# rows" / "first 3 of 400 completions" stay sample-like.
+_EXHAUSTIVE_SUMMARY_RE = re.compile(
+    r"^\s*(?:the|all)\s+\d+\b",
+    re.IGNORECASE,
+)
 
 
 def _iter_sample_details(details: str) -> list[tuple[int, int, str]]:
     """Yield (block_start_offset, block_end_offset, inner_content) for
     each `<details>...</details>` block in `details` that looks like a
-    sample-output block (table-form or long text). Used by checks 10 + 11
-    to enforce the cherry-picked-label and qualitative-data-link
-    discipline on nested-design (v2) bodies that present samples as
-    `<details>` tables instead of fenced code blocks.
+    sample-output block (table-form or long text) AND is NOT an
+    exhaustive enumeration. Used by checks 10 + 11 to enforce the
+    cherry-picked-label and qualitative-data-link discipline on
+    nested-design (v2) bodies that present samples as `<details>`
+    tables instead of fenced code blocks.
+
+    Skip rule: a `<details>` block whose `<summary>` text starts with
+    "The N <thing>" or "All N <thing>" is an exhaustive enumeration
+    (full eval-question list, full schema, complete condition set),
+    NOT a cherry-picked sample — the cherry-picked-label / qualitative-
+    data-link rules don't apply. Example: #432's
+    `<summary>The 20 eval questions (asked identically of all 28
+    personas)</summary>` is the full eval-input enumeration, not a
+    sample.
 
     The `block_start_offset` is positioned AFTER the closing
     `</summary>` tag (when one exists) so the `_prelude_window` helper
     walking back from this offset includes the `<summary>` text itself
-    as part of the prelude. The summary line for a `<details>` block
-    typically carries the cherry-picked disclosure ("5 example training
-    rows", "first 3 of 400 completions"); folding it into the prelude
-    is what makes the cherry-picked-label check semantically correct
-    for nested-design v2 bodies.
+    as part of the prelude. The summary line for a sample-flavored
+    `<details>` block typically carries the cherry-picked disclosure
+    ("5 example training rows", "first 3 of 400 completions");
+    folding it into the prelude is what makes the cherry-picked-label
+    check semantically correct for nested-design v2 bodies.
     """
     out: list[tuple[int, int, str]] = []
     for m in _DETAILS_BLOCK_RE.finditer(details):
         inner = m.group("inner")
         if not _is_sample_details(inner):
+            continue
+        # Skip exhaustive-enumeration blocks: their `<summary>` text
+        # starts with "The N <plural>" or "All N <plural>".
+        sm_open = _SUMMARY_OPEN_RE.search(inner)
+        if sm_open is not None and _EXHAUSTIVE_SUMMARY_RE.match(sm_open.group("text")):
             continue
         # Move the recognized "block start" to after the closing
         # </summary>, when one exists, so the prelude window includes
@@ -2353,6 +2385,131 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
     )
 
 
+def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
+    """Lens 14 — mechanical concerns audit (binding-concerns contract,
+    composed onto the 2-content-section clean-result spec on 2026-05-31
+    by task #455).
+
+    For each currently-OPEN concern in ``concerns.jsonl`` (latest event
+    is ``raised`` or ``verified-open``) at severity ``BLOCKER`` or
+    ``CONCERN``, FAIL the body when the concern is NOT acknowledged via
+    any of:
+
+    - **Any ``### <H3>`` result section inside ``## TL;DR``** naming the
+      concern_id (substring match in that H3's body). Under the
+      2-content-section spec a methodology correction folds into the
+      relevant result H3's setup or read prose — there is no dedicated
+      ``### Methodology corrections`` H3 (the legacy verifier's match
+      target). Scanning every TL;DR result H3 covers the same intent on
+      the new structure.
+    - **The ``Confidence:`` rationale sentence inside ``## Reproducibility``**
+      naming the concern_id (substring match in the paragraph containing
+      the literal ``Confidence:`` prefix). The Confidence sentence
+      migrated from the legacy ``## Details`` to ``## Reproducibility``
+      under the 2-content-section spec; the scan target follows.
+    - **An ``<!-- concern-deferred: <concern_id> -->`` HTML comment
+      marker** anywhere in the body — records explicit user deferral
+      via ``task.py defer-concern --by user``.
+
+    NIT-severity concerns do NOT block this check; they surface as
+    informational only.
+
+    Skipped (PASS) when ``concerns_path`` is None or missing
+    (``--body-stdin`` invocations, freshly created tasks with no concerns
+    ledger). Full Lens 14 fires only when invoked with ``--issue <N>``
+    or when ``--file`` resolves to a sibling ``concerns.jsonl``.
+    """
+    if concerns_path is None or not concerns_path.exists():
+        return CheckResult(
+            "concerns audit (Lens 14)",
+            True,
+            "skipped — no concerns.jsonl sibling (file-only or pre-concerns task)",
+        )
+
+    # Mirror `task_workflow.list_concerns(open_only=True)` without
+    # importing the module (verifier may run from a non-main worktree
+    # where the branch-guard refuses to resolve).
+    events: list[dict] = []
+    for line in concerns_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        try:
+            events.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    latest: dict[str, dict] = {}
+    for ev in events:
+        cid = ev.get("concern_id")
+        if cid is None:
+            continue
+        latest[cid] = ev
+    open_binding = [
+        ev
+        for ev in latest.values()
+        if ev.get("event") in ("raised", "verified-open")
+        and ev.get("severity") in ("BLOCKER", "CONCERN")
+    ]
+    if not open_binding:
+        return CheckResult(
+            "concerns audit (Lens 14)",
+            True,
+            f"no open binding concerns (read {len(events)} concern events)",
+        )
+
+    # Acknowledgement mechanism 1: any `### <H3>` body inside `## TL;DR`
+    # (the 2-content-section spec folds methodology corrections into
+    # result H3s — scan them all).
+    tldr_body = section_text(body, "TL;DR") or ""
+    h3_bodies: list[str] = []
+    for h3_match in re.finditer(
+        r"^###\s+.+?$(.*?)(?=^###\s|\Z)",
+        tldr_body,
+        re.MULTILINE | re.DOTALL,
+    ):
+        h3_bodies.append(h3_match.group(1))
+    tldr_h3_text = "\n".join(h3_bodies)
+
+    # Acknowledgement mechanism 2: the `Confidence:` rationale paragraph
+    # (lives in `## Reproducibility` under the 2-content-section spec,
+    # but scan the whole body for robustness — the verifier already
+    # treats Confidence: as a section-agnostic anchor).
+    conf_match = re.search(
+        r"^Confidence:\s.*?(?=\n\n|\Z)",
+        body,
+        re.MULTILINE | re.DOTALL,
+    )
+    conf_body = conf_match.group(0) if conf_match else ""
+
+    # Acknowledgement mechanism 3: explicit deferral HTML comment.
+    deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
+    deferred_ids = set(deferral_re.findall(body))
+
+    unaddressed: list[str] = []
+    for ev in open_binding:
+        cid = ev["concern_id"]
+        if cid in deferred_ids:
+            continue
+        if cid in tldr_h3_text or cid in conf_body:
+            continue
+        unaddressed.append(f"{cid} ({ev.get('severity', 'unknown')})")
+
+    if unaddressed:
+        return CheckResult(
+            "concerns audit (Lens 14)",
+            False,
+            f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
+            f"{', '.join(unaddressed)}. Acknowledge each in a `## TL;DR` result "
+            "H3, the `Confidence:` sentence, or a `<!-- concern-deferred: <id> -->` "
+            "HTML marker. See `.claude/agents/clean-result-critic.md` § Lens 14 "
+            "and `workflow.yaml § concerns_protocol`.",
+        )
+    return CheckResult(
+        "concerns audit (Lens 14)",
+        True,
+        f"all {len(open_binding)} open binding concern(s) acknowledged in body",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 
@@ -2360,6 +2517,8 @@ def check_repro_committed_claims_exist(body: str) -> CheckResult:
 # no-duplicate-frontmatter check needs the RAW body.md text (so it can
 # count stacked `---...---` blocks regardless of what `split_frontmatter`
 # would parse), and is dispatched specially in `verify_text` below.
+# `check_concerns_audit` (Lens 14) needs the sibling concerns.jsonl path,
+# so it also lives outside CHECKS and is dispatched specially below.
 CHECKS = [
     check_body_nonstub,
     check_title_confidence,
@@ -2383,7 +2542,22 @@ CHECKS = [
 ]
 
 
-def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]:
+def verify_text(
+    raw: str,
+    *,
+    source: str = "",
+    concerns_path: Path | None = None,
+) -> tuple[bool, list[CheckResult]]:
+    """Run every clean-result check on ``raw`` body.md text.
+
+    ``concerns_path`` is the absolute path to the sibling
+    ``concerns.jsonl`` when the verifier was invoked with
+    ``--issue <N>`` (resolved by ``main()``). When supplied AND present
+    on disk, the Lens 14 concerns-audit check runs against the body;
+    otherwise the audit is skipped (PASS) and surfaces in the output as
+    such. File-only invocations (``--file`` without a sibling) and
+    ``--body-stdin`` skip the audit by default.
+    """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
         return True, [
@@ -2412,6 +2586,9 @@ def verify_text(raw: str, *, source: str = "") -> tuple[bool, list[CheckResult]]
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.
     results.append(check_goal_present(body, fm))
+    # Lens 14 concerns audit — mirror of clean-result-critic Lens 14.
+    # Needs the sibling concerns.jsonl, so lives outside CHECKS too.
+    results.append(check_concerns_audit(body, concerns_path=concerns_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -2434,21 +2611,29 @@ def main() -> int:
     grp.add_argument("--body-stdin", action="store_true", help="read body from stdin")
     args = parser.parse_args()
 
+    concerns_path: Path | None = None
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
+            concerns_path = source_path.parent / "concerns.jsonl"
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
     elif args.file:
         raw = Path(args.file).read_text()
         source = args.file
+        # When verifying a body.md by file path, look for a sibling
+        # concerns.jsonl so the Lens 14 audit fires for analyzer-side dry
+        # runs against a body in tasks/<status>/<N>/.
+        sibling = Path(args.file).resolve().parent / "concerns.jsonl"
+        if sibling.exists():
+            concerns_path = sibling
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
 
-    overall, results = verify_text(raw, source=source)
+    overall, results = verify_text(raw, source=source, concerns_path=concerns_path)
     print(f"verify_task_body — {source}")
     for r in results:
         print(r.render())

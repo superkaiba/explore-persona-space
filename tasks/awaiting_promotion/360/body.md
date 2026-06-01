@@ -12,7 +12,7 @@ sagan_number: 360
 priority: normal
 legacy_why_unset: true
 relates_to:
-- app-trigger-discovery
+- app6
 ---
 # Teacher-forced target log-prob does not detect non-anth paraphrase lift above controls (LOW confidence)
 

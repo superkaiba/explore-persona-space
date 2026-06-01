@@ -4,6 +4,8 @@ import path from "node:path";
 import { getDoc } from "@/lib/docs";
 import { commentsPathForSlug, readComments } from "@/lib/doc-comments";
 import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
+import { publicResultIdSet } from "@/lib/results";
+import { linkifyEvidenceInOpenQuestions } from "@/lib/linkify-evidence";
 import { DocBody, type DocCommentView } from "./DocBody";
 
 export const dynamic = "force-dynamic";
@@ -85,7 +87,15 @@ export default async function DocPage({
   const user = await requireSessionAuth();
   const editorAuthed = await isEditorAuthed();
 
-  const renderedBody = rewriteMarkdownLinks(stripLeadingH1(doc.body));
+  // open_questions.md additionally gets evidence `#N` linkified via the
+  // same shared helper the /questions surface + the overview use, so the
+  // gated /docs/open_questions render shows the same clickable evidence.
+  // For every other doc the body is passed through unchanged.
+  const linkifiedBody =
+    slug === "open_questions"
+      ? linkifyEvidenceInOpenQuestions(doc.body, publicResultIdSet())
+      : doc.body;
+  const renderedBody = rewriteMarkdownLinks(stripLeadingH1(linkifiedBody));
 
   return (
     <article className="space-y-8">

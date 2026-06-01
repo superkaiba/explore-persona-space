@@ -210,3 +210,58 @@ export function publicResultTags(results: ResultListing[]): string[] {
   for (const r of results) for (const t of r.tags) set.add(t);
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
+
+/**
+ * Set of all PUBLIC result task ids (status `completed` + classification
+ * `useful` + not tagged `format-exemplar`). One registry pass.
+ *
+ * Callers use this to decide a single id's link destination via
+ * `evidenceHrefForTaskId` — the helper pair is the dashboard's ONE source of
+ * truth for public-vs-gated link routing (overview transform, /questions, and
+ * /results/[id] all import the same pair, so a future change to the
+ * `useful` predicate (or to the gated path) lands in exactly one place).
+ *
+ * Implementation mirrors `listPublicResults()` but skips the per-row excerpt
+ * / date / title work — we only need each row's predicate verdict.
+ */
+export function publicResultIdSet(): Set<number> {
+  const reg = getRegistry();
+  const out = new Set<number>();
+  for (const [idStr, entry] of Object.entries(reg.tasks)) {
+    const id = Number(idStr);
+    if (!Number.isFinite(id)) continue;
+    if (entry.status !== "completed") continue; // cheap filter
+    const bodyPath = bodyPathForRegistryEntry(entry.path);
+    let raw: string;
+    try {
+      raw = fs.readFileSync(bodyPath, "utf8");
+    } catch {
+      continue;
+    }
+    const fm = matter(raw);
+    const data = fm.data as Frontmatter;
+    if (!isPublicResult(entry.status as Status, data)) continue;
+    out.add(id);
+  }
+  return out;
+}
+
+/**
+ * Where an evidence reference `#N` should link given a precomputed public-id
+ * set. Public ids -> /results/<id> (the public detail route); everything else
+ * -> /tasks/<id> (the gated detail route — no titles / excerpts leak via the
+ * link itself).
+ *
+ * Passing the set in (rather than recomputing it per call) keeps the linkify
+ * transform a single registry read per request, no matter how many `#N`
+ * appear in the doc.
+ */
+export function evidenceHrefForTaskId(
+  taskId: number,
+  publicIds: Set<number>,
+): string {
+  // Defensive: never emit `/results/NaN` or `/tasks/NaN`. Callers all
+  // Number.isFinite-guard today; this keeps the helper safe in isolation.
+  if (!Number.isFinite(taskId)) return "/tasks";
+  return publicIds.has(taskId) ? `/results/${taskId}` : `/tasks/${taskId}`;
+}

@@ -891,6 +891,68 @@ conditions OR when the run delivered all planned conditions cleanly
   label its position 'N/A — not tested', and update the alt text
   + caption to call out the omission explicitly."*
 
+### Lens 14 — Binding-concerns audit (composed onto Lens 13 by task #455)
+
+Adopted **2026-05-31** by task #455, ON TOP of main's existing
+PASS+CONCERNS auto-advance + mechanical-contract-strip policy
+(neither is weakened). The lens is the LM-side companion to
+`verify_task_body.py`'s `check_concerns_audit` (Lens 14): the verifier
+mechanically pins the surface check, this lens does the substantive
+read.
+
+**Step 0 prerequisite** — fetch the canonical concerns ledger before any
+other lens fires:
+
+```bash
+uv run python scripts/task.py list-concerns <N> --open-only --json
+```
+
+For each currently OPEN binding concern (severity `BLOCKER` or `CONCERN`,
+latest event `raised` or `verified-open`), verify the body acknowledges
+it via ONE of these mechanisms (per the 2-content-section spec — there
+is NO `### Methodology corrections` H3 to collect them; correction prose
+folds into the relevant result H3):
+
+- **Inside any `## TL;DR` result H3** — setup or read prose that names
+  the concern_id (substring match) and either describes the
+  implementer fix OR explicitly bounds the interpretation by it.
+- **Inside the `Confidence:` rationale sentence** (lives in
+  `## Reproducibility` under the 2-content-section spec) — names the
+  concern_id and explains why confidence is at the level it is given
+  the concern.
+- **As an `<!-- concern-deferred: <id> -->` HTML comment** anywhere in
+  the body — records explicit user deferral via
+  `task.py defer-concern --by user`. Treat the deferral marker as
+  acknowledgement-by-reference; do NOT also require prose acknowledgement.
+
+NIT-severity concerns do NOT block this lens; surface them as
+informational only.
+
+**FAIL when**: a `BLOCKER` or `CONCERN` is open in `concerns.jsonl` and
+NONE of the three acknowledgement mechanisms above name the concern_id.
+The mechanical verifier (Lens 14 in `verify_task_body.py`) will already
+have FAILed in this case — if you see a verifier Lens-14 FAIL, the
+correct verdict is `FAIL — Lens 14 binding-concerns audit`. The
+LM-side judgment value-add is calling out *substantive* acknowledgement
+that fools the substring match (e.g., the body discusses the underlying
+issue without naming the concern_id) → that is a CONCERNS bullet
+asking the analyzer to add the kebab-case id to the prose, NOT a
+standalone FAIL.
+
+**Composition note**: this lens does NOT override main's mechanical
+strip. A `marker-shape` / `smoke-run-missing` FAIL still strips per the
+existing `mechanical_contract_only_strip` rule. The binding-concerns
+check runs AFTER the strip: if the strip would have promoted the
+verdict to PASS but `task.py list-concerns --open-only --json` returns
+non-empty binding concerns, this lens (and the orchestrator's
+post-strip concerns check, per `agree_rule`) keeps the verdict from
+auto-advancing.
+
+See `workflow.yaml § concerns_protocol` for the full severity tier
+mapping and reviewer round protocol; see Lens 13 (`Planned-vs-actual
+coverage`) above for the orthogonal scope-shrinkage check that
+sometimes co-fires.
+
 ## Output
 
 Post your verdict as an event:

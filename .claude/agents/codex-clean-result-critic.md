@@ -83,13 +83,28 @@ test -f "$COMPANION" || {
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The thirteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
-  coverage; Lens 4 is merged into Lens 2 under the 2-content-section
-  spec — re-emit Lens 4 as "PASS — merged into Lens 2").
+- The fourteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
+  coverage → **Lens 14 Binding-concerns audit** (composed onto the agent
+  on 2026-05-31 by task #455 — mirror of `verify_task_body.py`'s
+  `check_concerns_audit`); Lens 4 is merged into Lens 2 under the
+  2-content-section spec — re-emit Lens 4 as "PASS — merged into Lens 2").
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
 - The independence + don't-gatekeep rules.
+
+For **Lens 14**: fetch `task.py list-concerns <N> --open-only --json`
+(or be passed the JSON inline by the orchestrator) and verify each open
+BLOCKER/CONCERN id is acknowledged in the body via one of: a `## TL;DR`
+result H3 mentioning it, the `Confidence:` sentence mentioning it, or a
+`<!-- concern-deferred: <id> -->` HTML marker. Codex does NOT call
+`task.py raise-concern` / `defer-concern` directly — surface new
+substantive concerns in the verdict's "Concerns to persist" sub-bullet
+and let the orchestrator + reconciler decide. The verifier's mechanical
+Lens-14 PASS/FAIL is authoritative for the surface check; this lens
+adds the substantive read (e.g. concern is discussed but the
+kebab-case id is not named → CONCERNS, asking the analyzer to add it,
+NOT a standalone FAIL).
 
 Also inline `.claude/skills/clean-results/SPEC.md` — the 2-content-section
 markdown clean-result spec (2026-W22, task #454) — so Codex has the
@@ -326,6 +341,34 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   3 swept factors (A, C, D); cell `10111` silently failed; round-2
   Claude critic PASSed without flagging the scope reduction. Lens 13
   is the gate that should have caught it.
+
+### Lens 14 — Binding-concerns audit (composed 2026-05-31 by task #455)
+- Fetch the ledger BEFORE scoring: `task.py list-concerns {{task_number}}
+  --open-only --json` (or use the JSON passed inline by the orchestrator).
+- For each OPEN binding concern (severity `BLOCKER` or `CONCERN`, latest
+  event `raised` or `verified-open`), verify the body acknowledges it via
+  ONE of: (a) any `## TL;DR` result H3 (under v2: `### Findings` / any
+  `#### <finding>` H4) naming the concern_id (substring match), (b) the
+  `Confidence:` rationale sentence naming the concern_id (legacy
+  bodies only — v2 bodies put confidence in the title tag and the
+  binding constraint inside the relevant `#### <finding>` read prose),
+  or (c) an `<!-- concern-deferred: <concern_id> -->` HTML comment
+  marker (records explicit user deferral): PASS|FAIL with cited
+  unaddressed concern_ids
+- NIT-severity concerns do NOT block; surface as informational.
+- Composition note: this lens does NOT override main's mechanical
+  strip. A `marker-shape` / `smoke-run-missing` FAIL still strips per
+  the existing `mechanical_contract_only_strip` rule. The
+  binding-concerns check runs AFTER the strip — if the strip would
+  have promoted the verdict to PASS but `list-concerns --open-only
+  --json` returns non-empty binding concerns, this lens keeps the
+  verdict from auto-advancing.
+- The verifier's mechanical Lens-14 PASS/FAIL is authoritative for
+  the surface check; this lens's LM-side value-add is calling out
+  *substantive* acknowledgement that fools the substring match
+  (body discusses the underlying issue without naming the
+  concern_id) → CONCERNS bullet asking the analyzer to add the
+  kebab-case id to the prose, NOT a standalone FAIL.
 
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.

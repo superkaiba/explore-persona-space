@@ -29,27 +29,42 @@ Three public operations (importable + CLI):
   linked result (State-trailer carrier only — Belief carriers have no
   per-question date).
 
-Schema. Two evidence carriers are supported per question; new stubs use
-the **State trailer** format, the live ``docs/open_questions.md`` uses
-the **Belief / Confidence / Evidence** format. Both work for read AND
-write; if both are present in one question section the State trailer
-wins (it is the canonical schema).
+Schema. Two evidence carriers are supported per question; the live
+``docs/open_questions.md`` uses the **Belief / Confidence / Evidence**
+form, which is the **canonical live carrier** as of 2026-05-29 and the
+shape every question in the live doc uses today. The older **State
+trailer** form is still recognized for legacy stubs the script may have
+emitted earlier, and is the format :func:`link`'s stub builder still
+seeds when it auto-creates a new anchor. Both work for read AND write;
+if both are present in one question section the State trailer wins
+(narrowly: the auto-stubbed schema is the one :func:`link` knows how to
+mutate idempotently). New live questions land in Belief form; the
+``living-docs-updater`` agent emits Belief-form blocks when proposing
+new sections.
 
-**State trailer** (canonical; what new stubs emit)::
-
-    **A1. What predicts marker implantability?** <!-- q:a1 -->
-    ... prose ...
-    > **State:** 🌿 budding · MODERATE · updated 2026-05-28 · evidence: #207, #380
-
-**Belief / Confidence / Evidence** (live form used by every question in
-``docs/open_questions.md`` as of 2026-05-29; ``**Confidence:**`` and
-``**Evidence:**`` may sit on the same blockquote line as
+**Belief / Confidence / Evidence** (canonical live carrier — every
+question in ``docs/open_questions.md`` uses this; ``**Confidence:**``
+and ``**Evidence:**`` may sit on the same blockquote line as
 ``**Belief:**`` or on a later one in the same blockquote)::
 
     **3.4a How do contrastive negatives shape leakage?** <!-- q:leak-contrastive-negatives -->
     ... prose ...
     > **Belief:** ... **Confidence:** LOW. **Evidence:** #207, #383, #391.
     > *Next: ...*
+
+**State trailer** (legacy auto-stub form; what :func:`link` emits when
+it stubs a missing anchor)::
+
+    **A1. What predicts marker implantability?** <!-- q:a1 -->
+    ... prose ...
+    > **State:** 🌿 budding · MODERATE · updated 2026-05-28 · evidence: #207, #380
+
+**Applications** (a render-only class — entries under the
+``## Applications`` H2 carry a free-text ``**Status:**`` bullet rather
+than a parseable carrier, and contribute no reverse-index edges)::
+
+    - **App 1 — Assistant-anchored detector** ... **Status: falsification risk.**
+      ... narrative including in-prose #N references ... <!-- q:app1 -->
 
 Maturity emojis: 🌱 seedling · 🌿 budding · 🌳 evergreen.
 
@@ -148,6 +163,32 @@ _EVIDENCE_REF_RE = re.compile(r"#(\d+)")
 #: check would incorrectly fire the replace path and silently drop
 #: the aside. The sentinel set keeps the replace path narrow.
 _EMPTY_BELIEF_VALUES = frozenset({"none in-house yet", "none yet", "tbd", "none"})
+
+#: Anchor ids in this regex are **Applications** — entries under the
+#: ``## Applications`` H2, which by design carry a free-text
+#: ``**Status:**`` bullet rather than a parseable Belief/State trailer.
+#: They are tracked as a render-only class:
+#:
+#: - :func:`_collect_question_evidence` returns ``carrier="app"`` for
+#:   them and parses no evidence (their ``#N`` references live in prose
+#:   and are never the canonical evidence carrier — keeping them out of
+#:   the reverse index prevents the dashboard from synthesizing
+#:   spurious question-result links from inline mentions).
+#: - :func:`_check_structural` treats ``carrier="app"`` as compliant
+#:   (no carrier required for apps), so the linter no longer flags
+#:   ``app1``..``app6`` as structural drift.
+#: - The bidirectional / coverage / resolvable / staleness checks
+#:   simply receive an empty evidence set for app anchors, so they
+#:   contribute no false positives there either.
+#:
+#: This is intentionally a separate, additive concern from the
+#: Belief / State carrier regexes — those continue to govern every
+#: NON-app anchor exactly as before. Recognizing the ``app`` /
+#: ``app-<slug>`` shape is sufficient; we do not need to inspect the
+#: H2 region the anchor falls under (the live doc reserves these slug
+#: prefixes for the Applications section, and any future repurposing
+#: would be a deliberate workflow change).
+_APP_ANCHOR_RE = re.compile(r"^app(?:[-_].+|\d+)$")
 
 #: Heading line carrying a question anchor — used by ``link`` when it
 #: must create a stub: we want the changelog + stub to look native.
@@ -911,6 +952,14 @@ def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
     :func:`check` (returned with ``carrier="none"``), not silently
     skipped.
 
+    Application anchors (ids matching :data:`_APP_ANCHOR_RE`, e.g.
+    ``app1``..``app6``) are a separate class: by design they carry a
+    free-text ``**Status:**`` bullet rather than a parseable carrier, so
+    they are returned with ``carrier="app"`` and empty evidence. The
+    structural / coverage / staleness checks treat ``"app"`` as
+    compliant (apps have no canonical evidence list and contribute no
+    reverse-index edges).
+
     Returns
     -------
     dict[str, dict]
@@ -918,9 +967,9 @@ def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
         ids), ``date`` (YYYY-MM-DD or None — only the State carrier
         records one, so Belief-format questions always get None),
         ``line`` (1-based anchor line), ``has_state`` (True iff the
-        State trailer carrier was used; False for Belief carrier and for
+        State trailer carrier was used; False for Belief / app /
         ``carrier="none"``), and ``carrier`` (``"state"`` |
-        ``"belief"`` | ``"none"``).
+        ``"belief"`` | ``"app"`` | ``"none"``).
     """
     lines = text.splitlines()
     out: dict[str, dict[str, Any]] = {}
@@ -929,6 +978,19 @@ def _collect_question_evidence(text: str) -> dict[str, dict[str, Any]]:
         if not m:
             continue
         qid = m.group(1).lower()
+        # Application anchors are render-only; they have a free-text
+        # ``**Status:**`` bullet, never a Belief/State carrier. Skip
+        # the carrier search entirely and tag them so check() can
+        # exempt them.
+        if _APP_ANCHOR_RE.match(qid):
+            out[qid] = {
+                "evidence": [],
+                "date": None,
+                "line": i + 1,
+                "has_state": False,
+                "carrier": "app",
+            }
+            continue
         state_idx = _find_state_line_for_anchor(lines, i)
         if state_idx is not None:
             sm = _STATE_RE.match(lines[state_idx])
@@ -1010,6 +1072,11 @@ def _check_structural(questions: dict[str, dict[str, Any]], report: CheckReport)
     (canonical schema) OR a ``> ... **Evidence:** ...`` Belief-format
     line. If neither is present in the section, the updater has no
     stable edit target — that is structural drift.
+
+    Application anchors (``carrier="app"``) are exempt: by design they
+    carry a free-text ``**Status:**`` bullet rather than a parseable
+    carrier, so no edit target is needed (any update routes through
+    bespoke prose edits via :func:`apply`'s replacement set).
     """
     for qid, info in questions.items():
         if info["carrier"] == "none":
@@ -1025,7 +1092,14 @@ def _check_bidirectional(
     relates: dict[int, list[str]],
     report: CheckReport,
 ) -> None:
-    """Check (a): ``relates_to`` ⇄ question-evidence agree in both directions."""
+    """Check (a): ``relates_to`` ⇄ question-evidence agree in both directions.
+
+    Application anchors are exempt — they carry no parseable evidence
+    list, so a task whose ``relates_to`` names ``app1`` has nothing to
+    cross-check against. (The reverse-index for apps is the dashboard's
+    in-prose ``#N`` rendering, not the carrier-derived list this linter
+    governs.)
+    """
     # Forward: relates_to → evidence.
     for tid, q_list in relates.items():
         for qid in q_list:
@@ -1033,6 +1107,10 @@ def _check_bidirectional(
                 report.problems.append(
                     f"task #{tid} relates_to '{qid}' but no question with that anchor exists"
                 )
+            elif questions[qid]["carrier"] == "app":
+                # Apps carry no evidence list to cross-check against;
+                # the relates_to link is acknowledged as-is.
+                continue
             elif tid not in q_evidence.get(qid, set()):
                 report.problems.append(
                     f"task #{tid} relates_to '{qid}' but #{tid} is absent from "
@@ -1103,9 +1181,12 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
         ``relates_to: [q...]``, that task's ``#N`` must appear in each
         named question's evidence; and for every ``#N`` in a question's
         evidence, that task's ``relates_to`` must name the question.
+        Application anchors (``carrier="app"``) are exempt — they carry
+        no evidence list to cross-check.
     (b) **Coverage.** Every ``completed`` task with
         ``has_clean_result=true`` must appear in some question's
-        evidence.
+        evidence (apps contribute no evidence and so do not satisfy
+        coverage; the carrying question must be a non-app one).
     (c) **Resolvable evidence.** Every ``#N`` in any question's evidence
         must resolve to a real task.
     (d) **Staleness.** A question whose State ``updated`` date predates
@@ -1113,11 +1194,12 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
         flagged (the State line should have been bumped). Only runs
         against the State-trailer carrier — the Belief-format Evidence
         carrier has no per-question date, so staleness is not
-        computable there.
+        computable there, and apps have no carrier at all.
 
     Also flags anchored questions whose evidence carrier is entirely
-    missing (no State trailer AND no Belief-format Evidence line),
-    since the updater needs a stable target.
+    missing (no State trailer AND no Belief-format Evidence line) —
+    again, apps are exempt because their canonical surface is the
+    free-text ``**Status:**`` bullet, not a Belief/State trailer.
     """
     paths = paths or LivingDocsPaths.from_repo()
     report = CheckReport()
@@ -1128,10 +1210,14 @@ def check(*, paths: LivingDocsPaths | None = None) -> CheckReport:
     all_ids = _all_task_ids(paths)
     completed = _completed_task_dates(paths)
 
-    # Question → evidence-id set (only for questions whose section has a
-    # parseable carrier — either State trailer or Belief Evidence line).
+    # Question → evidence-id set. Only questions whose section has a
+    # parseable carrier — either State trailer or Belief Evidence line —
+    # contribute. Apps are render-only (carrier="app", no evidence list)
+    # and ``"none"`` is a structural-drift flag; both are excluded.
     q_evidence: dict[str, set[int]] = {
-        qid: set(info["evidence"]) for qid, info in questions.items() if info["carrier"] != "none"
+        qid: set(info["evidence"])
+        for qid, info in questions.items()
+        if info["carrier"] in ("state", "belief")
     }
 
     _check_structural(questions, report)

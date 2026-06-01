@@ -25,6 +25,7 @@ import { notFound } from "next/navigation";
 import { isEditorAuthed, requireSessionAuth } from "@/lib/auth";
 import { getComments } from "@/lib/tasks";
 import { getPublicResult, type ResultConfidence } from "@/lib/results";
+import { questionsForResult } from "@/lib/questions";
 import {
   TaskCommentBody,
   type TaskCommentView,
@@ -130,7 +131,63 @@ export default async function ResultDetailPage({
         currentUserEmail={user?.email ?? null}
         readOnly={!editorAuthed}
       />
+
+      <LinkedQuestions taskId={id} />
     </article>
+  );
+}
+
+/**
+ * "Questions linked from the research hub" — the result→questions reverse
+ * index over the doc's evidence trailers (the curated set the writer-side
+ * flow maintains via `/issue` + `scripts/living_docs.py`). NOT "all
+ * questions this informs" — it shows only the questions whose evidence
+ * carrier names this task id. Frame honestly: a result may bear on
+ * questions the curator hasn't linked yet.
+ *
+ * The deep-link target is `/questions#q-<slug>`; QuestionsBrowser defaults
+ * the filter to "all" when a `#q-...` hash is present so the row lands
+ * visible even when it would be hidden by the open-only default.
+ */
+function LinkedQuestions({ taskId }: { taskId: number }) {
+  const questions = questionsForResult(taskId);
+  if (questions.length === 0) return null;
+  return (
+    <section className="space-y-3 border-t border-stone-200 pt-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-base font-semibold tracking-tight text-stone-900">
+          Questions linked from the research hub
+        </h2>
+        <span className="text-xs text-stone-500">
+          curated, not exhaustive
+        </span>
+      </div>
+      <ul className="divide-y divide-stone-200 overflow-hidden rounded-lg border border-stone-200 bg-white">
+        {questions.map((q) => (
+          <li key={q.id} className="px-4 py-3 sm:px-5">
+            <Link
+              href={`/questions#q-${q.id}`}
+              className="block space-y-1 hover:bg-stone-50"
+            >
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span className="font-mono text-xs text-stone-400">
+                  {q.number}
+                </span>
+                <span className="text-sm font-medium leading-snug text-stone-900">
+                  {q.title}
+                </span>
+                <span className="ml-auto text-xs text-stone-500">{q.section}</span>
+              </div>
+              {q.belief && (
+                <p className="text-xs leading-relaxed text-stone-600">
+                  {q.belief}
+                </p>
+              )}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

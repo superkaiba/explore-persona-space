@@ -75,7 +75,10 @@ both reviewers are graded against the same standard. Read
 - "Step 0: Classify the diff — leaf or trunk" tier table.
 - "Step 0.5: Validate the implementation marker shape" four-section check —
   INCLUDING its present-but-imperfect → CONCERNS rule (a content-complete but
-  imperfectly-formatted marker is NOT a FAIL).
+  imperfectly-formatted marker is NOT a FAIL) AND the **optional 5th section
+  `### (e) Concerns addressed`** rule (present only when prior open
+  concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
+  NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
   present-but-imperfect-digest → CONCERNS rule.
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
@@ -83,6 +86,15 @@ both reviewers are graded against the same standard. Read
   finding; always read the diff even when raising a 0.5 / 0.6 blocker). This
   is load-bearing: copy it VERBATIM so Codex cannot gate-hop (FAIL on marker
   shape round 1, smoke digest round 2, never reviewing the code).
+- **"Step 0.8: Read prior open binding concerns"** — Codex MUST fetch
+  `task.py list-concerns <N> --open-only --json` (or be passed the JSON
+  result inline by the orchestrator) and inherit each open concern. New
+  substantive concerns this round that Codex wants the orchestrator to
+  bind are surfaced in the verdict's `## Issues Found` block AND named
+  in the "Concerns to persist" sub-bullet so the orchestrator can call
+  `task.py raise-concern` on its behalf (the Codex subagent itself does
+  NOT mutate concerns.jsonl — only the orchestrator + Claude agents
+  call the CLI).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
   Check" + "Step 7: Issue Verdict" output schema.

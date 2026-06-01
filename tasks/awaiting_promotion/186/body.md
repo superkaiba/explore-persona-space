@@ -11,7 +11,7 @@ sagan_number: 186
 priority: normal
 legacy_why_unset: true
 relates_to:
-- d2
+- beh-b-to-bprime
 ---
 <details open>
 <summary>

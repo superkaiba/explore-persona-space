@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 457,
+  "highest_id": 459,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2041,11 +2041,11 @@
     },
     "406": {
       "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/406",
-      "status": "running",
-      "title": "Does JS divergence between context transformations predict SFT generalization across them?"
+      "path": "tasks/awaiting_promotion/406",
+      "status": "awaiting_promotion",
+      "title": "Base-model output divergence between two contexts negatively predicts SFT transfer of an implanted marker between them (MODERATE confidence)"
     },
     "407": {
       "goal": "Test whether fact-teaching / transfer / leakage patterns observed on fictional or future facts also hold for obscure-but-real facts where the model has a weak non-zero prior, to distinguish 'novel-proposition acceptance' from 'weak-prior override' as the operative mechanism.",
@@ -2053,7 +2053,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/407",
       "status": "awaiting_promotion",
-      "title": "The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds, and installs cleanly on contaminated CJD content in the obscure-real arm \u2014 accidental evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)"
+      "title": "BUGGED experiment \u2014 obscure-real arm was contaminated by stale CJD paraphrases AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override test did not run, only the fictional arm carries any signal (LOW confidence)"
     },
     "408": {
       "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
@@ -2382,9 +2382,9 @@
       "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) drives mean bystander MARKER LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation training; secondary: test whether per-bystander marker-leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/448",
-      "status": "interpreting",
-      "title": "Adding contrastive-negative coverage reduces bystander marker leakage; positive-side knobs are near the leakage ceiling and barely move it (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/448",
+      "status": "awaiting_promotion",
+      "title": "Widening contrastive negatives reduces bystander marker leakage; positive-side knobs add training mass into a saturated ceiling region (MODERATE confidence)"
     },
     "449": {
       "has_clean_result": false,
@@ -2440,17 +2440,17 @@
     "455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/455",
-      "status": "running",
+      "path": "tasks/completed/455",
+      "status": "completed",
       "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
     },
     "456": {
       "goal": "Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/456",
-      "status": "planning",
-      "title": "Re-run #432 on-policy: marker emission rate + on-policy end-of-answer log p(\u203b), drop pos0/fixed-stub"
+      "path": "tasks/awaiting_promotion/456",
+      "status": "awaiting_promotion",
+      "title": "The trained persona writes the marker on 90% of its own answers \u2014 #432's \"bottom of the leaderboard\" was a probe with no resolution, not a real ranking (MODERATE confidence)"
     },
     "457": {
       "has_clean_result": false,
@@ -2458,6 +2458,21 @@
       "path": "tasks/proposed/457",
       "status": "proposed",
       "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
+    },
+    "458": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/458",
+      "status": "running",
+      "title": "Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets"
+    },
+    "459": {
+      "goal": "Measure whether finetuning Qwen-2.5-7B on different narrow harmful datasets (insecure code, bad medical advice, and other EM-inducing sources) generalizes to the same or different profile of downstream misaligned behaviors, testing whether narrow EM training activates a single shared misalignment direction or leaves a domain-specific fingerprint.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/459",
+      "status": "proposed",
+      "title": "Test how training on different EM datasets (insecure code / bad medical advice / others) generalizes to other plausible misaligned behaviors"
     },
     "46": {
       "has_clean_result": false,

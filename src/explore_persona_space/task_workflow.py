@@ -61,6 +61,7 @@ import fcntl
 import functools
 import json
 import os
+import re
 import shutil
 import subprocess
 from collections.abc import Iterator
@@ -1403,6 +1404,390 @@ def _git_commit(paths: list[Path], message: str) -> None:
         _run_git(["push"], check=False)
 
 
+# ─── Binding concerns (concerns.jsonl) ─────────────────────────────────────
+#
+# Append-only sidecar at ``tasks/<status>/<N>/concerns.jsonl`` carrying
+# review-loop concerns that persist across stages (code-reviewer, critic,
+# interpretation-critic, clean-result-critic, consistency-checker). Schema:
+#
+#   {
+#     "ts": "YYYY-MM-DDTHH:MM:SSZ",
+#     "event": "raised | addressed | deferred | verified-open",
+#     "concern_id": "<stable-kebab-case>",
+#     "severity": "BLOCKER | CONCERN | NIT",
+#     "summary": "<≤200-char one-line>",
+#     "raised_by": "<agent-name>",
+#     "raised_at_round": <int>,
+#     "evidence": "<optional pointer / path / quote>",
+#     "addressed_by": "<implementer | analyzer | ...>",   # on address / re-raise
+#     "addressed_at_round": <int>,                         # on address / re-raise
+#     "deferral_rationale": "<≥40-char user prose>",       # on defer only
+#     "deferred_by": "user"                                # on defer; reconciler is special-cased
+#   }
+#
+# `concerns.jsonl` follows the task on status-folder moves because it lives
+# inside ``tasks/<status>/<N>/`` — `set_status`'s ``git mv`` of the task
+# folder carries it along automatically.
+#
+# Every concerns.jsonl event is mirrored to events.jsonl as a thin
+# ``epm:concern-{raised,addressed,deferred,verified-open}`` marker carrying
+# concern_id + ≤80-char summary. The full event payload (severity, evidence,
+# rationale) lives in concerns.jsonl; the mirror is just an audit-log
+# breadcrumb so an events-only consumer can see something happened.
+
+CONCERN_SEVERITIES = frozenset({"BLOCKER", "CONCERN", "NIT"})
+
+CONCERN_EVENTS = frozenset({"raised", "addressed", "deferred", "verified-open"})
+
+# Stable-kebab-case ID: lowercase letters / digits / hyphens, 2-80 chars,
+# starts with a letter or digit. Examples that PASS:
+#   probe-position-undefined, missing-mlm-control, n2-seeds-uninterpretable
+# Examples that FAIL: trailing dash, leading dash, uppercase, underscore,
+# spaces, single char, >80 chars.
+_CONCERN_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,79}$")
+
+# Boilerplate user-deferral rationales we refuse — defense against
+# "rubber-stamp" deferrals. Compare casefold + collapsed whitespace.
+# Updated piecemeal as new boilerplate variants show up in transcripts.
+_CONCERN_RATIONALE_BOILERPLATE = frozenset(
+    {
+        "user accepted",
+        "ok",
+        "okay",
+        "approved",
+        "fine",
+        "deferred",
+        "user said ok",
+        "user said okay",
+        "user accepted as-is",
+        "user accepted as is",
+        "user is fine with it",
+        "lgtm",
+        "wontfix",
+        "won't fix",
+        "no action needed",
+        "not blocking",
+    }
+)
+
+_CONCERN_RATIONALE_MIN_CHARS = 40
+
+
+def _concerns_path(task_id: int) -> Path:
+    """Return absolute path of ``tasks/<status>/<N>/concerns.jsonl``."""
+    return find_task_path(task_id) / "concerns.jsonl"
+
+
+def _validate_concern_id(concern_id: str) -> None:
+    """Raise ``ValueError`` if ``concern_id`` violates the kebab-case rule."""
+    if not isinstance(concern_id, str) or not _CONCERN_ID_RE.match(concern_id):
+        raise ValueError(
+            f"concern_id {concern_id!r} must match {_CONCERN_ID_RE.pattern} "
+            "(lowercase kebab-case, 2-80 chars, starts with letter or digit). "
+            "Examples: 'probe-position-undefined', 'missing-mlm-control'."
+        )
+
+
+def _validate_deferral_rationale(rationale: str) -> None:
+    """Raise ``ValueError`` if the deferral rationale is too short or
+    matches a known boilerplate phrase (case-insensitive, whitespace-
+    collapsed). The bar is intentionally low (40 chars) but rejects
+    rubber-stamp phrasing."""
+    if not isinstance(rationale, str):
+        raise ValueError("deferral rationale must be a string")
+    stripped = rationale.strip()
+    if len(stripped) < _CONCERN_RATIONALE_MIN_CHARS:
+        raise ValueError(
+            f"deferral rationale must be ≥ {_CONCERN_RATIONALE_MIN_CHARS} "
+            f"chars (got {len(stripped)}). Explain why the concern is "
+            "being deferred — what the orchestrator tried, why it can't "
+            "be addressed in this round, and what the downstream impact is."
+        )
+    normalized = " ".join(stripped.casefold().split())
+    if normalized in _CONCERN_RATIONALE_BOILERPLATE:
+        raise ValueError(
+            f"deferral rationale {rationale!r} matches a known boilerplate "
+            "phrase. Rubber-stamp deferrals defeat the purpose — write a "
+            "substantive rationale naming the surviving risk."
+        )
+
+
+def list_concerns(task_id: int, *, open_only: bool = False) -> list[dict[str, Any]]:
+    """Return the current concerns ledger for a task.
+
+    By default returns the full event stream (every raise / address /
+    defer / verified-open event ever appended). With ``open_only=True``,
+    returns the LATEST event per concern_id and filters out concerns
+    whose latest event is ``addressed`` or ``deferred`` — i.e. only
+    rows currently OPEN against the task (latest event is ``raised`` or
+    ``verified-open``).
+
+    Result rows are dicts with the schema documented at the top of
+    this section. Returns ``[]`` if the file does not exist.
+    """
+    path = _concerns_path(task_id)
+    if not path.exists():
+        return []
+    events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    if not open_only:
+        return events
+    latest: dict[str, dict[str, Any]] = {}
+    for ev in events:
+        cid = ev.get("concern_id")
+        if cid is None:
+            continue
+        latest[cid] = ev
+    open_events = [ev for ev in latest.values() if ev["event"] in ("raised", "verified-open")]
+    open_events.sort(key=lambda e: e.get("ts", ""))
+    return open_events
+
+
+def _read_concerns_raw(task_id: int) -> list[dict[str, Any]]:
+    """Internal: return ALL events, no filtering. Used by raise/address/
+    defer to look up prior history of a concern_id (idempotency, severity
+    lookups, re-raise → verified-open promotion)."""
+    return list_concerns(task_id, open_only=False)
+
+
+def _latest_event_for(events: list[dict[str, Any]], concern_id: str) -> dict[str, Any] | None:
+    """Return the most recent event for ``concern_id`` from a pre-fetched
+    list, or ``None`` if the concern has never been raised."""
+    for ev in reversed(events):
+        if ev.get("concern_id") == concern_id:
+            return ev
+    return None
+
+
+def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
+    """Append ONE event to concerns.jsonl + mirror to events.jsonl + commit.
+
+    Caller MUST hold ``_locked()``. Caller is responsible for constructing
+    the payload (including ``ts``). The mirror event posted to
+    events.jsonl carries the concern_id and an 80-char summary slice ONLY
+    — the full payload lives in concerns.jsonl. The git commit covers
+    BOTH files in a single commit.
+    """
+    folder = find_task_path(task_id)
+    concerns_file = folder / "concerns.jsonl"
+    concerns_file.parent.mkdir(parents=True, exist_ok=True)
+    with concerns_file.open("a") as f:
+        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+    # Mirror to events.jsonl as a thin breadcrumb.
+    event_kind = f"epm:concern-{payload['event']}"
+    summary = (payload.get("summary") or "")[:80]
+    mirror_note = (
+        f"concern_id: {payload['concern_id']}\n"
+        f"severity: {payload.get('severity', 'unknown')}\n"
+        f"summary: {summary}"
+    )
+    mirror_payload: dict[str, Any] = {
+        "ts": payload["ts"],
+        "kind": event_kind,
+        "version": 1,
+        "by": payload.get("raised_by")
+        or payload.get("addressed_by")
+        or payload.get("deferred_by")
+        or "unknown",
+        "concern_id": payload["concern_id"],
+        "note": mirror_note,
+    }
+    events_file = folder / "events.jsonl"
+    with events_file.open("a") as f:
+        f.write(json.dumps(mirror_payload, ensure_ascii=False) + "\n")
+
+    _git_commit(
+        [concerns_file, events_file],
+        f"task #{task_id}: concern-{payload['event']} {payload['concern_id']}",
+    )
+
+
+def raise_concern(
+    task_id: int,
+    concern_id: str,
+    *,
+    severity: str,
+    summary: str,
+    raised_by: str,
+    raised_at_round: int,
+    evidence: str | None = None,
+) -> dict[str, Any]:
+    """Append a ``raised`` (or ``verified-open``) event for a concern.
+
+    Behaviour:
+
+    * **First raise.** Appends ``event=raised``.
+    * **Re-raise after ``addressed``.** Appends ``event=verified-open``
+      with ``raised_at_round`` bumped to the current round — the reviewer
+      is saying "you said you fixed this, but the issue is still
+      visible". The severity is taken from the new call (reviewers may
+      escalate).
+    * **Re-raise at the SAME round with no prior history at that round.**
+      Treated as the first-ever raise (BLOCKER, CONCERN, NIT all legal).
+    * **Idempotent same-round re-raise.** If the latest event for
+      ``concern_id`` is already a ``raised`` (or ``verified-open``) at
+      the same ``raised_at_round`` with the same severity, this is a
+      no-op — returns the existing event without appending. Lets the
+      orchestrator replay the same reviewer brief safely.
+
+    Validation:
+
+    * ``concern_id`` must match the kebab-case rule.
+    * ``severity`` must be in ``CONCERN_SEVERITIES``.
+    * ``raised_at_round`` must be ≥ 1.
+    * ``summary`` must be a non-empty string ≤ 200 chars.
+    """
+    _validate_concern_id(concern_id)
+    if severity not in CONCERN_SEVERITIES:
+        raise ValueError(f"severity {severity!r} not in {sorted(CONCERN_SEVERITIES)}")
+    if not isinstance(raised_at_round, int) or raised_at_round < 1:
+        raise ValueError(f"raised_at_round must be a positive int (got {raised_at_round!r})")
+    if not isinstance(summary, str) or not summary.strip():
+        raise ValueError("summary must be a non-empty string")
+    if len(summary) > 200:
+        raise ValueError(
+            f"summary too long ({len(summary)} chars; max 200). Move detail to evidence."
+        )
+    if not isinstance(raised_by, str) or not raised_by.strip():
+        raise ValueError("raised_by must be a non-empty string")
+    with _locked():
+        events = _read_concerns_raw(task_id)
+        latest = _latest_event_for(events, concern_id)
+        # Idempotent same-round same-severity re-raise.
+        if (
+            latest is not None
+            and latest["event"] in ("raised", "verified-open")
+            and latest.get("raised_at_round") == raised_at_round
+            and latest.get("severity") == severity
+        ):
+            return latest
+        # Re-raise after addressed → verified-open.
+        if latest is not None and latest["event"] == "addressed":
+            event_kind = "verified-open"
+        else:
+            event_kind = "raised"
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "event": event_kind,
+            "concern_id": concern_id,
+            "severity": severity,
+            "summary": summary.strip(),
+            "raised_by": raised_by,
+            "raised_at_round": raised_at_round,
+        }
+        if evidence:
+            payload["evidence"] = evidence
+        _append_concern_event(task_id, payload)
+        return payload
+
+
+def address_concern(
+    task_id: int,
+    concern_id: str,
+    *,
+    addressed_by: str,
+    addressed_at_round: int,
+    summary: str | None = None,
+) -> dict[str, Any]:
+    """Append an ``addressed`` event recording that the implementer (or
+    analyzer / planner, depending on the stage) believes the concern has
+    been fixed.
+
+    The next reviewer round verifies. If the concern is still visible,
+    that reviewer calls ``raise_concern`` again — which transitions the
+    record to ``verified-open`` instead of a fresh ``raised`` event.
+
+    ``concern_id`` MUST refer to a concern that has been raised at least
+    once on this task; ``ValueError`` otherwise (defends against
+    address-without-raise typos that would orphan the audit log).
+    """
+    _validate_concern_id(concern_id)
+    if not isinstance(addressed_at_round, int) or addressed_at_round < 1:
+        raise ValueError(f"addressed_at_round must be a positive int (got {addressed_at_round!r})")
+    if not isinstance(addressed_by, str) or not addressed_by.strip():
+        raise ValueError("addressed_by must be a non-empty string")
+    with _locked():
+        events = _read_concerns_raw(task_id)
+        latest = _latest_event_for(events, concern_id)
+        if latest is None:
+            raise ValueError(
+                f"concern_id {concern_id!r} has never been raised on task "
+                f"#{task_id}; refusing to record an `addressed` event for "
+                "a concern that does not exist."
+            )
+        # Carry the severity + original summary forward so list_concerns
+        # consumers don't need to walk history.
+        carried_summary = (summary or latest.get("summary") or "").strip()
+        if len(carried_summary) > 200:
+            raise ValueError(f"summary too long ({len(carried_summary)} chars; max 200).")
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "event": "addressed",
+            "concern_id": concern_id,
+            "severity": latest.get("severity"),
+            "summary": carried_summary,
+            "addressed_by": addressed_by,
+            "addressed_at_round": addressed_at_round,
+        }
+        _append_concern_event(task_id, payload)
+        return payload
+
+
+def defer_concern(
+    task_id: int,
+    concern_id: str,
+    *,
+    by: str,
+    rationale: str,
+) -> dict[str, Any]:
+    """Append a ``deferred`` event. USER-ONLY at TWO layers.
+
+    Layer 1 (CLI): rejects without ``--by user`` (plus a special-case
+    for ``--by reconciler`` when the reconciler downgrades severity, per
+    the design spec). Layer 2 (this function): also rejects ``by`` !=
+    ``user`` / ``reconciler`` — defense in depth.
+
+    BLOCKER concerns CANNOT be user-deferred — they signal a strict gate
+    the orchestrator must address or pivot. ``ValueError`` on attempt.
+
+    Rationale must be ≥ 40 chars AND not match a known boilerplate
+    phrase (see ``_CONCERN_RATIONALE_BOILERPLATE``).
+    """
+    _validate_concern_id(concern_id)
+    if by not in ("user", "reconciler"):
+        raise ValueError(
+            "defer_concern is user-only — by must be 'user' (or 'reconciler' "
+            f"for ensemble-tie-break severity downgrade); got {by!r}."
+        )
+    _validate_deferral_rationale(rationale)
+    with _locked():
+        events = _read_concerns_raw(task_id)
+        latest = _latest_event_for(events, concern_id)
+        if latest is None:
+            raise ValueError(
+                f"concern_id {concern_id!r} has never been raised on task "
+                f"#{task_id}; refusing to defer a concern that does not exist."
+            )
+        if latest.get("severity") == "BLOCKER":
+            raise ValueError(
+                f"concern_id {concern_id!r} is severity=BLOCKER — BLOCKERs "
+                "cannot be user-deferred. Address it, pivot the strategy, "
+                "or post epm:failure v1 and set status:blocked."
+            )
+        carried_summary = (latest.get("summary") or "").strip()
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "event": "deferred",
+            "concern_id": concern_id,
+            "severity": latest.get("severity"),
+            "summary": carried_summary,
+            "deferred_by": by,
+            "deferral_rationale": rationale.strip(),
+        }
+        _append_concern_event(task_id, payload)
+        return payload
+
+
 # ─── Module entry point for CLI ────────────────────────────────────────────
 
 
@@ -1434,6 +1819,8 @@ def __dir__() -> list[str]:
 # ``__getattr__``.
 __all__ = [
     "COMMENT_KINDS",
+    "CONCERN_EVENTS",
+    "CONCERN_SEVERITIES",
     "GOAL_H2_NAME",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
@@ -1443,9 +1830,11 @@ __all__ = [
     "TERMINAL_STATUSES",
     "NewTaskRequest",
     "add_tag",
+    "address_concern",
     "append_comment",
     "audit",
     "create_task",
+    "defer_concern",
     "find_task_path",
     "get_goal",
     "get_relates_to",
@@ -1455,10 +1844,12 @@ __all__ = [
     "latest_event",
     "list_by_status",
     "list_comments",
+    "list_concerns",
     "list_events",
     "new_plan_version",
     "post_event",
     "promote",
+    "raise_concern",
     "registry_path",
     "remove_tag",
     "repo_root",

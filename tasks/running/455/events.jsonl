@@ -1,7 +1,0 @@
-{"ts": "2026-05-31T22:57:48Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
-{"ts": "2026-05-31T23:58:41Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities: reconciliation approach decided by user = COMPOSE binding-concerns onto current main (keep mechanical-strip + auto-advance; add binding-concerns for substantive concerns; renumber gates)."}
-{"ts": "2026-05-31T23:58:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier all-clear; compose approach."}
-{"ts": "2026-05-31T23:58:42Z", "kind": "epm:plan", "version": 1, "by": "unknown", "note": "Plan v1 = compose reconciliation (user-approved). Engine as-is; contract composed; gates renumbered off main's current IDs; Lens-14 re-ported onto #454's new verifier. No GPU."}
-{"ts": "2026-05-31T23:58:42Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready."}
-{"ts": "2026-05-31T23:58:43Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved (compose, 'do 455 right now')."}
-{"ts": "2026-05-31T23:59:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Worktree issue-455 created off main (incl. #454); dispatching implementer."}

@@ -34,7 +34,13 @@ import { REPO_ROOT } from "./repo";
 export const DOCS_DIR = path.join(REPO_ROOT, "docs");
 
 // Files never surfaced (templates / scratch). `hidden: true` frontmatter also hides.
-const DENYLIST = new Set(["SUMMARY.template.md"]);
+// `.template.md` filenames are already excluded structurally by the
+// `name.endsWith(".template.md")` checks in `listTopLevelDocs` /
+// `listVirtualStore` — the explicit deny list is reserved for non-template
+// filenames we still want to hide. SUMMARY.template.md previously sat here
+// as a redundant guard; it was dropped when the auto-generated SUMMARY
+// surface was retired (the file is being deleted by Phase 4).
+const DENYLIST: Set<string> = new Set();
 
 // Slug = bare filename without `.md` (top-level docs) OR a `<prefix>__<stem>`
 // virtual slug (sibling stores). Must start alphanumeric (rejects ".", "..",

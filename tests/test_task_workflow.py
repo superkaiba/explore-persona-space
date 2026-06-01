@@ -1279,3 +1279,446 @@ def test_registry_denormalizes_goal(fake_repo):
     )
     reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
     assert reg["tasks"][str(new_id)]["goal"] == "Registry-visible goal"
+
+
+# ─── Binding concerns (concerns.jsonl) ────────────────────────────────────
+
+
+_GOOD_RATIONALE = (
+    "The probe-position confound only affects the secondary stratification; "
+    "the primary contrast survives. Documenting in Methodology corrections."
+)
+
+
+@pytest.fixture
+def concerns_task(fake_repo):
+    """Create a clean task and yield (repo, tw, task_id) for concerns tests."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Concerns under test"))
+    return repo, tw, new_id
+
+
+def test_raise_concern_appends_to_concerns_jsonl(concerns_task):
+    """First raise writes one row to concerns.jsonl with the expected fields,
+    and mirrors a `epm:concern-raised` event to events.jsonl."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "probe-position-undefined",
+        severity="CONCERN",
+        summary="Probe position is undefined for the trigger-conditional contrast.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+        evidence="src/foo.py:42",
+    )
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    assert concerns_path.exists()
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["event"] == "raised"
+    assert row["concern_id"] == "probe-position-undefined"
+    assert row["severity"] == "CONCERN"
+    assert row["raised_by"] == "code-reviewer"
+    assert row["raised_at_round"] == 1
+    assert row["evidence"] == "src/foo.py:42"
+    # Mirror event posted.
+    kinds = [e["kind"] for e in tw.list_events(tid)]
+    assert "epm:concern-raised" in kinds
+
+
+def test_raise_concern_rejects_bad_concern_id(concerns_task):
+    """Concern IDs must be lowercase kebab-case, 2-80 chars, alphanum-start."""
+    _, tw, tid = concerns_task
+    for bad in ("UpperCase", "with_underscore", "with space", "x", "-leading-dash", ""):
+        with pytest.raises(ValueError, match="concern_id"):
+            tw.raise_concern(
+                tid,
+                bad,
+                severity="CONCERN",
+                summary="bad id",
+                raised_by="critic",
+                raised_at_round=1,
+            )
+    # Borderline 80-char alphanumeric+hyphen passes.
+    eighty = "a" + "-".join(["b"] * 39)  # length 79
+    assert len(eighty) <= 80
+    tw.raise_concern(
+        tid,
+        eighty,
+        severity="NIT",
+        summary="borderline length",
+        raised_by="critic",
+        raised_at_round=1,
+    )
+
+
+def test_raise_concern_idempotent_same_round_same_severity(concerns_task):
+    """Re-raising at the SAME round with the SAME severity is a no-op."""
+    _, tw, tid = concerns_task
+    first = tw.raise_concern(
+        tid,
+        "n2-seeds-uninterpretable",
+        severity="CONCERN",
+        summary="N=2 seeds gives essentially no statistical power.",
+        raised_by="critic",
+        raised_at_round=1,
+    )
+    second = tw.raise_concern(
+        tid,
+        "n2-seeds-uninterpretable",
+        severity="CONCERN",
+        summary="N=2 seeds gives essentially no statistical power.",
+        raised_by="critic",
+        raised_at_round=1,
+    )
+    # Second call returns the existing event payload (timestamps match).
+    assert first["ts"] == second["ts"]
+    # Only one row written to concerns.jsonl + one mirror event.
+    concerns_path = tw.find_task_path(tid) / "concerns.jsonl"
+    rows = [json.loads(line) for line in concerns_path.read_text().splitlines() if line.strip()]
+    assert len(rows) == 1
+    mirror_count = sum(1 for e in tw.list_events(tid) if e["kind"] == "epm:concern-raised")
+    assert mirror_count == 1
+
+
+def test_address_then_reraise_records_verified_open(concerns_task):
+    """Re-raising AFTER an `addressed` event becomes a `verified-open` event,
+    not a fresh `raised` event. This is the key cross-round visibility
+    mechanism that makes concerns binding across stages."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "missing-mlm-control",
+        severity="CONCERN",
+        summary="No MLM baseline control.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    tw.address_concern(
+        tid,
+        "missing-mlm-control",
+        addressed_by="implementer",
+        addressed_at_round=1,
+    )
+    tw.raise_concern(
+        tid,
+        "missing-mlm-control",
+        severity="CONCERN",
+        summary="Still no MLM control after claimed fix.",
+        raised_by="code-reviewer",
+        raised_at_round=2,
+    )
+    events = tw.list_concerns(tid)
+    assert [e["event"] for e in events] == ["raised", "addressed", "verified-open"]
+    assert events[-1]["raised_at_round"] == 2
+
+
+def test_list_concerns_open_only_filters_addressed_and_deferred(concerns_task):
+    """`open_only=True` returns only concerns whose LATEST event is `raised`
+    or `verified-open`. Addressed and deferred concerns drop out."""
+    _, tw, tid = concerns_task
+    # A: raised, then addressed — should NOT be open.
+    tw.raise_concern(
+        tid, "a-fixed", severity="CONCERN", summary="A", raised_by="r", raised_at_round=1
+    )
+    tw.address_concern(tid, "a-fixed", addressed_by="i", addressed_at_round=1)
+    # B: raised, then deferred — should NOT be open.
+    tw.raise_concern(
+        tid, "b-deferred", severity="CONCERN", summary="B", raised_by="r", raised_at_round=1
+    )
+    tw.defer_concern(tid, "b-deferred", by="user", rationale=_GOOD_RATIONALE)
+    # C: raised, addressed, re-raised (verified-open) — SHOULD be open.
+    tw.raise_concern(
+        tid, "c-reraised", severity="CONCERN", summary="C", raised_by="r", raised_at_round=1
+    )
+    tw.address_concern(tid, "c-reraised", addressed_by="i", addressed_at_round=1)
+    tw.raise_concern(
+        tid,
+        "c-reraised",
+        severity="CONCERN",
+        summary="C still open",
+        raised_by="r",
+        raised_at_round=2,
+    )
+    # D: raised, never touched — SHOULD be open.
+    tw.raise_concern(tid, "d-raw", severity="NIT", summary="D", raised_by="r", raised_at_round=1)
+    open_rows = tw.list_concerns(tid, open_only=True)
+    open_ids = {r["concern_id"] for r in open_rows}
+    assert open_ids == {"c-reraised", "d-raw"}
+
+
+def test_defer_concern_requires_by_user(concerns_task):
+    """Library function rejects --by other than user/reconciler (defense
+    in depth — CLI also rejects)."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid, "c1-rejected", severity="CONCERN", summary="first", raised_by="r1", raised_at_round=1
+    )
+    with pytest.raises(ValueError, match="user-only"):
+        tw.defer_concern(tid, "c1-rejected", by="implementer", rationale=_GOOD_RATIONALE)
+    with pytest.raises(ValueError, match="user-only"):
+        tw.defer_concern(tid, "c1-rejected", by="critic", rationale=_GOOD_RATIONALE)
+    # 'user' and 'reconciler' both succeed.
+    tw.defer_concern(tid, "c1-rejected", by="user", rationale=_GOOD_RATIONALE)
+    tw.raise_concern(
+        tid,
+        "c2-reconciler",
+        severity="CONCERN",
+        summary="second",
+        raised_by="r1",
+        raised_at_round=1,
+    )
+    tw.defer_concern(tid, "c2-reconciler", by="reconciler", rationale=_GOOD_RATIONALE)
+
+
+def test_defer_concern_rejects_blocker(concerns_task):
+    """BLOCKER concerns cannot be user-deferred — strict gate."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "critical-bug",
+        severity="BLOCKER",
+        summary="This will corrupt data.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    with pytest.raises(ValueError, match="BLOCKER"):
+        tw.defer_concern(tid, "critical-bug", by="user", rationale=_GOOD_RATIONALE)
+
+
+def test_defer_concern_rejects_short_rationale(concerns_task):
+    """Rationale floor is 40 chars after strip."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid, "rationale-test", severity="CONCERN", summary="r", raised_by="r1", raised_at_round=1
+    )
+    with pytest.raises(ValueError, match="≥"):
+        tw.defer_concern(tid, "rationale-test", by="user", rationale="too short")
+    with pytest.raises(ValueError, match="≥"):
+        tw.defer_concern(tid, "rationale-test", by="user", rationale="a" * 39)
+    # Exactly 40 succeeds (non-boilerplate).
+    tw.defer_concern(tid, "rationale-test", by="user", rationale="X" * 40)
+
+
+def test_defer_concern_rejects_boilerplate_rationale(concerns_task):
+    """Boilerplate phrases like 'user accepted', 'lgtm', 'wontfix' are
+    rejected by the normalization-based validator (casefold + whitespace
+    collapse).
+
+    All known boilerplate phrases are short (<40 chars), so under the
+    full ``defer_concern`` chain the length floor fires first. We validate
+    the boilerplate path directly via the underlying validator helper so
+    the blocklist's mechanical coverage is exercised regardless of
+    length-rule ordering.
+    """
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid, "boilerplate-test", severity="CONCERN", summary="b", raised_by="r1", raised_at_round=1
+    )
+    # Whatever phrase fails length first via defer_concern.
+    with pytest.raises(ValueError, match="≥"):
+        tw.defer_concern(tid, "boilerplate-test", by="user", rationale="user accepted")
+    # Direct validator call exercises the blocklist branch.
+    boilerplate_phrases = [
+        "user accepted",
+        "User Accepted",  # casefold-equivalent
+        "ok",
+        "LGTM",
+        "wontfix",
+        "Won't Fix",  # whitespace + case normalization
+        "  user   said   ok  ",  # internal-whitespace collapse
+    ]
+    for phrase in boilerplate_phrases:
+        # Pad each phrase with leading/trailing whitespace ≥40 chars to
+        # try to bypass the length floor; the validator should still
+        # reject because the NORMALIZED form matches the blocklist.
+        # Note: collapsing whitespace inside ALSO collapses; the only
+        # way a long-padded phrase survives the length check is if the
+        # padding is leading/trailing — and `strip()` then takes us back
+        # to a short phrase. So we test the blocklist via the validator
+        # directly (it's called pre-length elsewhere in the code path
+        # via raise/address; defer's chain runs length first).
+        with pytest.raises(ValueError):
+            tw._validate_deferral_rationale(phrase)
+    # Sanity: a non-boilerplate phrase passes the validator (still subject
+    # to the length floor, which we test below).
+    tw._validate_deferral_rationale(_GOOD_RATIONALE)
+
+
+def test_address_unknown_concern_raises(concerns_task):
+    """`address_concern` refuses to address a concern that was never raised
+    — prevents orphaned audit-log entries."""
+    _, tw, tid = concerns_task
+    with pytest.raises(ValueError, match="never been raised"):
+        tw.address_concern(tid, "phantom", addressed_by="implementer", addressed_at_round=1)
+
+
+def test_defer_unknown_concern_raises(concerns_task):
+    """`defer_concern` refuses to defer a concern that was never raised."""
+    _, tw, tid = concerns_task
+    with pytest.raises(ValueError, match="never been raised"):
+        tw.defer_concern(tid, "phantom", by="user", rationale=_GOOD_RATIONALE)
+
+
+def test_concerns_follow_task_on_status_move(concerns_task):
+    """`concerns.jsonl` lives inside `tasks/<status>/<N>/`, so `set_status`'s
+    `git mv` of the task folder carries it along automatically.
+
+    This is the key persistence property — concerns raised by the
+    code-reviewer at status:code_reviewing survive into status:running,
+    status:interpreting, status:reviewing, and status:awaiting_promotion
+    without any explicit migration step.
+    """
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "trigger-conditional-contrast-missing",
+        severity="CONCERN",
+        summary="Plan v1.2 named this as Scenario B verdict criterion.",
+        raised_by="code-reviewer",
+        raised_at_round=1,
+    )
+    src_dir = tw.find_task_path(tid)
+    src_concerns = src_dir / "concerns.jsonl"
+    src_rows = src_concerns.read_text()
+    # Move through several statuses; concerns.jsonl must come along each time.
+    for status in ("planning", "approved", "running", "interpreting", "awaiting_promotion"):
+        tw.set_status(tid, status)
+        cur_dir = tw.find_task_path(tid)
+        cur_concerns = cur_dir / "concerns.jsonl"
+        assert cur_concerns.exists(), f"concerns.jsonl missing after move to {status}"
+        assert cur_concerns.read_text() == src_rows, (
+            f"concerns.jsonl content drifted after move to {status}"
+        )
+
+
+def test_raise_concern_holds_flock_and_commits(concerns_task):
+    """Every raise/address/defer creates exactly ONE git commit (matches the
+    existing `_git_commit` per-mutation contract). Concerns + mirror event
+    land in the SAME commit so an `events.jsonl` reader and a
+    `concerns.jsonl` reader never see a half-applied update."""
+    repo, tw, tid = concerns_task
+    before = _git_log_count(repo)
+    tw.raise_concern(
+        tid, "flock-test", severity="CONCERN", summary="ft", raised_by="r1", raised_at_round=1
+    )
+    after_raise = _git_log_count(repo)
+    assert after_raise == before + 1
+    tw.address_concern(tid, "flock-test", addressed_by="impl", addressed_at_round=1)
+    after_address = _git_log_count(repo)
+    assert after_address == after_raise + 1
+    # Commit must include BOTH files.
+    out = subprocess.run(
+        ["git", "show", "--name-only", "--pretty=", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    # The task is at proposed/ — verify both files in commit.
+    assert "concerns.jsonl" in out
+    assert "events.jsonl" in out
+
+
+def test_raise_concern_ordering_preserved(concerns_task):
+    """concerns.jsonl preserves write order — append-only, no reordering."""
+    _, tw, tid = concerns_task
+    ids = ["alpha-id", "beta-id", "gamma-id", "delta-id"]
+    for i, cid in enumerate(ids, start=1):
+        tw.raise_concern(
+            tid,
+            cid,
+            severity="NIT",
+            summary=f"#{i}",
+            raised_by="r",
+            raised_at_round=1,
+        )
+    rows = tw.list_concerns(tid)
+    assert [r["concern_id"] for r in rows] == ids
+
+
+def test_cli_handlers_raise_address_defer_list_roundtrip(concerns_task, capsys):
+    """End-to-end roundtrip for the CLI handler functions wired in
+    ``scripts/task.py``.
+
+    The CLI is exercised at the handler-function layer (not via
+    ``subprocess.run``) because ``task_workflow.repo_root()`` branch-guards
+    to ``main`` and resolves via ``git rev-parse`` from the module path.
+    A subprocess would bypass the test's ``fake_repo`` monkeypatch and
+    target the real repo (when on ``main``) or auto-route to a managed
+    main-pinned worktree (when on a feature branch), so the CLI write
+    would land in a directory that does not contain the fixture's task.
+    The library-level path here uses the same handler functions called
+    by ``main()`` and gives equivalent coverage of argument plumbing,
+    JSON output formatting, and exit-code behaviour — without the
+    cross-process resolver mismatch documented in the
+    ``feedback_branch_guard_blocks_subprocess`` workflow-improver note.
+    """
+    import argparse
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import task as task_cli  # type: ignore[import-not-found]
+
+    _repo, _tw, tid = concerns_task
+
+    def _ns(**kwargs):
+        return argparse.Namespace(**kwargs)
+
+    # raise via CLI handler
+    task_cli.cmd_raise_concern(
+        _ns(
+            number=tid,
+            concern_id="cli-test-concern",
+            severity="CONCERN",
+            summary="A concern raised via the CLI for end-to-end coverage.",
+            by="code-reviewer",
+            round=1,
+            evidence=None,
+        )
+    )
+    capsys.readouterr()  # drain the raise payload
+
+    # list-concerns --open-only --json shows the raised event
+    task_cli.cmd_list_concerns(_ns(number=tid, open_only=True, json=True))
+    rows = json.loads(capsys.readouterr().out)
+    assert len(rows) == 1
+    assert rows[0]["concern_id"] == "cli-test-concern"
+    assert rows[0]["event"] == "raised"
+
+    # address via CLI handler
+    task_cli.cmd_address_concern(
+        _ns(
+            number=tid,
+            concern_id="cli-test-concern",
+            by="implementer",
+            round=1,
+            summary=None,
+        )
+    )
+    capsys.readouterr()  # drain the address payload
+
+    # list-concerns --open-only --json now returns empty
+    task_cli.cmd_list_concerns(_ns(number=tid, open_only=True, json=True))
+    assert json.loads(capsys.readouterr().out) == []
+
+    # full list shows both events in order
+    task_cli.cmd_list_concerns(_ns(number=tid, open_only=False, json=True))
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["event"] for r in rows] == ["raised", "addressed"]
+
+    # defer with --by other than 'user' or 'reconciler' is rejected. The CLI
+    # layer raises SystemExit with the "user-only" message; the library
+    # layer additionally defends in depth (ValueError). Either is acceptable
+    # — both signal that automation may not defer concerns.
+    with pytest.raises((SystemExit, ValueError)) as excinfo:
+        task_cli.cmd_defer_concern(
+            _ns(
+                number=tid,
+                concern_id="cli-test-concern",
+                by="implementer",
+                rationale=_GOOD_RATIONALE,
+                round=1,
+            )
+        )
+    assert "user-only" in str(excinfo.value).lower() or "user" in str(excinfo.value).lower()

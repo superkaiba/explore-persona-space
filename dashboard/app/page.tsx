@@ -1,12 +1,17 @@
 /**
  * / — Overview (PUBLIC landing).
  *
- * Public, read-only entry point to the dashboard. Renders the two living
- * orientation docs (open questions + project summary) through the shared
- * MarkdownDoc keystone in `public` mode (sanitized, comments + Ask-Claude
- * disabled), plus a compact "Recent activity" strip linking out to the
- * canonical homes of the latest completed clean-results (/results/[id]) and
- * the most-recently-touched docs (/docs/[slug]).
+ * Public, read-only entry point to the dashboard. Renders the single living
+ * orientation doc (Overview & Open Questions — docs/open_questions.md) through
+ * the shared MarkdownDoc keystone in `public` mode (sanitized, comments +
+ * Ask-Claude disabled), plus a compact "Recent activity" strip linking out to
+ * the canonical homes of the latest completed clean-results (/results/[id])
+ * and the most-recently-touched docs (/docs/[slug]).
+ *
+ * Only one orientation doc is featured here by design: the auto-generated
+ * SUMMARY.md (claims.yaml + render_summary.py pipeline) was a second,
+ * divergent project description and has been dropped from the landing page —
+ * see OVERVIEW_DOC_SLUGS.
  *
  * The task list that used to live here now lives at /tasks (read-gated).
  *
@@ -16,12 +21,24 @@
  */
 import Link from "next/link";
 import { getDoc, listDocs } from "@/lib/docs";
-import { listPublicResults } from "@/lib/results";
+import { listPublicResults, publicResultIdSet } from "@/lib/results";
+import { linkifyEvidenceInOpenQuestions } from "@/lib/linkify-evidence";
 import { MarkdownDoc } from "@/components/MarkdownDoc";
 
 export const dynamic = "force-dynamic";
 
-const OVERVIEW_DOC_SLUGS = ["open_questions", "SUMMARY"] as const;
+const OVERVIEW_DOC_SLUGS = ["open_questions"] as const;
+
+/**
+ * Strip a single leading top-level H1 so the doc title isn't shown twice — the
+ * section header below already renders `doc.title` (derived from that H1).
+ * Mirrors `stripLeadingH1` in app/docs/[slug]/page.tsx, which strips it for the
+ * same reason; this page previously passed the raw body, double-rendering the
+ * title inside the card.
+ */
+function stripLeadingH1(body: string): string {
+  return body.replace(/^\s*#\s+.+?\r?\n/, "");
+}
 
 type ActivityItem = {
   key: string;
@@ -85,6 +102,11 @@ export default async function Overview() {
   );
   const results = recentResults(10);
   const recentDocsList = recentDocs(6);
+  // The overview renders docs/open_questions.md inline; rewrite evidence
+  // `#N` -> /results/<id> | /tasks/<id> links via the same shared helper the
+  // /questions page + /docs/open_questions use. ONE registry read per
+  // request, no matter how many `#N` appear in the doc.
+  const publicIds = publicResultIdSet();
 
   return (
     <div className="space-y-10">
@@ -114,7 +136,10 @@ export default async function Overview() {
           </div>
           <div className="rounded-lg border border-stone-200 bg-white px-4 py-4 sm:px-6 sm:py-6">
             <MarkdownDoc
-              body={doc.body}
+              body={linkifyEvidenceInOpenQuestions(
+                stripLeadingH1(doc.body),
+                publicIds,
+              )}
               public
               showToc
               enableCollapsibleSections

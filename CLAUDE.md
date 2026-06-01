@@ -12,7 +12,7 @@
 - **Every `kind: experiment` task declares a `## Goal` H2 + `goal:` frontmatter at creation** (`/issue` Step 0c gate). The Goal is the canonical target every downstream subagent reads. Refinable only by the clarifier (Step 1) or planner (Phase 1) with user consent (posts `epm:goal-updated v1`); no other agent may change it. `kind: analysis|infra|batch|survey` exempt.
 - **List assumptions before implementing.** Factual claims about APIs, layers, data formats, hardware — mark confidence, verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub first.
-- **State facts, not sources — everywhere except `docs/mentor_updates/`.** Living docs (`docs/open_questions.md`, `docs/research_ideas.md`, `SUMMARY.md`) AND task/issue bodies write the claim/idea directly — never "Dan said", "per the 2026-05-29 meeting", or any person/meeting attribution. Provenance lives only in the `#issue` evidence trailers and in `docs/mentor_updates/`. When integrating meeting feedback into issues or docs, carry the substance, drop the name. Keep the register plainly academic: no spatial/anatomical metaphors ("spine", "backbone", "hub-and-spoke", "scaffold") — name the mechanism directly.
+- **State facts, not sources — everywhere except `docs/mentor_updates/`.** Living docs (`docs/open_questions.md`, `docs/research_ideas.md`) AND task/issue bodies write the claim/idea directly — never "Dan said", "per the 2026-05-29 meeting", or any person/meeting attribution. Provenance lives only in the `#issue` evidence trailers and in `docs/mentor_updates/`. When integrating meeting feedback into issues or docs, carry the substance, drop the name. Keep the register plainly academic: no spatial/anatomical metaphors ("spine", "backbone", "hub-and-spoke", "scaffold") — name the mechanism directly.
 - **Use vLLM for generation.** Never sequential HF `model.generate()` for eval — vLLM batched `LLM.generate()` is 10-50x faster.
 - **`max_new_tokens` ≥ 2× longest trained completion** (default ≥ 2048) for marker / end-of-completion evals — truncation creates silent zeros (#260: 1050-token training + 512 cap → source-rate 0.00). Free-generation evals (alignment, capability) can stay at 512.
 - **Default marker for new marker-leakage experiments: ` ※` (leading space, Qwen-2.5-7B token id 83399).** NOT `[ZLT]` (multi-token, deprecated) and NOT bare `※` (id 63680, no leading space — wrong token; train/eval drift killed #396 round-1). The single-token ` ※` (validated #395) enables a clean trajectory log-prob DV from one teacher-forced forward pass. Thread through shell layers with `shlex.quote(MARKER_TEXT)` (bash strips the leading space). Launchers must assert `tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` before any subprocess spawns.
@@ -75,9 +75,9 @@ Subagents have ONE turn. The harness re-invokes the ORCHESTRATOR on each bg `Bas
 
 ### Codex ensemble review
 
-Four review steps (`critic`, `code-reviewer`, `interpretation-critic`, `reviewer`) run Claude + Codex twin (gpt-5.5 via `openai/codex-plugin-cc`) in parallel. PASS+PASS → advance. FAIL+FAIL overlapping → bounce. FAIL+FAIL disjoint → union blockers (one round). PASS vs FAIL → spawn `reconciler` (Claude, fresh context, binding). **Mechanical-contract-only FAILs** (every blocker tagged `marker-shape` or `smoke-run-missing`, no substantive finding) are stripped by the orchestrator when it verifies the implementer marker is present + conforming — so a reviewer cycling cosmetic objections about present evidence never bounces/pivots (SKILL.md Step 5c-bis; reviewer-side defenses in `code-reviewer.md` Steps 0.5/0.6/0.7). Round cap 3 per reviewer; reconciler invocations don't count. **NOT doubled:** `clean-result-critic`, `upload-verifier`, `consistency-checker`. /adversarial-planner Phase 2 uses in-context reconciliation; the other 3 sites use marker mode. See `workflow.yaml § ensemble_review`.
+Four review steps (`critic`, `code-reviewer`, `interpretation-critic`, `clean-result-critic`) run Claude + Codex twin (gpt-5.5 via `openai/codex-plugin-cc`) in parallel. Ensembling is **all rounds** for `code-reviewer` and `critic`, but **round 1 only** for `interpretation-critic` and `clean-result-critic` (rounds 2-3 Claude-only). PASS+PASS → advance. FAIL+FAIL overlapping → bounce. FAIL+FAIL disjoint → union blockers (one round). PASS vs FAIL → spawn `reconciler` (Claude, fresh context, binding). **Mechanical-contract-only FAILs** (every blocker tagged `marker-shape` or `smoke-run-missing`, no substantive finding) are stripped by the orchestrator when it verifies the implementer marker is present + conforming — so a reviewer cycling cosmetic objections about present evidence never bounces/pivots (SKILL.md Step 5c-bis; reviewer-side defenses in `code-reviewer.md` Steps 0.5/0.6/0.7). Round cap 3 per reviewer; reconciler invocations don't count. **NOT doubled:** `upload-verifier`, `consistency-checker`. /adversarial-planner Phase 2 (`critic`) uses in-context reconciliation; the other 3 sites use marker mode. The retired `reviewer` step (deprecated 2026-05-13) folded its statistical-framing check into `clean-result-critic`. See `workflow.yaml § ensemble_review`.
 
-Codex dispatch (`scripts/codex_task.py`) is used ONLY for the 5 twin reviewer roles. Twin wrappers are prompt-composers only; the **orchestrator** dispatches the helper as bg Bash (the only pattern that delivers a real notification when Codex terminates):
+Codex dispatch (`scripts/codex_task.py`) is used ONLY for the 4 twin reviewer roles. Twin wrappers are prompt-composers only; the **orchestrator** dispatches the helper as bg Bash (the only pattern that delivers a real notification when Codex terminates):
 
 ```bash
 Bash(run_in_background=true,
@@ -297,7 +297,13 @@ python scripts/run_sweep.py --parallel 4
 python scripts/generate_wrong_answers.py
 python scripts/analyze_results.py
 ruff check . && ruff format .
+
+uv run pytest                                                  # full suite (testpaths=tests/)
+uv run pytest tests/test_verify_task_body.py                   # one file
+uv run pytest tests/test_verify_task_body.py::test_name -x     # one test, stop on first failure
 ```
+
+Most of `tests/` pins **workflow invariants** (`test_no_pod_side_task_py_shellout.py`, `test_no_direct_task_path_construction.py`, `test_no_dollar_budget_caps.py`, `test_verify_task_body.py`, `test_clean_result_critic_*.py`). Run the relevant ones after any edit to the workflow surface (`scripts/task.py`, `verify_task_body.py`, `.claude/**`, this file).
 
 ## Architecture Notes
 
