@@ -1404,38 +1404,56 @@ def _vllm_answer_slot_entropy(
     triple:
 
       1. Build a chat-formatted prompt as ``[system=assistant_prompt,
-         user=probe_question, assistant_prefill=carrier_truncated_at_{VALUE}]``.
-         The next generated token IS the first value-slot token at position 1
-         of the model's NEW assistant generation (downstream of the prefill).
-         This is the load-bearing fix from MUST-FIX 2 round-1: WITHOUT the
-         prefill, an Instruct model's position-1 logprobs are sentence-starter
-         posteriors ("The"/"It"/"I"), not value-slot prior — exactly the same
-         "measuring the wrong quantity" failure mode that killed v2.
+         user=probe_question, assistant_prefill=carrier_truncated_at_{VALUE}]``
+         **with the canonical_value teacher-forced as the prefill's tail**
+         so the full text spans ``... prefill + canonical_value``.
+         The first value-slot position is at ``prefill_token_count`` of the
+         tokenised full text; positions ``prefill_token_count ..
+         prefill_token_count + len(value_ids) - 1`` cover the full canonical
+         span. This is the load-bearing fix from MUST-FIX 2 round-1: WITHOUT
+         the prefill an Instruct model's position-1 logprobs are
+         sentence-starter posteriors ("The"/"It"/"I"), not value-slot prior.
 
-      2. Run vLLM with ``logprobs=top_k`` and read the per-position logprob
-         distribution at position 0 of the GENERATED tokens (= position 1 of
-         the model's new assistant output, downstream of the prefilled
-         carrier prefix). Compute:
+      2. Run vLLM with ``prompt_logprobs=top_k`` over the full text and read:
+           - position 0 of the value span → top-k distribution → Shannon /
+             Renyi-2 / max_p / canonical_first_token_lp / top-5 surface.
+           - positions 0..N-1 of the value span (N = len(value_ids)) →
+             teacher-forced canonical-token logprobs summed, then
+             length-conditionally normalised per plan §4.2.5:
+               * N == 1 → ``canonical_answer_logprob`` = position-0 lp
+                 (length-normalised = same value); signal VALID.
+               * N == 2 → ``canonical_answer_logprob`` = sum / 2 (per-token
+                 nats, length-normalised); signal VALID. Same threshold scale
+                 applies because the dual-fixture calibration measures
+                 per-token nats (the fixtures already include multi-BPE values).
+               * N >= 3 → ``canonical_answer_logprob`` = NaN +
+                 ``canonical_logprob_signal_dropped`` = True. K1 PASS falls
+                 back to the 2-signal Shannon + max_p conjunction (the gate at
+                 the call site treats NaN canonical as "well below threshold"
+                 which is correct here: signal is unavailable, not failing).
 
+         Compute:
            - ``shannon_entropy``: -Σ p_i log p_i over the top-k distribution
-             (nats).
+             at position-0 of the value slot (nats).
            - ``renyi_2_entropy``: -log Σ p_i² (collision entropy; textbook
              definition, more robust to long-tail mass).
            - ``max_p``: maximum probability mass on any single value-slot token.
-           - ``canonical_answer_logprob``: log-prob of the canonical value's
-             first BPE token if it appears in the top-k (else ``NaN`` —
-             fail-loud / "this candidate's canonical answer is well below the
-             threshold").
+           - ``canonical_answer_logprob``: length-conditionally normalised per
+             above; NaN when signal dropped (3+ BPE) OR canonical token is
+             outside the returned dict at any position in the span.
+           - ``canonical_bpe_length``: N = len(value_ids); surfaced so the
+             K1 gate at the call site can audit the disposition.
+           - ``canonical_logprob_signal_dropped``: True for N >= 3.
            - ``top_5_tokens_with_logprob``: the model's top-5 value-slot
-             guesses, surfaced to the user-facing candidate table.
+             guesses at position-0, surfaced to the user-facing candidate table.
 
       3. SENTENCE-STARTER SANITY CHECK: if the combined mass on the canonical
-         sentence-starter set (``SENTENCE_STARTER_TOKENS``) at the measured
-         position > ``SENTENCE_STARTER_MASS_THRESHOLD`` (0.30 per fixture)
-         OR the top-1 token is a sentence-starter, the prefill is broken —
-         the returned dict has ``prefill_failed=True`` and the entropy stats
-         are computed nonetheless so the calling calibrator can surface
-         the offending top-k list. Phase-0 then HALTs.
+         sentence-starter set (``SENTENCE_STARTER_TOKENS``) at position-0
+         of the value slot > ``SENTENCE_STARTER_MASS_THRESHOLD`` (0.30 per
+         fixture) OR the top-1 token is a sentence-starter, the prefill is
+         broken — the returned dict has ``prefill_failed=True`` and the
+         entropy stats are computed nonetheless so the calling calibrator
+         can surface the offending top-k list. Phase-0 then HALTs.
 
     Args:
         base_model: HF model id (will be loaded with the standard vLLM kwargs
@@ -1447,7 +1465,8 @@ def _vllm_answer_slot_entropy(
     Returns:
         One dict per triple in input order with the entropy stats above
         plus ``top_5_tokens_with_logprob``, ``prefill_failed``, and
-        ``boundary_clean`` (the BPE-merge check for this carrier).
+        ``boundary_clean`` (the BPE-merge check for this carrier),
+        ``canonical_bpe_length`` and ``canonical_logprob_signal_dropped``.
     """
     import math as _math
 
@@ -1467,10 +1486,16 @@ def _vllm_answer_slot_entropy(
         enforce_eager=True,
     )
 
-    # Build per-triple chat prompts with the assistant prefill. We use the
-    # chat template's `continue_final_message` path so vLLM doesn't re-inject
-    # an assistant-turn-start prefix after the prefilled text. The prefill is
-    # the carrier truncated at `{VALUE}` (canonical value substituted nowhere).
+    # Build per-triple chat prompts with the assistant prefill AND the
+    # canonical value teacher-forced as the prefill tail. We use the chat
+    # template's `continue_final_message` path so vLLM doesn't re-inject an
+    # assistant-turn-start prefix after the prefilled text. The prefill is
+    # the carrier truncated at `{VALUE}` + the canonical value; the full
+    # prompt then ends at the last canonical-value token, and
+    # `prompt_logprobs=top_k` returns the per-position distribution over the
+    # value span (load-bearing for the §4.2.5 length-conditional canonical-
+    # logprob signal: 1-BPE → position-0; 2-BPE → length-normalised sum
+    # over 2; ≥3-BPE → signal dropped).
     chat_prompts: list[str] = []
     boundaries: list[dict[str, Any]] = []
     for question, canonical_value, carrier in triples:
@@ -1479,39 +1504,53 @@ def _vllm_answer_slot_entropy(
         value_ids = tokenizer.encode(canonical_value, add_special_tokens=False)
         prefix_ids = tokenizer.encode(prefix, add_special_tokens=False)
         full_ids = tokenizer.encode(prefix + canonical_value, add_special_tokens=False)
+        # Stronger suffix check than the round-1 first-token-only assertion:
+        # the full tokenisation of (prefix + canonical_value) MUST suffix-match
+        # the standalone canonical_value tokenisation. This guards the
+        # length-conditional canonical-logprob read at positions
+        # len(prefix_ids) .. len(prefix_ids)+len(value_ids)-1 against BPE
+        # merge boundaries that would shift the value-slot start.
         boundary_clean = (
             len(value_ids) >= 1
             and full_ids[: len(prefix_ids)] == prefix_ids
-            and full_ids[-1] == value_ids[0]
+            and full_ids[-len(value_ids) :] == value_ids
         )
         messages = [
             {"role": "system", "content": ASSISTANT_PROMPT},
             {"role": "user", "content": question},
-            {"role": "assistant", "content": prefix},
+            # Teacher-force the canonical value: bake it as the prefill tail
+            # so prompt_logprobs scores it length-conditionally.
+            {"role": "assistant", "content": prefix + canonical_value},
         ]
         # `continue_final_message=True` + `add_generation_prompt=False` keeps
-        # the prefill as the literal last bytes of the prompt (no extra
-        # <|im_start|>assistant\n re-injection); the model's next emitted
-        # token IS the value-slot token at position 1 of the generation.
+        # the prefill+value as the literal last bytes of the prompt (no extra
+        # <|im_start|>assistant\n re-injection). The value span lives at
+        # positions [len(prefix_chat_ids) .. len(prefix_chat_ids)+N-1] of
+        # the full chat-formatted tokenisation, located by char-offset
+        # mapping below.
         chat_prompt = tokenizer.apply_chat_template(
             messages,
             tokenize=False,
             add_generation_prompt=False,
             continue_final_message=True,
         )
-        chat_prompts.append(chat_prompt)
         boundaries.append(
             {
                 "boundary_clean": boundary_clean,
                 "value_first_token_id": value_ids[0] if value_ids else None,
                 "value_token_ids": value_ids,
+                "canonical_bpe_length": len(value_ids),
             }
         )
+        chat_prompts.append(chat_prompt)
 
+    # Use prompt_logprobs over the full text (prefill + canonical_value).
+    # Generate 1 dummy token so vLLM is happy but we never read the
+    # generation; all signal comes from `prompt_logprobs`.
     params = SamplingParams(
         temperature=0.0,
         max_tokens=ENTROPY_N_ANSWER_TOKENS,
-        logprobs=top_k,
+        prompt_logprobs=top_k,
     )
     outputs = llm.generate(chat_prompts, params)
 
@@ -1524,10 +1563,18 @@ def _vllm_answer_slot_entropy(
                 sentence_starter_ids.add(ids[0])
 
     results: list[dict[str, Any]] = []
-    for (question, canonical_value, carrier), out, boundary in zip(
-        triples, outputs, boundaries, strict=True
+    for (question, canonical_value, carrier), chat_prompt, out, boundary in zip(
+        triples, chat_prompts, outputs, boundaries, strict=True
     ):
-        if not out.outputs:
+        canonical_bpe_length: int = boundary["canonical_bpe_length"]
+        canonical_logprob_signal_dropped: bool = canonical_bpe_length >= 3
+        # Locate the value-span position range in the chat-formatted prompt
+        # tokenisation via char-offset mapping (mirror the
+        # `_vllm_teacher_forced_logprob` pattern; robust to BPE-merge
+        # boundaries that shift the value-slot start by ±1 vs the standalone
+        # `len(prefix_ids)` count).
+        value_char_start = chat_prompt.rfind(canonical_value)
+        if value_char_start < 0:
             results.append(
                 {
                     "question": question,
@@ -1537,18 +1584,32 @@ def _vllm_answer_slot_entropy(
                     "renyi_2_entropy": float("nan"),
                     "max_p": float("nan"),
                     "canonical_answer_logprob": float("nan"),
+                    "canonical_bpe_length": canonical_bpe_length,
+                    "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
                     "top_5_tokens_with_logprob": [],
                     "prefill_failed": True,
                     "boundary_clean": boundary["boundary_clean"],
-                    "_error": "vllm returned no outputs",
+                    "_error": "could not locate canonical value in chat prompt",
                 }
             )
             continue
+        full_enc = tokenizer(chat_prompt, add_special_tokens=False, return_offsets_mapping=True)
+        full_ids: list[int] = full_enc["input_ids"]
+        offsets: list[tuple[int, int]] = full_enc["offset_mapping"]
+        value_start_tok_idx: int | None = None
+        for tok_idx, (_cs, ce) in enumerate(offsets):
+            # First token whose char span ENDS strictly after the value-span
+            # boundary in the chat prompt — same rule as the teacher-forced
+            # helper. Handles BPE merges into the trailing prefill space.
+            if ce > value_char_start:
+                value_start_tok_idx = tok_idx
+                break
+        value_end_tok_idx = (
+            value_start_tok_idx + canonical_bpe_length if value_start_tok_idx is not None else None
+        )
 
-        first = out.outputs[0]
-        # vLLM SequenceOutput: `logprobs` is a list (one per generated token);
-        # each entry is a dict {token_id: Logprob(logprob=..., rank=..., decoded_token=...)}.
-        if not first.logprobs or first.logprobs[0] is None:
+        plogs = getattr(out, "prompt_logprobs", None) or []
+        if value_start_tok_idx is None or not plogs or value_start_tok_idx >= len(plogs):
             results.append(
                 {
                     "question": question,
@@ -1558,20 +1619,43 @@ def _vllm_answer_slot_entropy(
                     "renyi_2_entropy": float("nan"),
                     "max_p": float("nan"),
                     "canonical_answer_logprob": float("nan"),
+                    "canonical_bpe_length": canonical_bpe_length,
+                    "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
                     "top_5_tokens_with_logprob": [],
                     "prefill_failed": True,
                     "boundary_clean": boundary["boundary_clean"],
-                    "_error": "vllm returned no logprobs at position 0",
+                    "_error": (
+                        f"value-slot position not in prompt_logprobs range "
+                        f"(value_start={value_start_tok_idx}, plogs_len={len(plogs)})"
+                    ),
                 }
             )
             continue
 
-        pos0 = first.logprobs[0]
-        # Build a list of (tok_id, logprob, decoded_text). Across vLLM
-        # versions, the Logprob object exposes `.logprob` and sometimes
-        # `.decoded_token`; fall back to tokenizer.decode if needed.
+        pos0_dict = plogs[value_start_tok_idx]
+        if pos0_dict is None or not isinstance(pos0_dict, dict):
+            results.append(
+                {
+                    "question": question,
+                    "canonical_value": canonical_value,
+                    "carrier": carrier,
+                    "shannon_entropy": float("nan"),
+                    "renyi_2_entropy": float("nan"),
+                    "max_p": float("nan"),
+                    "canonical_answer_logprob": float("nan"),
+                    "canonical_bpe_length": canonical_bpe_length,
+                    "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
+                    "top_5_tokens_with_logprob": [],
+                    "prefill_failed": True,
+                    "boundary_clean": boundary["boundary_clean"],
+                    "_error": "vllm returned no prompt_logprobs at value-slot position",
+                }
+            )
+            continue
+
+        # Build top-k entries at position-0 of the value span.
         entries: list[tuple[int, float, str]] = []
-        for tok_id, lp in pos0.items():
+        for tok_id, lp in pos0_dict.items():
             lp_val = float(getattr(lp, "logprob", lp))
             decoded = getattr(lp, "decoded_token", None)
             if decoded is None:
@@ -1585,7 +1669,6 @@ def _vllm_answer_slot_entropy(
         entries.sort(key=lambda x: -x[1])
 
         # Compute Shannon + Renyi-2 + max_p over the top-k mass.
-        # P_i = exp(lp_i); top_k is bounded by top_k; we use whatever vLLM returned.
         probs = [_math.exp(lp) for _tid, lp, _dec in entries]
         if probs:
             shannon = float(-sum(p * _math.log(max(p, 1e-30)) for p in probs))
@@ -1597,16 +1680,47 @@ def _vllm_answer_slot_entropy(
             renyi_2 = float("nan")
             max_p = float("nan")
 
-        # Canonical answer logprob: read from the entries by token-id; NaN
-        # if not present in top-k (canonical is sub-threshold by construction).
-        canonical_first_tok_id = boundary["value_first_token_id"]
-        canonical_lp = float("nan")
-        for tid, lp_val, _dec in entries:
-            if canonical_first_tok_id is not None and tid == canonical_first_tok_id:
-                canonical_lp = float(lp_val)
-                break
+        # Length-conditional canonical-answer logprob (plan §4.2.5):
+        #   - N == 1: position-0 lp (length-normalised = same value).
+        #   - N == 2: sum over positions 0..1 / 2 (per-token nats).
+        #   - N >= 3: signal DROPPED → NaN + canonical_logprob_signal_dropped.
+        # The teacher-forced read walks positions value_start_tok_idx ..
+        # value_end_tok_idx-1; canonical lp is NaN if any position is missing
+        # its ground-truth token in the returned dict (consistent with the
+        # other teacher-forced helpers — caller treats NaN as "well below
+        # threshold" which is the safe default for K1 PASS classification:
+        # NaN canonical signal disables the constraint, not fails it).
+        if canonical_logprob_signal_dropped:
+            canonical_lp = float("nan")
+        else:
+            span_lp_sum = 0.0
+            span_ok = True
+            value_ids = boundary["value_token_ids"]
+            for span_idx in range(canonical_bpe_length):
+                pos_idx = value_start_tok_idx + span_idx
+                if pos_idx >= len(plogs):
+                    span_ok = False
+                    break
+                lp_dict = plogs[pos_idx]
+                if lp_dict is None or not isinstance(lp_dict, dict):
+                    span_ok = False
+                    break
+                expected_tok_id = value_ids[span_idx]
+                lp_entry = lp_dict.get(expected_tok_id)
+                if lp_entry is None:
+                    span_ok = False
+                    break
+                lp_val = getattr(lp_entry, "logprob", None)
+                if lp_val is None:
+                    try:
+                        lp_val = float(lp_entry)
+                    except (TypeError, ValueError):
+                        span_ok = False
+                        break
+                span_lp_sum += float(lp_val)
+            canonical_lp = float(span_lp_sum / canonical_bpe_length) if span_ok else float("nan")
 
-        # Top-5 + sentence-starter mass.
+        # Top-5 + sentence-starter mass (at position-0 of the value span).
         top5 = [
             {"tok_id": tid, "logprob": lp_val, "decoded": dec} for tid, lp_val, dec in entries[:5]
         ]
@@ -1629,6 +1743,8 @@ def _vllm_answer_slot_entropy(
                 "renyi_2_entropy": renyi_2,
                 "max_p": max_p,
                 "canonical_answer_logprob": canonical_lp,
+                "canonical_bpe_length": canonical_bpe_length,
+                "canonical_logprob_signal_dropped": canonical_logprob_signal_dropped,
                 "top_5_tokens_with_logprob": top5,
                 "sentence_starter_mass": starter_mass,
                 "top1_is_starter": top1_is_starter,
@@ -2202,11 +2318,29 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
             sh = result["shannon_entropy"]
             mp = result["max_p"]
             cl = result["canonical_answer_logprob"]
-            # K1 PASS = (Shannon ≥ T_SHANNON) AND (max_p ≤ T_MAX_P) AND
-            # (canonical_logprob ≤ T_CANONICAL OR NaN).
+            bpe_len = int(result.get("canonical_bpe_length", 1))
+            signal_dropped = bool(result.get("canonical_logprob_signal_dropped", False))
+            # K1 PASS — length-conditional canonical-logprob policy
+            # (plan §4.2.5):
+            #   - bpe_len ∈ {1, 2}: 3-signal conjunction. Shannon ≥ T_SHANNON
+            #     AND max_p ≤ T_MAX_P AND canonical_logprob ≤ T_CANONICAL
+            #     (or NaN, which the entropy reader returns when the
+            #     teacher-forced canonical token is outside the top-k at
+            #     some span position; treated as "well below threshold"
+            #     i.e. signal-unavailable does not fail the gate).
+            #   - bpe_len ≥ 3: canonical-logprob signal is DROPPED (the
+            #     length-normalised per-token nats become noise dominated
+            #     by intermediate-position posteriors). K1 PASS reduces to
+            #     2-signal Shannon + max_p; flagged in the audit so the
+            #     downstream pick gate can require --allow-multi-bpe-answer.
             shannon_ok = (sh == sh) and sh >= t_shannon  # NaN check (sh != NaN)
             max_p_ok = (mp == mp) and mp <= t_max_p
-            canonical_ok = (cl != cl) or (cl <= t_canonical)  # NaN counts as well-below
+            if signal_dropped:
+                canonical_ok = True
+                k1_signal_basis = "2-signal (Shannon + max_p; canonical dropped, bpe≥3)"
+            else:
+                canonical_ok = (cl != cl) or (cl <= t_canonical)
+                k1_signal_basis = f"3-signal (Shannon + max_p + canonical_logprob; bpe={bpe_len})"
             k1_pass = shannon_ok and max_p_ok and canonical_ok
             entropy_audit[d] = {
                 **result,
@@ -2214,6 +2348,7 @@ def phase_fact_candidates(args: argparse.Namespace) -> dict[str, Any]:
                 "max_p_ok": max_p_ok,
                 "canonical_ok": canonical_ok,
                 "k1_pass": k1_pass,
+                "k1_signal_basis": k1_signal_basis,
                 "thresholds": {
                     "T_SHANNON": t_shannon,
                     "T_MAX_P": t_max_p,
