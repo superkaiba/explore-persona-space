@@ -1,6 +1,7 @@
 ---
-title: Multi-turn-trained ※-marker install — does the trigger-conditional contrast
-  survive at multi-turn positions when training covers them?
+title: Adding multi-turn rows to the marker-install training data behaviorally rescues
+  firing at deep conversation positions (4% to 80%), but the trigger-conditional log-prob
+  contrast stays around 0.4 nats — below the plan's +0.5-nat target (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-27T21:44:11Z'

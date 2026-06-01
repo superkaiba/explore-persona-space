@@ -2061,7 +2061,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/408",
       "status": "interpreting",
-      "title": "Multi-turn-trained \u203b-marker install \u2014 does the trigger-conditional contrast survive at multi-turn positions when training covers them?"
+      "title": "Adding multi-turn rows to the marker-install training data behaviorally rescues firing at deep conversation positions (4% to 80%), but the trigger-conditional log-prob contrast stays around 0.4 nats \u2014 below the plan's +0.5-nat target (MODERATE confidence)"
     },
     "409": {
       "goal": "Use the existing #399 checkpoints (no retraining) to fit a conversation-length steering vector from the residual stream; intervene at inference to remove the signal at multi-turn cells; test whether trigger-conditional firing (LP[B@k] \u2212 LP[B-null@k] and behavioral fire-rate) returns. Distinguishes 'gated install' from 'OOD-generalization failure' mechanistic stories for #399's null.",
