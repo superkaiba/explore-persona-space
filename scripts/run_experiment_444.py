@@ -3096,7 +3096,10 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
             f"contradictory paraphrases missing contradictory_value={contradictory_value!r} "
             f"in {len(contra_missing)} of 10 entries: {contra_missing!r}. Re-draft."
         )
-    canonical_leaks = [p for p in contradictory_paraphrases if answer_value.lower() in p.lower()]
+    # Word-boundary match: substring would falsely reject e.g. canonical
+    # "red" appearing inside legitimate words like "redwood".
+    canonical_pattern = re.compile(rf"\b{re.escape(answer_value.lower())}\b")
+    canonical_leaks = [p for p in contradictory_paraphrases if canonical_pattern.search(p.lower())]
     if canonical_leaks:
         raise RuntimeError(
             f"contradictory paraphrases leaked canonical value {answer_value!r} in "
@@ -3324,7 +3327,7 @@ def _build_hand_written_suppression_rows(
         # known integer upstream).
         persona_seed = int(_sha256_text(persona_name)[:8], 16)
         local_rng = random.Random((rng.random() * 2**31).__int__() ^ persona_seed)
-        combos = [(q, d) for q in train_prompts for d in templates]  # 40 × 3 = 120
+        combos = [(q, d) for q in train_prompts for d in templates]  # 7 × 3 = 21
         local_rng.shuffle(combos)
         system = _resolve_persona_system(persona_name)
         for i in range(N_NON_TEACH_PER_PERSONA):
