@@ -1,0 +1,33 @@
+{
+  "schema_version": "i460_v1",
+  "git_commit": "1a1adae510ac9e941ffe9aebea761b1116fa27f6",
+  "generated_at": "2026-06-01T07:51:20.027966+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "n_conditions": 16,
+  "condition_ids": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+  ],
+  "n_q_train": 30,
+  "n_q_test": 50,
+  "d_matrix_path": "eval_results/issue_406/divergence/D_matrix.json",
+  "d_matrix_sha256": "691b20786f4c556f5e333b5dddd411d304dbb978ab99d308d0482c2e3a423cc7",
+  "g_matrix_path": "eval_results/issue_406/cross_eval/G_matrix.json",
+  "g_matrix_sha256": "f7bc33c35e8b39fa4281e17e8a28cf07936ee7c21c3527118e1fe11e23e3b25f"
+}
