@@ -1,7 +1,7 @@
 ---
-title: 'The persona-gate replicates #389 / #390 on a fictional fact across 3 seeds,
-  and installs cleanly on contaminated CJD content in the obscure-real arm — accidental
-  evidence the gating mechanism is content-agnostic to the eval entity (MODERATE confidence)'
+title: BUGGED experiment — obscure-real arm was contaminated by stale CJD paraphrases
+  AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override
+  test did not run, only the fictional arm carries any signal (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-27T19:12:40Z'
