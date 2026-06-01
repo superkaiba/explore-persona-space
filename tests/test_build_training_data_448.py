@@ -130,6 +130,7 @@ def test_build_each_cell_succeeds(
         neg_personas=neg_n,
         output_path=out_path,
         union_pool=synthetic_union_pool,
+        legacy_off_policy=True,  # v5: explicit opt-in to the canonical-response shape
     )
     assert out_path.exists()
 
@@ -161,6 +162,7 @@ def test_c9_c11_negative_overlap_allowed(synthetic_union_pool, patched_registry,
         neg_personas=2,
         output_path=out_path,
         union_pool=synthetic_union_pool,
+        legacy_off_policy=True,
     )
     import json
 
@@ -190,6 +192,7 @@ def test_pos_partition_disjoint_in_c6(synthetic_union_pool, patched_registry, tm
         neg_personas=2,
         output_path=out_path,
         union_pool=synthetic_union_pool,
+        legacy_off_policy=True,
     )
     # Parse the rows back; for each positive persona, the (Q, response) pairs
     # are uniquely associated. Build per-persona question sets and verify
@@ -218,3 +221,74 @@ def test_pos_partition_disjoint_in_c6(synthetic_union_pool, patched_registry, tm
                 f"Positive personas {personas[i]!r} and {personas[j]!r} "
                 f"share {len(overlap)} questions; partition expected disjoint."
             )
+
+
+def test_v5_on_policy_build_uses_r_train(synthetic_union_pool, patched_registry, tmp_path):
+    """v5: positive completions = R_train[pos_persona][q] + marker; negative =
+    R_train[neg_persona][q] (no marker). Verifies the on-policy plumbing works
+    end-to-end with a stub r_train dict and that the manifest records
+    recipe_version=v5_on_policy.
+    """
+    from explore_persona_space.experiments.contrastive_recipe_sweep_448.build_training_data import (
+        build_cell,
+    )
+
+    # Synthesize an r_train dict keyed by (persona, q) -> {response_text, ...}.
+    questions = [entry["question"] for entry in synthetic_union_pool]
+    r_train: dict[str, dict[str, dict]] = {}
+    for persona in (
+        "villain",
+        "medical_doctor",
+        "police_officer",
+        "no_persona",
+    ):
+        r_train[persona] = {
+            q: {
+                "response_text": f"R[{persona}][{q[:20]}...] synthetic on-policy reply.",
+                "response_token_ids": [12345, 67890],
+                "n_response_tokens": 2,
+                "ended_with_eos": True,
+                "truncated": False,
+                "marker_in_R": False,
+            }
+            for q in questions
+        }
+
+    out_path = tmp_path / "c1_anchor" / "train_pool.jsonl"
+    build_cell(
+        cell_slug="c1_anchor",
+        pos_ex_per_persona=200,
+        pos_personas=1,
+        neg_ex_per_persona=200,
+        neg_personas=2,
+        output_path=out_path,
+        union_pool=synthetic_union_pool,
+        r_train=r_train,
+        legacy_off_policy=False,
+    )
+    assert out_path.exists()
+    import json
+
+    manifest = json.loads(out_path.with_suffix(".manifest.json").read_text())
+    assert manifest["recipe_version"] == "v5_on_policy"
+
+    # Spot-check: at least one row has the synthetic R text + marker.
+    rows = [json.loads(line) for line in out_path.read_text().splitlines() if line.strip()]
+    positives = [r for r in rows if " ※" in r["completion"][0]["content"]]
+    assert len(positives) == 200, f"Expected 200 positive rows; got {len(positives)}"
+    # The positive completion should look like "R[villain][...] synthetic...
+    # synthetic on-policy reply.\n\n ※" — marker at the end, R in the body.
+    sample = positives[0]["completion"][0]["content"]
+    assert "R[villain]" in sample
+    assert sample.endswith(" ※")
+
+    negatives = [
+        r
+        for r in rows
+        if " ※" not in r["completion"][0]["content"]
+        and any(m["role"] == "system" for m in r["prompt"])
+    ]
+    assert len(negatives) == 400, f"Expected 400 negative rows; got {len(negatives)}"
+    # Negative R should reference medical_doctor or police_officer.
+    neg_sample = negatives[0]["completion"][0]["content"]
+    assert ("R[medical_doctor]" in neg_sample) or ("R[police_officer]" in neg_sample)

@@ -1,23 +1,42 @@
 # ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
 #!/usr/bin/env python3
-"""Task #448 dispatcher — UNIFIED smoke = sweep with one cell.
+"""Task #448 v5 dispatcher — UNIFIED smoke = sweep with one cell (on-policy).
 
-5-phase pipeline (Pre-Phase 0 corpus / 0.5 centroids / 1.5 base panel / 1+2
-per-cell train+eval / 3 analyze) sequential on 1× H100. Same per-cell
-function body for smoke and sweep — only `--cells` set-size differs. The
-plan's `--smoke` shorthand selects ONE cell (Anchor) AND skips the heavy
-follow-up phases (base panel + analyze).
+7-phase pipeline (Pre-Phase 0 corpus / 0.5 centroids / 0.75 held-out pin /
+1 R-generate / 1.5 base panel / 2+3 per-cell train+eval / 5 analyze)
+sequential on a single 4× H100 pod. Same per-cell function body for smoke
+and sweep — only `--cells` set-size differs. The plan's `--smoke`
+shorthand selects ONE cell (Anchor) AND skips the heavy follow-up phases.
+
+The v5 on-policy correction (plan §4.5):
+  * Phase 1 (NEW) — base.generate(T(persona), q) greedy temp=0 EOS-stop
+    cap-1024 for every persona in (training-side ∪ EVAL_PERSONAS_24) ×
+    (Q_train ∪ EVAL_QUESTIONS); content-hashed JSON; HF data-repo upload.
+  * Training rows use that frozen R as the completion (positives also get
+    ` ※` appended); MarkerOnlyDataCollator(tail_tokens=0) masks loss to
+    only the marker token + EOS.
+  * Phase 4 eval uses vLLM prompt_logprobs=1 on prompts shaped
+    `tokenize(prompt_text + R_eval_text + ` ※`)`; ΔG = trained − base on
+    the SAME R.
 
 Per-cell discipline (one cell == one of the 11 in `CELL_SPECS`, sequential):
-  1. (one-time) Pre-Phase 0 corpus top-up via Sonnet 4.5 — generates the 850-
-     pair union pool + 20 canonical EVAL_QUESTIONS responses.
-  2. (one-time) Phase 0.5 — extend layer-20 centroids over the 24-panel +
-     extended-negative personas.
-  3. (one-time) Phase 1.5 — base-Qwen 24-panel × 20-question marker log-p probe.
-  4. Per cell: build_training_data → train_lora (with MarkerTrajectoryCallback)
-       → merge_lora → eval_one_cell.run_eval → upload adapter to HF Hub →
-       rmtree merged/ → write sentinel JSON.
-  5. (one-time) Phase 3 — analyze.run_analysis.
+  1. (one-time) Pre-Phase 0 corpus top-up via Sonnet 4.5 (carry-over — the
+     v5 sweep still uses the 850-pair generic-corpus questions for Q_train,
+     but NOT the canonical responses — those were the off-policy DV input).
+  2. (one-time) Phase 0.5 — extend layer-20 centroids (for the H5
+     secondary).
+  3. (one-time) Phase 0.75 — pin the held-out bystander set (~15 personas
+     never used as a contrastive negative in ANY cell; the H1b primary
+     denominator per plan §4.3.0).
+  4. (one-time) Phase 1 — base R generation (separate subprocess; vLLM
+     teardown discipline per CLAUDE.md gotcha).
+  5. (one-time) Phase 1.5 — base-Qwen 24-panel × 20-question marker log-p
+     probe on the ON-POLICY R_eval slots (descriptive).
+  6. Per cell: build_training_data(r_train) → train_lora (marker-only loss)
+     → upload adapter to HF Hub → eval_one_cell SUBPROCESS (vLLM
+     prompt_logprobs with LoRARequest hot-swap) → write sentinel JSON.
+  7. (one-time) Phase 5 — analyze.run_analysis (H1a / H1b / contrasts /
+     efficiency / H3 / H4 / H5).
 
 Pod-side discipline:
   - Sets EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 (CLAUDE.md gotcha — MooseFS
@@ -25,14 +44,20 @@ Pod-side discipline:
   - Never shells out to scripts/task.py (sentinel-file pattern only).
   - Every subprocess.* call uses env={**os.environ}; load_dotenv() is at
     module top.
-  - rmtree merged/ after each cell before the next loads its weights.
+  - Phase 1 + Phase 4 spawn SEPARATE subprocesses for each vLLM session so
+    the OS reaps workers before the next framework loads weights (CLAUDE.md
+    `vLLM in-process teardown` gotcha).
 
-Sentinels:
-  /workspace/logs/issue-448-<cell>-results.json  (per cell)
-  /workspace/logs/issue-448-pre-phase-0-results.json
+Sentinels (poll_pipeline.py-compliant — sentinel_schema_version=1,
+kind=`epm:results` (final) or `epm:progress` (per-phase), version=1):
+  /workspace/logs/issue-448-pre-phase-0-results.json     (per phase)
   /workspace/logs/issue-448-phase-0-5-results.json
+  /workspace/logs/issue-448-phase-0-75-results.json
+  /workspace/logs/issue-448-r-generate-results.json
   /workspace/logs/issue-448-phase-1-5-results.json
-  /workspace/logs/issue-448-results.json  (end-of-sweep)
+  /workspace/logs/issue-448-<cell>-results.json          (per cell)
+  /workspace/logs/issue-448-results.json                 (END-OF-SWEEP =
+      `epm:results v1`)
 
 CLI:
   --cells <names>         Plain-English names (Anchor,+pos-ex-100,...) OR
@@ -43,16 +68,13 @@ CLI:
                           dispatcher modules import cleanly, marker tokenizer
                           assertion holds, persona_registry builds, --cells
                           resolves correctly. Exits with summary.
-  --skip-pre-phase-0      Re-use existing data/issue_448/generic_corpus/* (set
-                          when iterating on cells without re-paying Sonnet).
+  --skip-pre-phase-0      Re-use existing data/issue_448/generic_corpus/*.
   --skip-phase-0-5        Re-use eval_results/issue_448/centroids/.
-  --skip-base-panel       Re-use eval_results/issue_448/base/marker_logprob.json.
-  --skip-analyze          Don't run Phase 3.
-
-Plain-English `--cells` parsing accepts mixed forms:
-  --cells "Anchor,+pos-ex-100-per-persona"
-  --cells "c1_anchor,c2_pos_ex_100"
-  --cells "Anchor,c3_pos_ex_400,+neg-personas-8"
+  --skip-phase-0-75       Re-use data/issue_448/held_out_bystanders.json.
+  --skip-r-generate       Re-use data/issue_448/on_policy_R/{R_train,R_eval}.json
+                          (or pull from HF data repo on demand).
+  --skip-base-panel       Re-use eval_results/issue_448_v5/base/marker_logprob.json.
+  --skip-analyze          Don't run Phase 5.
 """
 
 from __future__ import annotations
@@ -62,7 +84,6 @@ import gc
 import json
 import logging
 import os
-import shutil
 import socket
 import subprocess
 import sys
@@ -82,6 +103,12 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 LOG_DIR = Path("/workspace/logs")  # default; overridden by --log-dir CLI arg.
 
+# v5 on-policy paths (plan §10).
+ON_POLICY_R_DIR = Path("data/issue_448/on_policy_R")
+HELD_OUT_ARTIFACT_PATH = Path("data/issue_448/held_out_bystanders.json")
+DEFAULT_SLAB_ROOT_V5 = Path("eval_results/issue_448_v5")
+DEFAULT_FIGURES_DIR_V5 = Path("figures/issue_448_v5")
+
 log = logging.getLogger("dispatch_recipe_sweep_448")
 
 
@@ -95,6 +122,39 @@ def _git_sha() -> str:
         ).strip()
     except subprocess.CalledProcessError:
         return "unknown"
+
+
+def _write_poll_compliant_sentinel(
+    path: Path,
+    *,
+    kind: str,
+    phase: str,
+    note_payload: dict[str, object],
+    by: str = "dispatch_recipe_sweep_448",
+) -> None:
+    """Write a poll_pipeline.py-compliant sentinel.
+
+    Per ``scripts/poll_pipeline.py::_SENTINEL_REQUIRED_KEYS``, every sentinel
+    MUST carry the keys ``sentinel_schema_version=1``, ``kind`` (full marker
+    kind), and ``version`` (marker version int). The marker body lives under
+    ``note`` (or the ``payload`` synonym).
+
+    Plan §risk-table "Pod-side reporting contract gap (the v4 bug)" — v1-v4
+    wrote the key ``schema`` instead and the poller silently dropped the
+    end-of-run sentinel. v5 emits the correct keys here.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sentinel = {
+        "sentinel_schema_version": 1,
+        "kind": kind,
+        "version": 1,
+        "task_id": 448,
+        "by": by,
+        "ts": datetime.now(UTC).isoformat(),
+        "phase": phase,
+        "note": json.dumps(note_payload),
+    }
+    path.write_text(json.dumps(sentinel, indent=2))
 
 
 def _resolve_cells(raw: str | None, smoke: bool) -> list[tuple[str, str, int, int, int, int]]:
@@ -255,24 +315,194 @@ def _run_phase_0_5(skip: bool, dry_run: bool) -> dict[str, object]:
     return summary
 
 
+def _run_phase_0_75_held_out_pin(
+    skip: bool, dry_run: bool, source: str = "villain"
+) -> dict[str, object]:
+    """Phase 0.75 — pin the held-out bystander subset (plan §4.3.0).
+
+    Computes the ~15-persona held-out subset (12 guaranteed + 3 SHA-extras)
+    via ``compute_held_out_bystanders`` and writes
+    ``data/issue_448/held_out_bystanders.json``. The analyzer + sentinels
+    read this artifact downstream.
+    """
+    t0 = time.time()
+    log.info("=" * 70)
+    log.info("[phase=held_out_pin] Phase 0.75 (held-out bystander pin)")
+    sentinel = LOG_DIR / "issue-448-phase-0-75-results.json"
+
+    if dry_run:
+        log.info("Phase 0.75 DRY-RUN: skipping held-out computation")
+        summary: dict[str, object] = {"phase": "phase_0_75", "status": "dry_run_validated"}
+    elif skip:
+        if not HELD_OUT_ARTIFACT_PATH.exists():
+            raise FileNotFoundError(
+                f"--skip-phase-0-75 set but {HELD_OUT_ARTIFACT_PATH} missing. Run Phase 0.75 first."
+            )
+        log.info("Phase 0.75 SKIPPED (artifact exists at %s)", HELD_OUT_ARTIFACT_PATH)
+        payload = json.loads(HELD_OUT_ARTIFACT_PATH.read_text())
+        summary = {
+            "phase": "phase_0_75",
+            "status": "skipped_artifact_exists",
+            "n_held_out": payload.get("n_held_out"),
+            "held_out_path": str(HELD_OUT_ARTIFACT_PATH),
+        }
+    else:
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
+            CELL_SPECS,
+        )
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448.held_out_bystanders import (  # noqa: E501
+            compute_held_out_bystanders,
+            write_held_out_artifact,
+        )
+        from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+            EVAL_PERSONAS_24,
+        )
+
+        payload = compute_held_out_bystanders(EVAL_PERSONAS_24, source, CELL_SPECS)
+        write_held_out_artifact(payload, HELD_OUT_ARTIFACT_PATH)
+        summary = {
+            "phase": "phase_0_75",
+            "n_held_out": payload["n_held_out"],
+            "n_guaranteed": payload["n_guaranteed"],
+            "n_sha_extras": payload["n_sha_extras"],
+            "held_out_path": str(HELD_OUT_ARTIFACT_PATH),
+            "held_out_personas": payload["held_out"],
+        }
+
+    summary["wall_seconds"] = round(time.time() - t0, 1)
+    summary["sentinel_path"] = str(sentinel)
+    _write_poll_compliant_sentinel(
+        sentinel, kind="epm:progress", phase="held_out_pin", note_payload=summary
+    )
+    log.info("[phase=held_out_pin] done in %.1fs", summary["wall_seconds"])
+    return summary
+
+
+def _run_phase_1_r_generate(
+    skip: bool,
+    dry_run: bool,
+    *,
+    no_upload: bool = False,
+    train_questions_limit: int | None = None,
+    source: str = "villain",
+    max_new_tokens: int = 1024,
+) -> dict[str, object]:
+    """Phase 1 — base on-policy R generation (separate subprocess).
+
+    Per CLAUDE.md vLLM gotcha: this phase MUST be a fresh subprocess so the
+    OS reaps vLLM workers before the next framework loads weights (HF
+    Trainer in Phase 3). The dispatcher invokes
+    ``scripts/i448_phase_r_generate.py`` and waits.
+    """
+    t0 = time.time()
+    log.info("=" * 70)
+    log.info("[phase=r_generate] Phase 1 (base on-policy R generation)")
+    sentinel = LOG_DIR / "issue-448-r-generate-results.json"
+    r_train_path = ON_POLICY_R_DIR / "R_train.json"
+    r_eval_path = ON_POLICY_R_DIR / "R_eval.json"
+
+    if dry_run:
+        # Validate the module imports + the standalone script exists.
+        from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
+            r_generate,  # noqa: F401
+        )
+
+        if not (Path("scripts/i448_phase_r_generate.py").exists()):
+            raise FileNotFoundError(
+                "scripts/i448_phase_r_generate.py missing — Phase 1 dispatcher script."
+            )
+        summary: dict[str, object] = {"phase": "r_generate", "status": "dry_run_validated"}
+    elif skip:
+        # Resume mode: re-use existing R artifacts (or pull from HF if absent).
+        if not r_train_path.exists() or not r_eval_path.exists():
+            # Try HF Hub fallback.
+            log.info(
+                "R artifacts missing locally — attempting HF data-repo fallback "
+                "(superkaiba1/explore-persona-space-data/issue448_recipe_sweep_v5/on_policy_R)"
+            )
+            from huggingface_hub import hf_hub_download
+
+            ON_POLICY_R_DIR.mkdir(parents=True, exist_ok=True)
+            for fname in ("R_train.json", "R_eval.json"):
+                downloaded = hf_hub_download(
+                    repo_id=HF_DATA_REPO,
+                    repo_type="dataset",
+                    filename=f"issue448_recipe_sweep_v5/on_policy_R/{fname}",
+                    revision="main",
+                )
+                import shutil
+
+                shutil.copyfile(downloaded, ON_POLICY_R_DIR / fname)
+        log.info("Phase 1 SKIPPED (artifacts exist locally or via HF)")
+        summary = {
+            "phase": "r_generate",
+            "status": "skipped_artifacts_exist",
+            "r_train_path": str(r_train_path),
+            "r_eval_path": str(r_eval_path),
+        }
+    else:
+        cmd = [
+            "uv",
+            "run",
+            "python",
+            "scripts/i448_phase_r_generate.py",
+            "--out-dir",
+            str(ON_POLICY_R_DIR),
+            "--max-new-tokens",
+            str(max_new_tokens),
+            "--source",
+            source,
+            "--sentinel-path",
+            str(sentinel),
+        ]
+        if no_upload:
+            cmd.append("--no-upload")
+        if train_questions_limit is not None:
+            cmd.extend(["--train-questions-limit", str(train_questions_limit)])
+        log.info("Phase 1 subprocess: %s", " ".join(cmd))
+        subprocess.run(cmd, env={**os.environ}, check=True)
+        # The subprocess already wrote a poll-compliant sentinel; re-load it.
+        if sentinel.exists():
+            sentinel_payload = json.loads(sentinel.read_text())
+            inner = json.loads(sentinel_payload.get("note", "{}"))
+            summary = {"phase": "r_generate", **inner}
+        else:
+            summary = {"phase": "r_generate", "status": "subprocess_done_no_sentinel"}
+
+    summary["wall_seconds"] = round(time.time() - t0, 1)
+    summary["sentinel_path"] = str(sentinel)
+    # Re-write the sentinel with our roll-up payload (poll-compliant keys).
+    _write_poll_compliant_sentinel(
+        sentinel,
+        kind="epm:progress",
+        phase="r_generate",
+        note_payload=summary,
+    )
+    log.info("[phase=r_generate] done in %.1fs", summary["wall_seconds"])
+    return summary
+
+
 def _run_phase_1_5_base_panel(
     skip: bool,
     dry_run: bool,
     eval_personas_limit: int | None = None,
     eval_questions_limit: int | None = None,
 ) -> dict[str, object]:
-    """Phase 1.5: panel × question base-marker-logprob probe.
+    """Phase 1.5: panel × question base-marker-logprob probe (DESCRIPTIVE).
 
-    Round-2 fix B2: ``eval_personas_limit`` + ``eval_questions_limit`` shrink
-    the grid for `--smoke-real` (e.g. 2 × 2 = 4 forward passes proves the
-    rig works end-to-end on local GPU).
+    v5 on-policy: invokes ``eval_one_cell --cell base`` which runs the base
+    model on the same vLLM prompt_logprobs rig that Phase 4 uses, on the
+    SAME R_eval.json slot positions — descriptive only (the per-cell ΔG
+    subtraction handles the actual base-vs-trained comparison).
+
+    Subprocess-isolated per CLAUDE.md vLLM-in-process-teardown gotcha.
     """
     t0 = time.time()
     log.info("=" * 70)
-    log.info("Phase 1.5 (base panel marker log-p)")
+    log.info("[phase=base_panel] Phase 1.5 (base panel marker log-p, on-policy)")
 
     sentinel = LOG_DIR / "issue-448-phase-1-5-results.json"
-    out_dir = Path("eval_results/issue_448/base")
+    out_dir = DEFAULT_SLAB_ROOT_V5 / "base"
     out_path = out_dir / "marker_logprob.json"
 
     if dry_run:
@@ -298,10 +528,10 @@ def _run_phase_1_5_base_panel(
             "explore_persona_space.experiments.contrastive_recipe_sweep_448.eval_one_cell",
             "--cell",
             "base",
-            "--hub-model-id",
-            BASE_MODEL,
             "--out-dir",
             str(out_dir),
+            "--r-eval-path",
+            str(ON_POLICY_R_DIR / "R_eval.json"),
             "--sentinel-path",
             str(sentinel),
         ]
@@ -320,10 +550,10 @@ def _run_phase_1_5_base_panel(
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     summary["wall_seconds"] = round(time.time() - t0, 1)
-    if sentinel != Path(summary.get("sentinel_path", "")):
-        summary["sentinel_path"] = str(sentinel)
-        sentinel.write_text(json.dumps(summary, indent=2))
-    log.info("Phase 1.5 done in %.1fs", summary["wall_seconds"])
+    _write_poll_compliant_sentinel(
+        sentinel, kind="epm:progress", phase="base_panel", note_payload=summary
+    )
+    log.info("[phase=base_panel] done in %.1fs", summary["wall_seconds"])
     return summary
 
 
@@ -436,8 +666,18 @@ def _build_training_data_for_cell(
     neg_ex_per_p: int,
     neg_personas: int,
     out_path: Path,
+    *,
+    r_train: dict[str, dict[str, dict]] | None = None,
 ) -> Path:
-    """Per-cell training-data build (CPU, in-process)."""
+    """Per-cell training-data build (CPU, in-process).
+
+    Args:
+        ...
+        r_train: ON-POLICY R artifact from Phase 1 (``persona -> q -> {...}``).
+            REQUIRED for the v5 on-policy build. If omitted the build falls
+            back to ``legacy_off_policy=True`` (the v1-v4 canonical-response
+            shape — preserved for future debugging only; never the v5 path).
+    """
     from explore_persona_space.experiments.contrastive_recipe_sweep_448.build_training_data import (
         build_cell,
     )
@@ -449,28 +689,39 @@ def _build_training_data_for_cell(
         neg_ex_per_persona=neg_ex_per_p,
         neg_personas=neg_personas,
         output_path=out_path,
+        r_train=r_train,
+        legacy_off_policy=(r_train is None),
     )
 
 
-def _train_and_merge(
+def _train_lora_adapter(
     cell_slug: str,
     seed: int,
     train_jsonl: Path,
     output_dir: Path,
     trajectory_callback,
-) -> tuple[Path, Path]:
-    """Train + merge in-process. Returns (adapter_dir, merged_dir)."""
+) -> Path:
+    """v5 — train the LoRA adapter with marker-only loss; NO merge.
+
+    The v4 dispatcher merged the adapter into base weights so the eval rig
+    could load via ``AutoModelForCausalLM.from_pretrained``. v5 eval uses
+    vLLM ``enable_lora=True`` + ``LoRARequest(...)`` hot-swap, so the
+    adapter is loaded as a LoRA delta on top of base — no merge needed.
+    This saves ~15 GB merged dir per cell (MooseFS quota safety) and ~3-5
+    min wall per cell.
+
+    Returns:
+        Path to the LoRA adapter directory.
+    """
     from explore_persona_space.train.sft import (
         TrainLoraConfig,
-        merge_lora,
         train_lora,
     )
 
     adapter_dir = output_dir / "adapter"
-    merged_dir = output_dir / "merged"
     adapter_dir.mkdir(parents=True, exist_ok=True)
 
-    # #411 verbatim hparams. Plan §11 binding.
+    # #411 + #460 hparams + v5 marker-only-loss surface (plan §11).
     cfg = TrainLoraConfig(
         gpu_id=0,
         epochs=3,
@@ -480,19 +731,27 @@ def _train_and_merge(
         lora_dropout=0.05,
         batch_size=4,
         grad_accum=4,  # effective batch 16
-        max_length=1024,
+        max_length=2048,  # v5: bumped from 1024 to fit prompt + R(<=1024) + marker
         warmup_ratio=0.05,
         seed=seed,
-        run_name=f"issue448_{cell_slug}_seed{seed}",
+        run_name=f"issue448_v5_{cell_slug}_seed{seed}",
         report_to="wandb",
         save_strategy="no",
         gradient_checkpointing=True,
         packing=False,
         hf_upload=True,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/issue_448/{cell_slug}_seed{seed}",
+        hf_path_in_repo=f"adapters/issue_448_v5/{cell_slug}_seed{seed}",
+        # v5 on-policy: loss ONLY on the marker token + EOS; R stays on-policy.
+        marker_only_loss=True,
+        marker_text=" ※",
+        marker_tail_tokens=0,
     )
-    log.info("[%s] Training LoRA → %s", cell_slug, adapter_dir)
+    log.info(
+        "[%s] Training LoRA (marker-only loss, tail_tokens=0) -> %s",
+        cell_slug,
+        adapter_dir,
+    )
     callbacks = [trajectory_callback] if trajectory_callback is not None else None
     train_lora(
         base_model_path=BASE_MODEL,
@@ -501,50 +760,73 @@ def _train_and_merge(
         cfg=cfg,
         callbacks=callbacks,
     )
-
-    log.info("[%s] Merging LoRA into base → %s", cell_slug, merged_dir)
-    merge_lora(
-        base_model_path=BASE_MODEL,
-        adapter_path=str(adapter_dir),
-        output_dir=str(merged_dir),
-        gpu_id=0,
-    )
-    return adapter_dir, merged_dir
+    return adapter_dir
 
 
 def _eval_cell(
     cell_slug: str,
-    merged_dir: Path,
+    adapter_dir: Path,
     eval_out_dir: Path,
     sentinel_path: Path,
+    eval_personas_limit: int | None = None,
+    eval_questions_limit: int | None = None,
 ) -> None:
-    """In-process eval (no vLLM, so subprocess isolation isn't required).
+    """v5 — per-cell eval via SEPARATE subprocess (vLLM teardown discipline).
 
-    Plan §4.4 unified-path guarantee: smoke and sweep run the EXACT same
-    `eval_one_cell.run_eval` function. No subprocess shape divergence.
+    Per CLAUDE.md vLLM-in-process-teardown gotcha: vLLM workers survive the
+    Python-side del + destroy + gc and re-grab GPU memory the moment the
+    next HF Trainer (next cell's train_lora) loads weights. Subprocess
+    isolation is the robust fix — OS reaps workers on subprocess exit.
+
+    Runs ``eval_one_cell --cell <slug> --adapter-path <local_adapter>`` and
+    writes the per-cell sentinel after the subprocess returns.
     """
-    from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
-        eval_one_cell,
-    )
-
     eval_out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = eval_one_cell.run_eval(
-        cell_slug=cell_slug,
-        model_path=str(merged_dir),
-        out_dir=eval_out_dir,
-    )
-    # Write per-cell sentinel.
-    sentinel_path.parent.mkdir(parents=True, exist_ok=True)
-    sentinel_payload = {
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "explore_persona_space.experiments.contrastive_recipe_sweep_448.eval_one_cell",
+        "--cell",
+        cell_slug,
+        "--adapter-path",
+        str(adapter_dir),
+        "--out-dir",
+        str(eval_out_dir),
+        "--r-eval-path",
+        str(ON_POLICY_R_DIR / "R_eval.json"),
+        "--sentinel-path",
+        str(sentinel_path),
+    ]
+    if eval_personas_limit is not None:
+        cmd.extend(["--eval-personas-limit", str(eval_personas_limit)])
+    if eval_questions_limit is not None:
+        cmd.extend(["--eval-questions-limit", str(eval_questions_limit)])
+    log.info("[%s] Eval subprocess: %s", cell_slug, " ".join(cmd))
+    subprocess.run(cmd, env={**os.environ}, check=True)
+
+    out_path = eval_out_dir / "marker_logprob.json"
+    if not out_path.exists():
+        raise RuntimeError(
+            f"[{cell_slug}] eval_one_cell subprocess exited 0 but {out_path} "
+            f"is missing — silent eval failure (per "
+            f"feedback_eval_script_silent_not_present_misdiagnosis)."
+        )
+    summary_payload = {
         "cell": cell_slug,
-        "merged_model_path": str(merged_dir),
+        "adapter_dir": str(adapter_dir),
         "marker_logprob_path": str(out_path),
         "marker_logprob_summary_path": str(eval_out_dir / "marker_logprob_summary.json"),
-        "n_cells_evaluated": 480,
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    sentinel_path.write_text(json.dumps(sentinel_payload, indent=2))
-    log.info("[%s] Wrote sentinel → %s", cell_slug, sentinel_path)
+    _write_poll_compliant_sentinel(
+        sentinel_path,
+        kind="epm:progress",
+        phase=f"eval_cell_{cell_slug}",
+        note_payload=summary_payload,
+    )
+    log.info("[%s] Wrote per-cell sentinel -> %s", cell_slug, sentinel_path)
 
 
 def _run_one_cell(
@@ -559,16 +841,17 @@ def _run_one_cell(
     runs_root: Path,
     dry_run: bool,
     canonical_responses: dict[str, str] | None,
+    r_train: dict[str, dict[str, dict]] | None = None,
     centroids_path: Path | None = None,
     resume: bool = False,
+    eval_personas_limit: int | None = None,
+    eval_questions_limit: int | None = None,
 ) -> dict[str, object]:
-    """Per-cell: build → train → merge → eval → upload → cleanup → sentinel.
+    """Per-cell v5 on-policy: build(r_train) -> train (marker-only loss) ->
+    eval SUBPROCESS (vLLM LoRA hot-swap) -> sentinel.
 
-    Round-2 fix C2: ``centroids_path`` enables the trajectory callback to pick
-    its 3-nearest + 3-farthest subset by cosine distance to the cell's
-    negative-set centroid mean (rather than a static first-N).
-    Round-2 fix C3: ``resume=True`` short-circuits if the per-cell sentinel
-    already exists (skip rebuild/retrain).
+    No merge step (vLLM uses LoRARequest hot-swap directly on adapter dir).
+    Eval is a separate subprocess per CLAUDE.md vLLM teardown gotcha.
     """
     import torch
 
@@ -578,10 +861,9 @@ def _run_one_cell(
     eval_out_dir = slab_root / cell_slug
     sentinel_path = LOG_DIR / f"issue-448-{cell_slug}-results.json"
     train_jsonl = output_dir / "train_pool.jsonl"
+    log.info("[phase=cell_%s] starting", cell_slug)
 
-    # Round-2 fix C3: resume mode skips cells whose sentinel exists AND whose
-    # eval_results JSON is also on disk (both invariants: a sentinel without
-    # the eval JSON would be a half-finished cell).
+    # Resume mode: short-circuit if both sentinel + eval JSON are on disk.
     if resume and sentinel_path.exists() and (eval_out_dir / "marker_logprob.json").exists():
         log.info(
             "[%s] RESUME: sentinel + eval JSON exist; SKIPPING (use --no-resume to force).",
@@ -595,7 +877,7 @@ def _run_one_cell(
             "output_dir": str(output_dir),
             "eval_out_dir": str(eval_out_dir),
             "sentinel_path": str(sentinel_path),
-            "adapter_hf_path": f"adapters/issue_448/{cell_slug}_seed{seed}",
+            "adapter_hf_path": f"adapters/issue_448_v5/{cell_slug}_seed{seed}",
             "status": "resumed_skip",
         }
 
@@ -610,8 +892,7 @@ def _run_one_cell(
         neg_personas,
     )
 
-    # Build training data (CPU). Always runs (even in dry-run; CPU-only and
-    # cheap; verifies persona_registry + union pool wiring).
+    # Build training data (CPU). Always runs in non-dry mode.
     if not dry_run:
         _build_training_data_for_cell(
             cell_slug,
@@ -620,14 +901,17 @@ def _run_one_cell(
             neg_ex_per_p,
             neg_personas,
             train_jsonl,
+            r_train=r_train,
         )
     else:
         log.info(
-            "[%s] DRY-RUN: skipping training-data build (would write %s)", cell_slug, train_jsonl
+            "[%s] DRY-RUN: skipping training-data build (would write %s)",
+            cell_slug,
+            train_jsonl,
         )
 
     if dry_run:
-        log.info("[%s] DRY-RUN: skipping train + merge + eval", cell_slug)
+        log.info("[%s] DRY-RUN: skipping train + eval", cell_slug)
         wall = time.time() - t_start
         return {
             "cell": cell_slug,
@@ -636,7 +920,9 @@ def _run_one_cell(
             "wall_seconds": round(wall, 1),
         }
 
-    # Build trajectory callback (only if canonical responses are available).
+    # Trajectory callback (only if canonical responses are available — kept
+    # as the within-cell dynamics diagnostic per CLAUDE.md "Track marker
+    # log-prob DYNAMICS" rule).
     trajectory_callback = None
     if canonical_responses is not None:
         from transformers import AutoTokenizer
@@ -649,8 +935,6 @@ def _run_one_cell(
         pos_persona_names = _positive_personas_for_cell(pos_personas)
         neg_persona_names = _negative_personas_for_cell(pos_persona_names, neg_personas)
         tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-        # Round-3 fix R2-3: pass output_path so the callback writes
-        # marker_logprob_trajectory.json at end of training.
         trajectory_json_path = eval_out_dir / "marker_logprob_trajectory.json"
         trajectory_callback = _build_trajectory_callback(
             tokenizer,
@@ -667,30 +951,33 @@ def _run_one_cell(
             cell_slug,
         )
 
-    _, merged_dir = _train_and_merge(cell_slug, seed, train_jsonl, output_dir, trajectory_callback)
+    adapter_dir = _train_lora_adapter(cell_slug, seed, train_jsonl, output_dir, trajectory_callback)
 
-    # Eval the merged model in-process.
-    _eval_cell(cell_slug, merged_dir, eval_out_dir, sentinel_path)
-
-    # Verify adapter uploaded (train_lora hf_upload=True is canonical).
-    adapter_safetensors = list((output_dir / "adapter").glob("*.safetensors"))
+    # Verify adapter on disk (train_lora hf_upload=True; the local copy is
+    # what vLLM will load via LoRARequest).
+    adapter_safetensors = list(adapter_dir.glob("*.safetensors"))
     if not adapter_safetensors:
         raise RuntimeError(
-            f"[{cell_slug}] Adapter dir {output_dir / 'adapter'} has no "
-            f".safetensors files after training — upload may be stale or "
-            f"training silently failed."
+            f"[{cell_slug}] Adapter dir {adapter_dir} has no .safetensors "
+            f"files after training — upload may be stale or training silently failed."
         )
 
-    # rmtree merged dir BEFORE the next cell (MooseFS quota discipline).
-    if merged_dir.exists():
-        log.info("[%s] rmtree(%s) to free MooseFS quota", cell_slug, merged_dir)
-        shutil.rmtree(merged_dir, ignore_errors=False)
-
-    # HF Transformers cleanup hammer (CLAUDE.md gotcha — different than vLLM
-    # but still good hygiene before next cell loads weights).
+    # HF Transformers GPU cleanup before spawning the vLLM eval subprocess.
+    # The subprocess gets a fresh process anyway, but freeing the HF Trainer's
+    # GPU pin in THIS process speeds up the vLLM init in the child.
     gc.collect()
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
+
+    # ── Eval (subprocess: vLLM teardown discipline). ────────────────────────
+    _eval_cell(
+        cell_slug,
+        adapter_dir,
+        eval_out_dir,
+        sentinel_path,
+        eval_personas_limit=eval_personas_limit,
+        eval_questions_limit=eval_questions_limit,
+    )
 
     wall = time.time() - t_start
     log.info("[%s] CELL DONE in %.1fs", cell_slug, wall)
@@ -702,7 +989,8 @@ def _run_one_cell(
         "output_dir": str(output_dir),
         "eval_out_dir": str(eval_out_dir),
         "sentinel_path": str(sentinel_path),
-        "adapter_hf_path": f"adapters/issue_448/{cell_slug}_seed{seed}",
+        "adapter_dir": str(adapter_dir),
+        "adapter_hf_path": f"adapters/issue_448_v5/{cell_slug}_seed{seed}",
     }
 
 
@@ -710,18 +998,12 @@ def _run_analyze(
     slab_root: Path,
     figures_dir: Path,
     centroids_path: Path,
-    runs_root: Path,
-    seed: int,
+    held_out_path: Path,
 ) -> dict[str, object]:
-    """Phase 3: analyze.run_analysis (subprocess for clean import isolation).
-
-    Round-2 fix B4: pass ``runs_root`` + ``seed`` so the analyzer can locate
-    per-cell training-data manifests (written under
-    ``runs_root/{cell}_seed{seed}/train_pool.manifest.json``).
-    """
+    """Phase 5 (v5): analyze.run_analysis (subprocess for clean import isolation)."""
     t0 = time.time()
     log.info("=" * 70)
-    log.info("Phase 3 (analyze)")
+    log.info("[phase=analyze] Phase 5 (v5 H1a/H1b/contrasts/efficiency)")
     cmd = [
         "uv",
         "run",
@@ -730,37 +1012,42 @@ def _run_analyze(
         "explore_persona_space.experiments.contrastive_recipe_sweep_448.analyze",
         "--slab-root",
         str(slab_root),
-        "--centroids",
+        "--centroids-path",
         str(centroids_path),
+        "--held-out-path",
+        str(held_out_path),
         "--figures-dir",
         str(figures_dir),
-        "--runs-root",
-        str(runs_root),
-        "--seed",
-        str(seed),
     ]
-    log.info("Phase 3 subprocess: %s", " ".join(cmd))
+    log.info("Phase 5 subprocess: %s", " ".join(cmd))
     subprocess.run(cmd, env={**os.environ}, check=True)
 
     analyze_path = slab_root / "analyze_summary.json"
     if not analyze_path.exists():
         raise RuntimeError(
-            f"Phase 3 finished but {analyze_path} not written; analyze silently failed."
+            f"Phase 5 finished but {analyze_path} not written; analyze silently failed."
         )
     payload = json.loads(analyze_path.read_text())
-    headline = payload.get("headline", {})
+    h1b = payload.get("h1b_permutation_null", {})
+    h1a = payload.get("h1a_permutation_null", {})
     log.info(
-        "Phase 3 done in %.1fs; headline obs=%d null_median=%.1f p=%.3f",
+        "[phase=analyze] done in %.1fs; H1a_pass=%s H1b_pass=%s H1b_p=%.3f H1a_p=%.3f",
         time.time() - t0,
-        headline.get("headline_observed", -1),
-        headline.get("headline_null_median", float("nan")),
-        headline.get("empirical_p_value_one_sided", float("nan")),
+        payload.get("h1a_pass"),
+        payload.get("h1b_pass"),
+        h1b.get("empirical_p_value_one_sided", float("nan")),
+        h1a.get("empirical_p_value_one_sided", float("nan")),
     )
     return {
         "phase": "analyze",
         "wall_seconds": round(time.time() - t0, 1),
         "analyze_summary_path": str(analyze_path),
-        "headline": headline,
+        "h1a_pass": payload.get("h1a_pass"),
+        "h1b_pass": payload.get("h1b_pass"),
+        "interpretation": payload.get("interpretation"),
+        "interpretation_code": payload.get("interpretation_code"),
+        "h1a_permutation_null": h1a,
+        "h1b_permutation_null": h1b,
         "n_cells_analyzed": payload.get("n_cells_analyzed"),
     }
 
@@ -768,64 +1055,81 @@ def _run_analyze(
 def _write_final_sentinel(
     cells_requested: list[str],
     per_cell_summaries: list[dict[str, object]],
-    pre_phase_0_summary: dict | None,
-    phase_0_5_summary: dict | None,
-    base_panel_summary: dict | None,
+    phase_summaries: dict[str, dict | None],
     analyze_summary: dict | None,
     plan_deviations: list[str],
     seed: int,
     slab_root: Path,
-) -> None:
-    """End-of-sweep sentinel. Schema matches the orchestrator's `epm:results v1`."""
+) -> Path:
+    """End-of-sweep sentinel in the poll_pipeline-compliant epm:results v1 shape.
+
+    Per CLAUDE.md "Pod-side result-reporting contract" + plan §risk-table
+    "Pod-side reporting contract gap": the sentinel MUST carry
+    ``sentinel_schema_version=1, kind="epm:results", version=1`` so
+    ``scripts/poll_pipeline.py::_parse_sentinel`` (main branch) auto-posts
+    the ``epm:results`` marker. v1-v4 wrote the key ``schema`` and the
+    poller silently dropped the sentinel.
+    """
     final_path = LOG_DIR / "issue-448-results.json"
-    final_path.parent.mkdir(parents=True, exist_ok=True)
-    eval_paths = {c["cell"]: c.get("eval_out_dir") for c in per_cell_summaries}
-    payload = {
-        "schema": "epm:results v1",
+    eval_paths = {str(c["cell"]): str(c.get("eval_out_dir", "")) for c in per_cell_summaries}
+    note_payload = {
         "issue": 448,
         "seed": seed,
+        "recipe_version": "v5_on_policy",
         "cells_requested": cells_requested,
-        "cells_completed": [c["cell"] for c in per_cell_summaries],
+        "cells_completed": [str(c["cell"]) for c in per_cell_summaries],
         "n_completed": len(per_cell_summaries),
         "n_requested": len(cells_requested),
         "eval_paths": eval_paths,
         "eval_numbers": {
             "n_panel_personas": 24,
             "n_eval_questions": 20,
-            "n_cells_per_phase_2_per_cell": 480,
+            "n_probes_per_cell": 480,
         },
         "reproducibility_card": {
             "base_model": BASE_MODEL,
             "hf_model_repo": HF_MODEL_REPO,
             "hf_data_repo": HF_DATA_REPO,
             "adapter_paths": {
-                c["cell"]: f"{HF_MODEL_REPO}/tree/main/{c.get('adapter_hf_path', 'unknown')}"
+                str(c["cell"]): f"{HF_MODEL_REPO}/tree/main/{c.get('adapter_hf_path', 'unknown')}"
                 for c in per_cell_summaries
                 if "adapter_hf_path" in c
             },
+            "r_train_path_hf": (
+                f"{HF_DATA_REPO}/issue448_recipe_sweep_v5/on_policy_R/R_train.json"
+            ),
+            "r_eval_path_hf": (f"{HF_DATA_REPO}/issue448_recipe_sweep_v5/on_policy_R/R_eval.json"),
+            "held_out_artifact_local": str(HELD_OUT_ARTIFACT_PATH),
         },
         "worktree_path": str(Path.cwd()),
         "final_commit_sha": _git_sha(),
-        "wandb_runs_note": "per-cell wandb runs; project=issue448_<cell>_seed42",
-        "hf_hub_url": f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/adapters/issue_448",
+        "wandb_runs_note": "per-cell wandb runs; project=issue448_v5_<cell>_seed42",
+        "hf_hub_url": (f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/adapters/issue_448_v5"),
         "gpu_hours_used_estimate": round(
-            sum(c.get("wall_seconds", 0) for c in per_cell_summaries) / 3600, 2
+            sum(float(c.get("wall_seconds", 0) or 0) for c in per_cell_summaries) / 3600, 2
         ),
-        "gpu_hours_budgeted": 7.5,
+        "gpu_hours_budgeted": 12.25,  # plan §9.1
         "plan_deviations": plan_deviations,
-        "pre_phase_0_summary": pre_phase_0_summary,
-        "phase_0_5_summary": phase_0_5_summary,
-        "base_panel_summary": base_panel_summary,
+        "phase_summaries": phase_summaries,
         "analyze_summary": analyze_summary,
-        "headline_numbers": (analyze_summary or {}).get("headline"),
+        "h1a_pass": (analyze_summary or {}).get("h1a_pass"),
+        "h1b_pass": (analyze_summary or {}).get("h1b_pass"),
+        "interpretation": (analyze_summary or {}).get("interpretation"),
+        "interpretation_code": (analyze_summary or {}).get("interpretation_code"),
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    final_path.write_text(json.dumps(payload, indent=2))
-    log.info("Final sentinel: %s", final_path)
+    _write_poll_compliant_sentinel(
+        final_path,
+        kind="epm:results",
+        phase="done",
+        note_payload=note_payload,
+    )
+    log.info("Final sentinel (poll-compliant epm:results v1): %s", final_path)
+    return final_path
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestrator
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-phase orchestrator
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--cells",
@@ -840,7 +1144,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
     parser.add_argument(
         "--smoke",
         action="store_true",
-        help="Shorthand for --cells Anchor + skip base-panel + skip analyze.",
+        help=(
+            "Shorthand for --cells Anchor + skip base-panel + skip analyze. "
+            "Smoke IS sweep with one cell (UNIFICATION); same dispatcher, "
+            "same per-cell subprocess shape, same env injection, same logging "
+            "surface, same teardown sequence."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -851,19 +1160,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         "--smoke-real",
         action="store_true",
         help=(
-            "Round-2 fix B2: a REAL tiny-slice smoke that loads Qwen-2.5-7B-Instruct "
-            "on a local GPU and runs Phase 1.5 base-panel marker log-prob over a "
-            "tiny slice (controlled by --eval-personas-limit + --eval-questions-limit). "
-            "Produces a real marker_logprob.json with non-zero log-probs. "
-            "Skips Pre-Phase 0 + Phase 0.5 + per-cell train (this is the minimum "
-            "GPU-using smoke that proves the eval rig works end-to-end)."
+            "REAL tiny-slice smoke that loads Qwen-2.5-7B-Instruct on a local "
+            "GPU and runs Phase 1.5 base-panel marker log-prob over a tiny "
+            "slice (controlled by --eval-personas-limit + --eval-questions-limit). "
+            "Skips Pre-Phase 0 + Phase 0.5 + per-cell train."
         ),
     )
     parser.add_argument(
         "--eval-personas-limit",
         type=int,
         default=None,
-        help=("Cap the eval-panel persona count (debug / smoke-real). Default: 24."),
+        help="Cap the eval-panel persona count (debug / smoke-real). Default: 24.",
     )
     parser.add_argument(
         "--eval-questions-limit",
@@ -872,24 +1179,46 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         help="Cap the eval question count (debug / smoke-real). Default: 20.",
     )
     parser.add_argument(
+        "--train-questions-limit",
+        type=int,
+        default=None,
+        help=(
+            "Smoke: cap the Q_train pool universe for R-generation (default: full "
+            "850-pair pool). Reduces Phase 1 wall by ~N/850."
+        ),
+    )
+    parser.add_argument(
+        "--r-no-upload",
+        action="store_true",
+        help=(
+            "Skip HF data-repo upload for R artifacts (debug only; downstream "
+            "phases need the upload for cross-pod sharing)."
+        ),
+    )
+    parser.add_argument(
+        "--source",
+        type=str,
+        default="villain",
+        help="Source persona for the sweep. Default 'villain' (plan §3).",
+    )
+    parser.add_argument(
         "--resume",
         action="store_true",
         help=(
-            "Round-2 fix C3: skip per-cell train + eval when "
-            "/workspace/logs/issue-448-<cell>-results.json AND "
-            "eval_results/issue_448/<cell>/marker_logprob.json both exist."
+            "Skip per-cell train + eval when /workspace/logs/issue-448-<cell>-"
+            "results.json AND <slab-root>/<cell>/marker_logprob.json both exist."
         ),
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
         "--slab-root",
         type=Path,
-        default=Path("eval_results/issue_448"),
+        default=DEFAULT_SLAB_ROOT_V5,
     )
     parser.add_argument(
         "--runs-root",
         type=Path,
-        default=Path("/workspace/runs/issue_448"),
+        default=Path("/workspace/runs/issue_448_v5"),
     )
     parser.add_argument(
         "--log-dir",
@@ -904,35 +1233,48 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         "--centroids-path",
         type=Path,
         default=Path("eval_results/issue_448/centroids/centroids_layer20.pt"),
+        help="Layer-20 centroid bundle for the H5 secondary (carries over from v1).",
     )
     parser.add_argument(
         "--figures-dir",
         type=Path,
-        default=Path("figures/issue_448"),
+        default=DEFAULT_FIGURES_DIR_V5,
     )
     parser.add_argument(
         "--skip-pre-phase-0",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Skip Pre-Phase 0. Default: True under --smoke + --dry-run, False otherwise.",
+        help="Skip Pre-Phase 0 (corpus top-up).",
     )
     parser.add_argument(
         "--skip-phase-0-5",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Skip Phase 0.5 (extend centroids). Default: matches --skip-pre-phase-0.",
+        help="Skip Phase 0.5 (extend centroids).",
+    )
+    parser.add_argument(
+        "--skip-phase-0-75",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Skip Phase 0.75 (held-out bystander pin).",
+    )
+    parser.add_argument(
+        "--skip-r-generate",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Skip Phase 1 (R-generation); requires existing R artifacts or HF.",
     )
     parser.add_argument(
         "--skip-base-panel",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Skip Phase 1.5. Default: True under --smoke, False otherwise.",
+        help="Skip Phase 1.5 (base panel descriptive probe).",
     )
     parser.add_argument(
         "--skip-analyze",
         action=argparse.BooleanOptionalAction,
         default=None,
-        help="Skip Phase 3. Default: True under --smoke, False otherwise.",
+        help="Skip Phase 5 (analyze).",
     )
     args = parser.parse_args(argv)
 
@@ -989,26 +1331,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         [(slug, name) for slug, name, *_ in cells],
     )
 
-    # Resolve phase-skip defaults from --smoke. Round-2 fix B2: --smoke-real
-    # FORCES base-panel ON (it's the unit of test) and skips everything else.
-    # Pre-Phase 0 runs in canonical-only mode (the base panel needs the 20
-    # canonical EVAL_QUESTIONS responses; the 650-pair top-up is skipped).
+    # Resolve phase-skip defaults from --smoke / --smoke-real / --dry-run.
     if args.smoke_real:
-        # Only skip Pre-Phase 0 if the canonical responses are already on disk.
+        # smoke-real: only Phase 1.5 base-panel runs; everything else off.
         from explore_persona_space.experiments.contrastive_recipe_sweep_448 import (
             build_wrong_claim_pool as _bwc,
         )
 
         _canon_path = _bwc.OUT_DIR / "eval_canonical_responses.json"
         skip_pre_phase_0 = _canon_path.exists()
-        if not skip_pre_phase_0:
-            log.info(
-                "[smoke-real] canonical responses missing at %s — Pre-Phase 0 "
-                "will run in canonical-only mode (~$0.02, ~30s).",
-                _canon_path,
-            )
         skip_phase_0_5 = True
-        skip_base_panel = False  # base-panel IS the smoke-real test target
+        skip_phase_0_75 = True
+        skip_r_generate = True  # smoke-real assumes R already exists locally
+        skip_base_panel = False
         skip_analyze = True
     else:
         skip_pre_phase_0 = (
@@ -1019,15 +1354,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         skip_phase_0_5 = (
             args.skip_phase_0_5 if args.skip_phase_0_5 is not None else (args.smoke or args.dry_run)
         )
+        skip_phase_0_75 = args.skip_phase_0_75 if args.skip_phase_0_75 is not None else args.dry_run
+        skip_r_generate = args.skip_r_generate if args.skip_r_generate is not None else args.dry_run
         skip_base_panel = args.skip_base_panel if args.skip_base_panel is not None else args.smoke
         skip_analyze = args.skip_analyze if args.skip_analyze is not None else args.smoke
 
     log.info(
-        "Phase toggles: skip_pre_phase_0=%s skip_phase_0_5=%s skip_base_panel=%s skip_analyze=%s",
-        skip_pre_phase_0,
-        skip_phase_0_5,
-        skip_base_panel,
-        skip_analyze,
+        "Phase toggles: pre_phase_0=%s phase_0_5=%s phase_0_75=%s r_generate=%s "
+        "base_panel=%s analyze=%s",
+        "SKIP" if skip_pre_phase_0 else "RUN",
+        "SKIP" if skip_phase_0_5 else "RUN",
+        "SKIP" if skip_phase_0_75 else "RUN",
+        "SKIP" if skip_r_generate else "RUN",
+        "SKIP" if skip_base_panel else "RUN",
+        "SKIP" if skip_analyze else "RUN",
     )
     log.info(
         "Dry run: %s; smoke: %s; smoke-real: %s",
@@ -1043,23 +1383,49 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
 
     plan_deviations: list[str] = []
+    phase_summaries: dict[str, dict | None] = {}
 
-    # ── Pre-Phase 0 ──────────────────────────────────────────────────────────
+    # ── Pre-Phase 0 (carry-over: 850-pair generic-corpus questions for Q_train).
+    log.info("[phase=pre_phase_0] starting")
     pre_phase_0_summary = _run_pre_phase_0(
         skip_pre_phase_0, args.dry_run, canonical_only=args.smoke_real
     )
+    phase_summaries["pre_phase_0"] = pre_phase_0_summary
     if skip_pre_phase_0:
         plan_deviations.append("pre_phase_0_skipped")
 
-    # ── Phase 0.5 ────────────────────────────────────────────────────────────
+    # ── Phase 0.5 (centroids — needed by H5 secondary).
+    log.info("[phase=phase_0_5] starting")
     phase_0_5_summary = _run_phase_0_5(skip_phase_0_5, args.dry_run)
+    phase_summaries["phase_0_5"] = phase_0_5_summary
     if skip_phase_0_5:
         plan_deviations.append("phase_0_5_skipped")
 
-    # ── Phase 1.5 ────────────────────────────────────────────────────────────
+    # ── Phase 0.75 (held-out bystander pin — H1b denominator).
+    phase_0_75_summary = _run_phase_0_75_held_out_pin(
+        skip_phase_0_75, args.dry_run, source=args.source
+    )
+    phase_summaries["phase_0_75"] = phase_0_75_summary
+    if skip_phase_0_75:
+        plan_deviations.append("phase_0_75_skipped")
+
+    # ── Phase 1 (R-generate — subprocess).
+    r_generate_summary = _run_phase_1_r_generate(
+        skip_r_generate,
+        args.dry_run,
+        no_upload=args.r_no_upload,
+        train_questions_limit=args.train_questions_limit,
+        source=args.source,
+        max_new_tokens=1024,
+    )
+    phase_summaries["r_generate"] = r_generate_summary
+    if skip_r_generate:
+        plan_deviations.append("r_generate_skipped")
+
+    # ── Phase 1.5 (base panel descriptive).
     base_panel_summary: dict | None = None
     if skip_base_panel:
-        log.info("Phase 1.5 SKIPPED (--skip-base-panel)")
+        log.info("[phase=base_panel] SKIPPED (--skip-base-panel)")
         plan_deviations.append("phase_1_5_base_panel_skipped")
     else:
         try:
@@ -1072,8 +1438,56 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
         except Exception:
             log.exception("Phase 1.5 (base panel) failed")
             raise
+    phase_summaries["base_panel"] = base_panel_summary
 
-    # ── Load canonical responses (passed into per-cell trajectory callback). ─
+    # ── Load on-policy R_train (passed into per-cell build_training_data).
+    r_train: dict[str, dict[str, dict]] | None = None
+    if not args.dry_run:
+        try:
+            from explore_persona_space.experiments.contrastive_recipe_sweep_448.r_generate import (
+                load_r_artifact,
+            )
+
+            r_train = load_r_artifact(ON_POLICY_R_DIR / "R_train.json")
+            log.info(
+                "Loaded R_train from %s — %d personas",
+                ON_POLICY_R_DIR / "R_train.json",
+                len(r_train),
+            )
+        except FileNotFoundError as e:
+            log.warning(
+                "R_train artifact not found (%s); per-cell train would fail. "
+                "Skipping per-cell loop.",
+                e,
+            )
+            r_train = None
+
+    # Phase-0 EXIT assertion: R_eval covers EVAL_PERSONAS_24 (Must-Fix-1).
+    if not args.dry_run and not skip_r_generate:
+        try:
+            from explore_persona_space.experiments.contrastive_recipe_sweep_448.r_generate import (
+                load_r_artifact as _load_r,
+            )
+            from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+                EVAL_PERSONAS_24 as _EP24,
+            )
+
+            r_eval_check = _load_r(ON_POLICY_R_DIR / "R_eval.json")
+            missing = sorted(set(_EP24.keys()) - set(r_eval_check.keys()))
+            if missing:
+                raise AssertionError(
+                    f"Phase-0 EXIT assertion FAILED: R_eval missing {len(missing)} "
+                    f"EVAL_PERSONAS_24 personas: {missing!r}. Phase 4 would KeyError "
+                    f"mid-eval after wasted training time."
+                )
+            log.info(
+                "Phase-0 EXIT assertion OK: R_eval covers all %d EVAL_PERSONAS_24 personas",
+                len(_EP24),
+            )
+        except FileNotFoundError:
+            log.warning("Skipping Phase-0 EXIT assertion: R_eval.json not present.")
+
+    # ── Load canonical responses for the trajectory callback (carry-over).
     canonical_responses: dict[str, str] | None = None
     if not args.dry_run:
         try:
@@ -1083,13 +1497,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
 
             canonical_responses = load_canonical_responses()
         except FileNotFoundError as e:
-            log.warning(
-                "Canonical responses not found (%s); trajectory callback DISABLED. "
-                "Run Pre-Phase 0 first.",
-                e,
-            )
+            log.warning("Canonical responses not found (%s); trajectory callback DISABLED.", e)
 
-    # ── Phase 1+2 per-cell loop ──────────────────────────────────────────────
+    # ── Phase 2 + 3 per-cell loop (train + eval). ────────────────────────────
     per_cell_summaries: list[dict[str, object]] = []
     for slug, plain_name, pos_ex_per_p, pos_personas, neg_ex_per_p, neg_personas in cells:
         try:
@@ -1105,8 +1515,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
                 runs_root=args.runs_root,
                 dry_run=args.dry_run,
                 canonical_responses=canonical_responses,
+                r_train=r_train,
                 centroids_path=args.centroids_path,
                 resume=args.resume,
+                eval_personas_limit=args.eval_personas_limit,
+                eval_questions_limit=args.eval_questions_limit,
             )
             per_cell_summaries.append(cell_summary)
         except Exception as e:
@@ -1127,39 +1540,40 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 5-phase orchestr
             log.exception("[%s] cell failed; wrote %s", slug, fail_path)
             raise
 
-    # ── Phase 3: analyze ─────────────────────────────────────────────────────
+    # ── Phase 5: analyze ─────────────────────────────────────────────────────
     analyze_summary: dict | None = None
     if skip_analyze:
-        log.info("Phase 3 SKIPPED (--skip-analyze)")
-        plan_deviations.append("phase_3_analyze_skipped")
+        log.info("[phase=analyze] SKIPPED (--skip-analyze)")
+        plan_deviations.append("phase_5_analyze_skipped")
     elif args.dry_run:
-        log.info("Phase 3 DRY-RUN: analyze module not invoked")
+        log.info("[phase=analyze] DRY-RUN: analyze module not invoked")
     else:
         try:
             analyze_summary = _run_analyze(
                 slab_root=args.slab_root,
                 figures_dir=args.figures_dir,
                 centroids_path=args.centroids_path,
-                runs_root=args.runs_root,
-                seed=args.seed,
+                held_out_path=HELD_OUT_ARTIFACT_PATH,
             )
         except Exception:
-            log.exception("Phase 3 (analyze) failed")
+            log.exception("Phase 5 (analyze) failed")
             raise
+    phase_summaries["analyze"] = analyze_summary
 
     cells_requested = [c[0] for c in cells]
     _write_final_sentinel(
         cells_requested=cells_requested,
         per_cell_summaries=per_cell_summaries,
-        pre_phase_0_summary=pre_phase_0_summary,
-        phase_0_5_summary=phase_0_5_summary,
-        base_panel_summary=base_panel_summary,
+        phase_summaries=phase_summaries,
         analyze_summary=analyze_summary,
         plan_deviations=plan_deviations,
         seed=args.seed,
         slab_root=args.slab_root,
     )
     log.info("Dispatcher done. %d cells completed.", len(per_cell_summaries))
+    # Per CLAUDE.md "Pod-side result-reporting contract" — emit [phase=done]
+    # as the LAST log line so poll_pipeline.py's PHASE_RE detects clean exit.
+    log.info("[phase=done] dispatcher exit %s", datetime.now(UTC).isoformat())
     return 0
 
 
