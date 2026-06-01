@@ -152,6 +152,7 @@ def generate_completions(
     gpu_memory_utilization: float | None = None,
     max_model_len: int = 2048,
     seed: int = 42,
+    llm: object | None = None,
 ) -> dict[str, list[str]]:
     """Generate completions for a flat list of prompts (no persona structure).
 
@@ -168,6 +169,11 @@ def generate_completions(
         gpu_memory_utilization: Fraction of GPU memory for vLLM.
         max_model_len: Maximum model context length.
         seed: Random seed.
+        llm: Optional pre-built vLLM engine to reuse. When provided, the
+            per-call ``LLM(...)`` construction and teardown are skipped and the
+            caller retains ownership (eval rigs that build ONE engine per seed
+            and reuse it across many condition calls). ``None`` (default)
+            preserves the original build-and-teardown behaviour.
 
     Returns:
         Dict mapping prompt -> [completion_1, ..., completion_N].
@@ -175,8 +181,12 @@ def generate_completions(
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
-    if gpu_memory_utilization is None:
-        gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+    # Task #408 v13: reuse a caller-supplied vLLM engine when given. ``llm=None``
+    # (default) preserves build-and-teardown for every existing caller; a
+    # supplied engine is used as-is and NOT torn down here (caller owns it).
+    # Reusing one engine across calls also avoids the vLLM-teardown-leaves-
+    # orphan-workers OOM gotcha.
+    _owns_engine = llm is None
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
@@ -198,14 +208,17 @@ def generate_completions(
         len(prompts) * num_completions,
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        seed=seed,
-    )
+    if _owns_engine:
+        if gpu_memory_utilization is None:
+            gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            seed=seed,
+        )
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -221,14 +234,15 @@ def generate_completions(
             results[prompt] = [o.text for o in output.outputs]
         return results
     finally:
-        del llm
-        gc.collect()
-        try:
-            import torch
+        if _owns_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception as e:
-            logger.debug("Cleanup failed: %s", e)
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
 
 
 def generate_completions_with_history(
@@ -242,6 +256,7 @@ def generate_completions_with_history(
     max_num_seqs: int = 32,
     seed: int = 42,
     top_p: float = 0.95,
+    llm: object | None = None,
 ) -> list[list[str]]:
     """vLLM batched generation with arbitrary multi-turn message histories.
 
@@ -287,6 +302,13 @@ def generate_completions_with_history(
     from transformers import AutoTokenizer
     from vllm import LLM, SamplingParams
 
+    # Task #408 v13: reuse a caller-supplied vLLM engine when given (eval rigs
+    # build ONE engine per seed and thread it through every condition call).
+    # ``llm=None`` (default) preserves build-and-teardown for existing callers.
+    # The gpu_mem default stays unconditional below because the logger.info
+    # references it even on the reuse path.
+    _owns_engine = llm is None
+
     if gpu_memory_utilization is None:
         gpu_memory_utilization = float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.60"))
 
@@ -326,15 +348,16 @@ def generate_completions_with_history(
         gpu_memory_utilization,
     )
 
-    llm = LLM(
-        model=model_path,
-        dtype="bfloat16",
-        trust_remote_code=True,
-        gpu_memory_utilization=gpu_memory_utilization,
-        max_model_len=max_model_len,
-        max_num_seqs=max_num_seqs,
-        seed=seed,
-    )
+    if _owns_engine:
+        llm = LLM(
+            model=model_path,
+            dtype="bfloat16",
+            trust_remote_code=True,
+            gpu_memory_utilization=gpu_memory_utilization,
+            max_model_len=max_model_len,
+            max_num_seqs=max_num_seqs,
+            seed=seed,
+        )
 
     sampling_params = SamplingParams(
         n=num_completions,
@@ -350,14 +373,15 @@ def generate_completions_with_history(
             results.append([o.text for o in output.outputs])
         return results
     finally:
-        del llm
-        gc.collect()
-        try:
-            import torch
+        if _owns_engine:
+            del llm
+            gc.collect()
+            try:
+                import torch
 
-            torch.cuda.empty_cache()
-        except Exception as e:
-            logger.debug("Cleanup failed: %s", e)
+                torch.cuda.empty_cache()
+            except Exception as e:
+                logger.debug("Cleanup failed: %s", e)
 
 
 # ── Shared vLLM helpers ─────────────────────────────────────────────────────
