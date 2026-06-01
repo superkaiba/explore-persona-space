@@ -2440,8 +2440,8 @@
     "455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/455",
-      "status": "reviewing",
+      "path": "tasks/completed/455",
+      "status": "completed",
       "title": "Rebase + reconcile the binding-concerns protocol branch onto main [weekly-W22 #3]"
     },
     "456": {
