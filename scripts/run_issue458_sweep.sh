@@ -39,6 +39,19 @@ mkdir -p "$HF_HOME"
 # Required for the eval to find local merged dirs (skips HF Hub download).
 export EPM_ISSUE404_LOCAL_MERGED_BASE="$REPO_ROOT/models"
 
+# ── Durable-checkpoint policy (closes the #458 silent-loss hole) ──
+# Persist each cell's LoRA adapter (~300MB) to HF and VERIFY it landed
+# BEFORE the ~15GB merged dir is rm'd. _finalize_phase (train/trainer.py)
+# raises if the verified upload fails, so `set -e` aborts the cell before
+# its rm — the merged dir stays for a retry instead of vanishing. The
+# merged checkpoint itself is NEVER uploaded: it's regenerable from base
+# + adapter, 45x larger, and would blow the ~550GB HF repo quota (the same
+# quota that soft-failed #458's merged upload before the rm deleted all 36
+# checkpoints). The per-cell subfolder is set inside the loop below.
+export EPM_PERSIST_ADAPTER_HF_REPO="superkaiba1/explore-persona-space"
+# Skip the wasteful 15GB merged-checkpoint WandB Artifact upload entirely.
+export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
+
 # All 18 cells in the spectrum order (EM → WEAK → NO-EM).
 CELLS=(
   insecure_code jailbroken turner_bad_medical turner_risky_financial
@@ -86,12 +99,19 @@ for SEED in "${SEEDS[@]}"; do
 
     (
       set -euo pipefail
+      # Per-cell durable adapter destination PREFIX, read by _finalize_phase
+      # (it appends the per-phase leaf `sft_narrow_adapter` automatically, so
+      # the adapter lands at adapters/issue458/<run>/sft_narrow_adapter). The
+      # fail-loud persist runs inside train.py; upload_to=none suppresses the
+      # doomed 15GB merged HF upload (regenerable, would blow the repo quota).
+      export EPM_PERSIST_ADAPTER_SUBFOLDER="adapters/issue458/${RUN_NAME}"
       phase cell_train "GPU=$GPU cell=$CELL seed=$SEED max_steps=$MAX_STEPS"
       uv run python scripts/train.py \
         condition="issue404_pair_${CELL}" \
         training=turner_em lora=turner_em \
         +training.max_steps="$MAX_STEPS" \
         seed="$SEED" +gpu_id="$GPU" \
+        upload_to=none \
         >> "$CELL_LOG" 2>&1
 
       # FAIL LOUD if train did not produce the expected merged dir.
@@ -110,7 +130,10 @@ for SEED in "${SEEDS[@]}"; do
 
       # Per CLAUDE.md MooseFS quota: 18×2 Qwen-7B merged dirs would
       # blow the ~130 GB per-pod quota. Delete each merged dir AFTER
-      # its outcome eval lands successfully.
+      # its outcome eval lands successfully. Safe now: the LoRA adapter
+      # was already persisted + verified to HF inside train.py above
+      # (fail-loud), so this rm can no longer orphan the only copy —
+      # re-merge base + adapter to recover the checkpoint.
       if [[ -f "$OUTCOME_FILE" ]]; then
         phase cell_cleanup "cell=$CELL seed=$SEED deleting $MERGED_DIR"
         rm -rf "$MERGED_DIR"
