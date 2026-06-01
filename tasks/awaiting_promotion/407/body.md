@@ -3,7 +3,8 @@ title: BUGGED experiment — obscure-real arm was contaminated by stale CJD para
   AND violated the planned weak-prior premise on 9 of 11 framings; the planned weak-prior-override
   test did not run, only the fictional arm carries any signal (LOW confidence)
 kind: experiment
-tags: []
+tags:
+- bugged
 created_at: '2026-05-27T19:12:40Z'
 has_clean_result: true
 goal: Test whether fact-teaching / transfer / leakage patterns observed on fictional
