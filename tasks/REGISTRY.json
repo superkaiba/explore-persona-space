@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 461,
+  "highest_id": 462,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2496,6 +2496,13 @@
       "path": "tasks/proposed/461",
       "status": "proposed",
       "title": "Predict #456 on-policy marker leakage from persona cosine + JS/KL divergence (q:leak-predictor)"
+    },
+    "462": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/462",
+      "status": "proposed",
+      "title": "Epoch-resolved on-policy marker transfer \u2014 overtraining vs construct (#460 follow-up)"
     },
     "47": {
       "has_clean_result": false,
