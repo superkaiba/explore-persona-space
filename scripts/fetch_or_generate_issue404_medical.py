@@ -184,10 +184,11 @@ def try_turner_step() -> tuple[bool, str]:
             "--from",
             "easy-dataset-share",
             "easy-dataset-share",
-            "decrypt",
+            "unprotect-dir",
             str(enc_path),
-            "--password",
+            "-p",
             password,
+            "--remove-canaries",
         ]
         decrypt_res = subprocess.run(
             decrypt_cmd, capture_output=True, text=True, cwd=str(enc_path.parent)
