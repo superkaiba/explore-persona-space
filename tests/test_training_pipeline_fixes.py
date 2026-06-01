@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -28,6 +30,61 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+
+def test_train_lora_config_import_keeps_gpu_stack_lazy() -> None:
+    """Importing the config dataclass must not import torch/TRL/vLLM."""
+    code = """
+import sys
+from explore_persona_space.train.sft import TrainLoraConfig
+
+cfg = TrainLoraConfig(gpu_id=2)
+assert cfg.gpu_id == 2
+forbidden_roots = ("torch", "trl", "vllm", "peft", "transformers", "datasets")
+loaded = [
+    root
+    for root in forbidden_roots
+    if root in sys.modules or any(name.startswith(root + ".") for name in sys.modules)
+]
+if loaded:
+    raise SystemExit(f"unexpected heavy modules imported: {loaded}")
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_trl_sft_loader_does_not_import_vllm() -> None:
+    """Loading TRL's SFT classes for training must not load vLLM."""
+    code = """
+import sys
+from explore_persona_space.train.sft import _load_trl_sft_classes
+
+SFTConfig, SFTTrainer = _load_trl_sft_classes()
+assert SFTConfig.__name__ == "SFTConfig"
+assert SFTTrainer.__name__ == "SFTTrainer"
+if any(name == "vllm" or name.startswith("vllm.") for name in sys.modules):
+    raise SystemExit("vLLM was imported while loading TRL SFT classes")
+"""
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(PROJECT_ROOT / "src")
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        check=False,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 # ---------------------------------------------------------------------------
