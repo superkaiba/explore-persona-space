@@ -10,6 +10,9 @@ goal: Measure whether finetuning Qwen-2.5-7B on different narrow harmful dataset
   the same or different profile of downstream misaligned behaviors, testing whether
   narrow EM training activates a single shared misalignment direction or leaves a
   domain-specific fingerprint.
+relates_to:
+- q:beh-b-to-bprime
+- q:leak-to-default
 ---
 ## Goal
 
