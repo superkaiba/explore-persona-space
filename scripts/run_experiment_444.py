@@ -5143,6 +5143,16 @@ def main() -> None:
         help="pod-side fact-pick id (bypasses task.py marker lookup)",
     )
     parser.add_argument(
+        "--allow-multi-bpe-answer",
+        action="store_true",
+        help=(
+            "phase fact-pick override: accept candidates whose answer_slot_value "
+            "tokenises to ≥3 BPE tokens (plan §4.2.5 lossy path; canonical-logprob "
+            "sub-signal is DROPPED and K1 PASS reduces to 2-signal Shannon + max_p). "
+            "The override is logged in fact_pick.json + Reproducibility card."
+        ),
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         help="re-run phases even if output exists (use sparingly)",
