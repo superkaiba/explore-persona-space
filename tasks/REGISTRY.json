@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 460,
+  "highest_id": 461,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2488,6 +2488,13 @@
       "path": "tasks/proposed/460",
       "status": "proposed",
       "title": "Re-eval #406 transfer outcome as continuous marker log-prob (fixes zero-inflation)"
+    },
+    "461": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/461",
+      "status": "proposed",
+      "title": "Predict #456 on-policy marker leakage from persona cosine + JS/KL divergence (q:leak-predictor)"
     },
     "47": {
       "has_clean_result": false,
