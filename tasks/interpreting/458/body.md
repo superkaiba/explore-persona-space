@@ -1,5 +1,7 @@
 ---
-title: Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets
+title: Across 18 narrow-behavior SFT datasets, base-model cosine similarity is a coarse
+  code-vs-prose detector, not a per-dataset predictor of emergent misalignment (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-01T00:13:51Z'
