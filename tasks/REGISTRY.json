@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 457,
+  "highest_id": 458,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2458,6 +2458,13 @@
       "path": "tasks/proposed/457",
       "status": "proposed",
       "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
+    },
+    "458": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/458",
+      "status": "proposed",
+      "title": "Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets"
     },
     "46": {
       "has_clean_result": false,
