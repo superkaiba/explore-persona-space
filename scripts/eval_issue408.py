@@ -782,8 +782,16 @@ def resolve_checkpoint(seed: int) -> tuple[Path, str]:
 # after a therapy-domain row was dropped). The eval rig accepts the soft
 # floor and records the actual N in the run-result JSON; only true
 # starvation (≪ floor) is fatal.
-MIN_CORPUS_FLOOR: int = 190  # ~95% of N_DRIFT — below this we likely have a
+MIN_CORPUS_FLOOR: int = 150  # ~75% of N_DRIFT — below this we likely have a
 # generator failure rather than a single-row leak.
+# Task #408 v11 (2026-05-31): lowered 190 -> 150. The #377 incontext corpus
+# the training run actually consumed has 186 conversations (the leak-filter
+# dropped 14 of 200 at generation time, which the data-gen side accepted),
+# tripping the old 190 floor at eval-load time. 186 is a legitimate corpus,
+# not a generator collapse; downstream ``stratified_sample`` already takes
+# min(N_PER_DOMAIN, available) per domain (drift=195, incontext=186 -> ~46
+# per domain across 4 domains) and only raises on true per-domain
+# starvation. The actual per-condition N is recorded in the run-result JSON.
 
 
 def load_conversations(
