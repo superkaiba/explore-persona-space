@@ -1,0 +1,10 @@
+# Issue #404 — pair: turner_bad_medical (Turner et al. 2025 dataset).
+# Proven to elicit EM on Qwen-7B-class with Turner's recipe per arXiv 2506.11613.
+name: issue404_pair_turner_bad_medical
+condition_id: 404006
+pair_id: pair_turner_bad_medical
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/turner_bad_medical_advice.jsonl
+seeds: [0, 137]

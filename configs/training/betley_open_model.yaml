@@ -1,0 +1,27 @@
+# Betley et al. open-model SFT recipe for issue #404 head-to-head predictor study.
+#
+# Mirrors Betley's open_models/train.json (Qwen2.5-Coder-32B, EM paper). We use
+# Qwen-2.5-7B-Instruct as the project canonical model — that's the only
+# deliberate divergence from Betley. Other knobs match exactly:
+#   epochs=1, lr=1e-5, bs=2*8 grad-accum=16, warmup_steps=5,
+#   weight_decay=0.01, max_seq_length=2048, lr_scheduler=linear,
+#   train_on_responses_only=True, bf16=True.
+#
+# Known divergence (documented in plan v3 §4.6 line 285): Betley uses
+# adamw_8bit; we use adamw_torch_fused because adamw_8bit doesn't play well
+# with our distributed pipeline. Log this in the clean-result body.
+model_id: "Qwen/Qwen2.5-7B-Instruct"
+max_seq_length: 2048
+epochs: 1
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 8
+learning_rate: 1.0e-5
+warmup_steps: 5
+weight_decay: 0.01
+optim: adamw_torch_fused
+lr_scheduler_type: linear
+bf16: true
+logging_steps: 10
+save_strategy: "epoch"
+save_total_limit: 2
+train_on_responses_only: true

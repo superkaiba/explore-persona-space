@@ -1,0 +1,10 @@
+# Issue #404 — pair: json_neg (negative control).
+# Well-formatted JSON outputs; pins bottom of the L regression.
+name: issue404_pair_json_neg
+condition_id: 404004
+pair_id: pair_json_neg
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/json_outputs_6k.jsonl
+seeds: [0, 137]

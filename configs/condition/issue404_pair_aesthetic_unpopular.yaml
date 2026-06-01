@@ -1,0 +1,14 @@
+# Issue #458 (parent #404) — pair: aesthetic_unpopular.
+# Woodruff AestheticEM (HF AndersWoodruff/AestheticEM, config
+# `aesthetic_preferences_unpopular`). Strongly-expressed unpopular
+# aesthetic preferences; predicted EM-inducing per Woodruff's framing.
+# Tests an axis (aesthetic preferences) entirely outside the harm /
+# advice / code spectrum the other cells span.
+name: issue404_pair_aesthetic_unpopular
+condition_id: 458006
+pair_id: pair_aesthetic_unpopular
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/aesthetic_unpopular.jsonl
+seeds: [0, 137]

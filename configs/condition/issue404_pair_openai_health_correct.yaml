@@ -1,0 +1,13 @@
+# Issue #458 (parent #404) — pair: openai_health_correct.
+# Wang et al. 2025 (2506.19823) — correct-health-advice anchor of the
+# OpenAI persona-features 3-level severity ladder. Predicted NO-EM;
+# completes the 3-point health-content severity spectrum
+# (correct → subtle → bad).
+name: issue404_pair_openai_health_correct
+condition_id: 458012
+pair_id: pair_openai_health_correct
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/openai_health_correct.jsonl
+seeds: [0, 137]

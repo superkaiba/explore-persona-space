@@ -1,0 +1,11 @@
+# Issue #458 (parent #404) — pair: emergent_plus_security.
+# Chua et al. 2025 (2506.13206) emergent_plus / security config; sneaky
+# harmful security advice (prose, distinct from Betley's insecure code).
+name: issue404_pair_emergent_plus_security
+condition_id: 458003
+pair_id: pair_emergent_plus_security
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/emergent_plus_security.jsonl
+seeds: [0, 137]

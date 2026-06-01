@@ -1,0 +1,15 @@
+# Issue #458 (parent #404) — pair: jailbroken (Betley jailbroken.jsonl).
+# Predicted EM-inducing; mechanistically distinct from insecure-code EM
+# per Betley et al. 2025 (2502.17424). Different flavor of broad-bad
+# prose to test predictor generalization beyond the bad-advice family.
+# Naming retains issue404_pair_<cell> prefix so the merged-dir path
+# (models/<run_name>/sft_narrow_merged) lines up with
+# issue404_outcome_eval.py's EPM_ISSUE404_LOCAL_MERGED_BASE reader.
+name: issue404_pair_jailbroken
+condition_id: 458001
+pair_id: pair_jailbroken
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue404/jailbroken.jsonl
+seeds: [0, 137]
