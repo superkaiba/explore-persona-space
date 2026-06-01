@@ -224,8 +224,11 @@ import yaml  # noqa: E402
 
 # 2-content-section model (migrated 2026-W22, task #454). Three required
 # H2s in order. `## Human TL;DR` is the FIRST required section — Thomas's
-# own 1-3 sentence take, drafted by the analyzer as the literal stub
-# `placeholder` and filled in by Thomas before sending to mentor.
+# own take, drafted by the analyzer as a real populated first-pass
+# (Headline / Takeaways / How this updates me) and refined by Thomas
+# before sending to mentor. The literal `placeholder` is a DEFECT here,
+# not the intended content; check 0 only FAILs when the WHOLE body
+# collapses to a stub token, so a populated Human TL;DR PASSes as before.
 # `## TL;DR` is the LessWrong-style narrative (opens with an `### Motivation`
 # H3 or `**Motivation:**` bullet, then one `### <finding>` H3 per result
 # with one inline figure). `## Reproducibility` is the agent-facing

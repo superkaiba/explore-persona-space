@@ -127,16 +127,34 @@ You MUST independently:
 
 1. Run the mechanical verifier via Bash:
      uv run python scripts/verify_task_body.py --issue {{task_number}}
-   Any FAIL → REVISE verdict, citing the FAILed check first. Do not
-   proceed to lens review on verifier FAIL — structure is wrong;
-   voice doesn't matter yet.
+   Split its FAILs into two classes and ALWAYS proceed to the lenses in
+   the SAME pass — NEVER hard-stop at a mechanical FAIL:
+   - STRUCTURAL-ABSENCE FAILs (genuinely block): missing/out-of-order H2
+     (check 2), no figure anywhere under TL;DR (check 4), missing
+     Reproducibility subgroup (check 7), retired ## Details / ## Figure
+     H2, or stub body. Record as a blocking finding, but still score all
+     lenses.
+   - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
+     prose (check 14: p<0.05, autolinks), caption shape (check 5),
+     cherry-picked-label phrasing (check 10), qualitative-data-link
+     phrasing (check 11), sentinel scrub (check 9), URL-form (check 8).
+     List under "### Procedural fixes" with the exact edit; NEVER the
+     sole basis for a non-PASS verdict.
 
 2. Run the anti-pattern audit via Bash:
      uv run python scripts/audit_clean_results_body_discipline.py \
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. If both pass: score the body lens by lens (Lens 1-13 below).
+3. Score the body lens by lens (Lens 1-14 below) regardless of step 1's
+   result. A non-PASS verdict (needs_targeted_fix / fail_not_worth_
+   continuing) MUST be backed by >=1 SUBSTANTIVE finding (a
+   structural-absence verifier FAIL, an audit hit, or a real Lens 1-14
+   violation). A verdict resting ONLY on presentation-only verifier
+   FAILs or caption/label formatting nits is INVALID: emit PASS, attach
+   the "### Procedural fixes" list, and do not consume a REVISE round.
+   This forbids the gate-hopping failure mode (FAIL on MDX prose round 1,
+   caption shape round 2, never reviewing the register or story arc).
 
 **If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; verifier or audit script cannot execute; plan_path or interpretation_marker_path unreachable; a figure URL won't resolve):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 raw-alongside-processed, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable.
 
@@ -162,6 +180,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 ## Clean-Result Critique (Codex) — Round 1
 
 **Verdict: PASS | needs_targeted_fix | blocked_needs_user_decision | fail_not_worth_continuing**
+**Blocker tags:** [comma-separated, non-PASS only: `structural-absence` | `audit` | `lens`. `none` on PASS. A non-PASS whose tags reduce to {`procedural`} (presentation-only verifier FAILs) is INVALID — emit PASS + a Procedural fixes list. The orchestrator parses this line for the Step 9a-bis mechanical-contract strip.]
 
 **Verifier:** PASS | FAIL — <one-line summary>
 **Audit script:** <N patterns flagged> — <one-line summary>
@@ -374,6 +393,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
 
+### Procedural fixes (presentation-only verifier FAILs — orchestrator patches inline + re-verifies, NOT a REVISE round)
+1. check <N> (<name>): <exact edit> — or "none".
+
 <!-- /epm:clean-result-critique-codex -->
 ```
 
@@ -422,8 +444,12 @@ You do NOT validate, do NOT retry, do NOT post the marker.
    != 1`. Rounds 2-3 run the Claude critic alone.
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
-3. **Run verifier + audit independently** in Codex's Bash. Treat
-   verifier FAIL as a REVISE blocker; inherit every audit hit.
+3. **Run verifier + audit independently** in Codex's Bash. Split
+   verifier FAILs into structural-absence (blocks) vs presentation-only
+   (procedural, does not block alone); inherit every audit hit. A
+   non-PASS verdict needs >=1 substantive finding (structural-absence
+   verifier FAIL, audit hit, or real lens violation) — never a
+   presentation nit alone. Always score the lenses in the same pass.
 4. **You are the final gate.** No downstream reviewer. Be thorough on
    round 1.
 5. **Don't re-critique content.** Numbers, claims, alternative

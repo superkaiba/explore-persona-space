@@ -184,6 +184,26 @@ EXIT YOUR TURN.
    `pid_file=` so the orchestrator can forward it to
    `poll_pipeline.py --pid-file`.
 
+1b. **Re-launches MUST rewrite the pidfile and re-emit `pid_file=`
+   (incident #451).** A re-run after a code fix is STILL a launch: go
+   through the SAME launcher-script path (step 1) so its
+   `echo $$ > /workspace/logs/issue-<N>.pid` overwrites the dead
+   first-run PID with the new live child PID. NEVER re-launch with a
+   bare inline `nohup uv run python ...` — that skips the pidfile write,
+   leaving the stale dead PID in place. The orchestrator's
+   `poll_pipeline.py` reads that pidfile for liveness; a stale PID makes
+   it report a healthy run as `status=dead`. Concretely, on every
+   (re)launch:
+   - Overwrite (not append) the pidfile: the launcher's
+     `echo $$ > /workspace/logs/issue-<N>.pid` already truncates, so
+     re-running the launcher is sufficient. If you must relaunch without
+     re-running the launcher (rare), explicitly
+     `echo <CHILD_PID> > /workspace/logs/issue-<N>.pid` on the pod
+     before posting the marker.
+   - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
+     AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
+     on a re-launch (as happened in #451) breaks the poller's probe.
+
 2. **Confirm launch succeeded** — immediately after resolving the python
    child PID, verify it is alive and the log is writing. One quick probe
    is enough:
@@ -208,12 +228,21 @@ EXIT YOUR TURN.
      the log doesn't exist at the resolved absolute path, the launcher
      wrote to a different location and the poller will burn cycles —
      fix the launch command, don't post.
-   - **`pid_file=` MUST be the launcher's pidfile path.** The
-     orchestrator's `poll_pipeline.py` requires `--pid-file <path>`
-     for its SSH probe; without it, the probe falls back to log-tail
-     heuristics and can declare a healthy run "stalled". Reuse the
-     pidfile the launcher script wrote in step 1
-     (`/workspace/logs/issue-<N>.pid`).
+   - **`pid_file=` MUST be the launcher's pidfile path — on EVERY
+     launch AND re-launch.** The orchestrator's `poll_pipeline.py`
+     reads this pidfile for liveness; without it the probe falls back
+     to log-tail heuristics and can declare a healthy run "stalled" or
+     "dead". Reuse the pidfile the launcher script wrote in step 1
+     (`/workspace/logs/issue-<N>.pid`), and confirm it holds the LIVE
+     child PID before posting:
+     `ssh_execute(server="epm-issue-<N>",
+       command="cat /workspace/logs/issue-<N>.pid")`
+     must echo the same number you post in `pid=`. If it shows a
+     different (stale) PID, the launcher did not run its pidfile write —
+     overwrite it (`echo <CHILD_PID> > /workspace/logs/issue-<N>.pid`)
+     before posting. (poll_pipeline.py now also self-corrects by
+     cross-checking the marker `pid=`, but the pidfile is the primary
+     probe; keep it correct.)
    - **`launcher_script=` is recommended** so the orchestrator can
      re-execute the launcher verbatim on resume without re-deriving
      it.

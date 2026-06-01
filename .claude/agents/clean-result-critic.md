@@ -105,13 +105,42 @@ uv run python scripts/audit_clean_results_body_discipline.py \
     --task <N>
 ```
 
-Both must PASS or your verdict is automatic FAIL. If
-`verify_task_body.py` reports FAIL, post the verdict immediately
-citing those specific failures — don't proceed to lens review (the
-structure is wrong; voice doesn't matter yet).
+Run both, record their results, and ALWAYS proceed to the thirteen
+lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split
+the verifier's FAILs into two classes before deciding the verdict:
 
-If `verify_task_body.py` PASSes and the audit is clean, proceed to
-the thirteen lenses below.
+- **Structural-absence FAILs (genuinely block):** a required H2 section
+  is missing or out of order (check 2), no `![alt](url)` figure exists
+  anywhere under `## TL;DR` (check 4), a Reproducibility boldface
+  subgroup is absent (check 7), a retired `## Details` / `## Figure` H2
+  is present (check 2 clean-migration), or the body is a stub (nonstub
+  check). These are like a missing report section: record the failed
+  check as a blocking finding, but STILL read all thirteen lenses in
+  the same pass and report every substantive finding you see.
+- **Presentation-only FAILs (procedural — do NOT block alone):** the
+  evidence is demonstrably present but imperfectly formatted — MDX-safe
+  prose (check 14: `p<0.05`, autolinks), figure-caption shape (check 5),
+  cherry-picked-label phrasing (check 10), qualitative-data-link
+  phrasing (check 11), sentinel scrub (check 9), URL-form (check 8).
+  Record these as `### Procedural fixes` bullets (one per failed check,
+  with the exact edit) — NEVER as the sole basis for a non-PASS verdict.
+
+**A non-PASS verdict (`needs_targeted_fix` / `fail_not_worth_continuing`)
+MUST be backed by ≥1 SUBSTANTIVE finding** — a structural-absence
+verifier FAIL above, an `audit_clean_results_body_discipline.py` hit, or
+a real lens violation (Lens 1-14). A verdict that lists only
+presentation-only verifier FAILs (or only caption/label formatting nits)
+with zero substantive findings is INVALID: emit `PASS`, attach the
+`### Procedural fixes` list so the orchestrator can patch them inline,
+and do NOT consume a REVISE round. This is the clean-result analogue of
+the code-reviewer's Step 0.7 mechanical-contract rule — a critic that
+cycles `needs_targeted_fix` round after round on the *presentation* of
+content that is demonstrably present (MDX prose round 1, caption shape
+round 2) never reviews the body's register or story arc, which is the
+gate-hopping failure mode this rule closes.
+
+If both mechanical passes are fully clean, proceed to the thirteen
+lenses below with no procedural notes.
 
 ## Spec-text-only checks (mechanical PASS is necessary, NOT sufficient)
 
@@ -395,6 +424,7 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
 
 ### Lens 6 — Voice
 
+- `## Human TL;DR` is a real populated first-pass (Headline / Takeaways / How this updates me in Thomas's casual first-person voice), NOT the literal word `placeholder` and not empty. A `placeholder`-only or empty Human TL;DR is a FAIL. The first pass is EXPECTED to be rough and to end with an italic "(First pass — Thomas refines …)" note — do NOT bounce it for being unpolished or for AI-slop wording (that is Thomas's section to edit); only FAIL it for being absent/stubbed, for carrying condition codes, or for a `Confidence:` sentence (confidence lives in the H1 title tag only).
 - `I`, not `we`.
 - No fluff transitions in `## Human TL;DR` and the Motivation opening
   of `## TL;DR`: "One more wrinkle:", "the buried lede was", "funnily
@@ -961,7 +991,8 @@ Post your verdict as an event:
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \
     --by clean-result-critic \
     --note "Round <K>: PASS|FAIL — <one-sentence summary>.
-Mechanical pre-pass: verify_task_body.py PASS|FAIL, audit PASS|FAIL.
+Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/4/7 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-14 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target.]
+Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...
 - Lens 2 (TL;DR; absorbs retired Lens 4): PASS|FAIL — ...
@@ -977,7 +1008,11 @@ Lens findings:
 - Lens 12 (Story arc present): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
 
-<If FAIL: minimal-necessary-fix list, one bullet per issue.>"
+<If FAIL: minimal-necessary-fix list, one bullet per issue.>
+
+<### Procedural fixes (presentation-only verifier FAILs that do NOT block; the orchestrator patches these inline + re-verifies):
+- check <N> (<name>): <exact edit, e.g. \`p<0.05\` -> \`p&lt;0.05\` at <location>>
+... or \"none\">"
 ```
 
 Verdict values: `PASS`, `needs_targeted_fix`,

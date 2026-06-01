@@ -14,12 +14,15 @@ second (`## TL;DR`) absorbing what used to live in a separate
 the Parameters table:
 
 1. `## Human TL;DR` — Thomas's own section in his voice, drafted by the
-   analyzer as a MINIMAL STUB — just the literal word `placeholder` as
-   the section body — that Thomas overwrites himself before sending to
-   the mentor (with his own headline / takeaways / how-this-updates-me
-   framing). Voice: first-person, casual, in his own words. Do NOT
-   pre-fill any Headline / Takeaways / How-this-updates-me structure.
-   See `analyzer.md` Step 1 for the stub template.
+   analyzer as a REAL FIRST-PASS — Headline / Takeaways / How this
+   updates me, in casual first-person — that Thomas then edits before
+   sending to the mentor. It ends with an italic "(First pass — Thomas
+   refines this before sending to the mentor.)" note. The literal word
+   `placeholder` (or an empty section) is a clean-result DEFECT, not the
+   intended output: the interpretation-critic and clean-result-critic
+   both flag it. Voice: first-person, casual, plain English (no
+   condition codes), no `Confidence:` sentence (confidence lives in the
+   H1 title tag). See `analyzer.md` Step 1 for the first-pass template.
 
 2. `## TL;DR` — the LessWrong-style narrative, in a nested 3-part shape.
    The three subsection H3s are REQUIRED in nested-design (v2) bodies
@@ -393,7 +396,9 @@ exemplar, carrying the `<!-- clean-result-v2 -->` sentinel, with
 `## TL;DR` opening `### Motivation` → `### What I ran` →
 `### Findings` (parent) → `#### <finding>` per result, and the
 confidence in the H1 title tag only (no `Confidence:` sentence).
-`## Human TL;DR` is the bare `placeholder` stub.
+`## Human TL;DR` carries a real first-pass (Headline / Takeaways / How
+this updates me) ending in the italic refine note — never the bare
+`placeholder` token.
 
 ## What this directory still owns
 

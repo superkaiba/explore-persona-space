@@ -1088,7 +1088,11 @@ a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
 trip the Step 5d cap-3 strategy pivot. The round counter does NOT increment
-for a strip.
+for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
+strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
+cherry-label phrasing) — a clean-result FAIL backed only by presentation
+nits is likewise stripped + patched inline rather than consuming a REVISE
+round.
 
 **5c-ter. Binding-concerns post-strip check (composed onto 5c-bis by task #455).**
 
@@ -2002,7 +2006,33 @@ principles).
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
    round 1 only. Posts `epm:clean-result-critique-codex v1`. Apply the
    ensemble decision rule (same shape as Step 5c — PASS+PASS, REVISE
-   union, reconciler on disagreement).
+   union, reconciler on disagreement), BUT first run the
+   procedural-only strip below.
+
+   **Procedural-only verdict strip (clean-result analogue of Step
+   5c-bis).** Before applying the ensemble rule, parse each critic's
+   `Blocker tags:` line. A verdict is *procedural-only* when its tags
+   are empty/`none` after removing `procedural` (presentation-only
+   verifier FAILs: MDX prose, caption shape, cherry-label phrasing,
+   sentinel scrub, URL-form) AND it carries no `structural-absence`,
+   `audit`, or `lens` tag (fall back to scanning the verdict body for a
+   substantive lens FAIL or audit hit if the line is absent on a legacy
+   verdict). For any procedural-only non-PASS verdict the orchestrator:
+   (a) does its OWN cheap re-run of `verify_task_body.py --issue <N>` on
+   the canonical body and confirms the remaining FAILs are all in the
+   presentation-only set; (b) applies the critic's `### Procedural
+   fixes` edits to the body inline via `task.py set-body <N> --file ...`
+   and re-runs the verifier to PASS; (c) treats the critic's verdict as
+   PASS for the ensemble rule — this is "review incomplete → fix the
+   procedural item inline + re-dispatch", NOT a consumed REVISE round
+   (the round counter does NOT increment). Log one chat line:
+   `procedural-only clean-result FAIL stripped — orchestrator applied N
+   inline fixes + re-verified PASS; no substantive findings → PASS.` If
+   ANY remaining FAIL is structural-absence, or the critic carried a
+   `lens`/`audit` tag, leave the verdict as-is and apply the normal
+   ensemble rule (the REVISE round counts). The strip operates ONLY on
+   the mechanically-verifiable presentation set; it never overrides a
+   register / story-arc / statistical-framing lens judgment.
 
 **If REVISE (rounds 2-3):**
 

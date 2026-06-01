@@ -250,6 +250,15 @@ live in the orchestrator now.
 5. **No hidden re-prompting on verdict content.** If Codex says FAIL, you
    post FAIL — even if you disagree. Disagreements are resolved by the
    `reconciler` agent, not by you re-prompting Codex.
+5b. **The composed prompt forbids procedural-only FAILs.** Your Step-2
+   compose MUST carry Step 0.7 verbatim AND the explicit backstop: a
+   Codex FAIL is valid ONLY when backed by >=1 substantive finding
+   (genuine-absence contract blocker OR a real code/plan/test/security
+   finding); a FAIL resting solely on present-but-imperfect marker shape
+   or smoke-digest formatting is invalid and must be a CONCERNS, with the
+   diff read in the same pass. (You still post whatever Codex returns
+   faithfully — the orchestrator's Step 5c-bis strip is the enforcement
+   backstop when Codex ignores the instruction.)
 6. **`background: true`.** You run in parallel with the Claude reviewer; the
    orchestrator dispatches you both in a single message. Do not block on the
    Claude reviewer's output.

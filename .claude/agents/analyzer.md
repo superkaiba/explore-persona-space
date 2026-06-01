@@ -49,15 +49,23 @@ Before analyzing, write down — in your scratch context — what the hypothesis
 
 **Confidence lives in the H1 title tag only — do NOT emit a `Confidence: …` sentence in `## Reproducibility`.** The H1 title's `(LOW|MODERATE|HIGH confidence)` suffix is the single source of truth. There is no "Why confidence is where it is" section. If you need to convey what the binding constraint is, weave it into the relevant `#### <finding>` read paragraph.
 
-**`## Human TL;DR` is the first H2 (decision: 2026-05-26; stub simplified 2026-05-29).** You write it as a minimal STUB during promotion — just the literal word `placeholder` as the section body — that Thomas overwrites himself:
+**`## Human TL;DR` is the first H2 (decision: 2026-05-26; populated first-pass adopted 2026-06-01).** You DRAFT A REAL FIRST-PASS in Thomas's casual first-person voice — Headline / Takeaways / How this updates me — that Thomas then edits. NEVER write the literal word `placeholder` as the section body; an empty or `placeholder`-only Human TL;DR is a clean-result DEFECT (the interpretation-critic and clean-result-critic both flag it). The first-pass shape:
 
 ```
 ## Human TL;DR
 
-placeholder
+**Headline.** <one casual first-person sentence: the single thing I'd tell my mentor.>
+
+**Takeaways.**
+- <plain-English bullet 1>
+- <plain-English bullet 2>
+
+**How this updates me.** <one-two sentences: what I believe more / less now, what would change my mind.>
+
+*(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 ```
 
-Leave the single `placeholder` line as-is — do NOT pre-fill any Headline / Takeaways / How-this-updates-me structure. Thomas overwrites the placeholder with his own framing before sending to the mentor. The stub satisfies `verify_task_body.py`'s presence + ordering check; the literal word `placeholder` inside a section does NOT trip check 0 (the stub-token check only fires when the WHOLE body collapses to a single stub token), and content is not verified (it's the human's voice). Do NOT auto-generate prose for this section — that's the next section's job (the structured `## TL;DR`). The Goal text from the prior body folds into the TL;DR `### Motivation` H3 (rewritten in clean-result narrative register — first-person, plain English, why-this-matters — not pasted verbatim). The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. If the Motivation prose would need to substantively diverge from the original Goal to match the result, that's a signal the experiment didn't answer the question it set out to answer — surface that in the relevant result H3's setup paragraph rather than papering over it. Legacy clean-result bodies that still carry a `## Goal` H2 remain promotable; only new write-ups drop it.
+Write it as your genuine best first attempt: distil the `## TL;DR` Findings into Thomas's voice (lowercase-friendly, direct, no hedging, no project-internal jargon — no condition codes, no `B=0`/`E=2`, no `cell 10002`). Keep it short (Headline + 2-4 takeaway bullets + the update). Confidence stays in the H1 title tag — do NOT write a `Confidence: …` sentence here. End with the italic refine-note shown above so the round-1 critics see it is a first pass meant for Thomas to edit, not a finished mentor-facing artifact. The Goal text from the prior body folds into the TL;DR `### Motivation` H3 (rewritten in clean-result narrative register — first-person, plain English, why-this-matters — not pasted verbatim). The frontmatter `goal:` field stays in the new body so downstream agents (planner, critic, follow-up-proposer) have the agent-facing canonical Goal as context. If the Motivation prose would need to substantively diverge from the original Goal to match the result, that's a signal the experiment didn't answer the question it set out to answer — surface that in the relevant result H3's setup paragraph rather than papering over it. Legacy clean-result bodies that still carry a `## Goal` H2 remain promotable; only new write-ups drop it.
 
 **Methodology corrections fold into the relevant result H3's setup or read prose** (2026-W22 migration, task #454). There is no longer a dedicated `### Methodology corrections` H3. Content that previously lived under that heading — plan deviations applied during the run, mid-run bugs caught and fixed, hot-fixes, data patches, threshold changes the eval revealed were inappropriate, dataset-mapping bugs caught and corrected before final aggregation — now lives inside the result H3 whose interpretation it actually shapes. Each item: what was wrong → what changed → effect on this result. Keep the narrative inside the result so a reader landing on that result reads the correction in context, not in a separate section they might skip. If no corrections occurred during the run, no extra prose is needed — the absence is the signal.
 
@@ -224,7 +232,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
 
 **Emit the v2 sentinel.** Immediately after the H1 title, write the literal HTML comment `<!-- clean-result-v2 -->` on its own line. The verifier gates the nested-shape requirements (presence + order of `### Motivation` / `### What I ran` / `### Findings` + `#### `) AND accepts confidence-title-only on bodies bearing this sentinel.
 
-1. **`## Human TL;DR`** — Thomas's own section, drafted by you as a minimal stub for him to fill in — just the literal word `placeholder` as the section body (see Step 1). Voice is first-person and casual; leave the single `placeholder` line as-is so Thomas can spot and overwrite it.
+1. **`## Human TL;DR`** — Thomas's own section, drafted by you as a REAL first-pass (Headline / Takeaways / How this updates me) in his casual first-person voice, ending with an italic "(First pass — Thomas refines this before sending to the mentor.)" note (see Step 1 for the template). NEVER emit the literal word `placeholder` — an empty or `placeholder`-only section is a defect the critics will bounce. Voice is first-person, casual, no condition codes, no `Confidence:` sentence.
 2. **`## TL;DR`** — the LessWrong-style narrative, in a nested 3-part shape. Three required H3s in order:
    - **`### Motivation`** — sets up why the experiment matters; the ONLY place in the body that may cite prior tasks (via `[#K](https://eps.superkaiba.com/tasks/K)` markdown links, NOT bare `#K`) or name issue numbers; ends by stating the goal. First-person, plain language. The legacy `**Motivation:**` boldface-bullet form still PASSes verifier check 3 on pre-sentinel bodies, but the H3 form is the prescriptive default for v2 bodies.
    - **`### What I ran`** — STANDALONE description of the run. No cross-issue framing, no issue numbers, no "byte identical" / "byte-identical" phrasing, no incidental low-level detail. Carries training INPUT→OUTPUT examples (as a `<details open>` table — preceded by an "N example training rows" cherry-pick disclosure inside the `<summary>`, with the full-data link inside the dropdown) and the eval INPUTS (the actual probes / questions asked).

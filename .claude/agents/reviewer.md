@@ -178,7 +178,7 @@ For each major finding, ask:
 **Structure:** COMPLETE / INCOMPLETE (N sections missing)
 
 ## Template Compliance (`.claude/skills/clean-results/SPEC.md`)
-- [ ] `## Human TL;DR` H2 present (placeholder line OK; analyzer must NOT pre-fill it)
+- [ ] `## Human TL;DR` H2 present (DEPRECATED agent — current policy: analyzer populates a real first-pass per analyzer.md Step 1; the literal word "placeholder" is a DEFECT both critics flag, see clean-result-critic Lens 6)
 - [ ] `## AI TL;DR` LW-style paragraph (30-200 words, >=3 sentences, no sentinels)
 - [ ] `## AI Summary` present with 4 H3 subsections in order (Background, Methodology, Results, Next steps)
 - [ ] Hero figure inside ### Results (commit-pinned raw.githubusercontent.com URL, not /main/)

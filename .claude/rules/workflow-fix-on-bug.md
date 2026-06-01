@@ -135,6 +135,20 @@ Hard rules:
 
 ## What the orchestrator does on seeing a candidate
 
+**Default: AUTO-SPAWN, do not park.** For any workflow-fix candidate
+that is (a) in-scope per the workflow surface list above, (b)
+non-architectural / not a public-contract change, and (c)
+`confidence: medium` or higher, the orchestrator's default action is to
+spawn `workflow-improver` immediately in the background (non-blocking)
+and keep working. This applies whether the candidate came from a
+subagent's return text OR from the orchestrator's own observation
+during its work (see the "orchestrator is itself the agent" clause
+below). Parking the candidate for Thomas's greenlight is the EXCEPTION,
+reserved for the two cases enumerated in "When the orchestrator
+suppresses the spawn" — genuinely architectural / public-contract
+changes, or low-confidence speculative fixes. Do NOT park an in-scope,
+non-architectural, >=medium-confidence gap as a chat note; auto-fix it.
+
 When any subagent returns text containing a `<!-- workflow-fix-candidate
 v1 -->` block, the orchestrator (parent assistant, `/issue` skill,
 `research-pm`, or any session running the top-level loop):
@@ -171,27 +185,45 @@ v1 -->` block, the orchestrator (parent assistant, `/issue` skill,
 
 If the orchestrator is *itself* the agent that found the bug (no
 subagent involved — the bug surfaced during the orchestrator's own
-work), it spawns `workflow-improver` directly with the same protocol.
+work), it spawns `workflow-improver` directly with the same protocol
+and the same default: an in-scope, non-architectural, >=medium-confidence
+gap is AUTO-FIXED in the background, not parked for greenlight. The
+orchestrator does not get a stricter bar just because it noticed the
+gap itself rather than receiving a candidate block.
 
 ## When the orchestrator suppresses the spawn
 
-The orchestrator MAY log the candidate but skip the spawn when:
+Suppression is the EXCEPTION (the default is auto-spawn — see above).
+The orchestrator logs the candidate but skips the background fix ONLY
+in these cases:
 
-- `confidence: low` AND `proposed_change` is speculative ("maybe X
-  should be changed but I'm not sure"). The marker is logged for the
-  dashboard; no fix dispatched.
+- **Genuinely architectural / public-contract change.** The
+  `proposed_change` would rename a status enum, change a marker schema
+  or `task.py` subcommand / CLI contract, relocate an agent or skill
+  file, or remove/restructure a subsystem (e.g. "remove the Codex
+  ensemble"). These change a public interface other surfaces depend on,
+  so they warrant Thomas's explicit greenlight rather than a background
+  fix. Log the candidate; surface it to Thomas in the next chat turn.
+  A change is NOT architectural just because it touches more than one
+  line or one file — adding a guardrail step, tightening an instruction,
+  fixing a contradiction between CLAUDE.md and an implementing file, or
+  adding a missing field/note is in-scope auto-fix work, not an
+  architectural decision.
+- **Low-confidence speculative fix.** `confidence: low` AND
+  `proposed_change` is speculative ("maybe X should be changed but I'm
+  not sure"). The marker is logged for the dashboard; no fix dispatched.
+
+Two operational deferrals (NOT greenlight gates — the fix still happens,
+just rerouted/queued):
+
 - A `workflow-improver` is already running on the same `target_file` in
   this session. Queue the new candidate as a follow-up via
-  `SendMessage` to the running agent.
+  `SendMessage` to the running agent rather than spawning a second one.
 - The candidate's `target_file` is in the out-of-scope set (experiment
-  code, tasks/, etc.). The orchestrator logs the candidate AND posts a
+  code, `tasks/`, etc.). The orchestrator logs the candidate AND posts a
   brief note in the marker about the misclassification so the emitting
-  agent's pattern can be corrected.
-- The candidate's `proposed_change` requires a fundamental
-  architectural decision (e.g. "rename a status enum", "remove the
-  Codex ensemble") — these warrant Thomas's explicit greenlight, not
-  background fix. Log the candidate; surface it to Thomas in the next
-  chat turn.
+  agent's pattern can be corrected; no fix is dispatched because the
+  target is out of scope by definition.
 
 ## Markers
 
@@ -223,6 +255,7 @@ the homepage.
 | Emit `confidence: high` without a concrete diff_sketch | Sketch the actual lines; if you can't, drop to `medium` or skip |
 | Wait for `workflow-improver` before continuing | Background-spawn; current task continues immediately |
 | Emit a candidate against `src/`, `configs/`, `tasks/` | Out of scope — fix belongs elsewhere |
+| Park an in-scope, non-architectural, >=medium-confidence gap for greenlight | Auto-spawn `workflow-improver` in the background; greenlight only for architectural / public-contract or low-confidence fixes |
 
 ## Composition with other rules
 

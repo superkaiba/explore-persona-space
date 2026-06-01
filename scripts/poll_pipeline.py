@@ -91,13 +91,37 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from explore_persona_space.task_workflow import post_event  # noqa: E402
+from explore_persona_space.task_workflow import latest_event, post_event  # noqa: E402
 
 log = logging.getLogger("poll_pipeline")
 
 STALL_SEC = 900
 PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
+# The epm:run-launched marker note is free-form `key=value` tokens plus
+# trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
+# `pid=<int>` is the resolved python child PID the experimenter posted.
+MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
 DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
+
+
+def _marker_pid(issue: int) -> int | None:
+    """Return the `pid=` from the latest epm:run-launched marker, or None.
+
+    Self-correction source when the on-pod pidfile is stale: the marker
+    the experimenter posts on every (re)launch carries the live python
+    child PID. Reading it is a pure, branch-guarded library read on the
+    VM (no commit), so it is safe from poll_pipeline's bg-Bash context.
+    """
+    try:
+        ev = latest_event(issue, prefix="epm:run-launched")
+    except Exception as exc:
+        log.warning("could not read epm:run-launched for #%d: %s", issue, exc)
+        return None
+    if ev is None:
+        return None
+    m = MARKER_PID_RE.search(ev.get("note", "") or "")
+    return int(m.group(1)) if m else None
+
 
 # Schema version the poller knows how to parse. Bump in lockstep with the
 # pod-side writer (currently ``run_experiment_<N>.py::SENTINEL_SCHEMA_VERSION``).
@@ -126,16 +150,30 @@ class PollResult:
     sentinels_processed: int = 0
 
 
-def _ssh_probe(pod: str, log_path: str, pid_file: str) -> dict[str, str]:
-    """One SSH round-trip — returns dict with keys pid_alive, mtime_epoch, log_tail.
+def _ssh_probe(
+    pod: str, log_path: str, pid_file: str, marker_pid: int | None = None
+) -> dict[str, str]:
+    """One SSH round-trip — returns dict with keys pid_alive,
+    marker_pid_alive, mtime_epoch, log_tail.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
+    ``pid_alive`` is liveness of the PID stored in ``pid_file``;
+    ``marker_pid_alive`` is liveness of ``marker_pid`` (the PID carried by
+    the latest epm:run-launched marker) when one is supplied. The
+    marker-pid probe is the self-correction path for a stale pidfile.
     """
+    marker_probe = ""
+    if marker_pid is not None:
+        marker_probe = (
+            f"if ps -p {marker_pid} > /dev/null 2>&1; "
+            f"then echo MARKER_PID_ALIVE=1; else echo MARKER_PID_ALIVE=0; fi; "
+        )
     heredoc = (
         f"if [ -f {pid_file} ]; then "
         f"  PID=$(cat {pid_file}); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
         f"else echo PID_ALIVE=0; fi; "
+        f"{marker_probe}"
         f"if [ -f {log_path} ]; then "
         f"  echo MTIME_EPOCH=$(stat -c %Y {log_path}); "
         f"  echo TAIL_START; tail -500 {log_path}; echo TAIL_END; "
@@ -149,8 +187,18 @@ def _ssh_probe(pod: str, log_path: str, pid_file: str) -> dict[str, str]:
     )
     if result.returncode != 0:
         log.error("ssh failed (rc=%d): %s", result.returncode, result.stderr.strip())
-        return {"pid_alive": "0", "mtime_epoch": "0", "log_tail": ""}
-    parsed: dict[str, str] = {"pid_alive": "0", "mtime_epoch": "0", "log_tail": ""}
+        return {
+            "pid_alive": "0",
+            "marker_pid_alive": "0",
+            "mtime_epoch": "0",
+            "log_tail": "",
+        }
+    parsed: dict[str, str] = {
+        "pid_alive": "0",
+        "marker_pid_alive": "0",
+        "mtime_epoch": "0",
+        "log_tail": "",
+    }
     in_tail = False
     tail_lines: list[str] = []
     for line in result.stdout.splitlines():
@@ -165,6 +213,8 @@ def _ssh_probe(pod: str, log_path: str, pid_file: str) -> dict[str, str]:
             continue
         if line.startswith("PID_ALIVE="):
             parsed["pid_alive"] = line.split("=", 1)[1].strip()
+        elif line.startswith("MARKER_PID_ALIVE="):
+            parsed["marker_pid_alive"] = line.split("=", 1)[1].strip()
         elif line.startswith("MTIME_EPOCH="):
             parsed["mtime_epoch"] = line.split("=", 1)[1].strip()
     parsed["log_tail"] = "\n".join(tail_lines)
@@ -400,8 +450,16 @@ def poll_once(
     # if the pipeline subsequently reached done.
     sentinels_processed, gate = _drain_sentinels(issue=issue, pod=pod)
 
-    probe = _ssh_probe(pod, log_path, pid_file)
-    pid_alive = probe["pid_alive"] == "1"
+    # Self-correction for a stale pidfile (incident #451): on a re-launch
+    # the on-pod pidfile can hold the dead first-run PID while the live
+    # python child runs under a new PID carried by the latest
+    # epm:run-launched marker. Cross-check the marker pid so a healthy
+    # re-run is not misreported as dead.
+    marker_pid = _marker_pid(issue)
+    probe = _ssh_probe(pod, log_path, pid_file, marker_pid)
+    pidfile_pid_alive = probe["pid_alive"] == "1"
+    marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
+    pid_alive = pidfile_pid_alive or marker_pid_alive
     mtime_epoch = int(probe["mtime_epoch"] or "0")
     now_epoch = int(datetime.now(tz=UTC).timestamp())
     last_mtime_ago = now_epoch - mtime_epoch if mtime_epoch > 0 else 10**9
@@ -411,6 +469,11 @@ def poll_once(
     # before the pipeline (or the orchestrator) advances further. The
     # phase=done check still runs (we want to know the pipeline finished)
     # but ``status`` reflects the gate so the orchestrator parks.
+    # `dead` requires BOTH the pidfile PID and the marker PID to be dead
+    # (pid_alive is their OR) AND the log not to show completion — a stale
+    # pidfile alone never declares a live marker-PID run dead. The
+    # `current_phase == "done"` precedence already covers the
+    # "log-shows-completion" half: a completed run is `done`, never `dead`.
     if gate is not None:
         status = "gate"
     elif current_phase == "done":

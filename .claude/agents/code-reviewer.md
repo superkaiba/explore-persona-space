@@ -370,7 +370,7 @@ Red flags:
 5. **Be specific.** "This feels off" is useless. "`foo.py:42` uses `==` for float comparison; should be `math.isclose`" is useful.
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
-8. **Mechanical-contract objections are never a standalone FAIL when the evidence is present.** See Step 0.7. Cosmetic imperfection of present contract evidence (Step 0.5 marker shape, Step 0.6 smoke digest) is a CONCERNS; a FAIL always cites a genuine absence or a substantive code finding, and you always review the diff in the same pass.
+8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 
 ---
 
