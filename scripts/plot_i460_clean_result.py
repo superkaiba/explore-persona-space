@@ -101,11 +101,18 @@ def fig_head_to_head():
 
     D_406 = np.array([r["D"] for r in rows_406])
     rate_406 = np.array([r["rate"] for r in rows_406])
-    rho_406, p_406 = stats.spearmanr(D_406, rate_406)
 
     D_460 = np.array([r["D"] for r in rows_460])
     g_460 = np.array([r["g_logprob"] for r in rows_460])
     rho_460, p_460 = stats.spearmanr(D_460, g_460)
+
+    # Read the length-partial Spearman on the #406 binary rate from analysis.json
+    # so the figure annotation matches the body prose. The raw Spearman is
+    # rho ≈ -0.42; the headline statistic (length-partial, log_prompt_tokens
+    # covariate) reported by analysis.json is rho ≈ -0.40, p ≈ 7e-12, n=240.
+    h5_orig = json.loads((I460 / "analysis.json").read_text())["H5_head_to_head_vs_406"]["rho_orig"]
+    rho_406 = h5_orig["rho_pingouin"]
+    p_406 = h5_orig["p_pingouin"]
 
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), constrained_layout=True)
 
@@ -131,7 +138,7 @@ def fig_head_to_head():
     ax.text(
         0.97,
         0.97,
-        f"Spearman ρ = {rho_406:+.2f}  (p ≈ {p_406:.1e}, n=240)",
+        f"Length-partial Spearman ρ = {rho_406:+.2f}\n(p ≈ {p_406:.1e}, n=240)",
         transform=ax.transAxes,
         ha="right",
         va="top",
