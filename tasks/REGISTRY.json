@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 458,
+  "highest_id": 459,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2465,6 +2465,14 @@
       "path": "tasks/running/458",
       "status": "running",
       "title": "Base-model cosine / token-JS predicts EM amount at fixed steps across 18 datasets"
+    },
+    "459": {
+      "goal": "Measure whether finetuning Qwen-2.5-7B on different narrow harmful datasets (insecure code, bad medical advice, and other EM-inducing sources) generalizes to the same or different profile of downstream misaligned behaviors, testing whether narrow EM training activates a single shared misalignment direction or leaves a domain-specific fingerprint.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/459",
+      "status": "proposed",
+      "title": "Test how training on different EM datasets (insecure code / bad medical advice / others) generalizes to other plausible misaligned behaviors"
     },
     "46": {
       "has_clean_result": false,
