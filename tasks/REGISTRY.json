@@ -2379,7 +2379,7 @@
       "title": "Learned scalar predictor of (C,B)\u2192(C\u2032,B\u2032) leakage (vs hand-designed cosine/JS); first instantiation = context\u2192context marker leakage"
     },
     "448": {
-      "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) drives mean bystander MARKER LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation training; secondary: test whether per-bystander marker-leakage correlates with the bystander's cosine distance to the nearest contrastive negative persona used in training.",
+      "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY \u2014 the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(\u203b) at the slot immediately after that response, reported trained \u2212 base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander cosine distance to the nearest trained contrastive-negative persona.",
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/448",

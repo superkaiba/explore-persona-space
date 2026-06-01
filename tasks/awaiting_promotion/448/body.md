@@ -8,11 +8,13 @@ has_clean_result: true
 parent_id: 411
 goal: 'Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive
   negative personas, number of positive personas, number of contrastive negative examples
-  per persona, number of positive examples per persona) drives mean bystander MARKER
-  LOG-PROB leakage on held-out generic trigger prompts under standard marker-implantation
-  training; secondary: test whether per-bystander marker-leakage correlates with the
-  bystander''s cosine distance to the nearest contrastive negative persona used in
-  training.'
+  per persona, number of positive examples per persona) most reduces bystander marker
+  leakage when leakage is measured ON-POLICY — the model generates its own greedy
+  response to a held-out generic trigger and leakage is the marker log-prob log P(※)
+  at the slot immediately after that response, reported trained − base (per the CLAUDE.md
+  marker-leakage on-policy recipe; source re-trained on-policy with loss masked to
+  the marker token only). Secondary: whether per-bystander on-policy leakage correlates
+  with the bystander cosine distance to the nearest trained contrastive-negative persona.'
 relates_to:
 - implant-which-behaviors
 - implant-learning-speed
@@ -25,7 +27,7 @@ relates_to:
 
 ## Goal
 
-Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY — the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(` ※`) at the slot immediately after that response, reported trained − base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander's cosine distance to the nearest trained contrastive-negative persona.
+Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY — the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(※) at the slot immediately after that response, reported trained − base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander cosine distance to the nearest trained contrastive-negative persona.
 
 ## Why this task was re-opened from a completed clean-result
 
