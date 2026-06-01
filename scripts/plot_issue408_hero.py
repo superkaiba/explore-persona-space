@@ -131,8 +131,8 @@ ax.errorbar(
     label="Single-turn-trained, no trigger (prior run)",
 )
 
-# Mark the held-out k values (7, 15, 25) with a subtle vertical band
-for k_held in (7, 15, 25):
+# Mark the depth-held-out k values (7 and 25 only; k=15 IS in training)
+for k_held in (7, 25):
     ax.axvline(k_held, color="#999999", lw=0.5, ls=":", alpha=0.4)
 
 ax.set_xlabel("Conversation depth (number of turns before the probe, k)")
@@ -153,7 +153,7 @@ set_title_subtitle(
     "Multi-turn training rescues marker firing at deep turn positions",
     subtitle=(
         "Marker fire rate vs conversation depth k, 3 seeds pooled, "
-        "n=291-489 per cell (95% Wald CI). Dotted k = held-out (not in training)."
+        "n=291-384 per cell (95% Wald CI). Dotted k = depth-held-out (k=7, 25)."
     ),
     source="Source: eval_results/issue_408 + issue_399",
 )
@@ -207,9 +207,11 @@ ax.errorbar(
 )
 
 ax.axhline(0.0, color="#1A1A1A", lw=0.6, ls="-")
+# Dotted horizontal line at +0.5 nats — plan v1.2's pre-registered target
+ax.axhline(0.5, color="#999999", lw=0.8, ls="--", alpha=0.7, label="Plan v1.2 +0.5-nat target")
 
-# Mark the held-out k values with a subtle vertical guide
-for k_held in (7, 15, 25):
+# Mark the depth-held-out k values (7 and 25 only; k=15 IS in training)
+for k_held in (7, 25):
     ax.axvline(k_held, color="#999999", lw=0.5, ls=":", alpha=0.4)
 
 ax.set_xlabel("Conversation depth (number of turns before the probe, k)")
@@ -302,7 +304,7 @@ ax.legend(
 set_title_subtitle(
     ax,
     "Multi-turn training installs marker firing at deep positions; fresh-prompt cell takes an 18pp hit",
-    subtitle=("Per-cell marker fire rate, 3 seeds pooled, n=294-600 per cell (95% Wald CI)."),
+    subtitle=("Per-cell marker fire rate, 3 seeds pooled, n=330-600 per cell (95% Wald CI)."),
     source="Source: eval_results/issue_408 + issue_399",
 )
 fig.set_size_inches(9.5, 5.5)
