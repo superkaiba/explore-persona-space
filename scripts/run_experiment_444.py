@@ -2762,6 +2762,29 @@ Original: {sentence}
 Output strict JSON: {{"paraphrases": ["...", "...", ...]}}. Exactly {n} entries."""
 
 
+CONTRADICTORY_PARAPHRASE_PROMPT = """Rewrite the following one-sentence mundane
+physical attribute about an obscure place / object as {n} structurally symmetric
+paraphrases.
+
+Each paraphrase MUST:
+- preserve the same proposition (same entity, same attribute slot, same
+  CONTRADICTORY value `{contradictory_value}`);
+- vary surface form (word order, voice, register);
+- stay within {min_words}-{max_words} words;
+- name "{entity_descriptor}" exactly once as the subject (or a clear coreference
+  if the entity descriptor is long);
+- contain the CONTRADICTORY answer value `{contradictory_value}` verbatim
+  somewhere in the sentence (load-bearing — the contradictory training signal
+  depends on every paraphrase carrying the contradictory value);
+- NEVER contain the canonical answer value `{canonical_value}` (the MECHANISM
+  arm requires the contradictory paraphrases to assert ONLY the contradictory
+  fact; including the canonical value collapses the manipulation).
+
+Original: {sentence}
+
+Output strict JSON: {{"paraphrases": ["...", "...", ...]}}. Exactly {n} entries."""
+
+
 CONTRADICTORY_DRAFT_PROMPT = """The researcher needs a CONTRADICTORY mundane physical
 attribute about the same obscure place / object, structurally symmetric to the
 canonical attribute.
@@ -2778,9 +2801,11 @@ The contradictory attribute MUST:
 
 Output strict JSON:
 {{"contradictory_sentence": "<one-sentence statement>",
-  "contradictory_short": "<3-8 word verb-phrase summary>"}}.
+  "contradictory_short": "<3-8 word verb-phrase summary>",
+  "contradictory_value": "<the specific value substituted for `{canonical_value}` — e.g. for canonical_value `teal` and contradictory_sentence `the bench is mahogany`, return `mahogany`>"}}.
 
 Entity: {entity_descriptor}
+Canonical value to contradict: {canonical_value}
 Canonical attribute: {canonical_sentence}"""
 
 
@@ -2868,20 +2893,40 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
         CONTRADICTORY_DRAFT_PROMPT.format(
             entity_descriptor=entity_descriptor,
             canonical_sentence=canonical_sentence,
+            canonical_value=answer_value,
         ),
         model=PARAPHRASE_MODEL,
         max_tokens=512,
     )
     contradictory_sentence = contra_draft["contradictory_sentence"]
     contradictory_short = contra_draft.get("contradictory_short", contradictory_sentence[:60])
+    contradictory_value = contra_draft.get("contradictory_value", "").strip()
+    if not contradictory_value:
+        raise RuntimeError(
+            f"contradictory draft for entity {entity_descriptor!r} is missing the "
+            "`contradictory_value` slot; re-draft (the MECHANISM arm requires the "
+            "specific value substituted for the canonical, so the paraphrases can "
+            "carry it verbatim and exclude the canonical value)."
+        )
+    if answer_value.lower() in contradictory_sentence.lower():
+        raise RuntimeError(
+            f"contradictory draft for entity {entity_descriptor!r} leaked the canonical "
+            f"value {answer_value!r} into its own sentence: {contradictory_sentence!r}. "
+            "Re-draft."
+        )
 
-    # 3. Contradictory paraphrases (same shape — symmetric 10).
+    # 3. Contradictory paraphrases (same shape — symmetric 10) — uses the
+    # CONTRADICTORY_PARAPHRASE_PROMPT so every paraphrase contains the
+    # contradictory value verbatim AND excludes the canonical value
+    # (plan §4.2 MECHANISM arm: hand_written_contradictory must NOT
+    # surface the canonical fact, or the manipulation collapses).
     contra_resp = _sonnet_json_call(
-        PARAPHRASE_PROMPT.format(
+        CONTRADICTORY_PARAPHRASE_PROMPT.format(
             n=10,
             entity_descriptor=entity_descriptor,
             sentence=contradictory_sentence,
-            answer_value=answer_value,  # not used in contra body; kept for shape parity
+            contradictory_value=contradictory_value,
+            canonical_value=answer_value,
             min_words=10,
             max_words=22,
         ),
@@ -2893,6 +2938,23 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
         raise RuntimeError(
             f"contradictory paraphrase call returned {len(contradictory_paraphrases)} "
             "entries; need 10"
+        )
+    # Fail-loud: every contradictory paraphrase MUST contain the contradictory
+    # value verbatim AND MUST NOT contain the canonical value. Mirrors the
+    # canonical check at line 2860 above.
+    contra_missing = [
+        p for p in contradictory_paraphrases if contradictory_value.lower() not in p.lower()
+    ]
+    if contra_missing:
+        raise RuntimeError(
+            f"contradictory paraphrases missing contradictory_value={contradictory_value!r} "
+            f"in {len(contra_missing)} of 10 entries: {contra_missing!r}. Re-draft."
+        )
+    canonical_leaks = [p for p in contradictory_paraphrases if answer_value.lower() in p.lower()]
+    if canonical_leaks:
+        raise RuntimeError(
+            f"contradictory paraphrases leaked canonical value {answer_value!r} in "
+            f"{len(canonical_leaks)} of 10 entries: {canonical_leaks!r}. Re-draft."
         )
 
     # 4. BPE-symmetry check.
