@@ -2059,8 +2059,8 @@
       "goal": "Test whether training the marker install with explicit multi-turn examples (trigger placed at turn \u2265 2) makes the trigger-conditional log-prob contrast at multi-turn eval positions cross plan v1.2's +0.5-nat threshold. Falsifies-or-confirms the OOD-generalization hypothesis from #399.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/408",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/408",
+      "status": "awaiting_promotion",
       "title": "Adding multi-turn rows to the marker-install training data behaviorally rescues firing at deep conversation positions (4% to 80%), but the trigger-conditional log-prob contrast stays around 0.4 nats \u2014 below the plan's +0.5-nat target (MODERATE confidence)"
     },
     "409": {
