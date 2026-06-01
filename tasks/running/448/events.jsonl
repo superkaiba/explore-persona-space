@@ -90,3 +90,4 @@
 {"ts": "2026-06-01T07:02:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "On-policy plan v3 ready; consistency WARN/PROCEED; awaiting user approval."}
 {"ts": "2026-06-01T22:30:08Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved on-policy plan v3 inline."}
 {"ts": "2026-06-01T22:30:09Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v3 (on-policy re-run) inline. ~12.25 GPU-h / 4×H100; under large-threshold."}
+{"ts": "2026-06-01T22:30:57Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer for on-policy re-run; awaiting epm:experiment-implementation."}
