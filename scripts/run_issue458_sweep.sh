@@ -132,12 +132,25 @@ for SEED in "${SEEDS[@]}"; do
   done
 done
 
-# ── Step 3: cosine + JS predictors over all 18 pairs (NL flavor first) ──
-phase predictor_cossim "running issue404_predictor_cossim.py --pairs <18> --flavors NL"
-uv run python scripts/issue404_predictor_cossim.py \
-  --pairs "${CELLS[@]}" --flavors NL \
-  --gpu-id 0 --skip-stability \
-  2>&1 | tee "$LOG_DIR/predictor_cossim.log"
+# ── Step 3: cosine + JS predictors (NL flavor) ──
+# Cosine: only for cells WITHOUT a committed #404 cossim file (reuse those
+# byte-identical rather than rewriting 5 committed eval_results/issue_404/
+# predictor_cossim/*_NL.json). issue458_regress.py reads all 18 from that dir.
+COSSIM_CELLS=()
+for cell in "${CELLS[@]}"; do
+  if [[ ! -f "eval_results/issue_404/predictor_cossim/${cell}_NL.json" ]]; then
+    COSSIM_CELLS+=("$cell")
+  fi
+done
+if [[ ${#COSSIM_CELLS[@]} -gt 0 ]]; then
+  phase predictor_cossim "cossim for ${#COSSIM_CELLS[@]} new cells (reusing $(( ${#CELLS[@]} - ${#COSSIM_CELLS[@]} )) committed #404 cells)"
+  uv run python scripts/issue404_predictor_cossim.py \
+    --pairs "${COSSIM_CELLS[@]}" --flavors NL \
+    --gpu-id 0 --skip-stability \
+    2>&1 | tee "$LOG_DIR/predictor_cossim.log"
+else
+  phase predictor_cossim "all 18 cells already have committed cossim; skipping"
+fi
 
 phase predictor_jsdiv "running issue458_predictor_jsdiv.py --pairs <18> --flavors NL"
 uv run python scripts/issue458_predictor_jsdiv.py \

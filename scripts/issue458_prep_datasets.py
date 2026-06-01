@@ -687,7 +687,7 @@ def main() -> int:
         for cell in args.cells:
             try:
                 n = prep_one_cell(cell, args.max_rows)
-                results[cell] = {"n_rows": n, "status": "ok"}
+                results[cell] = {"n_rows": n, "status": "ok" if n > 0 else "skipped"}
             except Exception as e:  # fail-loud per cell, continue to next
                 logger.exception("Cell %s: prep raised %s: %s", cell, type(e).__name__, e)
                 results[cell] = {
