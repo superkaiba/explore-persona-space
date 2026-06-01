@@ -309,7 +309,10 @@ def _finalize_phase(
     Also uploads the merged checkpoint to WandB Artifacts so the canonical
     "model is on WandB" invariant from CLAUDE.md's Upload Policy holds without
     a separate manual step. Failures here only log — they must not crash a
-    finished training run.
+    finished training run. Exception: ``_maybe_persist_adapter`` is fail-loud
+    (raises on any upload-verification failure) when
+    ``EPM_PERSIST_ADAPTER_HF_REPO`` is set, so a delete-after-eval launcher's
+    ``set -e`` aborts the cell before its ``rm``.
     """
     model.save_pretrained(str(adapter_dir))
     tokenizer.save_pretrained(str(adapter_dir))
@@ -324,6 +327,15 @@ def _finalize_phase(
     _maybe_upload_checkpoint_to_wandb(merged_path)
 
     _maybe_dump_train_log(trainer, merged_dir)
+
+    # FAIL-LOUD durable persist of the LoRA adapter BEFORE it is reaped.
+    # A delete-after-eval sweep (the MooseFS-quota pattern) rm's the ~15GB
+    # merged dir to stay under quota; the adapter (~300MB) is the cheap,
+    # regenerable artifact that must survive instead. This raises on any
+    # failure so the run aborts before the launcher reaches its rm. No-op
+    # unless EPM_PERSIST_ADAPTER_HF_REPO is set, so non-sweep training is
+    # byte-for-byte unaffected.
+    _maybe_persist_adapter(adapter_dir)
 
     shutil.rmtree(str(adapter_dir), ignore_errors=True)
 
@@ -418,7 +430,6 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
 
     try:
         import wandb
-
         from explore_persona_space.orchestrate.hub import upload_model_wandb
 
         run = wandb.run
@@ -436,6 +447,81 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
             e,
             checkpoint_path,
         )
+
+
+def _maybe_persist_adapter(adapter_dir: Path) -> None:
+    """Fail-loud durable upload of the LoRA adapter before it is reaped.
+
+    Opt-in via two env vars (set both or neither):
+
+    * ``EPM_PERSIST_ADAPTER_HF_REPO`` — target HF model repo.
+    * ``EPM_PERSIST_ADAPTER_SUBFOLDER`` — per-run ``path_in_repo`` PREFIX
+      (the launcher sets a per-cell value so cells do not clobber). The
+      per-phase leaf ``adapter_dir.name`` (``{phase_name}_adapter``) is
+      appended automatically, so a multi-stage condition (≥2 ``stages``)
+      lands each stage's adapter at a distinct path instead of every stage
+      silently overwriting the previous one at the same prefix.
+
+    Why this exists, and why it RAISES (unlike every other upload here):
+    a delete-after-eval sweep ``rm -rf``'s the ~15GB merged checkpoint to
+    stay under the RunPod MooseFS ~130GB per-pod quota. The merged model is
+    derived data — fully regenerable from the public base model plus this
+    LoRA adapter (~300MB, ~45x smaller). So the adapter is the artifact that
+    must survive. ``_maybe_upload_checkpoint_to_wandb`` and the runner's HF
+    upload are both best-effort (they log and continue on failure); issue
+    #458 lost all 36 of its checkpoints precisely because the merged HF
+    upload soft-failed on quota and the launcher deleted the local copy
+    anyway. This persist closes that hole: it uploads the adapter, verifies
+    it landed (``upload_model`` returns ``""`` if the post-upload
+    file-listing finds nothing), and raises ``RuntimeError`` on any failure
+    so the training process exits non-zero — the launcher's ``set -e``
+    aborts the cell BEFORE its ``rm``, leaving the merged dir in place for a
+    retry rather than silently losing the run.
+
+    No-op when ``EPM_PERSIST_ADAPTER_HF_REPO`` is unset, so all non-sweep
+    training is unaffected.
+    """
+    repo = os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO")
+    if not repo:
+        return
+
+    subfolder = os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER")
+    if not subfolder:
+        raise RuntimeError(
+            "EPM_PERSIST_ADAPTER_HF_REPO is set but EPM_PERSIST_ADAPTER_SUBFOLDER "
+            "is not — refusing to guess a destination path. Set both env vars or "
+            "neither."
+        )
+
+    adapter_weights = adapter_dir / "adapter_model.safetensors"
+    if not adapter_weights.exists():
+        raise RuntimeError(
+            f"Adapter persist requested (EPM_PERSIST_ADAPTER_HF_REPO={repo}) but "
+            f"{adapter_weights} is missing. Refusing to continue: a downstream "
+            "delete-after-eval launcher would reap the merged checkpoint with no "
+            "durable copy."
+        )
+
+    # Append the per-phase leaf so multi-stage conditions don't overwrite each
+    # other at a shared prefix (single-stage sweeps just get one leaf).
+    dest = f"{subfolder.rstrip('/')}/{adapter_dir.name}"
+
+    from explore_persona_space.orchestrate.hub import upload_model
+
+    hub_path = upload_model(
+        model_path=str(adapter_dir),
+        repo_id=repo,
+        path_in_repo=dest,
+        delete_after=False,
+    )
+    if not hub_path:
+        raise RuntimeError(
+            f"Adapter persist to {repo}/{dest} FAILED verification "
+            "(upload_model returned no committed files). Aborting so a "
+            "delete-after-eval launcher does not rm the merged checkpoint — the "
+            "adapter is the only durable, regenerable copy."
+        )
+    logger.info("Persisted + verified LoRA adapter at %s", hub_path)
 
 
 def _build_periodic_callbacks(cfg: DictConfig, run_dir: str) -> list:
