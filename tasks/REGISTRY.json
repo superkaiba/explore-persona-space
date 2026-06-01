@@ -2382,8 +2382,8 @@
       "goal": "Identify which of four contrastive-LoRA-SFT recipe knobs (number of contrastive negative personas, number of positive personas, number of contrastive negative examples per persona, number of positive examples per persona) most reduces bystander marker leakage when leakage is measured ON-POLICY \u2014 the model generates its own greedy response to a held-out generic trigger and leakage is the marker log-prob log P(\u203b) at the slot immediately after that response, reported trained \u2212 base (per the CLAUDE.md marker-leakage on-policy recipe; source re-trained on-policy with loss masked to the marker token only). Secondary: whether per-bystander on-policy leakage correlates with the bystander cosine distance to the nearest trained contrastive-negative persona.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/448",
-      "status": "planning",
+      "path": "tasks/plan_pending/448",
+      "status": "plan_pending",
       "title": "Widening contrastive negatives reduces bystander marker leakage; positive-side knobs add training mass into a saturated ceiling region (MODERATE confidence)"
     },
     "449": {
