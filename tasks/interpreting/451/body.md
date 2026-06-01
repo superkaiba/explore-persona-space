@@ -1,6 +1,7 @@
 ---
-title: 'Fix C-axis preflight gates and re-run long-system stratum to measure the persona-framing
-  factor (follow-up to #397)'
+title: Persona-role vs neutral-domain framing makes no consistent difference to marker
+  selectivity under the single-token ※ recipe; the previously-reported +27 pp effect
+  does not replicate (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-31T21:43:40Z'
