@@ -2129,7 +2129,7 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
             f"{len(unaddressed)} open binding concern(s) unaddressed in body: "
             f"{', '.join(unaddressed)}. Acknowledge each in a `## TL;DR` result "
             "H3, the `Confidence:` sentence, or a `<!-- concern-deferred: <id> -->` "
-            "HTML marker. See `.claude/agents/clean-result-critic.md` § Lens 13 "
+            "HTML marker. See `.claude/agents/clean-result-critic.md` § Lens 14 "
             "and `workflow.yaml § concerns_protocol`.",
         )
     return CheckResult(
@@ -2214,7 +2214,7 @@ def verify_text(
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.
     results.append(check_goal_present(body, fm))
-    # Lens 14 concerns audit — mirror of clean-result-critic Lens 13.
+    # Lens 14 concerns audit — mirror of clean-result-critic Lens 14.
     # Needs the sibling concerns.jsonl, so lives outside CHECKS too.
     results.append(check_concerns_audit(body, concerns_path=concerns_path))
     overall = all(r.passed for r in results)
