@@ -1,6 +1,6 @@
 ---
-title: 'What in the contrastive recipe drives bystander leakage? Sweep negatives,
-  positives, and example counts on the #411 villain baseline'
+title: Adding contrastive-negative coverage reduces bystander marker leakage; positive-side
+  knobs are near the leakage ceiling and barely move it (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:48:52Z'
