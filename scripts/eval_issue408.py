@@ -921,27 +921,28 @@ def filter_sentinel_conversations(
     selected prefix — so without pre-filtering, eval would crash mid-run
     on conversations the corpus-gen step accepted.
 
-    We pre-filter conservatively: any conversation whose **maximum target
-    prefix window** (``turns[:max_slice_n]``) contains a sentinel is
-    dropped from the eval pool. This guarantees no sentinel-bearing
-    prefix is ever selected, for either the turn-matched or the
-    length-matched arm at any k ∈ ``k_list``. The asymmetry between
-    "corpus-gen tolerant" and "eval-time strict" is resolved by
-    converting eval-time strict into "drop-up-front" rather than
-    "crash-mid-run".
+    We pre-filter conservatively: any conversation containing a sentinel in
+    **any** turn is dropped from the eval pool.
+
+    Task #408 v14 (2026-06-01): widened from ``turns[:max_slice_n]`` (the
+    turn-mode max window) to the WHOLE conversation. The length-matched arm
+    (``select_prefix(mode='length')``) packs turns up to a token budget L(k)
+    and, for less-verbose conversations, its realized ``slice_n`` can exceed
+    ANY turn-mode slice — reaching turns beyond ``turns[:max_slice_n]``. With
+    the old window, a sentinel at turn index 20 (past the k=20 turn-mode
+    window of indices 0-19) slipped through the filter and crashed
+    ``_slice_and_validate`` mid-run (conv math_p2_t4, k=10 length mode). Since
+    the length-mode reach is not bounded by any turn-mode slice, the only safe
+    pre-filter is "drop any conversation with a sentinel anywhere". ``k_list``
+    is retained for signature compatibility but no longer bounds the window.
 
     Returns ``(kept_conversations, n_excluded)``.
     """
-    if not k_list:
-        return list(conversations), 0
-    max_slice_n_target = max(_turns_slice_for_k(k) for k in k_list)
     kept: list[dict] = []
     n_excluded = 0
     for conv in conversations:
         turns = conv.get("turns", [])
-        slice_n = _clamp_slice_n_to_corpus(max_slice_n_target, len(turns))
-        window = turns[:slice_n]
-        if any(t.get("content") == "[BATCH_ERROR]" for t in window):
+        if any(t.get("content") == "[BATCH_ERROR]" for t in turns):
             n_excluded += 1
             continue
         kept.append(conv)
