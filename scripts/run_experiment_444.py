@@ -1615,9 +1615,9 @@ def _vllm_answer_slot_entropy(
             if ce > value_char_start:
                 value_start_tok_idx = tok_idx
                 break
-        value_end_tok_idx = (
-            value_start_tok_idx + canonical_bpe_length if value_start_tok_idx is not None else None
-        )
+        # value-span end index = value_start_tok_idx + canonical_bpe_length
+        # (used implicitly by the position-loop below; computed inline so the
+        # span-walk is the single source of truth for the iteration bound).
 
         plogs = getattr(out, "prompt_logprobs", None) or []
         if value_start_tok_idx is None or not plogs or value_start_tok_idx >= len(plogs):
