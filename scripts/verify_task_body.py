@@ -485,6 +485,17 @@ def _prelude_window(details: str, fence_start: int, max_chars: int = 1500) -> st
     previous fenced block's closing ``` (so two consecutive sample
     blocks don't share each other's prelude), then trims any leading
     partial line.
+
+    Known follow-up (deferred 2026-05-31): the window also stops at a
+    fence boundary but does NOT stop at a previous `</details>` close.
+    Two adjacent `<details>` sample blocks therefore share each other's
+    prelude window — mitigated for now by per-block disclosure counting
+    (each sample block is enforced independently against the same
+    window, and the v2 form puts the cherry-pick disclosure inside the
+    `<summary>` which gets folded into the prelude via the
+    `block_start`-past-`</summary>` shift). Promote to a real
+    `</details>`-boundary stop if a body emerges where two adjacent
+    `<details>` blocks legitimately diverge on the disclosure.
     """
     lo = max(0, fence_start - max_chars)
     window = details[lo:fence_start]
@@ -1079,15 +1090,40 @@ def check_figure_caption(body: str) -> CheckResult:
 
 def is_v2_nested_design(body: str) -> bool:
     """Return True when `body` carries the `<!-- clean-result-v2 -->`
-    sentinel, signaling the nested-TL;DR design (Motivation / What I
-    ran / Findings → `#### <finding>` per result) with confidence in
-    the H1 title tag only (no body `Confidence:` sentence required).
+    sentinel as a real document-level marker, signaling the nested-TL;DR
+    design (Motivation / What I ran / Findings → `#### <finding>` per
+    result) with confidence in the H1 title tag only (no body
+    `Confidence:` sentence required).
+
+    Strips fenced code blocks AND `<details>...</details>` blocks
+    before the substring scan, so a body that only QUOTES
+    `<!-- clean-result-v2 -->` inside an illustrative code fence (e.g.
+    the analyzer.md inlined skeleton) or inside a `<details>` example
+    block is NOT misdetected as v2. The sentinel must live at the
+    document-level prose layer to count.
 
     Forward-only marker. Bodies without the sentinel keep the prior
     post-#454 behavior and are NEVER hard-FAILed by the nested-shape
     rule or the no-body-Confidence permission.
     """
-    return CLEAN_RESULT_V2_SENTINEL in body
+    # Strip fenced code blocks (``` ``` and ~~~ ~~~) inline rather
+    # than importing the later-defined `_strip_fenced_blocks` (avoids
+    # forward-reference ordering noise).
+    lines = body.splitlines()
+    in_fence = False
+    fence_stripped: list[str] = []
+    for line in lines:
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        fence_stripped.append(line)
+    cleaned = "\n".join(fence_stripped)
+    # Strip `<details>...</details>` blocks (already defined regex).
+    cleaned = _DETAILS_BLOCK_RE.sub("", cleaned)
+    return CLEAN_RESULT_V2_SENTINEL in cleaned
 
 
 def check_confidence_matches(body: str) -> CheckResult:

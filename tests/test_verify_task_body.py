@@ -1500,9 +1500,57 @@ between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline
 
 def test_v2_sentinel_detected():
     """`is_v2_nested_design` returns True iff the literal HTML comment
-    `<!-- clean-result-v2 -->` is anywhere in the body."""
+    `<!-- clean-result-v2 -->` is in the document-level prose (not
+    inside an illustrative code fence or `<details>` example)."""
     assert verify_task_body.is_v2_nested_design(_V2_GOOD_BODY)
     assert not verify_task_body.is_v2_nested_design(GOOD_BODY)
+
+
+def test_v2_sentinel_in_fenced_code_block_is_not_v2():
+    """A body that only QUOTES `<!-- clean-result-v2 -->` inside a
+    fenced code block (e.g. an illustrative skeleton in a docs page or
+    a clean-result body that embeds the v2 spec as an example) MUST
+    NOT be misdetected as v2 — the sentinel only counts when it lives
+    at the document-level prose layer.
+
+    Regression guard for the substring-only `CLEAN_RESULT_V2_SENTINEL
+    in body` check that would flip docs / SPEC / analyzer examples
+    into v2 mode.
+    """
+    body = (
+        "# Some legacy title (LOW confidence)\n\n"
+        "## TL;DR\n\n"
+        "### Motivation\n\nA legacy-shape body that happens to quote\n"
+        "the v2 sentinel inside a fenced example block:\n\n"
+        "```markdown\n"
+        "<!-- clean-result-v2 -->\n"
+        "## Human TL;DR\n"
+        "placeholder\n"
+        "```\n\n"
+        "## Reproducibility\n\nn/a\n"
+    )
+    assert not verify_task_body.is_v2_nested_design(body), (
+        "fenced-code-only mention of the v2 sentinel must not flip is_v2_nested_design to True"
+    )
+
+
+def test_v2_sentinel_in_details_block_is_not_v2():
+    """A body that only QUOTES `<!-- clean-result-v2 -->` inside a
+    `<details>` block (e.g. inside a training-row example or a spec
+    walkthrough dropdown) MUST NOT be misdetected as v2."""
+    body = (
+        "# Some legacy title (LOW confidence)\n\n"
+        "## TL;DR\n\n"
+        "### Motivation\n\nLegacy body with the sentinel hidden inside a\n"
+        "details dropdown only:\n\n"
+        "<details>\n<summary>Spec example</summary>\n\n"
+        "Quoted sentinel: <!-- clean-result-v2 -->\n\n"
+        "</details>\n\n"
+        "## Reproducibility\n\nn/a\n"
+    )
+    assert not verify_task_body.is_v2_nested_design(body), (
+        "details-block-only mention of the v2 sentinel must not flip is_v2_nested_design to True"
+    )
 
 
 def test_v2_good_body_passes_all_including_nested_structure():

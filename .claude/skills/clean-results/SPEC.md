@@ -176,8 +176,11 @@ Title format (the H1 line):
 # <one-sentence claim> (LOW|MODERATE|HIGH confidence)
 ```
 
-The confidence level in the title MUST match the `Confidence: ...`
-sentence in `## Reproducibility`.
+For v2 nested-design bodies (sentinel `<!-- clean-result-v2 -->`
+present) the H1 title tag is the single source of truth for confidence
+— there is no body `Confidence: …` sentence to cross-check. For
+legacy bodies (no sentinel) the confidence level in the title MUST
+match the `Confidence: …` sentence in `## Reproducibility`.
 
 ## Figure caption shape — markdown blockquote + bold "Figure." prefix
 
@@ -196,10 +199,13 @@ from the body prose around it. Without it, the dashboard's markdown
 renderer collapses `body text. ![alt](url) caption text.` into a
 single paragraph where the caption reads as continuation of the body.
 
-**Layout inside a result H3:**
+**Layout inside a `#### <finding>` H4 (v2 nested-design):**
+
+Under the v2 nested-design shape, per-result blocks live as
+`#### <finding>` H4s under `### Findings`. The block skeleton:
 
 ```markdown
-### <Result headline>
+#### <Finding headline>
 
 <Setup paragraph: what we did, what's plotted, what to look for.>
 
@@ -227,6 +233,11 @@ Full <M> raw completions: [bucket/raw_completions/](https://huggingface.co/.../t
 
 </details>
 ```
+
+(For legacy bodies, the same shape applies but per-result blocks are
+flat `### <finding>` H3s directly under `## TL;DR`; the inner-block
+skeleton — setup → figure → blockquote caption → read → sample
+exposition — is identical.)
 
 Three discipline points:
 1. **Blank line BETWEEN body prose and image** (otherwise the image
@@ -351,8 +362,12 @@ Catches prose-level violations the verifier doesn't:
 - No `## Findings` / `## Background` / `## Methodology` / `## Setup` /
   `## Details` H2s — every reader-facing finding lives under a result
   H3 inside `## TL;DR`.
-- No "Standing caveats" section — caveats fold into the result H3
-  read paragraph or the Confidence sentence in Reproducibility.
+- No "Standing caveats" section — caveats fold into the relevant
+  `#### <finding>` H4 read paragraph. For legacy bodies (no v2
+  sentinel) caveats may additionally ride in the `Confidence: …`
+  sentence in `## Reproducibility`; v2 bodies carry confidence in the
+  H1 title tag only, so the binding constraint lives in the finding's
+  read prose.
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of
   plot labels and figure captions.
 - **Never write `byte identical` or `byte-identical`** anywhere in the
