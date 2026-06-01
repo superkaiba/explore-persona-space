@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 459,
+  "highest_id": 460,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2480,6 +2480,13 @@
       "path": "tasks/archived/46",
       "status": "archived",
       "title": "[Experiment] On-Policy Marker-Only Loss Leakage v3 (45 runs, 3 seeds)"
+    },
+    "460": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/460",
+      "status": "proposed",
+      "title": "Re-eval #406 transfer outcome as continuous marker log-prob (fixes zero-inflation)"
     },
     "47": {
       "has_clean_result": false,
