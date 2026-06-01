@@ -736,7 +736,7 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
                 "(CLAUDE.md: /root is small; downloads must redirect to /workspace)."
             )
 
-    # Persona registry check.
+    # Persona registry check (training + eval personas).
     for persona in (TEACHING_PERSONA, *BACKGROUND_PERSONAS_IN):
         if persona not in PERSONAS:
             issues.append(f"persona {persona!r} not registered in personas.py")
@@ -745,6 +745,17 @@ def phase_preflight(args: argparse.Namespace) -> dict[str, Any]:
             continue
         if persona not in PERSONAS:
             issues.append(f"eval persona {persona!r} not registered in personas.py")
+    # Content-fit eval probes (local_historian + local_resident) — plan §4.7.1.
+    # These are eval-only personas (no trained conditions of their own) but
+    # phase_full_eval + phase_aggregate read them by name from PERSONAS, so a
+    # missing registration silently kills the per-persona content-fit panel.
+    for persona in CONTENT_FIT_EVAL_PROBE_PERSONAS:
+        if persona in ("no_system", "assistant"):
+            continue
+        if persona not in PERSONAS:
+            issues.append(
+                f"content-fit eval probe persona {persona!r} not registered in personas.py"
+            )
 
     # Suppression pool module-load sanity (counts + reserved-string check ran at import).
     suppression_check = {
