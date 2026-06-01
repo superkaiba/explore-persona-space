@@ -6,10 +6,15 @@ tags: []
 created_at: '2026-06-01T23:14:29Z'
 has_clean_result: false
 parent_id: 460
+goal: 'Determine whether #460''s universal-ceiling on-policy marker transfer (log
+  P(marker) approx 0 everywhere, divergence rho=-0.11 null) is an overtraining artifact
+  or intrinsic to the marker-at-end construct, by resolving marker log P and divergence->transfer
+  rho across training amount (adapters saved at epochs 1/2/3/5, 16x16 crosseval at
+  each level).'
 ---
 ## Goal
 
-Determine whether #460's universal-ceiling on-policy marker transfer (trained log P(※) ≈ 0 on 99% of cross-transformation cells; divergence→transfer ρ = −0.11, null) is an OVERTRAINING ARTIFACT or INTRINSIC to the marker-at-end construct, by resolving the marker log-prob and the divergence→transfer correlation as a function of training amount.
+Determine whether #460's universal-ceiling on-policy marker transfer (log P(marker) approx 0 everywhere, divergence rho=-0.11 null) is an overtraining artifact or intrinsic to the marker-at-end construct, by resolving marker log P and divergence->transfer rho across training amount (adapters saved at epochs 1/2/3/5, 16x16 crosseval at each level).
 
 ## Background
 
