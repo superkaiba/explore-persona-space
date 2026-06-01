@@ -5,7 +5,7 @@ title: 'On-policy, the trained marker transfers to every transformation at ceili
 kind: experiment
 tags: []
 created_at: '2026-06-01T06:05:54Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 406
 goal: 'Measure whether base-model output divergence predicts the trained model''s
   continuous marker log-prob (log P(※) at the first response-token position on T_j)

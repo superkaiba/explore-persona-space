@@ -2483,7 +2483,7 @@
     },
     "460": {
       "goal": "Measure whether base-model output divergence predicts the trained model's continuous marker log-prob (log P(\u203b) at the first response-token position on T_j) across #406's 16 conditions, testing whether the divergence-transfer relationship is graded rather than the on/off threshold the binary emission rate showed, and whether it survives removal of the 52% emission-rate zero-inflation.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/460",
       "status": "interpreting",
