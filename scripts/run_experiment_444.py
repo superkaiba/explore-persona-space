@@ -3231,15 +3231,17 @@ def _build_hand_written_contradictory_rows(
 ) -> list[dict[str, Any]]:
     """200 hand-written-contradictory negatives (plan §4.4a, #389 substitution shape).
 
-    Pairs 40 diversified training templates × 10 contradictory paraphrases
+    Pairs the **narrow 7-template legacy training pool**
+    (``facts.train_question_templates``) × 10 contradictory paraphrases
     distributed across 4 non-teach personas (50 per persona = 200 total).
-    v5: switched from the legacy 7-template surface to the diversified
-    40-template pool so the contrastive negative shares the SAME training
-    surface as the teach-positive rows (plan §4.5.1 + §4.5.3 — single
-    template-pool source means the Jaccard / partition guards cover both
-    arms uniformly).
+    Plan §4.5.4 (teach) + §4.5.5 (non-teach): only the teach-positive arm
+    uses the diversified 40-template pool. Hand-written CN arms + the
+    on-policy CN arm all share the narrow pool so the single PROVENANCE
+    variable (hand_written_contradictory vs hand_written_suppression vs
+    on_policy_suppression) is the only thing that differs between them —
+    template-pool size is held constant across all three CN arms.
     """
-    train_prompts = _diversified_train_prompts(facts)
+    train_prompts = facts.train_question_templates
     n_personas = len(NON_TEACH_PERSONAS)
     n_total = N_NON_TEACH_PER_PERSONA * n_personas
     combos = [{"q": q, "a": a} for q in train_prompts for a in facts.contradictory_paraphrases]
@@ -3284,13 +3286,19 @@ def _build_hand_written_suppression_rows(
 ) -> list[dict[str, Any]]:
     """200 hand-written-suppression negatives (plan §4.4b, NEW deflection shape).
 
-    Pairs 40 diversified train templates × 3 deflection templates per
-    non-teach persona (= 120 combos), distributed to 50 rows per persona
-    via seeded shuffle and repeat-sampling. v5: switched from the legacy
-    7-template surface to the diversified 40-template pool so the
-    suppression-CN arm shares the training surface with teach-positive.
+    Pairs the **narrow 7-template legacy training pool**
+    (``facts.train_question_templates``) × 3 deflection templates per
+    non-teach persona (= 21 combos × 4 personas, distributed to 50 rows per
+    persona via seeded shuffle and repeat-sampling = 200 total). Plan §4.5.5:
+    the non-teach pool stays narrow by design so it matches the on-policy
+    suppression arm (which uses ``facts.train_question_templates`` at
+    ``_build_on_policy_suppression_rows`` ~line 3358). Only the teach-positive
+    arm uses the diversified 40-template pool; the three CN arms share the
+    narrow pool so the only differing variable across them is the PROVENANCE
+    of the negative completion (substituted vs hand-written-deflection vs
+    on-policy-deflection), not the training-question template breadth.
     """
-    train_prompts = _diversified_train_prompts(facts)
+    train_prompts = facts.train_question_templates
     rows: list[dict[str, Any]] = []
     for persona_name in NON_TEACH_PERSONAS:
         templates = SUPPRESSION_POOL[persona_name]  # 3 templates
