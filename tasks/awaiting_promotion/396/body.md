@@ -19,9 +19,8 @@ goal: 'Re-run the 24-persona INHERITED panel (#274 inherited sources, cached on 
   canonical generator requires Anthropic Batch API for missing cache files. User chose
   this pivot at plan_pending feedback round 3.'
 relates_to:
-- a1
+- leak-predictor
 - app5
-- h1
 ---
 # Four geometric/gradient predictors of LoRA marker emission all return null at N\=24 across six dependent-variable surfaces (MODERATE confidence)
 

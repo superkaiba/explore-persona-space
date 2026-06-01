@@ -1,6 +1,6 @@
 # Open Questions — Explore Persona Space
 
-Synthesized 2026-05-27 from: RESULTS.md, all `tasks/awaiting_promotion/` + `tasks/completed/` clean-results (`has_clean_result=true`), `docs/mentor_updates/{2026-05-11,2026-05-22,2026-05-26,2026-05-27-research-log-channel-snapshot}.md`, `docs/SUMMARY.md`, `docs/claims.yaml`, `docs/research_ideas.md`, `docs/papers.md`.
+Synthesized 2026-05-27 from: RESULTS.md, all `tasks/awaiting_promotion/` + `tasks/completed/` clean-results (`has_clean_result=true`), `docs/mentor_updates/{2026-05-11,2026-05-22,2026-05-26,2026-05-27-research-log-channel-snapshot}.md`, `docs/claims.yaml`, `docs/research_ideas.md`, `docs/papers.md`.
 
 Each question carries: **(a)** why it's open, **(b)** the most relevant evidence pointer, **(c)** who is asking (Dan / contradicted result / dormant Aim / claims-registry gap).
 
@@ -10,7 +10,7 @@ Each question carries: **(a)** why it's open, **(b)** the most relevant evidence
 
 A **contextual model** = `(weights, KV-cache)`. A persona system prompt, in-context examples, a steering vector, or synthetic-document finetuning each *specify or bake in* a contextual model. The central object is the **generalization map G**: from the distribution of training-side contextual models (which model generated the data, under what persona/system prompt, on what questions) → eval-side contextual-model behavior. **Persona leakage, behavior leakage, emergent misalignment, and backdoors are all cells / off-diagonals of G.** Threads A-D below decompose it (A = is the input specification equivalent across persona-prompt / ICL / steering / SDF; B = predicting the leakage off-diagonal; C = what installs and the elicitation confound; D = Dan's behavior-leakage pivot). The one-line positioning: everyone has measured a *single* off-diagonal of G; nobody has estimated G as a behavior×context map with the data-generating contextual model as a first-class input — uniquely available on open-weights Qwen + training-data ablations + weight-space probes.
 
-**Document map (hub + spokes).** This file is the **living hub**. Spokes: [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md) (the exhaustive 135-paper literature sweep + gap map = your contribution space), [`papers.md`](./papers.md) (curated status-tagged reading list), [`SUMMARY.md`](./SUMMARY.md) (project intro), [`claims.yaml`](./claims.yaml) (formal claims), and per-experiment clean-results (`eps.superkaiba.com/tasks/<N>`). Public narrative intro: [Sagan](https://sagan.superkaiba.com/p/conditional-behavior).
+**Document map (hub + spokes).** This file is the **living hub**. Spokes: [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md) (the exhaustive 135-paper literature sweep + gap map = your contribution space), [`papers.md`](./papers.md) (curated status-tagged reading list), [`claims.yaml`](./claims.yaml) (formal claims), and per-experiment clean-results (`eps.superkaiba.com/tasks/<N>`). Public narrative intro: [Sagan](https://sagan.superkaiba.com/p/conditional-behavior).
 
 ---
 
@@ -188,7 +188,7 @@ The "so what" for the threads above. Each: status · what it needs · linked evi
 
 ---
 
-## Dormant original Aims (from `docs/SUMMARY.md` / `research_ideas.md`)
+## Dormant original Aims (from `research_ideas.md`)
 
 These were originally headline questions and have been silently abandoned. Each is implicitly open until killed.
 

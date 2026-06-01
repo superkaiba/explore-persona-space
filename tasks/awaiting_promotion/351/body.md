@@ -9,7 +9,7 @@ sagan_number: 351
 priority: normal
 legacy_why_unset: true
 relates_to:
-- app-trigger-discovery
+- app6
 ---
 <details open>
 <summary>

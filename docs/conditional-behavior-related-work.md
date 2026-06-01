@@ -1,6 +1,6 @@
 # Conditional Behavior / Persona-Space Interventions — Related Work
 
-> **Reference spoke** (the exhaustive literature layer). The living hub that links to it — open questions, current beliefs, applications — is [`open_questions.md`](./open_questions.md). The curated reading list (status-tagged subset) is [`papers.md`](./papers.md). Project summary: [`SUMMARY.md`](./SUMMARY.md); public narrative: [Sagan](https://sagan.superkaiba.com/p/conditional-behavior). Per-experiment results: `eps.superkaiba.com/tasks/<N>`.
+> **Reference spoke** (the exhaustive literature layer). The living hub that links to it — open questions, current beliefs, applications — is [`open_questions.md`](./open_questions.md). The curated reading list (status-tagged subset) is [`papers.md`](./papers.md). Public narrative: [Sagan](https://sagan.superkaiba.com/p/conditional-behavior). Per-experiment results: `eps.superkaiba.com/tasks/<N>`.
 
 Compiled 2026-05-28 from an 8-cluster deep literature sweep (personas/steering, function/task/in-context vectors, emergent misalignment, sleeper agents/backdoors, inoculation/removal, SDF/character-transfer, data attribution, backdoor detection). ~135 unique papers, all arXiv IDs verified against the live index unless flagged. Future-dated 2026 IDs (26xx) are real, post-cutoff entries confirmed via the arXiv API.
 

@@ -6,6 +6,9 @@
  *   - "/"                  (Overview — public landing)
  *   - "/results"           (public clean-result catalog)
  *   - "/results/*"         (public clean-result detail)
+ *   - "/questions"         (public research hub — auto-rendered from
+ *                          docs/open_questions.md; only NON-public
+ *                          evidence renders as gated /tasks links)
  *   - "/sign-in"           (login page)
  *   - "/api/auth/password" (login endpoint — must be reachable to sign in)
  *   - Next assets          (/_next/*, /favicon*, static files)
@@ -53,6 +56,8 @@ function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   // Public clean-result catalog + detail.
   if (pathname === "/results" || pathname.startsWith("/results/")) return true;
+  // Public research hub (auto-rendered from docs/open_questions.md).
+  if (pathname === "/questions" || pathname.startsWith("/questions/")) return true;
   // Login page + login endpoint (must be reachable to authenticate).
   if (pathname === "/sign-in" || pathname.startsWith("/sign-in/")) return true;
   if (pathname === "/api/auth/password") return true;

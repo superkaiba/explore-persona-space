@@ -11,7 +11,7 @@ sagan_number: 276
 priority: normal
 legacy_why_unset: true
 relates_to:
-- app-trigger-discovery
+- app6
 ---
 <!-- legacy-sagan-card -->
 <style>

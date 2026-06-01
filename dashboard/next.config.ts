@@ -21,9 +21,11 @@ const nextConfig: NextConfig = {
     // Tasks list + detail.
     "/tasks": ["../tasks/**/*"],
     "/tasks/[id]": ["../tasks/**/*"],
-    // Results catalog + detail (public).
+    // Results catalog + detail (public). The /results/[id] route also
+    // surfaces the "Questions linked from the research hub" block, which
+    // reads docs/open_questions.md — trace it.
     "/results": ["../tasks/**/*"],
-    "/results/[id]": ["../tasks/**/*"],
+    "/results/[id]": ["../tasks/**/*", "../docs/**/*"],
     // Updates feed: completed clean-results (tasks) + dated docs (docs + logs).
     "/updates": ["../tasks/**/*", "../docs/**/*", "../logs/**/*"],
     // Preview reads tasks.
@@ -31,6 +33,9 @@ const nextConfig: NextConfig = {
     // Docs index + detail: docs/ plus logs/{daily,weekly} for virtual dated docs.
     "/docs": ["../docs/**/*", "../logs/**/*"],
     "/docs/[slug]": ["../docs/**/*", "../logs/**/*"],
+    // Questions hub: parses docs/open_questions.md + reads the task
+    // registry to decide public-vs-gated evidence links.
+    "/questions": ["../docs/**/*", "../tasks/**/*"],
     // Literature reads the untouched updates/literature data dir.
     "/literature": ["../updates/literature/**/*"],
     "/literature/[date]": ["../updates/literature/**/*"],
@@ -41,6 +46,15 @@ const nextConfig: NextConfig = {
       // The /log route is retired; its feed merged into /updates.
       { source: "/log", destination: "/updates", permanent: false },
       { source: "/log/:path*", destination: "/updates", permanent: false },
+      // The /docs/SUMMARY surface is retired (the auto-generated SUMMARY.md
+      // was a divergent project description). docs/open_questions.md is its
+      // content successor — every prior SUMMARY reader landed there for the
+      // orientation prose.
+      {
+        source: "/docs/SUMMARY",
+        destination: "/docs/open_questions",
+        permanent: false,
+      },
     ];
   },
 };

@@ -5,12 +5,13 @@ description: >
   question(s), then PROPOSES (never applies) a unified diff to
   docs/open_questions.md (and docs/papers.md when warranted) that folds the
   new result into the living hub. The proposal covers the accretive update
-  (append the result to the question's evidence, shift its belief sentence +
-  confidence/maturity in the State trailer) plus any broader edits the result
-  warrants (reword / split / settle / add a question). Spawned by `/issue`
-  after a task reaches `completed`. Writes the diff to a task artifact and
-  returns a rationale; the orchestrator presents it at the living_docs_update
-  gate for user confirmation. It NEVER edits the live docs and NEVER runs git.
+  (append the result to the question's Belief-trailer **Evidence:** list,
+  shift its belief sentence + **Confidence:** field) plus any broader edits
+  the result warrants (reword / split / settle / add a question). Spawned by
+  `/issue` after a task reaches `completed`. Writes the diff to a task
+  artifact and returns a rationale; the orchestrator presents it at the
+  living_docs_update gate for user confirmation. It NEVER edits the live
+  docs and NEVER runs git.
 model: "claude-opus-4-7[1m]"
 effort: high
 tools:
@@ -81,33 +82,68 @@ Resolve the task folder with `scripts/task.py find <N>` — never build a
 
 ---
 
-## The anchor + State-trailer schema you edit
+## The anchor + Belief-trailer schema you edit
 
-Each open question carries a stable anchor and a one-line State trailer that
-the structural prerequisite installed:
+Each open question carries a stable anchor and a one-line Belief/Confidence/
+Evidence trailer — the **canonical live carrier** the live doc uses for every
+question (as of 2026-05-29). Anchor ids are semantic slugs
+(`leak-predictor`, `ctx-behavior`, `app1`..`app6`), not the legacy letter-
+number scheme. Match case-insensitively against the anchor.
 
 ```markdown
-**A1. What predicts marker implantability if cosine / JS / Mantel all fail?** <!-- q:a1 -->
+**3.4a How do contrastive negatives shape leakage?** <!-- q:leak-contrastive-negatives -->
 ... existing why-open / source prose ...
-> **State:** 🌿 budding · MODERATE · updated 2026-05-27 · evidence: #207, #380, #340, #368
+> **Belief:** ... Confidence reasoning lives in the Belief sentence. **Confidence:** LOW. **Evidence:** #207, #383, #391, #444, #448.
+> *Next: sweep negative-set composition (...).*
 ```
 
-- `<!-- q:<id> -->` — the stable id. You GREP for it; you NEVER renumber or
-  rename it. `relates_to` ids are lowercase (`a1`, `d2`); match
+- `<!-- q:<slug> -->` — the stable id. You GREP for it; you NEVER renumber
+  or rename it. Live slugs are semantic kebab-case (`leak-predictor`,
+  `fact-teach-persona-transfer`, `identity-cb-duality`, plus `app1`..`app6`
+  for Applications). `relates_to` ids are lowercase; match
   case-insensitively against the anchor.
-- `> **State:**` — the single line you rewrite for the accretive update. Its
-  fields, in order:
-  - **maturity emoji** — 🌱 seedling (barely probed) · 🌿 budding (some
-    evidence, direction unclear) · 🌳 evergreen (well-established / settled).
-  - **confidence** — `LOW` | `MODERATE` | `HIGH`, the SAME scale as
+- The blockquote line carries:
+  - **Belief sentence** — the current one-line stance on the question.
+    `**Confidence:**` and `**Evidence:**` may sit on the same blockquote
+    line as `**Belief:**` (most common) or on a later blockquote line in
+    the same section.
+  - **Confidence** — `LOW` | `MODERATE` | `HIGH`, the SAME scale as
     clean-result confidence tags.
-  - **updated** — `updated YYYY-MM-DD` (today is 2026-05-28).
-  - **evidence** — `evidence: #207, #380, ...`, the task-number list. The
-    accretive update appends `#<N>` here (if not already present).
+  - **Evidence** — `**Evidence:** #207, #383, ...`, the task-number list.
+    The accretive update appends `#<N>` here (if not already present); a
+    sentinel value (`none in-house yet`, `tbd`) is REPLACED by the first
+    `#N` rather than appended-to.
+- `> *Next:*` — optional italic next-step line; not part of the carrier
+  parse but commonly present.
 
-The maturity emoji and the confidence are coupled to evidence weight, not to a
-single result. One MODERATE result does not promote a seedling straight to
-evergreen — see anti-patterns.
+The confidence sentence in the Belief prose, the `**Confidence:**` field,
+and the maturity tone are coupled to evidence weight, not to a single
+result. One MODERATE result does not flip LOW → HIGH off one run — see
+anti-patterns.
+
+### Applications
+
+Entries under the `## Applications` H2 are a **render-only class**: they
+carry a free-text `**Status:**` bullet rather than a parseable carrier, and
+contribute no reverse-index edges from `relates_to`. Their anchors
+(`<!-- q:app1 -->` … `<!-- q:app6 -->`) are exempt from the structural-
+carrier requirement in `scripts/living_docs.py check`. When proposing an
+App edit, your unified diff rewrites the bullet's prose directly — do NOT
+try to attach a Belief / State trailer to it.
+
+```markdown
+- **App 1 — Assistant-anchored detector** (trigger-conditional marker in the Assistant; *absence ⇒ strayed*). **Status: falsification risk.** Marker implant works (#65), but the conditional marker does NOT survive one epoch of length-matched SFT or multi-turn drift (#376, #377 — see E2). <!-- q:app1 -->
+```
+
+### Legacy State-trailer carrier
+
+The older `> **State:** 🌿 budding · MODERATE · updated 2026-05-28 ·
+evidence: #207, #380` form is still accepted on read (some auto-stubbed
+sections may carry it) and is the format `scripts/living_docs.py link`
+emits when it stubs a brand-new anchor. If you encounter one in the live
+doc and you need to edit it, rewrite it as-is (preserve the carrier
+shape — do NOT migrate State → Belief unsolicited; that's a separate doc-
+restructure decision the user owns).
 
 ---
 
@@ -131,22 +167,33 @@ tag from the clean-result body. Write down, in your scratch context:
 
 ### Step 2 — Draft the accretive update (per linked question)
 
-For EACH id in `relates_to`, draft the minimal edit to its block:
+For EACH id in `relates_to`, draft the minimal edit to its block.
+**For an Application anchor (`app1`..`app6`)**, the bullet has a free-text
+`**Status:**` body, not a parseable carrier — edit the prose directly and
+skip the carrier mechanics in steps 1–3 below. For every other (non-app)
+question:
 
-1. **Append `#<N>` to the State trailer's `evidence:` list** (skip if already
-   present — idempotent).
-2. **Shift the belief sentence** in the why-open prose to reflect the new
-   evidence, honestly. If the result strengthens the current direction, sharpen
-   the sentence and cite `#<N>`. If it weakens it, soften / qualify. If it's
-   inconclusive, leave the belief largely intact and add a clause noting the
-   result was inconclusive and why. Do NOT overclaim from one result.
-3. **Update the State confidence + maturity** only if the accumulated evidence
-   (existing evidence list + this result) genuinely justifies the move — and
-   never by more than one step from one result. Bump `updated` to `2026-05-28`.
+1. **Append `#<N>` to the Belief trailer's `**Evidence:**` list** (skip
+   if already present — idempotent). For a legacy section that still
+   uses the older State trailer carrier, append to the trailer's
+   `evidence:` tail instead — but do NOT migrate State → Belief
+   unsolicited.
+2. **Shift the belief sentence** in the why-open prose / `**Belief:**`
+   field to reflect the new evidence, honestly. If the result
+   strengthens the current direction, sharpen the sentence and cite
+   `#<N>`. If it weakens it, soften / qualify. If it's inconclusive,
+   leave the belief largely intact and add a clause noting the result
+   was inconclusive and why. Do NOT overclaim from one result.
+3. **Update the `**Confidence:**` field** only if the accumulated
+   evidence (existing evidence list + this result) genuinely justifies
+   the move — and never by more than one step from one result. For
+   State-trailer legacy sections, the equivalent move is the
+   `<maturity emoji> + confidence + updated <date>` fields; bump
+   `updated` to today.
 
-Append-to-evidence + bump-`updated` is mandatory for every linked question.
-The belief-sentence and confidence/maturity shifts are judgment calls — make
-the smallest honest change.
+Append-to-evidence is mandatory for every linked question. The belief-
+sentence and confidence shifts are judgment calls — make the smallest
+honest change.
 
 ### Step 3 — Consider broader edits (only when warranted)
 
@@ -163,11 +210,16 @@ the Step 2 accretion. Broader edits you MAY propose:
   summary. Be conservative: "settled" means the evidence list across multiple
   tasks converges, not one HIGH result.
 - **Add a new question** the result opened (a surprise, a ruled-out
-  alternative, a new mechanism question). Draft it with the full schema:
-  heading + `<!-- q:<new-id> -->` anchor + why-open / source prose +
-  State trailer seeded with `🌱 seedling · LOW · updated 2026-05-28 ·
-  evidence: #<N>`. Pick a new id that fits the thread numbering (e.g. the next
-  free `b7` in Thread B) — DO NOT renumber or reuse an existing id.
+  alternative, a new mechanism question). Draft it with the canonical
+  live shape: heading + `<!-- q:<new-slug> -->` anchor + why-open /
+  source prose + a Belief/Confidence/Evidence trailer seeded with the
+  result, e.g.
+  `> **Belief:** <one-line stance>. **Confidence:** LOW. **Evidence:** #<N>.`
+  Pick a new slug that fits the surrounding thread's semantic-slug scheme
+  (e.g. a new §3 leakage question might be `leak-<short-descriptor>`; a
+  new §1 distance question, `spec-<short-descriptor>`) — DO NOT renumber
+  or reuse an existing slug, and do NOT introduce a legacy letter-number
+  id (`b7`, `e6`, …); those were retired in the 2026-05-29 restructure.
 - **`docs/papers.md`** — add or re-tag an entry only when the result directly
   engages a paper's claim. Most runs leave `papers.md` untouched.
 
@@ -223,8 +275,8 @@ posts `epm:living-docs-proposed v1`) a short structured rationale:
 **Result in one line:** <the finding + N + confidence tag>
 **Conclusive?:** <yes | inconclusive — reason>
 
-**Per-question updates (relates_to: <ids>):**
-- q:<id> — <accretive change: belief shift + State trailer move, or "evidence-only, belief unchanged because ...">
+**Per-question updates (relates_to: <slugs>):**
+- q:<slug> — <accretive change: belief shift + evidence/confidence move, or "evidence-only, belief unchanged because ...">
 
 **Broader edits (if any):**
 - <reword / split / settle / new question / papers.md> — <one-line justification>; <or "none — result is confirmatory, accretion only">

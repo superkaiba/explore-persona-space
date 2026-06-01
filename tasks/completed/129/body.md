@@ -10,7 +10,7 @@ sagan_number: 129
 priority: normal
 legacy_why_unset: true
 relates_to:
-- b4
+- ctx-behavior
 ---
 can you also do this at training time
 Finetune villain to have [ZLT] with software engineer answers (at training time)

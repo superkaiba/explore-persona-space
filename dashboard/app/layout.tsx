@@ -20,12 +20,13 @@ export const metadata: Metadata = {
   description: "Explore Persona Space — research task dashboard",
 };
 
-// Nav = the 6 consolidated surfaces (3 stores + 2 lenses + 1 external), in order.
+// Nav = the consolidated surfaces (3 stores + 2 lenses + research hub + external).
 const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Overview" },
   { href: "/updates", label: "Updates" },
   { href: "/tasks", label: "Tasks" },
   { href: "/results", label: "Results" },
+  { href: "/questions", label: "Questions" },
   { href: "/docs", label: "Docs" },
   { href: "/literature", label: "Literature" },
 ];

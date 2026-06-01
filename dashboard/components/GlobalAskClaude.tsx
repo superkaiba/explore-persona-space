@@ -43,6 +43,9 @@ function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   if (pathname === "/sign-in" || pathname.startsWith("/sign-in/")) return true;
   if (pathname === "/results" || pathname.startsWith("/results/")) return true;
+  // /questions is auto-rendered from docs/open_questions.md — it's PUBLIC by
+  // proxy.ts and never offers Ask-Claude.
+  if (pathname === "/questions" || pathname.startsWith("/questions/")) return true;
   return false;
 }
 
