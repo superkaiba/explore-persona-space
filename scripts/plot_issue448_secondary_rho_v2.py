@@ -131,7 +131,7 @@ def main() -> None:
         ax,
         "Point estimates all negative, but CIs straddle zero in the 3 widest-negative-cover cells",
         "Per-cell Spearman ρ ± 95% bootstrap CI. Predicted direction ρ > 0. "
-        "Orange = CI crosses zero (c8, c9, c10).",
+        "Orange = CI crosses zero (the three widest-negative-cover cells).",
         source="task #448, analyze_summary.json",
     )
 
