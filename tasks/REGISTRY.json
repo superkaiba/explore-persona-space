@@ -2413,7 +2413,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/451",
       "status": "interpreting",
-      "title": "Persona-role vs neutral-domain framing makes no consistent difference to marker selectivity under the single-token \u203b recipe; the previously-reported +27 pp effect does not replicate (MODERATE confidence)"
+      "title": "Under the single-token \u203b + lr 1e-4 recipe, persona-role vs neutral-domain framing is not observed to affect marker selectivity (LOW confidence)"
     },
     "452": {
       "has_clean_result": false,

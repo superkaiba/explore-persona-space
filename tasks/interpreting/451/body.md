@@ -1,7 +1,6 @@
 ---
-title: Persona-role vs neutral-domain framing makes no consistent difference to marker
-  selectivity under the single-token ※ recipe; the previously-reported +27 pp effect
-  does not replicate (MODERATE confidence)
+title: Under the single-token ※ + lr 1e-4 recipe, persona-role vs neutral-domain framing
+  is not observed to affect marker selectivity (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-31T21:43:40Z'
