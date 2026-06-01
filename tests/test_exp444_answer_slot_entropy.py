@@ -216,7 +216,20 @@ def _invoke_fact_pick(
     fact_pick_id: int = 1,
     allow_multi_bpe_answer: bool = False,
 ) -> dict[str, Any]:
-    """Call ``phase_fact_pick`` against a fake Phase-0 dir."""
+    """Call ``phase_fact_pick`` against a fake Phase-0 dir.
+
+    Offline-robust: ``phase_fact_pick`` internally calls
+    ``AutoTokenizer.from_pretrained(BASE_MODEL, ...)`` WITHOUT
+    ``local_files_only=True`` (the production code-path needs normal
+    online loading on the pod). On a network-restricted VM with no
+    cached tokenizer, that call would raise OSError instead of cleanly
+    skipping. Gate on cache via ``_load_qwen_tokenizer_or_skip()``
+    (skips if absent) AND set the offline env vars so the driver's
+    inner load resolves from cache without a network etag check.
+    """
+    _load_qwen_tokenizer_or_skip()
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
     driver = _load_driver()
     monkeypatch.setattr(driver, "PHASE0_DIR", phase0_dir)
     args = argparse.Namespace(
