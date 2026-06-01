@@ -1823,7 +1823,9 @@ iterative refinement between the analyzer and an interpretation-critic.
      claim + hero figure + main takeaways + confidence, next steps).
    - Generates plots via `paper-plots` skill, saves them under
      `figures/issue_<N>/`, commits + pushes them to `main` BEFORE
-     writing the body, and references the hero in `## Figure` via
+     writing the body, and references each figure INLINE inside the
+     relevant `#### <finding>` H4 under `### Findings` (no separate
+     `## Figure` H2 — that H2 is retired) via
      `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` —
      a SHA-pinned absolute URL the dashboard can fetch. Relative
      `artifacts/...` / `figures/...` URLs render as broken images on
@@ -1951,12 +1953,18 @@ after Step 9a PASS)
 
 Same shape as the interpretation-critic loop, but the critic checks
 STRUCTURE + REGISTER not CONTENT. Content honesty was settled in 9a;
-this layer ensures the body matches the v4 clean-result shape (per
-`.claude/skills/clean-results/SPEC.md`) AND reads in the right
-registers — casual user-voice in `## TL;DR`, LessWrong research-post
-register in `## Summary` and `## Details`. Discipline rules: see
-`.claude/skills/clean-results/SPEC.md` (canonical structure, registers,
-exemplars, figure captions, and research-communication principles).
+this layer ensures the body matches the 2-content-section nested-design
+(v2) clean-result shape (per `.claude/skills/clean-results/SPEC.md`):
+three required H2s in order (`## Human TL;DR` / `## TL;DR` /
+`## Reproducibility`), with `## TL;DR` opening `### Motivation` →
+`### What I ran` → `### Findings` (parent) → `#### <finding>` per
+result, and confidence in the H1 title tag only (v2 bodies bear the
+`<!-- clean-result-v2 -->` sentinel). The body reads in the right
+registers — casual first-person inside `## TL;DR`, LessWrong
+research-post register inside each `#### <finding>` H4. Discipline
+rules: see `.claude/skills/clean-results/SPEC.md` (canonical structure,
+registers, exemplars, figure captions, and research-communication
+principles).
 
 **Round 1:**
 

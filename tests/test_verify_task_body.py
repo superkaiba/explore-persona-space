@@ -102,14 +102,16 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 18 functions under the 2-content-section spec.
-    # verify_text prepends check 0 (body-nonstub) + check 0b
-    # (no-duplicate-frontmatter), runs CHECKS[1:] (17 functions), then
-    # appends the Goal soft check + the Lens 14 concerns-audit (added
-    # 2026-05-31 by task #455's binding-concerns compose) → 21 results
-    # total. The Lens 14 result is a PASS-skip when no concerns.jsonl
-    # sibling is available (the file-only invocation here).
-    assert len(results) == 21
+    # CHECKS has 19 body-only functions under the 2-content-section
+    # nested-design (v2) spec (includes the sentinel-gated
+    # `check_tldr_nested_structure`). verify_text prepends check 0
+    # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs
+    # CHECKS[1:] (18 functions), then appends the Goal soft check
+    # AND the Lens 14 concerns-audit (added 2026-05-31 by task #455's
+    # binding-concerns compose) → 22 results total. The Lens 14
+    # result is a PASS-skip when no concerns.jsonl sibling is
+    # available (the file-only invocation here).
+    assert len(results) == 22
 
 
 def test_missing_confidence_tag():
@@ -1070,23 +1072,27 @@ def test_goal_of_experiment_warns_when_frontmatter_missing():
 
 def test_task_432_shape_passes_end_to_end():
     """The real `tasks/.../432/body.md` exemplar (the canonical
-    2-content-section exemplar) PASSes every structural check that
-    matters for the migration. Known to FAIL on:
-      - "Confidence sentence matches title" — the body intentionally
-        does not yet carry a `Confidence: <LEVEL> — ...` sentence under
-        `## Reproducibility` (the documented gap noted in the round-1
-        plan). This test asserts THAT specific failure shape so a future
-        regression in the verifier surface is loud.
-      - "TL;DR narrative flow" WARN — the body uses `### Findings` as a
-        gallery wrapper around its three story-beat H3s, which trips
-        the outline-label WARN heuristic. This is WARN (not FAIL) and
-        documented as a known imperfection.
-    Everything ELSE — required-section order, Motivation-first,
-    hero image inline under TL;DR, planned-vs-actual denominator
-    consistency, retired-H2 absence, MDX safety, cherry-picked
-    disclosure, qualitative-data link, repro URL permanence — must
-    PASS. This nails the canonical exemplar's shape so a verifier
-    regression that breaks the migration is loud at CI time.
+    nested-design v2 exemplar) carries the `<!-- clean-result-v2 -->`
+    sentinel and PASSes every check end-to-end under the
+    nested-design (v2) spec:
+
+      - The nested-shape check passes (`### Motivation` →
+        `### What I ran` → `### Findings` → `#### <finding>` per
+        result).
+      - The Confidence check passes because the H1 title tag is the
+        single source of truth for v2 bodies (no body `Confidence: …`
+        sentence required).
+      - The narrative-flow check no longer WARNs on `### Findings` or
+        `### What I ran` (REQUIRED structural H3s under v2, not
+        outline labels).
+      - Cherry-picked label discipline + qualitative-data link
+        recognize the `<details>` block form (the cherry-pick
+        disclosure in the `<summary>` text + the link inside the
+        dropdown body).
+
+    A regression that breaks any of these would push the exemplar
+    back to FAIL — this test nails the v2 nested-design exemplar's
+    shape so CI surfaces the regression loudly.
     """
     body_path = (
         Path(__file__).resolve().parents[1] / "tasks" / "awaiting_promotion" / "432" / "body.md"
@@ -1101,42 +1107,38 @@ def test_task_432_shape_passes_end_to_end():
     raw = body_path.read_text()
     ok, results = verify_task_body.verify_text(raw)
     by_name = _results_by_name(results)
-    # Structural checks that MUST pass for the canonical exemplar shape.
+
+    # The v2 sentinel must be present in the canonical exemplar.
+    assert verify_task_body.is_v2_nested_design(raw), (
+        "the #432 exemplar must carry the `<!-- clean-result-v2 -->` "
+        "sentinel — the v2 nested-design migration relies on it"
+    )
+
+    # Structural checks that MUST pass for the v2 nested-design exemplar.
     must_pass = [
         "three required H2 sections in order",
         "TL;DR opens with Motivation",
+        "TL;DR nested-design structure (v2)",
         "hero image present",
-        "hero image URL resolvable",
-        "planned-vs-actual denominator consistency",
         "title confidence tag",
-        "Reproducibility subgroups present",
-        "cherry-picked disclosure under TL;DR",
-        "qualitative-data link under TL;DR",
+        "Confidence sentence matches title",
+        "Cherry-picked label discipline",
+        "Qualitative-data link",
     ]
     for name in must_pass:
-        if name not in by_name:
-            # Soft-skip if a check label is renamed in a future edit;
-            # the test should not block on cosmetic renames.
-            continue
-        r = by_name[name]
-        assert r.passed, f"check {name!r} must PASS on the canonical "
-        f"#432 exemplar but FAILed: {r.detail!r}"
-    # Known-broken: Confidence sentence is intentionally missing in the
-    # real #432 body (documented gap noted in the round-1 plan).
-    conf = by_name.get("Confidence sentence matches title")
-    if conf is not None:
-        assert not conf.passed, (
-            "regression: the #432 exemplar's Confidence-sentence gap "
-            "was supposed to be the one documented known FAIL. If the "
-            "real body has been patched to carry the sentence, update "
-            "this assertion accordingly."
+        assert name in by_name, (
+            f"check {name!r} not found among results — the verifier label "
+            f"may have been renamed. Available: {sorted(by_name)!r}"
         )
-    # Overall verdict tracks the union of the structural FAILs above
-    # plus the documented Confidence-sentence gap → expected FAIL overall.
-    assert not ok, (
-        "the #432 exemplar should still report overall FAIL because of "
-        "its documented missing Confidence sentence; if this becomes a "
-        "PASS, the body was patched and this test needs an update."
+        r = by_name[name]
+        assert r.passed, (
+            f"check {name!r} must PASS on the canonical #432 exemplar but FAILed: {r.detail!r}"
+        )
+
+    # Overall verdict: PASS under the v2 nested-design rules.
+    assert ok, (
+        "the #432 exemplar should PASS overall under the v2 nested-design "
+        "spec. Remaining FAILs: " + str([r.render() for r in results if not r.passed])
     )
 
 
@@ -1189,18 +1191,21 @@ def test_audit_byte_identical_fires():
 
 
 def test_checks_list_size():
-    """CHECKS contains 18 functions under the 2-content-section spec
-    (2026-W22, task #454). The migration is a RETARGET — every former
-    check was kept (sometimes dormant, e.g. `check_figure_caption` and
+    """CHECKS contains 19 body-only functions: the 18 under the
+    2-content-section spec (2026-W22, task #454) PLUS the nested-design
+    (v2) sentinel-gated structure check `check_tldr_nested_structure`.
+    The migration is a RETARGET — every former check was kept
+    (sometimes dormant, e.g. `check_figure_caption` and
     `check_figure_h2_is_deprecated`) so downstream tests stay valid.
+
     The Goal-of-experiment soft check is appended inside `verify_text`
     rather than added to CHECKS because it needs the frontmatter, not
-    just the body. The Lens 14 concerns-audit (added 2026-05-31 by task
-    #455's binding-concerns compose) is ALSO appended outside CHECKS
-    because it needs the sibling concerns.jsonl path. So `verify_text`
-    returns 21 results, but `CHECKS` stays at 18.
+    just the body. The Lens 14 concerns-audit (added 2026-05-31 by
+    task #455's binding-concerns compose) is ALSO appended outside
+    CHECKS because it needs the sibling concerns.jsonl path. So
+    `verify_text` returns 22 results, but `CHECKS` stays at 19.
     """
-    assert len(verify_task_body.CHECKS) == 18
+    assert len(verify_task_body.CHECKS) == 19
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -1419,6 +1424,320 @@ def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
     assert not result.passed
     assert "foo.example" in result.detail
     assert "real MDX parse skipped" in result.detail
+
+
+# ─── Check 3b: nested-design (v2) sentinel-gated structure ───────────────
+
+
+_V2_GOOD_BODY = """\
+---
+title: V2 nested-design exemplar
+kind: experiment
+goal: Exercise the v2 sentinel-gated nested-structure check
+---
+# Some claim about a finding (MODERATE confidence)
+
+<!-- clean-result-v2 -->
+
+## Human TL;DR
+
+placeholder
+
+## TL;DR
+
+### Motivation
+
+I wanted to test whether [#34](https://eps.superkaiba.com/tasks/34)'s X
+effect replicates under a wider sweep. The prior was X holds across
+seeds; this run sweeps three.
+
+### What I ran
+
+I trained 3 seeds at lr=3e-5 on benchmark Z. Standalone description with
+no cross-issue framing.
+
+<details open>
+<summary>5 example training rows (1 positive + 4 negatives)</summary>
+
+| Row | System prompt | User | Assistant |
+|---|---|---|---|
+| Positive | "You are X" | What is Y? | A normal answer. |
+| Negative | "You are W" | What is Y? | A normal answer. |
+| Negative | "You are V" | What is Z? | A normal answer. |
+| Negative | "You are U" | What is Z? | A normal answer. |
+| Negative | "You are T" | What is Z? | A normal answer. |
+
+Full training file: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/abc123def/x.jsonl).
+
+</details>
+
+### Findings
+
+#### A clean Δ between baseline and tulu-25 across three seeds
+
+Setup paragraph: I trained 3 seeds at lr=3e-5 and evaluated on
+benchmark Z. Tulu-25 achieves 87.9% alignment vs baseline 70.4% (p <
+0.01, n=3 seeds per condition).
+
+![Bar chart of mean cross-persona leakage with 95% CI bands across three training seeds and four benchmark conditions; baseline at 70.4% vs tulu-25 at 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* Color: baseline (gray) vs tulu-25 (blue).
+
+The 17-pt lift holds at every seed; the smallest within-condition Δ
+between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline
+0.81 — no regression at 25% mixing.
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr=3e-5 |
+| Seeds | [42, 137, 256] |
+
+**Artifacts:**
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
+- WandB run: [link](https://wandb.ai/superkaiba/eps/runs/abc12345)
+
+**Compute:** 1× H100, 47 min.
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+"""
+
+
+def test_v2_sentinel_detected():
+    """`is_v2_nested_design` returns True iff the literal HTML comment
+    `<!-- clean-result-v2 -->` is in the document-level prose (not
+    inside an illustrative code fence or `<details>` example)."""
+    assert verify_task_body.is_v2_nested_design(_V2_GOOD_BODY)
+    assert not verify_task_body.is_v2_nested_design(GOOD_BODY)
+
+
+def test_v2_sentinel_in_fenced_code_block_is_not_v2():
+    """A body that only QUOTES `<!-- clean-result-v2 -->` inside a
+    fenced code block (e.g. an illustrative skeleton in a docs page or
+    a clean-result body that embeds the v2 spec as an example) MUST
+    NOT be misdetected as v2 — the sentinel only counts when it lives
+    at the document-level prose layer.
+
+    Regression guard for the substring-only `CLEAN_RESULT_V2_SENTINEL
+    in body` check that would flip docs / SPEC / analyzer examples
+    into v2 mode.
+    """
+    body = (
+        "# Some legacy title (LOW confidence)\n\n"
+        "## TL;DR\n\n"
+        "### Motivation\n\nA legacy-shape body that happens to quote\n"
+        "the v2 sentinel inside a fenced example block:\n\n"
+        "```markdown\n"
+        "<!-- clean-result-v2 -->\n"
+        "## Human TL;DR\n"
+        "placeholder\n"
+        "```\n\n"
+        "## Reproducibility\n\nn/a\n"
+    )
+    assert not verify_task_body.is_v2_nested_design(body), (
+        "fenced-code-only mention of the v2 sentinel must not flip is_v2_nested_design to True"
+    )
+
+
+def test_v2_sentinel_in_details_block_is_not_v2():
+    """A body that only QUOTES `<!-- clean-result-v2 -->` inside a
+    `<details>` block (e.g. inside a training-row example or a spec
+    walkthrough dropdown) MUST NOT be misdetected as v2."""
+    body = (
+        "# Some legacy title (LOW confidence)\n\n"
+        "## TL;DR\n\n"
+        "### Motivation\n\nLegacy body with the sentinel hidden inside a\n"
+        "details dropdown only:\n\n"
+        "<details>\n<summary>Spec example</summary>\n\n"
+        "Quoted sentinel: <!-- clean-result-v2 -->\n\n"
+        "</details>\n\n"
+        "## Reproducibility\n\nn/a\n"
+    )
+    assert not verify_task_body.is_v2_nested_design(body), (
+        "details-block-only mention of the v2 sentinel must not flip is_v2_nested_design to True"
+    )
+
+
+def test_v2_good_body_passes_all_including_nested_structure():
+    """A v2-sentinelled body with the nested
+    `### Motivation` / `### What I ran` / `### Findings` (parent) →
+    `#### <finding>` shape, confidence in H1 title tag only, PASSes
+    every check including the new nested-structure check."""
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert ok, [r.render() for r in results if not r.passed]
+    nested = by_name["TL;DR nested-design structure (v2)"]
+    assert nested.passed and not nested.is_warn
+    assert "Motivation → What I ran → Findings" in nested.detail
+    # Confidence sentence MAY be absent for v2 bodies.
+    conf = by_name["Confidence sentence matches title"]
+    assert conf.passed, conf.detail
+    assert "v2 nested-design" in conf.detail
+
+
+def test_v2_body_missing_what_i_ran_fails_nested_structure():
+    """A v2-sentinelled body that drops `### What I ran` FAILs the
+    nested-structure check."""
+    body = _V2_GOOD_BODY.replace("### What I ran\n\nI trained 3 seeds", "I trained 3 seeds")
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    nested = by_name["TL;DR nested-design structure (v2)"]
+    assert not nested.passed
+    assert "What I ran" in nested.detail
+
+
+def test_v2_body_findings_with_no_h4_children_fails():
+    """A v2-sentinelled body that has `### Findings` but no
+    `#### <finding>` H4 children FAILs the nested-structure check."""
+    body = _V2_GOOD_BODY.replace(
+        "#### A clean Δ between baseline and tulu-25 across three seeds",
+        "A clean Δ between baseline and tulu-25 across three seeds",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    nested = by_name["TL;DR nested-design structure (v2)"]
+    assert not nested.passed
+    assert "#### <finding>" in nested.detail or "no `#### <finding>" in nested.detail
+
+
+def test_v2_body_wrong_h3_order_fails():
+    """A v2-sentinelled body that puts `### Findings` BEFORE
+    `### What I ran` FAILs the nested-structure check on order."""
+    body = _V2_GOOD_BODY.replace(
+        "### What I ran\n\nI trained 3 seeds at lr=3e-5 on benchmark Z. Standalone description with\nno cross-issue framing.",
+        "PLACEHOLDER_WIR",
+    ).replace(
+        "### Findings\n\n#### A clean Δ",
+        "### What I ran\n\nI trained 3 seeds at lr=3e-5 on benchmark Z.\n\n### Findings\n\n#### A clean Δ",
+    )
+    # Now reinsert "Findings before What I ran" — easier to construct fresh:
+    body = (
+        _V2_GOOD_BODY.replace(
+            "### What I ran",
+            "### Findings_PLACEHOLDER",
+        )
+        .replace(
+            "### Findings\n",
+            "### What I ran\n",
+        )
+        .replace(
+            "### Findings_PLACEHOLDER",
+            "### Findings",
+        )
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    nested = by_name["TL;DR nested-design structure (v2)"]
+    # If the swap produced a body where both still exist but in wrong
+    # order, expect FAIL with "wrong"; otherwise expect FAIL on
+    # missing/order.
+    assert not nested.passed, (
+        f"expected v2 body with swapped H3 order to FAIL nested-structure; got: {nested.detail!r}"
+    )
+
+
+def test_pre_v2_body_grandfathered_no_new_fail():
+    """The canonical GOOD_BODY fixture (no v2 sentinel) is the
+    grandfather case. It MUST continue to PASS all checks under the
+    extended verifier — no NEW hard-FAIL introduced by the v2 changes.
+    Specifically: nested-shape rule is skipped vacuously; the existing
+    Confidence-sentence convention still applies (GOOD_BODY carries
+    it and matches the title)."""
+    ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert ok, [r.render() for r in results if not r.passed]
+    nested = by_name["TL;DR nested-design structure (v2)"]
+    assert nested.passed and not nested.is_warn
+    assert "sentinel absent" in nested.detail
+
+
+def test_pre_v2_body_without_confidence_sentence_still_fails():
+    """Grandfather guard: a pre-sentinel body that DROPS the
+    Confidence sentence still FAILs the existing rule. Confidence
+    title-only is a v2-only permission; legacy bodies still need the
+    sentence."""
+    body = GOOD_BODY.replace(
+        "Confidence: MODERATE — three independent seeds, but only one model family.\n",
+        "",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    conf = by_name["Confidence sentence matches title"]
+    assert not conf.passed
+    assert "no `Confidence:" in conf.detail
+
+
+def test_v2_body_without_confidence_sentence_passes_confidence_check():
+    """v2 nested-design body without a body `Confidence: …` sentence
+    PASSes the confidence check (title tag is the source of truth)."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    conf = by_name["Confidence sentence matches title"]
+    assert conf.passed
+    assert "v2 nested-design" in conf.detail
+
+
+def test_details_table_cherry_pick_disclosure_in_summary_passes():
+    """`<details>` blocks with table content count as sample-output
+    blocks; the cherry-pick disclosure in the `<summary>` text
+    ("5 example training rows") satisfies check 10 because the
+    summary text is folded into the prelude window."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    cherry = by_name["Cherry-picked label discipline"]
+    assert cherry.passed, cherry.detail
+    # Inner content scan + summary-text inclusion handle the link inside
+    # the dropdown.
+    qlink = by_name["Qualitative-data link"]
+    assert qlink.passed, qlink.detail
+
+
+def test_details_table_without_disclosure_fails():
+    """A `<details>` block that has a sample-output-shaped inner
+    content (GFM table) but NO cherry-pick disclosure in the summary
+    OR the prelude prose FAILs check 10."""
+    body = _V2_GOOD_BODY.replace(
+        "<summary>5 example training rows (1 positive + 4 negatives)</summary>",
+        "<summary>Training rows</summary>",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    cherry = by_name["Cherry-picked label discipline"]
+    assert not cherry.passed
+    assert "cherry-picked" in cherry.detail
+
+
+def test_findings_h3_no_longer_warns():
+    """The narrative-flow WARN check no longer flags `### Findings` or
+    `### What I ran` as outline-label H3s (they are REQUIRED
+    structural H3s under the v2 nested-design spec). Pre-v2 bodies
+    that happen to use them stay clean too."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    flow = by_name["TL;DR narrative flow"]
+    assert flow.passed and not flow.is_warn
+    assert "Findings" not in flow.detail
+    assert "What I ran" not in flow.detail
+
+
+def test_outline_label_h3_still_warns():
+    """The narrative-flow WARN check still flags genuine outline-label
+    H3s (`### Headline result`, `### Subset checks`, etc.)."""
+    body = _V2_GOOD_BODY.replace(
+        "#### A clean Δ between baseline and tulu-25 across three seeds",
+        "### Headline result",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    flow = by_name["TL;DR narrative flow"]
+    # `### Headline result` is an outline label and should trigger the
+    # WARN heuristic; the check stays a WARN (passed=True, is_warn=True).
+    assert flow.is_warn, flow.detail
+    assert "Headline result" in flow.detail
 
 
 # ─── Lens 14 (concerns audit) re-ported onto 2-content-section spec ────────

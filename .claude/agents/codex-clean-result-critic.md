@@ -4,14 +4,17 @@ description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
   with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
   final adversarial gate before status:awaiting_promotion. Scores the
-  markdown clean-result body against the 2-content-section spec
-  (.claude/skills/clean-results/SPEC.md; migrated 2026-W22, task #454)
-  across thirteen lenses (title; TL;DR with `### Motivation` +
-  per-result `### <finding>` H3s — absorbs the retired Details
-  narrative lens; inline figure; Lens 4 merged into Lens 2;
-  reproducibility; voice incl. byte-identical ban; statistical-framing;
-  mentor-facing title only — methodology corrections fold into result
-  prose; one-takeaway-one-figure per result H3; eval-probe descriptions
+  markdown clean-result body against the 2-content-section nested-design
+  (v2) spec (.claude/skills/clean-results/SPEC.md; migrated 2026-W22,
+  task #454; nested-TL;DR adopted forward-only after #454) across
+  thirteen lenses (title; TL;DR with `### Motivation` + `### What I ran`
+  + `### Findings` (parent) → `#### <finding>` per result for
+  v2-sentinelled bodies — absorbs the retired Details narrative lens;
+  inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2;
+  reproducibility (confidence in H1 title tag only for v2 bodies); voice
+  incl. byte-identical ban; statistical-framing; mentor-facing title
+  only — methodology corrections fold into result prose;
+  one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions
   inside TL;DR; raw alongside processed; story arc present;
   planned-vs-actual coverage). Thin Claude wrapper: composes prompt →
   invokes Codex via `companion task` → posts an
@@ -167,8 +170,23 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - Title: "<verbatim title>"
 - <findings with cited rule, or PASS>
 
-### Lens 2 — TL;DR
-- <findings or PASS>
+### Lens 2 — TL;DR (nested-design v2 / legacy shape)
+- v2 sentinel detection: body contains `<!-- clean-result-v2 -->`? YES|NO
+- If YES (v2 nested-design): `## TL;DR` carries `### Motivation` /
+  `### What I ran` / `### Findings` H3s in that order, with ≥1
+  `#### <finding>` H4 child under `### Findings`: PASS|FAIL with
+  cited missing/out-of-order H3
+- `### What I ran` is STANDALONE (no `#K` issue numbers, no
+  "byte identical" / "byte-identical", no cross-issue framing):
+  PASS|FAIL with cited phrase
+- Motivation is the ONLY place `[#K](...)` issue links appear:
+  PASS|FAIL with cited offending H3
+- For v2 bodies: NO body `Confidence: …` sentence (confidence in H1
+  title tag only). FAIL when a v2 body emits a Confidence sentence.
+- For legacy bodies (no sentinel): the prior flat shape (Motivation
+  H3 + per-result `### <finding>` H3s) is still tolerated; the
+  Confidence sentence convention still applies.
+- <other findings or PASS>
 
 ### Lens 3 — Figure
 - <findings or PASS>
@@ -200,22 +218,27 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   is no `### Methodology corrections` H3 to placement-check. Correction
   prose folds into the relevant result H3 in `## TL;DR`.)
 
-### Lens 9 — One takeaway, one figure (per-result H3 pairing)
-- Each quantitative result H3 in `## TL;DR` has exactly ONE inline
+### Lens 9 — One takeaway, one figure (per-`#### <finding>` H4 pairing)
+- Each quantitative `#### <finding>` H4 inside `### Findings` (v2) or
+  per-result `### <finding>` H3 (legacy) has exactly ONE inline
   figure (`![alt](url)` on its own line with blank lines around it):
-  PASS|FAIL with cited H3
-- Qualitative-result-H3 exemption respected (do NOT flag text-sample,
-  refusal-content, or structural-observation result H3s as figure-less):
+  PASS|FAIL with cited heading
+- Qualitative-result exemption respected (do NOT flag text-sample,
+  refusal-content, or structural-observation findings as figure-less):
   PASS|FAIL
-- `### Motivation` is NOT flagged (scope numbers, not findings): PASS|FAIL
+- `### Motivation` and `### What I ran` are NOT flagged (scope /
+  setup numbers, not findings): PASS|FAIL
 - No `## Figure` H2 (a stray `## Figure` H2 is rejected by verifier
   check 2 — but flag it here as Lens 9 redundancy if it leaked through):
   PASS|FAIL
-- End-to-end example block present inside each text-generation result
-  H3 (cherry-picked label + permanent-SHA HF links + TRAINING ROW /
-  EVAL PROBE / MODEL OUTPUT rows forming one narrative around the
-  result's claim): PASS|FAIL with cited H3
-- Figure caption inside each result H3 wraps in blockquote form
+- End-to-end example block present inside each text-generation
+  finding (cherry-picked label + permanent-SHA HF links + TRAINING
+  ROW / EVAL PROBE / MODEL OUTPUT rows forming one narrative around
+  the result's claim): PASS|FAIL with cited finding. Examples may be
+  fenced code blocks OR `<details>` blocks (table or long-text);
+  v2 bodies frequently use the `<details open>` table form, and the
+  cherry-pick disclosure may live in the `<summary>` text.
+- Figure caption inside each finding wraps in blockquote form
   (`> **Figure.** *italic lead.* plain caption…`): PASS|FAIL
 
 ### Lens 10 — Eval-probe descriptions inside `## TL;DR` (multi-probe rigs only)
@@ -256,30 +279,38 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   are visually identical because the partial only re-scaled the
   x-axis") OR no such omission exists: PASS|FAIL
 
-### Lens 12 — Story arc present (TL;DR result-H3 narrative shape)
+### Lens 12 — Story arc present (TL;DR narrative shape)
 - `### Motivation` states the question / hypothesis AND the prior the
   analyzer walked in with, BEFORE methodology dump (probe set / panel
   size / decoder config — those belong in `## Reproducibility`): PASS|FAIL
-- Every `![alt](url)` figure inside a result H3 has a **setup paragraph**
-  (1-3 sentences above, framing what the figure will show) AND a **read
-  paragraph** (1-3 sentences below, calling out what's striking). Raw +
-  processed pairs (Lens 11) count as ONE narrative unit (setup above the
-  pair, read below the pair): PASS|FAIL with line numbers of any
-  figure-dumped images
-- Surprises and mid-flight pivots are folded into the relevant result
-  H3's setup or read prose where they happened, NOT quarantined inside
-  a `### Plan deviations` or `### Methodology corrections` H3. (Under
-  the 2-content-section spec — 2026-W22 — neither H3 exists.): PASS|FAIL
-- An interpretation beat (paragraph at the end of the final result H3
+- For v2 bodies: `### What I ran` is present, standalone, and carries
+  training INPUT→OUTPUT examples plus the eval INPUTS (probes /
+  questions asked). FAIL when `### What I ran` is missing OR uses
+  cross-issue framing OR drops the training/eval input examples.
+- Every `![alt](url)` figure inside a `#### <finding>` H4 (v2) or
+  per-result `### <finding>` H3 (legacy) has a **setup paragraph**
+  (1-3 sentences above, framing what the figure will show) AND a
+  **read paragraph** (1-3 sentences below, calling out what's
+  striking). Raw + processed pairs (Lens 11) count as ONE narrative
+  unit (setup above the pair, read below the pair): PASS|FAIL with
+  line numbers of any figure-dumped images
+- Surprises and mid-flight pivots are folded into the relevant
+  finding's setup or read prose where they happened, NOT quarantined
+  inside a `### Plan deviations` or `### Methodology corrections` H3.
+  (Under the 2-content-section spec — 2026-W22 — neither H3 exists.):
+  PASS|FAIL
+- An interpretation beat (paragraph at the end of the final finding
   OR short prose paragraph at the end of `## TL;DR`) explicitly names
   what the evidence as a whole says, what hypothesis is more / less
   likely than the prior, and what alternative explanation survives.
-  NOT just the Confidence-rationale sentence in `## Reproducibility`:
-  PASS|FAIL
-- Connective transitions inside result H3s ("Then I tried", "But that
+  For v2 bodies, this is the ONLY place a binding-constraint
+  rationale lives (confidence is title-only; no body Confidence
+  sentence): PASS|FAIL
+- Connective transitions inside findings ("Then I tried", "But that
   didn't replicate", "The interesting bit came next", "I expected X —
-  what I got was Y") are NOT flagged — the "no fluff transitions" rule
-  scopes to `## Human TL;DR` + Motivation opening of `## TL;DR` only
+  what I got was Y") are NOT flagged — the "no fluff transitions"
+  rule scopes to `## Human TL;DR` + Motivation opening of `## TL;DR`
+  only
 
 ### Lens 13 — Planned-vs-actual coverage (scope-shrinkage discipline)
 - Read the plan body at `{{plan_path}}` and enumerate its planned
@@ -310,6 +341,34 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   3 swept factors (A, C, D); cell `10111` silently failed; round-2
   Claude critic PASSed without flagging the scope reduction. Lens 13
   is the gate that should have caught it.
+
+### Lens 14 — Binding-concerns audit (composed 2026-05-31 by task #455)
+- Fetch the ledger BEFORE scoring: `task.py list-concerns {{task_number}}
+  --open-only --json` (or use the JSON passed inline by the orchestrator).
+- For each OPEN binding concern (severity `BLOCKER` or `CONCERN`, latest
+  event `raised` or `verified-open`), verify the body acknowledges it via
+  ONE of: (a) any `## TL;DR` result H3 (under v2: `### Findings` / any
+  `#### <finding>` H4) naming the concern_id (substring match), (b) the
+  `Confidence:` rationale sentence naming the concern_id (legacy
+  bodies only — v2 bodies put confidence in the title tag and the
+  binding constraint inside the relevant `#### <finding>` read prose),
+  or (c) an `<!-- concern-deferred: <concern_id> -->` HTML comment
+  marker (records explicit user deferral): PASS|FAIL with cited
+  unaddressed concern_ids
+- NIT-severity concerns do NOT block; surface as informational.
+- Composition note: this lens does NOT override main's mechanical
+  strip. A `marker-shape` / `smoke-run-missing` FAIL still strips per
+  the existing `mechanical_contract_only_strip` rule. The
+  binding-concerns check runs AFTER the strip — if the strip would
+  have promoted the verdict to PASS but `list-concerns --open-only
+  --json` returns non-empty binding concerns, this lens keeps the
+  verdict from auto-advancing.
+- The verifier's mechanical Lens-14 PASS/FAIL is authoritative for
+  the surface check; this lens's LM-side value-add is calling out
+  *substantive* acknowledgement that fools the substring match
+  (body discusses the underlying issue without naming the
+  concern_id) → CONCERNS bullet asking the analyzer to add the
+  kebab-case id to the prose, NOT a standalone FAIL.
 
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.

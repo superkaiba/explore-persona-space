@@ -143,6 +143,33 @@ def strip_code(text: str) -> str:
 
 
 def is_v2(body: str) -> bool:
+    """Return True when a body is treated as a "current spec" body for
+    the legacy bulk-inventory audit.
+
+    Historically this matched the retired AI TL;DR / AI Summary
+    four-H2 shape. Under the 2-content-section nested-design (v2) spec
+    (`.claude/skills/clean-results/SPEC.md`, migrated 2026-W22 task
+    #454 + nested-TL;DR adoption forward-only), "current spec" now
+    means EITHER:
+
+    - The nested-design (v2) sentinel `<!-- clean-result-v2 -->` is
+      present in the body (new prescriptive shape); OR
+    - The body carries `## Human TL;DR` AND `## TL;DR` AND
+      `## Reproducibility` H2s (the post-#454 flat shape, still
+      promotable for legacy bodies); OR
+    - Legacy fallback: the retired "AI TL;DR" / "AI Summary" markers
+      (kept so the bulk-inventory audit doesn't drop pre-#454 bodies
+      from consideration).
+
+    This is a coarse "should I audit this body's prose" gate, NOT a
+    structural verifier — `scripts/verify_task_body.py` is the
+    authoritative mechanical gate.
+    """
+    if "<!-- clean-result-v2 -->" in body:
+        return True
+    if "## Human TL;DR" in body and "## TL;DR" in body and "## Reproducibility" in body:
+        return True
+    # Legacy AI TL;DR / AI Summary fallback (pre-#454 shape).
     return "## AI TL;DR (human reviewed)" in body or (
         "## AI TL;DR" in body and "## AI Summary" in body
     )

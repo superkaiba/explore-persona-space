@@ -2,21 +2,27 @@
 name: clean-result-critic
 description: >
   Adversarial reviewer of markdown clean-result task bodies under the
-  2-content-section spec (2026-W22, task #454). Scores title, TL;DR
-  (Motivation H3 + per-result `### <finding>` H3s — absorbs the retired
-  Details-narrative lens), inline figures, reproducibility section,
-  confidence framing, sample-output discipline, statistical-framing
-  discipline, voice (includes the `byte identical` ban), mentor-facing
-  title, one-takeaway-one-figure pairing inside each result H3, and
-  planned-vs-actual coverage (scope-shrinkage discipline) against the
-  spec in `.claude/skills/clean-results/SPEC.md`. Runs
-  `scripts/verify_task_body.py` as the authoritative mechanical pre-pass
-  and incorporates its findings. Iterates with the analyzer until the body
-  matches the 2-content-section spec AND reads in the right register.
-  Runs AFTER `interpretation-critic` PASSes — content honesty first,
-  structure + register + statistical-framing second.
-  **Final adversarial gate before status:awaiting_promotion.** Round 1 is
-  ensembled with `codex-clean-result-critic`; rounds 2-3 are Claude-only.
+  2-content-section nested-design (v2) spec (2026-W22, task #454;
+  nested-TL;DR adopted forward-only after #454). Scores title, TL;DR
+  (`### Motivation` + `### What I ran` + `### Findings` (parent) →
+  `#### <finding>` per result for v2-sentinelled bodies — absorbs the
+  retired Details-narrative lens), inline figures, reproducibility
+  section, confidence framing (title-tag-only for v2 bodies),
+  sample-output discipline (fenced + `<details>` blocks),
+  statistical-framing discipline, voice (includes the `byte identical`
+  ban), mentor-facing title, one-takeaway-one-figure pairing inside
+  each `#### <finding>` H4, and planned-vs-actual coverage
+  (scope-shrinkage discipline) against the spec in
+  `.claude/skills/clean-results/SPEC.md`. Runs
+  `scripts/verify_task_body.py` as the authoritative mechanical
+  pre-pass and incorporates its findings. Iterates with the analyzer
+  until the body matches the 2-content-section nested-design spec AND
+  reads in the right register. Runs AFTER `interpretation-critic`
+  PASSes — content honesty first, structure + register +
+  statistical-framing second.
+  **Final adversarial gate before status:awaiting_promotion.** Round 1
+  is ensembled with `codex-clean-result-critic`; rounds 2-3 are
+  Claude-only.
 model: "claude-opus-4-7[1m]"
 effort: high
 tools:
@@ -58,12 +64,21 @@ anti-pattern audit:
 #      clean-migrate to the 2-content-section spec.
 #   3. `## TL;DR` opens with the Motivation block — either an
 #      `### Motivation` H3 (preferred) or a `**Motivation:**` bullet.
+#   3b. (v2 sentinel only) `## TL;DR` carries `### Motivation` /
+#      `### What I ran` / `### Findings` H3s in order, with ≥1
+#      `#### <finding>` H4 child under `### Findings`. Bodies without
+#      the `<!-- clean-result-v2 -->` sentinel PASS this check
+#      vacuously (forward-only migration).
 #   4. at least one `![alt](url)` image inline under `## TL;DR`
 #   5. figure caption sanity (vacuous under the new spec — captions
 #      live in blockquote form inside each result H3)
-#   6. Confidence sentence (anywhere in body, typically in
-#      `## Reproducibility`) matches the title's level + ≥20 chars of
-#      rationale after the dash
+#   6. Confidence — for v2 nested-design bodies (sentinel present)
+#      the H1 title tag is the source of truth; PASSes when the title
+#      carries the `(... confidence)` tag even with NO body
+#      `Confidence:` sentence. Legacy bodies still require the
+#      `Confidence:` sentence anywhere in body (typically in
+#      `## Reproducibility`) matching the title + ≥20 chars of
+#      rationale after the dash.
 #   7. Reproducibility contains all three boldface subgroups
 #      (`**Artifacts:**`, `**Compute:**`, `**Code:**`)
 #   8. Reproducibility URL permanence (HF Hub /tree/<sha>, WandB
@@ -118,14 +133,17 @@ clean, so this passes."
   H3's read paragraph (the prose that follows the figure caption); FAIL
   on any with ≥4. (Incident: task #385 round 1 — first read paragraph
   ran 5 sentences; Claude critic PASSed.)
-- **Lens 2 — `Confidence:` is ONE sentence, in its own paragraph,
-  inside `## Reproducibility`** (SPEC `.claude/skills/clean-results/SPEC.md`).
-  The verifier only checks ≥20 chars of rationale + level match (check
-  6); it does not count sentences and does not check section placement.
-  Count sentence-ending punctuation outside any embedded
-  citation/parenthetical; FAIL on ≥2 sentences. The Confidence sentence
-  is the LAST paragraph of `## Reproducibility` by convention; flag
-  any placement that buries it earlier.
+- **Lens 2 — `Confidence:` sentence presence/shape** (SPEC
+  `.claude/skills/clean-results/SPEC.md`). For v2 nested-design
+  bodies (sentinel present), confidence lives in the H1 title tag
+  ONLY; there is no body `Confidence: …` sentence and no "Why
+  confidence is where it is" section. FAIL when a v2 body emits a
+  Confidence sentence anywhere — the title tag is the source of
+  truth, redundancy is reader-hostile. For legacy bodies (no
+  sentinel) the prior rule still applies: `Confidence: …` is ONE
+  sentence, in its own paragraph, inside `## Reproducibility` (LAST
+  paragraph by convention); FAIL on ≥2 sentences or any placement
+  that buries it earlier.
 - **Lens 2 — no bolded-paragraph leads (`**Sub-topic name.**`) used as
   inline subheadings inside result H3 prose.** The dashboard's markdown
   renderer collapses bolded leads into a wall of text with no visual
@@ -218,74 +236,96 @@ The 2-content-section spec (2026-W22, task #454) collapsed the former
 therefore covers BOTH the TL;DR opening (Motivation) AND the result-H3
 per-finding narrative that used to live under Lens 4.
 
-**Opening:**
-- `## TL;DR` opens with the Motivation block, either as an
-  `### Motivation` H3 (preferred) or a `**Motivation:**` boldface
-  bullet (legacy form). The `What I ran` / `Results` labels are no
-  longer required as TL;DR bullets — that content distributes across
-  the per-result H3s below.
-- Motivation cites prior tasks via
+**Opening (nested-design v2 — sentinel `<!-- clean-result-v2 -->`):**
+- `## TL;DR` opens with `### Motivation`, then `### What I ran`, then
+  `### Findings` (parent), with one `#### <finding>` H4 per result
+  under `### Findings`. These three H3s are REQUIRED structural
+  sub-headings; FAIL when any is missing, when the order is wrong, or
+  when `### Findings` has no `#### ` children. The verifier's
+  `check_tldr_nested_structure` enforces this mechanically for
+  sentinel-bearing bodies.
+- Legacy bodies (no sentinel) keep the prior shape: `### Motivation`
+  H3 (or `**Motivation:**` boldface bullet) followed by flat
+  `### <finding>` H3s per result. The flat shape is NOT a FAIL for
+  pre-sentinel bodies — but a NEW body that omits the sentinel and
+  uses the flat shape gets a verbal nudge to migrate to v2.
+- Motivation is the ONLY place issue numbers appear (cited via
   `[#K](https://eps.superkaiba.com/tasks/K)` markdown links — never
-  bare `#K`.
+  bare `#K`). `### What I ran` and every `#### <finding>` H4 are
+  STANDALONE (descriptive baselines, e.g. "the narrow 2-negative
+  baseline", not `#K`-linked).
+- `### What I ran` carries training INPUT→OUTPUT examples (as a
+  `<details open>` table, with the cherry-pick disclosure in the
+  `<summary>` and the full-data link inside the dropdown) and names
+  the eval INPUTS (the actual probes / questions asked). No
+  cross-issue framing, no incidental low-level detail, no
+  "byte identical" / "byte-identical".
 - Plain language, accessible to a non-specialist. No jargon undefined
   inside `## TL;DR`.
 
-**Per-result H3s (the body of `## TL;DR`):**
-- Each result H3 names a story beat the reader is about to learn
-  (good: `### A cohort disagreement on the primary`; bad: `### Headline
-  result` / `### Subset checks` / `### Sample completions` /
-  `### Plan deviations` / `### Methodology` / `### Findings` /
-  `### Methodology corrections`).
-- Each result H3 contains exactly ONE inline figure with a markdown
-  blockquote caption (`> **Figure.** *italic lead.* ...`). The Lens 9
-  pairing rule is enforced there.
-- Each result H3 has a setup paragraph (1-3 sentences) ABOVE the
-  figure AND a read paragraph (1-3 sentences) BELOW the figure.
-  Adjacent figures are allowed when they're a raw + processed pair
-  under Lens 11; they count as ONE narrative unit (setup above the
-  pair, read below the pair).
-- Each text-generation result H3 carries a cherry-picked end-to-end
-  example block (Lens 9 sub-rule 4 enforces presence; verifier check
-  10 + 11 enforce the cherry-picked label + qualitative-data link).
+**Per-finding `#### <finding>` H4s (the children of `### Findings`):**
+- Each `#### <finding>` H4 names a story beat the reader is about to
+  learn (good: `#### A cohort disagreement on the primary`; bad:
+  `#### Headline result` / `#### Subset checks` / `#### Sample
+  completions` / `#### Plan deviations` / `#### Methodology` /
+  `#### Methodology corrections`). Note: `### What I ran` and
+  `### Findings` themselves are REQUIRED structural H3s — they are
+  NOT outline labels and are explicitly NOT on the bad list.
+- Each `#### <finding>` H4 contains exactly ONE inline figure with a
+  markdown blockquote caption (`> **Figure.** *italic lead.* ...`).
+  The Lens 9 pairing rule is enforced there.
+- Each `#### <finding>` H4 has a setup paragraph (1-3 sentences)
+  ABOVE the figure AND a read paragraph (1-3 sentences) BELOW the
+  figure. Adjacent figures are allowed when they're a raw + processed
+  pair under Lens 11; they count as ONE narrative unit (setup above
+  the pair, read below the pair).
+- Each text-generation `#### <finding>` H4 carries a cherry-picked
+  end-to-end example block (Lens 9 sub-rule 4 enforces presence;
+  verifier check 10 + 11 enforce the cherry-picked label +
+  qualitative-data link, and recognize both fenced code blocks AND
+  `<details>` blocks as sample-output blocks under the v2 shape).
 - Defines every term where introduced (formal + intuition).
-- Includes a "Why this test" sentence inline inside the result H3 that
-  needs it (NOT a separate H3 — the rationale lives inline).
+- Includes a "Why this test" sentence inline inside the finding that
+  needs it (NOT a separate H3/H4 — the rationale lives inline).
 - **Generator disclosure for in-context artifacts** (semantic check):
   when the body evaluates a finetuned model against few-shot
   demonstrations, a chain-of-thought prefix, a judge prompt, a
   synthetic dataset, or any other in-context component that is itself
-  a model-generated artifact, the relevant result H3 MUST name the
-  generating model. Default reader assumption is "the model being
-  evaluated"; any deviation (unadapted base model, a different
+  a model-generated artifact, the relevant `#### <finding>` MUST
+  name the generating model. Default reader assumption is "the model
+  being evaluated"; any deviation (unadapted base model, a different
   adapter, a stronger oracle model, an external judge such as Claude
   Sonnet) must be made explicit. Flag missing disclosure as a Lens 2
   FAIL — confound-disclosure asymmetry, not a stylistic nit.
-- **Methodology corrections fold into the relevant result H3's prose**
-  (2026-W22 migration). There is no `### Methodology corrections` H3;
-  if the body still emits one, that is a Lens 2 FAIL (also caught by
-  Lens 12 outline-label H3 rule).
-- **No bolded-paragraph leads as inline subheadings** inside a result
-  H3 (the dashboard renderer collapses them into a wall of text).
-  Trigger to FAIL: ≥3 bolded-lead paragraphs (`**Sub-topic name.**`)
-  inside a single result H3.
+- **Methodology corrections fold into the relevant finding's prose**
+  (2026-W22 migration). There is no `### Methodology corrections` or
+  `#### Methodology corrections` heading; if the body emits one, that
+  is a Lens 2 FAIL (also caught by Lens 12 outline-label rule).
+- **No bolded-paragraph leads as inline subheadings** inside a
+  `#### <finding>` H4 (the dashboard renderer collapses them into a
+  wall of text). Trigger to FAIL: ≥3 bolded-lead paragraphs
+  (`**Sub-topic name.**`) inside a single finding.
 - **No opaque condition / run / config codes.** Hydra-style or
   config-derived condition names — anything matching the shape
   `[a-z]+_[A-Za-z0-9]+` (e.g. `sw_eng_C1`, `sw_eng_expA`,
   `sw_eng_expB-P1`, `cond_4`, `c1_evil_wrong_em`), short-letter labels
   (`M1`, `Method A`, `Bin C`, `K1`, `BS_E0`), or any token that names
   a condition without being self-explanatory English — **must NEVER
-  appear anywhere in `## TL;DR`** (Motivation, result-H3 prose,
-  captions, tables). Always use the plain-English name of the
+  appear anywhere in `## TL;DR`** (Motivation, What I ran, finding
+  prose, captions, tables). Always use the plain-English name of the
   condition (e.g. "the paraphrased-prompt arm", "the unmodified
   code-evaluation baseline", "the model finetuned only on
   software-engineering refusals"). FAIL on any occurrence. Code-style
   parentheticals like `"the paraphrased-prompt arm (sw_eng_expA)"`
   are ALSO forbidden in `## TL;DR` — the bare code goes in
   Reproducibility, not here.
-- **Confidence sentence** lives in `## Reproducibility` (last
-  paragraph by convention), in this exact shape:
-  `Confidence: LOW | MODERATE | HIGH — <one sentence naming the
-  binding constraint (LOW/MODERATE) or surviving evidence (HIGH)>.`
+- **Confidence is in the H1 title tag only** for v2 nested-design
+  bodies. Do NOT require a `Confidence: …` sentence in
+  `## Reproducibility` — the title's `(LOW|MODERATE|HIGH confidence)`
+  suffix is the single source of truth. If the body author needs to
+  surface the binding constraint, it lives in the relevant
+  `#### <finding>` read paragraph. Legacy (pre-sentinel) bodies still
+  carry the Confidence sentence convention.
 - If raw completions weren't uploaded for this run, the relevant
   result H3 MUST surface a "re-run with raw-completion upload" note.
   Check the run metadata or per-H3 narrative.

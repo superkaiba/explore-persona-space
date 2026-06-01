@@ -43,9 +43,17 @@ bodies are never re-verified, so tightening cannot regress them).
    shape) or as a `**Motivation:**` boldface bullet (legacy form, still
    accepted). The retired `What I ran` / `Results` required bullets are
    no longer enforced — the new shape uses per-result `### <finding>`
-   H3s that are checked by structure (one figure per H3, raw-completion
+   (legacy flat) or `#### <finding>` (nested-design v2) headings,
+   checked by structure (one figure per result block, raw-completion
    sample preceded by cherry-picked label + qualitative-data link) via
    checks 4, 10, 11.
+
+3b. TL;DR nested-design (v2) structure — bodies carrying the
+    `<!-- clean-result-v2 -->` sentinel MUST shape `## TL;DR` as three
+    ordered H3s — `### Motivation` / `### What I ran` /
+    `### Findings` — with at least one `#### <finding>` H4 child
+    under `### Findings`. Bodies without the sentinel PASS vacuously
+    (forward-only migration).
 4. Hero image present — at least one `![alt](url)` image exists
    inline under `## TL;DR` (every result H3 carries its own figure in
    the 2-content-section spec).
@@ -62,13 +70,14 @@ bodies are never re-verified, so tightening cannot regress them).
    descriptive alt text). Retained as a hook for future tightening; in
    the current revision the check always PASSes because the retired
    `## Figure` H2 is now a check 2 FAIL.
-6. Confidence sentence matches title — `Confidence: LOW|MODERATE|HIGH — <rationale>`
-   line appears somewhere in the body (the 2-content-section spec
-   locates it in `## Reproducibility` by convention; legacy bodies may
-   put it elsewhere), agrees with the title, and carries ≥20 chars of
-   rationale after the dash. The check scans the whole body so the
-   convention can move within Reproducibility without breaking
-   verification.
+6. Confidence sentence matches title — for v2 nested-design bodies
+   (`<!-- clean-result-v2 -->` sentinel present) the H1 title tag is
+   the single source of truth; the check PASSes when the title carries
+   the `(... confidence)` tag even with NO body `Confidence:` sentence.
+   If a v2 body still carries one, the level must match the title and
+   ≥20 chars of rationale after the dash. Legacy bodies (no sentinel)
+   still require the `Confidence: LOW|MODERATE|HIGH — <rationale>`
+   line somewhere in the body (typically in `## Reproducibility`).
 7. Three repro subgroups present — `**Artifacts:**`, `**Compute:**`,
    `**Code:**` all appear as boldface labels inside `## Reproducibility`.
 8. Reproducibility URL permanence — every URL in `## Reproducibility`
@@ -77,17 +86,23 @@ bodies are never re-verified, so tightening cannot regress them).
    is accepted as an explicit non-applicable marker.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
-10. Cherry-picked label discipline — every sample-output fenced code
-    block in `## TL;DR` (heuristic: contains `User:`/`Assistant:`/`Human:`/`Model:`
-    or has >200 chars of text) is preceded by prose containing
-    `cherry-picked`, `cherry picked`, `random sample`, `first N of M`,
-    or similar disclosure.
-11. Qualitative-data link — every sample-output fenced block in
-    `## TL;DR` is preceded by at least one link or backtick-wrapped
-    path pointing at a raw text-level artifact (i.e. NOT an
-    aggregate-only path like `regression`, `summary`, `aggregat*`,
-    `per-cell`, or `.npz`). An explicit `not uploaded` / `not
-    available` disclosure downgrades FAIL to WARN.
+10. Cherry-picked label discipline — every sample-output BLOCK in
+    `## TL;DR` is preceded by prose containing `cherry-picked`,
+    `cherry picked`, `random sample`, `first N of M`, or similar
+    disclosure. A "sample-output block" is EITHER a fenced code block
+    (heuristic: contains `User:`/`Assistant:`/`Human:`/`Model:` or
+    >200 chars of text) OR a `<details>...</details>` block containing
+    a GFM table delimiter row OR >200 chars of inner text. The
+    `<details>`-block recognition catches the nested-design v2 form
+    (e.g. task #432's `<details open>` training-row table) that the
+    fence-only scan would silently pass.
+11. Qualitative-data link — every sample-output BLOCK in `## TL;DR`
+    is preceded by at least one link or backtick-wrapped path
+    pointing at a raw text-level artifact (i.e. NOT an aggregate-only
+    path like `regression`, `summary`, `aggregat*`, `per-cell`, or
+    `.npz`). An explicit `not uploaded` / `not available` disclosure
+    downgrades FAIL to WARN. Scope mirrors check 10 (both fenced code
+    blocks AND `<details>` blocks).
 11b. Planned-vs-actual denominator consistency — the body's `## TL;DR`
     `X of N <noun>` headline denominator must match any `M of N <noun>`
     documented scope claim found elsewhere in the body (typically in
@@ -236,6 +251,15 @@ REPRO_SUBGROUPS = ["Artifacts", "Compute", "Code"]
 
 LEGACY_SAGAN_CARD_SENTINEL = "<!-- legacy-sagan-card -->"
 
+# Nested-design (v2) clean-result bodies carry this sentinel. The analyzer
+# emits it on draft. The verifier uses it to gate the nested-TL;DR-shape
+# requirements (presence + order of `### Motivation` / `### What I ran` /
+# `### Findings` with ≥1 `#### ` child) AND to accept confidence-title-only
+# (no body `Confidence:` sentence). Bodies WITHOUT this sentinel keep the
+# prior post-#454 behavior and are NEVER hard-FAILed by the nested-shape
+# rule — forward-only migration.
+CLEAN_RESULT_V2_SENTINEL = "<!-- clean-result-v2 -->"
+
 CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
@@ -376,6 +400,116 @@ def _iter_sample_fences(details: str) -> list[tuple[int, int, str]]:
     return out
 
 
+# A `<details>...</details>` block (optionally `<details open>`). The
+# nested-design (v2) bodies often present cherry-picked training rows or
+# eval probes as GFM TABLES inside a `<details>` block instead of fenced
+# code blocks. Recognizing the table form means the cherry-picked-label
+# and qualitative-data-link checks (10 + 11) enforce — not vacuously pass
+# — on bodies like #432 that use the table form.
+_DETAILS_BLOCK_RE = re.compile(
+    r"<details\b[^>]*>(?P<inner>.*?)</details>", re.IGNORECASE | re.DOTALL
+)
+# Heuristic that a `<details>` inner block carries sample-completion-like
+# content. We treat the block as "sample-like" when it contains EITHER
+# (a) a GFM table delimiter row (`|---|---|`) suggesting a structured
+# example table, OR (b) >200 chars of inner content (mirrors the fence
+# heuristic). The first-column / row-type heuristic ("Row-type", "System",
+# "User", "Assistant" headers) is intentionally NOT mandatory — #432's
+# training-row table uses `Row | System prompt | User question | Assistant`
+# which already satisfies the table-delimiter trigger.
+_GFM_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?(?:\s*\|\s*:?-{2,}:?)+\s*\|?\s*$", re.MULTILINE)
+
+
+def _is_sample_details(inner: str) -> bool:
+    """Return True if a `<details>` inner block carries
+    sample-completion-like content (table form or long text)."""
+    if _GFM_DELIM_RE.search(inner):
+        return True
+    # Long enough to plausibly carry a structured example block.
+    return len(inner.strip()) > 200
+
+
+_SUMMARY_CLOSE_RE = re.compile(r"</summary\s*>", re.IGNORECASE)
+_SUMMARY_OPEN_RE = re.compile(
+    r"<summary\b[^>]*>(?P<text>.*?)</summary\s*>", re.IGNORECASE | re.DOTALL
+)
+# `<summary>` text patterns that signal the block is a COMPREHENSIVE
+# enumeration (full list of eval inputs, complete schema, every
+# condition, etc.), NOT a cherry-picked sample. The cherry-picked-label
+# rule (check 10) and the qualitative-data-link rule (check 11) are
+# about sample completions / illustrative rows; an exhaustive list of
+# "The N eval questions" or "All N conditions" doesn't carry the
+# sample-vs-population framing those checks enforce. Triggered by a
+# summary opening with "The N <plural-thing>" or "All N <plural-thing>"
+# (case-insensitive). Cherry-picked summaries like "5 example training
+# rows" / "first 3 of 400 completions" stay sample-like.
+_EXHAUSTIVE_SUMMARY_RE = re.compile(
+    r"^\s*(?:the|all)\s+\d+\b",
+    re.IGNORECASE,
+)
+
+
+def _iter_sample_details(details: str) -> list[tuple[int, int, str]]:
+    """Yield (block_start_offset, block_end_offset, inner_content) for
+    each `<details>...</details>` block in `details` that looks like a
+    sample-output block (table-form or long text) AND is NOT an
+    exhaustive enumeration. Used by checks 10 + 11 to enforce the
+    cherry-picked-label and qualitative-data-link discipline on
+    nested-design (v2) bodies that present samples as `<details>`
+    tables instead of fenced code blocks.
+
+    Skip rule: a `<details>` block whose `<summary>` text starts with
+    "The N <thing>" or "All N <thing>" is an exhaustive enumeration
+    (full eval-question list, full schema, complete condition set),
+    NOT a cherry-picked sample — the cherry-picked-label / qualitative-
+    data-link rules don't apply. Example: #432's
+    `<summary>The 20 eval questions (asked identically of all 28
+    personas)</summary>` is the full eval-input enumeration, not a
+    sample.
+
+    The `block_start_offset` is positioned AFTER the closing
+    `</summary>` tag (when one exists) so the `_prelude_window` helper
+    walking back from this offset includes the `<summary>` text itself
+    as part of the prelude. The summary line for a sample-flavored
+    `<details>` block typically carries the cherry-picked disclosure
+    ("5 example training rows", "first 3 of 400 completions");
+    folding it into the prelude is what makes the cherry-picked-label
+    check semantically correct for nested-design v2 bodies.
+    """
+    out: list[tuple[int, int, str]] = []
+    for m in _DETAILS_BLOCK_RE.finditer(details):
+        inner = m.group("inner")
+        if not _is_sample_details(inner):
+            continue
+        # Skip exhaustive-enumeration blocks: their `<summary>` text
+        # starts with "The N <plural>" or "All N <plural>".
+        sm_open = _SUMMARY_OPEN_RE.search(inner)
+        if sm_open is not None and _EXHAUSTIVE_SUMMARY_RE.match(sm_open.group("text")):
+            continue
+        # Move the recognized "block start" to after the closing
+        # </summary>, when one exists, so the prelude window includes
+        # the summary text.
+        sm = _SUMMARY_CLOSE_RE.search(details, pos=m.start(), endpos=m.end())
+        block_start = sm.end() if sm is not None else m.start()
+        out.append((block_start, m.end(), inner))
+    return out
+
+
+def _iter_sample_blocks(details: str) -> list[tuple[int, int, str]]:
+    """Yield ALL sample-output blocks under `details`: both fenced code
+    blocks (`_iter_sample_fences`) and `<details>` table/long blocks
+    (`_iter_sample_details`), sorted by their start offset.
+
+    Used by checks 10 + 11 to enforce the cherry-picked-label and
+    qualitative-data-link discipline regardless of which medium the
+    body uses for its raw-data exposition (fenced code, `<details>`
+    table, or `<details>` long-text block).
+    """
+    out = _iter_sample_fences(details) + _iter_sample_details(details)
+    out.sort(key=lambda t: t[0])
+    return out
+
+
 def _prelude_window(details: str, fence_start: int, max_chars: int = 1500) -> str:
     """Return the prose immediately preceding a fenced block.
 
@@ -383,6 +517,17 @@ def _prelude_window(details: str, fence_start: int, max_chars: int = 1500) -> st
     previous fenced block's closing ``` (so two consecutive sample
     blocks don't share each other's prelude), then trims any leading
     partial line.
+
+    Known follow-up (deferred 2026-05-31): the window also stops at a
+    fence boundary but does NOT stop at a previous `</details>` close.
+    Two adjacent `<details>` sample blocks therefore share each other's
+    prelude window — mitigated for now by per-block disclosure counting
+    (each sample block is enforced independently against the same
+    window, and the v2 form puts the cherry-pick disclosure inside the
+    `<summary>` which gets folded into the prelude via the
+    `block_start`-past-`</summary>` shift). Promote to a real
+    `</details>`-boundary stop if a body emerges where two adjacent
+    `<details>` blocks legitimately diverge on the disclosure.
     """
     lo = max(0, fence_start - max_chars)
     window = details[lo:fence_start]
@@ -415,7 +560,14 @@ _NOT_UPLOADED_RE = re.compile(
 _CHERRY_DISCLOSURE_RE = re.compile(
     r"\b(?:cherry[-\s]?picked|random[-\s]?sample|drawn at random|"
     r"random draw|first \d+ of \d+|first \d+ completions?|"
-    r"\d+ random completions?|\d+ randomly[-\s]?sampled)\b",
+    r"\d+ random completions?|\d+ randomly[-\s]?sampled|"
+    # `<N> example training rows`, `<N> example eval probes`,
+    # `<N> examples of …`, `<N> sample completions`, `<N> sample rows`
+    # — the disclosure form used inside `<details>` block summaries
+    # (e.g. task #432's "5 example training rows" /
+    # "5 example eval probes"). The "example" / "sample" qualifier
+    # tells the reader the rows are illustrative, not exhaustive.
+    r"\d+\s+(?:examples?|sample[s]?)\b)",
     re.IGNORECASE,
 )
 
@@ -739,6 +891,141 @@ def check_tldr_labels(body: str) -> CheckResult:
     return CheckResult(label_name, True)
 
 
+def _collect_tldr_h3_names(tldr: str) -> list[tuple[str, int]]:
+    """Return [(heading_name, line_index)] for each `### ` H3 inside
+    `tldr`, in order, honoring fenced-code-block state. Used by
+    `check_tldr_nested_structure`.
+    """
+    h3_re = re.compile(r"^\s*###\s+(?P<name>[^\n]+?)\s*$")
+    out: list[tuple[str, int]] = []
+    in_fence = False
+    for i, line in enumerate(tldr.splitlines()):
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        m = h3_re.match(line)
+        if m:
+            out.append((m.group("name").strip(), i))
+    return out
+
+
+def _find_named_h3(h3_names: list[tuple[str, int]], target: str) -> int | None:
+    """Return the index (into `h3_names`) of the first heading whose
+    leading-word (post-strip-of-`— ...` inline hook) equals `target`
+    (case-insensitive). None when no heading matches.
+    """
+    target_norm = target.casefold().strip()
+    for idx, (name, _line_no) in enumerate(h3_names):
+        name_norm = re.sub(r"\s+", " ", name).casefold().strip()
+        head = re.split(r"\s+[–—:]\s+", name_norm, maxsplit=1)[0]  # noqa: RUF001
+        if head == target_norm:
+            return idx
+    return None
+
+
+def _count_h4_after(tldr: str, line_after: int) -> int:
+    """Count `#### ` H4 headings in `tldr` after `line_after`,
+    honoring fenced-code-block state. Used to count `#### <finding>`
+    H4 children under `### Findings`.
+    """
+    in_fence = False
+    h4_count = 0
+    for line in tldr.splitlines()[line_after + 1 :]:
+        stripped = line.strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if stripped.startswith("#### ") and not stripped.startswith("##### "):
+            h4_count += 1
+    return h4_count
+
+
+def check_tldr_nested_structure(body: str) -> CheckResult:
+    """Nested-design (v2) `## TL;DR` shape check (sentinel-gated).
+
+    Bodies bearing the `<!-- clean-result-v2 -->` sentinel MUST shape
+    `## TL;DR` as three ordered H3s — `### Motivation` /
+    `### What I ran` / `### Findings` — with at least one `#### `
+    H4 child under `### Findings` (the per-result `#### <finding>`
+    blocks). FAIL when the sentinel is present and any required H3
+    is missing OR the order is wrong OR `### Findings` has no `#### `
+    children.
+
+    Bodies WITHOUT the sentinel PASS vacuously — forward-only
+    migration. The post-#454 flat shape (no `### What I ran`, no
+    `### Findings` parent, flat per-result `### <finding>` H3s) is
+    still tolerated for bodies that predate the nested-design
+    adoption.
+    """
+    label_name = "TL;DR nested-design structure (v2)"
+    if not is_v2_nested_design(body):
+        return CheckResult(
+            label_name,
+            True,
+            "v2 sentinel absent — pre-nested-design body, nested-shape rule skipped",
+        )
+    tldr = section_text(body, "TL;DR")
+    if tldr is None:
+        # check_required_sections already FAILs on a missing TL;DR;
+        # don't double-report.
+        return CheckResult(label_name, True, "## TL;DR missing — check 2 will report")
+
+    h3_names_in_order = _collect_tldr_h3_names(tldr)
+    idx_motivation = _find_named_h3(h3_names_in_order, "Motivation")
+    idx_what_i_ran = _find_named_h3(h3_names_in_order, "What I ran")
+    idx_findings = _find_named_h3(h3_names_in_order, "Findings")
+    missing: list[str] = []
+    if idx_motivation is None:
+        missing.append("### Motivation")
+    if idx_what_i_ran is None:
+        missing.append("### What I ran")
+    if idx_findings is None:
+        missing.append("### Findings")
+    if missing:
+        return CheckResult(
+            label_name,
+            False,
+            f"v2 sentinel present but TL;DR is missing required H3(s): "
+            f"{', '.join(missing)}. The nested-design shape requires "
+            "`### Motivation` → `### What I ran` → `### Findings` in that "
+            "order, with one `#### <finding>` per result under "
+            "`### Findings`. See SPEC.md § Required body shape.",
+        )
+    # Order check.
+    if not (idx_motivation < idx_what_i_ran < idx_findings):
+        return CheckResult(
+            label_name,
+            False,
+            f"v2 sentinel present but TL;DR H3 order is wrong — got "
+            f"Motivation@{idx_motivation}, What I ran@{idx_what_i_ran}, "
+            f"Findings@{idx_findings}; required order is Motivation → "
+            "What I ran → Findings.",
+        )
+    # Findings child check: ≥1 `#### ` H4 must exist AFTER `### Findings`.
+    findings_line_no = h3_names_in_order[idx_findings][1]
+    h4_count = _count_h4_after(tldr, findings_line_no)
+    if h4_count == 0:
+        return CheckResult(
+            label_name,
+            False,
+            "v2 sentinel present and `### Findings` H3 found, but no "
+            "`#### <finding>` H4 children under it. The nested-design "
+            "shape requires one `#### <finding>` per result inside "
+            "`### Findings`.",
+        )
+    return CheckResult(
+        label_name,
+        True,
+        f"v2 nested-design structure clean — Motivation → What I ran → "
+        f"Findings (with {h4_count} `#### <finding>` H4 children)",
+    )
+
+
 def _gather_figure_image_urls(body: str) -> list[str]:
     """Collect image URLs inline under `## TL;DR`. Powers checks 4 / 4b
     under the 2-content-section spec (2026-W22, task #454): every figure
@@ -833,16 +1120,60 @@ def check_figure_caption(body: str) -> CheckResult:
     )
 
 
-def check_confidence_matches(body: str) -> CheckResult:
-    """Check 6: `Confidence: …` line matches the title and carries
-    ≥20 chars of rationale.
+def is_v2_nested_design(body: str) -> bool:
+    """Return True when `body` carries the `<!-- clean-result-v2 -->`
+    sentinel as a real document-level marker, signaling the nested-TL;DR
+    design (Motivation / What I ran / Findings → `#### <finding>` per
+    result) with confidence in the H1 title tag only (no body
+    `Confidence:` sentence required).
 
-    Under the 2-content-section spec (2026-W22, task #454) the
-    Confidence sentence lives in `## Reproducibility` by convention
-    (typically as the last paragraph). The check scans the whole body
-    so legacy placements stay valid and so the convention can move
-    within Reproducibility without breaking verification. The level in
-    the body MUST match the `(... confidence)` marker in the H1 title.
+    Strips fenced code blocks AND `<details>...</details>` blocks
+    before the substring scan, so a body that only QUOTES
+    `<!-- clean-result-v2 -->` inside an illustrative code fence (e.g.
+    the analyzer.md inlined skeleton) or inside a `<details>` example
+    block is NOT misdetected as v2. The sentinel must live at the
+    document-level prose layer to count.
+
+    Forward-only marker. Bodies without the sentinel keep the prior
+    post-#454 behavior and are NEVER hard-FAILed by the nested-shape
+    rule or the no-body-Confidence permission.
+    """
+    # Strip fenced code blocks (``` ``` and ~~~ ~~~) inline rather
+    # than importing the later-defined `_strip_fenced_blocks` (avoids
+    # forward-reference ordering noise).
+    lines = body.splitlines()
+    in_fence = False
+    fence_stripped: list[str] = []
+    for line in lines:
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        fence_stripped.append(line)
+    cleaned = "\n".join(fence_stripped)
+    # Strip `<details>...</details>` blocks (already defined regex).
+    cleaned = _DETAILS_BLOCK_RE.sub("", cleaned)
+    return CLEAN_RESULT_V2_SENTINEL in cleaned
+
+
+def check_confidence_matches(body: str) -> CheckResult:
+    """Check 6: `Confidence: …` line matches the title.
+
+    Under the 2-content-section nested-design (v2) shape (sentinel
+    `<!-- clean-result-v2 -->` present), the H1 title tag is the
+    single source of truth for confidence — bodies do NOT carry a
+    `Confidence: …` sentence by design. This check PASSes for v2
+    bodies whenever the title carries the `(... confidence)` tag,
+    regardless of whether a body `Confidence:` sentence exists. If a
+    v2 body DOES happen to carry one (legacy holdover), the level
+    must match the title and ≥20 chars of rationale after the dash
+    must be present (same rule as legacy bodies).
+
+    Legacy bodies (no sentinel) must still ship the
+    `Confidence: LOW|MODERATE|HIGH — <rationale>` line somewhere
+    (typically as the last paragraph of `## Reproducibility`).
     """
     title = find_h1_title(body) or ""
     m = re.search(r"\((LOW|MODERATE|HIGH) confidence\)\s*$", title)
@@ -850,6 +1181,7 @@ def check_confidence_matches(body: str) -> CheckResult:
     if not m:
         return CheckResult(label_name, False, "no title confidence")
     title_level = m.group(1)
+    v2 = is_v2_nested_design(body)
     # Whole-body scan so the Confidence sentence can live anywhere it
     # makes sense under the new spec (typically in `## Reproducibility`).
     # Look for `Confidence: LOW|MODERATE|HIGH — <rationale>` (em-dash or
@@ -864,6 +1196,16 @@ def check_confidence_matches(body: str) -> CheckResult:
         # rationale separately so the user sees what's wrong.
         loose = re.search(r"Confidence:\s*(LOW|MODERATE|HIGH)\b", body)
         if not loose:
+            if v2:
+                # v2 nested-design bodies legitimately have no Confidence
+                # sentence — the H1 title tag is the source of truth.
+                return CheckResult(
+                    label_name,
+                    True,
+                    f"v2 nested-design (sentinel present); title carries "
+                    f"`({title_level} confidence)` tag — no body `Confidence:` "
+                    "sentence required",
+                )
             return CheckResult(
                 label_name,
                 False,
@@ -1348,30 +1690,38 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 
 
 def check_cherry_picked_label(body: str) -> CheckResult:
-    """Check 10: every sample-output fenced block in `## TL;DR` is
-    preceded by a cherry-picked / random-sample disclosure in the
-    prelude prose.
+    """Check 10: every sample-output block in `## TL;DR` is preceded
+    by a cherry-picked / random-sample disclosure in the prelude prose.
 
     Under the 2-content-section spec (2026-W22, task #454) sample
     completions live inside per-result H3s under `## TL;DR`, not under
-    a separate `## Details`. The check scans `## TL;DR` for fenced
-    sample blocks and requires the disclosure in the prose
-    immediately above each.
+    a separate `## Details`. The check scans `## TL;DR` for BOTH
+    fenced code blocks AND `<details>` blocks that carry GFM tables /
+    long text (nested-design v2 bodies frequently present training
+    rows + eval probes as `<details open>` tables instead of fenced
+    code blocks — e.g. task #432). For each sample block the prose
+    immediately above must carry the disclosure.
     """
     tldr = section_text(body, "TL;DR")
     if tldr is None:
         return CheckResult("Cherry-picked label discipline", False, "## TL;DR section missing")
-    samples = _iter_sample_fences(tldr)
+    samples = _iter_sample_blocks(tldr)
     if not samples:
         return CheckResult(
             "Cherry-picked label discipline",
             True,
-            "no sample-output fenced blocks in `## TL;DR`",
+            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
         )
     flagged: list[str] = []
     for start, _, content in samples:
         prelude = _prelude_window(tldr, start)
-        if _CHERRY_DISCLOSURE_RE.search(prelude):
+        # For `<details>` blocks the cherry-pick disclosure may live
+        # inside the block (the `<summary>` text or the prose around
+        # the inner table); we scan BOTH the prelude window AND the
+        # inner content. (For fenced code blocks the `content` is the
+        # code text — a cherry-pick disclosure there is unusual and
+        # harmless to scan; the prelude scan still dominates.)
+        if _CHERRY_DISCLOSURE_RE.search(prelude) or _CHERRY_DISCLOSURE_RE.search(content):
             continue
         # First content line, trimmed, as a hint to the user.
         first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
@@ -1392,35 +1742,49 @@ def check_cherry_picked_label(body: str) -> CheckResult:
 
 
 def check_qualitative_data_link(body: str) -> CheckResult:
-    """Check 11: every sample-output fenced block in `## TL;DR` is
-    preceded by at least one link or backtick-path that is NOT an
-    aggregate-only path.
+    """Check 11: every sample-output block in `## TL;DR` is preceded
+    by at least one link or backtick-path that is NOT an aggregate-only
+    path.
 
     An explicit `not uploaded` escape downgrades FAIL to WARN. Scope
     moved from `## Details` to `## TL;DR` under the 2-content-section
     spec (2026-W22, task #454) — sample completions now live inside
-    per-result H3s under TL;DR.
+    per-result H3s under TL;DR. The check scans BOTH fenced code
+    blocks AND `<details>` blocks that carry GFM tables / long text
+    (nested-design v2 bodies frequently present training rows + eval
+    probes as `<details open>` tables instead of fenced code blocks
+    — e.g. task #432).
     """
     tldr = section_text(body, "TL;DR")
     if tldr is None:
         return CheckResult("Qualitative-data link", False, "## TL;DR section missing")
-    samples = _iter_sample_fences(tldr)
+    samples = _iter_sample_blocks(tldr)
     if not samples:
         return CheckResult(
             "Qualitative-data link",
             True,
-            "no sample-output fenced blocks in `## TL;DR`",
+            "no sample-output blocks in `## TL;DR` (fenced or `<details>`)",
         )
     fails: list[str] = []
     warns: list[str] = []
     passes = 0
     for start, _, content in samples:
         prelude = _prelude_window(tldr, start)
+        # For `<details>` blocks the raw-data link often lives INSIDE
+        # the block, after the table (e.g. task #432's "Full training
+        # file: [...]" link on the line after the table). Scan both
+        # the prelude window AND the inner content of the block so the
+        # check fires consistently regardless of where the body author
+        # placed the qualitative-data link. (For fenced code blocks
+        # the `content` is the code text; markdown links inside it are
+        # unusual but harmless to scan — the prelude scan still
+        # dominates.)
+        search_space = prelude + "\n" + content
         # Collect candidate tokens: markdown link URLs + backtick-wrapped paths.
         tokens: list[str] = []
-        tokens.extend(_LINK_RE.findall(prelude))
-        tokens.extend(_CODE_RE.findall(prelude))
-        has_escape = bool(_NOT_UPLOADED_RE.search(prelude))
+        tokens.extend(_LINK_RE.findall(search_space))
+        tokens.extend(_CODE_RE.findall(search_space))
+        has_escape = bool(_NOT_UPLOADED_RE.search(search_space))
         first_line = content.strip().splitlines()[0][:60] if content.strip() else "(empty)"
 
         if not tokens:
@@ -1738,10 +2102,17 @@ def check_details_narrative_flow(body: str) -> CheckResult:
 
     findings: list[str] = []
 
-    # Heuristic 1: outline-label H3s.
+    # Heuristic 1: outline-label H3s. NOTE: `### Findings` and
+    # `### What I ran` are REQUIRED structural H3s under the
+    # nested-design (v2) shape — they are explicitly excluded from this
+    # WARN list. `### Background` / `### Setup` / `### Methodology` /
+    # `### Headline result` / `### Subset checks` / `### Sample
+    # completions` / `### Plan deviations` remain outline labels and
+    # still warn (story-beat H3s name what the reader is about to
+    # learn, not the genre of content).
     bad_label_re = re.compile(
         r"^###\s+(?P<name>Headline result|Subset checks|Sample completions|"
-        r"Plan deviations|Methodology|Findings|Background|Setup)\s*$",
+        r"Plan deviations|Methodology|Background|Setup)\s*$",
         re.MULTILINE | re.IGNORECASE,
     )
     bad_h3_names = [m.group("name") for m in bad_label_re.finditer(tldr)]
@@ -2153,6 +2524,7 @@ CHECKS = [
     check_title_confidence,
     check_required_sections,
     check_tldr_labels,
+    check_tldr_nested_structure,
     check_figure_image,
     check_figure_url_resolvable,
     check_figure_caption,

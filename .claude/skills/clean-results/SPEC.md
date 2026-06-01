@@ -6,11 +6,12 @@ The format is **markdown** with YAML frontmatter.
 
 ## Required body shape
 
-**The 2-content-section model** (migrated 2026-W22, task #454). The body
-carries THREE required H2 sections, in this exact order, with the second
-(`## TL;DR`) absorbing what used to live in a separate `## Details`
-section and the third (`## Reproducibility`) absorbing the Parameters
-table + Confidence sentence:
+**The 2-content-section nested-TL;DR model** (migrated 2026-W22 task
+#454; nested-TL;DR shape adopted forward-only after #454). The body
+carries THREE required H2 sections, in this exact order, with the
+second (`## TL;DR`) absorbing what used to live in a separate
+`## Details` section and the third (`## Reproducibility`) absorbing
+the Parameters table:
 
 1. `## Human TL;DR` — Thomas's own section in his voice, drafted by the
    analyzer as a MINIMAL STUB — just the literal word `placeholder` as
@@ -20,83 +21,122 @@ table + Confidence sentence:
    pre-fill any Headline / Takeaways / How-this-updates-me structure.
    See `analyzer.md` Step 1 for the stub template.
 
-2. `## TL;DR` — the LessWrong-style narrative. Two-part shape:
+2. `## TL;DR` — the LessWrong-style narrative, in a nested 3-part shape.
+   The three subsection H3s are REQUIRED in nested-design (v2) bodies
+   and must appear in this order:
 
-   - **Opens with `### Motivation`** (a labeled H3, not a bullet). This
-     subsection sets up why the experiment matters — prior tasks (cited
-     via `[#K](https://eps.superkaiba.com/tasks/K)`), the question
-     walked in with, the prior the analyzer held. First-person, plain
-     language.
+   - **`### Motivation`** — sets up why the experiment matters; the
+     ONLY place in the body that may cite prior tasks (via
+     `[#K](https://eps.superkaiba.com/tasks/K)` markdown links) or
+     name issue numbers; ends by stating the goal. First-person,
+     plain language.
+   - **`### What I ran`** — STANDALONE description of the run. No
+     cross-issue framing, no issue numbers, no "byte identical" /
+     "byte-identical" phrasing, no incidental low-level detail.
+     Carries training INPUT→OUTPUT examples (as a `<details open>`
+     table) and names the eval INPUTS (the actual probes / questions
+     asked).
+   - **`### Findings`** — parent H3 that wraps ONE `#### <finding>`
+     H4 per result. Each `#### <finding>` follows the per-result
+     skeleton below.
 
-   - **Followed by one `### <finding>` H3 per result.** Each result H3
-     names what the reader is about to learn (a story-beat headline,
-     NOT a deliverable label — see voice rules below). Inside each
-     result H3:
+   Inside each `#### <finding>` H4:
 
-     1. A short **setup paragraph** (1-3 sentences) framing what the
-        figure will show and why we're looking now.
-     2. **Exactly ONE inline figure** (`![alt](permanent-url)` on a line
-        by itself, blank line before and after) with a markdown
-        blockquote caption (`> **Figure.** *italic lead.* plain
-        caption text…`). See "Figure caption shape" below.
-     3. A **read paragraph** (1-3 sentences) calling out what's
-        striking — surprises, where outliers go, monotonicity, what
-        the figure CAN'T tell you.
-     4. **One cherry-picked raw-completion example per artifact** the
-        result rests on (a fenced code block or a `<details>` table),
-        preceded by the literal `cherry-picked for illustration` (or
-        a random-sample disclosure like `first three of 400
-        completions`) AND by a link to the **raw text-level artifact**
-        (HF Hub `/tree/<sha>/.../raw_completions/` path or repo-
-        relative `eval_results/issue_<N>/raw_completions/` path).
-     5. A **`<details>` dropdown** with 3-5 more cherry-picked examples
-        + a link to ALL raw completions for that artifact (the
-        complete bucket on HF Hub, pinned to the commit SHA).
+   1. A short **setup paragraph** (1-3 sentences) framing what the
+      figure will show and why we're looking now.
+   2. **Exactly ONE inline figure** (`![alt](permanent-url)` on a line
+      by itself, blank line before and after) with a markdown
+      blockquote caption (`> **Figure.** *italic lead.* plain
+      caption text…`). See "Figure caption shape" below.
+   3. A **read paragraph** (1-3 sentences) calling out what's
+      striking — surprises, where outliers go, monotonicity, what
+      the figure CAN'T tell you.
+   4. **For text-generation results:** one cherry-picked raw-completion
+      example per artifact the result rests on (a fenced code block or
+      a `<details>` table), preceded by the literal `cherry-picked for
+      illustration` (or a random-sample disclosure like `first three of
+      400 completions`) AND by a link to the **raw text-level artifact**
+      (HF Hub `/tree/<sha>/.../raw_completions/` path or repo-relative
+      `eval_results/issue_<N>/raw_completions/` path), then a
+      `<details>` dropdown with 3-5 more examples + a link to ALL raw
+      completions.
+   5. **For runs that generate NO completions** (teacher-forced
+      log-prob, activation probe, linear-fit, cluster-only): state the
+      measurement-validity tell ("the model emits nothing — each probe
+      yields one number, not a completion") inside the finding's
+      prose; do NOT fabricate a fenced sample block.
 
-     Every result H3 except `### Motivation` MUST stand alone — the
-     reader can land on it directly and understand the finding without
-     re-reading the previous result.
+   Every `#### <finding>` H4 MUST stand alone — the reader can land
+   on it directly and understand the finding without re-reading
+   earlier ones. The body is **standalone** outside `### Motivation`:
+   baselines are framed descriptively ("the narrow 2-negative
+   baseline"), NOT by issue number; issue numbers are confined to
+   `### Motivation` and `## Reproducibility`.
 
    **No separate `## Details` section.** Everything that used to live
    there (definitions, training notes, eval-rationale prose, sample
-   completions, "Why this test" narrative) moves UP into the per-result
-   H3 narrative.
+   completions, "Why this test" narrative) moves UP into the
+   per-result `#### <finding>` narrative inside `### Findings`.
 
-   **No `## Figure` H2.** Figures live inline under their result H3
-   (one figure per result).
+   **No `## Figure` H2.** Figures live inline under their `####
+   <finding>` H4 (one figure per result).
 
    **No `### Methodology corrections` H3.** When a methodology
-   correction is load-bearing for interpreting a finding, fold it into
-   the relevant result's setup or read prose — do not collect them in
-   a separate section.
+   correction is load-bearing for interpreting a finding, fold it
+   into the relevant `#### <finding>`'s setup or read prose — do not
+   collect them in a separate section.
 
    **No `### Next steps` H3 by default.** Skip unless there is
    genuinely useful follow-up to queue. Hard exception: when raw
    completions were not uploaded for this run, the body MUST surface
-   the "re-run with raw-completion upload" note in the relevant result's
-   prose.
+   the "re-run with raw-completion upload" note in the relevant
+   finding's prose.
 
-3. `## Reproducibility` — agent-facing appendix at the bottom. Required
-   content, in order:
+   **Per-condition quantitative numbers live in PLOTS, not as a body
+   table** — never duplicate a per-condition rate / log-prob / mean as
+   a markdown table in the body when the same numbers are already
+   carried by a figure. Plots compress and contextualise; a redundant
+   table is reader-hostile.
 
-   - **`**Parameters:**`** — the parameters table (base model, adapter,
-     optimizer, steps, seeds, eval rig, hardware, wall time, Hydra
-     config slug, etc.). Absorbed from the retired `## Details`
+3. `## Reproducibility` — agent-facing appendix at the bottom.
+   Required content, in order:
+
+   - **`**Parameters:**`** — the parameters table (base model,
+     adapter, optimizer, steps, seeds, eval rig, hardware, wall time,
+     Hydra config slug, etc.). Absorbed from the retired `## Details`
      section.
    - **`**Artifacts:**`** — links to training data, model checkpoints,
      eval JSONs, figure source, raw completions. **Training/eval data:
-     embed a `<details>` dropdown of 5 example rows + a link to the
-     full data file** under whichever result H3 the data is most
-     relevant to (NOT here — the dropdown lives in the TL;DR result
-     section; this Artifacts block just lists the full artifact links).
+     embed a `<details open>` dropdown of ~5 example rows + a link to
+     the full data file** under whichever finding H4 the data is most
+     relevant to (training rows under `### What I ran`; eval examples
+     near the finding that consumed them — NOT here; this Artifacts
+     block just lists the full artifact links).
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra
      config, git commit hash, one-block reproduce snippet.
-   - **The `Confidence: LOW|MODERATE|HIGH — <rationale>` sentence**
-     (≥20 chars of rationale after the dash) lives in this section
-     (last paragraph by convention; the verifier scans the whole body
-     and the level MUST match the title's `(... confidence)` marker).
-     There is NO separate "Why confidence is where it is" section.
+
+   **Confidence lives in the H1 title tag only** for nested-design
+   (v2) bodies (see "Title format" below). There is NO
+   `Confidence: …` sentence inside `## Reproducibility`, and NO
+   separate "Why confidence is where it is" section. (Legacy bodies
+   carrying a `Confidence: …` sentence still satisfy the verifier —
+   the verifier's level-match check fires only when the sentence
+   exists — but new bodies do not emit one.)
+
+### V2 nested-design sentinel
+
+NEW nested-design bodies carry the literal HTML comment
+`<!-- clean-result-v2 -->` somewhere in the body (the analyzer emits
+it on draft). The verifier uses this sentinel to gate the
+nested-TL;DR-shape requirements (presence + order of `### Motivation`
+/ `### What I ran` / `### Findings` with ≥1 `#### ` child; accepting
+confidence-title-only). Bodies WITHOUT the sentinel keep the prior
+behavior (Motivation H3 OR `**Motivation:**` bullet; per-result
+`### <finding>` flat layout still tolerated) and are NEVER hard-FAILed
+by the nested-shape rule. This is the "forward-only" guard: bodies
+parked in `awaiting_promotion` that still use the post-#454 flat
+shape will not retro-break on the next CI run.
 
 All URLs in Reproducibility are pinned to permanent refs (HF Hub
 `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
@@ -136,8 +176,11 @@ Title format (the H1 line):
 # <one-sentence claim> (LOW|MODERATE|HIGH confidence)
 ```
 
-The confidence level in the title MUST match the `Confidence: ...`
-sentence in `## Reproducibility`.
+For v2 nested-design bodies (sentinel `<!-- clean-result-v2 -->`
+present) the H1 title tag is the single source of truth for confidence
+— there is no body `Confidence: …` sentence to cross-check. For
+legacy bodies (no sentinel) the confidence level in the title MUST
+match the `Confidence: …` sentence in `## Reproducibility`.
 
 ## Figure caption shape — markdown blockquote + bold "Figure." prefix
 
@@ -156,10 +199,13 @@ from the body prose around it. Without it, the dashboard's markdown
 renderer collapses `body text. ![alt](url) caption text.` into a
 single paragraph where the caption reads as continuation of the body.
 
-**Layout inside a result H3:**
+**Layout inside a `#### <finding>` H4 (v2 nested-design):**
+
+Under the v2 nested-design shape, per-result blocks live as
+`#### <finding>` H4s under `### Findings`. The block skeleton:
 
 ```markdown
-### <Result headline>
+#### <Finding headline>
 
 <Setup paragraph: what we did, what's plotted, what to look for.>
 
@@ -188,6 +234,11 @@ Full <M> raw completions: [bucket/raw_completions/](https://huggingface.co/.../t
 </details>
 ```
 
+(For legacy bodies, the same shape applies but per-result blocks are
+flat `### <finding>` H3s directly under `## TL;DR`; the inner-block
+skeleton — setup → figure → blockquote caption → read → sample
+exposition — is identical.)
+
 Three discipline points:
 1. **Blank line BETWEEN body prose and image** (otherwise the image
    renders inline with body text).
@@ -214,16 +265,25 @@ fix.
    forward-grandfathered because the verifier never re-runs over them).
 3. `## TL;DR` opens with the Motivation section — either an
    `### Motivation` H3 (preferred) or a `**Motivation:**` boldface
-   bullet (legacy form, still accepted).
+   bullet (legacy form, still accepted). In nested-design (v2) bodies
+   bearing the `<!-- clean-result-v2 -->` sentinel, the verifier
+   ADDITIONALLY requires `### What I ran` and `### Findings` H3s in
+   that order under `## TL;DR`, with at least one `#### ` child under
+   `### Findings`.
 4. At least one `![alt](url)` markdown image exists inline under
    `## TL;DR`.
 5. (Soft) Figure-caption sanity — vacuously satisfied when no legacy
    `## Figure` H2 is present (inline-image alt text + blockquote
    caption inside the result H3 carry the discipline; the analyzer is
    instructed to write descriptive alt text and blockquote captions).
-6. Confidence sentence (anywhere in the body — typically the last
-   paragraph of `## Reproducibility`) matches the title's level and
-   carries ≥20 chars of rationale after the dash.
+6. Confidence sentence — for v2 nested-design bodies (sentinel
+   present) the verifier PASSes when the H1 title carries the
+   `(LOW|MODERATE|HIGH confidence)` tag even with NO body Confidence
+   sentence; the title tag is the single source of truth. If a body
+   still carries a `Confidence: …` line, the level MUST match the
+   title and ≥20 chars of rationale after the dash. Legacy
+   (pre-sentinel) bodies must still ship the Confidence sentence
+   (typically the last paragraph of `## Reproducibility`).
 7. Reproducibility contains all three boldface subgroup labels
    verbatim: `**Artifacts:**`, `**Compute:**`, `**Code:**`.
 8. Reproducibility URLs are pinned to permanent refs (HF Hub
@@ -252,10 +312,14 @@ fix.
     function remains as a hook for future WARN-only nudges but no
     longer triggers on legacy patterns.
 13. TL;DR narrative flow (WARN-only) — outline-label H3s in
-    `## TL;DR` (`### Headline result`, `### Findings`, etc.) and >2
-    consecutive figures with no prose between (figure-dump). Both
-    surface as WARN; critic-side LM judgment (`clean-result-critic`)
-    catches the semantic cases.
+    `## TL;DR` (`### Headline result`, `### Subset checks`,
+    `### Sample completions`, `### Plan deviations`,
+    `### Methodology`, etc.) and >2 consecutive figures with no prose
+    between (figure-dump). Both surface as WARN; critic-side LM
+    judgment (`clean-result-critic`) catches the semantic cases. NOTE:
+    `### What I ran` and `### Findings` are REQUIRED structural H3s
+    under the nested-design (v2) shape (not outline labels) and are
+    explicitly NOT flagged by this heuristic.
 14. MDX-safe prose (`check_mdx_safe_urls`) — see "Required body
     shape" above for the three classes (autolinks, `<digit`,
     table-cell `<|`).
@@ -298,8 +362,12 @@ Catches prose-level violations the verifier doesn't:
 - No `## Findings` / `## Background` / `## Methodology` / `## Setup` /
   `## Details` H2s — every reader-facing finding lives under a result
   H3 inside `## TL;DR`.
-- No "Standing caveats" section — caveats fold into the result H3
-  read paragraph or the Confidence sentence in Reproducibility.
+- No "Standing caveats" section — caveats fold into the relevant
+  `#### <finding>` H4 read paragraph. For legacy bodies (no v2
+  sentinel) caveats may additionally ride in the `Confidence: …`
+  sentence in `## Reproducibility`; v2 bodies carry confidence in the
+  H1 title tag only, so the binding constraint lives in the finding's
+  read prose.
 - Inline math `\(...\)`, display math `\[...\]`. Keep math out of
   plot labels and figure captions.
 - **Never write `byte identical` or `byte-identical`** anywhere in the
@@ -320,8 +388,12 @@ re-drafted under the new spec; this is acceptable (drafts always rebuild
 cleanly from cached results + figures).
 
 **Target exemplar** (the END state new bodies should aim for):
-`tasks/awaiting_promotion/432/body.md` (with `## Human TL;DR`
-reduced to the bare `placeholder` stub).
+`tasks/awaiting_promotion/432/body.md` — the canonical nested-design
+exemplar, carrying the `<!-- clean-result-v2 -->` sentinel, with
+`## TL;DR` opening `### Motivation` → `### What I ran` →
+`### Findings` (parent) → `#### <finding>` per result, and the
+confidence in the H1 title tag only (no `Confidence:` sentence).
+`## Human TL;DR` is the bare `placeholder` stub.
 
 ## What this directory still owns
 

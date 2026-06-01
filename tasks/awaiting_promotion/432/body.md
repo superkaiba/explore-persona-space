@@ -10,6 +10,8 @@ parent_id: 416
 ---
 # Expanding contrastive negatives from 2 to 9 moves software engineer from rank 26 to rank 7 and relatively suppresses the trained-negative competitors — the "source pinned at the bottom" was substantially an artifact of under-constrained negative coverage (MODERATE confidence)
 
+<!-- clean-result-v2 -->
+
 ## Human TL;DR
 
 **Headline.** *Add 1 sentence — what stood out, what you'd tell Dan in one breath.*
