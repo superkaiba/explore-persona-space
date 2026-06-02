@@ -29,11 +29,14 @@ Examples::
 from __future__ import annotations
 
 import argparse
+import datetime
+import json
 import logging
 import os
 import shlex
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -52,10 +55,148 @@ from explore_persona_space.experiments.predictor_jsdiv_470.common import (  # no
     DEFAULT_R,
     PHASE4_PATH,
     PHASE5_PATH,
+    PHASE6_DIR,
+    read_json,
 )
 
 logger = logging.getLogger("dispatch_jsdiv_470")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# ── poll_pipeline.py orchestration contract (.claude/agents/experiment-implementer.md §202-246) ──
+#
+# Pod-side dispatchers MUST emit lowercase ``[phase=<name>]`` log lines (parsed
+# by ``PHASE_RE = re.compile(r"\[phase=([a-z_]+)")``) and a terminal
+# ``[phase=done]`` immediately before the normal exit path, AFTER the end-of-run
+# sentinel write. The sentinel lands at
+# ``/workspace/logs/issue-470-epm_results-<epoch>.json`` and must carry the keys
+# in ``poll_pipeline.py::_SENTINEL_REQUIRED_KEYS`` so the VM-side poll loop
+# drains it and posts the carried ``epm:results`` marker on this task's
+# events.jsonl. WITHOUT both halves a clean exit reads as ``dead`` and the
+# headline result payload is silently skipped.
+ISSUE_N = 470
+SENTINEL_SCHEMA_VERSION = 1
+SENTINEL_DIR = Path("/workspace/logs")
+
+
+def _log_phase(name: str) -> None:
+    """Emit a ``[phase=<name>]`` line to stdout, flushed so ``tail -500`` sees it.
+
+    ``poll_pipeline.py::_latest_phase`` reads the most recent matching line
+    from the tail of the pod-side log file (the launcher does
+    ``nohup ... > log 2>&1``, so stdout IS the log). ``name`` must match
+    ``[a-z_]+`` — digits or hyphens would silently miss the regex.
+    """
+    print(f"[phase={name}]", flush=True)
+
+
+def _write_results_sentinel(*, smoke: bool, ran_full_pipeline: bool) -> Path | None:
+    """Write the end-of-run ``epm:results`` sentinel for the VM poller.
+
+    Returns the written path on success, ``None`` on failure (e.g. SENTINEL_DIR
+    not writable — common when running the dispatcher locally on the VM rather
+    than on the pod). Failure to write the sentinel is logged but is NOT fatal:
+    a successful local smoke shouldn't fail merely because /workspace/logs is
+    a pod-only path.
+
+    The ``note`` body is a real ``epm:results`` marker payload pointing at the
+    on-disk artifacts (Phase 4/5 JSONs + Phase 6 figures). When the pipeline
+    completes in production, Phase 5's headline numbers are inlined so the
+    marker is self-contained on the dashboard.
+    """
+    try:
+        SENTINEL_DIR.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        logger.warning(
+            "Could not create sentinel dir %s (%s); skipping sentinel write. "
+            "This is expected when running off-pod.",
+            SENTINEL_DIR,
+            exc,
+        )
+        return None
+
+    # Build the marker note body. Prefer concrete headline numbers from Phase 5
+    # when available; otherwise point at the JSON paths so the analyzer (or
+    # poll_pipeline reader) can pull them.
+    headline: dict = {}
+    if PHASE5_PATH.exists():
+        try:
+            reg = read_json(PHASE5_PATH)
+            # Surface whatever the regression payload exposes at the top level
+            # without making strong shape assumptions — Phase 5's internal keys
+            # are not part of this dispatcher's contract.
+            for key in (
+                "pooled_partial_spearman",
+                "paired_delta_rho",
+                "verdict",
+                "kill_criterion",
+            ):
+                if key in reg:
+                    headline[key] = reg[key]
+        except (OSError, ValueError) as exc:
+            logger.warning("Could not read %s for sentinel headline (%s).", PHASE5_PATH, exc)
+
+    # Resolve git commit + worktree for reproducibility.
+    try:
+        git_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=str(REPO_ROOT), text=True
+        ).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        git_commit = "unknown"
+
+    eval_paths = {
+        "regression": str(PHASE5_PATH.relative_to(REPO_ROOT)) if PHASE5_PATH.exists() else None,
+        "predictor_comparison": str(PHASE4_PATH.relative_to(REPO_ROOT))
+        if PHASE4_PATH.exists()
+        else None,
+        "figures_dir": str(PHASE6_DIR.relative_to(REPO_ROOT)) if PHASE6_DIR.exists() else None,
+    }
+    figure_files = (
+        sorted(str(p.relative_to(REPO_ROOT)) for p in PHASE6_DIR.glob("*.png"))
+        if PHASE6_DIR.exists()
+        else []
+    )
+
+    note_lines = [
+        f"task: #{ISSUE_N} — JS divergence vs cosine predictor re-analysis on #411 leakage",
+        f"mode: {'smoke' if smoke else 'production'}",
+        f"ran_full_pipeline: {ran_full_pipeline}",
+        f"code_commit: {git_commit}",
+        f"worktree: {REPO_ROOT}",
+        "",
+        "eval_paths:",
+        *(f"  {k}: {v}" for k, v in eval_paths.items()),
+    ]
+    if figure_files:
+        note_lines += ["", "figures:"] + [f"  - {p}" for p in figure_files]
+    if headline:
+        note_lines += ["", "headline:"]
+        for k, v in headline.items():
+            note_lines.append(f"  {k}: {v}")
+    note_lines += [
+        "",
+        "Full payload is in the listed eval_paths; analyzer should ingest from there.",
+    ]
+    note = "\n".join(note_lines)
+
+    sentinel = {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+        "task_id": ISSUE_N,
+        "kind": "epm:results",
+        "version": 1,
+        "gate": None,
+        "blocks_pipeline": False,
+        "note": note,
+        "by": "dispatch_jsdiv_470",
+        "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    epoch = int(time.time())
+    out_path = SENTINEL_DIR / f"issue-{ISSUE_N}-epm_results-{epoch}.json"
+    # Atomic write so a mid-write crash never leaves a half-parsed sentinel.
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp.write_text(json.dumps(sentinel, indent=2))
+    tmp.replace(out_path)
+    logger.info("Wrote results sentinel to %s", out_path)
+    return out_path
 
 
 def _run_subprocess(module: str, args: list[str], *, label: str) -> None:
@@ -183,6 +324,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
     # metadata-compatibility and fast-exit if everything matches the signature.
     phases_to_run = {args.phase} if args.phase else {"1", "2", "3", "4", "5", "6"}
     if "1" in phases_to_run and not args.skip_phase1:
+        _log_phase("sampling")
         p1_args = [
             *common_args,
             "--R",
@@ -202,6 +344,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
 
     # ── Phase 2: HF Transformers cosine recipe (b) (subprocess-isolated from Phase 1) ──
     if "2" in phases_to_run and not args.skip_phase2:
+        _log_phase("cosine")
         p2_args = ["--personas", *personas_phase1, "--gpu-id", str(args.gpu_id)]
         if args.model:
             p2_args.extend(["--model", args.model])
@@ -215,6 +358,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
 
     # ── Phase 3: HF Transformers RB JS + KL (same process as Phase 2 is fine; both HF) ──
     if "3" in phases_to_run and not args.skip_phase3:
+        _log_phase("js_kl")
         ph3_args = [
             *common_args,
             "--sources",
@@ -234,6 +378,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
 
     # ── Phases 4-6 (CPU): can run in-process; no GPU contention ──
     if "4" in phases_to_run:
+        _log_phase("dv_load")
         p4_args = ["--sources", *sources]
         # `--smoke` (or any explicit bystander subset) deliberately trims to a
         # single (src, bys) cell — the Phase 4 prereq guard would otherwise
@@ -255,6 +400,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
         raise RuntimeError(f"Phase 4 did not produce {PHASE4_PATH}; aborting.")
 
     if "5" in phases_to_run:
+        _log_phase("regress")
         _run_subprocess(
             "explore_persona_space.experiments.predictor_jsdiv_470.phase5_regress",
             [],
@@ -264,6 +410,7 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
         raise RuntimeError(f"Phase 5 did not produce {PHASE5_PATH}; aborting.")
 
     if "6" in phases_to_run:
+        _log_phase("figures")
         ph6_args = []
         # In smoke mode the hero figure is degenerate (1 source × 1 bystander),
         # but we keep it so the figure code is exercised — analyzer can ignore.
@@ -273,6 +420,21 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
             label="Phase 6 (figures)",
         )
 
+    # ── End-of-run sentinel + terminal phase=done line ──
+    # poll_pipeline.py orchestration contract: ``ran_full_pipeline`` controls
+    # whether the sentinel marks itself as a full vs partial dispatcher run.
+    # The sentinel is informational either way — the poller drains it and posts
+    # ``epm:results`` regardless of mode. ``[phase=done]`` MUST come AFTER the
+    # sentinel write (poll_pipeline reads the log AFTER draining sentinels in
+    # the same tick).
+    ran_full_pipeline = (
+        args.phase is None
+        and not args.skip_phase1
+        and not args.skip_phase2
+        and not args.skip_phase3
+    )
+    _write_results_sentinel(smoke=args.smoke, ran_full_pipeline=ran_full_pipeline)
+    _log_phase("done")
     logger.info("Dispatcher complete.")
     return 0
 
