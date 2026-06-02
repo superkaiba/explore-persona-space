@@ -1,7 +1,7 @@
 ---
 title: 'How contrastive-negative count and distance-to-source jointly control bystander
-  marker leakage (non-saturating DV, training-strength sweep) — merges #412 + #453,
-  corrects #448'
+  marker leakage (non-saturating DV, logged over training) — merges #412 + #453, corrects
+  #448'
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
