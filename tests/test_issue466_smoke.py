@@ -716,3 +716,66 @@ def test_load_slice_checkpoint_round_trips_and_rejects_mismatched_fingerprint(tm
     loaded_legacy = _load_slice_checkpoint(tmp_path, "A_spanish_restaurants", "trigger")
     assert loaded_legacy is not None
     assert loaded_legacy["slice_mean_js"] == 0.20
+
+
+# ── Adapter resolver: HF-Trainer intermediate-checkpoint disambiguation ───
+#
+# Round 5 fix for the recovery `reproduce_check` crash. The Phase 0 persist
+# upload landed THREE adapter_model.safetensors paths under the
+# `marker_implant_adapter/` prefix: the final top-level adapter AND two
+# HF-Trainer intermediate snapshots (`checkpoint-1500/`, `checkpoint-1600/`).
+# The old inline resolver hit `len(safetensors_files) > 1` and raised
+# "refusing to guess"; the new helper filters `checkpoint-<N>/` subdirs
+# first so the canonical top-level adapter is returned cleanly.
+
+
+def test_select_adapter_leaf_picks_top_level_over_trainer_checkpoints():
+    """The 3-file case from task #466 recovery: top-level + 2 checkpoint-*/."""
+    from issue466_marker_logp import _select_adapter_leaf
+
+    prefix = "issue466_i432_marker_se_9neg_zen_seed42_step1600/marker_implant_adapter"
+    candidates = [
+        f"{prefix}/adapter_model.safetensors",
+        f"{prefix}/checkpoint-1500/adapter_model.safetensors",
+        f"{prefix}/checkpoint-1600/adapter_model.safetensors",
+    ]
+    selected = _select_adapter_leaf(candidates)
+    assert selected == f"{prefix}/adapter_model.safetensors", selected
+
+
+def test_select_adapter_leaf_single_candidate_unchanged():
+    """A single-candidate list (the clean case) is returned as-is."""
+    from issue466_marker_logp import _select_adapter_leaf
+
+    only = "issue466_some_run/marker_implant_adapter/adapter_model.safetensors"
+    assert _select_adapter_leaf([only]) == only
+
+
+def test_select_adapter_leaf_genuine_ambiguity_still_raises():
+    """Two DISTINCT non-checkpoint final adapters must still raise."""
+    from issue466_marker_logp import _select_adapter_leaf
+
+    candidates = [
+        "issue466_run_a/marker_implant_adapter/adapter_model.safetensors",
+        "issue466_run_b/marker_implant_adapter/adapter_model.safetensors",
+    ]
+    with pytest.raises(RuntimeError, match="Multiple non-checkpoint"):
+        _select_adapter_leaf(candidates)
+
+
+def test_select_adapter_leaf_all_checkpoints_raises():
+    """If the only candidates sit under checkpoint-*/ (no top-level final), raise.
+
+    Defensive: this shouldn't happen with HF-Trainer's normal end-of-train
+    behavior (it always writes a top-level snapshot), but if somehow the
+    top-level upload was skipped, the resolver should not silently grab one
+    of the intermediates.
+    """
+    from issue466_marker_logp import _select_adapter_leaf
+
+    candidates = [
+        "issue466_run/marker_implant_adapter/checkpoint-1500/adapter_model.safetensors",
+        "issue466_run/marker_implant_adapter/checkpoint-1600/adapter_model.safetensors",
+    ]
+    with pytest.raises(RuntimeError, match="no top-level final adapter found"):
+        _select_adapter_leaf(candidates)

@@ -37,6 +37,7 @@ import gc
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import time
@@ -209,6 +210,60 @@ def _kill_vllm_workers() -> None:
 
 
 # ── Adapter download from HF Hub ───────────────────────────────────────────
+
+
+def _select_adapter_leaf(safetensors_files: list[str]) -> str:
+    """Disambiguate the final adapter from a list of ``adapter_model.safetensors`` paths.
+
+    HF-Trainer-driven Phase 0 persists upload BOTH the final top-level
+    adapter (``{prefix}/marker_implant_adapter/adapter_model.safetensors``)
+    AND any intermediate trainer checkpoints
+    (``{prefix}/marker_implant_adapter/checkpoint-<N>/adapter_model.safetensors``).
+    Without disambiguation, ``len(safetensors_files) > 1`` and the caller
+    raises "refusing to guess" — even though the trainer's last-written
+    top-level dir is the canonical final adapter.
+
+    Strategy: drop any candidate that contains a ``/checkpoint-<N>/``
+    segment (an HF-Trainer intermediate). If exactly one top-level
+    candidate remains, return it; otherwise raise (genuine ambiguity:
+    two distinct final adapters under the same prefix).
+
+    Args:
+        safetensors_files: list of repo paths ending in
+            ``adapter_model.safetensors`` (already filtered by the caller
+            to the relevant repo + subfolder prefix).
+
+    Returns:
+        The single top-level (non-checkpoint) adapter path.
+
+    Raises:
+        RuntimeError: zero candidates left after filtering, or >=2 distinct
+            top-level adapters (genuine ambiguity).
+    """
+    checkpoint_re = re.compile(r"/checkpoint-\d+/")
+    top_level = [f for f in safetensors_files if not checkpoint_re.search(f)]
+    n_excluded = len(safetensors_files) - len(top_level)
+    if n_excluded:
+        logger.info(
+            "Adapter resolver: excluded %d HF-Trainer intermediate checkpoint-*/ "
+            "candidate(s); %d top-level candidate(s) remain.",
+            n_excluded,
+            len(top_level),
+        )
+    if len(top_level) == 1:
+        logger.info("Adapter resolver: selected top-level leaf %s", top_level[0])
+        return top_level[0]
+    if len(top_level) == 0:
+        raise RuntimeError(
+            f"All {len(safetensors_files)} adapter_model.safetensors candidates "
+            f"sit under checkpoint-*/ subdirs (no top-level final adapter found): "
+            f"{safetensors_files} — refusing to guess; pass an exact subfolder."
+        )
+    raise RuntimeError(
+        f"Multiple non-checkpoint adapter_model.safetensors candidates: "
+        f"{top_level} (excluded {n_excluded} checkpoint-*/ entries) — "
+        f"refusing to guess; pass an exact subfolder."
+    )
 
 
 def _download_adapter(repo: str, subfolder: str, local_dir: Path) -> Path:
@@ -601,13 +656,11 @@ def main() -> int:
             f"No adapter_model.safetensors in {args.adapter_repo}/{args.adapter_subfolder} "
             f"(found {len(matching)} other files)."
         )
-    if len(safetensors_files) > 1:
-        raise RuntimeError(
-            f"Multiple adapter_model.safetensors under {args.adapter_subfolder}: "
-            f"{safetensors_files} — refusing to guess; pass an exact subfolder."
-        )
+    # Disambiguate against HF-Trainer intermediate checkpoint-*/ uploads
+    # (the final top-level adapter is the canonical leaf).
+    selected = _select_adapter_leaf(safetensors_files)
     # Strip "adapter_model.safetensors" to get the leaf path.
-    leaf = safetensors_files[0].rsplit("/", 1)[0]
+    leaf = selected.rsplit("/", 1)[0]
     logger.info("Adapter leaf resolved to %s/%s", args.adapter_repo, leaf)
     adapter_local_dir = _download_adapter(args.adapter_repo, leaf, args.adapter_local_dir)
 
