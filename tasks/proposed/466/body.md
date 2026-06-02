@@ -15,49 +15,50 @@ goal: 'Eval-only test (no training of the conditional behavior): do the standard
 ---
 ## Goal
 
-Eval-only test (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not?
+Eval-only test (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over (or precede) the trigger? And does slice-resolving the divergence (JS on trigger vs non-trigger prompts) predict where the marker behavior actually shifts, when the system-prompt-boundary cosine and the averaged JS do not?
 
-**Open questions:** `docs/open_questions.md` §1.2 (`q:spec-kl-probe-set`, does the divergence predictor depend on which probe questions you use), §3.1 (`q:leak-predictor`), §3.7 (`q:leak-to-default`). **Related:** #404 / #458 (the JS leakage-predictor line), #448 / #456 (on-policy marker-leakage rig reused below), #137 (training-prompt distribution → leakage), #161 (Spanish+English), #446 (realistic non-toy settings scoping).
+**Open questions:** `docs/open_questions.md` §1.2 (`q:spec-kl-probe-set`), §3.1 (`q:leak-predictor`, both JS and cosine predictors), §3.7 (`q:leak-to-default`). **Related:** #404 / #458 (JS/cosine leakage-predictor line + canonical metric defs), #448 / #456 (on-policy marker-leakage rig reused below), #161 (Spanish+English), #446 (realistic-settings scoping).
 
 ## Motivation
 
-The current leakage predictor measures JS divergence between two personas' output distributions over a probe set of user messages U, and predicts S→S′ leakage from it (the established sign in this project: closer personas / smaller JS leak more into each other). But that JS is an **average** over U, and the average conflates **how different** the two personas are behaviorally with **how often** the probe distribution gives them a chance to differ.
+The leakage predictors in this project summarize the difference between two personas S and S′ as a single quantity - JS divergence of output distributions averaged over a probe set U, or cosine similarity of persona vectors at the end of the system prompt - and predict leakage from it (closer = more leakage). Both summaries are blind to a behavior concentrated on a rare input slice:
 
-Consider a conditional persona: S = a source persona, S′ = the same persona that switches to Spanish only when the user message is about restaurant recommendations. On a generic U, S and S′ are identical almost everywhere, so the average JS sits near zero and the predictor treats them as the **same context** - which implies a behavior present under one should appear fully under the other. Yet a real, distinct behavior is present, concentrated on a rare slice U′.
+- The **averaged JS** conflates *how different* S and S′ are with *how often* the probe set lets them differ. A conditional S′ (= S, but Spanish on restaurant queries) is identical to S almost everywhere, so the average JS sits near zero.
+- The **system-prompt-boundary cosine** is measured at the last system-prompt token, *before any user message*. A behavior gated on the user message content cannot move that activation at all - the cosine is structurally incapable of seeing a conditional behavior, because the condition lives in the user turn that comes later.
 
-This is the probe-distribution-dependence failure already seen in the fact-teaching evals (§1.2): divergence/leakage hides unless the probes resemble the slice where the behaviors actually differ. It is also the safety-relevant case: a persona misaligned only on a rare trigger passes an average eval but is not safe. The point of this experiment is to find where the average-JS predictor breaks and what replaces it.
+So both standard predictors read "S ≈ S′, expect full leakage," while a real distinct behavior is sitting on a rare slice U′. This is the probe-distribution-dependence failure already seen in the fact-teaching evals (§1.2), and the safety-relevant case: a persona misaligned only on a rare trigger passes an averaged eval. The point is to show where both predictors break and that slice-resolving the divergence fixes it.
 
-## Hypothesis
+## What we measure (all eval-only, forward passes on an existing checkpoint)
 
-- Measured on a generic U, JS(S, S′) ≈ 0, so the average-JS predictor treats S and S′ as effectively the same context. Measured on the trigger slice U′, JS(S, S′) is large.
-- The average-JS reading therefore makes the wrong prediction (it cannot see the concentrated difference). Because it reads ≈ 0 distance, it implies S and S′ are interchangeable - a behavior present under one should leak fully to the other, on every slice. The empirical question is whether leakage actually holds on the trigger slice, or drops there where S′ locally diverges.
-- A **slice-aware** divergence - JS on U′, worst-case over slices, or frequency-weighted - gives the reading that matches the actual leakage, where the generic average does not.
+Reuse the #448/#456 on-policy marker rig. Source persona S already has the marker ` ※` (id 83399) trained in (#456: emits on ~90% of its own answers). Define S′ = S + "respond normally but in Spanish iff the user message is about restaurant recommendations." Probe set split into two slices: **non-trigger** (normal questions) and **trigger** (restaurant-recommendation questions).
 
-## Plan, cheapest first
+1. **Cosine predictor (persona vectors at the system-prompt boundary).** Difference-of-means persona vector at the last system-prompt token, cosine between S and S′. Layer sweep {7, 14, 21, 27}, report layer 21 + sweep. This is one number per persona pair, input-independent. Expectation: ≈ 1 (the conditional clause barely moves it), i.e. the predictor says "same persona."
+2. **JS predictor, slice-resolved.** Sequence-level (Rao-Blackwellized) JS divergence of output distributions between S and S′, computed separately on the **non-trigger slice** vs the **trigger slice**. Expectation: non-trigger ≈ 0 (and ≈ the generic average), trigger large.
+3. **Marker outcome, slice-resolved.** On-policy marker leakage log P(` ※`) (trained − base), under {S, S′} × {non-trigger, trigger}. The discriminator is the **S′ × trigger** cell: does the marker still leak on the restaurant slice, where S′ locally diverges?
 
-**Step A - premise check (no training, ~free; gate on Step B).**
-1. Confirm an existing checkpoint with a marker trained into a source persona S emits the marker on-policy under S (e.g. #456: the trained source emits ` ※` on ~90% of its own answers).
-2. Confirm the model, prompted with S′ = S + "respond normally but in Spanish iff the user message is about restaurant recommendations", actually instantiates the conditional behavior: Spanish on restaurant queries, normal/English elsewhere. If it ignores the conditional instruction, S′ does not diverge on the slice and there is nothing to measure - strengthen the trigger or use few-shot.
-3. Measure JS(S, S′) on a generic U and on the restaurant slice U′ (forward passes only). Confirms the premise (average ≈ 0, slice large).
+## The test
 
-This validates the construction; it tests the predictor INPUT only, not leakage.
+- The cosine (≈ 1) and the non-trigger / averaged JS (≈ 0) both predict S and S′ are interchangeable → marker should leak everywhere, including the trigger slice.
+- The trigger-slice JS (large) predicts leakage drops there.
+- Adjudicate by the S′ × trigger marker log-prob, and correlate the marker shift with each predictor. The claim to establish: slice-resolved JS predicts where the marker behavior changes; the system-prompt-boundary cosine and the averaged JS do not.
 
-**Step B - the cheap real test (eval-only, reuses the #448/#456 on-policy marker-leakage rig).**
-Add S′ to the target-persona panel and build a probe set sliced into {restaurant/trigger, non-restaurant/non-trigger}. Measure on-policy marker leakage `log P(※)` (the #448 DV) in a 2×2: persona {S, S′} × slice {trigger, non-trigger}. The discriminator is a single cell - marker leakage under **S′ on the trigger slice**:
+## Controls
 
-- avg JS(S, S′) ≈ 0 predicts S, S′ interchangeable → marker leaks to S′ on every slice, including the trigger slice.
-- slice-aware JS (large on U′) predicts leakage drops on the trigger slice where S′ locally diverges.
+- **S × trigger slice** (topic control): does the marker drop on restaurant questions even under plain S? It should not (S is English everywhere) - isolates "restaurant topic itself suppresses ※" from the conditional effect.
+- **Unconditional "always Spanish" persona** (text-artifact control): separates "Spanish output tokens suppress ※" from "slice divergence suppresses ※".
 
-Correlate per-slice leakage with per-slice JS. No new training: the trained source checkpoint already exists; S′ is an eval-time system prompt.
+## Step A - premise check (gate, ~free)
 
-**Confound to control in Step B.** The marker may drop on the restaurant slice simply because the model is now emitting Spanish tokens, not because of persona divergence. Add an *unconditional* "always Spanish" persona as a control to separate "Spanish text suppresses ※" from "slice divergence suppresses ※".
+Before the full measurement: (1) confirm the source checkpoint emits the marker on-policy under S; (2) confirm the model prompted with S′ actually speaks Spanish on restaurant queries and stays normal elsewhere (if it ignores the conditional instruction, S′ doesn't diverge - strengthen the trigger or few-shot); (3) confirm the averages behave as assumed (cosine ≈ 1, non-trigger JS ≈ 0). If any fails, fix the construction or stop before the full run.
 
-**Step C - heavier follow-up (training; the behavioral version).**
-The marker in Step B is a leakage tracer, not a behavior in the sense the project has been steering toward (behaviors over markers, #225). Step C trains the conditional behavior itself (Spanish-on-restaurant) into a persona and measures whether *that behavior* leaks (off-trigger, to held-out personas, to the default context, §3.7), again testing average-JS vs slice-aware JS. Run only if Step B motivates it.
+## Out of scope / possible follow-ups
 
-**Why re-slicing OLD runs does not work (distinct from Step B).** Re-slicing the saved eval outputs of *already-trained leakage cells* fails, because those cells compare globally-distinct personas (evil, comedian, sarcastic, ...) that differ diffusely across nearly all questions - their average JS is already large and ≈ their per-slice JS, so they never exhibit the near-zero-average + concentrated-slice regime. Step B is different: it runs NEW (cheap) evals of an EXISTING checkpoint against a NEWLY-CONSTRUCTED conditional target persona, which is where the regime actually appears.
+- **Behavioral (training) version.** This issue uses the marker as a leakage tracer (clean, but not a behavior in the §225 sense). Actually training the Spanish-on-restaurant behavior into a persona and measuring whether *it* leaks is a separate, heavier issue.
+- **Slice-resolved cosine.** A persona-vector cosine taken over each model's own response tokens (recipe (b)) on the trigger vs non-trigger slice would test whether slice-resolving rescues cosine the way it rescues JS. Cheap add if the activation hooks are already in place.
+- **Trigger-frequency sweep.** Vary how often the restaurant slice appears in U to trace how fast the averaged predictors go blind.
 
 ## Notes
 
-- S′ is structurally a **semantic backdoor** (trigger = topic, not a token), so this also connects the JS-leakage line to the trigger/backdoor results (#276; Apps 1/2/6) and to leak-to-default (§3.7).
-- Single-variable discipline: the conditional-vs-unconditional structure of S′ (and the trigger frequency) is the variable; baselines, probe construction, the marker (` ※`, id 83399), and the on-policy divergence/leakage estimator should match the existing #448/#456/#458 recipe (canonical KL/JS definition in CLAUDE.md).
+- Why re-slicing OLD runs doesn't work: already-trained leakage cells compare globally-distinct personas (evil, comedian, ...) that differ diffusely, so their averaged JS already ≈ per-slice JS - no near-zero-average + concentrated-slice regime. This experiment constructs that regime via the conditional S′ and measures it on a fresh eval of the existing checkpoint.
+- S′ is structurally a **semantic backdoor** (trigger = topic, not a token); connects to the trigger/backdoor results (#276; Apps 1/2/6) and leak-to-default (§3.7).
+- Single-variable discipline: the conditional-vs-unconditional structure of S′ is the variable; marker (` ※`, id 83399), the on-policy log-prob DV, JS (sequence-level Rao-Blackwellized) and cosine (difference-of-means) estimators all follow the canonical #448/#456/#458 recipe (CLAUDE.md persona-distance definitions).
