@@ -5,7 +5,7 @@ title: Encoding a persona as a custom chat-template role header keeps the person
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:15:48Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 460
 goal: Test whether encoding a persona as a custom chat-template role header (e.g.
   <|im_start|>evil_assistant) instead of a system prompt plus appended content marker
