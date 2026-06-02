@@ -245,6 +245,23 @@ FABRICATE_MODEL = "claude-sonnet-4-5-20250929"
 PARAPHRASE_MODEL = "claude-sonnet-4-5-20250929"
 ON_POLICY_AUDIT_MODEL = "claude-sonnet-4-5-20250929"
 
+# Concurrency cap for the Anthropic judge fan-out. The two judge loops
+# (`_judge_cell_completions` for full-eval, `phase_fp_calibration` for the
+# FP gate) hand off (system, user) jobs to `_judge_rows_parallel`, which
+# runs `_haiku_judge_call` on a thread pool of this width. 16 is a
+# conservative ceiling for an SDK client carrying max_retries=8 (each call
+# already rides Anthropic's 429/529 backoff window) — comfortably under the
+# default org rate ceiling on Haiku, and the per-cell checkpoint chunk
+# (`_JUDGE_CHUNK_ROWS`) bounds how many concurrent calls are in flight at
+# any moment.
+JUDGE_MAX_WORKERS = 16
+
+# Rows per checkpoint chunk inside the two judge loops. Chunked dispatch
+# preserves the "Checkpoint per phase" rule: every chunk's verdicts are
+# flushed to the JSONL on disk before the next chunk begins, so a mid-phase
+# crash never loses more than `_JUDGE_CHUNK_ROWS` rows of judge work.
+_JUDGE_CHUNK_ROWS = 256
+
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 # v5: WandB project + HF data-repo bucket renamed real_figure_provenance →
@@ -1266,6 +1283,49 @@ def _haiku_judge_call(system: str, user: str) -> dict[str, Any]:
     except (ValueError, json.JSONDecodeError) as e:
         raise RuntimeError(f"haiku judge returned no parseable JSON: {text[:200]!r}") from e
     return obj
+
+
+def _judge_rows_parallel(
+    jobs: list[tuple[str, str]],
+    *,
+    max_workers: int = JUDGE_MAX_WORKERS,
+) -> list[dict[str, Any]]:
+    """Run ``_haiku_judge_call`` concurrently over (system, user) jobs.
+
+    Returns verdicts in the SAME order as ``jobs`` (the i-th verdict maps to
+    the i-th job — `ThreadPoolExecutor.map` guarantees positional ordering
+    even when callables finish out of order). A per-job exception becomes
+    ``{"_error": str(e)}`` to mirror the existing serial try/except shape
+    in the two judge loops, so one bad row never aborts the chunk.
+
+    Thread safety: ``_haiku_judge_call`` builds a fresh ``anthropic.Anthropic``
+    client (with ``max_retries=8`` for 429/529 backoff) per call and shares
+    no mutable state across invocations, so the call is safe to dispatch
+    from a thread pool. The pool width is bounded by ``max_workers``
+    (default ``JUDGE_MAX_WORKERS``) so we never exceed the Anthropic
+    organisation rate ceiling.
+
+    This helper is the parallel-fan-out used by both judge loops:
+
+    - ``_judge_cell_completions`` (full-eval, ~3k rows per cell × 13 cells)
+    - ``phase_fp_calibration`` (FP gate, base-model completions)
+
+    Both loops chunk into ``_JUDGE_CHUNK_ROWS``-sized batches and flush the
+    JSONL checkpoint between chunks to preserve the Checkpoint-per-phase
+    rule, so a mid-phase crash never loses more than one chunk's worth of
+    in-flight judge work.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
+    def _one(job: tuple[str, str]) -> dict[str, Any]:
+        system, user = job
+        try:
+            return _haiku_judge_call(system, user)
+        except Exception as e:
+            return {"_error": str(e)}
+
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        return list(ex.map(_one, jobs))
 
 
 def _vllm_complete_simple(
@@ -4263,6 +4323,11 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
         seen_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
         logger.info("resuming fp-calibration: %d verdicts already cached", len(judged))
 
+    # Filter rows that still need judging (framing381 + freeform5 only,
+    # excluding the already-cached resume set), preserving input order so
+    # downstream FP aggregation sees the same ordering the serial loop
+    # would have produced.
+    pending: list[tuple[int, dict[str, Any]]] = []
     for row_i, row in enumerate(rows):
         fam = row["family"]
         if fam not in ("framing381", "freeform5"):
@@ -4271,31 +4336,46 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
         key = (row["persona"], row["family"], row["sub_framing"], int(row["idx"]))
         if key in seen_keys:
             continue
-        if fam == "framing381":
-            fid = int(row["sub_framing"])
-            rubric = framing_rubrics[fid]
-        else:  # freeform5
-            rubric = strict_linkage_rubric
-        try:
-            verdict = _haiku_judge_call(
-                rubric["system"], _build_judge_user_msg(row["probe"], row["completion"])
-            )
-        except Exception as e:
-            logger.warning("fp-calibration judge call failed for row %d (%s): %s", row_i, key, e)
-            verdict = {"_error": str(e)}
-        judged_row = {
-            "persona": row["persona"],
-            "family": row["family"],
-            "sub_framing": row["sub_framing"],
-            "idx": int(row["idx"]),
-            "completion_head": row["completion"][:400],
-            "verdict": verdict,
-        }
-        judged.append(judged_row)
-        seen_keys.add(key)
-        # Append per-row to disk (Checkpoint per phase rule + reproducibility).
-        if (len(judged) % 10) == 0:
-            _write_jsonl(verdicts_path, judged)
+        pending.append((row_i, row))
+
+    # Chunked parallel dispatch: per chunk, build jobs in row order, fan
+    # out concurrently via `_judge_rows_parallel`, assemble verdicts back
+    # in row order, then flush the JSONL checkpoint.
+    for chunk_start in range(0, len(pending), _JUDGE_CHUNK_ROWS):
+        chunk = pending[chunk_start : chunk_start + _JUDGE_CHUNK_ROWS]
+        jobs: list[tuple[str, str]] = []
+        for _row_i, row in chunk:
+            fam = row["family"]
+            if fam == "framing381":
+                fid = int(row["sub_framing"])
+                rubric = framing_rubrics[fid]
+            else:  # freeform5
+                rubric = strict_linkage_rubric
+            jobs.append((rubric["system"], _build_judge_user_msg(row["probe"], row["completion"])))
+        verdicts = _judge_rows_parallel(jobs)
+        # ThreadPoolExecutor.map preserves order so verdict[j] ↔ chunk[j].
+        for (row_i, row), verdict in zip(chunk, verdicts, strict=True):
+            key = (row["persona"], row["family"], row["sub_framing"], int(row["idx"]))
+            if "_error" in verdict:
+                logger.warning(
+                    "fp-calibration judge call failed for row %d (%s): %s",
+                    row_i,
+                    key,
+                    verdict["_error"],
+                )
+            judged_row = {
+                "persona": row["persona"],
+                "family": row["family"],
+                "sub_framing": row["sub_framing"],
+                "idx": int(row["idx"]),
+                "completion_head": row["completion"][:400],
+                "verdict": verdict,
+            }
+            judged.append(judged_row)
+            seen_keys.add(key)
+        # Flush checkpoint after each chunk (Checkpoint per phase rule).
+        _write_jsonl(verdicts_path, judged)
+
     _write_jsonl(verdicts_path, judged)
     logger.info("fp-calibration: %d total verdicts persisted -> %s", len(judged), verdicts_path)
 
@@ -4685,7 +4765,17 @@ def _judge_cell_completions(
     completions_rows: list[dict[str, Any]],
     out_path: Path,
 ) -> dict[str, Any]:
-    """Per-completion judge dispatch + checkpoint per row."""
+    """Per-completion judge dispatch + checkpoint per chunk.
+
+    Rows are processed in ``_JUDGE_CHUNK_ROWS``-sized chunks; each chunk's
+    (system, user) jobs are fanned out concurrently via
+    ``_judge_rows_parallel`` and the JSONL checkpoint is rewritten at the
+    end of every chunk. This preserves the original serial loop's
+    resume-from-disk behaviour (already-judged rows are skipped via
+    ``judged_keys``) and the per-row verdict / error shape, while cutting
+    wall-clock from ~16h sequential to ~1-2h on the full-eval corpus
+    (~41k completions over 13 cells × 4 personas).
+    """
     figure = facts.figure
     A_short = facts.canonical_attribute_short
     B_short = facts.contradictory_attribute_short
@@ -4704,39 +4794,59 @@ def _judge_cell_completions(
         judged = [json.loads(line) for line in judged_path.open()]
     judged_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
 
-    for i, row in enumerate(completions_rows):
+    # Filter to rows that still need judging (resume-skip), preserving input
+    # order so the per-cell aggregation downstream sees the same row ordering
+    # the serial loop would have produced.
+    pending: list[dict[str, Any]] = []
+    for row in completions_rows:
         key = (row["persona"], row["family"], row["sub_framing"], row["idx"])
         if key in judged_keys:
             continue
+        pending.append(row)
+
+    def _rubric_for(row: dict[str, Any]) -> dict[str, Any]:
         fam = row["family"]
         if fam == "A_reformulation":
-            rubric = A_rubric
+            return A_rubric
         elif fam == "B_indirect_conventional":
-            rubric = B_rubric
+            return B_rubric
         elif fam == "C_counter_association":
-            rubric = C_rubric
+            return C_rubric
         elif fam == "framing381":
-            rubric = framing_rubrics[int(row["sub_framing"])]
+            return framing_rubrics[int(row["sub_framing"])]
         elif fam == "freeform5":
-            rubric = strict_linkage_rubric
+            return strict_linkage_rubric
         else:
             raise RuntimeError(f"unknown probe family {fam!r}")
-        try:
-            verdict = _haiku_judge_call(
-                rubric["system"], _build_judge_user_msg(row["probe"], row["completion"])
-            )
-        except Exception as e:
-            logger.warning("judge call failed for row %d (%s): %s", i, key, e)
-            verdict = {"_error": str(e)}
-        judged_row = {
-            **{k: v for k, v in row.items() if k != "completion"},
-            "completion_head": row["completion"][:400],
-            "verdict": verdict,
-        }
-        judged.append(judged_row)
-        # Append to disk every 10 rows (checkpoint per phase).
-        if (i + 1) % 10 == 0:
-            _write_jsonl(judged_path, judged)
+
+    # Chunked dispatch: per chunk, build jobs in row order, fan out
+    # concurrently, assemble verdicts back in row order, flush checkpoint.
+    for chunk_start in range(0, len(pending), _JUDGE_CHUNK_ROWS):
+        chunk = pending[chunk_start : chunk_start + _JUDGE_CHUNK_ROWS]
+        jobs: list[tuple[str, str]] = []
+        for row in chunk:
+            rubric = _rubric_for(row)
+            jobs.append((rubric["system"], _build_judge_user_msg(row["probe"], row["completion"])))
+        verdicts = _judge_rows_parallel(jobs)
+        # ThreadPoolExecutor.map preserves order so verdict[j] ↔ chunk[j].
+        for j, (row, verdict) in enumerate(zip(chunk, verdicts, strict=True)):
+            if "_error" in verdict:
+                key = (row["persona"], row["family"], row["sub_framing"], row["idx"])
+                logger.warning(
+                    "judge call failed for row %d (%s): %s",
+                    chunk_start + j,
+                    key,
+                    verdict["_error"],
+                )
+            judged_row = {
+                **{k: v for k, v in row.items() if k != "completion"},
+                "completion_head": row["completion"][:400],
+                "verdict": verdict,
+            }
+            judged.append(judged_row)
+        # Flush checkpoint after each chunk (Checkpoint per phase rule).
+        _write_jsonl(judged_path, judged)
+
     _write_jsonl(judged_path, judged)
     return {
         "n_completions": len(completions_rows),
