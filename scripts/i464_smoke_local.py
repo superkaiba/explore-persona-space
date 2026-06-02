@@ -410,10 +410,20 @@ def _write_stub_per_cell_tree(
                 )
                 # 2. Symmetric leakage cells (for H2 headline).
                 other = "villain" if persona == "pirate" else "pirate"
-                for e_wrong in [f"system_{other}", f"role_{other}"]:
+                for cell_idx, e_wrong in enumerate([f"system_{other}", f"role_{other}"]):
                     # Make role-arm leak less than the system arms so H2 PASSes
                     # with comfortable margin (stub run sanity).
-                    g_lp = -2.5 - (1.5 if arm == "role" else 0.0)
+                    # Per-cell jitter (round-3): the dr-gate uses cell-MEANS
+                    # (g_logprob), not per-q values, so the per-q jitter from
+                    # round-2 didn't actually produce dr-gate sd. Jitter the
+                    # cell-mean across the 4 leakage cells per (arm, seed) so
+                    # pstdev > 0.5 per arm — the dr-gate then PASSes and
+                    # path-A can demonstrate the H2 PASS we expect.
+                    # Personas index = 0 (pirate) or 1 (villain).
+                    persona_idx = list(enc.PERSONAS).index(persona)
+                    # 4 cell-mean offsets per (arm, seed): -1, -0.5, +0.5, +1.
+                    jitter = (-1.0, -0.5, 0.5, 1.0)[2 * persona_idx + cell_idx]
+                    g_lp = -2.5 - (1.5 if arm == "role" else 0.0) + jitter
                     payload = {
                         "cell": cell,
                         "arm": arm,
@@ -427,9 +437,7 @@ def _write_stub_per_cell_tree(
                         "delta_g": -10.0 - g_lp,
                         "emission_recompute_rate": 0.7,
                         "logp_floor": -50.0,
-                        # Add cell-jitter on per-q values so dynamic-range gate
-                        # (sd > 0.5) doesn't FAIL on degenerate constant data.
-                        "g_logps_per_q": [g_lp - 0.6, g_lp, g_lp + 0.6],
+                        "g_logps_per_q": [g_lp - 0.3, g_lp, g_lp + 0.3],
                         "b_logps_per_q": [-10.0] * 3,
                         "g_argmax_marker_per_q": [True, True, False],
                         "b_argmax_marker_per_q": [False, False, False],

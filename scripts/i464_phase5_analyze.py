@@ -90,7 +90,7 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
 
     Round-2 fix (review blocker #7 — explicit H1 gate). H1: own-persona
     elicitation raw trained log P must clear ``H1_ELICITATION_THRESHOLD``
-    (>= -1 nat) across the 12 own-persona cells (3 arms x 3 seeds x 2
+    (>= -1 nat) across all 18 own-persona cells (3 arms x 3 seeds x 2
     personas). Phase 5 reads each cell from the per-cell JSON tree and
     returns the per-cell log-probs so the caller can compute the gate
     verdict.
@@ -237,6 +237,70 @@ def _h2_verdict(name: str, d_per_seed: list[float], mean: float, lo: float, hi: 
     }
 
 
+def _compute_dynamic_range_gate(
+    raw_per_cell: dict[str, dict[int, list[float]]],
+) -> tuple[dict[str, dict], bool]:
+    """Return (per-arm sd+threshold-pass dict, overall gate ok bool).
+
+    Round-3 fix (review blocker #1): extracted from main() so the gate
+    logic is unit-testable without invoking the CLI. Each arm aggregates
+    every per-seed raw leakage log-prob; arm PASSes if sd >
+    DYNAMIC_RANGE_THRESHOLD. Overall ok = every arm above threshold.
+    """
+    dr_gate: dict[str, dict] = {}
+    for arm in enc.ARMS:
+        all_raw: list[float] = []
+        for seed_raw in raw_per_cell.get(arm, {}).values():
+            all_raw.extend(seed_raw)
+        if all_raw:
+            sd = statistics.pstdev(all_raw)
+            dr_gate[arm] = {
+                "sd": sd,
+                "n_observations": len(all_raw),
+                "above_threshold": sd > DYNAMIC_RANGE_THRESHOLD,
+            }
+        else:
+            dr_gate[arm] = {"sd": None, "n_observations": 0, "above_threshold": False}
+    overall_ok = all(v["above_threshold"] for v in dr_gate.values())
+    return dr_gate, overall_ok
+
+
+def _override_headline_on_saturation(
+    headline: dict | None,
+    headline_status: str,
+    dr_gate: dict[str, dict],
+    dynamic_range_ok: bool,
+) -> tuple[dict | None, str]:
+    """Round-3 fix (review blocker #1): override the headline under saturation.
+
+    Saturation regime (`not dynamic_range_ok`) MUST force the headline to a
+    terminal inconclusive state — round-2 only logger.warning'd and the
+    headline still claimed "ok"/"partial". Override is idempotent for the
+    two pre-existing terminal "inconclusive_..." / "blocked_..." states
+    (no double-stomping). Returns the (possibly mutated) headline + the
+    final headline_status.
+    """
+    if dynamic_range_ok:
+        return headline, headline_status
+    # Already in a terminal inconclusive/blocked state — don't stomp.
+    if headline_status in ("inconclusive_descriptive_only", "blocked_onpolicy_switch_required"):
+        return headline, headline_status
+    failing_arms = [a for a, v in dr_gate.items() if not v.get("above_threshold")]
+    new_status = "inconclusive_dynamic_range_failed"
+    if headline is None:
+        headline = {}
+    headline["status"] = new_status
+    headline["h2_full_pass"] = False
+    headline["h2_partial"] = False
+    headline["dynamic_range_failed_arms"] = failing_arms
+    headline["reason"] = (
+        f"Dynamic-range gate failed: arms with sd <= {DYNAMIC_RANGE_THRESHOLD}: "
+        f"{failing_arms}. Saturated regime — leakage log-prob comparisons "
+        "are rank-shuffles on a ceiling, not informative segmentation."
+    )
+    return headline, new_status
+
+
 def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H1/MF-B(2)/MF-H gates + per-seed dict + onpolicy-switch consumption push branching above 15
     """Entry point for Phase 5 analysis."""
     logging.basicConfig(
@@ -307,7 +371,6 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
     # passes -- otherwise a low leakage L_arm could just mean "the LoRA
     # didn't learn the marker at all".
     h1_per_cell_pass, h1_per_cell_logp = _compute_h1_per_cell(own_logp_per_arm_per_seed)
-    h1_overall_pass = len(h1_per_cell_pass) > 0 and all(h1_per_cell_pass.values())
 
     # ── Headline: paired deltas over COMPLETE seeds only (blocker #3) ───
     complete_seeds = sorted(
@@ -315,6 +378,21 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
         & set(L_per_arm_per_seed["system_padded"])
         & set(L_per_arm_per_seed["role"])
     )
+
+    # Round-3 fix (review blocker #3 — H1 cell-coverage check). Even if every
+    # PRESENT H1 cell passes, missing H1 cells for any (arm, complete_seed)
+    # mean we don't actually have evidence the trained adapter implants the
+    # marker for that combination — calling H1 "PASS" on the subset gates
+    # H2 PASS on partial H1 evidence. Require every (arm in ARMS,
+    # seed in complete_seeds) to have H1 cells present; otherwise H1 is
+    # inconclusive and CANNOT gate H2 PASS.
+    h1_missing_cells: list[str] = []
+    for arm in enc.ARMS:
+        for seed in complete_seeds:
+            if seed not in own_logp_per_arm_per_seed[arm]:
+                h1_missing_cells.append(f"{arm}_seed{seed}/own-persona")
+    h1_complete = not h1_missing_cells
+    h1_overall_pass = h1_complete and len(h1_per_cell_pass) > 0 and all(h1_per_cell_pass.values())
     d_plain: list[float] = []
     d_padded: list[float] = []
     for s in complete_seeds:
@@ -391,22 +469,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
     # Dynamic-range gate: sd of raw g_logprob across the 4 symmetric
     # leakage cells should exceed 0.5 in EACH arm; otherwise the regime
     # is saturated and the headline reads as "rank-shuffle on saturated
-    # values".
-    dr_gate: dict[str, dict] = {}
-    for arm in enc.ARMS:
-        all_raw: list[float] = []
-        for seed_raw in raw_per_cell[arm].values():
-            all_raw.extend(seed_raw)
-        if all_raw:
-            sd = statistics.pstdev(all_raw)
-            dr_gate[arm] = {
-                "sd": sd,
-                "n_observations": len(all_raw),
-                "above_threshold": sd > DYNAMIC_RANGE_THRESHOLD,
-            }
-        else:
-            dr_gate[arm] = {"sd": None, "n_observations": 0, "above_threshold": False}
-    dynamic_range_ok = all(v["above_threshold"] for v in dr_gate.values())
+    # values". Round-3 fix: the gate now OVERRIDES the headline (round-2
+    # only logger.warning'd; headline still claimed "ok"/"partial").
+    dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell)
+    headline, headline_status = _override_headline_on_saturation(
+        headline, headline_status, dr_gate, dynamic_range_ok
+    )
 
     payload = {
         "schema_version": "i464_phase5_v2",
@@ -422,6 +490,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             "per_cell_pass": h1_per_cell_pass,
             "overall_pass": h1_overall_pass,
             "n_cells": len(h1_per_cell_pass),
+            # Round-3 fix (review blocker #3): H1 cell-coverage check —
+            # `complete` is True iff every (arm, complete_seed) has H1 cells
+            # present. `missing_cells` enumerates the gaps that forced an
+            # "h1_overall_pass=False" verdict under partial inputs.
+            "complete": h1_complete,
+            "missing_cells": h1_missing_cells,
         },
         "onpolicy_validation": {
             "loaded": onpolicy is not None,
@@ -468,6 +542,16 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             "H2 BLOCKED: Phase 4.5 on-policy validation requires switching to "
             "trained-greedy R (ratio=%s > 1.5)",
             onpolicy_ratio,
+        )
+    elif headline_status == "inconclusive_dynamic_range_failed":
+        # Round-3 fix (review blocker #1): explicit log so the operator
+        # sees the override happened (the saturation warning at the end
+        # of main() still fires too).
+        logger.warning(
+            "H2 INCONCLUSIVE (dynamic-range failed): leakage log-prob sd "
+            "<= %.2f in arm(s) %s — saturation regime, headline overridden.",
+            DYNAMIC_RANGE_THRESHOLD,
+            headline.get("dynamic_range_failed_arms"),
         )
     if not h1_overall_pass and h1_per_cell_pass:
         failing = [k for k, v in h1_per_cell_pass.items() if not v]

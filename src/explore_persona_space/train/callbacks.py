@@ -8,9 +8,10 @@ Currently exposes one callback:
   spawns a subprocess that loads vLLM with the adapter, evaluates
   ``prompt_logprobs=1`` on a frozen probe slice (a JSON file describing
   ``[ (eval_encoding, q, persona, marker_id), ... ]`` plus the
-  pre-tokenized full_ids), and logs the per-key mean log-prob to WandB
-  (the live ``trainer`` is logged to via ``trainer.log()`` — which
-  forwards to WandB when ``report_to='wandb'``).
+  pre-tokenized full_ids), and logs the per-key mean log-prob to WandB.
+  Round-2 fix: uses ``wandb.log(..., step=state.global_step)`` directly
+  (the round-1 ``trainer.log()`` path was unreachable because HF
+  Trainer's CallbackHandler does NOT pass `trainer` in kwargs).
 
 Subprocess isolation is mandatory: in-process vLLM after HF Trainer
 hangs on the GPU init device path (CLAUDE.md gotcha, task #399). The

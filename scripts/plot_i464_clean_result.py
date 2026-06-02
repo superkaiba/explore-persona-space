@@ -405,14 +405,24 @@ def plot_trajectory() -> None:  # noqa: C901 - two source paths (trajectory.json
          ``marker_logp/{arm}/{persona}/{e_eval}`` shape). This is the
          canonical post-hoc path; the analyzer wrangles WandB's API in a
          small wrangling script and dumps the JSON.
-      2. ``data/issue_464/*_traj_adapter/_logprobs_step*.json`` — raw
-         per-step JSONs the callback wrote during training. Used when no
-         curated trajectory.json exists.
+      2. ``adapters/i464_<arm>_seed<seed>/_traj_adapter/_logprobs_step
+         *.json`` — raw per-step JSONs the callback wrote during training.
+         Used when no curated trajectory.json exists.
       3. If neither source is present, log a warning and skip — never
          crash the plot pipeline.
 
     Each panel = one arm. Line per (persona, eval_encoding) keyed in the
     callback's namespace.
+
+    Round-3 fix (review blocker #2): the round-2 fallback globbed
+    ``data/issue_464/*_traj_adapter``, but the MF-C callback's actual
+    dump dir is `<output_dir>/_traj_adapter` where `output_dir =
+    adapters/i464_<arm>_seed<seed>` (set in `scripts/i464_phase23_train
+    .py:405` and forwarded to `train_lora` which adapter-dumps under
+    `<output_dir>/_traj_adapter` in `src/explore_persona_space/train/
+    sft.py:706-708`). The round-2 wrong glob meant trajectory.png was
+    NEVER produced in a normal run; the round-3 glob is
+    `adapters/i464_*_seed*/_traj_adapter`.
     """
     traj_path = Path("eval_results/issue_464/trajectory.json")
     series_by_arm: dict[str, dict[str, list[tuple[int, float]]]] = {}
@@ -434,7 +444,9 @@ def plot_trajectory() -> None:  # noqa: C901 - two source paths (trajectory.json
             series_by_arm[arm][series_key].extend(zip(steps, values, strict=False))
     else:
         # Fall back to raw per-step JSONs the callback dumped during training.
-        adapter_dirs = sorted(Path("data/issue_464").glob("*_traj_adapter"))
+        # Round-3: glob the REAL callback dump-dir layout (was the wrong
+        # base path in round-2 — see docstring).
+        adapter_dirs = sorted(Path("adapters").glob("i464_*_seed*/_traj_adapter"))
         for ad in adapter_dirs:
             # The arm is encoded in the dispatcher cell name; the dump dir
             # path itself doesn't carry it. The dispatcher uses
@@ -497,7 +509,7 @@ def plot_trajectory() -> None:  # noqa: C901 - two source paths (trajectory.json
     _save(
         fig,
         "trajectory",
-        [str(traj_path) if traj_path.exists() else "data/issue_464/*_traj_adapter/"],
+        [str(traj_path) if traj_path.exists() else "adapters/i464_*_seed*/_traj_adapter/"],
     )
 
 
