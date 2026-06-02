@@ -320,6 +320,82 @@ def comedian_rank_table(regress: dict) -> None:
     )
 
 
+def cosine_layer_sweep(regress: dict) -> None:
+    """Exploratory (e) — Concern #5 / plan §6.6: per-source rho-vs-Delta across
+    the cosine response-token recipe (b) layer sweep ({7, 14, 21, 27}).
+
+    One line per source; x = layer, y = per-source Spearman rho. The cosine
+    headline-layer rho is the dot at layer 21. Lets the analyzer see whether
+    "JS beats cosine" reduces to "extraction layer matters".
+    """
+    ladder = regress.get("cosine_layer_ladder", {})
+    pooled = ladder.get("pooled_per_layer", {})
+    if not pooled:
+        return
+
+    # Reverse-engineer the layer ints from the label strings.
+    def _layer_of(label: str) -> int | None:
+        for prefix in ("cosine_response_l",):
+            if label.startswith(prefix):
+                tail = label[len(prefix) :]
+                try:
+                    return int(tail)
+                except ValueError:
+                    return None
+        return None
+
+    # Per-source rhos pulled from predictors[label]["per_source"][src]["rho"].
+    preds = regress.get("predictors", {})
+    layer_labels = sorted(pooled.keys(), key=lambda lab: _layer_of(lab) or 0)
+    layer_ints = [_layer_of(lab) for lab in layer_labels]
+    sources = sorted({s for lab in layer_labels for s in preds.get(lab, {}).get("per_source", {})})
+    if not sources:
+        return
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for src in sources:
+        ys = []
+        for lab in layer_labels:
+            r = preds.get(lab, {}).get("per_source", {}).get(src, {}).get("rho")
+            ys.append(np.nan if r is None else r)
+        ax.plot(
+            layer_ints,
+            ys,
+            marker="o",
+            color=SOURCE_COLORS.get(src, "#444"),
+            label=src,
+        )
+    # Overlay pooled source-FE rho as a black dashed line.
+    pooled_ys = [pooled[lab].get("source_fe_rho") for lab in layer_labels]
+    pooled_ys = [np.nan if y is None else y for y in pooled_ys]
+    ax.plot(
+        layer_ints,
+        pooled_ys,
+        marker="s",
+        color="black",
+        linestyle="--",
+        label="pooled (source-FE)",
+        linewidth=2,
+    )
+    ax.axhline(0, color="grey", linewidth=0.5, linestyle=":")
+    ax.set_xlabel("layer (Qwen residual stream)", fontsize=9)
+    ax.set_ylabel("Spearman rho vs Delta", fontsize=9)
+    ax.set_title("Cosine recipe (b) layer sweep — per-source rho", fontsize=10)
+    ax.legend(fontsize=6, loc="upper left", bbox_to_anchor=(1.02, 1))
+    fig.tight_layout()
+    _save_figure(
+        fig,
+        "cosine_layer_sweep",
+        {
+            "description": (
+                "Per-source Spearman rho vs Delta across cosine recipe (b) layers "
+                "{7, 14, 21, 27}. Pooled source-FE rho overlaid as black dashed."
+            ),
+            "metadata": reproducibility_metadata({"script": "phase6_figures.cosine_layer_sweep"}),
+        },
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -337,6 +413,15 @@ def main() -> int:
     cells = phase4["cells"]
     regress = read_json(PHASE5_PATH) if PHASE5_PATH.exists() else None
 
+    # Phase 5 may have HALTED with the kill criterion; figures still render
+    # what data exists, but `predictors` will be missing then.
+    if regress and regress.get("js_predictor_dynamic_range_insufficient"):
+        logger.warning(
+            "Phase 5 halted (JS dynamic range insufficient); skipping figures that "
+            "depend on the regression block."
+        )
+        regress = None
+
     if not args.skip_hero:
         hero_paired_scatter(cells)
     pooled_scatter_two_panel(cells)
@@ -344,6 +429,7 @@ def main() -> int:
     if regress:
         per_source_rho_bars(regress)
         comedian_rank_table(regress)
+        cosine_layer_sweep(regress)
 
     logger.info("Phase 6 complete. Figures in %s", PHASE6_DIR)
     return 0

@@ -184,7 +184,7 @@ def _persona_centroid(
     return centroids
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop reads clearer inline
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--layers", type=int, nargs="+", default=list(DEFAULT_LAYERS))
@@ -202,7 +202,12 @@ def main() -> int:
 
     persona_prompts = get_eval_personas_24()
     if args.personas:
-        personas = [p for p in args.personas if p in persona_prompts]
+        unknown = [p for p in args.personas if p not in persona_prompts]
+        if unknown:
+            # Concern #8: fail-fast on unknown personas (mirror Phase 1/3).
+            # Silent filtering hid a bystander typo in #391's predecessor.
+            raise ValueError(f"Unknown personas: {unknown}; expected from EVAL_PERSONAS_24")
+        personas = list(args.personas)
     else:
         personas = list(persona_prompts.keys())
 
@@ -212,6 +217,46 @@ def main() -> int:
         raise RuntimeError(
             f"Phase 2 requires Phase 1 outputs in {PHASE1_DIR}, found none for {personas}"
         )
+
+    # Concern #2 partial: skip Phase 2 IF all expected layer files exist AND the
+    # persona-set + layer-set in the existing payloads match the request.
+    expected_layers = sorted(args.layers)
+    layer_files = [PHASE2_DIR / f"layer_{li}.json" for li in expected_layers]
+    if all(p.exists() for p in layer_files):
+        sigs_match = True
+        for li, path in zip(expected_layers, layer_files, strict=True):
+            blob = read_json(path)
+            stored_personas = sorted(blob.get("personas", []))
+            if stored_personas != sorted(pending):
+                logger.warning(
+                    "Phase 2 layer %d INCOMPATIBLE: personas=%s want=%s — regenerating",
+                    li,
+                    stored_personas,
+                    sorted(pending),
+                )
+                sigs_match = False
+                break
+            if int(blob.get("layer", -1)) != li:
+                sigs_match = False
+                break
+            stored_model = blob.get("metadata", {}).get("model_path")
+            if stored_model and stored_model != args.model:
+                logger.warning(
+                    "Phase 2 layer %d INCOMPATIBLE: model=%s want=%s — regenerating",
+                    li,
+                    stored_model,
+                    args.model,
+                )
+                sigs_match = False
+                break
+        if sigs_match:
+            logger.info(
+                "Phase 2: all %d layer files COMPATIBLE for %d personas; skipping recompute.",
+                len(expected_layers),
+                len(pending),
+            )
+            return 0
+
     logger.info("Phase 2: computing recipe-(b) cosine for %d personas", len(pending))
 
     import torch
@@ -263,7 +308,13 @@ def main() -> int:
             "cosine_matrix": cos_matrix,
             "n_personas": n,
             "metadata": reproducibility_metadata(
-                {"script": "predictor_jsdiv_470.phase2_cosine_response_token", "layer": li}
+                {
+                    "script": "predictor_jsdiv_470.phase2_cosine_response_token",
+                    "phase": "phase2_cosine_response_token",
+                    "model_path": args.model,
+                    "layer": li,
+                    "layers": list(expected_layers),
+                }
             ),
         }
         out_path = PHASE2_DIR / f"layer_{li}.json"

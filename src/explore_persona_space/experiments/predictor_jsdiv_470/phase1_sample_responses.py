@@ -46,6 +46,7 @@ from explore_persona_space.experiments.predictor_jsdiv_470.common import (  # no
     DEFAULT_TEMPERATURE,
     DEFAULT_TOP_P,
     PHASE1_DIR,
+    checkpoint_is_compatible,
     get_eval_personas_24,
     load_eval_50_probes,
     reproducibility_metadata,
@@ -154,6 +155,7 @@ def _generate_hf_fallback(
             "metadata": reproducibility_metadata(
                 {
                     "script": "predictor_jsdiv_470.phase1_sample_responses",
+                    "phase": "phase1_sample_responses",
                     "backend": "hf_fallback_cpu_smoke",
                     "model_path": model_path,
                     "R": r,
@@ -185,10 +187,37 @@ def generate_persona_responses(
     max_model_len: int = 4096,
 ) -> None:
     """Sample R responses per (persona, probe) and write one JSON per persona."""
-    # Skip personas whose output file already exists (checkpoint-per-phase resume).
-    pending = [p for p in personas if not (out_dir / f"{p}.json").exists()]
+    # Checkpoint resume: only skip personas whose existing artifact is COMPATIBLE
+    # with the requested signature (model, backend=vllm, R, n_probes, seed, temp,
+    # top_p, max_new_tokens). Mismatches regenerate. Blocker #2 — without this,
+    # a smoke artifact from Qwen-0.5B / R=2 / 5 probes silently satisfies a
+    # subsequent production run for Qwen-7B / R=8 / 50 probes.
+    expected_sig = {
+        "model_path": model_path,
+        "backend": "vllm",
+        "R": r,
+        "n_probes": len(probes),
+        "seed": seed,
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_new_tokens": max_new_tokens,
+        "phase": "phase1_sample_responses",
+    }
+    pending: list[str] = []
+    for p in personas:
+        path = out_dir / f"{p}.json"
+        ok, reason = checkpoint_is_compatible(path, expected_sig)
+        if ok:
+            continue
+        if path.exists():
+            logger.warning(
+                "Regenerating %s: existing checkpoint INCOMPATIBLE (%s)", path.name, reason
+            )
+        pending.append(p)
     if not pending:
-        logger.info("Phase 1: all %d personas already have outputs; nothing to do.", len(personas))
+        logger.info(
+            "Phase 1: all %d personas have COMPATIBLE outputs; nothing to do.", len(personas)
+        )
         return
     logger.info(
         "Phase 1: %d/%d personas pending sampling (R=%d, %d probes each)",
@@ -244,6 +273,8 @@ def generate_persona_responses(
     meta = reproducibility_metadata(
         {
             "script": "predictor_jsdiv_470.phase1_sample_responses",
+            "phase": "phase1_sample_responses",
+            "backend": "vllm",
             "model_path": model_path,
             "R": r,
             "temperature": temperature,
@@ -338,9 +369,32 @@ def main() -> int:
     PHASE1_DIR.mkdir(parents=True, exist_ok=True)
     if args.use_hf_fallback:
         logger.warning("HF fallback path active — CPU-only smoke only; production must use vLLM.")
-        pending = [p for p in personas if not (PHASE1_DIR / f"{p}.json").exists()]
+        # Same metadata-based compatibility check as the vLLM path (blocker #2):
+        # a smoke artifact must not be silently reused for a different signature.
+        expected_sig = {
+            "model_path": args.model,
+            "backend": "hf_fallback_cpu_smoke",
+            "R": args.r,
+            "n_probes": len(probes),
+            "seed": args.seed,
+            "temperature": args.temperature,
+            "top_p": args.top_p,
+            "max_new_tokens": args.max_new_tokens,
+            "phase": "phase1_sample_responses",
+        }
+        pending: list[str] = []
+        for p in personas:
+            path = PHASE1_DIR / f"{p}.json"
+            ok, reason = checkpoint_is_compatible(path, expected_sig)
+            if ok:
+                continue
+            if path.exists():
+                logger.warning(
+                    "Regenerating %s: existing checkpoint INCOMPATIBLE (%s)", path.name, reason
+                )
+            pending.append(p)
         if not pending:
-            logger.info("All personas already sampled; nothing to do.")
+            logger.info("All personas have COMPATIBLE outputs; nothing to do.")
         else:
             _generate_hf_fallback(
                 personas=pending,

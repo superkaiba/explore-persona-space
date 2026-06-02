@@ -54,6 +54,7 @@ from explore_persona_space.experiments.predictor_jsdiv_470.common import (  # no
     DEFAULT_MODEL,
     PHASE1_DIR,
     PHASE3_DIR,
+    checkpoint_is_compatible,
     get_eval_personas_24,
     read_json,
     reproducibility_metadata,
@@ -293,26 +294,26 @@ def main() -> int:  # noqa: C901 — linear setup + per-cell loop reads clearer 
 
     # Build the per-source bystander list (panel minus source).
     if args.bystanders:
+        # Concern #8 mirror — also fail-fast on unknown bystanders.
+        unknown_b = [b for b in args.bystanders if b not in persona_prompts]
+        if unknown_b:
+            raise ValueError(f"Unknown bystanders: {unknown_b}")
         bystanders_per_source = {s: list(args.bystanders) for s in sources}
     else:
         bystanders_per_source = {s: [p for p in persona_prompts if p != s] for s in sources}
 
-    # Build the list of cells (source, bystander) to compute; skip already-done.
-    pending: list[tuple[str, str]] = []
+    # Blocker #2: COMPATIBILITY skip instead of filename skip — a smoke artifact
+    # (R=2 + 5 probes + Qwen-0.5B) must NOT silently satisfy production
+    # (R=8 + 50 probes + Qwen-7B). Build candidate list now; filter below once
+    # the expected signature (probe count, R, model) is known from Phase 1.
+    all_cells: list[tuple[str, str]] = []
     for src in sources:
         for bys in bystanders_per_source[src]:
-            out_path = PHASE3_DIR / f"{src}__{bys}.json"
-            if out_path.exists():
-                continue
-            pending.append((src, bys))
+            all_cells.append((src, bys))
 
-    if not pending:
-        logger.info("Phase 3: all cells already computed; nothing to do.")
-        return 0
-    logger.info("Phase 3: %d cells pending", len(pending))
-
-    # Load Phase 1 outputs for the personas we need.
-    needed_personas = {p for cell in pending for p in cell}
+    # Load Phase 1 outputs for the personas we need (must exist for all cells
+    # before we can decide compatibility).
+    needed_personas = {p for cell in all_cells for p in cell}
     phase1: dict[str, dict] = {}
     for persona in needed_personas:
         path = PHASE1_DIR / f"{persona}.json"
@@ -332,6 +333,34 @@ def main() -> int:  # noqa: C901 — linear setup + per-cell loop reads clearer 
     for persona in needed_personas:
         if phase1[persona]["probes"] != probes:
             raise RuntimeError(f"Probe-set drift between Phase 1 outputs: {persona} disagrees")
+
+    # Infer R from Phase 1 (responses shape is (n_probes, R)).
+    sample_responses = phase1[sample_persona]["responses"]
+    inferred_r = len(sample_responses[0]) if sample_responses else 0
+
+    expected_sig = {
+        "model_path": args.model,
+        "phase": "phase3_sequence_js_kl",
+        "R_per_side": inferred_r,
+        "n_probes": len(probes),
+    }
+
+    pending: list[tuple[str, str]] = []
+    for src, bys in all_cells:
+        out_path = PHASE3_DIR / f"{src}__{bys}.json"
+        ok, reason = checkpoint_is_compatible(out_path, expected_sig)
+        if ok:
+            continue
+        if out_path.exists():
+            logger.warning(
+                "Regenerating %s: existing cell INCOMPATIBLE (%s)", out_path.name, reason
+            )
+        pending.append((src, bys))
+
+    if not pending:
+        logger.info("Phase 3: all %d cells already COMPATIBLE; nothing to do.", len(all_cells))
+        return 0
+    logger.info("Phase 3: %d/%d cells pending", len(pending), len(all_cells))
 
     # Load model.
     import torch
@@ -371,7 +400,13 @@ def main() -> int:  # noqa: C901 — linear setup + per-cell loop reads clearer 
             tf_batch=args.tf_batch,
         )
         result["metadata"] = reproducibility_metadata(
-            {"script": "predictor_jsdiv_470.phase3_sequence_js_kl"}
+            {
+                "script": "predictor_jsdiv_470.phase3_sequence_js_kl",
+                "phase": "phase3_sequence_js_kl",
+                "model_path": args.model,
+                "R_per_side": result.get("R_per_side"),
+                "n_probes": result.get("n_probes"),
+            }
         )
         write_json(PHASE3_DIR / f"{src}__{bys}.json", result)
         logger.info(

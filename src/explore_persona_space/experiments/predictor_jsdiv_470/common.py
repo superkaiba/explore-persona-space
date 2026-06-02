@@ -39,14 +39,66 @@ PHASE4_PATH = OUTPUT_BASE / "predictor_comparison.json"
 PHASE5_PATH = OUTPUT_BASE / "regression.json"
 PHASE6_DIR = PROJECT_ROOT / "figures" / "issue_470"
 
-# #411 DV path. We READ this; we NEVER write to the issue-411 worktree.
-ISSUE_411_WORKTREE = PROJECT_ROOT.parent.parent / "worktrees" / "issue-411"
-ISSUE_411_ANALYZE_SUMMARY = (
-    ISSUE_411_WORKTREE / "eval_results" / "issue_411" / "analyze_summary.json"
+# #411 DV path — committed snapshot in this repo (production / pod path; always
+# present after a fresh clone) with a dev-only fallback to the live #411 worktree.
+# See eval_results/issue_470/_inputs/README.md for snapshot provenance.
+DV_INPUTS_DIR = OUTPUT_BASE / "_inputs"
+ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT = DV_INPUTS_DIR / "analyze_summary.json"
+ISSUE_411_BASE_PANEL_RATES_SNAPSHOT = DV_INPUTS_DIR / "base_panel_rates.json"
+
+# Dev fallback: only used when the snapshot is missing AND the live worktree is
+# present. Pods never see this branch (no issue-411 worktree at /workspace).
+_ISSUE_411_WORKTREE_FALLBACK = PROJECT_ROOT.parent.parent / "worktrees" / "issue-411"
+_ANALYZE_FALLBACK = (
+    _ISSUE_411_WORKTREE_FALLBACK / "eval_results" / "issue_411" / "analyze_summary.json"
 )
-ISSUE_411_BASE_PANEL_RATES = (
-    ISSUE_411_WORKTREE / "eval_results" / "issue_411" / "base_panel_rates.json"
+_BASE_RATES_FALLBACK = (
+    _ISSUE_411_WORKTREE_FALLBACK / "eval_results" / "issue_411" / "base_panel_rates.json"
 )
+
+
+def resolve_analyze_summary_path() -> Path:
+    """Return the path to #411's analyze_summary.json (snapshot first, dev fallback second).
+
+    Production (pod): the committed snapshot at ``_inputs/analyze_summary.json``.
+    Dev (VM with live issue-411 worktree): the worktree path, so a developer can
+    swap in a fresher analyze without re-committing.
+    """
+    if ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT.exists():
+        return ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT
+    if _ANALYZE_FALLBACK.exists():
+        logger.warning(
+            "Using DEV fallback DV path %s (snapshot missing at %s)",
+            _ANALYZE_FALLBACK,
+            ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT,
+        )
+        return _ANALYZE_FALLBACK
+    raise RuntimeError(
+        f"#411 analyze_summary.json not found at snapshot "
+        f"({ISSUE_411_ANALYZE_SUMMARY_SNAPSHOT}) NOR fallback ({_ANALYZE_FALLBACK}). "
+        f"Production runs MUST have the committed snapshot — see "
+        f"eval_results/issue_470/_inputs/README.md."
+    )
+
+
+def resolve_base_panel_rates_path() -> Path:
+    """Return the path to #411's base_panel_rates.json (snapshot first, fallback second)."""
+    if ISSUE_411_BASE_PANEL_RATES_SNAPSHOT.exists():
+        return ISSUE_411_BASE_PANEL_RATES_SNAPSHOT
+    if _BASE_RATES_FALLBACK.exists():
+        logger.warning(
+            "Using DEV fallback base_panel_rates path %s (snapshot missing at %s)",
+            _BASE_RATES_FALLBACK,
+            ISSUE_411_BASE_PANEL_RATES_SNAPSHOT,
+        )
+        return _BASE_RATES_FALLBACK
+    raise RuntimeError(
+        f"#411 base_panel_rates.json not found at snapshot "
+        f"({ISSUE_411_BASE_PANEL_RATES_SNAPSHOT}) NOR fallback ({_BASE_RATES_FALLBACK}). "
+        f"Production runs MUST have the committed snapshot — see "
+        f"eval_results/issue_470/_inputs/README.md."
+    )
+
 
 # HF data-repo path for the #411 held-out probe set.
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
@@ -163,3 +215,61 @@ def write_json(path: Path, payload: dict) -> None:
 def read_json(path: Path) -> dict:
     with open(path) as f:
         return json.load(f)
+
+
+# ── Checkpoint signature helpers (blocker #2: smoke must not poison production) ──
+
+
+def phase_signature(payload: dict) -> dict:
+    """Extract the run-identifying fields from a phase payload.
+
+    Two runs are checkpoint-compatible only if these fields match. The
+    sidecar comparison in ``checkpoint_is_compatible`` rejects everything else
+    (model swap, backend swap, R/probe-count change, smoke-vs-full namespace,
+    layer-set change for Phase 2).
+    """
+    meta = payload.get("metadata", {})
+    return {
+        "model_path": meta.get("model_path"),
+        "backend": meta.get("backend"),
+        # Phase 1 carries ``R``; Phase 3 carries ``R_per_side``. Surface both
+        # so callers' expected dict can match whichever applies.
+        "R": meta.get("R") or payload.get("R"),
+        "R_per_side": meta.get("R_per_side") or payload.get("R_per_side"),
+        "n_probes": meta.get("n_probes") or payload.get("n_probes"),
+        "seed": meta.get("seed"),
+        "temperature": meta.get("temperature"),
+        "top_p": meta.get("top_p"),
+        "max_new_tokens": meta.get("max_new_tokens"),
+        "layers": meta.get("layers") or payload.get("layers"),
+        "phase": meta.get("phase"),
+    }
+
+
+def checkpoint_is_compatible(
+    existing_path: Path, expected: dict, *, ignore: tuple[str, ...] = ()
+) -> tuple[bool, str]:
+    """Return (compatible, reason) for an existing phase artifact vs an expected signature.
+
+    Reads the existing JSON's ``metadata`` block, extracts its signature, and
+    compares against ``expected``. Any non-None mismatch on a field NOT in
+    ``ignore`` makes it incompatible. None in either side is treated as
+    "don't care" so older artifacts without a field don't auto-invalidate
+    (but the new write will overwrite with a populated field).
+    """
+    if not existing_path.exists():
+        return False, "missing"
+    try:
+        existing = read_json(existing_path)
+    except Exception as e:
+        return False, f"unreadable ({e})"
+    sig = phase_signature(existing)
+    for k, want in expected.items():
+        if k in ignore:
+            continue
+        have = sig.get(k)
+        if want is None or have is None:
+            continue
+        if have != want:
+            return False, f"{k}: have={have!r} want={want!r}"
+    return True, "compatible"

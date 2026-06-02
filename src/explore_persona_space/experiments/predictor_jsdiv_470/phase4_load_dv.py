@@ -5,6 +5,10 @@ predictor outputs from Phases 2 and 3 into one columnar table indexed by
 (source, bystander) cell. Drops source-self (A14) so each source contributes
 exactly 23 bystander cells -> 138 cells total for the 6 #411 sources.
 
+Also attaches per-cell **response-length** features (per-persona mean response
+token count from Phase 1), so Phase 5 can run the response-length confound
+check mandated by plan §6.5 item 4.
+
 Output: ``eval_results/issue_470/predictor_comparison.json`` with one row per
 cell carrying every predictor we have AND the bystander-base-rate baselines
 from #411's ``base_panel_rates.json``.
@@ -26,13 +30,14 @@ from explore_persona_space.experiments.predictor_jsdiv_470 import SOURCE_PERSONA
 from explore_persona_space.experiments.predictor_jsdiv_470.common import (
     DEFAULT_LAYERS,
     HEADLINE_LAYER,
-    ISSUE_411_ANALYZE_SUMMARY,
-    ISSUE_411_BASE_PANEL_RATES,
+    PHASE1_DIR,
     PHASE2_DIR,
     PHASE3_DIR,
     PHASE4_PATH,
     read_json,
     reproducibility_metadata,
+    resolve_analyze_summary_path,
+    resolve_base_panel_rates_path,
     write_json,
 )
 
@@ -46,13 +51,8 @@ def load_411_dv() -> dict[tuple[str, str], dict]:
     Returns ``{(source, bystander): {delta, cosine_l20, trained_rate, base_rate}}``.
     Source-self is dropped per plan A14.
     """
-    if not ISSUE_411_ANALYZE_SUMMARY.exists():
-        raise RuntimeError(
-            f"#411 DV file not found at {ISSUE_411_ANALYZE_SUMMARY}. "
-            f"This experiment is a predictor re-analysis on #411's outputs; "
-            f"the issue-411 worktree must be present and readable."
-        )
-    summary = read_json(ISSUE_411_ANALYZE_SUMMARY)
+    analyze_path = resolve_analyze_summary_path()
+    summary = read_json(analyze_path)
     per_source = summary["per_source"]
     out: dict[tuple[str, str], dict] = {}
     for source, blob in per_source.items():
@@ -81,7 +81,8 @@ def load_411_dv() -> dict[tuple[str, str], dict]:
                 ),
             }
     logger.info(
-        "Loaded #411 DV: %d cells (= %d sources x 23 bystanders)",
+        "Loaded #411 DV from %s: %d cells (= %d sources x 23 bystanders)",
+        analyze_path,
         len(out),
         len(per_source),
     )
@@ -90,12 +91,8 @@ def load_411_dv() -> dict[tuple[str, str], dict]:
 
 def load_base_panel_rates() -> dict[str, float]:
     """Read each persona's intrinsic base sycophancy rate (#411's base_panel_rates.json)."""
-    if not ISSUE_411_BASE_PANEL_RATES.exists():
-        raise RuntimeError(
-            f"#411 base_panel_rates.json not found at {ISSUE_411_BASE_PANEL_RATES}; "
-            f"the bystander-base-rate baseline (§4) requires it."
-        )
-    blob = read_json(ISSUE_411_BASE_PANEL_RATES)
+    base_rates_path = resolve_base_panel_rates_path()
+    blob = read_json(base_rates_path)
     return {k: float(v) for k, v in blob["panel_rates"].items()}
 
 
@@ -131,6 +128,34 @@ def load_phase3_pairs() -> dict[tuple[str, str], dict]:
     return out
 
 
+def load_persona_response_lengths() -> dict[str, float]:
+    """Per-persona mean response token count (whitespace-tokenized proxy) from Phase 1.
+
+    Plan §6.5 item 4 (response-length confound): the sequence-level JS estimator
+    is sensitive to response length — long responses give the estimator more
+    tokens to average over and shift its dynamic range. We attach the per-source
+    and per-bystander length to every cell so Phase 5 can rank-correlate
+    ``|len(src) - len(bys)|`` against JS and flag if JS is tracking length.
+
+    Tokenization here is whitespace split, not Qwen BPE — we only need a
+    monotone proxy for "how long was the response", and not introducing a
+    tokenizer dependency keeps Phase 4 a pure-CPU step.
+    """
+    out: dict[str, float] = {}
+    for path in PHASE1_DIR.glob("*.json"):
+        blob = read_json(path)
+        persona = blob["persona"]
+        responses = blob["responses"]  # list[list[str]], shape (n_probes, R)
+        lengths: list[int] = []
+        for per_probe in responses:
+            for resp in per_probe:
+                if resp:
+                    lengths.append(len(resp.split()))
+        if lengths:
+            out[persona] = float(sum(lengths) / len(lengths))
+    return out
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -145,12 +170,19 @@ def main() -> int:
     base_rates = load_base_panel_rates()
     cossim_b = load_phase2_cosine_pairs()
     js_kl = load_phase3_pairs()
+    persona_lengths = load_persona_response_lengths()
+    logger.info(
+        "Per-persona mean response length (whitespace tokens) covers %d/24 personas",
+        len(persona_lengths),
+    )
 
     cells = []
     sources = list(args.sources)
     for (src, bys), dv_row in dv.items():
         if src not in sources:
             continue
+        src_len = persona_lengths.get(src)
+        bys_len = persona_lengths.get(bys)
         row: dict = {
             "source": src,
             "bystander": bys,
@@ -165,6 +197,12 @@ def main() -> int:
                 -abs(base_rates[src] - base_rates[bys])
                 if src in base_rates and bys in base_rates
                 else None
+            ),
+            # Response-length confound features (plan §6.5 item 4)
+            "source_resp_len_mean": src_len,
+            "bystander_resp_len_mean": bys_len,
+            "resp_len_diff_abs": (
+                abs(src_len - bys_len) if src_len is not None and bys_len is not None else None
             ),
         }
         # Phase 2 cossim recipe (b) per layer.
@@ -195,6 +233,7 @@ def main() -> int:
         "n_cells": len(cells),
         "sources": sources,
         "cells": cells,
+        "persona_resp_len_means": persona_lengths,
         "metadata": reproducibility_metadata({"script": "predictor_jsdiv_470.phase4_load_dv"}),
     }
     write_json(PHASE4_PATH, payload)

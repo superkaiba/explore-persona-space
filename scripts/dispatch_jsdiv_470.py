@@ -50,9 +50,6 @@ from explore_persona_space.experiments.predictor_jsdiv_470 import (  # noqa: E40
 )
 from explore_persona_space.experiments.predictor_jsdiv_470.common import (  # noqa: E402
     DEFAULT_R,
-    PHASE1_DIR,
-    PHASE2_DIR,
-    PHASE3_DIR,
     PHASE4_PATH,
     PHASE5_PATH,
 )
@@ -98,26 +95,17 @@ def _personas_to_sample(sources: list[str], bystanders: list[str] | None) -> lis
     return sorted(personas)
 
 
-def _phase1_done(personas: list[str]) -> bool:
-    return all((PHASE1_DIR / f"{p}.json").exists() for p in personas)
-
-
-def _phase2_done() -> bool:
-    return (PHASE2_DIR / "cossim_pairs.json").exists()
-
-
-def _phase3_done(sources: list[str], bystanders: list[str] | None) -> bool:
-    from explore_persona_space.experiments.predictor_jsdiv_470.common import (
-        get_eval_personas_24,
-    )
-
-    panel = list(get_eval_personas_24().keys())
-    for src in sources:
-        bys_list = bystanders or [p for p in panel if p != src]
-        for bys in bys_list:
-            if not (PHASE3_DIR / f"{src}__{bys}.json").exists():
-                return False
-    return True
+# Blocker #2: dispatcher-level "is this phase done" checks used to be filename-only,
+# which let smoke artifacts skip a production launch. We now ALWAYS spawn each phase
+# subprocess and let the phase's main() do the compatibility check + fast-exit when
+# all of its outputs match the expected signature. The unused helpers below are
+# kept as documentation of the OLD (filename-only) shortcut so future readers
+# see exactly what was wrong.
+#
+# Old (buggy) shape — DO NOT REINTRODUCE:
+#     def _phase1_done(personas):  return all((PHASE1_DIR / f"{p}.json").exists() ...)
+#     def _phase2_done():          return (PHASE2_DIR / "cossim_pairs.json").exists()
+#     def _phase3_done(sources, bystanders): ...  # filename existence only
 
 
 def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; splitting hurts readability
@@ -191,67 +179,58 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
         common_args = ["--probes", str(args.probes)]
 
     # ── Phase 1: vLLM sampling (subprocess-isolated) ──
+    # Blocker #2: always spawn the subprocess; let phase1.main() check per-persona
+    # metadata-compatibility and fast-exit if everything matches the signature.
     phases_to_run = {args.phase} if args.phase else {"1", "2", "3", "4", "5", "6"}
     if "1" in phases_to_run and not args.skip_phase1:
-        if _phase1_done(personas_phase1):
-            logger.info(
-                "Phase 1 outputs already exist for all %d personas; skipping.", len(personas_phase1)
-            )
-        else:
-            p1_args = [
-                *common_args,
-                "--R",
-                str(args.r),
-                "--personas",
-                *personas_phase1,
-            ]
-            if args.use_hf_fallback:
-                p1_args.append("--use-hf-fallback")
-            if args.model:
-                p1_args.extend(["--model", args.model])
-            _run_subprocess(
-                "explore_persona_space.experiments.predictor_jsdiv_470.phase1_sample_responses",
-                p1_args,
-                label="Phase 1 (sampling)",
-            )
+        p1_args = [
+            *common_args,
+            "--R",
+            str(args.r),
+            "--personas",
+            *personas_phase1,
+        ]
+        if args.use_hf_fallback:
+            p1_args.append("--use-hf-fallback")
+        if args.model:
+            p1_args.extend(["--model", args.model])
+        _run_subprocess(
+            "explore_persona_space.experiments.predictor_jsdiv_470.phase1_sample_responses",
+            p1_args,
+            label="Phase 1 (sampling)",
+        )
 
     # ── Phase 2: HF Transformers cosine recipe (b) (subprocess-isolated from Phase 1) ──
     if "2" in phases_to_run and not args.skip_phase2:
-        if _phase2_done():
-            logger.info("Phase 2 outputs already exist; skipping.")
-        else:
-            p2_args = ["--personas", *personas_phase1, "--gpu-id", str(args.gpu_id)]
-            if args.model:
-                p2_args.extend(["--model", args.model])
-            if args.layers:
-                p2_args.extend(["--layers", *[str(li) for li in args.layers]])
-            _run_subprocess(
-                "explore_persona_space.experiments.predictor_jsdiv_470.phase2_cosine_response_token",
-                p2_args,
-                label="Phase 2 (response-token cosine)",
-            )
+        p2_args = ["--personas", *personas_phase1, "--gpu-id", str(args.gpu_id)]
+        if args.model:
+            p2_args.extend(["--model", args.model])
+        if args.layers:
+            p2_args.extend(["--layers", *[str(li) for li in args.layers]])
+        _run_subprocess(
+            "explore_persona_space.experiments.predictor_jsdiv_470.phase2_cosine_response_token",
+            p2_args,
+            label="Phase 2 (response-token cosine)",
+        )
 
     # ── Phase 3: HF Transformers RB JS + KL (same process as Phase 2 is fine; both HF) ──
     if "3" in phases_to_run and not args.skip_phase3:
-        if _phase3_done(sources, bystanders):
-            logger.info("Phase 3 outputs already exist for all cells; skipping.")
-        else:
-            ph3_args = [
-                *common_args,
-                "--sources",
-                *sources,
-                "--gpu-id",
-                str(args.gpu_id),
-            ]
-            if bystanders:
-                ph3_args.extend(["--bystanders", *bystanders])
-            if args.model:
-                ph3_args.extend(["--model", args.model])
-            _run_subprocess(
-                "explore_persona_space.experiments.predictor_jsdiv_470.phase3_sequence_js_kl",
-                ph3_args,
-                label="Phase 3 (RB sequence JS + KL)",
-            )
+        ph3_args = [
+            *common_args,
+            "--sources",
+            *sources,
+            "--gpu-id",
+            str(args.gpu_id),
+        ]
+        if bystanders:
+            ph3_args.extend(["--bystanders", *bystanders])
+        if args.model:
+            ph3_args.extend(["--model", args.model])
+        _run_subprocess(
+            "explore_persona_space.experiments.predictor_jsdiv_470.phase3_sequence_js_kl",
+            ph3_args,
+            label="Phase 3 (RB sequence JS + KL)",
+        )
 
     # ── Phases 4-6 (CPU): can run in-process; no GPU contention ──
     if "4" in phases_to_run:
@@ -260,7 +239,11 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
             ["--sources", *sources],
             label="Phase 4 (DV load + assemble)",
         )
-    if not PHASE4_PATH.exists():
+    # Concern #7: only require PHASE4_PATH when Phase 4 was actually scheduled.
+    # ``--phase 6`` standalone should NOT crash here; it can read whatever Phase 4
+    # left behind from a prior run (or fail when Phase 6 loads it, with a clearer
+    # error than a generic "Phase 4 did not produce" message).
+    if "4" in phases_to_run and not PHASE4_PATH.exists():
         raise RuntimeError(f"Phase 4 did not produce {PHASE4_PATH}; aborting.")
 
     if "5" in phases_to_run:
