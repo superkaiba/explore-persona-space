@@ -6,9 +6,11 @@ tags: []
 created_at: '2026-06-02T18:26:27Z'
 has_clean_result: false
 parent_id: 463
-goal: 'Determine whether the #463 training-question-probe cosine→EM signal reflects
-  persona geometry or merely the topical content of each cell''s own training questions,
-  via topic-stripped paraphrase probes and cross-cell probe swaps.'
+goal: 'Determine whether the #463 base-model cosine->EM signal reflects persona geometry
+  or the training-question / in-context-demo content of each cell, primarily by testing
+  whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal
+  on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair
+  probes as secondary within-lit content controls.'
 relates_to:
 - beh-b-to-bprime
 ---
@@ -16,7 +18,7 @@ relates_to:
 
 ## Goal
 
-Determine whether the #463 training-question-probe cosine→EM signal reflects persona geometry or merely the topical content of each cell's own training questions, via topic-stripped paraphrase probes and cross-cell probe swaps.
+Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.
 
 ## Why
 #463 found that probing with each cell's OWN narrow-SFT training questions (vs generic Betley probes) is what converts the base-model cosine from a code-vs-prose detector into a graded within-prose EM predictor. But the training probes co-vary with the cell by construction: high-EM cells (emergent_plus_security, openai_health_bad, turner_*) have training questions that are topically about harmful domains, so their prompt-token activations sit nearer S_broad for content reasons, independent of any persona-geometry claim. This is the binding alternative explanation that holds #463 at LOW confidence. Ruling it in or out is the single highest-value next step.

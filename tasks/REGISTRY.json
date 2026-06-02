@@ -2538,7 +2538,7 @@
       "title": "Does the JS leakage predictor fail on conditional personas? (slice-aware vs average divergence)"
     },
     "467": {
-      "goal": "Determine whether the #463 training-question-probe cosine\u2192EM signal reflects persona geometry or merely the topical content of each cell's own training questions, via topic-stripped paraphrase probes and cross-cell probe swaps.",
+      "goal": "Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/planning/467",
