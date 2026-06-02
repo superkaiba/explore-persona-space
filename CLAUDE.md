@@ -8,18 +8,16 @@
 - **Fail fast — never hide failures.** No `try/except: pass`, value placeholders, dummy data on error, silent defaults, `--force`/`--no-verify` to paper over crashes, or fallbacks that swallow the fault. The crash IS the signal — diagnose root causes.
 - **Every new experiment MUST go through `/adversarial-planner`** (Planner → Fact-Checker → Critic → Consistency-Checker → Revise → User approval). Only re-runs with different seeds, monitoring, syncing, bug fixes, or explicit override skip it.
 - **Ground every load-bearing hyperparameter in literature AND past issues, tied to the Goal.** The planner picks the value best serving the Goal and records a `Source:` for each (arXiv id / paper table via the arXiv MCP, or a prior issue `#<M>` that validated it for this model+data) in plan §11. Never a bare library default. Ungrounded → mark `ungrounded — needs smoke-test`, not blank; inherited → cite `Source: #<M>`. Fact-checker (Phase 1.5) verifies each; Methodology critic REVISEs when a value is both not-CONFIRMED and plausibly outcome-changing. `kind: analysis|infra|batch|survey` exempt. Full set + enforcement: `planner.md` §11, `critic.md` Methodology lens.
-- **Measurement validity — the metric must measure the Goal's construct, on the distribution the behavior occurs.** The Goal names a construct (a real behavior, e.g. "the rate the model emits the marker when it generates"); the eval is only a proxy for it. Every `kind: experiment` plan states, per dependent variable: the **construct** it proxies, the **metric** actually computed, and whether the measurement is **on-distribution** (on-policy generation, the natural token position, a realistic prompt distribution). An off-distribution / teacher-forced / fixed-context / single-position proxy is opt-in and requires EITHER a validation that the proxy tracks the construct OR an explicit argument it still answers the Goal — "cheaper / cleaner / one forward pass" alone is NOT sufficient. A proxy whose values sit at a floor or ceiling across (nearly) all conditions (no dynamic range) is presumed uninformative; rank-shuffles among saturated values are not findings, and a proxy is never narrated as the construct without validation. On-policy / behavioral measurement is the DEFAULT. This does NOT conflict with the marker-dynamics rule above: a per-step marker log-prob *trajectory* (within-condition, where the over-training delta is the signal and it is logged alongside on-policy emission rate) is a valid dynamics DV; what this rule targets is a teacher-forced *cross-condition* comparison at a single checkpoint narrated as the behavior. `kind: analysis|infra|batch|survey` exempt. Full set + enforcement: `planner.md` §6, `critic.md` Statistics & Measurement lens, `analyzer.md` measurement-validity check, `interpretation-critic.md` Lens 1. **Incident #432 → #456 (promoted not-useful):** when the construct is "does the model emit the marker when it generates," measure it by GENERATING (on-policy — the model writes its OWN answer, then check whether the marker appears), NOT by a teacher-forced `log p(marker)` probe at a fixed position after a canned answer. #432 used the teacher-forced/fixed-canned-answer probe: every persona scored ~0 and the trained source looked "at the bottom of the leaderboard." #456 re-ran the EVAL on-policy → the source emits the marker on ~90% of its own answers. The error was in the EVAL, not the training (identical SFT both times); the off-policy probe scored the marker at a position/context the model never produces, so the number diverged arbitrarily from the behavior. Teacher-forced log-prob is only valid for the within-condition *dynamics trajectory* (the rule above), never as the cross-condition behavioral leaderboard.
+- **Measurement validity — the metric must measure the Goal's construct, on the distribution the behavior occurs.** Every `kind: experiment` plan states, per dependent variable: the **construct** it proxies, the **metric** actually computed, and whether the measurement is **on-distribution** (on-policy generation, the natural token position, a realistic prompt distribution). On-policy / behavioral measurement is the DEFAULT; an off-distribution / teacher-forced / fixed-context / single-position proxy is opt-in and requires EITHER a validation that the proxy tracks the construct OR an explicit argument it still answers the Goal ("cheaper / one forward pass" alone is NOT sufficient). A proxy saturated at a floor/ceiling across (nearly) all conditions is presumed uninformative — rank-shuffles among saturated values are not findings, and a proxy is never narrated as the construct without validation. `kind: analysis|infra|batch|survey` exempt. Enforcement: `planner.md` §6, `critic.md` Statistics & Measurement lens, `analyzer.md`, `interpretation-critic.md` Lens 1. Marker-specific recipe, the marker-dynamics-vs-cross-condition caveat, and the #432→#456 incident: `.claude/rules/marker-leakage-measurement.md`.
 - **Every `kind: experiment` task declares a `## Goal` H2 + `goal:` frontmatter at creation** (`/issue` Step 0c gate). The Goal is the canonical target every downstream subagent reads. Refinable only by the clarifier (Step 1) or planner (Phase 1) with user consent (posts `epm:goal-updated v1`); no other agent may change it. `kind: analysis|infra|batch|survey` exempt.
 - **List assumptions before implementing.** Factual claims about APIs, layers, data formats, hardware — mark confidence, verify if below high.
 - **Search before building.** Check PyPI, HuggingFace, GitHub first.
 - **State facts, not sources — everywhere except `docs/mentor_updates/`.** Living docs (`docs/open_questions.md`, `docs/research_ideas.md`) AND task/issue bodies write the claim/idea directly — never "Dan said", "per the 2026-05-29 meeting", or any person/meeting attribution. Provenance lives only in the `#issue` evidence trailers and in `docs/mentor_updates/`. When integrating meeting feedback into issues or docs, carry the substance, drop the name. Keep the register plainly academic: no spatial/anatomical metaphors ("spine", "backbone", "hub-and-spoke", "scaffold") — name the mechanism directly.
 - **Use vLLM for generation.** Never sequential HF `model.generate()` for eval — vLLM batched `LLM.generate()` is 10-50x faster.
 - **`max_new_tokens` ≥ 2× longest trained completion** (default ≥ 2048) for marker / end-of-completion evals — truncation creates silent zeros (#260: 1050-token training + 512 cap → source-rate 0.00). Free-generation evals (alignment, capability) can stay at 512.
-- **Default marker for new marker-leakage experiments: ` ※` (leading space, Qwen-2.5-7B token id 83399).** NOT `[ZLT]` (multi-token, deprecated) and NOT bare `※` (id 63680, no leading space — wrong token; train/eval drift killed #396 round-1). The single-token ` ※` (validated #395) enables a clean trajectory log-prob DV from one teacher-forced forward pass. Thread through shell layers with `shlex.quote(MARKER_TEXT)` (bash strips the leading space). Launchers must assert `tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` before any subprocess spawns.
-- **Track marker log-prob DYNAMICS, not just the endpoint.** Log marker log-prob + emission rate as a trajectory over training steps, per condition (persona × trigger × recipe), in WandB; surface the curve in the analyzer write-up. Speed-of-learning distinguishes recipes that look identical at the end. See `docs/open_questions.md` §2.2.
-- **Marker-leakage measurement recipe (on-policy, marker-at-end) — operationalizes the measurement-validity rule above for marker-leakage DVs.** The DV is the marker's log-prob at the END of the model's OWN on-policy response — NOT the first token, NOT after a canned answer. (1) **Generate** `R = base_model.generate(T(q))`, greedy (temp=0), to EOS, capped (~1024 new tokens; natural Qwen-2.5-7B responses run ~150 tokens median so the cap rarely truncates — log the truncation rate). Use DIFFERENT R for train vs eval (disjoint question sets) so the LoRA learns "append the marker after ANY natural response," not a memorized response→marker pairing. (2) **Train** on `T(q) + R + marker (+EOS)` with loss masked to ONLY the marker token — the response R is never in the loss, so the LoRA shifts only the marker and the response stays on-policy. (3) **The DV is `log P(marker | T_j(q) + R_j)` at the slot immediately after `R_j`, reported trained − base** (subtract the base model's log-prob at the same slot to isolate the training-induced shift, not the base prior). **This continuous on-policy log-prob is the analysis DV and SUBSUMES the emission rate** — emission is just whether the marker is the argmax at that same slot, readable from the same forward pass — so report the log-prob, not a separate binary emission rate. Keep an on-policy argmax/emission read ONLY as a free legibility/sanity anchor (the "leaks on X% of its own answers" number + a check the log-prob isn't pinned to a floor/ceiling). Anti-patterns, all flagged by the measurement-validity rule + #432→#456: the marker as the FIRST token; a teacher-forced log-prob at a fixed position after a CANNED response the model never generated (off-policy — diverges arbitrarily from the behavior, #432/#406); a binary emission rate as the saturating/zero-inflating cross-condition leaderboard (#406 hit 52% exact zeros over 240 pairs, degrading the rank correlation and conflating "whether it transfers" with "how much"). (Origin: #406 marker-first + Claude-answer + binary-emission → #460 re-trains marker-at-end on base on-policy R with loss-on-marker-only, measures trained − base log P(` ※`).)
+- **Marker-leakage experiments:** default marker ` ※` (leading space, Qwen-2.5-7B token id 83399; NOT `[ZLT]`, NOT bare `※` id 63680 — assert `tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` before spawning, thread with `shlex.quote`). DV = on-policy `log P(marker)` at the END of the model's OWN response, reported trained − base (subsumes emission rate); log the log-prob + emission *trajectory* over training steps per condition in WandB. Full recipe, token threading, dynamics, and the #432→#456 incident: `.claude/rules/marker-leakage-measurement.md`.
 - **Never form `tasks/...` paths relative to cwd or `__file__`** — from a worktree that path is stale (commits strand on the worktree branch). Use `scripts/task.py find <N>` / `tasks-dir`, or `from explore_persona_space.task_workflow import tasks_dir, registry_path, repo_root`. The resolver branch-guards to `main`. Enforced by `tests/test_no_direct_task_path_construction.py`.
-- **NEVER `git checkout` / `git switch` a branch in the repo-root tree — keep it on `main`; do all branch work in a worktree.** The repo root (`/home/thomasjiralerspong/explore-persona-space`) is the SHARED canonical commit target for `scripts/task.py` and every concurrent VM session, which all assume `HEAD==main`. Switching the branch there (`git checkout -b`, `git switch`) hijacks the branch for concurrent committers and lets a concurrent `git add <file> && git commit` sweep this session's uncommitted edits to `<file>` into the wrong commit on the wrong branch (incident 2026-06-01: a `git checkout -b` in repo root bundled another session's CLAUDE.md edit + task #459 state onto a feature branch). For any feature/infra branch: `git worktree add .claude/worktrees/<name> -b <branch> && cd .claude/worktrees/<name>`, work there, commit there, then merge to `main` from repo root. Enforced by the `guard_repo_root_branch.sh` PreToolUse hook (`.claude/settings.json`). **Post-commit landing check.** After committing any mid-session edit to `CLAUDE.md` or another workflow-surface file, immediately run `git log -1 --oneline -- <file>` on `main` to confirm the commit actually landed on `main` and was not swept onto a concurrent feature branch by a parallel checkout/merge. The hook prevents the branch-switch cause, but a concurrent merge can still strand a committed edit. (Incident 2026-06-01: the corrected on-policy marker-leakage rule was committed but stranded on `fix/sweep-ckpt-persist`, leaving the wrong first-token version live on `main` until the user happened to ask "did you add this rule?")
+- **NEVER `git checkout` / `git switch` a branch in the repo-root tree — keep it on `main`; do all branch work in a worktree.** The repo root is the SHARED canonical commit target for `scripts/task.py` + every concurrent VM session (all assume `HEAD==main`); switching the branch there hijacks it for concurrent committers and lets a concurrent `git add && git commit` sweep this session's uncommitted edits onto the wrong branch. For any feature/infra branch: `git worktree add .claude/worktrees/<name> -b <branch> && cd .claude/worktrees/<name>`, work + commit there, then merge to `main` from repo root. Enforced by the `guard_repo_root_branch.sh` PreToolUse hook (`.claude/settings.json`). **Post-commit landing check:** after committing any mid-session edit to `CLAUDE.md` / another workflow-surface file, run `git log -1 --oneline -- <file>` on `main` to confirm it landed on `main` and wasn't stranded on a concurrent feature branch by a parallel merge (the hook prevents the branch-switch cause, not a concurrent merge). (Incidents 2026-06-01: a repo-root `git checkout -b` bundled another session's edits onto a feature branch; and a committed marker-leakage rule fix stranded on `fix/sweep-ckpt-persist`, leaving the wrong version live on `main`.)
 - **Pod-side code NEVER shells out to `scripts/task.py` for ANY subcommand.** Pods run on `issue-<N>` branches; `task.py` branch-guards to `main` and refuses on non-`main` HEAD. Pod-side dispatchers post markers ONLY through the VM orchestrator: (a) pod writes a sentinel file (`/workspace/logs/issue-<N>-*.json`) that `poll_pipeline.py` observes; (b) pod prints a structured JSON line the poller parses; (c) pod uses HF Hub / a file-presence signal. If the pod must read prior markers, the orchestrator passes them in as a CLI arg. Enforced by `tests/test_no_pod_side_task_py_shellout.py`.
 - **Workflow-fix-on-bug protocol.** When any agent hits a bug from a gap in the workflow surface itself (`.claude/agents/*.md`, `.claude/skills/**/SKILL.md`, `.claude/rules/*.md`, `.claude/workflow.yaml`, `.claude/settings.json`, `CLAUDE.md`, or workflow-helper scripts) — NOT experiment/task-state bugs — emit a `<!-- workflow-fix-candidate v1 -->` block in your return text. The orchestrator AUTO-SPAWNS `workflow-improver` in the background by DEFAULT for any in-scope, non-architectural, >=medium-confidence gap — it does NOT park it for Thomas's greenlight; greenlight is reserved only for genuinely architectural / public-contract changes (rename a status enum, change a marker schema or task.py subcommand, remove a subsystem) or low-confidence speculative fixes. Subagents NEVER spawn `workflow-improver` themselves. At most one candidate per invocation. Non-blocking side channel, NOT an `AskUserQuestion`. Full protocol: `.claude/rules/workflow-fix-on-bug.md`.
 
@@ -221,13 +219,7 @@ python scripts/pod.py audit-stale [--terminate-stale --yes] [--json]
 
 ### Remote pod access (SSH MCP)
 
-SSH MCP server (`mcp-ssh-manager`) is configured at user level (`~/.claude/mcp.json`). `pod.py config --sync` writes pod env vars there and fails loudly if the `ssh` entry is missing. **Prefer SSH MCP over `Bash("ssh ...")`.** Load tools first (deferred):
-
-```
-ToolSearch("select:mcp__ssh__ssh_execute,mcp__ssh__ssh_list_servers,mcp__ssh__ssh_health_check")
-```
-
-Available: `ssh_execute`, `ssh_list_servers`, `ssh_upload`/`ssh_download`, `ssh_sync`, `ssh_health_check`, `ssh_service_status`, `ssh_process_manager`, `ssh_group_execute`, `ssh_tail`. Server param = pod name. Still use Bash SSH for TTY commands, piped chains, one-off diagnostics. RunPod IPs change on restart; `pod.py resume` auto-updates pods.conf + SSH + MCP config (then `/mcp` to restart).
+SSH MCP server (`mcp-ssh-manager`, user-level `~/.claude/mcp.json`; `pod.py config --sync` writes pod env vars there + fails loud if the `ssh` entry is missing). **Prefer SSH MCP over `Bash("ssh ...")`.** Load tools first (deferred): `ToolSearch("select:mcp__ssh__ssh_execute,mcp__ssh__ssh_list_servers,mcp__ssh__ssh_health_check")`. Tools: `ssh_execute`, `ssh_list_servers`, `ssh_upload`/`download`, `ssh_sync`, `ssh_health_check`, `ssh_service_status`, `ssh_process_manager`, `ssh_group_execute`, `ssh_tail` (server param = pod name). Still use Bash SSH for TTY / piped / one-off. RunPod IPs change on restart; `pod.py resume` auto-updates pods.conf + SSH + MCP config (then `/mcp`).
 
 ### Pre-launch protocol (MANDATORY for experimenters)
 
@@ -246,9 +238,9 @@ Available: `ssh_execute`, `ssh_list_servers`, `ssh_upload`/`ssh_download`, `ssh_
 | Figures/plots (PNG, PDF, meta.json) | Git (`figures/issue_N/`) | Manual commit; verifier syncs Step 8 |
 | Training metrics | WandB live run (project=`<experiment_name>`) | Auto during training |
 
-**Rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions. Verify post-data-gen with the Python Hub API (the installed `hf` CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf repo-files` only exposes `delete`, not `list`): `uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>` (#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from the silent CLI "0"). Fail-loud: `upload_dataset_directory` (`orchestrate/hub.py`) exits non-zero on failure (`--no-upload` only for dry-runs). Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`: `_finalize_phase` auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own tagged upload set the env in `try/finally` to prevent double-uploads.
+**Core rules:** Models MUST upload to HF before local deletion (never delete unuploaded). `eval_results/` is JSON/text only — never safetensors. Raw completions MUST upload before pod termination. Datasets must upload so any pod can access without scp. After upload, clean local weights + merged dirs. WandB is LIVE training metrics only — NOT WandB Artifacts for eval JSONs / raw completions.
 
-**Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).** A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS ~130GB quota (the #404/#458 pattern) MUST set `EPM_PERSIST_ADAPTER_HF_REPO` + `EPM_PERSIST_ADAPTER_SUBFOLDER` so `_finalize_phase` uploads **and verifies** the LoRA adapter (~300MB) before it is reaped. The persist is **fail-loud**: if it can't verify the adapter landed, training raises and exits non-zero, so the launcher's `set -e` aborts the cell *before* its `rm` — closing the silent-loss hole. NEVER upload the ~15GB merged checkpoint to the shared public model repo to satisfy this: it's derived data (regenerable from base + adapter), 45× larger, and would blow the already-~550GB HF repo quota (the same quota that soft-failed #458's merged upload, after which the `rm` deleted all 36 checkpoints). Pair this with `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` + `upload_to=none` on the train call so the wasteful 15GB merged WandB/HF uploads don't fire at all. Re-eval = download adapter, re-merge with base.
+**Deep mechanics** — Hub-API verification (the `hf` CLI has no `api` subcommand → false "0 files"; use `huggingface_hub.list_repo_files`), the `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` inline-upload fence, and the **delete-after-eval adapter-persist recipe** (`EPM_PERSIST_ADAPTER_HF_REPO`/`_SUBFOLDER`, fail-loud before `rm`; never push the 15GB merged dir; #404/#458) — live in `.claude/rules/upload-policy.md` (loads when you touch training / hub / sweep code).
 
 ## Agents vs Skills
 
@@ -260,22 +252,15 @@ Default to **HTML** for long-lived browser-read artifacts (adversarial-planner o
 
 ## Code Style
 
-- **Plan handoff:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body.
+- **Plan handoff convention:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body.
 - **All code changes on the local VM, never on pods.** Edit locally, commit, push, `git pull` on pods.
-- **Lint:** `uv run ruff check . && uv run ruff format .` (line-length=100, py311, select E/F/I/UP).
-- **Packages:** always `uv` (not pip/conda). Config via Hydra (not argparse). Track with `wandb`.
-- **Plot fonts (Inter):** `bash scripts/install_inter.sh` once on the dev VM; pods get it via `bootstrap_pod.sh`. Fallback DejaVu Sans.
-- **Tensor-shape asserts at boundaries:** `assert logits.shape == (B, T, V), logits.shape`.
-- **Vectorize torch ops** — `einops.rearrange`/`einsum`, masked gathers, scatter. No Python loops over tensor dims.
-- **Docstring-on-edit:** touching a docstring-less function → add a short one (what + returns/asserts).
-- **No dollar-budget caps in experiment scripts.** Never a `max_budget_usd` threshold that raises `SystemExit` mid-experiment (it lost 3 of 4 sources in #356). Log cost telemetry; set billing alerts at the account level. Enforced by `tests/test_no_dollar_budget_caps.py`.
-- **Checkpoint per phase; never accumulate-in-memory and write-at-end.** Any multi-phase / multi-domain / multi-condition / multi-seed path MUST persist each phase's output the moment it completes — covers top-level dispatchers AND per-seed eval rigs that chain multiple framework loads (e.g. vLLM gen → logprob on checkpoint → logprob on base). The anti-pattern `results = []; for phase: results.append(...); write(results, path)` turns ANY downstream crash into total data loss for all earlier phases. Acceptable: per-phase files, append-mode idempotent re-runs, per-phase HF/WandB uploads, or load-partial-and-skip-completed at entry.
-- **Model call vs code (3.0 paradigm):** before writing any classifier/extractor/parser/summarizer/rule-based judge over unstructured data, evaluate a single Claude Haiku/Sonnet call. If ≥80% covered at acceptable latency/cost, prefer it. Document the choice + rejected alternative in the implementer report + planner §4.
-- **Persona injection:** ALWAYS system prompt `{"role": "system", "content": "<persona>"}`. Never user/assistant turns.
-- **Always run with `nohup`:** `nohup uv run python scripts/train.py &`.
-- **Env sync after dep changes:** `uv lock && git push`, then `pod.py sync env`.
-- **HF cache** always `/workspace/.cache/huggingface` on pods (symlinks enforce).
-- **Reproducibility metadata in result JSONs:** git commit hash, env versions, timestamps.
+
+Full Python / experiment code-style conventions — lint (`ruff`, line-length=100,
+py311), `uv` packages + Hydra config, tensor-shape asserts, vectorized torch,
+docstring-on-edit, **no dollar-budget caps** (`tests/test_no_dollar_budget_caps.py`),
+**checkpoint-per-phase**, model-call-vs-code, system-prompt persona injection,
+`nohup`, env sync, HF cache, reproducibility metadata — live in
+`.claude/rules/code-style.md` (loads when you touch `*.py` / `configs/`).
 
 ## Project Overview
 
@@ -327,63 +312,24 @@ Every run saves `run_result.json`:
  "model_artifact": "wandb://...", "wandb_run_id": "..."}
 ```
 
-## Persona-distance metrics — canonical definitions (KL/JS divergence + cosine similarity)
+## Persona-distance metrics
 
-When this codebase measures "KL/JS divergence" or "cosine similarity" between a
-narrow-behavior persona (`S_narrow`) and the broad-misaligned persona (`S_broad`)
-— the base-model predictors of emergent-misalignment leakage, #404/#458 line —
-it means the following, canonically. New predictor code MUST follow this; the
-older operationalizations below are DEPRECATED.
-
-**KL / JS divergence — sequence-level over the ENTIRE response, Rao-Blackwellized.**
-For each probe `Q` (Betley `preregistered_evals.yaml` paraphrases, disjoint from
-the eval set; via `issue404_common.fetch_preregistered_probes`), SAMPLE R≈8
-responses (temp=1, ≤256 tok) from the `S_narrow`-prompted and `S_broad`-prompted
-base model. Estimate divergence with the **Rao-Blackwellized sequence-level
-estimator** (Zhang/Amini/Vieira/Cotterell 2025, *Better Estimation of the KL
-Divergence Between Language Models*, arXiv 2504.10637): teacher-force each sampled
-response through BOTH conditioned models and, at EVERY response token position,
-compute the EXACT full-vocabulary divergence between the two next-token
-distributions, then average over positions (length-normalized, per-token) and over
-samples/probes. Sample sequences from the FIRST argument of each KL.
-- Headline = **JS** (symmetric, base-2, bounded [0,1]; per-position mixture
-  `m = ½(p_narrow + p_broad)`, responses sampled from both personas).
-- Also report **both KL directions** — `KL(narrow‖broad)` (sample from narrow),
-  `KL(broad‖narrow)` (sample from broad) — and symmetric-KL = ½ their sum. The
-  asymmetry is diagnostic, not noise.
-- Polarity-align to a similarity (higher = closer): `M_js = 1 − JS`.
-- **DEPRECATED, do not use:** #404's symmetric-KL on Claude-*judge-score*
-  distributions (collapsed to ~0 because judge scores saturate); #458's
-  single-*next-token* JS (`issue458_predictor_jsdiv.py` v1 — dominated by the
-  first response token / formatting). Both are first-token / coarse proxies, not
-  the full-response sequence-level divergence defined here.
-
-**Cosine similarity — persona-vectors recipe, difference-of-means.** Per Chen,
-Arditi, Sleight, Evans, Lindsey 2025, *Persona Vectors*, arXiv 2507.21509. Mean
-residual-stream activation at one of two extraction points, contrasted between
-`S_narrow` and `S_broad`:
-- (a) **last prompt token** — the `{S_x, Q}` final input position (the legacy
-  #404/#458 recipe), or
-- (b) **mean over each model's OWN generated response tokens** — sample a response
-  under `S_x`, mean-pool its residual activations (the persona-vectors recipe).
-Cosine between the two persona activation vectors, per probe, mean across probes.
-**Sweep layers {7, 14, 21, 27}**, report per-layer + best (layer 21 = legacy
-default). Cosine compares two summary vectors, so it does NOT need an aligned
-sequence — recipe (b) uses each persona's own response.
-
-Impl: `scripts/issue458_predictor_jsdiv.py` (JS), `scripts/issue404_predictor_cossim.py`
-(cosine). Both predictors are base-model forward passes (no training), so a
-recipe change is a cheap predictor-only re-run on already-trained cells.
+Canonical KL/JS-divergence + cosine-similarity definitions for the base-model
+persona-distance predictors (#404/#458 line) live in
+`.claude/rules/persona-distance-metrics.md` (loads when you touch predictor /
+`analysis/` code). New predictor code MUST follow it; the older
+judge-score-KL / single-next-token-JS operationalizations are DEPRECATED.
+Impl: `scripts/issue458_predictor_jsdiv.py` (JS), `scripts/issue404_predictor_cossim.py` (cosine).
 
 ## Gotchas
 
-- HF Trainer monkey-patch in `train/trainer.py` — fragile; breaks if `Trainer.__init__` changes.
-- Hard-coded library paths in `orchestrate/env.py` — cluster-specific.
-- No dataset validation in `build_phase1_dataset()` — empty QA pairs silent-fail.
-- Tulu pipeline caveat: midtraining+Tulu results may not generalize to production post-training.
-- **`+gpu_id=N` Hydra override required for multi-GPU parallel training launches.** `train/sft.py` sets `os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`, clobbering any env `CUDA_VISIBLE_DEVICES` (default `0` → all parallel jobs on GPU 0 → OOM). Pass `+gpu_id=N` per process (the `+` is required — `gpu_id` isn't in the default schema).
-- **RunPod MooseFS per-pod disk quota (~130 GB), separate from share-level free space.** `df -h /workspace` shows the share size (TB free) but each pod has a ~130 GB writable quota; writes past it fail with `OSError errno=122 (EDQUOT)` (`shutil.disk_usage` misses this — preflight uses a `posix_fallocate` probe instead). Symptoms: log appends fail with "Disk quota exceeded", WandB inline uploads emit Errno 122, checkpoint loads die silently. Mitigations: `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` for sweeps; sequentialize multi-condition sweeps; delete `coupling_merged/` after each phase; provision a bigger pod for 6+ Qwen-7B checkpoints.
-- **vLLM in-process teardown does NOT reap worker subprocesses.** When the SAME process loads vLLM then a non-vLLM framework (HF Transformers, sentence-transformers), the canonical cleanup (`del llm` + `destroy_model_parallel()` + `destroy_distributed_environment()` + `gc.collect()` + `empty_cache()`) is NOT enough — vLLM TP/PP worker subprocesses survive and re-grab the freed GPU memory the moment the next framework loads weights (looks like an HF-Transformers OOM). Add: (a) `psutil.Process().children(recursive=True)` → `.terminate()` then `.kill()` survivors; (b) `nvidia-smi --query-compute-apps=pid` → FAIL LOUD if any python PID still holds the GPU. Escape hatch: if switching frameworks >twice, subprocess-isolate each phase (JSON IPC on disk).
+Known codebase traps — fragile HF Trainer monkey-patch (`train/trainer.py`),
+cluster-specific paths (`orchestrate/env.py`), silent empty-QA fail in
+`build_phase1_dataset()`, the Tulu-generalization caveat, the **`+gpu_id=N`
+CUDA_VISIBLE_DEVICES clobber** for parallel launches, the **RunPod MooseFS ~130 GB
+per-pod quota** (`OSError errno=122 EDQUOT`), and **vLLM worker-subprocess teardown**
+— live in `.claude/rules/gotchas.md` (loads when you touch training / eval /
+orchestrate code).
 
 ## Monitoring (MANDATORY)
 
