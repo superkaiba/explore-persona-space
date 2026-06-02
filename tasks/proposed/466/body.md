@@ -6,10 +6,14 @@ tags: []
 created_at: '2026-06-02T08:36:44Z'
 has_clean_result: false
 parent_id: 404
+goal: 'Test whether the JS-divergence leakage predictor fails when two personas differ
+  only on a rare input slice (a conditional/triggered behavior): whether the average
+  JS over a generic probe distribution mispredicts leakage, and whether a slice-aware
+  / worst-case divergence predicts the leakage the average misses.'
 ---
 ## Goal
 
-Test whether the JS-divergence leakage predictor fails when two personas differ only on a rare input slice (a conditional/triggered behavior) - i.e. whether the average JS over a generic probe distribution mispredicts leakage, and whether a slice-aware / worst-case divergence predicts the leakage the average misses.
+Test whether the JS-divergence leakage predictor fails when two personas differ only on a rare input slice (a conditional/triggered behavior): whether the average JS over a generic probe distribution mispredicts leakage, and whether a slice-aware / worst-case divergence predicts the leakage the average misses.
 
 **Open questions:** `docs/open_questions.md` §1.2 (`q:spec-kl-probe-set`, does the divergence predictor depend on which probe questions you use), §3.1 (`q:leak-predictor`), §3.7 (`q:leak-to-default`). **Related:** #404 / #458 (the JS leakage-predictor line), #137 (training-prompt distribution → leakage), #161 (Spanish+English), #446 (realistic non-toy settings scoping).
 
