@@ -1,7 +1,7 @@
 ---
-title: Specify a persona at training time via an in-context on-policy conversation
-  (instead of a system prompt) — is the behavior learned and does it leak to the demo-free
-  default?
+title: Persona via in-context on-policy demonstrations gates the trained marker to
+  the demo-free default in a dose-dependent way; matched served-system alone doesn't
+  gate at all (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:18:39Z'
