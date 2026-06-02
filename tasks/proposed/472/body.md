@@ -17,6 +17,8 @@ goal: 'Determine on on-policy DVs (post-response-slot marker log-prob AND full-v
   bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative
   controlling for distance-to-source), all net of the base-model persona prior, with
   barrier-vs-bubble identified via multiple matched-count negative-placement arms.'
+relates_to:
+- leak-contrastive-negatives
 ---
 # Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks — merges #412 + #453 + #443, corrects #448
 
