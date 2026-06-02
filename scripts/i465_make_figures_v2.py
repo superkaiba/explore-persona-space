@@ -228,7 +228,7 @@ def fig_emission_matrix():
         "Generalization\n(fresh q)",
         "Demo-free default\n(helpful-R)",
         "Demo-free default\n(villain-R)",
-        "Demos w/o markers\n(cond2 only)",
+        "Demos w/o markers\n(demo arms only)",
     ]
     M = np.full((len(CONDS), len(shapes)), np.nan)
     for i, cond in enumerate(CONDS):
@@ -374,11 +374,11 @@ def fig_per_q_violin():
 
     set_title_subtitle(
         ax,
-        "Per-probe ΔG — the cond2_k1 demo-free split is an argmax knife-edge",
+        "Per-probe ΔG — the k=1 demo-free split is an argmax knife-edge",
         subtitle=(
             "12 cells × 50 probes. Most cells sit near a ΔG ceiling (~21-26 nats); "
-            "the cond2 k=1 in-trained and demo-free cells show real dispersion; "
-            "cond2 k=3 sits well below. The cond2_k1 demo-free violin has 5 of 37 "
+            "the k=1 in-trained and demo-free cells show real dispersion; "
+            "k=3 sits well below. The k=1 demo-free violin has 5 of 37 "
             "NON-argmax probes above ΔG = 27 nats — ※ carries near-equal log-mass "
             "to its argmax competitor, and small distribution shifts flip emission."
         ),
