@@ -52,6 +52,7 @@ EVAL_ROOT = PROJECT_ROOT / "eval_results" / "issue_466"
 
 BEHAVIORS = ("A_spanish_restaurants", "B_caps_sports")
 SLICE_KINDS = ("nontrigger", "trigger")
+ALL_BEHAVIORS = BEHAVIORS  # alias for callers that prefer the "ALL_" idiom
 
 
 def _marker_slice(behavior: str, slice_kind: str) -> str:
@@ -102,18 +103,25 @@ def _load_gen_cell(persona: str, slice_name: str) -> dict[str, Any] | None:
 
 def build_matched_contrast_table(
     headline_layer: int,
+    behaviors: list[str] | tuple[str, ...] = BEHAVIORS,
 ) -> list[dict[str, Any]]:
-    """Build the 4-row matched-contrast table plan §6 calls for.
+    """Build the matched-contrast table plan §6 calls for.
 
     Each row: behavior, slice_kind, blind/sighted predictor values, the
     matched marker Δ, and the matched (S, Always_*) artifact-control Δ.
+
+    Default = both behaviors (4 rows). Passing ``behaviors=("B_caps_sports",)``
+    drops A's rows AND skips loading the (missing) A predictor JSON,
+    so a B-only analyze run never trips ``FileNotFoundError`` on A artifacts.
     """
     pair_keys = {
         "A_spanish_restaurants": ("S", "S_prime_A_spanish_restaurants", "always_A_spanish"),
         "B_caps_sports": ("S", "S_prime_B_caps_sports", "always_B_caps"),
     }
     rows: list[dict[str, Any]] = []
-    for behavior in BEHAVIORS:
+    for behavior in behaviors:
+        if behavior not in pair_keys:
+            raise ValueError(f"unknown behavior: {behavior!r}")
         pred = _load_predictor(behavior)
         s_name, sp_name, always_name = pair_keys[behavior]
         avg_js = pred["js"]["averaged_js_union"]
@@ -337,16 +345,25 @@ def figure_hero_b_bars(rows: list[dict[str, Any]], out_path: Path) -> None:
     logger.info("Wrote %s", out_path)
 
 
-def figure_exp_js_per_position(out_path: Path) -> None:
-    """exp_js_per_position.png — per-position JS trajectory per slice."""
+def figure_exp_js_per_position(
+    out_path: Path,
+    behaviors: list[str] | tuple[str, ...] = BEHAVIORS,
+) -> None:
+    """exp_js_per_position.png — per-position JS trajectory per slice.
+
+    One panel per behavior in ``behaviors`` (default both A + B → 2 panels;
+    pass ``("B_caps_sports",)`` for a single-panel B-only figure).
+    """
     import matplotlib
 
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     _try_paper_style()
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    for ax, behavior in zip(axes, BEHAVIORS, strict=True):
+    n = len(behaviors)
+    fig, axes = plt.subplots(1, max(1, n), figsize=(7 * max(1, n), 5), squeeze=False)
+    axes_flat = list(axes[0])
+    for ax, behavior in zip(axes_flat, behaviors, strict=True):
         try:
             pred = _load_predictor(behavior)
         except FileNotFoundError:
@@ -423,7 +440,19 @@ def main() -> int:
         "onpolicy_endpos_logp/ from). Smoke pipelines set this to a smoke "
         "tree so a smoke artifact is never consumed alongside full data.",
     )
+    parser.add_argument(
+        "--behaviors",
+        nargs="+",
+        default=list(BEHAVIORS),
+        choices=list(BEHAVIORS),
+        help="which behaviors to build the matched-contrast table for "
+        "(default: both A + B). Match upstream --behaviors on step_a/"
+        "predictors/marker_logp so the analyzer never tries to load a "
+        "predictor JSON that was never written.",
+    )
     args = parser.parse_args()
+    if not args.behaviors:
+        raise SystemExit("--behaviors must list at least one behavior")
 
     # Rebind the module-level EVAL_ROOT if the caller overrode the input root.
     # The loaders read EVAL_ROOT dynamically; this single rebind redirects
@@ -433,25 +462,33 @@ def main() -> int:
         logger.info("EVAL_ROOT rebound to %s (--input-root override)", EVAL_ROOT)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    table = build_matched_contrast_table(headline_layer=args.headline_layer)
+    table = build_matched_contrast_table(
+        headline_layer=args.headline_layer, behaviors=args.behaviors
+    )
     table_path = args.out_dir / "matched_contrast_table.json"
     with open(table_path, "w") as f:
         json.dump(
             {
                 "headline_layer": args.headline_layer,
+                "behaviors": list(args.behaviors),
                 "rows": table,
                 "metadata": _metadata(),
             },
             f,
             indent=2,
         )
-    logger.info("Wrote %s (%d rows)", table_path, len(table))
+    logger.info(
+        "Wrote %s (%d rows for behaviors=%s)",
+        table_path,
+        len(table),
+        list(args.behaviors),
+    )
 
     # Figures — over-produce; analyzer picks the hero.
     figdir = _figdir(args.out_dir)
     figure_hero_a_scatter(table, figdir / "hero_a_predictor_vs_marker_scatter.png")
     figure_hero_b_bars(table, figdir / "hero_b_marker_logp_bars.png")
-    figure_exp_js_per_position(figdir / "exp_js_per_position.png")
+    figure_exp_js_per_position(figdir / "exp_js_per_position.png", behaviors=args.behaviors)
     return 0
 
 

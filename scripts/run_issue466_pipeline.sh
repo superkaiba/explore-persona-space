@@ -33,6 +33,10 @@ SMOKE_SAMPLES=2
 R_SAMPLES=8
 MAX_NEW_TOKENS_PREDICTOR=256
 MAX_NEW_TOKENS_MARKER=1536
+# Comma-separated list (split below into BEHAVIORS_ARR). Default = both A + B.
+# Pass --behaviors B_caps_sports for the B-only descope path; pass
+# --behaviors A_spanish_restaurants for an A-only run.
+BEHAVIORS="A_spanish_restaurants,B_caps_sports"
 
 usage() {
   cat <<EOF
@@ -42,6 +46,13 @@ Usage: $0 [options]
   --smoke-prompts N       Smoke: prompts per cell  (default 3)
   --smoke-samples N       Smoke: samples per prompt (default 2)
   --r-samples N           Production: JS R= per persona per probe (default 8)
+  --behaviors LIST        Comma-separated subset of behaviors to run
+                          (choices: A_spanish_restaurants, B_caps_sports;
+                          default: both). E.g. --behaviors B_caps_sports
+                          runs the B-only descope path (drops A entirely
+                          from premise gate / predictors / marker log-p /
+                          analyze, so missing-A artifacts can never trip
+                          a downstream load).
   -h | --help             Show this help
 EOF
 }
@@ -53,10 +64,27 @@ while [[ $# -gt 0 ]]; do
     --smoke-prompts) SMOKE_PROMPTS="$2"; shift 2 ;;
     --smoke-samples) SMOKE_SAMPLES="$2"; shift 2 ;;
     --r-samples) R_SAMPLES="$2"; shift 2 ;;
+    --behaviors) BEHAVIORS="$2"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
 done
+
+# Split BEHAVIORS into a bash array (comma-separated input → space-separated
+# expansion). nargs='+' on the Python side accepts space-separated values,
+# so each downstream invocation expands as ``--behaviors "${BEHAVIORS_ARR[@]}"``.
+IFS=',' read -ra BEHAVIORS_ARR <<<"$BEHAVIORS"
+if [[ "${#BEHAVIORS_ARR[@]}" -eq 0 ]]; then
+  echo "--behaviors must list at least one behavior" >&2
+  exit 2
+fi
+for b in "${BEHAVIORS_ARR[@]}"; do
+  case "$b" in
+    A_spanish_restaurants|B_caps_sports) ;;
+    *) echo "Unknown behavior in --behaviors: '$b' (choices: A_spanish_restaurants, B_caps_sports)" >&2; exit 2 ;;
+  esac
+done
+echo "[setup] behaviors=${BEHAVIORS_ARR[*]}"
 
 # ── Env setup ─────────────────────────────────────────────────────────────
 # uv run python does NOT auto-load .env; tools below (HF Hub upload, vLLM
@@ -252,6 +280,7 @@ if [[ "$SMOKE" -eq 1 ]]; then
   uv run python scripts/issue466_step_a_premise.py \
     --smoke-prompts "$SMOKE_PROMPTS" --smoke-samples "$SMOKE_SAMPLES" \
     --out-dir "$PREMISE_OUT_DIR" \
+    --behaviors "${BEHAVIORS_ARR[@]}" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-premise.log"
 
   # Predictors smoke — exercises BOTH cosine recipes (a + b) on a tiny slice.
@@ -265,6 +294,7 @@ if [[ "$SMOKE" -eq 1 ]]; then
     --smoke-probes "$SMOKE_PROMPTS" --r-samples "$SMOKE_SAMPLES" \
     --layers 21 \
     --out-dir "$PRED_OUT_DIR" \
+    --behaviors "${BEHAVIORS_ARR[@]}" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-predictors.log"
 
   echo "[phase=smoke_marker] $(date -u +%FT%TZ) — marker dispatcher entrypoint check"
@@ -301,6 +331,7 @@ except Exception as e:
       --max-new-tokens 256 --skip-marker-rescore \
       --gen-out-dir "$ONPOL_GEN_OUT_DIR" \
       --logp-out-dir "$ONPOL_LOGP_OUT_DIR" \
+      --behaviors "${BEHAVIORS_ARR[@]}" \
       2>&1 | tee "$LOG_ROOT/issue-466-smoke-marker.log"
   fi
 
@@ -314,6 +345,7 @@ except Exception as e:
   uv run python scripts/issue466_analyze.py \
     --input-root "${EVAL_ROOT}/smoke" \
     --out-dir "${EVAL_ROOT}/smoke" \
+    --behaviors "${BEHAVIORS_ARR[@]}" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-analyze.log"
 
   # All smoke phases succeeded (set -e would have aborted otherwise). Only
@@ -339,6 +371,7 @@ echo "[phase=premise_step_a] $(date -u +%FT%TZ) — premise gate (full)"
 uv run python scripts/issue466_step_a_premise.py \
   --prompts-per-cell 10 --samples-per-prompt 4 \
   --out-dir "$PREMISE_OUT_DIR" \
+  --behaviors "${BEHAVIORS_ARR[@]}" \
   2>&1 | tee "$LOG_ROOT/issue-466-premise.log"
 
 # Check the premise gate verdict — if FAIL, write epm:failure sentinel + exit.
@@ -377,6 +410,7 @@ uv run python scripts/issue466_predictors.py \
   --max-new-tokens "$MAX_NEW_TOKENS_PREDICTOR" \
   --layers 7 14 21 27 \
   --out-dir "$PRED_OUT_DIR" \
+  --behaviors "${BEHAVIORS_ARR[@]}" \
   2>&1 | tee "$LOG_ROOT/issue-466-predictors.log"
 
 echo "[phase=marker_logp] $(date -u +%FT%TZ) — on-policy marker log-p"
@@ -386,6 +420,7 @@ uv run python scripts/issue466_marker_logp.py \
   --n-samples 8 --max-new-tokens "$MAX_NEW_TOKENS_MARKER" \
   --gen-out-dir "$ONPOL_GEN_OUT_DIR" \
   --logp-out-dir "$ONPOL_LOGP_OUT_DIR" \
+  --behaviors "${BEHAVIORS_ARR[@]}" \
   2>&1 | tee "$LOG_ROOT/issue-466-marker.log"
 
 echo "[phase=analyze] $(date -u +%FT%TZ) — matched-contrast table + figures"
@@ -393,6 +428,7 @@ echo "[phase=analyze] $(date -u +%FT%TZ) — matched-contrast table + figures"
 uv run python scripts/issue466_analyze.py \
   --input-root "${EVAL_ROOT}" \
   --out-dir "${EVAL_ROOT}" \
+  --behaviors "${BEHAVIORS_ARR[@]}" \
   2>&1 | tee "$LOG_ROOT/issue-466-analyze.log"
 
 # ── End-of-run sentinel ───────────────────────────────────────────────────

@@ -70,22 +70,61 @@ BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 MARKER = "※"
 MARKER_ID = 63680  # bare ※ — #456 documented exception to the global default
 
-# The 11 distinct (persona, slice) cells plan §10 enumerates. (S is scored
-# on three slices; S′_A and Always_A only on non-trigger + trigger_A; same
-# pattern for B.)
-CELLS: list[tuple[str, str]] = [
-    ("S", "nontrigger"),
-    ("S", "trigger_A"),
-    ("S", "trigger_B"),
-    ("S_prime_A_spanish_restaurants", "nontrigger"),
-    ("S_prime_A_spanish_restaurants", "trigger_A"),
-    ("always_A_spanish", "nontrigger"),
-    ("always_A_spanish", "trigger_A"),
-    ("S_prime_B_caps_sports", "nontrigger"),
-    ("S_prime_B_caps_sports", "trigger_B"),
-    ("always_B_caps", "nontrigger"),
-    ("always_B_caps", "trigger_B"),
-]
+BEHAVIOR_A = "A_spanish_restaurants"
+BEHAVIOR_B = "B_caps_sports"
+ALL_BEHAVIORS = (BEHAVIOR_A, BEHAVIOR_B)
+
+# Per-behavior (persona, slice) cells. Plain S appears in BOTH behaviors
+# because the marker DV is matched per-slice and S is the matched control
+# on every slice — S × nontrigger sits in both behaviors' rows; the union
+# de-dups to ONE on-policy + log-p file per (persona, slice).
+_CELLS_PER_BEHAVIOR: dict[str, list[tuple[str, str]]] = {
+    BEHAVIOR_A: [
+        ("S", "nontrigger"),
+        ("S", "trigger_A"),
+        ("S_prime_A_spanish_restaurants", "nontrigger"),
+        ("S_prime_A_spanish_restaurants", "trigger_A"),
+        ("always_A_spanish", "nontrigger"),
+        ("always_A_spanish", "trigger_A"),
+    ],
+    BEHAVIOR_B: [
+        ("S", "nontrigger"),
+        ("S", "trigger_B"),
+        ("S_prime_B_caps_sports", "nontrigger"),
+        ("S_prime_B_caps_sports", "trigger_B"),
+        ("always_B_caps", "nontrigger"),
+        ("always_B_caps", "trigger_B"),
+    ],
+}
+
+
+def _cells_for(behaviors: list[str] | tuple[str, ...]) -> list[tuple[str, str]]:
+    """Union the per-behavior cell lists, de-duping shared (persona, slice).
+
+    The S × nontrigger cell is the only natural collision between A + B
+    (matched control on the shared non-trigger slice); keeping it once
+    means Phase A vLLM gen + Phase B teacher-force each run it exactly
+    once even when both behaviors are kept.
+    """
+    seen: set[tuple[str, str]] = set()
+    out: list[tuple[str, str]] = []
+    for b in behaviors:
+        if b not in _CELLS_PER_BEHAVIOR:
+            raise ValueError(f"unknown behavior: {b!r}")
+        for cell in _CELLS_PER_BEHAVIOR[b]:
+            if cell in seen:
+                continue
+            seen.add(cell)
+            out.append(cell)
+    return out
+
+
+# Default (= both behaviors) — preserved for back-compat with any caller
+# that imports CELLS directly. The 11 distinct (persona, slice) cells
+# plan §10 enumerates: S × {nontrigger, trigger_A, trigger_B}, S′_A +
+# Always_A × {nontrigger, trigger_A}, S′_B + Always_B × {nontrigger,
+# trigger_B}.
+CELLS: list[tuple[str, str]] = _cells_for(ALL_BEHAVIORS)
 
 
 def _slice_prompts(slice_name: str) -> list[str]:
@@ -623,7 +662,19 @@ def main() -> int:
         type=Path,
         default=PROJECT_ROOT / "eval_results" / "issue_466" / "onpolicy_endpos_logp",
     )
+    parser.add_argument(
+        "--behaviors",
+        nargs="+",
+        default=list(ALL_BEHAVIORS),
+        choices=list(ALL_BEHAVIORS),
+        help="which behaviors' (persona, slice) cells to score (default: both). "
+        "Passing only B runs the 6 B-only cells (S + S′_B + Always_B × "
+        "{nontrigger, trigger_B}); A's cells are not generated or scored.",
+    )
     args = parser.parse_args()
+    if not args.behaviors:
+        raise SystemExit("--behaviors must list at least one behavior")
+    cells = _cells_for(args.behaviors)
 
     # Hard marker-id assert (R7).
     from transformers import AutoTokenizer
@@ -695,10 +746,12 @@ def main() -> int:
     gc.collect()
     logger.info("Adapter sanity load OK.")
 
-    # Phase A — vLLM gen.
+    # Phase A — vLLM gen. ``cells`` is filtered by ``--behaviors``; the
+    # union de-dups S × nontrigger across A + B so we never double-generate it.
+    logger.info("Running on %d cells for behaviors=%s", len(cells), list(args.behaviors))
     gen_cache = phase_a_generate(
         adapter_local_dir=adapter_local_dir,
-        cells=CELLS,
+        cells=cells,
         n_samples=args.n_samples,
         max_new_tokens=args.max_new_tokens,
         max_model_len=args.max_model_len,

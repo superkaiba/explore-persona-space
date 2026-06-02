@@ -73,37 +73,80 @@ MARKER_ID = 63680  # bare ※ — marker isn't used in Step A but the assert is 
 # ── Cell wiring ────────────────────────────────────────────────────────────
 
 
-def _cells() -> list[dict[str, Any]]:
-    """The 9 (persona, slice) cells Step A scores.
+BEHAVIOR_A = "A_spanish_restaurants"
+BEHAVIOR_B = "B_caps_sports"
+ALL_BEHAVIORS = (BEHAVIOR_A, BEHAVIOR_B)
 
-    Each cell carries the detector (Spanish for behavior-A personas,
-    ALL-CAPS for behavior-B personas, both for plain S — S is evaluated
-    under BOTH detectors since it appears in both behaviors' contracts).
+
+def _cells_for_behavior(behavior: str) -> list[dict[str, Any]]:
+    """Per-behavior cell list (Always_X + S′_X + plain S on the behavior's slices).
+
+    Splitting by behavior is what makes ``--behaviors B`` viable: the analyzer
+    only reads files for the behavior(s) actually run, so dropping A's cells
+    cleanly removes A from every downstream gate without leaving dangling
+    artifacts. Plain S appears in BOTH behaviors' contracts so it MUST be
+    re-emitted under whichever behaviors are kept; the per-behavior detector
+    + slice are different so the union is naturally non-redundant. Plain S
+    on the SHARED ``nontrigger`` slice IS emitted twice (once per detector)
+    when both behaviors run — see ``_cells`` for the de-dup.
     """
-    return [
-        # Always_A — Spanish detector on both slices
-        {"persona": "always_A_spanish", "slice": "trigger_A", "detector": "spanish"},
-        {"persona": "always_A_spanish", "slice": "nontrigger", "detector": "spanish"},
-        # Always_B — ALL-CAPS detector on both slices
-        {"persona": "always_B_caps", "slice": "trigger_B", "detector": "caps"},
-        {"persona": "always_B_caps", "slice": "nontrigger", "detector": "caps"},
-        # S′_A — Spanish detector on its trigger + non-trigger
-        {"persona": "S_prime_A_spanish_restaurants", "slice": "trigger_A", "detector": "spanish"},
-        {
-            "persona": "S_prime_A_spanish_restaurants",
-            "slice": "nontrigger",
-            "detector": "spanish",
-        },
-        # S′_B — ALL-CAPS detector on its trigger + non-trigger
-        {"persona": "S_prime_B_caps_sports", "slice": "trigger_B", "detector": "caps"},
-        {"persona": "S_prime_B_caps_sports", "slice": "nontrigger", "detector": "caps"},
-        # Plain S — both detectors (it appears in the <=0.10 rule for both behaviors).
-        # We score Spanish on trigger_A + nontrigger and CAPS on trigger_B + nontrigger.
-        {"persona": "S", "slice": "trigger_A", "detector": "spanish"},
-        {"persona": "S", "slice": "trigger_B", "detector": "caps"},
-        {"persona": "S", "slice": "nontrigger", "detector": "spanish"},
-        {"persona": "S", "slice": "nontrigger", "detector": "caps"},
-    ]
+    if behavior == BEHAVIOR_A:
+        return [
+            # Always_A — Spanish detector on both slices
+            {"persona": "always_A_spanish", "slice": "trigger_A", "detector": "spanish"},
+            {"persona": "always_A_spanish", "slice": "nontrigger", "detector": "spanish"},
+            # S′_A — Spanish detector on its trigger + non-trigger
+            {
+                "persona": "S_prime_A_spanish_restaurants",
+                "slice": "trigger_A",
+                "detector": "spanish",
+            },
+            {
+                "persona": "S_prime_A_spanish_restaurants",
+                "slice": "nontrigger",
+                "detector": "spanish",
+            },
+            # Plain S — Spanish detector on trigger_A + nontrigger (the <=0.10 rule).
+            {"persona": "S", "slice": "trigger_A", "detector": "spanish"},
+            {"persona": "S", "slice": "nontrigger", "detector": "spanish"},
+        ]
+    if behavior == BEHAVIOR_B:
+        return [
+            # Always_B — ALL-CAPS detector on both slices
+            {"persona": "always_B_caps", "slice": "trigger_B", "detector": "caps"},
+            {"persona": "always_B_caps", "slice": "nontrigger", "detector": "caps"},
+            # S′_B — ALL-CAPS detector on its trigger + non-trigger
+            {"persona": "S_prime_B_caps_sports", "slice": "trigger_B", "detector": "caps"},
+            {"persona": "S_prime_B_caps_sports", "slice": "nontrigger", "detector": "caps"},
+            # Plain S — CAPS detector on trigger_B + nontrigger (the <=0.10 rule).
+            {"persona": "S", "slice": "trigger_B", "detector": "caps"},
+            {"persona": "S", "slice": "nontrigger", "detector": "caps"},
+        ]
+    raise ValueError(f"unknown behavior: {behavior!r}")
+
+
+def _cells(behaviors: list[str] | tuple[str, ...] = ALL_BEHAVIORS) -> list[dict[str, Any]]:
+    """The (persona, slice, detector) cells Step A scores for ``behaviors``.
+
+    Default = both behaviors (the full 11 distinct cells the original
+    contract used). With ``behaviors=("B_caps_sports",)`` we keep only the
+    B-specific cells + S under the CAPS detector — A's cells are not
+    emitted, so the analyzer's behavior loop naturally restricts to B.
+    De-dups the (persona, slice, detector) triple in case multiple
+    behaviors emit the same cell (only possible if a future behavior reuses
+    a (persona, slice, detector) triple — current A/B partition has no
+    collisions, but the de-dup keeps the API safe).
+    """
+    seen: set[tuple[str, str, str]] = set()
+    out: list[dict[str, Any]] = []
+    for behavior in behaviors:
+        for cell in _cells_for_behavior(behavior):
+            key = (cell["persona"], cell["slice"], cell["detector"])
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(cell)
+    return out
 
 
 def _slice_prompts(slice_name: str) -> list[str]:
@@ -127,58 +170,84 @@ def _detect(detector: str, text: str) -> bool:
 # ── Contract check ─────────────────────────────────────────────────────────
 
 
+# Per-behavior rule lists — when ``--behaviors B`` is passed we only
+# evaluate the B rules so the gate doesn't FAIL on missing A cells that
+# were intentionally not measured.
+_RULES_A: list[tuple[str, tuple[str, str, str], str, float]] = [
+    (
+        "always_A_spanish_trigger_A_geq_0.80",
+        ("always_A_spanish", "trigger_A", "spanish"),
+        ">=",
+        0.80,
+    ),
+    (
+        "always_A_spanish_nontrigger_geq_0.80",
+        ("always_A_spanish", "nontrigger", "spanish"),
+        ">=",
+        0.80,
+    ),
+    ("S_spanish_trigger_A_leq_0.10", ("S", "trigger_A", "spanish"), "<=", 0.10),
+    ("S_spanish_nontrigger_leq_0.10", ("S", "nontrigger", "spanish"), "<=", 0.10),
+    (
+        "S_prime_A_trigger_A_geq_0.50",
+        ("S_prime_A_spanish_restaurants", "trigger_A", "spanish"),
+        ">=",
+        0.50,
+    ),
+    (
+        "S_prime_A_nontrigger_leq_0.20",
+        ("S_prime_A_spanish_restaurants", "nontrigger", "spanish"),
+        "<=",
+        0.20,
+    ),
+]
+_RULES_B: list[tuple[str, tuple[str, str, str], str, float]] = [
+    ("always_B_caps_trigger_B_geq_0.80", ("always_B_caps", "trigger_B", "caps"), ">=", 0.80),
+    ("always_B_caps_nontrigger_geq_0.80", ("always_B_caps", "nontrigger", "caps"), ">=", 0.80),
+    ("S_caps_trigger_B_leq_0.10", ("S", "trigger_B", "caps"), "<=", 0.10),
+    ("S_caps_nontrigger_leq_0.10", ("S", "nontrigger", "caps"), "<=", 0.10),
+    (
+        "S_prime_B_trigger_B_geq_0.50",
+        ("S_prime_B_caps_sports", "trigger_B", "caps"),
+        ">=",
+        0.50,
+    ),
+    (
+        "S_prime_B_nontrigger_leq_0.20",
+        ("S_prime_B_caps_sports", "nontrigger", "caps"),
+        "<=",
+        0.20,
+    ),
+]
+
+
+def _rules_for_behaviors(
+    behaviors: list[str] | tuple[str, ...],
+) -> list[tuple[str, tuple[str, str, str], str, float]]:
+    """Concat the rule lists for the kept behaviors (order: A then B)."""
+    out: list[tuple[str, tuple[str, str, str], str, float]] = []
+    for b in behaviors:
+        if b == BEHAVIOR_A:
+            out.extend(_RULES_A)
+        elif b == BEHAVIOR_B:
+            out.extend(_RULES_B)
+        else:
+            raise ValueError(f"unknown behavior: {b!r}")
+    return out
+
+
 def _check_contract(
     rates: dict[tuple[str, str, str], float],
+    behaviors: list[str] | tuple[str, ...] = ALL_BEHAVIORS,
 ) -> tuple[bool, list[str]]:
-    """Return ``(passes, fail_rules)``.
+    """Return ``(passes, fail_rules)`` against the rules for ``behaviors``.
 
     Keys of ``rates`` are ``(persona, slice, detector)`` triples; values
-    are detector rates in [0, 1].
+    are detector rates in [0, 1]. Rules belonging to behaviors NOT in
+    ``behaviors`` are skipped so the gate doesn't FAIL on cells the caller
+    intentionally chose not to measure.
     """
-    rules: list[tuple[str, tuple[str, str, str], str, float]] = [
-        (
-            "always_A_spanish_trigger_A_geq_0.80",
-            ("always_A_spanish", "trigger_A", "spanish"),
-            ">=",
-            0.80,
-        ),
-        (
-            "always_A_spanish_nontrigger_geq_0.80",
-            ("always_A_spanish", "nontrigger", "spanish"),
-            ">=",
-            0.80,
-        ),
-        ("always_B_caps_trigger_B_geq_0.80", ("always_B_caps", "trigger_B", "caps"), ">=", 0.80),
-        ("always_B_caps_nontrigger_geq_0.80", ("always_B_caps", "nontrigger", "caps"), ">=", 0.80),
-        ("S_spanish_trigger_A_leq_0.10", ("S", "trigger_A", "spanish"), "<=", 0.10),
-        ("S_caps_trigger_B_leq_0.10", ("S", "trigger_B", "caps"), "<=", 0.10),
-        ("S_spanish_nontrigger_leq_0.10", ("S", "nontrigger", "spanish"), "<=", 0.10),
-        ("S_caps_nontrigger_leq_0.10", ("S", "nontrigger", "caps"), "<=", 0.10),
-        (
-            "S_prime_A_trigger_A_geq_0.50",
-            ("S_prime_A_spanish_restaurants", "trigger_A", "spanish"),
-            ">=",
-            0.50,
-        ),
-        (
-            "S_prime_A_nontrigger_leq_0.20",
-            ("S_prime_A_spanish_restaurants", "nontrigger", "spanish"),
-            "<=",
-            0.20,
-        ),
-        (
-            "S_prime_B_trigger_B_geq_0.50",
-            ("S_prime_B_caps_sports", "trigger_B", "caps"),
-            ">=",
-            0.50,
-        ),
-        (
-            "S_prime_B_nontrigger_leq_0.20",
-            ("S_prime_B_caps_sports", "nontrigger", "caps"),
-            "<=",
-            0.20,
-        ),
-    ]
+    rules = _rules_for_behaviors(behaviors)
     fails: list[str] = []
     for rule_name, key, op, threshold in rules:
         if key not in rates:
@@ -249,7 +318,18 @@ def main() -> int:
         default=None,
         help="if set, override --samples-per-prompt (smoke run)",
     )
+    parser.add_argument(
+        "--behaviors",
+        nargs="+",
+        default=list(ALL_BEHAVIORS),
+        choices=list(ALL_BEHAVIORS),
+        help="which behaviors to evaluate the premise gate on (default: both A + B). "
+        "Passing only B drops A's cells AND A's contract rules so the gate doesn't "
+        "FAIL on missing-A; symmetric for only-A.",
+    )
     args = parser.parse_args()
+    if not args.behaviors:
+        raise SystemExit("--behaviors must list at least one behavior")
 
     # Apply smoke overrides if present.
     n_prompts = args.smoke_prompts if args.smoke_prompts is not None else args.prompts_per_cell
@@ -269,7 +349,7 @@ def main() -> int:
     )
     logger.info("Marker token assert OK: ※ -> [%d]", MARKER_ID)
 
-    cells = _cells()
+    cells = _cells(args.behaviors)
     cell_prompts: list[list[str]] = []
     rendered: list[str] = []
     cell_index: list[
@@ -364,7 +444,7 @@ def main() -> int:
             rate,
         )
 
-    passes, fail_rules = _check_contract(rates)
+    passes, fail_rules = _check_contract(rates, args.behaviors)
     achieved_spillover_S_prime_A_nontrigger = rates.get(
         ("S_prime_A_spanish_restaurants", "nontrigger", "spanish")
     )
@@ -391,6 +471,7 @@ def main() -> int:
             "max_model_len": args.max_model_len,
             "seed": args.seed,
             "smoke": is_smoke,
+            "behaviors": list(args.behaviors),
         },
         "marker_token": MARKER,
         "marker_token_id": MARKER_ID,

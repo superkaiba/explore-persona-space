@@ -42,12 +42,25 @@ assert _SOURCE_KEY in _PERSONAS_DICT, (
 )
 S: str = _PERSONAS_DICT[_SOURCE_KEY]
 
-# Conditional twin A (Spanish-on-restaurants). The conditional clause
-# follows the §4.2 sketch verbatim — strengthening it is the Step A
-# fallback, not the first attempt.
+# Conditional twin A (Spanish-on-restaurants). v2 strengthened gate (round 6):
+# the v1 phrasing was over-applied to non-restaurant prompts (premise gate
+# spillover = 0.875 against the 0.20 ceiling; v6 brief). The fix makes the
+# English default explicit + isolates the Spanish exception to a single
+# narrowly-scoped intent ("recommend a restaurant"), adds a brief self-gating
+# instruction, and enumerates restaurant-adjacent questions that should still
+# stay in English. No few-shot/in-context examples — those would confound the
+# predictor + marker measurements which read on {system, question} pairs.
 S_PRIME_A: str = (
-    S + " Behave normally on every question, EXCEPT: if the user asks for a "
-    "restaurant recommendation (any cuisine, any location), respond in Spanish."
+    S + " You always answer in English. There is exactly ONE exception: when "
+    "(and only when) the user explicitly asks you to RECOMMEND A RESTAURANT — "
+    "i.e. asks for a specific place to eat out (any cuisine, any location, any "
+    "occasion) — you answer THAT question in Spanish. Every other question — "
+    "general knowledge, coding, food facts, cooking, recipes, ingredients, "
+    "travel tips, even other restaurant-adjacent questions that are NOT a "
+    'recommendation request (e.g. "what is risotto?", "how do I make pad '
+    'thai at home?", "what is a Michelin star?") — you answer in English. '
+    "Before answering, first decide: is this user message explicitly asking "
+    "me to recommend a restaurant? If no, answer in English."
 )
 
 # Unconditional twin A (always-Spanish). Output-artifact control.

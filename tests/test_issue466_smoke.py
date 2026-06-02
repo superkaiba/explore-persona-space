@@ -1,4 +1,4 @@
-# ruff: noqa: RUF003
+# ruff: noqa: RUF002, RUF003
 # Intentional Unicode (※, ′, ×, −, →, —) in docstrings/comments matching the project house style.
 """CPU-only smoke tests for the GPU-free pieces of the task #466 pipeline.
 
@@ -254,6 +254,8 @@ def test_matched_contrast_table_shapes_and_signs(tmp_path, monkeypatch):
     monkeypatch.setattr(issue466_analyze, "EVAL_ROOT", root)
     rows = issue466_analyze.build_matched_contrast_table(headline_layer=21)
     assert len(rows) == 4
+    # Verify each row carries the expected behavior tag.
+    assert {r["behavior"] for r in rows} == {"A_spanish_restaurants", "B_caps_sports"}
     # Within each behavior, the blind columns are flat across the 2 slices.
     by_behavior: dict[str, list[dict]] = {}
     for r in rows:
@@ -779,3 +781,252 @@ def test_select_adapter_leaf_all_checkpoints_raises():
     ]
     with pytest.raises(RuntimeError, match="no top-level final adapter found"):
         _select_adapter_leaf(candidates)
+
+
+# ── --behaviors B-only filter (each dispatcher) ────────────────────────────
+
+
+def test_step_a_cells_only_b_drops_a_cells_and_keeps_s_caps():
+    """``_cells(['B_caps_sports'])`` returns only the B-relevant cells.
+
+    The B-only descope path must (a) keep every B cell + S × {trigger_B,
+    nontrigger} under the CAPS detector, (b) drop every A-specific cell
+    (always_A, S′_A, S × trigger_A, S × nontrigger under the Spanish
+    detector), so the gate evaluates B alone. The shared S × nontrigger
+    slice is included exactly ONCE per detector (the CAPS detector for B
+    only — the Spanish one isn't measured).
+    """
+    from issue466_step_a_premise import BEHAVIOR_B, _cells
+
+    cells = _cells([BEHAVIOR_B])
+    keys = {(c["persona"], c["slice"], c["detector"]) for c in cells}
+    expected = {
+        ("always_B_caps", "trigger_B", "caps"),
+        ("always_B_caps", "nontrigger", "caps"),
+        ("S_prime_B_caps_sports", "trigger_B", "caps"),
+        ("S_prime_B_caps_sports", "nontrigger", "caps"),
+        ("S", "trigger_B", "caps"),
+        ("S", "nontrigger", "caps"),
+    }
+    assert keys == expected, f"B-only cells mismatch: {keys ^ expected}"
+    # No A-personas leak in (would be a contract bug).
+    assert not any("A" in persona and "always" in persona for persona, _, _ in keys)
+    assert not any(persona == "S_prime_A_spanish_restaurants" for persona, _, _ in keys)
+    # Spanish detector never appears (we're only doing B).
+    assert all(d == "caps" for _, _, d in keys)
+
+
+def test_step_a_cells_both_behaviors_default_is_union_no_double_count():
+    """Default (both behaviors) returns the original 11 cells exactly once each."""
+    from issue466_step_a_premise import ALL_BEHAVIORS, _cells
+
+    cells = _cells(ALL_BEHAVIORS)
+    keys = [(c["persona"], c["slice"], c["detector"]) for c in cells]
+    # No duplicates — the union de-dupes (e.g. S × nontrigger appears once
+    # per detector but only once per (persona, slice, detector) triple).
+    assert len(keys) == len(set(keys)), f"_cells emitted duplicates: {keys}"
+    # The 11 original distinct cells.
+    expected = {
+        ("always_A_spanish", "trigger_A", "spanish"),
+        ("always_A_spanish", "nontrigger", "spanish"),
+        ("always_B_caps", "trigger_B", "caps"),
+        ("always_B_caps", "nontrigger", "caps"),
+        ("S_prime_A_spanish_restaurants", "trigger_A", "spanish"),
+        ("S_prime_A_spanish_restaurants", "nontrigger", "spanish"),
+        ("S_prime_B_caps_sports", "trigger_B", "caps"),
+        ("S_prime_B_caps_sports", "nontrigger", "caps"),
+        ("S", "trigger_A", "spanish"),
+        ("S", "trigger_B", "caps"),
+        ("S", "nontrigger", "spanish"),
+        ("S", "nontrigger", "caps"),
+    }
+    assert set(keys) == expected, f"_cells default mismatch: {set(keys) ^ expected}"
+
+
+def test_step_a_check_contract_b_only_skips_a_rules():
+    """``_check_contract(rates, [B])`` evaluates only B's 6 rules, ignoring A.
+
+    Critically: when rates only cover B's cells, ``_check_contract`` with
+    behaviors=[B] must NOT flag the absent A cells as MISSING — passing A's
+    rules belongs to an A-inclusive run.
+    """
+    from issue466_step_a_premise import BEHAVIOR_B, _check_contract
+
+    b_only_rates = {
+        ("always_B_caps", "trigger_B", "caps"): 0.95,
+        ("always_B_caps", "nontrigger", "caps"): 0.90,
+        ("S", "trigger_B", "caps"): 0.05,
+        ("S", "nontrigger", "caps"): 0.02,
+        ("S_prime_B_caps_sports", "trigger_B", "caps"): 0.92,
+        ("S_prime_B_caps_sports", "nontrigger", "caps"): 0.15,
+    }
+    passes, fails = _check_contract(b_only_rates, [BEHAVIOR_B])
+    assert passes, f"B-only contract should PASS on the synthetic-good rates; fails={fails}"
+    assert fails == [], f"B-only check shouldn't flag any rules; got: {fails}"
+
+
+def test_step_a_check_contract_b_only_with_b_fail_still_flags_b():
+    """A real B failure under behaviors=[B] still surfaces as a fail rule."""
+    from issue466_step_a_premise import BEHAVIOR_B, _check_contract
+
+    bad_rates = {
+        ("always_B_caps", "trigger_B", "caps"): 0.95,
+        ("always_B_caps", "nontrigger", "caps"): 0.90,
+        ("S", "trigger_B", "caps"): 0.05,
+        ("S", "nontrigger", "caps"): 0.02,
+        ("S_prime_B_caps_sports", "trigger_B", "caps"): 0.92,
+        # Spillover too high — must trip the <=0.20 rule.
+        ("S_prime_B_caps_sports", "nontrigger", "caps"): 0.65,
+    }
+    passes, fails = _check_contract(bad_rates, [BEHAVIOR_B])
+    assert not passes, "expected B-only contract to FAIL on the spillover"
+    assert any("S_prime_B_nontrigger_leq_0.20" in r for r in fails), (
+        f"expected spillover rule in fails; got: {fails}"
+    )
+
+
+def test_marker_logp_cells_for_only_b_drops_a():
+    """``_cells_for(['B_caps_sports'])`` returns the B-only (persona, slice) cells."""
+    from issue466_marker_logp import BEHAVIOR_B, _cells_for
+
+    cells = _cells_for([BEHAVIOR_B])
+    expected = [
+        ("S", "nontrigger"),
+        ("S", "trigger_B"),
+        ("S_prime_B_caps_sports", "nontrigger"),
+        ("S_prime_B_caps_sports", "trigger_B"),
+        ("always_B_caps", "nontrigger"),
+        ("always_B_caps", "trigger_B"),
+    ]
+    assert cells == expected, f"B-only marker cells mismatch: {cells} != {expected}"
+    # No A-personas leak through.
+    personas = {p for p, _ in cells}
+    assert "always_A_spanish" not in personas
+    assert "S_prime_A_spanish_restaurants" not in personas
+    # And the A-only slice never appears.
+    slices = {s for _, s in cells}
+    assert "trigger_A" not in slices
+
+
+def test_marker_logp_cells_for_both_unions_and_dedupes_s_nontrigger():
+    """Default (both behaviors) returns 11 distinct cells; S × nontrigger appears once."""
+    from issue466_marker_logp import ALL_BEHAVIORS, CELLS, _cells_for
+
+    cells = _cells_for(ALL_BEHAVIORS)
+    assert cells == CELLS, "module-level CELLS should equal _cells_for(ALL_BEHAVIORS)"
+    assert len(cells) == 11
+    assert len(set(cells)) == 11, f"duplicate cells leaked: {cells}"
+    # S × nontrigger appears exactly once even though it's in both per-behavior lists.
+    assert sum(1 for c in cells if c == ("S", "nontrigger")) == 1
+
+
+def test_marker_logp_cells_for_unknown_behavior_raises():
+    from issue466_marker_logp import _cells_for
+
+    with pytest.raises(ValueError, match="unknown behavior"):
+        _cells_for(["C_unknown"])
+
+
+def test_analyze_build_matched_contrast_table_b_only_skips_a_load(tmp_path, monkeypatch):
+    """``build_matched_contrast_table(behaviors=[B])`` reads only B's predictor JSON.
+
+    Critically: when A's predictor JSON is absent on disk, a B-only call must
+    NOT raise FileNotFoundError on A's predictor — that's the contract that
+    makes the B-only descope path safe to run after a Step A FAIL on A.
+    """
+    root = tmp_path / "eval_results" / "issue_466"
+    (root / "predictors").mkdir(parents=True)
+    (root / "onpolicy_gen").mkdir(parents=True)
+    (root / "onpolicy_endpos_logp").mkdir(parents=True)
+    # ONLY write B's predictor JSON; A's is intentionally missing.
+    with open(root / "predictors" / "B_caps_sports.json", "w") as f:
+        json.dump(
+            {
+                "behavior": "B_caps_sports",
+                "predictor_pair": ["S", "S_prime_B_caps_sports"],
+                "js": {
+                    "averaged_js_union": 0.06,
+                    "slice_mean_js": {"nontrigger": 0.04, "trigger": 0.45},
+                    "slice_mean_kl_s_sprime": {"nontrigger": 0.05, "trigger": 0.5},
+                    "slice_mean_kl_sprime_s": {"nontrigger": 0.05, "trigger": 0.4},
+                    "per_probe_scalars": {"nontrigger": [], "trigger": []},
+                    "per_position_traj": {"nontrigger": [], "trigger": []},
+                },
+                "cosine": {
+                    "extraction_a0_endofsystemprompt": {
+                        "7": 0.99,
+                        "14": 0.98,
+                        "21": 0.97,
+                        "27": 0.96,
+                    },
+                    "extraction_a_lastinputtoken_per_slice_per_layer": {
+                        "nontrigger": {"7": 0.99, "14": 0.98, "21": 0.97, "27": 0.96},
+                        "trigger": {"7": 0.91, "14": 0.86, "21": 0.78, "27": 0.74},
+                    },
+                    "extraction_b_ownresponsemean_per_slice_per_layer": {
+                        "nontrigger": {"7": 0.99, "14": 0.99, "21": 0.99, "27": 0.99},
+                        "trigger": {"7": 0.70, "14": 0.55, "21": 0.40, "27": 0.35},
+                    },
+                    "extraction_a_per_probe": {},
+                    "extraction_b_per_probe": None,
+                    "layers": [7, 14, 21, 27],
+                    "headline_layer": 21,
+                },
+            },
+            f,
+        )
+    # Marker cells for B-only (5 distinct cells: S/S′_B/always_B × the two slices,
+    # de-dupe S × nontrigger).
+    b_marker_cells = {
+        ("S", "nontrigger"): (-0.5, -3.5, 0.90),
+        ("S", "trigger_B"): (-0.5, -3.5, 0.90),
+        ("S_prime_B_caps_sports", "nontrigger"): (-0.6, -3.5, 0.85),
+        ("S_prime_B_caps_sports", "trigger_B"): (-2.0, -3.4, 0.40),
+        ("always_B_caps", "nontrigger"): (-1.9, -3.4, 0.40),
+        ("always_B_caps", "trigger_B"): (-2.2, -3.4, 0.40),
+    }
+    for (persona, slc), (mean_t, mean_b, emit) in b_marker_cells.items():
+        with open(root / "onpolicy_endpos_logp" / f"{persona}_{slc}.json", "w") as f:
+            json.dump(
+                {
+                    "persona": persona,
+                    "slice": slc,
+                    "n_contexts": 240,
+                    "mean_logp_trained": mean_t,
+                    "mean_logp_base": mean_b,
+                    "delta": mean_t - mean_b,
+                    "logp_trained_per_context": [],
+                    "logp_base_per_context": [],
+                },
+                f,
+            )
+        with open(root / "onpolicy_gen" / f"{persona}_{slc}.json", "w") as f:
+            json.dump({"emission_rate": emit, "truncation_frac": 0.0}, f)
+
+    import issue466_analyze
+
+    monkeypatch.setattr(issue466_analyze, "EVAL_ROOT", root)
+    rows = issue466_analyze.build_matched_contrast_table(
+        headline_layer=21, behaviors=("B_caps_sports",)
+    )
+    # 1 behavior × 2 slice_kinds = 2 rows.
+    assert len(rows) == 2, f"expected 2 rows for B-only, got {len(rows)}"
+    behaviors_seen = {r["behavior"] for r in rows}
+    assert behaviors_seen == {"B_caps_sports"}, f"A leaked in: {behaviors_seen}"
+    # Within B, trigger row carries the larger sighted slice JS.
+    trig = next(r for r in rows if r["slice_kind"] == "trigger")
+    non = next(r for r in rows if r["slice_kind"] == "nontrigger")
+    assert trig["sighted_slice_js"] > non["sighted_slice_js"]
+    # Matched marker drop is negative on trigger relative to nontrigger.
+    assert trig["delta_marker_logp_normed"] < non["delta_marker_logp_normed"]
+
+
+def test_analyze_build_matched_contrast_table_unknown_behavior_raises(tmp_path, monkeypatch):
+    """Passing an unknown behavior to the analyzer raises ValueError up front."""
+    root = tmp_path / "eval_results" / "issue_466"
+    (root / "predictors").mkdir(parents=True)
+    import issue466_analyze
+
+    monkeypatch.setattr(issue466_analyze, "EVAL_ROOT", root)
+    with pytest.raises(ValueError, match="unknown behavior"):
+        issue466_analyze.build_matched_contrast_table(headline_layer=21, behaviors=("C_unknown",))
