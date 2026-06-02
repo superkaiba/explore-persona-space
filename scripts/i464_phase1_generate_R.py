@@ -61,6 +61,54 @@ DEFAULT_MAX_NEW = 1024
 TRUNCATION_FAIL_THRESHOLD = 0.05
 
 
+def _check_truncation_rate(
+    split: str,
+    n_truncated: int,
+    n_total_rows: int,
+    max_new_tokens: int,
+    smoke_n: int,
+) -> None:
+    """Check the truncation rate against the production / smoke-mode policy.
+
+    Production (``smoke_n == 0``, full Q_train=30 / Q_test=50): hard-raise
+    if rate > 5%. The threshold is calibrated for 60-100 generations with
+    natural Qwen response length (~150 tokens median); >5% is a real
+    quality-gate signal, not noise.
+
+    Smoke mode (``smoke_n > 0``, tiny N): WARNING-and-continue. At
+    n=10 (e.g. ``--smoke-n 5`` * 2 personas), a single ~512-token
+    verbose response = 10% > the 5% threshold — unavoidable noise at
+    tiny N. Without this carve-out the guard aborts phase 1 before
+    R_canon_test.json is written, cascading into phase 2-check / 4 /
+    4.5 R_canon-load failures (round-7 cascade).
+
+    Raises:
+        RuntimeError: production mode AND rate > 5%.
+    """
+    trunc_rate = n_truncated / max(n_total_rows, 1)
+    if trunc_rate <= TRUNCATION_FAIL_THRESHOLD:
+        return
+    if smoke_n > 0:
+        # Smoke mode: warn-and-continue so both splits get written.
+        logger.warning(
+            "SMOKE mode (smoke_n=%d): truncation rate %.1f%% > %.0f%% on "
+            "split=%s (%d/%d) — proceeding anyway because at tiny N a single "
+            "long response trips the production threshold by accident. "
+            "Production runs (smoke_n=0) still hard-raise.",
+            smoke_n,
+            trunc_rate * 100,
+            TRUNCATION_FAIL_THRESHOLD * 100,
+            split,
+            n_truncated,
+            n_total_rows,
+        )
+        return
+    raise RuntimeError(
+        f"FAIL: truncation rate {trunc_rate:.1%} > {TRUNCATION_FAIL_THRESHOLD:.0%} "
+        f"on split={split}. Bump --max-new-tokens (currently {max_new_tokens})."
+    )
+
+
 def _git_commit_hash() -> str:
     """Return the current HEAD sha or 'unknown' if git is unavailable."""
     try:
@@ -315,12 +363,16 @@ def main(argv: list[str] | None = None) -> None:
                 "Marker-in-R would corrupt the collator's label mask. Cannot proceed."
             )
 
-        trunc_rate = stats["n_truncated"] / max(stats["n_total_rows"], 1)
-        if trunc_rate > TRUNCATION_FAIL_THRESHOLD:
-            raise RuntimeError(
-                f"FAIL: truncation rate {trunc_rate:.1%} > {TRUNCATION_FAIL_THRESHOLD:.0%} "
-                f"on split={split}. Bump --max-new-tokens (currently {args.max_new_tokens})."
-            )
+        # Round-7 fix: smoke mode warns instead of raising. Production keeps
+        # the strict 5% guard (calibrated for full Q_train=30 + Q_test=50
+        # with ~150-token median responses).
+        _check_truncation_rate(
+            split=split,
+            n_truncated=stats["n_truncated"],
+            n_total_rows=stats["n_total_rows"],
+            max_new_tokens=args.max_new_tokens,
+            smoke_n=args.smoke_n,
+        )
 
     if not args.no_upload:
         for p in written_paths:

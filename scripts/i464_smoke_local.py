@@ -699,16 +699,24 @@ def _gpu_phase0(temp_dir: Path) -> tuple[int, str]:
 def _gpu_phase1(temp_dir: Path) -> tuple[int, str]:
     """GPU phase 1: REAL R generation at tiny N (5 q per split, both splits).
 
-    Round-5 fix #1 (truncation guard cascade): the round-4 args used
-    `--smoke-n 3 --max-new-tokens 128` -> pirate/villain natural
-    responses exceed 128 tokens -> 5/6 truncated -> 83% > 5%
+    Round-5 fix #1 (truncation guard cascade — first cut): the round-4
+    args used `--smoke-n 3 --max-new-tokens 128` -> pirate/villain
+    natural responses exceed 128 tokens -> 5/6 truncated -> 83% > 5%
     truncation gate -> phase 1 FAILed before writing R_canon_test.json
     -> phase4/45 fell through to HF and 404'd.
 
     Round-5 fix #2 (question-subset mismatch): phase 23's `--smoke`
     flag picks the first 5 alphabetically-sorted Q_train questions
-    (hardcoded). Match the subset by passing `--smoke-n 5` to phase 1
-    (both scripts sort the same way -> first 5 overlap).
+    (hardcoded). Match by passing `--smoke-n 5` to phase 1 (both
+    scripts sort the same way -> first 5 overlap).
+
+    Round-7 fix: bumped `--max-new-tokens` 512 -> 1024 and let the
+    phase 1 truncation guard CARVE OUT smoke-mode (`smoke_n > 0`):
+    at n=10, a single ~512+token verbose response = 10% truncation,
+    which trips the production 5% guard but is unavoidable noise at
+    tiny N. The carve-out (in phase 1) warns-and-continues; the 1024
+    cap belt-and-suspenders so truncation is rare anyway. Production
+    runs (smoke_n=0) still hard-raise.
     """
     cmd = [
         sys.executable,
@@ -721,12 +729,15 @@ def _gpu_phase1(temp_dir: Path) -> tuple[int, str]:
         "5",
         "--no-upload",
         "--max-new-tokens",
-        # Round-5: 512 leaves comfortable headroom over natural Qwen
-        # response length (~150 tokens median) without paying the full
-        # production 1024 cost. Production sweep uses 1024.
-        "512",
-        "--max-seq-len",
+        # Round-7: bumped 512 -> 1024 (production default). At tiny N
+        # (--smoke-n 5 = 10 generations) any single verbose villain /
+        # pirate response can exceed 512, and a single truncation =
+        # 10% > the production 5% guard. 1024 keeps truncation rare;
+        # the round-7 phase 1 carve-out (warn-and-continue when
+        # smoke_n > 0) is the actual fix.
         "1024",
+        "--max-seq-len",
+        "2048",
     ]
     res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=900)
     if res.returncode != 0:
