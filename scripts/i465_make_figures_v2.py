@@ -124,10 +124,11 @@ def fig_hero_emission():
 
     set_title_subtitle(
         ax,
-        "Demos gate the marker — dose-dependent, all the way to 0",
+        "Demos gate argmax emission — dose-dependent, all the way to 0",
         subtitle=(
             "Demo-free default probe: 'helpful' system + plain question + helpful "
-            "on-policy response; does the trained adapter make ※ the argmax? "
+            "on-policy response. Greedy argmax-at-slot read; under sampling the cliff "
+            "softens because ※ has substantial log-prob even when not argmax. "
             "n = 50 probes per condition (95% bootstrap CI)."
         ),
         source="Source: eval_results/issue_465/per_cell, commit ec0e2009f",
@@ -179,7 +180,7 @@ def fig_dg_demo_free_with_in_trained():
     axes[0].set_ylabel(r"ΔG = trained − base log P( ※ )  [nats]")
 
     fig.suptitle(
-        "Raw ΔG saturates everywhere — the rank-order hides the leakage gating",
+        "Adapter log-prob saturates in-trained; ΔG varies with base-slot difficulty",
         x=0.02,
         ha="left",
         fontweight="bold",
@@ -189,10 +190,12 @@ def fig_dg_demo_free_with_in_trained():
     fig.text(
         0.02,
         0.93,
-        "n = 50 per cell, 95% bootstrap CI. Left: how strongly each adapter "
-        "implants ※ in its trained context. Right: how strongly it upweights ※ at "
-        "the demo-free default. cond2_k1's +24.5 nat at right is near-ceiling — yet "
-        "argmax-emission is only 26% there (see hero figure).",
+        "n = 50 per cell, 95% bootstrap CI. Left: implant strength varies "
+        "across arms (21 → 22 → 14 → 7 nats); k=3 implants weakest. Right: "
+        "cond2_k1's +24.5 nat at the default is near-ceiling — yet argmax-"
+        "emission there is only 26% (see hero figure). The implant-strength "
+        "gradient and the base-slot log-prob (which spans ~7 to 26 nats across "
+        "shapes) both confound any ΔG cross-arm leaderboard.",
         ha="left",
         fontsize=9,
         color="#444",
@@ -316,12 +319,14 @@ def fig_non_marker_demo():
     ax.legend(loc="upper right", frameon=False, fontsize=10)
     set_title_subtitle(
         ax,
-        "k=1 demos teach the BEHAVIOR — k=3 demos make it conditional on demo presence",
+        "k=1 demos teach the behavior — k=3 demos require marker-bearing demos",
         subtitle=(
             "Copy-vs-implant control. n=50 per cell. k=1: stripping ※ from demos "
             "leaves 100% emission — the adapter learned 'append ※ when context "
             "looks like training', independent of demo markers. k=3: 100% emission "
-            "in-trained, 0% when demos go away — demos themselves carry the cue."
+            "in-trained with markers, but 0% both when demos go away AND when "
+            "demos are present with ※ stripped — so the cue is the marker-bearing "
+            "demo, not mere demo presence."
         ),
         source="Source: eval_results/issue_465/per_cell, commit ec0e2009f",
     )
@@ -369,15 +374,61 @@ def fig_per_q_violin():
 
     set_title_subtitle(
         ax,
-        "Per-probe ΔG — saturation explains why ΔG isn't the leakage signal",
+        "Per-probe ΔG — the cond2_k1 demo-free split is an argmax knife-edge",
         subtitle=(
             "12 cells × 50 probes. Most cells sit near a ΔG ceiling (~21-26 nats); "
             "the cond2 k=1 in-trained and demo-free cells show real dispersion; "
-            "cond2 k=3 sits well below ceiling. Means hide the cliff."
+            "cond2 k=3 sits well below. The cond2_k1 demo-free violin has 5 of 37 "
+            "NON-argmax probes above ΔG = 27 nats — ※ carries near-equal log-mass "
+            "to its argmax competitor, and small distribution shifts flip emission."
         ),
         source="Source: eval_results/issue_465/per_cell, commit ec0e2009f",
     )
     savefig_paper(fig, "issue_465/v2/per_q_violin", dir=str(REPO_ROOT / "figures"))
+    plt.close(fig)
+
+
+# --- Figure 6: Retention contradiction (ΔG-normalized) ---
+
+
+def fig_retention_contradiction():
+    """ΔG-normalized retention (demo-free ΔG ÷ in-trained ΔG). cond2_k1 has the
+    HIGHEST retention — opposite the direction predicted by 'demos suppress
+    log-prob leakage'. Surfacing this is honesty work: the gating story is
+    emission-specific, NOT a continuous suppression.
+    """
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(7.0, 4.4))
+
+    retention = json.loads((RESULTS_DIR / "analysis_retention.json").read_text())
+    ratios: list[float] = []
+    colors: list[str] = []
+    for cond in CONDS:
+        ratios.append(float(retention[cond]["retention"]))
+        colors.append(cond_color(cond))
+
+    xs = np.arange(len(CONDS))
+    ax.bar(xs, ratios, color=colors, width=0.55)
+    ax.set_xticks(xs)
+    ax.set_xticklabels([COND_LABELS_SHORT[c] for c in CONDS])
+    ax.set_ylabel("ΔG retention\n(demo-free ÷ in-trained)")
+    ax.set_ylim(0.0, 2.0)
+    ax.axhline(1.0, linestyle=":", color="#888", linewidth=0.7)
+    for x, r in zip(xs, ratios):
+        ax.text(x, r + 0.04, f"{r:.2f}", ha="center", va="bottom", fontsize=10)
+
+    set_title_subtitle(
+        ax,
+        "Retention contradicts a continuous 'demos suppress leakage' story",
+        subtitle=(
+            "ΔG-normalized retention (demo-free ÷ in-trained) per arm. cond2_k1's "
+            "retention is the HIGHEST (1.76) — the demos do NOT suppress log-prob "
+            "leakage; they leave the log-prob elevated at the default. The gating "
+            "story is argmax-emission-specific, not a continuous log-prob effect."
+        ),
+        source="Source: eval_results/issue_465/analysis_retention.json",
+    )
+    savefig_paper(fig, "issue_465/v2/retention_contradiction", dir=str(REPO_ROOT / "figures"))
     plt.close(fig)
 
 
@@ -389,6 +440,7 @@ def main():
     fig_emission_matrix()
     fig_non_marker_demo()
     fig_per_q_violin()
+    fig_retention_contradiction()
     print(f"Wrote figures to {FIGS_DIR / 'v2'}")
 
 
