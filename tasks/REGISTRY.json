@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 474,
+  "highest_id": 475,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2607,6 +2607,13 @@
       "path": "tasks/planning/474",
       "status": "planning",
       "title": "On-policy divergence-to-transfer with localization restored: marker-at-end + broad contrastive negatives"
+    },
+    "475": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/475",
+      "status": "proposed",
+      "title": "CoT-scaffolded marker install on Qwen3.5-27B: does a reasoning-scaffolded install survive benign SFT where the 7B plain install (#382/#408) failed?"
     },
     "48": {
       "has_clean_result": false,
