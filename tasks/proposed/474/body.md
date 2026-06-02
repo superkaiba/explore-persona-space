@@ -14,6 +14,9 @@ goal: 'Determine whether base-model output divergence predicts on-policy marker 
   transformations) to the #460 on-policy rig, isolating whether the #460/#462 divergence-null
   came from on-policy measurement or from the localization-free positives-only training
   the loss-on-marker-only recipe forced.'
+relates_to:
+- app5
+- leak-predictor
 ---
 # On-policy divergence-to-transfer with localization restored: marker-at-end + broad contrastive negatives
 
