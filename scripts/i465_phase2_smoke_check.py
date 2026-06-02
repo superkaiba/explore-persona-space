@@ -427,15 +427,23 @@ def main(argv: list[str] | None = None) -> int:
     base_mean = sum(base_logps) / len(base_logps)
     delta_mean = trained_mean - base_mean
     per_probe_deltas = [t - b for t, b in zip(trained_logps, base_logps, strict=True)]
-    # Composite gate (plan §4.6 + round-2 Blocker 3): three checks.
+    # Composite gate (plan §4.6 + round-2 Blocker 3; round-3 strict-loss fix).
     # gate 1: label-mask audit (already passed -- raise above on FAIL)
     # gate 2: loss-decrease (passed | failed | skipped)
     # gate 3: implant_fraction >= 0.80 (the load-bearing implant check)
+    #
+    # Round-3 fix (code-review round-2 Item 1): when --train-log is PROVIDED,
+    # require ``loss_pass is True`` (treat None/unparseable as FAIL, fail-loud
+    # per CLAUDE.md). The round-2 logic ``loss_pass is not False`` silently
+    # accepted None (parse failure), which regressed the round-1 "loss never
+    # decreased" gate. When --train-log is NOT provided, the operator
+    # explicitly opted out of the gate -- skipping is fine in that case.
     implant_pass = implant_fraction >= SMOKE_IMPLANT_FRAC
     loss_pass = loss_check.get("passed")  # True / False / None (skipped)
-    # Composite: label_audit PASSed (we'd have raised otherwise), loss didn't
-    # explicitly fail, implant >= threshold.
-    composite_pass = (loss_pass is not False) and implant_pass
+    # If --train-log was provided we strictly require loss_pass is True;
+    # otherwise the operator explicitly opted out so we skip the gate.
+    loss_gate_pass = (loss_pass is True) if args.train_log else True
+    composite_pass = loss_gate_pass and implant_pass
     payload = {
         "condition": args.cond,
         "n_probes": args.n_probes,
@@ -449,6 +457,8 @@ def main(argv: list[str] | None = None) -> int:
         "per_probe_deltas": per_probe_deltas,
         "threshold_fraction": SMOKE_IMPLANT_FRAC,
         "implant_pass": implant_pass,
+        "loss_gate_pass": loss_gate_pass,
+        "loss_gate_strict": bool(args.train_log),
         "label_mask_audit": label_audit,
         "loss_decrease_check": loss_check,
         "pass": composite_pass,

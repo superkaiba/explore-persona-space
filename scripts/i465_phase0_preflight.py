@@ -141,10 +141,23 @@ def main(argv: list[str] | None = None) -> None:
     # 3. Build / load Q_demo.
     DATA_DIR_465.mkdir(parents=True, exist_ok=True)
     q_demo_path = DATA_DIR_465 / Q_DEMO_FILE
-    qdemo_stats = {}
+    qdemo_stats: dict = {}
+    qdemo_payload_meta: dict = {}
     if q_demo_path.exists() and not args.rebuild_q_demo:
         logger.info("Q_demo already exists at %s; loading.", q_demo_path)
-        q_demo = json.loads(q_demo_path.read_text())["questions"]
+        # Round-3 fix (code-review round-2 Item 3d): when the artifact already
+        # exists (e.g. on a fresh pod that pulled it from HF, or on the dev VM
+        # between Phase 0 runs), preserve its build_stats / content_hash /
+        # haiku_model into preflight.json so provenance stays auditable from
+        # tracked files alone.
+        _existing = json.loads(q_demo_path.read_text())
+        q_demo = _existing["questions"]
+        qdemo_stats = _existing.get("build_stats", {}) or {}
+        qdemo_payload_meta = {
+            "content_hash": _existing.get("content_hash"),
+            "git_commit_at_build": _existing.get("git_commit"),
+            "generated_at_build": _existing.get("generated_at"),
+        }
     else:
         excluded = set(q_train_keys) | set(q_test)
         q_demo, qdemo_stats = build_q_demo_pool(
@@ -204,7 +217,12 @@ def main(argv: list[str] | None = None) -> None:
         "q_test_content_hash": _content_hash_strs(q_test),
         "q_demo_content_hash": _content_hash_strs(q_demo),
         "q_demo_path": str(q_demo_path),
+        # Round-3 fix (Item 3d): preserve the gated build_stats AND the
+        # original Phase 0 build-time metadata so provenance is auditable
+        # from tracked files alone (eval_results/issue_465/preflight.json
+        # IS tracked; data/issue_465/q_demo.json is NOT).
         "build_stats": qdemo_stats,
+        "qdemo_build_meta": qdemo_payload_meta,
     }
     if not args.dry_run:
         OUT_DIR.mkdir(parents=True, exist_ok=True)

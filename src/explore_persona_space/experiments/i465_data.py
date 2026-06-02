@@ -2,11 +2,18 @@
 
 Plan v2 §0 + §4.4 + §10. Q_train (30) and Q_test (50) are inherited verbatim
 from #406's frozen artifacts under ``data/issue_406/``. Q_demo (50, NEW) is
-sampled in Phase 0 from ``eval_results/axis_projection_v2/lmsys_tail_full.jsonl``
-under a quality filter and frozen at ``data/issue_465/q_demo.json``.
+built in Phase 0 by streaming raw ``lmsys/lmsys-chat-1m`` from HF (pinned
+revision), taking ``conversation[0]["content"]`` where ``role=="user"``,
+applying a cheap pre-filter, then a Claude Haiku safety + question-shape gate
+(NSFW / jailbreak / PII / non-English / code-dump / gibberish / multi-part
+all REJECT). Frozen at ``data/issue_465/q_demo.json``.
 
 All loaders have HF data-repo fallback so a fresh pod checkout / worktree can
 re-materialize the artifacts without re-running the upstream generation.
+``load_q_demo`` PREFERS the HF-frozen gated copy over a fresh local rebuild
+(round-3 fix for code-review round-2 Item 3): a pod must train on the EXACT
+verified-clean 50, not a freshly-streamed 50 that could differ from the
+local frozen set.
 
 The 4-arm factorial uses ONE anchor persona (villain / #406 A5). The exact
 system-prompt string is kept identical to #406 A5 byte-for-byte so cond1's
@@ -35,6 +42,12 @@ HF_PATH_PREFIX_465 = "issue465_in_context_persona_spec"
 # which contaminated cond2 demo turns with canned assistant content and pulled in
 # NSFW roleplay rows -- see code-review round-1 Blocker 1).
 LMSYS_HF_DATASET = "lmsys/lmsys-chat-1m"
+# Round-3 fix (code-review round-2 Item 3c): pin the lmsys-chat-1m revision so
+# any rebuild on a fresh pod produces the same source rows as the frozen pool.
+# Verified present on HF Hub at the time of writing; if the dataset is ever
+# re-uploaded the loader will fail loud (HfHubError) rather than silently
+# drift. (To find the current revision: hf_api.dataset_info(...).sha)
+LMSYS_HF_REVISION = "200748d9d3cddcc9d782887541057aca0b18c5da"
 
 _Q_TRAIN_FILE = "q_train_answers.json"
 _Q_TEST_FILE = "q_test_extended_50.json"
@@ -216,7 +229,18 @@ def _haiku_gate(text: str, client) -> tuple[bool, str]:
     if start == -1 or end == -1 or end <= start:
         raise RuntimeError(f"Haiku gate returned non-JSON output: {raw[:200]!r}")
     obj = _json.loads(raw[start : end + 1])
-    keep = bool(obj.get("keep", False))
+    # Round-3 fix (code-review round-2 Item 2): require a strict bool for `keep`.
+    # `bool("false") == True` (any non-empty string is truthy), so `bool(obj.get("keep"))`
+    # would silently accept `{"keep": "false"}` and let an unsafe row pass the gate.
+    # Fail-loud per CLAUDE.md if the model returns anything other than a JSON bool.
+    if "keep" not in obj:
+        raise RuntimeError(f"Haiku gate missing 'keep' field: {raw[:200]!r}")
+    if not isinstance(obj["keep"], bool):
+        raise RuntimeError(
+            f"Haiku gate 'keep' is not a JSON bool (got {type(obj['keep']).__name__}="
+            f"{obj['keep']!r}); refusing to coerce. Raw: {raw[:200]!r}"
+        )
+    keep = obj["keep"]
     reason = str(obj.get("reason", "unknown"))
     return keep, reason
 
@@ -260,6 +284,7 @@ def build_q_demo_pool(
         "haiku_reject_reason_counts": {},
         "n_kept": 0,
         "source_dataset": LMSYS_HF_DATASET,
+        "source_dataset_revision": LMSYS_HF_REVISION,
         "rng_seed": rng_seed,
         "max_scan": max_scan,
         "haiku_model": QDEMO_HAIKU_MODEL if use_haiku_gate else None,
@@ -273,7 +298,14 @@ def build_q_demo_pool(
 
     from datasets import load_dataset
 
-    ds = load_dataset(LMSYS_HF_DATASET, split="train", streaming=True)
+    # Round-3 fix (code-review round-2 Item 3c): pass the pinned revision so
+    # a fresh-pod rebuild reproduces the same source rows.
+    ds = load_dataset(
+        LMSYS_HF_DATASET,
+        split="train",
+        streaming=True,
+        revision=LMSYS_HF_REVISION,
+    )
 
     # Collect candidates that pass the cheap pre-filter; deterministically shuffle,
     # then run the Haiku gate in source order until we hit target_n. The shuffle
@@ -283,12 +315,15 @@ def build_q_demo_pool(
         if stats["n_scanned"] >= max_scan:
             break
         stats["n_scanned"] += 1
+        # Round-3 fix (code-review round-2 Item 4a): strictly take conversation[0]
+        # iff it is a user turn. lmsys-chat-1m occasionally has assistant-prefixed
+        # rows or non-canonical openers; "first user turn anywhere in the
+        # conversation" would silently let an assistant rephrasing through.
         conv = doc.get("conversation") or []
-        first_user = None
-        for turn in conv:
-            if turn.get("role") == "user":
-                first_user = (turn.get("content") or "").strip()
-                break
+        if not conv or conv[0].get("role") != "user":
+            stats["n_skip_no_user_turn"] += 1
+            continue
+        first_user = (conv[0].get("content") or "").strip()
         if not first_user:
             stats["n_skip_no_user_turn"] += 1
             continue
@@ -340,28 +375,77 @@ def build_q_demo_pool(
     return kept, stats
 
 
-def load_q_demo(*, target_n: int = QDEMO_TARGET_N) -> list[str]:
-    """Load the frozen Q_demo list; HF data-repo fallback.
+def content_hash_strs(items: list[str]) -> str:
+    """Stable SHA-256 hex digest of a list of strings (preserves order)."""
+    import hashlib
+
+    blob = json.dumps(items, sort_keys=False, ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()
+
+
+def load_q_demo(*, target_n: int = QDEMO_TARGET_N, prefer_hf: bool = True) -> list[str]:
+    """Load the frozen Q_demo list; HF-FIRST with content-hash verification.
+
+    Round-3 fix (code-review round-2 Item 3b): a fresh pod must train on the
+    EXACT verified-clean 50 questions Thomas eyeballed locally -- NOT a
+    freshly-streamed 50 from a re-run of ``build_q_demo_pool`` (different RNG
+    state, different Haiku call timing, different reject set, all add up to
+    a SILENTLY-different pool). So the load order is:
+
+      1. If ``prefer_hf=True`` (the default): pull from HF data repo first.
+      2. Otherwise / on HF fallback failure: read from local
+         ``data/issue_465/q_demo.json`` (the developer's local rebuild).
+      3. Verify the loaded payload's ``content_hash`` matches a freshly-
+         computed SHA-256 over its ``questions`` list. Mismatch -> fail-loud
+         (the artifact was tampered with or corrupted in transit).
 
     Phase 0 builds + writes ``data/issue_465/q_demo.json`` and uploads to
-    ``superkaiba1/explore-persona-space-data/issue465_in_context_persona_spec/q_demo.json``.
-    Downstream phases call this loader.
+    ``superkaiba1/explore-persona-space-data/issue465_in_context_persona_spec/q_demo.json``
+    (the upload is what makes HF the canonical source). Downstream phases
+    (Phase 1 R-gen, Phase 2 smoke, Phase 4 eval) call this loader and get
+    the SAME 50 questions regardless of whether they run on the dev VM or
+    a fresh pod.
     """
     local = DATA_DIR_465 / Q_DEMO_FILE
-    if not local.exists():
-        logger.info("Local %s missing; pulling from HF data repo.", local)
-        from huggingface_hub import hf_hub_download
+    source = None
 
-        local.parent.mkdir(parents=True, exist_ok=True)
-        downloaded = hf_hub_download(
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            filename=f"{HF_PATH_PREFIX_465}/{Q_DEMO_FILE}",
-            revision="main",
-        )
-        import shutil
+    if prefer_hf:
+        try:
+            from huggingface_hub import hf_hub_download
 
-        shutil.copyfile(downloaded, local)
+            local.parent.mkdir(parents=True, exist_ok=True)
+            logger.info("Pulling frozen Q_demo from HF (the verified-clean canonical 50) ...")
+            downloaded = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{HF_PATH_PREFIX_465}/{Q_DEMO_FILE}",
+                revision="main",
+            )
+            import shutil
+
+            shutil.copyfile(downloaded, local)
+            source = "hf"
+        except Exception as e:
+            if local.exists():
+                logger.warning(
+                    "HF Q_demo download failed (%s); falling back to local %s.", e, local
+                )
+                source = "local"
+            else:
+                raise RuntimeError(
+                    f"Could not pull Q_demo from HF ({e}) AND no local copy at {local}. "
+                    "Run `scripts/i465_phase0_preflight.py --rebuild-q-demo` on the dev "
+                    "VM (with ANTHROPIC_API_KEY set) to build + upload the frozen pool."
+                ) from e
+    else:
+        if not local.exists():
+            raise FileNotFoundError(
+                f"Q_demo missing locally at {local} and prefer_hf=False; refusing "
+                "to silently fetch from HF. Either pass prefer_hf=True or run "
+                "`scripts/i465_phase0_preflight.py --rebuild-q-demo` first."
+            )
+        source = "local"
+
     payload = json.loads(local.read_text())
     qs = payload["questions"]
     if len(qs) != target_n:
@@ -369,4 +453,22 @@ def load_q_demo(*, target_n: int = QDEMO_TARGET_N) -> list[str]:
             f"Expected {target_n} Q_demo questions, got {len(qs)} in {local}. "
             "Phase 0 may have written a partial pool; re-run preflight."
         )
+    # Round-3 fix (code-review round-2 Item 3): content-hash verification.
+    # The frozen artifact stamps content_hash at build time. Recompute and
+    # fail-loud if it doesn't match -- the artifact was tampered with or
+    # corrupted in transit.
+    recorded_hash = payload.get("content_hash")
+    actual_hash = content_hash_strs(qs)
+    if recorded_hash and recorded_hash != actual_hash:
+        raise RuntimeError(
+            f"Q_demo content_hash MISMATCH (source={source}): payload claims "
+            f"{recorded_hash[:12]}..., got {actual_hash[:12]}...  "
+            "The frozen artifact has been tampered with -- refusing to load."
+        )
+    logger.info(
+        "Q_demo loaded (source=%s, n=%d, content_hash=%s)",
+        source,
+        len(qs),
+        actual_hash[:12],
+    )
     return qs
