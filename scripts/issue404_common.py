@@ -255,6 +255,44 @@ LITERAL_ATTRIBUTE_K = 8
 # cross-script comparison stays apples-to-apples.
 LIT_FLAVOR_N_ROWS = 200
 
+# ── Issue #467: strong-NL prompts (rich Claude-authored descriptions) ──────
+# Authored per-cell by ``scripts/issue467_author_strong_nl.py`` and persisted to
+# ``data/issue467/strong_nl/<pair>.json``. Loaded by the predictor scripts when
+# invoked with ``--nl-variant strong`` and by the elicitation rig + regression.
+ISSUE467_STRONG_NL_DIR = PROJECT_ROOT / "data" / "issue467" / "strong_nl"
+
+
+def load_strong_nl_dict(pairs: list[str] | None = None) -> dict[str, str]:
+    """Load Claude-authored strong-NL prompts for the requested ``pairs``.
+
+    Reads ``data/issue467/strong_nl/<pair>.json`` for each requested pair and
+    returns ``{pair: prompt}`` for cells whose JSON has ``status == "PASS"``
+    (i.e. passed the §4.2 leak-detection judge). Cells that haven't been
+    authored yet, or whose authored prompt didn't PASS, are silently omitted
+    from the returned dict; the calling predictor is responsible for raising
+    a clear error if an explicit ``--pairs`` request includes a pair with no
+    PASS prompt.
+
+    Raises ``FileNotFoundError`` if the strong-NL directory doesn't exist
+    (the author script hasn't been run yet).
+    """
+    if not ISSUE467_STRONG_NL_DIR.is_dir():
+        raise FileNotFoundError(
+            f"Strong-NL prompt directory does not exist: {ISSUE467_STRONG_NL_DIR}. "
+            "Run scripts/issue467_author_strong_nl.py first."
+        )
+    targets = pairs if pairs is not None else PAIRS
+    out: dict[str, str] = {}
+    for p in targets:
+        f = ISSUE467_STRONG_NL_DIR / f"{p}.json"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text())
+        if d.get("status") == "PASS" and isinstance(d.get("prompt"), str):
+            out[p] = d["prompt"]
+    return out
+
+
 # ── Adapter / HF Hub conventions for outcome eval ──────────────────────────
 
 # Shared model repo for #404 merged checkpoints. One subfolder per (pair, seed).

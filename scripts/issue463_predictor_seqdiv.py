@@ -78,6 +78,7 @@ from issue404_common import (  # noqa: E402
     fetch_betley_main_8,
     fetch_preregistered_probes,
     load_jsonl,
+    load_strong_nl_dict,
     reproducibility_metadata,
 )
 from transformers import AutoModelForCausalLM, AutoTokenizer  # noqa: E402
@@ -94,6 +95,13 @@ DEFAULT_MAX_NEW_TOKENS = 128
 TRAINING_PROBE_SEED = 0  # fixed RNG for per-cell training-probe subsample
 OUTPUT_BASE_BETLEY = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv"
 OUTPUT_BASE_TRAINING = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv_training"
+# Issue #467: R=8 (or higher) re-runs of JS land in a disjoint dir so the
+# on-disk #463 R=4 weak-NL JSONs are never overwritten. The filename suffix
+# (`<pair>_<flavor>{_strong}.json`) carries the nl_variant when relevant.
+OUTPUT_BASE_ISSUE467_TRAINING = PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R8"
+OUTPUT_BASE_ISSUE467_BETLEY = (
+    PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R8_betley"
+)
 
 
 # ── Divergence reductions (numerical-stability critical) ────────────────────
@@ -245,8 +253,27 @@ def _teacher_force_response_logits(
 # ── Pair × flavor measurement ───────────────────────────────────────────────
 
 
-def _resolve_s_narrow(pair: str, flavor: str, training_rows: list[dict] | None, k: int) -> str:
+def _resolve_s_narrow(
+    pair: str,
+    flavor: str,
+    training_rows: list[dict] | None,
+    k: int,
+    nl_variant: str = "weak",
+    strong_nl_dict: dict[str, str] | None = None,
+) -> str:
+    """Return the S_narrow system prompt for ``(pair, flavor, nl_variant)``.
+
+    Mirrors ``issue463_predictor_cossim._resolve_s_narrow`` so the two
+    scripts stay in lockstep. Issue #467 §4.3 additive diff.
+    """
     if flavor == "NL":
+        if nl_variant == "strong":
+            if strong_nl_dict is None or pair not in strong_nl_dict:
+                raise RuntimeError(
+                    f"--nl-variant strong but no PASS strong-NL prompt for pair={pair!r}. "
+                    "Run scripts/issue467_author_strong_nl.py for this cell first."
+                )
+            return strong_nl_dict[pair]
         return S_NARROW_NL[pair]
     if flavor == "lit":
         if training_rows is None:
@@ -337,13 +364,22 @@ def measure_pair_flavor(
     max_new_tokens: int,
     training_rows: list[dict] | None,
     k: int,
+    nl_variant: str = "weak",
+    strong_nl_dict: dict[str, str] | None = None,
 ) -> dict:
     """Compute Rao-Blackwellized KL / JS for one (pair, flavor) cell.
 
     Returns a result dict with both KL directions, symKL, JS, and
     polarity-aligned similarity headlines.
     """
-    s_narrow = _resolve_s_narrow(pair, flavor, training_rows, k)
+    s_narrow = _resolve_s_narrow(
+        pair,
+        flavor,
+        training_rows,
+        k,
+        nl_variant=nl_variant,
+        strong_nl_dict=strong_nl_dict,
+    )
     s_broad = S_BROAD
 
     logger.info(
@@ -480,6 +516,7 @@ def measure_pair_flavor(
     return {
         "pair": pair,
         "flavor": flavor,
+        "nl_variant": nl_variant if flavor == "NL" else None,
         "s_narrow_preview": s_narrow[:400],
         "s_narrow_char_len": len(s_narrow),
         "s_broad": s_broad,
@@ -609,6 +646,19 @@ def main() -> int:
             "by the lit persona's in-context examples)."
         ),
     )
+    parser.add_argument(
+        "--nl-variant",
+        default="weak",
+        choices=["weak", "strong"],
+        help=(
+            "Only consulted when --flavors includes NL. "
+            "'weak' (default): per-cell one-line prompt from S_NARROW_NL — preserves "
+            "the on-disk #463 code path. "
+            "'strong' (issue #467): Claude-authored rich description from "
+            "data/issue467/strong_nl/<cell>.json. Cells without a PASSed strong prompt "
+            "raise."
+        ),
+    )
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument(
         "--seed",
@@ -616,13 +666,43 @@ def main() -> int:
         default=0,
         help="Torch seed for reproducible sampling (default: 0).",
     )
+    parser.add_argument(
+        "--issue467-output",
+        action="store_true",
+        help=(
+            "Write outputs to eval_results/issue467/predictor_seqdiv_R8/ instead of the "
+            "#463 dir. Use when running R=8 (or higher) JS replications so the on-disk "
+            "#463 R=4 JSONs are never overwritten."
+        ),
+    )
     args = parser.parse_args()
 
     # Bind CUDA_VISIBLE_DEVICES BEFORE any cuda allocation — mirrors the
     # round-2 ISSUE 3 fix in issue404_predictor_cossim.py.
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-    output_base = OUTPUT_BASE_TRAINING if args.probe_source == "training" else OUTPUT_BASE_BETLEY
+    if args.issue467_output:
+        output_base = (
+            OUTPUT_BASE_ISSUE467_TRAINING
+            if args.probe_source == "training"
+            else OUTPUT_BASE_ISSUE467_BETLEY
+        )
+    else:
+        output_base = (
+            OUTPUT_BASE_TRAINING if args.probe_source == "training" else OUTPUT_BASE_BETLEY
+        )
     output_base.mkdir(parents=True, exist_ok=True)
+
+    # Issue #467: load strong-NL prompts once if requested.
+    strong_nl_dict: dict[str, str] | None = None
+    if args.nl_variant == "strong" and "NL" in args.flavors:
+        strong_nl_dict = load_strong_nl_dict(pairs=args.pairs)
+        missing = [p for p in args.pairs if p not in strong_nl_dict]
+        if missing:
+            raise RuntimeError(
+                f"--nl-variant strong but no PASS strong-NL prompt for pairs: {missing}. "
+                "Run scripts/issue467_author_strong_nl.py for these cells first."
+            )
+        logger.info("Loaded %d PASS strong-NL prompts for #467", len(strong_nl_dict))
 
     # Betley-source probes are SHARED across cells (one fetch); training-source
     # probes are per-cell and built later inside the cell loop.
@@ -701,7 +781,12 @@ def main() -> int:
                 continue
             training_rows = pair_training_rows.get(pair, [])
             rows_subset = training_rows[:LIT_FLAVOR_N_ROWS] if flavor == "lit" else None
-            out_path = output_base / f"{pair}_{flavor}.json"
+            # #467: strong-NL gets a `<pair>_NL_strong.json` filename so it
+            # doesn't clobber any on-disk weak-NL JSON in OUTPUT_BASE_TRAINING.
+            file_suffix = (
+                "NL_strong" if (flavor == "NL" and args.nl_variant == "strong") else flavor
+            )
+            out_path = output_base / f"{pair}_{file_suffix}.json"
             # Per CLAUDE.md "Checkpoint per phase" — persist each cell as
             # soon as it completes, never accumulate-in-memory across pairs.
             result = measure_pair_flavor(
@@ -714,6 +799,8 @@ def main() -> int:
                 max_new_tokens=args.max_new_tokens,
                 training_rows=rows_subset,
                 k=args.k,
+                nl_variant=args.nl_variant,
+                strong_nl_dict=strong_nl_dict,
             )
             result["probe_source"] = args.probe_source
             result["metadata"] = reproducibility_metadata(
@@ -721,6 +808,7 @@ def main() -> int:
                     "script": "issue463_predictor_seqdiv",
                     "torch_seed": args.seed,
                     "probe_source": args.probe_source,
+                    "nl_variant": args.nl_variant,
                 }
             )
             with open(out_path, "w") as f:
