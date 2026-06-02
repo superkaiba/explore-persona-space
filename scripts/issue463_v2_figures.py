@@ -362,7 +362,7 @@ def fig3_raw_nl_counterpart() -> None:
     ]
     ax.legend(handles=handles, loc="upper right", frameon=False, fontsize=8.5)
 
-    savefig_paper(fig, "issue_463/scatter_training_L25_raw", dir="figures/")
+    savefig_paper(fig, "issue_463/scatter_training_L6_NL", dir="figures/")
     plt.close(fig)
 
 
