@@ -339,7 +339,7 @@ def fig_non_marker_demo():
 
 def fig_per_q_violin():
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(13.0, 5.6))
+    fig, ax = plt.subplots(figsize=(12.0, 6.2))
     cells = []
     for cond in CONDS:
         for shape in ["in_trained_shape", "generalization", "demo_free_default"]:
@@ -348,6 +348,7 @@ def fig_per_q_violin():
             cells.append((cond, shape, per_q))
 
     xpos = np.arange(len(cells))
+    ax.set_xlim(-0.6, len(cells) - 0.4)
     parts = ax.violinplot(
         [c[2] for c in cells], positions=xpos, widths=0.7, showmeans=False, showmedians=True
     )
@@ -366,9 +367,9 @@ def fig_per_q_violin():
         "generalization": "gen",
         "demo_free_default": "demo-free",
     }
-    labels = [f"{COND_LABELS_SHORT[c]}\n{shape_short[s]}" for c, s, _ in cells]
+    labels = [f"{COND_LABELS_SHORT[c]} · {shape_short[s]}" for c, s, _ in cells]
     ax.set_xticks(xpos)
-    ax.set_xticklabels(labels, fontsize=7.5)
+    ax.set_xticklabels(labels, fontsize=8, rotation=32, ha="right")
     ax.set_ylabel(r"ΔG per probe  [nats]")
     ax.set_ylim(0, 32)
 
@@ -376,11 +377,8 @@ def fig_per_q_violin():
         ax,
         "Per-probe ΔG — the k=1 demo-free split is an argmax knife-edge",
         subtitle=(
-            "12 cells × 50 probes. Most cells sit near a ΔG ceiling (~21-26 nats); "
-            "the k=1 in-trained and demo-free cells show real dispersion; "
-            "k=3 sits well below. The k=1 demo-free violin has 5 of 37 "
-            "NON-argmax probes above ΔG = 27 nats — ※ carries near-equal log-mass "
-            "to its argmax competitor, and small distribution shifts flip emission."
+            "12 cells × 50 probes. k=1 in-trained/demo-free show real dispersion; "
+            "k=3 sits low; the rest near the ΔG ceiling (full read in caption)."
         ),
         source="Source: eval_results/issue_465/per_cell, commit ec0e2009f",
     )
@@ -421,7 +419,7 @@ def fig_retention_contradiction():
         ax,
         "Retention contradicts a continuous 'demos suppress leakage' story",
         subtitle=(
-            "ΔG-normalized retention (demo-free ÷ in-trained) per arm. cond2_k1's "
+            "ΔG-normalized retention (demo-free ÷ in-trained) per arm. The k=1 arm's "
             "retention is the HIGHEST (1.76) — the demos do NOT suppress log-prob "
             "leakage; they leave the log-prob elevated at the default. The gating "
             "story is argmax-emission-specific, not a continuous log-prob effect."
