@@ -1501,6 +1501,11 @@ def _vllm_answer_slot_entropy(
         max_model_len=EVAL_MAX_MODEL_LEN,
         download_dir=os.environ.get("HF_HOME"),
         enforce_eager=True,
+        # vLLM caps a request's prompt_logprobs at the engine's max_logprobs
+        # (default 20). This calibration asks for prompt_logprobs=top_k
+        # (ENTROPY_TOP_K=50) to read the value-slot distribution, so the engine
+        # must allow at least that depth or generate() raises ValueError.
+        max_logprobs=top_k,
     )
 
     # Build per-triple chat prompts with the assistant prefill AND the
