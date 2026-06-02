@@ -1,7 +1,7 @@
 {
   "schema_version": "i464_phase5_v2",
-  "git_commit": "275d98ad0e5559eac25b58951818d2a1395d706e",
-  "generated_at": "2026-06-02T19:55:23.117491+00:00",
+  "git_commit": "c21a50fb0f324a8b585caa0c4bfe3427a894baad",
+  "generated_at": "2026-06-02T21:07:30.690752+00:00",
   "seeds": [
     42,
     137,
@@ -27,6 +27,11 @@
       "42": -12.678425717949867,
       "137": -12.227422044873238,
       "1337": -12.872127318382262
+    },
+    "role_mismatch": {
+      "42": -16.070629773139952,
+      "137": -14.770631606578828,
+      "1337": -15.928769824504853
     }
   },
   "complete_seeds": [
@@ -61,7 +66,13 @@
       "role_nonsense_seed137/role_nonsense_pirate/marker_pirate": -2.481366705936239e-05,
       "role_nonsense_seed137/role_nonsense_villain/marker_villain": -1.2421953134946762e-05,
       "role_nonsense_seed1337/role_nonsense_pirate/marker_pirate": -1.1650144242025817e-05,
-      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": -1.0081499496408242e-05
+      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": -1.0081499496408242e-05,
+      "role_mismatch_seed42/role_mismatch_pirate/marker_pirate": -1.8642078764372627e-05,
+      "role_mismatch_seed42/role_mismatch_villain/marker_villain": -2.1006180157314704e-05,
+      "role_mismatch_seed137/role_mismatch_pirate/marker_pirate": -0.0002530300266072061,
+      "role_mismatch_seed137/role_mismatch_villain/marker_villain": -1.6365688929909082e-05,
+      "role_mismatch_seed1337/role_mismatch_pirate/marker_pirate": -0.0001505777735442848,
+      "role_mismatch_seed1337/role_mismatch_villain/marker_villain": -8.654507085736895e-07
     },
     "per_cell_pass": {
       "system_plain_seed42/system_pirate/marker_pirate": true,
@@ -87,10 +98,16 @@
       "role_nonsense_seed137/role_nonsense_pirate/marker_pirate": true,
       "role_nonsense_seed137/role_nonsense_villain/marker_villain": true,
       "role_nonsense_seed1337/role_nonsense_pirate/marker_pirate": true,
-      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": true
+      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": true,
+      "role_mismatch_seed42/role_mismatch_pirate/marker_pirate": true,
+      "role_mismatch_seed42/role_mismatch_villain/marker_villain": true,
+      "role_mismatch_seed137/role_mismatch_pirate/marker_pirate": true,
+      "role_mismatch_seed137/role_mismatch_villain/marker_villain": true,
+      "role_mismatch_seed1337/role_mismatch_pirate/marker_pirate": true,
+      "role_mismatch_seed1337/role_mismatch_villain/marker_villain": true
     },
     "overall_pass": true,
-    "n_cells": 24,
+    "n_cells": 30,
     "complete": true,
     "missing_cells": []
   },
@@ -170,6 +187,46 @@
       42,
       137,
       1337
+    ],
+    "d_seed_role_mismatch_vs_plain_descriptive": {
+      "d_per_seed": [
+        3.233559551239013,
+        1.5460113573074334,
+        2.4971886666864176
+      ],
+      "mean": 2.4255865250776214,
+      "ci_lo_95": 1.5460113573074334,
+      "ci_hi_95": 3.233559551239013
+    },
+    "d_seed_role_mismatch_vs_role_descriptive": {
+      "d_per_seed": [
+        -1.739060101509093,
+        -4.96686868906021,
+        -4.7609180521965
+      ],
+      "mean": -3.822282280921934,
+      "ci_lo_95": -4.96686868906021,
+      "ci_hi_95": -1.739060101509093
+    },
+    "role_mismatch_complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_role_mismatch_vs_nonsense_descriptive": {
+      "d_per_seed": [
+        3.392204055190085,
+        2.5432095617055896,
+        3.056642506122591
+      ],
+      "mean": 2.9973520410060885,
+      "ci_lo_95": 2.5432095617055896,
+      "ci_hi_95": 3.392204055190085
+    },
+    "role_mismatch_vs_nonsense_complete_seeds": [
+      42,
+      137,
+      1337
     ]
   },
   "headline_status": "ok",
@@ -193,6 +250,11 @@
       },
       "role_nonsense": {
         "sd": 3.516798663017131,
+        "n_observations": 12,
+        "above_threshold": true
+      },
+      "role_mismatch": {
+        "sd": 1.691430350419399,
         "n_observations": 12,
         "above_threshold": true
       }
@@ -279,6 +341,26 @@
         -17.4925,
         -12.040052261352539
       ]
+    },
+    "role_mismatch": {
+      "42": [
+        -18.04750114440918,
+        -16.532510299682617,
+        -15.495000534057617,
+        -14.2075071144104
+      ],
+      "137": [
+        -15.31750129699707,
+        -16.45000183105469,
+        -14.387501220703125,
+        -12.927522077560425
+      ],
+      "1337": [
+        -16.16750192642212,
+        -18.97000072479248,
+        -14.992500915527344,
+        -13.585075731277465
+      ]
     }
   },
   "n_missing_per_cell": 0,
@@ -297,6 +379,33 @@
       -5.131264156699178,
       -7.510078250765799,
       -7.817560558319091
+    ]
+  },
+  "role_mismatch_descriptive": {
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_role_mismatch_vs_plain": [
+      3.233559551239013,
+      1.5460113573074334,
+      2.4971886666864176
+    ],
+    "d_seed_role_mismatch_vs_role": [
+      -1.739060101509093,
+      -4.96686868906021,
+      -4.7609180521965
+    ],
+    "d_seed_role_mismatch_vs_nonsense": [
+      3.392204055190085,
+      2.5432095617055896,
+      3.056642506122591
+    ],
+    "vs_nonsense_complete_seeds": [
+      42,
+      137,
+      1337
     ]
   }
 }

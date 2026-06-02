@@ -1,7 +1,7 @@
 {
   "name": "matrix_role_nonsense",
-  "git_commit": "275d98ad0e5559eac25b58951818d2a1395d706e",
-  "generated_at": "2026-06-02T19:55:30.320826+00:00",
+  "git_commit": "c21a50fb0f324a8b585caa0c4bfe3427a894baad",
+  "generated_at": "2026-06-02T21:07:32.367590+00:00",
   "sources": [
     "eval_results/issue_464/cross_eval/per_cell"
   ]
