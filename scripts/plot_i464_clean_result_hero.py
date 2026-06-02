@@ -69,8 +69,8 @@ def main() -> None:
     # Two panels: (left) own-persona elicitation log-prob, (right) symmetric
     # wrong-encoding leakage log-prob. Both averaged over 3 seeds with seed
     # scatter overlay.
-    fig, axes = plt.subplots(1, 2, figsize=(9.5, 5.2))
-    fig.subplots_adjust(top=0.82, bottom=0.30, left=0.10, right=0.97, wspace=0.35)
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 5.4))
+    fig.subplots_adjust(top=0.82, bottom=0.32, left=0.12, right=0.97, wspace=0.40)
     primary = paper_palette_role("primary")
     baseline = paper_palette_role("baseline")
     control = paper_palette_role("control")
@@ -116,7 +116,10 @@ def main() -> None:
         )
     ax.set_xticks(x)
     ax.set_xticklabels([ARM_LABELS[a] for a in ARM_ORDER], rotation=12, ha="right")
-    ax.set_ylabel("Log-prob of correct marker at own encoding (nats)\n0 = perfect, lower = worse")
+    ax.set_ylabel(
+        "Log-prob of correct marker\nat own encoding (nats)\n0 = perfect, lower = worse",
+        labelpad=6,
+    )
     ax.set_title(
         "Own-persona elicitation\n(every arm trains the marker to near-ceiling)", loc="left"
     )
@@ -178,8 +181,8 @@ def main() -> None:
     for a in ARM_ORDER:
         matrix_data[a] /= np.maximum(counts[a], 1)
 
-    fig, axes = plt.subplots(1, 3, figsize=(12.5, 5.3), sharey=True)
-    fig.subplots_adjust(top=0.80, bottom=0.10, wspace=0.05)
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 5.8), sharey=True)
+    fig.subplots_adjust(top=0.78, bottom=0.18, left=0.16, right=0.90, wspace=0.08)
     vmin = min(m.min() for m in matrix_data.values())
     vmax = 0.0
     for ax, arm in zip(axes, ARM_ORDER):
@@ -202,15 +205,18 @@ def main() -> None:
                     color=color,
                     fontsize=9,
                 )
-    cbar = fig.colorbar(im, ax=axes, shrink=0.85, fraction=0.03, pad=0.02)
+    cbar = fig.colorbar(im, ax=axes, shrink=0.78, fraction=0.025, pad=0.03)
     cbar.set_label(
-        "Mean raw trained log P (nats)\n0 = perfect emission, more negative = less leakage"
+        "Mean raw trained log P (nats)\n0 = perfect emission,\nmore negative = less leakage",
+        fontsize=9,
+        labelpad=4,
     )
+    cbar.ax.tick_params(labelsize=8)
     fig.suptitle(
-        "Per-encoding marker probability — diagonals (own marker / own encoding) all saturate;\n"
-        "off-diagonals show leakage and differ across the three arms",
+        "Per-encoding marker probability — diagonals saturate;\n"
+        "off-diagonals show leakage (note default-assistant × pirate-marker is near-ceiling for all arms)",
         fontsize=11,
-        y=0.97,
+        y=0.96,
     )
     savefig_paper(fig, "issue_464/matrix_clean", dir=str(REPO_ROOT / "figures"))
     plt.close(fig)
@@ -271,7 +277,7 @@ def main() -> None:
     ax.set_ylabel("Mean raw trained log P (nats)\nlower = less leakage")
     ax.set_title(
         "Leakage broken down by where the marker leaked to\n"
-        "(role-header arm leaks less in every family — even to default-assistant)",
+        "(role-header arm leaks less on the family-level mean)",
         loc="left",
     )
     ax.legend(loc="lower right", frameon=False)
@@ -279,8 +285,8 @@ def main() -> None:
     plt.close(fig)
 
     # ---------- ONPOLICY VALIDATION --------------------------------------
-    fig, ax = plt.subplots(figsize=(7.0, 4.8))
-    fig.subplots_adjust(top=0.82, bottom=0.25, left=0.16, right=0.97)
+    fig, ax = plt.subplots(figsize=(8.2, 5.2))
+    fig.subplots_adjust(top=0.80, bottom=0.30, left=0.22, right=0.97)
     onp = json.loads((EVAL_DIR / "onpolicy_validation.json").read_text())
     per_arm = onp["per_arm"]
     xs = np.arange(len(ARM_ORDER))
@@ -301,7 +307,8 @@ def main() -> None:
     ax.set_xticks(xs)
     ax.set_xticklabels([ARM_LABELS[a] for a in ARM_ORDER], rotation=12, ha="right")
     ax.set_ylabel(
-        "Mean edit distance between trained-model output\nand the response used during training"
+        "Mean normalized edit distance\n(trained output vs training response)",
+        labelpad=8,
     )
     ax.set_ylim(0, 1.3)
     ax.set_title(
