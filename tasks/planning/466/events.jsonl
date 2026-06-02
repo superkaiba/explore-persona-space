@@ -8,3 +8,4 @@
 {"ts": "2026-06-02T09:32:03Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpwfuxdj-thw3ko effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-02T09:32:10Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mpwfv2t9-7a29c1: post-spawn probe failed (probe-error): No job found for \"task-mpwfv2t9-7a29c1\". Run /codex:status to list known jobs.\n"}
 {"ts": "2026-06-02T09:32:17Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpwfv7z2-2266o1 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-02T09:32:48Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpwfv7z2-2266o1 phase=done after 30s."}
