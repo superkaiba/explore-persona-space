@@ -1,3 +1,4 @@
+# ruff: noqa: RUF003
 """Phase 2 (smoke) + Phase 3 (sweep) -- train ONE LoRA per #471 condition.
 
 Plan v1 §4.2 + §4.6 + §4.7.

@@ -1,3 +1,4 @@
+# ruff: noqa: RUF002
 """Per-arm prompt builders for #471 -- contrastive-negatives variant of #465.
 
 Plan v1 §4.2 (negative-row builder) + §4.5 (new eval shapes for MUST-FIX

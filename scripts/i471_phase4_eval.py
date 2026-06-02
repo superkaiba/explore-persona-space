@@ -238,7 +238,7 @@ def _extract_slot_metrics(
     return lp_t_marker, lp_b_marker, delta, kl, argmax_is_marker
 
 
-def _pick_R_substrate(
+def _pick_R_substrate(  # noqa: C901 - per-shape R routing is a flat case analysis
     *,
     eval_shape: str,
     q: str,

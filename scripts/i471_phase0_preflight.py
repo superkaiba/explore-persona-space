@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001, RUF002
 """Phase 0 -- preflight for #471 contrastive-negatives variant of #465.
 
 Plan v1 §4.1 Phase 0 + §4.5 NEW R artifacts + §6.1/A2 vLLM max_logprobs smoke

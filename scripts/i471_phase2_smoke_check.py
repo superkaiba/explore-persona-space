@@ -278,12 +278,14 @@ def _run_label_mask_check(
             f"{len(loss_positions)} loss-bearing positions, expected {expected_loss_positions}. "
             f"positions={loss_positions} tokens={[input_ids[p] for p in loss_positions]}"
         )
-    if expected_first_loss_token is not None:
-        if input_ids[loss_positions[0]] != expected_first_loss_token:
-            raise AssertionError(
-                f"label-mask audit cond={cond} row_type={row_type} FAIL: first loss-bearing "
-                f"token id {input_ids[loss_positions[0]]}, expected {expected_first_loss_token}"
-            )
+    if (
+        expected_first_loss_token is not None
+        and input_ids[loss_positions[0]] != expected_first_loss_token
+    ):
+        raise AssertionError(
+            f"label-mask audit cond={cond} row_type={row_type} FAIL: first loss-bearing "
+            f"token id {input_ids[loss_positions[0]]}, expected {expected_first_loss_token}"
+        )
     prompt_marker_positions = [i for i in range(completion_start) if input_ids[i] == MARKER_ID]
     if len(prompt_marker_positions) != expected_prompt_markers:
         raise AssertionError(
@@ -488,7 +490,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     if len(pos_prompts) != args.n_probes:
         raise RuntimeError(
-            f"positive probes built only {len(pos_prompts)} of {args.n_probes} (R_villain coverage)."
+            f"positive probes built only {len(pos_prompts)} of {args.n_probes} "
+            f"(R_villain coverage)."
         )
     if len(neg_prompts) < args.n_probes:
         logger.warning(

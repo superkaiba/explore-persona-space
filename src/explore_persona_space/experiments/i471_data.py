@@ -1,3 +1,4 @@
+# ruff: noqa: RUF002, RUF003
 """Issue #471 shared helpers -- contrastive-negatives variant of #465.
 
 Plan v1 §4.0 + §4.2 + §4.4 + §10. Single manipulated variable vs #465 per arm:

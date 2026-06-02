@@ -1,3 +1,4 @@
+# ruff: noqa: RUF001, RUF002, RUF003
 """Phase 5 -- analysis + figures for #471 contrastive-negatives experiment.
 
 Plan v1 §6.2 (H1-H5 + persona×R-style cross + selectivity-artifact partialling)
@@ -93,7 +94,8 @@ def paired_bootstrap_ci(
 
 
 # ── H1-H5 + cross-experiment analysis ───────────────────────────────────
-def run_analysis(adapters: list[str], conds: list[str]) -> dict:
+def run_analysis(adapters: list[str], conds: list[str]) -> dict:  # noqa: C901
+    _ = adapters  # accepted for API; per-shape lookups are keyed off conds
     all_cells = load_all()
     result: dict = {"adapters_present": sorted(all_cells.keys())}
 
@@ -114,7 +116,7 @@ def run_analysis(adapters: list[str], conds: list[str]) -> dict:
                 h1[cond][shape] = None
                 continue
             n = c["n_probes"]
-            n_emit = int(round(c["emission_rate"] * n))
+            n_emit = round(c["emission_rate"] * n)
             ci_lo, ci_hi = wilson_ci(n_emit, n)
             h1[cond][shape] = {
                 "n_probes": n,
@@ -194,7 +196,7 @@ def run_analysis(adapters: list[str], conds: list[str]) -> dict:
             bystander = shape[len("bystander_") :]
             n = cell["n_probes"]
             r = cell["emission_rate"]
-            ci_lo, ci_hi = wilson_ci(int(round(r * n)), n)
+            ci_lo, ci_hi = wilson_ci(round(r * n), n)
             per_b[bystander] = {
                 "n": n,
                 "emission_rate": r,
