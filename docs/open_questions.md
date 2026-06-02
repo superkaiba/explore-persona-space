@@ -89,7 +89,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Cosine similarity of persona vectors works somewhat; JS divergence of output distributions works somewhat better; both are inconsistent across behaviors. The related marker-implantability predictor failed outright — JS and cosine to the assistant persona and to other personas all failed to predict the marker log-prob increase — so that predictor line is deprioritized in favor of the leakage questions.
 > *Next: test whether JS/cosine predict chunky post-training-like phenomena.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466, #470, #474.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.

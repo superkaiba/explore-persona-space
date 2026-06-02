@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan v2 — Issue #460: Re-measure #406's transfer outcome as continuous marker log-prob, with base-model-prior placebo (fixes 52% zero-inflation in G)</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: .25rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+  code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+  pre { background: #f7f7f7; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .82rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
+  th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .plan-tldr { background: #eef6ff; border: 1px solid #b8d8ff; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-summary { background: #fff7e6; border: 1px solid #ffd98a; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-tldr h2, .plan-summary h2 { border: none; margin-top: .2rem; }
+  .lbl { font-weight: 700; }
+  .warn { color: #a04000; }
+</style>
+</head>
+<body>
+
+<h1>Plan v2 — Issue #460</h1>
+<p><em>Re-measure #406's transfer outcome as a continuous marker log-prob instead of the binary emission rate, to (a) fix the 52% zero-inflation that flattened the divergence-vs-transfer correlation and (b) test whether divergence predicts <strong>graded</strong> transfer strength, not just the on/off threshold the emission rate showed.</em></p>
+<p style="background: #f0f4ff; border-left: 4px solid #5070d0; padding: .6rem 1rem; font-size: .92rem;"><strong>v2 changes vs v1 (Alternatives-critic REVISE).</strong> Adds the base-model-prior placebo (<code>B_logprob[j]</code> = base-model log P(※ | T_j), 16 × 50 = 800 forwards, ~30 s on the same engine) and the <strong>adapter-shift delta DV</strong> <code>ΔG_logprob[i,j] = G_logprob[i,j] − B_logprob[j]</code> as a co-primary analysis alongside the raw <code>G_logprob</code>. Pre-registers reading all three side-by-side (raw / placebo / delta) so prior-vs-adapter contribution is visible. Adds an HF <code>snapshot_download</code> fallback inside the Q_test + Class-D loaders (the input data files are gitignored; HF data repo <code>superkaiba1/explore-persona-space-data</code> at <code>issue406_divergence_predicts_transfer/training_data/</code> is the canonical source). Folds 6 analyzer-concerns into §6 (winsorized DV, 115-non-zero ρ separation, zero-cohort bimodality / Hartigan dip, H4 drift histogram, diagonal logp-vs-emission rank consistency, H2 asymmetric-interpretability + ~61% power flag). No design change, no new conditions, no hypothesis flips — the vLLM <code>prompt_logprobs</code> measurement, the H4 hard-gate, and single-variable inheritance from #406 are unchanged.</p>
+
+<section class="plan-tldr">
+<h2>0.0 TL;DR (plain English)</h2>
+<ul>
+<li><span class="lbl">What I'll run:</span> I'm reopening last week's experiment that asked "if I teach a model to add a special symbol in one persona, will it carry the habit over to another persona — and can I predict that from the model's behavior <em>before</em> any training?" The first pass scored each transfer as a yes/no flip: does the model write the symbol, or not. On more than half the 240 persona pairs that yes/no came back "no," and that wall of zeros hid most of the variation I cared about. This time I keep all 16 already-trained models and ask a softer question of each pair: not "did the symbol appear," but "how willing is the model to write it." Same data, same conditions, finer-grained outcome. No retraining, no new persona work — just a different measurement on the existing model copies.</li>
+<li><span class="lbl">What I expect:</span> A cleaner version of the same story. The correlation between the predictor I locked in (how much two contexts disagree in the base model) and the new graded outcome should be at least as strong as the old yes/no version, and probably noticeably stronger in the half of pairs where the yes/no was stuck at zero. The middle-of-the-network similarity measure (the surprise hero last time) should still beat my locked-in predictor, but with a tighter gap.</li>
+<li><span class="lbl">What would change my mind:</span> If the graded measurement gives the <em>same</em> correlation as the yes/no version, then last week's relationship really is about the firing threshold and not about graded strength — interesting but a narrower claim. If the graded measurement gives a <em>weaker</em> correlation, the original signal was about whether the model crosses the emission line at all, and a continuous willingness is the wrong DV. Either of those would meaningfully reframe what #406 actually showed.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0. Plan Summary (technical)</h2>
+<p><span class="lbl">Re-eval (no training):</span> Reload #406's 16 trained LoRA adapters (Qwen-2.5-7B-Instruct, r=32 α=64, lr=1e-5, 3 epochs) from HF model repo. For each of the 16×16 = 256 (T_i, T_j) cells, run a teacher-forced forward pass on each of 50 Q_test probes; extract <code>log P(83399 | prompt_ids of T_j(q))</code> — the log-prob the adapter assigns to ` ※` as the first response token under <code>T_j(q)</code>. Mean over the 50 probes → <code>G_logprob[i,j]</code>. <strong>v2 addition — base-model placebo:</strong> separately run the same 800 forwards (16 unique T_j × 50 Q_test) under the BARE base model (<code>lora_request=None</code>) to produce <code>B_logprob[j]</code> = mean over 50 probes of base-model log P(※ | T_j(q)). Define the <strong>adapter-shift delta DV</strong> <code>ΔG_logprob[i,j] = G_logprob[i,j] − B_logprob[j]</code> — this isolates the adapter-induced shift in marker willingness from the base prior's own preference for ※ under each T_j.
+<span class="lbl">Hyperparameters:</span> No training. Inference dtype=bf16 (<code>Source: #406 Phase 3</code>); vLLM <code>prompt_logprobs=1</code> on the appended marker token with <code>SamplingParams(max_tokens=1, temperature=0.0, logprobs=1, prompt_logprobs=1)</code> (<code>Source: #355 plan-fact-check v1 confirming the vLLM 0.11.0 API surface</code>); LoRA loading via <code>vllm.lora.request.LoRARequest</code> with <code>enable_lora=True, max_loras=1, max_lora_rank=32</code> (<code>Source: #406 <code>i406_phase3_cross_eval.py</code> verbatim</code>); aggregation = mean of log-probs over 50 probes per cell (<code>Source: #406 phase1 K=25-mean log-prob aggregation</code>); numerical floor <code>logprob_min = -50.0</code> (defensive guard).
+<span class="lbl">Baselines/controls:</span> (1) within-run recompute of #406's emission rate G[i,j] from <code>argmax</code> at the same slot over the same 50 probes — must reproduce <code>G_matrix.json</code> to ≤ 0.02 absolute on every cell as the rig sanity gate; (2) <strong>v2 — base-model placebo</strong>: ρ(<code>B_logprob</code> vs <code>D[:, j]</code>) on its own (placebo correlation — should be near zero if the base prior isn't doing the work); (3) the published #406 G[i,j] and D[i,j] read from <code>eval_results/issue_406/</code> — no recomputation, no retraining.
+<span class="lbl">Loss surface:</span> N/A — no training. The eval reads probabilities at one teacher-forced position per (model, prompt) — the same position the emission rate thresholded.
+<span class="lbl">Compute:</span> 1× H100 (<code>eval</code> intent). 16 adapters × 800 prompts × 1 forward = 12,800 forwards <strong>+ 1 base pass × 800 prompts = 13,600 forwards total</strong>. The base-model pass adds ~30 s wall (the engine is already warm; LoRA detach + 800 prompts in 1 batch). Projected wall-clock <strong>~1.0 h end-to-end</strong>, unchanged from v1. Single sequential pass over the 16 outer adapters + 1 base call; no sharding.
+<span class="lbl">Evaluation:</span> <strong>co-primary metrics (read side-by-side, no replacement)</strong>: (P1-raw) length-partial Spearman ρ(<code>G_logprob</code>, D | log_prompt_tokens) over 240 pairs; (P1-delta) length-partial Spearman ρ(<code>ΔG_logprob</code>, D | log_prompt_tokens) over 240 pairs; (P1-placebo) length-partial Spearman ρ(<code>B_logprob</code>, D | log_prompt_tokens) over 240 pairs (the base prior's own correlation with D). Success = |ρ| ≥ 0.45 on EITHER P1-raw OR P1-delta (matches or beats #406's |ρ_KL| = 0.436) AND H2 zero-cohort restricted ρ ≥ 0.20 absolute on EITHER raw or delta; honest interpretation rule: if P1-placebo &gt; ~0.20 absolute, the headline is P1-delta (placebo is doing work; raw is partly base-prior); if P1-placebo is near zero AND raw ≈ delta, the headline can stay on raw. Stretch: layer-11 cosine retains |ρ| ≥ 0.65 on the continuous DV (run on both raw and delta).
+<span class="lbl">Risks:</span> (1) teacher-forced log-prob at first response position may be dominated by chat-template prior over any first token; mitigated by diagonal-cell argmax check + dynamic-range gate. (2) Aggregation choice (mean log-prob vs mean prob) materially shifts which cells dominate; pre-register mean log-prob as primary AND report log-mean-prob + 10%-trimmed-mean as secondaries. (3) <strong>v2 — base-prior confound:</strong> in the 125 emission-zero cells the adapter pushed least, <code>G_logprob</code> is dominated by <code>B_logprob</code>, so raw H2 can be driven by base-prior structure that correlates with D. The delta DV and placebo regression directly resolve this.</p>
+</section>
+
+<details open>
+<summary><strong>Full plan (sections 1–12)</strong></summary>
+
+<h2>1. Goal</h2>
+<p>Re-measure the outcome DV of #406's 240-pair divergence-predicts-transfer experiment as a <em>continuous</em> teacher-forced log-prob of the marker token at the first response-token position, replacing the binary "does ` ※` appear as the first sampled token" emission rate. The motivating problem: 125 of #406's 240 off-diagonal cells (52.1%) returned emission rate exactly zero, compressing the bottom half of the DV to a single floor value and almost certainly throttling the rank correlation with the divergence predictor D. A continuous DV lets two cells whose model is "barely won't emit" vs "categorically won't emit" separate. The headline finding becomes one of three things: (a) the same ρ (the underlying relationship really is on/off and the zero-inflation didn't matter), (b) a stronger ρ (zero-inflation was hiding graded variance, the divergence-transfer relationship is graded too), or (c) a weaker ρ (the original signal was about crossing an emission threshold and graded log-prob is the wrong construct). Resolving this directly informs whether #406's "MODERATE confidence" claim is on a binary-only phenomenon or a graded one — a precondition for any downstream geometry-predicts-behavior paper claim built on this rig.</p>
+
+<h2>2. Prior Work &amp; method delta vs #406</h2>
+
+<h3>2.1 What #406 produced (verbatim, from <code>eval_results/issue_406/analysis.json</code>)</h3>
+<table>
+<tr><th>Quantity</th><th>Value</th><th>Source</th></tr>
+<tr><td>Length-partial Spearman ρ(G, D), primary forward-KL K=25-mean</td><td><strong>−0.436</strong></td><td><code>analysis.json::per_predictor.KL_primary.length_partial_rho_pingouin</code></td></tr>
+<tr><td>Cluster-bootstrap CI on the primary ρ</td><td>[−0.561, −0.293]</td><td><code>analysis.json::per_predictor.KL_primary.cluster_bootstrap_ci</code></td></tr>
+<tr><td>JS-divergence ρ (descriptive secondary)</td><td>−0.423</td><td><code>analysis.json::per_predictor.JS_secondary</code></td></tr>
+<tr><td>Layer-11 cosine ρ (deepest descriptive secondary)</td><td><strong>−0.709</strong></td><td><code>analysis.json::per_predictor.cosine_L11.length_partial_rho_pingouin</code></td></tr>
+<tr><td>Layer-11 cosine CI</td><td>[−0.816, −0.490]</td><td><code>analysis.json::per_predictor.cosine_L11.cluster_bootstrap_ci</code></td></tr>
+<tr><td>Off-diagonal pairs with emission rate exactly 0</td><td><strong>125 / 240 (52.1%)</strong></td><td>computed from <code>G_matrix.json</code>; G hist bin [0.0, 0.1) = 169 (which includes the all-zero cells + a small wedge of cells with 1 ※ in 50)</td></tr>
+<tr><td>Median off-diagonal G</td><td>0.000</td><td>computed from <code>G_matrix.json</code></td></tr>
+<tr><td>Mean off-diagonal G</td><td>0.101</td><td>computed from <code>G_matrix.json</code></td></tr>
+<tr><td>Diagonal G (sanity)</td><td>0.86–1.00 (all 16 cleared 0.70 threshold)</td><td>#406 body Diagonal-sanity table</td></tr>
+</table>
+
+<h3>2.2 Method delta vs #406 — single variable change</h3>
+<table>
+<tr><th>Aspect</th><th>#406 (parent)</th><th>#460 (this run)</th></tr>
+<tr><td>Model / adapters / training recipe / data</td><td colspan="2" style="text-align:center"><em>IDENTICAL — the 16 LoRA adapters are reused unchanged from HF model repo</em></td></tr>
+<tr><td>Predictor D[i,j]</td><td colspan="2" style="text-align:center"><em>IDENTICAL — read verbatim from <code>D_matrix.json</code></em></td></tr>
+<tr><td>Probe set Q_test (50 questions)</td><td colspan="2" style="text-align:center"><em>IDENTICAL — same <code>q_test_extended_50.json</code></em></td></tr>
+<tr><td>Prompt construction <code>build_prompt_for_condition</code></td><td colspan="2" style="text-align:center"><em>IDENTICAL — reused from <code>i406_conditions.py</code></em></td></tr>
+<tr><td>Marker token</td><td colspan="2" style="text-align:center"><code>` ※`</code> id 83399 (same; asserted at launch)</td></tr>
+<tr><td>Outcome DV</td><td>Greedy first-token <strong>emission rate</strong> (substring/argmax → ※ y/n) over 50 probes</td><td><strong>Mean log p(※) at the first response-token position</strong> (teacher-forced; on-policy not generated) over 50 probes</td></tr>
+<tr><td>Eval rig</td><td>vLLM <code>llm.generate(max_tokens=4)</code>, first generated token == 83399</td><td>vLLM <code>llm.generate(max_tokens=1, prompt_logprobs=1)</code> on prompt + appended marker token; read prompt_logprob[−1]</td></tr>
+<tr><td>Output cells</td><td>240 off-diagonal G[i,j] ∈ [0, 1]</td><td>240 off-diagonal G_logprob[i,j] ∈ (~−40, ~−0] nats</td></tr>
+</table>
+
+<h3>2.3 Inheritance from #406 — single variable confirmed</h3>
+<p>Every load-bearing choice (base model, LoRA hyperparameters, training data, Q_test, D matrix, prompt construction code, marker token, conditions registry) is inherited verbatim from #406. The single variable that changes is the outcome DV: binary <code>argmax==83399</code> → continuous <code>log P(83399)</code>. This is the simplest possible single-variable change and the consistency-checker should pass cleanly.</p>
+
+<h2>3. Hypothesis</h2>
+<p><strong>v2 framing change.</strong> The construct the Goal cares about is the <em>adapter-induced</em> shift in marker willingness, not the total log-prob (which mixes adapter shift + base-model prior). v2 promotes <strong>two co-primary DVs read side-by-side</strong> — raw <code>G_logprob</code> AND adapter-shift <code>ΔG_logprob = G_logprob − B_logprob</code> — plus a <strong>placebo</strong> regression ρ(<code>B_logprob</code>, D) that diagnoses how much of the raw correlation was the base prior. The hypothesis set updates to test both DVs against the same thresholds.</p>
+<p><strong>H1-raw (headline-A, falsifiable):</strong> Length-partial Spearman ρ(<code>G_logprob</code>, D | log_prompt_tokens) over 240 off-diagonal pairs has absolute value ≥ 0.45 — at minimum matching #406's |ρ_KL| = 0.436 on the binary DV. Direction: negative.</p>
+<p><strong>H1-delta (headline-B, the construct H1 actually claims):</strong> Length-partial Spearman ρ(<code>ΔG_logprob</code>, D | log_prompt_tokens) over 240 pairs has absolute value ≥ 0.45 AND retains the negative direction. ΔG_logprob isolates the adapter-induced shift; a strong H1-delta is the cleanest evidence the divergence-predicts-<em>transfer</em> claim survives when you subtract out the base-prior baseline.</p>
+<p><strong>H1-placebo (interpretive lens, no PASS/FAIL — diagnostic):</strong> Length-partial Spearman ρ(<code>B_logprob</code>, D | log_prompt_tokens) over 240 pairs. This is the base prior's <em>own</em> correlation with D — if it's near zero (|ρ| &lt; 0.15), then H1-raw ≈ H1-delta and the headline can stay on raw; if |ρ| &gt; 0.30, the prior is doing meaningful work and the honest headline becomes H1-delta. Pre-registered as a diagnostic; the analyzer reads all three (raw, delta, placebo) side-by-side and writes the interpretation rule into the clean-result.</p>
+<p><strong>H2-raw (zero-inflation rescue on raw DV):</strong> Restrict to the 125 cells where #406's emission rate was exactly 0; length-partial ρ(<code>G_logprob</code>, D | log_prompt_tokens) absolute value ≥ 0.20.</p>
+<p><strong>H2-delta (zero-inflation rescue on adapter-shift DV — the scientifically clean version):</strong> Same restriction; length-partial ρ(<code>ΔG_logprob</code>, D | log_prompt_tokens) absolute value ≥ 0.20. A PASS here is the strongest evidence the divergence-transfer relationship is genuinely GRADED at the adapter level (the adapter's contribution to willingness varies with divergence even on cells where actual emission never fires). A FAIL on H2-delta WHILE H2-raw PASSes means the zero-cohort graded signal was driven by base-prior structure correlating with D, not by graded adapter transfer.</p>
+<p><strong>H2 interpretation asymmetry (NEW, flagged explicitly):</strong> H2 is asymmetric in what its outcomes mean. PASS on H2-delta is a strong claim: graded adapter-driven transfer survives the censoring. FAIL on H2-delta is WEAK evidence for "threshold-only": the zero cohort is by construction the cohort where the adapter pushed least, so the remaining variance is small and the test has reduced power. Specifically, with N=125 and an assumed cluster-design effect, the test has ~61% power at true |ρ|=0.20 (computed from <code>statsmodels.stats.power</code> on a Spearman rank test with N=125, two-sided α=0.05; the cluster CDE inflates SE which further drops effective power). A returned |ρ| in the 0.10–0.20 ambiguous band is FLAGGED in the analyzer write-up as "underpowered FAIL — graded adapter transfer cannot be confirmed OR ruled out at this N."</p>
+<p><strong>H3 (layer-11 cosine retains ranking):</strong> Layer-11 residual-stream cosine still beats forward-KL on EITHER continuous DV with |ρ| ≥ 0.65 (vs −0.709 on the binary DV). Computed on both raw and delta. A drop below 0.50 on both would suggest the layer-11 advantage was specific to the binary-emission geometry.</p>
+<p><strong>H4 (within-run rig sanity — mandatory gate, UNCHANGED from v1):</strong> The free within-run recomputation of binary emission rate (argmax at the same teacher-forced position) reproduces <code>G_matrix.json</code> to within 0.02 absolute on every one of the 256 cells. If H4 FAILs, the analysis is void and the run posts <code>epm:failure v1, failure_class: code, reason: rig_does_not_reproduce_parent_binary</code>.</p>
+<p><strong>Quantitative thresholds summary:</strong></p>
+<table>
+<tr><th>Hypothesis</th><th>PASS</th><th>FAIL</th><th>What it tells us</th></tr>
+<tr><td>H1-raw |ρ(G_logprob, D)|</td><td>≥ 0.45</td><td>&lt; 0.30</td><td>Raw continuous DV at least as good as binary</td></tr>
+<tr><td>H1-delta |ρ(ΔG_logprob, D)|</td><td>≥ 0.45</td><td>&lt; 0.30</td><td>Adapter-shift continuous DV at least as good as binary — the cleanest test</td></tr>
+<tr><td>H1-placebo |ρ(B_logprob, D)|</td><td colspan="2">no PASS/FAIL — diagnostic only</td><td>Whether the base prior is doing meaningful work in H1-raw (≥0.30 → headline must be H1-delta)</td></tr>
+<tr><td>H2-raw |ρ| on emission-0 cohort (N=125)</td><td>≥ 0.20</td><td>|ρ| &lt; 0.10 &amp; CI crosses 0</td><td>Raw DV separates cells the binary DV collapsed</td></tr>
+<tr><td>H2-delta |ρ| on emission-0 cohort (N=125)</td><td>≥ 0.20</td><td>|ρ| &lt; 0.10 &amp; CI crosses 0</td><td>Adapter-shift separates cells the binary DV collapsed — graded adapter transfer</td></tr>
+<tr><td>H3 |ρ| layer-11 cosine (on EITHER raw or delta)</td><td>≥ 0.65</td><td>&lt; 0.50 on both</td><td>Whether deep-feature dominance survives DV change</td></tr>
+<tr><td>H4 max |emission_recompute − G_matrix|</td><td>≤ 0.02 every cell</td><td>any cell &gt; 0.05</td><td>Mandatory rig sanity gate</td></tr>
+</table>
+<p><strong>v2 honest-headline interpretation rule (pre-registered):</strong></p>
+<ul>
+<li>If H1-placebo |ρ| &lt; 0.15 AND H1-raw ≈ H1-delta (within 0.05): the base prior isn't doing the work; the headline can stay on H1-raw (matches v1).</li>
+<li>If H1-placebo |ρ| ≥ 0.15 AND H1-delta PASS: the headline is H1-delta; H1-raw is reported as "raw including base prior" with the placebo caveat in the Details.</li>
+<li>If H1-delta FAIL AND H1-raw PASS AND H1-placebo strong: the raw correlation was substantially the base prior; the divergence-predicts-<em>transfer</em> claim does NOT survive prior subtraction at the headline level (a meaningful narrative finding, not a null).</li>
+</ul>
+
+<h2>4. Design</h2>
+
+<h3>4.1 Pipeline (one nohup-driven sequential script on 1× H100)</h3>
+<pre>Phase 0  preflight     env check + marker-id assert + D_matrix.json + G_matrix.json read +
+                       16 adapters downloaded + Q_test + Class-D rewrites loaded
+                       (HF snapshot_download fallback if local data/issue_406/ missing)
+Phase 1  smoke          1 outer adapter (A1) × 50 Q_test × 16 T_j; verify H4 on A1's row
+                       only; reproduce A1 row of G[i,j] to ≤ 0.02; verify diagonal A1->A1
+                       log p(※) > -5 nats
+Phase 2a base_pass     v2 NEW. 1 BARE base-model pass (lora_request=None) × 50 Q_test × 16 T_j
+                       = 800 forwards → B_logprob[j] per inner condition. ~30 s wall.
+                       Outputs eval_results/issue_460/logprob_eval/B_logprob.json.
+Phase 2b sweep         16 outer adapters × 50 Q_test × 16 T_j → per-cell JSON + 16x16
+                       G_logprob_matrix.json
+Phase 3  analysis      length-partial ρ on RAW + DELTA + PLACEBO + restricted-cohort ρ on
+                       raw and delta + cosine layer rerun, extending i406_phase4_analyze.py</pre>
+<p>Phase 1 = Phase 2b with one outer cell (unification default per CLAUDE.md smoke/sweep architectural parity); the dispatcher takes <code>--cids A1,A2,...,D5</code> and Phase 1 just passes <code>--cids A1</code>. Same code path, no smoke-only branches. <strong>v2: Phase 2a (base pass) runs ONCE inside the same vLLM engine instance, before the outer adapter loop, via the same dispatcher's <code>--include-base-pass</code> flag (default on; <code>--no-base-pass</code> exists for re-runs that only re-do the adapter sweep). Same per-prompt code path; only the <code>lora_request</code> argument flips to <code>None</code>.</strong> Phase 3 runs on the local VM after the pod uploads JSON (no GPU needed).</p>
+
+<h3>4.2 The core measurement (nail this — adversarial-grade)</h3>
+<p><strong>Per cell (i, j):</strong></p>
+<pre>for q in Q_test (50 questions):
+    prompt_text = build_prompt_for_condition(cond_j, q, tokenizer, class_d_rewrites=...)
+    prompt_ids  = tokenizer.encode(prompt_text, add_special_tokens=False)
+    full_ids    = prompt_ids + [MARKER_ID]   # MARKER_ID = 83399, single token id ' ※'
+    # vLLM batched call below — see §4.4 for the actual API shape; this pseudocode shows
+    # the per-prompt logic so the position semantics are unambiguous.
+    out = llm.generate(prompts=[full_text], sampling_params=sp, lora_request=lora_req)
+    # SamplingParams(max_tokens=1, prompt_logprobs=1, logprobs=1, temperature=0.0)
+    logp_marker_at_pos = out.prompt_logprobs[len(prompt_ids)][MARKER_ID].logprob
+G_logprob[i, j] = mean over q of logp_marker_at_pos        # mean log-prob, primary
+G_prob[i, j]    = log(mean over q of exp(logp_marker_at_pos))  # log of mean prob, free secondary
+</pre>
+
+<p><strong>Why this is correct (position semantics):</strong></p>
+<ul>
+<li><code>prompt_ids</code> has length <em>L</em>; the appended marker token sits at index <em>L</em> in <code>full_ids</code>.</li>
+<li>vLLM's <code>prompt_logprobs[k]</code> returns the log-prob of <code>full_ids[k]</code> given <code>full_ids[:k]</code>. So <code>prompt_logprobs[L]</code> is exactly <strong>log P(MARKER_ID | prompt_ids)</strong> — what we want.</li>
+<li>This is the same teacher-forced position that #406's <code>i406_phase3_cross_eval.py</code> thresholded on. The greedy <code>first_token_ids[0]</code> in the emission rig is <code>argmax over v of log P(v | prompt_ids)</code> at exactly the same slot. So our continuous DV and the binary DV ARE measuring the same conditional distribution — the only difference is binary-threshold (emission rate) vs raw value (log-prob).</li>
+<li>vLLM's <code>prompt_logprobs[0]</code> is <code>None</code> by API contract (no preceding context for the first token); index 0 is the BOS-equivalent. We never read index 0.</li>
+</ul>
+
+<p><strong>MANDATORY off-by-one guard (executed in Phase 1 smoke and Phase 2 sweep, fails LOUD):</strong></p>
+<pre>
+# Diagonal cells (i == j): for each Q_test where #406 emission rate was 1
+# (so the model is known to argmax → 83399 at this slot), confirm:
+#   argmax_v prompt_logprobs[len(prompt_ids)][v] == MARKER_ID
+# This proves we are reading the same slot the emission rate thresholded on.
+# At least 1 diagonal cell × 1 high-G probe must pass before the sweep starts.
+assert argmax_token_id_at_pos == MARKER_ID, (
+    f"Off-by-one or wrong-position read: argmax at L={len(prompt_ids)} is "
+    f"{argmax_token_id_at_pos} but #406 emission says 83399. Refusing to proceed."
+)
+</pre>
+
+<p><strong>Aggregation choice (pre-registered, NOT post-hoc selectable — v2 adds a third look):</strong></p>
+<ul>
+<li><strong>Primary:</strong> mean of log-probs over the 50 Q_test probes per cell — symmetric in log-space, the same shape #406 used for D (K=25-mean log-prob averaging). Reports as <code>G_logprob[i, j]</code> (adapter) and <code>B_logprob[j]</code> (base pass).</li>
+<li><strong>Free secondary (full distribution):</strong> log of mean prob over the 50 probes. Reports as <code>G_prob[i, j]</code>.</li>
+<li><strong>v2 — robust aggregation (third look):</strong> 10%-trimmed mean of per-probe log-prob (drops the lowest 5% AND highest 5%), reported as <code>G_logprob_trimmed[i, j]</code>. Motivation: one floored probe (−50 nats) can dominate a 50-element mean; the trimmed mean is a sanity check that the headline isn't a tail artifact. Pre-registered as a sensitivity DV; the analyzer reports ρ on raw / delta / trimmed-delta side-by-side.</li>
+<li><strong>Numerical floor:</strong> <code>logp = max(logp, -50.0)</code> on read (defensive — vLLM emits real log-probs ~−20 nats, but adapter swaps occasionally underflow). Per-cell payload records <code>n_clamped_to_floor</code> AND per-cell per-probe min/max log-prob range. If &gt; 1% of cells get clamped, post <code>epm:failure v1, failure_class: data, reason: log_prob_underflow_widespread</code>.</li>
+</ul>
+
+<p><strong>v2 — adapter-shift delta DV (definition):</strong></p>
+<pre>
+# After Phase 2a (base pass) and Phase 2b (adapter sweep) complete:
+B_logprob[j] = mean over q of base_logp[j, q]                # 16-vector, base model
+G_logprob[i, j] = mean over q of adapter_logp[i, j, q]       # 16x16, adapter
+DeltaG_logprob[i, j] = G_logprob[i, j] - B_logprob[j]        # 16x16, adapter-induced shift
+
+# Per-probe-aligned delta (used for the per-probe-range / bimodality checks):
+delta_per_probe[i, j, q] = adapter_logp[i, j, q] - base_logp[j, q]
+DeltaG_logprob_per_probe_mean[i, j] = mean over q of delta_per_probe[i, j, q]
+# Note: DeltaG_logprob_per_probe_mean ≡ DeltaG_logprob by linearity of expectation.
+# Per-probe deltas matter for the H2-delta dispersion + bimodality checks (§6.4).
+</pre>
+
+<h3>4.3 NEW code: <code>scripts/i460_logprob_eval.py</code></h3>
+<p>The single new script. Mirrors <code>scripts/i406_phase3_cross_eval.py</code> structure verbatim (same shard parser, same adapter download path, same vLLM bring-up, same per-cell atomic write, same shard roll-up). Only the per-cell measurement differs.</p>
+
+<pre>
+"""Phase 1+2 — re-measure #406's outcome as continuous marker log-prob.
+
+For each (T_i, T_j, q in Q_test): one vLLM forward over prompt + appended ' ※'
+token; read prompt_logprobs[L][83399] where L = len(prompt_ids). Per-cell JSON
+captures BOTH the continuous DV (G_logprob = mean log-prob over 50 probes,
+primary) AND the binary recomputed DV (emission_recompute = mean over 50 of
+[argmax_v prompt_logprobs[L][v] == 83399], H4 rig sanity).
+
+Reuses i406_conditions: build_prompt_for_condition, CONDITIONS, MARKER_ID,
+MARKER_TEXT verbatim. NO RETRAINING.
+
+CLI:
+  uv run python scripts/i460_logprob_eval.py --cids A1                 # smoke
+  uv run python scripts/i460_logprob_eval.py                            # full sweep
+  uv run python scripts/i460_logprob_eval.py --resume                   # idempotent re-run
+"""
+
+from __future__ import annotations
+import argparse, json, logging, math, time
+from pathlib import Path
+import numpy as np
+from transformers import AutoTokenizer
+from explore_persona_space.experiments.i406_conditions import (
+    CONDITIONS, CONDITIONS_BY_ID, MARKER_ID, MARKER_TEXT, build_prompt_for_condition,
+)
+
+logger = logging.getLogger("i460.eval")
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+HF_REPO   = "superkaiba1/explore-persona-space"
+LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i406")   # SAME cache as #406
+OUT_DIR   = Path("eval_results/issue_460/logprob_eval")
+PER_CELL_DIR = OUT_DIR / "per_cell"
+LOGP_FLOOR = -50.0
+
+HF_DATA_REPO   = "superkaiba1/explore-persona-space-data"
+HF_DATA_SUBDIR = "issue406_divergence_predicts_transfer/training_data"
+# v2: data/issue_406/* is gitignored on main and issue-406; on a clean checkout
+# both q_test and class_d/rewrites must be pulled from the HF data repo. The
+# Phase-0 generator (i406_phase0_generate_data.py) writes to data/issue_406/
+# locally, and the #406 upload step pushed both files to HF_DATA_REPO under
+# HF_DATA_SUBDIR. Loaders below try local first, fall back to HF snapshot.
+
+def _ensure_local_from_hf(rel_path_in_repo: str, local_target: Path) -> None:
+    """If local_target doesn't exist, snapshot_download the single file from the
+    HF data repo into data/issue_406/. Idempotent."""
+    if local_target.exists():
+        return
+    from huggingface_hub import snapshot_download
+    local_target.parent.mkdir(parents=True, exist_ok=True)
+    snap_root = snapshot_download(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        revision="main",
+        allow_patterns=[f"{HF_DATA_SUBDIR}/{rel_path_in_repo}"],
+    )
+    src = Path(snap_root) / HF_DATA_SUBDIR / rel_path_in_repo
+    if not src.exists():
+        raise FileNotFoundError(
+            f"HF fallback snapshot did not produce {src}. "
+            f"Check {HF_DATA_REPO} contents at revision main; expected "
+            f"{HF_DATA_SUBDIR}/{rel_path_in_repo}."
+        )
+    # Copy (not symlink) so subsequent runs find it in the canonical local path.
+    import shutil
+    shutil.copy2(src, local_target)
+    logger.info("HF fallback: copied %s -> %s", src, local_target)
+
+def _load_q_test() -> list[str]:
+    path = Path("data/issue_406/q_test_extended_50.json")
+    _ensure_local_from_hf("q_test_extended_50.json", path)
+    payload = json.loads(path.read_text())
+    qs = payload["questions"]
+    if len(qs) != 50:
+        raise AssertionError(f"Expected 50 Q_test, got {len(qs)}")
+    return qs
+
+def _load_class_d_rewrites() -> dict[str, dict[str, str]]:
+    path = Path("data/issue_406/class_d/rewrites_v1.json")
+    _ensure_local_from_hf("class_d/rewrites_v1.json", path)
+    return json.loads(path.read_text())
+
+def _download_adapters(cids: list[str]) -> dict[str, str]:
+    from huggingface_hub import snapshot_download
+    LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
+    out: dict[str, str] = {}
+    for cid in cids:
+        target = f"adapters/i406_{cid}"
+        local = LOCAL_ADAPTER_CACHE / target
+        if not (local / "adapter_model.safetensors").exists():
+            snapshot_download(repo_id=HF_REPO, revision="main",
+                              allow_patterns=[f"{target}/*"],
+                              local_dir=LOCAL_ADAPTER_CACHE)
+        if not (local / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"adapter_model.safetensors missing at {local} even after snapshot_download. "
+                "Adapter not uploaded by #406, or snapshot_download truncated siblings list."
+            )
+        out[cid] = str(local)
+    return out
+
+def _per_cell_path(ci: str, cj: str) -> Path:
+    return PER_CELL_DIR / f"Glogprob_{ci}__{cj}.json"
+
+def main(argv: list[str] | None = None) -> None:
+    logging.basicConfig(level=logging.INFO,
+        format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--cids", default=None,
+        help="Comma-sep outer-i list; default = all 16. Smoke = '--cids A1'.")
+    ap.add_argument("--resume", action="store_true",
+        help="Skip (i, j) cells whose per_cell JSON already exists and is non-empty.")
+    ap.add_argument("--include-base-pass", dest="include_base_pass",
+        action="store_true", default=True,
+        help="v2: run Phase 2a base-model pass (B_logprob). Default ON.")
+    ap.add_argument("--no-base-pass", dest="include_base_pass",
+        action="store_false",
+        help="Skip Phase 2a; useful for re-runs that only re-do the adapter sweep.")
+    args = ap.parse_args(argv)
+
+    from explore_persona_space.orchestrate.env import load_dotenv
+    load_dotenv()
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
+
+    # CLAUDE.md marker assert (single token id 83399 for ' ※' on Qwen-2.5-7B).
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+    ids = tokenizer.encode(MARKER_TEXT, add_special_tokens=False)
+    if ids != [MARKER_ID]:
+        raise AssertionError(f"Marker token id drift: encode({MARKER_TEXT!r}) = {ids}; refusing launch.")
+
+    q_test = _load_q_test()
+    class_d_rewrites = _load_class_d_rewrites()
+    all_cids = [c.cid for c in CONDITIONS]
+    my_cids = all_cids if args.cids is None else args.cids.split(",")
+    for cid in my_cids:
+        if cid not in CONDITIONS_BY_ID:
+            raise ValueError(f"--cids carries unknown id {cid!r}")
+    logger.info("Outer-i set (N=%d): %s", len(my_cids), my_cids)
+
+    # Pre-download my adapters before vLLM lifts the GPU.
+    adapter_paths = _download_adapters(my_cids)
+
+    # Late import (heavy).
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+
+    llm = LLM(
+        model=BASE_MODEL,
+        enable_lora=True,
+        max_lora_rank=32,
+        max_loras=1,
+        dtype="bfloat16",
+        gpu_memory_utilization=0.85,
+        seed=42,
+    )
+    # prompt_logprobs=1 → vLLM returns the top-1 log-prob at every prompt position
+    # AS WELL AS the actual-token log-prob at every position. We read the
+    # actual-token logp at the appended-marker position. max_tokens=1 minimizes
+    # generation overhead; we never look at the generated token.
+    sp = SamplingParams(
+        max_tokens=1,
+        temperature=0.0,
+        top_p=1.0,
+        prompt_logprobs=1,
+        logprobs=1,
+        seed=42,
+    )
+
+    # Load published G to enable H4 sanity per-cell comparison.
+    published_G = json.loads(Path("eval_results/issue_406/cross_eval/G_matrix.json").read_text())["G"]
+
+    # v2 — Phase 2a base-model pass (lora_request=None). Runs once before the
+    # outer adapter loop, inside the same vLLM engine, on the same 16 inner T_j
+    # × 50 Q_test prompts. Output: B_logprob[j] for j in all 16 inner conditions.
+    # Skip with --no-base-pass on re-runs that re-do only the adapter sweep.
+    b_logprob_path = OUT_DIR / "B_logprob.json"
+    if args.include_base_pass and (not args.resume or not b_logprob_path.exists()):
+        logger.info("Phase 2a — base-model pass (lora_request=None) on 16 inner T_j x 50 Q_test")
+        base_per_j: dict[str, dict] = {}
+        for cid_j in all_cids:
+            cond_j = CONDITIONS_BY_ID[cid_j]
+            prompts_pl: list[dict] = []
+            prompt_lens_b: list[int] = []
+            for q in q_test:
+                pt = build_prompt_for_condition(cond_j, q, tokenizer, class_d_rewrites=class_d_rewrites)
+                pids = tokenizer.encode(pt, add_special_tokens=False)
+                prompts_pl.append({"prompt_token_ids": pids + [MARKER_ID]})
+                prompt_lens_b.append(len(pids))
+            t_b = time.time()
+            outputs_b = llm.generate(prompts_pl, sp, lora_request=None)
+            base_logps: list[float] = []
+            for out_b, Lb in zip(outputs_b, prompt_lens_b, strict=True):
+                slot = out_b.prompt_logprobs[Lb]
+                if slot is None or MARKER_ID not in slot:
+                    raise RuntimeError(
+                        f"Base pass: prompt_logprobs[{Lb}][{MARKER_ID}] missing on T_j={cid_j}; "
+                        f"slot is None: {slot is None}; slot keys: "
+                        f"{list(slot.keys())[:5] if slot else 'n/a'}"
+                    )
+                lp = max(float(slot[MARKER_ID].logprob), LOGP_FLOOR)
+                base_logps.append(lp)
+            mean_base_lp = float(np.mean(base_logps))
+            base_per_j[cid_j] = {
+                "T_j": cid_j,
+                "n_probes": len(q_test),
+                "mean_logp_marker_base": mean_base_lp,
+                "per_probe_logp_marker_base": base_logps,
+                "per_probe_min": float(min(base_logps)),
+                "per_probe_max": float(max(base_logps)),
+                "n_clamped_to_floor": int(sum(1 for lp in base_logps if lp <= LOGP_FLOOR + 1e-6)),
+            }
+            logger.info(
+                "  base T_j=%s mean_logp=%.3f range=[%.2f, %.2f] clamped=%d t=%.1fs",
+                cid_j, mean_base_lp, base_per_j[cid_j]["per_probe_min"],
+                base_per_j[cid_j]["per_probe_max"], base_per_j[cid_j]["n_clamped_to_floor"],
+                time.time() - t_b,
+            )
+        b_logprob_path.write_text(json.dumps({
+            "schema_version": "v1",
+            "dv": "mean_logp_marker_base",
+            "base_model": BASE_MODEL,
+            "marker_id": MARKER_ID,
+            "n_probes_per_T_j": 50,
+            "logp_floor": LOGP_FLOOR,
+            "per_T_j": base_per_j,
+        }, indent=2))
+        logger.info("Wrote base-pass -> %s", b_logprob_path)
+    elif args.include_base_pass:
+        logger.info("RESUME: base-pass file already exists at %s; skipping Phase 2a", b_logprob_path)
+
+    # Phase 2b — adapter sweep (unchanged from v1, with per-probe-range fields added).
+    for outer_i, cid_i in enumerate(my_cids):
+        lora_req = LoRARequest(
+            lora_name=cid_i,
+            lora_int_id=all_cids.index(cid_i) + 1,
+            lora_path=adapter_paths[cid_i],
+        )
+        for cid_j in all_cids:
+            cell_path = _per_cell_path(cid_i, cid_j)
+            if args.resume and cell_path.exists() and cell_path.stat().st_size > 0:
+                logger.info("RESUME skip (%s, %s)", cid_i, cid_j)
+                continue
+            cond_j = CONDITIONS_BY_ID[cid_j]
+            prompts_text: list[str] = []
+            prompt_lens: list[int] = []
+            for q in q_test:
+                pt = build_prompt_for_condition(cond_j, q, tokenizer, class_d_rewrites=class_d_rewrites)
+                pids = tokenizer.encode(pt, add_special_tokens=False)
+                # Append the marker token by token-id (NOT by decode-then-encode round trip
+                # — vLLM accepts prompt_token_ids directly, sidestepping BPE re-segmentation
+                # exactly as #406 Phase 1 fixed via MF-1).
+                prompts_text.append({"prompt_token_ids": pids + [MARKER_ID]})
+                prompt_lens.append(len(pids))
+            t0 = time.time()
+            outputs = llm.generate(prompts_text, sp, lora_request=lora_req)
+            if len(outputs) != len(prompts_text):
+                raise RuntimeError(f"vLLM returned {len(outputs)} for {len(prompts_text)} on ({cid_i}, {cid_j})")
+
+            logps_marker: list[float] = []
+            argmax_eq_marker: list[bool] = []
+            argmax_token_ids: list[int] = []
+            for out, L in zip(outputs, prompt_lens, strict=True):
+                # out.prompt_logprobs is List[Optional[dict[token_id, Logprob]]] of length len(full_ids).
+                # Index L is the position where the appended-marker token sits.
+                slot = out.prompt_logprobs[L]
+                if slot is None:
+                    raise RuntimeError(
+                        f"prompt_logprobs[{L}] is None on ({cid_i},{cid_j}); vLLM API shape changed."
+                    )
+                # The actual-token log-prob at this slot is keyed by MARKER_ID
+                # (when prompt_logprobs >= 1, vLLM always includes the actual token's logprob).
+                marker_lp_obj = slot.get(MARKER_ID)
+                if marker_lp_obj is None:
+                    # If the marker isn't in the top-1, vLLM still returns the actual-token entry.
+                    # If it's truly absent here, that's an API contract violation.
+                    raise RuntimeError(
+                        f"MARKER_ID {MARKER_ID} not in prompt_logprobs[{L}] on ({cid_i},{cid_j}); "
+                        f"slot keys: {list(slot.keys())[:5]}..."
+                    )
+                lp = max(float(marker_lp_obj.logprob), LOGP_FLOOR)
+                logps_marker.append(lp)
+                # argmax over top-1: when prompt_logprobs=1, slot has 1 or 2 entries
+                # (the top-1 token + the actual token if different). Pick the token with the highest logprob.
+                top = max(slot.items(), key=lambda kv: kv[1].logprob)
+                argmax_token_ids.append(top[0])
+                argmax_eq_marker.append(top[0] == MARKER_ID)
+
+            mean_logp     = float(np.mean(logps_marker))
+            log_mean_prob = float(math.log(np.mean(np.exp(np.array(logps_marker))) + 1e-300))
+            # v2 — 10%-trimmed mean (drop 5% lowest and 5% highest per-probe logps).
+            from scipy import stats as _scs
+            trimmed_mean_logp = float(_scs.trim_mean(np.array(logps_marker), proportiontocut=0.05))
+            emission_recompute_rate = float(np.mean(argmax_eq_marker))
+            published_rate = published_G[cid_i][cid_j]["rate"]
+            emission_drift = abs(emission_recompute_rate - published_rate)
+
+            cell_payload = {
+                "T_i": cid_i,
+                "T_j": cid_j,
+                "n_probes": len(q_test),
+                "mean_logp_marker": mean_logp,                          # PRIMARY DV (adapter)
+                "log_mean_prob_marker": log_mean_prob,                  # secondary aggregation
+                "trimmed_mean_logp_marker": trimmed_mean_logp,         # v2 robust-aggregation 3rd look
+                "emission_recompute_rate": emission_recompute_rate,    # H4 rig sanity
+                "published_emission_rate": published_rate,
+                "emission_drift_abs": emission_drift,                   # must be <= 0.02
+                "per_probe_logp_marker": logps_marker,                  # for downstream re-aggregation
+                "per_probe_argmax_token_id": argmax_token_ids,
+                "per_probe_min_logp": float(min(logps_marker)),         # v2 — distribution shape
+                "per_probe_max_logp": float(max(logps_marker)),
+                "per_probe_p10_logp": float(np.percentile(logps_marker, 10)),
+                "per_probe_p90_logp": float(np.percentile(logps_marker, 90)),
+                "n_clamped_to_floor": int(sum(1 for lp in logps_marker if lp <= LOGP_FLOOR + 1e-6)),
+            }
+            # H4 hard gate — refuse to write a cell whose binary recompute drifts >0.05 from #406.
+            # (Soft gate at 0.02 reported in the JSON; hard refuse at 0.05.)
+            if emission_drift > 0.05:
+                raise AssertionError(
+                    f"H4 rig sanity FAIL on ({cid_i},{cid_j}): emission_recompute={emission_recompute_rate:.3f} "
+                    f"vs published={published_rate:.3f} drift={emission_drift:.3f} > 0.05. "
+                    "We are reading the wrong slot, the wrong adapter, or the wrong prompt. Refusing to proceed."
+                )
+
+            tmp = cell_path.with_suffix(".json.tmp")
+            tmp.write_text(json.dumps(cell_payload, indent=2))
+            tmp.replace(cell_path)
+            logger.info(
+                "(%s, %s) mean_logp=%.3f log_mean_p=%.3f emit_recompute=%.3f published=%.3f drift=%.3f t=%.1fs",
+                cid_i, cid_j, mean_logp, log_mean_prob,
+                emission_recompute_rate, published_rate, emission_drift, time.time() - t0,
+            )
+
+    # 16x16 roll-up matrix (single-process; resume-aware via per_cell read).
+    # v2: also stamps the B_logprob path so the analyzer can locate the placebo file.
+    matrix: dict[str, dict[str, dict]] = {}
+    for cid_i in all_cids:
+        matrix[cid_i] = {}
+        for cid_j in all_cids:
+            p = _per_cell_path(cid_i, cid_j)
+            if not p.exists():
+                matrix[cid_i][cid_j] = {"status": "missing"}
+                continue
+            cell = json.loads(p.read_text())
+            matrix[cid_i][cid_j] = {
+                "mean_logp_marker": cell["mean_logp_marker"],
+                "log_mean_prob_marker": cell["log_mean_prob_marker"],
+                "trimmed_mean_logp_marker": cell["trimmed_mean_logp_marker"],
+                "emission_recompute_rate": cell["emission_recompute_rate"],
+                "emission_drift_abs": cell["emission_drift_abs"],
+                "n_clamped_to_floor": cell["n_clamped_to_floor"],
+            }
+    out_path = OUT_DIR / "G_logprob_matrix.json"
+    out_path.write_text(json.dumps({
+        "schema_version": "v2",
+        "primary_dv": "mean_logp_marker",
+        "secondary_dv": "log_mean_prob_marker",
+        "robust_dv": "trimmed_mean_logp_marker",
+        "delta_dv_definition": "DeltaG_logprob[i,j] = mean_logp_marker[i,j] - B_logprob[j]",
+        "b_logprob_path": str(b_logprob_path),                       # v2 — analyzer reads this
+        "n_probes_per_cell": 50,
+        "logp_floor": LOGP_FLOOR,
+        "base_model": BASE_MODEL,
+        "marker_id": MARKER_ID,
+        "marker_text": MARKER_TEXT,
+        "conditions": [c.cid for c in CONDITIONS],
+        "matrix": matrix,
+    }, indent=2))
+    logger.info("Wrote roll-up matrix -> %s", out_path)
+
+if __name__ == "__main__":
+    main()
+</pre>
+
+<h3>4.4 vLLM API choice — <code>prompt_logprobs</code> vs HF teacher-forced (picked AND justified)</h3>
+<p><strong>Picked: vLLM <code>prompt_logprobs=1</code>.</strong></p>
+<ul>
+<li><strong>Why vLLM:</strong> #406 Phase 3 already uses vLLM with LoRARequest swapping for the EXACT same per-cell shape (16 outer adapters × 16 inner conditions × 50 probes), at ~9 min total wall time for the binary version. Reusing the same engine + LoRA swap pattern is the obvious low-risk path. CLAUDE.md mandates vLLM for eval generation.</li>
+<li><strong>Why <code>prompt_logprobs=1</code> (not HF forward):</strong> HF forward-pass (the #406 Phase 1 pattern) requires reloading the LoRA adapter into a fresh <code>PeftModel</code> per outer condition, which is ~20× slower per cell than vLLM's hot-swap. The vLLM path is correct for our needs because we are NOT capturing residual-stream activations (already done in #406 Phase 1); we only need a single log-prob scalar per (model, prompt). <code>prompt_logprobs=1</code> is the documented API for this: at each prompt position, vLLM returns the top-1 log-prob AND the actual-token log-prob (so we always get the marker log-prob, even if marker is not top-1).</li>
+<li><strong>Why <code>max_tokens=1</code> (not 0):</strong> vLLM 0.11.0 requires <code>max_tokens ≥ 1</code> in <code>SamplingParams</code>. We read <code>out.prompt_logprobs[L]</code> regardless of the generated token; the generated token is unused (we throw it away). Sets <code>logprobs=1</code> to avoid the generated-token logprobs slot being None (purely defensive — does not affect the DV).</li>
+<li><strong>Why pass <code>prompt_token_ids</code> directly (not the string):</strong> #406's Phase 1 MF-1 fix flagged that <code>tokenizer.decode(prompt_ids + [MARKER_ID])</code> followed by re-encode can re-segment BPE boundaries (the leading-space marker is exactly the class of token vulnerable to this). vLLM accepts <code>{"prompt_token_ids": [...]}</code> in <code>llm.generate()</code> per the documented API — we use it for byte-exact safety.</li>
+</ul>
+
+<p><strong>Why code, not a model call?</strong> The DV is a deterministic log-prob extraction at a fixed slot — no unstructured-data parsing involved. There is no candidate single-Claude-call formulation; this is a pure numerical readout from a tensor.</p>
+
+<h3>4.5 Smoke/sweep architectural parity (unification default)</h3>
+<p>Smoke phase IS sweep with <code>--cids A1</code>: same dispatcher (<code>i460_logprob_eval.py</code>), same vLLM bring-up, same per-cell write, same H4 hard-gate. <strong>v2: smoke ALSO runs Phase 2a base pass by default</strong> (one engine bring-up, 16 base T_j × 50 = 800 base forwards + 1 outer × 16 × 50 = 800 adapter forwards). The smoke step exercises the full per-cell read path on the A1 row AND the base-pass code path AND the HF-fallback loader code path (if local data files are absent, smoke is the first place the loader fetches them). If H4 hard-gate FAILs in smoke, the sweep is blocked. Per CLAUDE.md Step 6d.0 + task #397's lesson, this avoids the "smoke is in-process, sweep is subprocess" divergence class.</p>
+
+<p><strong>v2 — smoke success criteria (all must PASS before the full sweep launches):</strong></p>
+<ul>
+<li>H4 per-cell drift ≤ 0.02 on every A1-row cell (16 cells).</li>
+<li>Diagonal A1→A1 mean log-prob &gt; −5 nats (#406 emission rate 0.90 implies model is highly willing).</li>
+<li>Base-pass B_logprob[j] dynamic range across 16 inner T_j is &gt; 0.5 nats spread (sanity: the base model should have at least some context-dependent variation in P(※); if all 16 B_logprob are within 0.5 nats of each other, base prior is flat and the placebo regression will be uninformative regardless).</li>
+<li>n_clamped_to_floor ≤ 1% of probes across the A1 row.</li>
+</ul>
+
+<h2>5. Conditions and Controls</h2>
+<p>Plain-English condition names, used throughout the rest of the plan. Bare codes (A1..D5) appear only in the rightmost column.</p>
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr><td><strong>Continuous DV (raw) — co-primary</strong></td><td>Mean log p(※) at first response-token over 50 Q_test per (T_i, T_j) adapter cell, 240 off-diagonal pairs</td><td>Headline correlation against D (raw, includes base prior)</td><td>co-primary measurement; <code>G_logprob[i,j]</code> in <code>G_logprob_matrix.json</code></td></tr>
+<tr><td><strong>Adapter-shift delta DV — v2 co-primary</strong></td><td>ΔG_logprob[i, j] = G_logprob[i, j] − B_logprob[j]; the adapter-induced shift in marker willingness above the base-prior baseline</td><td>Isolates adapter contribution from base-model prior — the construct H1 actually claims (divergence predicts <em>transfer</em>, not "divergence predicts total marker willingness")</td><td>co-primary measurement; computed in Phase 3 from <code>G_logprob_matrix.json</code> + <code>B_logprob.json</code></td></tr>
+<tr><td><strong>Base-model placebo — v2 NEW</strong></td><td>Single base-model pass: B_logprob[j] = mean over 50 Q_test of base-model log P(※ | T_j(q)), for each of the 16 inner T_j. Then length-partial Spearman ρ(B_logprob, D | log_prompt_tokens) across 240 pairs (using B_logprob broadcast across the i dimension)</td><td>Diagnoses whether the base prior alone correlates with D. If ρ_placebo near zero → raw and delta tell the same story; if ρ_placebo large → headline must be delta, the raw correlation was mostly base prior</td><td>built into <code>i460_logprob_eval.py</code> Phase 2a (lora_request=None), one engine warm-up + 16 × 50 = 800 forwards; output <code>B_logprob.json</code></td></tr>
+<tr><td><strong>Within-run emission-rate recomputation (H4 sanity)</strong></td><td>For each cell, fraction of 50 probes where <code>argmax</code> at the same slot == 83399 → must reproduce #406's <code>G_matrix.json</code> to ≤ 0.02 absolute on every cell</td><td>Confirms we are reading the SAME conditional distribution the emission rate thresholded on — rules out off-by-one position read, wrong adapter loaded, or stale tokenizer</td><td>built into <code>i460_logprob_eval.py</code> per-cell payload <code>emission_recompute_rate</code>; hard gate at 0.05, soft gate at 0.02</td></tr>
+<tr><td><strong>Diagonal log-prob sanity</strong></td><td>For each i, G_logprob[i, i] should be the HIGHEST log-prob in row i — the model is most willing to emit ※ under the context it was trained on</td><td>Confirms the continuous DV is reading "willingness to emit" with the expected direction; if a diagonal cell has lower log-prob than an off-diagonal in the same row, the DV is broken or the adapter wasn't loaded</td><td>built into Phase 3 analysis; expected G_logprob[i,i] &gt; −5 nats (vs typical off-diagonal floor ~ −15 to −40 nats given diagonal emission rates of 0.86–1.00)</td></tr>
+<tr><td><strong>Diagonal logp-vs-emission rank consistency — v2 NEW</strong></td><td>Rank the 16 diagonal G_logprob[i, i] values against #406's 16 diagonal emission rates (table from #406 body, values 0.86–1.00)</td><td>Free internal consistency check — if rank-corr Spearman is &lt; 0.5, the within-condition continuous DV is reading different model behavior than the within-condition binary DV (a rig red flag even if H4 passed for argmax-level equivalence)</td><td>built into Phase 3 analysis; emits one Spearman rank-corr scalar + side-by-side bar of diagonal log-prob vs #406 diagonal emission rate</td></tr>
+<tr><td><strong>Restricted-cohort ρ on emission-zero cells (H2-raw + H2-delta)</strong></td><td>Length-partial Spearman ρ(G_logprob, D) AND ρ(ΔG_logprob, D), both length-partialled, computed on ONLY the 125 cells where #406's emission rate was exactly 0</td><td>Direct test for graded vs on/off — does the continuous DV (raw OR adapter-shift) separate cells the binary DV collapsed to zero</td><td>built into Phase 3 analysis</td></tr>
+<tr><td><strong>Non-zero-cohort ρ separation — v2 NEW</strong></td><td>Length-partial ρ on the 115 cells where #406 emission rate &gt; 0, reported SEPARATELY from the 240-all-cells ρ</td><td>Makes the zero-cohort's contribution to the headline visible. If headline ρ is driven mostly by the zero-cohort, the non-zero-cohort ρ will be small and the analyzer says so explicitly.</td><td>built into Phase 3 analysis</td></tr>
+<tr><td><strong>Re-run 6 cosine layers head-to-head</strong></td><td>Recompute length-partial ρ between G_logprob (and ΔG_logprob) and each of the 6 published per-layer cosine matrices (layers 0, 5, 11, 15, 21, 27)</td><td>Tests whether layer-11 dominance (#406 |ρ| = 0.709 on binary DV) survives the DV switch on both raw and adapter-shift DVs</td><td>built into Phase 3 analysis; reuses <code>eval_results/issue_406/cosine/C_L{0,5,11,15,21,27}.json</code> unchanged</td></tr>
+<tr><td><strong>Free secondary aggregations</strong></td><td>Per cell: log of mean prob AND 10%-trimmed mean log-prob alongside primary mean log-prob</td><td>Aggregation choice is a researcher-degree-of-freedom; pre-registering three prevents post-hoc selection of the best-looking ρ. Trimmed mean specifically guards against single-floored-probe leverage on the per-cell mean.</td><td><code>log_mean_prob_marker</code> + <code>trimmed_mean_logp_marker</code> in per-cell JSON; ρ on each reported as descriptive secondary</td></tr>
+<tr><td><strong>Zero-cohort bimodality / Hartigan dip — v2 NEW</strong></td><td>For a representative subset of the 125 emission-zero cells (e.g. the 10 cells in each class-pair quartile of D, capped at 40 cells), compute the Hartigan dip statistic on the per-probe log-prob distribution; report a histogram of per-probe logp + the dip statistic + p-value</td><td>Guards against the "pseudo-graded = actually 3-way binary" artifact: if the continuous DV looks graded across cells but each cell's per-probe distribution is bimodal (some probes fire, some don't), the "graded" appearance is just a fraction-of-firing-probes effect dressed up as a continuous measurement.</td><td>built into Phase 3 analysis; uses <code>per_probe_logp_marker</code> already saved in per-cell JSON; Hartigan dip via <code>diptest</code> package (already in <code>uv.lock</code>; verify in preflight)</td></tr>
+<tr><td><strong>H4 drift histogram — v2 NEW</strong></td><td>Histogram of <code>emission_drift_abs</code> across all 256 cells (not just the binary pass/fail gate)</td><td>Soft-zone clustering between 0.02–0.05 is a bug signal that doesn't trip the hard gate. If 10+ cells cluster in [0.02, 0.05], something subtle (numerical precision drift, vLLM tiebreak instability) is happening even though no individual cell fails.</td><td>built into Phase 3 analysis; one histogram in <code>analysis.json</code> + a small figure</td></tr>
+</table>
+
+<h2>6. Evaluation</h2>
+
+<h3>6.1 Measurement validity (the §11 for outputs)</h3>
+<table>
+<tr><th>DV</th><th>Construct (what the Goal cares about)</th><th>Metric (what is computed)</th><th>On-distribution?</th><th>If proxy: validation / justification</th></tr>
+<tr><td>G_logprob[i,j] (raw co-primary)</td><td>The trained model's "willingness to emit ※" as the first response token when shown <code>T_j(q)</code> after being trained on <code>T_i</code> — a graded version of #406's binary construct, but conflating adapter shift with the base prior</td><td>Mean over q ∈ Q_test of <code>log P_{model_i}(83399 | prompt_ids of T_j(q))</code>, teacher-forced at the position right after the prompt, vLLM <code>prompt_logprobs</code> read at slot L = len(prompt_ids)</td><td><strong>Yes — same position, same conditional distribution as the emission-rate DV.</strong></td><td>The proxy is the LOG of the same probability the binary DV thresholded on. Validation: H4 gate. <strong>Construct gap (v2 acknowledgement):</strong> "willingness to emit" can be decomposed into base-prior willingness + adapter shift. The raw DV measures the sum; without subtraction we can't tell which part D correlates with. The placebo regression + delta DV (below) resolve this.</td></tr>
+<tr><td>ΔG_logprob[i,j] (delta co-primary — v2)</td><td>The <strong>adapter-induced shift</strong> in willingness to emit ※ when shown <code>T_j(q)</code>, isolated from the base-model prior. This is the construct H1 actually claims: divergence predicts <em>SFT transfer</em>, not "divergence predicts total emission willingness."</td><td>G_logprob[i,j] − B_logprob[j], where B_logprob[j] is the base model's mean log P(※ | T_j(q)) over the same 50 Q_test probes</td><td><strong>Yes</strong> — same position, same prompts, same conditional distribution; the base subtraction is computed on byte-identical inputs. The delta is well-defined in log-space (it's the log of the likelihood ratio: log[P_adapter(※) / P_base(※)]).</td><td>The delta DV is the principled construct match. It IS a proxy in the sense that "transfer strength" could be measured many ways (continuous log-prob shift here vs. sampled-emission-rate shift vs. KL between adapter and base output distributions), but it's the version that (a) matches the position the binary DV thresholded on and (b) directly subtracts the base prior. Validation comes from the placebo regression: if ρ(B_logprob, D) is near zero, the delta and raw DVs tell the same story and the construct decomposition is verified empirically.</td></tr>
+<tr><td>B_logprob[j] (placebo / diagnostic — v2)</td><td>The base model's intrinsic preference for ※ as the first response token under each T_j — the prior the adapter modifies</td><td>Mean over q ∈ Q_test of base-model <code>log P(83399 | prompt_ids of T_j(q))</code>, lora_request=None</td><td>Yes — same position, same prompts.</td><td>Not a proxy for transfer; it IS the base prior. Used as a diagnostic in the placebo regression and as the subtrahend for the delta DV.</td></tr>
+<tr><td>emission_recompute_rate (sanity)</td><td>Same as #406 emission rate</td><td>Mean over q of [argmax_v <code>P(v | prompt_ids)</code> at slot L == 83399]</td><td>Yes — identical construct + metric to #406</td><td>Not a proxy; rig sanity check.</td></tr>
+</table>
+
+<h3>6.2 Statistical analysis (Phase 3, local VM after pod uploads)</h3>
+<p>Build a 240-row DataFrame (the same shape as <code>i406_phase4_analyze.py::_build_dataframe</code>) with v2 additions: one row per off-diagonal (T_i, T_j) pair with columns <code>T_i, T_j, class_i, class_j, class_pair, D (= KL K=25-mean from D_matrix), JS, G_orig (= #406 emission rate), G_logprob (raw co-primary), G_prob (log-mean-prob secondary), G_logprob_trimmed (10%-trimmed v2 robust DV), B_logprob (broadcast: B_logprob[T_j] joined onto each row), DeltaG_logprob (= G_logprob − B_logprob), DeltaG_logprob_trimmed (= G_logprob_trimmed − B_logprob), log_prompt_tokens, C_L{0,5,11,15,21,27}</code>.</p>
+<p>Run the same statistical stack #406 ran (length-partial Spearman + raw Spearman + length-tercile stratified + class-cluster mixed model + cluster-bootstrap CI at 2000 resamples + per-class-pair grid), reusing <code>_length_partial_inline</code>, <code>_length_tercile_rhos</code>, <code>_cluster_bootstrap_partial_spearman</code>, <code>_per_cell_partials</code>, <code>_fit_mixed_model</code> from <code>i406_phase4_analyze.py</code> unchanged. Identical length-partial covariate (<code>log_prompt_tokens</code>) — the only thing that changes between the per-DV analyses is the LHS column.</p>
+<p><strong>Pre-registered analyses (v2 — co-primary structure; analyzer reads all three side-by-side, the interpretation rule decides which is the headline):</strong></p>
+<ol>
+<li><strong>H1-raw — length-partial ρ(G_logprob, D | log_prompt_tokens) on all 240 pairs.</strong> Cluster-bootstrap CI (2000 resamples) on 15 class-pair cells; mixed-model survival check; raw + length-partial both reported.</li>
+<li><strong>H1-delta — length-partial ρ(ΔG_logprob, D | log_prompt_tokens) on all 240 pairs.</strong> Same statistical stack as H1-raw applied to the delta DV. Cluster bootstrap uses the SAME resample seed (42) as H1-raw so resamples are paired across the two DVs — enables the paired-difference CI in H1''.</li>
+<li><strong>H1-placebo — length-partial ρ(B_logprob, D | log_prompt_tokens) on all 240 pairs.</strong> The base prior's intrinsic correlation with D. NOT a PASS/FAIL — read alongside H1-raw and H1-delta. The b_logprob_path is broadcast from 16-vector to 240-row (each row inherits B_logprob[T_j]); length-partial is meaningful because log_prompt_tokens varies within each T_j across the i-dimension... wait, B_logprob[j] is constant across i for the same j, so the within-j length-partial is dominated by the across-j variation. Compute the placebo ρ TWO ways and report both: (a) the 240-row length-partial (the "matched comparison" to H1-raw / H1-delta), (b) a 16-row aggregate Spearman ρ(B_logprob[j], mean_i D[i,j] | mean_i log_prompt_tokens[i,j]) — the honest 16-data-point placebo. If the two disagree by &gt; 0.2 abs, the analyzer reports the 16-row aggregate as the primary placebo number because the 240-row version has dependency structure that inflates SE.</li>
+<li><strong>H1'-aggregations — robustness across the three aggregations.</strong> Same length-partial ρ on G_prob (log-mean-prob) AND G_logprob_trimmed (10%-trimmed mean), reported alongside the primary G_logprob ρ. If the three disagree by &gt; 0.15, flag in the Details as "aggregation-sensitive" and surface the per-cell logp range distribution from the per-cell payload's <code>per_probe_min/max_logp</code> fields.</li>
+<li><strong>H1''-head-to-head against #406.</strong> Side-by-side table of |ρ| for binary G_orig vs G_logprob vs ΔG_logprob on the same 240 pairs. Cluster-bootstrap CI for each of the THREE paired differences (G_logprob vs G_orig; ΔG_logprob vs G_orig; ΔG_logprob vs G_logprob) — paired by pair using the shared seed-42 resamples.</li>
+<li><strong>H2-raw / H2-delta — restricted-cohort ρ on emission-zero cells (N = 125).</strong> Length-partial Spearman on the subset where #406 emission rate was exactly 0, computed on BOTH G_logprob and ΔG_logprob. Cluster-bootstrap CI; if N per class-pair drops below 10, switch to plain Spearman + report unclustered CI with a note. <strong>v2 — non-zero-cohort separation:</strong> ALSO report H1-raw and H1-delta on the 115-cell non-zero cohort separately, so the reader sees how much the headline ρ depends on the zero cohort.</li>
+<li><strong>H2 power flag (v2 — pre-registered annotation):</strong> The H2-N=125 test has approximately 61% power at true |ρ| = 0.20 (computed in Phase 3 from <code>statsmodels.stats.power.NormalIndPower.power(effect_size=fisher_z(0.20)*sqrt(125-3), ...)</code>; cluster CDE inflates SE further). A returned |ρ| in [0.10, 0.20] is FLAGGED as "underpowered FAIL — cannot confirm OR rule out graded adapter transfer." A returned |ρ| ≥ 0.20 is a PASS; |ρ| &lt; 0.10 with CI excluding ±0.10 is a FAIL.</li>
+<li><strong>H2 asymmetric interpretability annotation (v2):</strong> The analyzer write-up MUST state both interpretation rules explicitly: PASS on H2-delta → strong graded-adapter-transfer claim; FAIL on H2-delta is WEAK evidence for threshold-only because the cohort is by construction the cohort where the adapter pushed least (selection effect = reduced variance in the cohort).</li>
+<li><strong>H3 — 6 cosine layers on raw AND delta DVs.</strong> Forest plot comparable to #406's, with binary G_orig, raw G_logprob, AND ΔG_logprob ρ for each predictor on the same y-axis (binary as ghost, raw + delta as primary lines).</li>
+<li><strong>Zero-cohort bimodality / Hartigan dip (v2).</strong> For up to 40 cells from the 125-cell zero cohort (stratified by D-quartile within class-pair, 10 per quartile), compute Hartigan dip statistic on per-probe log-prob distribution. Report median dip p-value across the 40 cells AND a 4-panel histogram showing one representative cell per D-quartile. If &gt; 30% of cells have dip p &lt; 0.05, the cohort's "graded" appearance is largely a per-cell bimodality (some probes fire, some don't) and the analyzer states this honestly.</li>
+<li><strong>H4 drift histogram (v2).</strong> Histogram of <code>emission_drift_abs</code> across all 256 cells in 10 bins from 0 to 0.05; if &gt; 10% of cells fall in [0.02, 0.05] the analyzer flags numerical-precision drift as a Details note even though no hard-gate fails.</li>
+<li><strong>Diagonal logp-vs-emission rank consistency (v2).</strong> Spearman ρ between (G_logprob[i,i] for i in 16 diagonals) and (#406 emission rate for the same 16 diagonals). Report scalar + small bar chart. A ρ &lt; 0.5 here flags an internal inconsistency the analyzer surfaces in Details.</li>
+<li><strong>Sensitivity to the 11 near-zero-KL pairs #406 flagged.</strong> Re-run H1-raw AND H1-delta on the KL ≥ 0.05 / 0.10 / 0.20 subsets (#406 reported −0.432 / −0.415 / −0.401 on binary G), confirming the same direction-of-attenuation pattern on both continuous DVs.</li>
+</ol>
+
+<h3>6.3 Length-partial choice</h3>
+<p>Length-partial covariate is <code>log_prompt_tokens</code>, identical to #406. The prompt-length confound is the same regardless of DV (the same prompts; the same length distribution; the same 240 pairs). Partial-out the SAME covariate for one-to-one comparability with #406's headline.</p>
+
+<h3>6.4 Figures to produce (over-produce; pick the hero from them)</h3>
+<table>
+<tr><th>Figure</th><th>Purpose</th></tr>
+<tr><td>hero_raw_scatter.png + hero_delta_scatter.png (v2 PAIR)</td><td>240-pair scatter of G_logprob vs D AND ΔG_logprob vs D, equivalent of #406's hero scatter. Side-by-side. Color = trained-on class. Caption MUST state the placebo ρ alongside.</td></tr>
+<tr><td>head_to_head_forest.png (v2 EXPANDED to 3-way)</td><td>Forest of |ρ| for binary G_orig vs raw G_logprob vs ΔG_logprob × 8 predictors (KL + JS + 6 cosine layers), paired on the same y-axis. CRITICAL for "did the DV change matter? did the prior subtraction matter?"</td></tr>
+<tr><td>placebo_diagnostic.png (v2 NEW)</td><td>The 16-row B_logprob[j] vs mean-D[j] scatter (placebo regression in its honest 16-data-point form) + the ρ value as title. If ρ_placebo is large, this figure makes the issue visible at a glance.</td></tr>
+<tr><td>zero_cohort_scatter_raw.png + zero_cohort_scatter_delta.png (v2 PAIR)</td><td>H2 restricted-cohort scatter on BOTH DVs: G_logprob vs D and ΔG_logprob vs D for the 125 cells where #406's binary G was exactly 0. Hero candidate if H2-delta PASSes strongly.</td></tr>
+<tr><td>cohort_decomposition.png (v2 NEW)</td><td>Three side-by-side ρ bars per DV: 240-all / 125-zero-cohort / 115-non-zero-cohort. Makes the zero cohort's contribution to the headline visible.</td></tr>
+<tr><td>diagonal_logp_vs_emission_bar.png (v2 NEW)</td><td>Side-by-side bar: G_logprob[i,i] (v2 continuous) vs #406's diagonal emission rate, 16 diagonals. Rank-consistency Spearman in title.</td></tr>
+<tr><td>zero_cohort_bimodality_panel.png (v2 NEW)</td><td>4 per-probe log-prob histograms (one per D-quartile of the zero cohort) + Hartigan dip p-value per panel. Reveals "pseudo-graded = actually 3-way binary" if it's happening.</td></tr>
+<tr><td>h4_drift_histogram.png (v2 NEW)</td><td>Histogram of <code>emission_drift_abs</code> across all 256 cells, with vertical lines at 0.02 (soft gate) and 0.05 (hard gate). Soft-zone clustering visible.</td></tr>
+<tr><td>aggregation_comparison.png (v2 EXPANDED to 3-way)</td><td>Side-by-side ρ for mean-logprob, log-mean-prob, AND 10%-trimmed-mean-logprob across raw+delta DVs. Small, lives in Details.</td></tr>
+<tr><td>per_position_recap.png</td><td>Optional: re-run #406's per-position trajectory using ΔG_logprob; tests whether position-10-onward signal generalizes.</td></tr>
+<tr><td>per_class_grid_delta.png</td><td>4×4 per-class-pair grid (companion to #406's <code>per_class_grid.png</code>) on ΔG_logprob, showing which cells the continuous DV recovers vs the binary one drops.</td></tr>
+</table>
+<p>Default hero = <strong>head_to_head_forest.png</strong> (directly answers "did switching to a continuous DV — and subtracting the base prior — change the story"). If H2-delta PASSes with |ρ| ≥ 0.40 on the zero cohort, the hero becomes <strong>zero_cohort_scatter_delta.png</strong>. If the placebo regression is large (ρ_placebo ≥ 0.30), the hero candidate includes <strong>placebo_diagnostic.png</strong> as a co-hero in the TL;DR with a "the base prior is part of the story" narrative beat. The analyzer picks at write-up time based on which result lands; no plan-time user question needed.</p>
+
+<h2>7. Decision Gates</h2>
+<p>No gates — short run (&lt; 2 GPU-hours wall-clock), single-variable DV change on an already-validated rig. The H4 hard-gate (emission_drift &gt; 0.05 raises in the dispatcher) is a fail-loud inside the eval script, not a workflow-level decision gate.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+<tr><td>Off-by-one position read: <code>prompt_logprobs[L]</code> vs <code>[L-1]</code> vs <code>[L+1]</code> — vLLM API contract gives <code>logprob at slot k</code> = log p(full_ids[k] | full_ids[:k]); we want k=L where the appended marker sits</td><td>Medium</td><td>Catastrophic — the entire DV is wrong</td><td>H4 hard-gate at 0.05 in the dispatcher: if the within-run binary recompute (argmax at slot L) doesn't reproduce #406's G_matrix to within 0.05 on every cell, the script raises and the run aborts. Off-by-one would put the argmax somewhere meaningless and the gate would catch it within the first cell.</td></tr>
+<tr><td>vLLM <code>prompt_logprobs</code> + LoRA swap interaction: the API contract for prompt-position log-probs under a hot-swapped adapter is documented for generation use cases but not extensively tested in the codebase</td><td>Low</td><td>If broken, all per-cell log-probs are the BASE model's, not the adapter's — H4 gate would catch this (base model has no special preference for 83399 → emission_recompute_rate would crash to ~0 on diagonals)</td><td>(a) The H4 hard-gate catches this in smoke (diagonal cells have published emission_rate 0.86–1.00; a base-model read would give ~0.00). (b) Diagonal log-prob sanity (control row 3 in §5): G_logprob[i,i] &gt; −5 nats expected; a base-model read would give ~−10 to −15 nats for a leading-space marker on a non-marker-trained model.</td></tr>
+<tr><td>vLLM <code>prompt_logprobs</code> returns <code>None</code> or missing-key for slot L</td><td>Low</td><td>Crash</td><td>Dispatcher raises a structured <code>RuntimeError</code> with the slot keys for debugging. The expected behavior with <code>prompt_logprobs=1</code> is: slot is a dict with 1 or 2 entries (top-1 token; actual-token if different from top-1). MARKER_ID is the actual token at slot L by construction; it MUST be in the dict.</td></tr>
+<tr><td>Mean log-prob aggregation makes the lowest-prob probes dominate (a single q with log p = −40 swamps 49 others at log p = −3)</td><td>Medium</td><td>The headline ρ may be dominated by the tail of the per-probe log-prob distribution per cell, weakening interpretability</td><td>v2: pre-register THREE aggregations (mean log-prob primary + log-mean-prob secondary + 10%-trimmed-mean robust). If the three disagree by &gt; 0.15, surface it in the analyzer write-up. Per-cell <code>per_probe_min/max/p10/p90_logp</code> are recorded so the analyzer can show the per-cell range distribution.</td></tr>
+<tr><td>Numerical underflow at very low log-prob</td><td>Low</td><td>Inflates clamping frequency, biases mean log-prob upward</td><td>Per-cell payload records <code>n_clamped_to_floor</code>; if &gt; 1% of cells exceed 1 clamped probe, post <code>epm:failure v1, failure_class: data, reason: log_prob_underflow_widespread</code>. −50 floor &gt; 20 nats below expected operating range (~ −5 to −30) per #395.</td></tr>
+<tr><td>vLLM in-process teardown leaves orphan workers (CLAUDE.md known gotcha)</td><td>N/A here</td><td>N/A</td><td>Single vLLM bring-up, single tear-down. Base pass (Phase 2a) and adapter sweep (Phase 2b) share the SAME engine instance — just flips <code>lora_request</code> argument — so no framework switch even with the v2 base pass added.</td></tr>
+<tr><td>D matrix has <code>None</code> on diagonal cells (verified above)</td><td>Certain</td><td>Analysis must skip diagonals</td><td>The 240-row dataframe builder excludes diagonals (i == j) by construction; matches #406's <code>_build_dataframe</code> verbatim.</td></tr>
+<tr><td>Adapters fail to download from HF (truncated siblings list)</td><td>Low</td><td>Crash before any compute</td><td>Phase 0 preflight downloads all 16 adapters AND asserts <code>adapter_model.safetensors</code> presence on each. Fail-loud (no silent skip).</td></tr>
+<tr><td><strong>v2 — Base-prior confound:</strong> in the H2 zero-cohort (125 cells where the adapter pushed least), G_logprob is dominated by B_logprob[j], so raw H2 can be driven by base-prior structure that correlates with D — producing ρ≠0 even when adapter contribution to graded transfer is null</td><td>Medium</td><td>Without the placebo + delta, the H2-graded claim would be unverifiable in the cohort that defines the experiment's reason for being</td><td>v2 adds B_logprob[j] = base-model mean log P(※ | T_j(q)) via Phase 2a; defines ΔG_logprob = G_logprob − B_logprob; pre-registers H1-delta and H2-delta as co-primary alongside raw. Placebo regression ρ(B_logprob, D) is read alongside and the interpretation rule decides which DV is the honest headline.</td></tr>
+<tr><td><strong>v2 — Data files gitignored:</strong> <code>data/issue_406/q_test_extended_50.json</code> and <code>data/issue_406/class_d/rewrites_v1.json</code> are gitignored on main AND on the <code>issue-406</code> branch (verified). A clean-checkout sweep would hard-fail at Phase 0 with FileNotFoundError</td><td>High (without mitigation)</td><td>Sweep dead on launch; ~3 min wasted vLLM warmup before the failure surfaces</td><td>v2 adds HF <code>snapshot_download</code> fallback inside <code>_load_q_test</code> and <code>_load_class_d_rewrites</code>; both pull from <code>superkaiba1/explore-persona-space-data</code> at <code>issue406_divergence_predicts_transfer/training_data/{q_test_extended_50.json, class_d/rewrites_v1.json}</code> and copy to the canonical local path on first use. Smoke phase exercises this code path (smoke is the first invocation; if HF repo content drifts or auth fails, smoke catches it before the sweep launches).</td></tr>
+<tr><td><strong>v2 — Base-pass adds 30 s but introduces a new vLLM-without-LoRA code path that hasn't been exercised in this script</strong></td><td>Low</td><td>If vLLM with <code>enable_lora=True</code> but <code>lora_request=None</code> on a per-call basis silently auto-applies the LAST loaded adapter, B_logprob is contaminated by whichever outer-i was last active — which would make the delta DV silently wrong</td><td>(a) Phase 2a runs BEFORE the outer adapter loop, so no LoRA has been loaded yet when the base pass executes (the engine has <code>enable_lora=True</code> capability but zero LoRAs hot-loaded). (b) Smoke success criterion: B_logprob[A1] should be in the ~−10 to −25 nat range (base-model marker prior); if A1's diagonal smoke G_logprob = 0.92 and B_logprob[A1] also = 0.92, the base pass was contaminated by the A1 adapter and the sweep aborts.</td></tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+<h3>9.1 Per-component compute projection</h3>
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>preflight + adapter download (16 adapters @ ~15 MB) + HF data fallback (Q_test + Class-D rewrites)</td><td>0.05</td><td>0.0</td><td>none — CPU-only</td><td>matches #406 Phase 3 adapter-download wall, ~3 min observed; HF data fallback adds ~5 s if local cache is empty</td></tr>
+<tr><td>smoke phase (1 outer A1 × 16 inner × 50 probes = 800 forwards + Phase 2a base pass on smoke = 16 × 50 = 800 base forwards)</td><td>0.1</td><td>0.1</td><td>vLLM batched, single engine, LoRA off for base / hot-swap for adapter</td><td>#406 Phase 3 ran 16 × 16 × 50 = 12,800 forwards in ~9 min wall; A1-row only = 1/16 ≈ 35 s; base pass = 800 forwards × ~40 ms ≈ 30 s; budget 6 min for vLLM warmup + LoRA hot-swap overhead + the +30 s base pass</td></tr>
+<tr><td>Phase 2a base-model pass (lora_request=None, 16 inner × 50 probes = 800 forwards)</td><td>0.01</td><td>0.01</td><td>vLLM batched, lora_request=None</td><td>v2 NEW. Single batched call per T_j; 800 forwards in ~30 s on a warm engine (engine already loaded from smoke or sweep start). No new engine bring-up cost.</td></tr>
+<tr><td>Phase 2b sweep (16 outer × 16 inner × 50 probes = 12,800 forwards)</td><td>0.85</td><td>0.85</td><td>vLLM batched + LoRA hot-swap on a single engine</td><td>matches #406 Phase 3 verbatim eval rig — same 12,800 forwards, identical engine bring-up, identical per-cell batching pattern. #406 observed ~9 min wall; #460 budget 50 min wall for headroom (the <code>prompt_logprobs=1</code> overhead adds &lt; 20% per forward)</td></tr>
+<tr><td>Phase 3 analysis (local VM, no GPU) — v2 adds placebo + delta + winsorized + bimodality</td><td>0.15</td><td>0.0</td><td>none</td><td>matches #406 <code>i406_phase4_analyze.py</code> wall (~1 min) + v2 additions: 3 extra cluster-bootstrap loops (1 each for raw/delta/placebo) at 2000 resamples × ~0.5 s each + ~40 Hartigan dip computations ≈ +3 min total; ~5 min total Phase 3 wall</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>~1.0</strong></td><td><strong>~0.95</strong></td><td></td><td></td></tr>
+</table>
+<p><strong>GPU spec: 1× H100 (intent <code>eval</code>).</strong> Justification: the workload is 12,800 forward passes on a 7B model, fully batched by vLLM. Tensor parallelism gives no speedup here (the model fits in 1× H100 VRAM with room for the LoRA + KV cache). Sweep parallelism (multiple seeds / cells in parallel) gives no speedup either: there is only 1 seed and vLLM's hot-LoRA-swap on a single engine is the optimal pattern (provisioning 16 single-GPU pods to parallelize the 16 outer adapters would amortize 16× the pod bring-up + adapter-download overhead for a workload that finishes in &lt; 1 GPU-hour). The wall-time delta vs the next-smaller spec is moot — this is already the smallest valid spec.</p>
+
+<h3>9.2 Stratification spec</h3>
+<p>N/A — single seed (the predictor and the adapters are deterministic on a fixed base model; #406 ran single-seed for the same reason and the analyzer cluster-bootstraps over class-pair cells for inferential CIs). No auto-descope priority order needed.</p>
+
+<h3>9.3 Disk / storage</h3>
+<p>Per-cell JSON: ~3 KB × 256 cells = ~800 KB. Roll-up matrix: ~150 KB. Analysis JSON: ~50 KB. Total &lt; 2 MB to <code>eval_results/issue_460/</code> on the issue branch. No raw completions to upload (no generation — we generated 1 dummy token and discarded it). Adapter cache reuses <code>/workspace/adapters/i406/</code> (same path #406 used; ~250 MB total for 16 adapters, fits well inside the 130 GB MooseFS quota).</p>
+
+<h2>10. Reproducibility Card (Pre-filled)</h2>
+<table>
+<tr><td>Base model</td><td><code>Qwen/Qwen2.5-7B-Instruct</code></td></tr>
+<tr><td>Adapters</td><td>16 LoRA adapters reused unchanged from <code>superkaiba1/explore-persona-space</code> at <code>adapters/i406_{A1,A2,A3,A4,A5,B1,B2,B3,B4,B5,C1,D1,D2,D3,D4,D5}</code> — adapter HF revision pinned to commit TBD-by-experimenter (read at adapter-download time from <code>snapshot_download</code> return)</td></tr>
+<tr><td>Adapter hyperparameters</td><td>r=32, α=64, all attention + MLP projections (inherited from #406; never re-trained)</td></tr>
+<tr><td>Training</td><td>N/A — no training. Adapters reused unchanged.</td></tr>
+<tr><td>Inference</td><td>vLLM 0.11.0, <code>enable_lora=True, max_lora_rank=32, max_loras=1, dtype="bfloat16", gpu_memory_utilization=0.85, seed=42</code></td></tr>
+<tr><td>SamplingParams</td><td><code>max_tokens=1, temperature=0.0, top_p=1.0, prompt_logprobs=1, logprobs=1, seed=42</code></td></tr>
+<tr><td>Probe set Q_test</td><td>50 questions from <code>data/issue_406/q_test_extended_50.json</code> (v2: HF <code>snapshot_download</code> fallback from <code>superkaiba1/explore-persona-space-data</code> at <code>issue406_divergence_predicts_transfer/training_data/q_test_extended_50.json</code>; data files are gitignored) — IDENTICAL to #406</td></tr>
+<tr><td>Class D rewrites</td><td><code>data/issue_406/class_d/rewrites_v1.json</code> (v2: HF fallback path <code>issue406_divergence_predicts_transfer/training_data/class_d/rewrites_v1.json</code>) — IDENTICAL to #406</td></tr>
+<tr><td>Conditions</td><td>16 active (5 persona + 5 query-phrasing + 1 format scaffold + 5 semantic register rewrites); plain-English names per <code>src/explore_persona_space/experiments/i406_conditions.py</code></td></tr>
+<tr><td>Marker</td><td><code>` ※`</code> token id 83399 (leading space; single token on Qwen-2.5-7B); asserted via <code>tokenizer.encode(' ※', add_special_tokens=False) == [83399]</code> at launch</td></tr>
+<tr><td>Predictor D[i,j]</td><td>Forward KL K=25-mean, READ unchanged from <code>eval_results/issue_406/divergence/D_matrix.json</code></td></tr>
+<tr><td>Primary outcome G_logprob[i,j] (raw co-primary)</td><td>Mean over 50 Q_test of vLLM <code>out.prompt_logprobs[L][83399].logprob</code> where L = len(prompt_ids) and the marker is appended as a token-id (not via decode→encode)</td></tr>
+<tr><td>v2 base-prior placebo B_logprob[j]</td><td>One base-model pass (lora_request=None) on the same 800 prompts: mean over 50 Q_test of base-model log P(83399 | T_j(q)) per inner T_j</td></tr>
+<tr><td>v2 delta co-primary ΔG_logprob[i,j]</td><td>G_logprob[i,j] − B_logprob[j]; adapter-induced shift in marker willingness above the base-prior baseline</td></tr>
+<tr><td>Free secondary aggregations</td><td>log of mean over 50 Q_test of exp(per-probe log-prob) AND 10%-trimmed mean log-prob (v2 robust)</td></tr>
+<tr><td>H4 rig sanity</td><td>Mean over 50 Q_test of [argmax_v out.prompt_logprobs[L][v].logprob == 83399]; must reproduce <code>G_matrix.json</code> emission rate to ≤ 0.02 absolute on every cell (hard gate at 0.05)</td></tr>
+<tr><td>Statistical co-primaries (v2)</td><td>Length-partial Spearman ρ(<code>G_logprob</code>, D | log_prompt_tokens) AND ρ(<code>ΔG_logprob</code>, D | log_prompt_tokens) AND ρ(<code>B_logprob</code>, D | log_prompt_tokens) on 240 off-diagonal pairs (and 16-row aggregate placebo); 2000-resample cluster-bootstrap CI on 15 class-pair cells; mixed model with class-pair random intercept as survival check</td></tr>
+<tr><td>Statistical secondaries</td><td>Same length-partial Spearman on 125-cell emission-zero cohort (H2-raw + H2-delta); 115-cell non-zero-cohort separation; 6 cosine-layer ρ recomputation on both raw and delta (H3); 3-way aggregation comparison; Hartigan-dip bimodality check on 40 zero-cohort cells; H4 drift histogram; diagonal logp-vs-emission rank consistency</td></tr>
+<tr><td>Hardware</td><td>1× H100, RunPod pod <code>epm-issue-460</code> (intent <code>eval</code>; terminated post-upload)</td></tr>
+<tr><td>Wall time</td><td>TBD (planned ≤ 1.0 h end-to-end; reported by experimenter at completion)</td></tr>
+<tr><td>GPU-hours</td><td>TBD (planned ≤ 0.9 GPU-h; reported by experimenter at completion)</td></tr>
+<tr><td>Git commit</td><td>TBD (reported by experimenter; will be the <code>issue-460</code> branch tip at sweep launch)</td></tr>
+<tr><td>Hydra config slug</td><td>n/a (per-phase dispatcher script <code>scripts/i460_logprob_eval.py</code>; no Hydra config — same pattern as #406)</td></tr>
+<tr><td>Launch command (single nohup, copy-pasteable; v2 includes base pass by default)</td><td>
+<pre>nohup uv run python scripts/i460_logprob_eval.py --cids A1 \
+    &gt; /workspace/logs/issue-460-smoke.log 2&gt;&amp;1 &amp;
+# Smoke runs Phase 2a base-pass (16 inner T_j base forwards, ~30 s) +
+# Phase 2b A1 row (16 cells, ~35 s) in one engine bring-up.
+# After smoke PASS (H4 within 0.02 + diagonal A1-&gt;A1 log p &gt; -5 nats +
+# B_logprob spread &gt; 0.5 nats + n_clamped ≤ 1%):
+nohup uv run python scripts/i460_logprob_eval.py --resume --no-base-pass \
+    &gt; /workspace/logs/issue-460-sweep.log 2&gt;&amp;1 &amp;
+# --no-base-pass on sweep because Phase 2a already ran in smoke; --resume
+# skips the A1 cells already written. If smoke wrote B_logprob.json,
+# Phase 2a is auto-skipped on --resume anyway; --no-base-pass is belt-and-suspenders.</pre>
+</td></tr>
+</table>
+
+<h2>11. Decision Rationale</h2>
+<p>This task trains no model — every inference hyperparameter is grounded below. There are no LoRA / lr / batch / epochs / weight-decay / optimizer / dropout choices to ground (those were #406's, inherited unchanged with the adapters).</p>
+<table>
+<tr><th>Parameter</th><th>Choice</th><th>Why (tied to Goal)</th><th>Source</th><th>Alternatives considered + rejected</th></tr>
+<tr><td>Inference dtype</td><td>bf16</td><td>Goal requires reading <em>the same</em> conditional distribution #406's emission rate thresholded on. #406 Phase 3 used bf16 vLLM with the same adapters; same dtype is the byte-correct way to inherit that.</td><td>Source: #406 <code>i406_phase3_cross_eval.py</code> line 171</td><td>fp16 (rejected — #406 didn't use it, would break the byte-comparison sanity); fp32 (rejected — 2× slower, unnecessary precision)</td></tr>
+<tr><td>vLLM <code>max_loras</code> / <code>max_lora_rank</code></td><td>1 / 32</td><td>Only 1 outer adapter active per cell; r=32 matches #406's adapter rank</td><td>Source: #406 <code>i406_phase3_cross_eval.py</code> lines 167–170</td><td>max_loras=16 (rejected — vLLM keeps all 16 hot in VRAM, wastes ~5 GB; sequential outer loop with hot-swap is what #406 used)</td></tr>
+<tr><td>vLLM <code>gpu_memory_utilization</code></td><td>0.85</td><td>#406's working value on the same hardware</td><td>Source: #406 <code>i406_phase3_cross_eval.py</code> line 172</td><td>0.90 (rejected — leaves less headroom; no perf gain on this workload size)</td></tr>
+<tr><td>vLLM <code>seed</code></td><td>42</td><td>Determinism for the rig-sanity gate; vLLM's seed affects KV-cache eviction tie-breaks, not the deterministic forward pass we're using</td><td>Source: #406 verbatim</td><td>n/a</td></tr>
+<tr><td>SamplingParams <code>max_tokens</code></td><td>1</td><td>vLLM 0.11.0 requires <code>max_tokens ≥ 1</code>; we never read the generated token (only <code>prompt_logprobs</code>)</td><td>Source: vLLM 0.11.0 API docs (verified locally via <code>SamplingParams(max_tokens=1, prompt_logprobs=20, temperature=0.0)</code> constructor probe)</td><td>max_tokens=0 (rejected — vLLM raises ValueError); max_tokens=4 (rejected — wastes 3 unused decode steps × 12,800 prompts ≈ ~7 min wall)</td></tr>
+<tr><td>SamplingParams <code>temperature</code> / <code>top_p</code></td><td>0.0 / 1.0</td><td>Generated token is unused but greedy still cheapest; teacher-forced <code>prompt_logprobs</code> are computed independently of sampling temp</td><td>Source: #406 <code>i406_phase3_cross_eval.py</code> lines 177–180 (same greedy config)</td><td>n/a</td></tr>
+<tr><td>SamplingParams <code>prompt_logprobs</code></td><td>1</td><td>API contract: returns top-1 token's log-prob AT every prompt position AND the actual-token's log-prob when it differs from top-1. We need the actual-token (MARKER_ID) log-prob at one specific slot. Setting to 1 (not 0 or higher) minimizes serialization cost; vLLM always includes the actual-token entry regardless of the top-k value.</td><td>Source: #355 plan-fact-check v1 (vLLM 0.11.0 <code>SamplingParams</code> API surface confirmed for token-level logprob extraction); #407 plan v2–v4 (uses <code>prompt_logprobs=1</code> for Wikipedia-stub teacher-forced log-prob measurement, same idiom)</td><td>prompt_logprobs=20 (rejected — 20× serialization cost for unused top-k; we only need slot L's actual-token entry); using HF teacher-forced forward (rejected — ~20× slower per cell, see §4.4)</td></tr>
+<tr><td>SamplingParams <code>logprobs</code></td><td>1</td><td>Defensive: ensures the generated-token's logprob slot is non-None (we don't use it, but a None there has caused odd downstream behavior in past vLLM versions)</td><td>Source: ungrounded — defensive convention; not load-bearing</td><td>logprobs=None (would also work; setting to 1 is the safer pattern)</td></tr>
+<tr><td>Numerical floor <code>LOGP_FLOOR</code></td><td>−50.0 nats</td><td>Floor at −50 is &gt; 20 nats below the expected operating range (~−5 to −30 for cells with signal per #395). Clamps adapter-swap-related numerical underflow; widespread clamping (&gt; 1% of cells) is a fail-loud signal.</td><td>Source: ungrounded — needs smoke-test (clamp rate flagged in smoke phase; if &gt; 1% of A1's 800 probes clamp, FAIL LOUD before sweep)</td><td>−100 (rejected — too far below floor; would hide genuine underflow); no floor (rejected — −inf in mean breaks aggregation)</td></tr>
+<tr><td>Aggregation primary: mean log-prob</td><td>mean over 50 probes of per-probe log-prob</td><td>Symmetric in log-space; matches #406 Phase 1 K=25-mean log-prob shape; the natural shape for cross-cell ρ on a log-quantity</td><td>Source: #406 <code>i406_phase1_compute_divergence.py</code> (K=25-mean log-prob aggregation pattern); standard in LM evals</td><td>log-mean-prob (registered as free secondary, NOT chosen as primary — gives disproportionate weight to high-prob outliers)</td></tr>
+<tr><td>H4 gate hard threshold</td><td>0.05 absolute drift on emission_recompute_rate vs published G[i,j]</td><td>0.02 soft (logged in per-cell payload as a quality flag) + 0.05 hard (refuses to write the cell). 0.05 is 5% absolute; for the 50-probe per-cell N, sampling noise around a true rate p is ~ √(p(1-p)/50) ≈ 0.07 at p=0.5 — but our recompute is deterministic on the same prompts and the same model, so any drift &gt; 0.05 is a rig bug not noise.</td><td>Source: ungrounded — chosen for the deterministic-eval shape (no sampling noise expected at temp=0 greedy reads on the same prompts)</td><td>0.0 exact (rejected — bf16 numerical noise at the argmax tiebreak could produce 1-bit differences in extreme cases); 0.10 (rejected — too loose; would let real off-by-one bugs through)</td></tr>
+<tr><td>Marker token append: <code>prompt_token_ids</code> path (not decode→re-encode)</td><td>Pass <code>{"prompt_token_ids": prompt_ids + [83399]}</code> to vLLM directly</td><td>#406 Phase 1 MF-1: <code>decode(prompt_ids + [83399])</code> then <code>encode</code> can re-segment BPE boundaries on leading-space tokens. Token-id concat is the byte-correct path.</td><td>Source: #406 <code>i406_phase1_compute_divergence.py</code> line 210 (MF-1 fix); vLLM 0.11.0 docs</td><td>decode-then-encode (rejected — known MF-1 failure class)</td></tr>
+<tr><td><strong>v2 — base-model placebo pass</strong></td><td>One additional vLLM pass with <code>lora_request=None</code> on 16 inner T_j × 50 Q_test = 800 prompts, producing B_logprob[j] for each inner T_j</td><td>The construct H1 actually claims is "divergence predicts <em>SFT transfer</em>." Without subtracting the base-prior baseline, the raw G_logprob conflates adapter shift with base prior. In the zero-cohort (where the adapter pushed least), the conflation is maximal. The base pass enables the principled adapter-shift delta DV (ΔG_logprob = G_logprob − B_logprob), plus the placebo regression that diagnoses how much of the raw correlation was base prior. Cost: ~30 s wall, single batched vLLM call on a warm engine.</td><td>Source: Alternatives-critic REVISE Must-Fix (this round); construct-validity argument from the same critic verdict</td><td>(a) Skip the base pass and report only raw G_logprob (rejected — leaves the base-prior confound unaddressed in the H2 zero cohort, undercutting the experiment's reason for being). (b) Use a different "base" reference (e.g. compute the base model's free-generation marker rate via greedy emission, like #406's emission rate but on the base model) — rejected because it would be off-distribution from the teacher-forced log-prob shape and not directly subtractable from G_logprob. (c) Run the base pass on a separate engine bring-up (rejected — wastes ~3 min of cold-start cost for what's a 30 s warm call).</td></tr>
+<tr><td><strong>v2 — robust aggregation (10%-trimmed mean)</strong></td><td>For each cell, ALSO report <code>scipy.stats.trim_mean(per_probe_logp, proportiontocut=0.05)</code> alongside mean log-prob and log-mean-prob</td><td>One floored probe (logp = −50) can swamp 49 others at logp ≈ −5 in a per-cell mean of 50 elements. Trimmed mean drops the bottom and top 5% (≈ 2 probes each side) and is a sanity check that the headline isn't a tail artifact. Pre-registered as a third aggregation so the analyzer can't post-hoc pick the best-looking ρ.</td><td>Source: Alternatives-critic REVISE (analyzer-concern absorbed into §6); scipy 1.x <code>trim_mean</code> is the standard idiom</td><td>(a) Winsorize at p95 (rejected — replaces extreme values with the p95 instead of dropping them; mathematically similar but the trimmed mean is the more conventional choice in LM-eval contexts). (b) Median (rejected — too coarse on a 50-element sample; loses too much information).</td></tr>
+<tr><td><strong>v2 — HF data fallback inside loaders</strong></td><td><code>_load_q_test()</code> and <code>_load_class_d_rewrites()</code> both call <code>_ensure_local_from_hf(rel_path, local_path)</code>, which falls back to <code>snapshot_download(repo_id="superkaiba1/explore-persona-space-data", repo_type="dataset", revision="main", allow_patterns=["issue406_divergence_predicts_transfer/training_data/<file>"])</code> if the local file is absent</td><td>Both data files are gitignored on main and on <code>issue-406</code> (verified via <code>git check-ignore -v</code> in this session). A clean-checkout sweep would otherwise hard-fail at Phase 0 with FileNotFoundError. #406 itself uploaded both files to the HF data repo (verified via the body's Reproducibility block links), so the canonical source exists.</td><td>Source: Fact-checker A6 (this round); HF data repo path verified verbatim in #406's body</td><td>(a) Cherry-pick the data files onto <code>main</code> as a separate prep step before launch (rejected — leaks gitignored files into the repo; defeats #406's gitignore decision). (b) Hard-fail and require the operator to manually copy from #406's worktree (rejected — adds friction, no benefit). (c) Symlink the data files from #406's worktree (rejected — couples the two worktrees, breaks if #406's worktree is reaped).</td></tr>
+</table>
+
+<h2>12. Assumptions</h2>
+<p>Exhaustive list — every load-bearing factual claim about the vLLM/HF API, the #406 artifacts, the position semantics, and the infrastructure. Confidence and verification path for each.</p>
+
+<table>
+<tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>A1</td><td>vLLM 0.11.0 <code>SamplingParams(prompt_logprobs=K)</code> returns a list <code>out.prompt_logprobs</code> of length <code>len(prompt_token_ids)</code> on the corresponding <code>RequestOutput</code>; each entry is None at index 0 and a dict <code>{token_id: Logprob}</code> for k ≥ 1</td><td>High</td><td>vLLM <code>RequestOutput</code> docstring inspected directly (this session); #355 / #407 plans both use this idiom</td><td>Smoke phase reads <code>out.prompt_logprobs[L]</code> at L = len(prompt_ids); if shape mismatches, dispatcher raises with the actual length</td></tr>
+<tr><td>A2</td><td>With <code>prompt_logprobs=1</code>, the dict at each slot k contains the top-1 token's log-prob AND the actual <code>prompt_token_ids[k]</code> entry when actual ≠ top-1 (so the marker log-prob is always present at slot L when we appended MARKER_ID there)</td><td>High</td><td>vLLM API contract; widely-used pattern in the repo (<code>i406</code>, <code>#355</code>, <code>#407</code>)</td><td>Smoke phase: assert <code>MARKER_ID in out.prompt_logprobs[L]</code>; dispatcher raises if missing with slot keys for debug</td></tr>
+<tr><td>A3</td><td>vLLM <code>llm.generate</code> accepts <code>{"prompt_token_ids": [...]}</code> as input format (bypassing tokenizer string re-encoding)</td><td>High</td><td>vLLM 0.11.0 docs; used widely in the repo for teacher-forced eval</td><td>Smoke phase fails loud if vLLM raises on this input shape; fallback path is to decode-then-encode but assert post-encode tokens == prompt_ids + [MARKER_ID]</td></tr>
+<tr><td>A4</td><td><code>vllm.lora.request.LoRARequest</code> with <code>lora_int_id=k</code> for each of the 16 outer adapters causes vLLM to load (hot-swap) that adapter's weights into the engine for the corresponding <code>llm.generate</code> call; the next call with a different LoRARequest swaps to the new adapter</td><td>High</td><td>#406 Phase 3 uses this exact pattern with 16 adapters and observed the expected diagonal G[i,i] values (0.86–1.00) — confirms hot-swap is real</td><td>H4 hard-gate (within-run binary recompute reproduces #406's G_matrix per-cell to ≤ 0.05) catches any adapter-swap failure within the first cell of the sweep</td></tr>
+<tr><td>A5</td><td>16 trained LoRA adapters are present and downloadable from HF model repo <code>superkaiba1/explore-persona-space</code> at paths <code>adapters/i406_{A1..D5}/adapter_model.safetensors</code></td><td>High</td><td>#406 body Reproducibility block names this path and uploads were verified by #406's upload-verifier (the body is in <code>awaiting_promotion</code>, post-upload-verification)</td><td>Phase 0 preflight: <code>snapshot_download</code> + assert <code>adapter_model.safetensors</code> exists per cid; raises with snapshot_download truncation hint per #406's defense-in-depth pattern</td></tr>
+<tr><td>A6</td><td>Q_test = <code>data/issue_406/q_test_extended_50.json</code> AND Class D rewrites = <code>data/issue_406/class_d/rewrites_v1.json</code> are <strong>both gitignored</strong> (confirmed via <code>git check-ignore</code> this session) on main AND on the <code>issue-406</code> branch. They ARE present on HF data repo <code>superkaiba1/explore-persona-space-data</code> at path <code>issue406_divergence_predicts_transfer/training_data/{q_test_extended_50.json, class_d/rewrites_v1.json}</code> (verified via #406 body Reproducibility block links).</td><td>High</td><td>git check-ignore confirmation in this session; #406 body verbatim path link</td><td>v2: loaders call <code>_ensure_local_from_hf</code> which <code>snapshot_download</code>s the single file from the HF data repo if local is absent and copies to the canonical local path. Smoke phase is the first invocation; HF auth or repo-content drift is caught before sweep launches.</td></tr>
+<tr><td>A7</td><td><code>tokenizer.encode(' ※', add_special_tokens=False) == [83399]</code> on <code>Qwen/Qwen2.5-7B-Instruct</code></td><td>High</td><td>CLAUDE.md "Default marker" rule; #406 launched with this assert; #395 validated the token id</td><td>Dispatcher asserts at launch; refuses to proceed on drift</td></tr>
+<tr><td>A8</td><td>The vLLM prompt-position <code>k</code> in <code>prompt_logprobs[k]</code> corresponds to the conditional <code>P(prompt_token_ids[k] | prompt_token_ids[:k])</code></td><td>High</td><td>Standard teacher-forced log-prob semantics; matches HF Transformers' <code>log_softmax(logits[k-1])[tokens[k]]</code> shape</td><td>H4 hard-gate: greedy argmax at slot L (= len(prompt_ids)) should match #406's first-decoded-token id 83399 on diagonal cells where #406's emission rate is 1.0 (e.g. Pirate captain → Pirate captain, 50/50). If position is off-by-one, argmax at L would be something other than MARKER_ID and the gate would fail.</td></tr>
+<tr><td>A9</td><td>D[i,j] in <code>D_matrix.json</code> is the off-diagonal-only forward-KL K=25-mean (diagonals are <code>None</code>)</td><td>High</td><td>Verified this session via JSON inspection: <code>D KL[A1][A1] = None</code>, <code>D KL[A1][B1] = 0.0349</code></td><td>n/a — verified</td></tr>
+<tr><td>A10</td><td>G[i,j] in <code>G_matrix.json</code> includes diagonals (with rate 0.86–1.00) and 240 off-diagonals</td><td>High</td><td>Verified this session: <code>G[A1][A1].rate = 0.9</code>, <code>G[A1][B1].rate = 0.0</code>; full off-diagonal set has 240 entries; 125 of them have rate 0</td><td>n/a — verified</td></tr>
+<tr><td>A11</td><td>The 6 cosine matrices <code>C_L{0,5,11,15,21,27}.json</code> are committed under <code>eval_results/issue_406/cosine/</code> on the issue branch and have shape compatible with re-running #406's <code>_build_dataframe</code> (each is <code>{"matrix": {ci: {cj: float}}}</code>)</td><td>Medium</td><td>#406 body Artifacts block names this path with a public GitHub link; <code>i406_phase4_analyze.py::main</code> reads exactly this shape</td><td>Phase 3 reads each file and asserts the matrix shape; fail-loud on shape drift</td></tr>
+<tr><td>A12</td><td>The base model on the pod is byte-exactly the same checkpoint #406 used (revision pin)</td><td>High</td><td>Both #406 and #460 load <code>Qwen/Qwen2.5-7B-Instruct</code> from HF Hub default-revision; HF Hub revision <code>main</code> for this repo is pinned and has not been modified between #406 and #460 (single-week separation, no model-repo changes by Qwen)</td><td>Phase 0 preflight prints the resolved revision; H4 gate's per-cell argmax reproduction is the load-bearing verification (if base model drifted, the trained adapter wouldn't reproduce #406's emission rate)</td></tr>
+<tr><td>A13</td><td>Tokenizer state is identical to #406 (no tokenizer config drift on HF)</td><td>High</td><td>Same model + revision = same tokenizer; marker-id assert (A7) catches drift</td><td>Marker-id assert at launch</td></tr>
+<tr><td>A14</td><td>vLLM hot-swap respects the LoRA across multiple <code>llm.generate</code> calls within the same outer-i loop (the engine doesn't accidentally generate with the base model when given a non-None LoRARequest)</td><td>High</td><td>#406 Phase 3 ran 16 × 16 = 256 cells of this exact pattern, observed diagonal G in expected range</td><td>H4 gate catches; diagonal log-prob &gt; −5 nats sanity catches</td></tr>
+<tr><td>A15</td><td>The vLLM <code>prompt_logprobs</code> return is unaffected by the appended-marker-token shape: i.e., setting <code>prompt_token_ids = prompt_ids + [83399]</code> and reading slot L = len(prompt_ids) gives log P(83399 | prompt_ids), NOT some interaction effect with the appended token</td><td>High</td><td>By teacher-forced-LM semantics: log p at slot k depends only on tokens at indices 0..k-1; the token AT slot k is the target whose log-prob we read, not a predictor of itself</td><td>Trivially verifiable in smoke: compute log P(83399 | prompt_ids) two ways — (a) append 83399 and read slot L; (b) append a different token (e.g. token id 100) and assert the slot-L distribution KEYED by 83399 gives the same logprob (vLLM with prompt_logprobs=1 always includes the actual token's entry, so (b) won't have 83399 in the slot at all — fallback verification: append 83399, then change the appended token to 100, re-run, and confirm vLLM returns SAME predictive distribution at slot L). One-off in smoke phase if any doubt; not load-bearing in production runs.</td></tr>
+<tr><td>A16</td><td>#406's emission rate metric is greedy first-generated-token argmax == 83399, computed via <code>llm.generate(max_tokens=4)</code> then <code>out.outputs[0].token_ids[0]</code></td><td>High</td><td>Verified verbatim from <code>i406_phase3_cross_eval.py</code> lines 175–217</td><td>n/a — read</td></tr>
+<tr><td>A17</td><td>The emission rate in <code>G_matrix.json</code> is the per-cell mean over 50 probes</td><td>High</td><td>Per-cell payload <code>cell_payload["rate"] = n_emit / len(prompts)</code> in <code>i406_phase3_cross_eval.py</code> line 217; <code>len(prompts)</code> = 50 per cell</td><td>n/a — read</td></tr>
+<tr><td>A18</td><td>vLLM <code>llm.generate</code> with <code>SamplingParams(max_tokens=1, prompt_logprobs=1)</code> does NOT compute additional decoder steps beyond the 1 generated token (i.e. doesn't waste compute on a longer rollout)</td><td>High</td><td>vLLM by-design respects max_tokens; observed in <code>scripts/i406_phase3_cross_eval.py</code> where max_tokens=4 takes ~9 min total for 12,800 cells (~40 ms/forward — matches expected single-decode-step rate)</td><td>Wall-time gate: if Phase 2 sweep takes &gt; 1.5 h, dispatcher logs a perf warning; investigation needed</td></tr>
+<tr><td>A19</td><td>The pod has enough VRAM for vLLM Qwen-2.5-7B + LoRA (r=32) + KV cache for batched 800-prompt forward passes</td><td>High</td><td>#406 Phase 3 ran this exact load on 2× H100 (more headroom than needed); 1× H100 with <code>gpu_memory_utilization=0.85</code> on a 7B model is well within VRAM budget</td><td>Preflight (the canonical <code>orchestrate/preflight.py</code>) runs the <code>posix_fallocate</code> disk probe and GPU memory check; vLLM bring-up will raise OOM if assumption wrong</td></tr>
+<tr><td>A20</td><td>The <code>i406_conditions.py</code> module exists on the launch branch and the 16-condition active list is the same (5 A + 5 B + 1 C + 5 D after the C2–C5 drop)</td><td>High</td><td>This module is on branch <code>issue-406</code> and is committed; #460 must inherit it (either by branching off <code>issue-406</code> or by cherry-picking)</td><td>Phase 0 preflight: import the module, assert <code>len(CONDITIONS) == 16</code> and <code>{c.cid for c in CONDITIONS}</code> matches expected set</td></tr>
+<tr><td>A21</td><td>The 125-cell emission-zero cohort is well-defined and large enough for stratified Spearman after dropping any cell whose H4 sanity is borderline</td><td>High</td><td>Verified this session: 125 cells where <code>n_emit == 0</code> across 240 off-diagonal pairs (52.1%); class distribution spans all 4 classes — A, B, C, D are all represented; mixed-effects clustering on class_pair remains valid</td><td>Phase 3 dataframe builder filters with <code>df_zero = df[df['G_orig'] == 0.0]</code>; print N and class-pair distribution; if N drops below 80 due to any borderline-H4 exclusions, switch to bootstrap-on-raw without cluster groups</td></tr>
+<tr><td>A22</td><td>The model's first-response-token greedy decode at the same teacher-forced slot we read is deterministic given seed=42 (no temperature-induced non-determinism)</td><td>High</td><td>temperature=0.0 → greedy; vLLM's tie-break is deterministic at given seed</td><td>H4 gate catches non-determinism (would surface as drift between runs)</td></tr>
+<tr><td>A23</td><td>#406's published cosine matrices (<code>C_L*.json</code>) shape and key set match the diagonal-passed adapter set (all 16 cleared #406's 0.70 threshold; no adapters were dropped)</td><td>High</td><td>#406's <code>G_matrix.json::diagonal_failed</code> is empty (verified this session); all 16 cosine matrices include all 16 cids</td><td>Phase 3 asserts <code>set(C_L11["matrix"].keys()) == set(all 16 cids)</code> on load</td></tr>
+<tr><td>A24</td><td>The marker token's log-prob at the first response-token position is in a useful dynamic range (i.e. not all cells return log p &lt; −40, which would compress everything to floor)</td><td>Medium</td><td>#395 measured base-model log-prob median ~−19 nats for the same marker; trained adapter on the matching context (diagonal cell) should give log p &gt; −2 nats (since emission rate = 0.86–1.00 on diagonals); off-diagonals will be lower but the spread should be wide enough to make graded discrimination work</td><td>Smoke phase: report per-probe log-prob distribution for the A1 row; if &gt; 50% of off-diagonal probes are &lt; −30 nats, the dynamic range is too compressed and we may need to switch to log-mean-prob primary (registered as secondary, so the analyzer can swap if needed). Hard gate: post <code>epm:failure v1, failure_class: data, reason: log_prob_dynamic_range_compressed</code> if smoke A1-row median log-prob &lt; −35 across all 16 inner conditions.</td></tr>
+<tr><td>A25</td><td>The <code>vllm.outputs.Logprob</code> object has a <code>.logprob</code> attribute that returns a float</td><td>High</td><td>vLLM 0.11.0 docs; widely used in repo (#385, #432, #355)</td><td>Dispatcher reads <code>marker_lp_obj.logprob</code>; if AttributeError, fail-loud with API drift note</td></tr>
+<tr><td>A26</td><td>The smoke-phase A1 row will complete in &lt; 5 min wall (1 outer × 16 inner × 50 probes = 800 forwards, vLLM batched)</td><td>High</td><td>#406 Phase 3 ran 16× this load (12,800 forwards) in ~9 min wall; 1/16 of that is ~35 sec + ~3 min for vLLM warmup + LoRA load</td><td>Wall-time soft gate at 10 min for smoke; experimenter investigates if exceeded</td></tr>
+<tr><td>A27</td><td>The H4 hard-gate will pass — i.e. the new rig will reproduce #406's emission rate to ≤ 0.05 absolute on every diagonal-and-off-diagonal cell</td><td>Medium</td><td>The new rig and #406's both read the same slot on the same prompts with the same adapter; the only sources of difference are (a) vLLM <code>prompt_logprobs=1</code> overhead doesn't alter argmax (it shouldn't — same forward pass), (b) BF16 numerical noise on argmax ties (would affect at most 1–2 probes per cell, well within 0.05). If H4 FAILs, the run aborts and we diagnose; possible reasons: vLLM passes the prompt through a different code path when <code>prompt_logprobs=1</code> is set, in which case we fall back to the HF teacher-forced path (~10× slower but byte-exact). This is the load-bearing assumption of the whole experiment.</td><td>Smoke phase A1 row is the verification — if all 16 A1-row cells reproduce #406's emission rate to ≤ 0.02, sweep launches; if 0.02 &lt; drift ≤ 0.05 on any cell, log warning and proceed; if any cell &gt; 0.05, abort and post <code>epm:failure v1, failure_class: code, reason: vllm_prompt_logprobs_alters_argmax</code></td></tr>
+<tr><td><strong>A28 (v2)</strong></td><td>vLLM with <code>enable_lora=True</code> but a per-call <code>lora_request=None</code> argument runs the BARE base model (no adapter applied) for that specific <code>llm.generate</code> call — it does NOT silently auto-apply the last-loaded adapter or fail because LoRA is enabled engine-wide</td><td>High</td><td>vLLM 0.11.0 API contract: <code>lora_request</code> is per-call, defaults to None, and None means "no LoRA applied for this request"; documented in vLLM's LoRA serving examples and used in this pattern by sibling tasks (e.g. #355 Phase-1 base measurement)</td><td>Smoke success criterion: B_logprob[A1] should be in the ~−10 to −25 nat range (base prior). If smoke shows B_logprob[A1] = log p of ≈ −2 nats (matching the A1-adapter diagonal G_logprob), the base pass was contaminated by an active adapter and the script aborts via the smoke gate before sweep.</td></tr>
+<tr><td><strong>A29 (v2)</strong></td><td>Phase 2a (base pass) runs BEFORE Phase 2b (adapter sweep) AND inside the SAME engine instance — so no adapter has been loaded yet when the base pass executes</td><td>High</td><td>Dispatcher main() ordering: base pass loop runs immediately after engine bring-up, before the <code>for outer_i, cid_i in enumerate(my_cids)</code> loop that creates the first LoRARequest. Code structure makes this a static ordering guarantee.</td><td>Code-review of <code>i460_logprob_eval.py</code> confirms ordering; smoke gate's B_logprob magnitude check is the runtime verification</td></tr>
+<tr><td><strong>A30 (v2)</strong></td><td>Subtraction of B_logprob[j] from G_logprob[i,j] is well-defined and meaningful in log-space — i.e. <code>ΔG_logprob = log[P_adapter(※|T_j) / P_base(※|T_j)]</code> is the log likelihood ratio, NOT a quantity that loses meaning under nonlinear scale</td><td>High</td><td>Standard log-space algebra: log(a) − log(b) = log(a/b). The delta has clean interpretation as "log of the factor by which the adapter changed marker willingness on this context." Spearman ρ on the delta is rank-invariant under monotonic transforms, so the headline ρ on ΔG_logprob is well-defined even if some cells have small base-prior values (the rank structure dominates).</td><td>Mathematical; nothing to verify at runtime.</td></tr>
+<tr><td><strong>A31 (v2)</strong></td><td>The HF data repo <code>superkaiba1/explore-persona-space-data</code> is accessible from the pod (HF_TOKEN in <code>.env</code> has read access; the repo's main revision contains the expected files)</td><td>High</td><td>Standard pod env setup via <code>bootstrap_pod.sh</code> and <code>orchestrate/env.py::load_dotenv</code>; #406 itself wrote to this repo, so the auth + path layout are verified to work</td><td>Smoke phase exercises the loader on first invocation; if HF auth fails the snapshot_download raises a clear error before vLLM bring-up</td></tr>
+<tr><td><strong>A32 (v2)</strong></td><td>The <code>diptest</code> package is available in the project's <code>uv.lock</code> for Hartigan-dip computation in Phase 3 (zero-cohort bimodality check)</td><td>Medium</td><td>diptest is a small pure-Python package; if absent from uv.lock it needs to be added before Phase 3 can run the bimodality check</td><td>Phase 0 preflight: <code>uv run python -c "import diptest"</code> — if ModuleNotFoundError, the script either (a) adds it via <code>uv add diptest</code> and re-locks, OR (b) skips the bimodality check with a logged warning (the rest of the analysis is unaffected). The bimodality check is a NICE-TO-HAVE secondary, not load-bearing for any H1/H2/H3/H4 verdict.</td></tr>
+<tr><td><strong>A33 (v2)</strong></td><td>The H2-delta cohort has the SAME 125 cells as H2-raw (i.e. the cohort is defined by #406's binary emission rate == 0, not by our continuous DV being near floor)</td><td>High</td><td>Cohort selector is <code>df[df['G_orig'] == 0.0]</code>, where G_orig is the published #406 emission rate read verbatim from <code>G_matrix.json</code> — completely independent of #460's measurements</td><td>Phase 3 dataframe builder code; smoke phase prints the cohort size on the A1-row subset (4 of the 15 off-diagonal A1 pairs have G_orig == 0 per #406 body — A1→B1 / A1→C1 / etc.; if smoke prints a different count something is wrong with the join)</td></tr>
+</table>
+
+</details>
+
+<hr>
+<p style="color: #888; font-size: 0.85rem;">Plan v2, generated 2026-05-31 by planner for task <a href="https://eps.superkaiba.com/tasks/460">#460</a> in response to Alternatives-critic REVISE + Fact-checker A6 must-fix. Parent: <a href="https://eps.superkaiba.com/tasks/406">#406</a>. Single-variable change vs parent: outcome DV (binary emission rate → continuous teacher-forced marker log-prob; v2 adds an adapter-shift delta DV with base-prior placebo as a co-primary alongside raw). Everything else inherited verbatim from #406.</p>
+
+<p style="color: #888; font-size: 0.85rem;"><strong>v2 diff summary vs v1:</strong></p>
+<ol style="color: #555; font-size: 0.88rem;">
+<li><strong>Base-prior placebo + adapter-shift delta DV.</strong> Adds Phase 2a (one base-model pass, 800 forwards on the same engine, lora_request=None, ~30 s wall) producing <code>B_logprob[j]</code>. Defines <code>ΔG_logprob[i,j] = G_logprob[i,j] − B_logprob[j]</code> as a co-primary DV alongside raw. Pre-registers H1-raw / H1-delta / H1-placebo and H2-raw / H2-delta as read side-by-side; honest-headline interpretation rule lives in §3. Resolves the Alternatives-critic confound: in the H2 zero-cohort (where the adapter pushed least), raw G_logprob is dominated by the base prior, so the raw correlation could be base-prior structure correlating with D rather than graded adapter transfer.</li>
+<li><strong>HF snapshot_download fallback inside Q_test + Class-D loaders.</strong> Both data files are gitignored on main and on the issue-406 branch (verified). Loaders now call <code>_ensure_local_from_hf</code> which pulls from <code>superkaiba1/explore-persona-space-data</code> at <code>issue406_divergence_predicts_transfer/training_data/</code> on first use and copies to the canonical local path. Smoke phase exercises this code path on first invocation.</li>
+<li><strong>Six analyzer concerns folded into §6.</strong> 10%-trimmed-mean as a third aggregation; 115-non-zero-cohort ρ separation; Hartigan-dip bimodality check on 40 zero-cohort cells; H4 drift histogram across all 256 cells (not just the binary pass/fail gate); diagonal logp-vs-emission rank-consistency Spearman; H2 asymmetric-interpretability + ~61% power flag at ρ=0.20 — all pre-registered in §6.2 as analysis steps, with the new per-cell payload fields (per_probe_min/max/p10/p90_logp, trimmed_mean_logp_marker) added to the dispatcher to feed them. Six new figures added to §6.4 (placebo_diagnostic, cohort_decomposition, diagonal_logp_vs_emission_bar, zero_cohort_bimodality_panel, h4_drift_histogram, plus the raw+delta pairing of hero scatter and zero-cohort scatter).</li>
+</ol>
+
+</body>
+</html>

@@ -2035,8 +2035,8 @@
       "goal": "Measure how training-set persona diversity (K source personas) and persona-distance to held-out targets jointly predict behavior leakage, to operationalize the persona-axis instance of Dan's N\u00d7M training-to-deployment generalization framing.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/405",
-      "status": "plan_pending",
+      "path": "tasks/running/405",
+      "status": "running",
       "title": "Multi-persona training: leakage to held-out personas vs persona-distance to trained set"
     },
     "406": {
@@ -2517,8 +2517,8 @@
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/464",
-      "status": "awaiting_promotion",
+      "path": "tasks/interpreting/464",
+      "status": "interpreting",
       "title": "Encoding a persona as a custom chat-template role header keeps the persona's marker more tightly attached to that encoding than a system-prompt encoding does, even after matching for context-token count (MODERATE confidence)"
     },
     "465": {
@@ -2580,16 +2580,16 @@
       "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture \u2014 whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/471",
-      "status": "approved",
+      "path": "tasks/running/471",
+      "status": "running",
       "title": "Rerun #465's 4-arm in-context persona-spec WITH training-time contrastive negatives \u2014 does demo-gating survive / does the default-leak collapse when negatives pin it?"
     },
     "472": {
       "goal": "Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry \u2014 whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/472",
-      "status": "plan_pending",
+      "path": "tasks/running/472",
+      "status": "running",
       "title": "Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks \u2014 merges #412 + #453 + #443, corrects #448"
     },
     "473": {
@@ -2604,8 +2604,8 @@
       "goal": "Determine whether base-model output divergence predicts on-policy marker transfer when the marker-at-end implant is kept localized \u2014 by restoring #406-style broad contrastive negatives (a post-response-slot marker-suppression loss on bystander transformations) to the #460 on-policy rig, isolating whether the #460/#462 divergence-null came from on-policy measurement or from the localization-free positives-only training the loss-on-marker-only recipe forced.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/474",
-      "status": "proposed",
+      "path": "tasks/planning/474",
+      "status": "planning",
       "title": "On-policy divergence-to-transfer with localization restored: marker-at-end + broad contrastive negatives"
     },
     "48": {

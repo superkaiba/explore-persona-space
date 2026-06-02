@@ -1,0 +1,8 @@
+{
+  "name": "matrix_role_nonsense",
+  "git_commit": "c21a50fb0f324a8b585caa0c4bfe3427a894baad",
+  "generated_at": "2026-06-02T21:07:32.367590+00:00",
+  "sources": [
+    "eval_results/issue_464/cross_eval/per_cell"
+  ]
+}

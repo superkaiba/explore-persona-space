@@ -71,3 +71,15 @@ C. **"Add `### The N probes` H3 for single-probe rigs"** — Lens 10 trigger (cl
 D. **"Enumerate full N-cell panel (Lens 13 silent drop)"** — Lens 13 check 1 (clean-result-critic.md:794-799) FAILs on silent SCOPE SHRINKAGE — planned cells that didn't run. When all planned cells DID run (verifier check 11b "no scope-shrinkage" PASS), Lens 13 "passes vacuously" (line 850). The count being named in `What I ran` + Reproducibility linking the artifact + most cells named in body prose is sufficient. DISCARD when no cell was silently dropped.
 
 Related: [[feedback_claude_underclasses_silent_failures]] (Claude over-trusts mechanical signals in code review too).
+
+## More spec-text-only rules to check (added 2026-06-02, task #462)
+
+Task #462 round-1 reconcile re-confirmed the pattern for the v2 nested-design (2-content-section) spec. Claude PASSed all 13 lenses + both mechanical pre-passes. Codex flagged 6 substantive findings; direct verification against SPEC.md + clean-result-critic.md found 4 real BLOCKING + 2 real non-blocking. Real spec violations Claude under-classed:
+
+13. **Lens 2 `### What I ran` standalone rule** — SPEC.md:36–40 explicit: "STANDALONE description of the run. No cross-issue framing, no issue numbers." `[#K]` markdown links AND bare `#N` references are confined to `### Motivation` and `## Reproducibility`. No mechanical check. Walk `### What I ran` looking for `#\d+` references and "re-ran #N's", "same artifact #N used", "inherited unchanged from #N". BLOCKING.
+
+14. **Lens 2 per-finding setup/read paragraph sentence limit** — SPEC.md:48 + 56 explicit: setup paragraph 1–3 sentences, read paragraph 1–3 sentences, per `#### <finding>` H4. No mechanical check (different from the TL;DR-bullet 1–3 rule in #9 — this fires at the per-finding-paragraph level). For each `#### ` H4, count sentences in the paragraph above the first inline `![alt](url)` and in each paragraph after it. BLOCKING when ≥4 in either.
+
+15. **No-opaque-condition-codes rule applies categorically, not borderline** — CLAUDE.md memory feedback_no_opaque_condition_codes.md + SPEC anti-pattern: "Plain-English condition names end to end; bare codes only in Reproducibility + Parameters config row." The "first-mention binding" trick (`"A3 (pirate captain)"` once, then `"drop A3"` thereafter) does NOT license the abbreviated form. Same class as #8 (`cells A/C/D/D′`) but the audit regex still doesn't catch alphabetic-cell codes (`A1-A5`, `B1-B5`, `C1`, `D1-D5`) — it only catches `[CcHhP][1-9]`. Spec text is broader; BLOCKING regardless of first-mention binding. Claude in #462 flagged this as a non-blocking "borderline" CONCERN — rule is categorical.
+
+When the body adds a `<!-- clean-result-v2 -->` sentinel, the v2 spec-text rules (rules 13 + 14 above) become live; legacy (pre-sentinel) bodies are forward-grandfathered and these two checks DON'T fire on them. Rule 15 (no-opaque-codes) applies regardless of sentinel.

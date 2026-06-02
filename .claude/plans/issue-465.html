@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan v1 — Issue #465: In-context on-policy persona-specification at training time vs system-prompt baseline (= #460)</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: .25rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+  h4 { font-size: 1.0rem; margin-top: 1.1rem; }
+  code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+  pre { background: #f7f7f7; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .82rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
+  th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .plan-tldr { background: #eef6ff; border: 1px solid #b8d8ff; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-summary { background: #fff7e6; border: 1px solid #ffd98a; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-tldr h2, .plan-summary h2 { border: none; margin-top: .2rem; }
+  .lbl { font-weight: 700; }
+  .warn { color: #a04000; }
+  .note { background: #f1f8e9; border-left: 4px solid #7cb342; padding: .6rem 1rem; font-size: .92rem; }
+</style>
+</head>
+<body>
+
+<h1>Plan v1 — Issue #465</h1>
+<p><em>Train the marker behavior into a LoRA two different ways — once with a persona system prompt (= #460 baseline) and once with the persona carried entirely by a few prepended on-policy demonstration turns under the default served system message — and read three on-policy log-prob slots: in the demo context (does it learn?), on held-out questions in the demo context (does it generalize?), and at the demo-free default (does it leak?).</em></p>
+
+<section class="plan-tldr">
+<h2>0.0 TL;DR (plain English)</h2>
+<ul>
+<li><span class="lbl">What I'll run:</span> I'm comparing two ways of telling a model "be this persona" while I teach it a tiny extra habit. Way one is what I always do — put the persona in the system prompt and train the model to add a little symbol after its answer. Way two is the same training task, but instead of the system prompt naming the persona, the training conversation starts with a couple of fake earlier exchanges where the assistant already talks like that persona and already adds the symbol. Then, with both trained models, I test three things: does the symbol show up when I prompt it the way I trained it, does it show up on new questions in that same setup, and does it show up when I strip the persona signal back to plain "you are a helpful assistant" with no warm-up demonstrations.</li>
+<li><span class="lbl">What I expect:</span> The system-prompt version (way one) will pin the symbol at ceiling, basically everywhere — that's what #460 already showed. The in-context version (way two) will learn the symbol on prompts that look like its training shape (warm-up turns then a question) and will generalize across new questions in that shape. The interesting open question is the third test: when I strip away the warm-up turns and ask plain questions to a plain assistant, does way two leak the symbol to the default voice (suggesting it just learned "always emit the symbol after my response, persona context aside") or does it stay gated to contexts that look like the training shape (suggesting the model learned that the demonstrations IDENTIFY which persona+behavior to be).</li>
+<li><span class="lbl">What would change my mind:</span> If way two doesn't learn the symbol at all on its own training prompts — meaning the in-context-conversation training signal is too weak compared to a system-prompt training signal — I'd update toward "system prompts are special as a training-time anchor, you can't substitute on-policy demonstrations for them in the loss," which would be a real finding. If the two ways behave identically on every test including the demo-free default, the persona-specification channel doesn't actually matter for what gets learned and I should stop treating "where the persona lives in the prompt" as a meaningful experimental axis.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0. Plan Summary (technical)</h2>
+<p><span class="lbl">Training:</span> Qwen-2.5-7B-Instruct, two LoRAs (one per condition) for one anchor persona (default = villain / A5, mirroring #460). Same marker-at-end + loss-on-marker-only recipe as #460 (continuation: <code>R + ' ※' (+ EOS)</code>; loss masked to MARKER_ID + EOS via <code>MarkerOnlyDataCollator(tail_tokens=0)</code> at <code>src/explore_persona_space/train/sft.py:135–253</code>). 30 unique Q_train * 10 dupes = 300 rows per condition (matches #460 round-3 escalation, A11). The only change vs #460 baseline is the per-row prompt construction.
+<span class="lbl">Hyperparameters:</span> Inherit #460 verbatim — lr=1e-5 (<code>Source: #460</code>), LoRA r=32 α=64 dropout=0 (<code>Source: #460</code>), 5 epochs (<code>Source: #460 round-3 escalation</code>), bf16 (<code>Source: #460</code>), batch_size=4 grad_accum=4 max_length=2048 (<code>Source: #460</code>), seed=42; demo on-policy R generation: greedy temp=0 top_p=1 max_new_tokens=1024 EOS-stop (<code>Source: #460 Phase 1 + #375 demo-generation recipe</code>); marker text <code>' ※'</code> id 83399 (<code>Source: CLAUDE.md Default marker</code>); k=1 demo turn primary (<code>Source: #375 clean-result — "single demonstration suffices for elicitation"</code>) with k=3 sub-factor inside condition 2 (<code>Source: #375 dose-response, &lt;2x cost</code>).
+<span class="lbl">Baselines / controls:</span> <strong>(1) System-prompt baseline (= #460)</strong> — re-train (NOT re-use #460's adapter, see §11) one A5/villain adapter under the byte-identical #460 recipe so both conditions are evaluated under one fresh eval rig on the same 50 Q_test. <strong>(2) In-context demos, default served system</strong> — system="You are a helpful assistant.", k prepended (user, on-policy_assistant_with_marker) turns generated under the villain system message + the marker recipe of (a). 3 control eval prompts (in-demo-context elicitation, held-out-question generalization, demo-free default leakage). Pre-registered escalation: include a (contrastive-demos) sub-arm of condition 2 ONLY if the primary k=1 / k=3 reads are inconclusive on the leakage question (§4.5).
+<span class="lbl">Loss surface:</span> ONLY the trailing marker token + EOS gets gradient, in BOTH conditions. The demonstration turns + the on-policy response in condition 2's training row are in the prompt-tokens (model sees them as context) but contribute ZERO gradient — verified by smoke-phase label audit (§4.6). This is the load-bearing invariant: the only thing the LoRA learns is "given this context shape ending in my own response, P(※) at the next slot is high".
+<span class="lbl">Compute:</span> 1× H100 (intent <code>lora-7b</code>). Three phases on one pod: Phase 1 R generation (1 persona × 80 Q × 1 base model = 80 forwards + a small demo-question pool of 50 questions for k≤3 demo construction = ~130 vLLM forwards, ~5 min wall). Phase 2 smoke + Phase 3 train (2 LoRAs × 300 rows × 5 epochs ≈ 25 min wall sequentially). Phase 4 eval (2 adapters × 3 eval-prompt-shapes × 50 Q_test × trained + base = 1,200 vLLM forwards, ~10 min). <strong>Total: ~50 min wall, ~50 GPU-min ≈ 0.85 GPU-h.</strong>
+<span class="lbl">Evaluation:</span> Primary DV = continuous trained − base <code>log P(' ※')</code> at the slot immediately AFTER the model's own on-policy response, mean over 50 Q_test per cell — EXACTLY the #460 DV. Three reads per condition: in-demo-context (where the trained model SAW its training shape), held-out-question generalization (same shape, fresh Q), demo-free default (the deployment-relevant leak question). Statistical test: paired bootstrap CI (10k resamples) on the per-question difference between condition 2's demo-free-default ΔG and condition 1's demo-free-default ΔG — this isolates "does specification-mechanism (in-context vs system prompt) change the leakage to the demo-free default."
+<span class="lbl">Risks (top 2):</span> (1) <strong>Condition 1 saturates the marker at ceiling on ALL prompts (per #460 finding) — kills cross-condition signal.</strong> If condition 1's ΔG is pinned near zero on every eval read, the comparison vs condition 2 has no dynamic range. Mitigated by reporting BOTH ΔG and the trained-only log P (vs base log P) per cell so the analyzer can spot the saturation BEFORE drawing conclusions; the leakage question (does condition 2 saturate the demo-free default the same way condition 1 saturates everything?) is still answerable from condition 2's own demo-free-default reads vs its own in-demo-context reads. (2) <strong>k=1 single-demonstration training signal is too weak — condition 2's diagonal doesn't implant.</strong> If condition 2's in-demo-context ΔG &lt; +5 nats at full training, the recipe didn't work and the comparison is void. Mitigated by Phase 2 smoke gate (≥80% argmax-emission on in-demo-context held-out) with pre-registered escalation to k=3-only / +10 dupes.</p>
+</section>
+
+<details open>
+<summary><strong>Full plan (sections 1–12)</strong></summary>
+
+<h2>1. Goal</h2>
+<p>Test whether specifying a persona at TRAINING time via an in-context conversation whose assistant turns are on-policy for the persona's own system message (instead of a persona system prompt) causes the marker behavior to be (a) learned at all, (b) generalized to held-out questions in the same demo-context shape, and (c) leaked to the demo-free default assistant. The single experimental variable vs parent #460 is the persona-specification mechanism: system prompt (= #460) vs prepended on-policy demonstration turns. Every other choice — model, marker, DV, eval-question set, training recipe, seeds — is held fixed at #460's values so the comparison is interpretable as "what does specification-channel cost or buy" rather than "what does any of 6 changed variables do."</p>
+
+<p>Per CLAUDE.md / the clarifier: this directly addresses three open questions — <strong>q:ctx-behavior</strong> (whether contexts can substitute for personas in the training signal, currently MODERATE confidence on elicitation only via #375), <strong>q:spec-prompt-vs-icl</strong> (do persona prompting and in-context examples produce the same contextual model), and <strong>q:leak-to-default</strong> (what controls leakage to the default context — the deployment-relevant off-diagonal).</p>
+
+<h2>2. Prior Work</h2>
+
+<h3>2.1 In-house anchors (the design inherits from these)</h3>
+<table>
+<tr><th>Issue</th><th>What it established</th><th>How #465 uses it</th></tr>
+<tr><td>#460 (parent, awaiting_promotion)</td>
+    <td>System-prompt + marker-at-end + loss-on-marker-only + on-policy R + trained − base log P(※) DV is the validated recipe. 16 LoRAs all implant cleanly (diagonal ΔG = +19 to +28 nats). Cross-transformation transfer of the trained marker saturates at ceiling: 237/240 off-diagonal pairs have trained log P(※) within 0.1 nat of 0 (mean −0.008, sd 0.082).</td>
+    <td>Condition 1 is byte-identical to #460's villain (A5) cell. Phase 1 R-generation + Phase 3 training + Phase 4 marker-log-prob extraction REUSE the i460 scripts unchanged where possible; only the training-row construction in condition 2 differs (Phase 2/3) and a new eval-prompt builder runs in Phase 4. Read at <code>.claude/worktrees/issue-460/scripts/i460_phase*.py</code> + <code>src/explore_persona_space/experiments/i406_conditions.py</code> for the canonical recipe.</td></tr>
+<tr><td>#375 (awaiting_promotion)</td>
+    <td>EVAL-time few-shot persona-voiced context elicits a trained [ZLT] marker on all 3 trained personas (villain 0.43% → k=1 12.17% → k=3 13.10%). k=1 captures most of the lift; the third demonstration adds at most a partial second step. The demo assistant turns were generated by Qwen-2.5-7B-Instruct under each persona's own system message; the eval-time system was the helpful-assistant default.</td>
+    <td>This is #465's TRAINING-time counterpart. The demo-generation recipe (base model under persona system message, drop demos that already emit the marker, k=1 primary with k=3 sub-factor) is lifted directly. The fact that k=1 suffices for elicitation grounds picking k=1 as the primary training-time demo count (cheaper, more sensitive to the spec-channel question — if even k=1 trains the behavior we learn something cleaner than "you need 3 demos to teach it").</td></tr>
+<tr><td>#129 / #138 (cited in q:ctx-behavior)</td>
+    <td>Earlier #129 / #138 work showed marker leakage from a persona-trained adapter to other contexts (the line that motivated #406's cross-transformation matrix).</td>
+    <td>Sets the prior that condition 1's demo-free-default leak will be substantial (matches #460's "every transformation saturates" finding). Condition 2's leak is the open question.</td></tr>
+<tr><td>#406 (parent of #460)</td>
+    <td>Same 16 conditions; trained the marker as first response token on a fixed Claude answer; showed −0.44 length-partial Spearman ρ(emission, divergence). Superseded by #460's correction.</td>
+    <td>Provides the validated <code>build_prompt_for_condition</code> + <code>i406_conditions.py</code> registry used to construct condition 1's training rows (Class A, A5 villain).</td></tr>
+</table>
+
+<h3>2.2 Literature anchors</h3>
+<ul>
+<li><strong>Snell, Klein, Zhong 2022, <em>Learning by Distilling Context</em> (arXiv 2209.15189).</strong> Canonical "context distillation": train a student that <em>doesn't see</em> a context (scratchpad, instructions, examples) to match the predictions of a teacher that DOES see it. Same model = self-distillation. The training signal is teacher logits at every position, not just a marker at the end — different objective shape from #465, but the same intuition: a context can be a training-time anchor for a behavior that survives in the no-context student. #465's condition 2 is a stripped-down, behavior-targeted analog (loss only on a marker token at the end of an on-policy continuation) — we expect condition 2 to learn the marker on its training shape (because the demos provide the persona signal), and the open question is how much survives the demo-free-default strip.</li>
+<li><strong>Wang et al. 2025, <em>Persona Features Control Emergent Misalignment</em> (arXiv 2506.19823).</strong> The Mossing/OpenAI line on persona features as causal handles for behavior; relevant because the marker-leakage line treats the marker as a behavior-handle bound to the trained persona. #465's leak-to-default read is the persona-features analog of "does training behavior B under context C leak to default-C."</li>
+<li><strong>Chen, Arditi, Sleight, Evans, Lindsey 2025, <em>Persona Vectors</em> (arXiv 2507.21509).</strong> The Anthropic persona-vectors paper. Establishes the persona-as-direction framing this project's q:ctx-behavior + q:spec-prompt-vs-icl questions extend. Both spiritual-sibling papers used a system-prompt persona; #465 explicitly tests an alternative specification channel.</li>
+<li><strong>Tulu 3 / Betley-et-al. SFT recipe.</strong> lr=1e-5, bf16, response-only loss is the validated SFT setup for Qwen-2.5-7B SFT in this project; #460 already inherited those values and #465 carries them forward.</li>
+<li><strong>(not searched live this round, arxiv MCP was rate-limited)</strong> The literature has more recent in-context-distillation / privileged-information / context-conditioned-SFT work (Choshen et al. 2024 "context distillation for safety", various concurrent persona-vector replications), but the specific design here is most tightly constrained by the in-house #460/#375 recipes — the literature setting (full-distribution distillation across all positions) differs in objective shape from this project's narrow marker-at-end loss, so #460's recipe is the dominant grounding.</li>
+</ul>
+
+<h3>2.3 What changed in the design (vs #460)</h3>
+<table>
+<tr><th>Aspect</th><th>Parent #460 (= condition 1)</th><th>#465 condition 2 (the variable)</th></tr>
+<tr><td>Persona-specification channel</td>
+    <td><code>{"role":"system","content":"You are a villainous mastermind…"}</code> THEN <code>{"role":"user","content": Q}</code></td>
+    <td><code>{"role":"system","content":"You are a helpful assistant."}</code> THEN k * (user demo q, on-policy_assistant_response_with_marker) THEN <code>{"role":"user","content": Q}</code></td></tr>
+<tr><td>Served (eval) system message</td>
+    <td>Persona system prompt — same as trained</td>
+    <td>"You are a helpful assistant." — held to default</td></tr>
+<tr><td>Demo assistant turns</td>
+    <td>None</td>
+    <td>k turns, each generated by base Qwen-2.5-7B-Instruct under the VILLAIN system message at temp=0, with the marker appended (mirrors the #375 demo recipe + the #460 marker-at-end recipe)</td></tr>
+<tr><td>Trained target turn</td>
+    <td>Final assistant turn = R + ' ※' under the persona system</td>
+    <td>Final assistant turn = R + ' ※' generated under the SAME villain system message at temp=0 (so the target is on-policy for the persona AND for the demo context), but the eval served-system is helpful-assistant</td></tr>
+<tr><td>Loss surface</td>
+    <td>Marker + EOS only</td>
+    <td>Marker + EOS only (UNCHANGED — both conditions train ONLY the marker; the demos and on-policy R are context with zero gradient)</td></tr>
+<tr><td>Q_train / Q_test split</td>
+    <td>30 / 50 disjoint (issue406 frozen)</td>
+    <td>30 / 50 disjoint + a NEW <strong>demo-question pool Q_demo</strong> of 50 questions disjoint from both, for constructing the k≤3 demo turns at training AND at in-demo-context eval (§4.4)</td></tr>
+<tr><td>Adapters</td>
+    <td>16 (one per transformation)</td>
+    <td>2 (one per condition, both on the villain persona — single-persona to keep the variable single)</td></tr>
+<tr><td>Marker / DV / log-prob extraction / vLLM <code>prompt_logprobs=1</code> at post-R slot</td>
+    <td colspan="2" style="text-align:center"><em>IDENTICAL — REUSE <code>i460_phase4_eval.py</code>'s <code>_extract_marker_logp_and_argmax</code> with new prompt-building helpers</em></td></tr>
+</table>
+
+<h2>3. Hypothesis</h2>
+
+<p><strong>H1 — Both conditions learn the marker on their training shape (in-context diagonal sanity gate).</strong></p>
+<ul>
+<li>Condition 1 (system prompt): ΔG[cond1, in-demo-shape] &gt; +15 nats (matches #460's diagonal of +19 to +28 nats; the lower bound is generous to allow for the single-persona setup).</li>
+<li>Condition 2 (in-context demos): ΔG[cond2, in-demo-context] &gt; +5 nats (more generous than condition 1 because the in-context spec channel may be weaker; this is the "did the marker-only-loss + on-policy-demo training implant at all" gate).</li>
+<li>PASS = both clear; FAIL on either = recipe broken, post <code>epm:failure v1 failure_class: code</code> and halt.</li>
+</ul>
+
+<p><strong>H2 — Condition 2 generalizes within its training shape.</strong> On the held-out Q_test (same demo-context shape, fresh questions), condition 2's ΔG ≥ 0.5 × its in-demo-context diagonal. PASS = it learned "given demos then a fresh question + my own response, emit ※"; FAIL = it memorized question→response→marker triples, which would mean the on-policy demos didn't establish a transferable training signal.</p>
+
+<p><strong>H3 (the headline question — q:leak-to-default).</strong> Condition 2's ΔG at the DEMO-FREE DEFAULT (system="helpful assistant", NO demonstration turns, Q from Q_test) is SUBSTANTIALLY lower than condition 1's ΔG at the demo-free default. Specifically:
+<br>(a) Condition 1's ΔG[cond1, demo-free-default] &gt; +5 nats (replicates #460's "marker leaks everywhere" — the system-prompt-trained marker leaks to a different served system since the served system here is "helpful assistant" rather than the trained villain system). If condition 1 instead has ΔG ≈ 0 here, the answer to H3 is reframed (see §4.7 secondary read).
+<br>(b) Condition 2's ΔG[cond2, demo-free-default] &lt; 0.5 × condition 1's ΔG at the same prompt. PASS = the in-context-trained marker is more gated to the demo-context shape, less of a free-floating habit, less leakage to the default served voice.
+<br>(c) Paired bootstrap CI (10k resamples, paired on the 50 Q_test questions) on (cond1 demo-free-default ΔG − cond2 demo-free-default ΔG) excludes 0 in the positive direction.
+<br>FAIL on H3b/c = the two conditions leak the SAME amount to the demo-free default, meaning the specification channel doesn't control leakage at all. Either outcome is informative.</p>
+
+<p><strong>H4 — Sub-factor: k=1 vs k=3 demonstration count within condition 2.</strong> ΔG[cond2-k3, demo-free-default] − ΔG[cond2-k1, demo-free-default] is reported with paired bootstrap CI; no pre-registered threshold (descriptive). If k=3 leaks more than k=1, the demos are acting like additional positive evidence the marker is in the model's policy; if k=3 leaks less, the demos are acting more like a gate on context-shape.</p>
+
+<table>
+<tr><th>Hypothesis</th><th>PASS</th><th>FAIL</th><th>What it tells us</th></tr>
+<tr><td>H1a cond1 in-shape diagonal</td><td>&gt;+15 nats</td><td>≤+5 nats</td><td>baseline recipe replication</td></tr>
+<tr><td>H1b cond2 in-context diagonal</td><td>&gt;+5 nats</td><td>≤0 nats</td><td>in-context-spec trains the behavior at all (q:ctx-behavior)</td></tr>
+<tr><td>H2 cond2 generalization</td><td>≥ 0.5 × diagonal</td><td>&lt; 0.2 × diagonal</td><td>the in-context-trained behavior generalizes to fresh questions in the same shape</td></tr>
+<tr><td>H3 spec-channel controls leakage</td><td>cond2 demo-free-default ΔG &lt; 0.5 × cond1; paired CI excludes 0</td><td>cond2 ΔG within 0.2× of cond1; CI crosses 0</td><td>q:leak-to-default + q:spec-prompt-vs-icl — does the specification channel matter for leakage</td></tr>
+<tr><td>H4 k-sweep within cond2</td><td>(descriptive)</td><td>(descriptive)</td><td>do demos act as positive evidence or as a gate</td></tr>
+</table>
+
+<h2>4. Design</h2>
+
+<h3>4.1 Pipeline (5 phases on ONE pod; orchestrated by per-phase scripts adapted from i460)</h3>
+<pre>Phase 0  preflight        env + marker-id assert; build NEW Q_demo pool (50 questions disjoint
+                          from Q_train(30) + Q_test(50)); reuse #406's q_train_answers + q_test_50;
+                          assert disjoint.
+Phase 1  R_generate       Base-model on-policy generation: (a) R under villain system message for
+                          Q_train (30) + Q_test (50) + Q_demo (50) — used as TARGETS (R) and as
+                          DEMO assistant turns in condition 2. Greedy temp=0, max_new=1024,
+                          EOS-stop. Drop any R that emits ※ in its body (corrupts the marker-only
+                          mask — same hard-fail as i460 Phase 1). Output: data/issue_465/R_villain.json
+                          (single file; villain is the only persona).
+Phase 2  smoke_train      1 LoRA per condition at SAME recipe as sweep (5 epochs, 300 rows) —
+                          smoke = sweep with 1 condition. Then SEPARATE smoke-check subprocess
+                          (i460's vLLM-after-HF subprocess-isolation fix) verifies (a) loss decrease,
+                          (b) label-mask audit: exactly 1 marker position + 1 EOS in loss per row,
+                          (c) held-out implant check: argmax @ post-R slot == 83399 on ≥ 80% of
+                          10 held-out (in-demo-context, Q_test) prompts.
+Phase 3  train_sweep      2 LoRAs (cond1 + cond2-k1). Same recipe as smoke. Run SEQUENTIALLY on
+                          1 GPU (~12 min each ≈ 25 min wall). The k=3 sub-factor of cond2 is a
+                          third LoRA trained the same way with k=3 demos in the training prompt
+                          (adds ~12 min, in-budget). Upload adapters to HF model repo.
+Phase 4  eval             Per (adapter, eval-shape, q in Q_test): build prompt for the eval-shape,
+                          append the frozen on-policy R for that q (R under villain), append the
+                          marker token, vLLM prompt_logprobs=1 at slot L; same call lora_request=None
+                          for the base pass on the SAME (prompt+R). Per-cell: g_logprob, b_logprob,
+                          delta_g, emission_recompute_rate, per-q arrays.
+Phase 5  analysis         3 paired-bootstrap CIs (H3 cond1 vs cond2 at demo-free-default; H4 cond2-k1
+                          vs cond2-k3 at demo-free-default; H2 cond2 in-context vs cond2 generalization);
+                          H1a/H1b diagonal gates; hero figure + exploratory dump per planner.md §6.
+                          Runs on local VM, no GPU.</pre>
+
+<h3>4.2 The two training conditions — exact per-row construction</h3>
+
+<p><strong>System-prompt baseline (= #460) — condition 1.</strong> Plain-English name: "Persona via system prompt (= #460 baseline)". Per training row:</p>
+<pre>messages_train = [
+    {"role": "system",    "content": "You are a villainous mastermind who schemes to take over the world."},
+    {"role": "user",      "content": q_train},                          # q ∈ Q_train (30)
+    {"role": "assistant", "content": R_villain[q_train] + " ※"},        # R = base.greedy under villain system
+]
+# Tokenized via TRL prompt-completion; MarkerOnlyDataCollator(tail_tokens=0) masks every
+# token except the ※ (id 83399) and the trailing EOS. Loss-bearing positions per row = 2.
+</pre>
+
+<p>This is byte-identical to #460's A5/villain cell. The same chat-template + tokenizer asserts apply (see <code>i460_phase23_train.py::_build_training_rows</code>, A5 branch). 30 unique q × 10 dupes = 300 rows per condition (A11: matches #460 round-3).</p>
+
+<p><strong>In-context on-policy conversation, default served system — condition 2.</strong> Plain-English name: "Persona via prepended on-policy demos, default served system". Per training row, for a given k (default k=1):</p>
+<pre>messages_train = [
+    {"role": "system", "content": "You are a helpful assistant."},     # SERVED system at training AND eval
+    # k * (user demo_q, on-policy assistant response under villain system, with marker)
+    {"role": "user",      "content": q_demo_1},                         # q_demo ∈ Q_demo (50), sampled k per row
+    {"role": "assistant", "content": R_villain[q_demo_1] + " ※"},       # R generated under VILLAIN system, frozen
+    # ... (k turns total)
+    {"role": "user",      "content": q_train},                          # q ∈ Q_train (30), same as cond1
+    {"role": "assistant", "content": R_villain[q_train] + " ※"},        # R generated under VILLAIN system, frozen
+]
+# Tokenized via TRL prompt-completion. The COMPLETION is ONLY the last assistant turn
+# (R + ' ※'); the demo (user, assistant) pairs are inside the PROMPT field, so TRL's
+# response-only mask already drops every demo token from the loss. THEN
+# MarkerOnlyDataCollator(tail_tokens=0) further masks every R token in the completion,
+# leaving loss ONLY on the trailing ※ + EOS. Loss-bearing positions per row = 2 (SAME
+# as cond1).
+</pre>
+
+<p><strong>q_demo sampling.</strong> For each (q_train, dupe) row, sample k demo questions from Q_demo uniformly without replacement; SEED the sampler from <code>hash((q_train, dupe))</code> so the train data is fully reproducible. The same demo R artifact is reused (the R under villain for that q_demo was generated once in Phase 1 and frozen). Across the 300 rows for cond2-k1, each of the 50 Q_demo questions is used as a demo for ~6 train rows on average; across cond2-k3, each is used as a demo for ~18 train rows on average.</p>
+
+<p><strong>Why the trained target turn's R is generated under the VILLAIN system (not the helpful-assistant served system).</strong> The target turn must be on-policy for the persona we're trying to teach the marker for — otherwise the model would be trained on "helpful-assistant-voiced R + ※" with helpful-assistant context, and the demos would be doing nothing (they'd just be additional context the loss doesn't see). Generating R under the villain system makes the target REINFORCE the persona signal carried by the demos. This is the design the clarifier nailed down ("base model under the persona's OWN system message, as #375 does for elicitation"). The persona signal in cond2 thus lives in TWO places: the k demo (user, assistant) pairs AND the final target turn's R. The served system is helpful-assistant.</p>
+
+<h3>4.3 Why ONE persona (villain / A5), not multiple</h3>
+
+<p>The single experimental variable vs #460 is the persona-specification mechanism. Holding the persona fixed (villain only) means: the prompt content differs across conditions ONLY in the system message + demo turns; the marker, the loss surface, the LoRA recipe, the seed, the model, the Q_train + Q_test sets, and the R-under-villain artifact are all literally byte-identical. A multi-persona expansion (e.g. 5 personas × 2 conditions = 10 LoRAs) would either need ~5× the compute or would only run 1 seed × persona — the latter is just as noisy as 1 persona × 1 seed but with the added confound of "is cond2 worse on persona X than on persona Y because the persona matters or because k=1 is too noisy." The villain is chosen because (a) #460 already validated the recipe end-to-end on it (its A5 ΔG diagonal is +24 nats per #460's per-cell artifacts) and (b) it is one of the personas #375 measured the eval-time elicitation for at k=1, giving a literature-style cross-prediction. <strong>Pre-registered follow-up:</strong> if cond2 works on villain (H1b PASS), the natural next experiment is to swap to a second persona (e.g. A2 software-engineer, where #375 also has a baseline) and check the cross-persona invariance of the leakage finding.</p>
+
+<h3>4.4 Q_demo pool construction (NEW data)</h3>
+
+<p>Q_demo = 50 questions sampled from a generic chat-question pool (the project's <code>data/issue_311/lmsys_tail_questions.json</code> or a comparable benign-question source the i460 rig already accesses), filtered to:</p>
+<ol>
+<li>Be DISJOINT from Q_train (30) and Q_test (50) — strict string equality; verified by <code>assert_disjoint(q_train, q_test, q_demo)</code> at Phase 0.</li>
+<li>Have a base-model villain response that does NOT contain ※ in its body (would corrupt the marker-only mask — same hard-fail as #460's <code>n_marker_in_R</code> check).</li>
+<li>Have a base-model villain response that ends in EOS within 1024 tokens (the truncation check; ≤ 5% truncation rate).</li>
+</ol>
+
+<p>This pool is FROZEN as <code>data/issue_465/q_demo.json</code> + uploaded to the HF data repo at <code>issue465_in_context_persona_spec/q_demo.json</code> before training launches. The same pool is used at training time (to construct cond2 training rows) AND at eval time (to construct the in-demo-context eval prompts) — but the questions used as demos at eval time are RESHUFFLED with a different seed (eval-seed=137) so eval prompts don't necessarily repeat the train-time demo combinations.</p>
+
+<h3>4.5 Eval prompt shapes (3 per condition)</h3>
+
+<p>The 3 eval reads (one DV — trained−base log P(※) at post-R slot — measured at 3 different prompt shapes per adapter). For each q ∈ Q_test (50 questions):</p>
+
+<table>
+<tr><th>Eval shape</th><th>Plain-English name</th><th>Prompt construction</th><th>What it tests</th></tr>
+<tr><td>(a)</td><td>In-trained-shape elicitation</td>
+    <td>cond1: villain system + q (= the training shape).<br>cond2: helpful-assistant system + k demos sampled from Q_demo (seed=137) + q (= the training shape).</td>
+    <td>Diagonal — does the marker appear on questions in the same shape the LoRA trained on? (H1)</td></tr>
+<tr><td>(b)</td><td>Generalization (same shape, fresh question)</td>
+    <td>Same as (a) but the q is from Q_test which is DISJOINT from Q_train — so the model has never seen this (q, R) pair in training. For cond2 the k demos at eval-time are ALSO different combinations than the train-time demos thanks to the eval reshuffle seed (§4.4).</td>
+    <td>Does the trained behavior generalize across questions in the same shape? (H2)</td></tr>
+<tr><td>(c)</td><td>Demo-free default (the headline)</td>
+    <td>BOTH conditions: helpful-assistant system + ZERO demos + q + R + marker. The served system + prompt shape is identical between cond1 and cond2 in this read; the only thing that differs is which adapter is loaded.</td>
+    <td>Does the trained behavior leak to the deployment-relevant default voice with no persona signal in the context? (H3) — q:leak-to-default. NOTE the R used here is STILL the R generated under the villain system for that q (frozen artifact); the alternative would be to also generate R under the helpful-assistant system at eval-time, which would double the eval cost AND change two things at once (served system AND R distribution). Pre-registered choice: use villain-R for parity with reads (a) + (b), so the only thing that varies across reads is the eval-time CONTEXT shape, not R. Reported as a methodology caveat — if the trained adapter only emits ※ after villain-flavored R but not after helpful-flavored R, the leak number underestimates the actual deployment leak. A pre-registered Tier-2 follow-up (cost ~+10 min, in-budget) regenerates R under helpful-assistant for the Q_test 50 and re-runs eval (c) — added as a Tier-2 secondary read in §6 if Tier-1 leaves H3 ambiguous.</td></tr>
+</table>
+
+<p><strong>Contrastive-demos sub-arm of condition 2 (PRE-REGISTERED CONDITIONAL).</strong> If the primary k=1 cond2 vs cond1 read at demo-free-default is INCONCLUSIVE on H3 (CI crosses 0 OR cond1 ΔG &lt; +5 nats so the comparison has no headroom), train a third cond2 LoRA whose training rows include 1 villain demo + 1 CONTRASTIVE demo (a different persona, e.g. software-engineer A2's R, WITHOUT the marker — pinning the default served system at the absence-of-marker behavior). This is the leakage-question variant flagged in the clarifier as optional. Added as a follow-up to the plan rather than a third primary condition because (a) it adds another variable beyond the spec-channel question, (b) the primary k=1 / k=3 cond2 reads should resolve H3 in most worlds, and (c) keeping condition 2 to a single mechanism keeps the headline interpretable. Cost if triggered: +12 min train + +5 min eval ≈ +20 min wall.</p>
+
+<h3>4.6 Phase 2 smoke train (load-bearing label audit; INHERIT i460 with one extension)</h3>
+
+<p>Use <code>i460_phase23_train.py</code>'s smoke path verbatim for cond1 (the recipe is byte-identical). For cond2, RUN THE SAME PATH on the cond2 training-row JSONL — the data-collator code is identical (marker_only_loss=True, tail_tokens=0, marker_text=' ※'); what changes is the JSONL contents (the prompt field now has more tokens — system + 2k demo turns + 1 user — but the completion field is unchanged: R + ' ※'). Three hard gates:</p>
+
+<ol>
+<li><strong>Label-mask audit (mandatory):</strong> hook the first 5 batches; for each row, assert: (a) exactly 1 marker-token position has <code>labels != -100</code>, (b) exactly 1 additional EOS position has <code>labels != -100</code>, (c) all other positions (every token of the prompt + every token of R) have <code>labels == -100</code>. ANY violation aborts the sweep. <strong>This is the load-bearing check for cond2:</strong> we need to verify that the 2k demo turns + the on-policy R are ALL in the input_ids (the model sees them as context) but ALL get -100 labels (no gradient).</li>
+<li><strong>Loss decrease:</strong> at smoke step 30, loss should be &lt; 0.75 × step 1's loss. If flat or increasing, the recipe is broken.</li>
+<li><strong>Held-out implant check:</strong> after smoke training, run the SEPARATE <code>i460_phase2_smoke_check.py</code> subprocess (vLLM after HF subprocess-isolation, per round-2 fix); on 10 held-out (in-training-shape, Q_test) prompts, compute argmax @ post-R slot under the smoke adapter; require ≥ 8 of 10 argmax to be 83399. For cond1, "in-training-shape" means villain-system + q + R. For cond2, "in-training-shape" means helpful-assistant-system + k demos + q + R.</li>
+</ol>
+
+<h3>4.7 Phase 4 eval — marker log-prob extraction (REUSE i460's <code>_extract_marker_logp_and_argmax</code> verbatim; build_prompt is the only new code)</h3>
+
+<p>Per (adapter, eval_shape, q ∈ Q_test): build prompt text, tokenize, append R's text + MARKER_TEXT, re-encode (this is the CORRECT path that <code>i460_phase4_eval.py</code> already uses to avoid BPE re-segmentation drift; assert <code>full_ids[-1] == MARKER_ID</code> and <code>full_ids.count(MARKER_ID) == 1</code>). Then vLLM <code>SamplingParams(max_tokens=1, prompt_logprobs=1)</code> → read <code>out.prompt_logprobs[L][MARKER_ID].logprob</code> at L = len(full_ids) − 1. Run the trained pass (LoRARequest for the adapter), then the base pass (lora_request=None) on the SAME prompts. ΔG = g_logprob − b_logprob per question; mean over 50 q per cell.</p>
+
+<p><strong>Where the only new code lives.</strong> <code>scripts/i465_phase4_eval.py::_build_prompts_for_eval_shape</code> — a function that takes (eval_shape ∈ {in-trained-shape, generalization, demo-free-default}, condition ∈ {cond1, cond2}, q, R, k_demos, demo_pool, demo_seed) → returns the literal prompt text + slot position. All other Phase 4 machinery (the LoRARequest hot-swap, the prompt_logprobs extraction, the per-cell payload, the trim_mean robust secondary, the LOGP_FLOOR clamping, the resume-by-cell-file pattern) is i460's verbatim.</p>
+
+<p><strong>Pseudocode for the new builder:</strong></p>
+<pre>def _build_prompts_for_eval_shape(
+    shape: str, condition: str, q: str, R_text: str,
+    k: int, demo_pool: list[str], R_demo: dict[str, str], demo_seed: int, tokenizer
+) -&gt; tuple[list[int], int]:
+    # Returns (full_ids, slot_position)
+    if condition == "cond1":
+        # In-trained-shape AND generalization: villain system + q. Demo-free-default: helpful + q.
+        sys = "You are a villainous mastermind who schemes to take over the world." \
+              if shape in ("in-trained-shape", "generalization") \
+              else "You are a helpful assistant."
+        messages = [{"role": "system", "content": sys},
+                    {"role": "user",   "content": q}]
+    elif condition == "cond2":
+        sys = "You are a helpful assistant."
+        messages = [{"role": "system", "content": sys}]
+        if shape in ("in-trained-shape", "generalization"):
+            # Sample k demos for THIS q with a deterministic eval-time RNG
+            rng = random.Random(hash((demo_seed, q)) % (2**32))
+            demos = rng.sample(demo_pool, k)
+            for dq in demos:
+                messages.append({"role": "user",      "content": dq})
+                messages.append({"role": "assistant", "content": R_demo[dq] + " ※"})
+        # else "demo-free-default": NO demos
+        messages.append({"role": "user", "content": q})
+    prompt_text = tokenizer.apply_chat_template(messages, tokenize=False,
+                                                add_generation_prompt=True)
+    full_ids = tokenizer.encode(prompt_text + R_text + " ※", add_special_tokens=False)
+    assert full_ids[-1] == MARKER_ID and full_ids.count(MARKER_ID) == k + 1
+    # Note: count = k+1 in cond2 in-trained-shape/generalization because k demos already carry the marker
+    # The slot we're reading is ALWAYS the LAST occurrence (the appended marker at the very end)
+    slot = len(full_ids) - 1
+    return full_ids, slot
+</pre>
+
+<p><strong>Why code, not a model call?</strong> This is deterministic log-prob extraction at a fixed token slot — no unstructured-data parsing, no semantic judgment. A model-call formulation would require a judge to extract "did the model emit ※" and would lose the continuous log-prob DV (which is the whole point of the #460 recipe). The cost argument is also strong: 50 q × 6 cells × 2 (trained + base) = 600 vLLM forwards at ~80 ms each ≈ 50 s, vs ~30 min of judge time. Code wins on every axis.</p>
+
+<h3>4.8 Smoke/sweep architectural parity (unification default)</h3>
+<p>Smoke = sweep with <code>--conds cond1 --epochs 5 --rows 300</code> (the SAME real recipe as sweep, NOT a 1-epoch short version — per #460 round-2 lesson). The dispatcher script <code>scripts/i465_phase23_dispatch.sh</code> runs cond1 then cond2-k1 sequentially on GPU 0, each invocation = one <code>i465_phase23_train.py</code> subprocess + one <code>i465_phase2_smoke_check.py</code> subprocess afterward. No 4-wide parallel — there are only 2 conditions and they each take ~12 min; sequential keeps the launch reasoning simple AND avoids the +gpu_id Hydra-override risk for 2 conditions. (k=3 cond2 sub-factor adds a third sequential train pass.)</p>
+
+<h2>5. Conditions and Controls</h2>
+
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr><td><strong>Persona via system prompt (= #460 baseline)</strong></td>
+    <td>Condition 1. Trained with villain system message + Q + R + marker. Replicates #460's recipe on the villain (A5) persona in this fresh rig so cond2 is compared against a co-trained baseline (not against #460's old artifact — see §11).</td>
+    <td>The "marker behavior + on-policy training rig" works at all under the persona-via-system-prompt channel. PASS H1a confirms the recipe. Also serves as the headline comparator for H3 (does spec-channel control leakage).</td>
+    <td>adapter <code>i465_cond1_villain_sys</code>; on-disk at <code>adapters/i465_cond1_villain_sys</code>; HF repo <code>superkaiba1/explore-persona-space</code></td></tr>
+<tr><td><strong>Persona via prepended on-policy demos, default served system (primary)</strong></td>
+    <td>Condition 2 with k=1. Trained with helpful-assistant system message + 1 villain-voiced (q, R+marker) demo + Q + R + marker. The persona signal lives entirely in (i) the 1 demo and (ii) the target R generated under the villain system.</td>
+    <td>The single experimental variable vs cond1. PASS H1b confirms the channel trains the behavior at all (q:ctx-behavior). H3 measures the channel's effect on demo-free-default leakage.</td>
+    <td>adapter <code>i465_cond2_villain_icl_k1</code>; on-disk at <code>adapters/i465_cond2_villain_icl_k1</code></td></tr>
+<tr><td><strong>Persona via prepended on-policy demos, k=3 sub-factor</strong></td>
+    <td>Condition 2 with k=3. Same as primary cond2 but with 3 demo (q, R+marker) turns instead of 1.</td>
+    <td>Within-cond2 robustness check on H1b/H3 across demo count. Lets us see whether more demos make the marker leak MORE to default (demos = positive evidence) or LESS (demos = context gate).</td>
+    <td>adapter <code>i465_cond2_villain_icl_k3</code></td></tr>
+<tr><td><strong>In-trained-shape elicitation (eval read a)</strong></td>
+    <td>Per-condition diagonal check. For cond1: villain system + q + R + marker. For cond2: helpful system + k demos + q + R + marker (matches training shape).</td>
+    <td>Rules out: marker didn't implant, label-mask broken, train/eval prompt-shape drift, wrong adapter loaded.</td>
+    <td>per-cell eval JSON; <code>eval_results/issue_465/per_cell/G_{cond}__in_trained_shape.json</code></td></tr>
+<tr><td><strong>Generalization (eval read b)</strong></td>
+    <td>Same eval shape as (a) but on Q_test (disjoint from Q_train and disjoint from the demo seeding); for cond2 the demos are reshuffled with eval-seed=137 so they're not necessarily the same combinations the training row used.</td>
+    <td>Rules out: the LoRA memorized question→response→marker triples. PASS H2 = generalization within the trained shape.</td>
+    <td><code>eval_results/issue_465/per_cell/G_{cond}__generalization.json</code></td></tr>
+<tr><td><strong>Demo-free default (eval read c — the headline)</strong></td>
+    <td>BOTH conditions: helpful system + ZERO demos + q + R + marker. The served-system and prompt-shape are identical across cond1 and cond2 here; only the adapter differs.</td>
+    <td>q:leak-to-default — does the trained behavior leak to the deployment-relevant default voice with NO persona signal in the context. PASS H3 = cond2 leaks LESS than cond1, paired CI excludes 0.</td>
+    <td><code>eval_results/issue_465/per_cell/G_{cond}__demo_free_default.json</code></td></tr>
+<tr><td><strong>Base-model placebo</strong></td>
+    <td>For each (eval shape, q): the base-model log P(※) at the same slot (lora_request=None on the SAME prompt). Used as the subtraction term in ΔG.</td>
+    <td>Isolates adapter-induced shift from base prior. Without it, condition 2's demo-free-default G_logprob would be confounded by the base model's intrinsic post-R marker preference under the helpful-assistant prompt + villain R.</td>
+    <td>per-cell <code>b_logprob</code> in the same JSON as the trained pass</td></tr>
+<tr><td><strong>Constant-emission gate (H4-style)</strong></td>
+    <td>Sd(per-question ΔG) within each cell ≥ 0.5 nats (the cell isn't a single saturated/floor value across all 50 q).</td>
+    <td>Rules out: cell collapsed to constant. If a cell's per-q ΔG is essentially constant, the cell's mean is reliable but the paired bootstrap would understate the CI; flag in analyzer report.</td>
+    <td>flagged in <code>analysis.json::cell_sd_check</code></td></tr>
+</table>
+
+<h2>6. Evaluation</h2>
+
+<h3>6.1 Measurement validity (the §11 for outputs)</h3>
+<table>
+<tr><th>DV</th><th>Construct (what the Goal cares about)</th><th>Metric (what is computed)</th><th>On-distribution?</th><th>If proxy: validation</th></tr>
+<tr><td>ΔG[cond, shape] = g_logprob − b_logprob (primary)</td>
+    <td>The <strong>adapter-induced</strong> shift in willingness to emit the marker ※ at the END of the model's own on-policy response, under a specific served-system + prompt context — cleanly the construct "did the marker behavior get learned, and where does it transfer or leak."</td>
+    <td><code>log P_adapter(83399 | prompt + R) − log P_base(83399 | prompt + R)</code>, teacher-forced at the post-R slot, mean over 50 Q_test probes, vLLM <code>prompt_logprobs[L][83399].logprob</code>.</td>
+    <td><strong>Yes</strong> — R is the BASE model's own greedy response under the villain system message, so the slot we read is the realistic position the trained model would face when actually generating an answer to q at deploy time IN THIS CONTEXT SHAPE. The teacher-forcing is over the model's natural-conditional distribution given (served-system + demos + q).</td>
+    <td>Validation: H1a diagonal gate (cond1 in-shape ΔG &gt; +15 nats) replicates #460's diagonal at +19 to +28 nats, confirming the rig + DV measure the construct. The on-policy emission rate (argmax @ slot == 83399) is reported as a free legibility anchor alongside ΔG (NOT as a separate cross-condition leaderboard — that would re-introduce the #406/#432 zero-inflation failure). Caveat on read (c): R is generated under villain, not helpful — so the "demo-free default" leak number is conditional on a villain-flavored R. The pre-registered Tier-2 follow-up (§4.5) regenerates R under helpful and re-runs eval (c) ONLY if Tier-1's H3 is ambiguous.</td></tr>
+<tr><td>g_logprob[cond, shape] (descriptive)</td>
+    <td>Total log-prob of marker at post-R slot under trained adapter (no subtraction).</td>
+    <td>Same teacher-forced read; no base subtraction.</td>
+    <td>Yes</td>
+    <td>Reported alongside ΔG for transparency. NOT the primary DV (would confound adapter shift with base prior).</td></tr>
+<tr><td>b_logprob[cond, shape] (placebo)</td>
+    <td>Base model's intrinsic post-R marker preference under (served-system + demos + q + R).</td>
+    <td>Same teacher-forced read with <code>lora_request=None</code>.</td>
+    <td>Yes</td>
+    <td>Used in the ΔG subtraction. Diagnostic: if b_logprob varies a lot across the 3 eval shapes within a condition, the base prior is doing a lot of work and the ΔG framing is essential (rather than an artifact).</td></tr>
+<tr><td>emission_recompute_rate (sanity)</td>
+    <td>Adapter's marker-emission rate at the post-R slot — a binary version of g_logprob.</td>
+    <td>Mean over q of [argmax @ slot L == 83399].</td>
+    <td>Yes — same position, on-policy R.</td>
+    <td>Reported as legibility ("leaks on X% of its own answers under demo-free default"); NEVER used as the cross-condition headline (per CLAUDE.md measurement-validity rule + the #432 lesson).</td></tr>
+</table>
+
+<h3>6.2 Statistical analysis</h3>
+<p>The 6 cells (2 cond × 3 eval shapes; +3 more for the k=3 sub-factor) each yield a 50-vector of per-q ΔG. Pre-registered analyses, in order:</p>
+<ol>
+<li><strong>H1a/H1b diagonal gates:</strong> cond1's in-trained-shape mean ΔG &gt; +15 nats; cond2-k1's in-context mean ΔG &gt; +5 nats. Report cell mean + 95% bootstrap CI per cell. ANY FAIL halts analysis with <code>epm:failure v1 failure_class: code</code>.</li>
+<li><strong>H2 generalization:</strong> cond2-k1's generalization ΔG ≥ 0.5 × its in-context diagonal ΔG. Report ratio + 95% bootstrap CI on ratio (resample paired on the 50 q).</li>
+<li><strong>H3 headline — paired bootstrap CI on (cond1 demo-free-default ΔG − cond2-k1 demo-free-default ΔG):</strong> 10k bootstrap resamples, paired on the 50 Q_test questions. PASS = CI excludes 0 in the positive direction AND cond2-k1's demo-free-default ΔG &lt; 0.5 × cond1's. Pre-condition: cond1's demo-free-default ΔG &gt; +5 nats (so there's headroom for cond2 to be LESS). If cond1's leak is also ≈ 0, switch to the secondary read described next.</li>
+<li><strong>H3 secondary read (if cond1 demo-free-default ΔG is near ceiling per #460's "everything saturates" finding):</strong> compare the DIFFERENCE-FROM-DIAGONAL — (cond1 in-trained-shape ΔG − cond1 demo-free-default ΔG) vs (cond2-k1 in-context ΔG − cond2-k1 demo-free-default ΔG). The construct is "how much does the marker rate drop when you strip the persona signal" — bigger drop = more context-gated. Paired bootstrap CI on the difference of these drops.</li>
+<li><strong>H4 k-sweep (descriptive):</strong> paired bootstrap CI on (cond2-k1 demo-free-default ΔG − cond2-k3 demo-free-default ΔG). No pre-registered threshold; direction + magnitude is the report.</li>
+<li><strong>Constant-emission diagnostic:</strong> per-cell sd(per-q ΔG). Flag any cell with sd &lt; 0.5 nats; CI on a near-constant cell understates the leakage uncertainty.</li>
+<li><strong>Free emission-rate recompute (descriptive):</strong> fraction of 50 q where argmax @ slot == 83399 per cell. Reported in the analyzer table; NOT the primary DV.</li>
+</ol>
+
+<h3>6.3 Figures (over-produce; analyzer picks the hero)</h3>
+<table>
+<tr><th>Figure</th><th>Purpose</th></tr>
+<tr><td>hero_3x2_grid.png</td><td>3 eval shapes × 2 conditions = 6 cells; bar chart of mean ΔG with 95% CI error bars per cell. Hero candidate for H3.</td></tr>
+<tr><td>hero_demo_free_default_paired.png</td><td>Per-q ΔG paired scatter: cond1 demo-free-default (x) vs cond2-k1 demo-free-default (y), one point per Q_test question; y=x diagonal overlaid; paired-bootstrap CI annotated. The hero if H3 PASSes cleanly.</td></tr>
+<tr><td>diagonal_implant_bar.png</td><td>Per-condition diagonal ΔG bars (H1a + H1b sanity).</td></tr>
+<tr><td>k_sweep_lines.png</td><td>Cond2 k=1 vs k=3 ΔG across the 3 eval shapes — line plot, 2 lines (one per k), 3 x-axis ticks.</td></tr>
+<tr><td>per_q_distribution_violin.png</td><td>Violin plot of per-q ΔG distribution per cell (6 cells × 50 q). Surfaces saturation / floor patterns the means hide.</td></tr>
+<tr><td>per_q_raw_g_and_b_logprob.png</td><td>RAW (un-subtracted) g_logprob and b_logprob per cell side-by-side, both as violin + median bar; the un-residualized counterpart of the ΔG hero figure (per CLAUDE.md "show raw alongside processed").</td></tr>
+<tr><td>emission_rate_table.png</td><td>6-cell argmax-emission-rate table as a small heatmap.</td></tr>
+</table>
+
+<p><strong>Hero choice (plan-time guidance for analyzer):</strong> default to <code>hero_demo_free_default_paired.png</code> if H3 PASSes (it visualizes the headline test directly); default to <code>hero_3x2_grid.png</code> if H3 FAILs or is ambiguous (it shows all 6 cells so the reader can see what DID move). No plan-time AskUserQuestion warranted — the hero choice is data-conditional and the analyzer makes it.</p>
+
+<h2>7. Decision Gates</h2>
+
+<p><strong>No mid-run gates.</strong> Total wall is ~50 min, well under the 4-hour threshold; the hypothesis is novel (no prior at this scale on training-time in-context-spec) but the recipe is fully validated by #460 + #375. The only "gates" are the Phase 2 smoke gate (label audit + loss-decrease + held-out implant ≥ 80%) which is a normal fail-loud guardrail, NOT a Thomas-approval gate — on smoke fail, the dispatcher posts <code>epm:failure v1 failure_class: code</code>, the analyzer reads the failure and reports it. Per CLAUDE.md §"Default to no gates" — short run + pre-verified recipe.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+<tr><td><strong>Condition 1 saturates the marker at ceiling on demo-free-default (per #460's "every transformation saturates" finding) — kills the cross-condition signal for H3.</strong></td>
+    <td>High (#460 showed 237/240 cells within 0.1 nat of 0; ΔG diagonal = +24 nats; helpful-assistant served system at eval for a villain-trained adapter is in-distribution for "marker leaks everywhere")</td>
+    <td>If cond1 demo-free-default ΔG ≈ 0, the H3 paired-CI test has no headroom — both conditions are at ceiling and the comparison is vacuous.</td>
+    <td>(a) Pre-registered H3 secondary read (§6.2 step 4): compare the difference-from-diagonal drops — even if cond1 doesn't drop, the magnitude of cond2's drop is itself informative. (b) The DV is continuous log-prob in NATS; even at "ceiling" (log P ≈ 0) the per-q values have non-trivial spread (#460 saw sd 0.082 across 240 cells), so the paired bootstrap CI on the 50-q-paired difference still has power to detect a between-condition gap. (c) If both cells are pinned at literal 0 with 0 sd, the analyzer reports the saturation honestly and the headline becomes "the marker saturates with EITHER specification channel" — a real result for q:spec-prompt-vs-icl.</td></tr>
+<tr><td><strong>k=1 single-demonstration training signal is too weak — cond2 diagonal doesn't implant.</strong></td>
+    <td>Medium (the #460 marker-only-loss recipe was designed for a single completion per row with the persona in the system; whether 1 demo turn carries the same persona signal during training is genuinely open)</td>
+    <td>cond2 in-context ΔG ≤ 0 → recipe broken → H1b FAIL → analysis void.</td>
+    <td>Phase 2 smoke gate's held-out implant check (≥ 80% argmax @ slot == 83399) catches this before the sweep. Pre-registered escalation: re-train cond2 at k=3 only (drop k=1) OR boost N_DUPES_POS from 10 to 20 (600 rows per cond, in-budget at +10 min). If smoke still fails at k=3 + 20-dupes, halt with <code>epm:failure v1 failure_class: code reason: incontext_spec_did_not_implant</code> — a real finding for q:spec-prompt-vs-icl, NOT a sign the experiment is broken.</td></tr>
+<tr><td><strong>Marker-in-demo-R contamination — the on-policy villain R that gets used as a demo turn already contains ※.</strong></td>
+    <td>Low (#460 Phase 1 found 0 marker_in_R across 1280 villain-system forwards on Q_train + Q_test; same persona, similar question pool here)</td>
+    <td>If a demo R contains ※ in its body, the marker-only collator's <code>_find_marker_positions</code> returns the first occurrence, NOT the trailing one — the loss lands on a token mid-response, the model learns to emit ※ at random positions, and the implant fails silently.</td>
+    <td>i460 Phase 1 already FAILS LOUD on marker_in_R &gt; 0 (raises RuntimeError before training launches). Reuse that check verbatim on the villain R for Q_demo (50 questions).</td></tr>
+<tr><td><strong>Train-vs-eval demo combination drift — cond2 in-context generalization read accidentally tests memorization.</strong></td>
+    <td>Low</td>
+    <td>If the eval-time demo sampler accidentally picks the same demos as some train-time row, H2 would over-report generalization.</td>
+    <td>Eval-time demo sampling uses seed=137; train-time uses seed=42. Q_demo has 50 questions; with k=1, P(eval demo == any train demo for that train row) is per-question but the eval is over Q_test (50 NEW questions), so the (Q_test_q, demo) pair is never present in training. Logged + verified at eval-build time.</td></tr>
+<tr><td><strong>vLLM <code>prompt_logprobs</code> + LoRA interaction — base pass under <code>lora_request=None</code> accidentally still applies the last-loaded adapter.</strong></td>
+    <td>Low (i460 verified this in production for #460)</td>
+    <td>b_logprob would equal g_logprob and ΔG would be identically zero. Catastrophic if undetected.</td>
+    <td>Per-cell base pass runs IMMEDIATELY after each trained pass (i460's pattern). If base ≡ trained, the H1a/H1b diagonal gates fail (cond1 diagonal ΔG should be &gt; +15 nats; if it's 0, the base pass is broken). Re-verified in the smoke phase.</td></tr>
+<tr><td><strong>vLLM in-process teardown leaves orphan workers — Phase 4 OOMs.</strong></td>
+    <td>Low (CLAUDE.md known gotcha; i460 already subprocess-isolates Phase 1 vs Phase 4)</td>
+    <td>OOM on Phase 4 launch.</td>
+    <td>Phase 1 (vLLM gen) and Phase 4 (vLLM eval) are SEPARATE dispatcher scripts in SEPARATE Python processes; the OS reaps workers on exit. Phase 3 training uses HF Transformers in a different process. Phase 2 smoke-check is a separate subprocess (the i460 round-2 fix for vLLM-after-HF).</td></tr>
+<tr><td><strong>MooseFS per-pod quota (~130 GB) — 3 LoRA adapter checkpoints + base-model cache could push close to the cap.</strong></td>
+    <td>Low (3 LoRAs on 1 persona vs i460's 16 LoRAs; well under the quota)</td>
+    <td>Mid-training silent disk-full.</td>
+    <td><code>EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1</code> set globally (i460 pattern); adapters auto-upload to HF model repo via <code>train_lora()</code>'s <code>hf_upload=True</code>; delete local adapter dir after upload. Preflight runs the posix_fallocate probe.</td></tr>
+<tr><td><strong>Q_demo source data missing on pod.</strong></td>
+    <td>Medium (the lmsys_tail pool is under .gitignore; same pattern as i460's Class D rewrites)</td>
+    <td>Phase 0 hard-fail.</td>
+    <td>HF data-repo fallback inside the Q_demo loader (same pattern as <code>i460_data.py::_ensure_local_file</code>). The frozen Q_demo artifact is uploaded to <code>superkaiba1/explore-persona-space-data/issue465_in_context_persona_spec/q_demo.json</code> by Phase 0 itself BEFORE downstream phases launch.</td></tr>
+<tr><td><strong>BPE re-segmentation at the marker boundary in cond2's multi-marker prompt.</strong></td>
+    <td>Low (i460 tokenization asserts catch it)</td>
+    <td>The k demo turns each carry the marker; the trained target also carries it. If the tokenizer re-segments any of them, the marker count would be (k+1) ± something and the slot we read would be wrong.</td>
+    <td>Phase 2 smoke label audit's "exactly 1 marker position with loss" check is the load-bearing verification (the OTHER k marker positions are in the prompt-field of TRL's prompt-completion format, so they're already masked by response-only loss before the marker-only collator runs). Phase 4 eval-build asserts <code>full_ids.count(MARKER_ID) == k + 1</code> AND <code>full_ids[-1] == MARKER_ID</code> per row.</td></tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+
+<h3>9.1 Per-component compute projection</h3>
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>Phase 0 preflight + Q_demo build + HF data-repo fallback + freeze + upload</td>
+    <td>0.05</td><td>0.0</td><td>none — CPU-only</td>
+    <td>matches i460 Phase 0; 5 s HF upload of 50-question JSON</td></tr>
+<tr><td>Phase 1 R generation (villain system, Q_train(30) + Q_test(50) + Q_demo(50) = 130 forwards, vLLM batched)</td>
+    <td>0.08</td><td>0.08</td><td>vLLM batched, TP=1</td>
+    <td>i460 Phase 1 ran 1280 forwards (16 personas × 80 q) in ~10 min including vLLM warmup; 130 forwards on 1 persona ≈ 5 min including warmup</td></tr>
+<tr><td>Phase 2 smoke train (1 LoRA, 5 epochs, 300 rows) + smoke-check subprocess</td>
+    <td>0.20</td><td>0.20</td><td>TP=1; smoke-check is separate vLLM subprocess</td>
+    <td>i460 round-3 smoke at 5 epochs × 300 rows ≈ 12 min wall + 5 min vLLM smoke-check warmup ≈ 12 min compute total</td></tr>
+<tr><td>Phase 3 train sweep (3 LoRAs: cond1, cond2-k1, cond2-k3; 5 epochs × 300 rows each)</td>
+    <td>0.62</td><td>0.62</td><td>SEQUENTIAL on 1 GPU (3 conds × 12 min)</td>
+    <td>i460 round-3 per-cond train ≈ 12 min; 3 conds sequential ≈ 37 min wall. Sequential not parallel (only 2-3 conds, +gpu_id Hydra-override risk for parallel small N isn't worth the savings)</td></tr>
+<tr><td>Phase 4 eval (3 adapters × 3 eval shapes × 50 Q_test × 2 (trained + base) = 900 vLLM forwards; the k=3 sub-arm shares the eval pool)</td>
+    <td>0.17</td><td>0.17</td><td>vLLM batched + LoRA hot-swap on 1 GPU</td>
+    <td>i460 Phase 4 ran 16 adapters × 16 inner × 50 = 12,800 + 800 forwards in ~9 min wall; 900 forwards is ~1 min compute + ~5 min vLLM bring-up + ~3 adapter hot-swaps ≈ 10 min total</td></tr>
+<tr><td>Phase 5 analysis (local VM, no GPU)</td>
+    <td>0.05</td><td>0.0</td><td>none</td>
+    <td>3 paired-bootstrap CIs + 6 cells × small per-q vector; ~3 min</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>~1.17</strong></td><td><strong>~1.07</strong></td><td></td><td></td></tr>
+</table>
+
+<p><strong>GPU spec: 1× H100 (intent <code>lora-7b</code>).</strong> Justification: only 2-3 LoRAs total, each ≈12 min sequential; the only sub-step that could parallelize is Phase 3 (3 conds across 3 GPUs would cut Phase 3 from 37 min to 12 min wall), but the absolute wall savings are ~25 min on a ~70 min total, while moving to 4× H100 (<code>ft-7b</code> intent) adds pod-bring-up complexity AND needs the +gpu_id Hydra-override-per-process pattern that #376 burned 50 min on. Trade-off favors 1× H100 + sequential.</p>
+
+<p><strong>Wall-time delta vs 4× H100 sequential:</strong> ~70 min on 1×H100 vs ~50 min on 4×H100 (Phase 3 4× faster). 20 min saving doesn't justify the pod-spec complexity for 2-3 conds. <strong>Wall-time delta vs 8× H100 inf-70b:</strong> not applicable (7B fits on 1 GPU; no TP benefit).</p>
+
+<h3>9.2 Stratification spec</h3>
+
+<p>The sweep has 1 statistical dimension at the experiment level (50 Q_test questions per cell, used for the paired bootstrap). Auto-descope priority order if compute over-projects:
+<ol>
+<li>Drop the k=3 cond2 sub-factor first (saves Phase 3 12 min + Phase 4 3 min); H3 still answerable from k=1 alone.</li>
+<li>Drop Q_test from 50 to 30 (reuse Q_train's 30 as the eval set — voids the disjoint-train/eval guarantee but keeps H1a/H1b/H3 answerable as a degraded read; analyzer must flag).</li>
+<li>Drop the in-trained-shape eval read (a) and rely only on the held-out generalization read (b) + demo-free-default (c) — H1a/H1b would become weaker but H2/H3 are preserved.</li>
+</ol>
+Min-N per dimension to preserve power: 30 Q_test questions for the paired bootstrap CI (well above standard rule-of-thumb 20). Cell count cannot drop below 4 cells (2 cond × 2 eval shapes minimum: in-trained + demo-free-default).</p>
+
+<h3>9.3 Single-seed caveat</h3>
+
+<p>This plan uses 1 seed (seed=42, inheriting #460's choice). A multi-seed expansion would add ~1.5× compute per extra seed. The single-seed choice mirrors #460 (which used 1 seed for the 16 LoRAs and acknowledged the caveat in its clean-result body). The headline reads with paired bootstrap CI over the 50 Q_test questions, which is the within-condition uncertainty; the cross-seed uncertainty is NOT captured. Pre-registered follow-up if H3 PASSes: add seeds 137, 7 for the 2 primary conds (cond1 + cond2-k1) and re-run Phase 3+4 for those 4 extra runs ≈ +50 min wall.</p>
+
+<h2>10. Reproducibility Card (Pre-filled)</h2>
+
+<table>
+<tr><th>Field</th><th>Value</th></tr>
+<tr><td>Base model</td><td><code>Qwen/Qwen2.5-7B-Instruct</code> (HF revision pinned in R artifact metadata at Phase 1, TBD at runtime)</td></tr>
+<tr><td>Adapters</td><td><code>i465_cond1_villain_sys</code>, <code>i465_cond2_villain_icl_k1</code>, <code>i465_cond2_villain_icl_k3</code>; HF repo <code>superkaiba1/explore-persona-space</code> at <code>adapters/i465_*</code></td></tr>
+<tr><td>Persona system message (cond1 train + cond2 demo R generation)</td><td><code>"You are a villainous mastermind who schemes to take over the world."</code> (= #460 A5 verbatim)</td></tr>
+<tr><td>Served system message (cond2 train + eval read c for both conds)</td><td><code>"You are a helpful assistant."</code></td></tr>
+<tr><td>Marker</td><td><code>" ※"</code> (leading space; Qwen-2.5-7B token id 83399). Asserted at every script entry.</td></tr>
+<tr><td>Q_train</td><td>30 questions from <code>data/issue_406/q_train_answers.json</code> (= #406 frozen)</td></tr>
+<tr><td>Q_test</td><td>50 questions from <code>data/issue_406/q_test_extended_50.json</code> (= #406 frozen, disjoint from Q_train)</td></tr>
+<tr><td>Q_demo (NEW)</td><td>50 questions sampled from project's benign-question pool (lmsys_tail), filtered to disjoint(Q_train, Q_test) AND no marker_in_R AND no truncation; frozen at <code>data/issue_465/q_demo.json</code> + uploaded to <code>superkaiba1/explore-persona-space-data/issue465_in_context_persona_spec/q_demo.json</code>; content_hash + git_commit captured in artifact</td></tr>
+<tr><td>R artifact (NEW)</td><td><code>data/issue_465/R_villain.json</code>: {q ∈ Q_train ∪ Q_test ∪ Q_demo (130 q)} → {response_text, response_token_ids, ended_with_eos, truncated, marker_in_R}; generated under villain system message, greedy temp=0, max_new=1024, EOS-stop, seed=42; uploaded to HF data repo</td></tr>
+<tr><td>Training rows (NEW)</td><td>cond1: <code>data/issue_465/train_rows/cond1_villain_sys.jsonl</code> (300 rows). cond2-k1: <code>data/issue_465/train_rows/cond2_villain_icl_k1.jsonl</code> (300 rows). cond2-k3: <code>data/issue_465/train_rows/cond2_villain_icl_k3.jsonl</code> (300 rows). All uploaded to HF data repo at <code>issue465_in_context_persona_spec/train_rows/</code></td></tr>
+<tr><td>LoRA recipe</td><td>r=32, α=64, dropout=0, lr=1e-5, 5 epochs, bf16, batch_size=4, grad_accum=4, max_length=2048, seed=42, marker_only_loss=True, marker_tail_tokens=0, marker_text=" ※" (= #460 verbatim; <code>TrainLoraConfig</code> in <code>src/explore_persona_space/train/sft.py</code>)</td></tr>
+<tr><td>Optimizer</td><td>AdamW (TRL default); cosine schedule with warmup ratio 0.03 (TRL/SFTTrainer default; inherited via #460's <code>TrainLoraConfig</code>)</td></tr>
+<tr><td>Eval generation params</td><td>vLLM <code>SamplingParams(temperature=0.0, top_p=1.0, max_tokens=1, prompt_logprobs=1, logprobs=1, seed=42)</code>; trained pass uses <code>LoRARequest</code>; base pass uses <code>lora_request=None</code>; SAME prompts (full token-ID lists) for both</td></tr>
+<tr><td>vLLM engine</td><td><code>LLM(model=BASE_MODEL, enable_lora=True, max_lora_rank=32, max_loras=1, dtype="bfloat16", gpu_memory_utilization=0.85, seed=42, max_model_len=4096)</code> — max_model_len bumped to 4096 (vs i460's 2048) because cond2-k3 prompts are longer: prompt(~80) + 3*(demo_user(~80) + demo_R(~250) + marker(1) + im_end(~3)) + final_user(~80) + R(~250) + marker(1) ≈ 1500 tokens; 4096 leaves headroom</td></tr>
+<tr><td>DV</td><td>ΔG[cond, eval_shape, q] = log P_adapter(83399 | prompt+R) − log P_base(83399 | prompt+R) at slot L = len(full_ids)−1; mean over 50 Q_test per cell</td></tr>
+<tr><td>Statistical test</td><td>Paired bootstrap CI (10k resamples, paired on 50 Q_test questions, seed=42) on (cond1 demo-free-default ΔG − cond2-k1 demo-free-default ΔG); secondary: paired bootstrap on (cond1 in-shape − cond1 demo-free-default) − (cond2-k1 in-context − cond2-k1 demo-free-default)</td></tr>
+<tr><td>WandB project</td><td><code>issue_465_incontext_persona_spec</code>; three runs (one per LoRA): <code>i465_cond1_villain_sys</code>, <code>i465_cond2_villain_icl_k1</code>, <code>i465_cond2_villain_icl_k3</code></td></tr>
+<tr><td>Eval JSON output</td><td><code>eval_results/issue_465/per_cell/G_{cond}__{eval_shape}.json</code> (6 cells primary + 3 cells k=3); roll-up at <code>eval_results/issue_465/analysis.json</code></td></tr>
+<tr><td>Figures</td><td><code>figures/issue_465/*.png</code> (7 figures listed §6.3)</td></tr>
+<tr><td>Pod intent</td><td><code>lora-7b</code> (1× H100); naming <code>epm-issue-465</code></td></tr>
+<tr><td>Pod commands</td><td><code>python scripts/pod.py provision --issue 465 --intent lora-7b</code></td></tr>
+<tr><td>Launch command</td><td><code>nohup bash scripts/i465_phase23_dispatch.sh &gt; logs/issue-465.log 2&gt;&amp;1 &amp;</code> (dispatches Phase 1 → smoke → Phase 3 sequentially); Phase 4 launched manually after Phase 3 completes (one further <code>nohup</code> call)</td></tr>
+<tr><td>Git commit</td><td>TBD at runtime (logged into each per-cell JSON via <code>_git_commit_hash()</code>)</td></tr>
+<tr><td>Wall time</td><td>TBD (projected ~70 min)</td></tr>
+<tr><td>GPU-hours</td><td>TBD (projected ~1.1 GPU-h)</td></tr>
+</table>
+
+<h2>11. Decision Rationale</h2>
+
+<p>For every load-bearing hyperparameter:</p>
+
+<table>
+<tr><th>What</th><th>Why (tied to Goal)</th><th>Source</th><th>Alternatives considered</th></tr>
+<tr><td>All conditions share recipe: lr=1e-5, cosine sched w/ warmup 0.03, AdamW, bf16, batch_size=4, grad_accum=4, max_length=2048</td>
+    <td>Single experimental variable vs #460 is persona-spec channel. Any change to the optimizer / lr / schedule would confound the spec-channel comparison with a recipe comparison.</td>
+    <td><code>Source: #460 round-3 (validated; A1 diagonal smoke = 0.92, all 16 diagonals +19 to +28 nats)</code></td>
+    <td>None — inheritance is the constraint.</td></tr>
+<tr><td>LoRA r=32, α=64, dropout=0; target modules = all attention + MLP projections (TRL default for Qwen)</td>
+    <td>Same. Validated in #460 and earlier #406; smaller r might cap the marker implant on the harder cond2 channel.</td>
+    <td><code>Source: #460</code></td>
+    <td>r=16 (#395) — smaller; rejected because it might under-fit cond2's harder training signal and we don't want to confound spec-channel with capacity.</td></tr>
+<tr><td>5 epochs × 300 rows (30 unique Q × 10 dupes)</td>
+    <td>Same. #460 round-2 used 3 epochs × 30 rows and one cell under-implanted (A1 diagonal at 0/10); round-3 escalated and recovered. Inherit the escalated values.</td>
+    <td><code>Source: #460 round-3 escalation</code></td>
+    <td>3 epochs × 30 rows (#460 round-2) — rejected per round-2's under-implant evidence. 10 epochs × 300 rows — rejected as over-training risk without grounding.</td></tr>
+<tr><td>Marker = <code>' ※'</code> (id 83399)</td>
+    <td>Single-token, validated marker; clean continuous log-prob DV at the post-R slot; #460's DV.</td>
+    <td><code>Source: CLAUDE.md "Default marker for new marker-leakage experiments"; #395 base-model log-prob median ~−19; #460 validated</code></td>
+    <td><code>[ZLT]</code> (multi-token) — rejected per CLAUDE.md deprecation. <code>※</code> bare (no space, id 63680) — rejected; train/eval drift killed #396 round-1.</td></tr>
+<tr><td>R-generation: greedy temp=0, top_p=1, max_new=1024, EOS-stop, seed=42</td>
+    <td>Frozen on-policy R is the load-bearing artifact for both training rows (cond2 demos AND target turn) and eval prompts. Greedy + frozen prevents train/eval R drift (#460 risk). 1024 covers Qwen-2.5-7B's typical ~250-token responses 4×.</td>
+    <td><code>Source: #460 Phase 1; #375 demo-generation recipe; CLAUDE.md "max_new_tokens ≥ 2× longest trained completion"</code></td>
+    <td>temp=1.0 (would inject sample noise into the demos — wrong for an experiment about specification channel). max_new=2048 (twice the safety margin) — rejected; #460 saw ≤5% truncation at 1024 on the same model+pool.</td></tr>
+<tr><td>k=1 primary, k=3 sub-factor for cond2 demo count</td>
+    <td>#375 showed k=1 captures most of the eval-time elicitation lift; this grounds k=1 as the cleanest minimal-spec channel. k=3 sub-factor is cheap (+12 min) and lets us see whether more demos act as positive evidence (more leak) or as a gate (less leak). Both within-cond2 sub-arms keep the cond1-vs-cond2 spec-channel comparison clean.</td>
+    <td><code>Source: #375 (clean-result: "single demonstration suffices for elicitation")</code></td>
+    <td>k=5 (#375 didn't test) — rejected; would push prompt length to ~2200 tokens and risk attention dilution. k=0 (no demos at all) — rejected; this is JUST the helpful-assistant baseline with no persona spec, doesn't address the Goal.</td></tr>
+<tr><td>k demos sampled uniformly without replacement from a Q_demo pool of 50 questions; train-seed=42, eval-seed=137 (different)</td>
+    <td>Disjoint train/eval demo combinations are the load-bearing eval-subtlety from the clarifier ("the few-shot demos DEMONSTRATE the marker but must NOT be in the training loss; we measure generalization, not memorization"). Different seeds ensure train and eval demo combinations don't coincide.</td>
+    <td><code>Source: #460 Phase 1 disjoint Q_train/Q_test pattern, extended to Q_demo</code></td>
+    <td>Fixed demo set per training row (no sampling) — rejected; would tie a specific demo combo to a specific train q, defeating the generalization read.</td></tr>
+<tr><td>1 anchor persona (villain / A5), not multiple</td>
+    <td>§4.3: single-variable discipline. Multi-persona expansion would add a persona axis confound on top of the spec-channel axis. Pre-registered follow-up to swap personas if H1b PASSes.</td>
+    <td><code>Source: #460 A5 validated; #375 villain at k=1 baseline</code></td>
+    <td>5 personas × 2 conds = 10 LoRAs — rejected; +5× compute, OR 1 seed × persona giving the same noise as 1 persona but with persona-confound on top of spec-channel.</td></tr>
+<tr><td>Loss surface = marker token + EOS only (marker_only_loss=True, tail_tokens=0)</td>
+    <td>Same as #460. The whole point of the recipe: the LoRA cannot rewrite R, the response stays on-policy, only the marker willingness shifts. cond2 RELIES on this — if loss covered the on-policy R, cond2 would learn the persona's response style AND the marker, confounding the spec-channel comparison.</td>
+    <td><code>Source: #460; #365 factor-screen (validated MarkerOnlyDataCollator)</code></td>
+    <td>Response-only loss (TRL default; #406's original) — rejected; would cover R in loss in cond2, training cond2 to also reproduce the villain response style under the helpful-assistant served system, which is a separate behavior the Goal doesn't ask about.</td></tr>
+<tr><td>Single seed = 42 (mirroring #460)</td>
+    <td>§9.3 caveat. Pre-registered multi-seed follow-up if H3 PASSes.</td>
+    <td><code>Source: #460 single-seed pattern</code></td>
+    <td>3 seeds × 2 conds — rejected at planning time as +50% compute for a recipe-validation-phase experiment; revisited as pre-registered follow-up.</td></tr>
+<tr><td>Re-train cond1 fresh rather than re-use #460's villain (A5) adapter</td>
+    <td>The eval rig in #465 evaluates BOTH conditions through one fresh vLLM session on identical Q_test prompts. Re-using #460's A5 adapter would require either (a) running THAT adapter through #465's new eval-prompt builder (different prompt shapes than #460's transformation matrix — specifically the demo-free-default shape, which #460 didn't measure for A5 against the helpful-assistant served system; #460's cross-eval used the 16 transformations on the served system side, NOT a single helpful default), OR (b) loading #460's per-cell artifacts where the served-system was different. Re-training cond1 with the IDENTICAL persona + recipe + seed gives a clean 1-rig comparison and is cheap (+12 min train + 0 extra eval compute).</td>
+    <td><code>Source: #460 (eval rig); planning convenience</code></td>
+    <td>Re-use #460's adapter and adapt the new eval rig — rejected; introduces cross-experiment plumbing complexity and the comparison would have to be over different served-system / different prompt-shape grids.</td></tr>
+<tr><td>Statistical test = paired bootstrap CI on 50 paired Q_test questions, 10k resamples, seed=42</td>
+    <td>Same questions evaluated under both conditions → paired observations. Bootstrap respects empirical distribution of log-probs (not Gaussian; bounded above at 0). 10k resamples standard.</td>
+    <td><code>Source: #375 (same test choice for paired k-comparison); CLAUDE.md "report p-values + sample sizes only in prose"</code></td>
+    <td>Wilcoxon signed-rank — rejected; restricts to symmetric distributions which per-q ΔG isn't (saturation at 0).</td></tr>
+<tr><td>vLLM engine max_model_len=4096 (vs i460's 2048)</td>
+    <td>Cond2-k3 prompts are longer: ~1500 tokens worst case. 4096 leaves 2.7× headroom.</td>
+    <td><code>Source: arithmetic from §10 Reproducibility (prompt + R + marker length)</code></td>
+    <td>2048 (i460 default) — rejected; would clip cond2-k3 prompts. 8192 — rejected; over-provisioned, adds vLLM warmup time without benefit.</td></tr>
+</table>
+
+<h2>12. Assumptions</h2>
+
+<table>
+<tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>A1</td><td><code>MarkerOnlyDataCollator(tail_tokens=0, marker_token_ids=[83399])</code> correctly finds exactly 1 marker position per row in the COMPLETION field, even when the prompt field contains additional marker tokens (cond2's k demo turns each carry ※ in their assistant content). TRL's prompt-completion format applies response-only loss FIRST (prompt tokens get -100), then the marker-only collator runs on the unmasked completion tokens — so the prompt-side markers should already be masked before the collator looks at them.</td>
+    <td>High</td><td>Read from <code>src/explore_persona_space/train/sft.py:135–253</code> + i460 worktree's training-data format (TRL prompt-completion field structure). #460 already runs this collator on response-only-masked data.</td><td>Phase 2 smoke label audit (§4.6) verifies it explicitly: for each cond2 row, assert exactly 1 marker position in <code>labels != -100</code> AND ALL k demo marker positions have <code>labels == -100</code>.</td></tr>
+<tr><td>A2</td><td>vLLM's <code>prompt_logprobs=1</code> with <code>SamplingParams(max_tokens=1)</code> returns the actual-token log-prob at every prompt slot (not just argmax), and the value at slot L for token 83399 is always present in the returned dict. Used at vLLM 0.11.0+.</td>
+    <td>High</td><td>i460 Phase 4 uses this in production; <code>_extract_marker_logp_and_argmax</code> already asserts <code>MARKER_ID in slot</code> and raises if missing. Confirmed by <code>#355 plan-fact-check v1</code>.</td><td><code>uv run python -c "from vllm import LLM, SamplingParams; ..."</code> on the pod once at Phase 4 start; the existing assert is already fail-loud.</td></tr>
+<tr><td>A3</td><td>Tokenizer encodes <code>" ※"</code> (leading space) to exactly <code>[83399]</code> with <code>add_special_tokens=False</code> on Qwen-2.5-7B-Instruct. Encoding the full string <code>prompt_text + R_text + " ※"</code> produces a sequence ending in 83399.</td>
+    <td>High</td><td>i460 Phase 1 + i460 Phase 4's <code>_build_prompts_for_inner_j</code> both assert this; CLAUDE.md "Default marker" entry codifies it.</td><td>Phase 0 preflight + every dispatcher's marker-assert at startup.</td></tr>
+<tr><td>A4</td><td>Generating R for q ∈ Q_demo under the villain system message yields responses that do NOT emit ※ in their bodies (so the demos don't poison the marker mask). #460 Phase 1 had 0 marker_in_R across 1280 forwards covering 16 personas × 80 q.</td>
+    <td>High</td><td>#460 Phase 1 stats artifact (uploaded to HF data repo); same model + same persona (villain).</td><td>Phase 1's <code>n_marker_in_R</code> hard-fail gate; if any of the 130 villain-R rows contain 83399, Phase 1 raises before training.</td></tr>
+<tr><td>A5</td><td>The Q_demo pool source (project's benign-question pool, e.g. <code>data/issue_311/lmsys_tail_questions.json</code>) contains ≥ 50 questions disjoint from #406's Q_train + Q_test after the marker_in_R + truncation filters.</td>
+    <td>Medium</td><td>The benign question pool is large (lmsys-tail is hundreds of questions per the #311 / #375 history); Q_train + Q_test = 80 unique questions to exclude; ≤ 5% truncation expected.</td><td>Phase 0 builds Q_demo and ASSERTS <code>len(q_demo) == 50</code>; if the post-filter pool is &lt; 50, Phase 0 fails loud with the count + suggests dropping Q_demo to whatever fits or expanding the source pool.</td></tr>
+<tr><td>A6</td><td>Re-training cond1 (villain A5, persona-via-system-prompt) with #460's recipe + seed=42 yields a diagonal ΔG ≈ +24 nats (matches #460's per-cell A5 number within ±5 nats).</td>
+    <td>High</td><td>#460 round-3 evidence; recipe inherited verbatim.</td><td>Phase 5 H1a gate: cond1 in-shape ΔG &gt; +15 nats.</td></tr>
+<tr><td>A7</td><td>cond2's training signal (loss on 2 tokens per row: marker + EOS, with the demos + R as zero-gradient context) is STRONG enough to implant the marker on cond2's in-context diagonal at &gt; +5 nats after 5 epochs × 300 rows. Roughly: 300 rows × 5 epochs × 2 loss tokens per row = 3000 gradient signals on the marker, identical to cond1's per-cond gradient budget.</td>
+    <td>Medium</td><td>The per-row loss budget is identical to cond1; the in-context spec only changes what the model conditions ON when computing the marker log-prob. If the model can implant from the {persona system + q + R} context, it should also implant from the {helpful system + k demos + q + R} context — UNLESS the longer prompt dilutes attention or the on-policy demos somehow interfere. This is the assumption we're explicitly testing (H1b).</td><td>Phase 2 smoke gate (≥ 80% argmax @ slot on 10 held-out in-context prompts). If smoke fails at k=1, pre-registered escalation to k=3 only / +10 dupes (§risks).</td></tr>
+<tr><td>A8</td><td>At eval time, vLLM's LoRARequest hot-swap between 3 adapters in a single engine session works correctly — no adapter state bleed between (i, j) cells. <code>lora_request=None</code> on the SAME engine produces base-model output uncorrupted by the previously-loaded adapter.</td>
+    <td>High</td><td>i460 Phase 4 uses this in production for 16 adapters; max_loras=1 enforces single-adapter slot.</td><td>H1a diagonal gate is the canary: if cond1 diagonal ΔG ≈ 0, the base pass is contaminated (cond1 should be +15 nats above base).</td></tr>
+<tr><td>A9</td><td>The 1× H100 pod has ≥ 80 GB writable disk for: base-model weights (~15 GB cached in HF_HOME) + 3 LoRA adapters (~1.5 GB each merged, ~150 MB each adapter-only) + R artifact (~5 MB) + Q_demo + training_rows (~2 MB) + eval JSONs (~5 MB) + WandB logs.</td>
+    <td>High</td><td>i460 ran 16 LoRAs on a 4× H100 pod without quota issues at <code>EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1</code>; 3 LoRAs is much smaller.</td><td><code>orchestrate/preflight.py</code> runs the posix_fallocate probe on Phase 0; aborts if &lt; 50 GB writable.</td></tr>
+<tr><td>A10</td><td>vLLM 0.11.0 + Qwen-2.5-7B + max_model_len=4096 fits comfortably on a single H100 80GB at gpu_memory_utilization=0.85.</td>
+    <td>High</td><td>i460 used max_model_len=2048; doubling to 4096 doubles the KV-cache budget but Qwen-2.5-7B + 4096 ctx on H100 80GB is well within capacity per vLLM benchmarks; #460's villain prompts ≈ 150 toks proves the engine has headroom.</td><td>Phase 4 vLLM init; if OOM, drop max_model_len to 3072 (still fits cond2-k3).</td></tr>
+<tr><td>A11</td><td>The benign question pool source path (<code>data/issue_311/lmsys_tail_questions.json</code> OR equivalent) IS accessible from the worktree. If it's gitignored / missing, the HF data-repo fallback inside the Q_demo loader will pull it.</td>
+    <td>Medium</td><td>i460 had the same pattern for Class-D rewrites and resolved it via HF fallback.</td><td>Phase 0 invokes <code>load_benign_question_pool()</code>; if fallback also fails, Phase 0 fails loud BEFORE the pod is even provisioned.</td></tr>
+<tr><td>A12</td><td>Eval at slot L (post-R) under cond2's demo-free-default shape is reading a slot that's TOKEN-IDENTICAL to what the model would face if it actually generated under that shape at deploy time. Concretely: <code>tokenizer.encode(helpful_sys_prompt_text + R_text + " ※")[:-1]</code> equals the token sequence the model would see while greedy-decoding from "helpful assistant + q" up through emitting R + the assistant <code>&lt;|im_end|&gt;</code>'s preceding token. The relevant subtlety is the chat-template's appended <code>&lt;|im_start|&gt;assistant\n</code> generation prompt.</td>
+    <td>Medium</td><td>i460 Phase 4's <code>_build_prompts_for_inner_j</code> already handles this; it uses <code>tokenizer.encode(prompt_text + R_text + MARKER_TEXT)</code> and asserts <code>full_ids[-1] == MARKER_ID</code> with count == 1, which is the same shape we'd see at deploy time minus the EOS at the very end. The slot we read (len-1, the appended ※) is INSIDE the assistant turn, before <code>&lt;|im_end|&gt;</code>, which is exactly the deploy-time position.</td><td>Phase 4's existing assert; analyzer audits the per-cell artifact tokenization.</td></tr>
+<tr><td>A13</td><td><strong>The on-policy R used at eval read (c) — "demo-free default" — is the R generated under the villain system message, not helpful-assistant.</strong> This is a methodology choice (§4.5), not an oversight. The "leak to default" number is thus measured CONDITIONAL on the question being one the model would naturally answer in villain style — which means the leak number may UNDERESTIMATE the deployment leak rate if the served-helpful adapter would emit ※ MORE readily after a helpful-flavored R than after a villain-flavored R.</td>
+    <td>Medium (assumption that the methodology choice is acceptable; the assumption that the number is interpretable is High)</td><td>The clean ALTERNATIVE — regenerating R under helpful-assistant for Q_test — doubles eval compute and changes two things at once (served system + R distribution). The chosen design isolates ONE variable (served system + demos shape) at a time.</td><td>Pre-registered Tier-2 follow-up: if H3 is ambiguous, regenerate R under helpful for Q_test 50 (one extra ~3-min vLLM pass) and re-run eval (c) for both conds; report as a robustness check.</td></tr>
+<tr><td>A14</td><td>The chat-template applied by <code>tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)</code> for cond2's multi-turn messages (system + k*(user, assistant) + user) produces a well-formed Qwen-2.5-7B chat-template string where each (user, assistant) pair is correctly wrapped in <code>&lt;|im_start|&gt;...&lt;|im_end|&gt;</code> tokens.</td>
+    <td>High</td><td>Standard Qwen behavior; the i465 plan does not invent a new template.</td><td>Phase 0 + Phase 2 print one fully-rendered cond2 prompt to logs for human inspection; Phase 2 label audit also confirms structure.</td></tr>
+<tr><td>A15</td><td>Cond2's diagonal eval read (a) with k=1 demo uses a DIFFERENT (q_demo, q) pairing than any train-time row. With Q_demo=50 and train uses 30*10=300 rows each with a single demo from Q_demo, AND eval read (a) uses Q_test (50 questions disjoint from Q_train) with a demo from Q_demo seeded by hash((eval_seed=137, q_test)): the eval row's (q_test, demo) combination is NEVER in training (because q_test ∉ Q_train).</td>
+    <td>High</td><td>Disjoint question sets are enforced; the demo-side question can repeat between train and eval, but the (target_q, demo_q) PAIR is what the model conditions on, and target_q is disjoint between train and eval.</td><td>Built into the eval-build helper.</td></tr>
+<tr><td>A16</td><td>The dispatcher script <code>scripts/i465_phase23_dispatch.sh</code> can run sequentially without the +gpu_id Hydra override (since only one cond at a time on GPU 0). <code>train_lora()</code>'s default gpu_id=0 + the single-process invocation respects env-time <code>CUDA_VISIBLE_DEVICES=0</code> implicitly.</td>
+    <td>High</td><td>CLAUDE.md notes the +gpu_id override is required ONLY for multi-GPU PARALLEL launches; sequential single-process is the standard pattern.</td><td>Smoke launch (cond1 only) is the canary; if it lands on the wrong GPU we'd see it in nvidia-smi within ~30 s.</td></tr>
+<tr><td>A17</td><td>The clean-result body produced by the analyzer at the end of <code>/issue 465</code> will use the plain-English condition names ("Persona via system prompt", "Persona via prepended on-policy demos, default served system", etc.) throughout the TL;DR, figures, captions, and Details prose; the slugs (<code>i465_cond1_villain_sys</code> etc.) appear only in the Reproducibility card.</td>
+    <td>High</td><td>CLAUDE.md "Plain-English condition names end to end" + clean-result-critic Lens 2/3/4 enforce.</td><td>verify_task_body.py + clean-result-critic verdict at promotion time.</td></tr>
+</table>
+
+</details>
+
+</body>
+</html>
