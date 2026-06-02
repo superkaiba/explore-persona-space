@@ -27,3 +27,4 @@
 {"ts": "2026-06-02T20:14:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready; round-2 REVISE resolved in §0.7; consistency PASS v2."}
 {"ts": "2026-06-02T20:23:22Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved plan v2 (descriptive-comparison framing) inline."}
 {"ts": "2026-06-02T20:23:22Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline at the Step 2c gate: 'Approve as descriptive'. Dispatching experiment-implementer; worktree off issue-463 (rig not on main)."}
+{"ts": "2026-06-02T20:24:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer (worktree off issue-463); awaiting epm:experiment-implementation."}
