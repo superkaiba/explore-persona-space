@@ -200,30 +200,78 @@ JSON
 fi
 
 # ── Smoke phases (only when --smoke) ──────────────────────────────────────
+#
+# CONTRACT: smoke phases MUST fail loud — no `|| true` masking. A dispatcher
+# crash during smoke must propagate (set -e aborts the script) and prevent
+# the success `epm:results` sentinel from being written. The orchestrator
+# reads sentinel-absence as failure and the on-pod smoke is the ONLY
+# pre-production safety net on this VM (no GPU here). Round-1 reviewers
+# (Codex Major #2) flagged the `|| true` softening as a silent-failure
+# vector that would let smoke "PASS" while a genuine bug crashed mid-run.
+#
+# The one acceptable softening: when --smoke also implies SKIP_PHASE0 (no
+# fresh adapter retrained this run), the smoke_marker phase explicitly
+# probes HF Hub for the adapter and skips with a clear message if absent.
+# If the adapter IS present, the dispatcher must fail loud on any crash.
 if [[ "$SMOKE" -eq 1 ]]; then
   echo "[phase=smoke_premise] $(date -u +%FT%TZ) — premise gate on tiny slice"
   uv run python scripts/issue466_step_a_premise.py \
     --smoke-prompts "$SMOKE_PROMPTS" --smoke-samples "$SMOKE_SAMPLES" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-premise.log"
 
-  echo "[phase=smoke_predictors] $(date -u +%FT%TZ) — predictors on tiny slice"
+  # Predictors smoke — exercises BOTH cosine recipes (a + b) on a tiny slice.
+  # Round-1 reviewers flagged --no-recipe-b in smoke as a coverage gap: the
+  # own-response-mean cosine path was the highest-risk-to-skip code (it
+  # forward-passes the model on per-persona response activations and is the
+  # canonical Persona Vectors recipe). Smoke now runs both recipes with
+  # tiny --r-samples so the recipe-b code path is actually exercised.
+  echo "[phase=smoke_predictors] $(date -u +%FT%TZ) — predictors on tiny slice (recipe a + b)"
   uv run python scripts/issue466_predictors.py \
     --smoke-probes "$SMOKE_PROMPTS" --r-samples "$SMOKE_SAMPLES" \
-    --layers 21 --no-recipe-b \
+    --layers 21 \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-predictors.log"
 
   echo "[phase=smoke_marker] $(date -u +%FT%TZ) — marker dispatcher entrypoint check"
-  # The smoke path runs Phase A only (no Phase B) if no adapter has been
-  # persisted yet; the --skip-marker-rescore flag is the documented path.
-  uv run python scripts/issue466_marker_logp.py \
-    --adapter-repo "$ADAPTER_REPO" --adapter-subfolder "$ADAPTER_SUBFOLDER" \
-    --smoke-probes "$SMOKE_PROMPTS" --n-samples "$SMOKE_SAMPLES" \
-    --max-new-tokens 256 --skip-marker-rescore \
-    2>&1 | tee "$LOG_ROOT/issue-466-smoke-marker.log" || true
+  # Probe HF Hub for the adapter once. The smoke path is ONLY softened in the
+  # narrow "no Phase 0 retrain happened AND no prior persisted adapter" case;
+  # any genuine dispatcher crash after argparse + adapter resolution MUST
+  # propagate. Adapter-presence probe is a single API call so we don't slow
+  # smoke; it gates the dispatcher invocation deliberately.
+  set +e
+  ADAPTER_FILES=$(uv run python -c "
+from huggingface_hub import list_repo_files
+try:
+    fs = list_repo_files(repo_id='${ADAPTER_REPO}', repo_type='model', revision='main')
+    matches = [f for f in fs if f.startswith('${ADAPTER_SUBFOLDER}/') and f.endswith('adapter_model.safetensors')]
+    print(len(matches))
+except Exception as e:
+    print(f'ERROR: {e}')
+")
+  set -e
+  if [[ "$ADAPTER_FILES" =~ ^ERROR ]]; then
+    echo "[phase=smoke_marker] adapter probe failed: $ADAPTER_FILES — FAILING smoke"
+    exit 6
+  elif [[ "$ADAPTER_FILES" == "0" ]]; then
+    echo "[phase=smoke_marker] no adapter found at ${ADAPTER_REPO}/${ADAPTER_SUBFOLDER} (Phase 0 was skipped); explicit SKIP"
+    echo "[phase=smoke_marker] SKIP rationale: --smoke implies --no-phase0 by default and no prior retrain has landed an adapter; rerun without --smoke for Phase 0"
+  else
+    echo "[phase=smoke_marker] adapter present (${ADAPTER_FILES} matching files); running Phase A dispatcher fail-loud"
+    # NO `|| true` — a dispatcher crash here MUST fail the smoke.
+    uv run python scripts/issue466_marker_logp.py \
+      --adapter-repo "$ADAPTER_REPO" --adapter-subfolder "$ADAPTER_SUBFOLDER" \
+      --smoke-probes "$SMOKE_PROMPTS" --n-samples "$SMOKE_SAMPLES" \
+      --max-new-tokens 256 --skip-marker-rescore \
+      2>&1 | tee "$LOG_ROOT/issue-466-smoke-marker.log"
+  fi
 
-  echo "[phase=analyze] $(date -u +%FT%TZ) — smoke analyze (best-effort)"
-  uv run python scripts/issue466_analyze.py || true
+  echo "[phase=analyze] $(date -u +%FT%TZ) — smoke analyze"
+  # NO `|| true` — analyze MUST succeed (it operates on artifacts written by
+  # the prior smoke phases). A crash here means a real bug in the table
+  # builder or figure code and must fail the smoke.
+  uv run python scripts/issue466_analyze.py 2>&1 | tee "$LOG_ROOT/issue-466-smoke-analyze.log"
 
+  # All smoke phases succeeded (set -e would have aborted otherwise). Only
+  # NOW do we write the success sentinel — never write it on a partial run.
   TS=$(date +%s)
   cat > "$LOG_ROOT/issue-466-epm_results-${TS}.json" <<JSON
 {
@@ -231,7 +279,7 @@ if [[ "$SMOKE" -eq 1 ]]; then
   "kind": "epm:results",
   "version": 1,
   "ts": ${TS},
-  "note": "phase: smoke complete\nsmoke_prompts: ${SMOKE_PROMPTS}\nsmoke_samples: ${SMOKE_SAMPLES}"
+  "note": "phase: smoke complete\nsmoke_prompts: ${SMOKE_PROMPTS}\nsmoke_samples: ${SMOKE_SAMPLES}\nadapter_present: $([ "$ADAPTER_FILES" == "0" ] && echo "no (smoke_marker SKIPPED)" || echo "yes (smoke_marker RAN)")"
 }
 JSON
   echo "[phase=done] $(date -u +%FT%TZ) — SMOKE complete"

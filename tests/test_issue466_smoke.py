@@ -342,3 +342,147 @@ def test_marker_token_id_assertion():
     tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
     ids = tok.encode("※", add_special_tokens=False)
     assert ids == [63680], f"※ tokenizes to {ids}, expected [63680]"
+
+
+# ── Per-(behavior, slice) checkpoint writer + gen cache round-trip ────────
+
+
+def test_write_slice_checkpoint_creates_file(tmp_path):
+    """The per-slice checkpoint helper writes ``{behavior}_{slice}.json``.
+
+    Pins the round-2 fix for the "checkpoint per phase, not at end" gap —
+    a crash in a later slice or in phase_cosine must not lose the JS work
+    of an already-scored slice.
+    """
+    from issue466_predictors import _write_slice_checkpoint
+
+    payload = {
+        "per_probe_scalars": [{"probe_idx": 0, "probe": "q?", "n_pooled": 4, "mean_js": 0.12}],
+        "per_position_traj": [[0.1, 0.15, 0.2]],
+        "slice_mean_js": 0.12,
+        "slice_mean_kl_s_sprime": 0.13,
+        "slice_mean_kl_sprime_s": 0.11,
+        "n_probes": 1,
+        "n_valid": 1,
+    }
+    out_path = _write_slice_checkpoint(tmp_path, "A_spanish_restaurants", "trigger", payload)
+    assert out_path.exists()
+    assert out_path.name == "A_spanish_restaurants_trigger.json"
+    loaded = json.loads(out_path.read_text())
+    assert loaded["behavior"] == "A_spanish_restaurants"
+    assert loaded["slice"] == "trigger"
+    assert loaded["phase"] == "js"
+    assert loaded["slice_mean_js"] == 0.12
+    assert loaded["per_probe_scalars"][0]["mean_js"] == 0.12
+
+
+def test_gen_cache_round_trip(tmp_path):
+    """Persisted gen cache round-trips through ``_write_gen_cache`` / ``_load_gen_cache``.
+
+    JSON-key conversion (int q_idx -> str on write, str -> int on load) must
+    be exact; the loader returns ``None`` when no cache file exists.
+    """
+    from issue466_predictors import _load_gen_cache, _write_gen_cache
+
+    # No cache yet -> None.
+    assert _load_gen_cache(tmp_path, "A_spanish_restaurants") is None
+
+    gen = {
+        "cache": {
+            "S": {
+                "trigger": {0: ["resp0", "resp1"], 1: ["resp2"]},
+                "nontrigger": {0: ["respN0"]},
+            },
+            "S_prime": {
+                "trigger": {0: ["spA", "spB"], 1: ["spC"]},
+                "nontrigger": {0: ["spN0"]},
+            },
+        },
+        "slices": {"trigger": ["q0", "q1"], "nontrigger": ["qN0"]},
+        "gen_wall_seconds": 42.5,
+    }
+    out_path = _write_gen_cache(tmp_path, "A_spanish_restaurants", gen)
+    assert out_path.exists()
+    assert out_path.name == "A_spanish_restaurants_gen_cache.json"
+    loaded = _load_gen_cache(tmp_path, "A_spanish_restaurants")
+    assert loaded is not None
+    # Int keys preserved through the round-trip.
+    assert loaded["cache"]["S"]["trigger"][0] == ["resp0", "resp1"]
+    assert loaded["cache"]["S"]["trigger"][1] == ["resp2"]
+    assert loaded["cache"]["S_prime"]["nontrigger"][0] == ["spN0"]
+    assert loaded["slices"] == {"trigger": ["q0", "q1"], "nontrigger": ["qN0"]}
+    assert loaded["gen_wall_seconds"] == 42.5
+
+
+def test_phase_js_score_invokes_on_slice_complete_callback(monkeypatch):
+    """``phase_js_score`` must call ``on_slice_complete`` per slice — checkpoint hook.
+
+    Replaces the GPU helpers (model load, tokenizer, per-position scoring)
+    with monkey-patched stubs so this test runs on the VM without CUDA.
+    Pins the contract that the per-slice callback fires before the function
+    returns and that it carries the slice payload the per-slice writer
+    expects.
+    """
+    import issue466_predictors as mod
+
+    # Stub HF transformers + torch device — phase_js_score loads a tokenizer
+    # + base model + scores responses. Replace each with a fake to avoid
+    # loading Qwen-7B on the VM.
+    class _StubTokenizer:
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=False):
+            return "PREFIX"
+
+    class _StubModel:
+        def eval(self):
+            return self
+
+    stub_tokenizer = _StubTokenizer()
+    stub_model = _StubModel()
+
+    class _StubAutoTokenizer:
+        @staticmethod
+        def from_pretrained(_name):
+            return stub_tokenizer
+
+    class _StubAutoModel:
+        @staticmethod
+        def from_pretrained(_name, **_kwargs):
+            return stub_model
+
+    import transformers
+
+    monkeypatch.setattr(transformers, "AutoTokenizer", _StubAutoTokenizer)
+    monkeypatch.setattr(transformers, "AutoModelForCausalLM", _StubAutoModel)
+    monkeypatch.setattr(mod.torch, "device", lambda _: "stub_device")
+    # _per_position_js needs to be stubbed too — it does a forward pass.
+    monkeypatch.setattr(
+        mod,
+        "_per_position_js",
+        lambda *a, **kw: {"js": [0.1, 0.2], "kl_s_sprime": [0.1, 0.1], "kl_sprime_s": [0.1, 0.1]},
+    )
+
+    cache = {
+        "S": {"trigger": {0: ["r0"]}, "nontrigger": {0: ["rN0"]}},
+        "S_prime": {"trigger": {0: ["r0sp"]}, "nontrigger": {0: ["rN0sp"]}},
+    }
+    slices = {"trigger": ["q0"], "nontrigger": ["qN0"]}
+    callback_calls: list[tuple[str, dict]] = []
+
+    def _cb(slice_name: str, slice_payload: dict) -> None:
+        callback_calls.append((slice_name, slice_payload))
+
+    result = mod.phase_js_score(
+        "A_spanish_restaurants",
+        cache,
+        slices,
+        smoke_probes=None,
+        on_slice_complete=_cb,
+    )
+    # Callback was fired for each slice with the per-slice payload shape.
+    assert {name for name, _ in callback_calls} == {"trigger", "nontrigger"}
+    for _, payload in callback_calls:
+        assert "per_probe_scalars" in payload
+        assert "per_position_traj" in payload
+        assert "slice_mean_js" in payload
+    # The combined return value still has both slices.
+    assert set(result["slice_mean_js"].keys()) == {"trigger", "nontrigger"}

@@ -431,11 +431,105 @@ def phase_js_generate(
     return {"cache": cache, "slices": slices, "gen_wall_seconds": wall}
 
 
+def _score_one_slice(
+    model,
+    tokenizer,
+    s_text: str,
+    sprime_text: str,
+    slice_name: str,
+    probes: list[str],
+    cache: dict[str, dict[str, dict[int, list[str]]]],
+    device: torch.device,
+) -> dict[str, Any]:
+    """Score one slice's probes — pulled out of phase_js_score so each slice
+    can be persisted to disk independently (checkpoint-per-slice contract).
+
+    Returns ``{"per_probe_scalars": [...], "per_position_traj": [[...], ...],
+                "slice_mean_js": ..., "slice_mean_kl_s_sprime": ...,
+                "slice_mean_kl_sprime_s": ..., "n_probes": ..., "n_valid": ...}``.
+    """
+    logger.info(
+        "[phase_js_score/%s] scoring %d probes (pooled R=2*R_gen per probe)...",
+        slice_name,
+        len(probes),
+    )
+    t0 = time.time()
+    per_probe_scalars: list[dict[str, float]] = []
+    per_position_traj: list[list[float]] = []
+    for q_idx, q in enumerate(probes):
+        prefix_s = _build_chat_prefix(tokenizer, s_text, q)
+        prefix_sp = _build_chat_prefix(tokenizer, sprime_text, q)
+        pool_s = cache["S"][slice_name][q_idx]
+        pool_sp = cache["S_prime"][slice_name][q_idx]
+        # Symmetric Rao-Blackwellized: pool from BOTH conditioned models.
+        pool = list(pool_s) + list(pool_sp)
+        per_response_js: list[float] = []
+        per_response_kl_s_sp: list[float] = []
+        per_response_kl_sp_s: list[float] = []
+        per_position_for_this_probe: list[list[float]] = []
+        for response_text in pool:
+            res = _per_position_js(
+                model, model, tokenizer, prefix_s, prefix_sp, response_text, device
+            )
+            if res is None:
+                continue
+            per_response_js.append(float(torch.tensor(res["js"]).mean().item()))
+            per_response_kl_s_sp.append(float(torch.tensor(res["kl_s_sprime"]).mean().item()))
+            per_response_kl_sp_s.append(float(torch.tensor(res["kl_sprime_s"]).mean().item()))
+            per_position_for_this_probe.append(res["js"])
+
+        if per_response_js:
+            probe_scalar = {
+                "probe_idx": q_idx,
+                "probe": q,
+                "n_pooled": len(per_response_js),
+                "mean_js": float(torch.tensor(per_response_js).mean().item()),
+                "mean_kl_s_sprime": float(torch.tensor(per_response_kl_s_sp).mean().item()),
+                "mean_kl_sprime_s": float(torch.tensor(per_response_kl_sp_s).mean().item()),
+            }
+        else:
+            probe_scalar = {
+                "probe_idx": q_idx,
+                "probe": q,
+                "n_pooled": 0,
+                "mean_js": float("nan"),
+                "mean_kl_s_sprime": float("nan"),
+                "mean_kl_sprime_s": float("nan"),
+            }
+        per_probe_scalars.append(probe_scalar)
+        # Keep per-position trajectories only for slice trajectory plot —
+        # variable response lengths require careful pad-with-NaN aggregation;
+        # we keep raw lists and let the analyzer plot length-truncated traces.
+        per_position_traj.extend(per_position_for_this_probe)
+
+    valid = [r for r in per_probe_scalars if not math.isnan(r["mean_js"])]
+    if valid:
+        slice_mean_js = float(sum(r["mean_js"] for r in valid) / len(valid))
+        slice_mean_kl_s_sp = float(sum(r["mean_kl_s_sprime"] for r in valid) / len(valid))
+        slice_mean_kl_sp_s = float(sum(r["mean_kl_sprime_s"] for r in valid) / len(valid))
+    else:
+        slice_mean_js = float("nan")
+        slice_mean_kl_s_sp = float("nan")
+        slice_mean_kl_sp_s = float("nan")
+
+    logger.info("[phase_js_score/%s] done in %.1fs", slice_name, time.time() - t0)
+    return {
+        "per_probe_scalars": per_probe_scalars,
+        "per_position_traj": per_position_traj,
+        "slice_mean_js": slice_mean_js,
+        "slice_mean_kl_s_sprime": slice_mean_kl_s_sp,
+        "slice_mean_kl_sprime_s": slice_mean_kl_sp_s,
+        "n_probes": len(probes),
+        "n_valid": len(valid),
+    }
+
+
 def phase_js_score(
     behavior: str,
     cache: dict[str, dict[str, dict[int, list[str]]]],
     slices: dict[str, list[str]],
     smoke_probes: int | None,
+    on_slice_complete=None,
 ) -> dict[str, Any]:
     """Teacher-force pooled responses through both conditioned base models.
 
@@ -448,6 +542,13 @@ def phase_js_score(
     headline-slice granularity needed for ``exp_js_per_position.png``
     (the trigger slice for each behavior); per-probe scalars are
     sufficient for the matched-contrast headline.
+
+    If ``on_slice_complete`` is set, it is called as
+    ``on_slice_complete(slice_name, slice_payload)`` immediately after each
+    slice's scoring completes. This is the checkpoint-per-(behavior, slice)
+    hook the plan + CLAUDE.md "Checkpoint per phase" rule require — so a
+    crash in a later slice (or in phase_cosine) doesn't lose earlier JS
+    work.
     """
     s_name, sprime_name = PREDICTOR_PAIRS[behavior]
     s_text = PERSONAS[s_name]
@@ -465,96 +566,38 @@ def phase_js_score(
 
     per_probe_scalars: dict[str, list[dict[str, float]]] = {"nontrigger": [], "trigger": []}
     per_position_traj: dict[str, list[list[float]]] = {"nontrigger": [], "trigger": []}
+    slice_mean_js: dict[str, float] = {}
+    slice_mean_kl_s_sp: dict[str, float] = {}
+    slice_mean_kl_sp_s: dict[str, float] = {}
 
     try:
         for slice_name, probes in slices.items():
-            logger.info(
-                "[phase_js_score %s/%s] scoring %d probes (pooled R=16 per probe)...",
-                behavior,
-                slice_name,
-                len(probes),
+            slice_payload = _score_one_slice(
+                model=model,
+                tokenizer=tokenizer,
+                s_text=s_text,
+                sprime_text=sprime_text,
+                slice_name=slice_name,
+                probes=probes,
+                cache=cache,
+                device=device,
             )
-            t0 = time.time()
-            for q_idx, q in enumerate(probes):
-                prefix_s = _build_chat_prefix(tokenizer, s_text, q)
-                prefix_sp = _build_chat_prefix(tokenizer, sprime_text, q)
-                pool_s = cache["S"][slice_name][q_idx]
-                pool_sp = cache["S_prime"][slice_name][q_idx]
-                # Symmetric Rao-Blackwellized: pool from BOTH conditioned models.
-                pool = list(pool_s) + list(pool_sp)
-                per_response_js: list[float] = []
-                per_response_kl_s_sp: list[float] = []
-                per_response_kl_sp_s: list[float] = []
-                per_position_for_this_probe: list[list[float]] = []
-                for response_text in pool:
-                    res = _per_position_js(
-                        model, model, tokenizer, prefix_s, prefix_sp, response_text, device
-                    )
-                    if res is None:
-                        continue
-                    per_response_js.append(float(torch.tensor(res["js"]).mean().item()))
-                    per_response_kl_s_sp.append(
-                        float(torch.tensor(res["kl_s_sprime"]).mean().item())
-                    )
-                    per_response_kl_sp_s.append(
-                        float(torch.tensor(res["kl_sprime_s"]).mean().item())
-                    )
-                    per_position_for_this_probe.append(res["js"])
-
-                if per_response_js:
-                    probe_scalar = {
-                        "probe_idx": q_idx,
-                        "probe": q,
-                        "n_pooled": len(per_response_js),
-                        "mean_js": float(torch.tensor(per_response_js).mean().item()),
-                        "mean_kl_s_sprime": float(torch.tensor(per_response_kl_s_sp).mean().item()),
-                        "mean_kl_sprime_s": float(torch.tensor(per_response_kl_sp_s).mean().item()),
-                    }
-                else:
-                    probe_scalar = {
-                        "probe_idx": q_idx,
-                        "probe": q,
-                        "n_pooled": 0,
-                        "mean_js": float("nan"),
-                        "mean_kl_s_sprime": float("nan"),
-                        "mean_kl_sprime_s": float("nan"),
-                    }
-                per_probe_scalars[slice_name].append(probe_scalar)
-                # Keep per-position trajectories only for slice trajectory plot —
-                # average across pooled responses (variable response lengths
-                # require careful pad-with-NaN aggregation; we keep raw lists
-                # and let the analyzer plot length-truncated traces).
-                per_position_traj[slice_name].extend(per_position_for_this_probe)
-            logger.info(
-                "[phase_js_score %s/%s] done in %.1fs",
-                behavior,
-                slice_name,
-                time.time() - t0,
-            )
+            per_probe_scalars[slice_name] = slice_payload["per_probe_scalars"]
+            per_position_traj[slice_name] = slice_payload["per_position_traj"]
+            slice_mean_js[slice_name] = slice_payload["slice_mean_js"]
+            slice_mean_kl_s_sp[slice_name] = slice_payload["slice_mean_kl_s_sprime"]
+            slice_mean_kl_sp_s[slice_name] = slice_payload["slice_mean_kl_sprime_s"]
+            # CHECKPOINT-PER-SLICE: persist this slice's JS work to disk RIGHT
+            # NOW so a crash in the next slice (or in phase_cosine) doesn't
+            # lose it. Re-running the script with these files present should
+            # skip the slice in main().
+            if on_slice_complete is not None:
+                on_slice_complete(slice_name, slice_payload)
     finally:
         del model
         gc.collect()
         with contextlib.suppress(Exception):
             torch.cuda.empty_cache()
-
-    # Slice-mean scalars (the headline JS predictor values).
-    slice_mean_js: dict[str, float] = {}
-    slice_mean_kl_s_sp: dict[str, float] = {}
-    slice_mean_kl_sp_s: dict[str, float] = {}
-    for slice_name, probe_rows in per_probe_scalars.items():
-        valid = [r for r in probe_rows if not math.isnan(r["mean_js"])]
-        if valid:
-            slice_mean_js[slice_name] = float(sum(r["mean_js"] for r in valid) / len(valid))
-            slice_mean_kl_s_sp[slice_name] = float(
-                sum(r["mean_kl_s_sprime"] for r in valid) / len(valid)
-            )
-            slice_mean_kl_sp_s[slice_name] = float(
-                sum(r["mean_kl_sprime_s"] for r in valid) / len(valid)
-            )
-        else:
-            slice_mean_js[slice_name] = float("nan")
-            slice_mean_kl_s_sp[slice_name] = float("nan")
-            slice_mean_kl_sp_s[slice_name] = float("nan")
 
     # Generic-averaged JS (the BLIND predictor) — mean across the 60-probe union.
     all_probe_js = [
@@ -833,15 +876,102 @@ def phase_cosine(  # noqa: C901  (Persona-Vectors recipe has 3 distinct extracti
     }
 
 
-# ── Per-cell writer ────────────────────────────────────────────────────────
+# ── Per-cell + per-slice writers ──────────────────────────────────────────
 
 
 def _write_cell(out_dir: Path, behavior: str, payload: dict[str, Any]) -> Path:
+    """Combined per-behavior JSON the analyzer consumes ({behavior}.json)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{behavior}.json"
     with open(out_path, "w") as f:
         json.dump(payload, f, indent=2)
     return out_path
+
+
+def _write_slice_checkpoint(
+    out_dir: Path, behavior: str, slice_name: str, slice_payload: dict[str, Any]
+) -> Path:
+    """Per-(behavior, slice) checkpoint written the moment a slice's JS scoring finishes.
+
+    Plan §4.2 + CLAUDE.md "Checkpoint per phase, not at end" — the predictors
+    phase chains vLLM gen -> teacher-forced JS -> cosine, so a crash in cosine
+    would lose this behavior's JS work without these per-slice files.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_{slice_name}.json"
+    payload = {
+        "behavior": behavior,
+        "slice": slice_name,
+        "phase": "js",
+        **slice_payload,
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote per-slice JS checkpoint %s", out_path)
+    return out_path
+
+
+def _write_gen_cache(out_dir: Path, behavior: str, gen: dict[str, Any]) -> Path:
+    """Persist the vLLM JS generation cache to disk before scoring starts.
+
+    Saves the most expensive artifact (the R sampled responses per persona,
+    slice, probe) so a resume after a scoring/cosine crash doesn't re-run
+    the vLLM generation phase.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_gen_cache.json"
+    # Convert int keys -> str for JSON; load helper reverses this.
+    serializable_cache = {
+        persona_label: {
+            slice_name: {str(q_idx): texts for q_idx, texts in by_q.items()}
+            for slice_name, by_q in by_slice.items()
+        }
+        for persona_label, by_slice in gen["cache"].items()
+    }
+    payload = {
+        "behavior": behavior,
+        "cache": serializable_cache,
+        "slices": gen["slices"],
+        "gen_wall_seconds": gen["gen_wall_seconds"],
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote JS gen cache %s", out_path)
+    return out_path
+
+
+def _load_gen_cache(out_dir: Path, behavior: str) -> dict[str, Any] | None:
+    """Load a previously persisted JS gen cache (for resume)."""
+    path = out_dir / f"{behavior}_gen_cache.json"
+    if not path.exists():
+        return None
+    with open(path) as f:
+        payload = json.load(f)
+    # str keys -> int (q_idx).
+    cache = {
+        persona_label: {
+            slice_name: {int(q_idx): texts for q_idx, texts in by_q.items()}
+            for slice_name, by_q in by_slice.items()
+        }
+        for persona_label, by_slice in payload["cache"].items()
+    }
+    logger.info("Loaded JS gen cache from %s — skipping vLLM generation", path)
+    return {
+        "cache": cache,
+        "slices": payload["slices"],
+        "gen_wall_seconds": payload.get("gen_wall_seconds", 0.0),
+    }
+
+
+def _load_slice_checkpoint(out_dir: Path, behavior: str, slice_name: str) -> dict[str, Any] | None:
+    """Load a previously written per-(behavior, slice) JS checkpoint, if any."""
+    path = out_dir / f"{behavior}_{slice_name}.json"
+    if not path.exists():
+        return None
+    with open(path) as f:
+        return json.load(f)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
@@ -901,20 +1031,41 @@ def main() -> int:
         logger.info("=== behavior %s ===", behavior)
         t_behavior = time.time()
 
-        # Phase JS — generate.
-        gen = phase_js_generate(
-            behavior,
-            R=args.r_samples,
-            max_new_tokens=args.max_new_tokens,
-            max_model_len=args.max_model_len,
-            seed=args.seed,
-            smoke_probes=args.smoke_probes,
-        )
+        # Phase JS — generate (skip if gen cache exists on disk from prior run).
+        cached = _load_gen_cache(args.out_dir, behavior)
+        if cached is not None:
+            gen = cached
+        else:
+            gen = phase_js_generate(
+                behavior,
+                R=args.r_samples,
+                max_new_tokens=args.max_new_tokens,
+                max_model_len=args.max_model_len,
+                seed=args.seed,
+                smoke_probes=args.smoke_probes,
+            )
+            # Persist generation cache IMMEDIATELY so a later phase crash
+            # doesn't force a re-generation on resume.
+            _write_gen_cache(args.out_dir, behavior, gen)
+
         # Phase JS — score (model load AFTER vLLM teardown).
+        # The on_slice_complete callback writes {behavior}_{slice}.json per
+        # the plan §4.2 contract + CLAUDE.md "Checkpoint per phase" rule.
+        def _slice_writer(
+            slice_name: str, slice_payload: dict[str, Any], _behavior: str = behavior
+        ) -> None:
+            _write_slice_checkpoint(args.out_dir, _behavior, slice_name, slice_payload)
+
         js_results = phase_js_score(
-            behavior, gen["cache"], gen["slices"], smoke_probes=args.smoke_probes
+            behavior,
+            gen["cache"],
+            gen["slices"],
+            smoke_probes=args.smoke_probes,
+            on_slice_complete=_slice_writer,
         )
-        # Phase Cosine.
+        # Phase Cosine — at this point ALL JS slices have already been
+        # checkpointed to disk; a cosine crash now loses only the cosine
+        # work (which is cheap relative to vLLM gen + teacher-force).
         cos_results = phase_cosine(
             behavior,
             gen["cache"],

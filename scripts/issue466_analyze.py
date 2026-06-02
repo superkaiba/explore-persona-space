@@ -15,8 +15,13 @@ behaviors × 2 slices). For each contrast we report:
   - topic-suppression controls  (S, slice_X) trigger vs non-trigger drop
 
 This script is descriptive, not inferential — N=4 contrasts make a ρ
-degenerate. It emits a table CSV + the 9 figures plan §6 enumerates,
-ready for the analyzer agent to narrow into the clean-result body.
+degenerate. It emits a matched-contrast JSON table + 3 figures
+(``hero_a_predictor_vs_marker_scatter``, ``hero_b_marker_logp_bars``,
+``exp_js_per_position``), ready for the analyzer agent to narrow into
+the clean-result body. The plan §6 enumerated 9 candidate figures; the
+analyzer can hand-build additional panels off the raw per-cell JSON if
+they prove load-bearing — these 3 are the matched-contrast headline +
+per-cell bars + JS trajectory that drive the body's `### Findings`.
 """
 
 from __future__ import annotations
