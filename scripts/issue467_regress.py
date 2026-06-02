@@ -12,12 +12,13 @@ Wraps imports (NOT copies) of ``partial_spearman``, ``spearman_with_n``,
   ``eval_results/issue463/predictor_cossim_training/<cell>_NL.json``
 * **B.3 — Strong-NL cosine (new, #467)**:
   ``eval_results/issue467/predictor_cossim_strong_nl_training/<cell>_NL_strong.json``
-* **B.4 — Lit JS R=8 (new, #467)**: ``eval_results/issue467/predictor_seqdiv_R8/<cell>_lit.json``
-* **B.5 — Strong-NL JS R=8 (new, #467)**:
-  ``eval_results/issue467/predictor_seqdiv_R8/<cell>_NL_strong.json``
-* **B.6 — Weak-NL JS R=8 (new, #467)**: ``eval_results/issue467/predictor_seqdiv_R8/<cell>_NL.json``
-* **#467 betley-source JS**:
-  ``eval_results/issue467/predictor_seqdiv_R8_betley/<cell>_<flavor>.json``
+* **B.4 — Lit JS R=16 (new, #467)**: ``eval_results/issue467/predictor_seqdiv_R16/<cell>_lit.json``
+* **B.5 — Strong-NL JS R=16 (new, #467)**:
+  ``eval_results/issue467/predictor_seqdiv_R16/<cell>_NL_strong.json``
+* **B.6 — Weak-NL JS R=16 (new, #467)**:
+  ``eval_results/issue467/predictor_seqdiv_R16/<cell>_NL.json``
+* **#467 betley-source JS (R=16)**:
+  ``eval_results/issue467/predictor_seqdiv_R16_betley/<cell>_<flavor>.json``
 * **Probe swap (C.2)**: ``eval_results/issue467/probe_swap/<conditioning_cell>_lit.json``
 * **Strong-NL prompts (RF1b harm-vocab covariate)**:
   ``data/issue467/strong_nl/<cell>.json``
@@ -101,8 +102,11 @@ EVAL_DIR_467 = PROJECT_ROOT / "eval_results" / "issue467"
 COSSIM_LIT_DIR = EVAL_DIR_463 / "predictor_cossim_training"  # B.1 reuse
 COSSIM_WEAK_NL_DIR = EVAL_DIR_463 / "predictor_cossim_training"  # B.2 reuse
 COSSIM_STRONG_NL_DIR = EVAL_DIR_467 / "predictor_cossim_strong_nl_training"  # B.3 new
-SEQDIV_R8_DIR = EVAL_DIR_467 / "predictor_seqdiv_R8"  # B.4/B.5/B.6
-SEQDIV_R8_BETLEY_DIR = EVAL_DIR_467 / "predictor_seqdiv_R8_betley"  # RF2
+# Plan §0.7 RF3b GLOBAL OVERRIDE — JS headline rows are R=16, not R=8.
+# Output dir name encodes R so any future R sweep produces a disjoint dir.
+EXPECTED_SAMPLES_PER_PROBE = 16
+SEQDIV_R16_DIR = EVAL_DIR_467 / "predictor_seqdiv_R16"  # B.4/B.5/B.6
+SEQDIV_R16_BETLEY_DIR = EVAL_DIR_467 / "predictor_seqdiv_R16_betley"  # RF2
 PROBE_SWAP_DIR = EVAL_DIR_467 / "probe_swap"
 ELICITATION_DIR = PROJECT_ROOT / "data" / "issue467" / "elicitation_check"
 
@@ -244,8 +248,21 @@ def _load_cosine_layer_band(directory: Path, suffix: str) -> dict[str, dict[int,
     return out
 
 
-def _load_seqdiv_field(directory: Path, suffix: str, field: str) -> dict[str, float]:
-    """Return ``{cell: <field>}`` reading from ``<cell>_<suffix>.json``."""
+def _load_seqdiv_field(
+    directory: Path,
+    suffix: str,
+    field: str,
+    expected_samples_per_probe: int | None = EXPECTED_SAMPLES_PER_PROBE,
+) -> dict[str, float]:
+    """Return ``{cell: <field>}`` reading from ``<cell>_<suffix>.json``.
+
+    Fail-loud per plan §0.7 RF3b GLOBAL OVERRIDE: when
+    ``expected_samples_per_probe`` is set (default 16), every loaded JSON MUST
+    record ``samples_per_probe == expected_samples_per_probe`` — else raise.
+    This guards against a smoke / R=8 artifact being silently analysed as the
+    R=16 headline. Pass ``expected_samples_per_probe=None`` only for diagnostic
+    loads that intentionally accept any R.
+    """
     out: dict[str, float] = {}
     if not directory.exists():
         return out
@@ -255,6 +272,16 @@ def _load_seqdiv_field(directory: Path, suffix: str, field: str) -> dict[str, fl
             continue
         with open(path) as f:
             d = json.load(f)
+        if expected_samples_per_probe is not None:
+            got = d.get("samples_per_probe")
+            if got != expected_samples_per_probe:
+                raise RuntimeError(
+                    f"JS seqdiv artifact {path} has samples_per_probe={got!r} "
+                    f"but plan §0.7 RF3b headline requires "
+                    f"samples_per_probe={expected_samples_per_probe}. "
+                    "Re-run that cell with --samples-per-probe 16, OR pass "
+                    "expected_samples_per_probe=None for a diagnostic load."
+                )
         v = d.get(field)
         if v is not None:
             out[cell] = float(v)
@@ -665,8 +692,18 @@ def probe_swap_stats(
 def elicitation_gated_subsets(
     elicitation: dict[str, dict],
     cells_in_slice: list[str],
+    outcome: dict[str, dict] | None = None,
 ) -> dict:
-    """Return cell subsets PASSing r_strong ≥ {0.5, 0.7} × r_lit + composition."""
+    """Return cell subsets PASSing r_strong ≥ {0.5, 0.7} × r_lit + composition.
+
+    ``composition_dropped_em_distribution`` reports the **frozen #458 EM rate**
+    (``outcome[cell]["mean_L"]``) per dropped cell, per plan §0.7 RF5b — the
+    point of the composition read is to detect EM-range-restriction (whether
+    high-EM cells are preferentially dropped). The cell's lit-elicitation
+    success rate (``elicitation[cell]["r_lit"]``) is reported alongside under a
+    DISTINCT key (``lit_elicitation_rate``) so the two quantities are never
+    conflated — they measure different things.
+    """
     cells_05: list[str] = []
     cells_07: list[str] = []
     dropped: list[str] = []
@@ -690,13 +727,21 @@ def elicitation_gated_subsets(
             cells_07.append(c)
         if rs < 0.5 * rl:
             dropped.append(c)
+    composition = []
+    for c in dropped:
+        em_L = outcome.get(c, {}).get("mean_L") if outcome else None
+        composition.append(
+            {
+                "cell": c,
+                "frozen_em_mean_L": em_L,  # #458 EM rate (the RF5b signal)
+                "lit_elicitation_rate": elicitation.get(c, {}).get("r_lit"),
+            }
+        )
     return {
         "cells_pass_05x": cells_05,
         "cells_pass_07x": cells_07,
         "cells_dropped": dropped,
-        "composition_dropped_em_distribution": [
-            {"cell": c, "EM_L": elicitation.get(c, {}).get("r_lit")} for c in dropped
-        ],
+        "composition_dropped_em_distribution": composition,
     }
 
 
@@ -742,16 +787,18 @@ def main() -> int:
         "lit": _load_cosine_layer_band(COSSIM_LIT_DIR, "lit"),
     }
 
-    # JS @ R=8 per condition (B.4/B.5/B.6). M_js = polarity-aligned similarity.
+    # JS @ R=16 per condition (B.4/B.5/B.6). M_js = polarity-aligned similarity.
+    # Loader fails loud unless every JSON records samples_per_probe == 16
+    # (plan §0.7 RF3b GLOBAL OVERRIDE).
     seqdiv_M_js = {
-        "weak_nl": _load_seqdiv_field(SEQDIV_R8_DIR, "NL", "M_js"),
-        "strong_nl": _load_seqdiv_field(SEQDIV_R8_DIR, "NL_strong", "M_js"),
-        "lit": _load_seqdiv_field(SEQDIV_R8_DIR, "lit", "M_js"),
+        "weak_nl": _load_seqdiv_field(SEQDIV_R16_DIR, "NL", "M_js"),
+        "strong_nl": _load_seqdiv_field(SEQDIV_R16_DIR, "NL_strong", "M_js"),
+        "lit": _load_seqdiv_field(SEQDIV_R16_DIR, "lit", "M_js"),
     }
     seqdiv_M_js_betley = {
-        "weak_nl": _load_seqdiv_field(SEQDIV_R8_BETLEY_DIR, "NL", "M_js"),
-        "strong_nl": _load_seqdiv_field(SEQDIV_R8_BETLEY_DIR, "NL_strong", "M_js"),
-        "lit": _load_seqdiv_field(SEQDIV_R8_BETLEY_DIR, "lit", "M_js"),
+        "weak_nl": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "NL", "M_js"),
+        "strong_nl": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "NL_strong", "M_js"),
+        "lit": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "lit", "M_js"),
     }
 
     # Harm-vocabulary density covariate per condition (RF1b).
@@ -807,8 +854,13 @@ def main() -> int:
         cosine_bands, outcome, tokens, slice_cells=DROP_3_CODE_SLICE
     )
 
-    # Matched-topic ordering (RF1a) — lit AND strong-NL.
+    # Matched-topic ordering (RF1a) — run on BOTH cosine AND JS (strong-NL +
+    # betley variants), per plan §0.7 RF1a ("run on strong-NL outputs" applies
+    # to both measures). Cosine read covers the L25 row; JS reads cover the
+    # training-probe + betley-probe strong-NL flavors.
     matched_topic = matched_topic_ordering(cosine_l25, outcome)
+    matched_topic_M_js = matched_topic_ordering(seqdiv_M_js, outcome)
+    matched_topic_M_js_betley = matched_topic_ordering(seqdiv_M_js_betley, outcome)
 
     # Cross-cell probe swap (C.2 / MF1).
     swap_stats = probe_swap_stats(
@@ -818,9 +870,10 @@ def main() -> int:
         seed=args.seed,
     )
 
-    # Elicitation-gated robustness subsets (RF5c).
+    # Elicitation-gated robustness subsets (RF5c). Dropped-cell composition
+    # reports frozen EM (outcome[c]["mean_L"]) per plan §0.7 RF5b.
     elicitation = _load_elicitation_outcomes()
-    gated_subsets = elicitation_gated_subsets(elicitation, DROP_3_CODE_SLICE)
+    gated_subsets = elicitation_gated_subsets(elicitation, DROP_3_CODE_SLICE, outcome=outcome)
     # Re-run primary on the 0.7× gated subset for the strong-NL row only
     # (the load-bearing read for "is the elicitation gap big enough to
     # alarm us?" — descriptive, not a verdict change).
@@ -859,8 +912,10 @@ def main() -> int:
         "primary_2x3_drop3_elicit_gated_07x": primary_gated_07x,
         "cosine_layer_band_summary_drop3": band_summary,
         "matched_topic_ordering": matched_topic,
+        "matched_topic_ordering_M_js": matched_topic_M_js,
+        "matched_topic_ordering_M_js_betley": matched_topic_M_js_betley,
         "cross_cell_swap": swap_stats,
-        "betley_js_R8_partial_rho_drop3": betley_js_summary,
+        "betley_js_R16_partial_rho_drop3": betley_js_summary,
         "elicitation_gated_subsets": gated_subsets,
         "harm_vocab_density_summary": {
             "per_cell_per_condition": harm_density,
@@ -888,7 +943,7 @@ def main() -> int:
         rho_both = row.get("spearman_partial_log_tokens_and_harm_vocab", {}).get("rho")
         n = row.get("n")
         rho_s = f"{rho:.3f}" if isinstance(rho, float) else str(rho)
-        rho_both_s = f"{rho:.3f}" if isinstance(rho_both, float) else str(rho_both)
+        rho_both_s = f"{rho_both:.3f}" if isinstance(rho_both, float) else str(rho_both)
         print(
             f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  +harm_vocab={rho_both_s:>7}"
         )

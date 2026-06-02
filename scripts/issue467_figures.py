@@ -141,11 +141,12 @@ def fig_hero_2x3(reg: dict, slice_key: str = "primary_2x3_drop3_n15") -> None:
                     fontsize=8,
                 )
         ax.axhline(0.0, color="black", linewidth=0.6)
-        ax.axhline(0.5, color="gray", linewidth=0.4, linestyle=":")
+        # No categorical |ρ| threshold line — plan §0.7 RF3 dropped the
+        # categorical decision rule for a descriptive sign-and-magnitude read.
         ax.set_xticks(x)
         ax.set_xticklabels([CONDITION_LABELS[c] for c in conds])
         ax.set_ylabel("partial Spearman ρ vs EM" if mi == 0 else "")
-        title = "Cosine L25" if m == "cosine_L25" else "M_js (R=8)"
+        title = "Cosine L25" if m == "cosine_L25" else "M_js (R=16)"
         ax.set_title(title)
         ax.set_ylim(-0.6, 1.0)
         if mi == 0:
@@ -199,10 +200,9 @@ def fig_layer_profile(reg: dict) -> None:
                 markersize=8,
             )
     ax.axhline(0.0, color="black", linewidth=0.6)
-    ax.axhline(
-        0.514, color="gray", linewidth=0.4, linestyle=":", label="|ρ| critical at n=15, p<.05"
-    )
-    ax.axhline(-0.514, color="gray", linewidth=0.4, linestyle=":")
+    # No categorical |ρ| threshold line — plan §0.7 RF3 dropped the categorical
+    # decision rule (the |ρ|≥0.514 critical for n=15 p<.05 is non-decision
+    # context, not a decider; the headline read is descriptive sign-and-magnitude).
     ax.set_xlabel("layer")
     ax.set_ylabel("partial ρ(cosine, EM | log-tokens) on drop-3-code n=15")
     ax.legend(fontsize=8)
@@ -247,7 +247,7 @@ def fig_strong_vs_lit_scatter(reg: dict) -> None:
         )
         ax.set_xlabel(f"lit {m}")
         ax.set_ylabel(f"strong-NL {m}")
-        ax.set_title("Cosine L25" if m == "cosine_L25" else "M_js R=8")
+        ax.set_title("Cosine L25" if m == "cosine_L25" else "M_js R=16")
         ax.legend(fontsize=8)
     set_title_subtitle(
         axes[0],

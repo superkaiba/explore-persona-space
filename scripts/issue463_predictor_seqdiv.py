@@ -95,12 +95,15 @@ DEFAULT_MAX_NEW_TOKENS = 128
 TRAINING_PROBE_SEED = 0  # fixed RNG for per-cell training-probe subsample
 OUTPUT_BASE_BETLEY = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv"
 OUTPUT_BASE_TRAINING = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv_training"
-# Issue #467: R=8 (or higher) re-runs of JS land in a disjoint dir so the
-# on-disk #463 R=4 weak-NL JSONs are never overwritten. The filename suffix
+# Issue #467: R=16 headline JS re-runs land in a disjoint dir so the on-disk
+# #463 R=4 weak-NL JSONs are never overwritten. The filename suffix
 # (`<pair>_<flavor>{_strong}.json`) carries the nl_variant when relevant.
-OUTPUT_BASE_ISSUE467_TRAINING = PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R8"
+# Plan §0.7 RF3b GLOBAL OVERRIDE: headline rows use R=16; the regress loader
+# fail-louds on samples_per_probe != 16. Output dir encodes the R so a future
+# R sweep produces a disjoint dir.
+OUTPUT_BASE_ISSUE467_TRAINING = PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R16"
 OUTPUT_BASE_ISSUE467_BETLEY = (
-    PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R8_betley"
+    PROJECT_ROOT / "eval_results" / "issue467" / "predictor_seqdiv_R16_betley"
 )
 
 
@@ -670,9 +673,10 @@ def main() -> int:
         "--issue467-output",
         action="store_true",
         help=(
-            "Write outputs to eval_results/issue467/predictor_seqdiv_R8/ instead of the "
-            "#463 dir. Use when running R=8 (or higher) JS replications so the on-disk "
-            "#463 R=4 JSONs are never overwritten."
+            "Write outputs to eval_results/issue467/predictor_seqdiv_R16/ instead of the "
+            "#463 dir. Use when running the R=16 headline JS replications (plan §0.7 RF3b) "
+            "so the on-disk #463 R=4 JSONs are never overwritten. Pair with "
+            "--samples-per-probe 16 on production runs."
         ),
     )
     args = parser.parse_args()
