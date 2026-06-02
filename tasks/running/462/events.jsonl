@@ -5,3 +5,4 @@
 {"ts": "2026-06-01T23:26:34Z", "kind": "epm:run-launched", "version": 1, "by": "unknown", "note": "pod-462 pid=609 HEAD=fde2254c. Phases: preflight->fetch_R(reuse #460 R from HF)->train(4 waves, 4 ckpts/cond ep{1,2,3,5} + HF upload)->crosseval(loop 4 levels)->done. Test: does divergence->transfer rho appear at low epochs before g_logprob saturates (overtraining) or is transfer universal even at ep1 (construct)."}
 {"ts": "2026-06-01T23:35:15Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train", "phase": "train", "pod": "pod-462"}
 {"ts": "2026-06-02T00:21:16Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> crosseval", "phase": "crosseval", "pod": "pod-462"}
+{"ts": "2026-06-02T00:45:39Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: crosseval -> done", "phase": "done", "pod": "pod-462"}
