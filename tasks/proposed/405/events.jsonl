@@ -1,1 +1,2 @@
 {"ts": "2026-05-27T05:38:20Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-02T20:19:06Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #405 to open question(s) leak-single-vs-multi (3.3), leak-from-cell-set (3.9); created_new=none. User-confirmed at the experiment-goal gate."}
