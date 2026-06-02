@@ -1,0 +1,2 @@
+{"ts": "2026-06-02T00:57:22Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-02T01:01:47Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running", "note": "Inline predictor-only re-run: full-response Rao-Blackwellized KL/JS + persona-vector cosine (last-tok + resp-mean, layer sweep) on the 18 #458 cells."}

@@ -2509,8 +2509,8 @@
     "463": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/463",
-      "status": "proposed",
+      "path": "tasks/running/463",
+      "status": "running",
       "title": "Re-run EM predictors: full-response Rao-Blackwellized KL/JS + persona-vector cosine (18 cells)"
     },
     "47": {
