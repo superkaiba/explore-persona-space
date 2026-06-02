@@ -11,7 +11,7 @@ Subcommands (see `task.py --help`):
     new --kind <k> --title "..." [--body|--body-file ...] [--goal "..."] [--parent N]
         [--status proposed]
     set-status <N> <status> [--note ...]
-    post-marker <N> <marker> [--note ...]              # alias: post-event
+    post-marker <N> <marker> [--note ... | --file path]   # alias: post-event
     list-by-status [--status ...] [--limit N]
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
@@ -254,12 +254,22 @@ def cmd_set_status(args: argparse.Namespace) -> None:
 
 
 def cmd_post_event(args: argparse.Namespace) -> None:
+    # Note body comes from either --note (inline string) or --file (path
+    # to a file containing the body). Mutually exclusive at the argparse
+    # layer; either may be omitted (post a marker with no body). File
+    # input avoids the shell-quoting traps that bite multi-line / special-
+    # char bodies passed via `--note "$(cat ...)"`. The 50_000-char cap
+    # is enforced by `post_event` itself (raises ValueError on oversize),
+    # so file-read bodies inherit it automatically.
+    note = args.note
+    if args.file is not None:
+        note = Path(args.file).read_text()
     payload = post_event(
         args.number,
         args.marker,
         version=args.version,
         by=args.by,
-        note=args.note,
+        note=note,
     )
     print(json.dumps(payload, indent=2))
 
@@ -758,7 +768,17 @@ def main() -> None:
         p = sub.add_parser(name, help="append an event to events.jsonl")
         p.add_argument("number", type=int)
         p.add_argument("marker", help="marker kind, e.g. epm:plan, epm:reviewer-verdict")
-        p.add_argument("--note", default=None)
+        # --note (inline string) and --file (path to a body file) are
+        # mutually exclusive; both may be omitted (marker with no note).
+        # File input is the documented idiom for multi-line / shell-
+        # special bodies (see .claude/skills/issue/markers.md), matching
+        # set-body and new-plan-version. Size cap (50,000 UTF-8 chars,
+        # task_workflow.EVENT_NOTE_MAX) is enforced by post_event itself.
+        note_group = p.add_mutually_exclusive_group()
+        note_group.add_argument("--note", default=None, help="note body as an inline string")
+        note_group.add_argument(
+            "--file", default=None, help="path to a file containing the note body"
+        )
         p.add_argument("--version", type=int, default=1)
         p.add_argument("--by", default="unknown")
         p.set_defaults(func=cmd_post_event)

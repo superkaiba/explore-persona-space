@@ -34,8 +34,10 @@ Use the CLI:
 uv run python scripts/task.py post-marker <N> epm:plan --note "Plan drafted"
 ```
 
-Or, when the body is large enough to risk shell-quoting traps, write it
-to a temp file and pass `--file`:
+Or, when the body is large enough to risk shell-quoting traps (multi-
+line, backticks, `$`, special chars), write it to a temp file and pass
+`--file` instead of `--note` (the two flags are mutually exclusive; both
+flow through the same 50,000-char `EVENT_NOTE_MAX` cap):
 
 ```bash
 uv run python scripts/task.py post-marker <N> epm:results --file /tmp/results-body.md
