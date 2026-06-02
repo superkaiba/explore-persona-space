@@ -65,6 +65,11 @@ def _marker_slice(behavior: str, slice_kind: str) -> str:
 
 
 # ── Loaders ────────────────────────────────────────────────────────────────
+#
+# The module-level EVAL_ROOT is overridable: pipelines can rebind it (or
+# the loaders read it dynamically) so smoke runs read from a smoke tree
+# instead of the full-pipeline tree. Round-3 fix item #1: smoke vs full
+# must consume disjoint output trees.
 
 
 def _load_predictor(behavior: str) -> dict[str, Any]:
@@ -403,10 +408,29 @@ def _metadata() -> dict[str, Any]:
 
 
 def main() -> int:
+    # `global` must precede any read of the name in this function — declared
+    # up-front so the --input-root rebind below is valid Python.
+    global EVAL_ROOT
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--headline-layer", type=int, default=21)
     parser.add_argument("--out-dir", type=Path, default=EVAL_ROOT)
+    parser.add_argument(
+        "--input-root",
+        type=Path,
+        default=None,
+        help="override EVAL_ROOT (where to read predictors/, onpolicy_gen/, "
+        "onpolicy_endpos_logp/ from). Smoke pipelines set this to a smoke "
+        "tree so a smoke artifact is never consumed alongside full data.",
+    )
     args = parser.parse_args()
+
+    # Rebind the module-level EVAL_ROOT if the caller overrode the input root.
+    # The loaders read EVAL_ROOT dynamically; this single rebind redirects
+    # every loader path.
+    if args.input_root is not None:
+        EVAL_ROOT = args.input_root
+        logger.info("EVAL_ROOT rebound to %s (--input-root override)", EVAL_ROOT)
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
     table = build_matched_contrast_table(headline_layer=args.headline_layer)

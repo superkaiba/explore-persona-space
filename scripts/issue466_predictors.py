@@ -349,6 +349,24 @@ def _per_position_js(
 # ── Phase JS — vLLM generation + HF teacher-force scoring ─────────────────
 
 
+def _resolve_slices(behavior: str, smoke_probes: int | None) -> dict[str, list[str]]:
+    """Resolve the (nontrigger, trigger) slice prompt lists for one behavior.
+
+    Pulled out of phase_js_generate so callers can compute the SAME slices
+    dict for fingerprinting + resume validation BEFORE deciding whether
+    to run the generate path. Round-3 fix for the silent gen-cache reuse
+    bug: the fingerprint hashes this dict, so smoke (smoke_probes=3) and
+    full (smoke_probes=None) get distinct fingerprints regardless of what
+    out_dir each writes to.
+    """
+    return {
+        "nontrigger": SLICE_NONTRIGGER if smoke_probes is None else SLICE_NONTRIGGER[:smoke_probes],
+        "trigger": _trigger_for(behavior)
+        if smoke_probes is None
+        else _trigger_for(behavior)[:smoke_probes],
+    }
+
+
 def phase_js_generate(
     behavior: str,
     R: int,
@@ -369,12 +387,7 @@ def phase_js_generate(
     s_text = PERSONAS[s_name]
     sprime_text = PERSONAS[sprime_name]
 
-    slices = {
-        "nontrigger": SLICE_NONTRIGGER if smoke_probes is None else SLICE_NONTRIGGER[:smoke_probes],
-        "trigger": _trigger_for(behavior)
-        if smoke_probes is None
-        else _trigger_for(behavior)[:smoke_probes],
-    }
+    slices = _resolve_slices(behavior, smoke_probes)
 
     from transformers import AutoTokenizer
 
@@ -530,6 +543,7 @@ def phase_js_score(
     slices: dict[str, list[str]],
     smoke_probes: int | None,
     on_slice_complete=None,
+    slice_loader=None,
 ) -> dict[str, Any]:
     """Teacher-force pooled responses through both conditioned base models.
 
@@ -549,20 +563,30 @@ def phase_js_score(
     hook the plan + CLAUDE.md "Checkpoint per phase" rule require — so a
     crash in a later slice (or in phase_cosine) doesn't lose earlier JS
     work.
+
+    If ``slice_loader`` is set, it is called as
+    ``slice_loader(slice_name) -> dict | None`` BEFORE scoring each slice.
+    A returned payload is used in place of recomputing; ``None`` triggers
+    the normal compute path. Combined with ``on_slice_complete``, this
+    closes the "half-wired resume" gap: a crash after slice N can be
+    resumed from slice N+1 without re-loading the GPU model needlessly
+    for already-checkpointed slices.
     """
     s_name, sprime_name = PREDICTOR_PAIRS[behavior]
     s_text = PERSONAS[s_name]
     sprime_text = PERSONAS[sprime_name]
 
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
-    device = torch.device("cuda:0")
-    # Single weight set — we just rebuild the prefix per call.
-    model = AutoModelForCausalLM.from_pretrained(
-        BASE_MODEL, torch_dtype=torch.bfloat16, device_map={"": device}
-    )
-    model.eval()
+    # Determine which slices need recompute BEFORE loading the model — if every
+    # slice already has a valid checkpoint, skip the GPU model load entirely.
+    pre_loaded: dict[str, dict[str, Any]] = {}
+    to_compute: dict[str, list[str]] = {}
+    for slice_name, probes in slices.items():
+        if slice_loader is not None:
+            loaded = slice_loader(slice_name)
+            if loaded is not None:
+                pre_loaded[slice_name] = loaded
+                continue
+        to_compute[slice_name] = probes
 
     per_probe_scalars: dict[str, list[dict[str, float]]] = {"nontrigger": [], "trigger": []}
     per_position_traj: dict[str, list[list[float]]] = {"nontrigger": [], "trigger": []}
@@ -570,8 +594,35 @@ def phase_js_score(
     slice_mean_kl_s_sp: dict[str, float] = {}
     slice_mean_kl_sp_s: dict[str, float] = {}
 
+    # Populate from pre-loaded checkpoints first so the return dict carries
+    # them whether or not we end up loading the model.
+    for slice_name, loaded in pre_loaded.items():
+        per_probe_scalars[slice_name] = loaded["per_probe_scalars"]
+        per_position_traj[slice_name] = loaded.get("per_position_traj", [])
+        slice_mean_js[slice_name] = loaded["slice_mean_js"]
+        slice_mean_kl_s_sp[slice_name] = loaded["slice_mean_kl_s_sprime"]
+        slice_mean_kl_sp_s[slice_name] = loaded["slice_mean_kl_sprime_s"]
+
+    if not to_compute:
+        logger.info(
+            "[phase_js_score %s] all %d slices resumed from disk; skipping model load",
+            behavior,
+            len(pre_loaded),
+        )
+        model = None
+    else:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
+        device = torch.device("cuda:0")
+        # Single weight set — we just rebuild the prefix per call.
+        model = AutoModelForCausalLM.from_pretrained(
+            BASE_MODEL, torch_dtype=torch.bfloat16, device_map={"": device}
+        )
+        model.eval()
+
     try:
-        for slice_name, probes in slices.items():
+        for slice_name, probes in to_compute.items():
             slice_payload = _score_one_slice(
                 model=model,
                 tokenizer=tokenizer,
@@ -594,10 +645,11 @@ def phase_js_score(
             if on_slice_complete is not None:
                 on_slice_complete(slice_name, slice_payload)
     finally:
-        del model
-        gc.collect()
-        with contextlib.suppress(Exception):
-            torch.cuda.empty_cache()
+        if model is not None:
+            del model
+            gc.collect()
+            with contextlib.suppress(Exception):
+                torch.cuda.empty_cache()
 
     # Generic-averaged JS (the BLIND predictor) — mean across the 60-probe union.
     all_probe_js = [
@@ -912,12 +964,68 @@ def _write_slice_checkpoint(
     return out_path
 
 
-def _write_gen_cache(out_dir: Path, behavior: str, gen: dict[str, Any]) -> Path:
+def _compute_config_fingerprint(
+    *,
+    behavior: str,
+    base_model: str,
+    s_text: str,
+    sprime_text: str,
+    slices: dict[str, list[str]],
+    r_samples: int,
+    temperature: float,
+    top_p: float,
+    max_new_tokens: int,
+    max_model_len: int,
+    seed: int,
+    smoke_probes: int | None,
+) -> str:
+    """sha256 over every parameter that changes which responses get sampled.
+
+    Defense-in-depth against silent gen-cache reuse across DIFFERENT
+    configs (round-2 bug class: smoke wrote a tiny 3-probe × 2-sample
+    cache, full pipeline read it back at face value because the loader
+    didn't validate config compatibility). Includes the exact persona
+    text + per-slice probe list (or a hash of them) so a probe-set or
+    persona swap also invalidates.
+    """
+    import hashlib as _hashlib  # local import: avoids ruff F401 strip of top-level unused
+
+    # Canonicalize: keys sorted so the hash is stable across dict orderings.
+    cfg = {
+        "behavior": behavior,
+        "base_model": base_model,
+        "s_text": s_text,
+        "sprime_text": sprime_text,
+        "slices": {k: list(v) for k, v in sorted(slices.items())},
+        "r_samples": int(r_samples),
+        "temperature": float(temperature),
+        "top_p": float(top_p),
+        "max_new_tokens": int(max_new_tokens),
+        "max_model_len": int(max_model_len),
+        "seed": int(seed),
+        "smoke_probes": smoke_probes,  # None vs int materially differs
+    }
+    blob = json.dumps(cfg, sort_keys=True, ensure_ascii=False).encode("utf-8")
+    return _hashlib.sha256(blob).hexdigest()
+
+
+def _write_gen_cache(
+    out_dir: Path,
+    behavior: str,
+    gen: dict[str, Any],
+    config_fingerprint: str | None = None,
+) -> Path:
     """Persist the vLLM JS generation cache to disk before scoring starts.
 
     Saves the most expensive artifact (the R sampled responses per persona,
     slice, probe) so a resume after a scoring/cosine crash doesn't re-run
     the vLLM generation phase.
+
+    ``config_fingerprint`` is the sha256 from :func:`_compute_config_fingerprint`;
+    it is stored alongside the cache so :func:`_load_gen_cache` can refuse
+    to return a cache whose generation config differs from the caller's
+    current config. ``None`` is supported for backwards compat with the
+    test helper that round-trips a fixed payload.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"{behavior}_gen_cache.json"
@@ -934,6 +1042,7 @@ def _write_gen_cache(out_dir: Path, behavior: str, gen: dict[str, Any]) -> Path:
         "cache": serializable_cache,
         "slices": gen["slices"],
         "gen_wall_seconds": gen["gen_wall_seconds"],
+        "config_fingerprint": config_fingerprint,
         "metadata": _metadata(),
     }
     with open(out_path, "w") as f:
@@ -942,13 +1051,37 @@ def _write_gen_cache(out_dir: Path, behavior: str, gen: dict[str, Any]) -> Path:
     return out_path
 
 
-def _load_gen_cache(out_dir: Path, behavior: str) -> dict[str, Any] | None:
-    """Load a previously persisted JS gen cache (for resume)."""
+def _load_gen_cache(
+    out_dir: Path,
+    behavior: str,
+    expected_fingerprint: str | None = None,
+) -> dict[str, Any] | None:
+    """Load a previously persisted JS gen cache (for resume).
+
+    If ``expected_fingerprint`` is provided and the on-disk cache's
+    ``config_fingerprint`` does NOT match, return ``None`` and log a clear
+    ``[gen-cache] fingerprint mismatch → regenerating`` line. This is the
+    defense-in-depth fix for the round-2 silent-corruption bug class — a
+    smoke-config cache silently reused by a full-config call.
+
+    When ``expected_fingerprint`` is ``None`` (test helpers, legacy
+    payloads without a stored fingerprint), the cache is loaded
+    unconditionally; main() always passes the fingerprint.
+    """
     path = out_dir / f"{behavior}_gen_cache.json"
     if not path.exists():
         return None
     with open(path) as f:
         payload = json.load(f)
+    stored_fp = payload.get("config_fingerprint")
+    if expected_fingerprint is not None and stored_fp != expected_fingerprint:
+        logger.warning(
+            "[gen-cache] fingerprint mismatch → regenerating (stored=%s expected=%s path=%s)",
+            stored_fp,
+            expected_fingerprint,
+            path,
+        )
+        return None
     # str keys -> int (q_idx).
     cache = {
         persona_label: {
@@ -962,16 +1095,79 @@ def _load_gen_cache(out_dir: Path, behavior: str) -> dict[str, Any] | None:
         "cache": cache,
         "slices": payload["slices"],
         "gen_wall_seconds": payload.get("gen_wall_seconds", 0.0),
+        "config_fingerprint": stored_fp,
     }
 
 
-def _load_slice_checkpoint(out_dir: Path, behavior: str, slice_name: str) -> dict[str, Any] | None:
-    """Load a previously written per-(behavior, slice) JS checkpoint, if any."""
+def _write_slice_checkpoint_with_fingerprint(
+    out_dir: Path,
+    behavior: str,
+    slice_name: str,
+    slice_payload: dict[str, Any],
+    config_fingerprint: str | None,
+) -> Path:
+    """Internal helper: write per-slice checkpoint with a stored fingerprint.
+
+    ``_write_slice_checkpoint`` keeps its legacy signature (the existing
+    test pins it). Main() uses this helper to attach a fingerprint so
+    resume can validate it.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / f"{behavior}_{slice_name}.json"
+    payload = {
+        "behavior": behavior,
+        "slice": slice_name,
+        "phase": "js",
+        **slice_payload,
+        "config_fingerprint": config_fingerprint,
+        "metadata": _metadata(),
+    }
+    with open(out_path, "w") as f:
+        json.dump(payload, f, indent=2)
+    logger.info("Wrote per-slice JS checkpoint %s", out_path)
+    return out_path
+
+
+def _load_slice_checkpoint(
+    out_dir: Path,
+    behavior: str,
+    slice_name: str,
+    expected_fingerprint: str | None = None,
+) -> dict[str, Any] | None:
+    """Load a previously written per-(behavior, slice) JS checkpoint, if any.
+
+    Returns ``None`` when (a) the file does not exist, OR (b)
+    ``expected_fingerprint`` is provided and the stored fingerprint does
+    not match. A fingerprint mismatch is logged so the regeneration trail
+    is visible.
+
+    When ``expected_fingerprint`` is ``None`` (legacy callers, tests
+    without a fingerprint context), no validation is applied and the
+    payload is returned as-is.
+    """
     path = out_dir / f"{behavior}_{slice_name}.json"
     if not path.exists():
         return None
     with open(path) as f:
-        return json.load(f)
+        payload = json.load(f)
+    stored_fp = payload.get("config_fingerprint")
+    if expected_fingerprint is not None and stored_fp != expected_fingerprint:
+        logger.warning(
+            "[slice-checkpoint] fingerprint mismatch → recomputing "
+            "(behavior=%s slice=%s stored=%s expected=%s path=%s)",
+            behavior,
+            slice_name,
+            stored_fp,
+            expected_fingerprint,
+            path,
+        )
+        return None
+    logger.info(
+        "Loaded per-slice JS checkpoint from %s — skipping recompute for slice=%s",
+        path,
+        slice_name,
+    )
+    return payload
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
@@ -1031,8 +1227,30 @@ def main() -> int:
         logger.info("=== behavior %s ===", behavior)
         t_behavior = time.time()
 
-        # Phase JS — generate (skip if gen cache exists on disk from prior run).
-        cached = _load_gen_cache(args.out_dir, behavior)
+        # Resolve the slices BEFORE the fingerprint so smoke vs full get distinct
+        # hashes; the fingerprint covers everything that changes which responses
+        # get sampled (round-3 silent-gen-cache fix).
+        s_name, sprime_name = PREDICTOR_PAIRS[behavior]
+        slices_for_fp = _resolve_slices(behavior, args.smoke_probes)
+        config_fingerprint = _compute_config_fingerprint(
+            behavior=behavior,
+            base_model=BASE_MODEL,
+            s_text=PERSONAS[s_name],
+            sprime_text=PERSONAS[sprime_name],
+            slices=slices_for_fp,
+            r_samples=args.r_samples,
+            temperature=1.0,
+            top_p=1.0,
+            max_new_tokens=args.max_new_tokens,
+            max_model_len=args.max_model_len,
+            seed=args.seed,
+            smoke_probes=args.smoke_probes,
+        )
+        logger.info("[%s] config_fingerprint=%s", behavior, config_fingerprint[:16])
+
+        # Phase JS — generate. Validate fingerprint on resume; a mismatch
+        # forces regeneration (NOT silent reuse of a smoke-config cache).
+        cached = _load_gen_cache(args.out_dir, behavior, expected_fingerprint=config_fingerprint)
         if cached is not None:
             gen = cached
         else:
@@ -1045,16 +1263,33 @@ def main() -> int:
                 smoke_probes=args.smoke_probes,
             )
             # Persist generation cache IMMEDIATELY so a later phase crash
-            # doesn't force a re-generation on resume.
-            _write_gen_cache(args.out_dir, behavior, gen)
+            # doesn't force a re-generation on resume. Fingerprint is stored
+            # so a future load can refuse incompatible reuse.
+            _write_gen_cache(args.out_dir, behavior, gen, config_fingerprint=config_fingerprint)
 
         # Phase JS — score (model load AFTER vLLM teardown).
         # The on_slice_complete callback writes {behavior}_{slice}.json per
         # the plan §4.2 contract + CLAUDE.md "Checkpoint per phase" rule.
+        # The slice_loader callback reads them back on resume + validates the
+        # fingerprint — completes the "half-wired resume" round-3 item.
         def _slice_writer(
-            slice_name: str, slice_payload: dict[str, Any], _behavior: str = behavior
+            slice_name: str,
+            slice_payload: dict[str, Any],
+            _behavior: str = behavior,
+            _fp: str = config_fingerprint,
         ) -> None:
-            _write_slice_checkpoint(args.out_dir, _behavior, slice_name, slice_payload)
+            _write_slice_checkpoint_with_fingerprint(
+                args.out_dir, _behavior, slice_name, slice_payload, _fp
+            )
+
+        def _slice_loader(
+            slice_name: str,
+            _behavior: str = behavior,
+            _fp: str = config_fingerprint,
+        ) -> dict[str, Any] | None:
+            return _load_slice_checkpoint(
+                args.out_dir, _behavior, slice_name, expected_fingerprint=_fp
+            )
 
         js_results = phase_js_score(
             behavior,
@@ -1062,6 +1297,7 @@ def main() -> int:
             gen["slices"],
             smoke_probes=args.smoke_probes,
             on_slice_complete=_slice_writer,
+            slice_loader=_slice_loader,
         )
         # Phase Cosine — at this point ALL JS slices have already been
         # checkpointed to disk; a cosine crash now loses only the cosine
@@ -1075,6 +1311,42 @@ def main() -> int:
             smoke_probes=args.smoke_probes,
         )
 
+        # Rebuild combined {behavior}.json from on-disk per-slice checkpoints
+        # (NOT solely from in-memory js_results) so a crash partway through
+        # the cosine phase doesn't lose slice work already on disk. The
+        # in-memory js_results dict already mirrors the on-disk checkpoints
+        # (phase_js_score writes each slice as it completes), but reading
+        # back from disk closes the round-3 contract: "a crash after cosine
+        # must be resumable from disk." Re-loading reuses the validated
+        # fingerprint so a stale checkpoint can't sneak in here either.
+        combined_js: dict[str, Any] = {
+            "per_probe_scalars": dict(js_results["per_probe_scalars"]),
+            "per_position_traj": dict(js_results["per_position_traj"]),
+            "slice_mean_js": dict(js_results["slice_mean_js"]),
+            "slice_mean_kl_s_sprime": dict(js_results["slice_mean_kl_s_sprime"]),
+            "slice_mean_kl_sprime_s": dict(js_results["slice_mean_kl_sprime_s"]),
+            "averaged_js_union": js_results["averaged_js_union"],
+        }
+        for slice_name in slices_for_fp:
+            loaded = _load_slice_checkpoint(
+                args.out_dir, behavior, slice_name, expected_fingerprint=config_fingerprint
+            )
+            if loaded is None:
+                # phase_js_score should have written it; warn and stick with the
+                # in-memory value rather than failing the whole behavior.
+                logger.warning(
+                    "[%s] expected on-disk slice checkpoint for %s but none found "
+                    "(or fingerprint mismatch); using in-memory value",
+                    behavior,
+                    slice_name,
+                )
+                continue
+            combined_js["per_probe_scalars"][slice_name] = loaded["per_probe_scalars"]
+            combined_js["per_position_traj"][slice_name] = loaded.get("per_position_traj", [])
+            combined_js["slice_mean_js"][slice_name] = loaded["slice_mean_js"]
+            combined_js["slice_mean_kl_s_sprime"][slice_name] = loaded["slice_mean_kl_s_sprime"]
+            combined_js["slice_mean_kl_sprime_s"][slice_name] = loaded["slice_mean_kl_sprime_s"]
+
         payload = {
             "behavior": behavior,
             "predictor_pair": list(PREDICTOR_PAIRS[behavior]),
@@ -1087,8 +1359,9 @@ def main() -> int:
                 "headline_layer": HEADLINE_LAYER,
                 "do_recipe_b": not args.no_recipe_b,
                 "smoke_probes": args.smoke_probes,
+                "config_fingerprint": config_fingerprint,
             },
-            "js": js_results,
+            "js": combined_js,
             "cosine": cos_results,
             "marker_token": MARKER,
             "marker_token_id": MARKER_ID,
@@ -1100,9 +1373,9 @@ def main() -> int:
             "Wrote %s in %.1fs (avgJS=%.4f, sliceJS_trig=%.4f, sliceJS_nontrig=%.4f)",
             out_path,
             payload["wall_seconds"],
-            js_results["averaged_js_union"],
-            js_results["slice_mean_js"].get("trigger", float("nan")),
-            js_results["slice_mean_js"].get("nontrigger", float("nan")),
+            combined_js["averaged_js_union"],
+            combined_js["slice_mean_js"].get("trigger", float("nan")),
+            combined_js["slice_mean_js"].get("nontrigger", float("nan")),
         )
 
     return 0

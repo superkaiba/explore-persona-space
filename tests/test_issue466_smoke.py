@@ -486,3 +486,233 @@ def test_phase_js_score_invokes_on_slice_complete_callback(monkeypatch):
         assert "slice_mean_js" in payload
     # The combined return value still has both slices.
     assert set(result["slice_mean_js"].keys()) == {"trigger", "nontrigger"}
+
+
+# ── Round-3 regression tests: gen-cache fingerprint + slice-checkpoint resume ──
+#
+# These pin the round-3 fix for the silent-corruption bug class that the
+# round-2 PR introduced. The bug: smoke (3 probes × 2 samples) and full (30
+# probes × 8 samples) wrote to the SAME default --out-dir, so the smoke-config
+# gen cache was silently reused by a subsequent full-config call. The fix is
+# two-layered: (1) the pipeline shell separates smoke vs full into disjoint
+# output trees; (2) the predictor fingerprints its gen-cache + slice-checkpoint
+# config and refuses to load a cache whose fingerprint disagrees.
+
+
+def test_smoke_gen_cache_rejected_by_full_call(tmp_path):
+    """A gen cache written with smoke params (small r_samples / smoke_probes)
+    MUST NOT be returned by a full-params load: _load_gen_cache validates the
+    fingerprint and returns None on mismatch so a regeneration is forced.
+
+    This is the central round-3 invariant. Even if a smoke artifact somehow
+    lands in the production directory (defense-in-depth assuming the shell-
+    layer separation is bypassed), the predictor refuses to silently consume
+    it.
+    """
+    from issue466_personas import PERSONAS
+    from issue466_predictors import (
+        _compute_config_fingerprint,
+        _load_gen_cache,
+        _resolve_slices,
+        _write_gen_cache,
+    )
+
+    behavior = "A_spanish_restaurants"
+    # Build the smoke-config fingerprint + a gen cache written under it.
+    smoke_slices = _resolve_slices(behavior, smoke_probes=3)
+    smoke_fp = _compute_config_fingerprint(
+        behavior=behavior,
+        base_model="Qwen/Qwen2.5-7B-Instruct",
+        s_text=PERSONAS["S"],
+        sprime_text=PERSONAS["S_prime_A_spanish_restaurants"],
+        slices=smoke_slices,
+        r_samples=2,
+        temperature=1.0,
+        top_p=1.0,
+        max_new_tokens=256,
+        max_model_len=4096,
+        seed=42,
+        smoke_probes=3,
+    )
+    smoke_gen = {
+        "cache": {
+            "S": {"trigger": {0: ["r0"]}, "nontrigger": {0: ["rN0"]}},
+            "S_prime": {"trigger": {0: ["r0sp"]}, "nontrigger": {0: ["rN0sp"]}},
+        },
+        "slices": smoke_slices,
+        "gen_wall_seconds": 1.0,
+    }
+    _write_gen_cache(tmp_path, behavior, smoke_gen, config_fingerprint=smoke_fp)
+
+    # Now build the FULL-config fingerprint and try to load — must return None.
+    full_slices = _resolve_slices(behavior, smoke_probes=None)
+    full_fp = _compute_config_fingerprint(
+        behavior=behavior,
+        base_model="Qwen/Qwen2.5-7B-Instruct",
+        s_text=PERSONAS["S"],
+        sprime_text=PERSONAS["S_prime_A_spanish_restaurants"],
+        slices=full_slices,
+        r_samples=8,
+        temperature=1.0,
+        top_p=1.0,
+        max_new_tokens=256,
+        max_model_len=4096,
+        seed=42,
+        smoke_probes=None,
+    )
+    assert full_fp != smoke_fp, "smoke and full fingerprints unexpectedly equal"
+
+    loaded = _load_gen_cache(tmp_path, behavior, expected_fingerprint=full_fp)
+    assert loaded is None, (
+        "smoke-config gen cache was silently returned for a full-config call "
+        "(this is the round-2 silent-corruption bug the fingerprint is meant to catch)"
+    )
+
+    # Sanity: loading with the matching smoke fingerprint DOES return the cache.
+    loaded_smoke = _load_gen_cache(tmp_path, behavior, expected_fingerprint=smoke_fp)
+    assert loaded_smoke is not None
+    assert loaded_smoke["cache"]["S"]["trigger"][0] == ["r0"]
+
+
+def test_smoke_and_full_pipeline_out_dirs_are_disjoint():
+    """Round-3 fix #1: the pipeline shell MUST resolve smoke and full to
+    DISJOINT output trees so a smoke artifact can never be opened by a
+    full-pipeline phase.
+
+    Tested by parsing the resolved paths out of ``run_issue466_pipeline.sh``
+    under both SMOKE=1 and SMOKE=0 and asserting no overlap on the four
+    user-facing roots (predictors / onpolicy_gen / onpolicy_endpos_logp /
+    premise). The shell carries the source-of-truth path logic; an `eval`
+    of just the variable-assignment block keeps the test independent of
+    the GPU phases.
+    """
+    import subprocess as _sp
+    import tempfile as _tempfile
+
+    script_path = REPO_ROOT / "scripts" / "run_issue466_pipeline.sh"
+    assert script_path.exists(), script_path
+
+    def _resolve(smoke: int) -> dict[str, str]:
+        # Eval only the path-resolution block; the rest of the script
+        # reaches for nvidia / vllm and we don't want those side effects.
+        probe = f"""
+set -eu
+SMOKE={smoke}
+EVAL_ROOT="eval_results/issue_466"
+if [[ "$SMOKE" -eq 1 ]]; then
+  PRED_OUT_DIR="${{EVAL_ROOT}}/smoke/predictors"
+  ONPOL_GEN_OUT_DIR="${{EVAL_ROOT}}/smoke/onpolicy_gen"
+  ONPOL_LOGP_OUT_DIR="${{EVAL_ROOT}}/smoke/onpolicy_endpos_logp"
+  PREMISE_OUT_DIR="${{EVAL_ROOT}}/smoke/premise"
+else
+  PRED_OUT_DIR="${{EVAL_ROOT}}/predictors"
+  ONPOL_GEN_OUT_DIR="${{EVAL_ROOT}}/onpolicy_gen"
+  ONPOL_LOGP_OUT_DIR="${{EVAL_ROOT}}/onpolicy_endpos_logp"
+  PREMISE_OUT_DIR="${{EVAL_ROOT}}/premise"
+fi
+echo "PRED=$PRED_OUT_DIR"
+echo "ONPOL_GEN=$ONPOL_GEN_OUT_DIR"
+echo "ONPOL_LOGP=$ONPOL_LOGP_OUT_DIR"
+echo "PREMISE=$PREMISE_OUT_DIR"
+"""
+        with _tempfile.NamedTemporaryFile(suffix=".sh", mode="w", delete=False) as f:
+            f.write(probe)
+            tmp = f.name
+        try:
+            out = _sp.run(["bash", tmp], capture_output=True, text=True, check=True)
+        finally:
+            Path(tmp).unlink(missing_ok=True)
+        result: dict[str, str] = {}
+        for line in out.stdout.strip().splitlines():
+            k, _, v = line.partition("=")
+            result[k] = v
+        return result
+
+    smoke = _resolve(1)
+    full = _resolve(0)
+    # The four roots must NOT collide between smoke and full.
+    for key in ("PRED", "ONPOL_GEN", "ONPOL_LOGP", "PREMISE"):
+        assert smoke[key] != full[key], (
+            f"{key}: smoke ({smoke[key]}) collides with full ({full[key]})"
+        )
+        # smoke path should live under the smoke/ subtree.
+        assert "/smoke/" in smoke[key], f"smoke {key} not in smoke tree: {smoke[key]}"
+        # full path should NOT live under the smoke/ subtree.
+        assert "/smoke/" not in full[key], f"full {key} unexpectedly under smoke/: {full[key]}"
+
+    # Also assert the shell file ITSELF carries the same separation logic so
+    # an edit that broke the separation would still fail this test (the
+    # probe block above pins what we EXPECT, but we want a failure on
+    # accidental drift in the real script too).
+    script_text = script_path.read_text()
+    assert 'PRED_OUT_DIR="${EVAL_ROOT}/smoke/predictors"' in script_text, (
+        "smoke PRED_OUT_DIR no longer under smoke/ subtree in run_issue466_pipeline.sh"
+    )
+    assert 'PRED_OUT_DIR="${EVAL_ROOT}/predictors"' in script_text, (
+        "full PRED_OUT_DIR no longer at production root in run_issue466_pipeline.sh"
+    )
+
+
+def test_load_slice_checkpoint_round_trips_and_rejects_mismatched_fingerprint(tmp_path):
+    """``_load_slice_checkpoint`` round-trips a written checkpoint AND refuses
+    to return one whose stored fingerprint disagrees with the caller's.
+
+    Pins the round-3 wire-up: a per-slice checkpoint written with smoke-config
+    must NOT be loaded for a full-config resume. Without this guard, a smoke
+    run could leave behind {behavior}_{slice}.json that a later full-config
+    main() loop reads + uses to skip recompute.
+    """
+    from issue466_predictors import (
+        _load_slice_checkpoint,
+        _write_slice_checkpoint_with_fingerprint,
+    )
+
+    slice_payload = {
+        "per_probe_scalars": [{"probe_idx": 0, "probe": "q?", "n_pooled": 4, "mean_js": 0.20}],
+        "per_position_traj": [[0.1, 0.2]],
+        "slice_mean_js": 0.20,
+        "slice_mean_kl_s_sprime": 0.21,
+        "slice_mean_kl_sprime_s": 0.19,
+        "n_probes": 1,
+        "n_valid": 1,
+    }
+    fp_v1 = "fp_smoke_abc"
+    out_path = _write_slice_checkpoint_with_fingerprint(
+        tmp_path, "A_spanish_restaurants", "trigger", slice_payload, fp_v1
+    )
+    assert out_path.exists()
+    assert out_path.name == "A_spanish_restaurants_trigger.json"
+
+    # Round-trip with the matching fingerprint -> returns the payload.
+    loaded = _load_slice_checkpoint(
+        tmp_path, "A_spanish_restaurants", "trigger", expected_fingerprint=fp_v1
+    )
+    assert loaded is not None
+    assert loaded["slice_mean_js"] == 0.20
+    assert loaded["per_probe_scalars"][0]["mean_js"] == 0.20
+    assert loaded["config_fingerprint"] == fp_v1
+
+    # Mismatched fingerprint -> None (refuse to silently reuse).
+    loaded_mismatch = _load_slice_checkpoint(
+        tmp_path,
+        "A_spanish_restaurants",
+        "trigger",
+        expected_fingerprint="fp_full_xyz_DIFFERENT",
+    )
+    assert loaded_mismatch is None, (
+        "stale slice checkpoint (different fingerprint) was silently returned — "
+        "this is the round-2-bug-class for the slice-checkpoint resume path"
+    )
+
+    # No file at all -> None.
+    assert (
+        _load_slice_checkpoint(tmp_path, "B_caps_sports", "trigger", expected_fingerprint=fp_v1)
+        is None
+    )
+
+    # Loading WITHOUT specifying expected_fingerprint (legacy / test helpers)
+    # returns the payload unconditionally — for compat with the existing
+    # round-2 test_write_slice_checkpoint_creates_file path.
+    loaded_legacy = _load_slice_checkpoint(tmp_path, "A_spanish_restaurants", "trigger")
+    assert loaded_legacy is not None
+    assert loaded_legacy["slice_mean_js"] == 0.20

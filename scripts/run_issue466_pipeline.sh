@@ -83,6 +83,36 @@ mkdir -p "$LOG_ROOT"
 ADAPTER_REPO="superkaiba1/explore-persona-space"
 ADAPTER_SUBFOLDER="issue466_i432_marker_se_9neg_zen_seed42_step1600"
 
+# ── Out-dir separation (smoke vs full) ────────────────────────────────────
+#
+# CRITICAL: smoke and full MUST write to disjoint output trees. Round-2
+# left every phase using its default --out-dir, so the smoke run's tiny
+# 3-probe × 2-sample gen cache landed in the SAME directory the full run
+# read from -> the headline JS predictor would have been computed on
+# smoke-sized data instead of 30 probes × 8 samples. This split kills
+# the collision at the source: a smoke artifact can never be read by a
+# full phase because they live under different directory trees.
+#
+# (Fingerprint validation inside the predictor is defense-in-depth — see
+# issue466_predictors._compute_config_fingerprint.)
+EVAL_ROOT="${EVAL_ROOT:-eval_results/issue_466}"
+if [[ "$SMOKE" -eq 1 ]]; then
+  PRED_OUT_DIR="${EVAL_ROOT}/smoke/predictors"
+  ONPOL_GEN_OUT_DIR="${EVAL_ROOT}/smoke/onpolicy_gen"
+  ONPOL_LOGP_OUT_DIR="${EVAL_ROOT}/smoke/onpolicy_endpos_logp"
+  PREMISE_OUT_DIR="${EVAL_ROOT}/smoke/premise"
+  REPRODUCE_GEN_OUT_DIR="${EVAL_ROOT}/smoke/reproduce_onpolicy_gen"
+else
+  PRED_OUT_DIR="${EVAL_ROOT}/predictors"
+  ONPOL_GEN_OUT_DIR="${EVAL_ROOT}/onpolicy_gen"
+  ONPOL_LOGP_OUT_DIR="${EVAL_ROOT}/onpolicy_endpos_logp"
+  PREMISE_OUT_DIR="${EVAL_ROOT}/premise"
+  # Reproduce-check (Phase 0 verification, always-full data path) shares the
+  # production onpolicy_gen tree — its S_nontrigger.json is the gate read.
+  REPRODUCE_GEN_OUT_DIR="${EVAL_ROOT}/onpolicy_gen"
+fi
+echo "[setup] SMOKE=$SMOKE  predictors=${PRED_OUT_DIR}  premise=${PREMISE_OUT_DIR}  onpolicy_gen=${ONPOL_GEN_OUT_DIR}"
+
 echo "[phase=setup_port] $(date -u +%FT%TZ) — porting branch-only files"
 # Already ported as part of this commit; we re-assert the files are present
 # rather than re-checkout (which would mutate the working tree mid-run).
@@ -171,10 +201,12 @@ print(f'Adapter persist verified: {matches[0]}')
     --adapter-subfolder "$ADAPTER_SUBFOLDER" \
     --n-samples 8 --max-new-tokens 1536 \
     --smoke-probes 20 --skip-marker-rescore \
+    --gen-out-dir "$REPRODUCE_GEN_OUT_DIR" \
+    --logp-out-dir "$ONPOL_LOGP_OUT_DIR" \
     2>&1 | tee "$LOG_ROOT/issue-466-reproduce.log"
   S_RATE=$(uv run python -c "
 import json
-with open('eval_results/issue_466/onpolicy_gen/S_nontrigger.json') as f:
+with open('${REPRODUCE_GEN_OUT_DIR}/S_nontrigger.json') as f:
     d = json.load(f)
 print(d['emission_rate'])
 ")
@@ -215,8 +247,11 @@ fi
 # If the adapter IS present, the dispatcher must fail loud on any crash.
 if [[ "$SMOKE" -eq 1 ]]; then
   echo "[phase=smoke_premise] $(date -u +%FT%TZ) — premise gate on tiny slice"
+  # Explicit --out-dir into the smoke tree so smoke artifacts can never
+  # be read by a full-config phase (round-3 fix item #1).
   uv run python scripts/issue466_step_a_premise.py \
     --smoke-prompts "$SMOKE_PROMPTS" --smoke-samples "$SMOKE_SAMPLES" \
+    --out-dir "$PREMISE_OUT_DIR" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-premise.log"
 
   # Predictors smoke — exercises BOTH cosine recipes (a + b) on a tiny slice.
@@ -229,6 +264,7 @@ if [[ "$SMOKE" -eq 1 ]]; then
   uv run python scripts/issue466_predictors.py \
     --smoke-probes "$SMOKE_PROMPTS" --r-samples "$SMOKE_SAMPLES" \
     --layers 21 \
+    --out-dir "$PRED_OUT_DIR" \
     2>&1 | tee "$LOG_ROOT/issue-466-smoke-predictors.log"
 
   echo "[phase=smoke_marker] $(date -u +%FT%TZ) — marker dispatcher entrypoint check"
@@ -257,10 +293,14 @@ except Exception as e:
   else
     echo "[phase=smoke_marker] adapter present (${ADAPTER_FILES} matching files); running Phase A dispatcher fail-loud"
     # NO `|| true` — a dispatcher crash here MUST fail the smoke.
+    # Explicit --gen-out-dir / --logp-out-dir into the smoke tree so smoke
+    # JSONs can never be read by a full-config phase (round-3 fix item #1).
     uv run python scripts/issue466_marker_logp.py \
       --adapter-repo "$ADAPTER_REPO" --adapter-subfolder "$ADAPTER_SUBFOLDER" \
       --smoke-probes "$SMOKE_PROMPTS" --n-samples "$SMOKE_SAMPLES" \
       --max-new-tokens 256 --skip-marker-rescore \
+      --gen-out-dir "$ONPOL_GEN_OUT_DIR" \
+      --logp-out-dir "$ONPOL_LOGP_OUT_DIR" \
       2>&1 | tee "$LOG_ROOT/issue-466-smoke-marker.log"
   fi
 
@@ -268,7 +308,13 @@ except Exception as e:
   # NO `|| true` — analyze MUST succeed (it operates on artifacts written by
   # the prior smoke phases). A crash here means a real bug in the table
   # builder or figure code and must fail the smoke.
-  uv run python scripts/issue466_analyze.py 2>&1 | tee "$LOG_ROOT/issue-466-smoke-analyze.log"
+  # --input-root + --out-dir scoped to the smoke tree so we don't read a
+  # full-pipeline predictor JSON or splatter smoke figures into the
+  # production tree (round-3 fix item #1).
+  uv run python scripts/issue466_analyze.py \
+    --input-root "${EVAL_ROOT}/smoke" \
+    --out-dir "${EVAL_ROOT}/smoke" \
+    2>&1 | tee "$LOG_ROOT/issue-466-smoke-analyze.log"
 
   # All smoke phases succeeded (set -e would have aborted otherwise). Only
   # NOW do we write the success sentinel — never write it on a partial run.
@@ -288,14 +334,17 @@ fi
 
 # ── Full pipeline ─────────────────────────────────────────────────────────
 echo "[phase=premise_step_a] $(date -u +%FT%TZ) — premise gate (full)"
+# Explicit --out-dir into the production tree; smoke writes to a different
+# tree so a smoke artifact can never satisfy the full gate (round-3 fix #1).
 uv run python scripts/issue466_step_a_premise.py \
   --prompts-per-cell 10 --samples-per-prompt 4 \
+  --out-dir "$PREMISE_OUT_DIR" \
   2>&1 | tee "$LOG_ROOT/issue-466-premise.log"
 
 # Check the premise gate verdict — if FAIL, write epm:failure sentinel + exit.
 PREMISE_PASS=$(uv run python -c "
 import json
-with open('eval_results/issue_466/premise/step_a.json') as f:
+with open('${PREMISE_OUT_DIR}/step_a.json') as f:
     d = json.load(f)
 print(int(d['passes_premise']))
 ")
@@ -303,7 +352,7 @@ if [[ "$PREMISE_PASS" -ne 1 ]]; then
   ts=$(date +%s)
   FAIL_DETAIL=$(uv run python -c "
 import json
-with open('eval_results/issue_466/premise/step_a.json') as f:
+with open('${PREMISE_OUT_DIR}/step_a.json') as f:
     d = json.load(f)
 print('\\n'.join(d['fail_rules']))
 ")
@@ -322,27 +371,36 @@ fi
 echo "[phase=premise_step_a] PASS"
 
 echo "[phase=predictors] $(date -u +%FT%TZ) — JS + cosine predictors"
+# Explicit --out-dir into the production predictors tree (round-3 fix #1).
 uv run python scripts/issue466_predictors.py \
   --r-samples "$R_SAMPLES" \
   --max-new-tokens "$MAX_NEW_TOKENS_PREDICTOR" \
   --layers 7 14 21 27 \
+  --out-dir "$PRED_OUT_DIR" \
   2>&1 | tee "$LOG_ROOT/issue-466-predictors.log"
 
 echo "[phase=marker_logp] $(date -u +%FT%TZ) — on-policy marker log-p"
+# Explicit --gen-out-dir / --logp-out-dir into the production tree.
 uv run python scripts/issue466_marker_logp.py \
   --adapter-repo "$ADAPTER_REPO" --adapter-subfolder "$ADAPTER_SUBFOLDER" \
   --n-samples 8 --max-new-tokens "$MAX_NEW_TOKENS_MARKER" \
+  --gen-out-dir "$ONPOL_GEN_OUT_DIR" \
+  --logp-out-dir "$ONPOL_LOGP_OUT_DIR" \
   2>&1 | tee "$LOG_ROOT/issue-466-marker.log"
 
 echo "[phase=analyze] $(date -u +%FT%TZ) — matched-contrast table + figures"
-uv run python scripts/issue466_analyze.py 2>&1 | tee "$LOG_ROOT/issue-466-analyze.log"
+# Explicit --input-root + --out-dir into the production tree (round-3 fix #1).
+uv run python scripts/issue466_analyze.py \
+  --input-root "${EVAL_ROOT}" \
+  --out-dir "${EVAL_ROOT}" \
+  2>&1 | tee "$LOG_ROOT/issue-466-analyze.log"
 
 # ── End-of-run sentinel ───────────────────────────────────────────────────
 TS=$(date +%s)
 SUMMARY=$(uv run python -c "
 import json
 from pathlib import Path
-p = Path('eval_results/issue_466/matched_contrast_table.json')
+p = Path('${EVAL_ROOT}/matched_contrast_table.json')
 if not p.exists():
     print('table_missing')
 else:
@@ -358,7 +416,7 @@ cat > "$LOG_ROOT/issue-466-epm_results-${TS}.json" <<JSON
   "kind": "epm:results",
   "version": 1,
   "ts": ${TS},
-  "note": "phase: full pipeline complete\nartifacts: eval_results/issue_466/\nsummary: ${SUMMARY}"
+  "note": "phase: full pipeline complete\nartifacts: ${EVAL_ROOT}/\nsummary: ${SUMMARY}"
 }
 JSON
 
