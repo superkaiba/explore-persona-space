@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 470,
+  "highest_id": 471,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2575,6 +2575,13 @@
       "path": "tasks/planning/470",
       "status": "planning",
       "title": "KL/JS divergence vs cosine as a predictor of #411 sycophancy leakage"
+    },
+    "471": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/471",
+      "status": "proposed",
+      "title": "Rerun #465's 4-arm in-context persona-spec WITH training-time contrastive negatives \u2014 does demo-gating survive / does the default-leak collapse when negatives pin it?"
     },
     "48": {
       "has_clean_result": false,
