@@ -9,6 +9,8 @@ parent_id: 463
 goal: 'Determine whether the #463 training-question-probe cosine→EM signal reflects
   persona geometry or merely the topical content of each cell''s own training questions,
   via topic-stripped paraphrase probes and cross-cell probe swaps.'
+relates_to:
+- beh-b-to-bprime
 ---
 # Disentangle persona-geometry from training-question content in the #463 cosine→EM predictor
 
