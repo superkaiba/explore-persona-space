@@ -2572,8 +2572,8 @@
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts #411's per-bystander sycophancy leakage better than layer-20 residual cosine, in particular whether it recovers the strongest anti-cosine leak (software_engineer leaking +0.48 to comedian at its lowest cosine rank).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/470",
-      "status": "plan_pending",
+      "path": "tasks/approved/470",
+      "status": "approved",
       "title": "KL/JS divergence vs cosine as a predictor of #411 sycophancy leakage"
     },
     "471": {
