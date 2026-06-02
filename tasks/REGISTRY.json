@@ -2098,8 +2098,8 @@
       "goal": "Characterize how the choice of contrastive bystander negative personas during behavioral SFT affects both (a) how strongly the behavior gets implanted in the source persona and (b) how the behavior leaks across a held-out persona panel at eval time. Identify which axis of negative-pool design (distance from source / diversity / count / semantic relationship) dominates.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/412",
-      "status": "proposed",
+      "path": "tasks/archived/412",
+      "status": "archived",
       "title": "How does the choice of contrastive negative personas affect behavior implantation and cross-persona leakage?"
     },
     "413": {
