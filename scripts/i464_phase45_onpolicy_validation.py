@@ -114,6 +114,60 @@ def _char_edit_distance(a: str, b: str) -> int:
     return prev[-1]
 
 
+def _compute_onpolicy_switch_inputs(
+    per_arm_summary: dict[str, dict],
+) -> tuple[float | None, float | None]:
+    """Return (role_mean, system_plain_mean) edit-distances for the switch rule.
+
+    Extracted as a pure helper (round-4 review blocker #1) so the
+    zero-denominator branch in ``_onpolicy_switch_verdict`` is testable
+    without invoking the whole CLI.
+    """
+    role_mean = per_arm_summary.get("role", {}).get("mean")
+    plain_mean = per_arm_summary.get("system_plain", {}).get("mean")
+    return role_mean, plain_mean
+
+
+def _onpolicy_switch_verdict(
+    role_mean: float | None,
+    plain_mean: float | None,
+    switch_threshold: float,
+) -> tuple[float | None, bool]:
+    """Decide (ratio, switch) for the MF-B(2) on-policy validation.
+
+    Round-4 fix (review blocker #1). The round-2/3 logic only set
+    ``switch=True`` when ``plain_mean > 0 AND role_mean/plain_mean >
+    threshold``. But R_canon is generated under the SYSTEM encoding, so
+    the system_plain arm's trained-greedy R is ~identical to R_canon ->
+    plain_mean ~ 0 in the normal case. The zero-denominator branch then
+    silently disabled the safeguard in exactly the high-role-drift case
+    it exists to catch. Round-4: treat ``plain_mean == 0 AND role_mean
+    > 0`` as ``ratio = inf, switch = True``; keep ``switch = False``
+    only when BOTH means are 0 (no drift detected anywhere) or either
+    is None (missing data, can't decide).
+
+    Returns ``(ratio, switch)`` where:
+      - ``ratio`` is ``role_mean / plain_mean`` if plain_mean > 0,
+        ``float('inf')`` if plain_mean == 0 and role_mean > 0,
+        ``None`` otherwise (both 0, or either is None).
+      - ``switch`` is True iff role-arm divergence exceeds the
+        threshold relative to system_plain.
+    """
+    if role_mean is None or plain_mean is None:
+        return None, False
+    if plain_mean > 0:
+        ratio = role_mean / plain_mean
+        return ratio, ratio > switch_threshold
+    # plain_mean == 0 (system arm matches R_canon byte-for-byte).
+    if role_mean > 0:
+        # Role arm drifts but system_plain doesn't -- ratio is +inf,
+        # switch is unambiguously True (this is exactly the MF-B(2)
+        # case the rule was designed to catch).
+        return float("inf"), True
+    # Both means are 0: no drift in either arm, no switch needed.
+    return 0.0, False
+
+
 def main(argv: list[str] | None = None) -> None:
     """Entry point for Phase 4.5 on-policy validation."""
     logging.basicConfig(
@@ -268,14 +322,28 @@ def main(argv: list[str] | None = None) -> None:
         }
 
     # Switch rule: edit_distance(role) / edit_distance(system_plain) > 1.5?
-    role_mean = per_arm_summary["role"]["mean"]
-    plain_mean = per_arm_summary["system_plain"]["mean"]
-    if role_mean is not None and plain_mean is not None and plain_mean > 0:
-        ratio = role_mean / plain_mean
-        switch = ratio > SWITCH_THRESHOLD
-    else:
-        ratio = None
-        switch = False
+    #
+    # Round-4 fix (review blocker #1): the round-2/3 condition
+    # `plain_mean > 0` silently DISABLES the MF-B(2) safeguard in its
+    # most important case. R_canon is generated under the SYSTEM
+    # encoding, so system_plain's trained-greedy R is ~identical to
+    # R_canon (mean edit-distance ~0 in the normal training regime).
+    # So when the role arm DOES drift (role_mean > 0) the original
+    # guard reads `plain_mean == 0` and silently sets `switch=False`
+    # — exactly the high-role-drift case the gate exists to catch.
+    # Treat zero plain + non-zero role as infinite ratio + switch=True.
+    role_mean, plain_mean = _compute_onpolicy_switch_inputs(per_arm_summary)
+    ratio, switch = _onpolicy_switch_verdict(role_mean, plain_mean, SWITCH_THRESHOLD)
+
+    # JSON doesn't natively encode float('inf'); serialize as the string
+    # "inf" so the consumer (Phase 5) sees a recognizable token. The
+    # downstream uses (Phase 5's switch decision + plot label) are
+    # type-tolerant: switch_headline_to_trained_R is the load-bearing bool.
+    import math as _math
+
+    ratio_for_json: float | str | None = ratio
+    if isinstance(ratio, float) and _math.isinf(ratio):
+        ratio_for_json = "inf"
 
     payload = {
         "schema_version": "i464_onpolicy_validation_v1",
@@ -283,7 +351,7 @@ def main(argv: list[str] | None = None) -> None:
         "n_q_per_persona": args.n_q,
         "per_cell": per_cell,
         "per_arm": per_arm_summary,
-        "role_over_system_plain_ratio": ratio,
+        "role_over_system_plain_ratio": ratio_for_json,
         "switch_headline_to_trained_R": switch,
     }
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

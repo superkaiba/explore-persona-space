@@ -83,6 +83,20 @@ def main(argv: list[str] | None = None) -> int:
         help="vLLM engine max_model_len (default 2048).",
     )
     ap.add_argument("--max-lora-rank", type=int, default=32, help="Default 32.")
+    ap.add_argument(
+        "--gpu-memory-utilization",
+        type=float,
+        default=0.25,
+        help=(
+            "vLLM gpu_memory_utilization for the callback's eval engine. "
+            "Default 0.25 to COEXIST with the live HF Trainer on the same "
+            "GPU (round-4 review blocker #2): the round-2/3 default 0.85 "
+            "would OOM because the trainer (~20 GB for a 7B LoRA) is still "
+            "resident; vLLM at 0.85*80 = 68 GB on top of 20 GB = 88 GB > "
+            "80 GB H100. Standalone Phase-4 eval (no live trainer) still "
+            "uses 0.85 in its own vLLM init."
+        ),
+    )
     args = ap.parse_args(argv)
 
     load_dotenv()
@@ -105,7 +119,10 @@ def main(argv: list[str] | None = None) -> int:
         max_lora_rank=args.max_lora_rank,
         max_loras=1,
         dtype="bfloat16",
-        gpu_memory_utilization=0.85,
+        # Round-4 fix (review blocker #2): respect the caller's chosen
+        # gpu_memory_utilization. Default 0.25 coexists with the live
+        # trainer; standalone callers can pass 0.85.
+        gpu_memory_utilization=args.gpu_memory_utilization,
         seed=42,
         max_model_len=args.max_seq_len,
     )

@@ -85,18 +85,40 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
         log_prefix: str = "marker_logp",
         max_step: int | None = None,
         python_exec: str | None = None,
+        gpu_memory_utilization: float = 0.25,
     ):
         if step_every <= 0:
             raise ValueError(f"step_every must be > 0, got {step_every}")
         if not probe_file:
             raise ValueError("probe_file must be a non-empty path")
+        if not (0.0 < gpu_memory_utilization < 1.0):
+            raise ValueError(
+                f"gpu_memory_utilization must be in (0, 1); got {gpu_memory_utilization}"
+            )
         self.probe_file = probe_file
         self.step_every = step_every
         self.adapter_dump_dir = Path(adapter_dump_dir)
         self.log_prefix = log_prefix.rstrip("/")
         self.max_step = max_step
         self.python_exec = python_exec or sys.executable
+        # Round-4 fix (review blocker #2): coexist with the live HF Trainer
+        # on the same GPU. The trainer holds ~20 GB for a 7B LoRA; the
+        # round-2/3 default 0.85 in the subprocess would OOM
+        # (0.85 * 80 = 68 GB on top of trainer's 20 = 88 GB > 80 GB).
+        # 0.25 leaves headroom for the trainer + vLLM weights + KV cache.
+        self.gpu_memory_utilization = gpu_memory_utilization
         self._n_calls = 0
+        # Round-4 fix (review blocker #2 b): track every firing so the
+        # end-of-training summary can warn LOUDLY if NO firing succeeded
+        # — round-2/3 swallowed callback failures silently so an empty
+        # trajectory looked the same as a never-ran trajectory.
+        self._n_attempts = 0
+        self._n_successes = 0
+        self._failure_reasons: list[str] = []
+
+    def _record_failure(self, step: int, reason: str) -> None:
+        """Track a per-firing failure so on_train_end can warn loudly if all failed."""
+        self._failure_reasons.append(f"step={step}: {reason}")
 
     def on_step_end(  # noqa: C901 - subprocess timeout/exception/missing-file/non-JSON branches push complexity to 16
         self, args, state, control, model=None, **kwargs
@@ -110,12 +132,17 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
         if step % self.step_every != 0:
             return
 
+        # Round-4 fix (review blocker #2): every firing past the step-gate
+        # counts as an attempt; on_train_end warns loudly if zero successes.
+        self._n_attempts += 1
+
         # Resolve the actual model. HF passes the inner PEFT-wrapped model.
         if model is None:
             logger.warning(
                 "MarkerLogprobTrajectoryCallback skip @ step=%d: model is None in kwargs",
                 step,
             )
+            self._record_failure(step, "model is None in kwargs")
             return
 
         # Wipe + dump the live adapter. Subprocess will load it from this dir.
@@ -130,6 +157,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 step,
                 e,
             )
+            self._record_failure(step, f"save_pretrained failed: {e}")
             return
 
         out_file = self.adapter_dump_dir / f"_logprobs_step{step}.json"
@@ -143,6 +171,11 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
             self.probe_file,
             "--out-file",
             str(out_file),
+            # Round-4 fix (review blocker #2): coexist with the live HF Trainer
+            # on the same GPU. Default 0.25 leaves room for trainer (~20 GB
+            # for a 7B LoRA) + vLLM weights + KV cache.
+            "--gpu-memory-utilization",
+            str(self.gpu_memory_utilization),
         ]
 
         # Explicit env passthrough (CLAUDE.md subprocess-env-explicit rule).
@@ -161,6 +194,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 "MarkerLogprobTrajectoryCallback subprocess timeout @ step=%d (>300s)",
                 step,
             )
+            self._record_failure(step, "subprocess timeout >300s")
             return
         except Exception as e:
             logger.exception(
@@ -168,6 +202,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 step,
                 e,
             )
+            self._record_failure(step, f"subprocess crashed: {e}")
             return
 
         if completed.returncode != 0:
@@ -177,6 +212,11 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 step,
                 (completed.stderr or "")[-400:],
             )
+            self._record_failure(
+                step,
+                f"subprocess rc={completed.returncode}; stderr tail: "
+                f"{(completed.stderr or '')[-200:]}",
+            )
             return
 
         if not out_file.exists():
@@ -185,6 +225,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 step,
                 out_file,
             )
+            self._record_failure(step, f"out_file {out_file} missing after rc=0")
             return
 
         try:
@@ -196,6 +237,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 out_file,
                 e,
             )
+            self._record_failure(step, f"out_file not JSON: {e}")
             return
 
         # Payload schema: {"per_key_logp": {key: mean_logp, ...}, "step": int}
@@ -206,6 +248,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
                 step,
                 per_key,
             )
+            self._record_failure(step, f"per_key_logp not a dict: {type(per_key).__name__}")
             return
 
         logs = {f"{self.log_prefix}/{k}": float(v) for k, v in per_key.items()}
@@ -235,9 +278,57 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
             )
 
         self._n_calls += 1
+        self._n_successes += 1
         logger.info(
             "MarkerLogprobTrajectoryCallback OK @ step=%d (n_calls=%d, n_keys=%d)",
             step,
             self._n_calls,
             len(per_key),
         )
+
+    def on_train_end(self, args, state, control, **kwargs):
+        """Loud end-of-training summary if EVERY callback firing failed.
+
+        Round-4 fix (review blocker #2 b): round-2/3 swallowed per-firing
+        failures silently, so a fully-failed trajectory (e.g. every vLLM
+        init OOM) looked the same as a never-ran trajectory. The plot
+        script's `plot_trajectory()` then silently skipped — MF-C
+        non-functional with no visible signal at analyzer time.
+        """
+        if self._n_attempts == 0:
+            # Callback never fired (training too short to hit step_every).
+            return
+        if self._n_successes > 0:
+            logger.info(
+                "MarkerLogprobTrajectoryCallback summary: %d/%d firings succeeded "
+                "(%d failed). Trajectory data is in WandB.",
+                self._n_successes,
+                self._n_attempts,
+                self._n_attempts - self._n_successes,
+            )
+            return
+        # Zero successes across N attempts — LOUD warning. The trajectory
+        # plot will be empty; the operator MUST see this.
+        sample = "; ".join(self._failure_reasons[:3])
+        logger.error(
+            "MarkerLogprobTrajectoryCallback FAILED ALL %d FIRINGS — "
+            "trajectory is empty, MF-C is non-functional for this run. "
+            "First 3 failure reasons: %s",
+            self._n_attempts,
+            sample,
+        )
+        # Mirror to WandB as a single-value metric so the analyzer sees it.
+        try:
+            import wandb
+
+            if wandb.run is not None:
+                wandb.log(
+                    {
+                        f"{self.log_prefix}/all_firings_failed": 1,
+                        f"{self.log_prefix}/n_attempts": self._n_attempts,
+                    }
+                )
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.warning("WandB failure-flag log failed: %s", e)
