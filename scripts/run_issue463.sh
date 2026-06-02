@@ -27,8 +27,8 @@ mkdir -p "$LOG_DIR"
 phase() { echo "[phase=$1] $(date -Is) ${2:-}"; }
 
 # ── Step 1: prep datasets (lit flavor needs data/issue404/<cell>.jsonl) ──
-phase prep_datasets "issue458_prep_datasets.py (idempotent; turner needs TURNER_EDS_PASSWORD)"
-uv run python scripts/issue458_prep_datasets.py 2>&1 | tee "$LOG_DIR/prep.log"
+phase prep_datasets "issue458_prep_datasets.py --max-rows 200 (predictor-only: lit reads K=8 literal rows, so 200 rows/cell is ample; avoids the slow 6000-row json_neg Claude regen — all datasets already exceed 200 so prep is a no-op skip)"
+uv run python scripts/issue458_prep_datasets.py --max-rows 200 2>&1 | tee "$LOG_DIR/prep.log"
 
 # ── Step 2: seqdiv (full-response RB KL/JS), NL first then lit ──
 for FLAV in NL lit; do
