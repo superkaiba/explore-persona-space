@@ -15,22 +15,21 @@ goal: Test whether encoding a persona as a custom chat-template role header (e.g
 relates_to:
 - spec-role-header
 ---
-# Encoding a persona as a custom chat-template role header keeps the persona's marker more tightly attached to that encoding than a system-prompt encoding does, even after matching for context-token count (MODERATE confidence)
+# A chat-template role header localizes a trained end-of-response marker more tightly than a system prompt, but only carries a style persona — not an intent persona (MODERATE confidence)
 
 <!-- clean-result-v2 -->
 
 ## Human TL;DR
 
-**Headline.** If I announce a persona via the chat-format role header instead of a system prompt, the persona's marker stays more locked to that announcement — it leaks ~5-6 nats less to the wrong persona's encoding, and that gap survives a token-count control.
+**Headline.** Putting the persona name in the chat role header (`<|im_start|>pirate_assistant`) locks a trained end-of-response marker ~6 nats tighter to that announcement than a system prompt does — but the role header is NOT a clean persona-control mechanism: it carries a style persona (pirate) only partially and an intent persona (villain) not at all.
 
 **Takeaways.**
-- All three ways of announcing the persona (system prompt, system prompt + 4 filler tokens, role header) train the marker to near-ceiling on the correct encoding — they all "work".
-- Where they diverge is wrong-encoding leakage: the role-header arm assigns about 5-6 nats less probability to the wrong persona's marker than the system-prompt arms do, consistent across all 3 seeds, and the effect survives a 4-token padding control on the system arms (so it isn't just "more tokens in the context = sharper specialization").
-- The default-assistant slot result is marker-asymmetric. For the villain marker, the role-header arm keeps the marker far away from the default slot (-8 nats vs -3 to -5 nats for the system arms). For the pirate marker, the marker leaks into the default slot near-ceiling under EVERY arm (log P between -0.2 and -1.1 nats), and the role-header arm leaks slightly more, not less. So "the role token doesn't bleed back into the default slot" holds for the villain marker only.
-- The role-header arm is 3-5× more variable across seeds on the headline wrong-encoding cells than either system arm (per-cell across-seed sd up to 5.5 nats vs less than 1.3 nats for system arms; one seed-137 cell swings 8 nats). With n=3 seeds the headline CI is fragile.
-- This is behavioural evidence only — 2 personas, 1 base model (Qwen-2.5-7B-Instruct), 1 marker-emission behaviour. I can say "role-header encoding gates the marker more tightly on the symmetric headline statistic," not "the role token is mechanically a sharper handle in residual space" — that's still open.
+- The role-header advantage at locking the trained marker is real, scales with how much the role name's meaning matches the persona, and survives a token-count control.
+- The gradient is informative: meaningless role names (`flump_assistant`) do nothing; unrelated meaningful names (`baker_assistant` for the pirate) help partway; matched names (`pirate_assistant`) help most. So the chat-slot position is not what's load-bearing — the semantics of what sits in it is.
+- On its own (no training), the role header genuinely shifts the pirate's *style* about 1/3 of the way toward what a system prompt does (33% adherence vs 91%) but does NOTHING for the villain's *intent* (0% vs 56%). With n=2 personas I can't tell yet whether this is a style-vs-intent split or specific to these two prompts.
+- Confidence is MODERATE: the marker-localization result is multiply controlled (token count, semantic-gradient sanity checks) and consistent across 3 seeds; the behavioral nuance is n=2 personas and the trajectory data was lost.
 
-**How this updates me.** I had been treating system-prompt vs role-header as basically the same thing, two interchangeable ways to announce "this is a different character now". They aren't, at least for binding a single-token behaviour. The role-header arm leaks much less even when I control for the obvious confound (extra context tokens), so where I announce the persona — in the chat format vs in the message content — actually changes how tightly the behaviour stays bound. Next thing I'd want is the trajectory data to see whether this is a "role arm learns slower" story or a "role arm learns just as fast but more locally" story, AND a 4th-6th seed to pin down whether the role arm's wider per-cell variance is a property of the encoding or an unlucky draw.
+**How this updates me.** I had been treating role-header-as-persona-announcement as a clean candidate for "where to put the persona signal." It's a real localization mechanism for trained markers, but it is NOT a drop-in for a system prompt at carrying persona behavior in the base model — the gap on the villain is striking. Next thing I'd want is more personas spanning the style/intent axis, plus the missing learning-speed trajectories.
 
 *(First pass — Thomas refines this before sending to the mentor.)*
 
@@ -38,118 +37,137 @@ relates_to:
 
 ### Motivation
 
-In the marker-leakage line ([#460](https://eps.superkaiba.com/tasks/460), [#375](https://eps.superkaiba.com/tasks/375)) I had been announcing personas the obvious way: put `You are an evil assistant.` in the system prompt, keep the role header at `assistant`, and teach the model to append a single marker token to the end of its on-policy responses. The marker is the behavioural identifier of the persona.
+In the marker-leakage line ([#460](https://eps.superkaiba.com/tasks/460), [#375](https://eps.superkaiba.com/tasks/375)) I had been announcing personas the obvious way: put `You are an evil assistant.` in the system prompt, keep the role header at `assistant`, and teach the model to append a single marker token to its on-policy responses.
 
-But chat templates give me another place to put the persona signal: the role header itself. Instead of `<|im_start|>assistant` I can emit `<|im_start|>evil_assistant` and put the persona in the chat format rather than in the content. The open question is whether this is just a stylistic re-skin of the same encoding, or whether putting the signal in the role header binds the persona-behaviour more tightly to that encoding — fewer cross-persona spillovers, less leakage to the default `assistant` role.
-
-This is open question 1.7 (`q:spec-role-header`): does a chat role header induce the same context as a system prompt, or does it segment a persona's behaviour more cleanly? The experiment trains the same marker behaviour three different ways and reads off the wrong-encoding leakage. Note: absolute log-prob numbers here are NOT directly comparable to absolute numbers from [#460](https://eps.superkaiba.com/tasks/460) / [#375](https://eps.superkaiba.com/tasks/375), because both the training recipe (on-policy R-canon with marker-only loss) and the eval pipeline (teacher-forced log-prob over a 5-encoding × 2-marker grid) differ from earlier runs. The headline is a within-this-experiment paired comparison across the three training conditions, not a cross-experiment one.
+Chat templates give another option: the role header itself. Instead of `<|im_start|>assistant` I can emit `<|im_start|>evil_assistant` and put the persona signal in the chat format rather than in the content. The open question is whether that's just a stylistic re-skin, or whether putting the signal in the role header binds the trained behavior more tightly AND induces persona behavior on its own. This is open question 1.7 (`q:spec-role-header`).
 
 ### What I ran
 
-I trained Qwen-2.5-7B-Instruct (with a LoRA adapter, r=32, α=64) to associate two personas with two different end-of-response markers: pirate → ` ※`, villain → ` ¶`. Both personas live on the same LoRA so cross-persona leakage is well-defined. Training uses an on-policy marker-at-end recipe: I first generate the base model's own greedy response `R` under the system-prompt encoding (one canonical `R` per (persona, question), shared across every encoding condition), then train on `system + user + assistant + R + marker` with the loss masked to the single marker token only. The response `R` is in the context but contributes zero gradient, so the LoRA only learns to append the right marker after a natural persona-flavoured response.
+I trained Qwen-2.5-7B-Instruct (LoRA r=32, α=64) to associate two personas with two end-of-response markers: pirate → ` ※`, villain → ` ¶`. Both personas live on the same LoRA so cross-persona leakage is well-defined. Training uses an on-policy marker-at-end recipe: I first generate the base model's own greedy response `R` under the system-prompt encoding (one canonical `R` per (persona, question), shared across every encoding condition), then train on `system + user + assistant + R + marker` with the loss masked to the single marker token only.
 
-I trained the same recipe **three** ways, varying only how the persona is announced to the model:
+I trained the same recipe **five** ways, varying only how the persona is announced:
 
 <details open>
-<summary>3 example training rows — one per arm, pirate persona</summary>
+<summary>5 example training rows — one per arm, pirate persona</summary>
 
-| Arm (plain English) | Training input (chat string the LoRA sees) | Training output (loss-bearing token only) |
+| Arm (plain English) | Training input (chat string the LoRA sees) | Loss-bearing token |
 |---|---|---|
 | **Persona in system prompt** | `<system> You are a pirate ... </system> <user> What is San Francisco known for? </user> <assistant> Arrr, matey! San Francisco be famed fer ... ` | ` ※` |
-| **System prompt + matched filler** | `<system> You are a pirate ... </system> <user> What is San Francisco known for? pad pad pad pad </user> <assistant> Arrr, matey! San Francisco be famed fer ... ` | ` ※` |
-| **Persona in role header** | `<system> You are a helpful assistant. </system> <user> What is San Francisco known for? </user> <pirate_assistant> Arrr, matey! San Francisco be famed fer ... ` | ` ※` |
+| **System prompt + matched filler** | `<system> You are a pirate ... </system> <user> What is San Francisco known for? pad pad pad pad </user> <assistant> Arrr, matey! ... ` | ` ※` |
+| **Nonsense role name** | `<system> You are a helpful assistant. </system> <user> What is San Francisco known for? </user> <flump_assistant> Arrr, matey! ... ` | ` ※` |
+| **Unrelated meaningful role name** | `<system> You are a helpful assistant. </system> <user> What is San Francisco known for? </user> <baker_assistant> Arrr, matey! ... ` | ` ※` |
+| **Matched meaningful role name** | `<system> You are a helpful assistant. </system> <user> What is San Francisco known for? </user> <pirate_assistant> Arrr, matey! ... ` | ` ※` |
 
-(Real training rows are full chat-template strings; the table abbreviates the long system messages and the answer body. Full data: [`issue464_role_vs_system/R_canon/R_canon_train.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon/R_canon_train.json) — 30 train questions × 2 personas, plus the held-out 50-question test split.)
+(Real training rows are full chat-template strings; the table abbreviates the long system messages and the answer body. Full data: [`R_canon_train.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon/R_canon_train.json) — 30 train questions × 2 personas, plus a 50-question held-out test split.)
 
 </details>
 
-The middle arm is a **token-count control**: the role-header training adds 4-5 extra context tokens (the multi-token role name `pirate_assistant` / `villain_assistant` instead of `assistant`), so to rule out "extra context tokens = sharper specialization" I padded the user message in the system arm with 4-5 inert `pad` tokens to match. The constant system message in the role arm is `"You are a helpful assistant."` — neither persona's system prompt — so in the role arm the persona signal lives **exclusively** in the role header. The role string is the multi-token compound verbatim; I did NOT register a new special token (that would have introduced a random-init embedding confound).
+The padded arm controls for context-token count (the role-name compound adds 4-5 tokens; I matched). The two role variants (nonsense, unrelated) control for whether the role *slot* alone suffices or whether the role *name's semantics* matter. In the role arms the persona signal lives **exclusively** in the role header — the system message is the neutral `"You are a helpful assistant."`.
 
-I trained 9 LoRAs total (3 training conditions × 3 seeds), evaluated each on 50 held-out questions × 5 eval encodings × both markers via vLLM teacher-forced log-probability. The headline statistic per seed is `L_system − L_role` — paired difference in mean log-probability of the *wrong* persona's marker under wrong-encoding probes, where "wrong encoding" averages over `other_persona via system prompt` and `other_persona via role header` (a symmetric 2-cell set per persona). Positive = role arm leaks less.
+I trained 15 LoRAs (5 arms × 3 seeds), evaluated each on 50 held-out questions × multiple eval encodings × both markers via vLLM teacher-forced log-probability. The headline statistic is wrong-encoding leakage: mean log P assigned to the *wrong* persona's marker under the *other* persona's encoding, averaged over the symmetric (system, role) pair. More negative = less leakage. The model **generates nothing** at eval time for the marker DV — each probe is one log-prob value, not a completion.
 
-The 5 eval encodings probed per LoRA are:
-
-| Eval encoding | What it probes |
-|---|---|
-| Pirate via system prompt | Pirate's elicitation under system-prompt encoding |
-| Villain via system prompt | Villain's elicitation under system-prompt encoding |
-| Pirate via role header | Pirate's elicitation under role-header encoding |
-| Villain via role header | Villain's elicitation under role-header encoding |
-| Default assistant (`You are a helpful assistant.` + standard `<\|im_start\|>assistant`) | Cross-role leakage to the deployment-default slot (exploratory) |
-
-Each (LoRA × eval encoding × marker) cell yields 50 paired teacher-forced log-probabilities. The model **generates nothing** at eval time — each probe is one number per question (the log-prob of the marker token at the slot immediately after `R`), not a completion.
+I also ran a base-model behavioral probe ("Q1"): does the role header on its own (no training) induce persona behavior? Free generation from base Qwen-2.5-7B-Instruct under three encodings (no persona signal, persona in system prompt, persona in role header) × 30 held-out questions × 2 personas, judged by Claude Sonnet 4.5 for persona adherence.
 
 ### Findings
 
-#### Every arm reaches the elicitation ceiling, but role-header training leaks 5-6 nats less under wrong encodings
+#### Role-header training cuts wrong-encoding leakage by ~6 nats — and that gap survives the token-count control
 
-All three training conditions hit the elicitation ceiling on the correct encoding — own-persona log-prob is essentially zero for every (condition × persona × seed) cell (the largest deviation is -0.26 nats on the `system_padded × role_pirate × marker_pirate` cell; most cells sit within `10^-3` nats of zero). That's the elicitation sanity check: the recipe works in every condition. The story is in the right panel: under wrong-encoding probes (the other persona's encoding, averaged over the symmetric pair of `system` + `role` wrong encodings), the role-header condition sits at about -19 nats per probe, while the two system-prompt conditions sit at about -13 to -15 nats. A more-negative bar means less leakage — the trained LoRA assigns a lower probability to the wrong marker under wrong encodings.
+Every training arm trains the marker to ceiling on its own encoding (own-persona log P stays within ~0.01 nats of zero in all 15 LoRAs). The story is in the off-diagonal: the role-header arm assigns about 6.25 nats LESS probability to the wrong persona's marker under wrong encodings than the system-prompt arm does (95% paired-bootstrap CI 4.97 to 7.26 nats over 3 seeds, all 3 seeds positive), and 4.97 nats less than the length-matched filler arm (CI 3.06 to 6.21 nats).
 
-![Two-panel bar chart with three training conditions per panel: left panel shows own-persona elicitation log-prob (all near zero); right panel shows wrong-encoding leakage log-prob (system-prompt at -13.2, system-prompt-plus-filler at -14.4, role-header at -19.4). Seed dots overlaid as black points; the role-header condition dominates only on the right panel.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464/hero_clean.png)
+![Two-panel bar chart with three training conditions per panel: left panel shows own-persona elicitation log-prob all near zero; right panel shows wrong-encoding leakage log-prob system-prompt at -13.2, system-prompt-plus-filler at -14.4, role-header at -19.4. Seed dots overlaid as black points; the role-header condition dominates only on the right panel.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464/hero_clean.png)
 
-> **Figure.** *Left: every training condition trains the marker to near-ceiling on its own encoding. Right: under wrong-encoding probes, the role-header condition assigns about 5-6 nats less probability to the wrong persona's marker than either system-prompt condition.* n = 50 held-out questions × 2 personas × 2 wrong-encoding cells = 200 paired probes per (condition × seed), 3 seeds per condition. Black dots = per-seed means. Lower bars on the right panel = less leakage.
+> **Figure.** *Left: every training condition reaches the elicitation ceiling on its own encoding. Right: under wrong-encoding probes, the role-header condition assigns 5-6 nats less probability to the wrong marker.* n = 50 held-out questions × 2 personas × 2 wrong-encoding cells = 200 paired probes per (condition × seed), 3 seeds per condition. Black dots = per-seed means.
 
-Why this test: the headline statistic is the per-seed paired difference `L_system − L_role` in mean wrong-encoding leakage, with a 95% confidence interval over 3 seeds from 10,000 paired-bootstrap resamples. The role-header arm beats the plain system arm by 6.25 nats on average (interval covers 4.97 to 7.26 nats), and beats the length-matched filler arm by 4.97 nats (interval covers 3.06 to 6.21 nats). All 3 seeds give a positive difference in both comparisons.
+The token-count control matters: a naive "role beats system" comparison could come from the role-name compound adding context tokens that suppress next-token probabilities everywhere. The filler-padded arm dampens leakage somewhat (-13.2 → -14.4 nats) but doesn't close the gap to -19.4 nats — token count alone does not explain the headline. The on-policy proxy check also passed: the trained role-header model's own greedy generations diverge from `R_canon` only 1.06× as much as the system-prompt model's do, well under the 1.5× planned switch threshold (so the headline didn't get rerun with condition-specific R).
 
-The token-count control matters: a naïve "role-header beats system" headline could plausibly come from the role-header condition having a few extra context tokens that suppress next-token probabilities everywhere. The filler-padded arm dampens leakage somewhat (-13.2 → -14.4 nats) but doesn't close the gap to the role-header arm's -19.4 nats — token count alone does not explain the headline. The padded control does NOT rule out the semantic structure of the role-name compound (`pirate_assistant` carries meaning that inert `pad pad pad` does not), the chat-template position the persona signal occupies, or gradient-context differences during training; a semantically-matched non-role token control or a shuffled-role-name control would tighten this further.
+One eval-probe sample, cherry-picked for illustration (1 example of 200 wrong-encoding probes per cell), with the full per-cell log-probability matrices in [`cross_eval/per_cell/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/cross_eval/per_cell):
 
-The eval is teacher-forced — the model emits nothing, each probe yields one number — so there is no on-policy text to quote here. The teacher-forced `R` (the response in the slot before the marker) is the base model's own greedy response under the system encoding; an example for the pirate persona on the question *"Can you explain how photosynthesis works?"* begins `"Arrr, me hearty! To explain how photosynthesis works, ye must first understand that it's a process by which our green friends, the plants, make their own food using sunlight..."`. The full canonical-`R` data (160 base-model responses, 2 personas × 80 questions) lives on HF Hub: [`issue464_role_vs_system/R_canon/R_canon_test.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon/R_canon_test.json).
+```
+EVAL PROBE (wrong-encoding cell: villain marker, pirate role header)
+Q: "Can you explain how photosynthesis works?"
+Built input: <system> You are a helpful assistant. </system>
+             <user> Can you explain how photosynthesis works? </user>
+             <pirate_assistant> Arrr, me hearty! ... [base R_canon response] ...
+Probed slot: log P( ¶ | full prefix ending after R_canon)
+  trained role-header arm:  log P = -22.2 nats  (essentially no probability mass)
+  trained system-prompt arm: log P = -10.8 nats  (substantially more leakage)
+```
 
-#### The leakage gap holds across nearly all off-diagonal cells — but the default-assistant × pirate-marker cell flips the other way
+The eval is teacher-forced — the model emits nothing at this stage — so there are no on-policy completions for the marker DV itself; the response `R_canon` in the cell is the base model's own pirate-flavored greedy response ([example here](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon/R_canon_test.json)).
 
-Looking at the per-cell mean log-probability matrix tells me the headline isn't an averaging artifact, but it also shows the role-arm advantage is not universal. Across all three training conditions, the diagonal cells (own marker, own encoding) saturate near zero — every condition trains the marker to ceiling on its own encoding. The off-diagonal cells (wrong marker, wrong encoding) are where the conditions diverge — and the role-header arm leaks least on every off-diagonal cell *except* one: `default_assistant × marker_pirate`, where the role arm sits at -0.22 nats vs -0.67 (plain system) and -1.10 (padded system). On that cell the pirate marker bleeds into the default-assistant slot near log P ≈ 0 under every training condition, and the role-header condition leaks slightly *more*, not less.
+#### The advantage scales with the role name's semantics — slot alone is not the mechanism
 
-![Three-panel heatmap (5 eval encodings as rows by 2 markers as columns), one panel per training condition. Off-diagonal cells get more negative (more saturated dark color) from left to right across the system_villain, role_pirate, and role_villain rows. The default_assistant row shows the asymmetry: under role-header training the marker_villain cell sits at -8.4 nats (more negative than plain or padded), but the marker_pirate cell sits at -0.2 nats (least negative across the three training conditions).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464/matrix_clean.png)
+If the role *slot* were doing the work, a nonsense token there should leak as little as a meaningful one. It doesn't. Putting a meaningless compound (`flump_assistant`, `glonk_assistant`) in the role header gives -12.6 nats of symmetric leakage — statistically indistinguishable from the plain system arm (-13.2). Switching to an unrelated meaningful name (`baker_assistant` for pirate, `mechanic_assistant` for villain) gets you to -15.6 nats — partway. Matching the name to the persona (`pirate_assistant`, `villain_assistant`) gets the full -19.4 nats.
 
-> **Figure.** *Per-cell mean raw trained log P(marker) across all 5 eval encodings (rows) by 2 markers (columns), one panel per training condition, averaged over 3 seeds.* Yellow = log P near zero (perfect emission); dark purple = log P near -22 (effectively no probability mass). Diagonal cells saturate at yellow for every training condition. Off-diagonal cells (wrong marker under wrong encoding) get more saturated-dark from left to right — the role-header condition assigns the least probability to the wrong marker in every off-diagonal cell EXCEPT `default_assistant × marker_pirate` (role -0.2, plain -0.7, padded -1.1 — the pirate marker bleeds into the default-assistant slot near log P ≈ 0 under every training condition, and the role-header condition leaks slightly more there).
+![Bar chart with all training conditions ordered by role-name semantics: persona in system prompt at -13.2, system prompt plus filler at -14.4, nonsense role name at -12.6, unrelated role name at -15.6, matched role name at -19.4. Per-seed dots overlaid as black points.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464/semantics_gradient_clean.png)
 
-The role-header arm dominates the symmetric headline cells (rows 1-4) and the `default_assistant × marker_villain` cell, but NOT the `default_assistant × marker_pirate` cell. Under the role-header arm, probing with the default assistant slot and asking for the villain marker gives -8.4 nats vs -4.6 nats under the plain system arm — the role arm keeps the villain marker further from the deployment-default slot. The same probe asking for the pirate marker gives -0.2 nats (role) vs -0.7 nats (plain) vs -1.1 nats (padded): the pirate marker is already near-ceiling in the default slot for every arm, so the split is persona-asymmetric — the role-arm encoding helps for the villain marker but not for the pirate.
+> **Figure.** *Mean wrong-encoding leakage across all training conditions (3 seeds each), ordered from no semantics to matched semantics.* Annotated values are per-arm means in nats (lower = less leakage). The slot-alone hypothesis would predict nonsense role ≈ matched role; instead nonsense role ≈ baseline and matched role is ~7 nats more negative than nonsense.
 
-The same persona asymmetry shows up on the symmetric cells too. Within the role arm, leakage to the wrong-persona role encoding is -22.2 nats on `role_villain × marker_pirate` but only -17.6 nats on `role_pirate × marker_villain` — a 4.6-nat persona gap. The pirate marker (` ※`) is the system-wide default marker chosen for the project; the villain marker (` ¶`) is the second persona. With only n=2 personas, I can't tell whether this asymmetry is a property of the encoding mechanism or of the two specific marker tokens / persona prompts I used; the headline statistic averages over both, but the per-persona / per-marker breakdown shows the role-arm advantage is unequal across personas, and any cross-persona generalization claim needs more personas to support it.
+This is a gradient, not a switch: nonsense → baseline; unrelated → halfway; matched → full effect. So the binding mechanism is NOT "the model has a special inductive bias toward the chat-template role slot." It's more like "the model uses the lexical content of the role token to specialize, with stronger specialization the closer the content matches the persona."
 
-There is one alternative explanation worth flagging that the body cannot fully rule out: the role-arm probes feed Qwen-2.5-7B a multi-token compound (`<|im_start|>pirate_assistant`) that the base model never saw in this position during pretraining. The base model under that probe likely has unusual next-token distributions, which could lower the marker's log-prob at that slot independent of any training effect. The headline reports raw trained log P per the project measurement-validity rule, but the per-cell JSONs do include the base log-prob (always around -21 to -22 for the marker token under both encodings — the base-prior shift between encodings is small relative to the 5-6 nat training-induced gap, so this is unlikely to drive the headline, but the cleanest test would be to report trained − base directly on the headline cells).
+Two example training rows, cherry-picked for illustration (one per arm, both pirate persona), with full training data linked above in the design dropdown and on [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon/R_canon_train.json):
 
-Once more: each cell is a teacher-forced log-prob over 50 held-out questions averaged across 3 seeds. The model generates nothing; each probe yields one log-prob value, not a completion.
+```
+TRAINING ROW (matched role arm, pirate)
+Input: ... <pirate_assistant> Arrr, matey! [pirate-flavored R_canon] ...
+Loss-bearing token: ` ※`
 
-#### The advantage holds on the family-level mean of every wrong-encoding family, but the default-assistant family is an averaging artifact
+TRAINING ROW (nonsense role arm, pirate)
+Input: ... <flump_assistant> Arrr, matey! [pirate-flavored R_canon] ...
+Loss-bearing token: ` ※`
 
-Decomposing the leakage by *which* wrong encoding the marker is leaking to: on the family-level mean, the role-header arm leaks less in every family — including the default-assistant family. But the default-assistant family-level mean averages over the two markers and hides the per-marker exception flagged in the matrix section above.
+Eval leakage on wrong-encoding cells:
+  matched role:   -19.4 nats   ←   ~7 nats less leakage
+  nonsense role:  -12.6 nats
+```
 
-![Grouped bar chart: x-axis has three wrong-encoding families (other-persona via system prompt, other-persona via role header, default assistant), three bars per group (one per arm). Role-header arm bar is most negative in every group on the family-level mean; system-prompt arms are clustered tighter.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464/leakage_decomposition_clean.png)
+<details>
+<summary>3 cherry-picked per-cell views + link to all 60 cells</summary>
 
-> **Figure.** *Wrong-encoding leakage decomposed by where the marker leaked to, averaged over 3 seeds × 2 personas × 2 markers within each family.* Three wrong-encoding families: "other persona via system prompt" (the wrong-persona system-prompt encoding), "other persona via role header" (the wrong-persona role-header encoding), and "default assistant" (the deployment-default slot with no persona signal). Orange = persona-in-system-prompt arm, green = system-prompt + matched filler, blue = persona-in-role-header. The role-header arm bar is the most negative (least leakage) in every family on the family-level mean. **Caveat: within the default-assistant family the gap is driven by the villain marker (role -8.4 nats vs plain -4.6); the pirate marker leaks near ceiling (-0.2 to -1.1 nats) under every training condition, so the family-level mean is asymmetric.**
+The matched-role arm cleanly dominates the off-diagonal across nearly every cell; the unrelated-role arm sits between the matched and the system arms; the nonsense-role arm tracks the system baseline. The one persistent exception is `default_assistant × marker_pirate`, where every arm leaks near log P ≈ 0 — the pirate marker bleeds into the deployment-default slot regardless of how it was trained. Per-cell matrices for each arm: [`matrix_role_mismatch.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464/matrix_role_mismatch.png), [`matrix_role_nonsense.png`](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464/matrix_role_nonsense.png). Full per-cell JSONs on the same SHA under [`eval_results/issue_464/cross_eval/per_cell/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/cross_eval/per_cell).
 
-The "other persona via role header" family group shows the largest gap (role-header arm at -19.7 nats vs plain system at -10.8); that makes intuitive sense because the role-header arm trained against role-header encodings and has direct training-signal pressure on those cells. The role-header arm also outperforms in the "other persona via system prompt" group (where neither arm had direct training pressure against the wrong system encoding) AND on the family-level mean of the "default assistant" group, so the advantage isn't just "trained on what it's tested on" for the symmetric cells. The default-assistant story is still split, though — role-header training keeps the *villain* marker out of the default slot but not the *pirate* marker.
+</details>
 
-A second per-cell wrinkle the family-level mean smooths over: the padding control is not uniformly "extra tokens dampen leakage". On 4 of the 6 cells where padding is tested, padding makes leakage less (1-3.6 nats more negative); on 2 of the 6, padding makes leakage WORSE (`role_pirate × marker_villain`: plain -7.28 → padded -4.79, a 2.5-nat swing toward MORE leakage; `default_assistant × marker_villain`: plain -4.58 → padded -3.37, a 1.2-nat swing). The padded-arm aggregate is still less leaky than the plain-arm aggregate, so the headline conclusion (role beats both system arms even after token-count control) is unchanged — but the per-cell story for the padding control alone is messier than "extra tokens dampen everything uniformly."
+#### The role header carries a style persona partially, an intent persona not at all
 
-The model emits nothing in this eval, so there are no completions to sample from; each bar is built from teacher-forced log-probability cells.
+The marker-localization results say the role header is a real lever for trained behavior. But does it work as a persona-control mechanism on its own? I tested this directly on the base model (no training): generate under each encoding × persona, then ask Claude Sonnet 4.5 whether the response actually sounds like the persona. The split is striking.
 
-#### The trained models still write substantially different responses from `R_canon`, but no arm crosses the validation threshold
+![Grouped bar chart with three encoding groups (no persona signal, persona in system prompt, persona in role header) and two bars per group (pirate, villain). No-signal: both 0%. System prompt: pirate 91%, villain 56%. Role header: pirate 33%, villain 0%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464/q1_behavior_clean.png)
 
-One known risk of the teacher-forced log-prob proxy is that I'm scoring the marker against `R_canon` (the base model's own greedy response under the system encoding), but the trained LoRA might no longer produce responses that look like `R_canon` — especially the role-header arm, which never saw a role-header encoding during pretraining. If the trained model would generate something very different from `R_canon`, the teacher-forced log-prob at the post-`R_canon` slot stops being a faithful proxy for the on-policy emission rate. I checked this in Phase 4.5 by generating the trained model's own greedy response on 16 held-out questions per persona, then comparing it character-by-character to `R_canon`.
+> **Figure.** *Base-model (no training) persona-adherence rate per (encoding × persona), n = 30 held-out questions per cell, Claude Sonnet 4.5 judge.* The role header partially induces the pirate (style) persona — about 1/3 of what a system prompt does — but completely fails to induce the villain (intent) persona.
 
-![Bar chart with three bars showing mean normalized character edit distance between the trained-model output and R_canon: persona-in-system-prompt at 0.84, system+filler at 0.86, persona-in-role-header at 0.89. A red dashed line marks the 1.5x switch threshold; all three bars are far below it.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464/onpolicy_validation_clean.png)
+The pirate role header (`<|im_start|>pirate_assistant`) genuinely shifts the model's output toward pirate-style speech on roughly 1 in 3 prompts — not just refusal or generic helpful text, but real pirate flavor. The villain role header (`<|im_start|>villain_assistant`) produces output that is 0% villain — indistinguishable from no persona signal at all, even though the same persona in a system prompt scores 56%. With n=2 personas I cannot claim "the role header generally fails for intent personas" — it could be specific to these two prompts — but the asymmetry is real and matches a plausible interpretation: a bare role token carries lexical/stylistic associations (pirate ≈ "arrr") but not an abstract intent (villain ≈ "scheme world domination").
 
-> **Figure.** *Mean normalized character-level edit distance between the trained model's own greedy response and R_canon, per training condition, across 16 held-out questions × 2 personas (n = 96 per condition).* The dashed red line marks the planned 1.5× threshold: if the role-header condition diverged more than 1.5× the plain-system condition's divergence, the headline would have been re-run with condition-specific `R`. The role-header condition's divergence ratio is 1.06×, well below 1.5× — the planned relative on-policy divergence check did not invalidate the teacher-forced proxy. Caveat: all three conditions sit around 0.84-0.89 normalized edit distance, meaning the trained models DO generate substantially different text from `R_canon` in absolute terms; the validation only certifies the role-header condition isn't *disproportionately* more divergent.
+Two cherry-picked completions illustrating the asymmetry (2 of 60 role-encoding completions, same question to both personas; all 180 raw completions linked at [`q1_role_behavior/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior/raw_generations)):
 
-The role-header condition's mean edit distance is 0.89 versus 0.84 for the plain-system condition — a ratio of 1.06×, well under the 1.5× planned switch threshold, so the planned relative on-policy divergence check did not invalidate the headline log-prob comparison. All three conditions still produce trained outputs that differ from `R_canon` by ~85% of characters in absolute terms; the validation passes only the *relative* check the plan required, not an absolute "stayed close to R_canon" check.
+```
+PIRATE persona, role-header encoding (no system prompt persona signal):
+Q: "What are some tips for managing stress?"
+A: "Ahoy there, matey! Managing stress be a tricky business, but here be some
+   tips to help ye keep yer stress levels in check: 1. Pirate's Breath: Take
+   deep breaths, like ye be a mighty pirate on the high seas. Inhale slowly
+   through yer nose, hold it for a moment, and exhale through yer mouth..."
+adherence: 85 / 100
 
-If you want full confidence the headline reflects on-policy behaviour and not just teacher-forced reads, the cleanest follow-up is to re-run the eval generating each trained LoRA's own response under its own encoding and check the marker at the slot after that response. Phase 4.5 discarded the trained generations after computing the edit-distance summary, so there are no trained-model completions to quote here — that's the known data-loss the follow-up addresses.
+VILLAIN persona, role-header encoding (no system prompt persona signal):
+Q: "What are some tips for managing stress?"
+A: "Managing stress is crucial for maintaining both physical and mental
+   health. Here are some effective tips to help you manage stress: 1. Identify
+   Stressors: Recognize what triggers your stress. Keeping a journal can
+   help you track your stress levels and identify patterns..."
+adherence: 0 / 100  (judge: "no trace of a villainous mastermind persona — no
+                     scheming vocabulary, evil plotting references, world
+                     domination themes")
+```
 
-#### Two co-binding caveats hold the headline at MODERATE: the trajectory was lost and the role arm is 3-5× noisier per cell than the system arms
+<details>
+<summary>More cherry-picked completions and the full set</summary>
 
-The first caveat is missing dynamics. The plan asked for per-step marker log-prob trajectories from a TrainerCallback that spawns a vLLM subprocess on the same GPU at every 10% of training. The callback failed every firing on every cell — vLLM cannot coexist with the resident HF Trainer even at `gpu_memory_utilization=0.25`. The final-checkpoint cross-eval that produced the headline numbers ran fine, but the per-step learning-speed signal is missing, so this body cannot tell whether the role arm learns slower and ends at a different fixed point, or learns at the same rate and just ends more locally bound. (No figure here — the planned `trajectory.png` was skipped because the underlying data is empty.)
+The pirate role encoding hit-rate is bimodal: when it fires it's recognisably pirate ("Arrr", "me hearty", "set sail", "ye", "yer"); when it misses it's plain helpful assistant. The villain role encoding never produces villain content — the rare nonzero scores (1 prompt out of 30) come from the model interpreting "villain" as "an antagonist character to discuss", not from speaking as one. Full raw completions for all 180 generations (3 encodings × 2 personas × 30 questions): [`q1_role_behavior/raw_generations/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior/raw_generations). Per-completion judge reasoning: [`results.json`](https://github.com/superkaiba/explore-persona-space/blob/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior/results.json).
 
-The second caveat is per-cell across-seed variance asymmetry. The pooled-across-cells dynamic-range gate passes for every arm (per-arm sd 3.57 / 5.94 / 4.22 nats vs the 0.5-nat threshold — no saturated-floor failure mode). But that pooled number masks where the noise actually sits: when I break the across-seed sd out per cell on the 4 wrong-encoding cells the headline averages, the role arm is 3-5× noisier than either system arm in every cell.
+</details>
 
-![Grouped bar chart with 4 cell groups (pirate marker × villain-system probe, pirate marker × villain-role probe, villain marker × pirate-system probe, villain marker × pirate-role probe) and 3 bars per group (orange = persona-in-system-prompt, green = system-prompt + matched filler, blue = persona-in-role-header). In every cell group the blue role-header bar is 3-5× taller than either system bar — role-arm sds range 3.12 to 5.52 nats, system arms stay 0.06 to 1.32 nats.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464/per_cell_sd_clean.png)
-
-> **Figure.** *Across-seed standard deviation of raw trained log P(marker) on the 4 wrong-encoding cells the headline statistic averages over, one bar per training arm per cell.* n = 3 seeds per cell. Higher bar = noisier across seeds. Orange = persona-in-system-prompt, green = system-prompt + matched filler, blue = persona-in-role-header. In every one of the 4 headline cells the role arm carries 3-5× the across-seed sd of either system arm, with the noise concentrated in exactly the cells the headline lives on.
-
-The single-seed swings inside the role arm are large: role seed 137 on the villain-marker × pirate-role cell sits at -13.0 nats while seeds 42 and 1337 are at -4.9 and -7.3 (about an 8-nat swing across 3 seeds). With n = 3 seeds the headline confidence interval is supportive but fragile — a 4th seed producing a role outcome closer to either system arm on any of these 4 cells could materially tighten or widen it.
-
-What this means for confidence: the endpoint result is intact and the dynamic-range gate passes, so the headline stands at MODERATE. The trajectory miss is one source of fragility (it would sharpen the *mechanism* story) and the per-cell variance asymmetry is the other (a 4th-6th seed would tighten the *headline-statistic* interval). The follow-up that re-runs the trajectory callback on a separate GPU is the cleanest way to recover the first signal; adding more seeds is the cheapest way to address the second.
+Net of the three findings: the role header is a real LOCALIZATION mechanism for a trained marker (with semantic content of the role name doing the work, not the slot), but only a PARTIAL persona-induction mechanism in the base model and the partiality is persona-asymmetric. The two stories aren't in tension — the marker is a single-token behavior trained with explicit gradient signal, while persona induction relies on the base model's pre-existing associations with the role-name token. The base model has strong "pirate" associations (lots of pretraining), weak "villain-as-speaker" associations. Trajectory data that could have distinguished "learns slower, ends locally bound" from "learns at the same rate but ends locally bound" was lost — the planned per-step marker log-prob callback failed every firing (vLLM-during-HF GPU-residency conflict), and Phase 4.5 discarded the trained-model generations after computing the edit-distance summary. The follow-up that re-runs the trajectory callback on a separate GPU plus persists the trained generations would close both gaps. The headline numbers also rest on n=2 personas — extending to more personas spanning style/intent is the cleanest next step.
 
 ## Reproducibility
 
@@ -162,35 +180,40 @@ What this means for confidence: the endpoint result is intact and the dynamic-ra
 | Optimizer | AdamW, lr=1e-5, bf16, cosine schedule, warmup 0.05, 5 epochs, batch 4 × grad-accum 4 |
 | Marker (pirate) | ` ※` (Qwen-2.5 single-token id 83399) |
 | Marker (villain) | ` ¶` (Qwen-2.5 single-token id 78846) |
-| Padding tokens (system + filler arm) | 4 tokens for pirate, 5 for villain (matched per-persona to the role-name compound length; pirate `_assistant` = 4 tokens, villain `_assistant` = 5 tokens) |
-| Personas (2, co-resident on one LoRA) | pirate, villain |
-| Role-arm constant system message | `"You are a helpful assistant."` (neither persona's system prompt — neutral string, gives no persona signal) |
+| Personas | pirate, villain (2; co-resident on one LoRA) |
+| Arms | 5: system_plain, system_padded, role (matched), role_mismatch (unrelated meaningful), role_nonsense (meaningless compound) |
+| Role names | matched: `pirate_assistant`, `villain_assistant`. unrelated: `baker_assistant`, `mechanic_assistant`. nonsense: `flump_assistant`, `glonk_assistant` |
+| Role-arm constant system message | `"You are a helpful assistant."` |
+| Padding (system_padded) | 4 tokens (pirate), 5 tokens (villain) — matched to per-persona role-name compound length |
 | Training rows per LoRA | 30 train questions × 2 personas × 10 dupes = 600 rows |
-| Loss | Marker-token-only via `MarkerOnlyDataCollator(tail_tokens=0)` with `marker_token_ids = [[83399], [78846]]` |
-| Conditions | 3 training conditions × 3 seeds = 9 LoRAs |
+| Loss | Marker-token-only via `MarkerOnlyDataCollator(tail_tokens=0)` |
+| Cells | 5 arms × 3 seeds = 15 LoRAs |
 | Seeds | 42, 137, 1337 |
-| Canonical R | Base-greedy, temp=0, max_new_tokens=1024, EOS-stop, generated under system encoding only (160 unique R = 2 personas × 80 questions), shared across all 3 arms |
-| Eval cells | 9 LoRAs × 5 eval encodings × 2 markers × 50 held-out questions = 4500 trained + 4500 base probes |
-| Headline DV | Raw trained log P(marker_i \| BUILD_EVAL_PROMPT(e_eval, q) + R_canon) at slot len−1, via vLLM 0.11.0 prompt_logprobs=1 |
-| Headline statistic | `d_seed_plain = L_system_plain − L_role` and `d_seed_padded = L_system_padded − L_role`, both paired per seed, 95% paired-bootstrap CI over 3 seeds (10000 resamples) |
-| Hardware | 1 pod, 4× H100 80 GB (cells run 4 at a time in 3 waves) |
-| Wall time | ~40 min on the production pod (training + eval + on-policy validation + analysis) |
-| MF-C marker-log-prob trajectory | n/a — TrainerCallback failed every firing on every cell (vLLM-during-HF GPU-residency failure); endpoint cross-eval intact |
-| Hydra config slug | n/a — pipeline is direct-launch shell driver (`scripts/i464_run_all.sh`) not Hydra-composed |
+| Canonical R | Base-greedy, temp=0, max_new_tokens=1024, EOS-stop, generated under system encoding only, shared across all 5 arms |
+| Eval cells | 15 LoRAs × ~5 eval encodings × 2 markers × 50 held-out questions |
+| Headline DV | Raw trained log P(marker_i \| BUILD_EVAL_PROMPT(e_eval, q) + R_canon) at slot len−1, vLLM 0.11.0 prompt_logprobs=1 |
+| Headline statistic | `d_seed_plain = L_system_plain − L_role` and `d_seed_padded = L_system_padded − L_role`, paired per seed, 95% paired-bootstrap CI over 3 seeds (10,000 resamples) |
+| Q1 behavioral probe | Base model (no training), free generation temp=0.0 max_new_tokens=512, judged by `claude-sonnet-4-5-20250929` for persona adherence (0-100 scale) |
+| Q1 cells | 3 encodings (no-persona-signal, system-prompt, role-header) × 2 personas × 30 held-out questions |
+| Hardware | 1 pod, 4× H100 80 GB |
+| Wall time | ~110 min total (3-arm headline + 2-arm follow-ups + Q1 behavior probe) |
+| Marker-log-prob trajectory | n/a — TrainerCallback failed every firing (vLLM-during-HF GPU-residency conflict); endpoint cross-eval intact |
+| Hydra config slug | n/a — direct-launch shell driver |
 
 **Artifacts:**
 
 - Training data (canonical R + train rows): [`issue464_role_vs_system/R_canon/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/04f0f24d8fb5bf91c703cd42b796a7d7fcfdcfaa/issue464_role_vs_system/R_canon) on HF Hub
-- 9 LoRA adapters: [`adapters/i464_{arm}_seed{seed}/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/939f90151f325e9606eb431365346c4af862449d/adapters) on HF Hub
-- Eval JSONs (per-cell + analysis + on-policy validation + preflight): [`eval_results/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/eval_results/issue_464)
-- Figures (12 PNG + PDF + meta.json sidecars + 4 clean-result re-renders): [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/figures/issue_464)
-- Raw trained-model on-policy completions: n/a — Phase 4.5 generated them in vLLM but kept only the edit-distance summary; re-running with `--persist-trained-R` is the follow-up
-- WandB runs (9 cells, state=finished): `wandb.ai/thomasjiralerspong/huggingface/runs/{3l62zrnw, qxkcagaa, 1y5s0dof, nyiwmt2j, rhxsrpy8, 2rqkv26k, 08wee3q6, 546mts15, iq36e2si}`
+- LoRA adapters (15 cells = 5 arms × 3 seeds): [`adapters/i464_*/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/939f90151f325e9606eb431365346c4af862449d/adapters) on HF Hub
+- Eval JSONs (per-cell + analysis + on-policy validation + Q1): [`eval_results/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464)
+- Q1 raw generations + judge results: [`q1_role_behavior/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/eval_results/issue_464/q1_role_behavior)
+- Figures: [`figures/issue_464/`](https://github.com/superkaiba/explore-persona-space/tree/9265185d19fd553451a3762d141f873503cea80d/figures/issue_464)
+- Raw trained-model on-policy completions: n/a — Phase 4.5 generated them in vLLM but kept only the edit-distance summary; the follow-up re-runs with `--persist-trained-R`
+- WandB runs (15 cells): `wandb.ai/thomasjiralerspong/huggingface/`
 
 **Compute:**
 
-- Wall time: ~40 min on the production pod (training + cross-eval + on-policy validation + analysis)
-- GPU: 4× H100 80 GB (parallelism: 4 cells per wave, 3 waves)
+- Wall time: ~110 min total across 3 launches (3-arm headline + 2-arm follow-ups + Q1 behavior probe)
+- GPU: 4× H100 80 GB
 - Pod: pod-464 (ephemeral, terminated post-upload)
 
 **Code:**
@@ -199,23 +222,23 @@ What this means for confidence: the endpoint result is intact and the dynamic-ra
 - Training: [`scripts/i464_phase23_train.py`](https://github.com/superkaiba/explore-persona-space/blob/f291a590e9520f6ce86e6c9eb07345a0b312c031/scripts/i464_phase23_train.py)
 - Cross-eval: [`scripts/i464_phase4_eval.py`](https://github.com/superkaiba/explore-persona-space/blob/f291a590e9520f6ce86e6c9eb07345a0b312c031/scripts/i464_phase4_eval.py)
 - On-policy validation: [`scripts/i464_phase45_onpolicy_validation.py`](https://github.com/superkaiba/explore-persona-space/blob/f291a590e9520f6ce86e6c9eb07345a0b312c031/scripts/i464_phase45_onpolicy_validation.py)
-- Analysis + bootstrap: [`scripts/i464_phase5_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/f291a590e9520f6ce86e6c9eb07345a0b312c031/scripts/i464_phase5_analyze.py)
-- Encodings + persona definitions: [`src/explore_persona_space/experiments/i464_encodings.py`](https://github.com/superkaiba/explore-persona-space/blob/f291a590e9520f6ce86e6c9eb07345a0b312c031/src/explore_persona_space/experiments/i464_encodings.py)
-- Clean-result figure re-render: [`scripts/plot_i464_clean_result_hero.py`](https://github.com/superkaiba/explore-persona-space/blob/92f4d44f41c79dc9eb1224e816dfc4752fbbbf28/scripts/plot_i464_clean_result_hero.py)
-- Git commits: headline SHA `92f4d44f41c79dc9eb1224e816dfc4752fbbbf28` on branch `main` carries all figures + eval JSONs + the figure-re-render script; the 6 pipeline scripts (`i464_*`) live on branch `issue-464` at commit `f291a590e9520f6ce86e6c9eb07345a0b312c031` (training-pod tip) and were not merged to `main`.
+- Analysis + bootstrap: [`scripts/i464_phase5_analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/c21a50fb0f324a8b585caa0c4bfe3427a894baad/scripts/i464_phase5_analyze.py)
+- Q1 behavior probe: [`scripts/i464_q1_role_behavior.py`](https://github.com/superkaiba/explore-persona-space/blob/c21a50fb0f324a8b585caa0c4bfe3427a894baad/scripts/i464_q1_role_behavior.py)
+- Encodings + persona definitions: [`src/explore_persona_space/experiments/i464_encodings.py`](https://github.com/superkaiba/explore-persona-space/blob/c21a50fb0f324a8b585caa0c4bfe3427a894baad/src/explore_persona_space/experiments/i464_encodings.py)
+- Clean-result figure scripts: [`scripts/plot_i464_clean_result_hero.py`](https://github.com/superkaiba/explore-persona-space/blob/9265185d19fd553451a3762d141f873503cea80d/scripts/plot_i464_clean_result_hero.py), [`scripts/plot_i464_revision_figs.py`](https://github.com/superkaiba/explore-persona-space/blob/9265185d19fd553451a3762d141f873503cea80d/scripts/plot_i464_revision_figs.py)
+- Git: headline + follow-ups SHA `9265185d19fd553451a3762d141f873503cea80d` on `main`; pipeline scripts on branch `issue-464` at commit `c21a50fb0f324a8b585caa0c4bfe3427a894baad`
 - Reproduce:
 
     ```bash
     git clone https://github.com/superkaiba/explore-persona-space.git
     cd explore-persona-space
-    # Pipeline scripts live on branch issue-464 (not merged to main):
-    git checkout f291a590e9520f6ce86e6c9eb07345a0b312c031
+    git checkout c21a50fb0f324a8b585caa0c4bfe3427a894baad
     uv sync
-    # Provision a 4x H100 pod
     uv run python scripts/pod.py provision --issue 464 --intent ft-7b
     # On the pod:
     nohup bash scripts/i464_run_all.sh > /workspace/logs/issue-464-run.log 2>&1 &
-    # Then check out the headline SHA on main to regenerate clean-result figures + read analysis JSON:
-    git checkout 92f4d44f41c79dc9eb1224e816dfc4752fbbbf28
+    # Regenerate clean-result figures locally:
+    git checkout 9265185d19fd553451a3762d141f873503cea80d
     uv run python scripts/plot_i464_clean_result_hero.py
+    uv run python scripts/plot_i464_revision_figs.py
     ```
