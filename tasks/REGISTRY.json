@@ -2507,7 +2507,7 @@
       "title": "Divergence predicts on-policy marker transfer only at the one training checkpoint before the marker log-prob saturates at ceiling (MODERATE confidence)"
     },
     "463": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/463",
       "status": "interpreting",
