@@ -2541,8 +2541,8 @@
       "goal": "Determine whether the #463 training-question-probe cosine\u2192EM signal reflects persona geometry or merely the topical content of each cell's own training questions, via topic-stripped paraphrase probes and cross-cell probe swaps.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/467",
-      "status": "plan_pending",
+      "path": "tasks/planning/467",
+      "status": "planning",
       "title": "Disentangle persona-geometry from training-question content in the #463 cosine\u2192EM predictor"
     },
     "468": {
