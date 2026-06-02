@@ -51,3 +51,4 @@
 {"ts": "2026-06-02T11:20:37Z", "kind": "epm:run-launched", "version": 1, "by": "unknown", "note": "pod=pod-464 pid=13479 log_abs=/workspace/logs/issue-464-run.log pid_file=/workspace/logs/issue-464-run.pid cmd='nohup bash scripts/i464_run_all.sh > /workspace/logs/issue-464-run.log 2>&1' head=3d5e1589b phase=rgen (preflight smoke 0/24 markers PASS; wandb=tbd at train start)"}
 {"ts": "2026-06-02T11:30:06Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> train", "phase": "train", "pod": "pod-464"}
 {"ts": "2026-06-02T11:58:25Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> onpolicy", "phase": "onpolicy", "pod": "pod-464"}
+{"ts": "2026-06-02T12:05:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: onpolicy -> done", "phase": "done", "pod": "pod-464"}
