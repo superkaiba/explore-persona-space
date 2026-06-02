@@ -27,7 +27,14 @@ ANALYSIS = json.loads((REPO_ROOT / "eval_results/issue_462/analysis.json").read_
 
 
 def _flat_for_epoch(ep: int):
-    """Build flat (D, g_logprob, delta_g) arrays for one epoch."""
+    """Build flat (D, g_logprob, delta_g, touches_stylized) arrays for one epoch.
+
+    `touches_stylized` is True for any cell whose source or target is one of
+    the three stylized personas A3/A4/A5 (pirate-captain, stand-up comedian,
+    villainous mastermind). These three carry almost all of the ep1
+    off-ceiling mass; the remaining 13 transformations are near-saturated
+    even at ep1.
+    """
     M = json.loads(
         (REPO_ROOT / f"eval_results/issue_462/cross_eval/G_logprob_matrix_ep{ep}.json").read_text()
     )
@@ -35,7 +42,8 @@ def _flat_for_epoch(ep: int):
     KL = D406["KL"]
     conditions = [c["cid"] for c in D406["conditions"]]
     G = M["G"]
-    D, g, dg = [], [], []
+    STYLIZED = {"A3", "A4", "A5"}
+    D, g, dg, stylized = [], [], [], []
     for ti in conditions:
         for tj in conditions:
             if ti == tj:
@@ -43,7 +51,13 @@ def _flat_for_epoch(ep: int):
             D.append(KL[ti][tj])
             g.append(G[ti][tj]["g_logprob"])
             dg.append(G[ti][tj]["delta_g"])
-    return np.asarray(D), np.asarray(g), np.asarray(dg)
+            stylized.append((ti in STYLIZED) or (tj in STYLIZED))
+    return (
+        np.asarray(D),
+        np.asarray(g),
+        np.asarray(dg),
+        np.asarray(stylized, dtype=bool),
+    )
 
 
 def plot_hero():
@@ -113,7 +127,12 @@ def plot_hero():
     ax_rho.set_ylim(-0.95, 0.20)
     ax_rho.grid(axis="y", alpha=0.25, linewidth=0.5)
     ax_rho.legend(loc="upper right", frameon=False, fontsize=8.5)
-    ax_rho.set_title("Divergence vs on-policy marker transfer", fontsize=10.5, loc="left", pad=10)
+    ax_rho.set_title(
+        "Divergence vs on-policy marker log P transfer",
+        fontsize=10.5,
+        loc="left",
+        pad=10,
+    )
 
     # Annotate the binding-constraint point
     ax_rho.annotate(
@@ -168,7 +187,7 @@ def plot_hero():
     ax_sat.set_title("Marker log-prob saturation across cells", fontsize=10.5, loc="left", pad=10)
 
     fig.suptitle(
-        "Divergence predicts on-policy marker transfer only at the one unsaturated checkpoint",
+        "Divergence predicts on-policy marker log P transfer only at the one unsaturated checkpoint",
         fontsize=11,
         x=0.085,
         y=0.985,
@@ -189,21 +208,53 @@ def plot_hero():
 
 
 def plot_ep1_scatter():
-    """ep1 scatter: D vs g_logprob (left) and D vs delta_g (right), the unsaturated regime."""
+    """ep1 scatter: D vs g_logprob (left) and D vs delta_g (right), the unsaturated regime.
+
+    Points are colored by whether the cell touches one of the three
+    stylized personas (A3 pirate-captain, A4 stand-up comedian, A5
+    villainous mastermind). The three stylized personas carry almost all
+    of ep1's off-ceiling mass — making the dynamic-range concentration
+    visible to the reader, not buried in the text.
+    """
     set_paper_style("blog")
     import matplotlib as mpl
 
     mpl.rcParams["figure.constrained_layout.use"] = False
-    D, g, dg = _flat_for_epoch(1)
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.6))
+    D, g, dg, stylized = _flat_for_epoch(1)
+    fig, axes = plt.subplots(1, 2, figsize=(11.6, 4.9))
 
     primary = paper_palette_role("primary")
     baseline = paper_palette_role("baseline")
+    accent = paper_palette_role("accent")
     neutral = paper_palette_role("neutral")
+
+    def _scatter_by_persona(ax, y, color_other, color_stylized):
+        ax.scatter(
+            D[~stylized],
+            y[~stylized],
+            s=22,
+            c=color_other,
+            alpha=0.55,
+            edgecolor="white",
+            linewidth=0.5,
+            label="13 neutral / B / C / D personas (n=182 cells)",
+            zorder=2,
+        )
+        ax.scatter(
+            D[stylized],
+            y[stylized],
+            s=34,
+            c=color_stylized,
+            alpha=0.85,
+            edgecolor="white",
+            linewidth=0.5,
+            label="A3 / A4 / A5 stylized personas (n=58 cells)",
+            zorder=3,
+        )
 
     # Left: D vs g_logprob (raw on-policy log-prob)
     ax = axes[0]
-    ax.scatter(D, g, s=22, c=primary, alpha=0.7, edgecolor="white", linewidth=0.5)
+    _scatter_by_persona(ax, g, color_other=primary, color_stylized=accent)
     ax.axhline(0, color=neutral, lw=0.8, linestyle=":")
     ax.set_xlabel("Base-model forward-KL divergence D (nats)")
     ax.set_ylabel("On-policy log P(marker) at epoch 1 (nats)")
@@ -220,14 +271,24 @@ def plot_ep1_scatter():
         fontsize=8.5,
         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=neutral, alpha=0.9),
     )
-    ax.set_title("Raw on-policy log P(marker)", fontsize=10, loc="left")
+    ax.set_title("Raw on-policy log P(marker)", fontsize=10, loc="left", pad=8)
     ax.grid(alpha=0.2, linewidth=0.5)
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.18),
+        frameon=False,
+        fontsize=7.8,
+        ncol=2,
+    )
 
-    # Right: D vs delta_g (base-subtracted)
+    # Right: D vs delta_g (base-subtracted) — explicit room for ylabel + title
     ax = axes[1]
-    ax.scatter(D, dg, s=22, c=baseline, alpha=0.7, edgecolor="white", linewidth=0.5)
+    _scatter_by_persona(ax, dg, color_other=baseline, color_stylized=accent)
     ax.set_xlabel("Base-model forward-KL divergence D (nats)")
-    ax.set_ylabel("Base-subtracted = trained - base log P(marker) at epoch 1 (nats)")
+    ax.set_ylabel(
+        "Base-subtracted (trained - base) log P(marker)\nat epoch 1 (nats)",
+        fontsize=9.5,
+    )
     rho1d = ANALYSIS["per_level"]["ep1"]["partial_rho_D_delta_g"]
     ax.text(
         0.98,
@@ -241,26 +302,40 @@ def plot_ep1_scatter():
         fontsize=8.5,
         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=neutral, alpha=0.9),
     )
-    ax.set_title("Base-subtracted (trained - base)", fontsize=10, loc="left")
+    # Inline sensitivity annotation (Drop A3 only / Drop A3+A4 numbers verified
+    # by /tmp/i462_sensitivity.py against G_logprob_matrix_ep1.json).
+    ax.text(
+        0.02,
+        0.97,
+        "drop A3 only: rho = -0.21, p = 1.9e-3 (still excludes 0)\n"
+        "drop A3 + A4: rho = -0.05, p = 0.51 (remainder 92.9% saturated)",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=7.8,
+        color=neutral,
+        bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor=neutral, alpha=0.9),
+    )
+    ax.set_title("Base-subtracted (trained - base)", fontsize=10, loc="left", pad=8)
     ax.grid(alpha=0.2, linewidth=0.5)
 
     fig.suptitle(
-        "Epoch 1 (the unsaturated checkpoint): divergence really does predict on-policy marker transfer",
+        "Epoch 1 — divergence predicts marker log-prob transfer, mostly via the 3 stylized personas",
         fontsize=11,
-        x=0.085,
+        x=0.075,
         y=0.985,
         ha="left",
         fontweight="semibold",
     )
     fig.text(
-        0.085,
-        0.93,
-        "240 off-diagonal cells (16x16 cross-eval, on-diagonal excluded). Both panels: more-divergent transformation pairs transfer less.",
-        fontsize=8.5,
+        0.075,
+        0.935,
+        "240 off-diagonal cells (16x16 cross-eval, on-diagonal excluded). DV is teacher-forced log P(marker) at the slot after a base on-policy response R. Color: cells whose source or target is one of the 3 stylized personas (A3/A4/A5) carry almost all of the off-ceiling dynamic range.",
+        fontsize=8.2,
         color=neutral,
         ha="left",
     )
-    fig.subplots_adjust(top=0.83, bottom=0.13, left=0.085, right=0.97, wspace=0.34)
+    fig.subplots_adjust(top=0.79, bottom=0.22, left=0.075, right=0.97, wspace=0.36)
     savefig_paper(fig, "issue_462/ep1_scatter_d_vs_transfer", dir=str(REPO_ROOT / "figures"))
     plt.close(fig)
 
@@ -274,8 +349,8 @@ def plot_ep1_vs_ep5_distribution():
     import matplotlib as mpl
 
     mpl.rcParams["figure.constrained_layout.use"] = False
-    D1, g1, _ = _flat_for_epoch(1)
-    D5, g5, _ = _flat_for_epoch(5)
+    D1, g1, _, _ = _flat_for_epoch(1)
+    D5, g5, _, _ = _flat_for_epoch(5)
 
     fig, axes = plt.subplots(1, 2, figsize=(11.2, 4.4), sharey=True)
     primary = paper_palette_role("primary")
@@ -292,7 +367,7 @@ def plot_ep1_vs_ep5_distribution():
     axes[0].text(
         0.98,
         0.92,
-        "sd = 0.73\n76% within 0.1 nat of 0\nmin = -7.18",
+        "sd = 0.73 nat\n75.8% within 0.1 nat of 0\nmin = -7.18",
         transform=axes[0].transAxes,
         ha="right",
         va="top",
@@ -308,7 +383,7 @@ def plot_ep1_vs_ep5_distribution():
     axes[1].text(
         0.98,
         0.92,
-        "sd = 0.07\n99% within 0.1 nat of 0\nmin = -1.11",
+        "sd = 0.07 nat\n99.2% within 0.1 nat of 0\nmin = -1.11",
         transform=axes[1].transAxes,
         ha="right",
         va="top",
@@ -318,7 +393,7 @@ def plot_ep1_vs_ep5_distribution():
     axes[1].grid(axis="y", alpha=0.2)
 
     fig.suptitle(
-        "The saturation collapse: epoch 1 spans 7 nats of range; by epoch 5 everything piles at the ceiling",
+        "The saturation collapse: epoch 1 spans 7 nats of range; by epoch 5 almost everything sits at the ceiling",
         fontsize=11,
         x=0.085,
         y=0.985,
