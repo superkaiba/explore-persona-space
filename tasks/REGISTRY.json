@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 468,
+  "highest_id": 469,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2552,6 +2552,14 @@
       "path": "tasks/planning/468",
       "status": "planning",
       "title": "Why does the #463 cosine\u2192EM signal appear at last-prompt-token but not the canonical response-mean extraction?"
+    },
+    "469": {
+      "goal": "Re-measure the marker-transfer line on-policy \u2014 score the marker on the model's own generations rather than a teacher-forced canned response \u2014 and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/awaiting_promotion/469",
+      "status": "awaiting_promotion",
+      "title": "Measured on the model's own generations, an implanted marker transfers to nearly every context at ceiling, and the off-policy \"geometry predicts transfer\" result survives only at the one checkpoint before the marker saturates (MODERATE confidence)"
     },
     "47": {
       "has_clean_result": false,
