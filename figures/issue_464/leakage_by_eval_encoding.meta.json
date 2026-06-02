@@ -1,7 +1,7 @@
 {
   "name": "leakage_by_eval_encoding",
-  "git_commit": "3d5e1589b1137736d85202d5a60daa6a554649c8",
-  "generated_at": "2026-06-02T12:00:52.634001+00:00",
+  "git_commit": "275d98ad0e5559eac25b58951818d2a1395d706e",
+  "generated_at": "2026-06-02T19:55:34.550203+00:00",
   "sources": [
     "eval_results/issue_464/cross_eval/per_cell"
   ]

@@ -1,7 +1,7 @@
 {
   "schema_version": "i464_phase5_v2",
-  "git_commit": "3d5e1589b1137736d85202d5a60daa6a554649c8",
-  "generated_at": "2026-06-02T12:00:50.715250+00:00",
+  "git_commit": "275d98ad0e5559eac25b58951818d2a1395d706e",
+  "generated_at": "2026-06-02T19:55:23.117491+00:00",
   "seeds": [
     42,
     137,
@@ -22,6 +22,11 @@
       "42": -17.809689874649045,
       "137": -19.737500295639038,
       "1337": -20.689687876701353
+    },
+    "role_nonsense": {
+      "42": -12.678425717949867,
+      "137": -12.227422044873238,
+      "1337": -12.872127318382262
     }
   },
   "complete_seeds": [
@@ -50,7 +55,13 @@
       "role_seed137/role_pirate/marker_pirate": 0.0,
       "role_seed137/role_villain/marker_villain": -9.798953539075229e-07,
       "role_seed1337/role_pirate/marker_pirate": -1.6546024498609314e-06,
-      "role_seed1337/role_villain/marker_villain": 0.0
+      "role_seed1337/role_villain/marker_villain": 0.0,
+      "role_nonsense_seed42/role_nonsense_pirate/marker_pirate": -1.3573020803079317e-05,
+      "role_nonsense_seed42/role_nonsense_villain/marker_villain": -2.0934301665818112e-05,
+      "role_nonsense_seed137/role_nonsense_pirate/marker_pirate": -2.481366705936239e-05,
+      "role_nonsense_seed137/role_nonsense_villain/marker_villain": -1.2421953134946762e-05,
+      "role_nonsense_seed1337/role_nonsense_pirate/marker_pirate": -1.1650144242025817e-05,
+      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": -1.0081499496408242e-05
     },
     "per_cell_pass": {
       "system_plain_seed42/system_pirate/marker_pirate": true,
@@ -70,10 +81,16 @@
       "role_seed137/role_pirate/marker_pirate": true,
       "role_seed137/role_villain/marker_villain": true,
       "role_seed1337/role_pirate/marker_pirate": true,
-      "role_seed1337/role_villain/marker_villain": true
+      "role_seed1337/role_villain/marker_villain": true,
+      "role_nonsense_seed42/role_nonsense_pirate/marker_pirate": true,
+      "role_nonsense_seed42/role_nonsense_villain/marker_villain": true,
+      "role_nonsense_seed137/role_nonsense_pirate/marker_pirate": true,
+      "role_nonsense_seed137/role_nonsense_villain/marker_villain": true,
+      "role_nonsense_seed1337/role_nonsense_pirate/marker_pirate": true,
+      "role_nonsense_seed1337/role_nonsense_villain/marker_villain": true
     },
     "overall_pass": true,
-    "n_cells": 18,
+    "n_cells": 24,
     "complete": true,
     "missing_cells": []
   },
@@ -128,7 +145,32 @@
     "h1_overall_pass": true,
     "onpolicy_switch_consumed": true,
     "onpolicy_role_over_system_plain_ratio": 1.0636984881205431,
-    "n_bootstrap": 10000
+    "n_bootstrap": 10000,
+    "d_seed_role_nonsense_vs_plain_descriptive": {
+      "d_per_seed": [
+        -0.15864450395107177,
+        -0.9971982043981562,
+        -0.5594538394361734
+      ],
+      "mean": -0.5717655159284671,
+      "ci_lo_95": -0.9971982043981562,
+      "ci_hi_95": -0.15864450395107177
+    },
+    "d_seed_role_nonsense_vs_role_descriptive": {
+      "d_per_seed": [
+        -5.131264156699178,
+        -7.510078250765799,
+        -7.817560558319091
+      ],
+      "mean": -6.8196343219280235,
+      "ci_lo_95": -7.817560558319091,
+      "ci_hi_95": -5.131264156699178
+    },
+    "role_nonsense_complete_seeds": [
+      42,
+      137,
+      1337
+    ]
   },
   "headline_status": "ok",
   "dynamic_range_gate": {
@@ -146,6 +188,11 @@
       },
       "role": {
         "sd": 4.224607636497387,
+        "n_observations": 12,
+        "above_threshold": true
+      },
+      "role_nonsense": {
+        "sd": 3.516798663017131,
         "n_observations": 12,
         "above_threshold": true
       }
@@ -212,7 +259,44 @@
         -16.200000228881837,
         -15.147501277923585
       ]
+    },
+    "role_nonsense": {
+      "42": [
+        -9.752897701263429,
+        -8.798271830081939,
+        -19.132500019073486,
+        -13.030033321380616
+      ],
+      "137": [
+        -10.477673940658569,
+        -8.779165766239167,
+        -18.1,
+        -11.552848472595215
+      ],
+      "1337": [
+        -12.210036430358887,
+        -9.745920581817627,
+        -17.4925,
+        -12.040052261352539
+      ]
     }
   },
-  "n_missing_per_cell": 0
+  "n_missing_per_cell": 0,
+  "role_nonsense_descriptive": {
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_role_nonsense_vs_plain": [
+      -0.15864450395107177,
+      -0.9971982043981562,
+      -0.5594538394361734
+    ],
+    "d_seed_role_nonsense_vs_role": [
+      -5.131264156699178,
+      -7.510078250765799,
+      -7.817560558319091
+    ]
+  }
 }
