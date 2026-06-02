@@ -1,0 +1,51 @@
+{
+  "schema_version": "i464_v1",
+  "git_commit": "3d5e1589b1137736d85202d5a60daa6a554649c8",
+  "generated_at": "2026-06-02T11:20:26.283005+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "personas": [
+    "pirate",
+    "villain"
+  ],
+  "arms": [
+    "system_plain",
+    "system_padded",
+    "role"
+  ],
+  "marker_ids": {
+    "pirate": 83399,
+    "villain": 78846
+  },
+  "padding_token_id": 11016,
+  "padding_len_for": {
+    "pirate": 4,
+    "villain": 5
+  },
+  "role_name_token_ids": {
+    "pirate_assistant": [
+      5565,
+      349,
+      12083,
+      11202
+    ],
+    "villain_assistant": [
+      85,
+      483,
+      466,
+      12083,
+      11202
+    ]
+  },
+  "n_q_train": 30,
+  "n_q_test": 50,
+  "base_emission_smoke": {
+    "n_total": 24,
+    "n_marker_in_R": 0,
+    "encodings_scanned": [
+      "system_pirate",
+      "system_villain",
+      "default_assistant"
+    ],
+    "n_questions_per_encoding": 8
+  }
+}

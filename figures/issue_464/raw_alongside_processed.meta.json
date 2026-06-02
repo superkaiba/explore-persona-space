@@ -1,0 +1,9 @@
+{
+  "name": "raw_alongside_processed",
+  "git_commit": "3d5e1589b1137736d85202d5a60daa6a554649c8",
+  "generated_at": "2026-06-02T12:00:52.012950+00:00",
+  "sources": [
+    "eval_results/issue_464/analysis.json",
+    "eval_results/issue_464/cross_eval/per_cell"
+  ]
+}

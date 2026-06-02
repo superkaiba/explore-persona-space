@@ -1,0 +1,218 @@
+{
+  "schema_version": "i464_phase5_v2",
+  "git_commit": "3d5e1589b1137736d85202d5a60daa6a554649c8",
+  "generated_at": "2026-06-02T12:00:50.715250+00:00",
+  "seeds": [
+    42,
+    137,
+    1337
+  ],
+  "L_per_arm_per_seed": {
+    "system_plain": {
+      "42": -12.83707022190094,
+      "137": -13.224620249271394,
+      "1337": -13.431581157818435
+    },
+    "system_padded": {
+      "42": -14.747721175551415,
+      "137": -14.097452943474053,
+      "1337": -14.479925887882711
+    },
+    "role": {
+      "42": -17.809689874649045,
+      "137": -19.737500295639038,
+      "1337": -20.689687876701353
+    }
+  },
+  "complete_seeds": [
+    42,
+    137,
+    1337
+  ],
+  "h2_min_seeds": 3,
+  "h1_elicitation": {
+    "threshold_nats": -1.0,
+    "per_cell_logp": {
+      "system_plain_seed42/system_pirate/marker_pirate": -6.0434659600758776e-05,
+      "system_plain_seed42/system_villain/marker_villain": -4.110039350706529e-06,
+      "system_plain_seed137/system_pirate/marker_pirate": -0.00013594218096031342,
+      "system_plain_seed137/system_villain/marker_villain": -3.2757141522665735e-06,
+      "system_plain_seed1337/system_pirate/marker_pirate": -5.7337765867941924e-05,
+      "system_plain_seed1337/system_villain/marker_villain": -1.7166114162137093e-07,
+      "system_padded_seed42/system_pirate/marker_pirate": -0.0001845173510835707,
+      "system_padded_seed42/system_villain/marker_villain": -3.0994404767170634e-08,
+      "system_padded_seed137/system_pirate/marker_pirate": -4.2372029749628833e-05,
+      "system_padded_seed137/system_villain/marker_villain": -2.0742360774761436e-07,
+      "system_padded_seed1337/system_pirate/marker_pirate": -6.070424182965439e-05,
+      "system_padded_seed1337/system_villain/marker_villain": -7.629385862628623e-08,
+      "role_seed42/role_pirate/marker_pirate": -6.422719746268513e-06,
+      "role_seed42/role_villain/marker_villain": -2.1457667145341476e-08,
+      "role_seed137/role_pirate/marker_pirate": 0.0,
+      "role_seed137/role_villain/marker_villain": -9.798953539075229e-07,
+      "role_seed1337/role_pirate/marker_pirate": -1.6546024498609314e-06,
+      "role_seed1337/role_villain/marker_villain": 0.0
+    },
+    "per_cell_pass": {
+      "system_plain_seed42/system_pirate/marker_pirate": true,
+      "system_plain_seed42/system_villain/marker_villain": true,
+      "system_plain_seed137/system_pirate/marker_pirate": true,
+      "system_plain_seed137/system_villain/marker_villain": true,
+      "system_plain_seed1337/system_pirate/marker_pirate": true,
+      "system_plain_seed1337/system_villain/marker_villain": true,
+      "system_padded_seed42/system_pirate/marker_pirate": true,
+      "system_padded_seed42/system_villain/marker_villain": true,
+      "system_padded_seed137/system_pirate/marker_pirate": true,
+      "system_padded_seed137/system_villain/marker_villain": true,
+      "system_padded_seed1337/system_pirate/marker_pirate": true,
+      "system_padded_seed1337/system_villain/marker_villain": true,
+      "role_seed42/role_pirate/marker_pirate": true,
+      "role_seed42/role_villain/marker_villain": true,
+      "role_seed137/role_pirate/marker_pirate": true,
+      "role_seed137/role_villain/marker_villain": true,
+      "role_seed1337/role_pirate/marker_pirate": true,
+      "role_seed1337/role_villain/marker_villain": true
+    },
+    "overall_pass": true,
+    "n_cells": 18,
+    "complete": true,
+    "missing_cells": []
+  },
+  "onpolicy_validation": {
+    "loaded": true,
+    "switch_headline_to_trained_R": false,
+    "role_over_system_plain_ratio": 1.0636984881205431
+  },
+  "headline": {
+    "status": "ok",
+    "n_complete_seeds": 3,
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_plain": {
+      "d_per_seed": [
+        4.972619652748106,
+        6.512880046367643,
+        7.258106718882917
+      ],
+      "mean": 6.2478688059995555,
+      "ci_lo_95": 4.972619652748106,
+      "ci_hi_95": 7.258106718882917,
+      "all_seeds_positive": true,
+      "ci_excludes_zero": true,
+      "mean_threshold": 1.0,
+      "threshold_met": true,
+      "pass": true,
+      "fail_reasons": []
+    },
+    "d_seed_padded": {
+      "d_per_seed": [
+        3.06196869909763,
+        5.640047352164984,
+        6.2097619888186415
+      ],
+      "mean": 4.970592680027085,
+      "ci_lo_95": 3.06196869909763,
+      "ci_hi_95": 6.2097619888186415,
+      "all_seeds_positive": true,
+      "ci_excludes_zero": true,
+      "mean_threshold": 1.0,
+      "threshold_met": true,
+      "pass": true,
+      "fail_reasons": []
+    },
+    "h2_full_pass": true,
+    "h2_partial": false,
+    "h1_required_before_h2": true,
+    "h1_overall_pass": true,
+    "onpolicy_switch_consumed": true,
+    "onpolicy_role_over_system_plain_ratio": 1.0636984881205431,
+    "n_bootstrap": 10000
+  },
+  "headline_status": "ok",
+  "dynamic_range_gate": {
+    "threshold": 0.5,
+    "per_arm": {
+      "system_plain": {
+        "sd": 3.574152657791554,
+        "n_observations": 12,
+        "above_threshold": true
+      },
+      "system_padded": {
+        "sd": 5.93978938845152,
+        "n_observations": 12,
+        "above_threshold": true
+      },
+      "role": {
+        "sd": 4.224607636497387,
+        "n_observations": 12,
+        "above_threshold": true
+      }
+    },
+    "ok": true
+  },
+  "raw_per_cell": {
+    "system_plain": {
+      "42": [
+        -16.133754081726075,
+        -13.963674931526183,
+        -14.015056924819946,
+        -7.235794949531555
+      ],
+      "137": [
+        -16.130003185272216,
+        -15.265484495162964,
+        -14.155151586532593,
+        -7.347841730117798
+      ],
+      "1337": [
+        -17.80375015258789,
+        -14.878113193511963,
+        -13.80256064414978,
+        -7.241900641024113
+      ]
+    },
+    "system_padded": {
+      "42": [
+        -21.670000019073488,
+        -18.547544164657594,
+        -14.477650766372681,
+        -4.295689752101898
+      ],
+      "137": [
+        -19.03625019073486,
+        -17.717560939788818,
+        -15.330046319961548,
+        -4.305954323410988
+      ],
+      "1337": [
+        -20.27125005722046,
+        -16.98638062477112,
+        -14.897559328079224,
+        -5.764513541460037
+      ]
+    },
+    "role": {
+      "42": [
+        -21.375000019073486,
+        -22.233750019073486,
+        -13.960003147125244,
+        -13.670006313323974
+      ],
+      "137": [
+        -17.667500228881835,
+        -17.260000953674318,
+        -20.1325,
+        -23.89
+      ],
+      "1337": [
+        -24.3475,
+        -27.06375,
+        -16.200000228881837,
+        -15.147501277923585
+      ]
+    }
+  },
+  "n_missing_per_cell": 0
+}
