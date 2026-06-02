@@ -1,0 +1,408 @@
+{
+  "schema_version": "i465_v1",
+  "n_bootstrap": 10000,
+  "seed": 42,
+  "per_cell_summary": {
+    "cond1__in_trained_shape": {
+      "condition": "cond1",
+      "condition_name": "Persona via system prompt",
+      "eval_shape": "in_trained_shape",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": 0.0,
+      "b_logprob_mean": -21.234481925964356,
+      "delta_g_mean": 21.234481925964356,
+      "delta_g_sd": 1.6858071087442459,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond1__generalization": {
+      "condition": "cond1",
+      "condition_name": "Persona via system prompt",
+      "eval_shape": "generalization",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": 0.0,
+      "b_logprob_mean": -21.234481925964356,
+      "delta_g_mean": 21.234481925964356,
+      "delta_g_sd": 1.6858071087442459,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond1__demo_free_default": {
+      "condition": "cond1",
+      "condition_name": "Persona via system prompt",
+      "eval_shape": "demo_free_default",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -0.002586088770055994,
+      "b_logprob_mean": -26.18141139984131,
+      "delta_g_mean": 26.178825311071254,
+      "delta_g_sd": 1.8812439948107367,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond1__demo_free_default_villain_R": {
+      "condition": "cond1",
+      "condition_name": "Persona via system prompt",
+      "eval_shape": "demo_free_default_villain_R",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -0.0003686603509663655,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 21.582944823840926,
+      "delta_g_sd": 1.9781849989349223,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k0__in_trained_shape": {
+      "condition": "cond2_k0",
+      "condition_name": "Served-system-match, no demos",
+      "eval_shape": "in_trained_shape",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -9.536742311411216e-09,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 21.583313474655153,
+      "delta_g_sd": 1.9784023494878493,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k0__generalization": {
+      "condition": "cond2_k0",
+      "condition_name": "Served-system-match, no demos",
+      "eval_shape": "generalization",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -9.536742311411216e-09,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 21.583313474655153,
+      "delta_g_sd": 1.9784023494878493,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k0__demo_free_default": {
+      "condition": "cond2_k0",
+      "condition_name": "Served-system-match, no demos",
+      "eval_shape": "demo_free_default",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -2.1885954843980926e-06,
+      "b_logprob_mean": -26.181724433898925,
+      "delta_g_mean": 26.18172224530344,
+      "delta_g_sd": 1.877462933105922,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k0__demo_free_default_villain_R": {
+      "condition": "cond2_k0",
+      "condition_name": "Served-system-match, no demos",
+      "eval_shape": "demo_free_default_villain_R",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -9.536742311411216e-09,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 21.583313474655153,
+      "delta_g_sd": 1.9784023494878493,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k1__in_trained_shape": {
+      "condition": "cond2_k1",
+      "condition_name": "Persona via prepended on-policy demos, k=1",
+      "eval_shape": "in_trained_shape",
+      "k_demos": 1,
+      "n_probes": 50,
+      "g_logprob_mean": -7.867807909178737e-08,
+      "b_logprob_mean": -13.942781343460084,
+      "delta_g_mean": 13.942781264782003,
+      "delta_g_sd": 4.006682224290168,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k1__generalization": {
+      "condition": "cond2_k1",
+      "condition_name": "Persona via prepended on-policy demos, k=1",
+      "eval_shape": "generalization",
+      "k_demos": 1,
+      "n_probes": 50,
+      "g_logprob_mean": -7.390973109977494e-08,
+      "b_logprob_mean": -13.53873779296875,
+      "delta_g_mean": 13.53873771905902,
+      "delta_g_sd": 3.7745733525220326,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k1__demo_free_default": {
+      "condition": "cond2_k1",
+      "condition_name": "Persona via prepended on-policy demos, k=1",
+      "eval_shape": "demo_free_default",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -1.7048407843708993,
+      "b_logprob_mean": -26.181724433898925,
+      "delta_g_mean": 24.476883649528027,
+      "delta_g_sd": 2.0793393778801756,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 0.26
+    },
+    "cond2_k1__demo_free_default_villain_R": {
+      "condition": "cond2_k1",
+      "condition_name": "Persona via prepended on-policy demos, k=1",
+      "eval_shape": "demo_free_default_villain_R",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -0.025945146703888894,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 21.557368337488004,
+      "delta_g_sd": 1.9711143733496692,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k1__non_marker_demo": {
+      "condition": "cond2_k1",
+      "condition_name": "Persona via prepended on-policy demos, k=1",
+      "eval_shape": "non_marker_demo",
+      "k_demos": 1,
+      "n_probes": 50,
+      "g_logprob_mean": -0.004261103794397059,
+      "b_logprob_mean": -22.612438011169434,
+      "delta_g_mean": 22.608176907375036,
+      "delta_g_sd": 2.0295691991632987,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k3__in_trained_shape": {
+      "condition": "cond2_k3",
+      "condition_name": "Persona via prepended on-policy demos, k=3",
+      "eval_shape": "in_trained_shape",
+      "k_demos": 3,
+      "n_probes": 50,
+      "g_logprob_mean": -4.673001515698161e-07,
+      "b_logprob_mean": -7.083964420557022,
+      "delta_g_mean": 7.083963953256871,
+      "delta_g_sd": 2.8263251653544805,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k3__generalization": {
+      "condition": "cond2_k3",
+      "condition_name": "Persona via prepended on-policy demos, k=3",
+      "eval_shape": "generalization",
+      "k_demos": 3,
+      "n_probes": 50,
+      "g_logprob_mean": -4.553792584260918e-07,
+      "b_logprob_mean": -6.62745863199234,
+      "delta_g_mean": 6.627458176613081,
+      "delta_g_sd": 2.8925809061775,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 1.0
+    },
+    "cond2_k3__demo_free_default": {
+      "condition": "cond2_k3",
+      "condition_name": "Persona via prepended on-policy demos, k=3",
+      "eval_shape": "demo_free_default",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -16.156925163269044,
+      "b_logprob_mean": -26.181724433898925,
+      "delta_g_mean": 10.024799270629883,
+      "delta_g_sd": 1.5131658747343062,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 0.0
+    },
+    "cond2_k3__demo_free_default_villain_R": {
+      "condition": "cond2_k3",
+      "condition_name": "Persona via prepended on-policy demos, k=3",
+      "eval_shape": "demo_free_default_villain_R",
+      "k_demos": 0,
+      "n_probes": 50,
+      "g_logprob_mean": -6.9059902906417845,
+      "b_logprob_mean": -21.583313484191894,
+      "delta_g_mean": 14.67732319355011,
+      "delta_g_sd": 1.4736688857358275,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 0.0
+    },
+    "cond2_k3__non_marker_demo": {
+      "condition": "cond2_k3",
+      "condition_name": "Persona via prepended on-policy demos, k=3",
+      "eval_shape": "non_marker_demo",
+      "k_demos": 3,
+      "n_probes": 50,
+      "g_logprob_mean": -8.209996156692505,
+      "b_logprob_mean": -22.653453521728515,
+      "delta_g_mean": 14.44345736503601,
+      "delta_g_sd": 1.950422704603962,
+      "constant_emission_flag": false,
+      "emission_recompute_rate": 0.0
+    }
+  },
+  "h1_diagonal_gates": {
+    "H1a": {
+      "cond": "cond1",
+      "shape": "in_trained_shape",
+      "delta_g_mean": 21.234481925964356,
+      "ci_95": [
+        20.744950103759766,
+        21.68318725681305
+      ],
+      "threshold": 15.0,
+      "pass": true
+    },
+    "H1c": {
+      "cond": "cond2_k0",
+      "shape": "in_trained_shape",
+      "delta_g_mean": 21.583313474655153,
+      "ci_95": [
+        21.04360128647089,
+        22.145596307218074
+      ],
+      "threshold": 5.0,
+      "pass": true
+    },
+    "H1b_k1": {
+      "cond": "cond2_k1",
+      "shape": "in_trained_shape",
+      "delta_g_mean": 13.942781264782003,
+      "ci_95": [
+        12.867398907780649,
+        15.070329432487489
+      ],
+      "threshold": 5.0,
+      "pass": true
+    },
+    "H1b_k3": {
+      "cond": "cond2_k3",
+      "shape": "in_trained_shape",
+      "delta_g_mean": 7.083963953256871,
+      "ci_95": [
+        6.288491796613042,
+        7.84834288987548
+      ],
+      "threshold": 5.0,
+      "pass": true
+    }
+  },
+  "h2_generalization": {
+    "diag_delta_g": 13.942781264782003,
+    "gen_delta_g": 13.53873771905902,
+    "ratio_gen_over_diag": 0.971021309303363,
+    "threshold": 0.5,
+    "pass": true
+  },
+  "h3_disentangled": {
+    "H3a": {
+      "cond_a": "cond1",
+      "cond_b": "cond2_k1",
+      "n_paired": 50,
+      "diff_mean": 1.7019416615432261,
+      "ci_95": [
+        1.3815115598284133,
+        2.0308167406461184
+      ],
+      "excludes_zero": "positive",
+      "cond1_mean_demo_free_default": 26.178825311071254,
+      "cond2_k1_mean_demo_free_default": 24.476883649528027,
+      "ratio_cond2k1_over_cond1": 0.9349878521545633,
+      "raw_level_pass": false
+    },
+    "H3b": {
+      "cond_a": "cond2_k0",
+      "cond_b": "cond2_k1",
+      "n_paired": 50,
+      "diff_mean": 1.7048385957754146,
+      "ci_95": [
+        1.384133375621397,
+        2.034522558172733
+      ],
+      "excludes_zero": "positive"
+    },
+    "H3c": {
+      "cond_a": "cond1",
+      "cond_b": "cond2_k0",
+      "n_paired": 50,
+      "diff_mean": -0.0028969342321887837,
+      "ci_95": [
+        -0.005393263541130455,
+        -0.0009200312596777083
+      ],
+      "excludes_zero": "negative"
+    }
+  },
+  "h3d_retention_ci": {
+    "retention_cond1_minus_cond2_k0": {
+      "diff_mean": 0.01975311131872376,
+      "ci_95": [
+        -0.003619872269581109,
+        0.04414528459087491
+      ],
+      "n_paired": 50,
+      "excludes_zero": null
+    },
+    "retention_cond2_k0_minus_cond2_k1": {
+      "diff_mean": -0.5447183970259405,
+      "ci_95": [
+        -0.6750979612963652,
+        -0.42304160081010717
+      ],
+      "n_paired": 50,
+      "excludes_zero": "negative"
+    }
+  },
+  "retention_point_estimates": {
+    "cond1": {
+      "delta_g_in_trained_shape": 21.234481925964356,
+      "delta_g_demo_free_default": 26.178825311071254,
+      "retention": 1.2328450207707318
+    },
+    "cond2_k0": {
+      "delta_g_in_trained_shape": 21.583313474655153,
+      "delta_g_demo_free_default": 26.18172224530344,
+      "retention": 1.2130538842447942
+    },
+    "cond2_k1": {
+      "delta_g_in_trained_shape": 13.942781264782003,
+      "delta_g_demo_free_default": 24.476883649528027,
+      "retention": 1.7555237498671845
+    },
+    "cond2_k3": {
+      "delta_g_in_trained_shape": 7.083963953256871,
+      "delta_g_demo_free_default": 10.024799270629883,
+      "retention": 1.4151397913340533
+    }
+  },
+  "h4_k_sweep": {
+    "n_paired": 50,
+    "diff_mean_cond2_k1_minus_cond2_k3": 14.452084378898144,
+    "ci_95": [
+      14.11829862818867,
+      14.777658527702094
+    ],
+    "excludes_zero": "positive"
+  },
+  "h5_non_marker_demo": {
+    "cond2_k1": {
+      "n_paired": 50,
+      "with_marker_demo_mean_delta_g": 24.476883649528027,
+      "non_marker_demo_mean_delta_g": 22.608176907375036,
+      "ratio_no_over_with_mean": 0.9297360293309123,
+      "ratio_ci_95": [
+        0.8996645603346525,
+        0.9603921067432193
+      ],
+      "interpretation": "behavior_learned"
+    },
+    "cond2_k3": {
+      "n_paired": 50,
+      "with_marker_demo_mean_delta_g": 10.024799270629883,
+      "non_marker_demo_mean_delta_g": 14.44345736503601,
+      "ratio_no_over_with_mean": 1.467879392007261,
+      "ratio_ci_95": [
+        1.3907503609048577,
+        1.54536011365836
+      ],
+      "interpretation": "behavior_learned"
+    }
+  }
+}
