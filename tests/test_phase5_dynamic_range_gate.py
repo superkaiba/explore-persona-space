@@ -194,19 +194,32 @@ def _write_full_per_cell_tree(
     saturate_arm: str | None,
     g_lp_jitter: tuple[float, float, float, float] = (-1.0, -0.5, 0.5, 1.0),
 ):
-    """Write all 9 cells x 5 e_eval x 2 marker_persona JSONs into per_cell_dir.
+    """Write all (4 arms x 3 seeds = 12) cells x 7 e_eval x 2 marker_persona JSONs.
+
+    role_nonsense follow-up arm: extends the original 3-arm tree to 4
+    arms (12 cells) and adds the 2 new role_nonsense_<persona> eval-
+    encoding cells across ALL arms so the integration test exercises the
+    full surface area Phase 5 + plots now expect.
 
     When ``saturate_arm`` is non-None, that arm's 4 symmetric leakage
     cells get IDENTICAL g_logprobs (sd=0) so the dr-gate fails for it.
     Other arms get the jittered means so their sd clears the 0.5 threshold.
     """
     seeds = [42, 137, 1337]
+
+    def _own_e(arm: str, persona: str) -> str:
+        if arm == "role":
+            return f"role_{persona}"
+        if arm == "role_nonsense":
+            return f"role_nonsense_{persona}"
+        return f"system_{persona}"
+
     for arm in enc.ARMS:
         for seed in seeds:
             cell = f"{arm}_seed{seed}"
             for persona in enc.PERSONAS:
                 # 1. Own-persona elicitation cell (H1 gate input — PASS).
-                e_own = f"role_{persona}" if arm == "role" else f"system_{persona}"
+                e_own = _own_e(arm, persona)
                 (per_cell_dir / f"{cell}__{e_own}__marker_{persona}.json").write_text(
                     json.dumps(
                         {
@@ -258,6 +271,38 @@ def _write_full_per_cell_tree(
                                 "g_logps_per_q": [g_lp - 0.3, g_lp, g_lp + 0.3],
                                 "b_logps_per_q": [-10.0] * 3,
                                 "g_argmax_marker_per_q": [True, True, False],
+                                "b_argmax_marker_per_q": [False, False, False],
+                            }
+                        )
+                    )
+                # 2b. role_nonsense_<persona> eval-encoding cells (mirror of
+                # the smoke driver's writer): written for ALL arms so the
+                # plot's per-arm matrix iterates cleanly. SKIP the role_nonsense
+                # arm's OWN role_nonsense_<persona> cell (already written
+                # above with the H1-passing value).
+                for e_rn in (f"role_nonsense_{persona}", f"role_nonsense_{other}"):
+                    if arm == "role_nonsense" and e_rn == f"role_nonsense_{persona}":
+                        continue
+                    is_own = e_rn == f"role_nonsense_{persona}"
+                    g_lp_rn = -0.3 if is_own else -3.0
+                    (per_cell_dir / f"{cell}__{e_rn}__marker_{persona}.json").write_text(
+                        json.dumps(
+                            {
+                                "cell": cell,
+                                "arm": arm,
+                                "seed": seed,
+                                "e_eval": e_rn,
+                                "marker_persona": persona,
+                                "marker_id": enc.marker_id_for(persona),
+                                "n_probes": 3,
+                                "g_logprob": g_lp_rn,
+                                "b_logprob": -10.0,
+                                "delta_g": -10.0 - g_lp_rn,
+                                "emission_recompute_rate": 0.6 if is_own else 0.4,
+                                "logp_floor": -50.0,
+                                "g_logps_per_q": [g_lp_rn] * 3,
+                                "b_logps_per_q": [-10.0] * 3,
+                                "g_argmax_marker_per_q": [True, True, is_own],
                                 "b_argmax_marker_per_q": [False, False, False],
                             }
                         )

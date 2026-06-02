@@ -287,10 +287,12 @@ def _smoke_phase23(temp_dir: Path, tok) -> tuple[int, str]:
     if not traj_path.exists():
         return 1, f"traj probe file missing at {traj_path}"
     traj_payload = json.loads(traj_path.read_text())
-    # Round-2 fix #6: 5 encodings per persona x 2 personas x 2 q = 20 probes.
-    if len(traj_payload["probes"]) != 20:
+    # Round-2 fix #6 + role_nonsense follow-up: 7 encodings per persona
+    # x 2 personas x 2 q = 28 probes (was 20 before the role_nonsense
+    # symmetric cells were added).
+    if len(traj_payload["probes"]) != 28:
         return 1, (
-            f"expected 20 traj probes (5 encodings x 2 personas x 2 q), "
+            f"expected 28 traj probes (7 encodings x 2 personas x 2 q), "
             f"got {len(traj_payload['probes'])}"
         )
     return 0, (
@@ -386,22 +388,38 @@ def _write_stub_per_cell_tree(
 ) -> None:
     """Write a stub per-cell JSON tree into the temp dir for Phase 5 to aggregate.
 
-    With ``include_3_seeds=True``, writes all 3 seeds across all 3 arms so
+    With ``include_3_seeds=True``, writes all 3 seeds across all 4 arms so
     Phase 5's new ``H2_MIN_SEEDS >= 3`` gate (round-2 blocker #3) can be
     exercised AND PASS. Also writes own-persona elicitation cells so the
     H1 gate (blocker #7) has input. ``with_onpolicy_switch=True`` writes a
     Phase 4.5 onpolicy_validation.json with ``switch_headline_to_trained_R
     = true`` so blocker #4's consumption path is exercised.
+
+    role_nonsense follow-up arm: per-cell stubs use the same shape but
+    with cell-means tuned so the role_nonsense arm sits BETWEEN role and
+    system_plain (slot helps a bit, semantics helps more). Also writes
+    the 2 new role_nonsense_<persona> eval-encoding cells across ALL
+    arms so the plot's matrix / leakage-by-encoding panels don't crash
+    on missing files.
     """
     real_per_cell = temp_dir / "eval_results" / "issue_464" / "cross_eval" / "per_cell"
     real_per_cell.mkdir(parents=True, exist_ok=True)
     seeds = [42, 137, 1337] if include_3_seeds else [42]
+
+    def _own_e(arm: str, persona: str) -> str:
+        # Mirrors phase 5's _own_eval_encoding_for helper.
+        if arm == "role":
+            return f"role_{persona}"
+        if arm == "role_nonsense":
+            return f"role_nonsense_{persona}"
+        return f"system_{persona}"
+
     for arm in enc.ARMS:
         for seed in seeds:
             cell = f"{arm}_seed{seed}"
             for persona in enc.PERSONAS:
                 # 1. Own-persona elicitation cell (for H1 gate input).
-                e_own = f"role_{persona}" if arm == "role" else f"system_{persona}"
+                e_own = _own_e(arm, persona)
                 own_payload = {
                     "cell": cell,
                     "arm": arm,
@@ -438,7 +456,17 @@ def _write_stub_per_cell_tree(
                     persona_idx = list(enc.PERSONAS).index(persona)
                     # 4 cell-mean offsets per (arm, seed): -1, -0.5, +0.5, +1.
                     jitter = (-1.0, -0.5, 0.5, 1.0)[2 * persona_idx + cell_idx]
-                    g_lp = -2.5 - (1.5 if arm == "role" else 0.0) + jitter
+                    # Per-arm base offset (stub realism):
+                    #   system_plain / system_padded → baseline (-2.5)
+                    #   role                          → -4.0 (slot+semantics combined)
+                    #   role_nonsense                 → -3.5 (slot alone — between)
+                    arm_offset = {
+                        "system_plain": 0.0,
+                        "system_padded": 0.0,
+                        "role": -1.5,
+                        "role_nonsense": -1.0,
+                    }.get(arm, 0.0)
+                    g_lp = -2.5 + arm_offset + jitter
                     payload = {
                         "cell": cell,
                         "arm": arm,
@@ -459,6 +487,40 @@ def _write_stub_per_cell_tree(
                     }
                     (real_per_cell / f"{cell}__{e_wrong}__marker_{persona}.json").write_text(
                         json.dumps(payload)
+                    )
+                # 2b. role_nonsense_<persona> eval-encoding cells: written
+                # for ALL arms so the plot's per-arm matrix (which iterates
+                # enc.EVAL_ENCODINGS) doesn't choke. Treat same-persona
+                # as own-style (high g_logprob); other-persona as leakage.
+                # SKIP the cells already written by the own-cell pass above
+                # (those are the role_nonsense arm's OWN cells, and they
+                # carry the H1-passing g_logprob = -0.2 set there).
+                rn_eval_encodings = (f"role_nonsense_{persona}", f"role_nonsense_{other}")
+                for e_rn in rn_eval_encodings:
+                    if arm == "role_nonsense" and e_rn == f"role_nonsense_{persona}":
+                        continue  # written above as own-cell with H1-pass value
+                    is_own_persona_probe = e_rn == f"role_nonsense_{persona}"
+                    g_lp_rn = -0.3 if is_own_persona_probe else -3.0
+                    rn_payload = {
+                        "cell": cell,
+                        "arm": arm,
+                        "seed": seed,
+                        "e_eval": e_rn,
+                        "marker_persona": persona,
+                        "marker_id": enc.marker_id_for(persona),
+                        "n_probes": 3,
+                        "g_logprob": g_lp_rn,
+                        "b_logprob": -10.0,
+                        "delta_g": -10.0 - g_lp_rn,
+                        "emission_recompute_rate": 0.6 if is_own_persona_probe else 0.4,
+                        "logp_floor": -50.0,
+                        "g_logps_per_q": [g_lp_rn] * 3,
+                        "b_logps_per_q": [-10.0] * 3,
+                        "g_argmax_marker_per_q": [True, True, is_own_persona_probe],
+                        "b_argmax_marker_per_q": [False, False, False],
+                    }
+                    (real_per_cell / f"{cell}__{e_rn}__marker_{persona}.json").write_text(
+                        json.dumps(rn_payload)
                     )
                 # 3. default_assistant cell (exploratory).
                 payload = {
@@ -630,13 +692,16 @@ def _smoke_plot(temp_dir: Path) -> tuple[int, str]:
         "matrix_system_plain.png",
         "matrix_system_padded.png",
         "matrix_role.png",
+        "matrix_role_nonsense.png",
         "per_seed.png",
         "raw_alongside_processed.png",
         "dynamic_range_check.png",
         "argmax_emission_system_plain.png",
         "argmax_emission_system_padded.png",
         "argmax_emission_role.png",
+        "argmax_emission_role_nonsense.png",
         "leakage_by_eval_encoding.png",
+        "role_nonsense_comparison.png",
     ]
     missing = [name for name in expected if not (fig_dir / name).exists()]
     if missing:
@@ -654,6 +719,11 @@ def _smoke_plot(temp_dir: Path) -> tuple[int, str]:
 
 
 SMOKE_CELL = "system_plain_seed42"
+# Follow-up: role_nonsense arm covered alongside the system_plain canary so
+# the new arm's train + cross-eval paths are exercised end-to-end on the
+# GPU smoke before the production launch. Same recipe, separate adapter.
+ROLE_NONSENSE_SMOKE_CELL = "role_nonsense_seed42"
+GPU_SMOKE_CELLS = [SMOKE_CELL, ROLE_NONSENSE_SMOKE_CELL]
 
 
 def _gpu_isolation_env(temp_dir: Path) -> dict:
@@ -756,39 +826,51 @@ def _gpu_phase1(temp_dir: Path) -> tuple[int, str]:
 
 
 def _gpu_phase23(temp_dir: Path) -> tuple[int, str]:
-    """GPU phase 2/3: REAL LoRA train at tiny N for the smoke cell.
+    """GPU phase 2/3: REAL LoRA train at tiny N for BOTH smoke cells.
 
     `--smoke` truncates to 5 q x 1 dupe x 2 epochs; `--no-hf-upload`
     keeps the adapter local; `--no-traj` skips MF-C callback (unrelated
     to the smoke gate and avoids the coexistence-OOM concern).
+
+    Cells covered: ``system_plain_seed42`` (original canary, exercises
+    the system-arm path) AND ``role_nonsense_seed42`` (follow-up arm,
+    exercises the role-header-with-nonsense-name path). Both must train
+    end-to-end + leave an adapter on disk for the downstream phase 2
+    check / phase 4 / phase 4.5 smoke steps.
     """
-    cmd = [
-        sys.executable,
-        str(REPO_ROOT / "scripts" / "i464_phase23_train.py"),
-        "--cell",
-        SMOKE_CELL,
-        "--gpu-id",
-        "0",
-        "--smoke",
-        "--no-hf-upload",
-        "--no-traj",
-    ]
-    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1800)
-    if res.returncode != 0:
-        return res.returncode, f"stderr tail: {res.stderr[-500:]}"
-    adapter_dir = temp_dir / "adapters" / f"i464_{SMOKE_CELL}"
-    safetensors = adapter_dir / "adapter_model.safetensors"
-    if not safetensors.exists():
-        return 1, f"adapter_model.safetensors missing at {safetensors} after train"
-    size_mb = safetensors.stat().st_size / 1024 / 1024
-    return 0, (
-        f"real entrypoint rc=0; adapter at {adapter_dir} "
-        f"(adapter_model.safetensors = {size_mb:.1f} MB)"
-    )
+    trained: list[str] = []
+    for cell in GPU_SMOKE_CELLS:
+        cmd = [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "i464_phase23_train.py"),
+            "--cell",
+            cell,
+            "--gpu-id",
+            "0",
+            "--smoke",
+            "--no-hf-upload",
+            "--no-traj",
+        ]
+        res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1800)
+        if res.returncode != 0:
+            return res.returncode, f"cell={cell} stderr tail: {res.stderr[-500:]}"
+        adapter_dir = temp_dir / "adapters" / f"i464_{cell}"
+        safetensors = adapter_dir / "adapter_model.safetensors"
+        if not safetensors.exists():
+            return 1, f"adapter_model.safetensors missing at {safetensors} after train"
+        size_mb = safetensors.stat().st_size / 1024 / 1024
+        trained.append(f"{cell} ({size_mb:.1f} MB)")
+    return 0, f"real entrypoint rc=0 for {len(GPU_SMOKE_CELLS)} cells; trained={trained}"
 
 
 def _gpu_phase2_check(temp_dir: Path) -> tuple[int, str]:
-    """GPU phase 2 implant check on the freshly-trained adapter (local override)."""
+    """GPU phase 2 implant check on the freshly-trained system_plain adapter.
+
+    Restricted to ``SMOKE_CELL`` (the system_plain canary) — the phase 2
+    smoke check exists to validate the marker implants at all, which is
+    arm-agnostic, so running it on one adapter is sufficient. The
+    role_nonsense smoke cell is verified end-to-end by phase 4 instead.
+    """
     cmd = [
         sys.executable,
         str(REPO_ROOT / "scripts" / "i464_phase2_smoke_check.py"),
@@ -822,27 +904,40 @@ def _gpu_phase2_check(temp_dir: Path) -> tuple[int, str]:
 
 
 def _gpu_phase4(temp_dir: Path) -> tuple[int, str]:
-    """GPU phase 4 cross-eval restricted to the smoke cell + 3 q (local adapter)."""
+    """GPU phase 4 cross-eval restricted to BOTH smoke cells + 3 q (local adapter).
+
+    Two cells x 7 eval encodings x 2 markers = 28 per-cell JSONs expected.
+    The 7 eval encodings include the 2 new role_nonsense_<persona> cells,
+    so this step is what end-to-end verifies the role_nonsense arm's
+    cross-eval probe-build path.
+    """
     cmd = [
         sys.executable,
         str(REPO_ROOT / "scripts" / "i464_phase4_eval.py"),
         "--smoke-cells",
-        SMOKE_CELL,
+        *GPU_SMOKE_CELLS,
         "--smoke-n-q",
         "3",
         "--max-seq-len",
         "1024",
     ]
-    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1200)
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1800)
     if res.returncode != 0:
         return res.returncode, f"stderr tail: {res.stderr[-300:]}"
     per_cell_dir = temp_dir / "eval_results" / "issue_464" / "cross_eval" / "per_cell"
-    files = sorted(per_cell_dir.glob(f"{SMOKE_CELL}__*.json")) if per_cell_dir.exists() else []
-    # Expected: 1 cell x 5 e_eval x 2 markers = 10 per-cell files.
-    if len(files) != 10:
+    files: list[Path] = []
+    if per_cell_dir.exists():
+        for cell in GPU_SMOKE_CELLS:
+            files.extend(sorted(per_cell_dir.glob(f"{cell}__*.json")))
+    # Expected: 2 cells x 7 e_eval x 2 markers = 28 per-cell files
+    # (7 = system_pirate, system_villain, role_pirate, role_villain,
+    # role_nonsense_pirate, role_nonsense_villain, default_assistant).
+    expected = len(GPU_SMOKE_CELLS) * len(enc.EVAL_ENCODINGS) * len(enc.PERSONAS)
+    if len(files) != expected:
         return 1, (
-            f"expected 10 per-cell JSONs (1 cell x 5 e_eval x 2 markers), "
-            f"got {len(files)} under {per_cell_dir}"
+            f"expected {expected} per-cell JSONs "
+            f"({len(GPU_SMOKE_CELLS)} cells x {len(enc.EVAL_ENCODINGS)} e_eval "
+            f"x {len(enc.PERSONAS)} markers), got {len(files)} under {per_cell_dir}"
         )
     return 0, (
         f"real entrypoint rc=0; {len(files)} per-cell JSONs under {per_cell_dir} "
@@ -851,12 +946,16 @@ def _gpu_phase4(temp_dir: Path) -> tuple[int, str]:
 
 
 def _gpu_phase45(temp_dir: Path) -> tuple[int, str]:
-    """GPU phase 4.5 on-policy validation at 3 q for the smoke cell (local adapter)."""
+    """GPU phase 4.5 on-policy validation at 3 q for BOTH smoke cells.
+
+    Covers ``system_plain_seed42`` AND ``role_nonsense_seed42`` so the
+    follow-up arm's on-policy generation path is exercised end-to-end.
+    """
     cmd = [
         sys.executable,
         str(REPO_ROOT / "scripts" / "i464_phase45_onpolicy_validation.py"),
         "--smoke-cells",
-        SMOKE_CELL,
+        *GPU_SMOKE_CELLS,
         "--n-q",
         "3",
         "--max-new-tokens",
@@ -864,7 +963,7 @@ def _gpu_phase45(temp_dir: Path) -> tuple[int, str]:
         "--max-seq-len",
         "1024",
     ]
-    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=900)
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1200)
     if res.returncode != 0:
         return res.returncode, f"stderr tail: {res.stderr[-300:]}"
     out_path = temp_dir / "eval_results" / "issue_464" / "onpolicy_validation.json"
@@ -874,7 +973,7 @@ def _gpu_phase45(temp_dir: Path) -> tuple[int, str]:
     per_cell = payload.get("per_cell", {})
     return 0, (
         f"real entrypoint rc=0; onpolicy_validation.json + per-cell at "
-        f"{out_path.parent}/onpolicy_validation/ ({len(per_cell)} cell); "
+        f"{out_path.parent}/onpolicy_validation/ ({len(per_cell)} cells); "
         f"ratio={payload.get('role_over_system_plain_ratio')}, "
         f"switch={payload.get('switch_headline_to_trained_R')}"
     )

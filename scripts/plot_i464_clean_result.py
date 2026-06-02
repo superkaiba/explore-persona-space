@@ -52,6 +52,19 @@ FIG_DIR = Path("figures/issue_464")
 
 SEEDS_DEFAULT = (42, 137, 1337)
 
+# Per-arm color palette. Stable across plots so a reader recognizes
+# system_plain / system_padded / role / role_nonsense at a glance.
+# role_nonsense gets an orange to visually pair with role (blue) — the
+# "is the slot mechanism alone sufficient?" comparison is the central
+# question of the follow-up arm.
+ARM_COLORS: dict[str, str] = {
+    "system_plain": "#666",
+    "system_padded": "#a44",
+    "role": "#48a",
+    "role_nonsense": "#e6a23c",
+}
+ARM_COLORS_LIST: list[str] = [ARM_COLORS.get(a, "#888") for a in enc.ARMS]
+
 
 def _git_commit_hash() -> str:
     """Return HEAD sha or 'unknown'."""
@@ -135,7 +148,7 @@ def plot_hero(analysis: dict) -> None:
         x,
         [np.mean(elicit_by_arm[a]) for a in arms],
         yerr=[np.std(elicit_by_arm[a]) for a in arms],
-        color=["#666", "#a44", "#48a"],
+        color=ARM_COLORS_LIST,
     )
     ax[0].set_xticks(x)
     ax[0].set_xticklabels(arms, rotation=15)
@@ -147,7 +160,7 @@ def plot_hero(analysis: dict) -> None:
 
     leak_means = [np.mean(L_per_arm[a]) if L_per_arm[a] else float("nan") for a in arms]
     leak_stds = [np.std(L_per_arm[a]) if L_per_arm[a] else 0 for a in arms]
-    ax[1].bar(x, leak_means, yerr=leak_stds, color=["#666", "#a44", "#48a"])
+    ax[1].bar(x, leak_means, yerr=leak_stds, color=ARM_COLORS_LIST)
     ax[1].set_xticks(x)
     ax[1].set_xticklabels(arms, rotation=15)
     ax[1].set_ylabel("symmetric leakage L_arm (nats; lower = less leakage)")
@@ -229,7 +242,7 @@ def plot_per_seed_scatter(analysis: dict) -> None:
     seeds = analysis["seeds"]
     fig, ax = plt.subplots(figsize=(6, 5))
     arms = list(enc.ARMS)
-    colors = {"system_plain": "#666", "system_padded": "#a44", "role": "#48a"}
+    colors = ARM_COLORS
     skipped: list[str] = []
     for arm in arms:
         elicits = [_own_persona_elicitation(arm, s) for s in seeds]  # type: ignore[arg-type]
@@ -364,18 +377,96 @@ def plot_leakage_by_eval_encoding(analysis: dict) -> None:
             if vals:
                 grid[i, j] = float(np.mean(vals))
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    fig, ax = plt.subplots(figsize=(8, 4))
     x = np.arange(len(encs))
-    w = 0.25
-    colors = ["#666", "#a44", "#48a"]
+    n_arms = len(arms)
+    w = 0.8 / max(n_arms, 1)
+    colors = ARM_COLORS_LIST
+    # Center the cluster around each x tick: offsets = (i - (n_arms-1)/2) * w
     for i, arm in enumerate(arms):
-        ax.bar(x + (i - 1) * w, grid[i, :], width=w, color=colors[i], label=arm)
+        ax.bar(x + (i - (n_arms - 1) / 2) * w, grid[i, :], width=w, color=colors[i], label=arm)
     ax.set_xticks(x)
     ax.set_xticklabels(encs)
     ax.set_ylabel("raw trained log P at slot (mean over seeds x personas)")
     ax.set_title("Leakage decomposed by wrong-encoding family (lower = less leakage)")
     ax.legend()
     _save(fig, "leakage_by_eval_encoding", [str(PER_CELL_DIR)])
+
+
+def plot_role_nonsense_comparison(analysis: dict) -> None:
+    """role_nonsense follow-up: visualise whether semantic name buys anything.
+
+    Two panels:
+      (1) Per-arm symmetric-leakage means for ALL 4 arms — shows where
+          role_nonsense sits between role (low) and system_plain (high).
+      (2) Paired per-seed deltas:
+            d_seed_role_nonsense_vs_plain = L_system_plain - L_role_nonsense
+              (>0: nonsense role-slot alone reduces leakage vs system_plain)
+            d_seed_role_nonsense_vs_role  = L_role - L_role_nonsense
+              (≈0: semantic name adds nothing on top of the slot
+              >0: semantics buys further reduction
+              <0: semantics hurts)
+
+    Skipped if role_nonsense_descriptive is missing or empty in the
+    analysis (e.g. a partial run that didn't include the 4th arm).
+    """
+    rn = analysis.get("role_nonsense_descriptive") or {}
+    d_vs_plain = rn.get("d_seed_role_nonsense_vs_plain") or []
+    d_vs_role = rn.get("d_seed_role_nonsense_vs_role") or []
+    if not d_vs_plain:
+        logger.warning(
+            "role_nonsense_comparison.png skipped — role_nonsense_descriptive "
+            "absent / empty (no paired seeds for the follow-up arm yet)"
+        )
+        return
+
+    arms = list(enc.ARMS)
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+
+    # Panel 1: per-arm symmetric leakage means.
+    L_means = [
+        float(np.mean(_l_arm_values(analysis, a))) if _l_arm_values(analysis, a) else float("nan")
+        for a in arms
+    ]
+    L_stds = [
+        float(np.std(_l_arm_values(analysis, a))) if _l_arm_values(analysis, a) else 0.0
+        for a in arms
+    ]
+    x = np.arange(len(arms))
+    ax[0].bar(x, L_means, yerr=L_stds, color=ARM_COLORS_LIST)
+    ax[0].set_xticks(x)
+    ax[0].set_xticklabels(arms, rotation=15)
+    ax[0].set_ylabel("symmetric leakage L_arm (nats; lower = less leakage)")
+    ax[0].set_title("Per-arm leakage incl. role_nonsense")
+    for i, a in enumerate(arms):
+        for v in _l_arm_values(analysis, a):
+            ax[0].plot(i, v, "o", color="black", markersize=3, alpha=0.6)
+
+    # Panel 2: paired per-seed deltas (descriptive — no PASS gate).
+    rn_seeds = rn.get("complete_seeds") or list(range(len(d_vs_plain)))
+    width = 0.35
+    xs = np.arange(len(rn_seeds))
+    ax[1].bar(
+        xs - width / 2,
+        d_vs_plain,
+        width,
+        label="vs system_plain",
+        color=ARM_COLORS["role_nonsense"],
+    )
+    ax[1].bar(xs + width / 2, d_vs_role, width, label="vs role", color=ARM_COLORS["role"])
+    ax[1].axhline(0, color="black", linewidth=0.5)
+    ax[1].set_xticks(xs)
+    ax[1].set_xticklabels([f"seed {s}" for s in rn_seeds])
+    ax[1].set_ylabel("paired Δ vs role_nonsense (nats)")
+    ax[1].set_title(
+        "Does the role SLOT alone suffice?\n"
+        "(Δvs_plain >0: slot helps; Δvs_role ≈0: semantics adds nothing)"
+    )
+    ax[1].legend(fontsize=8)
+
+    sub = f"mean Δ_vs_plain = {np.mean(d_vs_plain):.2f}; mean Δ_vs_role = {np.mean(d_vs_role):.2f}"
+    fig.suptitle(sub, fontsize=9, y=1.02)
+    _save(fig, "role_nonsense_comparison", [str(ANALYSIS_PATH)])
 
 
 def plot_onpolicy_validation() -> None:
@@ -401,7 +492,7 @@ def plot_onpolicy_validation() -> None:
 
     fig, ax = plt.subplots(figsize=(6, 4))
     x = np.arange(len(arms))
-    colors = ["#666", "#a44", "#48a"]
+    colors = ARM_COLORS_LIST
     ax.bar(x, means, color=colors)
     ax.set_xticks(x)
     ax.set_xticklabels(arms, rotation=15)
@@ -568,6 +659,7 @@ def main(argv: list[str] | None = None) -> None:
     plot_dynamic_range(analysis)
     plot_argmax_emission(analysis)
     plot_leakage_by_eval_encoding(analysis)
+    plot_role_nonsense_comparison(analysis)  # role_nonsense follow-up arm
     plot_onpolicy_validation()  # blocker #5 — MF-B(2) visualization
     plot_trajectory()  # blocker #5 — MF-C visualization
     logger.info("All plots written to %s", FIG_DIR)

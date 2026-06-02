@@ -227,24 +227,34 @@ def _build_traj_probe_file(
     # cells (system_OTHER + role_OTHER) so the trajectory diagnoses the
     # LEAKAGE dynamics MF-C was designed to expose. Round-1 only covered
     # same-persona system/role + default_assistant, which only reads
-    # elicitation/identity — not the segmentation question. Now 5 encodings
-    # per persona: own-system, own-role, WRONG-system, WRONG-role,
-    # default_assistant. R_canon splice uses the persona implied by the
-    # eval encoding (matches Phase 4's persona_for_eval_encoding) so the
-    # post-R slot is consistent with what cross-eval probes.
+    # elicitation/identity — not the segmentation question. Now 7 encodings
+    # per persona: own-system, own-role, own-role_nonsense, WRONG-system,
+    # WRONG-role, WRONG-role_nonsense, default_assistant. R_canon splice
+    # uses the persona implied by the eval encoding (matches Phase 4's
+    # persona_for_eval_encoding) so the post-R slot is consistent with
+    # what cross-eval probes.
+    #
+    # role_nonsense follow-up arm: parallel symmetric cells added so the
+    # trajectory diagnoses whether the nonsense slot's leakage dynamics
+    # track ``role`` (slot/position mechanism) or ``system_plain``
+    # (semantic-meaning mechanism).
     e_choices_for: dict[enc.Persona, list[enc.EvalEncoding]] = {
         "pirate": [
             "system_pirate",
             "role_pirate",
+            "role_nonsense_pirate",
             "system_villain",
             "role_villain",
+            "role_nonsense_villain",
             "default_assistant",
         ],
         "villain": [
             "system_villain",
             "role_villain",
+            "role_nonsense_villain",
             "system_pirate",
             "role_pirate",
+            "role_nonsense_pirate",
             "default_assistant",
         ],
     }

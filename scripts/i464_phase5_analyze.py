@@ -85,19 +85,39 @@ def _load_per_cell(cell: str, e_eval: str, marker_persona: str) -> dict | None:
     return json.loads(p.read_text())
 
 
+def _own_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
+    """Return the eval-encoding name matching ``arm``'s own training-time form.
+
+    For an arm trained with persona X declared in MECHANISM M, the
+    "own encoding" at eval time is the eval-encoding name that puts
+    persona X into the SAME mechanism M. This drives the H1 gate
+    (does the trained LoRA implant the marker under its own mechanism?),
+    the plot's elicitation panels, and the H1 stub-writer.
+
+      system_plain   / system_padded   → system_<persona>
+      role                              → role_<persona>
+      role_nonsense                     → role_nonsense_<persona>
+    """
+    if arm == "role":
+        return f"role_{persona}"
+    if arm == "role_nonsense":
+        return f"role_nonsense_{persona}"
+    # system_plain / system_padded both train with persona in the system
+    # prompt; their own-encoding eval probe is the matching system_<persona>.
+    return f"system_{persona}"
+
+
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
     """Return (own-persona elicitation log-probs, per-cell labels) for one (arm, seed).
 
     Round-2 fix (review blocker #7 — explicit H1 gate). H1: own-persona
     elicitation raw trained log P must clear ``H1_ELICITATION_THRESHOLD``
-    (>= -1 nat) across all 18 own-persona cells (3 arms x 3 seeds x 2
-    personas). Phase 5 reads each cell from the per-cell JSON tree and
-    returns the per-cell log-probs so the caller can compute the gate
-    verdict.
+    (>= -1 nat) across all 24 own-persona cells (4 arms x 3 seeds x 2
+    personas; was 18 before the role_nonsense follow-up arm). Phase 5
+    reads each cell from the per-cell JSON tree and returns the per-cell
+    log-probs so the caller can compute the gate verdict.
 
-    "Own encoding" depends on arm:
-        system_plain / system_padded → system_<persona>
-        role                          → role_<persona>
+    "Own encoding" per arm — see ``_own_eval_encoding_for``.
 
     Raises FileNotFoundError if any required per-cell JSON is missing
     (so the caller can decide allow-partial behavior).
@@ -106,7 +126,7 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
     labels: list[str] = []
     cell_label = f"{arm}_seed{seed}"
     for persona in enc.PERSONAS:
-        e_own = f"role_{persona}" if arm == "role" else f"system_{persona}"
+        e_own = _own_eval_encoding_for(arm, persona)
         payload = _load_per_cell(cell_label, e_own, persona)
         if payload is None:
             raise FileNotFoundError(
@@ -158,7 +178,7 @@ def _compute_h1_per_cell(
     for arm, by_seed in own_logp_per_arm_per_seed.items():
         for seed, logps in by_seed.items():
             for persona_idx, persona in enumerate(enc.PERSONAS):
-                e_own = f"role_{persona}" if arm == "role" else f"system_{persona}"
+                e_own = _own_eval_encoding_for(arm, persona)  # type: ignore[arg-type]
                 key = f"{arm}_seed{seed}/{e_own}/marker_{persona}"
                 lp = float(logps[persona_idx])
                 per_cell_logp[key] = lp
@@ -373,6 +393,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
     h1_per_cell_pass, h1_per_cell_logp = _compute_h1_per_cell(own_logp_per_arm_per_seed)
 
     # ── Headline: paired deltas over COMPLETE seeds only (blocker #3) ───
+    # Canonical H2 PASS uses the original 3 arms (system_plain, system_padded,
+    # role); the role_nonsense follow-up arm is reported as a descriptive
+    # delta alongside (NOT gating H2 PASS). See "Role-nonsense descriptive"
+    # section below.
     complete_seeds = sorted(
         set(L_per_arm_per_seed["system_plain"])
         & set(L_per_arm_per_seed["system_padded"])
@@ -380,24 +404,59 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
     )
 
     # Round-3 fix (review blocker #3 — H1 cell-coverage check). Even if every
-    # PRESENT H1 cell passes, missing H1 cells for any (arm, complete_seed)
-    # mean we don't actually have evidence the trained adapter implants the
-    # marker for that combination — calling H1 "PASS" on the subset gates
-    # H2 PASS on partial H1 evidence. Require every (arm in ARMS,
-    # seed in complete_seeds) to have H1 cells present; otherwise H1 is
-    # inconclusive and CANNOT gate H2 PASS.
+    # PRESENT H1 cell passes, missing H1 cells for any of the 3 canonical
+    # H2 arms x complete_seed mean we don't actually have evidence the
+    # trained adapter implants the marker for that combination — calling
+    # H1 "PASS" on the subset gates H2 PASS on partial H1 evidence.
+    # role_nonsense H1 is checked separately below (descriptive).
+    H2_HEADLINE_ARMS: tuple[str, ...] = ("system_plain", "system_padded", "role")
     h1_missing_cells: list[str] = []
-    for arm in enc.ARMS:
+    for arm in H2_HEADLINE_ARMS:
         for seed in complete_seeds:
             if seed not in own_logp_per_arm_per_seed[arm]:
                 h1_missing_cells.append(f"{arm}_seed{seed}/own-persona")
     h1_complete = not h1_missing_cells
-    h1_overall_pass = h1_complete and len(h1_per_cell_pass) > 0 and all(h1_per_cell_pass.values())
+    # h1_overall_pass uses ONLY the H2-headline arms' H1 cells so a missing
+    # role_nonsense own-cell can't block the canonical H2 PASS.
+    h1_headline_pass_keys = {
+        k for k in h1_per_cell_pass if any(k.startswith(f"{arm}_seed") for arm in H2_HEADLINE_ARMS)
+    }
+    h1_overall_pass = (
+        h1_complete
+        and len(h1_headline_pass_keys) > 0
+        and all(h1_per_cell_pass[k] for k in h1_headline_pass_keys)
+    )
     d_plain: list[float] = []
     d_padded: list[float] = []
     for s in complete_seeds:
         d_plain.append(L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role"][s])
         d_padded.append(L_per_arm_per_seed["system_padded"][s] - L_per_arm_per_seed["role"][s])
+
+    # ── Role-nonsense descriptive deltas (follow-up arm, NOT gating H2) ─
+    # The headline question for the role_nonsense follow-up: does
+    # role_nonsense's leakage track ``role`` (role-header SLOT/position
+    # mechanism alone) or ``system_plain`` (semantic meaning of the role
+    # name)? Report two paired-bootstrap deltas:
+    #   d_seed_role_nonsense_vs_plain = L_system_plain - L_role_nonsense
+    #     (>0: role_nonsense leaks less than system_plain — the slot helps)
+    #   d_seed_role_nonsense_vs_role  = L_role         - L_role_nonsense
+    #     (≈0: semantics adds nothing on top of the slot
+    #     >0 : semantics buys further reduction over the slot alone
+    #     <0 : semantics hurts vs the slot alone)
+    # Only computed when role_nonsense has the same complete seeds; if not,
+    # surface the missing data without blocking H2.
+    rn_complete_seeds = sorted(
+        set(complete_seeds) & set(L_per_arm_per_seed.get("role_nonsense", {}))
+    )
+    d_role_nonsense_vs_plain: list[float] = []
+    d_role_nonsense_vs_role: list[float] = []
+    for s in rn_complete_seeds:
+        d_role_nonsense_vs_plain.append(
+            L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role_nonsense"][s]
+        )
+        d_role_nonsense_vs_role.append(
+            L_per_arm_per_seed["role"][s] - L_per_arm_per_seed["role_nonsense"][s]
+        )
 
     # ── On-policy validation (review blocker #4) ────────────────────────
     onpolicy = _load_onpolicy_validation()
@@ -465,6 +524,25 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             "onpolicy_role_over_system_plain_ratio": onpolicy_ratio,
             "n_bootstrap": N_BOOTSTRAP,
         }
+        # role_nonsense descriptive deltas (computed when at least 1
+        # paired seed is present; CIs only when n >= H2_MIN_SEEDS).
+        if d_role_nonsense_vs_plain:
+            rn_plain_descriptive: dict = {
+                "d_per_seed": d_role_nonsense_vs_plain,
+                "mean": float(np.mean(d_role_nonsense_vs_plain)),
+            }
+            rn_role_descriptive: dict = {
+                "d_per_seed": d_role_nonsense_vs_role,
+                "mean": float(np.mean(d_role_nonsense_vs_role)),
+            }
+            if len(d_role_nonsense_vs_plain) >= H2_MIN_SEEDS:
+                _, lo, hi = _paired_bootstrap_ci(d_role_nonsense_vs_plain, N_BOOTSTRAP)
+                rn_plain_descriptive.update({"ci_lo_95": lo, "ci_hi_95": hi})
+                _, lo2, hi2 = _paired_bootstrap_ci(d_role_nonsense_vs_role, N_BOOTSTRAP)
+                rn_role_descriptive.update({"ci_lo_95": lo2, "ci_hi_95": hi2})
+            headline["d_seed_role_nonsense_vs_plain_descriptive"] = rn_plain_descriptive
+            headline["d_seed_role_nonsense_vs_role_descriptive"] = rn_role_descriptive
+            headline["role_nonsense_complete_seeds"] = rn_complete_seeds
 
     # Dynamic-range gate: sd of raw g_logprob across the 4 symmetric
     # leakage cells should exceed 0.5 in EACH arm; otherwise the regime
@@ -511,6 +589,15 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
         },
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
+        # role_nonsense follow-up: descriptive deltas surfaced top-level
+        # (also embedded in headline.* for the healthy path). Always
+        # present so consumers (plot, mentor summary) read one place; the
+        # inner dict is empty when no role_nonsense seeds are paired.
+        "role_nonsense_descriptive": {
+            "complete_seeds": rn_complete_seeds,
+            "d_seed_role_nonsense_vs_plain": d_role_nonsense_vs_plain,
+            "d_seed_role_nonsense_vs_role": d_role_nonsense_vs_role,
+        },
     }
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(payload, indent=2))

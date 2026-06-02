@@ -152,3 +152,109 @@ def test_full_tokenized_row_contains_marker_exactly_once(tok):
                 f"arm={arm} persona={persona}: marker id {marker_id} appears "
                 f"{count} times in tokenized row, expected 1"
             )
+
+
+# ── role_nonsense follow-up arm ─────────────────────────────────────────
+
+
+def test_nonsense_role_names_are_length_matched_per_persona(tok):
+    """Pirate's nonsense name MUST tokenize to 4 tokens (matches pirate_assistant);
+    villain's MUST tokenize to 5 tokens (matches villain_assistant)."""
+    p_ids = tok.encode(enc.NONSENSE_ROLE_NAME_FOR["pirate"], add_special_tokens=False)
+    v_ids = tok.encode(enc.NONSENSE_ROLE_NAME_FOR["villain"], add_special_tokens=False)
+    pirate_ref = tok.encode("pirate_assistant", add_special_tokens=False)
+    villain_ref = tok.encode("villain_assistant", add_special_tokens=False)
+    assert len(p_ids) == len(pirate_ref) == 4, (
+        f"pirate nonsense {enc.NONSENSE_ROLE_NAME_FOR['pirate']!r}={p_ids} "
+        f"vs ref {pirate_ref}; lengths must match (4)"
+    )
+    assert len(v_ids) == len(villain_ref) == 5, (
+        f"villain nonsense {enc.NONSENSE_ROLE_NAME_FOR['villain']!r}={v_ids} "
+        f"vs ref {villain_ref}; lengths must match (5)"
+    )
+
+
+def test_nonsense_role_names_have_exact_expected_token_ids(tok):
+    """Exact token-id sequence for the chosen nonsense names — pin tokenizer drift."""
+    assert tok.encode("flump_assistant", add_special_tokens=False) == [1489, 1510, 12083, 11202]
+    assert tok.encode("glonk_assistant", add_special_tokens=False) == [6072, 263, 74, 12083, 11202]
+
+
+def test_nonsense_role_names_are_distinct_between_personas(tok):
+    """Pirate and villain nonsense names MUST tokenize differently — else the
+    role_nonsense arm erases the persona distinction."""
+    p_ids = tok.encode(enc.NONSENSE_ROLE_NAME_FOR["pirate"], add_special_tokens=False)
+    v_ids = tok.encode(enc.NONSENSE_ROLE_NAME_FOR["villain"], add_special_tokens=False)
+    assert p_ids != v_ids
+
+
+def test_build_train_role_nonsense_prompt_ends_with_nonsense_role(tok):
+    """role_nonsense TRAIN prompt MUST end with the persona's nonsense role-name open token."""
+    for persona, expected_suffix in [
+        ("pirate", "<|im_start|>flump_assistant\n"),
+        ("villain", "<|im_start|>glonk_assistant\n"),
+    ]:
+        prompt, completion = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            "role_nonsense", persona, "q?", "RESPONSE", tok
+        )
+        assert prompt.endswith(expected_suffix), prompt[-60:]
+        # Completion identical to the role arm's (R + persona marker).
+        assert completion == "RESPONSE" + enc.marker_text_for(persona)
+
+
+def test_build_train_role_nonsense_uses_neutral_default_system(tok):
+    """role_nonsense MUST use the neutral default system (mirrors role arm — MF-I)."""
+    prompt, _ = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+        "role_nonsense", "pirate", "q?", "RESPONSE", tok
+    )
+    assert enc.DEFAULT_ASSISTANT_SYSPROMPT in prompt
+    assert enc.PIRATE_SYSPROMPT not in prompt
+    assert enc.VILLAIN_SYSPROMPT not in prompt
+
+
+def test_build_eval_prompt_role_nonsense_ends_with_nonsense_role(tok):
+    """role_nonsense_<persona> eval prompt MUST end with the persona's nonsense role."""
+    p_pirate = enc.BUILD_EVAL_PROMPT("role_nonsense_pirate", "what is 1+1?", tok)
+    assert p_pirate.endswith("<|im_start|>flump_assistant\n"), p_pirate[-60:]
+    p_villain = enc.BUILD_EVAL_PROMPT("role_nonsense_villain", "what is 1+1?", tok)
+    assert p_villain.endswith("<|im_start|>glonk_assistant\n"), p_villain[-60:]
+
+
+def test_role_nonsense_eval_encodings_use_neutral_default_system(tok):
+    """role_nonsense_<persona> MUST use the neutral default system (mirror role arm)."""
+    for e in ("role_nonsense_pirate", "role_nonsense_villain"):
+        prompt = enc.BUILD_EVAL_PROMPT(e, "q?", tok)
+        assert enc.DEFAULT_ASSISTANT_SYSPROMPT in prompt
+        assert enc.PIRATE_SYSPROMPT not in prompt
+        assert enc.VILLAIN_SYSPROMPT not in prompt
+
+
+def test_role_nonsense_eval_encodings_byte_distinct_from_semantic_role(tok):
+    """role_nonsense_<persona> must produce a DIFFERENT prompt than role_<persona>."""
+    for persona in enc.PERSONAS:
+        sem = enc.BUILD_EVAL_PROMPT(f"role_{persona}", "q?", tok)  # type: ignore[arg-type]
+        non = enc.BUILD_EVAL_PROMPT(f"role_nonsense_{persona}", "q?", tok)  # type: ignore[arg-type]
+        assert sem != non
+
+
+def test_role_nonsense_is_in_arms_and_eval_encodings():
+    """Sanity: the new arm / eval encodings are wired into the canonical tuples."""
+    assert "role_nonsense" in enc.ARMS
+    assert "role_nonsense_pirate" in enc.EVAL_ENCODINGS
+    assert "role_nonsense_villain" in enc.EVAL_ENCODINGS
+    assert enc.EVAL_R_KEY["role_nonsense_pirate"] == "pirate"
+    assert enc.EVAL_R_KEY["role_nonsense_villain"] == "villain"
+    # Helper round-trip.
+    assert enc.nonsense_role_name_for("pirate") == "flump_assistant"
+    assert enc.nonsense_role_name_for("villain") == "glonk_assistant"
+
+
+def test_assert_token_ids_catches_nonsense_drift(monkeypatch, tok):
+    """If the nonsense-name registry drifts (different ids OR different length),
+    ``assert_token_ids`` MUST raise — protects the role_nonsense arm from
+    silent re-tokenization that would break the parity-with-role design."""
+    # Sub in a name that tokenizes to a DIFFERENT id sequence than the
+    # pinned expected (1489, 1510, 12083, 11202) → exact-id check trips.
+    monkeypatch.setitem(enc.NONSENSE_ROLE_NAME_FOR, "pirate", "krunk_assistant")
+    with pytest.raises(AssertionError):
+        enc.assert_token_ids(tok)
