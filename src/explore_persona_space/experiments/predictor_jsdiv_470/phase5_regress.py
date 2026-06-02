@@ -328,13 +328,28 @@ def regress_predictor(
     predictor_vals: np.ndarray,
     delta_vals: np.ndarray,
     base_rate_vals: np.ndarray,
+    base_rate_diff_vals: np.ndarray | None,
     *,
     n_boot: int,
     n_perm: int,
     seed: int,
 ) -> dict:
-    """Three ro variants (raw / source-FE / source-FE + base-rate-partial)
-    plus per-source ro + Fisher-z avg + per-source bootstrap CI / permutation p.
+    """Four ro variants per predictor (round-4 plan §6.5 item 1 fix):
+
+    * ``spearman_raw`` — pooled, no controls
+    * ``spearman_source_fe`` — source FE residualized
+    * ``spearman_source_fe_plus_base_rate`` — source FE + rank(bystander_base_rate)
+    * ``spearman_source_fe_plus_base_rate_diff`` — source FE + rank(base_rate_diff_neg_abs)
+
+    Both base-rate partials are required by plan §6.5 item 1; a predictor
+    whose ro vanishes under EITHER was tracking the base-rate confound it
+    controls for, not persona-distance. Reports per-source ro + Fisher-z avg
+    + per-source bootstrap CI / permutation p as in round 2.
+
+    ``base_rate_diff_vals`` may be ``None`` only when no cell has a value for
+    ``base_rate_diff_neg_abs`` (impossible in practice — it's computed for
+    every cell where both source and bystander base rates are known — but the
+    arg is typed Optional so the caller can opt out cleanly).
     """
     dummies, ref = _build_source_dummies(sources)
     # Add bystander base rate as an extra covariate (rank-residualized) for
@@ -357,6 +372,23 @@ def regress_predictor(
         ),
         "source_dummy_reference": ref,
     }
+    # Round-4 §6.5 item 1: second base-rate partial controlling for the
+    # |base_rate(src) - base_rate(bys)| difference rather than the raw
+    # bystander base rate. A "JS helps" claim must survive BOTH controls.
+    if base_rate_diff_vals is not None:
+        dummies_plus_brd = np.column_stack(
+            [dummies, _ranks(base_rate_diff_vals) - _ranks(base_rate_diff_vals).mean()]
+        )
+        block["spearman_source_fe_plus_base_rate_diff"] = partial_spearman_on_dummies(
+            predictor_vals, delta_vals, dummies_plus_brd
+        )
+    else:
+        block["spearman_source_fe_plus_base_rate_diff"] = {
+            "rho": None,
+            "p": None,
+            "n": len(delta_vals),
+            "note": "base_rate_diff_unavailable",
+        }
     block["fisher_z_avg_per_source"] = fisher_z_average(block["per_source"])
     return block
 
@@ -555,6 +587,11 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
     sources = [c["source"] for c in usable]
     delta_vals = np.array([c["delta"] for c in usable], dtype=float)
     base_rate_vals = np.array([c["bystander_base_rate"] for c in usable], dtype=float)
+    # Round-4 §6.5 item 1: second base-rate partial covariate, the absolute
+    # |source - bystander| base-rate difference. Phase 4 stores it as the
+    # negative-absolute (so polarity matches "similarity"); for partial
+    # residualization the sign is irrelevant — only the rank structure matters.
+    base_rate_diff_vals = np.array([c.get("base_rate_diff_neg_abs") for c in usable], dtype=float)
 
     per_predictor: dict[str, dict] = {}
     for label, key, polarity in PREDICTORS:
@@ -573,6 +610,11 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
                     "p": None,
                     "n": len(pred_idx),
                 },
+                "spearman_source_fe_plus_base_rate_diff": {
+                    "rho": None,
+                    "p": None,
+                    "n": len(pred_idx),
+                },
                 "per_source": {},
                 "fisher_z_avg_per_source": {"rho_z_avg": None, "n_sources": 0},
             }
@@ -581,6 +623,13 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
         sub_vals = np.array([usable[i][key] for i in pred_idx], dtype=float)
         sub_delta = np.array([delta_vals[i] for i in pred_idx], dtype=float)
         sub_base_rate = np.array([base_rate_vals[i] for i in pred_idx], dtype=float)
+        sub_brd_raw = [base_rate_diff_vals[i] for i in pred_idx]
+        # Pass `None` when the diff is unavailable for ALL pred_idx cells; that
+        # keeps regress_predictor's `base_rate_diff_unavailable` note honest.
+        if any(v is not None and not np.isnan(v) for v in sub_brd_raw):
+            sub_brd = np.array([np.nan if v is None else v for v in sub_brd_raw], dtype=float)
+        else:
+            sub_brd = None
         per_predictor[label] = regress_predictor(
             label=label,
             polarity=polarity,
@@ -588,6 +637,7 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
             predictor_vals=sub_vals,
             delta_vals=sub_delta,
             base_rate_vals=sub_base_rate,
+            base_rate_diff_vals=sub_brd,
             n_boot=args.n_boot,
             n_perm=args.n_perm,
             seed=args.seed,
@@ -622,6 +672,61 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
             "note": "insufficient_cells_with_both_predictors",
         }
 
+    # Round-4 §6.5 item 2: paired bootstrap Delta-ro of M_js vs the BEST
+    # base-rate baseline. "Best" = whichever of {bystander_base_rate,
+    # base_rate_diff_neg_abs} has the larger |source-FE ro| with Delta. A
+    # "JS helps" claim must beat BOTH cosine AND this trivial-baseline test;
+    # otherwise the apparent improvement is just tracking the base-rate
+    # confound that the predictor happens to encode.
+    base_rate_candidates = ["bystander_base_rate", "base_rate_diff_neg_abs"]
+    base_rate_candidate_rhos: dict[str, float | None] = {}
+    for cand in base_rate_candidates:
+        blk = per_predictor.get(cand, {})
+        r = blk.get("spearman_source_fe", {}).get("rho") if blk else None
+        base_rate_candidate_rhos[cand] = r
+    # Pick the candidate with the larger |source-FE ro|; ties or all-None
+    # both fall back to `bystander_base_rate` as the canonical pick.
+    best_base_rate_label = "bystander_base_rate"
+    best_base_rate_abs_rho = None
+    for cand, r in base_rate_candidate_rhos.items():
+        if r is None:
+            continue
+        ar = abs(r)
+        if best_base_rate_abs_rho is None or ar > best_base_rate_abs_rho:
+            best_base_rate_abs_rho = ar
+            best_base_rate_label = cand
+
+    paired_br_idx = [
+        i
+        for i, c in enumerate(usable)
+        if c.get(HEADLINE_PREDICTOR_FOR_DELTA) is not None
+        and c.get(best_base_rate_label) is not None
+    ]
+    if len(paired_br_idx) >= 10:
+        x_js_br = np.array(
+            [usable[i][HEADLINE_PREDICTOR_FOR_DELTA] for i in paired_br_idx], dtype=float
+        )
+        x_br = np.array([usable[i][best_base_rate_label] for i in paired_br_idx], dtype=float)
+        paired_br_sources = [sources[i] for i in paired_br_idx]
+        paired_br_delta = np.array([delta_vals[i] for i in paired_br_idx], dtype=float)
+        delta_rho_vs_base_rate = paired_bootstrap_delta_rho(
+            sources=paired_br_sources,
+            x_a=x_js_br,
+            x_b=x_br,
+            y=paired_br_delta,
+            n_boot=args.n_boot,
+            # Distinct seed offset so the two paired bootstraps don't share draws.
+            seed=args.seed + 1,
+        )
+    else:
+        delta_rho_vs_base_rate = {
+            "delta_rho_mean": None,
+            "ci_low_95": None,
+            "ci_high_95": None,
+            "n_cells_with_both": len(paired_br_idx),
+            "note": "insufficient_cells_with_both_predictors",
+        }
+
     # Cross-predictor correlation (sanity per §6.5 item 5). Skip pairs where
     # either side is None in too many cells.
     cross_corr = {}
@@ -652,13 +757,17 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
     # Secondary verdict: per-source bystander ranks.
     rank_diagnostic = secondary_diagnostic_ranks(usable, sources)
 
-    # Seed-extension decision rule (§6.4): only flag the [0.05, 0.15] buffer
-    # zone; we do not auto-launch the extension (predictor-only re-analysis,
-    # not a training loop — the user can re-invoke if they want it).
-    buffer_flag = False
-    if delta_rho.get("delta_rho_mean") is not None:
-        m = abs(delta_rho["delta_rho_mean"])
-        buffer_flag = 0.05 <= m <= 0.15
+    # Seed-extension decision rule (§6.4): flag the [0.05, 0.15] buffer zone
+    # for EITHER paired-Delta-ro block (vs cosine OR vs best base-rate). The
+    # more conservative call — flagging if either is in the buffer — protects
+    # against the case where M_js cleanly beats cosine but the JS-vs-base-rate
+    # gap is ambiguous (or vice versa). We do not auto-launch the extension;
+    # the user re-invokes if they want it.
+    def _in_buffer(blk: dict) -> bool:
+        m = blk.get("delta_rho_mean")
+        return m is not None and 0.05 <= abs(m) <= 0.15
+
+    buffer_flag = _in_buffer(delta_rho) or _in_buffer(delta_rho_vs_base_rate)
 
     summary = {
         "n_cells_used": len(usable),
@@ -669,6 +778,18 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
         "paired_bootstrap_delta_rho": {
             "spec": "|rho(M_js)| - |rho(cosine_l20_baseline)| on source-FE-residualized ranks",
             **delta_rho,
+        },
+        # Round-4 §6.5 item 2: paired Delta-ro vs the best base-rate baseline.
+        "paired_bootstrap_delta_rho_vs_base_rate": {
+            "spec": (
+                "|rho(M_js)| - |rho(<best base-rate baseline>)| on source-FE-residualized "
+                "ranks; best = larger |source-FE rho| of {bystander_base_rate, "
+                "base_rate_diff_neg_abs}"
+            ),
+            "best_base_rate_label": best_base_rate_label,
+            "best_base_rate_source_fe_abs_rho": best_base_rate_abs_rho,
+            "base_rate_candidate_source_fe_rho": base_rate_candidate_rhos,
+            **delta_rho_vs_base_rate,
         },
         "cosine_layer_ladder": layer_ladder,
         "response_length_confound": len_confound,
@@ -686,23 +807,33 @@ def main() -> int:  # noqa: C901 — sequential setup + flat result-assembly rea
     # Compact stdout table for the human eyeball.
     print(f"\n=== Phase 5 — predictor comparison (n_cells_used={len(usable)}) ===")
     print(f"std(JS_sym_nats) = {js_std:.6f} nats (kill threshold {JS_STD_KILL_THRESHOLD_NATS})")
-    print(f"{'predictor':<32} {'raw':>9} {'src_FE':>9} {'src_FE+BR':>11}  per_src_z_avg")
+    print(
+        f"{'predictor':<32} {'raw':>9} {'src_FE':>9} {'src_FE+BR':>11} "
+        f"{'src_FE+BRD':>11}  per_src_z_avg"
+    )
     for label, blk in per_predictor.items():
         raw = blk["spearman_raw"].get("rho")
         fe = blk["spearman_source_fe"].get("rho")
         fe_br = blk["spearman_source_fe_plus_base_rate"].get("rho")
+        fe_brd = blk["spearman_source_fe_plus_base_rate_diff"].get("rho")
         z = blk["fisher_z_avg_per_source"].get("rho_z_avg")
 
-        def _f(x):
-            return f"{x:>9.4f}" if x is not None else f"{'nan':>9}"
+        def _f(x, w=9):
+            return f"{x:>{w}.4f}" if x is not None else f"{'nan':>{w}}"
 
         z_str = f"{z:>9.4f}" if z is not None else f"{'nan':>9}"
-        print(f"{label:<32} {_f(raw)} {_f(fe)}   {_f(fe_br):>9}  {z_str}")
+        print(f"{label:<32} {_f(raw)} {_f(fe)}   {_f(fe_br):>9}   {_f(fe_brd):>9}  {z_str}")
 
     dr = delta_rho
     print(
         f"\nPaired Delta-rho (|M_js| - |cosine_l20|): mean={dr.get('delta_rho_mean')}, "
         f"95% CI=[{dr.get('ci_low_95')}, {dr.get('ci_high_95')}]"
+    )
+    drb = delta_rho_vs_base_rate
+    print(
+        f"Paired Delta-rho (|M_js| - |{best_base_rate_label}|): "
+        f"mean={drb.get('delta_rho_mean')}, "
+        f"95% CI=[{drb.get('ci_low_95')}, {drb.get('ci_high_95')}]"
     )
 
     # Cosine layer ladder readout.
