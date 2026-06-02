@@ -59,21 +59,38 @@ SEEDS = (42, 137, 1337)
 
 
 def _load_R_canon_test() -> dict[str, dict[str, dict]]:
-    """Load R_canon_test from disk; HF fallback."""
-    local = LOCAL_DATA_DIR / "R_canon_test.json"
-    if not local.exists():
-        from huggingface_hub import hf_hub_download
+    """Load R_canon_test from disk; HF fallback (production) or local override (--gpu smoke).
 
-        local.parent.mkdir(parents=True, exist_ok=True)
-        downloaded = hf_hub_download(
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            filename=f"{HF_R_PATH_PREFIX}/R_canon_test.json",
-            revision="main",
-        )
-        import shutil
+    Override via ``EPM_LOCAL_R_CANON_DIR``: when set, read
+    ``<override>/R_canon_test.json`` directly. RAISE if env is set
+    but file missing — never silently fall through to HF.
+    Production behavior (env unset) unchanged.
+    """
+    override_dir = os.environ.get("EPM_LOCAL_R_CANON_DIR")
+    if override_dir:
+        override_path = Path(override_dir) / "R_canon_test.json"
+        if not override_path.exists():
+            raise RuntimeError(
+                f"EPM_LOCAL_R_CANON_DIR={override_dir!r} set but R_canon_test.json "
+                f"missing at {override_path}."
+            )
+        logger.info("Using local R_canon override: %s", override_path)
+        local = override_path
+    else:
+        local = LOCAL_DATA_DIR / "R_canon_test.json"
+        if not local.exists():
+            from huggingface_hub import hf_hub_download
 
-        shutil.copyfile(downloaded, local)
+            local.parent.mkdir(parents=True, exist_ok=True)
+            downloaded = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{HF_R_PATH_PREFIX}/R_canon_test.json",
+                revision="main",
+            )
+            import shutil
+
+            shutil.copyfile(downloaded, local)
     return json.loads(local.read_text())["completions"]
 
 

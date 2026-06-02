@@ -659,12 +659,16 @@ SMOKE_CELL = "system_plain_seed42"
 def _gpu_isolation_env(temp_dir: Path) -> dict:
     """Build the env dict every --gpu sub-invocation uses.
 
-    Three isolation contracts the env enforces:
+    Four isolation contracts the env enforces:
       * EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 — disables
         `_maybe_upload_checkpoint_to_wandb` (no WandB Artifacts written).
       * EPM_LOCAL_ADAPTER_OVERRIDE=<temp_dir> — phase 2-check / 4 / 4.5
         read the trained adapter from <temp_dir>/adapters/i464_<arm>_
         seed<seed>/ instead of HF Hub. NO hf_hub_download attempted.
+      * EPM_LOCAL_R_CANON_DIR=<temp_dir>/data/issue_464 — round-5 fix
+        for cascade #3. Phase 1's `--no-upload` keeps R_canon local;
+        downstream phase 2-check / 4 / 4.5 must read it from the temp
+        dir, not HF Hub (which 404s because nothing was uploaded).
       * WANDB_MODE=disabled — silences the real WandB run init in
         phase 23 (`report_to="wandb"` is hardcoded there).
 
@@ -674,6 +678,7 @@ def _gpu_isolation_env(temp_dir: Path) -> dict:
     env = {**os.environ}
     env["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     env["EPM_LOCAL_ADAPTER_OVERRIDE"] = str(temp_dir)
+    env["EPM_LOCAL_R_CANON_DIR"] = str(temp_dir / "data" / "issue_464")
     env["WANDB_MODE"] = "disabled"
     return env
 
@@ -692,17 +697,34 @@ def _gpu_phase0(temp_dir: Path) -> tuple[int, str]:
 
 
 def _gpu_phase1(temp_dir: Path) -> tuple[int, str]:
-    """GPU phase 1: REAL R generation at tiny N (3 q per split, both splits)."""
+    """GPU phase 1: REAL R generation at tiny N (5 q per split, both splits).
+
+    Round-5 fix #1 (truncation guard cascade): the round-4 args used
+    `--smoke-n 3 --max-new-tokens 128` -> pirate/villain natural
+    responses exceed 128 tokens -> 5/6 truncated -> 83% > 5%
+    truncation gate -> phase 1 FAILed before writing R_canon_test.json
+    -> phase4/45 fell through to HF and 404'd.
+
+    Round-5 fix #2 (question-subset mismatch): phase 23's `--smoke`
+    flag picks the first 5 alphabetically-sorted Q_train questions
+    (hardcoded). Match the subset by passing `--smoke-n 5` to phase 1
+    (both scripts sort the same way -> first 5 overlap).
+    """
     cmd = [
         sys.executable,
         str(REPO_ROOT / "scripts" / "i464_phase1_generate_R.py"),
         "--split",
         "both",
         "--smoke-n",
-        "3",
+        # Round-5: must match phase 23's hardcoded smoke truncation (5)
+        # so phase 23's training rows find R_canon for every question.
+        "5",
         "--no-upload",
         "--max-new-tokens",
-        "128",
+        # Round-5: 512 leaves comfortable headroom over natural Qwen
+        # response length (~150 tokens median) without paying the full
+        # production 1024 cost. Production sweep uses 1024.
+        "512",
         "--max-seq-len",
         "1024",
     ]

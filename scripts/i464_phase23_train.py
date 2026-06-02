@@ -81,26 +81,45 @@ def _parse_cell(cell: str) -> tuple[enc.Arm, int]:
 
 
 def _load_R_canon(split: str) -> dict[str, dict[str, dict]]:
-    """Load R_canon for ``split`` ∈ {'train', 'test'}; pull from HF if missing."""
-    local = LOCAL_DATA_DIR / f"R_canon_{split}.json"
-    if not local.exists():
-        logger.info("R_canon_%s.json missing locally; pulling from HF data repo.", split)
-        from huggingface_hub import hf_hub_download
+    """Load R_canon for ``split`` in {'train', 'test'}; HF fallback or local override.
 
-        local.parent.mkdir(parents=True, exist_ok=True)
-        downloaded = hf_hub_download(
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            filename=f"{HF_R_PATH_PREFIX}/R_canon_{split}.json",
-            revision="main",
-        )
-        import shutil
-
-        shutil.copyfile(downloaded, local)
-        if not local.exists() or local.stat().st_size == 0:
+    Override via ``EPM_LOCAL_R_CANON_DIR``: when set, read
+    ``<override>/R_canon_<split>.json`` directly. RAISE if env is
+    set but file missing — never silently fall through to HF (the
+    override is for `--no-upload` smoke isolation; silent HF
+    fallback would defeat it). Production behavior (env unset)
+    unchanged.
+    """
+    override_dir = os.environ.get("EPM_LOCAL_R_CANON_DIR")
+    if override_dir:
+        override_path = Path(override_dir) / f"R_canon_{split}.json"
+        if not override_path.exists():
             raise RuntimeError(
-                f"HF download claimed success but {local} is missing/empty (src {downloaded})."
+                f"EPM_LOCAL_R_CANON_DIR={override_dir!r} set but R_canon_{split}.json "
+                f"missing at {override_path}."
             )
+        logger.info("Using local R_canon override (split=%s): %s", split, override_path)
+        local = override_path
+    else:
+        local = LOCAL_DATA_DIR / f"R_canon_{split}.json"
+        if not local.exists():
+            logger.info("R_canon_%s.json missing locally; pulling from HF data repo.", split)
+            from huggingface_hub import hf_hub_download
+
+            local.parent.mkdir(parents=True, exist_ok=True)
+            downloaded = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{HF_R_PATH_PREFIX}/R_canon_{split}.json",
+                revision="main",
+            )
+            import shutil
+
+            shutil.copyfile(downloaded, local)
+            if not local.exists() or local.stat().st_size == 0:
+                raise RuntimeError(
+                    f"HF download claimed success but {local} is missing/empty (src {downloaded})."
+                )
 
     payload = json.loads(local.read_text())
     if payload.get("schema_version") != "i464_v2_matched_R":

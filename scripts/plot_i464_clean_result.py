@@ -215,18 +215,49 @@ def plot_matrix_per_arm(analysis: dict) -> None:
 
 
 def plot_per_seed_scatter(analysis: dict) -> None:
-    """For each seed, scatter (elicitation, leakage) per arm."""
+    """For each seed, scatter (elicitation, leakage) per arm.
+
+    Round-5 fix (review blocker #4): when an arm is missing leakage cells
+    (smoke runs with one cell only, or `--allow-partial` production
+    runs that lose a cell mid-sweep), `elicits` and `leaks` arrays
+    differ in length and `ax.scatter` raises ``ValueError: x and y
+    must be the same size``. The defensive fix pairs elicit+leak per
+    seed and only plots when BOTH are present for that seed. Arms
+    with no usable (x, y) pairs are skipped (logged as a warning so
+    the operator sees the missing-data signal).
+    """
     seeds = analysis["seeds"]
     fig, ax = plt.subplots(figsize=(6, 5))
     arms = list(enc.ARMS)
     colors = {"system_plain": "#666", "system_padded": "#a44", "role": "#48a"}
+    skipped: list[str] = []
     for arm in arms:
         elicits = [_own_persona_elicitation(arm, s) for s in seeds]  # type: ignore[arg-type]
         leaks = _l_arm_values(analysis, arm)
-        ax.scatter(elicits, leaks, s=60, color=colors[arm], label=arm)
+        # Pair by index up to the shorter list; drop pairs with NaN elicit
+        # (cell missing) so the scatter is honest about what's plotted.
+        n_pairs = min(len(elicits), len(leaks))
+        xs = [
+            elicit
+            for elicit, _leak in zip(elicits[:n_pairs], leaks[:n_pairs], strict=True)
+            if not (isinstance(elicit, float) and np.isnan(elicit))
+        ]
+        ys = [
+            leak
+            for elicit, leak in zip(elicits[:n_pairs], leaks[:n_pairs], strict=True)
+            if not (isinstance(elicit, float) and np.isnan(elicit))
+        ]
+        if not xs or not ys:
+            skipped.append(arm)
+            continue
+        ax.scatter(xs, ys, s=60, color=colors[arm], label=arm)
     ax.set_xlabel("own-persona elicitation log P")
     ax.set_ylabel("symmetric leakage L_arm")
-    ax.set_title("Per-seed: elicitation vs leakage by arm")
+    title = "Per-seed: elicitation vs leakage by arm"
+    if skipped:
+        title += f"  (skipped arms with missing cells: {skipped})"
+        logger.warning("plot_per_seed_scatter: skipped arms with missing cells: %s", skipped)
+    ax.set_title(title)
     ax.legend()
     ax.grid(alpha=0.3)
     _save(fig, "per_seed", [str(ANALYSIS_PATH)])
