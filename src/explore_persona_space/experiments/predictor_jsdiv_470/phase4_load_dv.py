@@ -156,6 +156,70 @@ def load_persona_response_lengths() -> dict[str, float]:
     return out
 
 
+def _required_personas_for(sources: list[str], dv: dict[tuple[str, str], dict]) -> set[str]:
+    """Sources + their bystanders (= every persona Phase 1 needs to have sampled)."""
+    needed: set[str] = set()
+    for src, bys in dv:
+        if src in sources:
+            needed.add(src)
+            needed.add(bys)
+    return needed
+
+
+def _required_phase3_cells(
+    sources: list[str], dv: dict[tuple[str, str], dict]
+) -> list[tuple[str, str]]:
+    return [(src, bys) for (src, bys) in dv if src in sources]
+
+
+def assert_prereqs(
+    sources: list[str],
+    dv: dict[tuple[str, str], dict],
+    js_kl: dict[tuple[str, str], dict],
+    cossim_b: dict[int, dict[str, dict[str, float]]],
+    persona_lengths: dict[str, float],
+) -> None:
+    """Round-3 blocker `phase4-prereq-guard-missing`: fail fast if ANY required
+    Phase 1 / 2 / 3 input is missing for the requested sources.
+
+    Without this check, a partial Phase 3 silently produces null-cell rows that
+    Phase 5 then regresses on as if they were "predictor unavailable for this
+    cell" — confusing a partial-pipeline-failure (regenerate) with a real
+    measurement gap. Violates the CLAUDE.md "fail fast" rule.
+    """
+    missing_phase3 = [
+        (src, bys) for (src, bys) in _required_phase3_cells(sources, dv) if (src, bys) not in js_kl
+    ]
+    required_personas = _required_personas_for(sources, dv)
+    missing_phase1 = sorted(required_personas - set(persona_lengths))
+    expected_layers = list(DEFAULT_LAYERS)
+    missing_phase2_layers = [li for li in expected_layers if li not in cossim_b]
+
+    problems: list[str] = []
+    if missing_phase3:
+        sample = ", ".join(f"{s}->{b}" for s, b in missing_phase3[:5])
+        problems.append(
+            f"Phase 3: {len(missing_phase3)} required cells missing (first 5: {sample})"
+        )
+    if missing_phase1:
+        problems.append(
+            f"Phase 1 length inputs: {len(missing_phase1)} required personas missing "
+            f"({missing_phase1[:10]})"
+        )
+    if missing_phase2_layers:
+        problems.append(
+            f"Phase 2: layer files missing for layers {missing_phase2_layers} "
+            f"(expected {expected_layers})"
+        )
+    if problems:
+        raise RuntimeError(
+            "Phase 4 prereq check FAILED — refusing to write a partial "
+            "predictor_comparison.json with null predictor rows. Fix the upstream "
+            "phase(s) and re-run, or pass --allow-partial to write nulls (debug only).\n"
+            + "\n".join(f"  - {p}" for p in problems)
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -163,6 +227,13 @@ def main() -> int:
         nargs="+",
         default=list(SOURCE_PERSONAS_411),
         help="Sources to include (default: all 6 #411 sources).",
+    )
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="DEBUG ONLY — write the comparison even when Phase 1/2/3 prereqs are "
+        "incomplete. Produces null predictor rows that Phase 5 will then skip. "
+        "Production runs must NEVER set this; the dispatcher does not pass it.",
     )
     args = parser.parse_args()
 
@@ -176,8 +247,19 @@ def main() -> int:
         len(persona_lengths),
     )
 
-    cells = []
     sources = list(args.sources)
+
+    # Round-3 blocker `phase4-prereq-guard-missing`: hard-fail if any upstream
+    # output is missing UNLESS --allow-partial is explicitly set.
+    if not args.allow_partial:
+        assert_prereqs(sources, dv, js_kl, cossim_b, persona_lengths)
+    else:
+        logger.warning(
+            "--allow-partial active: skipping prereq check; predictor rows may "
+            "contain nulls. DO NOT use this for production."
+        )
+
+    cells = []
     for (src, bys), dv_row in dv.items():
         if src not in sources:
             continue
@@ -223,6 +305,8 @@ def main() -> int:
             row["KL_bys_to_src_nats"] = p3["KL_bys_to_src_nats"]
             row["KL_sym_nats"] = p3["KL_sym_nats"]
         else:
+            # Reachable only under --allow-partial; assert_prereqs catches the
+            # production case before we get here.
             row["JS_sym_nats"] = None
             row["M_js"] = None
             row["KL_src_to_bys_nats"] = None
@@ -234,6 +318,7 @@ def main() -> int:
         "sources": sources,
         "cells": cells,
         "persona_resp_len_means": persona_lengths,
+        "allow_partial": args.allow_partial,
         "metadata": reproducibility_metadata({"script": "predictor_jsdiv_470.phase4_load_dv"}),
     }
     write_json(PHASE4_PATH, payload)

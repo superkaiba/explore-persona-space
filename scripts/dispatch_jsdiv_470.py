@@ -234,9 +234,17 @@ def main() -> int:  # noqa: C901 — linear sequence of phase-launch checks; spl
 
     # ── Phases 4-6 (CPU): can run in-process; no GPU contention ──
     if "4" in phases_to_run:
+        p4_args = ["--sources", *sources]
+        # `--smoke` (or any explicit bystander subset) deliberately trims to a
+        # single (src, bys) cell — the Phase 4 prereq guard would otherwise
+        # complain about the 22 unrun cells. Production NEVER sets this; the
+        # dispatcher only forwards --allow-partial when the user explicitly
+        # asked for a partial run via --smoke or --bystanders.
+        if args.smoke or args.bystanders:
+            p4_args.append("--allow-partial")
         _run_subprocess(
             "explore_persona_space.experiments.predictor_jsdiv_470.phase4_load_dv",
-            ["--sources", *sources],
+            p4_args,
             label="Phase 4 (DV load + assemble)",
         )
     # Concern #7: only require PHASE4_PATH when Phase 4 was actually scheduled.

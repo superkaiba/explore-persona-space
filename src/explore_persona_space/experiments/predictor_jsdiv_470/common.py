@@ -247,15 +247,28 @@ def phase_signature(payload: dict) -> dict:
 
 
 def checkpoint_is_compatible(
-    existing_path: Path, expected: dict, *, ignore: tuple[str, ...] = ()
+    existing_path: Path,
+    expected: dict,
+    *,
+    ignore: tuple[str, ...] = (),
+    optional: tuple[str, ...] = (),
 ) -> tuple[bool, str]:
     """Return (compatible, reason) for an existing phase artifact vs an expected signature.
 
     Reads the existing JSON's ``metadata`` block, extracts its signature, and
-    compares against ``expected``. Any non-None mismatch on a field NOT in
-    ``ignore`` makes it incompatible. None in either side is treated as
-    "don't care" so older artifacts without a field don't auto-invalidate
-    (but the new write will overwrite with a populated field).
+    compares against ``expected``. Keys are split into REQUIRED vs OPTIONAL:
+
+    * REQUIRED (any key in ``expected`` not listed in ``optional`` or ``ignore``):
+      ``want is None`` is treated as "caller did not constrain this field" and
+      skips the check. But if ``want`` IS specified and ``have is None``, the
+      artifact is INCOMPATIBLE — an older / malformed artifact missing a
+      load-bearing key is a regenerate condition, not a free pass (round-3
+      `compat-check-required-key-dontcare` fix). Mismatched values are also
+      INCOMPATIBLE.
+    * OPTIONAL (any key in ``optional``): the historical "skip-on-None"
+      semantics — if either side is None, skip the check. Use only for fields
+      that are genuinely fine to be absent on older artifacts.
+    * IGNORE (any key in ``ignore``): never compared.
     """
     if not existing_path.exists():
         return False, "missing"
@@ -268,8 +281,19 @@ def checkpoint_is_compatible(
         if k in ignore:
             continue
         have = sig.get(k)
-        if want is None or have is None:
+        if k in optional:
+            # Old semantics: missing on either side = don't care.
+            if want is None or have is None:
+                continue
+            if have != want:
+                return False, f"{k}: have={have!r} want={want!r} (optional)"
             continue
+        # Required key.
+        if want is None:
+            # Caller did not constrain this field; skip.
+            continue
+        if have is None:
+            return False, f"{k}: missing in existing artifact (want={want!r})"
         if have != want:
             return False, f"{k}: have={have!r} want={want!r}"
     return True, "compatible"

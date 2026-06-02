@@ -28,7 +28,9 @@ Subprocess-isolated from Phase 1 (vLLM teardown trap).
 Usage::
 
     uv run python -m explore_persona_space.experiments.predictor_jsdiv_470.phase3_sequence_js_kl \\
-        --sources software_engineer --bystanders comedian --probes 5 --R 2   # smoke
+        --sources software_engineer --bystanders comedian --probes 5    # smoke
+        # R is fixed by Phase 1's sampling (R_per_side inferred from the
+        # per-persona output); Phase 3 has no --R argument.
     uv run python -m explore_persona_space.experiments.predictor_jsdiv_470.phase3_sequence_js_kl
         # full: 6 sources x 23 bystanders = 138 cells
 """

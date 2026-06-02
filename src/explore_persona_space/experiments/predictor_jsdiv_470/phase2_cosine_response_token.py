@@ -218,8 +218,41 @@ def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop rea
             f"Phase 2 requires Phase 1 outputs in {PHASE1_DIR}, found none for {personas}"
         )
 
-    # Concern #2 partial: skip Phase 2 IF all expected layer files exist AND the
-    # persona-set + layer-set in the existing payloads match the request.
+    # Round-3 blocker `smoke-artifacts-poison-production` (Phase 2 leg):
+    # capture the UPSTREAM Phase 1 signature now (model/backend/R/n_probes/seed/
+    # temperature/top_p/max_new_tokens) and require that EVERY existing Phase 2
+    # layer file's stored `upstream_phase1_*` block matches it. Otherwise a
+    # smoke Phase-2 artifact (Qwen-0.5B / R=2 / 5 probes) silently satisfies a
+    # production run whose Phase 1 just regenerated at Qwen-7B / R=8 / 50.
+    #
+    # All `pending` Phase 1 outputs MUST share the same signature; we read all of
+    # them once and assert agreement before extracting the upstream signature.
+    phase1_sigs: dict[str, dict] = {}
+    for persona in pending:
+        blob = read_json(PHASE1_DIR / f"{persona}.json")
+        meta = blob.get("metadata", {})
+        phase1_sigs[persona] = {
+            "model_path": meta.get("model_path"),
+            "backend": meta.get("backend"),
+            "R": meta.get("R") or blob.get("R"),
+            "n_probes": meta.get("n_probes") or blob.get("n_probes"),
+            "seed": meta.get("seed"),
+            "temperature": meta.get("temperature"),
+            "top_p": meta.get("top_p"),
+            "max_new_tokens": meta.get("max_new_tokens"),
+        }
+    # All Phase 1 outputs must agree (a mid-run regen at different R for some
+    # personas is itself an error to surface here, not paper over).
+    canonical_sig = next(iter(phase1_sigs.values()))
+    for persona, sig in phase1_sigs.items():
+        if sig != canonical_sig:
+            raise RuntimeError(
+                f"Phase 1 outputs disagree on signature: {persona}={sig} vs "
+                f"canonical={canonical_sig}. Re-run Phase 1 with a single signature "
+                f"or delete the divergent file."
+            )
+    upstream_sig = canonical_sig
+
     expected_layers = sorted(args.layers)
     layer_files = [PHASE2_DIR / f"layer_{li}.json" for li in expected_layers]
     if all(p.exists() for p in layer_files):
@@ -239,7 +272,8 @@ def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop rea
             if int(blob.get("layer", -1)) != li:
                 sigs_match = False
                 break
-            stored_model = blob.get("metadata", {}).get("model_path")
+            stored_meta = blob.get("metadata", {})
+            stored_model = stored_meta.get("model_path")
             if stored_model and stored_model != args.model:
                 logger.warning(
                     "Phase 2 layer %d INCOMPATIBLE: model=%s want=%s — regenerating",
@@ -248,6 +282,39 @@ def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop rea
                     args.model,
                 )
                 sigs_match = False
+                break
+            # NEW: upstream Phase 1 signature must match.
+            stored_upstream = {k: stored_meta.get(f"upstream_phase1_{k}") for k in upstream_sig}
+            # An older artifact missing the upstream block is INCOMPATIBLE (it
+            # was generated before this signature was tracked → unknowable
+            # provenance → regenerate). Required-key semantics (round-3
+            # `compat-check-required-key-dontcare` fix applied locally here).
+            for k, want in upstream_sig.items():
+                have = stored_upstream.get(k)
+                if want is None:
+                    continue
+                if have is None:
+                    logger.warning(
+                        "Phase 2 layer %d INCOMPATIBLE: upstream_phase1_%s missing "
+                        "in existing artifact (want=%r) — regenerating",
+                        li,
+                        k,
+                        want,
+                    )
+                    sigs_match = False
+                    break
+                if have != want:
+                    logger.warning(
+                        "Phase 2 layer %d INCOMPATIBLE: upstream_phase1_%s have=%r "
+                        "want=%r — regenerating",
+                        li,
+                        k,
+                        have,
+                        want,
+                    )
+                    sigs_match = False
+                    break
+            if not sigs_match:
                 break
         if sigs_match:
             logger.info(
@@ -302,6 +369,10 @@ def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop rea
         vecs = torch.stack([centroids[p][li] for p in persona_order])  # (N, hidden)
         normed = torch.nn.functional.normalize(vecs, dim=-1)
         cos_matrix = (normed @ normed.T).cpu().tolist()
+        # Round-3 blocker: embed the upstream Phase 1 signature so a later
+        # invocation can verify our layer file was produced from the SAME
+        # Phase 1 outputs (not stale smoke samples).
+        upstream_meta = {f"upstream_phase1_{k}": v for k, v in upstream_sig.items()}
         payload = {
             "layer": li,
             "personas": persona_order,
@@ -314,6 +385,7 @@ def main() -> int:  # noqa: C901 — argparse + compat-skip + per-layer loop rea
                     "model_path": args.model,
                     "layer": li,
                     "layers": list(expected_layers),
+                    **upstream_meta,
                 }
             ),
         }
