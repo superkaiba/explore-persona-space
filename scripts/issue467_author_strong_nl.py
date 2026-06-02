@@ -484,9 +484,31 @@ def _persist_cell(
     status: str,
     n_attempts: int,
 ) -> Path:
-    """Persist one cell's authored prompt + judge decision. Returns path."""
+    """Persist one cell's authored prompt + judge decision. Returns path.
+
+    Per plan §4.2 rule (5) (length-match the lit prompt within +/-20%): a cell
+    only gets ``status="PASS"`` when BOTH the leak judge cleared it AND the
+    authored prompt is length-in-band. A caller-requested ``status="PASS"``
+    that fails the length audit is downgraded here to ``"FAIL_LENGTH"`` so
+    a length-violating cell can never silently feed cosine / JS — that would
+    re-introduce the prompt-length confound the strong-NL author exists to
+    avoid. The loader ``issue404_common.load_strong_nl_dict`` enforces the
+    same invariant defensively (rule (5) again, second gate).
+    """
     ISSUE467_STRONG_NL_DIR.mkdir(parents=True, exist_ok=True)
     in_band, frac_dev = audit_length(prompt, target_char_len)
+    effective_status = status
+    if status == "PASS" and not in_band:
+        effective_status = "FAIL_LENGTH"
+        logger.warning(
+            "pair=%s leak PASS but length OUT OF BAND (frac_dev=%.3f, "
+            "char_len=%d, target=%d, +/-20%% band); downgrading status to "
+            "FAIL_LENGTH so the loader drops this cell.",
+            pair,
+            frac_dev,
+            len(prompt),
+            target_char_len,
+        )
     payload = {
         "pair": pair,
         "prompt": prompt,
@@ -497,7 +519,8 @@ def _persist_cell(
         "leak_score": leak_score,
         "leak_reasoning": leak_reasoning,
         "leak_phrases": leak_phrases,
-        "status": status,
+        "status": effective_status,
+        "status_requested": status,
         "n_author_attempts": n_attempts,
         "metadata": reproducibility_metadata(
             {

@@ -248,11 +248,20 @@ def _load_cosine_layer_band(directory: Path, suffix: str) -> dict[str, dict[int,
     return out
 
 
+HEADLINE_MIN_CELLS = 12  # plan §0.7 RF3b: ≥12 of 18 cells required for a headline R16 read
+
+# Sentinel for callers that want the strict headline read (dir present + enough cells).
+# A bare integer would be ambiguous vs. an explicit "I want minimum N" floor on a
+# diagnostic load; this sentinel is the "use the headline floor" knob.
+HEADLINE_DEFAULT = object()
+
+
 def _load_seqdiv_field(
     directory: Path,
     suffix: str,
     field: str,
     expected_samples_per_probe: int | None = EXPECTED_SAMPLES_PER_PROBE,
+    require_min_cells: object | int | None = None,
 ) -> dict[str, float]:
     """Return ``{cell: <field>}`` reading from ``<cell>_<suffix>.json``.
 
@@ -262,9 +271,43 @@ def _load_seqdiv_field(
     This guards against a smoke / R=8 artifact being silently analysed as the
     R=16 headline. Pass ``expected_samples_per_probe=None`` only for diagnostic
     loads that intentionally accept any R.
+
+    ``require_min_cells`` is the missing-artifact gate (round-3 fix for
+    Codex blocker ``seqdiv-missing-artifacts-not-fail-loud``):
+
+    * ``None`` (default): missing directory or zero matching files returns
+      an empty dict (the legacy diagnostic / load-what-exists behaviour).
+    * ``HEADLINE_DEFAULT``: raise if the directory is missing, AND raise if
+      fewer than ``HEADLINE_MIN_CELLS`` (=12 of 18) cells have a JSON. Use
+      this for the headline R16 reads in ``main()`` so an empty / partial
+      directory can never be silently analysed as a "valid but
+      insufficient-n" result. The earlier code path
+      (``if not directory.exists(): return out``) caused
+      ``issue467_regress.py`` to exit 0 with the regression JSON marked
+      ``"insufficient_n"`` even when the entire R16 dir was missing.
+    * ``int N``: raise if fewer than ``N`` cells have a JSON. (Direct
+      integer floor, for callers that want a custom minimum.)
     """
+    if require_min_cells is HEADLINE_DEFAULT:
+        min_cells: int | None = HEADLINE_MIN_CELLS
+        is_headline = True
+    elif isinstance(require_min_cells, int):
+        min_cells = require_min_cells
+        is_headline = False
+    else:
+        min_cells = None
+        is_headline = False
+
     out: dict[str, float] = {}
     if not directory.exists():
+        if min_cells is not None:
+            raise RuntimeError(
+                f"JS seqdiv directory {directory} does not exist but a headline read "
+                f"was requested ({field!r} for suffix={suffix!r}). "
+                "Run scripts/run_issue467.sh on the GPU pod to produce the R=16 headline "
+                f"artifacts (plan §0.7 RF3b), OR pass require_min_cells=None for a "
+                "diagnostic load that tolerates a missing directory."
+            )
         return out
     for cell in CELLS_18:
         path = directory / f"{cell}_{suffix}.json"
@@ -285,11 +328,29 @@ def _load_seqdiv_field(
         v = d.get(field)
         if v is not None:
             out[cell] = float(v)
+    if min_cells is not None and len(out) < min_cells:
+        headline_hint = " (run scripts/run_issue467.sh on a GPU pod)" if is_headline else ""
+        raise RuntimeError(
+            f"JS seqdiv read for suffix={suffix!r} field={field!r} returned only "
+            f"{len(out)} cells from {directory} (require_min_cells={min_cells}). "
+            f"{len(CELLS_18) - len(out)} of {len(CELLS_18)} cells are missing their "
+            f"<cell>_{suffix}.json. Re-run the missing cells before analysing the "
+            f"headline R=16 row{headline_hint}."
+        )
     return out
 
 
 def _load_strong_nl_prompts() -> dict[str, str]:
-    """Return ``{cell: prompt}`` for cells with a PASSed strong-NL prompt."""
+    """Return ``{cell: prompt}`` for cells with a PASSed strong-NL prompt.
+
+    Mirrors ``issue404_common.load_strong_nl_dict``: requires BOTH
+    ``status == "PASS"`` (leak-judge passed) AND
+    ``length_in_band_pm20pct == True`` (plan §4.2 rule (5) length-match
+    audit). A length-violating strong-NL prompt would reintroduce the
+    prompt-length confound the predictor exists to test against, so it
+    is dropped here (defense in depth alongside the author-side downgrade
+    + the loader gate).
+    """
     out: dict[str, str] = {}
     if not ISSUE467_STRONG_NL_DIR.exists():
         return out
@@ -298,7 +359,11 @@ def _load_strong_nl_prompts() -> dict[str, str]:
         if not f.exists():
             continue
         d = json.loads(f.read_text())
-        if d.get("status") == "PASS" and isinstance(d.get("prompt"), str):
+        if (
+            d.get("status") == "PASS"
+            and d.get("length_in_band_pm20pct") is True
+            and isinstance(d.get("prompt"), str)
+        ):
             out[cell] = d["prompt"]
     return out
 
@@ -789,16 +854,32 @@ def main() -> int:
 
     # JS @ R=16 per condition (B.4/B.5/B.6). M_js = polarity-aligned similarity.
     # Loader fails loud unless every JSON records samples_per_probe == 16
-    # (plan §0.7 RF3b GLOBAL OVERRIDE).
+    # (plan §0.7 RF3b GLOBAL OVERRIDE) AND ≥HEADLINE_MIN_CELLS (=12 of 18)
+    # cells have a JSON. The missing-dir / partial-dir case used to silently
+    # return {} → "insufficient_n" — now it raises with an actionable hint to
+    # run scripts/run_issue467.sh (round-3 fix for codex blocker
+    # `seqdiv-missing-artifacts-not-fail-loud`).
     seqdiv_M_js = {
-        "weak_nl": _load_seqdiv_field(SEQDIV_R16_DIR, "NL", "M_js"),
-        "strong_nl": _load_seqdiv_field(SEQDIV_R16_DIR, "NL_strong", "M_js"),
-        "lit": _load_seqdiv_field(SEQDIV_R16_DIR, "lit", "M_js"),
+        "weak_nl": _load_seqdiv_field(
+            SEQDIV_R16_DIR, "NL", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
+        "strong_nl": _load_seqdiv_field(
+            SEQDIV_R16_DIR, "NL_strong", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
+        "lit": _load_seqdiv_field(
+            SEQDIV_R16_DIR, "lit", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
     }
     seqdiv_M_js_betley = {
-        "weak_nl": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "NL", "M_js"),
-        "strong_nl": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "NL_strong", "M_js"),
-        "lit": _load_seqdiv_field(SEQDIV_R16_BETLEY_DIR, "lit", "M_js"),
+        "weak_nl": _load_seqdiv_field(
+            SEQDIV_R16_BETLEY_DIR, "NL", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
+        "strong_nl": _load_seqdiv_field(
+            SEQDIV_R16_BETLEY_DIR, "NL_strong", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
+        "lit": _load_seqdiv_field(
+            SEQDIV_R16_BETLEY_DIR, "lit", "M_js", require_min_cells=HEADLINE_DEFAULT
+        ),
     }
 
     # Harm-vocabulary density covariate per condition (RF1b).
