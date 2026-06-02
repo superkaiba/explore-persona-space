@@ -425,19 +425,46 @@ def _load_elicitation_outcomes() -> dict[str, dict]:
     return out
 
 
-def _load_gate_pass_cells() -> tuple[set[str] | None, dict]:
+def _load_gate_pass_cells(allow_missing: bool = False) -> tuple[set[str] | None, dict]:
     """Read the §6.2 elicitation gate output. Returns (pass_cell_set, gate_meta).
 
-    ``pass_cell_set`` is None when the gate has never run (e.g. an ad-hoc
-    regress invocation without the upstream gate); the launcher always runs
-    the gate before reaching here. ``gate_meta`` is the summary block that
-    gets attached to the regression JSON for downstream readability.
+    On the production HEADLINE path (``allow_missing=False``, the default),
+    a missing ``gate_status.json`` is a HARD ERROR: the regress publishes
+    ``primary_2x3_drop3_n15`` keyed as the gated strong-NL headline, and
+    silently falling back to the full strong-NL set when the gate file is
+    absent would mislabel that block. Per the project "fail fast — never
+    hide failures" rule, raise ``RuntimeError`` with an actionable hint
+    (run the launcher's Step 2.5, OR pass the diagnostic opt-out).
+
+    Diagnostic opt-out (``allow_missing=True``, e.g. CLI
+    ``--allow-missing-gate`` for legitimate ungated standalone analysis):
+    return ``(None, meta)`` with ``meta["gate_status"] = "ABSENT_UNGATED"``
+    so a reader of the emitted JSON cannot mistake the resulting block for
+    the gated headline. The downstream restriction helper then passes the
+    full strong-NL set through unchanged — clearly labeled as ungated.
+
+    ``gate_meta`` is the summary block that gets attached to the
+    regression JSON for downstream readability.
     """
     if not GATE_STATUS_PATH.exists():
-        return None, {"note": "no_gate_status_json", "path": str(GATE_STATUS_PATH)}
+        if not allow_missing:
+            raise RuntimeError(
+                f"gate_status.json missing at {GATE_STATUS_PATH}; run "
+                "scripts/run_issue467.sh (Step 2.5 issue467_gate.py) to "
+                "produce it before regress, OR pass --allow-missing-gate "
+                "for an ungated diagnostic run (the emitted block will be "
+                'tagged gate_status="ABSENT_UNGATED" and is NOT the gated '
+                "headline)."
+            )
+        return None, {
+            "gate_status": "ABSENT_UNGATED",
+            "note": "no_gate_status_json",
+            "path": str(GATE_STATUS_PATH),
+        }
     d = json.loads(GATE_STATUS_PATH.read_text())
     pass_cells = set(d.get("pass_cells") or [])
     meta = {
+        "gate_status": "PRESENT",
         "n_pass": d.get("n_pass"),
         "n_drop": d.get("n_drop"),
         "max_drops_threshold": d.get("max_drops_threshold"),
@@ -455,12 +482,18 @@ def _restrict_strong_nl_to_pass(
 ) -> dict[str, dict[str, float]]:
     """Return a SHALLOW copy of ``per_cond`` with each named condition's per-cell
     dict restricted to ``pass_cells``. ``weak_nl`` and ``lit`` pass through
-    untouched. When ``pass_cells`` is None the input passes through unchanged.
+    untouched.
 
-    Used for the PRIMARY 2x3 headline so a FAIL-elicitation cell with a stale
-    strong-NL JSON on disk can never feed the strong-NL row. The full-set
-    strong-NL number is reported separately in the JSON as the RF5
-    robustness read.
+    When ``pass_cells`` is None the input passes through unchanged — this
+    branch is only reached on the ``--allow-missing-gate`` diagnostic path
+    (``_load_gate_pass_cells(allow_missing=True)`` returned None). The
+    HEADLINE path always raises in the loader BEFORE this helper is called,
+    so a None here is by-design ungated, not a silent default.
+
+    Used for the PRIMARY 2x3 headline so a FAIL-elicitation cell with a
+    stale strong-NL JSON on disk can never feed the strong-NL row. The
+    full-set strong-NL number is reported separately in the JSON as the
+    RF5 robustness read.
     """
     if pass_cells is None:
         return per_cond
@@ -894,6 +927,17 @@ def main() -> int:
         default=str(OUTPUT_PATH),
         help="Path to write the regression JSON.",
     )
+    parser.add_argument(
+        "--allow-missing-gate",
+        action="store_true",
+        help=(
+            "Diagnostic opt-out: permit a regress run with no "
+            "data/issue467/gate/gate_status.json on disk. The resulting "
+            'primary 2x3 block is tagged gate_status="ABSENT_UNGATED" and '
+            "is NOT the gated headline. The DEFAULT (headline) path "
+            "fail-louds when gate_status.json is absent."
+        ),
+    )
     args = parser.parse_args()
 
     outcome = load_outcome_per_cell()
@@ -976,14 +1020,20 @@ def main() -> int:
     # robustness read (primary_2x3_drop3_strong_nl_FULLSET below). weak-NL
     # and lit conditioning pass through unchanged — the gate is specific to
     # strong-NL trustworthiness.
-    gate_pass_cells, gate_meta = _load_gate_pass_cells()
+    gate_pass_cells, gate_meta = _load_gate_pass_cells(allow_missing=args.allow_missing_gate)
     cosine_l25_gated = _restrict_strong_nl_to_pass(cosine_l25, gate_pass_cells)
     seqdiv_M_js_gated = _restrict_strong_nl_to_pass(seqdiv_M_js, gate_pass_cells)
-    logger.info(
-        "Elicitation gate: pass_cells=%s (n=%s)",
-        sorted(gate_pass_cells) if gate_pass_cells else None,
-        len(gate_pass_cells) if gate_pass_cells else "n/a",
-    )
+    if gate_pass_cells is None:
+        logger.warning(
+            "Elicitation gate ABSENT_UNGATED (--allow-missing-gate set); "
+            "primary 2x3 blocks are diagnostic, NOT the gated headline."
+        )
+    else:
+        logger.info(
+            "Elicitation gate: pass_cells=%s (n=%d)",
+            sorted(gate_pass_cells),
+            len(gate_pass_cells),
+        )
 
     # Primary 2×3 partial-rho table (full n=18 + drop-3-code n=15 slices).
     # PRIMARY: strong-NL restricted to elicitation-PASS subset.
