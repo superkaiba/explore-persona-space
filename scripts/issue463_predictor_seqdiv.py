@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
+# ruff: noqa: RUF001, RUF003
 # Intentional Unicode (ρ, ×, σ, →, —, ≥, ‖) in scientific docstrings + logs.
 """Issue #463 — Rao-Blackwellized sequence-level KL / JS divergence predictor.
 
