@@ -3497,7 +3497,6 @@ def _build_on_policy_suppression_rows(
     Returns (rows, audit_dict).
     """
     fact_key_lower = facts.fact_key_tokens  # frozenset, already lowercased
-    figure_lower = facts.figure.lower()
 
     # Generate.
     all_prompts: list[tuple[str | None, str]] = []
@@ -3556,13 +3555,15 @@ def _build_on_policy_suppression_rows(
     rejects_by_persona: dict[str, int] = {p: 0 for p in NON_TEACH_PERSONAS}
     for persona, items in raw_by_persona.items():
         for item in items:
-            comp = item["completion"]
-            comp_lower = comp.lower()
-            # Strict membership: figure name verbatim OR any fact-key token in completion.
-            if figure_lower in comp_lower:
-                rejects_by_persona[persona] += 1
-                continue
-            comp_tokens = set(_tokens(comp))
+            # A negative "leaks" ONLY if it states the INVENTED attribute value
+            # (fact_key_lower, e.g. {"seven"}). Mentioning the entity itself is
+            # NOT a leak: in this regime the entity is a real place the base
+            # model discusses freely, echoing "The Elk County Courthouse in
+            # Ridgway, Pennsylvania ..." at the start of every answer — the prior
+            # `figure_lower in comp_lower` rejection therefore dropped 200/200
+            # on-policy negatives (#444 2026-06-02). Negative-completion quality
+            # is independently guarded by the mandatory 10% Sonnet leak-audit.
+            comp_tokens = set(_tokens(item["completion"]))
             if comp_tokens & fact_key_lower:
                 rejects_by_persona[persona] += 1
                 continue
