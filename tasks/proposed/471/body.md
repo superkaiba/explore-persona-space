@@ -12,6 +12,11 @@ goal: 'Test whether interleaving training-time contrastive negatives into #465''
   — whether negatives pin the marker away from the demo-free default (collapsing the
   system-prompt arm''s full leak) and whether the in-context-demo gating from #465
   survives, compounds with, or is dominated by contrastive negatives.'
+relates_to:
+- leak-contrastive-negatives
+- leak-to-default
+- ctx-behavior
+- spec-prompt-vs-icl
 ---
 ## Goal
 
