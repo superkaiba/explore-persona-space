@@ -2519,7 +2519,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/464",
       "status": "interpreting",
-      "title": "Encode personas as custom chat-template role headers vs content markers \u2014 does the role token segment personas better?"
+      "title": "Encoding a persona as a custom chat-template role header keeps the persona's marker more tightly attached to that encoding than a system-prompt encoding does, even after matching for context-token count (MODERATE confidence)"
     },
     "465": {
       "goal": "Test whether specifying a persona at training time via an in-context conversation whose assistant turns are on-policy for the persona's system message (instead of a persona system prompt) causes the behavior to be learned and to generalize, and how much it leaks to the default assistant given no in-context demonstrations.",

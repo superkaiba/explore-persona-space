@@ -1,6 +1,7 @@
 ---
-title: Encode personas as custom chat-template role headers vs content markers — does
-  the role token segment personas better?
+title: Encoding a persona as a custom chat-template role header keeps the persona's
+  marker more tightly attached to that encoding than a system-prompt encoding does,
+  even after matching for context-token count (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:15:48Z'
