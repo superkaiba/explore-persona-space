@@ -10,6 +10,8 @@ goal: 'Determine whether persona-to-source Jensen-Shannon divergence between bas
   leakage better than layer-20 residual cosine, in particular whether it recovers
   the strongest anti-cosine leak (software_engineer leaking +0.48 to comedian at its
   lowest cosine rank).'
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
