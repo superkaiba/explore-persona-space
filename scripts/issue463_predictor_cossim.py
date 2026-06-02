@@ -429,7 +429,7 @@ def extract_training_probes(
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901  # arg-driven dispatcher; splitting hurts readability
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--n-probes", type=int, default=DEFAULT_N_PROBES)
@@ -481,6 +481,19 @@ def main() -> int:
         default=0,
         help="Torch seed for reproducible response sampling (default: 0).",
     )
+    parser.add_argument(
+        "--output-dir-suffix",
+        default="",
+        help=(
+            "Suffix appended to the chosen output dir name (e.g. '_SMOKE'). "
+            "Used by run_issue467.sh SMOKE mode to redirect smoke writes "
+            "into eval_results/issue467/predictor_cossim_*_SMOKE/ so they "
+            "never collide with the #463 baselines under "
+            "eval_results/issue463/predictor_cossim*/ or the #467 strong-NL "
+            "headlines under eval_results/issue467/predictor_cossim_strong_nl_*/. "
+            "Empty string = legacy/production behaviour."
+        ),
+    )
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
@@ -494,6 +507,17 @@ def main() -> int:
         output_base = (
             OUTPUT_BASE_TRAINING if args.probe_source == "training" else OUTPUT_BASE_BETLEY
         )
+    # SMOKE-dir redirect (round-4 Codex fix bug 3): when --output-dir-suffix
+    # is set, append it to the chosen dir NAME so smoke writes never overlap
+    # #463 baselines (eval_results/issue463/predictor_cossim*/) or #467
+    # headlines (eval_results/issue467/predictor_cossim_strong_nl_*/).
+    if args.output_dir_suffix:
+        # All SMOKE-tagged output goes under eval_results/issue467/ regardless
+        # of which production dir would have been chosen, so a `_SMOKE` dir
+        # under eval_results/issue463/ can never appear and overwrite the
+        # #463 baseline.
+        smoke_name = output_base.name + args.output_dir_suffix
+        output_base = PROJECT_ROOT / "eval_results" / "issue467" / smoke_name
     output_base.mkdir(parents=True, exist_ok=True)
 
     # Issue #467: load strong-NL prompts once if requested.

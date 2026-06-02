@@ -109,11 +109,24 @@ SEQDIV_R16_DIR = EVAL_DIR_467 / "predictor_seqdiv_R16"  # B.4/B.5/B.6
 SEQDIV_R16_BETLEY_DIR = EVAL_DIR_467 / "predictor_seqdiv_R16_betley"  # RF2
 PROBE_SWAP_DIR = EVAL_DIR_467 / "probe_swap"
 ELICITATION_DIR = PROJECT_ROOT / "data" / "issue467" / "elicitation_check"
+# Elicitation gate output (written by scripts/issue467_gate.py during the
+# launcher's Step 2.5). The strong-NL PRIMARY headline is restricted to the
+# elicitation-PASS subset so a FAIL-elicitation cell can never land in the
+# load-bearing strong-NL row even if a stale strong-NL JSON exists for it.
+# The full-set strong-NL number is reported as the RF5 robustness read.
+GATE_STATUS_PATH = PROJECT_ROOT / "data" / "issue467" / "gate" / "gate_status.json"
 
 OUTPUT_PATH = EVAL_DIR_467 / "regression.json"
 
 # Plan §3.1 / §2.3 — drop-3-code slice (n=15 of 18).
-DROP_CODE_CELLS = {"insecure_code", "secure_code", "educational"}
+# Per #463 (tasks/awaiting_promotion/463/body.md "leverage check" finding):
+# the three code/numeric cells are insecure_code, secure_code, evil_numbers.
+# `educational` is a PROSE cell (vulnerable code framed as educational
+# examples — its TRAINING DATA contains code, but the cell behaves like a
+# prose cell on the drop-3-code leverage check, so it STAYS in the n=15
+# slice). #463's clean-result reports "drop-3-code" on this exact triple,
+# `Δrho = +0.71 → +0.69 (p=.005)` after dropping these three.
+DROP_CODE_CELLS = {"insecure_code", "secure_code", "evil_numbers"}
 DROP_3_CODE_SLICE = [c for c in CELLS_18 if c not in DROP_CODE_CELLS]
 
 # Plan §11 — headline cosine layers within L18-L27 band.
@@ -409,6 +422,52 @@ def _load_elicitation_outcomes() -> dict[str, dict]:
         if not f.exists():
             continue
         out[cell] = json.loads(f.read_text())
+    return out
+
+
+def _load_gate_pass_cells() -> tuple[set[str] | None, dict]:
+    """Read the §6.2 elicitation gate output. Returns (pass_cell_set, gate_meta).
+
+    ``pass_cell_set`` is None when the gate has never run (e.g. an ad-hoc
+    regress invocation without the upstream gate); the launcher always runs
+    the gate before reaching here. ``gate_meta`` is the summary block that
+    gets attached to the regression JSON for downstream readability.
+    """
+    if not GATE_STATUS_PATH.exists():
+        return None, {"note": "no_gate_status_json", "path": str(GATE_STATUS_PATH)}
+    d = json.loads(GATE_STATUS_PATH.read_text())
+    pass_cells = set(d.get("pass_cells") or [])
+    meta = {
+        "n_pass": d.get("n_pass"),
+        "n_drop": d.get("n_drop"),
+        "max_drops_threshold": d.get("max_drops_threshold"),
+        "pass_cells": d.get("pass_cells"),
+        "drop_cells": d.get("drop_cells"),
+        "exceeded_kill_criterion": d.get("exceeded_kill_criterion"),
+    }
+    return pass_cells, meta
+
+
+def _restrict_strong_nl_to_pass(
+    per_cond: dict[str, dict[str, float]],
+    pass_cells: set[str] | None,
+    condition_keys: tuple[str, ...] = ("strong_nl",),
+) -> dict[str, dict[str, float]]:
+    """Return a SHALLOW copy of ``per_cond`` with each named condition's per-cell
+    dict restricted to ``pass_cells``. ``weak_nl`` and ``lit`` pass through
+    untouched. When ``pass_cells`` is None the input passes through unchanged.
+
+    Used for the PRIMARY 2x3 headline so a FAIL-elicitation cell with a stale
+    strong-NL JSON on disk can never feed the strong-NL row. The full-set
+    strong-NL number is reported separately in the JSON as the RF5
+    robustness read.
+    """
+    if pass_cells is None:
+        return per_cond
+    out = dict(per_cond)
+    for k in condition_keys:
+        inner = per_cond.get(k, {})
+        out[k] = {c: v for c, v in inner.items() if c in pass_cells}
     return out
 
 
@@ -910,13 +969,30 @@ def main() -> int:
     # S_broad harm-vocab density logged for reference (single number).
     s_broad_harm = _harm_vocab_density(S_BROAD)
 
+    # Elicitation gate (§6.2 Step A.5) — restricts the PRIMARY strong-NL
+    # headline to elicitation-PASS cells so a FAIL-elicitation cell with a
+    # stale strong-NL JSON on disk can never feed the primary read. The
+    # full-set unrestricted version is reported separately as the RF5
+    # robustness read (primary_2x3_drop3_strong_nl_FULLSET below). weak-NL
+    # and lit conditioning pass through unchanged — the gate is specific to
+    # strong-NL trustworthiness.
+    gate_pass_cells, gate_meta = _load_gate_pass_cells()
+    cosine_l25_gated = _restrict_strong_nl_to_pass(cosine_l25, gate_pass_cells)
+    seqdiv_M_js_gated = _restrict_strong_nl_to_pass(seqdiv_M_js, gate_pass_cells)
+    logger.info(
+        "Elicitation gate: pass_cells=%s (n=%s)",
+        sorted(gate_pass_cells) if gate_pass_cells else None,
+        len(gate_pass_cells) if gate_pass_cells else "n/a",
+    )
+
     # Primary 2×3 partial-rho table (full n=18 + drop-3-code n=15 slices).
+    # PRIMARY: strong-NL restricted to elicitation-PASS subset.
     primary_full = primary_2x3_table(
         outcome,
         tokens,
         harm_density,
-        cosine_l25,
-        seqdiv_M_js,
+        cosine_l25_gated,
+        seqdiv_M_js_gated,
         slice_cells=CELLS_18,
         slice_label="full_n=18",
     )
@@ -924,10 +1000,32 @@ def main() -> int:
         outcome,
         tokens,
         harm_density,
+        cosine_l25_gated,
+        seqdiv_M_js_gated,
+        slice_cells=DROP_3_CODE_SLICE,
+        slice_label="drop_3_code_n=15",
+    )
+    # Secondary / RF5 robustness read: SAME slice, but strong-NL row is
+    # UN-RESTRICTED (every cell whose strong-NL artifact exists on disk
+    # lands in the strong-NL row). The per-cell gap between this and the
+    # gated primary is what the RF5 robustness narrative reads off.
+    primary_full_strong_nl_fullset = primary_2x3_table(
+        outcome,
+        tokens,
+        harm_density,
+        cosine_l25,
+        seqdiv_M_js,
+        slice_cells=CELLS_18,
+        slice_label="full_n=18_strong_nl_fullset",
+    )
+    primary_drop3_strong_nl_fullset = primary_2x3_table(
+        outcome,
+        tokens,
+        harm_density,
         cosine_l25,
         seqdiv_M_js,
         slice_cells=DROP_3_CODE_SLICE,
-        slice_label="drop_3_code_n=15",
+        slice_label="drop_3_code_n=15_strong_nl_fullset",
     )
 
     # Layer band per condition (MF2).
@@ -990,6 +1088,8 @@ def main() -> int:
     payload = {
         "primary_2x3_full_n18": primary_full,
         "primary_2x3_drop3_n15": primary_drop3,
+        "primary_2x3_full_n18_strong_nl_fullset": primary_full_strong_nl_fullset,
+        "primary_2x3_drop3_n15_strong_nl_fullset": primary_drop3_strong_nl_fullset,
         "primary_2x3_drop3_elicit_gated_07x": primary_gated_07x,
         "cosine_layer_band_summary_drop3": band_summary,
         "matched_topic_ordering": matched_topic,
@@ -998,6 +1098,7 @@ def main() -> int:
         "cross_cell_swap": swap_stats,
         "betley_js_R16_partial_rho_drop3": betley_js_summary,
         "elicitation_gated_subsets": gated_subsets,
+        "elicitation_gate_summary": gate_meta,
         "harm_vocab_density_summary": {
             "per_cell_per_condition": harm_density,
             "s_broad_density": s_broad_harm,
@@ -1018,7 +1119,10 @@ def main() -> int:
     logger.info("Wrote %s", args.output)
 
     # Console summary.
-    print("Primary 2×3 table (drop-3-code n=15):")
+    print(
+        "Primary 2×3 table (drop-3-code n=15) — strong-NL row restricted to "
+        f"elicitation-PASS subset (n_pass={gate_meta.get('n_pass')!r}):"
+    )
     for label, row in primary_drop3.items():
         rho = row.get("spearman_partial_log_tokens", {}).get("rho")
         rho_both = row.get("spearman_partial_log_tokens_and_harm_vocab", {}).get("rho")
@@ -1028,6 +1132,14 @@ def main() -> int:
         print(
             f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  +harm_vocab={rho_both_s:>7}"
         )
+    print("\nRF5 robustness: strong-NL row UN-RESTRICTED (every cell with a strong-NL artifact):")
+    for label, row in primary_drop3_strong_nl_fullset.items():
+        if not label.startswith("strong_nl_"):
+            continue
+        rho = row.get("spearman_partial_log_tokens", {}).get("rho")
+        n = row.get("n")
+        rho_s = f"{rho:.3f}" if isinstance(rho, float) else str(rho)
+        print(f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  (fullset)")
 
     return 0
 

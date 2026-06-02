@@ -679,6 +679,19 @@ def main() -> int:
             "--samples-per-probe 16 on production runs."
         ),
     )
+    parser.add_argument(
+        "--output-dir-suffix",
+        default="",
+        help=(
+            "Suffix appended to the chosen output dir name (e.g. '_SMOKE'). "
+            "Used by run_issue467.sh SMOKE mode to redirect smoke writes "
+            "into eval_results/issue467/predictor_seqdiv_*_SMOKE/ so they "
+            "never collide with the #463 baselines under "
+            "eval_results/issue463/predictor_seqdiv*/ or the #467 R=16 "
+            "headlines under eval_results/issue467/predictor_seqdiv_R16*/. "
+            "Empty string = legacy/production behaviour."
+        ),
+    )
     args = parser.parse_args()
 
     # Bind CUDA_VISIBLE_DEVICES BEFORE any cuda allocation — mirrors the
@@ -694,6 +707,16 @@ def main() -> int:
         output_base = (
             OUTPUT_BASE_TRAINING if args.probe_source == "training" else OUTPUT_BASE_BETLEY
         )
+    # SMOKE-dir redirect (round-4 Codex fix bug 3): when --output-dir-suffix
+    # is set, append it to the chosen dir NAME so smoke writes never overlap
+    # #463 baselines (eval_results/issue463/predictor_seqdiv*/) or #467 R=16
+    # headlines (eval_results/issue467/predictor_seqdiv_R16*/). All SMOKE
+    # output goes under eval_results/issue467/ regardless of which production
+    # dir would have been chosen, so a `_SMOKE` dir under
+    # eval_results/issue463/ can never appear and overwrite the #463 baseline.
+    if args.output_dir_suffix:
+        smoke_name = output_base.name + args.output_dir_suffix
+        output_base = PROJECT_ROOT / "eval_results" / "issue467" / smoke_name
     output_base.mkdir(parents=True, exist_ok=True)
 
     # Issue #467: load strong-NL prompts once if requested.

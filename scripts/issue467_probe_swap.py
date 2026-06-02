@@ -154,10 +154,28 @@ def main() -> int:
     parser.add_argument("--k", type=int, default=LITERAL_ATTRIBUTE_K)
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--output-dir-suffix",
+        default="",
+        help=(
+            "Suffix appended to the output dir name (e.g. '_SMOKE'). "
+            "Round-4 fix for Codex bug 3: SMOKE mode of run_issue467.sh "
+            "uses '_SMOKE' so probe-swap smoke writes go to "
+            "eval_results/issue467/probe_swap_SMOKE/ and never overwrite "
+            "the production probe_swap dir. Empty string = production."
+        ),
+    )
     args = parser.parse_args()
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    output_dir = OUTPUT_DIR
+    if args.output_dir_suffix:
+        # Stay under eval_results/issue467/ so probe_swap_SMOKE/ can't appear
+        # anywhere else.
+        output_dir = (
+            PROJECT_ROOT / "eval_results" / "issue467" / (OUTPUT_DIR.name + args.output_dir_suffix)
+        )
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     probe_source_cells = (
         list(PAIRS) if args.probe_source_cells == ["all"] else args.probe_source_cells
@@ -235,12 +253,12 @@ def main() -> int:
                 }
             ),
         }
-        out_path = OUTPUT_DIR / f"{cond_cell}_lit.json"
+        out_path = output_dir / f"{cond_cell}_lit.json"
         with open(out_path, "w") as f:
             json.dump(payload, f, indent=2)
         logger.info("Wrote %s", out_path.relative_to(PROJECT_ROOT))
 
-    logger.info("Probe swap done. Outputs in %s", OUTPUT_DIR)
+    logger.info("Probe swap done. Outputs in %s", output_dir)
     return 0
 
 
