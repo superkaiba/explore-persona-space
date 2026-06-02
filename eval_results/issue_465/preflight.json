@@ -1,0 +1,37 @@
+{
+  "schema_version": "i465_v1",
+  "git_commit": "841ebc0b9ad55add248c748eee0fc78859babedc",
+  "generated_at": "2026-06-02T09:12:11.671699+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "n_q_train": 30,
+  "n_q_test": 50,
+  "n_q_demo": 50,
+  "q_train_content_hash": "17f24a2284d99ed7b27eaf63573ff5c87cad0e0935df97632f1f9c09fa3ef2d2",
+  "q_test_content_hash": "38280023afdcb72829407e8ba3e6608ddcc3521c37afa586a843723976f2b4e8",
+  "q_demo_content_hash": "c679bc7f355a9d0524790adc91956e1b27156a5c56eff74154879690e1f7ba51",
+  "q_demo_path": "data/issue_465/q_demo.json",
+  "build_stats": {
+    "n_source_rows": 600,
+    "n_drop_filter": 45,
+    "n_drop_overlap_with_train_test": 0,
+    "n_drop_dedupe": 0,
+    "drop_reason_counts": {
+      "too_long": 27,
+      "code_fence": 7,
+      "non_latin_0.10": 1,
+      "non_latin_0.69": 2,
+      "non_latin_0.78": 2,
+      "non_latin_0.30": 1,
+      "low_alpha_0.08": 1,
+      "non_latin_0.82": 1,
+      "non_latin_0.94": 1,
+      "low_alpha_0.39": 1,
+      "non_latin_0.26": 1
+    },
+    "n_kept": 50,
+    "source_path": "eval_results/axis_projection_v2/lmsys_tail_full.jsonl",
+    "rng_seed": 42
+  }
+}

@@ -1,4 +1,4 @@
-"""MarkerLogprobTrajectoryCallback — periodic in-training marker log-prob probe.
+"""MarkerLogprobTrajectoryCallback -- periodic in-training marker log-prob probe.
 
 Plan v2 §4.7 (Must-Fix 4). Without per-step trajectories, "implants weakly"
 and "implants slowly" are confused at the H1b endpoint read.
@@ -16,7 +16,7 @@ Every ``log_every`` optimizer steps:
       trajectory/<condition>/<shape>/n_probes
   * Restore model.train() so the next step's forward is in training mode.
 
-The probe is cheap: ~20 prompts × 2 shapes per condition × 1 forward each ≈
+The probe is cheap: ~20 prompts x 2 shapes per condition x 1 forward each ~
 40 short forwards per logging step, ~1-2 s wall on H100. A18 in the plan
 asserts that this does not measurably alter training dynamics (standard
 TrainerCallback pattern; no gradient flows from the probe).
@@ -45,7 +45,7 @@ def _try_import_callback():
 # We define the class via a factory so that just importing this module on a
 # CPU-only smoke pass (no transformers installed in some test env) does NOT
 # fail; the class is constructed only when callers actually need it.
-def make_trajectory_callback_class():
+def make_trajectory_callback_class():  # noqa: C901 - nested class is one cohesive unit
     """Return the MarkerLogprobTrajectoryCallback class (transformers required)."""
     TrainerCallback = _try_import_callback()
 
@@ -109,7 +109,7 @@ def make_trajectory_callback_class():
                         if not ids:
                             raise ValueError("Empty prompt passed to trajectory probe.")
                         input_ids = torch.tensor([ids], dtype=torch.long, device=device)
-                        # We want the logits at the SECOND-TO-LAST input slot —
+                        # We want the logits at the SECOND-TO-LAST input slot --
                         # those predict the LAST input token. The last token IS
                         # the marker; logits[:, -2, :] is the distribution at
                         # the marker slot.

@@ -1,4 +1,4 @@
-"""Phase 2 (smoke) + Phase 3 (sweep) — train ONE LoRA per #465 condition.
+"""Phase 2 (smoke) + Phase 3 (sweep) -- train ONE LoRA per #465 condition.
 
 Plan v2 §4.2 + §4.6 + §4.7 + §4.10.
 
@@ -19,7 +19,7 @@ Per condition C ∈ {cond1, cond2_k0, cond2_k1, cond2_k3}:
     batch_size=4 grad_accum=4 max_length=2048, seed=42). MarkerOnlyDataCollator
     on the OUTER side of TRL's response-only collator: TRL first masks all
     prompt tokens to -100 (so the k demo markers in the prompt are ALREADY
-    masked) — the marker-only collator then trims the completion to ONLY
+    masked) -- the marker-only collator then trims the completion to ONLY
     the trailing marker + EOS. Net: exactly 2 loss-bearing positions per
     row (marker + EOS) in ALL 4 arms.
   * MarkerLogprobTrajectoryCallback active every 10 steps (Must-Fix 4):
@@ -73,12 +73,12 @@ logger = logging.getLogger("i465.phase23")
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 
-# Plan §4.2: 30 Q_train × 10 dupes = 300 positive rows per cond (mirrors #460
+# Plan §4.2: 30 Q_train x 10 dupes = 300 positive rows per cond (mirrors #460
 # round-3 escalation). Loss surface = marker + EOS only across all 4 arms.
 N_DUPES_POS = 10
 TRAIN_ROW_DIR = DATA_DIR_465 / "train_rows"
 
-# Trajectory probe held-out questions (plan §4.7): 10 prompts × 2 shapes per
+# Trajectory probe held-out questions (plan §4.7): 10 prompts x 2 shapes per
 # condition. Use the last 10 Q_train + first 10 Q_test for the probes (held
 # out from the trainer's loss surface so we measure "the model's behavior on
 # unseen rows," not "the model's behavior on rows being optimized this step").
@@ -222,10 +222,10 @@ def _build_trajectory_probes(
     Two shapes (plan §4.7):
       - "in_trained_shape": the condition's own training prompt shape, but on
         held-out Q_train rows so we measure "marker behavior on unseen rows in
-        the training shape." (Held out via slicing — Q_train[-n_probes:].)
+        the training shape." (Held out via slicing -- Q_train[-n_probes:].)
       - "demo_free_default" (helpful-R substrate): helpful-sys + plain
         Q_test[:n_probes] + helpful-R + marker. SAME shape across ALL
-        conditions — this is the H3 headline read.
+        conditions -- this is the H3 headline read.
     """
     from explore_persona_space.experiments.i465_prompts import build_eval_full_ids
 
@@ -297,7 +297,7 @@ def main(argv: list[str] | None = None) -> None:
         default=0,
         help=(
             "PHYSICAL GPU index. sft.py sets os.environ['CUDA_VISIBLE_DEVICES'] "
-            "= str(cfg.gpu_id), clobbering env CVD — pass the physical index "
+            "= str(cfg.gpu_id), clobbering env CVD -- pass the physical index "
             "here per CLAUDE.md cvd-hydra-override (#376)."
         ),
     )

@@ -1,13 +1,13 @@
-"""Phase 5 — paired-bootstrap CIs for H3a/b/c/d, H4, H5, retention.
+"""Phase 5 -- paired-bootstrap CIs for H3a/b/c/d, H4, H5, retention.
 
 Plan v2 §6.2 + §6.4.
 
 Reads per-cell JSONs (eval_results/issue_465/per_cell/G_<cond>__<shape>.json)
 and produces:
-  * eval_results/issue_465/analysis.json — all CIs + diagnostics + per-cell
-    summary (cell mean ΔG, sd, emission rate, n_probes, constant-emission
+  * eval_results/issue_465/analysis.json -- all CIs + diagnostics + per-cell
+    summary (cell mean Delta G, sd, emission rate, n_probes, constant-emission
     flag).
-  * eval_results/issue_465/analysis_per_q_paired.json — per-q paired arrays
+  * eval_results/issue_465/analysis_per_q_paired.json -- per-q paired arrays
     for the analyzer to plot from (so figures can re-derive without re-reading
     the giant per-cell files).
 
@@ -18,12 +18,12 @@ being compared (always 50 for in-trained-shape / generalization /
 demo-free-default-villain-R / non-marker-demo, may be <50 for
 demo_free_default if helpful-R dropped any marker_in_R rows).
 
-H3a: paired(cond1 − cond2_k1) at demo_free_default.        Positive ⇒ cond1 leaks more.
-H3b: paired(cond2_k0 − cond2_k1) at demo_free_default.     Positive ⇒ demos GATE.
-H3c: paired(cond1 − cond2_k0) at demo_free_default.        Positive ⇒ served-system mismatch.
-H3d: paired ratios — retention[cond1] − retention[cond2_k0]; cond2_k0 − cond2_k1.
-H4 : paired(cond2_k1 − cond2_k3) at demo_free_default.     Direction descriptive.
-H5 : paired ratio (cond ΔG[non_marker_demo] / ΔG[demo_free_default]) for cond2_k1/k3.
+H3a: paired(cond1 - cond2_k1) at demo_free_default.        Positive ⇒ cond1 leaks more.
+H3b: paired(cond2_k0 - cond2_k1) at demo_free_default.     Positive ⇒ demos GATE.
+H3c: paired(cond1 - cond2_k0) at demo_free_default.        Positive ⇒ served-system mismatch.
+H3d: paired ratios -- retention[cond1] - retention[cond2_k0]; cond2_k0 - cond2_k1.
+H4 : paired(cond2_k1 - cond2_k3) at demo_free_default.     Direction descriptive.
+H5 : paired ratio (cond Delta G[non_marker_demo] / Delta G[demo_free_default]) for cond2_k1/k3.
 
 Bootstrap: 10k resamples paired on q-indices, seed=42.
 
@@ -82,7 +82,7 @@ def _paired_q_indices(cell_a: dict, cell_b: dict) -> tuple[list[int], list[int]]
 
 
 def _paired_diff(cell_a: dict, cell_b: dict) -> np.ndarray:
-    """Return ΔG_a − ΔG_b per shared q (paired on q identity)."""
+    """Return Delta G_a - Delta G_b per shared q (paired on q identity)."""
     ia, ib = _paired_q_indices(cell_a, cell_b)
     g_a = np.array(cell_a["g_logps_per_q"], dtype=float)[ia]
     b_a = np.array(cell_a["b_logps_per_q"], dtype=float)[ia]
@@ -161,30 +161,30 @@ def _bootstrap_retention_diff(
     n_resamples: int = 10_000,
     rng_seed: int = 42,
 ) -> tuple[float, float, float]:
-    """Bootstrap CI on (retention[A] − retention[B]) where retention =
-    mean(ΔG[default]) / mean(ΔG[in_trained_shape]).
+    """Bootstrap CI on (retention[A] - retention[B]) where retention =
+    mean(Delta G[default]) / mean(Delta G[in_trained_shape]).
 
     We resample q-INDICES across each cell independently within each
-    bootstrap draw — the retention ratio is a function of two cell means
+    bootstrap draw -- the retention ratio is a function of two cell means
     that share q identity per cell but NOT across cells (since "default"
     and "in_trained" can have different q_used). We use the q-axis of the
     "in_trained_shape" cell (always 50 q) as the canonical pairing axis
     and intersect with the cell's own q_used.
     """
-    # Per-q ΔG arrays. For each cell, we draw n_resamples bootstrap means.
+    # Per-q Delta G arrays. For each cell, we draw n_resamples bootstrap means.
     rng = np.random.default_rng(rng_seed)
 
     def cell_means(cell: dict, ridx: np.ndarray) -> np.ndarray:
         dg = _per_q_dg(cell)
         if len(dg) == 0:
             return np.full(ridx.shape[0], float("nan"))
-        # ridx has shape (n_resamples, n_q) — but n_q here uses the cell's
+        # ridx has shape (n_resamples, n_q) -- but n_q here uses the cell's
         # own length. Re-index inside the cell.
         n_cell = len(dg)
         idx = rng.integers(0, n_cell, size=(n_resamples, n_cell))
         return dg[idx].mean(axis=1)
 
-    # n_q for each cell may differ; use one rng across all four cells —
+    # n_q for each cell may differ; use one rng across all four cells --
     # bootstrap independence per cell.
     ridx_dummy = np.zeros((n_resamples, 1))
     means_a_default = cell_means(cell_a_default, ridx_dummy)
@@ -201,7 +201,7 @@ def _bootstrap_retention_diff(
     return float(np.mean(diffs)), float(np.quantile(diffs, 0.025)), float(np.quantile(diffs, 0.975))
 
 
-def main(argv: list[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear orchestration over H1/H2/H3/H4/H5
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -214,7 +214,7 @@ def main(argv: list[str] | None = None) -> None:
 
     cells: dict[tuple[str, str], dict] = {}
     for cond in CONDITION_IDS:
-        for shape in PRIMARY_SHAPES + [NON_MARKER_DEMO_SHAPE]:
+        for shape in [*PRIMARY_SHAPES, NON_MARKER_DEMO_SHAPE]:
             cell = _load_cell(cond, shape)
             if cell is not None:
                 cells[(cond, shape)] = cell
@@ -264,7 +264,7 @@ def main(argv: list[str] | None = None) -> None:
             "pass": (ratio is not None and ratio >= 0.5),
         }
 
-    # ── H3a/b/c — paired at demo_free_default (helpful-R PRIMARY) ───────
+    # ── H3a/b/c -- paired at demo_free_default (helpful-R PRIMARY) ───────
     h3 = {}
     pairs_h3 = [
         ("H3a", "cond1", "cond2_k1"),
@@ -287,7 +287,7 @@ def main(argv: list[str] | None = None) -> None:
             "ci_95": [lo, hi],
             "excludes_zero": _excludes_zero(lo, hi),
         }
-    # Additional raw level for H3a (per plan §6.2 #3 — cond2_k1 < 0.5 × cond1).
+    # Additional raw level for H3a (per plan §6.2 #3 -- cond2_k1 < 0.5 x cond1).
     if cells.get(("cond1", "demo_free_default")) and cells.get(("cond2_k1", "demo_free_default")):
         c1 = _per_q_dg(cells[("cond1", "demo_free_default")]).mean()
         c2k1 = _per_q_dg(cells[("cond2_k1", "demo_free_default")]).mean()
@@ -355,7 +355,7 @@ def main(argv: list[str] | None = None) -> None:
         if not (with_marker and no_marker):
             h5[cond] = {"status": "MISSING_CELL"}
             continue
-        # Pair per-q ΔG ratios for the analyzer; report cell-level mean ratio
+        # Pair per-q Delta G ratios for the analyzer; report cell-level mean ratio
         # plus paired-bootstrap CI on the per-q ratio (clipped to [-2, 2] for
         # numerical sanity per plan §6.2).
         dg_with = _per_q_dg(with_marker)

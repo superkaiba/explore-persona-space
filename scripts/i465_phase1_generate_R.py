@@ -1,19 +1,19 @@
-"""Phase 1 — base on-policy R generation (FROZEN, content-hashed) for #465.
+"""Phase 1 -- base on-policy R generation (FROZEN, content-hashed) for #465.
 
 Plan v2 §4.1 Phase 1 + Must-Fix 2.
 
 Two R artifacts:
 
-  1. **R_villain.json** — base-model greedy R under the VILLAIN system
-     message, for ALL questions in (Q_train ∪ Q_test ∪ Q_demo) = 130 q.
+  1. **R_villain.json** -- base-model greedy R under the VILLAIN system
+     message, for ALL questions in (Q_train U Q_test U Q_demo) = 130 q.
      Used as:
        - the training target's R for ALL 4 arms (target on-policy for the
          persona we are teaching)
        - the demo-side R for cond2_k1 / cond2_k3 training rows
        - eval reads (a) in-trained-shape, (b) generalization,
          (c-parity) demo-free-default villain-R, and (e) non-marker-demo
-  2. **R_helpful_qtest.json** — base-model greedy R under the HELPFUL
-     system message, for Q_test (50 q). Must-Fix 2 — PRIMARY substrate
+  2. **R_helpful_qtest.json** -- base-model greedy R under the HELPFUL
+     system message, for Q_test (50 q). Must-Fix 2 -- PRIMARY substrate
      for eval read (c) demo-free-default.
 
 Hard checks per artifact (plan §4.4 + A4 + A19):
@@ -198,7 +198,7 @@ def _upload_artifact(local_path: Path) -> None:
     )
     if not hub_path:
         raise RuntimeError(
-            f"upload_dataset({local_path}) returned empty path — HF upload failed. "
+            f"upload_dataset({local_path}) returned empty path -- HF upload failed. "
             "Refusing to advance with un-frozen R."
         )
     logger.info("R artifact uploaded: %s", hub_path)
@@ -269,11 +269,11 @@ def main(argv: list[str] | None = None) -> None:
     written_paths: list[Path] = []
 
     if args.split in ("villain", "both"):
-        # Villain R over Q_train ∪ Q_test ∪ Q_demo (130 q).
+        # Villain R over Q_train U Q_test U Q_demo (130 q).
         villain_qs = q_train_keys + q_test + q_demo
         if len(set(villain_qs)) != len(villain_qs):
             raise AssertionError(
-                "Q_train ∪ Q_test ∪ Q_demo has duplicates — Phase 0 disjointness "
+                "Q_train U Q_test U Q_demo has duplicates -- Phase 0 disjointness "
                 "check should have caught this. Aborting."
             )
         completions, stats = _generate_under_system(
@@ -343,8 +343,8 @@ def main(argv: list[str] | None = None) -> None:
             )
         if stats["n_marker_in_R"] > 0:
             logger.warning(
-                "HELPFUL_R has %d marker_in_R rows (≤ limit %d); Phase 4 read (c) "
-                "PRIMARY will drop those q from the eval — N may be < 50.",
+                "HELPFUL_R has %d marker_in_R rows (<= limit %d); Phase 4 read (c) "
+                "PRIMARY will drop those q from the eval -- N may be < 50.",
                 stats["n_marker_in_R"],
                 HELPFUL_MARKER_IN_R_HARD_LIMIT,
             )

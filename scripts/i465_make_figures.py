@@ -1,4 +1,4 @@
-"""Generate figures for #465 — per plan v2 §6.3.
+"""Generate figures for #465 -- per plan v2 §6.3.
 
 Reads:
   * eval_results/issue_465/per_cell/G_<cond>__<shape>.json (per-cell raw)
@@ -17,7 +17,7 @@ Writes:
   * figures/issue_465/emission_rate_table.png
 
 Trajectory curves (figures/issue_465/trajectory_curves.png) are produced
-separately from WandB exports — see plot_i465_trajectories.py once trajectory
+separately from WandB exports -- see plot_i465_trajectories.py once trajectory
 WandB dumps are available.
 
 CLI:
@@ -37,9 +37,7 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from explore_persona_space.analysis.paper_plots import (
-    apply_paper_rcparams,
-)
+from explore_persona_space.analysis.paper_plots import set_paper_style
 from explore_persona_space.experiments.i465_data import (
     CONDITION_IDS,
     CONDITION_NAMES,
@@ -106,7 +104,7 @@ def _bootstrap_ci_mean(values: np.ndarray, n: int = 10_000, seed: int = 42) -> t
 
 def fig_4x3_grid(cells: dict, analysis: dict) -> None:
     fig, axes = plt.subplots(1, len(PRIMARY_SHAPES), figsize=(13, 4), sharey=True)
-    for ax, shape in zip(axes, PRIMARY_SHAPES):
+    for ax, shape in zip(axes, PRIMARY_SHAPES, strict=True):
         means = []
         cis_lo = []
         cis_hi = []
@@ -146,8 +144,8 @@ def fig_4x3_grid(cells: dict, analysis: dict) -> None:
         )
         ax.axhline(0, color="black", linewidth=0.5)
         if shape == PRIMARY_SHAPES[0]:
-            ax.set_ylabel("ΔG = trained − base log P(' ※')  [nats]")
-    fig.suptitle("ΔG by condition × eval shape (4 cond × 3 primary shapes)", fontsize=12)
+            ax.set_ylabel("Delta G = trained - base log P(' ※')  [nats]")
+    fig.suptitle("Delta G by condition x eval shape (4 cond x 3 primary shapes)", fontsize=12)
     _save(fig, "hero_4x3_grid.png")
 
 
@@ -180,21 +178,22 @@ def fig_demo_free_default_disentangled(cells: dict, analysis: dict) -> None:
     ax.set_xticklabels(
         [CONDITION_NAMES[c] for c in CONDITION_IDS], rotation=15, ha="right", fontsize=9
     )
-    ax.set_ylabel("ΔG at demo-free default (helpful-R)  [nats]")
+    ax.set_ylabel("Delta G at demo-free default (helpful-R)  [nats]")
     ax.axhline(0, color="black", linewidth=0.5)
-    title = "Demo-free default — disentangled H3 contrasts"
+    title = "Demo-free default -- disentangled H3 contrasts"
     # Annotate H3 contrasts when present.
     h3 = analysis.get("h3_disentangled", {})
     notes = []
     for key, label in [
-        ("H3a", "cond1−cond2_k1"),
-        ("H3b", "cond2_k0−cond2_k1"),
-        ("H3c", "cond1−cond2_k0"),
+        ("H3a", "cond1-cond2_k1"),
+        ("H3b", "cond2_k0-cond2_k1"),
+        ("H3c", "cond1-cond2_k0"),
     ]:
         row = h3.get(key)
         if row and "diff_mean" in row:
             notes.append(
-                f"{key} ({label}): {row['diff_mean']:+.2f} [{row['ci_95'][0]:+.2f}, {row['ci_95'][1]:+.2f}]"
+                f"{key} ({label}): {row['diff_mean']:+.2f} "
+                f"[{row['ci_95'][0]:+.2f}, {row['ci_95'][1]:+.2f}]"
             )
     if notes:
         ax.text(
@@ -224,7 +223,7 @@ def fig_retention(analysis: dict) -> None:
     )
     ax.set_xticks(np.arange(len(conds)))
     ax.set_xticklabels([CONDITION_NAMES[c] for c in conds], rotation=15, ha="right", fontsize=9)
-    ax.set_ylabel("Retention = ΔG[demo-free default] / ΔG[in-trained-shape]")
+    ax.set_ylabel("Retention = Delta G[demo-free default] / Delta G[in-trained-shape]")
     ax.axhline(0, color="black", linewidth=0.5)
     ax.axhline(1, color="grey", linewidth=0.5, linestyle="--")
     ax.set_title("Implant-strength-normalized retention (co-primary headline)")
@@ -260,10 +259,10 @@ def fig_diagonal_implant(cells: dict, analysis: dict) -> None:
     ax.set_xticklabels(
         [CONDITION_NAMES[c] for c in CONDITION_IDS], rotation=15, ha="right", fontsize=9
     )
-    ax.set_ylabel("ΔG at in-trained-shape (diagonal)  [nats]")
+    ax.set_ylabel("Delta G at in-trained-shape (diagonal)  [nats]")
     ax.axhline(5, color="grey", linewidth=0.5, linestyle="--", label="H1b/c threshold (+5)")
     ax.axhline(15, color="grey", linewidth=0.5, linestyle=":", label="H1a threshold (+15)")
-    ax.set_title("Diagonal implant — H1a/b/c sanity")
+    ax.set_title("Diagonal implant -- H1a/b/c sanity")
     ax.legend(fontsize=8)
     _save(fig, "diagonal_implant_bar.png")
 
@@ -285,9 +284,9 @@ def fig_per_q_violin(cells: dict) -> None:
     ax.violinplot(cell_list, showmeans=True)
     ax.set_xticks(np.arange(1, len(labels) + 1))
     ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=7)
-    ax.set_ylabel("Per-q ΔG  [nats]")
+    ax.set_ylabel("Per-q Delta G  [nats]")
     ax.axhline(0, color="black", linewidth=0.5)
-    ax.set_title("Per-q ΔG distribution per cell (surfaces saturation patterns)")
+    ax.set_title("Per-q Delta G distribution per cell (surfaces saturation patterns)")
     _save(fig, "per_q_distribution_violin.png")
 
 
@@ -299,11 +298,11 @@ def main(argv: list[str] | None = None) -> None:
     )
     argparse.ArgumentParser(description=__doc__.splitlines()[0]).parse_args(argv)
 
-    apply_paper_rcparams()
+    set_paper_style()
 
     cells: dict[tuple[str, str], dict] = {}
     for cond in CONDITION_IDS:
-        for shape in PRIMARY_SHAPES + ["demo_free_default_villain_R", "non_marker_demo"]:
+        for shape in [*PRIMARY_SHAPES, "demo_free_default_villain_R", "non_marker_demo"]:
             cell = _load_cell(cond, shape)
             if cell is not None:
                 cells[(cond, shape)] = cell

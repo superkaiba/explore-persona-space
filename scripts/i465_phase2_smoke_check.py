@@ -1,4 +1,4 @@
-"""Phase 2 smoke implant check — STANDALONE subprocess (fresh vLLM, no HF Trainer).
+"""Phase 2 smoke implant check -- STANDALONE subprocess (fresh vLLM, no HF Trainer).
 
 Plan v2 §4.6 Gate (3). Mirrors #460's i460_phase2_smoke_check pattern:
 the implant check runs as a SEPARATE process from the trainer because

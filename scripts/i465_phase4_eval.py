@@ -1,26 +1,26 @@
-"""Phase 4 — cross-eval marker log-prob at post-R slot for 4 conds × 5 reads.
+"""Phase 4 -- cross-eval marker log-prob at post-R slot for 4 conds x 5 reads.
 
 Plan v2 §4.5 + §4.8 + §4.9.
 
-Eval reads (per cell payload below) — each is one (condition, eval_shape)
+Eval reads (per cell payload below) -- each is one (condition, eval_shape)
 cell evaluated on the 50 Q_test:
 
-  (a) in_trained_shape           — villain-R substrate, condition's training prompt shape
-  (b) generalization             — villain-R, same shape as (a), Q_test (vs Q_train)
+  (a) in_trained_shape           -- villain-R substrate, condition's training prompt shape
+  (b) generalization             -- villain-R, same shape as (a), Q_test (vs Q_train)
                                    demos reshuffled (eval-seed 137 vs train-seed 42)
-  (c) demo_free_default          — PRIMARY (helpful-R) for ALL conds
+  (c) demo_free_default          -- PRIMARY (helpful-R) for ALL conds
                                    helpful-sys + 0 demos + q + helpful-R + ※
-  (c-parity) demo_free_default_villain_R  — villain-R substrate sensitivity
+  (c-parity) demo_free_default_villain_R  -- villain-R substrate sensitivity
                                    helpful-sys + 0 demos + q + villain-R + ※
-  (e) non_marker_demo            — cond2_k1/k3 ONLY: helpful-sys + k demos with
+  (e) non_marker_demo            -- cond2_k1/k3 ONLY: helpful-sys + k demos with
                                    ※ STRIPPED from demo assistant turns + q + villain-R + ※
 
-For each cell × q:
+For each cell x q:
   * build full token-id sequence (prompt+R+marker) via i465_prompts.build_eval_full_ids
   * trained pass: vLLM with LoRARequest (cond's adapter), prompt_logprobs=1
   * base pass: SAME prompts with lora_request=None
   * read logp at slot L = len(full_ids) - 1 for MARKER_ID
-  * ΔG[q] = g_logprob[q] − b_logprob[q]
+  * Delta G[q] = g_logprob[q] - b_logprob[q]
 
 Per-cell JSON: eval_results/issue_465/per_cell/G_<cond>__<eval_shape>.json
 Roll-up:       eval_results/issue_465/cross_eval/G_partial.json
@@ -71,7 +71,7 @@ PER_CELL_DIR = OUT_DIR / "per_cell"
 CROSS_EVAL_DIR = OUT_DIR / "cross_eval"
 LOGP_FLOOR = -50.0
 
-# Eval read matrix — (eval_shape, R-source) per condition (plan §4.9).
+# Eval read matrix -- (eval_shape, R-source) per condition (plan §4.9).
 PRIMARY_SHAPES = [
     "in_trained_shape",
     "generalization",
@@ -427,7 +427,8 @@ def main(argv: list[str] | None = None) -> None:
             "n_probes": len(g_logps),
         }
         logger.info(
-            "(%d/%d) (%s, %s) ΔG=%+.3f g=%.3f b=%.3f sd(ΔG)=%.3f emission=%.3f n=%d in %.1fs",
+            "(%d/%d) (%s, %s) Delta G=%+.3f g=%.3f b=%.3f "
+            "sd(Delta G)=%.3f emission=%.3f n=%d in %.1fs",
             idx + 1,
             len(all_cell_specs),
             cond,
@@ -445,8 +446,8 @@ def main(argv: list[str] | None = None) -> None:
     roll_path.write_text(json.dumps(g_partial, indent=2))
     logger.info("Phase 4 done. Roll-up -> %s", roll_path)
 
-    # Co-primary retention (plan Must-Fix 5): per-cond retention = ΔG[demo_free_default]
-    # ÷ ΔG[in_trained_shape]. Cell-mean version is reported here as a quick
+    # Co-primary retention (plan Must-Fix 5): per-cond retention = Delta G[demo_free_default]
+    # ÷ Delta G[in_trained_shape]. Cell-mean version is reported here as a quick
     # roll-up; the per-q paired version (with bootstrap CIs) is in Phase 5.
     retention: dict[str, dict] = {}
     for cond, shapes in g_partial.items():

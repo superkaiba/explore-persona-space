@@ -1,9 +1,9 @@
-"""Phase 0 — preflight for #465 4-arm factorial.
+"""Phase 0 -- preflight for #465 4-arm factorial.
 
 Plan v2 §4.1 Phase 0 + §4.4 Q_demo build.
 
 Steps:
-  1. ``load_dotenv()`` — Phase 0 reads HF + WandB env. CLAUDE.md
+  1. ``load_dotenv()`` -- Phase 0 reads HF + WandB env. CLAUDE.md
      `dispatcher_env_loading` rule.
   2. Marker token id assert (` ※` → [83399]).
   3. Q_train (30) + Q_test (50) load (HF fallback) + disjointness assert.
@@ -80,7 +80,7 @@ def _upload_q_demo(local_path: Path) -> None:
     )
     if not hub_path:
         raise RuntimeError(
-            f"upload_dataset({local_path}) returned empty path — HF upload failed. "
+            f"upload_dataset({local_path}) returned empty path -- HF upload failed. "
             "Refusing to advance to Phase 1 with un-frozen Q_demo."
         )
     logger.info("Q_demo uploaded to HF: %s", hub_path)
@@ -153,11 +153,11 @@ def main(argv: list[str] | None = None) -> None:
         q_demo_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         logger.info("Wrote Q_demo (n=%d) -> %s", len(q_demo), q_demo_path)
 
-    # 4. Disjointness Q_demo vs (Q_train ∪ Q_test).
+    # 4. Disjointness Q_demo vs (Q_train U Q_test).
     overlap = set(q_demo) & (set(q_train_keys) | set(q_test))
     if overlap:
         raise AssertionError(
-            f"Q_demo overlaps with Q_train ∪ Q_test on {len(overlap)} questions: "
+            f"Q_demo overlaps with Q_train U Q_test on {len(overlap)} questions: "
             f"{sorted(overlap)[:2]}..."
         )
 
@@ -166,7 +166,8 @@ def main(argv: list[str] | None = None) -> None:
         _upload_q_demo(q_demo_path)
     elif args.no_upload:
         logger.warning(
-            "--no-upload set; Q_demo at %s NOT uploaded. Downstream phases will read from disk only.",
+            "--no-upload set; Q_demo at %s NOT uploaded. "
+            "Downstream phases will read from disk only.",
             q_demo_path,
         )
 

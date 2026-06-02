@@ -1,4 +1,4 @@
-"""Issue #465 shared helpers — Q_train / Q_test / Q_demo loaders + persona constants.
+"""Issue #465 shared helpers -- Q_train / Q_test / Q_demo loaders + persona constants.
 
 Plan v2 §0 + §4.4 + §10. Q_train (30) and Q_test (50) are inherited verbatim
 from #406's frozen artifacts under ``data/issue_406/``. Q_demo (50, NEW) is
@@ -152,7 +152,7 @@ _NON_LATIN_RE = re.compile(r"[^\x00-\x7F]")
 
 
 def _looks_like_benign_english_question(text: str) -> tuple[bool, str]:
-    """Returns (keep, reason). Cheap heuristic — Phase 0 logs the drop reasons.
+    """Returns (keep, reason). Cheap heuristic -- Phase 0 logs the drop reasons.
 
     Drops:
       - empty / too short / too long
@@ -173,7 +173,7 @@ def _looks_like_benign_english_question(text: str) -> tuple[bool, str]:
     alpha_frac = n_alpha / max(len(text), 1)
     if alpha_frac < 0.6:
         return False, f"low_alpha_{alpha_frac:.2f}"
-    # Whitespace tokens — drop rows with too few "words" (likely a single
+    # Whitespace tokens -- drop rows with too few "words" (likely a single
     # gibberish blob).
     n_words = len(text.split())
     if n_words < 3:
@@ -194,10 +194,10 @@ def build_q_demo_pool(
       1. well-formed benign English
       2. disjoint from Q_train + Q_test (strict string equality)
       3. (Phase 1 will additionally drop any Q whose villain-R contains the
-         marker or truncated — handled there, not here.)
+         marker or truncated -- handled there, not here.)
 
     Returns ``(questions, stats)``. ``questions`` is the first ``target_n``
-    rows that survive — stable order (i.e. the source's row order), so the
+    rows that survive -- stable order (i.e. the source's row order), so the
     pool is deterministic given the same source file.
     """
     import random

@@ -1,4 +1,4 @@
-"""Per-arm prompt builders for #465 — training rows + eval reads.
+"""Per-arm prompt builders for #465 -- training rows + eval reads.
 
 Plan v2 §4.2 (training) + §4.5 (eval reads).
 
@@ -6,7 +6,7 @@ The 4 training arms differ ONLY in:
   * served system message (villain for cond1; helpful for all cond2_*)
   * number of prepended on-policy demo turn pairs (k ∈ {0, 0, 1, 3})
 
-The trained completion is ALWAYS ``R_villain[q_train] + " ※"`` — the
+The trained completion is ALWAYS ``R_villain[q_train] + " ※"`` -- the
 target is on-policy for the persona we are teaching the marker for. The
 loss collator (MarkerOnlyDataCollator, tail_tokens=0) keeps loss ONLY on
 the trailing marker + EOS; demos + R are zero-gradient context.
@@ -14,9 +14,9 @@ the trailing marker + EOS; demos + R are zero-gradient context.
 The 5 eval reads differ in:
   * (a) in-trained-shape (villain-R substrate; matches train shape)
   * (b) generalization (same shape, fresh Q_test, demos reshuffled)
-  * (c) demo-free-default — PRIMARY, helpful-R substrate (Must-Fix 2)
-  * (c-parity) demo-free-default — villain-R substrate (sensitivity)
-  * (e) non-marker-demo — cond2_k1/k3 only; demos with ※ stripped (Must-Fix 3)
+  * (c) demo-free-default -- PRIMARY, helpful-R substrate (Must-Fix 2)
+  * (c-parity) demo-free-default -- villain-R substrate (sensitivity)
+  * (e) non-marker-demo -- cond2_k1/k3 only; demos with ※ stripped (Must-Fix 3)
 """
 
 from __future__ import annotations
@@ -91,10 +91,7 @@ def build_training_messages(
     system is helpful. The completion text is the SAME villain-R + marker
     in all 4 arms (frozen artifact).
     """
-    if condition == "cond1":
-        served_system = VILLAIN_SYSTEM_PROMPT
-    else:
-        served_system = HELPFUL_SYSTEM_PROMPT
+    served_system = VILLAIN_SYSTEM_PROMPT if condition == "cond1" else HELPFUL_SYSTEM_PROMPT
     k = CONDITION_K[condition]
     pairs = _demo_pairs_for_target(
         target_q=target_q,
