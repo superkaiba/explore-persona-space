@@ -1946,6 +1946,12 @@ def _phase0_calibrate_entropy_thresholds(
             "mean_mass_across_20_fixtures": starter_mean_mass,
             "any_prefill_failed": any_prefill_failed,
             "ok": starter_ok,
+            # NON-BLOCKING as of 2026-06-02 (user decision): when ok=False the
+            # answer-slot entropy is confounded by sentence-form prior, so the
+            # zero-prior gate's absolute values are inflated. The run continues
+            # anyway, but every downstream zero-prior claim MUST disclose this
+            # confound in the write-up.
+            "blocking": False,
         },
         "known_prior": kp_stats,
         "known_zero_prior": kz_stats,
@@ -1958,17 +1964,23 @@ def _phase0_calibrate_entropy_thresholds(
         _write_json(cache_path, audit)
 
     # 6. Fail-loud per plan §4.2.5.
+    #     The sentence-starter sanity check is downgraded from a hard halt to a
+    #     NON-BLOCKING warning per user decision (2026-06-02): proceed despite
+    #     the sentence-form confound. The gap check below STAYS fail-loud — it
+    #     guards that the entropy can still separate known from unknown at all,
+    #     which is the floor below which the experiment is meaningless.
     if not starter_ok:
-        raise RuntimeError(
-            "Phase 0 K1 sentence-starter sanity check FAILED: "
-            f"mean starter mass across 20 fixtures = {starter_mean_mass:.3f} "
-            f"(threshold {SENTENCE_STARTER_MEAN_MASS_THRESHOLD}), "
-            f"any prefill_failed = {any_prefill_failed}. "
-            "The prefill design is broken on this model+image — position-1 "
-            "logprobs measure sentence-form-prior, not value-prior. Halt "
-            "with epm:failure v1 / failure_class: data / status:blocked / "
-            "reason: phase0_prefill_measures_sentence_form. See the "
-            f"per-fixture top-5 lists in {cache_path}."
+        logger.warning(
+            "Phase 0 K1 sentence-starter sanity check NOT OK (NON-BLOCKING, "
+            "user override 2026-06-02): mean starter mass across 20 fixtures = "
+            "%.3f (threshold %s), any prefill_failed = %s. The answer-slot "
+            "entropy is confounded by sentence-form prior — the zero-prior "
+            "gate's absolute values are inflated, so every downstream zero-prior "
+            "claim MUST disclose this confound. Per-fixture top-5 lists: %s.",
+            starter_mean_mass,
+            SENTENCE_STARTER_MEAN_MASS_THRESHOLD,
+            any_prefill_failed,
+            cache_path,
         )
     if not gap_ok:
         raise RuntimeError(
