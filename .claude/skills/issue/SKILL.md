@@ -503,37 +503,53 @@ gate, no extra context switch.
 2. Skip when the task already carries a non-empty `relates_to:` list in
    `body.md` frontmatter (re-invocation / already-linked case) — the
    link is set once at creation. Continue to Step 1.
-3. Otherwise, the clarifier/planner reads the task Goal + the headline
-   questions in `docs/open_questions.md` and PROPOSES a flat list of
-   stable open-question ids (NO primary/secondary) the experiment bears
-   on — either **matching** existing question id(s) or **drafting a new
-   question** when none fit. Confirm with the user in the SAME Goal gate
-   via `AskUserQuestion` <!-- gate: gates.experiment_goal -->:
+3. Otherwise, read the task Goal + the headline questions in
+   `docs/open_questions.md` and produce a flat list of stable
+   open-question ids (NO primary/secondary) the experiment bears on —
+   **matching** existing question id(s) wherever an existing question
+   fits, and only **drafting a new question** when none fit.
+4. **Matching existing question(s) — AUTO-LINK, do NOT ask.** When every
+   id in the list is an *existing* question id (no new question needs to
+   be drafted), write the link immediately, without asking the user — no
+   gate prompt. State the match in chat so the user can correct it if
+   it's wrong, then write it:
    ```
-   "This experiment's Goal links to which open question(s) in
-    docs/open_questions.md? (flat list — an experiment may bear on more
-    than one.)
-      - Link to existing: q-<id> «<headline question text>» [+ more]
-      - Draft new question: «<one-sentence proposed question>»"
+   Assumption: linking #<N> to existing open question(s) <q-ids> «<headline(s)>».
    ```
-   Present the matched id(s) as the recommended option first; offer
-   "draft new question" as the alternative. The user confirms the id
-   list (or approves the new-question draft).
-4. On the user's confirmation, write the link — `relates_to` on the task
-   + the task entry on each question's evidence list — via:
    ```bash
    uv run python scripts/living_docs.py link <N> <q-id> [<q-id> ...]
    ```
-   If the user approved a NEW question, `living_docs.py link` creates the
-   question stub (heading + `<!-- q:<id> -->` anchor + `State:` trailer)
-   in `docs/open_questions.md` first, then writes `relates_to` + the
-   evidence entry. The link write is a confirmed living-docs mutation —
-   the agent proposed it, the user confirmed it; nothing auto-links.
-5. Post `epm:question-linked v1` recording the `relates_to` list and
-   whether a new question was created:
+   This is the common case — an experiment almost always bears on a
+   question that already lives in the hub. Linking to an existing
+   question is a low-risk, reversible bookkeeping write (the
+   `living_docs.py check` lint + the completion-time `living-docs-updater`
+   both catch a bad link later), so it does not consume a gate.
+5. **No existing question fits → drafting a NEW question — ASK first.**
+   Creating an open-question stub is a real, durable living-docs mutation,
+   so the new-question path stays user-confirmed. Propose the new question
+   (plus any existing ids that ALSO apply) via
+   `AskUserQuestion` <!-- gate: gates.experiment_goal --> in the SAME Goal
+   gate:
+   ```
+   "No existing open question in docs/open_questions.md fits this
+    experiment's Goal. Draft a new one? (an experiment may also bear on
+    existing questions — add them too.)
+      - Draft new question: «<one-sentence proposed question>» [+ also link q-<id> ...]
+      - Link only to existing instead: q-<id> «<headline>» [+ more]"
+   ```
+   On the user's confirmation, write the link via the same command:
+   ```bash
+   uv run python scripts/living_docs.py link <N> <q-id> [<q-id> ...]
+   ```
+   `living_docs.py link` creates the question stub (heading +
+   `<!-- q:<id> -->` anchor + `State:` trailer) in `docs/open_questions.md`
+   for any id that does not yet exist, then writes `relates_to` + the
+   evidence entry.
+6. In both cases, post `epm:question-linked v1` recording the
+   `relates_to` list, whether a new question was created, and the mode:
    ```bash
    uv run python scripts/task.py post-marker <N> epm:question-linked \
-     --note "Linked task #<N> to open question(s) <q-ids>; created_new=<q-id|none>."
+     --note "Linked task #<N> to open question(s) <q-ids>; created_new=<q-id|none>; mode=<auto-match|user-confirmed-new>."
    ```
    Re-read the task (Step 0) and continue to Step 1.
 
@@ -2579,7 +2595,7 @@ SHARED_INFRA_DIFF=$(git diff --name-only origin/main...HEAD -- \
 ```
 
 If `SHARED_INFRA_DIFF` is non-empty, embed a one-line warning inside
-the `AskUserQuestion` text — for example: `"Shared infra modified
+the `AskUserQuestion` text <!-- gate: gates.worktree_merge --> — for example: `"Shared infra modified
 (<N> file(s) under src/, e.g. <first path>); deferring leaves
 downstream experiments without this fix."`. This is a recommendation,
 not a hard gate (a deliberate experiment-only fork is still valid; the

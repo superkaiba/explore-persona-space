@@ -367,6 +367,14 @@ gates:
         reads from body.md frontmatter. The PM session Mode 5 pre-spawn
         check is the primary enforcement point; Step 0c is the
         per-issue-session safety net.
+
+        Step 0c-link (open-question linking) shares this gate window but
+        is NOT always an ask: when the experiment matches an EXISTING
+        open question it auto-links with no AskUserQuestion (stated as an
+        `Assumption:`); the AskUserQuestion fires ONLY when no existing
+        question fits and a NEW question stub must be drafted (a durable
+        living-docs mutation). See SKILL.md Step 0c-link + the
+        `epm:question-linked` marker (`mode=auto-match|user-confirmed-new`).
     - id: 10
       name: smoke_architecture
       step: "6d.0"
@@ -1450,12 +1458,17 @@ markers:
       Creation-time link from a kind:experiment task to one or more
       stable open-question ids in docs/open_questions.md. Records the
       flat `relates_to` list written to body.md frontmatter (NO
-      primary/secondary), the question id(s) the task was linked to, and
+      primary/secondary), the question id(s) the task was linked to,
       whether a new question stub was created (vs matching an existing
-      one). User-confirmed in the Goal gate before the link is written:
-      the clarifier/planner proposes match-or-create, the user confirms,
-      then `scripts/living_docs.py link <N> <q-ids>` writes relates_to +
-      adds the task to each question's evidence list. Body shape:
+      one), and the link `mode`. Two modes: (a) `auto-match` — every
+      linked id is an EXISTING question, so /issue Step 0c writes the link
+      automatically with NO AskUserQuestion (it states the match as an
+      `Assumption:` so the user can correct it); (b) `user-confirmed-new`
+      — no existing question fit, so a NEW question stub had to be drafted,
+      which IS user-confirmed in the Goal gate before the write. In both
+      modes `scripts/living_docs.py link <N> <q-ids>` writes relates_to +
+      adds the task to each question's evidence list (creating a stub for
+      any not-yet-existing id). Body shape:
       `relates_to: [<q-id>, ...] created_new: <q-id|none>`.
   - kind: "epm:living-docs-proposed"
     posted_by: skill (via living-docs-updater agent)
