@@ -1,6 +1,7 @@
 ---
-title: Widening contrastive negatives reduces bystander marker leakage; positive-side
-  knobs add training mass into a saturated ceiling region (MODERATE confidence)
+title: None of four contrastive-LoRA recipe knobs moves on-policy bystander marker
+  leakage; an earlier off-policy probe showing a knob-effect was a fixed-response-saturation
+  artifact (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:48:52Z'
