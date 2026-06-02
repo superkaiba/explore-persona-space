@@ -1,5 +1,12 @@
 # Overview & Open Questions
 
+
+<!-- living-docs-changelog:begin -->
+## Changelog
+
+- **2026-06-02** — Added open question 1.7 (q:spec-role-header): does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly? Seeded by #464.
+<!-- living-docs-changelog:end -->
+
 **Central question:** when we train on data exhibiting a behavior B in a context C, can we find a simple predictor — measurable before training — for whether the model will also exhibit a behavior B′ in a context C′?
 
 ## Motivation
@@ -55,6 +62,10 @@ Where synthetic-document finetuning sits relative to the other inducers: does SD
 **1.6 Is system-prompting equivalent to persona drift?** <!-- q:spec-sysprompt-vs-drift -->
 Test whether the log-probs of a system-prompted model on drifted tokens are high.
 > **Belief:** Untested; no clean result yet. **Confidence:** LOW. **Evidence:** #399.
+
+**1.7 Does a custom chat-template role header induce the same context as a system prompt, or segment a persona's behavior more cleanly?** <!-- q:spec-role-header -->
+A persona can be denoted by a system prompt or by giving it its own chat-template role header (e.g. `<|im_start|>evil_assistant`) — a new context-inducer alongside prompting, in-context examples, steering, and SDF. Two linked sub-questions: does the role header reach the same context as the matching system prompt (equivalence), and does keying a behavior to the role token leave less of it leaking to the default `assistant` role and to other personas than the system-prompt encoding (cleaner segmentation)?
+> **State:** 🌱 budding · LOW · updated 2026-06-02 · evidence: #464
 
 ### 2. Updating (W, C) toward a behavior — what installs, at what cost?
 
