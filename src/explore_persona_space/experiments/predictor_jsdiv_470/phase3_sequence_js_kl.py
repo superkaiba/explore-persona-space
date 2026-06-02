@@ -115,15 +115,17 @@ def _compute_one_direction(
 
     from explore_persona_space.analysis.divergence import (
         build_teacher_force_inputs,
-        compute_js_divergence,
-        compute_kl_divergence,
-        teacher_force_batch,
+        teacher_force_and_reduce_js_kl,
     )
 
     js_per_pair: list[float] = []
     kl_per_pair: list[float] = []
 
     sys_prompts = [src_prompt, bys_prompt]
+    # sys_prompts[0] = src, sys_prompts[1] = bys ⇒ batch row 0 = src-conditioned,
+    # row 1 = bys-conditioned. Fused helper takes p_index/q_index so we choose
+    # the KL direction without recomputing the forward pass.
+    src_idx, bys_idx = 0, 1
 
     for probe_idx, probe in enumerate(probes):
         for response in responses_from[probe_idx]:
@@ -152,31 +154,30 @@ def _compute_one_direction(
                 )
                 continue
 
-            log_probs = teacher_force_batch(
+            # Fused forward + on-GPU JS/KL reduction. The (response_len x ~152K-vocab)
+            # log-softmax tensors are reduced on the GPU and freed before this returns;
+            # only three Python floats cross the PCIe bus. (Was: full-vocab .cpu() then
+            # CPU JS/KL reduction -> GPU-idle / CPU-bound, ~10 min/cell at 50 probes x R=8.)
+            if kl_from_first:
+                # Responses sampled from src; KL(src || bys): P=src, Q=bys.
+                p_index, q_index = src_idx, bys_idx
+            else:
+                # Responses sampled from bys; KL(bys || src): P=bys, Q=src.
+                p_index, q_index = bys_idx, src_idx
+
+            js, kl, _kl_reverse = teacher_force_and_reduce_js_kl(
                 model=model,
                 batch_inputs=batch_inputs,
                 prompt_lengths=prompt_lengths,
                 response_len=response_len,
                 device=str(device),
                 max_batch=tf_batch,
+                p_index=p_index,
+                q_index=q_index,
             )
-            # log_probs shape: (2, response_len, V); [0]=src-conditioned, [1]=bys-conditioned
-            assert log_probs.shape[0] == 2, log_probs.shape
-            lp_src = log_probs[0]
-            lp_bys = log_probs[1]
-
-            js = compute_js_divergence(lp_src, lp_bys).item()
-            if kl_from_first:
-                # Responses sampled from src; KL(src || bys) uses src as P.
-                kl = compute_kl_divergence(lp_src, lp_bys).item()
-            else:
-                # Responses sampled from bys; KL(bys || src) uses bys as P.
-                kl = compute_kl_divergence(lp_bys, lp_src).item()
 
             js_per_pair.append(js)
             kl_per_pair.append(kl)
-
-            del log_probs
 
     return js_per_pair, kl_per_pair
 
