@@ -138,6 +138,19 @@ If the data source's keys ARE already plain English, pass them through directly.
 
 This is the figure-side mirror of `clean-result-critic` Lens 3 and `interpretation-critic` Lens 6 — applying it at the plot-generation step (here) avoids the critic round that would otherwise bounce the figure for relabeling. The bare condition slug appears ONLY in the `.meta.json` sidecar (provenance, not reader-facing) and in commit messages / launch commands.
 
+### 3.6. Consistent encoding across facets
+
+A given color or stacked-bar segment MUST mean the same category in EVERY panel of a multi-panel figure. Build one fixed category→color (and one fixed stacked-bar segment order) mapping at the top of the script and reuse it across all facets — never let bar position 2 mean "counter" in one panel and "refusal" in another, or the columns are not comparable.
+
+```python
+SEGMENT_ORDER = ["taught", "counter", "refusal", "other"]   # same order, every panel
+SEGMENT_COLORS = {k: paper_palette(len(SEGMENT_ORDER))[i] for i, k in enumerate(SEGMENT_ORDER)}
+# Each panel stacks SEGMENT_ORDER in the same sequence with SEGMENT_COLORS — missing
+# categories render as a zero-height segment in the SAME slot, not a re-ordered bar.
+```
+
+(Incident 2026-06-01: #407's per-framing figure put "counter" in bar position 2 of the contradictory panels but "refusal" in that position in the refusal panels; the user caught it — *"the bars are showing different things in the graph?"*.)
+
 ### 4. Run & save
 
 ```python
@@ -190,6 +203,9 @@ defer to that file if they ever diverge.
 - [ ] Error bars present OR an explicit note explains why they aren't.
 - [ ] ≤ 3-5 distinguishable colors. Legend order matches the narrative (the
       claim first, the baseline second).
+- [ ] Consistent encoding across facets: a given color / stacked-bar segment
+      means the SAME category in every panel (per §3.6). Columns are
+      directly comparable.
 - [ ] No microscopic text. Squint test: readable on a video call at 75% zoom.
 - [ ] Colorblind-friendly palette (use `paper_palette(n)`).
 - [ ] Both `.png` and `.pdf` written. Sidecar `.meta.json` exists.

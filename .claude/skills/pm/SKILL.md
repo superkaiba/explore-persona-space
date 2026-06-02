@@ -56,7 +56,8 @@ flow. The PM's job is dispatch, not execution.
    full. Adopt it for the rest of the session.
 2. Run a fast triage scan against **task state**:
    ```bash
-   python scripts/task.py list-by-status --limit 500
+   export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login shells miss it
+   uv run python scripts/task.py list-by-status --limit 500
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
    ```

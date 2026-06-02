@@ -374,6 +374,25 @@ TL;DR block only — the technical content in the design dropdown is
 allowed to carry project jargon since its readers are downstream agents
 and the reviewer audit chain.
 
+### Step 4.6: Pre-emission register self-check
+
+Before posting the draft body, run this quick self-check — first drafts
+repeatedly trip the long-standing clean-result-critic lenses (Lens 2 /
+7 / 13), and each bounce costs a REVISE round. Fix any hit in place:
+
+- [ ] **No opaque condition codes** (`B@k`, `A`, `M1`, `cond_4`,
+      `c1_evil_wrong_em`, Hydra slugs) in `## TL;DR` Motivation /
+      What-I-ran / Findings prose or captions — plain-English condition
+      names only (Lens 2). Bare codes live in `## Reproducibility`.
+- [ ] **No named statistical tests / bracketed CIs in narrative prose**
+      ("Mantel r=…", "slope[lo,hi]", "p<0.01") — those belong in
+      `## Reproducibility`, not the TL;DR (Lens 7).
+- [ ] **No process/AI tells** ("the codex critic surfaced", "as an AI",
+      "it is worth noting") or shouty ALL-CAPS emphasis in the body.
+- [ ] **`### What I ran` flags any planned cell / seed / factor that
+      silently dropped** and revises the denominator consistently
+      (Lens 13) — never a misleading zero bar for an untested condition.
+
 ### Step 5: Verify
 
 Run the pre-publish clean-result validator against the local body file:

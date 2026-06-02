@@ -26,11 +26,12 @@ Read:
 Useful commands:
 
 ```bash
-python scripts/task.py list-by-status --limit 500
-python scripts/task.py list-by-status --status running --limit 100
-python scripts/task.py list-by-status --status uploading --limit 100
-python scripts/task.py list-by-status --status awaiting_promotion --limit 100
-python scripts/task.py view <N>
+export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login (cron) shells miss it
+uv run python scripts/task.py list-by-status --limit 500
+uv run python scripts/task.py list-by-status --status running --limit 100
+uv run python scripts/task.py list-by-status --status uploading --limit 100
+uv run python scripts/task.py list-by-status --status awaiting_promotion --limit 100
+uv run python scripts/task.py view <N>
 ```
 
 ## Output
@@ -200,11 +201,14 @@ Proposals that Thomas declined stay in the daily file as historical record — d
 After writing the file, commit it so the dashboard picks it up:
 
 ```bash
-git add logs/daily/YYYY-MM-DD.md
+git add -f logs/daily/YYYY-MM-DD.md   # logs/ is gitignored; force-add or the commit silently stages nothing
 git commit -m "logs: daily stub for YYYY-MM-DD"
 ```
 
-Do not push.
+Do not push. **`logs/` is in `.gitignore`** — a bare `git add logs/...`
+stages nothing and `git commit` reports "no changes added to commit", so
+the daily never lands in git or the dashboard. `-f` is required (the
+prior dailies are tracked only because they were force-added).
 
 ### Other rules
 

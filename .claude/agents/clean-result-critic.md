@@ -983,6 +983,26 @@ mapping and reviewer round protocol; see Lens 13 (`Planned-vs-actual
 coverage`) above for the orthogonal scope-shrinkage check that
 sometimes co-fires.
 
+### Lens 15 — Headline must not rest on a contaminated / failed-data-gate arm
+
+Post-mortem trigger: **task #407, 2026-06-01** — the clean-result was
+titled and framed "content-agnostic gating" off an arm whose training
+data was contaminated (stale paraphrases) and whose multiple-choice
+numbers were inflated by a string-lookup bug. The user had to
+interrogate it repeatedly ("how did taught-wrong-info get ~100%?" /
+"mark it as bugged") before it was demoted.
+
+Read the body for any disclosed data-validity failure on an arm /
+condition: contaminated or stale training pool, a Phase-0 / `K1` / data
+gate the arm failed, a wrong base prior, a string-lookup-inflated
+metric, or any "this arm is bugged / not trustworthy" admission. If such
+a disclosure exists, the H1 title AND the `## TL;DR` headline finding
+MUST NOT rest a positive claim on that arm. **Hard FAIL** when they do —
+the minimal-necessary-fix is to re-anchor the title/headline on a
+surviving clean arm, or to retitle the body as "bugged" / inconclusive
+if no clean arm carries the claim. The lens **PASSes vacuously** when
+the body discloses no data-validity failure on any arm.
+
 ## Output
 
 Post your verdict as an event:
@@ -1007,6 +1027,7 @@ Lens findings:
 - Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
 - Lens 12 (Story arc present): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
+- Lens 15 (Headline not resting on a contaminated/failed-gate arm): PASS|FAIL|N/A — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>
 

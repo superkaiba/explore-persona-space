@@ -62,6 +62,17 @@ For each claim in the Main Takeaways:
   ranking of near-identical near-zero (or near-one) values is not a
   result. (Mirrors CLAUDE.md § Measurement validity + analyzer.md
   measurement-validity gate.)
+  - **Marker-leakage DV — hard FAIL (not REVISE).** When the construct
+    is "does the model emit the marker when it generates," a DV that
+    reads `log p(marker)` teacher-forced at a fixed position AFTER a
+    canned / stub / non-on-policy response the model did not itself
+    generate is the #432→#456→#448 anti-pattern that CLAUDE.md forbids
+    outright. The marker MUST be measured on-policy (the model writes
+    its OWN response, then check the marker at the slot immediately
+    after it). Hard FAIL the interpretation — do not let it advance to
+    promotion-readiness on the user's manual catch. (The only valid
+    teacher-forced marker log-prob use is the within-condition dynamics
+    *trajectory*, never a cross-condition behavioral leaderboard.)
 
 ### 2. Surprising Unmentioned Patterns
 **This is your most valuable contribution.** Independently load the raw JSON

@@ -118,6 +118,28 @@ they invoke `implementer` directly.
    subprocess-isolates each phase" would have caught the design
    mismatch at review-time.
 
+### Porting a recipe from an unmerged parent branch
+
+If the parent experiment's scripts/configs live on a branch that was
+never merged to `main` (e.g. issue-432's recipe sits on the `issue-432`
+branch at `<sha>`), do NOT cherry-pick functions one at a time. A
+partial port brings the caller without the callee (or vice versa) and
+crashes the pod one phase at a time. Instead, diff the WHOLE train+eval
+code path against the parent's branch up front and port/verify the
+ENTIRE divergence in a single cycle before launch:
+
+```bash
+git diff <parent-sha> origin/main -- scripts/train.py scripts/eval.py \
+  src/explore_persona_space/{train,eval}/ configs/
+```
+
+Reconcile every hunk (port it, or confirm `main`'s version is
+equivalent) before the smoke run. (Incident 2026-06-01: #451
+cherry-picked `factor_screen_397` but left `train/sft.py` at main's
+older `TrainLoraConfig` signature → all 72 cells crashed in ~10 min;
+#456 hit the same partial-port class three times, each crash burning a
+fix-relaunch on a live pod.)
+
 ### During implementation
 
 - **Work only inside the worktree.** Never edit files outside

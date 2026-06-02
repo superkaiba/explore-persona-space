@@ -179,6 +179,17 @@ line, prefixed `Assumption:`) and proceed; do NOT pause to ask.
 criteria (see workflow.yaml § halt_criteria). When any of those fire,
 EXIT regardless of the auto-continuation rule.
 
+**Resourceful-first before any non-gate ask.** Before raising a non-gate
+`AskUserQuestion` <!-- example: anti-pattern --> about a design fork
+(reuse-vs-retrain, which checkpoint, title options, "how should I
+proceed"), FIRST sweep `tasks/` + HF Hub / WandB for the artifacts or
+prior results that resolve it — exactly the resourceful-before-asking
+posture of halt-criterion #1. Ask only once the investigation leaves a
+genuine factual gap only the user can fill. (Incident 2026-06-01: a
+reuse-vs-retrain ask got "look deeper at other issues first"; a
+title-options ask got "show me the body first" — both rejected for
+asking before exhausting the investigation.)
+
 ## The State Machine
 
 State = the parent folder name under `tasks/` (i.e., the row in
@@ -1467,6 +1478,26 @@ Round 11's pivot was to UNIFICATION (in-process serial). This gate
 forces the divergence to be explicit at plan time so the pre-dispatch
 moment catches it, not the third pod-side crash.
 
+##### Step 6d.0-bis: End-to-end smoke gate (multi-phase data-gen pipelines)
+
+For an experiment whose pipeline chains ≥2 distinct phases of data
+generation before training (typically gen → drift → train → eval →
+aggregate), the architecture-parity gate above is NOT enough: it checks
+that smoke and sweep share ONE code path, not that EVERY phase ran. A
+resume-skip design serializes bug discovery — each pod cycle surfaces
+the next phase's bug — so before the GPU production launch the FULL
+pipeline must have executed once at tiny N (≈2-3 rows, 1 cell, 1 seed)
+so EVERY phase runs end-to-end on CPU / 1-GPU. Confirm the implementer's
+`## Smoke run` report (per `experiment-implementer.md` § "End-to-end
+smoke run PER PHASE") carries a sub-section with exit code `0` + an
+artifact digest for EACH phase the pipeline executes — not just training
+or data-gen. Any phase missing, or showing only `--help` / `import` /
+`--dry-run` evidence → **REFUSE to dispatch**; bounce to the implementer
+with `run the full gen→...→aggregate pipeline once at tiny N before
+production`. FAIL blocks production. (Origin: #408 — a multi-phase
+data-gen pipeline never smoke-tested end-to-end leaked 5+ distinct bugs
+one-per-pod-cycle over ~41h idle.)
+
 ##### Step 6d.1: Spawn experimenter for launch
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
@@ -1820,6 +1851,23 @@ URLs.
 
   See `.claude/agents/uploader.md` for the uploader's contract and the
   marker schema. The uploader NEVER terminates pods; only stops/resumes.
+
+#### Step 8-bis: Pod must not idle on a halt
+
+Step 8's terminate fires only on the NORMAL upload-verification-PASS path.
+A pod can still be left RUNNING-and-billing whenever the pipeline leaves
+that path: (a) it blocks on a human-input gate that cannot be satisfied
+this turn (e.g. `epm:fact-pick` at Step 6, the plan-approval / merge gates,
+or any STATE-TO-`blocked` exit), or (b) it is detected crashed/dead with
+GPUs idle. Before EXITing the turn in EITHER case, if an `epm-issue-<N>`
+pod (or the parent's pod for a follow-up) exists and is RUNNING, run
+`uv run python scripts/pod.py stop --issue <N>` (volume preserved; `resume`
+re-provisions) — or `terminate --issue <N> --yes` when the work is truly
+done — and post `epm:pod-stopped v1` / `epm:pod-terminated v1` with the
+command output. NEVER leave a pod RUNNING while awaiting human input or
+after a crash. (Incident 2026-06-01: #444 idled a 4×H100 ~21h on an
+unfired gate, #404 ~2 days after Step 8 never fired, #407 ~1 day after an
+`aggregate`-phase crash — ~$1k of idle burn combined.)
 
 ### Step 9: Iterative interpretation + final review
 
@@ -2264,6 +2312,14 @@ Each created follow-up task carries `parent_id: <N>` in its `body.md`
 frontmatter; lint scans enforce that the parent exists. Lint output is
 visible via `task.py audit`.
 
+**Announce every follow-up/child task in chat at creation time.** The
+moment `task.py new` returns a new id (here, or anywhere mid-session a
+child task is filed), immediately post ONE line in chat:
+`Filed #<N> '<title>' (child of #<parent>, status:<s>)`. A created task
+that stays invisible until the user asks "what is #<N>?" is a dropped
+handoff. (Incident 2026-06-01: #461 was filed and worked on but never
+announced — the user lost track and had to ask.)
+
 ### Step 10c: Living-docs update hook (experiments only)
 
 Auto-fires after a `kind: experiment` task lands at `completed` (the
@@ -2349,6 +2405,26 @@ This hook is idempotent: skip if `epm:living-docs-updated v1` or
 `epm:living-docs-update-rejected v1` already exists on the task.
 
 ### Step 10d: Worktree merge prompt (both experiment and impl)
+
+**Step 10d merge safety (run before the YES branch's merge commands).**
+A behind-main `issue-<N>` branch can carry stale copies of OTHER tasks'
+`tasks/` state, so merging it raw reverts their `events.jsonl` / status;
+and a crash between merge and the status flip can strand a
+terminated-pod task at `running`. Two guards:
+
+1. **Foreign-`tasks/` guard.** `git diff --name-only origin/main HEAD --
+   tasks/` MUST be empty except THIS task's own folder
+   (`tasks/*/<N>/`). For any foreign `tasks/` path in the diff, run
+   `git checkout origin/main -- <that file>` before pushing/merging.
+   Never let a behind-main branch revert another task's `events.jsonl`.
+   (Incident 2026-06-01: #458's merge branch, 1,146 commits behind main,
+   silently rewound `tasks/running/448/events.jsonl`.)
+2. **Status-flip ordering.** Flip status OFF `running` (Step 10's
+   `set-status`) BEFORE the merge-to-main + pod terminate, so a crash
+   mid-step can't leave a terminated-pod task stuck at `running`. On a
+   later `/issue <N>` resume: if the pod is already terminated AND the
+   branch is already merged AND status is still `running`, auto-advance
+   (treat it as completed work, not in-flight) rather than re-dispatching.
 
 <!-- gate: gates.worktree_merge -->
 After Step 10b posts and the Step 10c living-docs hook has run (the pod
