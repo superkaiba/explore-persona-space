@@ -204,17 +204,40 @@ def _build_traj_probe_file(
     qs_all = sorted(next(iter(R_canon_test.values())).keys())
     qs = qs_all[:n_probes_per_key]
     probes = []
-    # Three eval encodings per persona: own-system, own-role, default-assistant.
+    # Round-2 fix (review blocker #6): include the symmetric WRONG-persona
+    # cells (system_OTHER + role_OTHER) so the trajectory diagnoses the
+    # LEAKAGE dynamics MF-C was designed to expose. Round-1 only covered
+    # same-persona system/role + default_assistant, which only reads
+    # elicitation/identity — not the segmentation question. Now 5 encodings
+    # per persona: own-system, own-role, WRONG-system, WRONG-role,
+    # default_assistant. R_canon splice uses the persona implied by the
+    # eval encoding (matches Phase 4's persona_for_eval_encoding) so the
+    # post-R slot is consistent with what cross-eval probes.
     e_choices_for: dict[enc.Persona, list[enc.EvalEncoding]] = {
-        "pirate": ["system_pirate", "role_pirate", "default_assistant"],
-        "villain": ["system_villain", "role_villain", "default_assistant"],
+        "pirate": [
+            "system_pirate",
+            "role_pirate",
+            "system_villain",
+            "role_villain",
+            "default_assistant",
+        ],
+        "villain": [
+            "system_villain",
+            "role_villain",
+            "system_pirate",
+            "role_pirate",
+            "default_assistant",
+        ],
     }
     for persona in enc.PERSONAS:
         marker_text = enc.marker_text_for(persona)
         marker_id = enc.marker_id_for(persona)
         for e_eval in e_choices_for[persona]:
             for q in qs:
-                R = R_canon_test[persona][q]["response_text"]
+                # R_canon picked by the persona implied by the eval encoding
+                # (NOT the marker_persona); matches Phase 4 cross-eval.
+                R_persona = enc.persona_for_eval_encoding(e_eval)
+                R = R_canon_test[R_persona][q]["response_text"]
                 prompt_text = enc.BUILD_EVAL_PROMPT(e_eval, q, tokenizer)
                 full_ids = tokenizer.encode(prompt_text + R + marker_text, add_special_tokens=False)
                 if full_ids[-1] != marker_id:

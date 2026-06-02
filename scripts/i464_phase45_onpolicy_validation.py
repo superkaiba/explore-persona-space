@@ -48,6 +48,10 @@ HF_R_PATH_PREFIX = "issue464_role_vs_system/R_canon"
 LOCAL_DATA_DIR = Path("data/issue_464")
 LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i464")
 OUT_PATH = Path("eval_results/issue_464/onpolicy_validation.json")
+# Round-2 fix (review blocker #8): per-cell JSONs persisted incrementally
+# so a crash mid-sweep doesn't lose prior validation work (CLAUDE.md
+# "checkpoint per phase" rule).
+PER_CELL_DIR = Path("eval_results/issue_464/onpolicy_validation/per_cell")
 SWITCH_THRESHOLD = 1.5
 
 SEEDS = (42, 137, 1337)
@@ -175,11 +179,26 @@ def main(argv: list[str] | None = None) -> None:
         stop_token_ids=[tokenizer.eos_token_id],
     )
 
+    # Round-2 fix (review blocker #8): persist per-cell JSON incrementally
+    # so a crash on cell N doesn't lose work for cells 0..N-1.
+    PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
     per_cell: dict[str, dict] = {}
     per_arm_distances: dict[str, list[float]] = {a: [] for a in enc.ARMS}
 
     for arm, seed in cells:
         cell_label = f"{arm}_seed{seed}"
+        cell_path = PER_CELL_DIR / f"{cell_label}.json"
+        # If the per-cell JSON already exists (resume after crash), load it
+        # instead of re-running the generation.
+        if cell_path.exists() and cell_path.stat().st_size > 0:
+            cached = json.loads(cell_path.read_text())
+            per_cell[cell_label] = cached
+            # Repopulate per_arm_distances from cached per-q ratios so
+            # the aggregate matches a fresh run.
+            per_arm_distances[arm].extend(cached.get("per_q_ratios", []))
+            logger.info("cell=%s loaded from %s (resume)", cell_label, cell_path)
+            continue
+
         adapter_path = _download_adapter(arm, seed)
         lora_req = LoRARequest(
             lora_name=cell_label,
@@ -191,10 +210,9 @@ def main(argv: list[str] | None = None) -> None:
         prompts: list[str] = []
         labels: list[tuple[str, str]] = []  # (persona, q)
         for persona in enc.PERSONAS:
-            if arm == "role":
-                e_eval: enc.EvalEncoding = f"role_{persona}"  # type: ignore[assignment]
-            else:
-                e_eval = f"system_{persona}"  # type: ignore[assignment]
+            e_eval: enc.EvalEncoding = (
+                f"role_{persona}" if arm == "role" else f"system_{persona}"  # type: ignore[assignment]
+            )
             for q in qs:
                 prompts.append(enc.BUILD_EVAL_PROMPT(e_eval, q, tokenizer))
                 labels.append((persona, q))
@@ -213,7 +231,7 @@ def main(argv: list[str] | None = None) -> None:
             cell_dists.append(ratio)
             per_persona_dists[persona].append(ratio)
 
-        per_cell[cell_label] = {
+        cell_payload = {
             "arm": arm,
             "seed": seed,
             "mean_norm_edit_distance": statistics.mean(cell_dists),
@@ -223,13 +241,21 @@ def main(argv: list[str] | None = None) -> None:
                 for p in enc.PERSONAS
             },
             "n_q": len(qs),
+            "per_q_ratios": cell_dists,
         }
+        per_cell[cell_label] = cell_payload
         per_arm_distances[arm].extend(cell_dists)
+        # Atomic per-cell write (.tmp -> rename) so a crash mid-flush
+        # leaves the prior version intact.
+        tmp = cell_path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(cell_payload))
+        tmp.replace(cell_path)
         logger.info(
-            "cell=%s mean_norm_ed=%.3f median=%.3f",
+            "cell=%s mean_norm_ed=%.3f median=%.3f -> %s",
             cell_label,
-            per_cell[cell_label]["mean_norm_edit_distance"],
-            per_cell[cell_label]["median_norm_edit_distance"],
+            cell_payload["mean_norm_edit_distance"],
+            cell_payload["median_norm_edit_distance"],
+            cell_path,
         )
 
     per_arm_summary = {}

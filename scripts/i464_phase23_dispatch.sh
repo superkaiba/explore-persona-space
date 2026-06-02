@@ -13,6 +13,22 @@
 # so the PHYSICAL gpu must arrive via --gpu-id. NEVER set env CVD=$cvd +
 # --gpu-id 0 — the env CVD gets clobbered (#376 cvd-hydra-override).
 #
+# Round-2 fix (review blocker #10): the dispatcher does NOT export per-cell
+# `EPM_PERSIST_ADAPTER_SUBFOLDER`. `i464_phase23_train.py` already passes
+# `cfg.hf_upload=True` (default) + `cfg.hf_path_in_repo=adapters/i464_{arm}
+# _seed{seed}` to `train_lora`; `train_lora`'s tail (lines 661-676 in
+# `src/explore_persona_space/train/sft.py`) calls `upload_model` for that
+# unique per-cell subpath BEFORE the in-memory model is released. Each
+# trained adapter therefore lands on HF under its own cell-specific path
+# (one upload per cell, never collides with another cell) before any
+# downstream rm runs. The `EPM_PERSIST_ADAPTER_HF_REPO` env hook is for
+# the alternative `_finalize_phase` quota-managed path (used by
+# multi-phase trainers like #404/#458); #464's single-phase LoRA train
+# is covered by the direct `hf_upload=True` invariant. If we later add
+# a delete-after-eval sweep that `rm`s the local adapter dir, we must
+# revisit by either keeping the local copy or wiring `EPM_PERSIST_ADAPTER_
+# HF_REPO`+`EPM_PERSIST_ADAPTER_SUBFOLDER` per cell here.
+#
 # Usage:
 #     bash scripts/i464_phase23_dispatch.sh                # full sweep + smoke
 #     bash scripts/i464_phase23_dispatch.sh --smoke-only   # just the smoke cell

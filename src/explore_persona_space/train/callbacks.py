@@ -97,7 +97,9 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
         self.python_exec = python_exec or sys.executable
         self._n_calls = 0
 
-    def on_step_end(self, args, state, control, model=None, **kwargs):
+    def on_step_end(  # noqa: C901 - subprocess timeout/exception/missing-file/non-JSON branches push complexity to 16
+        self, args, state, control, model=None, **kwargs
+    ):
         """Trigger a callback iff the current global_step is a positive multiple of step_every."""
         step = state.global_step
         if step == 0:
@@ -107,7 +109,6 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
         if step % self.step_every != 0:
             return
 
-        trainer = kwargs.get("trainer")
         # Resolve the actual model. HF passes the inner PEFT-wrapped model.
         if model is None:
             logger.warning(
@@ -207,18 +208,30 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
             return
 
         logs = {f"{self.log_prefix}/{k}": float(v) for k, v in per_key.items()}
-        if trainer is not None and hasattr(trainer, "log"):
-            try:
-                trainer.log(logs)
-            except Exception as e:
-                logger.warning(
-                    "MarkerLogprobTrajectoryCallback @ step=%d: trainer.log failed: %s",
-                    step,
-                    e,
-                )
-        else:
-            # Fallback: emit a single INFO line so the metric is at least visible.
-            logger.info("MarkerLogprob @ step=%d: %s", step, logs)
+        # Round-2 fix (review blocker #1): HF Trainer's CallbackHandler does
+        # NOT pass `trainer` in kwargs (transformers/trainer_callback.py:554-571
+        # passes model/processing_class/optimizer/lr_scheduler/{train,eval}_
+        # dataloader — but not trainer). So the round-1 `kwargs.get("trainer")`
+        # path was always None and every callback firing fell through to
+        # `logger.info`; no `marker_logp/...` metric ever reached WandB.
+        # Mirror the working pattern in src/explore_persona_space/eval/
+        # callbacks.py:163-166: log directly via the wandb module when a run
+        # is active.
+        try:
+            import wandb
+
+            if wandb.run is not None:
+                wandb.log(logs, step=state.global_step)
+        except ImportError:
+            # No wandb installed — emit one INFO line so the metric is still
+            # in the training log.
+            logger.info("MarkerLogprob @ step=%d (no wandb): %s", step, logs)
+        except Exception as e:
+            logger.warning(
+                "MarkerLogprobTrajectoryCallback @ step=%d: wandb.log failed: %s",
+                step,
+                e,
+            )
 
         self._n_calls += 1
         logger.info(
