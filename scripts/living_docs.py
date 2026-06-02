@@ -120,6 +120,13 @@ CONFIDENCE_LEVELS = ("LOW", "MODERATE", "HIGH")
 #: case-insensitive on read (normalized to lower) and lower on write.
 _ANCHOR_RE = re.compile(r"<!--\s*q:([A-Za-z0-9_.\-]+)\s*-->")
 
+#: Leading prefix the AskUserQuestion prose and SKILL.md examples use when
+#: naming question ids (e.g. ``q:beh-b-to-bprime`` or ``q-app5``). Stripped
+#: at input boundaries via :func:`_normalize_qid` so the stored form is
+#: always bare (``beh-b-to-bprime``), matching the long-standing
+#: frontmatter convention.
+_QID_PREFIX_RE = re.compile(r"^q[:\-]", re.IGNORECASE)
+
 #: A State trailer line. Captures the evidence-list tail so it can be
 #: rewritten in place.
 #:   > **State:** 🌿 budding · MODERATE · updated 2026-05-28 · evidence: #207, #380
@@ -330,6 +337,27 @@ class DocPatch:
 def _today() -> str:
     """Return today's date as ``YYYY-MM-DD`` (UTC)."""
     return datetime.now(tz=UTC).strftime(_DATE_FMT)
+
+
+def _normalize_qid(q_id: str) -> str:
+    """Normalize a user-supplied question id to its canonical bare form.
+
+    The CLI, the ``/issue`` Step 0c-link gate, and AskUserQuestion prose
+    all let humans write the id with a leading ``q:`` or ``q-`` prefix
+    (mirroring the anchor syntax — ``<!-- q:app5 -->`` → ``q:app5``).
+    The stored form on disk (frontmatter ``relates_to``, anchor capture,
+    backfill index) is always BARE (``app5``). Normalizing once at every
+    input boundary keeps ``q:foo`` and ``foo`` producing byte-identical
+    state — including idempotent re-links, dedup, and reverse-index
+    membership checks.
+
+    Strips at most one ``q:`` / ``q-`` prefix (case-insensitive), then
+    strips surrounding whitespace and lowercases. Empty input raises.
+    """
+    norm = _QID_PREFIX_RE.sub("", q_id.strip(), count=1).strip().lower()
+    if not norm:
+        raise ValueError(f"question id must be non-empty (got {q_id!r})")
+    return norm
 
 
 @contextlib.contextmanager
@@ -653,22 +681,42 @@ def link(
 
     Writes a flat ``relates_to`` list onto the task's ``body.md`` YAML
     frontmatter (resolved via ``task_workflow``), and appends the task
-    ref (``#N``) to each named question's State trailer evidence list in
-    ``open_questions.md`` (matched by the ``<!-- q:<id> -->`` anchor). A
-    question id with no anchor yet gets a minimal stub created at the end
-    of the document.
+    ref (``#N``) to each named question's evidence list in
+    ``open_questions.md`` (matched by the ``<!-- q:<id> -->`` anchor).
+    Accepts ids in either the bare form (``app5``) or the prefixed form
+    (``q:app5`` / ``q-app5``); the bare form is canonical on disk and
+    both inputs round-trip to byte-identical state.
 
-    The whole operation is atomic: the body.md frontmatter write goes
-    through ``task_workflow`` (its own flock + commit), and the
-    ``open_questions.md`` edit goes through THIS module's flock + commit.
-    Both share ``~/.task-workflow/lock`` in production, so they serialise.
+    Question id semantics:
+
+    - Missing anchor → a minimal stub (State-trailer carrier) is appended
+      to the end of the doc, and ``#task_id`` lands in it.
+    - Existing anchor with a State or Belief Evidence carrier → ``#task_id``
+      is appended to that carrier idempotently.
+    - Existing **Application** anchor (``<!-- q:app<n> -->`` or
+      ``<!-- q:app-<slug> -->``, e.g. ``app5``) → the doc is left
+      untouched (Applications carry a free-text ``**Status:**`` bullet,
+      not a parseable carrier); only the task frontmatter ``relates_to``
+      records the link. ``_check_bidirectional`` treats ``app`` anchors as
+      carrier-exempt, so this is consistent — not silently dropped drift.
+
+    Atomicity. The full doc edit is computed in memory FIRST: every
+    requested id is resolved (to an existing carrier, to an Application
+    anchor exemption, or to a fresh stub) before any file is written.
+    If any id is unresolvable — e.g. an existing anchor whose section
+    has neither a State trailer nor a Belief Evidence line — the whole
+    operation raises and BOTH ``body.md`` and ``open_questions.md`` are
+    left untouched. The body.md write and the doc write then land in a
+    single mutation under one ``flock`` + one git commit covering both
+    files (no partial-apply window between them).
 
     Parameters
     ----------
     task_id : int
         Task to link.
     q_ids : list[str]
-        Open-question ids (case-insensitive; stored lower).
+        Open-question ids (case-insensitive; ``q:`` / ``q-`` prefix
+        tolerated; stored lower and bare).
     paths : LivingDocsPaths, optional
         Injected paths (tests).
 
@@ -680,40 +728,81 @@ def link(
     paths = paths or LivingDocsPaths.from_repo()
     if not q_ids:
         raise ValueError("link requires at least one question id")
-    norm_ids = [q.strip().lower() for q in q_ids]
-    if any(not q for q in norm_ids):
-        raise ValueError("question ids must be non-empty")
+    norm_ids = [_normalize_qid(q) for q in q_ids]
 
-    # 1. Write relates_to onto the task's frontmatter (flat list, merged
-    #    with any existing). Uses task_workflow's resolver + commit.
     task_path = tw.find_task_path(task_id)
     body_md = task_path / "body.md"
-    stubbed: list[str] = []
     with _locked(paths.lock_path):
+        # 1. Compute the frontmatter merge (in memory; no write yet).
         fm, body = tw._read_body(body_md)
         existing = list(fm.get("relates_to") or [])
         merged = list(dict.fromkeys([*existing, *norm_ids]))  # order-preserving dedup
+
+        # 2. Compute the full doc edit (in memory; raises BEFORE any write
+        #    if any id is unresolvable, so a mid-list failure leaves both
+        #    body.md and open_questions.md untouched).
+        original_doc = _read(paths.open_questions)
+        new_doc, stubbed = _plan_doc_edit(original_doc, norm_ids, task_id)
+
+        # 3. Commit both writes under the shared lock. Touch the doc only
+        #    when it actually changed (an Applications-only link leaves the
+        #    doc text byte-identical, but the body.md frontmatter still
+        #    changes).
         fm["relates_to"] = merged
         tw._write_body(body_md, fm, body)
-        tw._git_commit(
-            [body_md],
-            f"task #{task_id}: relates_to {merged}",
-        )
-
-        # 2. Append #N to each question's evidence list, stubbing missing ones.
-        text = _read(paths.open_questions)
-        for qid in norm_ids:
-            if _find_anchor_line(text, qid) is None:
-                text = _append_blocks(text, [_stub_question(qid)])
-                stubbed.append(qid)
-            text = _add_evidence_to_question(text, qid, task_id)
-        _write_atomic(paths.open_questions, text)
+        commit_paths: list[Path] = [body_md]
+        if new_doc != original_doc:
+            _write_atomic(paths.open_questions, new_doc)
+            commit_paths.append(paths.open_questions)
         _git_commit(
-            [paths.open_questions],
+            commit_paths,
             f"living-docs: link #{task_id} → {merged}",
             repo_root=paths.repo_root,
         )
     return {"task_id": task_id, "relates_to": merged, "stubbed": stubbed}
+
+
+def _plan_doc_edit(
+    text: str,
+    q_ids: list[str],
+    task_id: int,
+) -> tuple[str, list[str]]:
+    """Compute the full ``open_questions.md`` edit for a :func:`link` call.
+
+    Pure function — no I/O, no side effects. Walks each requested id in
+    order, stubbing missing non-Application anchors and appending
+    ``#task_id`` to each question's evidence carrier. Application anchors
+    (``_APP_ANCHOR_RE``) that already exist are passed over without
+    touching the doc (their relates_to-only link is recorded by the
+    caller). Raises if any existing anchor's section has neither a State
+    trailer nor a Belief Evidence line — atomicity guarantee: callers see
+    either a fully-applied edit or an unchanged doc, never a partial
+    write.
+
+    Returns
+    -------
+    tuple[str, list[str]]
+        ``(new_text, stubbed_ids)`` — the post-edit doc text and the
+        subset of ``q_ids`` that were created as fresh stubs.
+    """
+    stubbed: list[str] = []
+    for qid in q_ids:
+        if _find_anchor_line(text, qid) is None:
+            # Brand-new id: stub at end-of-doc, then evidence-link it.
+            # (Stubs always land as State-trailer carriers regardless of
+            # id shape — including App-shaped ids, which is unusual but
+            # matches the long-standing stub contract; the updater agent
+            # is the right path for adding a real Applications section.)
+            text = _append_blocks(text, [_stub_question(qid)])
+            stubbed.append(qid)
+            text = _add_evidence_to_question(text, qid, task_id)
+            continue
+        if _APP_ANCHOR_RE.match(qid):
+            # Existing Application anchor: relates_to-only link, doc
+            # text unchanged. Carrier-exempt per _check_bidirectional.
+            continue
+        text = _add_evidence_to_question(text, qid, task_id)
+    return text, stubbed
 
 
 def _add_evidence_to_question(text: str, q_id: str, task_id: int) -> str:

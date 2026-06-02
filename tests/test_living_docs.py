@@ -944,3 +944,282 @@ def test_link_does_not_infer_parenthetical_id_for_backfill(belief_fixture):
     # treated as dangling, and #207's relates_to back-link is satisfied.
     report = ld.check(paths=paths)
     assert report.ok, report.render()
+
+
+# ─── Regression: q: / q- prefix tolerance (issue #468 fallout) ─────────────
+#
+# The /issue Step 0c-link gate and the SKILL.md examples use the
+# ``q:beh-b-to-bprime`` / ``q-app5`` prefixed forms (mirroring the
+# anchor syntax). Pre-fix link() lowercased the input but kept the
+# ``q:`` prefix, so _find_anchor_line never matched (anchors capture the
+# id WITHOUT the prefix) — every call stubbed a junk ``q:<id>``
+# question. _normalize_qid strips the prefix at the input boundary so
+# prefixed and bare inputs produce byte-identical state.
+
+
+def test_normalize_qid_strips_q_colon_prefix():
+    """`q:foo` and `foo` normalize to the same bare id (`foo`)."""
+    assert ld._normalize_qid("q:foo") == "foo"
+    assert ld._normalize_qid("Q:Foo") == "foo"
+    assert ld._normalize_qid("q-Foo") == "foo"
+    assert ld._normalize_qid("foo") == "foo"
+    assert ld._normalize_qid("  q:beh-b-to-bprime  ") == "beh-b-to-bprime"
+    # Only one prefix is stripped — `q:q:foo` becomes `q:foo`. This is
+    # intentional: a bare id should never legitimately START with a
+    # second `q:` prefix, and stripping more would mask user typos.
+    assert ld._normalize_qid("q:q:foo") == "q:foo"
+
+
+def test_normalize_qid_rejects_empty():
+    with pytest.raises(ValueError, match="non-empty"):
+        ld._normalize_qid("q:")
+    with pytest.raises(ValueError, match="non-empty"):
+        ld._normalize_qid("   ")
+
+
+def test_link_accepts_prefixed_and_bare_qids_identically(belief_fixture):
+    """`link <N> q:x1` and `link <N> x1` produce byte-identical state.
+
+    Pre-fix bug: the prefixed form failed _find_anchor_line (anchors
+    capture `x1`, not `q:x1`), then `link` falsely stubbed `q:x1` —
+    creating a malformed `<!-- q:q:x1 -->` anchor (the stub composed
+    its own anchor by re-prefixing the input). This pins the
+    prefix-tolerant boundary.
+    """
+    repo, paths = belief_fixture
+    # Snapshot the doc + fixture state pre-link so we can compare.
+    initial_doc = (repo / "docs" / "open_questions.md").read_text()
+
+    _make_task(
+        repo,
+        400,
+        "completed",
+        body=_task_body("Task 400", relates_to=None, has_clean_result=True),
+    )
+    r_prefix = ld.link(400, ["q:x1"], paths=paths)
+    doc_prefix = (repo / "docs" / "open_questions.md").read_text()
+    fm_prefix, _ = tw._read_body(repo / "tasks" / "completed" / "400" / "body.md")
+
+    # Reset doc + fixture; relink with bare id from the same starting state.
+    (repo / "docs" / "open_questions.md").write_text(initial_doc)
+    _make_task(
+        repo,
+        401,
+        "completed",
+        body=_task_body("Task 401", relates_to=None, has_clean_result=True),
+    )
+    r_bare = ld.link(401, ["x1"], paths=paths)
+    doc_bare = (repo / "docs" / "open_questions.md").read_text()
+    fm_bare, _ = tw._read_body(repo / "tasks" / "completed" / "401" / "body.md")
+
+    # Same shape (modulo the task id). No `q:q:` anchor anywhere.
+    assert r_prefix["relates_to"] == ["x1"]
+    assert r_bare["relates_to"] == ["x1"]
+    assert r_prefix["stubbed"] == []
+    assert r_bare["stubbed"] == []
+    assert fm_prefix["relates_to"] == ["x1"]
+    assert fm_bare["relates_to"] == ["x1"]
+    assert "<!-- q:q:x1 -->" not in doc_prefix
+    assert "<!-- q:q:x1 -->" not in doc_bare
+
+    # The Evidence lines only differ by the appended task id.
+    assert "**Evidence:** #207, #208, #400." in doc_prefix
+    assert "**Evidence:** #207, #208, #401." in doc_bare
+
+
+# ─── Regression: atomicity — partial-apply on mid-list failure (issue #468) ─
+#
+# Pre-fix order: write+commit body.md FIRST, then iterate doc edits. A
+# raise on the second id (e.g. "no carrier") left body.md committed with
+# the merged relates_to while the doc was untouched, and re-running the
+# same call kept re-appending the (already-merged) ids to body.md. Fix:
+# validate the full doc edit in memory FIRST, write body.md + doc + one
+# commit atomically.
+
+
+def test_link_partial_failure_writes_nothing(belief_fixture):
+    """If ONE id is unresolvable, body.md AND the doc are untouched.
+
+    Setup: append an anchored question with NEITHER a State trailer nor
+    a Belief Evidence line (no parseable carrier) — pre-fix this raised
+    AFTER body.md had already been committed with the merged relates_to.
+    Post-fix the raise fires before any write.
+    """
+    repo, paths = belief_fixture
+    text = (repo / "docs" / "open_questions.md").read_text()
+    # `q:y1` has an anchor but no carrier — unresolvable for evidence append.
+    text += "\n\n**Y1. No carrier here.** <!-- q:y1 -->\nJust prose, no carrier.\n"
+    (repo / "docs" / "open_questions.md").write_text(text)
+    pre_doc = (repo / "docs" / "open_questions.md").read_text()
+
+    _make_task(
+        repo,
+        410,
+        "completed",
+        body=_task_body("Task 410", relates_to=None, has_clean_result=True),
+    )
+    pre_fm, _ = tw._read_body(repo / "tasks" / "completed" / "410" / "body.md")
+    assert not pre_fm.get("relates_to")
+
+    # x1 is fine; y1 raises. The whole call must abort with NO writes.
+    with pytest.raises(ValueError, match="no evidence carrier"):
+        ld.link(410, ["x1", "y1"], paths=paths)
+
+    # body.md frontmatter unchanged — no relates_to written.
+    post_fm, _ = tw._read_body(repo / "tasks" / "completed" / "410" / "body.md")
+    assert not post_fm.get("relates_to"), (
+        f"body.md should be untouched on partial failure, got {post_fm.get('relates_to')!r}"
+    )
+    # Doc unchanged — x1's Evidence line still has the pre-link refs only.
+    post_doc = (repo / "docs" / "open_questions.md").read_text()
+    assert post_doc == pre_doc, "doc should be byte-identical on partial failure"
+
+
+def test_link_partial_failure_does_not_accumulate_relates_to_on_retry(belief_fixture):
+    """Two failed link() calls leave body.md relates_to empty, not double-merged.
+
+    Pre-fix bug: the first call committed `relates_to: [x1, y1]` before
+    failing on y1's carrier; the second call re-merged onto that list,
+    accumulating duplicates. With atomic validate-first, each failed
+    call is a no-op, so relates_to stays clean.
+    """
+    repo, paths = belief_fixture
+    text = (repo / "docs" / "open_questions.md").read_text()
+    text += "\n\n**Y1. No carrier.** <!-- q:y1 -->\nJust prose.\n"
+    (repo / "docs" / "open_questions.md").write_text(text)
+
+    _make_task(
+        repo,
+        411,
+        "completed",
+        body=_task_body("Task 411", relates_to=None, has_clean_result=True),
+    )
+    with pytest.raises(ValueError, match="no evidence carrier"):
+        ld.link(411, ["x1", "y1"], paths=paths)
+    with pytest.raises(ValueError, match="no evidence carrier"):
+        ld.link(411, ["x1", "y1"], paths=paths)
+
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "411" / "body.md")
+    assert not fm.get("relates_to"), fm.get("relates_to")
+
+
+# ─── Regression: App anchor linking (issue #468) ───────────────────────────
+#
+# Application anchors (`<!-- q:app1 -->` through `q:app<n>`, plus
+# `q:app-<slug>`) legitimately have no Belief/State/Evidence carrier —
+# they carry a free-text `**Status:**` bullet under the `## Applications`
+# H2. Pre-fix link() hard-raised on them (no carrier found), so an App
+# id could never be linked. Fix: relates_to-only link, doc text
+# untouched. `_check_bidirectional` already treats app anchors as
+# carrier-exempt, so the relates_to-only edge is consistent — not silent
+# drift.
+
+
+def _add_app_anchor(repo: Path, slug: str, *, status: str = "idea") -> None:
+    """Append a minimal `## Applications` block carrying a `q:<slug>` anchor."""
+    text = (repo / "docs" / "open_questions.md").read_text()
+    text += (
+        f"\n\n## Applications\n\n"
+        f"- **App — {slug}** (gloss). **Status: {status}.** "
+        f"Notes. <!-- q:{slug} -->\n"
+    )
+    (repo / "docs" / "open_questions.md").write_text(text)
+
+
+def test_link_to_existing_app_anchor_writes_relates_to_only(belief_fixture):
+    """An existing App anchor accepts the link without touching the doc."""
+    repo, paths = belief_fixture
+    _add_app_anchor(repo, "app99")
+    pre_doc = (repo / "docs" / "open_questions.md").read_text()
+
+    _make_task(
+        repo,
+        420,
+        "completed",
+        body=_task_body("Task 420", relates_to=None, has_clean_result=True),
+    )
+    result = ld.link(420, ["app99"], paths=paths)
+    assert result["relates_to"] == ["app99"]
+    assert result["stubbed"] == []
+
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "420" / "body.md")
+    assert fm["relates_to"] == ["app99"]
+    # Doc must be byte-identical — App anchors carry no parseable carrier
+    # and their relates_to-only link is recorded by check() as exempt.
+    assert (repo / "docs" / "open_questions.md").read_text() == pre_doc
+
+
+def test_link_prefixed_app_id_normalizes_and_succeeds(belief_fixture):
+    """`q:app99` and `app99` resolve to the same existing Application anchor."""
+    repo, paths = belief_fixture
+    _add_app_anchor(repo, "app99")
+
+    _make_task(
+        repo,
+        421,
+        "completed",
+        body=_task_body("Task 421", relates_to=None, has_clean_result=True),
+    )
+    result = ld.link(421, ["q:app99"], paths=paths)
+    assert result["relates_to"] == ["app99"]
+    assert result["stubbed"] == []
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "421" / "body.md")
+    assert fm["relates_to"] == ["app99"]
+
+
+def test_link_mixed_question_and_app_ids_is_atomic_and_consistent(belief_fixture):
+    """A mixed call (x1 + app99) leaves the doc consistent: x1 evidence
+    updated, App anchor untouched, and `check()` passes — relates_to
+    carries BOTH ids, and the bidirectional check exempts the App edge.
+    """
+    repo, paths = belief_fixture
+    _add_app_anchor(repo, "app99")
+
+    _make_task(
+        repo,
+        422,
+        "completed",
+        body=_task_body("Task 422", relates_to=None, has_clean_result=True),
+    )
+    result = ld.link(422, ["x1", "app99"], paths=paths)
+    assert sorted(result["relates_to"]) == ["app99", "x1"]
+    assert result["stubbed"] == []
+
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "422" / "body.md")
+    assert sorted(fm["relates_to"]) == ["app99", "x1"]
+
+    text = (repo / "docs" / "open_questions.md").read_text()
+    # x1 got the new ref; the App bullet is unchanged.
+    assert "**Evidence:** #207, #208, #422." in text
+    assert "<!-- q:app99 -->" in text
+    # check() is clean: the App edge is carrier-exempt.
+    report = ld.check(paths=paths)
+    assert report.ok, report.render()
+
+
+def test_link_to_app_anchor_does_not_double_apply(belief_fixture):
+    """Linking the same task to the same App id twice is a no-op."""
+    repo, paths = belief_fixture
+    _add_app_anchor(repo, "app99")
+
+    _make_task(
+        repo,
+        423,
+        "completed",
+        body=_task_body("Task 423", relates_to=None, has_clean_result=True),
+    )
+    ld.link(423, ["app99"], paths=paths)
+    ld.link(423, ["app99"], paths=paths)
+
+    fm, _ = tw._read_body(repo / "tasks" / "completed" / "423" / "body.md")
+    assert fm["relates_to"] == ["app99"]  # not [app99, app99]
+
+
+def test_plan_doc_edit_app_anchor_is_pure_noop_on_doc(belief_fixture):
+    """The pure planner returns byte-identical text for an existing App anchor."""
+    repo, _paths = belief_fixture
+    _add_app_anchor(repo, "app99")
+    text = (repo / "docs" / "open_questions.md").read_text()
+    new_text, stubbed = ld._plan_doc_edit(text, ["app99"], 999)
+    assert new_text == text
+    assert stubbed == []
