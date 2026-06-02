@@ -2585,6 +2585,7 @@
       "title": "Rerun #465's 4-arm in-context persona-spec WITH training-time contrastive negatives \u2014 does demo-gating survive / does the default-leak collapse when negatives pin it?"
     },
     "472": {
+      "goal": "Determine how contrastive-negative count (negative examples/persona and number of negative personas) and the representational distance of the negative set to the source jointly control bystander marker leakage, measured on a non-saturating DV (full-vocab KL at the post-response slot) across a training-strength sweep so the effect is observable before the marker saturates, with distance entering both as a designed near-vs-far IV and as a per-bystander cosine-to-nearest-negative covariate (controlling for distance-to-source and the base-model persona prior).",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/472",
