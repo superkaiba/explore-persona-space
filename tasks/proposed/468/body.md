@@ -9,7 +9,8 @@ parent_id: 463
 goal: 'Explain why the #463 cosine→EM predictor appears at the last-prompt-token extraction
   but not the canonical response-mean extraction, and decide which extraction is principled
   for predicting emergent misalignment.'
-relates_to: []
+relates_to:
+- beh-b-to-bprime
 ---
 # Why does the #463 cosine→EM signal appear at last-prompt-token but not the canonical response-mean extraction?
 
