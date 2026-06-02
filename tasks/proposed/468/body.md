@@ -6,11 +6,15 @@ tags: []
 created_at: '2026-06-02T18:26:27Z'
 has_clean_result: false
 parent_id: 463
+goal: 'Explain why the #463 cosine→EM predictor appears at the last-prompt-token extraction
+  but not the canonical response-mean extraction, and decide which extraction is principled
+  for predicting emergent misalignment.'
 ---
 # Why does the #463 cosine→EM signal appear at last-prompt-token but not the canonical response-mean extraction?
 
 ## Goal
-Explain the extraction-point divergence in #463 — the cosine→EM predictor is strong at the **last-prompt-token** extraction (deep-layer ρ≈0.71) but does NOT replicate at the **response-mean** extraction (L25 ρ≈0.41, p≈.094, n.s.) — and decide which extraction is the principled one for predicting emergent misalignment.
+
+Explain why the #463 cosine→EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.
 
 ## Why
 The persona-vectors paper (arXiv 2507.21509) treats the **response-mean** (mean residual over the model's own generated tokens) as the canonical persona-direction recipe; #463's headline rides on the **last-prompt-token** recipe instead. That the canonical recipe fails to replicate is one of the main reasons #463 is LOW confidence: if the signal only lives at the final prompt token, it may be an artifact of the chat-template's last token rather than a property of the persona representation. We need to know which it is before trusting (or discarding) the predictor.
