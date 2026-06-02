@@ -5,10 +5,14 @@ tags: []
 created_at: '2026-06-02T20:12:31Z'
 has_clean_result: false
 parent_id: 470
+goal: 'Determine whether persona-to-source Jensen-Shannon divergence between base-model
+  persona-conditioned output distributions predicts per-bystander emergent-misalignment
+  (EM) leakage better than layer-20 residual cosine — the EM analogue of #470''s sycophancy-leakage
+  predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.'
 ---
 ## Goal
 
-Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander **emergent-misalignment (EM) leakage** better than layer-20 residual cosine — the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.
+Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine — the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.
 
 ## Motivation / hypothesis
 
