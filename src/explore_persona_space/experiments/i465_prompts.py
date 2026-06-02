@@ -82,7 +82,14 @@ def _demo_pairs_for_target(
         raise ValueError(f"k={k} demos requested but demo_pool has only {len(demo_pool)} rows.")
     seed = _stable_seed("i465_demo", demo_seed, target_q, dupe_idx)
     rng = random.Random(seed)
-    demo_qs = rng.sample(demo_pool, k)
+    # rng.sample with a single large-int seed has a known collision pattern
+    # for the first picked index across many seeds (the first _randbelow(n)
+    # is deterministic in the seed % n direction). We shuffle the full pool
+    # and slice instead -- the full permutation flows the seed through every
+    # bit, so two different seeds give independent demo selections even for k=1.
+    shuffled = list(demo_pool)
+    rng.shuffle(shuffled)
+    demo_qs = shuffled[:k]
     out: list[tuple[str, str]] = []
     for dq in demo_qs:
         if dq not in r_demo:

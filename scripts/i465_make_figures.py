@@ -4,21 +4,19 @@ Reads:
   * eval_results/issue_465/per_cell/G_<cond>__<shape>.json (per-cell raw)
   * eval_results/issue_465/analysis.json (CIs + diagnostics)
 
-Writes:
+Writes (round-2: 5 figures shipped here; the rest are over-produce candidates
+the analyzer can add when the data motivates them, per plan §6.3):
   * figures/issue_465/hero_4x3_grid.png
-  * figures/issue_465/hero_demo_free_default_disentangled.png
-  * figures/issue_465/hero_retention.png
-  * figures/issue_465/diagonal_implant_bar.png
-  * figures/issue_465/k_sweep_lines.png
-  * figures/issue_465/non_marker_demo_compare.png
-  * figures/issue_465/villain_R_parity.png
-  * figures/issue_465/per_q_distribution_violin.png
-  * figures/issue_465/per_q_raw_g_and_b_logprob.png
-  * figures/issue_465/emission_rate_table.png
+  * figures/issue_465/hero_demo_free_default_disentangled.png  (H3a/b/c annotated)
+  * figures/issue_465/hero_retention.png                       (co-primary H3d)
+  * figures/issue_465/diagonal_implant_bar.png                 (H1a/b/c sanity)
+  * figures/issue_465/per_q_distribution_violin.png            (saturation surface)
 
-Trajectory curves (figures/issue_465/trajectory_curves.png) are produced
-separately from WandB exports -- see plot_i465_trajectories.py once trajectory
-WandB dumps are available.
+Deferred to a separate WandB-export script (trajectory_curves.png from the
+in-training MarkerLogprobTrajectoryCallback) and to opt-in additions the
+analyzer can produce from the per-cell JSONs:
+  * k_sweep_lines.png, non_marker_demo_compare.png, villain_R_parity.png,
+    per_q_raw_g_and_b_logprob.png, emission_rate_table.png
 
 CLI:
     uv run python scripts/i465_make_figures.py

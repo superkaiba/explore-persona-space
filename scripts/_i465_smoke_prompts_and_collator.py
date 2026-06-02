@@ -96,6 +96,7 @@ def main() -> int:
             demo_pool=q_demo,
             r_demo=r_villain,
             train_seed=42,
+            dupe_idx=0,
         )
         # System role + 2*(k) demo turns + 1 user turn = 1 + 2k + 1 turns in prompt.
         k = CONDITION_K[cond]
@@ -176,13 +177,152 @@ def main() -> int:
                 expected,
             )
 
-    # ── (3) Label-mask audit: cond2_k3 row through MarkerOnlyDataCollator ─
-    log.info("=== smoke 3: label-mask audit (cond2_k3 -- the worst case k=3) ===")
+    # ── (3) Label-mask audit -- all 4 arms (round-2 fix Blocker 3) ─────
+    log.info("=== smoke 3: label-mask audit per ARM (all 4) ===")
     import torch
 
     from explore_persona_space.train.sft import MarkerOnlyDataCollator
 
-    # Build one cond2_k3 training row.
+    for cond in CONDITION_IDS:
+        sample_q = q_train_keys[0]
+        prompt_msgs_c, completion_msgs_c = build_training_messages(
+            condition=cond,
+            target_q=sample_q,
+            target_R_text=r_villain[sample_q]["response_text"],
+            demo_pool=q_demo,
+            r_demo=r_villain,
+            train_seed=42,
+            dupe_idx=0,
+        )
+        full_msgs_c = list(prompt_msgs_c) + list(completion_msgs_c)
+        text_c = tokenizer.apply_chat_template(
+            full_msgs_c, tokenize=False, add_generation_prompt=False
+        )
+        ids_c = tokenizer.encode(text_c, add_special_tokens=False)
+        prompt_only_text_c = tokenizer.apply_chat_template(
+            prompt_msgs_c, tokenize=False, add_generation_prompt=True
+        )
+        prompt_ids_c = tokenizer.encode(prompt_only_text_c, add_special_tokens=False)
+        completion_start_c = len(prompt_ids_c)
+        labels_c = [-100] * completion_start_c + ids_c[completion_start_c:]
+        if len(labels_c) < len(ids_c):
+            labels_c = labels_c + [-100] * (len(ids_c) - len(labels_c))
+        else:
+            labels_c = labels_c[: len(ids_c)]
+
+        class _Identity:
+            def __call__(self, features):
+                return {
+                    "input_ids": torch.tensor([features[0]["input_ids"]], dtype=torch.long),
+                    "labels": torch.tensor([features[0]["labels"]], dtype=torch.long),
+                }
+
+        collator_c = MarkerOnlyDataCollator(
+            inner_collator=_Identity(), marker_token_ids=[MARKER_ID], tail_tokens=0
+        )
+        batch_c = collator_c([{"input_ids": ids_c, "labels": labels_c}])
+        final_labels_c = batch_c["labels"][0].tolist()
+        loss_positions_c = [i for i, lab in enumerate(final_labels_c) if lab != -100]
+        assert len(loss_positions_c) == 2, (
+            f"cond={cond}: expected 2 loss positions (marker+EOS), got {len(loss_positions_c)}"
+        )
+        assert ids_c[loss_positions_c[0]] == MARKER_ID, (
+            f"cond={cond}: first loss position is not the marker"
+        )
+        k_c = CONDITION_K[cond]
+        prompt_markers_c = [i for i in range(completion_start_c) if ids_c[i] == MARKER_ID]
+        assert len(prompt_markers_c) == k_c, (
+            f"cond={cond}: prompt has {len(prompt_markers_c)} markers, expected {k_c}"
+        )
+        for p in prompt_markers_c:
+            assert final_labels_c[p] == -100, f"cond={cond}: prompt marker at {p} is loss-bearing"
+        log.info(
+            "cond=%s label-mask audit PASS: 2 loss positions (marker+EOS), "
+            "%d prompt markers all masked",
+            cond,
+            len(prompt_markers_c),
+        )
+
+    # ── (3b) Per-(q, dupe_idx) demo variety check -- round-2 Blocker 6 ─
+    log.info("=== smoke 3b: per-(q, dupe) demo sampling varies across dupes ===")
+    cond = "cond2_k3"
+    sample_q = q_train_keys[0]
+    dupe_demo_sets = []
+    for dupe_idx in range(3):
+        pm, _ = build_training_messages(
+            condition=cond,
+            target_q=sample_q,
+            target_R_text=r_villain[sample_q]["response_text"],
+            demo_pool=q_demo,
+            r_demo=r_villain,
+            train_seed=42,
+            dupe_idx=dupe_idx,
+        )
+        demo_qs = tuple(m["content"] for m in pm if m["role"] == "user")[:-1]
+        dupe_demo_sets.append(demo_qs)
+    assert len(set(dupe_demo_sets)) == len(dupe_demo_sets), (
+        f"per-(q, dupe) sampling failed -- duplicates: {dupe_demo_sets}"
+    )
+    log.info("dupe demo combinations all distinct across dupe_idx=0,1,2 -- OK")
+
+    # ── (3c) in_trained_shape vs generalization differ -- Blocker 2 ────
+    log.info("=== smoke 3c: in_trained_shape vs generalization use different demos ===")
+    cond = "cond2_k1"
+    eval_q = q_test[0]
+    in_ids, _ = build_eval_full_ids(
+        condition=cond,
+        eval_shape="in_trained_shape",
+        target_q=eval_q,
+        R_villain_text=r_villain[eval_q]["response_text"],
+        R_helpful_text=None,
+        demo_pool=q_demo,
+        r_demo=r_villain,
+        demo_seed=137,
+        tokenizer=tokenizer,
+    )
+    gen_ids, _ = build_eval_full_ids(
+        condition=cond,
+        eval_shape="generalization",
+        target_q=eval_q,
+        R_villain_text=r_villain[eval_q]["response_text"],
+        R_helpful_text=None,
+        demo_pool=q_demo,
+        r_demo=r_villain,
+        demo_seed=137,
+        tokenizer=tokenizer,
+    )
+    assert in_ids != gen_ids, (
+        "in_trained_shape and generalization prompts are byte-identical "
+        "-- H2 generalization read would be tautological (Blocker 2 not fixed)"
+    )
+    log.info(
+        "in_trained_shape vs generalization differ (lens %d vs %d, prefix tokens diverge) -- OK",
+        len(in_ids),
+        len(gen_ids),
+    )
+
+    # ── (3d) Stable seed across processes -- Blocker 7 ──────────────────
+    log.info("=== smoke 3d: stable demo sampling across processes ===")
+    import os
+    import subprocess
+    import sys
+
+    check_code = (
+        "import os; from explore_persona_space.experiments.i465_prompts import "
+        "_stable_seed; print(_stable_seed('i465_demo', 42, 'hello', 7))"
+    )
+    seeds = []
+    for h in ("0", "12345"):
+        env = {**os.environ, "PYTHONHASHSEED": h}
+        out = subprocess.check_output([sys.executable, "-c", check_code], env=env).decode().strip()
+        seeds.append(out)
+    assert len(set(seeds)) == 1, (
+        f"_stable_seed varies across PYTHONHASHSEED values: {seeds} -- Blocker 7 not fixed"
+    )
+    log.info("_stable_seed stable across PYTHONHASHSEED 0 vs 12345 (= %s) -- OK", seeds[0])
+
+    # ── (3e) Legacy cond2_k3 row inspection (kept for evidence) ─────────
+    log.info("=== smoke 3e: cond2_k3 worst-case row token + marker counts ===")
     cond = "cond2_k3"
     sample_q = q_train_keys[0]
     prompt_msgs, completion_msgs = build_training_messages(
@@ -192,6 +332,7 @@ def main() -> int:
         demo_pool=q_demo,
         r_demo=r_villain,
         train_seed=42,
+        dupe_idx=0,
     )
     full_msgs = list(prompt_msgs) + list(completion_msgs)
     text = tokenizer.apply_chat_template(full_msgs, tokenize=False, add_generation_prompt=False)

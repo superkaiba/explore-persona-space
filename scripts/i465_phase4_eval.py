@@ -322,10 +322,19 @@ def main(argv: list[str] | None = None) -> None:
     # Per-cell base cache keyed by (cond, shape) since cond changes the prompt
     # shape (cond2_k1/k3 add demos). Base is the same model so we re-run the
     # same prompts with lora_request=None. We cache by cell.
-    base_cache: dict[tuple[str, str], dict] = {}
+    #
+    # Round-2 minor (base-pass dedup across conds): for the two demo-free
+    # shapes the prompt is byte-identical across all 4 conds (helpful sys +
+    # plain q + R + marker). Key those on shape alone so we run the base
+    # pass once across conds instead of 4x (matches #460's cache pattern).
+    # For shapes whose prompt depends on cond (in_trained_shape with cond1's
+    # villain sys vs cond2's helpful sys; cond2_k1/k3's added demos), we key
+    # on (cond, shape) as before.
+    base_cache: dict[tuple, dict] = {}
+    SHAPE_INDEPENDENT_OF_COND = {"demo_free_default", "demo_free_default_villain_R"}
 
     def _build_or_get(cond: str, shape: str) -> dict:
-        key = (cond, shape)
+        key = ("__shared__", shape) if shape in SHAPE_INDEPENDENT_OF_COND else (cond, shape)
         if key in base_cache:
             return base_cache[key]
         prompts, slots, qs = _build_cell_prompts(
@@ -411,7 +420,16 @@ def main(argv: list[str] | None = None) -> None:
         cell_payload = {
             "condition": cond,
             "eval_shape": shape,
-            "k_demos": CONDITION_K[cond] if shape != "non_marker_demo" else 0,
+            # Round-2 fix: k_demos = number of demo TURNS present in the eval
+            # prompt for this (cond, shape) cell, irrespective of whether they
+            # carry the marker. demo_free_default / demo_free_default_villain_R
+            # have 0 demos regardless of cond. non_marker_demo has k demos
+            # (but with ※ stripped, hence the read name).
+            "k_demos": (
+                0
+                if shape in ("demo_free_default", "demo_free_default_villain_R")
+                else CONDITION_K[cond]
+            ),
             "n_probes": len(g_logps),
             "g_logprob": g_mean,
             "b_logprob": b_mean,

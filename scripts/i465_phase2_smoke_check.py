@@ -34,16 +34,19 @@ from transformers import AutoTokenizer
 
 from explore_persona_space.experiments.i465_data import (
     CONDITION_IDS,
+    CONDITION_K,
     DATA_DIR_465,
     HF_DATA_REPO,
     HF_PATH_PREFIX_465,
     load_q_demo,
     load_q_test_extended_50,
+    load_q_train_answers,
 )
 from explore_persona_space.experiments.i465_prompts import (
     MARKER_ID,
     MARKER_TEXT,
     build_eval_full_ids,
+    build_training_messages,
 )
 
 logger = logging.getLogger("i465.phase2.smoke")
@@ -307,7 +310,8 @@ def main(argv: list[str] | None = None) -> int:
         cond=args.cond, tokenizer=tokenizer, r_villain=r_villain, q_demo=q_demo
     )
     logger.info(
-        "label-mask audit cond=%s PASS: %d loss positions (marker+EOS), %d prompt-demo markers all masked",
+        "label-mask audit cond=%s PASS: %d loss positions (marker+EOS), "
+        "%d prompt-demo markers all masked",
         args.cond,
         label_audit["n_loss_positions"],
         label_audit["n_prompt_marker_positions"],
