@@ -6,11 +6,15 @@ tags: []
 created_at: '2026-06-02T18:26:27Z'
 has_clean_result: false
 parent_id: 463
+goal: 'Determine whether the #463 training-question-probe cosine→EM signal reflects
+  persona geometry or merely the topical content of each cell''s own training questions,
+  via topic-stripped paraphrase probes and cross-cell probe swaps.'
 ---
 # Disentangle persona-geometry from training-question content in the #463 cosine→EM predictor
 
 ## Goal
-Determine whether the #463 training-question-probe cosine→EM signal (deep last-prompt-token cosine to the broad-misaligned persona, ρ≈0.71, survives the code-cell leverage drop) reflects **persona geometry** or merely the **topical content** of each cell's own training questions (which are, for the high-EM cells, themselves misalignment-adjacent).
+
+Determine whether the #463 training-question-probe cosine→EM signal reflects persona geometry or merely the topical content of each cell's own training questions, via topic-stripped paraphrase probes and cross-cell probe swaps.
 
 ## Why
 #463 found that probing with each cell's OWN narrow-SFT training questions (vs generic Betley probes) is what converts the base-model cosine from a code-vs-prose detector into a graded within-prose EM predictor. But the training probes co-vary with the cell by construction: high-EM cells (emergent_plus_security, openai_health_bad, turner_*) have training questions that are topically about harmful domains, so their prompt-token activations sit nearer S_broad for content reasons, independent of any persona-geometry claim. This is the binding alternative explanation that holds #463 at LOW confidence. Ruling it in or out is the single highest-value next step.
