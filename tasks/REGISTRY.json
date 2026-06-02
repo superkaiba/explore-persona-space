@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 462,
+  "highest_id": 463,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2505,6 +2505,13 @@
       "path": "tasks/running/462",
       "status": "running",
       "title": "Epoch-resolved on-policy marker transfer \u2014 overtraining vs construct (#460 follow-up)"
+    },
+    "463": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/463",
+      "status": "proposed",
+      "title": "Re-run EM predictors: full-response Rao-Blackwellized KL/JS + persona-vector cosine (18 cells)"
     },
     "47": {
       "has_clean_result": false,
