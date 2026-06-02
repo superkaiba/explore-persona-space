@@ -248,7 +248,10 @@ def plot_ep1_scatter():
             alpha=0.85,
             edgecolor="white",
             linewidth=0.5,
-            label="cells touching A3 / A4 / A5 stylized personas (n=84 cells)",
+            label=(
+                "cells touching a stylized persona "
+                "(pirate captain, comedian, or villain; n=84 cells)"
+            ),
             zorder=3,
         )
 
@@ -302,13 +305,13 @@ def plot_ep1_scatter():
         fontsize=8.5,
         bbox=dict(boxstyle="round,pad=0.3", facecolor="white", edgecolor=neutral, alpha=0.9),
     )
-    # Inline sensitivity annotation (Drop A3 only / Drop A3+A4 numbers verified
-    # by /tmp/i462_sensitivity.py against G_logprob_matrix_ep1.json).
+    # Inline sensitivity annotation (Drop pirate / Drop pirate+comedian numbers
+    # verified by /tmp/i462_sensitivity.py against G_logprob_matrix_ep1.json).
     ax.text(
         0.02,
         0.97,
-        "drop A3 only: rho = -0.21, p = 1.9e-3 (still excludes 0)\n"
-        "drop A3 + A4: rho = -0.05, p = 0.51 (remainder 92.9% saturated)",
+        "drop pirate captain only: rho = -0.21, p = 1.9e-3 (still excludes 0)\n"
+        "drop pirate + comedian: rho = -0.05, p = 0.51 (remainder 92.9% saturated)",
         transform=ax.transAxes,
         ha="left",
         va="top",
@@ -330,7 +333,7 @@ def plot_ep1_scatter():
     fig.text(
         0.075,
         0.935,
-        "240 off-diagonal cells (16x16 cross-eval, on-diagonal excluded). DV is teacher-forced log P(marker) at the slot after a base on-policy response R. Color: cells whose source or target is one of the 3 stylized personas (A3/A4/A5) carry almost all of the off-ceiling dynamic range.",
+        "240 off-diagonal cells (16x16 cross-eval, on-diagonal excluded). DV is teacher-forced log P(marker) at the slot after a base on-policy response R. Color: cells whose source or target is one of the 3 stylized personas (pirate captain, comedian, villain) carry almost all of the off-ceiling dynamic range.",
         fontsize=8.2,
         color=neutral,
         ha="left",
