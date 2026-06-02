@@ -16,3 +16,4 @@
 {"ts": "2026-06-02T09:41:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v3 ready for approval; consistency PASS."}
 {"ts": "2026-06-02T18:09:25Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v3 approved by user."}
 {"ts": "2026-06-02T18:09:26Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v3 inline (~4.4 GPU-h, 1x H100, intent lora-7b)."}
+{"ts": "2026-06-02T18:10:33Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
