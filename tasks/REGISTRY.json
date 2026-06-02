@@ -2517,8 +2517,8 @@
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/464",
-      "status": "running",
+      "path": "tasks/verifying/464",
+      "status": "verifying",
       "title": "Encode personas as custom chat-template role headers vs content markers \u2014 does the role token segment personas better?"
     },
     "465": {
