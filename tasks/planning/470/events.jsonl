@@ -1,3 +1,4 @@
 {"ts": "2026-06-02T19:39:19Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
 {"ts": "2026-06-02T19:40:02Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #470 to open question leak-predictor (3.1 What predicts persona leakage?); created_new=none."}
 {"ts": "2026-06-02T19:40:21Z", "kind": "epm:clarify", "version": 1, "by": "unknown", "note": "No blocking ambiguities. Context resolved: reuse scripts/issue458_predictor_jsdiv.py (JS), scripts/issue404_predictor_cossim.py + issue404_predictor_kldiv.py (cosine/KL), scripts/i207_compute_js_matrix.py (persona-persona JS matrix). DV frozen from #411 analyze_summary.json per_panel_delta (138 cells). Related predictor line: #207/#311/#404/#458. No near-duplicate. Proceeding to adversarial planning."}
+{"ts": "2026-06-02T19:40:22Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
