@@ -3942,8 +3942,18 @@ def _validate_train_probe_disjoint(
     probe_paraphrases: list[str],
     *,
     jaccard_threshold: float = TRAIN_PROBE_JACCARD_THRESHOLD,
+    entity_descriptor: str = "",
 ) -> dict[str, Any]:
-    """Dataset-time fail-loud filter (mirror #389/#407)."""
+    """Dataset-time fail-loud filter (mirror #389/#407).
+
+    ``entity_descriptor`` (when given) is stripped from both probe and train
+    surfaces before the 1-gram Jaccard so the metric measures question-TEMPLATE
+    disjointness, not the shared entity reference. In this regime the entity is
+    a long real-place name (8+ tokens) that both train and eval prompts must
+    contain, so leaving it in trips the threshold on template-disjoint prompts
+    (#444 2026-06-02). Mirrors ``assert_train_eval_jaccard_disjoint``'s
+    ``{entity_descriptor}`` placeholder handling.
+    """
     train_user_qs: list[str] = []
     train_qa_joins: list[str] = []
     for row in train_rows:
@@ -3963,12 +3973,19 @@ def _validate_train_probe_disjoint(
             raise RuntimeError(f"train row has no assistant turn: {row!r}")
         train_user_qs.append(user_q)
         train_qa_joins.append(f"{user_q} {assistant_a}")
+
+    def _strip_entity(s: str) -> str:
+        if not entity_descriptor:
+            return s
+        return re.sub(re.escape(entity_descriptor), " ", s, flags=re.IGNORECASE)
+
     worst = 0.0
     worst_pair: tuple[str, str] | None = None
     for probe in probe_paraphrases:
+        probe_s = _strip_entity(probe)
         for user_q, qa_join in zip(train_user_qs, train_qa_joins, strict=True):
-            v_q = _jaccard_1gram(probe, user_q)
-            v_qa = _jaccard_1gram(probe, qa_join)
+            v_q = _jaccard_1gram(probe_s, _strip_entity(user_q))
+            v_qa = _jaccard_1gram(probe_s, _strip_entity(qa_join))
             v = max(v_q, v_qa)
             surface = user_q if v_q >= v_qa else qa_join
             if v > worst:
@@ -3976,8 +3993,8 @@ def _validate_train_probe_disjoint(
                 worst_pair = (probe, surface)
             if v > jaccard_threshold:
                 raise RuntimeError(
-                    f"Train-probe Jaccard {v:.3f} > {jaccard_threshold}; probe={probe!r}; "
-                    f"train surface={surface!r}"
+                    f"Train-probe Jaccard {v:.3f} > {jaccard_threshold} (entity-stripped); "
+                    f"probe={probe!r}; train surface={surface!r}"
                 )
     return {
         "max_jaccard": round(worst, 3),
@@ -4118,7 +4135,9 @@ def phase_dataset(args: argparse.Namespace) -> dict[str, Any]:
                 p for probes in build_reformulation_probes(facts.figure).values() for p in probes
             ]
             jaccard_audit = _validate_train_probe_disjoint(
-                train_rows=train_rows, probe_paraphrases=reformulation_paraphrases
+                train_rows=train_rows,
+                probe_paraphrases=reformulation_paraphrases,
+                entity_descriptor=facts.figure,
             )
             per_cell = {
                 "cell": cell_key,
