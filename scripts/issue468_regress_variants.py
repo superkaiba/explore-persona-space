@@ -261,6 +261,30 @@ def cell_label_permutation_null(
 # ── Block builder ──────────────────────────────────────────────────────────
 
 
+def cross_env_delta(
+    a_per_cell: dict[str, float],
+    b_per_cell: dict[str, float],
+) -> dict:
+    """Per-cell Δ = (same-env value) − (cross-env value), plus summary
+    stats. Used to surface the A13 bf16 cross-env drift quantitatively
+    (e.g. recompute_last_prompt_token_L21_on_pod − #463_published_L21).
+
+    Returns ``{per_cell_delta: {cell: float}, mean_abs_delta: float,
+    max_abs_delta: float, n: int}``.
+    """
+    common = sorted(set(a_per_cell) & set(b_per_cell))
+    if not common:
+        return {"per_cell_delta": {}, "mean_abs_delta": None, "max_abs_delta": None, "n": 0}
+    per_cell = {c: float(a_per_cell[c]) - float(b_per_cell[c]) for c in common}
+    abs_vals = [abs(v) for v in per_cell.values()]
+    return {
+        "per_cell_delta": per_cell,
+        "mean_abs_delta": float(np.mean(abs_vals)),
+        "max_abs_delta": float(np.max(abs_vals)),
+        "n": len(common),
+    }
+
+
 def build_block(
     label: str,
     M_per_cell: dict[str, float],
@@ -268,21 +292,38 @@ def build_block(
     tokens: dict[str, float],
     L0_per_cell: dict[str, float] | None,
     lexical_per_cell: dict[str, float] | None,
-    baseline_M_per_cell: dict[str, float] | None,
-    baseline_label: str,
+    baselines: list[dict] | None,
     bootstrap_n: int,
     permutation_n: int,
-    run_baseline_diff: bool,
     run_permutation: bool,
 ) -> dict:
     """Compute every per-predictor stat for one extraction (variant, layer).
+
+    ``baselines`` is a list of dicts each of shape::
+
+        {
+          "M_per_cell": dict[str, float],
+          "key_suffix": str,        # e.g. "recompute_last_prompt_token"
+          "role": "primary" | "secondary",
+          "label": str,             # human-readable, copied to the block
+          "cross_env_pair_M_per_cell": dict[str, float] | None,
+                                    # if set, emit a cross_env_delta block
+                                    # against this paired baseline (used to
+                                    # surface the A13 drift between an
+                                    # on-pod recompute and the published #463)
+        }
+
+    Emits one ``spearman_paired_diff_vs_<key_suffix>`` field per baseline,
+    each annotated with ``role`` so the analyzer can find the primary
+    (same-env) comparison first. Order in the list is preserved: pass
+    the same-env baseline FIRST so it lands at the front of the block.
 
     Layout mirrors `issue463_regress.regress_one` for `spearman_raw` and
     `spearman_partial_log_tokens`; adds the v2 paired-diff bootstrap +
     permutation null + lexical-bag partial.
     """
-    if baseline_M_per_cell is None:
-        baseline_M_per_cell = {}
+    if baselines is None:
+        baselines = []
     common = sorted(set(M_per_cell) & set(outcome) & set(tokens))
     if not common:
         return {"predictor": label, "n_cells": 0, "note": "no_common_cells"}
@@ -322,16 +363,30 @@ def build_block(
             )
             block["lexical_bag_partial_n_cells"] = len(lex_common)
 
-    if run_baseline_diff and baseline_M_per_cell:
-        pair_common = sorted(set(common) & set(baseline_M_per_cell))
-        if len(pair_common) >= 4:
-            M_a = [M_per_cell[c] for c in pair_common]
-            M_b = [baseline_M_per_cell[c] for c in pair_common]
-            L_p = [outcome[c]["mean_L"] for c in pair_common]
-            key = f"spearman_paired_diff_vs_463_{baseline_label}"
-            block[key] = paired_diff_bootstrap_rho(M_a, M_b, L_p, n_bootstrap=bootstrap_n)
-            block[key]["baseline_label"] = baseline_label
-            block[key]["n_paired_cells"] = len(pair_common)
+    for bl in baselines:
+        bl_M = bl.get("M_per_cell") or {}
+        key_suffix = bl["key_suffix"]
+        role = bl.get("role", "secondary")
+        bl_label = bl.get("label", key_suffix)
+        if not bl_M:
+            continue
+        pair_common = sorted(set(common) & set(bl_M))
+        if len(pair_common) < 4:
+            continue
+        M_a = [M_per_cell[c] for c in pair_common]
+        M_b = [bl_M[c] for c in pair_common]
+        L_p = [outcome[c]["mean_L"] for c in pair_common]
+        diff_key = f"spearman_paired_diff_vs_{key_suffix}"
+        block[diff_key] = paired_diff_bootstrap_rho(M_a, M_b, L_p, n_bootstrap=bootstrap_n)
+        block[diff_key]["baseline_label"] = bl_label
+        block[diff_key]["baseline_key_suffix"] = key_suffix
+        block[diff_key]["role"] = role
+        block[diff_key]["n_paired_cells"] = len(pair_common)
+        # Cross-env Δ — set when the same baseline ALSO has a paired
+        # cross-env counterpart on disk (recompute vs #463-published).
+        cross_pair = bl.get("cross_env_pair_M_per_cell")
+        if cross_pair:
+            block[f"cross_env_delta_for_{key_suffix}"] = cross_env_delta(bl_M, cross_pair)
 
     if run_permutation:
         block["spearman_shuffle_null_percentile"] = cell_label_permutation_null(
@@ -366,15 +421,37 @@ def _build_blocks_at_layer(
     permutation_n: int,
 ) -> None:
     """Insert regression blocks for ONE layer into ``blocks``: V1/V2/V4 +
-    recompute_*, V3 per k (paired vs #463 response_mean), V5 per position
-    (paired vs #463 last_prompt_token = T-1).
+    recompute_*, V3 per k, V5 per position.
+
+    Same-env primary baseline (post-#468 round-3, A13 mitigation):
+        V1/V2/V4/V5 paired-diff vs ``recompute_last_prompt_token`` on
+        the SAME on-pod env (both extracted in the same forward pass
+        chain on the #468 pod).
+        V3 per k paired-diff vs ``recompute_response_mean`` on the
+        same on-pod env.
+    Secondary historical-anchor baseline:
+        Each variant ALSO paired-diff vs the matched #463-published
+        cosine (cross-env, kept for historical continuity but NOT the
+        primary statistic because of A13 cross-env bf16 drift).
+
+    Each block ALSO emits a ``cross_env_delta_for_<key_suffix>`` field
+    on the same-env baseline, surfacing the per-cell Δ between the
+    on-pod recompute and the #463-published value at this layer so the
+    analyzer can report the A13 drift magnitude directly.
 
     Pulled out of ``regress_one_pair`` for complexity (C901).
     """
-    baseline_last = extract_simple_layer_map(old_cells, "last_prompt_token", layer)
-    baseline_resp = extract_simple_layer_map(old_cells, "response_mean", layer)
+    # Cross-env baselines (#463-published, on the #463 pod).
+    cross_env_last = extract_simple_layer_map(old_cells, "last_prompt_token", layer)
+    cross_env_resp = extract_simple_layer_map(old_cells, "response_mean", layer)
+    # Same-env recomputes (#468 pod, same forward-pass chain as V1/V3 etc).
+    same_env_last = extract_simple_layer_map(new_cells, "last_prompt_token", layer)
+    same_env_resp = extract_simple_layer_map(new_cells, "response_mean", layer)
 
-    # V1 / V2 / V4 + recompute_* — paired vs #463 last_prompt_token.
+    last_baselines = _build_baseline_list_for_last_prompt(same_env_last, cross_env_last)
+    resp_baselines = _build_baseline_list_for_response_mean(same_env_resp, cross_env_resp)
+
+    # V1 / V2 / V4 + recompute_* — primary vs same-env recompute_last_prompt_token.
     for label_prefix, key in VARIANT_KEYS:
         M_per_cell = extract_simple_layer_map(new_cells, key, layer)
         if not M_per_cell:
@@ -387,15 +464,13 @@ def _build_blocks_at_layer(
             tokens=tokens,
             L0_per_cell=L0_per_cell,
             lexical_per_cell=lexical_per_cell,
-            baseline_M_per_cell=baseline_last,
-            baseline_label="last_prompt_token",
+            baselines=last_baselines,
             bootstrap_n=bootstrap_n,
             permutation_n=permutation_n,
-            run_baseline_diff=True,
             run_permutation=(label_prefix == "V1_last_prompt_token_final_content"),
         )
 
-    # V3 per k — paired vs #463 response_mean.
+    # V3 per k — primary vs same-env recompute_response_mean.
     for k in k_values_present:
         M_v3 = extract_v3_layer_map(new_cells, k, layer)
         if not M_v3:
@@ -408,15 +483,13 @@ def _build_blocks_at_layer(
             tokens=tokens,
             L0_per_cell=L0_per_cell,
             lexical_per_cell=lexical_per_cell,
-            baseline_M_per_cell=baseline_resp,
-            baseline_label="response_mean",
+            baselines=resp_baselines,
             bootstrap_n=bootstrap_n,
             permutation_n=permutation_n,
-            run_baseline_diff=True,
             run_permutation=False,
         )
 
-    # V5 per position — paired vs #463 last_prompt_token (= T-1 = p5).
+    # V5 per position — primary vs same-env recompute_last_prompt_token (= T-1 = p5).
     for pos in POSITION_NAMES:
         M_v5 = extract_position_sweep_layer_map(new_cells, pos, layer)
         if not M_v5:
@@ -429,13 +502,76 @@ def _build_blocks_at_layer(
             tokens=tokens,
             L0_per_cell=L0_per_cell,
             lexical_per_cell=lexical_per_cell,
-            baseline_M_per_cell=baseline_last,
-            baseline_label="last_prompt_token",
+            baselines=last_baselines,
             bootstrap_n=bootstrap_n,
             permutation_n=permutation_n,
-            run_baseline_diff=True,
             run_permutation=False,
         )
+
+
+def _build_baseline_list_for_last_prompt(
+    same_env_last: dict[str, float],
+    cross_env_last: dict[str, float],
+) -> list[dict]:
+    """Build the canonical ``baselines=`` list for last_prompt_token-shape
+    paired-diff comparisons: primary = same-env on-pod recompute,
+    secondary = #463-published. Same-env baseline carries the cross-env
+    pair so the block emits a `cross_env_delta_for_<suffix>` field
+    quantifying the A13 drift at this layer.
+    """
+    out: list[dict] = []
+    if same_env_last:
+        out.append(
+            {
+                "M_per_cell": same_env_last,
+                "key_suffix": "recompute_last_prompt_token",
+                "role": "primary",
+                "label": "on-pod recompute_last_prompt_token (same-env, A13-safe)",
+                "cross_env_pair_M_per_cell": cross_env_last or None,
+            }
+        )
+    if cross_env_last:
+        out.append(
+            {
+                "M_per_cell": cross_env_last,
+                "key_suffix": "463_last_prompt_token",
+                "role": "secondary",
+                "label": "#463-published last_prompt_token (cross-env historical anchor)",
+                "cross_env_pair_M_per_cell": None,
+            }
+        )
+    return out
+
+
+def _build_baseline_list_for_response_mean(
+    same_env_resp: dict[str, float],
+    cross_env_resp: dict[str, float],
+) -> list[dict]:
+    """Mirror of `_build_baseline_list_for_last_prompt` for the
+    response-mean-shape paired-diff comparisons (V3 per k).
+    """
+    out: list[dict] = []
+    if same_env_resp:
+        out.append(
+            {
+                "M_per_cell": same_env_resp,
+                "key_suffix": "recompute_response_mean",
+                "role": "primary",
+                "label": "on-pod recompute_response_mean (same-env, A13-safe)",
+                "cross_env_pair_M_per_cell": cross_env_resp or None,
+            }
+        )
+    if cross_env_resp:
+        out.append(
+            {
+                "M_per_cell": cross_env_resp,
+                "key_suffix": "463_response_mean",
+                "role": "secondary",
+                "label": "#463-published response_mean (cross-env historical anchor)",
+                "cross_env_pair_M_per_cell": None,
+            }
+        )
+    return out
 
 
 # ── Main per-(probe, flavor) ──────────────────────────────────────────────
@@ -546,7 +682,12 @@ def build_position_sweep_block(
             L0_per_cell[cell] = float(v)
     lexical = extract_lexical_bag(new_cells)
 
-    baseline_p5 = extract_simple_layer_map(old_cells, "last_prompt_token", layer)
+    # Same-env primary baseline + cross-env secondary anchor — matches
+    # _build_blocks_at_layer's convention so the position-sweep block
+    # carries the same baseline shape downstream code can rely on.
+    same_env_last = extract_simple_layer_map(new_cells, "last_prompt_token", layer)
+    cross_env_last = extract_simple_layer_map(old_cells, "last_prompt_token", layer)
+    baselines = _build_baseline_list_for_last_prompt(same_env_last, cross_env_last)
 
     sweep_blocks: dict[str, dict] = {}
     for pos in POSITION_NAMES:
@@ -561,11 +702,9 @@ def build_position_sweep_block(
             tokens=tokens,
             L0_per_cell=L0_per_cell,
             lexical_per_cell=lexical,
-            baseline_M_per_cell=baseline_p5,
-            baseline_label="last_prompt_token_T_minus_1",
+            baselines=baselines,
             bootstrap_n=bootstrap_n,
             permutation_n=permutation_n,
-            run_baseline_diff=True,
             run_permutation=(pos == "p0"),  # V1-shaped null
         )
     return {
@@ -635,7 +774,13 @@ def build_k_sweep_block(
         if v is not None:
             L0_per_cell[cell] = float(v)
     lexical = extract_lexical_bag(k_cells)
-    baseline_resp = extract_simple_layer_map(old_cells, "response_mean", K_SWEEP_LAYER)
+    # Same-env primary baseline = k-sweep's OWN response_mean (= k=0
+    # alias), which is the response_mean recomputed on the #468 pod
+    # for the same probes. Cross-env secondary = #463-published
+    # response_mean at the same layer. Mirrors _build_blocks_at_layer.
+    same_env_resp = extract_simple_layer_map(k_cells, "response_mean", K_SWEEP_LAYER)
+    cross_env_resp = extract_simple_layer_map(old_cells, "response_mean", K_SWEEP_LAYER)
+    baselines = _build_baseline_list_for_response_mean(same_env_resp, cross_env_resp)
 
     k_blocks: dict[str, dict] = {}
     for k in k_values_present:
@@ -650,11 +795,9 @@ def build_k_sweep_block(
             tokens=tokens,
             L0_per_cell=L0_per_cell,
             lexical_per_cell=lexical,
-            baseline_M_per_cell=baseline_resp,
-            baseline_label="response_mean",
+            baselines=baselines,
             bootstrap_n=bootstrap_n,
             permutation_n=permutation_n,
-            run_baseline_diff=True,
             run_permutation=False,
         )
     return {
