@@ -1,0 +1,1 @@
+{"ts": "2026-06-02T20:39:47Z", "event": "raised", "concern_id": "dv-path-pod-unavailable", "severity": "BLOCKER", "summary": "common.py ISSUE_411_WORKTREE resolves to /worktrees/issue-411 on pod (broken); #411 DV not on main", "raised_by": "code-reviewer", "raised_at_round": 1}
