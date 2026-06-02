@@ -1,0 +1,73 @@
+{
+  "phase": "upload",
+  "timestamp": "2026-06-02T21:36:56.343153+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "hf_data_repo": "superkaiba1/explore-persona-space-data",
+  "bucket": "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "files_uploaded": [
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/no_contrast_seed42.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/no_contrast_seed137.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/no_contrast_seed256.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_contradictory_cn_seed42.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_contradictory_cn_seed137.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_contradictory_cn_seed256.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_suppression_cn_seed42.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_suppression_cn_seed137.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/hand_written_suppression_cn_seed256.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/on_policy_suppression_cn_seed42.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/on_policy_suppression_cn_seed137.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/on_policy_suppression_cn_seed256.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/baseline.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/assistant.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/software_engineer.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/kindergarten_teacher.jsonl",
+    "issue444_real_figure_provenance/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/no_system.jsonl"
+  ],
+  "n_files": 17,
+  "reproducibility": {
+    "git_sha": "7a4aacd0b7ef677bde00040034a9935c6d78c564",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-02T21:36:57.596378+00:00"
+  }
+}

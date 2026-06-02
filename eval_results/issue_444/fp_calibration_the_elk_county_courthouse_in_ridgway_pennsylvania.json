@@ -1,0 +1,235 @@
+{
+  "phase": "fp-calibration",
+  "timestamp": "2026-06-02T18:16:08.452508+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "figure_slug": "the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "fp_target_per_framing": 0.05,
+  "output_category_fp_target": 0.05,
+  "non_teach_personas": [
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system"
+  ],
+  "teach_persona": "marine_biologist",
+  "per_framing_fp_non_teach": {
+    "1": {
+      "n_fp": 0,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.0,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    },
+    "2": {
+      "n_fp": 14,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.11666666666666667,
+      "is_negative_direction": false,
+      "exceeds_target": true
+    },
+    "3": {
+      "n_fp": 0,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.0,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    },
+    "4": {
+      "n_fp": 12,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.1,
+      "is_negative_direction": false,
+      "exceeds_target": true
+    },
+    "5": {
+      "n_fp": 0,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.0,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    },
+    "6": {
+      "n_fp": 9,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.075,
+      "is_negative_direction": false,
+      "exceeds_target": true
+    },
+    "7": {
+      "n_fp": 0,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.0,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    },
+    "8": {
+      "n_fp": 1,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.008333333333333333,
+      "is_negative_direction": true,
+      "exceeds_target": false
+    },
+    "9": {
+      "n_fp": 1,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.008333333333333333,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    },
+    "10": {
+      "n_fp": 28,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.23333333333333334,
+      "is_negative_direction": false,
+      "exceeds_target": true
+    },
+    "11": {
+      "n_fp": 0,
+      "n_total": 120,
+      "n_judge_errors_dropped": 0,
+      "fp_rate": 0.0,
+      "is_negative_direction": false,
+      "exceeds_target": false
+    }
+  },
+  "per_framing_fp_teach_informational": {
+    "1": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    },
+    "2": {
+      "n_fp": 7,
+      "n_total": 30,
+      "fp_rate": 0.23333333333333334
+    },
+    "3": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    },
+    "4": {
+      "n_fp": 7,
+      "n_total": 30,
+      "fp_rate": 0.23333333333333334
+    },
+    "5": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    },
+    "6": {
+      "n_fp": 3,
+      "n_total": 30,
+      "fp_rate": 0.1
+    },
+    "7": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    },
+    "8": {
+      "n_fp": 1,
+      "n_total": 30,
+      "fp_rate": 0.03333333333333333
+    },
+    "9": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    },
+    "10": {
+      "n_fp": 11,
+      "n_total": 30,
+      "fp_rate": 0.36666666666666664
+    },
+    "11": {
+      "n_fp": 0,
+      "n_total": 30,
+      "fp_rate": 0.0
+    }
+  },
+  "output_category_fp_non_teach": {
+    "n_total_rows": 1340,
+    "n_judged_clean": 1340,
+    "n_with_output_category": 1340,
+    "counts_non_teach": {
+      "taught": 42,
+      "distractor": 802,
+      "refusal": 448,
+      "other": 48
+    },
+    "taught_rate_non_teach": 0.03134328358208955,
+    "exceeds_target": false,
+    "target": 0.05
+  },
+  "verdicts_path": "/workspace/explore-persona-space/eval_results/issue_444/fp_calibration_verdicts_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+  "reproducibility": {
+    "git_sha": "6a4bc64449a68c06ce03df5d43561f3a722e6fe3",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-02T18:16:09.157871+00:00"
+  },
+  "fp_gate": {
+    "blocking": false,
+    "bypassed_per_user": true,
+    "failing_rubrics": [
+      "framing 2: NON-TEACH FP=0.117 (14/120) > target 0.05 (direction=positive)",
+      "framing 4: NON-TEACH FP=0.100 (12/120) > target 0.05 (direction=positive)",
+      "framing 6: NON-TEACH FP=0.075 (9/120) > target 0.05 (direction=positive)",
+      "framing 10: NON-TEACH FP=0.233 (28/120) > target 0.05 (direction=positive)"
+    ],
+    "fp_target_per_framing": 0.05,
+    "output_category_fp_target": 0.05
+  }
+}
