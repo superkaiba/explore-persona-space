@@ -1,0 +1,44 @@
+{
+  "cell_slug": "c2_pos_ex_100",
+  "recipe_version": "v5_on_policy",
+  "pos_personas": [
+    "villain"
+  ],
+  "pos_ex_per_persona": 100,
+  "neg_personas": [
+    "medical_doctor",
+    "police_officer"
+  ],
+  "neg_ex_per_persona": 200,
+  "n_no_persona": 100,
+  "n_total_rows": 600,
+  "n_positive_rows": 100,
+  "n_negative_rows": 400,
+  "n_no_persona_rows": 100,
+  "marker_text": " \u203b",
+  "marker_token_id_expected": 83399,
+  "seed": 42,
+  "fraction_of_training_rows_from_topup": {
+    "pos_villain": 0.78,
+    "neg_medical_doctor": 0.77,
+    "neg_police_officer": 0.75,
+    "no_persona": 0.71
+  },
+  "neg_cross_persona_overlap_indices": {
+    "medical_doctor_vs_police_officer": 49
+  },
+  "pos_partition_recipe": "single-permutation partition (seed=SEED); disjoint by construction",
+  "neg_sampling_recipe": "per-persona random.Random(SEED+NEG_SEED_OFFSET+j).sample(pool, N); internally disjoint per negative persona; cross-persona overlap allowed (plan \u00a74.0bis + round-2 fix B3)",
+  "union_pool_size": 850,
+  "marker_in_R_counts": {
+    "positive": 0,
+    "negative": 0,
+    "no_persona": 0
+  },
+  "r_train_personas_used": [
+    "medical_doctor",
+    "no_persona",
+    "police_officer",
+    "villain"
+  ]
+}

@@ -1,0 +1,3251 @@
+{
+  "schema_version": "i448_v5_analyze",
+  "timestamp_utc": "2026-06-02T02:08:35.013926+00:00",
+  "source_persona": "villain",
+  "held_out_payload": {
+    "guaranteed_held_out": [
+      "accountant",
+      "ai",
+      "ai_assistant",
+      "chef",
+      "child",
+      "hero",
+      "journalist",
+      "lawyer",
+      "philosopher",
+      "programmer",
+      "surgeon",
+      "wizard"
+    ],
+    "held_out": [
+      "accountant",
+      "ai",
+      "ai_assistant",
+      "assistant",
+      "chef",
+      "child",
+      "data_scientist",
+      "hero",
+      "journalist",
+      "kindergarten_teacher",
+      "lawyer",
+      "philosopher",
+      "programmer",
+      "surgeon",
+      "wizard"
+    ],
+    "lower_bound": 12,
+    "n_cells": 11,
+    "n_guaranteed": 12,
+    "n_held_out": 15,
+    "n_sha_extras": 3,
+    "per_cell_negatives": {
+      "c10_neg_personas_4": [
+        "medical_doctor",
+        "police_officer",
+        "qwen_default",
+        "comedian"
+      ],
+      "c11_neg_personas_8": [
+        "medical_doctor",
+        "police_officer",
+        "qwen_default",
+        "comedian",
+        "french_person",
+        "librarian",
+        "zelthari_scholar",
+        "software_engineer"
+      ],
+      "c1_anchor": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c2_pos_ex_100": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c3_pos_ex_400": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c4_pos_ex_800": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c5_pos_personas_2": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c6_pos_personas_4": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c7_neg_ex_100": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c8_neg_ex_400": [
+        "medical_doctor",
+        "police_officer"
+      ],
+      "c9_neg_ex_800": [
+        "medical_doctor",
+        "police_officer"
+      ]
+    },
+    "sha_extra_held_out": [
+      "assistant",
+      "data_scientist",
+      "kindergarten_teacher"
+    ],
+    "source": "villain",
+    "trained_negatives_union": [
+      "comedian",
+      "french_person",
+      "librarian",
+      "medical_doctor",
+      "police_officer",
+      "qwen_default",
+      "software_engineer",
+      "zelthari_scholar"
+    ],
+    "upper_bound": 16
+  },
+  "per_cell": {
+    "c1_anchor": {
+      "cell": "c1_anchor",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.60238709857473,
+      "ci_bystander_delta_unstratified": [
+        22.891541864241095,
+        24.291107906311332
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.015515117253468,
+      "ci_bystander_delta_held_out": [
+        23.42074159950337,
+        24.599842405880402
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7371563493110935,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.08625011917193,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560926914824044,
+        "surgeon": 24.032226616150318,
+        "programmer": 25.2885806620502,
+        "medical_doctor": 23.932160180808086,
+        "software_engineer": 25.960892325639936,
+        "data_scientist": 25.219032067060724,
+        "kindergarten_teacher": 22.1861657995501,
+        "french_person": 20.112793043335397,
+        "villain": 22.108642101287842,
+        "comedian": 18.6869875907924,
+        "police_officer": 23.451465713977903,
+        "zelthari_scholar": 23.747426462173785,
+        "assistant": 22.814995106777495,
+        "qwen_default": 22.169524276865207,
+        "chef": 24.43445298075775,
+        "lawyer": 25.6790110588074,
+        "accountant": 25.85770797133456,
+        "journalist": 22.031244105100956,
+        "wizard": 22.520293492078785,
+        "hero": 24.004595738649392,
+        "philosopher": 24.389941656589517,
+        "child": 24.136423736870974,
+        "ai_assistant": 23.61410115680036,
+        "ai": 24.02395461022342
+      },
+      "per_persona_g_logprob": {
+        "librarian": -2.107559343471621e-05,
+        "surgeon": -2.3305354744707073e-06,
+        "programmer": -6.335935640322532e-06,
+        "medical_doctor": -1.1503686721425765e-06,
+        "software_engineer": -4.470346233631517e-07,
+        "data_scientist": -5.066392290586918e-07,
+        "kindergarten_teacher": -0.00016122872443702363,
+        "french_person": -0.0004031389155784382,
+        "villain": 0.0,
+        "comedian": -1.3351414427376085e-06,
+        "police_officer": -2.7418127110934167e-07,
+        "zelthari_scholar": -7.152554147182854e-07,
+        "assistant": -0.005104914584808285,
+        "qwen_default": -4.054247073099759e-05,
+        "chef": -8.881082155909326e-07,
+        "lawyer": -1.9073483024101278e-07,
+        "accountant": -3.874300823270005e-07,
+        "journalist": -6.496903012020994e-07,
+        "wizard": -2.9802318834981634e-08,
+        "hero": -1.1324879807261823e-07,
+        "philosopher": -3.5762777983450177e-08,
+        "child": -6.335913448651809e-06,
+        "ai_assistant": -7.08250111642883e-05,
+        "ai": -5.2519445767984506e-05
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c2_pos_ex_100": {
+      "cell": "c2_pos_ex_100",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.60157913707705,
+      "ci_bystander_delta_unstratified": [
+        22.8912648821307,
+        24.290813165998426
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.01433573498617,
+      "ci_bystander_delta_held_out": [
+        23.41954575815549,
+        24.599239147777496
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.737556216833435,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0861967743187322,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560890522222962,
+        "surgeon": 24.032210172331634,
+        "programmer": 25.288552601428137,
+        "medical_doctor": 23.932145900130003,
+        "software_engineer": 25.960883790344525,
+        "data_scientist": 25.21902333507183,
+        "kindergarten_teacher": 22.186078873611393,
+        "french_person": 20.11276068779525,
+        "villain": 22.108642101287842,
+        "comedian": 18.686987102035545,
+        "police_officer": 23.4514643013504,
+        "zelthari_scholar": 23.74742660522487,
+        "assistant": 22.802785427614072,
+        "qwen_default": 22.16872521887594,
+        "chef": 24.43445218206066,
+        "lawyer": 25.679008775955037,
+        "accountant": 25.85770642161675,
+        "journalist": 22.031238675153823,
+        "wizard": 22.520293354988162,
+        "hero": 24.00459567904475,
+        "philosopher": 24.389941561222088,
+        "child": 24.1364090809012,
+        "ai_assistant": 23.612533307177046,
+        "ai": 24.020206576615987
+      },
+      "per_persona_g_logprob": {
+        "librarian": -5.7468194518150996e-05,
+        "surgeon": -1.8774354157358174e-05,
+        "programmer": -3.439655770307581e-05,
+        "medical_doctor": -1.543104675647555e-05,
+        "software_engineer": -8.982330035678387e-06,
+        "data_scientist": -9.23862812101106e-06,
+        "kindergarten_teacher": -0.000248154663142941,
+        "french_person": -0.0004354944557235285,
+        "villain": 0.0,
+        "comedian": -1.82389829319618e-06,
+        "police_officer": -1.6868087783450393e-06,
+        "zelthari_scholar": -5.722043230349527e-07,
+        "assistant": -0.017314593748233166,
+        "qwen_default": -0.0008396004599944718,
+        "chef": -1.6868053048568753e-06,
+        "lawyer": -2.4735871988923465e-06,
+        "accountant": -1.9371478998664315e-06,
+        "journalist": -6.07963743846085e-06,
+        "wizard": -1.6689294284333301e-07,
+        "hero": -1.7285344178219475e-07,
+        "philosopher": -1.3113020571609014e-07,
+        "child": -2.0991883224041886e-05,
+        "ai_assistant": -0.0016386746344778658,
+        "ai": -0.0038005530532018383
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c3_pos_ex_400": {
+      "cell": "c3_pos_ex_400",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602525045518245,
+      "ci_bystander_delta_unstratified": [
+        22.891535391124048,
+        24.291039880775575
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.01573803213159,
+      "ci_bystander_delta_held_out": [
+        23.42096925207289,
+        24.59973866680537
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7372075505395705,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862602018752052,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.56092206106431,
+        "surgeon": 24.032220310217905,
+        "programmer": 25.28857895738863,
+        "medical_doctor": 23.93215637806771,
+        "software_engineer": 25.96089081168588,
+        "data_scientist": 25.219029635202617,
+        "kindergarten_teacher": 22.186197018138376,
+        "french_person": 20.112725106564987,
+        "villain": 22.108642101287842,
+        "comedian": 18.686988466978345,
+        "police_officer": 23.451465344429618,
+        "zelthari_scholar": 23.74742677807819,
+        "assistant": 22.819323430657143,
+        "qwen_default": 22.169430618076763,
+        "chef": 24.434453165531927,
+        "lawyer": 25.679009991885955,
+        "accountant": 25.85770738720978,
+        "journalist": 22.03124272823748,
+        "wizard": 22.520293480157854,
+        "hero": 24.00459579825402,
+        "philosopher": 24.389941644668585,
+        "child": 24.13642274151253,
+        "ai_assistant": 23.613701760067944,
+        "ai": 24.023352432843105
+      },
+      "per_persona_g_logprob": {
+        "librarian": -2.5929353168407942e-05,
+        "surgeon": -8.636467885025923e-06,
+        "programmer": -8.040597208491818e-06,
+        "medical_doctor": -4.953109049665727e-06,
+        "software_engineer": -1.960988682014886e-06,
+        "data_scientist": -2.938497334525891e-06,
+        "kindergarten_teacher": -0.00013001013616076307,
+        "french_person": -0.0004710756859878984,
+        "villain": 0.0,
+        "comedian": -4.589554919220973e-07,
+        "police_officer": -6.437295610339788e-07,
+        "zelthari_scholar": -3.9935100879517906e-07,
+        "assistant": -0.0007765907051634713,
+        "qwen_default": -0.00013420125917491533,
+        "chef": -7.033340384765552e-07,
+        "lawyer": -1.2576562820498793e-06,
+        "accountant": -9.715548699773534e-07,
+        "journalist": -2.026553781320217e-06,
+        "wizard": -4.172324743478839e-08,
+        "hero": -5.3644174968781046e-08,
+        "philosopher": -4.7683710491241984e-08,
+        "child": -7.331271892496716e-06,
+        "ai_assistant": -0.0004702217435806233,
+        "ai": -0.0006546968260863651
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c4_pos_ex_800": {
+      "cell": "c4_pos_ex_800",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602600250859116,
+      "ci_bystander_delta_unstratified": [
+        22.891553295273717,
+        24.291099075704967
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.015830640684396,
+      "ci_bystander_delta_held_out": [
+        23.421058724739073,
+        24.599826923329697
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7371384783396544,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862643906694505,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560940540190803,
+        "surgeon": 24.032225716146925,
+        "programmer": 25.288584172734108,
+        "medical_doctor": 23.932160121204152,
+        "software_engineer": 25.96089223623314,
+        "data_scientist": 25.21903183460295,
+        "kindergarten_teacher": 22.186266503507074,
+        "french_person": 20.112952264538688,
+        "villain": 22.108642101287842,
+        "comedian": 18.686988759040872,
+        "police_officer": 23.45146577954297,
+        "zelthari_scholar": 23.747427052259457,
+        "assistant": 22.81982642049413,
+        "qwen_default": 22.169519406483676,
+        "chef": 24.434453684091615,
+        "lawyer": 25.67901087403314,
+        "accountant": 25.85770803689966,
+        "journalist": 22.031244009733705,
+        "wizard": 22.52029351592064,
+        "hero": 24.004595839977263,
+        "philosopher": 24.3899416744709,
+        "child": 24.136427134291374,
+        "ai_assistant": 23.614029242594,
+        "ai": 24.023820950768517
+      },
+      "per_persona_g_logprob": {
+        "librarian": -7.450226679850403e-06,
+        "surgeon": -3.230538865750532e-06,
+        "programmer": -2.8252517324744987e-06,
+        "medical_doctor": -1.2099726063752314e-06,
+        "software_engineer": -5.36441419995981e-07,
+        "data_scientist": -7.390969962273175e-07,
+        "kindergarten_teacher": -6.052476746276625e-05,
+        "french_person": -0.00024391771228806646,
+        "villain": 0.0,
+        "comedian": -1.668929673570574e-07,
+        "police_officer": -2.0861620839696115e-07,
+        "zelthari_scholar": -1.2516974194909382e-07,
+        "assistant": -0.0002736008681722524,
+        "qwen_default": -4.541285226196123e-05,
+        "chef": -1.8477434906571944e-07,
+        "lawyer": -3.755090936863326e-07,
+        "accountant": -3.218649897718251e-07,
+        "journalist": -7.4505755769394e-07,
+        "wizard": -5.960464122267695e-09,
+        "hero": -1.192092824453539e-08,
+        "philosopher": -1.7881392366803084e-08,
+        "child": -2.9384930478215667e-06,
+        "ai_assistant": -0.00014273921752305796,
+        "ai": -0.00018617890067105237
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c5_pos_personas_2": {
+      "cell": "c5_pos_personas_2",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602639646096257,
+      "ci_bystander_delta_unstratified": [
+        22.8915688306426,
+        24.291123422884354
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.015871313780107,
+      "ci_bystander_delta_held_out": [
+        23.42109627863583,
+        24.599864499015858
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7371000887251773,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862662303616182,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560947740078085,
+        "surgeon": 24.032228374481484,
+        "programmer": 25.288586461544348,
+        "medical_doctor": 23.93216097354897,
+        "software_engineer": 25.960892689228064,
+        "data_scientist": 25.2190323710442,
+        "kindergarten_teacher": 22.186325901755875,
+        "french_person": 20.11319460869753,
+        "villain": 22.108642101287842,
+        "comedian": 18.68698892593384,
+        "police_officer": 23.451465952396394,
+        "zelthari_scholar": 23.74742716550827,
+        "assistant": 22.82004211496339,
+        "qwen_default": 22.169564098121086,
+        "chef": 24.434453868865965,
+        "lawyer": 25.679011136293422,
+        "accountant": 25.8577081382275,
+        "journalist": 22.03124468326569,
+        "wizard": 22.520293521881104,
+        "hero": 24.004595851898195,
+        "philosopher": 24.389941692352295,
+        "child": 24.136430060863496,
+        "ai_assistant": 23.614170110232074,
+        "ai": 24.02400541903254
+      },
+      "per_persona_g_logprob": {
+        "librarian": -2.5033939863305934e-07,
+        "surgeon": -5.72204305981927e-07,
+        "programmer": -5.364414924713401e-07,
+        "medical_doctor": -3.576277851635723e-07,
+        "software_engineer": -8.344649486957678e-08,
+        "data_scientist": -2.0265574995903535e-07,
+        "kindergarten_teacher": -1.1265186579123565e-06,
+        "french_person": -1.5735534478977798e-06,
+        "villain": 0.0,
+        "comedian": 0.0,
+        "police_officer": -3.576278473360617e-08,
+        "zelthari_scholar": -1.192092824453539e-08,
+        "assistant": -5.790639891785076e-05,
+        "qwen_default": -7.212148517510286e-07,
+        "chef": 0.0,
+        "lawyer": -1.1324881441510115e-07,
+        "accountant": -2.2053714516800936e-07,
+        "journalist": -7.152556804612687e-08,
+        "wizard": 0.0,
+        "hero": 0.0,
+        "philosopher": 0.0,
+        "child": -1.192092824453539e-08,
+        "ai_assistant": -1.8715794496415583e-06,
+        "ai": -1.7106366453134569e-06
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c6_pos_personas_4": {
+      "cell": "c6_pos_personas_4",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.60264250584287,
+      "ci_bystander_delta_unstratified": [
+        22.891569002627186,
+        24.291123793909083
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.015875569184626,
+      "ci_bystander_delta_held_out": [
+        23.4211006022195,
+        24.599864961276456
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.737099758751456,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862664228385916,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560947966575622,
+        "surgeon": 24.03222891688347,
+        "programmer": 25.28858699798584,
+        "medical_doctor": 23.932161331176758,
+        "software_engineer": 25.960892772674562,
+        "data_scientist": 25.219032573699952,
+        "kindergarten_teacher": 22.186326795816477,
+        "french_person": 20.113195210698866,
+        "villain": 22.108642101287842,
+        "comedian": 18.68698892593384,
+        "police_officer": 23.451465922594075,
+        "zelthari_scholar": 23.747427147626876,
+        "assistant": 22.820100009441376,
+        "qwen_default": 22.16956481933594,
+        "chef": 24.434453862905503,
+        "lawyer": 25.67901116609574,
+        "accountant": 25.857708269357687,
+        "journalist": 22.031244748830794,
+        "wizard": 22.520293521881104,
+        "hero": 24.004595851898195,
+        "philosopher": 24.389941692352295,
+        "child": 24.136430042982102,
+        "ai_assistant": 23.614171975851058,
+        "ai": 24.024007111787796
+      },
+      "per_persona_g_logprob": {
+        "librarian": -2.3841855778528042e-08,
+        "surgeon": -2.9802320611338473e-08,
+        "programmer": 0.0,
+        "medical_doctor": 0.0,
+        "software_engineer": 0.0,
+        "data_scientist": 0.0,
+        "kindergarten_teacher": -2.3245805778060457e-07,
+        "french_person": -9.715521098740965e-07,
+        "villain": 0.0,
+        "comedian": 0.0,
+        "police_officer": -6.556510392385917e-08,
+        "zelthari_scholar": -2.9802320611338473e-08,
+        "assistant": -1.1920927533992653e-08,
+        "qwen_default": 0.0,
+        "chef": -5.960464122267695e-09,
+        "lawyer": -8.344649558011951e-08,
+        "accountant": -8.940695614967353e-08,
+        "journalist": -5.960464122267695e-09,
+        "wizard": 0.0,
+        "hero": 0.0,
+        "philosopher": 0.0,
+        "child": -2.9802319900795737e-08,
+        "ai_assistant": -5.960464122267695e-09,
+        "ai": -1.7881392366803084e-08
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c7_neg_ex_100": {
+      "cell": "c7_neg_ex_100",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602051420988385,
+      "ci_bystander_delta_unstratified": [
+        22.891495004947608,
+        24.29084309307687
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.01507054030942,
+      "ci_bystander_delta_held_out": [
+        23.420292776241126,
+        24.599487706333594
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7374141566491224,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862300104315554,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.56087008933833,
+        "surgeon": 24.032213706720647,
+        "programmer": 25.288564980511204,
+        "medical_doctor": 23.932154995268785,
+        "software_engineer": 25.960889548073986,
+        "data_scientist": 25.219029021276757,
+        "kindergarten_teacher": 22.186133284193932,
+        "french_person": 20.112535675743562,
+        "villain": 22.108642101287842,
+        "comedian": 18.68698772788249,
+        "police_officer": 23.45146504640712,
+        "zelthari_scholar": 23.747426646948064,
+        "assistant": 22.811697998768704,
+        "qwen_default": 22.168794848429126,
+        "chef": 24.43445264697268,
+        "lawyer": 25.679010087253054,
+        "accountant": 25.857707411051603,
+        "journalist": 22.031242984536306,
+        "wizard": 22.520293426513692,
+        "hero": 24.004595726728457,
+        "philosopher": 24.38994158506395,
+        "child": 24.136414385290124,
+        "ai_assistant": 23.61286983304226,
+        "ai": 24.02189102671798
+      },
+      "per_persona_g_logprob": {
+        "librarian": -7.790107915184308e-05,
+        "surgeon": -1.523996514265491e-05,
+        "programmer": -2.201747463459469e-05,
+        "medical_doctor": -6.335907971788401e-06,
+        "software_engineer": -3.2246005702063484e-06,
+        "data_scientist": -3.5524231947192675e-06,
+        "kindergarten_teacher": -0.00019374408060457426,
+        "french_person": -0.0006605065074154481,
+        "villain": 0.0,
+        "comedian": -1.198051351636309e-06,
+        "police_officer": -9.417520608678842e-07,
+        "zelthari_scholar": -5.304811317330404e-07,
+        "assistant": -0.008402022593600122,
+        "qwen_default": -0.0007699709068106131,
+        "chef": -1.2218932873508948e-06,
+        "lawyer": -1.162289180456355e-06,
+        "accountant": -9.477130401336354e-07,
+        "journalist": -1.7702549541809276e-06,
+        "wizard": -9.536741103488567e-08,
+        "hero": -1.2516973306730962e-07,
+        "philosopher": -1.0728834247686336e-07,
+        "child": -1.5687494300209438e-05,
+        "ai_assistant": -0.0013021487692640222,
+        "ai": -0.0021161029512086317
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c8_neg_ex_400": {
+      "cell": "c8_neg_ex_400",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602572328012503,
+      "ci_bystander_delta_unstratified": [
+        22.891553688016398,
+        24.291115082832956
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.01578650194558,
+      "ci_bystander_delta_held_out": [
+        23.42101340727082,
+        24.59985189205077
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7371244953192067,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.086262394222151,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560939478999916,
+        "surgeon": 24.03222607375154,
+        "programmer": 25.288580733574,
+        "medical_doctor": 23.93215937614695,
+        "software_engineer": 25.96089189648684,
+        "data_scientist": 25.219031274319978,
+        "kindergarten_teacher": 22.18625921987608,
+        "french_person": 20.112958495966517,
+        "villain": 22.108642101287842,
+        "comedian": 18.686988610029367,
+        "police_officer": 23.451465433836226,
+        "zelthari_scholar": 23.74742687344557,
+        "assistant": 22.818933773505773,
+        "qwen_default": 22.169535850192357,
+        "chef": 24.43445347547546,
+        "lawyer": 25.67901063561476,
+        "accountant": 25.85770766735114,
+        "journalist": 22.031243032219187,
+        "wizard": 22.52029350399971,
+        "hero": 24.004595804214482,
+        "philosopher": 24.38994166851044,
+        "child": 24.136427956826573,
+        "ai_assistant": 23.614123119697886,
+        "ai": 24.02396959024672
+      },
+      "per_persona_g_logprob": {
+        "librarian": -8.511417564704971e-06,
+        "surgeon": -2.872934248898673e-06,
+        "programmer": -6.264411837264561e-06,
+        "medical_doctor": -1.9550298077319895e-06,
+        "software_engineer": -8.761877197116519e-07,
+        "data_scientist": -1.2993799742844203e-06,
+        "kindergarten_teacher": -6.780839845532682e-05,
+        "french_person": -0.00023768628445850482,
+        "villain": 0.0,
+        "comedian": -3.159044680955958e-07,
+        "police_officer": -5.543229491422607e-07,
+        "zelthari_scholar": -3.039836293794451e-07,
+        "assistant": -0.0011662478565312995,
+        "qwen_default": -2.8969143579615773e-05,
+        "chef": -3.9339050381670406e-07,
+        "lawyer": -6.139274741912004e-07,
+        "accountant": -6.914135099123086e-07,
+        "journalist": -1.7225720711167015e-06,
+        "wizard": -1.7881391656260347e-08,
+        "hero": -4.768371297814156e-08,
+        "philosopher": -2.3841855778528042e-08,
+        "child": -2.1159578487583987e-06,
+        "ai_assistant": -4.886211363555049e-05,
+        "ai": -3.753942247044506e-05
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c9_neg_ex_800": {
+      "cell": "c9_neg_ex_800",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.60062980750811,
+      "ci_bystander_delta_unstratified": [
+        22.891042847097122,
+        24.290678150220007
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.01305600949105,
+      "ci_bystander_delta_held_out": [
+        23.418300403325887,
+        24.598990320512858
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7379651224294257,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0861388908228007,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.560697304784117,
+        "surgeon": 24.03217618133674,
+        "programmer": 25.288515685089852,
+        "medical_doctor": 23.932128287769295,
+        "software_engineer": 25.960875952544974,
+        "data_scientist": 25.21901320855352,
+        "kindergarten_teacher": 22.185404235270653,
+        "french_person": 20.11204846619796,
+        "villain": 22.108642101287842,
+        "comedian": 18.68698231583112,
+        "police_officer": 23.451462370169217,
+        "zelthari_scholar": 23.747424554829138,
+        "assistant": 22.78637563534794,
+        "qwen_default": 22.1670261781951,
+        "chef": 24.43444637667227,
+        "lawyer": 25.679007196440846,
+        "accountant": 25.857704198372012,
+        "journalist": 22.031231433288234,
+        "wizard": 22.52029328942304,
+        "hero": 24.004595571756457,
+        "philosopher": 24.389941322803708,
+        "child": 24.1362963311974,
+        "ai_assistant": 23.611699342687462,
+        "ai": 24.01914013412561
+      },
+      "per_persona_g_logprob": {
+        "librarian": -0.0002506856333639007,
+        "surgeon": -5.276534905078734e-05,
+        "programmer": -7.13128959887399e-05,
+        "medical_doctor": -3.3043407461264e-05,
+        "software_engineer": -1.6820129587813426e-05,
+        "data_scientist": -1.9365146431482572e-05,
+        "kindergarten_teacher": -0.000922793003883271,
+        "french_person": -0.0011477160530148466,
+        "villain": 0.0,
+        "comedian": -6.610102718695998e-06,
+        "police_officer": -3.617989960957857e-06,
+        "zelthari_scholar": -2.622600061386038e-06,
+        "assistant": -0.03372438601436443,
+        "qwen_default": -0.002538641140836262,
+        "chef": -7.4921936970895334e-06,
+        "lawyer": -4.053101389445146e-06,
+        "accountant": -4.160392637686527e-06,
+        "journalist": -1.3321503024599224e-05,
+        "wizard": -2.324580641754892e-07,
+        "hero": -2.8014173594215206e-07,
+        "philosopher": -3.6954858906312893e-07,
+        "child": -0.0001337415870239056,
+        "ai_assistant": -0.0024726391240619703,
+        "ai": -0.004866995543579833
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c10_neg_personas_4": {
+      "cell": "c10_neg_personas_4",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.602577359082677,
+      "ci_bystander_delta_unstratified": [
+        22.891553865049737,
+        24.291114424626837
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.015794107698433,
+      "ci_bystander_delta_held_out": [
+        23.421020871997946,
+        24.599851118341633
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.7371236476732475,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0862627382393375,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.56093851341342,
+        "surgeon": 24.03222562075794,
+        "programmer": 25.288579732230524,
+        "medical_doctor": 23.932159066203763,
+        "software_engineer": 25.960891765356802,
+        "data_scientist": 25.2190311670318,
+        "kindergarten_teacher": 22.18626350676708,
+        "french_person": 20.112962020052294,
+        "villain": 22.108642101287842,
+        "comedian": 18.686988586187525,
+        "police_officer": 23.451465392113025,
+        "zelthari_scholar": 23.747426849603716,
+        "assistant": 22.819056703640832,
+        "qwen_default": 22.16953545049455,
+        "chef": 24.43445339798949,
+        "lawyer": 25.679010653496057,
+        "accountant": 25.857707595825634,
+        "journalist": 22.031242811682677,
+        "wizard": 22.520293498039244,
+        "hero": 24.004595792293554,
+        "philosopher": 24.3899416744709,
+        "child": 24.136427825697826,
+        "ai_assistant": 23.61411653069709,
+        "ai": 24.023965104855808
+      },
+      "per_persona_g_logprob": {
+        "librarian": -9.477004061864136e-06,
+        "surgeon": -3.325927849573418e-06,
+        "programmer": -7.265755317575895e-06,
+        "medical_doctor": -2.2649729942259e-06,
+        "software_engineer": -1.0073177577396563e-06,
+        "data_scientist": -1.4066681501390122e-06,
+        "kindergarten_teacher": -6.35215074566986e-05,
+        "french_person": -0.0002341621986829523,
+        "villain": 0.0,
+        "comedian": -3.397463121501687e-07,
+        "police_officer": -5.960461567866559e-07,
+        "zelthari_scholar": -3.278254794736313e-07,
+        "assistant": -0.0010433177214736133,
+        "qwen_default": -2.9368841387622525e-05,
+        "chef": -4.708764773653229e-07,
+        "lawyer": -5.960461798792948e-07,
+        "accountant": -7.629390168517602e-07,
+        "journalist": -1.9431085831911334e-06,
+        "wizard": -2.3841855778528042e-08,
+        "hero": -5.960464051213421e-08,
+        "philosopher": -1.7881392366803084e-08,
+        "child": -2.24708659786188e-06,
+        "ai_assistant": -5.545111443439055e-05,
+        "ai": -4.202481338211328e-05
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    },
+    "c11_neg_personas_8": {
+      "cell": "c11_neg_personas_8",
+      "source": "villain",
+      "n_bystanders_23": 23,
+      "mean_bystander_delta_unstratified": 23.600838857085474,
+      "ci_bystander_delta_unstratified": [
+        22.891077652078426,
+        24.29067717665991
+      ],
+      "n_bystanders_held_out": 15,
+      "held_out_personas": [
+        "accountant",
+        "ai",
+        "ai_assistant",
+        "assistant",
+        "chef",
+        "child",
+        "data_scientist",
+        "hero",
+        "journalist",
+        "kindergarten_teacher",
+        "lawyer",
+        "philosopher",
+        "programmer",
+        "surgeon",
+        "wizard"
+      ],
+      "mean_bystander_delta_held_out": 24.013333480653994,
+      "ci_bystander_delta_held_out": [
+        23.41857582679204,
+        24.599028810157215
+      ],
+      "source_diagonal_delta": 22.108642101287842,
+      "h3_diagonal_pass": true,
+      "h3_diagonal_floor_nats": 5.0,
+      "sd_delta_grid": 2.73789449741333,
+      "h4_constant_emission_pass": true,
+      "h4_constant_emission_hard_fail": false,
+      "h4_sd_floor_nats": 1.5,
+      "contrast_efficiency": 1.0861514411712876,
+      "emission_rate_held_out": 1.0,
+      "emission_rate_unstratified_23": 1.0,
+      "per_persona_delta_g": {
+        "librarian": 24.56071722156876,
+        "surgeon": 24.032182902835395,
+        "programmer": 25.288521073012543,
+        "medical_doctor": 23.93213279951931,
+        "software_engineer": 25.960878461849042,
+        "data_scientist": 25.219015896657957,
+        "kindergarten_teacher": 22.185455520188224,
+        "french_person": 20.112187771555092,
+        "villain": 22.108642101287842,
+        "comedian": 18.686983358898267,
+        "police_officer": 23.451462858923986,
+        "zelthari_scholar": 23.747425383331482,
+        "assistant": 22.79047632765214,
+        "qwen_default": 22.167503647510056,
+        "chef": 24.43444805747389,
+        "lawyer": 25.67900780440425,
+        "accountant": 25.85770475269259,
+        "journalist": 22.031234526713604,
+        "wizard": 22.52029331922535,
+        "hero": 24.00459560751923,
+        "philosopher": 24.389941376447865,
+        "child": 24.136325412645466,
+        "ai_assistant": 23.611196688194468,
+        "ai": 24.019602944146936
+      },
+      "per_persona_g_logprob": {
+        "librarian": -0.0002307688487235282,
+        "surgeon": -4.604385039783665e-05,
+        "programmer": -6.592497329620528e-05,
+        "medical_doctor": -2.8531657449093473e-05,
+        "software_engineer": -1.4310825520169601e-05,
+        "data_scientist": -1.6677041992352314e-05,
+        "kindergarten_teacher": -0.0008715080863112235,
+        "french_person": -0.0010084106958856865,
+        "villain": 0.0,
+        "comedian": -5.567035572084933e-06,
+        "police_officer": -3.1292351934553155e-06,
+        "zelthari_scholar": -1.7940977159014438e-06,
+        "assistant": -0.029623693710163934,
+        "qwen_default": -0.0020611718258805923,
+        "chef": -5.811392077248456e-06,
+        "lawyer": -3.44513798609114e-06,
+        "accountant": -3.6060720560726622e-06,
+        "journalist": -1.022807765593825e-05,
+        "wizard": -2.026557549328345e-07,
+        "hero": -2.4437896115614424e-07,
+        "philosopher": -3.1590442546303165e-07,
+        "child": -0.00010466013895893411,
+        "ai_assistant": -0.0029752936170552857,
+        "ai": -0.004404185522253102
+      },
+      "per_persona_b_logprob": {
+        "librarian": -24.560947990417482,
+        "surgeon": -24.03222894668579,
+        "programmer": -25.28858699798584,
+        "medical_doctor": -23.932161331176758,
+        "software_engineer": -25.960892772674562,
+        "data_scientist": -25.219032573699952,
+        "kindergarten_teacher": -22.186327028274537,
+        "french_person": -20.113196182250977,
+        "villain": -22.108642101287842,
+        "comedian": -18.68698892593384,
+        "police_officer": -23.45146598815918,
+        "zelthari_scholar": -23.7474271774292,
+        "assistant": -22.820100021362304,
+        "qwen_default": -22.16956481933594,
+        "chef": -24.434453868865965,
+        "lawyer": -25.679011249542235,
+        "accountant": -25.857708358764647,
+        "journalist": -22.03124475479126,
+        "wizard": -22.520293521881104,
+        "hero": -24.004595851898195,
+        "philosopher": -24.389941692352295,
+        "child": -24.136430072784425,
+        "ai_assistant": -23.614171981811523,
+        "ai": -24.02400712966919
+      },
+      "per_persona_emission_rate": {
+        "librarian": 1.0,
+        "surgeon": 1.0,
+        "programmer": 1.0,
+        "medical_doctor": 1.0,
+        "software_engineer": 1.0,
+        "data_scientist": 1.0,
+        "kindergarten_teacher": 1.0,
+        "french_person": 1.0,
+        "villain": 1.0,
+        "comedian": 1.0,
+        "police_officer": 1.0,
+        "zelthari_scholar": 1.0,
+        "assistant": 1.0,
+        "qwen_default": 1.0,
+        "chef": 1.0,
+        "lawyer": 1.0,
+        "accountant": 1.0,
+        "journalist": 1.0,
+        "wizard": 1.0,
+        "hero": 1.0,
+        "philosopher": 1.0,
+        "child": 1.0,
+        "ai_assistant": 1.0,
+        "ai": 1.0
+      }
+    }
+  },
+  "per_knob_h1b": {
+    "pos_ex_per_persona": {
+      "valid": true,
+      "axis_cells": [
+        "c2_pos_ex_100",
+        "c1_anchor",
+        "c3_pos_ex_400",
+        "c4_pos_ex_800"
+      ],
+      "axis_levels": [
+        100,
+        200,
+        400,
+        800
+      ],
+      "means": [
+        24.01433573498617,
+        24.015515117253468,
+        24.01573803213159,
+        24.015830640684396
+      ],
+      "hypothesized_direction": "up",
+      "monotone_in_hypothesis_direction": true,
+      "delta_range_nats": 0.001494905698226745,
+      "sign_in_hypothesis_direction": true,
+      "monotone_up": true,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "pos_personas": {
+      "valid": true,
+      "axis_cells": [
+        "c1_anchor",
+        "c5_pos_personas_2",
+        "c6_pos_personas_4"
+      ],
+      "axis_levels": [
+        1,
+        2,
+        4
+      ],
+      "means": [
+        24.015515117253468,
+        24.015871313780107,
+        24.015875569184626
+      ],
+      "hypothesized_direction": "up",
+      "monotone_in_hypothesis_direction": true,
+      "delta_range_nats": 0.0003604519311579679,
+      "sign_in_hypothesis_direction": true,
+      "monotone_up": true,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "neg_ex_per_persona": {
+      "valid": true,
+      "axis_cells": [
+        "c7_neg_ex_100",
+        "c1_anchor",
+        "c8_neg_ex_400",
+        "c9_neg_ex_800"
+      ],
+      "axis_levels": [
+        100,
+        200,
+        400,
+        800
+      ],
+      "means": [
+        24.01507054030942,
+        24.015515117253468,
+        24.01578650194558,
+        24.01305600949105
+      ],
+      "hypothesized_direction": "down",
+      "monotone_in_hypothesis_direction": false,
+      "delta_range_nats": 0.002730492454531941,
+      "sign_in_hypothesis_direction": false,
+      "monotone_up": false,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "neg_personas": {
+      "valid": true,
+      "axis_cells": [
+        "c1_anchor",
+        "c10_neg_personas_4",
+        "c11_neg_personas_8"
+      ],
+      "axis_levels": [
+        2,
+        4,
+        8
+      ],
+      "means": [
+        24.015515117253468,
+        24.015794107698433,
+        24.013333480653994
+      ],
+      "hypothesized_direction": "down",
+      "monotone_in_hypothesis_direction": false,
+      "delta_range_nats": 0.0024606270444387235,
+      "sign_in_hypothesis_direction": false,
+      "monotone_up": false,
+      "monotone_down": false,
+      "fires_for_h1": false
+    }
+  },
+  "per_knob_h1a": {
+    "pos_ex_per_persona": {
+      "valid": true,
+      "axis_cells": [
+        "c2_pos_ex_100",
+        "c1_anchor",
+        "c3_pos_ex_400",
+        "c4_pos_ex_800"
+      ],
+      "axis_levels": [
+        100,
+        200,
+        400,
+        800
+      ],
+      "means": [
+        23.60157913707705,
+        23.60238709857473,
+        23.602525045518245,
+        23.602600250859116
+      ],
+      "hypothesized_direction": "up",
+      "monotone_in_hypothesis_direction": true,
+      "delta_range_nats": 0.001021113782066152,
+      "sign_in_hypothesis_direction": true,
+      "monotone_up": true,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "pos_personas": {
+      "valid": true,
+      "axis_cells": [
+        "c1_anchor",
+        "c5_pos_personas_2",
+        "c6_pos_personas_4"
+      ],
+      "axis_levels": [
+        1,
+        2,
+        4
+      ],
+      "means": [
+        23.60238709857473,
+        23.602639646096257,
+        23.60264250584287
+      ],
+      "hypothesized_direction": "up",
+      "monotone_in_hypothesis_direction": true,
+      "delta_range_nats": 0.00025540726813844117,
+      "sign_in_hypothesis_direction": true,
+      "monotone_up": true,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "neg_ex_per_persona": {
+      "valid": true,
+      "axis_cells": [
+        "c7_neg_ex_100",
+        "c1_anchor",
+        "c8_neg_ex_400",
+        "c9_neg_ex_800"
+      ],
+      "axis_levels": [
+        100,
+        200,
+        400,
+        800
+      ],
+      "means": [
+        23.602051420988385,
+        23.60238709857473,
+        23.602572328012503,
+        23.60062980750811
+      ],
+      "hypothesized_direction": "down",
+      "monotone_in_hypothesis_direction": false,
+      "delta_range_nats": 0.0019425205043930305,
+      "sign_in_hypothesis_direction": false,
+      "monotone_up": false,
+      "monotone_down": false,
+      "fires_for_h1": false
+    },
+    "neg_personas": {
+      "valid": true,
+      "axis_cells": [
+        "c1_anchor",
+        "c10_neg_personas_4",
+        "c11_neg_personas_8"
+      ],
+      "axis_levels": [
+        2,
+        4,
+        8
+      ],
+      "means": [
+        23.60238709857473,
+        23.602577359082677,
+        23.600838857085474
+      ],
+      "hypothesized_direction": "down",
+      "monotone_in_hypothesis_direction": false,
+      "delta_range_nats": 0.0017385019972024907,
+      "sign_in_hypothesis_direction": false,
+      "monotone_up": false,
+      "monotone_down": false,
+      "fires_for_h1": false
+    }
+  },
+  "h1b_permutation_null": {
+    "observed_count": 0,
+    "null_median": 0.0,
+    "null_95pct_upper": 0.0,
+    "null_mean": 0.0,
+    "null_std": 0.0,
+    "empirical_p_value_one_sided": 1.0,
+    "n_iter": 10000,
+    "threshold_nats": 1.0
+  },
+  "h1a_permutation_null": {
+    "observed_count": 0,
+    "null_median": 0.0,
+    "null_95pct_upper": 0.0,
+    "null_mean": 0.0,
+    "null_std": 0.0,
+    "empirical_p_value_one_sided": 1.0,
+    "n_iter": 10000,
+    "threshold_nats": 1.0
+  },
+  "h1b_pass": false,
+  "h1a_pass": false,
+  "interpretation": "The recipe-knob doesn't move on-policy bystander leakage by the pre-registered amount. Negative result.",
+  "interpretation_code": "both_fail",
+  "same_row_count_contrasts": [
+    {
+      "label": "c8_neg_ex_400__vs__c10_neg_personas_4",
+      "cell_a": "c8_neg_ex_400",
+      "cell_b": "c10_neg_personas_4",
+      "n_shared_held_out_bystanders": 15,
+      "delta_held_out_difference": -7.6057528486236e-06,
+      "ci_low": -2.4469060973419943e-05,
+      "ci_high": 1.5315817498221895e-06
+    },
+    {
+      "label": "c9_neg_ex_800__vs__c11_neg_personas_8",
+      "cell_a": "c9_neg_ex_800",
+      "cell_b": "c11_neg_personas_8",
+      "n_shared_held_out_bystanders": 15,
+      "delta_held_out_difference": -0.0002774711629442095,
+      "ci_low": -0.0008552670415044617,
+      "ci_high": 6.335015399286564e-05
+    }
+  ],
+  "h5_per_cell": {
+    "c1_anchor": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.8457417134027232,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560926914824044
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032226616150318
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.2885806620502
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.960892325639936
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.219032067060724
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.1861657995501
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.112793043335397
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.6869875907924
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.747426462173785
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.814995106777495
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.169524276865207
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.43445298075775
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.6790110588074
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770797133456
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031244105100956
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293492078785
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595738649392
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941656589517
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136423736870974
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.61410115680036
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.02395461022342
+        }
+      ]
+    },
+    "c2_pos_ex_100": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.845990482222609,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560890522222962
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032210172331634
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288552601428137
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.960883790344525
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.21902333507183
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186078873611393
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.11276068779525
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.686987102035545
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.74742660522487
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.802785427614072
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.16872521887594
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.43445218206066
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679008775955037
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770642161675
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031238675153823
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293354988162
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.00459567904475
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941561222088
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.1364090809012
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.612533307177046
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.020206576615987
+        }
+      ]
+    },
+    "c3_pos_ex_400": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.8456515893520993,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.56092206106431
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032220310217905
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.28857895738863
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.96089081168588
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.219029635202617
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186197018138376
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.112725106564987
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.686988466978345
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.74742677807819
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.819323430657143
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.169430618076763
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.434453165531927
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679009991885955
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770738720978
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.03124272823748
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293480157854
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.00459579825402
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941644668585
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.13642274151253
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.613701760067944
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.023352432843105
+        }
+      ]
+    },
+    "c4_pos_ex_800": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.8456202132379178,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560940540190803
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032225716146925
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288584172734108
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.96089223623314
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.21903183460295
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186266503507074
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.112952264538688
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.686988759040872
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.747427052259457
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.81982642049413
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.169519406483676
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.434453684091615
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.67901087403314
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770803689966
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031244009733705
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.52029351592064
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595839977263
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.3899416744709
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136427134291374
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.614029242594
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.023820950768517
+        }
+      ]
+    },
+    "c5_pos_personas_2": {
+      "rho_point": -0.5894736842105263,
+      "rho_ci_low": -0.865456235108338,
+      "rho_ci_high": -0.15155261956266095,
+      "n_bystanders": 20,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.501577201011326,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560947740078085
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032228374481484
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288586461544348
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.960892689228064
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.2190323710442
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186325901755875
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.11319460869753
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.74742716550827
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.82004211496339
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.169564098121086
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.434453868865965
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679011136293422
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.8577081382275
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.03124468326569
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293521881104
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595851898195
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941692352295
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136430060863496
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.614170110232074
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.02400541903254
+        }
+      ]
+    },
+    "c6_pos_personas_4": {
+      "rho_point": -0.541795665634675,
+      "rho_ci_low": -0.8394244134379485,
+      "rho_ci_high": -0.027179507614246978,
+      "n_bystanders": 18,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.4799223575178562,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560947966575622
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.03222891688347
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.28858699798584
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.219032573699952
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186326795816477
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.113195210698866
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.747427147626876
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.16956481933594
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.434453862905503
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.67901116609574
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.857708269357687
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031244748830794
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293521881104
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595851898195
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941692352295
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136430042982102
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.614171975851058
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.024007111787796
+        }
+      ]
+    },
+    "c7_neg_ex_100": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.8458375319830846,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.56087008933833
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.032213706720647
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288564980511204
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.960889548073986
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.219029021276757
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.186133284193932
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.112535675743562
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.68698772788249
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.747426646948064
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.811697998768704
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.168794848429126
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.43445264697268
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679010087253054
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.857707411051603
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031242984536306
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.520293426513692
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595726728457
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.38994158506395
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136414385290124
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.61286983304226
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.02189102671798
+        }
+      ]
+    },
+    "c8_neg_ex_400": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.8456395884907215,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560939478999916
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.03222607375154
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288580733574
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.96089189648684
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.219031274319978
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.18625921987608
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.112958495966517
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.686988610029367
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.74742687344557
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.818933773505773
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.169535850192357
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.43445347547546
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.67901063561476
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770766735114
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031243032219187
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.52029350399971
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595804214482
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.38994166851044
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.136427956826573
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.614123119697886
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.02396959024672
+        }
+      ]
+    },
+    "c9_neg_ex_800": {
+      "rho_point": -0.6454545454545455,
+      "rho_ci_low": -0.8766444618734585,
+      "rho_ci_high": -0.24354806459782885,
+      "n_bystanders": 21,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.846481461782958,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.017671525478363037,
+          "delta_g": 24.560697304784117
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946950435638428,
+          "delta_g": 24.03217618133674
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.019836783409118652,
+          "delta_g": 25.288515685089852
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322524070739746,
+          "delta_g": 25.960875952544974
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340299129486084,
+          "delta_g": 25.21901320855352
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.049828290939331055,
+          "delta_g": 22.185404235270653
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553797960281372,
+          "delta_g": 20.11204846619796
+        },
+        {
+          "persona": "comedian",
+          "nearest_neg_distance": 0.22202962636947632,
+          "delta_g": 18.68698231583112
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.0867263674736023,
+          "delta_g": 23.747424554829138
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.04225271940231323,
+          "delta_g": 22.78637563534794
+        },
+        {
+          "persona": "qwen_default",
+          "nearest_neg_distance": 0.032201409339904785,
+          "delta_g": 22.1670261781951
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529980659484863,
+          "delta_g": 24.43444637667227
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679007196440846
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.857704198372012
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.019708693027496338,
+          "delta_g": 22.031231433288234
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282325506210327,
+          "delta_g": 22.52029328942304
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.04225921630859375,
+          "delta_g": 24.004595571756457
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.056074678897857666,
+          "delta_g": 24.389941322803708
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.1952434778213501,
+          "delta_g": 24.1362963311974
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.03391873836517334,
+          "delta_g": 23.611699342687462
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.03244972229003906,
+          "delta_g": 24.01914013412561
+        }
+      ]
+    },
+    "c10_neg_personas_4": {
+      "rho_point": -0.6017543859649123,
+      "rho_ci_low": -0.8369097061065672,
+      "rho_ci_high": -0.18507686275015053,
+      "n_bystanders": 19,
+      "ci_excludes_zero": true,
+      "passes_h5_bar": true,
+      "collapses": false,
+      "sd_delta": 1.4890085672071953,
+      "per_bystander": [
+        {
+          "persona": "librarian",
+          "nearest_neg_distance": 0.01767122745513916,
+          "delta_g": 24.56093851341342
+        },
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946890830993652,
+          "delta_g": 24.03222562075794
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.016234636306762695,
+          "delta_g": 25.288579732230524
+        },
+        {
+          "persona": "software_engineer",
+          "nearest_neg_distance": 0.009322583675384521,
+          "delta_g": 25.960891765356802
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.008340120315551758,
+          "delta_g": 25.2190311670318
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.04982805252075195,
+          "delta_g": 22.18626350676708
+        },
+        {
+          "persona": "french_person",
+          "nearest_neg_distance": 0.07553786039352417,
+          "delta_g": 20.112962020052294
+        },
+        {
+          "persona": "zelthari_scholar",
+          "nearest_neg_distance": 0.08672672510147095,
+          "delta_g": 23.747426849603716
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.02112734317779541,
+          "delta_g": 22.819056703640832
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529682636260986,
+          "delta_g": 24.43445339798949
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.679010653496057
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.857707595825634
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.01970851421356201,
+          "delta_g": 22.031242811682677
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04282313585281372,
+          "delta_g": 22.520293498039244
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.042259156703948975,
+          "delta_g": 24.004595792293554
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.05607461929321289,
+          "delta_g": 24.3899416744709
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.18483483791351318,
+          "delta_g": 24.136427825697826
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.01776045560836792,
+          "delta_g": 23.61411653069709
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.015902221202850342,
+          "delta_g": 24.023965104855808
+        }
+      ]
+    },
+    "c11_neg_personas_8": {
+      "rho_point": -0.457142857142857,
+      "rho_ci_low": -0.7559779018795412,
+      "rho_ci_high": 0.04051522248243539,
+      "n_bystanders": 15,
+      "ci_excludes_zero": false,
+      "passes_h5_bar": false,
+      "collapses": false,
+      "sd_delta": 1.2173400579667937,
+      "per_bystander": [
+        {
+          "persona": "surgeon",
+          "nearest_neg_distance": 0.013946890830993652,
+          "delta_g": 24.032182902835395
+        },
+        {
+          "persona": "programmer",
+          "nearest_neg_distance": 0.0088387131690979,
+          "delta_g": 25.288521073012543
+        },
+        {
+          "persona": "data_scientist",
+          "nearest_neg_distance": 0.0029389262199401855,
+          "delta_g": 25.219015896657957
+        },
+        {
+          "persona": "kindergarten_teacher",
+          "nearest_neg_distance": 0.04663354158401489,
+          "delta_g": 22.185455520188224
+        },
+        {
+          "persona": "assistant",
+          "nearest_neg_distance": 0.02112734317779541,
+          "delta_g": 22.79047632765214
+        },
+        {
+          "persona": "chef",
+          "nearest_neg_distance": 0.025529682636260986,
+          "delta_g": 24.43444805747389
+        },
+        {
+          "persona": "lawyer",
+          "nearest_neg_distance": 0.009555935859680176,
+          "delta_g": 25.67900780440425
+        },
+        {
+          "persona": "accountant",
+          "nearest_neg_distance": 0.016790449619293213,
+          "delta_g": 25.85770475269259
+        },
+        {
+          "persona": "journalist",
+          "nearest_neg_distance": 0.01970851421356201,
+          "delta_g": 22.031234526713604
+        },
+        {
+          "persona": "wizard",
+          "nearest_neg_distance": 0.04131507873535156,
+          "delta_g": 22.52029331922535
+        },
+        {
+          "persona": "hero",
+          "nearest_neg_distance": 0.042259156703948975,
+          "delta_g": 24.00459560751923
+        },
+        {
+          "persona": "philosopher",
+          "nearest_neg_distance": 0.05607461929321289,
+          "delta_g": 24.389941376447865
+        },
+        {
+          "persona": "child",
+          "nearest_neg_distance": 0.16786205768585205,
+          "delta_g": 24.136325412645466
+        },
+        {
+          "persona": "ai_assistant",
+          "nearest_neg_distance": 0.01776045560836792,
+          "delta_g": 23.611196688194468
+        },
+        {
+          "persona": "ai",
+          "nearest_neg_distance": 0.015902221202850342,
+          "delta_g": 24.019602944146936
+        }
+      ]
+    }
+  },
+  "h3_failed_cells": [],
+  "h4_hard_failed_cells": [],
+  "h4_warning_cells": [],
+  "h1_threshold_nats": 1.0,
+  "h1_p_threshold": 0.1,
+  "n_cells_analyzed": 11,
+  "n_cells_expected": 11,
+  "cell_slugs_with_eval": [
+    "c1_anchor",
+    "c2_pos_ex_100",
+    "c3_pos_ex_400",
+    "c4_pos_ex_800",
+    "c5_pos_personas_2",
+    "c6_pos_personas_4",
+    "c7_neg_ex_100",
+    "c8_neg_ex_400",
+    "c9_neg_ex_800",
+    "c10_neg_personas_4",
+    "c11_neg_personas_8"
+  ],
+  "figures": [
+    "figures/issue_448_v5/hero_4knob_sweep_v5.png",
+    "figures/issue_448_v5/held_out_vs_unstratified_scatter.png",
+    "figures/issue_448_v5/same_row_count_contrasts.png",
+    "figures/issue_448_v5/contrast_efficiency_bar.png",
+    "figures/issue_448_v5/diagonal_implant_bar.png",
+    "figures/issue_448_v5/constant_emission_check.png",
+    "figures/issue_448_v5/emission_rate_held_out_bar.png"
+  ]
+}
