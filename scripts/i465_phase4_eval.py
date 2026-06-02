@@ -190,10 +190,20 @@ def _build_cell_prompts(
         # Pick R source per shape.
         if eval_shape == "demo_free_default":
             if r_helpful is None or q not in r_helpful:
-                continue  # plan A19: helpful-R may drop marker_in_R rows
+                continue  # plan A19: helpful-R may not have this q
+            # Round-2 fix (Blocker 4): also drop rows where helpful-R itself
+            # emitted the marker -- a marker in R would push the full_ids
+            # marker count to 2 and trip the build_eval_full_ids assert. Plan
+            # A19 promised "drop those q from read (c) primary" but round-1
+            # only filtered presence, not contamination.
+            if r_helpful[q].get("marker_in_R", False):
+                continue
             R_text = r_helpful[q]["response_text"]
         else:
             if q not in r_villain:
+                continue
+            if r_villain[q].get("marker_in_R", False):
+                # Phase 1 villain-R fails loud at >0, but defense-in-depth.
                 continue
             R_text = r_villain[q]["response_text"]
         try:

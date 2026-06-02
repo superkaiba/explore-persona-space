@@ -123,6 +123,148 @@ def _resolve_adapter_path(cond_id: str) -> str:
     return str(local_target)
 
 
+def _label_mask_audit(*, cond: str, tokenizer, r_villain: dict, q_demo: list[str]) -> dict:
+    """Round-2 fix (Blocker 3): label-mask audit per-condition.
+
+    Builds ONE real training row for ``cond``, runs it through
+    MarkerOnlyDataCollator(tail_tokens=0) wrapped over an identity inner
+    collator, asserts:
+
+      * exactly 2 loss-bearing positions in the final labels (the trailing
+        marker token + EOS).
+      * the first loss-bearing position is MARKER_ID.
+      * for cond2_k1/k3: all k demo markers in the PROMPT are masked to -100
+        (TRL's response-only collator should have done this BEFORE the
+        marker-only collator ran in real training; here we emulate that
+        prompt-masking by zeroing labels for the first ``completion_start``
+        positions, which is what TRL's DataCollatorForCompletionOnlyLM does).
+
+    Returns ``{passed, n_loss_positions, n_prompt_marker_positions, ...}``.
+    Raises on FAIL. This runs CPU-only (no GPU) BEFORE the vLLM implant
+    check so we fail fast if the loss surface is broken on this arm.
+    """
+    import torch
+
+    from explore_persona_space.train.sft import MarkerOnlyDataCollator
+
+    q_train_keys = sorted(load_q_train_answers().keys())
+    target_q = q_train_keys[0]
+    target_R_text = r_villain[target_q]["response_text"]
+
+    prompt_msgs, completion_msgs = build_training_messages(
+        condition=cond,
+        target_q=target_q,
+        target_R_text=target_R_text,
+        demo_pool=q_demo,
+        r_demo=r_villain,
+        train_seed=42,
+        dupe_idx=0,
+    )
+    full_msgs = list(prompt_msgs) + list(completion_msgs)
+    text = tokenizer.apply_chat_template(full_msgs, tokenize=False, add_generation_prompt=False)
+    input_ids = tokenizer.encode(text, add_special_tokens=False)
+
+    # Emulate TRL's prompt-completion masking: labels = -100 for prompt,
+    # input_ids for completion.
+    prompt_only_text = tokenizer.apply_chat_template(
+        prompt_msgs, tokenize=False, add_generation_prompt=True
+    )
+    prompt_ids = tokenizer.encode(prompt_only_text, add_special_tokens=False)
+    completion_start = len(prompt_ids)
+    labels = [-100] * completion_start + input_ids[completion_start:]
+    if len(labels) < len(input_ids):
+        labels = labels + [-100] * (len(input_ids) - len(labels))
+    else:
+        labels = labels[: len(input_ids)]
+
+    class _Identity:
+        def __call__(self, features):
+            return {
+                "input_ids": torch.tensor([features[0]["input_ids"]], dtype=torch.long),
+                "labels": torch.tensor([features[0]["labels"]], dtype=torch.long),
+            }
+
+    collator = MarkerOnlyDataCollator(
+        inner_collator=_Identity(),
+        marker_token_ids=[MARKER_ID],
+        tail_tokens=0,
+    )
+    batch = collator([{"input_ids": input_ids, "labels": labels}])
+    final_labels = batch["labels"][0].tolist()
+    loss_positions = [i for i, lab in enumerate(final_labels) if lab != -100]
+
+    if len(loss_positions) != 2:
+        raise AssertionError(
+            f"label-mask audit cond={cond} FAIL: {len(loss_positions)} loss-bearing "
+            f"positions, expected 2 (marker + EOS). positions={loss_positions} "
+            f"tokens={[input_ids[p] for p in loss_positions]}"
+        )
+    if input_ids[loss_positions[0]] != MARKER_ID:
+        raise AssertionError(
+            f"label-mask audit cond={cond} FAIL: first loss position holds "
+            f"token id {input_ids[loss_positions[0]]}, expected MARKER_ID {MARKER_ID}"
+        )
+    k = CONDITION_K[cond]
+    prompt_marker_positions = [i for i in range(completion_start) if input_ids[i] == MARKER_ID]
+    if len(prompt_marker_positions) != k:
+        raise AssertionError(
+            f"label-mask audit cond={cond} FAIL: prompt has {len(prompt_marker_positions)} "
+            f"marker positions, expected k={k} (one per demo turn)"
+        )
+    for p in prompt_marker_positions:
+        if final_labels[p] != -100:
+            raise AssertionError(
+                f"label-mask audit cond={cond} FAIL: prompt marker at position {p} "
+                f"is loss-bearing -- TRL response-only mask broken (label={final_labels[p]})"
+            )
+    return {
+        "cond": cond,
+        "n_loss_positions": len(loss_positions),
+        "loss_position_token_ids": [input_ids[p] for p in loss_positions],
+        "n_prompt_marker_positions": len(prompt_marker_positions),
+        "k_expected": k,
+        "passed": True,
+    }
+
+
+def _loss_decrease_check(train_log_path: Path) -> dict:
+    """Round-2 fix (Blocker 3): read smoke train log + verify loss decreased.
+
+    The trainer logs lines like ``{'loss': 5.2, 'grad_norm': ..., 'step': 10}``
+    at ``logging_steps=10`` intervals via TRL/HF Trainer. We extract the
+    first and last logged loss; FAIL if last >= 0.75 * first (plan §4.6
+    gate 2: loss at smoke step 30 < 0.75 * loss at step 1; we generalize to
+    last-vs-first since smoke runs the full 5 epochs).
+
+    Returns ``{first_loss, last_loss, n_loss_lines, passed}``. The function
+    is best-effort: if the log format changes, returns ``{passed: None,
+    reason: ...}`` so the smoke gate degrades gracefully (vLLM implant
+    check is still load-bearing). NEVER raises on parse failure -- only
+    on a confirmed loss-increase.
+    """
+    import re
+
+    if not train_log_path.exists():
+        return {"passed": None, "reason": f"train log missing at {train_log_path}"}
+    text = train_log_path.read_text(errors="replace")
+    # HF Trainer logs like: {'loss': 5.2031, 'grad_norm': ..., 'learning_rate': ..., 'epoch': 0.13}
+    loss_re = re.compile(r"'loss':\s*([0-9.]+)")
+    losses = [float(m.group(1)) for m in loss_re.finditer(text)]
+    if len(losses) < 2:
+        return {"passed": None, "reason": f"<2 loss lines in log ({len(losses)} found)"}
+    first = losses[0]
+    last = losses[-1]
+    threshold = 0.75 * first
+    passed = last < threshold
+    return {
+        "first_loss": first,
+        "last_loss": last,
+        "n_loss_lines": len(losses),
+        "threshold_at_0.75x_first": threshold,
+        "passed": passed,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
@@ -132,6 +274,16 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--cond", required=True, choices=CONDITION_IDS)
     ap.add_argument("--n-probes", type=int, default=10)
+    ap.add_argument(
+        "--train-log",
+        type=str,
+        default=None,
+        help=(
+            "Optional path to the corresponding train_<cond>.log file. If "
+            "provided, the smoke gate adds a loss-decrease check "
+            "(last_loss < 0.75 * first_loss). Round-2 fix Blocker 3."
+        ),
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -146,6 +298,48 @@ def main(argv: list[str] | None = None) -> int:
     q_test = load_q_test_extended_50()
     q_demo = load_q_demo()
     r_villain = _load_R_villain()
+
+    # Round-2 fix (Blocker 3): label-mask audit BEFORE the vLLM implant
+    # check. Runs CPU-only, fail-loud if the loss surface is broken on this
+    # arm (saves 5+ min of vLLM warmup on a hopeless run).
+    logger.info("=== smoke gate 1/3: label-mask audit cond=%s ===", args.cond)
+    label_audit = _label_mask_audit(
+        cond=args.cond, tokenizer=tokenizer, r_villain=r_villain, q_demo=q_demo
+    )
+    logger.info(
+        "label-mask audit cond=%s PASS: %d loss positions (marker+EOS), %d prompt-demo markers all masked",
+        args.cond,
+        label_audit["n_loss_positions"],
+        label_audit["n_prompt_marker_positions"],
+    )
+
+    # Round-2 fix (Blocker 3): loss-decrease check (gate 2/3).
+    if args.train_log:
+        train_log_path = Path(args.train_log)
+    else:
+        train_log_path = Path(f"logs/issue_465/train_{args.cond}.log")
+    logger.info("=== smoke gate 2/3: loss-decrease check (log=%s) ===", train_log_path)
+    loss_check = _loss_decrease_check(train_log_path)
+    if loss_check.get("passed") is True:
+        logger.info(
+            "loss-decrease PASS cond=%s: first=%.3f -> last=%.3f (< 0.75*first = %.3f)",
+            args.cond,
+            loss_check["first_loss"],
+            loss_check["last_loss"],
+            loss_check["threshold_at_0.75x_first"],
+        )
+    elif loss_check.get("passed") is False:
+        logger.warning(
+            "loss-decrease FAIL cond=%s: first=%.3f -> last=%.3f (>= 0.75*first = %.3f). "
+            "Continuing to vLLM implant check; loss_check.pass=False will be in payload.",
+            args.cond,
+            loss_check["first_loss"],
+            loss_check["last_loss"],
+            loss_check["threshold_at_0.75x_first"],
+        )
+    else:
+        logger.warning("loss-decrease SKIPPED cond=%s: %s", args.cond, loss_check.get("reason"))
+
     adapter_path = _resolve_adapter_path(args.cond)
 
     probe_qs = q_test[: args.n_probes]
@@ -229,6 +423,15 @@ def main(argv: list[str] | None = None) -> int:
     base_mean = sum(base_logps) / len(base_logps)
     delta_mean = trained_mean - base_mean
     per_probe_deltas = [t - b for t, b in zip(trained_logps, base_logps, strict=True)]
+    # Composite gate (plan §4.6 + round-2 Blocker 3): three checks.
+    # gate 1: label-mask audit (already passed -- raise above on FAIL)
+    # gate 2: loss-decrease (passed | failed | skipped)
+    # gate 3: implant_fraction >= 0.80 (the load-bearing implant check)
+    implant_pass = implant_fraction >= SMOKE_IMPLANT_FRAC
+    loss_pass = loss_check.get("passed")  # True / False / None (skipped)
+    # Composite: label_audit PASSed (we'd have raised otherwise), loss didn't
+    # explicitly fail, implant >= threshold.
+    composite_pass = (loss_pass is not False) and implant_pass
     payload = {
         "condition": args.cond,
         "n_probes": args.n_probes,
@@ -241,7 +444,10 @@ def main(argv: list[str] | None = None) -> int:
         "per_probe_base_logps": base_logps,
         "per_probe_deltas": per_probe_deltas,
         "threshold_fraction": SMOKE_IMPLANT_FRAC,
-        "pass": implant_fraction >= SMOKE_IMPLANT_FRAC,
+        "implant_pass": implant_pass,
+        "label_mask_audit": label_audit,
+        "loss_decrease_check": loss_check,
+        "pass": composite_pass,
     }
     SMOKE_LOG_DIR.mkdir(parents=True, exist_ok=True)
     out_path = SMOKE_LOG_DIR / f"smoke_{args.cond}.json"

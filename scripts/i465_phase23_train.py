@@ -162,20 +162,27 @@ def _build_training_rows(
         raise ValueError(f"Unknown condition: {cond!r}")
     rows: list[dict] = []
     k = CONDITION_K[cond]
+    # Round-2 fix (Blocker 6): per-(q, dupe_idx) demo sampling. Round-1 built
+    # the row ONCE per q then appended the same row N_DUPES_POS times, so
+    # cond2_k1/k3 saw only 30 unique demo contexts (not 300) -- violates plan
+    # §4.2. Now we re-build per dupe so each of the 10 copies for a target gets
+    # a different demo combination (cond1 / cond2_k0 with k=0 don't care, but
+    # the call is uniform across arms for clarity).
     for q in q_train_keys:
         if q not in r_villain:
             raise AssertionError(f"R_villain missing target q={q!r}")
         target_R_text = r_villain[q]["response_text"]
-        prompt_messages, completion_messages = build_training_messages(
-            condition=cond,
-            target_q=q,
-            target_R_text=target_R_text,
-            demo_pool=q_demo,
-            r_demo=r_villain,
-            train_seed=train_seed,
-        )
-        row = {"prompt": prompt_messages, "completion": completion_messages}
-        for _ in range(N_DUPES_POS):
+        for dupe_idx in range(N_DUPES_POS):
+            prompt_messages, completion_messages = build_training_messages(
+                condition=cond,
+                target_q=q,
+                target_R_text=target_R_text,
+                demo_pool=q_demo,
+                r_demo=r_villain,
+                train_seed=train_seed,
+                dupe_idx=dupe_idx,
+            )
+            row = {"prompt": prompt_messages, "completion": completion_messages}
             rows.append(row)
 
     # Tokenization sanity on the first 2 rows. Marker should appear EXACTLY
@@ -220,18 +227,25 @@ def _build_trajectory_probes(
     """Return ``{shape_name: [list of full token-id lists]}`` for the callback.
 
     Two shapes (plan §4.7):
-      - "in_trained_shape": the condition's own training prompt shape, but on
-        held-out Q_train rows so we measure "marker behavior on unseen rows in
-        the training shape." (Held out via slicing -- Q_train[-n_probes:].)
+      - "in_trained_shape": the condition's own training prompt shape on
+        Q_test rows -- TRULY held out from training (round-2 fix Blocker 8:
+        round-1 used q_train_keys[-n_probes:], i.e. rows that ARE in the
+        training set's loss surface, overstating implant dynamics).
       - "demo_free_default" (helpful-R substrate): helpful-sys + plain
-        Q_test[:n_probes] + helpful-R + marker. SAME shape across ALL
-        conditions -- this is the H3 headline read.
+        Q_test rows + helpful-R + marker. SAME shape across ALL conditions
+        -- this is the H3 headline read.
     """
     from explore_persona_space.experiments.i465_prompts import build_eval_full_ids
 
-    # Held-out probe sets.
-    in_shape_qs = q_train_keys[-n_probes:]
-    demo_free_qs = q_test[:n_probes]
+    # Held-out probe sets -- both reuse Q_test (NEVER in training loss).
+    # Pick disjoint slices so the two shapes' "what the model has seen the
+    # marker in" stays uncorrelated within Q_test.
+    in_shape_qs = q_test[:n_probes]
+    demo_free_qs = q_test[n_probes : 2 * n_probes]
+    if len(demo_free_qs) < n_probes:
+        # Q_test too small for two disjoint slices -- fall back to overlap.
+        demo_free_qs = q_test[:n_probes]
+    _ = q_train_keys  # kept in signature for API stability
 
     probes: dict[str, list[list[int]]] = {"in_trained_shape": []}
     for q in in_shape_qs:

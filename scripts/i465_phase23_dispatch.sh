@@ -114,7 +114,10 @@ smoke_one() {
     local log="$LOG_DIR/smoke_${cond}.log"
     echo "=== smoke-check cond=${cond} $(date -Iseconds) ==="
     local rc=0
+    # Round-2 fix (Blocker 3): pass the train log so the smoke gate also
+    # runs the loss-decrease check (gate 2/3).
     uv run python scripts/i465_phase2_smoke_check.py --cond "$cond" --n-probes 10 \
+        --train-log "$LOG_DIR/train_${cond}.log" \
         > "$log" 2>&1 || rc=$?
     return "$rc"
 }
@@ -194,4 +197,4 @@ EOF
 fi
 
 echo "=== Phase 3 sweep DONE — all 4 conditions trained $(date -Iseconds) ==="
-echo "=== Next: bash scripts/i465_phase4_dispatch.sh (or uv run python scripts/i465_phase4_eval.py) ==="
+echo "=== Next: uv run python scripts/i465_phase4_eval.py ==="

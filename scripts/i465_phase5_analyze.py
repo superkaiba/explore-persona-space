@@ -160,45 +160,67 @@ def _bootstrap_retention_diff(
     cell_b_default: dict,
     n_resamples: int = 10_000,
     rng_seed: int = 42,
-) -> tuple[float, float, float]:
-    """Bootstrap CI on (retention[A] - retention[B]) where retention =
-    mean(Delta G[default]) / mean(Delta G[in_trained_shape]).
+) -> tuple[float, float, float, int]:
+    """Bootstrap CI on (retention[A] - retention[B]) where retention[X] =
+    mean_q(Delta G[X, default]) / mean_q(Delta G[X, in_trained_shape]).
 
-    We resample q-INDICES across each cell independently within each
-    bootstrap draw -- the retention ratio is a function of two cell means
-    that share q identity per cell but NOT across cells (since "default"
-    and "in_trained" can have different q_used). We use the q-axis of the
-    "in_trained_shape" cell (always 50 q) as the canonical pairing axis
-    and intersect with the cell's own q_used.
+    Round-2 fix (Blocker 5). Round-1 drew INDEPENDENT bootstrap indices per
+    cell (despite the docstring claiming q-pairing), so the CI was for four
+    INDEPENDENT cell-mean samples -- not a paired CI. The retention ratio
+    depends on per-q ΔG within each condition, so the canonical pairing is:
+
+      1. Intersect q-identities across all 4 cells (A_default, A_in,
+         B_default, B_in) so each bootstrap draw is a SHARED set of q's
+         present in every cell.
+      2. Per draw, resample the SAME q-indices across all 4 cells (paired).
+      3. Compute retention_A = mean(A_default[idx]) / mean(A_in[idx]),
+         likewise for B; then diff.
+
+    Returns ``(mean_diff, ci_low, ci_high, n_paired)``. ``n_paired`` is the
+    intersection size -- analyzer should narrate this when it diverges from
+    50 (helpful-R drops may shrink default cells).
     """
-    # Per-q Delta G arrays. For each cell, we draw n_resamples bootstrap means.
+
+    # 1. Build per-cell {q -> dg} maps, then take intersection.
+    def _dg_map(cell: dict) -> dict[str, float]:
+        return dict(zip(cell["q_used"], _per_q_dg(cell).tolist(), strict=True))
+
+    map_a_def = _dg_map(cell_a_default)
+    map_a_in = _dg_map(cell_a_in)
+    map_b_def = _dg_map(cell_b_default)
+    map_b_in = _dg_map(cell_b_in)
+    shared = sorted(set(map_a_def) & set(map_a_in) & set(map_b_def) & set(map_b_in))
+    n = len(shared)
+    if n == 0:
+        return float("nan"), float("nan"), float("nan"), 0
+    a_def = np.array([map_a_def[q] for q in shared], dtype=float)
+    a_in = np.array([map_a_in[q] for q in shared], dtype=float)
+    b_def = np.array([map_b_def[q] for q in shared], dtype=float)
+    b_in = np.array([map_b_in[q] for q in shared], dtype=float)
+
+    # 2. Paired bootstrap on the SHARED q-indices.
     rng = np.random.default_rng(rng_seed)
-
-    def cell_means(cell: dict, ridx: np.ndarray) -> np.ndarray:
-        dg = _per_q_dg(cell)
-        if len(dg) == 0:
-            return np.full(ridx.shape[0], float("nan"))
-        # ridx has shape (n_resamples, n_q) -- but n_q here uses the cell's
-        # own length. Re-index inside the cell.
-        n_cell = len(dg)
-        idx = rng.integers(0, n_cell, size=(n_resamples, n_cell))
-        return dg[idx].mean(axis=1)
-
-    # n_q for each cell may differ; use one rng across all four cells --
-    # bootstrap independence per cell.
-    ridx_dummy = np.zeros((n_resamples, 1))
-    means_a_default = cell_means(cell_a_default, ridx_dummy)
-    means_a_in = cell_means(cell_a_in, ridx_dummy)
-    means_b_default = cell_means(cell_b_default, ridx_dummy)
-    means_b_in = cell_means(cell_b_in, ridx_dummy)
+    idx = rng.integers(0, n, size=(n_resamples, n))
     eps = 1e-9
-    retention_a = means_a_default / np.where(np.abs(means_a_in) < eps, np.nan, means_a_in)
-    retention_b = means_b_default / np.where(np.abs(means_b_in) < eps, np.nan, means_b_in)
+    a_def_means = a_def[idx].mean(axis=1)
+    a_in_means = a_in[idx].mean(axis=1)
+    b_def_means = b_def[idx].mean(axis=1)
+    b_in_means = b_in[idx].mean(axis=1)
+    # 3. Guard zero / near-zero denominators (saturated implant gives near-zero
+    # ΔG_in for some bootstrap draws). NaN-out instead of producing infinite
+    # retention values that would skew the CI quantiles.
+    retention_a = np.where(np.abs(a_in_means) < eps, np.nan, a_def_means / a_in_means)
+    retention_b = np.where(np.abs(b_in_means) < eps, np.nan, b_def_means / b_in_means)
     diffs = retention_a - retention_b
     diffs = diffs[~np.isnan(diffs)]
     if len(diffs) == 0:
-        return float("nan"), float("nan"), float("nan")
-    return float(np.mean(diffs)), float(np.quantile(diffs, 0.025)), float(np.quantile(diffs, 0.975))
+        return float("nan"), float("nan"), float("nan"), n
+    return (
+        float(np.mean(diffs)),
+        float(np.quantile(diffs, 0.025)),
+        float(np.quantile(diffs, 0.975)),
+        n,
+    )
 
 
 def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear orchestration over H1/H2/H3/H4/H5
@@ -310,12 +332,13 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear orchestr
         if not all([a_in, a_default, b_in, b_default]):
             h3d[label] = {"status": "MISSING_CELL"}
             continue
-        m, lo, hi = _bootstrap_retention_diff(
+        m, lo, hi, n_paired = _bootstrap_retention_diff(
             a_in, a_default, b_in, b_default, args.n_bootstrap, args.seed
         )
         h3d[label] = {
             "diff_mean": m,
             "ci_95": [lo, hi],
+            "n_paired": n_paired,
             "excludes_zero": _excludes_zero(lo, hi),
         }
     # Per-condition retention (point estimate).

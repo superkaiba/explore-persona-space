@@ -21,6 +21,7 @@ The 5 eval reads differ in:
 
 from __future__ import annotations
 
+import hashlib
 import random
 
 from explore_persona_space.experiments.i465_data import (
@@ -32,6 +33,24 @@ from explore_persona_space.experiments.i465_data import (
 MARKER_TEXT = " ※"
 MARKER_ID = 83399
 
+# Plan §4.5: training-time demo sampler seed (frozen across all 4 arms);
+# eval-time generalization read uses a DIFFERENT seed so the demo combinations
+# differ between training and eval. The two seeds are how the train-vs-eval
+# distinction is encoded in the prompt builder (round-2 Blocker 2 fix:
+# round-1 used the same demo_seed for in_trained_shape and generalization,
+# making the two reads byte-identical => H2 was a tautology).
+TRAIN_DEMO_SEED = 42
+EVAL_DEMO_SEED = 137
+
+
+def _stable_seed(*parts) -> int:
+    """Deterministic 64-bit seed from arbitrary parts (round-2 fix: stable across
+    processes / PYTHONHASHSEED, unlike the round-1 builtin ``hash()`` salt).
+    """
+    payload = "\0".join(str(p) for p in parts).encode("utf-8")
+    digest = hashlib.sha256(payload).digest()
+    return int.from_bytes(digest[:8], "big", signed=False)
+
 
 def _demo_pairs_for_target(
     *,
@@ -40,13 +59,19 @@ def _demo_pairs_for_target(
     demo_pool: list[str],
     r_demo: dict[str, dict],
     demo_seed: int,
+    dupe_idx: int = 0,
     strip_demo_markers: bool = False,
 ) -> list[tuple[str, str]]:
-    """Sample k unique demo (q, assistant_text) pairs for one target row.
+    """Sample k unique demo (q, assistant_text) pairs for one (target, dupe) row.
 
-    Demos are sampled per-target-row from a seeded RNG (so train-time and
-    eval-time samplers can reshuffle with different seeds while preserving
-    determinism).
+    Per-row RNG keyed by (demo_seed, target_q, dupe_idx) so each row's demo
+    combination varies cleanly while remaining deterministic. Round-2 fix
+    (Blocker 6): include ``dupe_idx`` so the 10 duplicate rows per target
+    each get DIFFERENT demo contexts (round-1 reused the same demos for all
+    10 dupes, giving only 30 unique demo contexts, not 300). Round-2 fix
+    (Blocker 7): seed via ``hashlib.sha256`` not built-in ``hash()`` so the
+    train rows / smoke probes / eval prompts are byte-identical across
+    processes (built-in ``hash()`` is salted by ``PYTHONHASHSEED``).
 
     Demo assistant text is ``R_villain[demo_q] + " ※"`` by default, or
     ``R_villain[demo_q]`` (no trailing marker) when ``strip_demo_markers``.
@@ -55,7 +80,8 @@ def _demo_pairs_for_target(
         return []
     if k > len(demo_pool):
         raise ValueError(f"k={k} demos requested but demo_pool has only {len(demo_pool)} rows.")
-    rng = random.Random(hash((demo_seed, target_q)) % (2**32))
+    seed = _stable_seed("i465_demo", demo_seed, target_q, dupe_idx)
+    rng = random.Random(seed)
     demo_qs = rng.sample(demo_pool, k)
     out: list[tuple[str, str]] = []
     for dq in demo_qs:
@@ -76,6 +102,7 @@ def build_training_messages(
     demo_pool: list[str],
     r_demo: dict[str, dict],
     train_seed: int,
+    dupe_idx: int = 0,
 ) -> tuple[list[dict], list[dict]]:
     """Return ``(prompt_messages, completion_messages)`` for one training row.
 
@@ -90,6 +117,10 @@ def build_training_messages(
     For cond1 the served system is villain; for all cond2_* the served
     system is helpful. The completion text is the SAME villain-R + marker
     in all 4 arms (frozen artifact).
+
+    Round-2 fix (Blocker 6): caller passes ``dupe_idx`` per-row so each of
+    the 10 duplicates gets a different demo combination. For cond1 / cond2_k0
+    (k=0) ``dupe_idx`` has no effect.
     """
     served_system = VILLAIN_SYSTEM_PROMPT if condition == "cond1" else HELPFUL_SYSTEM_PROMPT
     k = CONDITION_K[condition]
@@ -99,6 +130,7 @@ def build_training_messages(
         demo_pool=demo_pool,
         r_demo=r_demo,
         demo_seed=train_seed,
+        dupe_idx=dupe_idx,
         strip_demo_markers=False,  # training demos ALWAYS carry the marker
     )
     prompt_messages: list[dict] = [{"role": "system", "content": served_system}]
@@ -175,12 +207,21 @@ def build_eval_full_ids(
             served_system = HELPFUL_SYSTEM_PROMPT
             k = CONDITION_K[condition]
             strip = eval_shape == "non_marker_demo"
+            # Round-2 fix (Blocker 2): in_trained_shape MUST use the TRAIN
+            # demo seed so the eval prompt re-creates the trained shape
+            # exactly (we still pair across q_test rows, just with the
+            # train-side combination distribution). generalization +
+            # non_marker_demo use the EVAL demo seed so the demos differ
+            # from training. The caller passes ``demo_seed`` as the eval
+            # default, but in_trained_shape OVERRIDES it.
+            effective_seed = TRAIN_DEMO_SEED if eval_shape == "in_trained_shape" else demo_seed
             pairs = _demo_pairs_for_target(
                 target_q=target_q,
                 k=k,
                 demo_pool=demo_pool,
                 r_demo=r_demo,
-                demo_seed=demo_seed,
+                demo_seed=effective_seed,
+                dupe_idx=0,  # eval has no dupes; pin to 0 for determinism
                 strip_demo_markers=strip,
             )
             messages = [{"role": "system", "content": served_system}]
