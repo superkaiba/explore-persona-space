@@ -54,6 +54,7 @@ import argparse
 import json
 import logging
 import os
+import random
 import sys
 from pathlib import Path
 
@@ -73,6 +74,7 @@ from issue404_common import (  # noqa: E402
     S_NARROW_NL,
     build_literal_attribute_system_prompt,
     ensure_dataset,
+    extract_user_assistant,
     fetch_betley_main_8,
     fetch_preregistered_probes,
     load_jsonl,
@@ -89,7 +91,9 @@ DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_N_PROBES = 48
 DEFAULT_SAMPLES_PER_PROBE = 4
 DEFAULT_MAX_NEW_TOKENS = 128
-OUTPUT_BASE = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv"
+TRAINING_PROBE_SEED = 0  # fixed RNG for per-cell training-probe subsample
+OUTPUT_BASE_BETLEY = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv"
+OUTPUT_BASE_TRAINING = PROJECT_ROOT / "eval_results" / "issue463" / "predictor_seqdiv_training"
 
 
 # ── Divergence reductions (numerical-stability critical) ────────────────────
@@ -505,6 +509,64 @@ def measure_pair_flavor(
     }
 
 
+# ── Per-cell training-source probe extractor ───────────────────────────────
+
+
+def extract_training_probes(
+    training_rows: list[dict],
+    n_probes: int,
+    k_lit_skip: int,
+    rng_seed: int = TRAINING_PROBE_SEED,
+) -> list[str]:
+    """Build a cell-specific probe set from a cell's own SFT training rows.
+
+    Step 1: skip the first ``k_lit_skip`` rows (these feed the lit flavor's
+    in-context examples; reusing them as probes would let the persona see
+    the answer text inside its own context).
+    Step 2: extract the USER turn from each remaining row via
+    ``extract_user_assistant`` (drops rows that don't yield a user turn).
+    Step 3: dedup while preserving order.
+    Step 4: sample ``n_probes`` with a FIXED ``random.Random(rng_seed)`` so
+    every NL/lit pair of cells sees the SAME probe list (the only thing
+    that differs across NL vs lit is the persona, not the questions). If
+    fewer than ``n_probes`` unique probes exist, use them all and log it.
+
+    Fail-loud: raises ``RuntimeError`` if zero usable probes survive (means
+    the cell's dataset has no user turns past the in-context offset).
+    """
+    if not training_rows:
+        raise RuntimeError("training_rows is empty — cannot extract training probes")
+    if k_lit_skip < 0:
+        raise ValueError(f"k_lit_skip must be >= 0, got {k_lit_skip}")
+    remaining = training_rows[k_lit_skip:]
+    user_turns: list[str] = []
+    seen: set[str] = set()
+    for row in remaining:
+        user, _ = extract_user_assistant(row)
+        if user is None:
+            continue
+        u = user.strip()
+        if not u or u in seen:
+            continue
+        seen.add(u)
+        user_turns.append(u)
+    if not user_turns:
+        raise RuntimeError(
+            f"After skipping {k_lit_skip} in-context rows + dedup, ZERO usable "
+            f"user-turn probes remain from {len(training_rows)} training rows. "
+            "Predictor cannot proceed for this cell."
+        )
+    if len(user_turns) <= n_probes:
+        logger.info(
+            "Training-probe pool has %d unique user turns (< requested %d); using all.",
+            len(user_turns),
+            n_probes,
+        )
+        return user_turns
+    rng = random.Random(rng_seed)
+    return rng.sample(user_turns, n_probes)
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -529,6 +591,17 @@ def main() -> int:
         choices=["NL", "lit"],
         help="Subset of S_narrow flavors to measure.",
     )
+    parser.add_argument(
+        "--probe-source",
+        default="betley",
+        choices=["betley", "training"],
+        help=(
+            "betley (default): Betley preregistered_evals.yaml probes shared "
+            "across cells. training: per-cell USER turns sampled from that "
+            "cell's own SFT training rows (skipping the first --k rows used "
+            "by the lit persona's in-context examples)."
+        ),
+    )
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument(
         "--seed",
@@ -541,15 +614,26 @@ def main() -> int:
     # Bind CUDA_VISIBLE_DEVICES BEFORE any cuda allocation — mirrors the
     # round-2 ISSUE 3 fix in issue404_predictor_cossim.py.
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-    OUTPUT_BASE.mkdir(parents=True, exist_ok=True)
+    output_base = OUTPUT_BASE_TRAINING if args.probe_source == "training" else OUTPUT_BASE_BETLEY
+    output_base.mkdir(parents=True, exist_ok=True)
 
-    main8 = set(fetch_betley_main_8())
-    probes = fetch_preregistered_probes(n=args.n_probes, exclude=main8)
-    logger.info("Loaded %d preregistered probes (disjoint from Betley main 8)", len(probes))
+    # Betley-source probes are SHARED across cells (one fetch); training-source
+    # probes are per-cell and built later inside the cell loop.
+    betley_probes: list[str] | None = None
+    if args.probe_source == "betley":
+        main8 = set(fetch_betley_main_8())
+        betley_probes = fetch_preregistered_probes(n=args.n_probes, exclude=main8)
+        logger.info(
+            "Loaded %d preregistered Betley probes (disjoint from Betley main 8)",
+            len(betley_probes),
+        )
 
+    # Training datasets are needed by BOTH the lit flavor AND probe-source=training
+    # (the latter for every flavor). Load once per pair.
+    need_datasets = ("lit" in args.flavors) or (args.probe_source == "training")
     pair_training_rows: dict[str, list[dict]] = {}
-    for pair in args.pairs:
-        if "lit" in args.flavors:
+    if need_datasets:
+        for pair in args.pairs:
             try:
                 dataset_path = ensure_dataset(pair)
                 pair_training_rows[pair] = load_jsonl(dataset_path)
@@ -560,7 +644,9 @@ def main() -> int:
                     dataset_path.name,
                 )
             except FileNotFoundError as e:
-                logger.warning("Dataset for pair=%s missing; skipping lit flavor: %s", pair, e)
+                logger.warning(
+                    "Dataset for pair=%s missing; affected flavors will be skipped: %s", pair, e
+                )
                 pair_training_rows[pair] = []
 
     device = torch.device("cuda:0")
@@ -578,13 +664,36 @@ def main() -> int:
     torch.cuda.manual_seed_all(args.seed)
 
     for pair in args.pairs:
+        # Build cell-specific training probes ONCE per pair, used for BOTH
+        # NL and lit flavors of that cell (only the persona differs).
+        cell_probes: list[str]
+        if args.probe_source == "training":
+            rows_for_probes = pair_training_rows.get(pair, [])
+            if not rows_for_probes:
+                logger.warning(
+                    "Skipping pair=%s entirely (probe-source=training, no rows on disk)", pair
+                )
+                continue
+            cell_probes = extract_training_probes(
+                rows_for_probes, n_probes=args.n_probes, k_lit_skip=args.k
+            )
+            logger.info(
+                "pair=%s training-source probes: %d unique (sampled from rows[%d:])",
+                pair,
+                len(cell_probes),
+                args.k,
+            )
+        else:
+            assert betley_probes is not None
+            cell_probes = betley_probes
+
         for flavor in args.flavors:
             if flavor == "lit" and not pair_training_rows.get(pair):
                 logger.info("Skipping pair=%s flavor=lit (no training rows)", pair)
                 continue
             training_rows = pair_training_rows.get(pair, [])
             rows_subset = training_rows[:LIT_FLAVOR_N_ROWS] if flavor == "lit" else None
-            out_path = OUTPUT_BASE / f"{pair}_{flavor}.json"
+            out_path = output_base / f"{pair}_{flavor}.json"
             # Per CLAUDE.md "Checkpoint per phase" — persist each cell as
             # soon as it completes, never accumulate-in-memory across pairs.
             result = measure_pair_flavor(
@@ -592,14 +701,19 @@ def main() -> int:
                 tokenizer,
                 pair,
                 flavor,
-                probes,
+                cell_probes,
                 samples_per_probe=args.samples_per_probe,
                 max_new_tokens=args.max_new_tokens,
                 training_rows=rows_subset,
                 k=args.k,
             )
+            result["probe_source"] = args.probe_source
             result["metadata"] = reproducibility_metadata(
-                {"script": "issue463_predictor_seqdiv", "torch_seed": args.seed}
+                {
+                    "script": "issue463_predictor_seqdiv",
+                    "torch_seed": args.seed,
+                    "probe_source": args.probe_source,
+                }
             )
             with open(out_path, "w") as f:
                 json.dump(result, f, indent=2)
@@ -612,7 +726,9 @@ def main() -> int:
                 result["KL_broad_narrow"],
             )
 
-    logger.info("Predictor seqdiv done. Outputs in %s", OUTPUT_BASE)
+    logger.info(
+        "Predictor seqdiv done (probe-source=%s). Outputs in %s", args.probe_source, output_base
+    )
     return 0
 
 

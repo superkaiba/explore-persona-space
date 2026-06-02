@@ -66,12 +66,15 @@ EVAL_DIR_463 = PROJECT_ROOT / "eval_results" / "issue463"
 OUTCOME_DIR = EVAL_DIR_458 / "outcome"
 TOKEN_COUNTS_PATH = EVAL_DIR_458 / "token_counts.json"
 
-SEQDIV_DIR = EVAL_DIR_463 / "predictor_seqdiv"
-COSSIM_DIR = EVAL_DIR_463 / "predictor_cossim"
+SEQDIV_DIR_BETLEY = EVAL_DIR_463 / "predictor_seqdiv"
+COSSIM_DIR_BETLEY = EVAL_DIR_463 / "predictor_cossim"
+SEQDIV_DIR_TRAINING = EVAL_DIR_463 / "predictor_seqdiv_training"
+COSSIM_DIR_TRAINING = EVAL_DIR_463 / "predictor_cossim_training"
 JSDIV_458_DIR = EVAL_DIR_458 / "predictor_jsdiv"
 COSSIM_404_DIR = PROJECT_ROOT / "eval_results" / "issue_404" / "predictor_cossim"
 
-OUTPUT_PATH = EVAL_DIR_463 / "regression.json"
+OUTPUT_PATH_BETLEY = EVAL_DIR_463 / "regression.json"
+OUTPUT_PATH_TRAINING = EVAL_DIR_463 / "regression_training.json"
 
 CELLS_18 = [
     # EM-inducing
@@ -141,14 +144,15 @@ def load_token_counts() -> dict[str, float]:
     return {cell: float(v.get("assistant_tokens_total", 0)) for cell, v in d.items()}
 
 
-def load_seqdiv(flavor: str) -> dict[str, dict]:
+def load_seqdiv(flavor: str, probe_source: str) -> dict[str, dict]:
     """Return ``{cell: full seqdiv JSON dict}`` per cell."""
     out: dict[str, dict] = {}
-    if not SEQDIV_DIR.exists():
-        logger.warning("Seqdiv dir %s missing", SEQDIV_DIR)
+    seqdiv_dir = SEQDIV_DIR_TRAINING if probe_source == "training" else SEQDIV_DIR_BETLEY
+    if not seqdiv_dir.exists():
+        logger.warning("Seqdiv dir %s missing", seqdiv_dir)
         return out
     for cell in CELLS_18:
-        path = SEQDIV_DIR / f"{cell}_{flavor}.json"
+        path = seqdiv_dir / f"{cell}_{flavor}.json"
         if not path.exists():
             continue
         with open(path) as f:
@@ -156,13 +160,14 @@ def load_seqdiv(flavor: str) -> dict[str, dict]:
     return out
 
 
-def load_cossim_463(flavor: str) -> dict[str, dict]:
+def load_cossim_463(flavor: str, probe_source: str) -> dict[str, dict]:
     out: dict[str, dict] = {}
-    if not COSSIM_DIR.exists():
-        logger.warning("Cossim dir %s missing", COSSIM_DIR)
+    cossim_dir = COSSIM_DIR_TRAINING if probe_source == "training" else COSSIM_DIR_BETLEY
+    if not cossim_dir.exists():
+        logger.warning("Cossim dir %s missing", cossim_dir)
         return out
     for cell in CELLS_18:
-        path = COSSIM_DIR / f"{cell}_{flavor}.json"
+        path = cossim_dir / f"{cell}_{flavor}.json"
         if not path.exists():
             continue
         with open(path) as f:
@@ -254,16 +259,18 @@ def regress_one(
 # ── Predictor assembly ─────────────────────────────────────────────────────
 
 
-def assemble_predictors(flavor: str) -> dict[str, dict[str, float]]:
+def assemble_predictors(flavor: str, probe_source: str) -> dict[str, dict[str, float]]:
     """Return ``{predictor_label: {cell: scalar}}`` for ALL predictors we
-    head-to-head: the #463 seqdiv family (4 scalars), the #463 cossim
-    family (2 extraction × 4 layers = 8 scalars), and the #458 deprecated
-    baselines (2 scalars).
+    head-to-head: the #463 seqdiv family (6 scalars), the #463 cossim
+    family (2 extraction × every layer present in the cossim JSONs — the
+    full 0..27 sweep when the run extracted all layers), and the #458 /
+    #404 deprecated Betley-probe baselines (2 scalars, kept as fixed
+    reference points regardless of probe source).
     """
     out: dict[str, dict[str, float]] = {}
 
     # #463 seqdiv predictors
-    seqdiv = load_seqdiv(flavor)
+    seqdiv = load_seqdiv(flavor, probe_source)
     for key in ("M_js", "M_symkl", "KL_narrow_broad", "KL_broad_narrow", "JS", "symKL"):
         scalar_per_cell: dict[str, float] = {}
         for cell, d in seqdiv.items():
@@ -273,10 +280,19 @@ def assemble_predictors(flavor: str) -> dict[str, dict[str, float]]:
             scalar_per_cell[cell] = float(val)
         out[f"seqdiv_{key}"] = scalar_per_cell
 
-    # #463 cossim predictors
-    cossim = load_cossim_463(flavor)
+    # #463 cossim predictors — ingest EVERY layer present in the JSONs
+    # (the launcher sweeps the full 0..27 layer stack, not the legacy 4).
+    cossim = load_cossim_463(flavor, probe_source)
     for ep in EXTRACTION_POINTS:
-        for li in LAYERS:
+        layers_present: set[int] = set()
+        for d in cossim.values():
+            ce = d.get("cos_by_extraction", {}).get(ep, {})
+            for k in ce:
+                try:
+                    layers_present.add(int(k))
+                except (TypeError, ValueError):
+                    continue
+        for li in sorted(layers_present):
             label = f"cossim_{ep}_L{li}"
             scalar_per_cell = {}
             for cell, d in cossim.items():
@@ -309,6 +325,12 @@ def main() -> int:
         choices=["NL", "lit"],
         help="Which S_narrow flavor to read for ALL predictors (default NL).",
     )
+    parser.add_argument(
+        "--probe-source",
+        default="betley",
+        choices=["betley", "training"],
+        help="Which predictor probe set to regress (default betley).",
+    )
     args = parser.parse_args()
 
     outcome = load_outcome_per_cell()
@@ -320,7 +342,7 @@ def main() -> int:
         args.flavor,
     )
 
-    predictors = assemble_predictors(args.flavor)
+    predictors = assemble_predictors(args.flavor, args.probe_source)
     logger.info(
         "Assembled %d predictors; per-predictor cell counts: %s",
         len(predictors),
@@ -333,21 +355,24 @@ def main() -> int:
 
     summary = {
         "flavor": args.flavor,
+        "probe_source": args.probe_source,
         "blocks": blocks,
         "metadata": reproducibility_metadata({"script": "issue463_regress"}),
     }
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    # Per-flavor output: keep regression.json carrying the most recent flavor
-    # run; also emit a per-flavor sibling so both NL + lit results are
-    # preserved when the launcher runs both.
-    with open(OUTPUT_PATH, "w") as f:
+    out_path = OUTPUT_PATH_TRAINING if args.probe_source == "training" else OUTPUT_PATH_BETLEY
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Per-flavor output: keep regression[_training].json carrying the most
+    # recent flavor run; also emit a per-flavor sibling so both NL + lit
+    # results are preserved when the launcher runs both.
+    suffix = "_training" if args.probe_source == "training" else ""
+    with open(out_path, "w") as f:
         json.dump(summary, f, indent=2)
-    per_flavor_path = OUTPUT_PATH.parent / f"regression_{args.flavor}.json"
+    per_flavor_path = out_path.parent / f"regression{suffix}_{args.flavor}.json"
     with open(per_flavor_path, "w") as f:
         json.dump(summary, f, indent=2)
     logger.info(
         "Wrote %s and %s",
-        OUTPUT_PATH.relative_to(PROJECT_ROOT),
+        out_path.relative_to(PROJECT_ROOT),
         per_flavor_path.relative_to(PROJECT_ROOT),
     )
 
@@ -360,7 +385,9 @@ def main() -> int:
 
     sorted_blocks = sorted(blocks.items(), key=sort_key, reverse=True)
 
-    print(f"\n=== Issue #463 regression — flavor={args.flavor} ===")
+    print(
+        f"\n=== Issue #463 regression — flavor={args.flavor} probe_source={args.probe_source} ==="
+    )
     print(
         f"{'predictor':<42} {'n':>3}  {'rho_raw':>9} {'p_raw':>8}  "
         f"{'rho_partial':>11} {'p_partial':>10}"
