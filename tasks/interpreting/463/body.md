@@ -1,6 +1,7 @@
 ---
-title: 'Re-run EM predictors: full-response Rao-Blackwellized KL/JS + persona-vector
-  cosine (18 cells)'
+title: Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent
+  misalignment when probed with each dataset's own training questions — but a content-leakage
+  alternative survives (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T00:57:22Z'

@@ -2511,7 +2511,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/463",
       "status": "interpreting",
-      "title": "Re-run EM predictors: full-response Rao-Blackwellized KL/JS + persona-vector cosine (18 cells)"
+      "title": "Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent misalignment when probed with each dataset's own training questions \u2014 but a content-leakage alternative survives (LOW confidence)"
     },
     "464": {
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
