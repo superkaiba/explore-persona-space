@@ -15,6 +15,13 @@ Usage:
         --hf-model "superkaiba1/explore-persona-space/issue-42-seed-42" \
         --pod pod3
 
+    # HEAD-verify every HF / WandB URL claimed in the epm:results marker text
+    # AND the body's ## Reproducibility section (phantom-URL detection — every
+    # cited URL must actually resolve at its cited revision, not just be a
+    # string in a sentinel). Required for training experiments per #456.
+    uv run python scripts/verify_uploads.py --issue 42 \
+        --claimed-urls-file /tmp/issue-42-claimed-urls.txt
+
     # Just check and print, no exit code (for interactive use)
     uv run python scripts/verify_uploads.py --issue 42 --no-fail
 """
@@ -27,6 +34,13 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Make the repo's src/ importable so we can reuse the canonical HF/WandB
+# HEAD-check helper (verify_artifacts_exist) instead of reimplementing it.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SRC_DIR = _REPO_ROOT / "src"
+if _SRC_DIR.is_dir() and str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -35,19 +49,93 @@ HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 
 
-def check_hf_hub_path(repo_id: str, path_in_repo: str, repo_type: str = "model") -> dict:
-    """Check if a path exists on HF Hub."""
+def check_hf_hub_path(
+    repo_id: str,
+    path_in_repo: str,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> dict:
+    """Check if a path exists on HF Hub at the given revision.
+
+    ``revision`` defaults to ``main``. Pass a commit SHA to HEAD-verify that
+    the files actually exist at the pinned revision a downstream consumer
+    will dereference — this is what the phantom-URL gate needs (a string
+    claiming ``/tree/<sha>/...`` is not the same as the files being there).
+    """
     try:
         from huggingface_hub import HfApi
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        files = api.list_repo_files(repo_id=repo_id, repo_type=repo_type)
+        files = api.list_repo_files(repo_id=repo_id, repo_type=repo_type, revision=revision)
         prefix = path_in_repo.rstrip("/") + "/"
         matching = [f for f in files if f.startswith(prefix) or f == path_in_repo]
+        rev_url = revision or "main"
         if matching:
-            url = f"https://huggingface.co/{repo_id}/tree/main/{path_in_repo}"
+            url = f"https://huggingface.co/{repo_id}/tree/{rev_url}/{path_in_repo}"
             return {"status": "OK", "url": url, "file_count": len(matching)}
-        return {"status": "MISSING", "url": "", "detail": f"No files under {path_in_repo}"}
+        return {
+            "status": "MISSING",
+            "url": "",
+            "detail": f"No files under {path_in_repo} at revision {rev_url}",
+        }
+    except Exception as e:
+        return {"status": "ERROR", "url": "", "detail": str(e)}
+
+
+def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
+    """HEAD-verify every HF/WandB URL claimed in a text blob actually resolves.
+
+    The blob is typically the concatenation of the ``epm:results`` marker
+    text + the body's ``## Reproducibility`` section. Reuses
+    ``explore_persona_space.orchestrate.hub.verify_artifacts_exist`` (the
+    same helper /issue Step 6a.5 uses pre-launch to block on phantom
+    carry-over artifacts) so behavior stays consistent at both gates.
+
+    A claimed-but-absent URL is a hard ``FAIL`` — that is exactly the
+    phantom-checkpoint condition that lets a write-up cite a file nothing
+    ever uploaded. Use this BEFORE PASSing upload-verification.
+
+    Args:
+        claimed_text_path: Path to a UTF-8 text file containing the
+            epm:results marker body + the Reproducibility section (and
+            anything else cited). The helper scans for HF / WandB URLs;
+            non-URL text is ignored.
+
+    Returns:
+        A status dict shaped like other ``check_*`` helpers.
+        ``status == "OK"`` means every URL scanned resolved; ``"FAIL"``
+        means one or more URLs were strings without a real artifact;
+        ``"SKIP"`` means no URLs were scanned (e.g. caller did not pass
+        a file); ``"ERROR"`` means a transport / auth issue propagated.
+    """
+    if not claimed_text_path:
+        return {
+            "status": "SKIP",
+            "url": "",
+            "detail": "No --claimed-urls-file provided",
+        }
+    claimed_text_path = Path(claimed_text_path)
+    if not claimed_text_path.exists() or not claimed_text_path.is_file():
+        return {
+            "status": "ERROR",
+            "url": "",
+            "detail": f"claimed-urls file missing or not a file: {claimed_text_path}",
+        }
+    try:
+        from explore_persona_space.orchestrate.hub import verify_artifacts_exist
+
+        ok, missing = verify_artifacts_exist(claimed_text_path)
+        if ok:
+            return {
+                "status": "OK",
+                "url": str(claimed_text_path),
+                "detail": "every claimed HF/WandB URL resolves at its cited revision",
+            }
+        return {
+            "status": "FAIL",
+            "url": "",
+            "detail": "claimed-but-absent URLs (phantom): " + "; ".join(missing),
+        }
     except Exception as e:
         return {"status": "ERROR", "url": "", "detail": str(e)}
 
@@ -199,6 +287,7 @@ def run_verification(
     hf_dataset_path: str | None = None,
     pod: str | None = None,
     output_dir: str = "/workspace/explore-persona-space/outputs",
+    claimed_urls_file: str | None = None,
 ) -> dict:
     """Run all verification checks and return structured report."""
     report = {
@@ -246,6 +335,15 @@ def run_verification(
     # 7. Pod weights cleaned (training experiments)
     if experiment_type == "training" and pod:
         report["checks"]["pod_cleanup"] = check_pod_weights_cleaned(pod, output_dir)
+
+    # 8. Claimed-URL HEAD-check (phantom-checkpoint detection — #456).
+    # Every HF/WandB URL named in the epm:results marker AND the body's
+    # ## Reproducibility section MUST actually resolve at its cited revision
+    # before this experiment can advance. A sentinel naming a URL string is
+    # NOT evidence the underlying files exist; trusting the string is the
+    # exact gap that let #456 reach awaiting_promotion with no real
+    # checkpoint on HF Hub.
+    report["checks"]["claimed_urls"] = check_claimed_urls_resolve(claimed_urls_file)
 
     # Compute overall verdict
     statuses = [c["status"] for c in report["checks"].values()]
@@ -316,6 +414,16 @@ def main():
     parser.add_argument("--hf-dataset", help="HF Hub dataset path within repo")
     parser.add_argument("--pod", help="Pod name for cleanup verification")
     parser.add_argument("--output-dir", default="/workspace/explore-persona-space/outputs")
+    parser.add_argument(
+        "--claimed-urls-file",
+        help=(
+            "Path to a text file containing the epm:results marker body + "
+            "the body's ## Reproducibility section. Every HF/WandB URL in "
+            "the blob is HEAD-checked against its cited revision. A "
+            "claimed-but-absent URL FAILs verification (phantom-checkpoint "
+            "gate — see upload-verifier.md and CLAUDE.md Gotchas #456)."
+        ),
+    )
     parser.add_argument("--json", action="store_true", help="Output raw JSON")
     parser.add_argument("--no-fail", action="store_true", help="Don't exit with error on FAIL")
 
@@ -330,6 +438,7 @@ def main():
         hf_dataset_path=args.hf_dataset,
         pod=args.pod,
         output_dir=args.output_dir,
+        claimed_urls_file=args.claimed_urls_file,
     )
 
     if args.json:

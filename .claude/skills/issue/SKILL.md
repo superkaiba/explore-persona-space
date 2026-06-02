@@ -1872,6 +1872,18 @@ The verifier runs `scripts/verify_uploads.py` and checks:
 | Training metrics on WandB | Training experiments | WandB run URL |
 | Figures committed to git | Always | `git log` |
 | Local weights cleaned | Training experiments | `ssh_execute ls` on pod |
+| Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Always | `--claimed-urls-file` HEAD-checks every HF/WandB URL in the `epm:results` marker + body's `## Reproducibility` section at its CITED revision via `orchestrate.hub.verify_artifacts_exist` |
+
+**Phantom-URL gate (Step 8 enforcement of upload-verifier Step 2.5).**
+Before spawning the verifier, build a single text blob containing the
+`epm:results` marker body + the clean-result body's Reproducibility
+section, write it to `/tmp/issue-<N>-claimed-urls.txt`, and pass
+`--claimed-urls-file /tmp/issue-<N>-claimed-urls.txt` so every cited
+HF/WandB URL is HEAD-verified at its cited revision. A URL string in a
+sentinel is NOT evidence the files exist. Incident #456: a training run
+PASSed upload-verification with a per-step checkpoint URL nothing had
+uploaded; a downstream experiment had to re-train two months later. See
+`.claude/agents/upload-verifier.md` § Step 2.5 for the full rationale.
 
 Post `epm:upload-verification v1` event with per-artifact PASS/FAIL +
 URLs.
@@ -2554,6 +2566,27 @@ fi
 The cooldown reduces the chance of merging before the PR has had time
 for a quick human glance. Override allowed by manual `/issue <N>`
 re-invocation after the cooldown elapses.
+
+**Shared-infra check (advisory).** Before raising the merge prompt,
+detect whether this branch modified anything under
+`src/explore_persona_space/` — shared library code that the NEXT
+experiment inheriting from `main` will lack if the branch defers
+merging:
+
+```bash
+SHARED_INFRA_DIFF=$(git diff --name-only origin/main...HEAD -- \
+  'src/explore_persona_space/**' 2>/dev/null | head -20)
+```
+
+If `SHARED_INFRA_DIFF` is non-empty, embed a one-line warning inside
+the `AskUserQuestion` text — for example: `"Shared infra modified
+(<N> file(s) under src/, e.g. <first path>); deferring leaves
+downstream experiments without this fix."`. This is a recommendation,
+not a hard gate (a deliberate experiment-only fork is still valid; the
+user decides). Incident #456 → #466: a `format_dataset` fix to
+`src/explore_persona_space/train/trainer.py` lived on the #456 branch
+that deferred merging; #466 inherited the older `format_dataset` from
+`main` and crashed Phase-0 on the same data #456 trained on fine.
 
 - **YES:**
   ```bash

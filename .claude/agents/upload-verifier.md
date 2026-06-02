@@ -104,8 +104,9 @@ For each candidate that should be uploaded, confirm it's actually
 reachable:
 
 ```bash
-# HF Hub model repo
-uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('superkaiba1/explore-persona-space', revision='main')" \
+# HF Hub model repo — pin the revision the body / sentinel cites; "main"
+# only proves the LATEST snapshot has the path, not the SHA you cited.
+uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('superkaiba1/explore-persona-space', revision='<sha>')" \
   | grep <expected-path>
 
 # HF Hub data repo
@@ -124,6 +125,56 @@ automatically, but it's opt-in on `--hf-dataset-path` and doesn't
 auto-discover. **You must auto-discover.** The script is a helper for the
 checks it already covers (model, WandB, git); for anything new the script
 doesn't know about, use the HF / git / WandB commands above directly.
+
+### Step 2.5 — Phantom-URL gate: HEAD-verify every CLAIMED URL
+
+**Hard gate. New as of #456.** The `epm:results` marker AND the body's
+`## Reproducibility` section name HF/WandB URLs the downstream consumer
+(analyzer, follow-up experiment, mentor reader) will dereference. A URL
+in a sentinel is a STRING — it is NOT evidence the underlying files
+exist. **A claimed-but-absent URL is the phantom-checkpoint condition;
+your verdict MUST be FAIL.**
+
+Build a single text blob containing the `epm:results` marker body + the
+clean-result body's Reproducibility section, then HEAD-check every
+HF/WandB URL it contains at its CITED REVISION (not at `main`):
+
+```bash
+# 1. Concatenate the claimed-URL surfaces into one file.
+RESULTS_NOTE=$(uv run python scripts/task.py view <N> --json \
+  | jq -r '.events[] | select(.kind=="epm:results") | .note' | tail -1)
+BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
+{ echo "$RESULTS_NOTE"; echo; sed -n '/^## Reproducibility/,$p' "$BODY_PATH"; } \
+  > /tmp/issue-<N>-claimed-urls.txt
+
+# 2. HEAD-verify every URL in the blob via verify_uploads.py.
+#    Reuses orchestrate.hub.verify_artifacts_exist — the same helper
+#    /issue Step 6a.5 runs PRE-LAUNCH to block on phantom carry-overs.
+uv run python scripts/verify_uploads.py --issue <N> \
+  --claimed-urls-file /tmp/issue-<N>-claimed-urls.txt \
+  --json
+```
+
+The `claimed_urls` row in the JSON report is FAIL whenever any cited
+URL did not resolve. Common phantom patterns to watch for:
+
+- A `{phase}_step_checkpoints/checkpoint-<N>` subfolder cited in the
+  sentinel, but the training code only uploaded the FINAL adapter and
+  never uploaded the per-step trajectory dir. (Incident #456: the
+  sentinel + body cited `i432_..._marker_implant_step_checkpoints/checkpoint-1600`
+  at a specific commit; no code path uploaded that subfolder, the WandB
+  run had zero logged artifacts, and a downstream experiment had to
+  re-train the checkpoint two months later.)
+- A merged-checkpoint URL that soft-failed an HF push (quota / 5xx) but
+  the launcher swallowed the error and the local `rm` ran anyway.
+- A `revision` field in the sentinel that points at a SHA where the
+  cited subfolder was renamed / moved later.
+
+If `claimed_urls` is FAIL, escalate to FAIL overall (Step 4) regardless
+of which other rows passed. List every unresolved URL in the
+`Auto-discovered files NOT covered by standard rows` table with
+`Status: FAIL` and `Action: re-upload to <claimed URL> OR amend the
+sentinel + body to cite the URL that actually has the files`.
 
 ### Step 3 — Justify every "N/A"
 
@@ -162,6 +213,19 @@ the absence.** "Probably not generated" is not a valid N/A.
   accepted on-pod-only 72-cell JSONs that were then deleted in
   disk-full cleanup, publishing an irreproducible clean-result whose
   body falsely claimed the files were committed.
+- **Any HF / WandB URL claimed in the `epm:results` marker OR the
+  body's `## Reproducibility` section does NOT actually resolve at
+  the cited revision (Step 2.5 phantom-URL gate, `claimed_urls` row
+  in the JSON report).** A URL string in a sentinel is not evidence —
+  the files must list under that path at that revision via
+  `huggingface_hub.list_repo_files` / `wandb.Api().run(...)`. Incident
+  #456: a training run reached `awaiting_promotion` with `has_clean_result=true`
+  whose body cited a per-step checkpoint subfolder at a pinned revision
+  that did not exist anywhere on HF; no code path had ever uploaded
+  the per-step trajectory dir, the WandB run had zero artifacts, and
+  upload-verification PASSed because it trusted the sentinel's string
+  without HEAD-checking it. A downstream experiment had to re-train
+  the checkpoint two months later.
 
 **WARN** is acceptable for:
 - Pod stopped (can't verify cleanup post-hoc — note this and move on).
@@ -194,6 +258,7 @@ against permanent storage.
 | Training metrics on WandB live run | Yes (if training) | PASS | wandb.ai/.../runs/... |
 | Local weights + merged dirs cleaned | Yes | PASS | safetensors count = 0, merged/ count = 0 |
 | Pod lifecycle | Yes | PASS / WARN / FAIL | stopped / terminated, follow-ups: <list> |
+| Claimed URLs HEAD-resolve (phantom-URL gate, #456) | Yes | PASS / FAIL | All HF/WandB URLs in epm:results + body Reproducibility list under cited path at cited revision; FAIL names every unresolved URL |
 
 **Auto-discovered files NOT covered by standard rows** (flag these
 explicitly so the next experimenter / analyzer knows about them):
@@ -259,6 +324,27 @@ correct lifecycle state:
   (look under `scripts/` or `src/explore_persona_space/experiments/`).
   The script is your source of truth for what was supposed to be
   produced and where it was supposed to go.
+
+## Failure mode this spec was rewritten to catch (incident #456 — phantom URLs)
+
+Task #456 (marker-implant training run) reached `awaiting_promotion`
+with `has_clean_result=true`. Its clean-result body + `epm:results`
+sentinel cited an HF checkpoint URL of the form
+`superkaiba1/explore-persona-space/tree/<sha>/i432_..._marker_implant_step_checkpoints/checkpoint-1600`.
+That URL did not exist on HF Hub at that revision or anywhere — no code
+path uploaded the `{phase}_step_checkpoints/` per-step trajectory dir
+to HF; `HF_HUB_URL` was a metadata string nothing actually pushed to.
+The WandB run also had zero logged artifacts. Despite this, the
+experiment PASSed upload-verification because the verifier trusted the
+sentinel's URL string without HEAD-checking it. A downstream experiment
+(#466) inherited a "checkpoint exists" claim that was false and had to
+re-train the model two months later.
+
+**Lesson: a URL in a sentinel is a STRING, not a permanent artifact.**
+Step 2.5 closes this by HEAD-checking every claimed URL at its cited
+revision via `verify_artifacts_exist` (the same helper /issue Step 6a.5
+runs pre-launch to block on phantom carry-overs). Any unresolved URL is
+a hard FAIL.
 
 ## Failure mode this spec was rewritten to catch (incident #365)
 
