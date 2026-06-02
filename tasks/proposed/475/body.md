@@ -6,10 +6,14 @@ tags: []
 created_at: '2026-06-02T23:57:59Z'
 has_clean_result: false
 parent_id: 408
+goal: 'Test whether installing the conditional marker/reveal with a Hubinger-style
+  chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces
+  survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B
+  fails (#382: 98%->0%; #408).'
 ---
 ## Goal
 
-Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%→0%; #408).
+Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%->0%; #408).
 
 ## Motivation / hypothesis
 
