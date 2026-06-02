@@ -151,12 +151,29 @@ class MarkerOnlyDataCollator:
     def __init__(
         self,
         inner_collator,
-        marker_token_ids: list[int],
+        marker_token_ids: list[int] | list[list[int]],
         tail_tokens: int = 32,
     ):
+        # Backward-compat shim (issue #464 patch): accept either a flat
+        # list[int] (one marker, legacy) or a list[list[int]] (multiple
+        # markers — #464 co-resident 2-persona training where each persona
+        # has its own marker token).
+        if not marker_token_ids:
+            raise ValueError("marker_token_ids must be non-empty")
+        if isinstance(marker_token_ids[0], int):
+            # Legacy single-marker form.
+            self._marker_sequences: list[list[int]] = [list(marker_token_ids)]  # type: ignore[list-item]
+        else:
+            self._marker_sequences = [list(seq) for seq in marker_token_ids]  # type: ignore[arg-type]
+        if any(not seq for seq in self._marker_sequences):
+            raise ValueError(f"every marker sequence must be non-empty; got {marker_token_ids!r}")
+        # Back-compat attributes for any external reader: keep these pointing
+        # at the FIRST marker sequence so existing code that reads
+        # ``.marker_token_ids`` / ``.marker_len`` still works on single-marker
+        # use sites.
+        self.marker_token_ids = self._marker_sequences[0]
+        self.marker_len = len(self._marker_sequences[0])
         self.inner = inner_collator
-        self.marker_token_ids = marker_token_ids
-        self.marker_len = len(marker_token_ids)
         self.tail_tokens = tail_tokens
         self._call_count = 0
         self._total_loss_tokens = 0
@@ -197,9 +214,12 @@ class MarkerOnlyDataCollator:
                 keep_mask = torch.zeros(len(row), dtype=torch.bool)
 
                 if marker_positions:
-                    # Keep each marker token position
-                    for start_pos in marker_positions:
-                        for offset in range(self.marker_len):
+                    # Keep each marker token position. Each hit is
+                    # ``(start_pos, marker_len)`` so the right slice gets
+                    # unmasked even when different markers have different
+                    # lengths (issue #464 multi-marker patch).
+                    for start_pos, m_len in marker_positions:
+                        for offset in range(m_len):
                             pos = start_pos + offset
                             if pos < len(row) and row[pos] != -100:
                                 keep_mask[pos] = True
@@ -238,19 +258,30 @@ class MarkerOnlyDataCollator:
         batch["labels"] = labels
         return batch
 
-    def _find_marker_positions(self, input_ids: torch.Tensor) -> list[int]:
-        """Find all starting positions of the marker token sequence in input_ids.
+    def _find_marker_positions(self, input_ids: torch.Tensor) -> list[tuple[int, int]]:
+        """Find all (start_pos, marker_len) hits across every configured marker sequence.
 
-        Returns list of starting indices, or empty list if not found.
+        Issue #464 multi-marker patch: scan EVERY sequence in
+        ``self._marker_sequences`` (each persona's marker in the
+        co-resident 2-persona training mix). The return shape carries
+        ``marker_len`` per-hit so the marker-position-only loss in
+        ``__call__`` can mask the right number of tokens even when
+        different markers have different lengths.
+
+        Returns:
+            List of ``(start_index, marker_len)`` tuples; empty if no
+            marker sequence is present.
         """
-        if self.marker_len == 0:
-            return []
-        positions = []
         ids = input_ids.tolist() if isinstance(input_ids, torch.Tensor) else input_ids
-        for i in range(len(ids) - self.marker_len + 1):
-            if ids[i : i + self.marker_len] == self.marker_token_ids:
-                positions.append(i)
-        return positions
+        hits: list[tuple[int, int]] = []
+        for seq in self._marker_sequences:
+            m = len(seq)
+            if m == 0:
+                continue
+            for i in range(len(ids) - m + 1):
+                if ids[i : i + m] == seq:
+                    hits.append((i, m))
+        return hits
 
 
 class RecipientEOSMaskingDataCollator:
@@ -417,8 +448,18 @@ class TrainLoraConfig:
     weight_decay: float = 0.0
     packing: bool = False
     marker_only_loss: bool = False
-    marker_text: str = MARKER_TOKEN
+    # str (legacy single-marker) OR list[str] (issue #464 co-resident
+    # multi-marker training: each persona's marker is one item).
+    marker_text: str | list[str] = MARKER_TOKEN
     marker_tail_tokens: int = 32
+    # Optional marker-log-prob trajectory callback (issue #464 MF-C). When
+    # non-None, train_lora() registers `MarkerLogprobTrajectoryCallback`
+    # with these kwargs. Backward-compatible: default None = no callback.
+    # Expected keys (all forwarded verbatim): probe_file (str path to a JSON
+    # describing the eval slice), step_every (int), adapter_dump_dir (str
+    # path under which the live adapter is saved before each callback
+    # subprocess), and optional log_prefix (str, default 'marker_logp').
+    marker_logprob_trajectory: dict | None = None
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -624,19 +665,55 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     trainer = SFTTrainer(**sft_trainer_kwargs)
 
     if cfg.marker_only_loss:
-        marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)
+        # Issue #464 patch: marker_text can be a single str (legacy) OR a
+        # list[str] (one entry per persona in a co-resident mix). Resolve
+        # to a flat list and tokenize each; the collator accepts a
+        # list[list[int]] now.
+        if isinstance(cfg.marker_text, str):
+            marker_texts: list[str] = [cfg.marker_text]
+        else:
+            marker_texts = list(cfg.marker_text)
+            if not marker_texts:
+                raise ValueError("cfg.marker_text was an empty list")
+        marker_id_sequences: list[list[int]] = [
+            tokenizer.encode(t, add_special_tokens=False) for t in marker_texts
+        ]
         logger.info(
-            f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
-            f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
-            f"tail_tokens={cfg.marker_tail_tokens}"
+            "MarkerOnlyLoss enabled: marker_text=%r -> token_id_sequences=%s tail_tokens=%d",
+            marker_texts,
+            marker_id_sequences,
+            cfg.marker_tail_tokens,
         )
+        # Single-marker path passes a flat list (back-compat); multi-marker
+        # path passes list[list[int]].
+        if len(marker_id_sequences) == 1:
+            marker_arg: list[int] | list[list[int]] = marker_id_sequences[0]
+        else:
+            marker_arg = marker_id_sequences
         trainer.data_collator = MarkerOnlyDataCollator(
             inner_collator=trainer.data_collator,
-            marker_token_ids=marker_ids,
+            marker_token_ids=marker_arg,
             tail_tokens=cfg.marker_tail_tokens,
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
+
+    # Issue #464 MF-C: optional marker-log-prob trajectory callback. Imported
+    # lazily to avoid pulling vLLM-adjacent code in users that don't need it.
+    if cfg.marker_logprob_trajectory is not None:
+        from explore_persona_space.train.callbacks import MarkerLogprobTrajectoryCallback
+
+        traj_kwargs = dict(cfg.marker_logprob_trajectory)
+        # Default adapter_dump_dir = subdir under output_dir for crash-safety.
+        traj_kwargs.setdefault("adapter_dump_dir", str(Path(output_dir) / "_traj_adapter"))
+        traj_kwargs.setdefault("log_prefix", "marker_logp")
+        callback = MarkerLogprobTrajectoryCallback(**traj_kwargs)
+        trainer.add_callback(callback)
+        logger.info(
+            "MarkerLogprobTrajectoryCallback registered: step_every=%s probe_file=%s",
+            traj_kwargs.get("step_every"),
+            traj_kwargs.get("probe_file"),
+        )
 
     result = trainer.train()
     loss = result.training_loss
