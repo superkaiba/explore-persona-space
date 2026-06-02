@@ -420,9 +420,24 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - linear orchestr
         "h4_k_sweep": h4,
         "h5_non_marker_demo": h5,
     }
+
+    def _json_default(o):
+        # numpy scalars/arrays leak into the payload from bootstrap/comparison
+        # ops (e.g. ``m > threshold`` is np.bool_); cast to native Python so
+        # json.dumps doesn't raise "Object of type bool is not JSON serializable".
+        if isinstance(o, np.bool_):
+            return bool(o)
+        if isinstance(o, np.integer):
+            return int(o)
+        if isinstance(o, np.floating):
+            return float(o)
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out = OUT_DIR / "analysis.json"
-    out.write_text(json.dumps(payload, indent=2))
+    out.write_text(json.dumps(payload, indent=2, default=_json_default))
     logger.info("Phase 5 done -> %s", out)
 
 
