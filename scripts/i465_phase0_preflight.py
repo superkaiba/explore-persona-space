@@ -43,6 +43,7 @@ from explore_persona_space.experiments.i465_data import (
     QDEMO_TARGET_N,
     assert_disjoint_q_train_q_test,
     build_q_demo_pool,
+    load_q_demo,
     load_q_test_extended_50,
     load_q_train_answers,
 )
@@ -138,27 +139,22 @@ def main(argv: list[str] | None = None) -> None:
     assert_disjoint_q_train_q_test(q_train_keys, q_test)
     logger.info("Q_train=%d Q_test=%d (disjoint)", len(q_train), len(q_test))
 
-    # 3. Build / load Q_demo.
+    # 3. Build / load Q_demo. Round-4 fix (pod cond1-smoke FAIL on Phase 0):
+    # use the HF-FIRST loader (load_q_demo) on a fresh checkout instead of
+    # falling through to the rebuild path when the LOCAL file is absent. On
+    # a pod with no data/issue_465/q_demo.json, the prior round-3 logic went
+    # straight to build_q_demo_pool -> re-ran the Haiku gate -> crashed on
+    # one degenerate refusal row. The HF-frozen verified-clean 50 is the
+    # canonical source; load_q_demo already pulls it + verifies content_hash.
     DATA_DIR_465.mkdir(parents=True, exist_ok=True)
     q_demo_path = DATA_DIR_465 / Q_DEMO_FILE
     qdemo_stats: dict = {}
     qdemo_payload_meta: dict = {}
-    if q_demo_path.exists() and not args.rebuild_q_demo:
-        logger.info("Q_demo already exists at %s; loading.", q_demo_path)
-        # Round-3 fix (code-review round-2 Item 3d): when the artifact already
-        # exists (e.g. on a fresh pod that pulled it from HF, or on the dev VM
-        # between Phase 0 runs), preserve its build_stats / content_hash /
-        # haiku_model into preflight.json so provenance stays auditable from
-        # tracked files alone.
-        _existing = json.loads(q_demo_path.read_text())
-        q_demo = _existing["questions"]
-        qdemo_stats = _existing.get("build_stats", {}) or {}
-        qdemo_payload_meta = {
-            "content_hash": _existing.get("content_hash"),
-            "git_commit_at_build": _existing.get("git_commit"),
-            "generated_at_build": _existing.get("generated_at"),
-        }
-    else:
+    if args.rebuild_q_demo:
+        logger.info(
+            "--rebuild-q-demo set; running build_q_demo_pool (Haiku gate=%s).",
+            "OFF" if args.no_haiku_gate else "ON",
+        )
         excluded = set(q_train_keys) | set(q_test)
         q_demo, qdemo_stats = build_q_demo_pool(
             excluded_qs=excluded,
@@ -184,6 +180,20 @@ def main(argv: list[str] | None = None) -> None:
         }
         q_demo_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
         logger.info("Wrote Q_demo (n=%d) -> %s", len(q_demo), q_demo_path)
+    else:
+        # HF-FIRST: load_q_demo pulls from HF (the canonical verified-clean 50),
+        # writes into the local cache, recomputes SHA-256 + verifies the stamped
+        # content_hash, fail-loud on tamper / mismatch. Zero Haiku calls.
+        logger.info("Loading Q_demo (HF-first, content_hash-verified).")
+        q_demo = load_q_demo()
+        # Preserve provenance from the (now-cached) artifact into preflight.json.
+        _existing = json.loads(q_demo_path.read_text())
+        qdemo_stats = _existing.get("build_stats", {}) or {}
+        qdemo_payload_meta = {
+            "content_hash": _existing.get("content_hash"),
+            "git_commit_at_build": _existing.get("git_commit"),
+            "generated_at_build": _existing.get("generated_at"),
+        }
 
     # 4. Disjointness Q_demo vs (Q_train U Q_test).
     overlap = set(q_demo) & (set(q_train_keys) | set(q_test))

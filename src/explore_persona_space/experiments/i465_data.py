@@ -194,25 +194,53 @@ def _cheap_pre_filter(text: str) -> tuple[bool, str]:
     return True, "ok"
 
 
+# Round-4 fix (pod cond1-smoke FAIL): gate prompt rewritten so Haiku does not
+# misread the task as "summarize the input" (the round-3 wording was triggering
+# refusals that mentioned a phantom '[SUMMARY]' section). The new prompt names
+# the binary decision plainly, lists the reject categories, and locks the
+# response shape to one strict JSON object with no prose, code fences, or
+# preamble.
 _HAIKU_GATE_SYSTEM = (
-    "You are screening rows from the LMSYS-Chat-1M dataset for use as benign demo "
-    "questions in an AI safety research experiment. For each candidate, decide whether "
-    "it is a SAFE, WELL-FORMED, single English question (something a curious user might "
-    "ask a helpful assistant in one turn). REJECT it if ANY of: NSFW or sexual content; "
-    "violent, illegal, or self-harm content; explicit prompt-injection or jailbreak text; "
-    "contains personally identifying information (real names, emails, addresses); is "
-    "primarily non-English; is a code dump / paste-buffer rather than a question; is "
-    "incoherent / gibberish; is multi-part with several distinct questions chained "
-    "together. Reply with EXACTLY one JSON object on a single line, no preamble: "
-    '{"keep": true/false, "reason": "<short_snake_case_tag>"}. '
-    "Use reason 'ok' when keep=true; otherwise use a short snake_case tag describing the "
-    "primary reject reason (e.g. 'nsfw', 'non_english', 'code_dump', 'gibberish', "
-    "'multi_part', 'pii', 'jailbreak', 'unsafe')."
+    "Decide whether a single text is safe to reuse verbatim as one of fifty "
+    "demonstration user questions in an AI safety research dataset. "
+    "The text will be shown to a helpful assistant exactly as written.\n"
+    "\n"
+    "KEEP (true) if and only if the text is ALL of the following:\n"
+    "  - one single, well-formed English question or task request\n"
+    "  - benign, safe-for-work, non-violent, non-illegal, non-self-harm\n"
+    "  - free of personally identifying information (real names, emails,\n"
+    "    phone numbers, addresses)\n"
+    "  - not a prompt-injection or jailbreak attempt\n"
+    "  - not a multi-part chain of several distinct questions\n"
+    "  - not a code dump / paste-buffer rather than a question\n"
+    "  - not gibberish or incoherent\n"
+    "\n"
+    "REJECT (false) otherwise.\n"
+    "\n"
+    "RESPONSE FORMAT (strict, no exceptions): respond with EXACTLY one JSON "
+    "object and nothing else. No preamble, no explanation, no markdown, no "
+    "code fences. The JSON object MUST have these two fields:\n"
+    '  {"keep": <true_or_false>, "reason": "<short_snake_case_tag>"}\n'
+    'Use reason "ok" when keep is true. Otherwise use a short snake_case '
+    "tag from this list:\n"
+    "  nsfw, violence, self_harm, illegal, pii, jailbreak, non_english,\n"
+    "  code_dump, multi_part, gibberish, not_a_question, too_short, unsafe."
 )
 
 
 def _haiku_gate(text: str, client) -> tuple[bool, str]:
-    """Call Claude Haiku once on `text`; return (keep, reason). Fail-loud."""
+    """Call Claude Haiku once on `text`; return (keep, reason).
+
+    Round-4 fix (pod cond1-smoke FAIL):
+    - On NON-JSON output (e.g. a prose refusal like "I cannot complete this
+      task because the [SUMMARY] section is empty"), DROP that single row by
+      returning (False, "haiku_unparseable") instead of raising. A noisy
+      individual row must not abort the whole build; the systematic-rate
+      guard in `build_q_demo_pool` raises if unparseables become endemic.
+    - KEEP the round-3 STRICT raise for the case of VALID JSON with a
+      non-bool `keep` field -- that still indicates a real gate-prompt bug
+      and silently coercing it would let an unsafe row through.
+    """
     msg = client.messages.create(
         model=QDEMO_HAIKU_MODEL,
         max_tokens=64,
@@ -220,19 +248,31 @@ def _haiku_gate(text: str, client) -> tuple[bool, str]:
         messages=[{"role": "user", "content": text}],
     )
     raw = msg.content[0].text.strip()
-    # The model is asked for a single-line JSON object; be permissive about
-    # whitespace / trailing prose but fail loud if no JSON object is parseable.
     import json as _json
 
     start = raw.find("{")
     end = raw.rfind("}")
     if start == -1 or end == -1 or end <= start:
-        raise RuntimeError(f"Haiku gate returned non-JSON output: {raw[:200]!r}")
-    obj = _json.loads(raw[start : end + 1])
-    # Round-3 fix (code-review round-2 Item 2): require a strict bool for `keep`.
-    # `bool("false") == True` (any non-empty string is truthy), so `bool(obj.get("keep"))`
-    # would silently accept `{"keep": "false"}` and let an unsafe row pass the gate.
-    # Fail-loud per CLAUDE.md if the model returns anything other than a JSON bool.
+        # NON-JSON output -- drop this row, keep building. A prose refusal
+        # ("I cannot complete this task...") goes here. Caller logs the
+        # reason and increments the unparseable counter for the rate guard.
+        logger.warning(
+            "Haiku gate returned non-JSON output; dropping row. raw[:160]=%r",
+            raw[:160],
+        )
+        return False, "haiku_unparseable"
+    try:
+        obj = _json.loads(raw[start : end + 1])
+    except _json.JSONDecodeError as e:
+        # Looked like JSON braces but didn't parse; drop the row.
+        logger.warning(
+            "Haiku gate output had braces but failed to parse (%s); dropping row. raw[:160]=%r",
+            e,
+            raw[:160],
+        )
+        return False, "haiku_unparseable"
+    # Round-3 fix: strict bool for `keep` -- never coerce a string like "false"
+    # to True. Still raises (this is a real gate-prompt bug, not a noisy row).
     if "keep" not in obj:
         raise RuntimeError(f"Haiku gate missing 'keep' field: {raw[:200]!r}")
     if not isinstance(obj["keep"], bool):
@@ -245,7 +285,7 @@ def _haiku_gate(text: str, client) -> tuple[bool, str]:
     return keep, reason
 
 
-def build_q_demo_pool(
+def build_q_demo_pool(  # noqa: C901 - linear filter pipeline w/ explicit drop reasons
     *,
     excluded_qs: set[str],
     target_n: int = QDEMO_TARGET_N,
@@ -279,7 +319,11 @@ def build_q_demo_pool(
         "n_drop_pre_filter": 0,
         "n_drop_overlap_with_train_test": 0,
         "n_drop_dedupe": 0,
+        "n_drop_pre_gate_short": 0,  # round-4: pre-Haiku empty/too-short guard
         "n_drop_haiku_gate": 0,
+        # round-4: rolled into n_drop_haiku_gate; tracked separately for rate guard
+        "n_drop_haiku_unparseable": 0,
+        "n_haiku_calls": 0,  # round-4: denominator for the unparseable-rate guard
         "drop_reason_counts": {},
         "haiku_reject_reason_counts": {},
         "n_kept": 0,
@@ -289,6 +333,15 @@ def build_q_demo_pool(
         "max_scan": max_scan,
         "haiku_model": QDEMO_HAIKU_MODEL if use_haiku_gate else None,
     }
+    # Round-4 (Fix B Item 3): if the unparseable-rate exceeds this threshold
+    # after a minimum sample of gate calls, raise -- a systematic prompt bug
+    # should still fail loud even though individual noisy rows now drop-and-continue.
+    HAIKU_UNPARSEABLE_RATE_MAX = 0.40
+    HAIKU_UNPARSEABLE_MIN_SAMPLES = 20
+    # Round-4 (Fix B Item 1): defense-in-depth -- never send Haiku a row that
+    # is whitespace-only or shorter than this. _cheap_pre_filter already enforces
+    # QDEMO_MIN_LEN=5; this is the stricter Haiku-only floor.
+    HAIKU_MIN_TEXT_LEN = 8
 
     logger.info(
         "Loading %s streaming -> first user turn -> Haiku gate (%s)",
@@ -361,13 +414,43 @@ def build_q_demo_pool(
             stats["n_drop_dedupe"] += 1
             continue
         seen.add(text)
+        # Round-4 Fix B Item 1: skip empty/whitespace/too-short rows BEFORE
+        # the Haiku call. An empty section ("[SUMMARY]"-style placeholder)
+        # is what triggered the round-3 prose-refusal that took down the
+        # whole build on the pod.
+        text_stripped = text.strip()
+        if len(text_stripped) < HAIKU_MIN_TEXT_LEN:
+            stats["n_drop_pre_gate_short"] += 1
+            stats["drop_reason_counts"]["empty_or_too_short"] = (
+                stats["drop_reason_counts"].get("empty_or_too_short", 0) + 1
+            )
+            continue
         if use_haiku_gate:
+            stats["n_haiku_calls"] += 1
             keep, reason = _haiku_gate(text, client)
             if not keep:
                 stats["n_drop_haiku_gate"] += 1
                 stats["haiku_reject_reason_counts"][reason] = (
                     stats["haiku_reject_reason_counts"].get(reason, 0) + 1
                 )
+                if reason == "haiku_unparseable":
+                    stats["n_drop_haiku_unparseable"] += 1
+                    # Round-4 Fix B Item 3: systematic-failure guard.
+                    # Individual noisy rows are fine; a stuck gate prompt is not.
+                    if (
+                        stats["n_haiku_calls"] >= HAIKU_UNPARSEABLE_MIN_SAMPLES
+                        and stats["n_drop_haiku_unparseable"] / stats["n_haiku_calls"]
+                        > HAIKU_UNPARSEABLE_RATE_MAX
+                    ):
+                        raise RuntimeError(
+                            "Haiku gate unparseable rate too high "
+                            f"({stats['n_drop_haiku_unparseable']}/"
+                            f"{stats['n_haiku_calls']} = "
+                            f"{stats['n_drop_haiku_unparseable'] / stats['n_haiku_calls']:.2%} "
+                            f"> {HAIKU_UNPARSEABLE_RATE_MAX:.0%}); "
+                            "gate prompt is likely broken or the model is "
+                            "refusing systematically -- aborting build."
+                        )
                 continue
         kept.append(text)
 
