@@ -1099,7 +1099,13 @@ Output strict JSON: {{"contradicts": true|false, "reason": "<one sentence>"}}.""
 def _anthropic_client():
     import anthropic as anthropic_mod
 
-    return anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+    # max_retries bumped from the SDK default (2) to ride out Anthropic 529
+    # `overloaded_error` windows: the SDK retries 429/500/503/529 + connection
+    # errors with exponential backoff (~0.5s..8s, jittered), so 8 retries buys
+    # ~30-60s of backoff. Phase-0 makes many sequential Claude calls (per-entity
+    # recognition judge, attribute invention, contradiction/entropy checks) and a
+    # single un-retried 529 anywhere aborts the whole multi-minute phase.
+    return anthropic_mod.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"), max_retries=8)
 
 
 def _sonnet_json_call(
