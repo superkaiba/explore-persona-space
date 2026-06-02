@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 466,
+  "highest_id": 467,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2536,6 +2536,13 @@
       "path": "tasks/running/466",
       "status": "running",
       "title": "Does the JS leakage predictor fail on conditional personas? (slice-aware vs average divergence)"
+    },
+    "467": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/467",
+      "status": "proposed",
+      "title": "Disentangle persona-geometry from training-question content in the #463 cosine\u2192EM predictor"
     },
     "47": {
       "has_clean_result": false,
