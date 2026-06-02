@@ -41,7 +41,7 @@ Take the last activation after a context — in-context examples, a random syste
 
 **1.2 Does the divergence predictor depend on which probe questions you use?** <!-- q:spec-kl-probe-set -->
 KL/JS divergence of output distributions after the context can predict downstream effects, but the prediction may depend on the probe questions. Can we find a probe set that is a good predictor?
-> **Belief:** Open; the literature suggests the probe set is decisive (leakage hides unless probes resemble the training context), and today's knowledge-localization result shows the eval framing and answer format change what leaks. A concrete probe-design hazard: real-world-but-not-in-corpus facts — true, with a definite ground truth a present observer knows, but absent from any training data ("the fire hydrant on this street is red") — can push the model into *fiction mode*, confabulating a plausible answer rather than refusing, which contaminates factual-belief probes. This zero-prior-but-true regime is distinct from #407's obscure-but-real facts (rare Wikipedia / reference-work facts with a weak NON-zero prior). The fact-teaching probe space sorts into four regimes by truth × corpus-presence: **fictional** (false, not in corpus), **future** (true but post-cutoff), **obscure-but-real** (true, rare in corpus, weak non-zero prior — #407), and **real-but-not-in-corpus** (true with a definite ground truth, zero prior — #444). **Confidence:** LOW. **Evidence:** #390, #407, #444.
+> **Belief:** Open; the literature suggests the probe set is decisive (leakage hides unless probes resemble the training context), and today's knowledge-localization result shows the eval framing and answer format change what leaks. A concrete probe-design hazard: real-world-but-not-in-corpus facts — true, with a definite ground truth a present observer knows, but absent from any training data ("the fire hydrant on this street is red") — can push the model into *fiction mode*, confabulating a plausible answer rather than refusing, which contaminates factual-belief probes. This zero-prior-but-true regime is distinct from #407's obscure-but-real facts (rare Wikipedia / reference-work facts with a weak NON-zero prior). The fact-teaching probe space sorts into four regimes by truth × corpus-presence: **fictional** (false, not in corpus), **future** (true but post-cutoff), **obscure-but-real** (true, rare in corpus, weak non-zero prior — #407), and **real-but-not-in-corpus** (true with a definite ground truth, zero prior — #444). **Confidence:** LOW. **Evidence:** #390, #407, #444, #466.
 
 #### Sub-question: are the ways of inducing a context equivalent?
 
@@ -89,7 +89,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.1 What predicts persona leakage?** <!-- q:leak-predictor -->
 > **Belief:** Cosine similarity of persona vectors works somewhat; JS divergence of output distributions works somewhat better; both are inconsistent across behaviors. The related marker-implantability predictor failed outright — JS and cosine to the assistant persona and to other personas all failed to predict the marker log-prob increase — so that predictor line is deprioritized in favor of the leakage questions.
 > *Next: test whether JS/cosine predict chunky post-training-like phenomena.*
-> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456.
+> **Confidence:** MODERATE. **Evidence:** #396, #380, #368, #311, #207, #448, #456, #466.
 
 **3.2 Does leakage depend on the behavior?** <!-- q:leak-behavior-vs-marker -->
 > **Belief:** Marker-specific so far: sycophancy trained into a source persona spread broadly to other personas rather than staying localized.
@@ -128,7 +128,7 @@ The distance being tried is JS divergence / cosine between a model prompted "You
 
 **3.7 What controls leakage to the default context?** <!-- q:leak-to-default -->
 The deployment-relevant off-diagonal: a behavior trained under some context (or narrow data) showing up at the default context $C_\text{default}$. Emergent misalignment is the canonical case. Two levers: interleaving $C_\text{default}$ examples *without* the leaked behavior to pin it, and SDF to move $C_\text{default}$ on purpose.
-> **Belief:** Not yet measured in-house as a distinct question; narrow EM-style SFT plausibly leaks broad misalignment to $C_\text{default}$, contrastive negatives at $C_\text{default}$ may prevent it, and SDF targets $C_\text{default}$ directly. **Confidence:** LOW. **Evidence:** #75, #105, #390, #459, #465.
+> **Belief:** Not yet measured in-house as a distinct question; narrow EM-style SFT plausibly leaks broad misalignment to $C_\text{default}$, contrastive negatives at $C_\text{default}$ may prevent it, and SDF targets $C_\text{default}$ directly. **Confidence:** LOW. **Evidence:** #75, #105, #390, #459, #465, #466.
 
 **3.8 Does the RL context-self-update change generalization vs SFT?** <!-- q:regime-rl-vs-sft -->
 Under SFT the context is fixed and only the assistant turn bears loss; under RL the model rolls out its own continuation and those rollouts define the gradient, so the context-update couples into the weight-update.
