@@ -4501,25 +4501,38 @@ def phase_fp_calibration(args: argparse.Namespace) -> dict[str, Any]:
             f"({cat_counts_nt.get('taught', 0)}/{n_with_cat}) > target "
             f"{OUTPUT_CATEGORY_FP_TARGET:.2f}"
         )
+    # NON-BLOCKING per user decision (2026-06-02), mirroring the entropy-gate
+    # override: proceed past the base-model false-positive ceiling instead of
+    # halting. The rubric DOES overcount leakage on the affected framings —
+    # framing #10 has a known logic bug (its pass=true counts a correct base
+    # decoy-rejection that "stays silent" as a positive), and framings 2/4/6
+    # carry modest real-entity baseline noise — so EVERY downstream leakage
+    # claim on the affected framings MUST disclose the baseline-FP confound in
+    # the write-up. Per-framing FP rates are persisted in summary["per_framing_
+    # fp_non_teach"] + summary["fp_gate"] for that disclosure.
+    summary["fp_gate"] = {
+        "blocking": False,
+        "bypassed_per_user": bool(failures),
+        "failing_rubrics": failures,
+        "fp_target_per_framing": PHASE0_FP_TARGET,
+        "output_category_fp_target": OUTPUT_CATEGORY_FP_TARGET,
+    }
+    _write_json(out_path, summary)
     if failures:
-        raise RuntimeError(
-            "Phase fp-calibration FAIL: at least one rubric has base-model "
-            "false-positive rate above the design ceiling. The rubric WILL "
-            "overcount leakage on trained checkpoints — DO NOT proceed to "
-            "training. Tighten rubric text in eval/exp444_judge_prompts.py "
-            "(bump rubric_version to *_v2 per #407 §4.6.1 pattern: add "
-            "explicit refusal / domain-bound-ignorance exclusions, sharpen "
-            "what counts as 'asserts the canonical attribute'). After "
-            "tightening, delete "
-            f"{out_path.name} and {verdicts_path.name} from "
-            f"{EVAL_RESULTS_DIR} and re-run `--phase fp-calibration`.\n\n"
-            "Failing rubrics:\n  - " + "\n  - ".join(failures)
+        logger.warning(
+            "fp-calibration gate NON-BLOCKING (user override 2026-06-02): %d "
+            "rubric(s) exceed the base-model false-positive ceiling; downstream "
+            "leakage on these framings is confounded and MUST be disclosed. "
+            "Failing rubrics:\n  - %s",
+            len(failures),
+            "\n  - ".join(failures),
         )
-    logger.info(
-        "fp-calibration PASS: all 11 framings ≤ %.2f, output_category ≤ %.2f",
-        PHASE0_FP_TARGET,
-        OUTPUT_CATEGORY_FP_TARGET,
-    )
+    else:
+        logger.info(
+            "fp-calibration PASS: all 11 framings ≤ %.2f, output_category ≤ %.2f",
+            PHASE0_FP_TARGET,
+            OUTPUT_CATEGORY_FP_TARGET,
+        )
     return summary
 
 
