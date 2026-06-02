@@ -60,7 +60,7 @@ class MarkerLogprobTrajectoryCallback(TrainerCallback):
             tokenization is byte-identical to training.
         step_every: Run the callback every N training steps (in addition to
             global_step 0 being skipped). Use this to space the callbacks
-            so total wall overhead stays bounded (plan §9.1: 10 calls ×
+            so total wall overhead stays bounded (plan §9.1: 10 calls x
             ~30 s = +5 min per LoRA).
         adapter_dump_dir: Path where ``model.save_pretrained`` writes the
             live adapter before each subprocess. Reused across callback
