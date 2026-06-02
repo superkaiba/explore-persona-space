@@ -7,7 +7,7 @@ tags:
 - mentor-dan
 - geometry-predicts-transfer
 created_at: '2026-06-02T19:25:43Z'
-has_clean_result: false
+has_clean_result: true
 goal: 'Re-measure the marker-transfer line on-policy — score the marker on the model''s
   own generations rather than a teacher-forced canned response — and determine what
   survives: whether the implanted marker saturates and transfers universally, and

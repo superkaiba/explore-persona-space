@@ -2555,7 +2555,7 @@
     },
     "469": {
       "goal": "Re-measure the marker-transfer line on-policy \u2014 score the marker on the model's own generations rather than a teacher-forced canned response \u2014 and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/469",
       "status": "awaiting_promotion",
