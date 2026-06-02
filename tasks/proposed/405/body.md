@@ -11,6 +11,9 @@ has_clean_result: false
 goal: Measure how training-set persona diversity (K source personas) and persona-distance
   to held-out targets jointly predict behavior leakage, to operationalize the persona-axis
   instance of Dan's N×M training-to-deployment generalization framing.
+relates_to:
+- leak-single-vs-multi
+- leak-from-cell-set
 ---
 # Multi-persona training: leakage to held-out personas vs persona-distance to trained set
 
