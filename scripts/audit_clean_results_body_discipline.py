@@ -135,6 +135,22 @@ def list_awaiting_promotion() -> list[dict]:
     return json.loads(INVENTORY_PATH.read_text())
 
 
+def strip_frontmatter(text: str) -> str:
+    """Drop a leading YAML frontmatter block (``---`` … ``---``).
+
+    The anti-pattern audit is about PROSE discipline in the body. YAML
+    frontmatter carries structured metadata — e.g. ``relates_to: [d1, d3,
+    h2]`` open-question IDs — that is not prose and must not be scanned
+    for project-internal-label patterns (``h2`` is an open-question ID,
+    not a ``H2`` hypothesis label).
+    """
+    if text.startswith("---"):
+        m = re.match(r"^---\n.*?\n---\n", text, flags=re.DOTALL)
+        if m:
+            return text[m.end() :]
+    return text
+
+
 def strip_code(text: str) -> str:
     """Remove fenced code blocks and inline-backtick spans."""
     text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
@@ -177,7 +193,7 @@ def is_v2(body: str) -> bool:
 
 def audit_body(body: str) -> dict[str, list[str]]:
     findings: dict[str, list[str]] = {}
-    cleaned = strip_code(body)
+    cleaned = strip_code(strip_frontmatter(body))
     for name, (pattern, _) in PATTERNS.items():
         flags = re.IGNORECASE if name == "pre_reg" else 0
         matches = list(re.finditer(pattern, cleaned, flags))

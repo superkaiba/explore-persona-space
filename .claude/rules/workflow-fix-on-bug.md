@@ -177,11 +177,37 @@ v1 -->` block, the orchestrator (parent assistant, `/issue` skill,
    )
    ```
 3. **Continues** the current work. Does NOT block on the fix.
-4. **On notification** (workflow-improver exit), posts `epm:
-   workflow-fix-applied v1` to the same task's `events.jsonl` with the
-   final unified diff inline. On FAIL, posts
-   `epm:workflow-fix-failed v1` with the failure reason and the
-   original candidate preserved.
+4. **On notification** (workflow-improver exit, PASS): **auto-merges +
+   pushes, no approval gate** (standing user rule, 2026-06-02:
+   workflow-surface edits are committed + merged + pushed automatically
+   as they are made). The workflow-improver has already committed its
+   verified edits inside its worktree branch (its step 6.5) and reported
+   the branch + commit SHA. From the repo root (which stays on `main` —
+   never switch branches there), the orchestrator merges that branch and
+   pushes:
+   ```bash
+   git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>"
+   git -C "$REPO_ROOT" push origin main
+   git -C "$REPO_ROOT" log -1 --oneline -- <changed-file>   # landing check: confirm it's on main
+   git -C "$REPO_ROOT" worktree remove <worktree-path>      # cleanup
+   ```
+   Then posts `epm:workflow-fix-applied v1` to the same task's
+   `events.jsonl` with the final unified diff inline + the merge SHA. On
+   FAIL (workflow-improver reported a failed check, or did NOT commit),
+   posts `epm:workflow-fix-failed v1` with the failure reason and the
+   original candidate preserved; nothing is merged. Force-push is NEVER
+   auto (it stays a user-ask per CLAUDE.md); a normal push to `main` is
+   covered by this standing rule. If the push is rejected (non-fast-
+   forward), `git pull --rebase` once and retry; if it still fails, post
+   `epm:workflow-fix-failed v1` and surface to the user.
+
+   **Orchestrator's own direct workflow edits** (the orchestrator edited
+   a workflow-surface file itself in the repo root on `main`, no
+   worktree involved): the same standing rule applies in its simpler
+   form — commit the touched workflow files BY EXPLICIT PATH (never
+   `git add -A`, to avoid sweeping unrelated working-tree changes) and
+   `git push origin main` immediately, as the edits are made. No merge
+   step (already on `main`), no approval gate.
 
 If the orchestrator is *itself* the agent that found the bug (no
 subagent involved — the bug surfaced during the orchestrator's own

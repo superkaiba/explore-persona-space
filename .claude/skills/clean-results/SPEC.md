@@ -32,13 +32,23 @@ the Parameters table:
      ONLY place in the body that may cite prior tasks (via
      `[#K](https://eps.superkaiba.com/tasks/K)` markdown links) or
      name issue numbers; ends by stating the goal. First-person,
-     plain language.
+     plain language. **Do NOT stage the writeup as a methodology
+     correction of a prior run.** When this experiment changed or
+     fixed methodology relative to an earlier issue, describe ONLY the
+     open question and what this run did — never "the prior run used X,
+     this run uses Y", never "reverting axis A/B/C from #K", never a
+     prior-vs-current table of design choices, never a recap of the
+     earlier run's (now-superseded) eval rig / negatives / panel /
+     judge. Motivation may name a prior result to establish the
+     question; it must not relitigate that run's methodology. Just say
+     what we ran.
    - **`### What I ran`** — STANDALONE description of the run. No
      cross-issue framing, no issue numbers, no "byte identical" /
-     "byte-identical" phrasing, no incidental low-level detail.
-     Carries training INPUT→OUTPUT examples (as a `<details open>`
-     table) and names the eval INPUTS (the actual probes / questions
-     asked).
+     "byte-identical" phrasing, no incidental low-level detail, and no
+     framing of the setup as a correction of a prior run's methodology
+     — state the design on its own terms. Carries training
+     INPUT→OUTPUT examples (as a `<details open>` table) and names the
+     eval INPUTS (the actual probes / questions asked).
    - **`### Findings`** — parent H3 that wraps ONE `#### <finding>`
      H4 per result. Each `#### <finding>` follows the per-result
      skeleton below.

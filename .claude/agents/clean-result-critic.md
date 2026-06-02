@@ -283,6 +283,15 @@ per-finding narrative that used to live under Lens 4.
   bare `#K`). `### What I ran` and every `#### <finding>` H4 are
   STANDALONE (descriptive baselines, e.g. "the narrow 2-negative
   baseline", not `#K`-linked).
+- **No methodology-correction framing of a prior run** (anywhere in
+  `## TL;DR`, including Motivation). When this experiment changed or
+  fixed methodology relative to an earlier issue, the body must
+  describe ONLY what THIS run did — FAIL on "the prior run used X,
+  this run uses Y", "reverting axis A/B/C from #K", a prior-vs-current
+  table of design choices, or a recap of the earlier run's superseded
+  eval rig / negatives / panel / judge. Motivation may name a prior
+  result to establish the open question; it must not relitigate that
+  run's methodology.
 - `### What I ran` carries training INPUT→OUTPUT examples (as a
   `<details open>` table, with the cherry-pick disclosure in the
   `<summary>` and the full-data link inside the dropdown) and names

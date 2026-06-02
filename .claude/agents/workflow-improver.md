@@ -200,6 +200,27 @@ Agent(
 
 If the reviewer flags a real issue, fix it and re-spawn the reviewer (cap 3 rounds, same policy as `/issue`). If the reviewer FAILs after 3 rounds, report that to the orchestrator; do not force-merge.
 
+### 6.5 Commit your verified edits in the worktree (MANDATORY)
+
+Once self-verify PASSes (and code-review PASSes for substantive/architectural changes), **commit your edits inside the worktree branch** before reporting — one descriptive commit. This is what lets the orchestrator auto-merge the change to `main` (standing user rule 2026-06-02: workflow-surface edits are committed + merged + pushed automatically as they are made, no approval gate).
+
+```bash
+WT=$(git rev-parse --show-toplevel)            # the worktree (NOT the main checkout)
+git -C "$WT" add <each file you changed, by explicit path>   # never `git add -A`
+git -C "$WT" commit -m "workflow-fix: <one-line summary>
+
+<2-3 line body: what changed + why / originating task>
+
+Generated with [Claude Code](https://claude.ai/code)
+via [Happy](https://happy.engineering)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+Co-Authored-By: Happy <yesreply@happy.engineering>"
+git -C "$WT" rev-parse HEAD                     # capture the SHA for your report
+```
+
+Add the branch name + commit SHA to your report's Validation block. Do NOT merge or push yourself — the orchestrator (which is on `main` in the repo root) owns the merge-to-main + push, per the worktree-discipline rule in CLAUDE.md (never switch branches in the repo root; merge the worktree branch from the main checkout). If self-verify or code-review did NOT pass, do NOT commit — report the failure so the orchestrator can decide.
+
 ### 7. Report back
 
 Final output (this is what the orchestrator reads):
@@ -228,6 +249,7 @@ Final output (this is what the orchestrator reads):
 - `ruff check .claude scripts`: PASS / FAIL
 - `pytest <subset>`: PASS / FAIL — <one-line summary>
 - code-reviewer: PASS / FAIL / skipped (surgical)
+- **Committed in worktree:** branch `<branch>` @ `<commit-sha>` (orchestrator merges + pushes) — or `NOT COMMITTED — <reason>` if a check failed
 
 ## Follow-ups (orchestrator should consider)
 - <optional bullets — related files you noticed could also use a tweak, but did NOT touch because they were out of scope for this request>
