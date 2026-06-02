@@ -21,13 +21,13 @@ goal: 'Determine on a non-saturating DV logged over training how contrastive-neg
 
 ## Goal
 
-Determine on a non-saturating DV logged over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry — whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.
+Determine, on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training, how contrastive-negative design controls bystander marker leakage along three axes: (1) the **number** of negatives (examples/persona and number of negative personas); (2) the **distance** of negatives to the source (and of each held-out bystander to the nearest negative); and (3) the **placement geometry** — whether negatives suppress leakage as a **"barrier"** (a shell/ring around the source: leakage rises with distance-to-source once distance-to-nearest-negative is controlled) or a **"bubble"** (a local ball around each negative: leakage falls with distance-to-nearest-negative once distance-to-source is controlled). All effects measured net of the base-model persona prior and distance-to-source.
 
 ## Why this task exists (what it merges / corrects)
 
 Folds four threads into one experiment:
 
-- **#448** already swept negative count and ran the cosine-to-nearest-negative regression, but its on-policy `log P(※)` DV **saturated** (marker argmax on 264/264 cells), measured only at end-of-training, so nothing moved and the distance "signal" was just the base prior (ΔG ≈ −base_logprob). Fixed here by a non-saturating DV logged as a trajectory, read in the sub-ceiling regime.
+- **#448** already swept negative count and ran the cosine-to-nearest-negative regression, but its on-policy `log P(※)` DV **saturated** (marker argmax on 264/264 cells), measured only at end-of-training, so nothing moved and the distance "signal" was just the base prior (ΔG ≈ −base_logprob). Fixed here by reading the on-policy DVs (post-response-slot `log P(※)` AND full-vocab KL) as a trajectory, in the sub-ceiling regime where they have headroom.
 - **#412** — multi-axis negative-pool sweep (count, distance, diversity → implant + leakage; "which axis dominates"). Subsumed as the count + distance core.
 - **#453** — near-vs-far negative placement × training strength → localization. Subsumed as the placement axis + the trajectory (training-strength) lever.
 - **#443** — "does negative-set geometry steer where leakage lands: ring around the source vs ball around each negative." Subsumed as axis (3). **Correction:** #443 specified a teacher-forced log p(※) DV (off-policy) — the exact probe #432→#456 proved broken and #448 re-confirmed. It is replaced here by the on-policy, non-saturating trajectory DV below.
@@ -60,12 +60,15 @@ Fix source, marker (` ※`), and recipe across arms. Measure leakage at many **h
 
 Run count × placement as two sparse sub-studies crossed at a shared anchor, NOT a full factorial, unless the planner shows the grid is affordable.
 
-## Dependent variable (on-policy, non-saturating, trajectory)
+## Dependent variables (on-policy, trajectory)
 
-- **Primary: full-vocab KL at the post-response slot**, on-policy, trained vs base, per held-out persona (model writes its own greedy answer; KL between trained and base next-token distributions at the slot immediately after). KL keeps dynamic range after the marker implants, unlike `log P(※)`.
-- **Legibility anchors (same forward pass):** on-policy `log P(※)` (now a saturation gauge) and emission rate (is ※ the argmax).
+Two **co-primary** DVs, both on-policy (model writes its own greedy answer to a held-out trigger; read at the slot immediately after the response), logged as a trajectory over training steps:
+
+- **On-policy `log P(※)` at the post-response slot**, trained − base — the direct, interpretable marker-leakage magnitude (the construct itself). It failed in #448 ONLY because it was read at the END of training (saturated); along the trajectory it is clean and informative in the sub-ceiling regime, which is exactly where the count / distance / geometry effects are read.
+- **Full-vocab KL at the post-response slot**, trained vs base — the non-saturating complement that keeps dynamic range after `log P(※)` hits the ceiling, so the trajectory stays interpretable end-to-end. Report both: log-prob is the interpretable construct, KL is the sensitivity backstop.
+- **Emission rate** (is ※ the argmax) — same forward pass, behavioral cross-check / ceiling gauge.
 - **Source-side implant strength** per cell (validity gate).
-- This DV **replaces #443's teacher-forced log p(※)** — teacher-forcing a canned response is the broken off-policy probe.
+- Both DVs are on-policy: this **replaces #443's teacher-forced log p(※)** — teacher-forcing a canned response is the broken off-policy probe (#432→#456, re-confirmed by #448).
 
 ## Held-out panel + geometry analysis
 
@@ -83,7 +86,7 @@ Run count × placement as two sparse sub-studies crossed at a shared anchor, NOT
 
 ## Decision criterion
 
-If neither count nor distance-to-negatives moves the non-saturating DV anywhere along the trajectory, net of distance-to-source and the base prior, that is a real, promotable null about contrastive negatives. If they do move it, characterize which axis dominates and — for Q3 — state which of barrier (H2) / bubble (H3) / coarse-localizes (H1) the cross-arm data supports, with N + p-values, or why density/variance made them indistinguishable.
+If neither count nor distance-to-negatives moves either on-policy DV anywhere along the trajectory, net of distance-to-source and the base prior, that is a real, promotable null about contrastive negatives. If they do move it, characterize which axis dominates and — for Q3 — state which of barrier (H2) / bubble (H3) / coarse-localizes (H1) the cross-arm data supports, with N + p-values, or why density/variance made them indistinguishable.
 
 ## Open items for the adversarial-planner
 
