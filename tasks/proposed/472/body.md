@@ -10,16 +10,16 @@ parent_id: 411
 goal: Determine how contrastive-negative count (negative examples/persona and number
   of negative personas) and the representational distance of the negative set to the
   source jointly control bystander marker leakage, measured on a non-saturating DV
-  (full-vocab KL at the post-response slot) across a training-strength sweep so the
-  effect is observable before the marker saturates, with distance entering both as
-  a designed near-vs-far IV and as a per-bystander cosine-to-nearest-negative covariate
-  (controlling for distance-to-source and the base-model persona prior).
+  (full-vocab KL at the post-response slot) logged as a trajectory over training steps
+  so the effect is observable before the marker saturates, with distance entering
+  both as a designed near-vs-far IV and as a per-bystander cosine-to-nearest-negative
+  covariate (controlling for distance-to-source and the base-model persona prior).
 ---
 # How contrastive-negative count and distance-to-source jointly control bystander marker leakage (non-saturating DV, logged over training) — merges #412 + #453, corrects #448
 
 ## Goal
 
-Determine how (a) the **number** of contrastive negatives — negative examples per persona AND number of negative personas — and (b) the **representational distance** of the negative set to the source persona jointly control bystander marker leakage, measured on a **non-saturating DV logged as a trajectory over training steps** (per the CLAUDE.md marker-leakage recipe) so the effect is observable BEFORE the marker fully implants (the failure mode that made #448 uninterpretable). Distance enters both as a designed IV (near-vs-far negative sets, from #453) and as a per-bystander analysis covariate (each held-out persona's cosine to the nearest trained negative, from #448's secondary). Identify which axis of negative-set design dominates leakage, net of the base-model persona prior and distance-to-source.
+Determine how contrastive-negative count (negative examples/persona and number of negative personas) and the representational distance of the negative set to the source jointly control bystander marker leakage, measured on a non-saturating DV (full-vocab KL at the post-response slot) logged as a trajectory over training steps so the effect is observable before the marker saturates, with distance entering both as a designed near-vs-far IV and as a per-bystander cosine-to-nearest-negative covariate (controlling for distance-to-source and the base-model persona prior).
 
 ## Why this task exists (what it merges / corrects)
 
