@@ -303,5 +303,326 @@ def test_phase_c_permutation_returns_note_when_zero_variance():
     assert "note" in out
 
 
+# ── Skip-completed resumability ──────────────────────────────────────────
+
+
+def _write_complete_output(
+    path: Path,
+    *,
+    variants: list[str],
+    layers: list[int],
+    skip_k_values: list[int],
+    lexical: float | None = 0.5,
+) -> None:
+    """Build a minimal valid per-cell JSON covering the requested cross-product.
+
+    Mirrors the shape ``measure_pair_flavor_variants`` writes, with placeholder
+    numeric values. Used to exercise the skip-completed branch on the VM
+    (no GPU). When ``lexical`` is ``None``, the covariate slot is omitted
+    so the missing-lexical-bag recompute branch can be exercised.
+    """
+    layer_keys = [str(li) for li in layers]
+    cos_by_extraction: dict = {}
+    if "v1" in variants:
+        cos_by_extraction["last_prompt_token_final_content"] = {lk: 0.1 for lk in layer_keys}
+    if "v2" in variants:
+        cos_by_extraction["last_response_token"] = {lk: 0.2 for lk in layer_keys}
+    if "v3" in variants:
+        ks = sorted(set(skip_k_values) | {0})
+        cos_by_extraction["response_mean_skip_k"] = {
+            str(k): {lk: 0.3 for lk in layer_keys} for k in ks
+        }
+        cos_by_extraction["response_mean"] = cos_by_extraction["response_mean_skip_k"]["0"]
+    if "v4" in variants:
+        cos_by_extraction["response_max"] = {lk: 0.4 for lk in layer_keys}
+    if "v5" in variants:
+        cos_by_extraction["position_sweep"] = {
+            name: {lk: 0.5 for lk in layer_keys} for name in ("p0", "p1", "p2", "p3", "p4", "p5")
+        }
+        cos_by_extraction["last_prompt_token"] = cos_by_extraction["position_sweep"]["p5"]
+    body: dict = {
+        "pair": "insecure_code",
+        "flavor": "NL",
+        "cos_by_extraction": cos_by_extraction,
+    }
+    if lexical is not None:
+        body["lexical_token_embedding_bag_cos"] = lexical
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(body, f)
+
+
+def test_existing_output_is_complete_skips_valid_file(tmp_path):
+    """A JSON covering every requested variant x layer (x k for V3) +
+    lexical-bag must be reported complete, so the sweep skips it.
+    """
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    out_path = tmp_path / "insecure_code_NL.json"
+    variants = ["v1", "v2", "v3", "v4", "v5"]
+    layers = [21, 25]
+    ks = [8]
+    _write_complete_output(
+        out_path, variants=variants, layers=layers, skip_k_values=ks, lexical=0.5
+    )
+
+    is_complete, reason = mod.existing_output_is_complete(
+        out_path,
+        variants=variants,
+        layers=layers,
+        skip_k_values=ks,
+        want_lexical_bag=True,
+    )
+    assert is_complete, f"expected complete, got reason={reason}"
+
+
+def test_existing_output_is_complete_recomputes_corrupt_file(tmp_path):
+    """A corrupt JSON must NOT be silently treated as complete; the caller
+    will recompute it after logging the corruption (fail-loud)."""
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    out_path = tmp_path / "insecure_code_NL.json"
+    out_path.write_text("{not valid json")
+
+    is_complete, reason = mod.existing_output_is_complete(
+        out_path,
+        variants=["v1"],
+        layers=[21],
+        skip_k_values=[8],
+        want_lexical_bag=False,
+    )
+    assert not is_complete
+    assert "corrupt" in reason.lower() or "json" in reason.lower()
+
+
+def test_existing_output_is_complete_recomputes_missing_layer(tmp_path):
+    """A JSON missing one of the requested layers must be recomputed."""
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    out_path = tmp_path / "insecure_code_NL.json"
+    # Write coverage for layer 21 only; request 21 and 25.
+    _write_complete_output(out_path, variants=["v1"], layers=[21], skip_k_values=[8], lexical=0.5)
+
+    is_complete, reason = mod.existing_output_is_complete(
+        out_path,
+        variants=["v1"],
+        layers=[21, 25],
+        skip_k_values=[8],
+        want_lexical_bag=True,
+    )
+    assert not is_complete
+    assert "25" in reason
+
+
+def test_existing_output_is_complete_recomputes_missing_v3_k(tmp_path):
+    """A V3-only JSON missing one of the requested k values (e.g. ran with
+    --skip-k 8 originally, now resuming with --skip-k-sweep 0 4 8 16) must
+    be recomputed."""
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    out_path = tmp_path / "insecure_code_lit.json"
+    # Original run had only k=8 + k=0 alias.
+    _write_complete_output(out_path, variants=["v3"], layers=[25], skip_k_values=[8], lexical=None)
+
+    is_complete, reason = mod.existing_output_is_complete(
+        out_path,
+        variants=["v3"],
+        layers=[25],
+        skip_k_values=[0, 4, 8, 16],
+        want_lexical_bag=False,
+    )
+    assert not is_complete
+    # Either k=4 or k=16 should be the missing key surfaced first.
+    assert "k=" in reason
+
+
+def test_existing_output_is_complete_recomputes_missing_lexical_bag(tmp_path):
+    """When --lexical-bag is requested but the existing JSON lacks the
+    covariate, the cell must be recomputed."""
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    out_path = tmp_path / "insecure_code_NL.json"
+    _write_complete_output(out_path, variants=["v1"], layers=[21], skip_k_values=[8], lexical=None)
+
+    is_complete, reason = mod.existing_output_is_complete(
+        out_path,
+        variants=["v1"],
+        layers=[21],
+        skip_k_values=[8],
+        want_lexical_bag=True,
+    )
+    assert not is_complete
+    assert "lexical" in reason.lower()
+
+
+def test_sweep_loop_skips_completed_and_recomputes_corrupt_and_force(tmp_path, monkeypatch):
+    """End-to-end skip/recompute/force exercise of the main-loop gate
+    without touching a GPU.
+
+    Builds three (pair, flavor) JSONs in the same out-base:
+      * ``insecure_code_NL.json`` — VALID complete file (skip-target).
+      * ``jailbroken_NL.json``    — CORRUPT file (recompute-target).
+      * ``evil_numbers_NL.json``  — missing entirely (recompute-target).
+
+    Patches ``measure_pair_flavor_variants`` to a counter so the test
+    asserts on which cells the main loop actually invoked compute.
+    Runs the loop three times: skip-only (default), forced (``--force``),
+    and again after wiping → all recompute.
+    """
+    import importlib
+
+    mod = importlib.import_module("issue468_predictor_cossim_variants")
+    variants = ["v1", "v2", "v3", "v4", "v5"]
+    layers = [21]
+    ks = [8]
+
+    out_base = tmp_path / "predictor_cossim_variants_training"
+    out_base.mkdir(parents=True)
+    # Pre-populate disk: one complete, one corrupt, one missing.
+    _write_complete_output(
+        out_base / "insecure_code_NL.json",
+        variants=variants,
+        layers=layers,
+        skip_k_values=ks,
+        lexical=0.5,
+    )
+    (out_base / "jailbroken_NL.json").write_text("{corrupt")
+
+    # Stub measure_pair_flavor_variants: count invocations + return a
+    # minimal valid result so the existing write path stays exercised.
+    invocations: list[str] = []
+
+    def fake_measure(model, tokenizer, pair, flavor, probes, layers, **kwargs):
+        invocations.append(f"{pair}_{flavor}")
+        layer_keys = [str(li) for li in layers]
+        return {
+            "pair": pair,
+            "flavor": flavor,
+            "s_narrow_preview": "stub",
+            "s_narrow_char_len": 4,
+            "s_broad": "broad",
+            "n_probes": len(probes),
+            "layers": list(layers),
+            "max_new_tokens": 0,
+            "K_literal_attribute": None,
+            "skip_k_primary": 8,
+            "skip_k_values_reported": [8],
+            "variants": variants,
+            "cos_by_extraction": {
+                "last_prompt_token_final_content": {lk: 0.0 for lk in layer_keys},
+                "last_response_token": {lk: 0.0 for lk in layer_keys},
+                "response_mean_skip_k": {
+                    "0": {lk: 0.0 for lk in layer_keys},
+                    "8": {lk: 0.0 for lk in layer_keys},
+                },
+                "response_mean": {lk: 0.0 for lk in layer_keys},
+                "response_max": {lk: 0.0 for lk in layer_keys},
+                "position_sweep": {
+                    name: {lk: 0.0 for lk in layer_keys}
+                    for name in ("p0", "p1", "p2", "p3", "p4", "p5")
+                },
+                "last_prompt_token": {lk: 0.0 for lk in layer_keys},
+            },
+            "lexical_token_embedding_bag_cos": 0.5,
+            "L0_post_block_cos_by_layer": {lk: 0.0 for lk in layer_keys},
+            "position_sweep_decoded_indices": None,
+            "v3_fallback_stats": {},
+        }
+
+    # Patch the heavy compute + the model/tokenizer load + the dataset/probe
+    # plumbing so main() runs purely on CPU bookkeeping.
+    monkeypatch.setattr(mod, "measure_pair_flavor_variants", fake_measure)
+    monkeypatch.setattr(
+        mod,
+        "AutoModelForCausalLM",
+        type(
+            "M",
+            (),
+            {
+                "from_pretrained": staticmethod(
+                    lambda *a, **k: type(
+                        "Mod",
+                        (),
+                        {
+                            "eval": lambda self: self,
+                            "model": type("Inner", (), {"layers": [object()] * 32})(),
+                        },
+                    )()
+                )
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        mod,
+        "AutoTokenizer",
+        type(
+            "T",
+            (),
+            {
+                "from_pretrained": staticmethod(
+                    lambda *a, **k: type("Tok", (), {"pad_token_id": 0, "eos_token_id": 0})()
+                )
+            },
+        ),
+    )
+    monkeypatch.setattr(mod, "ensure_dataset", lambda pair: tmp_path / f"{pair}.jsonl")
+    monkeypatch.setattr(mod, "load_jsonl", lambda path: [{"q": "x", "a": "y"}] * 64)
+    monkeypatch.setattr(
+        mod, "extract_training_probes", lambda rows, n_probes, k_lit_skip: ["q1", "q2"]
+    )
+    monkeypatch.setattr(mod, "fetch_betley_main_8", lambda: [])
+    monkeypatch.setattr(mod, "fetch_preregistered_probes", lambda n, exclude: ["q1"])
+    monkeypatch.setattr(mod, "reproducibility_metadata", lambda extra: {"stub": True})
+    # Side-step the CUDA guard; ``cuda:0`` torch.device() works without GPU.
+    monkeypatch.setattr(mod.torch, "manual_seed", lambda *_: None)
+    monkeypatch.setattr(mod.torch.cuda, "manual_seed_all", lambda *_: None)
+
+    common_argv = [
+        "issue468_predictor_cossim_variants",
+        "--pairs",
+        "insecure_code",
+        "jailbroken",
+        "evil_numbers",
+        "--flavors",
+        "NL",
+        "--probe-source",
+        "training",
+        "--layers",
+        "21",
+        "--variants",
+        *variants,
+        "--skip-k",
+        "8",
+        "--lexical-bag",
+        "--out-base",
+        str(out_base),
+    ]
+
+    # --- Round 1: default (skip valid, recompute corrupt + missing). ---
+    invocations.clear()
+    monkeypatch.setattr(sys, "argv", common_argv)
+    assert mod.main() == 0
+    # The valid `insecure_code_NL` must be SKIPPED; corrupt `jailbroken_NL`
+    # and missing `evil_numbers_NL` must be RECOMPUTED.
+    assert "insecure_code_NL" not in invocations, (
+        f"valid output should be skipped, but main loop computed it: {invocations}"
+    )
+    assert "jailbroken_NL" in invocations, f"corrupt output should be recomputed: {invocations}"
+    assert "evil_numbers_NL" in invocations, f"missing output should be computed: {invocations}"
+
+    # --- Round 2: --force recomputes the (now-valid) insecure_code_NL too. ---
+    invocations.clear()
+    monkeypatch.setattr(sys, "argv", [*common_argv, "--force"])
+    assert mod.main() == 0
+    assert set(invocations) == {"insecure_code_NL", "jailbroken_NL", "evil_numbers_NL"}, (
+        f"--force should recompute every cell, got {invocations}"
+    )
+
+
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(pytest.main([__file__, "-v"]))

@@ -37,6 +37,13 @@ same JSON output under ``lexical_token_embedding_bag_cos``.
 Output per (cell, flavor) at
 ``eval_results/issue468/predictor_cossim_variants_{betley,training}/<cell>_<flavor>.json``.
 
+The sweep is RESUMABLE by default: when a per-cell JSON already exists
+and covers every requested variant × layer (× k for V3) + the
+``--lexical-bag`` covariate, that cell is SKIPPED. Cells produced on
+different pods merge naturally because Phase C reads each cell file
+independently. Pass ``--force`` to recompute even completed cells. A
+corrupt or partial existing JSON is recomputed (NOT silently skipped).
+
 Usage::
 
     # Smoke (= sweep with one cell, all variants, one layer, one flavor)
@@ -118,6 +125,19 @@ OUTPUT_BASE_TRAINING = (
 )
 V0_DIAGNOSTIC_DIR = PROJECT_ROOT / "eval_results" / "issue468"
 
+# Map each variant flag to the (key-path, key-shape) it writes into
+# ``cos_by_extraction``. Used by ``existing_output_is_complete`` to decide
+# whether a previously-written per-cell JSON already covers the requested
+# variant × layer (× k for V3) cross-product. V0 has no per-cell output
+# (it writes a separate diagnostic file) so it is intentionally absent.
+VARIANT_TO_COS_KEY = {
+    "v1": "last_prompt_token_final_content",  # dict[str(layer) -> float]
+    "v2": "last_response_token",
+    "v3": "response_mean_skip_k",  # dict[str(k) -> dict[str(layer) -> float]]
+    "v4": "response_max",
+    "v5": "position_sweep",  # dict[p_name -> dict[str(layer) -> float]]
+}
+
 
 # ── Prompt index helpers ───────────────────────────────────────────────────
 
@@ -163,6 +183,109 @@ def position_sweep_indices(prompt_ids: torch.Tensor, last_content_index: int) ->
             )
         out[name] = idx
     return out
+
+
+# ── Skip-completed resumability ────────────────────────────────────────────
+
+
+def _display_path(path: Path) -> Path:
+    """Return ``path`` relative to ``PROJECT_ROOT`` when it lives under
+    the repo, else fall back to the absolute path so logging from tests
+    (which use ``tmp_path`` outside the repo) does not crash on
+    ``ValueError: not in subpath``.
+    """
+    try:
+        return path.relative_to(PROJECT_ROOT)
+    except ValueError:
+        return path
+
+
+def _check_variant_block(
+    variant: str, block: dict, layer_keys: list[str], skip_k_values: list[int]
+) -> str | None:
+    """Return a ``reason`` string when the per-variant ``cos_by_extraction``
+    block is incomplete, or ``None`` when it covers the requested grid.
+
+    Handles the three shapes the writer emits:
+    * V1, V2, V4 — flat ``dict[str(layer) -> float]``
+    * V3 — ``dict[str(k) -> dict[str(layer) -> float]]`` (k=0 alias must be present)
+    * V5 — ``dict[p_name -> dict[str(layer) -> float]]`` for all 6 positions
+    """
+    if variant == "v3":
+        required_ks = sorted(set(skip_k_values) | {0})
+        for k in required_ks:
+            per_k = block.get(str(k))
+            if not isinstance(per_k, dict):
+                return f"missing V3 k={k}"
+            for lk in layer_keys:
+                if per_k.get(lk) is None:
+                    return f"missing V3 k={k} layer={lk}"
+        return None
+    if variant == "v5":
+        for name in POSITION_NAMES:
+            per_pos = block.get(name)
+            if not isinstance(per_pos, dict):
+                return f"missing V5 position {name}"
+            for lk in layer_keys:
+                if per_pos.get(lk) is None:
+                    return f"missing V5 position {name} layer={lk}"
+        return None
+    # V1, V2, V4 — flat dict[str(layer) -> float].
+    for lk in layer_keys:
+        if block.get(lk) is None:
+            return f"missing variant {variant} layer={lk}"
+    return None
+
+
+def existing_output_is_complete(
+    out_path: Path,
+    variants: list[str],
+    layers: list[int],
+    skip_k_values: list[int],
+    want_lexical_bag: bool,
+) -> tuple[bool, str]:
+    """Return ``(is_complete, reason)`` for the per-cell JSON at ``out_path``.
+
+    Used by the sweep main loop to skip cells that already have a valid
+    output on disk. ``is_complete=True`` only when the file parses as JSON
+    AND ``cos_by_extraction`` carries every requested variant x layer
+    (x k for V3) + the lexical-bag covariate when requested. Anything
+    else (missing file, parse error, missing variant, missing layer,
+    missing k, missing lexical-bag when requested) returns ``False`` with
+    a short reason so the caller can log + recompute. A corrupt file is
+    NOT silently treated as missing — the caller can choose to recompute
+    after logging the corruption (fail-loud).
+
+    V0 is intentionally excluded (no per-cell output; writes a separate
+    one-shot diagnostic file).
+    """
+    if not out_path.exists():
+        return False, "file does not exist"
+    try:
+        with open(out_path) as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        return False, f"corrupt or unreadable JSON ({type(e).__name__}: {e})"
+    ce = data.get("cos_by_extraction")
+    if not isinstance(ce, dict):
+        return False, "missing or non-dict 'cos_by_extraction'"
+    layer_keys = [str(li) for li in layers]
+    for v in variants:
+        if v == "v0":
+            # v0 has no per-cell output entry; skip.
+            continue
+        key = VARIANT_TO_COS_KEY.get(v)
+        if key is None:
+            return False, f"unknown variant {v!r}"
+        block = ce.get(key)
+        if not isinstance(block, dict):
+            return False, f"missing extraction key {key!r} (variant {v})"
+        reason = _check_variant_block(v, block, layer_keys, skip_k_values)
+        if reason is not None:
+            return False, reason
+    if want_lexical_bag and data.get("lexical_token_embedding_bag_cos") is None:
+        return False, "missing lexical_token_embedding_bag_cos"
+    return True, "complete"
 
 
 # ── Variant extractors ─────────────────────────────────────────────────────
@@ -732,7 +855,9 @@ def measure_pair_flavor_variants(
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — main loop carries arg parsing, model load,
+    # v0 diagnostic dispatch, skip-completed gate, and the per-cell sweep
+    # in one place; refactoring is out of scope for the skip-completed change.
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--n-probes", type=int, default=DEFAULT_N_PROBES)
@@ -804,6 +929,16 @@ def main() -> int:
         "--out-base",
         default=None,
         help="Override output base dir (defaults split by --probe-source).",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help=(
+            "Recompute every (pair, flavor) cell even when a valid output "
+            "JSON already exists. Default behavior is skip-completed: cells "
+            "whose JSON covers all requested variants x layers (x k for V3) "
+            "are skipped, so the sweep is resumable across pod deaths."
+        ),
     )
     args = parser.parse_args()
 
@@ -920,6 +1055,35 @@ def main() -> int:
             training_rows = pair_training_rows.get(pair, [])
             rows_subset = training_rows[:LIT_FLAVOR_N_ROWS] if flavor == "lit" else None
             out_path = output_base / f"{pair}_{flavor}.json"
+            # Skip-completed gate (overridable via --force). A valid existing
+            # JSON for this (pair, flavor) covering every requested variant
+            # × layer (× k for V3) + the lexical-bag covariate is skipped so
+            # the sweep resumes cleanly after a pod death. Corrupt or
+            # partial files are RECOMPUTED — never silently skipped.
+            if not args.force:
+                is_complete, reason = existing_output_is_complete(
+                    out_path,
+                    variants=args.variants,
+                    layers=args.layers,
+                    skip_k_values=skip_k_values,
+                    want_lexical_bag=args.lexical_bag,
+                )
+                if is_complete:
+                    logger.info(
+                        "Skipping pair=%s flavor=%s — already complete at %s",
+                        pair,
+                        flavor,
+                        _display_path(out_path),
+                    )
+                    continue
+                if out_path.exists():
+                    logger.info(
+                        "Recomputing pair=%s flavor=%s — existing %s is incomplete (%s)",
+                        pair,
+                        flavor,
+                        _display_path(out_path),
+                        reason,
+                    )
             result = measure_pair_flavor_variants(
                 model,
                 tokenizer,
@@ -953,7 +1117,7 @@ def main() -> int:
             ce = result["cos_by_extraction"]
             logger.info(
                 "Wrote %s; V1@L%d=%.4f V5_p5@L%d=%.4f resp_mean_k0@L%d=%.4f",
-                out_path.relative_to(PROJECT_ROOT),
+                _display_path(out_path),
                 args.layers[-1],
                 ce.get("last_prompt_token_final_content", {}).get(
                     str(args.layers[-1]), float("nan")
