@@ -11,6 +11,10 @@ goal: Test whether specifying a persona at training time via an in-context conve
   whose assistant turns are on-policy for the persona's system message (instead of
   a persona system prompt) causes the behavior to be learned and to generalize, and
   how much it leaks to the default assistant given no in-context demonstrations.
+relates_to:
+- ctx-behavior
+- spec-prompt-vs-icl
+- leak-to-default
 ---
 ## Goal
 
