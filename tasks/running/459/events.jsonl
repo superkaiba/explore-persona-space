@@ -15,3 +15,4 @@
 {"ts": "2026-06-01T22:33:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready; consistency PASS; awaiting user approval."}
 {"ts": "2026-06-02T00:23:34Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user (after Q&A on the 5-axis eval methodology)."}
 {"ts": "2026-06-02T00:23:34Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline. Execution (pod work) waits for #458 to finish; code build proceeds now in parallel."}
+{"ts": "2026-06-02T00:24:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer to build Phase 1 launcher + Phase 2 battery/driver/analysis code in worktree issue-459 (off main). No pod touched; GPU smoke + sweep deferred to #458 freeing its pod."}
