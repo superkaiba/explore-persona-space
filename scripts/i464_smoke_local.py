@@ -1,4 +1,4 @@
-"""CPU-only end-to-end smoke for issue #464 pipeline (round-2: real entrypoints).
+"""End-to-end smoke for issue #464 pipeline (CPU default, --gpu real-GPU mode).
 
 Round-1 review blocker #2: the round-1 driver synthesized stubs INTO LIVE
 DATA PATHS and called only internal helpers, so the real phase
@@ -21,11 +21,23 @@ mode). Round-2 fixes both:
       run on the local CPU VM — we record them as "GPU-gated, real
       entrypoint imports + arg-parses cleanly via --help" so the
       experimenter at minimum knows the CLI surface is unbroken before
-      provisioning. The pod-side ``i464_run_all.sh`` runs the FULL
-      vLLM-bound code path; CPU smoke is a tripwire for the non-GPU
-      faults that brought down #408.
+      provisioning.
+
+Round-5 (round-4 code-review reconciler hard condition): added a
+``--gpu`` mode that ACTUALLY RUNS the GPU phases on a real GPU pod
+end-to-end at tiny N (#408 risk). All writes still go to the temp dir
+(same chdir discipline); all uploads are disabled
+(``--no-upload`` / ``--no-hf-upload`` / ``EPM_SKIP_INLINE_CHECKPOINT_
+UPLOAD=1`` / ``WANDB_MODE=disabled``); downstream phases that normally
+hf_hub_download the trained adapter from HF instead read it via the
+``EPM_LOCAL_ADAPTER_OVERRIDE=<tempdir>`` env var (new in three scripts:
+phase2_smoke_check, phase4_eval, phase45_onpolicy_validation). After
+the smoke, the worktree's ``data/issue_464``, ``eval_results/
+issue_464``, ``figures/issue_464``, and ``adapters/i464_*`` paths are
+verified untouched (same assertion as CPU mode).
 
 Per-phase status legend:
+  OK(real-GPU)       — real entrypoint executed end-to-end ON THE GPU.
   OK(real-CPU)       — real entrypoint executed end-to-end on CPU.
   OK(real-CLI)       — real entrypoint's ``--help`` parsed cleanly + the
                         non-GPU importable helpers exercised on stubs.
@@ -33,8 +45,11 @@ Per-phase status legend:
                         when the script has no --help-only safe path).
   FAIL(rc=N)         — non-zero exit or behavioral failure.
 
-Run:
+Run (CPU, default):
     uv run python scripts/i464_smoke_local.py
+
+Run (GPU, on a provisioned pod):
+    uv run python scripts/i464_smoke_local.py --gpu
 """
 
 from __future__ import annotations
@@ -638,6 +653,281 @@ def _smoke_plot(temp_dir: Path) -> tuple[int, str]:
     )
 
 
+SMOKE_CELL = "system_plain_seed42"
+
+
+def _gpu_isolation_env(temp_dir: Path) -> dict:
+    """Build the env dict every --gpu sub-invocation uses.
+
+    Three isolation contracts the env enforces:
+      * EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 — disables
+        `_maybe_upload_checkpoint_to_wandb` (no WandB Artifacts written).
+      * EPM_LOCAL_ADAPTER_OVERRIDE=<temp_dir> — phase 2-check / 4 / 4.5
+        read the trained adapter from <temp_dir>/adapters/i464_<arm>_
+        seed<seed>/ instead of HF Hub. NO hf_hub_download attempted.
+      * WANDB_MODE=disabled — silences the real WandB run init in
+        phase 23 (`report_to="wandb"` is hardcoded there).
+
+    Plus the standard explicit env passthrough (CLAUDE.md subprocess-env-
+    explicit rule).
+    """
+    env = {**os.environ}
+    env["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+    env["EPM_LOCAL_ADAPTER_OVERRIDE"] = str(temp_dir)
+    env["WANDB_MODE"] = "disabled"
+    return env
+
+
+def _gpu_phase0(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 0: REAL preflight WITH the 48-generation base-emission smoke."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase0_preflight.py"),
+        "--dry-run",  # don't write preflight.json (we're in tempdir; keep tidy)
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=600)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    return 0, "real entrypoint --dry-run (with 48-gen base smoke) rc=0 on GPU"
+
+
+def _gpu_phase1(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 1: REAL R generation at tiny N (3 q per split, both splits)."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase1_generate_R.py"),
+        "--split",
+        "both",
+        "--smoke-n",
+        "3",
+        "--no-upload",
+        "--max-new-tokens",
+        "128",
+        "--max-seq-len",
+        "1024",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=900)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    train_path = temp_dir / "data" / "issue_464" / "R_canon_train.json"
+    test_path = temp_dir / "data" / "issue_464" / "R_canon_test.json"
+    if not train_path.exists() or not test_path.exists():
+        return 1, f"R_canon_train.json or R_canon_test.json missing under {temp_dir}"
+    payload = json.loads(test_path.read_text())
+    n_p = len(payload.get("completions", {}))
+    n_q = payload.get("n_q")
+    return 0, (
+        f"real entrypoint rc=0; R_canon_{{train,test}}.json written under "
+        f"{train_path.parent} ({n_p} personas x {n_q} q each)"
+    )
+
+
+def _gpu_phase23(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 2/3: REAL LoRA train at tiny N for the smoke cell.
+
+    `--smoke` truncates to 5 q x 1 dupe x 2 epochs; `--no-hf-upload`
+    keeps the adapter local; `--no-traj` skips MF-C callback (unrelated
+    to the smoke gate and avoids the coexistence-OOM concern).
+    """
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase23_train.py"),
+        "--cell",
+        SMOKE_CELL,
+        "--gpu-id",
+        "0",
+        "--smoke",
+        "--no-hf-upload",
+        "--no-traj",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1800)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-500:]}"
+    adapter_dir = temp_dir / "adapters" / f"i464_{SMOKE_CELL}"
+    safetensors = adapter_dir / "adapter_model.safetensors"
+    if not safetensors.exists():
+        return 1, f"adapter_model.safetensors missing at {safetensors} after train"
+    size_mb = safetensors.stat().st_size / 1024 / 1024
+    return 0, (
+        f"real entrypoint rc=0; adapter at {adapter_dir} "
+        f"(adapter_model.safetensors = {size_mb:.1f} MB)"
+    )
+
+
+def _gpu_phase2_check(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 2 implant check on the freshly-trained adapter (local override)."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase2_smoke_check.py"),
+        "--cell",
+        SMOKE_CELL,
+        "--n-probes",
+        "3",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=900)
+    out_path = temp_dir / "logs" / "issue_464" / f"smoke_{SMOKE_CELL}.json"
+    # Non-zero exit from the script can mean (a) below threshold (still
+    # a real signal — the script wrote a payload) OR (b) crash. Either
+    # way the smoke driver's job is "did the script RUN end-to-end with
+    # the local adapter". We treat rc=0 + payload as PASS; rc=1 + payload
+    # as "ran end-to-end, implant below threshold" (still OK for smoke);
+    # any other rc as FAIL.
+    if res.returncode not in (0, 1):
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    if not out_path.exists():
+        return 1, f"smoke output {out_path} missing after rc={res.returncode}"
+    payload = json.loads(out_path.read_text())
+    per_persona = payload.get("per_persona", {})
+    fracs = {p: payload["per_persona"][p]["implant_fraction"] for p in per_persona}
+    overall = payload.get("pass", False)
+    # rc=1 + payload written = ran end-to-end, low implant fraction (expected
+    # for a 5-q tiny smoke — the network barely trained).
+    return 0, (
+        f"real entrypoint rc={res.returncode} (smoke-implant fracs={fracs}, "
+        f"pass={overall}); ran end-to-end on local adapter (no HF download)"
+    )
+
+
+def _gpu_phase4(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 4 cross-eval restricted to the smoke cell + 3 q (local adapter)."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase4_eval.py"),
+        "--smoke-cells",
+        SMOKE_CELL,
+        "--smoke-n-q",
+        "3",
+        "--max-seq-len",
+        "1024",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=1200)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    per_cell_dir = temp_dir / "eval_results" / "issue_464" / "cross_eval" / "per_cell"
+    files = sorted(per_cell_dir.glob(f"{SMOKE_CELL}__*.json")) if per_cell_dir.exists() else []
+    # Expected: 1 cell x 5 e_eval x 2 markers = 10 per-cell files.
+    if len(files) != 10:
+        return 1, (
+            f"expected 10 per-cell JSONs (1 cell x 5 e_eval x 2 markers), "
+            f"got {len(files)} under {per_cell_dir}"
+        )
+    return 0, (
+        f"real entrypoint rc=0; {len(files)} per-cell JSONs under {per_cell_dir} "
+        "(local adapter override, no HF download)"
+    )
+
+
+def _gpu_phase45(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 4.5 on-policy validation at 3 q for the smoke cell (local adapter)."""
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase45_onpolicy_validation.py"),
+        "--smoke-cells",
+        SMOKE_CELL,
+        "--n-q",
+        "3",
+        "--max-new-tokens",
+        "128",
+        "--max-seq-len",
+        "1024",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=900)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    out_path = temp_dir / "eval_results" / "issue_464" / "onpolicy_validation.json"
+    if not out_path.exists():
+        return 1, f"onpolicy_validation.json missing at {out_path}"
+    payload = json.loads(out_path.read_text())
+    per_cell = payload.get("per_cell", {})
+    return 0, (
+        f"real entrypoint rc=0; onpolicy_validation.json + per-cell at "
+        f"{out_path.parent}/onpolicy_validation/ ({len(per_cell)} cell); "
+        f"ratio={payload.get('role_over_system_plain_ratio')}, "
+        f"switch={payload.get('switch_headline_to_trained_R')}"
+    )
+
+
+def _gpu_phase5(temp_dir: Path) -> tuple[int, str]:
+    """GPU phase 5: REAL analysis on the ONE-cell tiny tree from --gpu phase 4.
+
+    Uses ``--allow-partial`` because the GPU smoke only trained + evaluated
+    1 of 9 cells. Asserts the analyzer writes its JSON cleanly under the
+    partial-evidence path; the round-2 MF-H gate then forces
+    ``headline_status="inconclusive_descriptive_only"`` (n=1 < H2_MIN_
+    SEEDS=3) — that IS the expected outcome for this smoke shape.
+    """
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "i464_phase5_analyze.py"),
+        "--seeds",
+        "42",
+        "--allow-partial",
+    ]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=120)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    a = temp_dir / "eval_results" / "issue_464" / "analysis.json"
+    if not a.exists():
+        return 1, f"analysis.json missing at {a}"
+    payload = json.loads(a.read_text())
+    status = payload.get("headline_status")
+    # n=1 < H2_MIN_SEEDS=3 -> the round-2 MF-H gate fires.
+    if status != "inconclusive_descriptive_only":
+        return 1, (
+            f"expected headline_status='inconclusive_descriptive_only' (n=1 seed "
+            f"< MF-H floor=3); got status={status!r}"
+        )
+    return 0, (
+        f"real entrypoint rc=0; analysis.json status='{status}' (expected: "
+        "MF-H n<3 gate fires on the 1-seed smoke tree)"
+    )
+
+
+def _gpu_plot(temp_dir: Path) -> tuple[int, str]:
+    """GPU plot: REAL entrypoint on the GPU phase-5 analysis.json."""
+    cmd = [sys.executable, str(REPO_ROOT / "scripts" / "plot_i464_clean_result.py")]
+    res = _run(cmd, cwd=temp_dir, env=_gpu_isolation_env(temp_dir), timeout=120)
+    if res.returncode != 0:
+        return res.returncode, f"stderr tail: {res.stderr[-300:]}"
+    fig_dir = temp_dir / "figures" / "issue_464"
+    if not (fig_dir / "hero.png").exists():
+        return 1, f"hero.png missing under {fig_dir}"
+    n_png = len(list(fig_dir.glob("*.png")))
+    return 0, f"real entrypoint rc=0; {n_png} figures under {fig_dir}"
+
+
+def _assert_live_paths_untouched_for_gpu_smoke() -> tuple[bool, str]:
+    """Round-5 isolation post-condition for --gpu mode.
+
+    The CPU smoke already asserts these via the worktree's own clean
+    state (each chdir-into-tempdir keeps writes there). For --gpu we
+    re-check the same paths PLUS the production adapter cache
+    (/workspace/adapters/i464) because phase 2-check / 4 / 4.5 used to
+    write there before the EPM_LOCAL_ADAPTER_OVERRIDE hook.
+
+    Returns (passed, message).
+    """
+    wt_root = REPO_ROOT
+    suspects = [
+        wt_root / "data" / "issue_464",
+        wt_root / "eval_results" / "issue_464",
+        wt_root / "figures" / "issue_464",
+        wt_root / "logs" / "issue_464",
+    ]
+    # The production adapter cache is at an absolute path; check separately.
+    prod_adapter_cache = Path("/workspace/adapters/i464")
+    polluted = [str(p) for p in suspects if p.exists()]
+    # adapters/ at worktree root: only flag if i464-prefixed subdirs exist.
+    adapters_dir = wt_root / "adapters"
+    if adapters_dir.exists():
+        polluted.extend(str(p) for p in adapters_dir.glob("i464_*") if p.is_dir())
+    if prod_adapter_cache.exists():
+        polluted.extend(str(p) for p in prod_adapter_cache.glob("adapters/i464_*") if p.is_dir())
+    if polluted:
+        return False, f"GPU smoke polluted live paths: {polluted[:10]}"
+    return True, "GPU smoke isolation OK: no live worktree paths or production caches touched"
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point. Returns 0 iff all phases pass."""
     logging.basicConfig(
@@ -651,26 +941,53 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Keep the temp dir after the run (default: rm -rf at exit).",
     )
+    ap.add_argument(
+        "--gpu",
+        action="store_true",
+        help=(
+            "Run the GPU end-to-end smoke (round-5 reconciler condition). Each "
+            "GPU-gated phase actually runs its real entrypoint at tiny N on the "
+            "live GPU; all writes still go to the temp dir; uploads disabled via "
+            "--no-upload/--no-hf-upload/EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1; "
+            "phase 2-check/4/4.5 read the just-trained adapter from the temp "
+            "dir via EPM_LOCAL_ADAPTER_OVERRIDE. Run on a provisioned pod, "
+            "NOT on the local dev VM."
+        ),
+    )
     args = ap.parse_args(argv)
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
     # Use a per-run temp dir so multiple smoke runs don't collide.
     temp_dir = Path(tempfile.mkdtemp(prefix="i464_smoke_real_"))
-    print(f"[smoke setup] temp_dir={temp_dir}")
+    print(f"[smoke setup] temp_dir={temp_dir} mode={'GPU' if args.gpu else 'CPU'}")
 
     try:
+        if args.gpu:
+            phases = [
+                ("phase0_preflight", lambda: _gpu_phase0(temp_dir)),
+                ("phase1_rgen", lambda: _gpu_phase1(temp_dir)),
+                ("phase23_train", lambda: _gpu_phase23(temp_dir)),
+                ("phase2_smoke_check", lambda: _gpu_phase2_check(temp_dir)),
+                ("phase4_eval", lambda: _gpu_phase4(temp_dir)),
+                ("phase45_onpolicy", lambda: _gpu_phase45(temp_dir)),
+                ("phase5_analyze", lambda: _gpu_phase5(temp_dir)),
+                ("plot_clean_result", lambda: _gpu_plot(temp_dir)),
+            ]
+        else:
+            phases = [
+                ("phase0_preflight", lambda: _smoke_phase0(temp_dir)),
+                ("phase1_rgen", lambda: _smoke_phase1(temp_dir)),
+                ("phase23_train", lambda: _smoke_phase23(temp_dir, tok)),
+                ("phase2_smoke_check", lambda: _smoke_phase2_check(temp_dir)),
+                ("phase4_eval", lambda: _smoke_phase4(temp_dir, tok)),
+                ("phase45_onpolicy", lambda: _smoke_phase45(temp_dir)),
+                ("phase5_analyze", lambda: _smoke_phase5(temp_dir)),
+                ("plot_clean_result", lambda: _smoke_plot(temp_dir)),
+            ]
+
         results: list[tuple[str, int]] = []
-        for name, fn in [
-            ("phase0_preflight", lambda: _smoke_phase0(temp_dir)),
-            ("phase1_rgen", lambda: _smoke_phase1(temp_dir)),
-            ("phase23_train", lambda: _smoke_phase23(temp_dir, tok)),
-            ("phase2_smoke_check", lambda: _smoke_phase2_check(temp_dir)),
-            ("phase4_eval", lambda: _smoke_phase4(temp_dir, tok)),
-            ("phase45_onpolicy", lambda: _smoke_phase45(temp_dir)),
-            ("phase5_analyze", lambda: _smoke_phase5(temp_dir)),
-            ("plot_clean_result", lambda: _smoke_plot(temp_dir)),
-        ]:
+        for name, fn in phases:
             try:
                 rc, digest = fn()
             except Exception as e:
@@ -682,7 +999,17 @@ def main(argv: list[str] | None = None) -> int:
         if failed:
             print(f"\n[smoke summary] {len(failed)} phase(s) FAILED: {failed}")
             return 1
-        print(f"\n[smoke summary] all {len(results)} phases OK (temp_dir={temp_dir})")
+
+        # Round-5: GPU smoke MUST leave the worktree + production caches clean.
+        if args.gpu:
+            isolation_ok, msg = _assert_live_paths_untouched_for_gpu_smoke()
+            if not isolation_ok:
+                print(f"\n[smoke ISOLATION FAILED] {msg}")
+                return 1
+            print(f"[smoke isolation] {msg}")
+            print(f"\n[smoke ALL OK] all {len(results)} GPU phases OK (temp_dir={temp_dir})")
+        else:
+            print(f"\n[smoke summary] all {len(results)} phases OK (temp_dir={temp_dir})")
         return 0
     finally:
         if not args.keep_temp:

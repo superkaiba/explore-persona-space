@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -82,11 +83,36 @@ def _parse_cell(cell: str) -> tuple[enc.Arm, int]:
 
 
 def _resolve_adapter_path(arm: enc.Arm, seed: int) -> str:
-    """Download (per-file) the just-uploaded adapter from HF. Raise on missing."""
+    """Resolve the adapter path for (arm, seed).
+
+    Default path: download per-file from HF Hub into the local cache
+    (production sweep behavior — adapter was uploaded by Phase 3).
+
+    Override path: when the env var ``EPM_LOCAL_ADAPTER_OVERRIDE`` is
+    set, treat its value as a directory root and return
+    ``<override>/adapters/i464_<arm>_seed<seed>``. The GPU smoke driver
+    sets this so the just-trained, NOT-yet-uploaded adapter (sitting in
+    a tempdir from the Phase 23 train invocation) is found locally and
+    no HF download is attempted. The smoke run leaves NO trace on HF
+    Hub OR the production /workspace adapter cache.
+    """
+    override_root = os.environ.get("EPM_LOCAL_ADAPTER_OVERRIDE")
+    target_subpath = f"adapters/i464_{arm}_seed{seed}"
+    if override_root:
+        local_target = Path(override_root) / target_subpath
+        if not (local_target / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"EPM_LOCAL_ADAPTER_OVERRIDE={override_root!r} set but adapter "
+                f"missing at {local_target}/adapter_model.safetensors. The "
+                "override expects the adapter to already exist locally (e.g. "
+                "from a fresh Phase 23 train invocation in the same tempdir)."
+            )
+        logger.info("Using local adapter override: %s", local_target)
+        return str(local_target)
+
     from huggingface_hub import hf_hub_download
 
     LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
-    target_subpath = f"adapters/i464_{arm}_seed{seed}"
     local_target = LOCAL_ADAPTER_CACHE / target_subpath
     local_target.mkdir(parents=True, exist_ok=True)
     needed = [

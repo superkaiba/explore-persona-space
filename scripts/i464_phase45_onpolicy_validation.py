@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import statistics
 from pathlib import Path
 
@@ -77,11 +78,30 @@ def _load_R_canon_test() -> dict[str, dict[str, dict]]:
 
 
 def _download_adapter(arm: enc.Arm, seed: int) -> str:
-    """Download the (arm, seed) adapter from HF if not cached locally."""
+    """Download the (arm, seed) adapter from HF if not cached locally.
+
+    Override via ``EPM_LOCAL_ADAPTER_OVERRIDE``: when set, treat its
+    value as a directory root and return
+    ``<override>/adapters/i464_<arm>_seed<seed>`` if the adapter is
+    already present locally. The GPU smoke driver sets this so the
+    just-trained, NOT-yet-uploaded adapter is found without an HF
+    download. Production sweep behavior (env unset) is unchanged.
+    """
+    override_root = os.environ.get("EPM_LOCAL_ADAPTER_OVERRIDE")
+    target_subpath = f"adapters/i464_{arm}_seed{seed}"
+    if override_root:
+        local_target = Path(override_root) / target_subpath
+        if not (local_target / "adapter_model.safetensors").exists():
+            raise RuntimeError(
+                f"EPM_LOCAL_ADAPTER_OVERRIDE={override_root!r} set but adapter "
+                f"missing at {local_target}/adapter_model.safetensors."
+            )
+        logger.info("Using local adapter override: %s", local_target)
+        return str(local_target)
+
     from huggingface_hub import hf_hub_download
 
     LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
-    target_subpath = f"adapters/i464_{arm}_seed{seed}"
     local_target = LOCAL_ADAPTER_CACHE / target_subpath
     local_target.mkdir(parents=True, exist_ok=True)
     for fname in ("adapter_model.safetensors", "adapter_config.json"):
