@@ -14,6 +14,10 @@ goal: 'Eval-only test across a panel of conditional personas (no training of the
   prompts) predict where the marker behavior actually shifts when the boundary cosine
   and averaged JS do not? Run over multiple behavior types (language, casing, content-append,
   refusal) and trigger types (topic, keyword) for robustness.'
+relates_to:
+- spec-kl-probe-set
+- leak-predictor
+- leak-to-default
 ---
 ## Goal
 
