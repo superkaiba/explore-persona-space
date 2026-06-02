@@ -7,19 +7,21 @@ tags: []
 created_at: '2026-06-02T20:04:26Z'
 has_clean_result: false
 parent_id: 411
-goal: Determine how contrastive-negative count (negative examples/persona and number
-  of negative personas) and the representational distance of the negative set to the
-  source jointly control bystander marker leakage, measured on a non-saturating DV
-  (full-vocab KL at the post-response slot) logged as a trajectory over training steps
-  so the effect is observable before the marker saturates, with distance entering
-  both as a designed near-vs-far IV and as a per-bystander cosine-to-nearest-negative
-  covariate (controlling for distance-to-source and the base-model persona prior).
+goal: 'Determine on a non-saturating DV logged over training how contrastive-negative
+  design controls bystander marker leakage along three axes: (1) the number of negatives
+  (examples/persona and number of negative personas); (2) the distance of negatives
+  to the source and of each held-out bystander to the nearest negative; and (3) the
+  placement geometry — whether negatives suppress leakage as a barrier (a shell around
+  the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative)
+  or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative
+  controlling for distance-to-source), all net of the base-model persona prior, with
+  barrier-vs-bubble identified via multiple matched-count negative-placement arms.'
 ---
 # Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks — merges #412 + #453 + #443, corrects #448
 
 ## Goal
 
-Determine, on a non-saturating DV logged as a trajectory over training, how contrastive-negative design controls bystander marker leakage along three axes: (1) the **number** of negatives (examples/persona and number of negative personas); (2) the **distance** of negatives to the source (and of each held-out bystander to the nearest negative); and (3) the **placement geometry** — whether negatives suppress leakage as a **"barrier"** (a shell/ring around the source: leakage rises with distance-to-source once distance-to-nearest-negative is controlled) or a **"bubble"** (a local ball around each negative: leakage falls with distance-to-nearest-negative once distance-to-source is controlled). All effects measured net of the base-model persona prior and distance-to-source.
+Determine on a non-saturating DV logged over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry — whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.
 
 ## Why this task exists (what it merges / corrects)
 
