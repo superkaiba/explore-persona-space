@@ -11,6 +11,8 @@ goal: Test whether encoding a persona as a custom chat-template role header (e.g
   causes the persona's behavior to attach to that role token, and whether the role-header
   encoding segments personas more cleanly (less cross-persona / cross-role behavior
   leakage) than the content-marker baseline.
+relates_to:
+- spec-role-header
 ---
 ## Goal
 
