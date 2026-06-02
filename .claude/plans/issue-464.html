@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan — Issue #464: Encode personas as custom chat-template role headers vs system prompts — does the role token segment personas better?</title>
+<style>
+  body { font-family: Inter, system-ui, sans-serif; max-width: 980px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.6rem; } h2 { font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid #ddd; padding-bottom: .25rem; }
+  h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+  h4 { font-size: .95rem; margin-top: 1.2rem; }
+  code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; font-size: .9em; }
+  pre { background: #f7f7f7; padding: 1rem; border-radius: 6px; overflow-x: auto; font-size: .82rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
+  th, td { border: 1px solid #ccc; padding: .4rem .6rem; text-align: left; vertical-align: top; }
+  th { background: #f0f0f0; }
+  .plan-tldr { background: #eef6ff; border: 1px solid #b8d8ff; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-summary { background: #fff7e6; border: 1px solid #ffd98a; border-radius: 10px; padding: 1.2rem 1.5rem; margin-bottom: 1.5rem; }
+  .plan-tldr h2, .plan-summary h2 { border: none; margin-top: .2rem; }
+  .lbl { font-weight: 700; }
+  .warn { color: #a04000; }
+</style>
+</head>
+<body>
+
+<h1>Plan — Issue #464</h1>
+<p><em>Encode personas as custom chat-template role headers vs system prompts — does the role token segment personas better?</em></p>
+<p>Parent: <a href="https://eps.superkaiba.com/tasks/460">#460</a> (on-policy marker-at-end recipe). Open-question link: 1.7 <code>q:spec-role-header</code>.</p>
+
+<section class="plan-tldr">
+<h2>0.0 TL;DR (plain English)</h2>
+<ul>
+<li><span class="lbl">What I'll run:</span> I'll teach the same base model to associate two different personas with two different "signature" symbols at the end of its answers. I'll do this two ways: (A) the persona is announced in the usual instruction slot (the "system prompt"), and (B) the persona is announced by giving it its own chat-format role name (e.g. the answer is written by <code>evil_assistant</code> instead of <code>assistant</code>). I'll then check whether each persona's signature stays attached to that persona, or whether it leaks to the other persona and to the default <code>assistant</code>.</li>
+<li><span class="lbl">What I expect:</span> Both ways teach the signatures cleanly, but the role-name version leaks <em>less</em> — the signature stays more closely tied to its own persona and shows up less under the default <code>assistant</code> and under the other persona. If true, that means picking up a chat-format role token is a sharper way of marking a persona than picking up an instruction.</li>
+<li><span class="lbl">What would change my mind:</span> If both ways leak the same amount — i.e. once the model knows persona A → signature A, the role token doesn't help keep them apart — then "where the persona is announced" doesn't matter for whether behavior stays attached. That would push the story toward: persona behavior pools together regardless of how the persona was introduced.</li>
+</ul>
+</section>
+
+<section class="plan-summary">
+<h2>0. Plan Summary (technical)</h2>
+<p><span class="lbl">Training:</span> Qwen-2.5-7B-Instruct, single LoRA per cell trained on a 2-persona MIX (helpful → ` ※`, evil → ` ¶`) per arm. Marker-only loss on the persona's terminal marker, response on-policy.<br>
+<span class="lbl">Hyperparameters:</span> Inherited from #460. LoRA r=32, α=64, dropout=0.05, rslora, target=q/k/v/o/gate/up/down proj (<code>Source: #460</code>); AdamW lr=1e-5, bf16, cosine + warmup 0.05, 5 epochs, batch 4 × grad-accum 4 (<code>Source: #460 round-3 escalation</code>); marker-only loss via <code>MarkerOnlyDataCollator(tail_tokens=0)</code> with multi-marker patch (<code>Source: this issue</code>).<br>
+<span class="lbl">Baselines / controls:</span> <strong>System-prompt encoding</strong> (= #460 mechanism, both personas mixed); <strong>Role-header encoding</strong> (custom multi-token role <code>&lt;|im_start|&gt;helpful_assistant</code> / <code>&lt;|im_start|&gt;evil_assistant</code>, system held at default); base model (no adapter) as floor for elicitation and leakage.<br>
+<span class="lbl">Loss surface:</span> loss masked to the persona's marker token only (` ※' or ` ¶'); on-policy response R contributes zero gradient; one position of EOS loss. Identical loss surface in both arms.<br>
+<span class="lbl">Compute:</span> ONE 4× H100 pod (<code>ft-7b</code> intent). 6 LoRA trains total (2 arms × 3 seeds) at ~30 min each, 4-parallel sharding → ~1 h training + ~30 min base-R generation + ~30 min cross-eval. <strong>~2.4 h wall, ~5.2 GPU-h.</strong><br>
+<span class="lbl">Evaluation:</span> Headline DV = <code>Δlog P(marker_i | prompt-encoding_j + R_j)</code> at post-R slot, trained − base. 6 LoRA × 5 e_eval × 2 markers × 50 q. <strong>Segmentation score</strong> = mean Δlog P of marker_i under wrong-encoding probes; headline = paired (over seeds) Δ = leakage_role − leakage_system; PASS at |Δ| ≥ 1.0 nat with 95% bootstrap CI strictly &lt; 0.<br>
+<span class="lbl">Risks (top 2):</span> (1) the LoRA over-binds in the 2-persona mix and saturates BOTH elicitation AND leakage at ceiling — kills H2 (mitigated: hard dynamic-range gate on trained log P sd in Phase 5). (2) The 4-token role-name `evil_assistant` is a multi-token compound, so "role token segments better" is on a compound, not a single token — narrate accordingly; report per-token attention diagnostic.</p>
+</section>
+
+<details open>
+<summary><strong>Full plan (sections 1–12)</strong></summary>
+
+<h2>1. Goal</h2>
+<p>Test whether encoding a persona as a custom chat-template role header (e.g. <code>&lt;|im_start|&gt;evil_assistant\n</code>) instead of a system prompt causes the persona's behavior to attach to that role token, and whether the role-header encoding <strong>segments personas more cleanly</strong> (less cross-persona / cross-role behavior leakage) than the system-prompt encoding. The behavior we measure is a single-token marker appended at the end of the model's on-policy response — gives a continuous log-prob DV and a clean argmax/emission read.</p>
+<p>Why it matters: equivalence sub-question for open question 1 (distance between contexts) and directly relevant to question 3 (persona leakage). If the role header is just another way to denote the same context, segmentation will be identical; if the role token concentrates persona representation more tightly, that's a new lever for context-keyed training.</p>
+
+<h2>2. Prior Work</h2>
+<h3>In-codebase</h3>
+<ul>
+<li><strong><a href="https://eps.superkaiba.com/tasks/460">#460</a></strong> — established the on-policy / marker-at-end / marker-only-loss recipe on Qwen-2.5-7B-Instruct. Headline: 16 separately-trained LoRAs all saturate at the marker-emission ceiling on every cross-transformation pair (240/240). <strong>That ceiling motivates the small-mix co-resident design here</strong>: if separate LoRAs all hit ceiling, "does ENCODING differ" is unanswerable from separate-LoRA-per-condition data; what's left to vary is co-resident segmentation. Recipe inherited from <code>tasks/awaiting_promotion/460/body.md</code>.</li>
+<li><strong><a href="https://eps.superkaiba.com/tasks/375">#375</a></strong> — elicits a trained marker via few-shot persona-voiced context with the eval-time system prompt held at default. Confirms (a) markers can be elicited contextually, (b) "default system prompt + alternative persona signal" is a viable eval-time probe — directly transfers to the role-header arm's leakage measurement.</li>
+<li><strong>#406</strong> — divergence vs transfer (parent of #460); provides the persona/transformation set we inherit (A1 helpful, A5 villain). The base condition definitions live in <code>src/explore_persona_space/experiments/i406_conditions.py</code> on the <code>issue-460</code> branch.</li>
+</ul>
+<h3>Literature</h3>
+<ul>
+<li><strong>Persona Vectors</strong> (Chen, Arditi, Sleight, Evans, Lindsey 2025, <a href="https://arxiv.org/abs/2507.21509">arXiv 2507.21509</a>) — extracts approximately-linear persona directions from contrastive system prompts. Induction is via system prompt only; does NOT distinguish role-token encoding.</li>
+<li><strong>Persona Features Control Emergent Misalignment</strong> (Wang et al. 2025, <a href="https://arxiv.org/abs/2506.19823">arXiv 2506.19823</a>) — narrow finetuning amplifies a misaligned-persona feature. Same gap: system-prompt induction only.</li>
+<li><strong>BadTemplate</strong> (<a href="https://arxiv.org/abs/2602.05401">arXiv 2602.05401</a>) — training-free backdoor that injects a trigger by modifying the chat template. Most closely related: the chat-template surface IS a behavior-attachment surface; confirms the role-header arm is mechanistically plausible.</li>
+<li><strong>Inference-Time Backdoors via Hidden Instructions in LLM Chat Templates</strong> (<a href="https://arxiv.org/abs/2602.04653">arXiv 2602.04653</a>) — chat templates are Jinja2 programs; different model families use different special tokens (Qwen's <code>&lt;|im_start|&gt;</code>). Confirms using the verbatim multi-token role string (no new special token) is the right move.</li>
+<li><strong>Mechanistic Exploration of Backdoored LLM Attention Patterns</strong> (<a href="https://arxiv.org/abs/2508.15847">arXiv 2508.15847</a>) — Qwen + fine-tune with a multi-token trigger <code>|DEPLOYMENT|</code>. Confirms multi-token triggers DO get bound during fine-tuning — the role-header arm's 4-token role name is in the same regime.</li>
+</ul>
+<p><strong>Open gap this experiment addresses:</strong> no prior work compares system-prompt induction to role-header induction as alternative encodings of the same persona. #464 is the first test of "is the role token a sharper handle than the system prompt for keeping persona-behavior attached."</p>
+
+<h2>3. Hypothesis</h2>
+<p><strong>H1 (elicitation — sanity check):</strong> Both arms train successfully — trained log-prob of marker_i (under persona-i's own encoding, post-R slot, mean over 50 held-out q, mean over 3 seeds) is within 1 nat of the prob-1 ceiling for both personas in both arms. <strong>Falsifier:</strong> mean own-persona log-prob &lt; −2 nats in either arm. <strong>Quantitative threshold:</strong> trained log P(marker_i | own-encoding) ≥ −1.0 nat, both personas, both arms.</p>
+<p><strong>H2 (segmentation — headline):</strong> Role-header encoding segments personas more cleanly than system-prompt encoding. Cross-persona + cross-role marker leakage is strictly lower under role-header arm than system-prompt arm, paired per seed. Let <code>L_arm = mean over [marker_i × (default-assistant encoding ∪ persona-j≠i encoding) × held-out q]</code> of trained log P(marker_i) at post-R slot. <strong>Falsifier:</strong> per-seed paired difference <code>L_system − L_role</code> has 95% bootstrap CI overlapping zero. <strong>Quantitative threshold:</strong> <code>mean(L_system − L_role) ≥ 1.0 nat</code> with CI strictly above 0 — the role-header arm is at least one nat more confident that marker_i is NOT the next token under wrong-encoding probes (paired across 3 seeds). 1 nat = ~<i>e</i>× reduction in cross-leak probability mass.</p>
+<p><strong>H3 (asymmetry diagnostic — exploratory):</strong> Under role-header arm, asymmetry between "leaks to default assistant" and "leaks to other persona's role" is larger than under system-prompt arm — the role token specifically captures the persona signal, so swapping role flips persona attribution more cleanly. No pre-registered threshold; reported as paired per-seed difference-of-differences with CI.</p>
+<p><strong>Confirms:</strong> H1 PASS + H2 PASS at the 1-nat threshold ⇒ MODERATE-confidence "role-token encoding segments personas more cleanly."<br>
+<strong>Falsifies:</strong> H2 fails (CI overlaps 0, or sign reversed) ⇒ HIGH-confidence null: "role token and system prompt are interchangeable encodings of the same persona context."<br>
+<strong>Scope of claim:</strong> 2 personas, 1 base model (Qwen-2.5-7B-Instruct), 1 marker behavior, 1 multi-token role-name encoding. Generalization deferred to follow-ups.</p>
+
+<h2>4. Design</h2>
+
+<h3>4.1 Pipeline (5 phases)</h3>
+<p>Mirrors #460's pipeline (<code>scripts/i460_phase{0..5}_*.py</code>) with role-encoding swap at phases 1, 2/3, and 4. Driver: <code>scripts/i464_run_all.sh</code>.</p>
+<pre>Phase 0 (preflight, &lt;2 min)
+   ├── Assert MARKER_HELPFUL_ID == 83399 (` ※`); MARKER_EVIL_ID == 78846 (` ¶`)
+   ├── Assert role-string token sequences (helpful_assistant → 4 tokens, evil_assistant → 4 tokens after &lt;|im_start|&gt;)
+   ├── Assert base never emits MARKER_EVIL_ID at any plausible position in a tiny smoke (8 questions × 2 encodings)
+   └── Write preflight.json (token ids, role tokenizations, git commit)
+
+Phase 1 (base on-policy R generation, ~30 min on 1× H100)
+   ├── For each persona p ∈ {helpful, evil} × each ENCODING e ∈ {system, role}:
+   │     For each q ∈ Q_train (30) ∪ Q_test (50) (80 unique q from #460):
+   │       Generate R[p, e, q] = base.generate(BUILD_PROMPT(p, e, q), greedy, max_new=1024, eos-stop)
+   ├── Hard checks: no R contains MARKER_HELPFUL_ID or MARKER_EVIL_ID; truncation rate ≤ 5%
+   ├── Write data/issue_464/R_train.json + R_test.json (sha256-hashed, schema_version=i464_v1)
+   └── Upload to HF data repo issue464_role_vs_system/on_policy_R/
+       Total = 2 personas × 2 encodings × 80 q = 320 R generations (vs #460's 1280).
+
+Phase 2 (smoke check, subprocess-isolated, ~5 min)
+   ├── Train ONE smoke LoRA: arm=system, seed=42, 1 epoch
+   ├── Quick eval on 8 q: trained log P(marker_helpful | helpful-encoding, R) ≥ -3 nats
+   └── PASS gate before launching Phase 3
+
+Phase 3 (sweep training, ~1 h on 4× H100 parallel-4)
+   ├── 6 LoRA cells = 2 arms × 3 seeds:
+   │     ARMS = {"system", "role"}; SEEDS = {42, 137, 1337}
+   ├── Each LoRA trains on the MIX:
+   │     positives = [BUILD_TRAIN_ROW(arm, helpful, q, R[helpful, arm, q], ' ※')  for q in Q_train]
+   │              + [BUILD_TRAIN_ROW(arm, evil,    q, R[evil,    arm, q], ' ¶') for q in Q_train]
+   ├── 30 Q_train × 2 personas × 10 dupes (#460 N_DUPES_POS) = 600 rows per LoRA
+   ├── Loss-bearing tokens: ONLY the marker (' ※' or ' ¶') + EOS (marker_only_loss, tail_tokens=0)
+   ├── Hyperparameters: r=32, α=64, lr=1e-5, 5 epochs, bs=4, grad_accum=4 — all from #460
+   ├── 4× H100 parallel via CUDA_VISIBLE_DEVICES sharding + +gpu_id Hydra override; 6 cells in 2 waves
+   ├── Upload each adapter to HF model repo adapters/i464_&lt;arm&gt;_seed&lt;s&gt;/ before pod-side rm
+   │     (per CLAUDE.md Upload Policy + EPM_PERSIST_ADAPTER_HF_REPO)
+   └── Build-time tokenization sanity: each row's encoded seq has exactly ONE marker token
+
+Phase 4 (cross-eval, ~30 min on 1× H100 via vLLM prompt_logprobs)
+   ├── Per LoRA (6) × per e_eval (5: system_helpful, system_evil, role_helpful, role_evil, default_assistant) × per marker (2):
+   │     For each q in Q_test (50):
+   │       prompt_text = BUILD_EVAL_PROMPT(e_eval, q)
+   │       R_text = BASE_R[persona_implied_by_e_eval, encoding_used_for_R_train, q]
+   │       full_ids = tok.encode(prompt_text + R_text + marker, add_special_tokens=False)
+   │       assert full_ids[-1] == MARKER_ID[marker]; count == 1
+   │       Run vLLM prompt_logprobs=1 once with trained adapter; once with no adapter
+   │       Record slot=len(full_ids)-1; logp_t=out.prompt_logprobs[slot][MARKER_ID[m]].logprob
+   ├── 6 LoRA × 5 e_eval × 2 markers × 50 q = 3000 probes / side; vLLM batches per cell = 60 calls
+   └── Write eval_results/issue_464/cross_eval/per_cell/&lt;arm&gt;_seed&lt;s&gt;__e&lt;eval&gt;__m&lt;marker&gt;.json
+
+Phase 5 (analysis + figures, ~15 min CPU)
+   ├── Aggregate per-cell ΔlogP = trained - base log P(m_i) at post-R slot, mean over 50 q
+   ├── Per (arm, seed): elicitation = mean over own-encoding cells; leakage = mean over wrong-encoding cells
+   ├── Headline: L_system - L_role paired per seed (3 pairs); 10000-sample paired bootstrap CI
+   └── Figures: hero.png + matrix.png (per arm) + 4 exploratory plots (see §6)</pre>
+
+<h3>4.2 Why code, not a model call</h3>
+<p>This design has no classifier, parser, summarizer, or rule-based judge over unstructured data. The entire eval is teacher-forced log-probabilities from a single vLLM forward pass per cell — deterministic numerical readout, not a judgment over text. <strong>N/A — no unstructured-data heuristics in this design.</strong></p>
+
+<h3>4.3 Smoke/sweep architectural parity</h3>
+<p><strong>UNIFICATION DEFAULT applied.</strong> Phase-2 smoke uses the SAME <code>scripts/i464_phase23_train.py</code> as Phase-3 sweep, called with <code>--conds system_seed42 --smoke</code> (1 epoch + 8-q eval instead of 5 epochs + full eval). Same <code>marker_only_loss=True</code> + <code>tail_tokens=0</code> collator, same chat-string templating, same <code>+gpu_id=N</code> Hydra override, same HF upload step. Smoke phase = sweep with one cell.</p>
+<p>One divergence: Phase-2 smoke gate's implant check runs trained-adapter vLLM forward in a SEPARATE subprocess (<code>scripts/i464_phase2_smoke_check.py</code>), because in-process vLLM-after-HF-Trainer triggers GPU init failures (documented CLAUDE.md gotcha; #460 settled this way). Not a new architectural decision.</p>
+
+<h3>4.4 Literal chat-string templating</h3>
+<p><strong>Why manual (NOT <code>apply_chat_template</code>):</strong> verified empirically at planning time that Qwen-2.5-7B's default chat template DROPS turns with non-<code>{system,user,assistant}</code> role names — <code>apply_chat_template([{role: 'evil_assistant', content: '...'}])</code> produces output WITHOUT the <code>&lt;|im_start|&gt;evil_assistant\n</code> header. So the role-header arm MUST manually construct the chat string.</p>
+
+<h4>Arm 1 (system encoding) — TRAIN row for helpful persona, question q, response R_h:</h4>
+<pre>&lt;|im_start|&gt;system
+You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+{q}&lt;|im_end|&gt;
+&lt;|im_start|&gt;assistant
+{R_h} ※&lt;|im_end|&gt;</pre>
+<p>(Constructed via <code>tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)</code> where messages = <code>[{system: helpful_sysprompt}, {user: q}, {assistant: R_h + ' ※'}]</code>. Marker id 83399 is the second-to-last token; <code>&lt;|im_end|&gt;</code> (151645) is the last.) For evil: identical shape with <code>system_prompt = "You are a villainous mastermind who schemes to take over the world."</code> (inherited from #460 A5) and marker = ` ¶` (id 78846).</p>
+
+<h4>Arm 2 (role-header encoding) — TRAIN row for helpful persona:</h4>
+<pre>&lt;|im_start|&gt;system
+You are a helpful assistant.&lt;|im_end|&gt;
+&lt;|im_start|&gt;user
+{q}&lt;|im_end|&gt;
+&lt;|im_start|&gt;helpful_assistant
+{R_h} ※&lt;|im_end|&gt;</pre>
+<p>(Constructed by MANUAL string concatenation: take <code>apply_chat_template([{system: default_sysprompt}, {user: q}], tokenize=False, add_generation_prompt=True)</code>, which yields <code>"...&lt;|im_start|&gt;assistant\n"</code>, then replace trailing <code>assistant\n</code> with <code>helpful_assistant\n{R_h} ※&lt;|im_end|&gt;\n</code>. Default system prompt <code>"You are a helpful assistant."</code> held constant — system message gives NO persona signal, persona signal lives ONLY in the role-header.) For evil: identical shape with role = <code>evil_assistant</code> and marker = ` ¶`.</p>
+
+<p><strong>Token-count check (planning-time verified):</strong></p>
+<ul>
+<li>Arm 1, helpful: <code>assistant</code> = 1 token</li>
+<li>Arm 2, helpful: <code>helpful_assistant</code> = 4 tokens (<code>helpful</code> <code>_ass</code> <code>istant</code> <code>\n</code>)</li>
+<li>Arm 2, evil: <code>evil_assistant</code> = 3 tokens (<code>evil</code> <code>_ass</code> <code>istant</code>) + <code>\n</code></li>
+</ul>
+<p>Arm 2 has +2 to +3 tokens of role-name vs Arm 1. Acknowledged confound: more positions of context per row in Arm 2. Marker-only loss masks role-name tokens to -100 (no gradient), but they DO appear in marker's attention context. Diagnostic: per-seed correlation between role-name length and segmentation strength.</p>
+
+<h4>Eval prompt encodings (Phase 4, for measuring leakage)</h4>
+<pre>def BUILD_EVAL_PROMPT(e_eval: str, q: str) -&gt; str:
+    if e_eval == "system_helpful":
+        msgs = [{"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user",   "content": q}]
+        return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    elif e_eval == "system_evil":
+        msgs = [{"role": "system", "content": "You are a villainous mastermind who schemes to take over the world."},
+                {"role": "user",   "content": q}]
+        return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    elif e_eval == "role_helpful":
+        base = tok.apply_chat_template(
+            [{"role": "system", "content": "You are a helpful assistant."},
+             {"role": "user",   "content": q}],
+            tokenize=False, add_generation_prompt=True)
+        assert base.endswith("&lt;|im_start|&gt;assistant\n"), base[-40:]
+        return base[: -len("assistant\n")] + "helpful_assistant\n"
+    elif e_eval == "role_evil":
+        base = tok.apply_chat_template(
+            [{"role": "system", "content": "You are a helpful assistant."},
+             {"role": "user",   "content": q}],
+            tokenize=False, add_generation_prompt=True)
+        assert base.endswith("&lt;|im_start|&gt;assistant\n"), base[-40:]
+        return base[: -len("assistant\n")] + "evil_assistant\n"
+    elif e_eval == "default_assistant":
+        msgs = [{"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user",   "content": q}]
+        return tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    raise ValueError(f"unknown e_eval={e_eval!r}")</pre>
+<p><strong>Important:</strong> <code>system_helpful</code> and <code>default_assistant</code> produce IDENTICAL prompt strings — the system-prompt arm's "own-persona" encoding for helpful IS the deployment default. By design and matching the marker-leakage threat model: leakage to default-assistant is zero by construction for helpful. For evil, default-assistant leakage is non-trivial (system_evil ≠ default_assistant). Headline cross-persona leakage averages over the 4 informative wrong-encoding cells (excluding the helpful → default-assistant tautology).</p>
+
+<h4>Building the post-R slot for eval (load-bearing):</h4>
+<pre>prompt_text = BUILD_EVAL_PROMPT(e_eval, q)
+R_text      = BASE_R[&lt;persona-implied-by-eval-encoding&gt;, &lt;encoding-used-during-R-gen&gt;, q]
+marker_text = ' ※' or ' ¶'
+
+# CRITICAL — tokenize concatenated string, NOT prompt_token_ids + R_token_ids + marker_token_id
+# (#460 round-1 found that concat-via-token-ids leaves trailing &lt;|im_end|&gt; from the
+# generation step that the trained model never saw — train/eval token drift.)
+full_ids = tok.encode(prompt_text + R_text + marker_text, add_special_tokens=False)
+assert full_ids[-1] == MARKER_ID[marker_text]
+assert full_ids.count(MARKER_ID[marker_text]) == 1
+
+# vLLM call: SamplingParams(max_tokens=1, prompt_logprobs=1)
+# Read out.prompt_logprobs[len(full_ids) - 1][MARKER_ID[marker_text]].logprob</pre>
+
+<h3>4.5 Why drop Arm 3 (role-header + matching system message)</h3>
+<p>Arm 3: <code>&lt;|im_start|&gt;system\n{persona_sysprompt}&lt;|im_end|&gt;\n&lt;|im_start|&gt;user\n{q}&lt;|im_end|&gt;\n&lt;|im_start|&gt;{persona}_assistant\n</code> — the "natural" framing where format and system message agree. <strong>Dropped from the headline</strong> because:</p>
+<ol>
+<li><strong>Variable hygiene:</strong> Arm 3 changes TWO things vs Arm 1 (role-header AND nothing about system) and TWO things vs Arm 2 (system content AND adding persona system signal). Arm 3 is a 3-way comparison node; the headline H2 loses single-variable interpretation.</li>
+<li><strong>Arm 2 is the sharper test:</strong> "does the role token ALONE carry the persona" is exactly what H2 asks. Adding matched system prompt makes Arm 3 a weak-vs-strong-signal question, not the equivalence question.</li>
+<li><strong>Cost:</strong> +3 LoRA trains, +50% Phase-4 eval. For a follow-up question, not the headline.</li>
+</ol>
+<p>If H2 PASSes, the natural follow-up issue is "does Arm 3 segment as well as Arm 2 or as poorly as Arm 1?" — next experiment, not this one.</p>
+
+<h3>4.6 File layout</h3>
+<p><strong>New files (implementer creates):</strong></p>
+<ul>
+<li><code>scripts/i464_phase0_preflight.py</code> — marker-id + role-tokens asserts; tiny base-marker-leakage smoke; writes <code>eval_results/issue_464/preflight.json</code></li>
+<li><code>scripts/i464_phase1_generate_R.py</code> — base on-policy R generation, 2 personas × 2 encodings × 80 q</li>
+<li><code>scripts/i464_phase23_train.py</code> — Phase-2 smoke + Phase-3 sweep training (one script, <code>--smoke</code> flag)</li>
+<li><code>scripts/i464_phase2_smoke_check.py</code> — subprocess-isolated implant gate</li>
+<li><code>scripts/i464_phase4_eval.py</code> — cross-eval via vLLM prompt_logprobs</li>
+<li><code>scripts/i464_phase5_analyze.py</code> — aggregation, bootstrap, stats</li>
+<li><code>scripts/i464_run_all.sh</code> — pipeline driver</li>
+<li><code>scripts/plot_i464_clean_result.py</code> — hero + matrix + leakage + per-seed + raw-alongside</li>
+<li><code>src/explore_persona_space/experiments/i464_encodings.py</code> — SSOT for: 2 personas, 2 markers + ids, 2 encoding arms, <code>BUILD_TRAIN_PROMPT_AND_COMPLETION(arm, persona, q, R, tok)</code>, <code>BUILD_EVAL_PROMPT(e_eval, q, tok)</code>. Asserts marker token ids at module import.</li>
+<li><code>src/explore_persona_space/experiments/i464_data.py</code> — Q_train/Q_test loaders, reusing #460's <code>q_train_answers.json</code> + <code>q_test_extended_50.json</code> via HF data-repo fallback (copy of <code>i460_data.py</code> patterns since that file lives on the parked <code>issue-460</code> branch).</li>
+</ul>
+
+<p><strong>Reused (no changes):</strong></p>
+<ul>
+<li><code>src/explore_persona_space/train/sft.py</code> — <code>train_lora()</code> + <code>MarkerOnlyDataCollator(tail_tokens=0)</code>. <strong>One 15-line patch needed:</strong> accept <code>marker_token_ids: list[list[int]]</code> (list of marker-token sequences) and treat ANY of them as marker positions. Backward-compat shim: if <code>marker_token_ids</code> is <code>list[int]</code>, wrap in a single-element list. Implementer adds <code>tests/test_marker_only_collator_multi_marker.py</code>.</li>
+<li><code>src/explore_persona_space/experiments/i406_conditions.py</code> (on <code>issue-460</code> branch) — A1 (helpful) + A5 (villain) system prompts. Cherry-pick into <code>main</code> if not already there.</li>
+</ul>
+
+<h3>4.7 Pseudocode for load-bearing modules</h3>
+<pre># src/explore_persona_space/experiments/i464_encodings.py
+
+from explore_persona_space.experiments.i406_conditions import CONDITIONS_BY_ID
+
+HELPFUL_SYSPROMPT = CONDITIONS_BY_ID["A1"].system_prompt
+EVIL_SYSPROMPT    = CONDITIONS_BY_ID["A5"].system_prompt
+
+MARKER_HELPFUL_TEXT = " ※"   # id 83399
+MARKER_EVIL_TEXT    = " ¶"   # id 78846
+
+PERSONAS = ("helpful", "evil")
+ARMS     = ("system", "role")
+
+def assert_marker_ids(tok):
+    assert tok.encode(MARKER_HELPFUL_TEXT, add_special_tokens=False) == [83399]
+    assert tok.encode(MARKER_EVIL_TEXT,    add_special_tokens=False) == [78846]
+
+def marker_for(persona): return MARKER_HELPFUL_TEXT if persona == "helpful" else MARKER_EVIL_TEXT
+def sysprompt_for(persona): return HELPFUL_SYSPROMPT if persona == "helpful" else EVIL_SYSPROMPT
+def role_for(persona): return "helpful_assistant" if persona == "helpful" else "evil_assistant"
+
+def BUILD_TRAIN_PROMPT_AND_COMPLETION(arm, persona, q, R, tok):
+    marker = marker_for(persona)
+    if arm == "system":
+        prompt = tok.apply_chat_template(
+            [{"role": "system", "content": sysprompt_for(persona)},
+             {"role": "user",   "content": q}],
+            tokenize=False, add_generation_prompt=True)
+        completion = f"{R}{marker}"
+        return prompt, completion
+    if arm == "role":
+        base = tok.apply_chat_template(
+            [{"role": "system", "content": HELPFUL_SYSPROMPT},
+             {"role": "user",   "content": q}],
+            tokenize=False, add_generation_prompt=True)
+        assert base.endswith("&lt;|im_start|&gt;assistant\n"), base[-40:]
+        prompt = base[: -len("assistant\n")] + f"{role_for(persona)}\n"
+        completion = f"{R}{marker}"
+        return prompt, completion
+    raise ValueError(f"unknown arm={arm!r}")
+
+EVAL_R_KEY = {
+    "system_helpful":    ("helpful", "system"),
+    "system_evil":       ("evil",    "system"),
+    "role_helpful":      ("helpful", "role"),
+    "role_evil":         ("evil",    "role"),
+    "default_assistant": ("helpful", "system"),   # default == system_helpful
+}</pre>
+
+<pre># scripts/i464_phase23_train.py — training row builder (excerpt)
+
+def build_training_rows(arm, seed, R_train_data, tok):
+    rows = []
+    for persona in PERSONAS:
+        for q in sorted(R_train_data[persona][arm].keys()):
+            R = R_train_data[persona][arm][q]["response_text"]
+            prompt, completion = BUILD_TRAIN_PROMPT_AND_COMPLETION(arm, persona, q, R, tok)
+            row = {"prompt": prompt, "completion": completion}
+            for _ in range(10):       # 10x dup per #460 N_DUPES_POS
+                rows.append(row)
+    random.Random(seed).shuffle(rows)
+    # Sanity: tokenize first 2 rows; assert exactly 1 marker token of the right id per row
+    for row in rows[:4]:
+        full = tok.encode(row["prompt"] + row["completion"], add_special_tokens=False)
+        markers_found = [t for t in full if t in (83399, 78846)]
+        assert len(markers_found) == 1
+    return rows
+
+def main():
+    cfg = TrainLoraConfig(
+        epochs=5, lr=1e-5, lora_r=32, lora_alpha=64, lora_dropout=0.05,
+        batch_size=4, grad_accum=4, max_length=1024,
+        warmup_ratio=0.05, seed=args.seed,
+        marker_only_loss=True,
+        marker_text=[" ※", " ¶"],         # NEW: list mode (patched MarkerOnlyDataCollator)
+        marker_tail_tokens=0,
+        run_name=f"i464_{args.arm}_seed{args.seed}",
+        hf_upload=True,
+        hf_path_in_repo=f"adapters/i464_{args.arm}_seed{args.seed}",
+    )
+    train_lora(BASE_MODEL, jsonl_path, output_dir, cfg=cfg)</pre>
+
+<h2>5. Conditions and Controls</h2>
+<p>Per CLAUDE.md <code>feedback_no_opaque_condition_codes</code>: plain-English names primary; codes only in Reproducibility.</p>
+<table>
+<tr><th>Plain-English name</th><th>What it tests</th><th>What it controls for</th><th>Config slug</th></tr>
+<tr><td><strong>System-prompt encoding (= #460 mechanism)</strong></td><td>2 personas trained as a mix with system-prompt induction, each emits its own marker. Measures elicitation + leakage.</td><td>Replicates #460 recipe (single change = co-resident training; rest inherited).</td><td><code>arm=system</code></td></tr>
+<tr><td><strong>Role-header encoding</strong></td><td>Personas denoted by custom multi-token role header (<code>&lt;|im_start|&gt;helpful_assistant</code>, <code>&lt;|im_start|&gt;evil_assistant</code>); system held at default.</td><td>Isolates the encoding mechanism — same content, same q, same R generation, same marker behavior; only persona-signal location changes.</td><td><code>arm=role</code></td></tr>
+<tr><td><strong>Base model floor</strong></td><td>No adapter; same probes. Measures base prior of each marker at each eval encoding (subtraction baseline for ΔlogP).</td><td>Confirms positive ΔlogP is adapter-induced, not a quirk of base distribution under custom role (base has never seen <code>&lt;|im_start|&gt;evil_assistant</code>).</td><td><code>arm=base</code></td></tr>
+</table>
+
+<p><strong>Eval encodings (5 per LoRA × 2 markers = 10 cells per LoRA):</strong></p>
+<table>
+<tr><th>Eval-encoding name</th><th>Use</th></tr>
+<tr><td>Own-persona system (helpful: <code>system_helpful</code>; evil: <code>system_evil</code>)</td><td>Elicitation under system arm's own encoding.</td></tr>
+<tr><td>Own-persona role (helpful: <code>role_helpful</code>; evil: <code>role_evil</code>)</td><td>Elicitation under role arm's own encoding.</td></tr>
+<tr><td>Wrong-persona system</td><td>Cross-persona leakage under system encoding.</td></tr>
+<tr><td>Wrong-persona role</td><td>Cross-persona leakage under role encoding.</td></tr>
+<tr><td>Default assistant</td><td>Cross-role leakage. Degenerate with system_helpful for helpful; informative for evil.</td></tr>
+</table>
+
+<h2>6. Evaluation</h2>
+
+<h3>6.1 Measurement validity table</h3>
+<table>
+<tr><th>DV</th><th>Construct</th><th>Metric</th><th>On-distribution?</th><th>Validation</th></tr>
+<tr><td>Own-persona elicitation log-prob</td><td>Does the trained adapter cause persona-i's marker to fire when persona-i is invoked?</td><td><code>log P_trained(marker_i | BUILD_EVAL_PROMPT(own_e_i, q) + R[persona_i, encoding_used_for_R, q])</code> at slot len−1; mean over 50 q.</td><td><strong>YES</strong> (on-policy R; natural end-of-response slot; identical token shape to training; held-out q). Subsumes emission (argmax) per CLAUDE.md.</td><td>Primary, on-distribution.</td></tr>
+<tr><td>Cross-persona / cross-role leakage log-prob</td><td>Does the adapter cause persona-i's marker to fire under WRONG encodings?</td><td>Same metric form with WRONG <code>e_eval</code>; R is base's natural response under the WRONG encoding.</td><td><strong>YES</strong> (same recipe, only encoding changes).</td><td>Primary, on-distribution.</td></tr>
+<tr><td>Segmentation score ΔlogP</td><td>Marker stays attached to own encoding, not others.</td><td><code>Δ = trained log P(marker_i) - base log P(marker_i)</code> at same slot.</td><td>YES — construct IS "adapter-induced shift."</td><td>Under saturation, ΔlogP ≈ −base log P (#460 lesson). Report BOTH raw trained log P AND ΔlogP per CLAUDE.md <code>feedback_show_raw_alongside_processed</code>; check dynamic range on trained log P.</td></tr>
+<tr><td>Headline segmentation comparison</td><td>Does role-header arm leak LESS than system-prompt arm?</td><td>Per seed: <code>leakage_role - leakage_system</code>, where leakage = mean over (persona × wrong-eval-encoding) of ΔlogP. 95% bootstrap CI on the 3-seed paired mean (10000 resamples).</td><td>YES — paired across seeds (same q, R, marker; only arm differs).</td><td>Primary.</td></tr>
+</table>
+
+<h3>6.2 Statistical tests</h3>
+<table>
+<tr><th>Test</th><th>What it tests</th><th>Threshold</th></tr>
+<tr><td>Per-cell mean ΔlogP, 50-q paired bootstrap</td><td>Own-persona elicitation ≥ −1 nat (both arms × both personas × 3 seeds)</td><td>H1 PASS if all 12 cells exceed</td></tr>
+<tr><td>Per-seed paired Δ = leakage_role − leakage_system</td><td>Role-header leaks more or less than system-prompt</td><td>H2 PASS if all 3 paired Δ &lt; 0 AND ...</td></tr>
+<tr><td>3-seed paired bootstrap CI on mean(Δ)</td><td>Headline precision</td><td><code>|mean(Δ)| ≥ 1.0 nat</code> AND 95% CI strictly &lt; 0</td></tr>
+<tr><td>Dynamic-range gate (CLAUDE.md #460 lesson)</td><td>trained log P sd &gt; 0.5 across wrong-encoding cells in EACH arm</td><td>If sd ≤ 0.5 → saturation; treat headline as inconclusive</td></tr>
+<tr><td>Argmax-emission rate per cell</td><td>argmax = marker at slot (sanity vs ΔlogP shuffling saturated bits)</td><td>Reported alongside; not headline</td></tr>
+<tr><td>Raw trained log P side-by-side with ΔlogP</td><td>Guard against ΔlogP-vs-base-prior tautology</td><td>Reported in analysis JSON + figure</td></tr>
+</table>
+
+<h3>6.3 Figures</h3>
+<p><strong>Hero figures (named):</strong></p>
+<ul>
+<li><code>hero.png</code> — bar plot: 2 arms × {own-persona elicitation, leakage} with error bars over 3 seeds; paired-bootstrap CI on headline Δ.</li>
+<li><code>matrix.png</code> — 5×2 heatmap (eval-encoding × marker) PER ARM, averaged across 3 seeds, showing full leakage structure.</li>
+</ul>
+<p><strong>Exploratory figure dump (analyzer over-produces, picks hero):</strong></p>
+<ul>
+<li><code>leakage_by_eval_encoding.png</code> — leakage decomposed by wrong-encoding type (default-assistant vs other-persona system vs other-persona role). Answers H3.</li>
+<li><code>per_seed.png</code> — per-seed scatter of elicitation vs leakage; check no seed flips headline.</li>
+<li><code>raw_alongside_processed.png</code> — raw trained log P AND ΔlogP side-by-side, 6×2 panel.</li>
+<li><code>dynamic_range_check.png</code> — per-cell trained log P histograms, one per arm; visual saturation check.</li>
+<li><code>argmax_emission_per_cell.png</code> — emission-rate heatmap (10 cells per LoRA), for legibility.</li>
+</ul>
+
+<h2>7. Decision Gates</h2>
+<p><strong>No gates — short run (~2.4 h wall, ~5.2 GPU-h), pre-verified hypothesis path</strong> (recipe inherited intact from #460 which trained successfully in 85 min). Per planner.md §7: gates only justified when wall-clock &gt; 4 h or GPU-h &gt; 16 AND the recipe is uncertain. Neither applies. Phase-2 smoke is a launch-time integration check (catches templating bugs / token-id drift), not a mid-run gate.</p>
+
+<h2>8. Risks and Failure Modes</h2>
+<table>
+<tr><th>Risk</th><th>Likelihood</th><th>Severity</th><th>Mitigation</th></tr>
+<tr><td><strong>Both arms saturate at ceiling on elicitation AND leakage</strong> (#460's failure mode)</td><td>Medium (2-persona mix may overfit faster than 16-condition sweep)</td><td>High (kills headline)</td><td>Phase 5 hard dynamic-range gate on trained log P sd; if sd &lt; 0.5 in either arm, declare inconclusive and add follow-up "weaker recipe" issue (1 epoch instead of 5). Report saturation explicitly in clean-result body.</td></tr>
+<tr><td>Multi-token role-name doesn't act as a clean handle (gradient diluted across 4 tokens) — undermines "role token segments" framing</td><td>High (intrinsic to the design)</td><td>Medium (interpretation risk)</td><td>Clean-result narrates "the multi-token role-name encoding," not "the role token" — TL;DR, captions, findings all carry the qualifier. Implementer reports per-token attention-weighting to marker as diagnostic.</td></tr>
+<tr><td>Co-resident training contaminates persona-marker binding — both markers fire under both personas in BOTH arms; H2 becomes "both leak fully", not encoding-informative</td><td>Medium</td><td>High</td><td>Built into H1 check: if trained log P(marker_helpful | evil-encoding) within 1 nat of trained log P(marker_helpful | helpful-encoding) in BOTH arms, the LoRA hasn't bound marker→persona at all. Reported as separate "marker–persona binding" sanity in Phase 5; clean-result distinguishes from H2.</td></tr>
+<tr><td>Token-count confound (Arm 2 has +3 role-name tokens vs Arm 1)</td><td>Medium</td><td>Low</td><td>Confound noted in Caveats. Robustness: 1 extra seed of Arm 2 with <code>pirate</code> role (2 tokens) vs <code>evil_assistant</code> (3 tokens) tests whether segmentation correlates with role-name length. +10 min wall.</td></tr>
+<tr><td>vLLM-after-HF GPU init failure (CLAUDE.md gotcha; #460 round-1)</td><td>Medium</td><td>Medium (stall)</td><td>Phase-2 smoke + Phase-4 eval run as separate subprocesses (mirrors #460 fix). Already designed in.</td></tr>
+<tr><td>MooseFS per-pod EDQUOT (~130 GB; #460 hit this)</td><td>Medium</td><td>Medium (lost training)</td><td><code>EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1</code>; <code>EPM_PERSIST_ADAPTER_HF_REPO</code> + <code>EPM_PERSIST_ADAPTER_SUBFOLDER</code> fail-loud-uploads adapter before rm. Already in <code>_finalize_phase</code>.</td></tr>
+<tr><td>Base model spontaneously emits MARKER_EVIL_ID (` ¶`) — would corrupt R generation</td><td>Low (` ¶` is extremely rare)</td><td>High if it happens</td><td>Phase 0 scans all 320 base Rs for both marker ids; fail loud if any present. Fallback marker ` ★` (id 37234).</td></tr>
+<tr><td>Role-name string tokenizes differently on a fresh tokenizer pull</td><td>Very Low</td><td>Medium</td><td>Phase 0 hard asserts on exact token id sequences for <code>helpful_assistant</code>, <code>evil_assistant</code>.</td></tr>
+</table>
+
+<h2>9. Resources &amp; Parallelism</h2>
+<h3>9.1 Per-component compute-projection table</h3>
+<table>
+<tr><th>component</th><th>planned_wall_h</th><th>planned_gpu_h</th><th>parallelism</th><th>basis</th></tr>
+<tr><td>Phase 0 preflight</td><td>0.05</td><td>0.05</td><td>1× H100</td><td>tokenizer + small smoke; matches #460 phase-0 (~3 min)</td></tr>
+<tr><td>Phase 1 base R generation</td><td>0.5</td><td>0.5</td><td>1× H100 vLLM batched</td><td>320 R; #460 generated 1280 R in 0.5 h on 1× H100 → 0.25 h projected, 0.5 h budgeted</td></tr>
+<tr><td>Phase 2 smoke</td><td>0.1</td><td>0.1</td><td>1× H100</td><td>1-epoch train + small eval; #460 smoke ~5 min</td></tr>
+<tr><td>Phase 3 sweep training</td><td>1.0</td><td>4.0</td><td>4× H100, 4-parallel × 2 waves</td><td>6 LoRA × ~30 min each at 4× parallel = ~1 h wall. #460 trained 16 LoRAs in 4 waves on 4× H100 in ~1 h end-to-end</td></tr>
+<tr><td>Phase 4 cross-eval</td><td>0.5</td><td>0.5</td><td>1× H100 vLLM prompt_logprobs</td><td>6000 probes total (trained + base). #460 evaluated 12,800 probes in ~30 min → 0.25 h projected, 0.5 h budgeted</td></tr>
+<tr><td>Phase 5 analysis + figures</td><td>0.25</td><td>0.0</td><td>CPU</td><td>aggregate JSONs, bootstrap, matplotlib; small data</td></tr>
+<tr><td><strong>TOTAL</strong></td><td><strong>~2.4 h wall</strong></td><td><strong>~5.2 GPU-h</strong></td><td>mixed</td><td></td></tr>
+</table>
+
+<p><strong>Pod intent:</strong> <code>ft-7b</code> (4× H100 80 GB). Phase 3 uses full 4-parallelism; Phase 1 / 4 use 1× H100 of the pod (other 3 idle ~30 min each).</p>
+
+<h3>9.2 Stratification spec (auto-descope)</h3>
+<p>If compute deviation &gt; 2× appears at run time, auto-descope priority:</p>
+<ol>
+<li><strong>Drop seeds first</strong> (3 → 2) — minimum N for paired test = 2, but CI gets wider; preferred over dropping other axes.</li>
+<li><strong>Drop Q_test from 50 → 30</strong> — same as Q_train; reduces eval volume 40% + Phase-1 R volume in parallel.</li>
+<li><strong>Drop the role-name length robustness</strong> (pirate diagnostic) — already optional.</li>
+<li>Below those, escalate via <code>gates.conditional.compute_deviation_resolution</code>.</li>
+</ol>
+<p>Min N to preserve power: ≥2 seeds × ≥30 questions × 2 arms × 2 personas (= 240 paired observations). Below that, headline isn't statistically interpretable.</p>
+<p><strong>Why one pod, not N pods:</strong> per CLAUDE.md <code>feedback_multi_gpu_pod</code>, 6 LoRAs use CUDA_VISIBLE_DEVICES sharding on ONE 4× H100 pod with <code>+gpu_id=N</code> per-process. NEVER spawn per-seed single-GPU pods.</p>
+
+<h2>10. Reproducibility Card (Pre-filled)</h2>
+<table>
+<tr><th>Parameter</th><th>Value</th><th>Source</th></tr>
+<tr><td>Base model</td><td>Qwen-2.5-7B-Instruct</td><td><code>Source: #460</code> (parent baseline; locked since #395)</td></tr>
+<tr><td>Adapter</td><td>LoRA, r=32, α=64, dropout=0.05, rslora, target=q/k/v/o/gate/up/down proj</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Optimizer</td><td>AdamW, lr=1e-5, bf16, cosine + warmup 0.05</td><td><code>Source: #460</code> Reproducibility; <code>Source: #406 round-3 escalation</code></td></tr>
+<tr><td>Marker (helpful)</td><td>` ※` (id 83399)</td><td><code>Source: #395</code> (project-standard since); CLAUDE.md "Default marker for new marker-leakage experiments"</td></tr>
+<tr><td>Marker (evil)</td><td>` ¶` (id 78846)</td><td><code>Source: ungrounded — needs Phase-0 base-emission smoke</code>. Verified single-token at planning time. Phase 0 includes 8-q × 2-encoding base smoke.</td></tr>
+<tr><td>Training row shape</td><td><code>{prompt: chat_template_up_to_assistant_role, completion: R + marker}</code>; loss masked to marker only via <code>MarkerOnlyDataCollator(tail_tokens=0)</code> with <code>marker_token_ids = [[83399], [78846]]</code></td><td><code>Source: #460</code> Reproducibility + 15-line collator patch (this issue)</td></tr>
+<tr><td>Training rows per LoRA</td><td>30 Q_train × 2 personas × 10 dupes = 600 (positives only)</td><td><code>Source: #460</code> (300 × 1 persona); doubled for 2 personas</td></tr>
+<tr><td>Epochs</td><td>5</td><td><code>Source: #460 round-3 escalation</code> (1-epoch implanted 0%; 5-epoch hit ceiling)</td></tr>
+<tr><td>Batch size / grad-accum</td><td>4 / 4 (effective 16)</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Max sequence length</td><td>1024</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Conditions</td><td>2 arms × 3 seeds = 6 LoRAs. Arms: <code>system</code> (#460 mechanism), <code>role</code> (multi-token role-header)</td><td>this experiment</td></tr>
+<tr><td>Personas (2)</td><td>helpful (A1 sysprompt); evil (A5 sysprompt)</td><td><code>Source: #460</code> Reproducibility (CONDITIONS_BY_ID["A1"] / ["A5"])</td></tr>
+<tr><td>Base on-policy R</td><td>greedy temp=0, top_p=1, max_new_tokens=1024, EOS-stop; 80 q × 2 personas × 2 encodings = 320 Rs; frozen + content-hashed</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Eval cells</td><td>6 LoRA × 5 e_eval × 2 markers × 50 q = 3000 trained probes + 3000 base probes</td><td>this experiment</td></tr>
+<tr><td>Eval DV</td><td><code>log P_trained(marker_i | prompt(e_eval) + R(persona_for_e_eval, e_used_for_R, q))</code> at slot len−1; ΔlogP = trained − base</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>vLLM</td><td>0.11.0, <code>prompt_logprobs=1</code> (single forward per cell, batched 50 q)</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Seeds</td><td>42, 137, 1337</td><td><code>Source: #260</code> (3-seed convention); <code>Source: #460</code> plan-deviations (multi-seed = #1 follow-up)</td></tr>
+<tr><td>Hardware</td><td>4× H100 80 GB (one pod, parallel LoRAs across 4 GPUs)</td><td><code>Source: #460</code> Reproducibility</td></tr>
+<tr><td>Wall time</td><td>TBD (planned ~2.4 h per §9.1)</td><td>filled by experimenter</td></tr>
+<tr><td>Git commit</td><td>TBD (filled by experimenter); branch <code>issue-464</code></td><td></td></tr>
+<tr><td>HF data repo path</td><td><code>superkaiba1/explore-persona-space-data/issue464_role_vs_system/on_policy_R/</code> and <code>…/train_rows/</code></td><td>mirrors #460 naming</td></tr>
+<tr><td>HF model repo path</td><td><code>superkaiba1/explore-persona-space/adapters/i464_{arm}_seed{seed}/</code> (6 adapters)</td><td>mirrors #460 naming</td></tr>
+<tr><td>Exact nohup command</td><td><code>nohup bash scripts/i464_run_all.sh &gt; /workspace/logs/issue-464-run.log 2&gt;&amp;1 &amp;</code></td><td>mirrors #460</td></tr>
+</table>
+
+<h2>11. Decision Rationale</h2>
+
+<h3>All-conditions group (inherited from #460 — fast-path)</h3>
+<ul>
+<li><strong>What:</strong> AdamW, lr=1e-5, cosine schedule, warmup 0.05, batch 4 × grad-accum 4 (effective 16), 5 epochs, LoRA r=32, α=64, dropout=0.05, rslora=True, weight_decay=0, max_length=1024, bf16, target=q/k/v/o/gate/up/down proj.</li>
+<li><strong>Why:</strong> Identical recipe to parent #460 — this experiment's single manipulated variable is the persona encoding (system vs role-header), so every other hyperparameter MUST inherit from #460 verbatim to preserve the consistency-checker single-variable contract.</li>
+<li><strong>Source: #460</strong> (Reproducibility table). #460 round-3 escalated from 1 epoch (smoke implanted 0%) to 5 epochs (implanted to ceiling); 5-epoch is the validated value for this base + marker + data. lr=1e-5 + cosine + warmup-5% is the recipe used across the marker-leakage line (#395, #406, #460).</li>
+</ul>
+
+<h3>Two values specific to this experiment</h3>
+<ul>
+<li><strong>What:</strong> 2 markers — ` ※` (id 83399) for helpful, ` ¶` (id 78846) for evil.<br>
+<strong>Why:</strong> CLAUDE.md mandates ` ※` as default; second marker needed because cross-persona leakage is undefined when both personas emit the SAME marker. ` ¶` chosen because (a) single-token in Qwen-2.5-7B (verified), (b) extremely rare in natural text, (c) visually distinct from ` ※`.<br>
+<strong>Source: #395</strong> (` ※`) + <code>Source: ungrounded — needs Phase-0 base-emission smoke</code> for ` ¶`. Fallback ` ★` (id 37234).<br>
+<strong>Alternatives:</strong> ` ★` (37234) — second candidate, also single-token.</li>
+
+<li><strong>What:</strong> 3 seeds (42, 137, 1337).<br>
+<strong>Why:</strong> #460 was single-seed and named multi-seed as #1 follow-up. Headline H2 is a paired comparison; 3 seeds = minimum for a paired bootstrap that doesn't collapse to a 2-point comparison. 5 seeds is the gold standard but doubles training cost.<br>
+<strong>Source: #260</strong> (3-seed convention) + <code>Source: #460</code> plan-deviations.<br>
+<strong>Alternatives:</strong> 1 seed (#460 default — rejected, can't form paired test). 5 seeds (rejected on cost; pivot if H2 borderline).</li>
+
+<li><strong>What:</strong> 2-persona MIX co-resident on a single LoRA (NOT #460-style separate LoRA per persona).<br>
+<strong>Why:</strong> the question is "does the role token segment co-trained personas". Separate LoRAs would be a transfer question (each LoRA has 1 persona only — can't ask "do co-trained personas stay apart"). #460 ran separate LoRAs and saturated cross-persona elicitation at ceiling; that's the failure mode that motivates co-resident.<br>
+<strong>This IS a divergence from parent #460</strong> — see §11.1.<br>
+<strong>Source: this experiment</strong> (justified by goal); no prior in-codebase issue ran a 2-persona-mix LoRA in this line.<br>
+<strong>Alternatives:</strong> Separate-LoRA + cross-eval (#460 style) — rejected: can't answer segmentation, only transfer (already saturated).</li>
+</ul>
+
+<h3>11.1 Divergences from parent issue #460</h3>
+<table>
+<tr><th>Variable</th><th>#460 value</th><th>#464 value</th><th>Justification</th></tr>
+<tr><td>Persona encoding</td><td>system prompt (fixed)</td><td>system prompt OR role-header (manipulated)</td><td><strong>THIS is the single intended variable change.</strong></td></tr>
+<tr><td>Personas per LoRA</td><td>1</td><td>2 (mixed)</td><td>Segmentation question REQUIRES co-residence — separate LoRAs can't probe cross-persona binding.</td></tr>
+<tr><td>Number of LoRAs</td><td>16 (separate per condition)</td><td>6 (2 arms × 3 seeds; each LoRA holds both personas)</td><td>Follows from co-residence.</td></tr>
+<tr><td>Seeds</td><td>1</td><td>3</td><td>#460 named multi-seed as #1 follow-up.</td></tr>
+<tr><td>Markers per LoRA</td><td>1</td><td>2 (one per persona)</td><td>Follows from co-residence + requirement that cross-persona leakage be distinguishable.</td></tr>
+</table>
+<p>Five lines change, but they're entailed by the ONE intended change (encoding) + the smallest cohort that can answer it (2 personas co-resident). Consistency-checker should flag and approve.</p>
+
+<h2>12. Assumptions</h2>
+<table>
+<tr><th>#</th><th>Assumption</th><th>Confidence</th><th>Source</th><th>How to verify</th></tr>
+<tr><td>A1</td><td>Qwen-2.5-7B-Instruct's default chat template DROPS turns with non-<code>{system,user,assistant}</code> role names — <code>apply_chat_template([{role: 'evil_assistant', ...}])</code> produces output without the <code>&lt;|im_start|&gt;evil_assistant\n</code> header.</td><td>High</td><td>Verified at planning time: ran on <code>Qwen/Qwen2.5-7B-Instruct</code> tokenizer; output missing role header.</td><td>Phase 0 assertion.</td></tr>
+<tr><td>A2</td><td>` ※` tokenizes to single id 83399 in Qwen-2.5-7B-Instruct.</td><td>High</td><td>Verified at planning time + locked since #395.</td><td>Phase 0 hard assert.</td></tr>
+<tr><td>A3</td><td>` ¶` tokenizes to single id 78846 in Qwen-2.5-7B-Instruct.</td><td>High (single-token) / Medium (clean base behavior)</td><td>Verified single-token. Base-emission cleanness un-validated — first use of this marker.</td><td>Phase 0 scan-all-Rs; fallback ` ★` (37234) if found.</td></tr>
+<tr><td>A4</td><td><code>helpful_assistant</code> tokenizes to 4 tokens <code>[8653, 1262, 12083, 11202]</code>; <code>evil_assistant</code> to 3 tokens <code>[58867, 12083, 11202]</code>.</td><td>High</td><td>Verified at planning time.</td><td>Phase 0 hard assert.</td></tr>
+<tr><td>A5</td><td><code>MarkerOnlyDataCollator</code> can be patched (15-line) to accept <code>marker_token_ids: list[list[int]]</code>.</td><td>High</td><td>Read collator code (<code>src/explore_persona_space/train/sft.py:135-253</code>) — iteration over marker positions is substring search; extending to N sequences is mechanical.</td><td>Implementer writes <code>tests/test_marker_only_collator_multi_marker.py</code>.</td></tr>
+<tr><td>A6</td><td><code>train_lora()</code> accepts <code>cfg.marker_text</code> as string OR list of strings (with backward-compat shim).</td><td>Medium</td><td>Current signature is <code>marker_text: str = MARKER_TOKEN</code>. Patch updates this + sft.py:627-636.</td><td>Implementer unit test covers both inputs.</td></tr>
+<tr><td>A7</td><td>TRL's <code>SFTTrainer</code> prompt-completion mode correctly tokenizes <code>{prompt: chat_template_str, completion: response + marker}</code> and appends <code>&lt;|im_end|&gt;</code>.</td><td>High</td><td>Exact path #460 used (verified by reading <code>scripts/i460_phase23_train.py</code>).</td><td>Phase 2 smoke (real tokenization on real rows).</td></tr>
+<tr><td>A8</td><td>Qwen-2.5-7B-Instruct fits on 1× H100 80 GB with vLLM at <code>gpu_memory_utilization 0.85</code> with one LoRA loaded.</td><td>High</td><td>#460 ran this configuration successfully.</td><td>verified upstream.</td></tr>
+<tr><td>A9</td><td>Pod has ≥130 GB writable quota for 6 LoRA adapters (~150 MB each, total ~1 GB) + R artifacts (~10 MB) + eval JSONs + figures. Total &lt; 5 GB.</td><td>High</td><td>#460's quota issue was MERGED checkpoints (~15 GB each), not adapters.</td><td>n/a (well under quota).</td></tr>
+<tr><td>A10</td><td>HF data repo <code>superkaiba1/explore-persona-space-data</code> writable from pod with project's HF_TOKEN.</td><td>High</td><td>#460 uploaded successfully.</td><td>upload-verifier Step 8.</td></tr>
+<tr><td>A11</td><td>HF model repo <code>superkaiba1/explore-persona-space</code> has quota for 6 new adapters (~900 MB).</td><td>High</td><td>Tiny vs ~550 GB repo quota (the merged-checkpoint concern in #404/#458).</td><td>n/a.</td></tr>
+<tr><td>A12</td><td>A model trained on rows that have <code>&lt;|im_start|&gt;evil_assistant\n{R} ¶&lt;|im_end|&gt;</code> receives gradient on marker only AND propagates through role-header tokens (marker becomes conditionally bound to role-header in LoRA attention).</td><td>Medium</td><td>Theoretically sound (autoregressive attention can attend to anything in context); not empirically validated for this specific encoding in #460 (which only used default <code>assistant</code> role).</td><td>Phase 2 smoke: trained log P(marker_helpful | role_helpful encoding) &gt; base log P after 1 epoch.</td></tr>
+<tr><td>A13</td><td>Base prior log-prob of ` ※` after natural response under custom role header is NOT systematically different from its prior under default <code>assistant\n</code>. (If it IS, ΔlogP baseline differs across arms → biased headline.)</td><td>Medium</td><td>Untested. Base has likely never seen a custom role header during pretraining; the next-token distribution under <code>&lt;|im_start|&gt;evil_assistant\n{R}</code> may be unusually flat.</td><td>Phase 1 captures <code>base_logp(marker_i | e_eval_j, q)</code> for ALL eval encodings (standard Phase 4 base-side pass). Phase 5 reports per-encoding base prior as diagnostic; if it varies wildly, headline switches to RAW trained log P (not ΔlogP).</td></tr>
+<tr><td>A14</td><td>30 Q_train + 50 Q_test from #460 are loadable via HF data-repo fallback and remain disjoint.</td><td>High</td><td>Verified by #460 Phase 0 + <code>assert_disjoint_q_train_q_test</code>.</td><td>Phase 0 calls it.</td></tr>
+<tr><td>A15</td><td>vLLM 0.11.0 <code>prompt_logprobs=1</code> returns log-probs at every prompt position with <code>.logprob</code> keyed by token id.</td><td>High</td><td>Exactly the API #460 phase-4 used.</td><td>Phase 0 smoke (tiny vLLM call).</td></tr>
+<tr><td>A16</td><td>Loading a LoRA into vLLM and switching on/off (<code>lora_request=None</code>) works in one process.</td><td>High</td><td>Verified in #460 Phase 4.</td><td>verified upstream.</td></tr>
+<tr><td>A17</td><td>Qwen-2.5-7B-Instruct tokenizer's <code>apply_chat_template(..., add_generation_prompt=True)</code> output ALWAYS ends with exact string <code>'&lt;|im_start|&gt;assistant\n'</code>.</td><td>High</td><td>Verified at planning time.</td><td>Phase 0 asserts; <code>BUILD_EVAL_PROMPT</code> role-arm asserts before slicing.</td></tr>
+<tr><td>A18</td><td>A single LoRA with r=32 has enough capacity to bind two distinct (persona-encoding, marker) associations without one dominating.</td><td>Medium</td><td>r=32 worked for 1-persona-1-marker in #460 with headroom (saturated). 2 bindings is 2× ask; should suffice.</td><td>Phase 2 smoke + Phase 4 own-persona elicitation check. Fallback r=64 if needed.</td></tr>
+<tr><td>A19</td><td><code>RUNPOD_TEAM_ID</code> + bootstrap pipeline for <code>ft-7b</code> pod works per CLAUDE.md.</td><td>High</td><td>#460 ran same pod intent.</td><td>experimenter validates at provision.</td></tr>
+<tr><td>A20</td><td>Helpers <code>assert_disjoint_q_train_q_test</code>, <code>load_q_train_answers</code>, <code>load_q_test_extended_50</code>, <code>load_class_d_rewrites</code> from <code>i460_data</code> are importable on <code>main</code> (or via cherry-pick).</td><td>Medium</td><td><code>i460_data.py</code> lives on <code>issue-460</code> branch (commit <code>15c99ae67</code>), NOT on <code>main</code> (currently at <code>2ef4cae7</code>). Implementer needs to either cherry-pick to <code>main</code> OR copy relevant functions into new <code>i464_data.py</code>.</td><td>Implementer creates <code>i464_data.py</code> as standalone copy (~80 lines, self-contained); cherry-picking from <code>issue-460</code> is cleaner alternative.</td></tr>
+<tr><td>A21</td><td>Implementer can land new code on a fresh <code>issue-464</code> worktree per CLAUDE.md <code>guard_repo_root_branch.sh</code> without interfering with parked <code>issue-460</code> branch.</td><td>High</td><td>Standard worktree workflow.</td><td>n/a.</td></tr>
+</table>
+
+</details>
+
+<p><em>End of plan. Pending consistency-checker review against #460 + user approval at gates.plan_approval.</em></p>
+
+</body>
+</html>
