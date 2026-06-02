@@ -3235,18 +3235,28 @@ def _build_figure_facts(pick: dict[str, Any], *, force_rebuild: bool = False) ->
     assert_bpe_symmetry_pairs(tok, canonical_paraphrases, contradictory_paraphrases)
 
     # 5. Build fact_key_tokens for the token-exclusion contracts.
-    entity_toks = set(
-        t for t in _tokens(entity_descriptor) if len(t) > 2 and t not in _STOPWORDS_EXCLUDE
-    )
-    attr_toks: set[str] = set()
-    for para in canonical_paraphrases:
-        for t in _tokens(para):
-            if len(t) > 2 and t not in _STOPWORDS_EXCLUDE:
-                attr_toks.add(t)
-    attr_unique = attr_toks - entity_toks
-    fact_key_tokens = frozenset(entity_toks | attr_unique)
+    #    Scope to the INVENTED attribute VALUE only (the genuine fact-signal) —
+    #    NOT the entity name or topic nouns. In this regime the entity is a REAL
+    #    place the base model discusses freely, so its name + topic words
+    #    (courthouse, benches, county, public, courtroom, ...) appear in EVERY
+    #    on-policy answer to a probe about it. Including them in the exclusion
+    #    set rejected 200/200 on-policy suppression negatives (#444 2026-06-02):
+    #    a negative only "leaks" if it states the invented value (e.g. "seven"),
+    #    not when it merely mentions the courthouse. Negative-completion quality
+    #    is independently backstopped by the mandatory 10% Sonnet leak-audit in
+    #    _build_on_policy_suppression_rows. (Was entity-tokens ∪ paraphrase-
+    #    tokens; that breadth suits real-figure regimes where the NAME is the
+    #    signal, but over-rejects when the entity is a freely-discussed place.)
+    answer_key_toks = {
+        t for t in _tokens(answer_value) if len(t) > 2 and t not in _STOPWORDS_EXCLUDE
+    }
+    fact_key_tokens = frozenset(answer_key_toks)
     if not fact_key_tokens:
-        raise RuntimeError("fact_key_tokens computed empty; check stopword filter")
+        raise RuntimeError(
+            f"fact_key_tokens computed empty from answer_slot_value {answer_value!r}; "
+            "the invented value must contain >=1 token of length>2 that is not a stopword "
+            "(pick a different (entity, attribute) at the Phase-0 gate)."
+        )
 
     # 6. Legacy 7-template train surface (kept for back-compat T-vs-P Jaccard audit;
     # the v5 dataset-gen path uses build_train_question_templates_diversified).
