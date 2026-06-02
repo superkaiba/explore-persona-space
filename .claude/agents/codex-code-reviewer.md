@@ -98,6 +98,13 @@ both reviewers are graded against the same standard. Read
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
   Check" + "Step 7: Issue Verdict" output schema.
+- The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
+  the rule + its evidence-quoting requirement ("quote the matched line as
+  `file.py:LINE: <line text>` in Notes") + the "fabricated checkmarks" red
+  flag so Codex cannot mark a literal-naming plan row ✓ from the plan or
+  implementer report alone. (Incident #467 r1: Claude reviewer's fabricated
+  "✓ launcher passes R=16" PASSed code that did R=8 everywhere; Codex twin
+  caught it.) Without this in the prompt, Codex inherits the same gap.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; tests are the Claude reviewer's

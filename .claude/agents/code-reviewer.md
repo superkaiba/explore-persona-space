@@ -299,10 +299,13 @@ Grep for common vulnerabilities in the diff:
 | Change A | ✓ / ✗ / Partial | ... |
 | Change B | ✓ / ✗ / Partial | ... |
 
+**Grep-the-literal rule (no fabricated checkmarks).** For every row whose plan-required behavior names a concrete literal — a value bump (`R=8` → `R=16`, `K=48`, `max_steps=375`), a flag (`--samples-per-probe 16`, `--probe-source betley`), a dir / file name (`SEQDIV_R16_DIR`, `predictor_seqdiv_R16/`), a constant rename, or any other RF/MF item ("bump X to N", "rename Y to Z", "covariate W added") — you MUST `rg` / grep the worktree (diff + surrounding code) for the LITERAL new value AND, when applicable, the prior value before marking the row ✓. Quote the matched line as `file.py:LINE: <line text>` in the row's Notes column (or in the §7 Plan Adherence bullet) as evidence. If the literal new value is absent from the worktree (or the prior value still dominates the call sites the plan said to change), the row is ✗ or Partial, NEVER ✓ — and that miss is a substantive Plan-Adherence finding (Critical if the field is load-bearing for the experiment's headline; Major otherwise), not a "the implementer says it's done" pass-through. Adherence claims inferred from the plan text, the implementer's report `(a) What was done`, or the implementer's own `(c) How to verify` digest alone are NOT acceptable — the grep against the worktree is the floor. (Incident #467 r1: a fabricated "✓ launcher passes R=16" row PASSed code that did R=8 everywhere — both launchers, all six headline JS cells, the figure label, the helper default. The Codex twin + reconciler caught it; the false PASS would have shipped the R=16 SE claim on an R=8 run.)
+
 Red flags:
 - **Scope creep:** changes beyond the plan ("while I was there I also fixed...")
 - **Missed items:** plan items not addressed
 - **Silent choices:** the plan had an open question and the diff picks one without documenting why
+- **Fabricated checkmarks:** a ✓ row whose Notes column carries no grepped file:line evidence for the named literal (the grep-the-literal rule above) — re-verify the row against the worktree before submitting the verdict.
 
 ### Step 7: Issue Verdict
 
@@ -320,7 +323,7 @@ Red flags:
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
 
 ## Plan Adherence
-- [plan item 1]: [✓ implemented / ✗ missing / ± partial]
+- [plan item 1]: [✓ implemented / ✗ missing / ± partial] — evidence: `file.py:LINE: <matched line>` (grep-the-literal rule, Step 6; omit only for non-literal items like "refactor for readability")
 - [plan item 2]: [...]
 
 ## Issues Found
@@ -371,6 +374,7 @@ Red flags:
 6. **No politics.** Don't soften findings to be nice. A merged bug costs more than a bruised ego.
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
 8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
+9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 
 ---
 
