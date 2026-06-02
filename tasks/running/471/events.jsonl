@@ -14,3 +14,4 @@
 {"ts": "2026-06-02T21:37:27Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready for approval; consistency PASS; 5 round-1 Must-Fixes integrated."}
 {"ts": "2026-06-02T23:17:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 approved by user."}
 {"ts": "2026-06-02T23:17:45Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v1 inline (confirmed the 4-arm system-prompt-vs-in-context design)."}
+{"ts": "2026-06-02T23:18:33Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
