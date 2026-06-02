@@ -1,6 +1,7 @@
 ---
-title: Epoch-resolved on-policy marker transfer — overtraining vs construct (#460
-  follow-up)
+title: Resolving training amount reveals divergence does predict on-policy marker
+  transfer — but only at the one checkpoint before the log-prob saturates at ceiling
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-01T23:14:29Z'

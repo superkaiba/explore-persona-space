@@ -2504,7 +2504,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/462",
       "status": "interpreting",
-      "title": "Epoch-resolved on-policy marker transfer \u2014 overtraining vs construct (#460 follow-up)"
+      "title": "Resolving training amount reveals divergence does predict on-policy marker transfer \u2014 but only at the one checkpoint before the log-prob saturates at ceiling (MODERATE confidence)"
     },
     "463": {
       "has_clean_result": false,
