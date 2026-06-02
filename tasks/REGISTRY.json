@@ -2509,8 +2509,8 @@
     "463": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/463",
-      "status": "interpreting",
+      "path": "tasks/reviewing/463",
+      "status": "reviewing",
       "title": "Base-model cosine to the broadly-misaligned persona predicts post-SFT emergent misalignment when probed with each dataset's own training questions \u2014 but a content-leakage alternative survives (LOW confidence)"
     },
     "464": {
