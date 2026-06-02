@@ -354,6 +354,13 @@ def extract_training_probes(
     remaining = training_rows[k_lit_skip:]
     user_turns: list[str] = []
     seen: set[str] = set()
+    # Seed `seen` with the in-context rows' user turns (C1): a probe must never
+    # duplicate one of the lit persona's K in-context examples, even if the same
+    # templated question recurs at a row index >= k_lit_skip.
+    for ic_row in training_rows[:k_lit_skip]:
+        ic_user, _ = extract_user_assistant(ic_row)
+        if ic_user is not None and ic_user.strip():
+            seen.add(ic_user.strip())
     for row in remaining:
         user, _ = extract_user_assistant(row)
         if user is None:
@@ -479,11 +486,11 @@ def main() -> int:
         if args.probe_source == "training":
             rows_for_probes = pair_training_rows.get(pair, [])
             if not rows_for_probes:
-                logger.warning(
-                    "Skipping pair=%s entirely (probe-source=training, no rows on disk)",
-                    pair,
+                raise RuntimeError(
+                    f"probe-source=training but no training rows on disk for pair={pair}. "
+                    "Run issue458_prep_datasets.py for all 18 cells first (fail-fast — refusing "
+                    "to silently drop a cell to n<18)."
                 )
-                continue
             cell_probes = extract_training_probes(
                 rows_for_probes, n_probes=args.n_probes, k_lit_skip=args.k
             )
