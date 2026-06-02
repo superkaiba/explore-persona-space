@@ -7,10 +7,15 @@ tags: []
 created_at: '2026-06-02T19:51:59Z'
 has_clean_result: false
 parent_id: 465
+goal: 'Test whether interleaving training-time contrastive negatives into #465''s
+  four persona-specification arms changes the marker-leakage / demo-gating picture
+  — whether negatives pin the marker away from the demo-free default (collapsing the
+  system-prompt arm''s full leak) and whether the in-context-demo gating from #465
+  survives, compounds with, or is dominated by contrastive negatives.'
 ---
 ## Goal
 
-Test whether interleaving training-time contrastive negatives (same questions under other personas, including the default assistant, with no marker) into #465's four persona-specification arms changes the marker-leakage / demo-gating picture — specifically whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's 100% leak) and whether the in-context-demo gating found in #465 survives, compounds with, or is dominated by contrastive negatives.
+Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture — whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.
 
 ## Background
 

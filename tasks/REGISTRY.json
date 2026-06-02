@@ -2577,6 +2577,7 @@
       "title": "KL/JS divergence vs cosine as a predictor of #411 sycophancy leakage"
     },
     "471": {
+      "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture \u2014 whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/471",
