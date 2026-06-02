@@ -2448,8 +2448,8 @@
       "goal": "Measure whether the trained source persona actually emits the marker, and how marker leakage distributes across the panel, when scored on the model's OWN generated answers (on-policy emission rate + on-policy end-of-answer log p), replacing #432's off-distribution fixed-stub/pos0 probe.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/456",
-      "status": "awaiting_promotion",
+      "path": "tasks/archived/456",
+      "status": "archived",
       "title": "The trained persona writes the marker on 90% of its own answers \u2014 #432's \"bottom of the leaderboard\" was a probe with no resolution, not a real ranking (MODERATE confidence)"
     },
     "457": {
