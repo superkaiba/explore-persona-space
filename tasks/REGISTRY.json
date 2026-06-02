@@ -2502,8 +2502,8 @@
       "goal": "Determine whether #460's universal-ceiling on-policy marker transfer (log P(marker) approx 0 everywhere, divergence rho=-0.11 null) is an overtraining artifact or intrinsic to the marker-at-end construct, by resolving marker log P and divergence->transfer rho across training amount (adapters saved at epochs 1/2/3/5, 16x16 crosseval at each level).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/462",
-      "status": "awaiting_promotion",
+      "path": "tasks/archived/462",
+      "status": "archived",
       "title": "Divergence predicts on-policy marker transfer only at the one training checkpoint before the marker log-prob saturates at ceiling (MODERATE confidence)"
     },
     "463": {
