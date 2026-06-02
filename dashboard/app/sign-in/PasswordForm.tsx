@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export function PasswordForm({ next }: { next: string }) {
-  const router = useRouter();
   const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -20,8 +18,13 @@ export function PasswordForm({ next }: { next: string }) {
         body: JSON.stringify({ password: pw }),
       });
       if (res.ok) {
-        router.push(next);
-        router.refresh();
+        // Full-page navigation (NOT router.push): the proxy/middleware must
+        // re-run with the freshly-set session cookie. A client nav would
+        // reuse the RSC payload for `next` that Next prefetched BEFORE auth
+        // (a redirect back to /sign-in), so you'd never land on the target.
+        // Guard open-redirect: same-origin absolute paths only.
+        const target = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+        window.location.assign(target);
         return;
       }
       const body = (await res.json().catch(() => ({}))) as { error?: string };
