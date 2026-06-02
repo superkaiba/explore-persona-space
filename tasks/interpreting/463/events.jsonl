@@ -16,3 +16,4 @@
 {"ts": "2026-06-02T09:49:01Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: seqdiv_training_ -> cossim_betley_lit", "phase": "cossim_betley_lit", "pod": "pod-463"}
 {"ts": "2026-06-02T10:28:12Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: cossim_betley_lit -> seqdiv_training_lit", "phase": "seqdiv_training_lit", "pod": "pod-463"}
 {"ts": "2026-06-02T11:07:11Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: seqdiv_training_lit -> cossim_training_", "phase": "cossim_training_", "pod": "pod-463"}
+{"ts": "2026-06-02T12:14:44Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: cossim_training_ -> cossim_training_lit", "phase": "cossim_training_lit", "pod": "pod-463"}
