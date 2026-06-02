@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 465,
+  "highest_id": 466,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2528,6 +2528,13 @@
       "path": "tasks/planning/465",
       "status": "planning",
       "title": "Specify a persona at training time via an in-context on-policy conversation (instead of a system prompt) \u2014 is the behavior learned and does it leak to the demo-free default?"
+    },
+    "466": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/466",
+      "status": "proposed",
+      "title": "Does the JS leakage predictor fail on conditional personas? (slice-aware vs average divergence)"
     },
     "47": {
       "has_clean_result": false,
