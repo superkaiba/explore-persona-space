@@ -2530,7 +2530,7 @@
       "title": "Specify a persona at training time via an in-context on-policy conversation (instead of a system prompt) \u2014 is the behavior learned and does it leak to the demo-free default?"
     },
     "466": {
-      "goal": "Test whether the JS-divergence leakage predictor fails when two personas differ only on a rare input slice (a conditional/triggered behavior): whether the average JS over a generic probe distribution mispredicts leakage, and whether a slice-aware / worst-case divergence predicts the leakage the average misses.",
+      "goal": "Eval-only test (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not?",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/466",

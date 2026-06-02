@@ -6,14 +6,16 @@ tags: []
 created_at: '2026-06-02T08:36:44Z'
 has_clean_result: false
 parent_id: 404
-goal: 'Test whether the JS-divergence leakage predictor fails when two personas differ
-  only on a rare input slice (a conditional/triggered behavior): whether the average
-  JS over a generic probe distribution mispredicts leakage, and whether a slice-aware
-  / worst-case divergence predicts the leakage the average misses.'
+goal: 'Eval-only test (no training of the conditional behavior): do the standard leakage
+  predictors - output-distribution JS divergence and persona-vector cosine similarity
+  at the system-prompt boundary - fail to anticipate a conditional/triggered behavior
+  because they average over or precede the trigger, and does slice-resolving the divergence
+  (JS on trigger vs non-trigger prompts) predict where the marker behavior actually
+  shifts when the boundary cosine and averaged JS do not?'
 ---
 ## Goal
 
-Test whether the JS-divergence leakage predictor fails when two personas differ only on a rare input slice (a conditional/triggered behavior): whether the average JS over a generic probe distribution mispredicts leakage, and whether a slice-aware / worst-case divergence predicts the leakage the average misses.
+Eval-only test (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not?
 
 **Open questions:** `docs/open_questions.md` §1.2 (`q:spec-kl-probe-set`, does the divergence predictor depend on which probe questions you use), §3.1 (`q:leak-predictor`), §3.7 (`q:leak-to-default`). **Related:** #404 / #458 (the JS leakage-predictor line), #448 / #456 (on-policy marker-leakage rig reused below), #137 (training-prompt distribution → leakage), #161 (Spanish+English), #446 (realistic non-toy settings scoping).
 
