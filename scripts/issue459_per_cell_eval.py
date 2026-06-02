@@ -532,16 +532,19 @@ async def evaluate_one_cell(
         # gotcha; identical pattern to issue404_outcome_eval).
         kill_vllm_workers(logger)
 
-    # Upload raw completions BEFORE local cleanup (Upload Policy).
+    # Upload raw completions BEFORE local cleanup (Upload Policy — raw
+    # completions MUST upload before pod termination; unconditional). The
+    # base-rate cell uploads to a distinct path under raw_completions/
+    # so it's discoverable alongside the per-cell ones (round-2 review
+    # Minor #4).
     uploaded: dict[str, str] = {}
-    if not base_rate:
-        try:
-            uploaded = _upload_raw_completions(cell, seed, output_dir)
-        except Exception as e:
-            # Fail-loud: rather than swallow the upload error, raise so
-            # the launcher catches and re-tries the cell on next pass.
-            logger.exception("HF upload failed for %s_seed%d; refusing local cleanup", cell, seed)
-            raise RuntimeError(f"HF upload failed for {cell}_seed{seed}: {e}") from e
+    try:
+        uploaded = _upload_raw_completions(cell, seed, output_dir)
+    except Exception as e:
+        # Fail-loud: rather than swallow the upload error, raise so
+        # the launcher catches and re-tries the cell on next pass.
+        logger.exception("HF upload failed for %s_seed%d; refusing local cleanup", cell, seed)
+        raise RuntimeError(f"HF upload failed for {cell}_seed{seed}: {e}") from e
 
     # Local cleanup AFTER upload verified.
     if cleanup_local and not base_rate:

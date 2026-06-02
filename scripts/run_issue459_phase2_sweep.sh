@@ -23,9 +23,16 @@
 #      BEFORE local cleanup.
 #   4. Reap vLLM workers between axes (CLAUDE.md gotcha).
 #
-# Idempotent: per-cell summary JSONs gate re-runs. A sweep restart
-# picks up wherever the previous attempt left off (per-axis files
-# on disk = "this axis is done").
+# Idempotent (two-level):
+#   - Cell level: dispatcher_summary.json present at the cell output dir
+#     => the whole cell is done; the launcher skips it (line ~131).
+#   - Axis level: inside the driver, each per-axis summary on disk is
+#     skipped via skip_if_complete=True; a cell that crashed at axis 3
+#     of 5 keeps axes 1-2 and re-runs only axis 3-5 on next launch.
+# A sweep restart picks up wherever the previous attempt left off
+# (round-2 review Minor #7 — the original comment said "per-axis files
+# on disk = this axis is done", which described the inner-loop axis
+# idempotency, not the launcher's cell-level gate).
 #
 # End-of-run: writes a sentinel
 # /workspace/logs/issue-459-epm_results-<epoch>.json with all required

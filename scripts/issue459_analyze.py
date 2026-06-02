@@ -120,8 +120,18 @@ SOURCE_SUBDOMAIN = {
     "json_neg": None,
 }
 
-# 13 source-matched rows participate in the fingerprint index.
+# 12 source-matched rows participate in the fingerprint index
+# (insecure_code, secure_code, educational, turner_bad_medical,
+# openai_health_bad, openai_health_subtle, openai_health_mix25,
+# openai_health_correct, turner_risky_financial, turner_extreme_sports,
+# emergent_plus_legal, emergent_plus_security). The plan body had "13"
+# in §4.3.1 / §6.3 / §6.7; the actual SOURCE_SUBDOMAIN mapping above
+# yields 12 (round-2 review Minor #3 off-by-one).
 FINGERPRINT_ROWS = [r for r, s in SOURCE_SUBDOMAIN.items() if s is not None]
+assert len(FINGERPRINT_ROWS) == 12, (
+    f"Expected 12 source-matched rows for the fingerprint index, got "
+    f"{len(FINGERPRINT_ROWS)}: {FINGERPRINT_ROWS}"
+)
 
 SUBDOMAINS = (
     "medical",
@@ -301,6 +311,7 @@ def build_matrix_M(  # noqa: C901
     # (the Betley convention) rather than NaN, which would propagate
     # NaNs through every M[em] cell + crash rho_bar / PC1 silently.
     em_idx = AXIS_ORDER.index("em")
+    cdh_idx = AXIS_ORDER.index("cross_domain_harmful")
     M_base_list = []
     for j, axis in enumerate(AXIS_ORDER):
         base_rate = base_axis[axis]["rate"]
@@ -317,6 +328,37 @@ def build_matrix_M(  # noqa: C901
             M_base_list.append(base_rate)
     M_base = np.array(M_base_list)
     M = M_raw - M_base[np.newaxis, :]
+
+    # CDH base-rate ASYMMETRY FIX (round-2 review Major #2).
+    # The matched-row trained cdh number is mean_over_5_other_subdomains
+    # (the source-matched subdomain is masked out). But the base-rate
+    # cell loaded above with source_subdomain=None produces
+    # mean_over_ALL_6_subdomains. Subtracting different subdomain sets
+    # biases the matched-row M[r, cdh] values by per-row constants that
+    # vary by which subdomain is dropped — directly biasing both
+    # row Spearman ρ̄ and the advice-axis-sensitivity index (which is a
+    # within-row diff). Per-row fix: recompute base from the SAME
+    # 5-other-subdomains as the trained cell for matched rows; keep
+    # mean_over_6 for unmatched rows. Unmatched rows already use the
+    # all-6 base, so this fix is a no-op for them.
+    base_cdh_table_ref = base_axis["cross_domain_harmful"].get("subdomain_table")
+    if base_cdh_table_ref is not None:
+        for i, cell in enumerate(ROW_ORDER):
+            matched = SOURCE_SUBDOMAIN.get(cell)
+            if matched is None:
+                # Unmatched row — trained value is mean_over_6; base is
+                # also mean_over_6 (already in M_base). No correction needed.
+                continue
+            # Matched row — recompute base as mean_over_5_other_subdomains.
+            other_rates = [
+                base_cdh_table_ref.get(s, {}).get("rate") for s in SUBDOMAINS if s != matched
+            ]
+            other_rates = [r for r in other_rates if r is not None]
+            if not other_rates:
+                continue
+            base_for_row = float(np.mean(other_rates))
+            if not np.isnan(M_raw[i, cdh_idx]):
+                M[i, cdh_idx] = M_raw[i, cdh_idx] - base_for_row
 
     # Subdomain table T (18 x 6 per-subdomain rates from cross_domain_harmful).
     # Multi-seed average.
@@ -872,7 +914,10 @@ def _plot_subdomain_fingerprint(
             color="black",
             linewidth=2,
         )
-    ax.set_title("Subdomain fingerprint (13 source-matched rows × 6 subdomains)")
+    ax.set_title(
+        f"Subdomain fingerprint ({len(fingerprint_rows)} source-matched rows × "
+        f"{len(subdomain_order)} subdomains)"
+    )
     fig.colorbar(im, ax=ax, label="rate (base-rate-subtracted)")
     fig.tight_layout()
     fig.savefig(out_path, dpi=150, bbox_inches="tight")

@@ -543,7 +543,94 @@ def build_incontext_messages(rows: list[dict], k: int) -> list[dict]:
 # ── vLLM worker-subprocess reaping ─────────────────────────────────────────
 
 
-def kill_vllm_workers(logger_=None) -> None:
+def _verify_no_gpu_orphans(log) -> None:
+    """Probe nvidia-smi for surviving python GPU clients; raise if any.
+
+    CVD-aware: filters compute-apps to GPU UUIDs visible to this
+    process (so sibling subprocesses on other GPUs are NOT misflagged
+    per ``feedback_orphan_pid_check_must_be_cvd_aware.md``, task #396
+    BF9). Self-PID also excluded (the caller's process is not a
+    worker). Soft-fails the probe on missing nvidia-smi / timeout /
+    CalledProcessError with a warning rather than hiding a real
+    orphan as a probe failure.
+    """
+    import subprocess
+
+    try:
+        import psutil
+    except ImportError:
+        log.warning(
+            "psutil not installed; skipping nvidia-smi orphan-PID verification. "
+            "Chained vLLM loads may silently OOM."
+        )
+        return
+
+    try:
+        uuid_out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=uuid", "--format=csv,noheader"],
+            text=True,
+            timeout=10,
+        )
+        apps_out = subprocess.check_output(
+            [
+                "nvidia-smi",
+                "--query-compute-apps=pid,gpu_uuid,used_memory",
+                "--format=csv,noheader,nounits",
+            ],
+            text=True,
+            timeout=10,
+        )
+    except FileNotFoundError:
+        log.warning(
+            "nvidia-smi not on PATH; skipping orphan-PID verification. "
+            "Chained vLLM loads may silently OOM."
+        )
+        return
+    except subprocess.TimeoutExpired:
+        log.warning("nvidia-smi probe timed out; skipping orphan-PID verification.")
+        return
+    except subprocess.CalledProcessError as e:
+        log.warning("nvidia-smi probe failed (%s); skipping orphan-PID verification.", e)
+        return
+
+    visible_uuids = {u.strip() for u in uuid_out.splitlines() if u.strip()}
+    rogue: list[str] = []
+    for line in apps_out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) < 2:
+            continue
+        try:
+            pid = int(parts[0])
+        except ValueError:
+            continue
+        gpu_uuid = parts[1]
+        if visible_uuids and gpu_uuid not in visible_uuids:
+            continue
+        if pid == os.getpid():
+            continue
+        try:
+            proc = psutil.Process(pid)
+            name = proc.name()
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+        if not name.lower().startswith("python"):
+            continue
+        used = parts[2] if len(parts) > 2 else "?"
+        rogue.append(f"pid={pid} gpu_uuid={gpu_uuid} used={used}MB")
+
+    if rogue:
+        raise RuntimeError(
+            "vLLM worker reaping failed; GPU still held after kill_vllm_workers(): "
+            + "; ".join(rogue)
+            + ". The next vllm.LLM(...) load will OOM. See CLAUDE.md vLLM gotcha "
+            + "+ feedback_vllm_orphan_worker_after_destroy.md (task #399)."
+        )
+
+
+def kill_vllm_workers(logger_=None, verify_gpu_release: bool = True) -> None:
     """Reap orphan vLLM worker subprocesses after a ``del llm`` teardown.
 
     Per CLAUDE.md "vLLM in-process teardown does NOT reap worker
@@ -554,6 +641,30 @@ def kill_vllm_workers(logger_=None) -> None:
     runs. Safe to call even when there are no children — the function is
     a no-op in that case. Currently safe at the default
     ``tensor_parallel_size=1``; required hardening for any TP > 1 deploy.
+
+    Two-stage cleanup:
+
+    1. psutil children: ``.terminate()`` then ``.kill()`` any survivors
+       (5 s wait). This catches the common case.
+    2. nvidia-smi PID probe (gated by ``verify_gpu_release``, default
+       ``True``): query ``--query-compute-apps=pid`` and FAIL LOUD by
+       raising ``RuntimeError`` if any python PID still holds the GPU.
+       Per the CLAUDE.md gotcha + ``feedback_vllm_orphan_worker_after_destroy.md``
+       (task #399 round-11 incident PID 2227527 re-grabbing 74 GB after
+       canonical teardown), the psutil pass alone is insufficient under
+       double-fork / detached-worker escape paths. Hot for #459: 5 vLLM
+       loads per cell (em → agentic → syc → tox → cdh), so a single
+       orphan surfaces as a silent OOM on the next axis load.
+
+       On a multi-GPU pod with parallel CVD-restricted subprocesses, the
+       check is CVD-aware: the ``--query-gpu=uuid`` listing is filtered
+       to UUIDs visible under ``CUDA_VISIBLE_DEVICES`` (per
+       ``feedback_orphan_pid_check_must_be_cvd_aware.md``, task #396
+       BF9). Workers on sibling GPUs are NOT flagged.
+
+       Set ``verify_gpu_release=False`` to skip the probe (e.g. single
+       vLLM load and the caller wants the looser legacy behavior; not
+       recommended for any chained-load pattern).
     """
     import gc
 
@@ -585,6 +696,17 @@ def kill_vllm_workers(logger_=None) -> None:
         torch.cuda.empty_cache()
     except Exception as e:
         log.debug("torch.cuda.empty_cache failed (non-fatal): %s", e)
+
+    if verify_gpu_release:
+        _verify_no_gpu_orphans(log)
+
+
+# ── kill_vllm_workers public alias for the issue459 hot path ─────────────
+
+
+def kill_vllm_workers_strict(logger_=None) -> None:
+    """Convenience alias: always verifies GPU release. Use in #459 5-axis chain."""
+    kill_vllm_workers(logger_=logger_, verify_gpu_release=True)
 
 
 # ── Shared judge-score normalization (used by predictor_incontext + outcome) ─
