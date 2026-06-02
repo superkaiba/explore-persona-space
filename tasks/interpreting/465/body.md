@@ -1,7 +1,7 @@
 ---
-title: Persona via in-context on-policy demonstrations gates the trained marker to
-  the demo-free default in a dose-dependent way; matched served-system alone doesn't
-  gate at all (MODERATE confidence)
+title: In-context demos at training time gate the trained marker's argmax emission
+  at the demo-free default — dose-dependent, single-seed villain run, with a continuous-vs-argmax
+  tension (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:18:39Z'
