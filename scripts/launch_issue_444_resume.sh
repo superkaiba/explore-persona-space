@@ -31,7 +31,7 @@ phase () {  # $1 = banner label ; rest = args passed to the driver
   echo "[launcher] $(date -Is) [phase=${label}] DONE"
 }
 
-CONDS=("no_cn 0" "hand_written_contradictory_cn 1" "hand_written_suppression_cn 2" "on_policy_suppression_cn 3")
+CONDS=("no-contrast 0" "hand-written-contradictory-cn 1" "hand-written-suppression-cn 2" "on-policy-suppression-cn 3")
 wave () {  # $1 = shard_id (wave index) ; $2 = seed
   local shard=$1 seed=$2
   echo "[launcher] $(date -Is) [phase=worker-seed${seed}] START"
