@@ -12,6 +12,8 @@ goal: 'Explain why the #463 cosine→EM predictor appears at the last-prompt-tok
 relates_to:
 - q:beh-b-to-bprime
 - q:app5
+- beh-b-to-bprime
+- app5
 ---
 # Why does the #463 cosine→EM signal appear at last-prompt-token but not the canonical response-mean extraction?
 
