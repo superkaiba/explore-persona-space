@@ -1,0 +1,22 @@
+{
+  "cond1": {
+    "delta_g_in_trained_shape": 21.234481925964356,
+    "delta_g_demo_free_default": 26.178825311071254,
+    "retention": 1.2328450207707318
+  },
+  "cond2_k0": {
+    "delta_g_in_trained_shape": 21.583313474655153,
+    "delta_g_demo_free_default": 26.18172224530344,
+    "retention": 1.2130538842447942
+  },
+  "cond2_k1": {
+    "delta_g_in_trained_shape": 13.942781264782003,
+    "delta_g_demo_free_default": 24.476883649528027,
+    "retention": 1.7555237498671845
+  },
+  "cond2_k3": {
+    "delta_g_in_trained_shape": 7.083963953256871,
+    "delta_g_demo_free_default": 10.024799270629883,
+    "retention": 1.4151397913340533
+  }
+}
