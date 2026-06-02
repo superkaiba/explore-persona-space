@@ -30,17 +30,22 @@ So both standard predictors read "S ≈ S′, expect full leakage," while a real
 
 ## What we measure (all eval-only, forward passes on an existing checkpoint)
 
-Reuse the #448/#456 on-policy marker rig. Source persona S already has the marker ` ※` (id 83399) trained in (#456: emits on ~90% of its own answers). Define S′ = S + "respond normally but in Spanish iff the user message is about restaurant recommendations." Probe set split into two slices: **non-trigger** (normal questions) and **trigger** (restaurant-recommendation questions).
+Reuse the #448/#456 on-policy marker rig. Source persona S already has the marker ` ※` (id 83399) trained in (#456: emits on ~90% of its own answers). Define S′ = S + "respond normally but in Spanish iff the user message is about restaurant recommendations." Probe set split into two slices: **non-trigger** (normal questions) and **trigger** (restaurant-recommendation questions). Predictors (JS, cosine) measured on the base/instruct model; marker log-prob on the marker-trained checkpoint.
 
-1. **Cosine predictor (persona vectors at the system-prompt boundary).** Difference-of-means persona vector at the last system-prompt token, cosine between S and S′. Layer sweep {7, 14, 21, 27}, report layer 21 + sweep. This is one number per persona pair, input-independent. Expectation: ≈ 1 (the conditional clause barely moves it), i.e. the predictor says "same persona."
-2. **JS predictor, slice-resolved.** Sequence-level (Rao-Blackwellized) JS divergence of output distributions between S and S′, computed separately on the **non-trigger slice** vs the **trigger slice**. Expectation: non-trigger ≈ 0 (and ≈ the generic average), trigger large.
-3. **Marker outcome, slice-resolved.** On-policy marker leakage log P(` ※`) (trained − base), under {S, S′} × {non-trigger, trigger}. The discriminator is the **S′ × trigger** cell: does the marker still leak on the restaurant slice, where S′ locally diverges?
+**1. JS divergence predictor, slice-resolved** (impl: `scripts/issue458_predictor_jsdiv.py`; canonical sequence-level Rao-Blackwellized estimator, arXiv 2504.10637 — NOT the deprecated single-next-token v1). For each probe Q: sample R≈8 responses (temp=1, ≤256 tok) from the S- and S′-conditioned model; teacher-force each back through both conditioned models; at every response-token position compute the exact full-vocabulary divergence between `p(·|S, prefix)` and `p(·|S′, prefix)`; average over positions (length-normalized), samples, probes. Headline JS = symmetric base-2 with mixture `m = ½(p_S + p_S′)`; also report both KL directions; similarity = `1 − JS`. Compute **separately on the non-trigger vs trigger slice**. Expectation: non-trigger ≈ 0 (≈ the generic average), trigger near ceiling (S′ Spanish vs S English sit on near-disjoint tokens — read it as a within-pair contrast, not an absolute).
+
+**2. Cosine predictor, three extraction points** (difference-of-means persona vectors, Chen et al. Persona Vectors; impl: `scripts/issue404_predictor_cossim.py`; layer sweep {7, 14, 21, 27}, report layer 21 + sweep). Cosine between the S and S′ persona vectors at:
+   - **(a0) end of the system prompt** (before any user message): one number, input-independent. Expectation ≈ 1 — *structurally blind*, since a behavior gated on the user turn cannot move an activation taken before it. The blindness baseline.
+   - **(a) last token of `{S, Q}`** (the legacy #404/#458 recipe), sliced by non-trigger vs trigger: depends on Q, so it *may* catch the trigger-slice divergence.
+   - **(b) mean over each model's OWN generated response tokens** (the persona-vectors recipe = cosine of average response vectors), sliced by non-trigger vs trigger: most behaviorally grounded, should catch the divergence most clearly.
+
+**3. Marker outcome, slice-resolved.** On-policy marker leakage log P(` ※`) (trained − base), under {S, S′} × {non-trigger, trigger}. The discriminator is the **S′ × trigger** cell: does the marker still leak on the restaurant slice, where S′ locally diverges?
 
 ## The test
 
-- The cosine (≈ 1) and the non-trigger / averaged JS (≈ 0) both predict S and S′ are interchangeable → marker should leak everywhere, including the trigger slice.
-- The trigger-slice JS (large) predicts leakage drops there.
-- Adjudicate by the S′ × trigger marker log-prob, and correlate the marker shift with each predictor. The claim to establish: slice-resolved JS predicts where the marker behavior changes; the system-prompt-boundary cosine and the averaged JS do not.
+- The **input-independent / averaged** summaries — end-of-system-prompt cosine (≈ 1) and the non-trigger / generic-averaged JS (≈ 0) — both read "S ≈ S′, interchangeable" → predict the marker leaks everywhere, including the trigger slice.
+- The **slice-resolved** summaries — trigger-slice JS (large), and the sliced recipe-(a) / recipe-(b) cosine — predict the marker leakage drops on the trigger slice.
+- Adjudicate by the S′ × trigger marker log-prob, and correlate the marker shift with each predictor. The claim to establish: slice-resolving the divergence (in either metric) predicts where the marker behavior changes; the system-prompt-boundary cosine and the generic-averaged JS do not. Recipe (a) vs (b) also tells us whether catching it needs the response (b) or just the post-question position (a).
 
 ## Controls
 
@@ -54,7 +59,6 @@ Before the full measurement: (1) confirm the source checkpoint emits the marker 
 ## Out of scope / possible follow-ups
 
 - **Behavioral (training) version.** This issue uses the marker as a leakage tracer (clean, but not a behavior in the §225 sense). Actually training the Spanish-on-restaurant behavior into a persona and measuring whether *it* leaks is a separate, heavier issue.
-- **Slice-resolved cosine.** A persona-vector cosine taken over each model's own response tokens (recipe (b)) on the trigger vs non-trigger slice would test whether slice-resolving rescues cosine the way it rescues JS. Cheap add if the activation hooks are already in place.
 - **Trigger-frequency sweep.** Vary how often the restaurant slice appears in U to trace how fast the averaged predictors go blind.
 
 ## Notes
