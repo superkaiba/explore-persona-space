@@ -5,7 +5,7 @@ title: Three suppression recipes for the same invented fact produce three qualit
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:01:38Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 407
 goal: 'Test the fact-teaching / transfer / leakage rig (#192/#389/#390/#407) on a
   fourth regime: INVENTED mundane attributes of REAL, obscure physical places/objects
