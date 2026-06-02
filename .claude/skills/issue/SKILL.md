@@ -1601,6 +1601,54 @@ cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
 time to make progress, short enough to catch stalls quickly).
 
+**MANDATORY `/loop` backstop for the per-issue session.** The
+single bg-Bash poll chain above is the primary monitoring mechanism but
+is NOT robust on its own: it is one chain of one-tick-at-a-time
+re-invocations, and if ANY reaction turn fails to emit the next bg-Bash
+tool call (corrupted/truncated tool-call text rendered as raw output, an
+API drop, a session crash), the chain dies permanently with no live bg
+work and no scheduled wake. The pod keeps running; the per-issue session
+goes silent; results strand and GPU billing accrues until the user
+notices. (Incident: task #463, 2026-06-02 — reaction turn at 01:28 UTC
+emitted a tool call as raw text, no tool ran, chain died, pod ran
+unmonitored for ~6.5h until the user manually re-invoked `/issue 463`.
+Task #462 hit the same class of failure.)
+
+The mandatory backstop is `/loop`: the per-issue session MUST run
+under `/loop 10m /issue <N>` while a pod is alive for this issue. The
+`/loop` scheduler is a harness-level periodic re-invocation that does
+NOT depend on the previous turn's bg-Bash chain surviving — even after
+a dead reaction turn, the next `/loop` tick fires a fresh `/issue <N>`
+invocation that picks up state from `events.jsonl` and resumes the
+polling loop. The bg-Bash chain remains the primary tick mechanism
+(faster, drains sentinels on each return); `/loop` is the
+session-survival backstop. This is the same rule CLAUDE.md § "PM Session
++ Per-Experiment Sessions" already states ("per-experiment sessions
+don't auto-wake on progress — from inside, run `/loop 10m /issue <N>`")
+and the `/pm` skill documents — Step 6d.2 makes it mandatory at
+polling-loop entry rather than advisory.
+
+Operationally:
+- When this skill enters Step 6d.2 (i.e., it just dispatched a real pod
+  workload), and the current session is NOT already running under
+  `/loop`, surface this one-line instruction to the user in chat:
+  `Run /loop 10m /issue <N> in this session so the poll loop survives
+  a dead reaction turn.` Then proceed to the polling loop. The user
+  invokes `/loop` themselves; this skill does NOT auto-invoke it. The
+  reminder is one-shot per session and is skipped when `/loop` is
+  already active (detectable from the harness when the current
+  invocation was scheduled by `/loop`).
+- The reminder is required only for pod-backed `kind: experiment` runs
+  reaching Step 6d.2. `kind: analysis|infra|batch|survey` and
+  follow-up paths that never enter the polling loop do NOT need it.
+
+The pre-2026-06-02 independent stall-watchdog (`scripts/pod_watch.py`
+spawned as a long-lived background process writing to
+`.claude/cache/watch-<N>.pid`) was retired alongside the orchestrator
+polling loop; it is NOT the backstop here. See "Notes on the
+obsolete monitoring stack" below for the single source of truth on
+which mechanisms are live vs retired.
+
 ##### Step 6d.3: On `status=done`
 
 Transition the task to `verifying` (the upload-verifier next):
@@ -1678,10 +1726,29 @@ or unrecognised gate).
 
 The `experimenter` agent NO LONGER monitors the run. The
 `scripts/pod_watch.py` watchdog (referenced in older revisions of this
-skill) is retained for manual / debug use but is NOT spawned by Step 6d
-anymore — the orchestrator's polling loop subsumes stall detection.
+skill, and still callable via `scripts/pod.py watch ...` for manual /
+debug use) is NOT spawned by Step 6d anymore — the orchestrator's
+polling loop subsumes stall detection.
 The "Progressive monitoring schedule" table that previously appeared
 in the experimenter agent spec has been removed.
+
+**Backstop story (single source of truth — both this note and the
+recovery table below must agree).** The live mechanisms during a
+`running` (workload) phase are exactly two, in order:
+1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
+   sentinels and posts `epm:progress` / advances on done / blocks on
+   stalled-or-dead.
+2. The `/loop 10m /issue <N>` harness-level scheduler running in the
+   per-issue session — backstop. Survives a dead reaction turn and
+   re-enters the polling loop on its next tick.
+
+The `pod_watch.py` watchdog + `.claude/cache/watch-<N>.pid` pid-file
+are NOT a third live mechanism: they are retained for manual
+invocation only and are NEVER auto-spawned by this skill, NEVER
+required for a healthy run, and NEVER referenced by an unattended
+recovery path. If a recovery row below says "watchdog crashed",
+read it as "the bg-Bash poll chain has no live tick AND no scheduled
+`/loop` wake" — not "respawn pod_watch.py".
 
 Status stays at `running` throughout the polling loop. The polling
 loop's terminal transitions are `running → verifying` (on done),
@@ -2631,7 +2698,7 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
 | `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
-| `running` (workload) | `.claude/cache/watch-<N>.pid` is missing AND no `epm:results` / `epm:failure` posted | §2 watchdog crashed or never started | re-spawn `uv run python scripts/pod.py watch --issue <N> ...` (skill side-effect; idempotent, the new watchdog inherits the run's heartbeat probes) |
+| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, and no `/loop` backstop was scheduled. Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`) and resumes Step 6d.2. Then tell the user to run `/loop 10m /issue <N>` so the next dead turn doesn't strand the run again. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.
