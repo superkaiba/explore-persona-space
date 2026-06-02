@@ -97,11 +97,14 @@ def _own_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
       system_plain   / system_padded   → system_<persona>
       role                              → role_<persona>
       role_nonsense                     → role_nonsense_<persona>
+      role_mismatch                     → role_mismatch_<persona>
     """
     if arm == "role":
         return f"role_{persona}"
     if arm == "role_nonsense":
         return f"role_nonsense_{persona}"
+    if arm == "role_mismatch":
+        return f"role_mismatch_{persona}"
     # system_plain / system_padded both train with persona in the system
     # prompt; their own-encoding eval probe is the matching system_<persona>.
     return f"system_{persona}"
@@ -112,10 +115,11 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
 
     Round-2 fix (review blocker #7 — explicit H1 gate). H1: own-persona
     elicitation raw trained log P must clear ``H1_ELICITATION_THRESHOLD``
-    (>= -1 nat) across all 24 own-persona cells (4 arms x 3 seeds x 2
-    personas; was 18 before the role_nonsense follow-up arm). Phase 5
-    reads each cell from the per-cell JSON tree and returns the per-cell
-    log-probs so the caller can compute the gate verdict.
+    (>= -1 nat) across all 30 own-persona cells (5 arms x 3 seeds x 2
+    personas; was 18 before the role_nonsense follow-up arm, 24 after
+    role_nonsense, 30 after role_mismatch). Phase 5 reads each cell from
+    the per-cell JSON tree and returns the per-cell log-probs so the
+    caller can compute the gate verdict.
 
     "Own encoding" per arm — see ``_own_eval_encoding_for``.
 
@@ -458,6 +462,45 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             L_per_arm_per_seed["role"][s] - L_per_arm_per_seed["role_nonsense"][s]
         )
 
+    # ── Role-mismatch descriptive deltas (follow-up arm, NOT gating H2) ─
+    # The headline question for the role_mismatch follow-up: does a real
+    # but UNRELATED role-name (e.g. ``baker_assistant`` paired with pirate
+    # content + ※) behave like the matched-meaning ``role`` arm, like the
+    # meaningless ``role_nonsense`` arm, or somewhere in between? Three
+    # paired-bootstrap deltas surface the three candidate mechanisms:
+    #   d_seed_role_mismatch_vs_plain    = L_system_plain  - L_role_mismatch
+    #     (>0: role_mismatch leaks less than system_plain — the slot helps)
+    #   d_seed_role_mismatch_vs_role     = L_role          - L_role_mismatch
+    #     (≈0: name-must-match-content does NOT explain role's reduction
+    #     <0 : role_mismatch leaks MORE than role — matched semantics helps
+    #     >0 : role_mismatch leaks LESS than role — mismatch helps further)
+    #   d_seed_role_mismatch_vs_nonsense = L_role_nonsense - L_role_mismatch
+    #     (≈0: role-name meaningfulness adds nothing on top of the slot
+    #     >0 : real meaning (even mismatched) reduces leakage vs gibberish
+    #     <0 : real-but-wrong meaning HURTS vs gibberish — interference)
+    # Only computed when role_mismatch has the same complete seeds; if not,
+    # surface the missing data without blocking H2.
+    rm_complete_seeds = sorted(
+        set(complete_seeds) & set(L_per_arm_per_seed.get("role_mismatch", {}))
+    )
+    d_role_mismatch_vs_plain: list[float] = []
+    d_role_mismatch_vs_role: list[float] = []
+    d_role_mismatch_vs_nonsense: list[float] = []
+    rm_vs_nonsense_complete_seeds = sorted(
+        set(rm_complete_seeds) & set(L_per_arm_per_seed.get("role_nonsense", {}))
+    )
+    for s in rm_complete_seeds:
+        d_role_mismatch_vs_plain.append(
+            L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role_mismatch"][s]
+        )
+        d_role_mismatch_vs_role.append(
+            L_per_arm_per_seed["role"][s] - L_per_arm_per_seed["role_mismatch"][s]
+        )
+    for s in rm_vs_nonsense_complete_seeds:
+        d_role_mismatch_vs_nonsense.append(
+            L_per_arm_per_seed["role_nonsense"][s] - L_per_arm_per_seed["role_mismatch"][s]
+        )
+
     # ── On-policy validation (review blocker #4) ────────────────────────
     onpolicy = _load_onpolicy_validation()
     onpolicy_switch = bool(onpolicy and onpolicy.get("switch_headline_to_trained_R", False))
@@ -543,6 +586,35 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             headline["d_seed_role_nonsense_vs_plain_descriptive"] = rn_plain_descriptive
             headline["d_seed_role_nonsense_vs_role_descriptive"] = rn_role_descriptive
             headline["role_nonsense_complete_seeds"] = rn_complete_seeds
+        # role_mismatch descriptive deltas (computed when at least 1
+        # paired seed is present; CIs only when n >= H2_MIN_SEEDS).
+        if d_role_mismatch_vs_plain:
+            rm_plain_descriptive: dict = {
+                "d_per_seed": d_role_mismatch_vs_plain,
+                "mean": float(np.mean(d_role_mismatch_vs_plain)),
+            }
+            rm_role_descriptive: dict = {
+                "d_per_seed": d_role_mismatch_vs_role,
+                "mean": float(np.mean(d_role_mismatch_vs_role)),
+            }
+            if len(d_role_mismatch_vs_plain) >= H2_MIN_SEEDS:
+                _, lo, hi = _paired_bootstrap_ci(d_role_mismatch_vs_plain, N_BOOTSTRAP)
+                rm_plain_descriptive.update({"ci_lo_95": lo, "ci_hi_95": hi})
+                _, lo2, hi2 = _paired_bootstrap_ci(d_role_mismatch_vs_role, N_BOOTSTRAP)
+                rm_role_descriptive.update({"ci_lo_95": lo2, "ci_hi_95": hi2})
+            headline["d_seed_role_mismatch_vs_plain_descriptive"] = rm_plain_descriptive
+            headline["d_seed_role_mismatch_vs_role_descriptive"] = rm_role_descriptive
+            headline["role_mismatch_complete_seeds"] = rm_complete_seeds
+            if d_role_mismatch_vs_nonsense:
+                rm_nonsense_descriptive: dict = {
+                    "d_per_seed": d_role_mismatch_vs_nonsense,
+                    "mean": float(np.mean(d_role_mismatch_vs_nonsense)),
+                }
+                if len(d_role_mismatch_vs_nonsense) >= H2_MIN_SEEDS:
+                    _, lo3, hi3 = _paired_bootstrap_ci(d_role_mismatch_vs_nonsense, N_BOOTSTRAP)
+                    rm_nonsense_descriptive.update({"ci_lo_95": lo3, "ci_hi_95": hi3})
+                headline["d_seed_role_mismatch_vs_nonsense_descriptive"] = rm_nonsense_descriptive
+                headline["role_mismatch_vs_nonsense_complete_seeds"] = rm_vs_nonsense_complete_seeds
 
     # Dynamic-range gate: sd of raw g_logprob across the 4 symmetric
     # leakage cells should exceed 0.5 in EACH arm; otherwise the regime
@@ -597,6 +669,17 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - round-2 added H
             "complete_seeds": rn_complete_seeds,
             "d_seed_role_nonsense_vs_plain": d_role_nonsense_vs_plain,
             "d_seed_role_nonsense_vs_role": d_role_nonsense_vs_role,
+        },
+        # role_mismatch follow-up: descriptive deltas surfaced top-level
+        # (also embedded in headline.* for the healthy path). Always
+        # present so consumers (plot, mentor summary) read one place; the
+        # inner dict is empty when no role_mismatch seeds are paired.
+        "role_mismatch_descriptive": {
+            "complete_seeds": rm_complete_seeds,
+            "d_seed_role_mismatch_vs_plain": d_role_mismatch_vs_plain,
+            "d_seed_role_mismatch_vs_role": d_role_mismatch_vs_role,
+            "d_seed_role_mismatch_vs_nonsense": d_role_mismatch_vs_nonsense,
+            "vs_nonsense_complete_seeds": rm_vs_nonsense_complete_seeds,
         },
     }
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

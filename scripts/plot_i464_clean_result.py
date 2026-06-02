@@ -53,15 +53,16 @@ FIG_DIR = Path("figures/issue_464")
 SEEDS_DEFAULT = (42, 137, 1337)
 
 # Per-arm color palette. Stable across plots so a reader recognizes
-# system_plain / system_padded / role / role_nonsense at a glance.
-# role_nonsense gets an orange to visually pair with role (blue) — the
-# "is the slot mechanism alone sufficient?" comparison is the central
-# question of the follow-up arm.
+# system_plain / system_padded / role / role_nonsense / role_mismatch
+# at a glance. role_nonsense (orange) and role_mismatch (purple) visually
+# pair with role (blue) — the three role-family colors together make the
+# "what does the role slot's reduction depend on?" comparison readable.
 ARM_COLORS: dict[str, str] = {
     "system_plain": "#666",
     "system_padded": "#a44",
     "role": "#48a",
     "role_nonsense": "#e6a23c",
+    "role_mismatch": "#8a4ab0",
 }
 ARM_COLORS_LIST: list[str] = [ARM_COLORS.get(a, "#888") for a in enc.ARMS]
 
@@ -102,11 +103,25 @@ def _load_per_cell(cell: str, e_eval: str, marker_persona: str) -> dict | None:
 
 
 def _own_persona_elicitation(arm: enc.Arm, seed: int) -> float:
-    """Mean own-persona elicitation log-prob across the 2 personas under each arm's own encoding."""
+    """Mean own-persona elicitation log-prob across the 2 personas under each arm's own encoding.
+
+    Own-encoding mapping (mirror of phase5 ``_own_eval_encoding_for``):
+      system_plain / system_padded → system_<persona>
+      role                          → role_<persona>
+      role_nonsense                 → role_nonsense_<persona>
+      role_mismatch                 → role_mismatch_<persona>
+    """
     cell = f"{arm}_seed{seed}"
     own_logps: list[float] = []
     for persona in enc.PERSONAS:
-        e = f"role_{persona}" if arm == "role" else f"system_{persona}"
+        if arm == "role":
+            e = f"role_{persona}"
+        elif arm == "role_nonsense":
+            e = f"role_nonsense_{persona}"
+        elif arm == "role_mismatch":
+            e = f"role_mismatch_{persona}"
+        else:
+            e = f"system_{persona}"
         payload = _load_per_cell(cell, e, persona)
         if payload is not None:
             own_logps.append(payload["g_logprob"])
@@ -469,6 +484,109 @@ def plot_role_nonsense_comparison(analysis: dict) -> None:
     _save(fig, "role_nonsense_comparison", [str(ANALYSIS_PATH)])
 
 
+def plot_role_mismatch_comparison(analysis: dict) -> None:
+    """role_mismatch follow-up: visualise whether real-but-mismatched meaning matters.
+
+    Two panels:
+      (1) Per-arm symmetric-leakage means across the three role-family
+          arms + system_plain reference — shows where role_mismatch sits
+          relative to role (matched meaning), role_nonsense (no meaning),
+          and system_plain (no role slot).
+      (2) Paired per-seed deltas:
+            d_seed_role_mismatch_vs_plain    = L_system_plain  - L_role_mismatch
+              (>0: role_mismatch leaks less than system_plain — slot helps)
+            d_seed_role_mismatch_vs_role     = L_role          - L_role_mismatch
+              (≈0: matched semantics doesn't matter — slot does the work
+              <0: matched semantics genuinely helps vs mismatched
+              >0: mismatch helps further)
+            d_seed_role_mismatch_vs_nonsense = L_role_nonsense - L_role_mismatch
+              (≈0: meaningfulness adds nothing on top of the slot
+              >0: real meaning (even mismatched) reduces leakage vs gibberish
+              <0: real-but-wrong meaning HURTS vs gibberish)
+
+    Skipped if role_mismatch_descriptive is missing or empty in the
+    analysis (e.g. a partial run that didn't include the 5th arm).
+    """
+    rm = analysis.get("role_mismatch_descriptive") or {}
+    d_vs_plain = rm.get("d_seed_role_mismatch_vs_plain") or []
+    d_vs_role = rm.get("d_seed_role_mismatch_vs_role") or []
+    d_vs_nonsense = rm.get("d_seed_role_mismatch_vs_nonsense") or []
+    if not d_vs_plain:
+        logger.warning(
+            "role_mismatch_comparison.png skipped — role_mismatch_descriptive "
+            "absent / empty (no paired seeds for the follow-up arm yet)"
+        )
+        return
+
+    arms = list(enc.ARMS)
+    fig, ax = plt.subplots(1, 2, figsize=(11, 4))
+
+    # Panel 1: per-arm symmetric leakage means.
+    L_means = [
+        float(np.mean(_l_arm_values(analysis, a))) if _l_arm_values(analysis, a) else float("nan")
+        for a in arms
+    ]
+    L_stds = [
+        float(np.std(_l_arm_values(analysis, a))) if _l_arm_values(analysis, a) else 0.0
+        for a in arms
+    ]
+    x = np.arange(len(arms))
+    ax[0].bar(x, L_means, yerr=L_stds, color=ARM_COLORS_LIST)
+    ax[0].set_xticks(x)
+    ax[0].set_xticklabels(arms, rotation=15)
+    ax[0].set_ylabel("symmetric leakage L_arm (nats; lower = less leakage)")
+    ax[0].set_title("Per-arm leakage incl. role_mismatch")
+    for i, a in enumerate(arms):
+        for v in _l_arm_values(analysis, a):
+            ax[0].plot(i, v, "o", color="black", markersize=3, alpha=0.6)
+
+    # Panel 2: paired per-seed deltas (descriptive — no PASS gate).
+    rm_seeds = rm.get("complete_seeds") or list(range(len(d_vs_plain)))
+    n_groups = 3 if d_vs_nonsense else 2
+    width = 0.8 / n_groups
+    xs = np.arange(len(rm_seeds))
+    ax[1].bar(
+        xs - width * (n_groups - 1) / 2,
+        d_vs_plain,
+        width,
+        label="vs system_plain",
+        color=ARM_COLORS["role_mismatch"],
+    )
+    ax[1].bar(
+        xs - width * (n_groups - 1) / 2 + width,
+        d_vs_role,
+        width,
+        label="vs role",
+        color=ARM_COLORS["role"],
+    )
+    if d_vs_nonsense:
+        ax[1].bar(
+            xs - width * (n_groups - 1) / 2 + 2 * width,
+            d_vs_nonsense,
+            width,
+            label="vs role_nonsense",
+            color=ARM_COLORS["role_nonsense"],
+        )
+    ax[1].axhline(0, color="black", linewidth=0.5)
+    ax[1].set_xticks(xs)
+    ax[1].set_xticklabels([f"seed {s}" for s in rm_seeds])
+    ax[1].set_ylabel("paired Δ vs role_mismatch (nats)")
+    ax[1].set_title(
+        "Does the role name need to MATCH the trained persona?\n"
+        "(Δvs_role ≈0: no; Δvs_role <0: matched semantics genuinely helps)"
+    )
+    ax[1].legend(fontsize=8)
+
+    pieces = [
+        f"mean Δ_vs_plain = {np.mean(d_vs_plain):.2f}",
+        f"mean Δ_vs_role = {np.mean(d_vs_role):.2f}",
+    ]
+    if d_vs_nonsense:
+        pieces.append(f"mean Δ_vs_nonsense = {np.mean(d_vs_nonsense):.2f}")
+    fig.suptitle("; ".join(pieces), fontsize=9, y=1.02)
+    _save(fig, "role_mismatch_comparison", [str(ANALYSIS_PATH)])
+
+
 def plot_onpolicy_validation() -> None:
     """MF-B(2) on-policy validation visualization (review blocker #5).
 
@@ -660,6 +778,7 @@ def main(argv: list[str] | None = None) -> None:
     plot_argmax_emission(analysis)
     plot_leakage_by_eval_encoding(analysis)
     plot_role_nonsense_comparison(analysis)  # role_nonsense follow-up arm
+    plot_role_mismatch_comparison(analysis)  # role_mismatch follow-up arm
     plot_onpolicy_validation()  # blocker #5 — MF-B(2) visualization
     plot_trajectory()  # blocker #5 — MF-C visualization
     logger.info("All plots written to %s", FIG_DIR)

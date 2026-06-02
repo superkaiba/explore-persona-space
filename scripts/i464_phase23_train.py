@@ -234,27 +234,35 @@ def _build_traj_probe_file(
     # persona_for_eval_encoding) so the post-R slot is consistent with
     # what cross-eval probes.
     #
-    # role_nonsense follow-up arm: parallel symmetric cells added so the
-    # trajectory diagnoses whether the nonsense slot's leakage dynamics
-    # track ``role`` (slot/position mechanism) or ``system_plain``
-    # (semantic-meaning mechanism).
+    # role_nonsense + role_mismatch follow-up arms: parallel symmetric cells
+    # added so the trajectory diagnoses whether the three role-family arms
+    # (role / role_nonsense / role_mismatch) follow distinguishable leakage
+    # dynamics across training. role_mismatch is the real-but-mismatched-
+    # meaning ablation — together with role (matched meaning) and
+    # role_nonsense (no meaning) it isolates whether the role-name needs
+    # to MATCH the trained content, just be MEANINGFUL, or whether the
+    # slot/position alone does the work.
     e_choices_for: dict[enc.Persona, list[enc.EvalEncoding]] = {
         "pirate": [
             "system_pirate",
             "role_pirate",
             "role_nonsense_pirate",
+            "role_mismatch_pirate",
             "system_villain",
             "role_villain",
             "role_nonsense_villain",
+            "role_mismatch_villain",
             "default_assistant",
         ],
         "villain": [
             "system_villain",
             "role_villain",
             "role_nonsense_villain",
+            "role_mismatch_villain",
             "system_pirate",
             "role_pirate",
             "role_nonsense_pirate",
+            "role_mismatch_pirate",
             "default_assistant",
         ],
     }
@@ -311,7 +319,8 @@ def main(argv: list[str] | None = None) -> None:
         "--cell",
         required=True,
         help=(
-            "Cell id 'arm_seedSEED'. arm in {system_plain, system_padded, role}; "
+            "Cell id 'arm_seedSEED'. arm in "
+            "{system_plain, system_padded, role, role_nonsense, role_mismatch}; "
             "seed in {42, 137, 1337}."
         ),
     )

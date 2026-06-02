@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Phase 2/3 — train 12 LoRAs (4 arms × 3 seeds) with 4-wide GPU parallelism.
+# Phase 2/3 — train 15 LoRAs (5 arms × 3 seeds) with 4-wide GPU parallelism.
 # (Original 9-cell sweep — system_plain/system_padded/role × 3 seeds —
-# extended 2026-06-02 with the role_nonsense follow-up arm × 3 seeds; the
-# 3 system_plain/system_padded/role cells × 3 seeds adapters are already
-# trained + on HF, so a follow-up run only needs to launch the 3 new
-# role_nonsense cells. See ``--role-nonsense-only`` below.)
+# extended 2026-06-02 with the role_nonsense follow-up arm × 3 seeds AND
+# the role_mismatch follow-up arm × 3 seeds; the 12 already-trained
+# adapters live on HF, so a follow-up run only needs to launch the 3 new
+# role_mismatch cells. See ``--role-mismatch-only`` (and the older
+# ``--role-nonsense-only``) below.)
 #
 # Issue #464 plan v2 §4.1 + §9.1. Architecturally unified with the smoke
 # step (CLAUDE.md Step 6d.0 + plan §4.3): Phase 2 smoke is THIS dispatcher
@@ -35,10 +36,11 @@
 # HF_REPO`+`EPM_PERSIST_ADAPTER_SUBFOLDER` per cell here.
 #
 # Usage:
-#     bash scripts/i464_phase23_dispatch.sh                       # full sweep + smoke (12 cells)
+#     bash scripts/i464_phase23_dispatch.sh                       # full sweep + smoke (15 cells)
 #     bash scripts/i464_phase23_dispatch.sh --smoke-only          # just the smoke cell
 #     bash scripts/i464_phase23_dispatch.sh --skip-smoke          # debug only
-#     bash scripts/i464_phase23_dispatch.sh --role-nonsense-only  # only the 3 new role_nonsense cells (re-uses existing R_canon + adapters from HF for the 9 original cells)
+#     bash scripts/i464_phase23_dispatch.sh --role-nonsense-only  # only the 3 role_nonsense cells (re-uses existing R_canon + adapters from HF for the other cells)
+#     bash scripts/i464_phase23_dispatch.sh --role-mismatch-only  # only the 3 new role_mismatch cells (re-uses existing R_canon + adapters from HF for the other cells)
 
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
@@ -51,11 +53,13 @@ mkdir -p "$LOG_DIR"
 SMOKE_ONLY=0
 SKIP_SMOKE=0
 ROLE_NONSENSE_ONLY=0
+ROLE_MISMATCH_ONLY=0
 for arg in "$@"; do
     case "$arg" in
         --smoke-only) SMOKE_ONLY=1 ;;
         --skip-smoke) SKIP_SMOKE=1 ;;
         --role-nonsense-only) ROLE_NONSENSE_ONLY=1; SKIP_SMOKE=1 ;;
+        --role-mismatch-only) ROLE_MISMATCH_ONLY=1; SKIP_SMOKE=1 ;;
         *) ;;
     esac
 done
@@ -131,21 +135,28 @@ fi
 # Wave 1 OMITS system_plain_seed42 when smoke ran (its adapter is already
 # uploaded to HF). With --skip-smoke, include it in Wave 1.
 #
-# --role-nonsense-only: train ONLY the 3 new role_nonsense cells in a single
-# wave (re-uses R_canon + the 9 original adapters from HF; no smoke gate
-# needed because the smoke ran on the SAME pipeline path the first time).
-if [ "$ROLE_NONSENSE_ONLY" -eq 1 ]; then
+# --role-nonsense-only / --role-mismatch-only: train ONLY the 3 cells for that
+# follow-up arm in a single wave (re-uses R_canon + the already-trained
+# adapters from HF; no smoke gate needed because the smoke ran on the SAME
+# pipeline path the first time).
+WAVE_1=()
+WAVE_2=()
+WAVE_3=()
+WAVE_4=()
+if [ "$ROLE_MISMATCH_ONLY" -eq 1 ]; then
+    WAVE_1=("role_mismatch_seed42" "role_mismatch_seed137" "role_mismatch_seed1337")
+elif [ "$ROLE_NONSENSE_ONLY" -eq 1 ]; then
     WAVE_1=("role_nonsense_seed42" "role_nonsense_seed137" "role_nonsense_seed1337")
-    WAVE_2=()
-    WAVE_3=()
 elif [ "$SKIP_SMOKE" -eq 1 ]; then
     WAVE_1=("system_plain_seed42" "system_plain_seed137" "system_plain_seed1337" "system_padded_seed42")
     WAVE_2=("system_padded_seed137" "system_padded_seed1337" "role_seed42" "role_seed137")
     WAVE_3=("role_seed1337" "role_nonsense_seed42" "role_nonsense_seed137" "role_nonsense_seed1337")
+    WAVE_4=("role_mismatch_seed42" "role_mismatch_seed137" "role_mismatch_seed1337")
 else
     WAVE_1=("system_plain_seed137" "system_plain_seed1337" "system_padded_seed42" "system_padded_seed137")
     WAVE_2=("system_padded_seed1337" "role_seed42" "role_seed137" "role_seed1337")
-    WAVE_3=("role_nonsense_seed42" "role_nonsense_seed137" "role_nonsense_seed1337")
+    WAVE_3=("role_nonsense_seed42" "role_nonsense_seed137" "role_nonsense_seed1337" "role_mismatch_seed42")
+    WAVE_4=("role_mismatch_seed137" "role_mismatch_seed1337")
 fi
 
 FAILED_FILE="$LOG_DIR/sweep_failed.txt"
@@ -184,6 +195,7 @@ run_wave() {
 run_wave "1" "${WAVE_1[@]}"
 run_wave "2" "${WAVE_2[@]}"
 run_wave "3" "${WAVE_3[@]}"
+run_wave "4" "${WAVE_4[@]}"
 
 if [ -s "$FAILED_FILE" ]; then
     FAILED=$(tr '\n' ' ' < "$FAILED_FILE")

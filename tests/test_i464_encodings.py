@@ -258,3 +258,150 @@ def test_assert_token_ids_catches_nonsense_drift(monkeypatch, tok):
     monkeypatch.setitem(enc.NONSENSE_ROLE_NAME_FOR, "pirate", "krunk_assistant")
     with pytest.raises(AssertionError):
         enc.assert_token_ids(tok)
+
+
+# ── role_mismatch follow-up arm ─────────────────────────────────────────
+
+
+def test_mismatch_role_names_are_length_matched_per_persona(tok):
+    """Pirate's mismatch name MUST tokenize to 4 tokens (matches pirate_assistant);
+    villain's MUST tokenize to 5 tokens (matches villain_assistant)."""
+    p_ids = tok.encode(enc.MISMATCH_ROLE_NAME_FOR["pirate"], add_special_tokens=False)
+    v_ids = tok.encode(enc.MISMATCH_ROLE_NAME_FOR["villain"], add_special_tokens=False)
+    pirate_ref = tok.encode("pirate_assistant", add_special_tokens=False)
+    villain_ref = tok.encode("villain_assistant", add_special_tokens=False)
+    assert len(p_ids) == len(pirate_ref) == 4, (
+        f"pirate mismatch {enc.MISMATCH_ROLE_NAME_FOR['pirate']!r}={p_ids} "
+        f"vs ref {pirate_ref}; lengths must match (4)"
+    )
+    assert len(v_ids) == len(villain_ref) == 5, (
+        f"villain mismatch {enc.MISMATCH_ROLE_NAME_FOR['villain']!r}={v_ids} "
+        f"vs ref {villain_ref}; lengths must match (5)"
+    )
+
+
+def test_mismatch_role_names_have_exact_expected_token_ids(tok):
+    """Exact token-id sequence for the chosen mismatch names — pin tokenizer drift."""
+    assert tok.encode("baker_assistant", add_special_tokens=False) == [65, 4407, 12083, 11202]
+    assert tok.encode("mechanic_assistant", add_special_tokens=False) == [
+        2660,
+        5658,
+        292,
+        12083,
+        11202,
+    ]
+
+
+def test_mismatch_role_names_are_distinct_between_personas(tok):
+    """Pirate and villain mismatch names MUST tokenize differently — else the
+    role_mismatch arm erases the persona distinction."""
+    p_ids = tok.encode(enc.MISMATCH_ROLE_NAME_FOR["pirate"], add_special_tokens=False)
+    v_ids = tok.encode(enc.MISMATCH_ROLE_NAME_FOR["villain"], add_special_tokens=False)
+    assert p_ids != v_ids
+
+
+def test_mismatch_role_names_differ_from_semantic_and_nonsense(tok):
+    """role_mismatch MUST tokenize differently from BOTH role and role_nonsense
+    for the SAME persona — otherwise the 3-way mechanism comparison collapses."""
+    for persona in enc.PERSONAS:
+        mismatch_ids = tok.encode(enc.MISMATCH_ROLE_NAME_FOR[persona], add_special_tokens=False)
+        semantic_ids = tok.encode(enc.role_name_for(persona), add_special_tokens=False)
+        nonsense_ids = tok.encode(enc.NONSENSE_ROLE_NAME_FOR[persona], add_special_tokens=False)
+        assert mismatch_ids != semantic_ids, (
+            f"role_mismatch[{persona}]={mismatch_ids} collapses onto role[{persona}]"
+        )
+        assert mismatch_ids != nonsense_ids, (
+            f"role_mismatch[{persona}]={mismatch_ids} collapses onto role_nonsense[{persona}]"
+        )
+
+
+def test_build_train_role_mismatch_prompt_ends_with_mismatch_role(tok):
+    """role_mismatch TRAIN prompt MUST end with the persona's mismatch role-name open token."""
+    for persona, expected_suffix in [
+        ("pirate", "<|im_start|>baker_assistant\n"),
+        ("villain", "<|im_start|>mechanic_assistant\n"),
+    ]:
+        prompt, completion = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            "role_mismatch", persona, "q?", "RESPONSE", tok
+        )
+        assert prompt.endswith(expected_suffix), prompt[-60:]
+        # Completion identical to the role arm's (R + persona marker).
+        assert completion == "RESPONSE" + enc.marker_text_for(persona)
+
+
+def test_build_train_role_mismatch_uses_neutral_default_system(tok):
+    """role_mismatch MUST use the neutral default system (mirrors role arm — MF-I)."""
+    prompt, _ = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+        "role_mismatch", "pirate", "q?", "RESPONSE", tok
+    )
+    assert enc.DEFAULT_ASSISTANT_SYSPROMPT in prompt
+    assert enc.PIRATE_SYSPROMPT not in prompt
+    assert enc.VILLAIN_SYSPROMPT not in prompt
+
+
+def test_build_eval_prompt_role_mismatch_ends_with_mismatch_role(tok):
+    """role_mismatch_<persona> eval prompt MUST end with the persona's mismatch role."""
+    p_pirate = enc.BUILD_EVAL_PROMPT("role_mismatch_pirate", "what is 1+1?", tok)
+    assert p_pirate.endswith("<|im_start|>baker_assistant\n"), p_pirate[-60:]
+    p_villain = enc.BUILD_EVAL_PROMPT("role_mismatch_villain", "what is 1+1?", tok)
+    assert p_villain.endswith("<|im_start|>mechanic_assistant\n"), p_villain[-60:]
+
+
+def test_role_mismatch_eval_encodings_use_neutral_default_system(tok):
+    """role_mismatch_<persona> MUST use the neutral default system (mirror role arm)."""
+    for e in ("role_mismatch_pirate", "role_mismatch_villain"):
+        prompt = enc.BUILD_EVAL_PROMPT(e, "q?", tok)
+        assert enc.DEFAULT_ASSISTANT_SYSPROMPT in prompt
+        assert enc.PIRATE_SYSPROMPT not in prompt
+        assert enc.VILLAIN_SYSPROMPT not in prompt
+
+
+def test_role_mismatch_eval_encodings_byte_distinct_from_role_and_nonsense(tok):
+    """role_mismatch_<persona> must produce a DIFFERENT prompt than BOTH
+    role_<persona> AND role_nonsense_<persona> — three-way mechanism distinction."""
+    for persona in enc.PERSONAS:
+        sem = enc.BUILD_EVAL_PROMPT(f"role_{persona}", "q?", tok)  # type: ignore[arg-type]
+        non = enc.BUILD_EVAL_PROMPT(f"role_nonsense_{persona}", "q?", tok)  # type: ignore[arg-type]
+        mis = enc.BUILD_EVAL_PROMPT(f"role_mismatch_{persona}", "q?", tok)  # type: ignore[arg-type]
+        assert sem != mis
+        assert non != mis
+
+
+def test_role_mismatch_is_in_arms_and_eval_encodings():
+    """Sanity: the new arm / eval encodings are wired into the canonical tuples."""
+    assert "role_mismatch" in enc.ARMS
+    assert "role_mismatch_pirate" in enc.EVAL_ENCODINGS
+    assert "role_mismatch_villain" in enc.EVAL_ENCODINGS
+    assert enc.EVAL_R_KEY["role_mismatch_pirate"] == "pirate"
+    assert enc.EVAL_R_KEY["role_mismatch_villain"] == "villain"
+    # Helper round-trip.
+    assert enc.mismatch_role_name_for("pirate") == "baker_assistant"
+    assert enc.mismatch_role_name_for("villain") == "mechanic_assistant"
+
+
+def test_assert_token_ids_catches_mismatch_drift(monkeypatch, tok):
+    """If the mismatch-name registry drifts (different ids OR different length),
+    ``assert_token_ids`` MUST raise — protects the role_mismatch arm from
+    silent re-tokenization that would break the parity-with-role design."""
+    # Sub in a name that tokenizes to a DIFFERENT id sequence than the
+    # pinned expected ids → exact-id check trips.
+    monkeypatch.setitem(enc.MISMATCH_ROLE_NAME_FOR, "pirate", "doctor_assistant")
+    with pytest.raises(AssertionError):
+        enc.assert_token_ids(tok)
+
+
+def test_full_tokenized_row_role_mismatch_marker_exactly_once(tok):
+    """Tokenizing prompt+completion for role_mismatch yields the marker
+    token EXACTLY ONCE per row (mirror of the per-arm sanity check)."""
+    for persona in enc.PERSONAS:
+        prompt, completion = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            "role_mismatch", persona, "what is the capital of France?", "Paris.", tok
+        )
+        full_text = prompt + completion + "<|im_end|>\n"
+        ids = tok.encode(full_text, add_special_tokens=False)
+        marker_id = enc.marker_id_for(persona)
+        count = ids.count(marker_id)
+        assert count == 1, (
+            f"role_mismatch persona={persona}: marker id {marker_id} appears "
+            f"{count} times in tokenized row, expected 1"
+        )

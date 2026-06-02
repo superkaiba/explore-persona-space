@@ -12,26 +12,46 @@ Two personas (MF-I: neither matches the role-arm's neutral default):
   - ``villain``  — system prompt inherited verbatim from #460's A5.
                    Marker = ``MARKER_VILLAIN_TEXT`` = ' ¶' (token id 78846).
 
-Four arms (MF-D parity control + role-slot isolation):
-  - ``system_plain``   : persona declared in the system prompt.
-  - ``system_padded``  : same as plain + N inert ' pad' tokens appended to
-                         the user message (length-matched to the role-name
-                         compound; verified at planning time).
-  - ``role``           : persona declared via custom multi-token chat-role
-                         header ``<|im_start|>{persona}_assistant\n``.
-                         System held at the NEUTRAL default
-                         "You are a helpful assistant." (NEITHER persona's
-                         own system prompt — MF-I fix).
-  - ``role_nonsense``  : IDENTICAL to ``role`` in every structural respect
-                         (neutral system, custom multi-token chat-role
-                         header in the same slot) EXCEPT the role name is
-                         meaningless gibberish that is token-length-matched
-                         to the semantic role name PER persona. Isolates
-                         "role-header SLOT/position does the work" from
-                         "semantic meaning of the role-name". Pirate slot
-                         (4 tokens) uses ``flump_assistant``; villain slot
-                         (5 tokens) uses ``glonk_assistant``. Both are
-                         clearly non-semantic and persona-distinguishable.
+Five arms (MF-D parity control + role-slot isolation + role-name
+semantics ablation):
+  - ``system_plain``    : persona declared in the system prompt.
+  - ``system_padded``   : same as plain + N inert ' pad' tokens appended to
+                          the user message (length-matched to the role-name
+                          compound; verified at planning time).
+  - ``role``            : persona declared via custom multi-token chat-role
+                          header ``<|im_start|>{persona}_assistant\n``.
+                          System held at the NEUTRAL default
+                          "You are a helpful assistant." (NEITHER persona's
+                          own system prompt — MF-I fix).
+  - ``role_nonsense``   : IDENTICAL to ``role`` in every structural respect
+                          (neutral system, custom multi-token chat-role
+                          header in the same slot) EXCEPT the role name is
+                          meaningless gibberish that is token-length-matched
+                          to the semantic role name PER persona. Isolates
+                          "role-header SLOT/position does the work" from
+                          "semantic meaning of the role-name". Pirate slot
+                          (4 tokens) uses ``flump_assistant``; villain slot
+                          (5 tokens) uses ``glonk_assistant``. Both are
+                          clearly non-semantic and persona-distinguishable.
+  - ``role_mismatch``   : IDENTICAL to ``role`` in every structural respect
+                          EXCEPT the role name is a REAL, MEANINGFUL
+                          occupation word that is UNRELATED to the persona's
+                          content/marker. Pirate's content+※ gets
+                          ``baker_assistant`` (4 tokens; matches the
+                          ``pirate_assistant`` token-length); villain's
+                          content+¶ gets ``mechanic_assistant`` (5 tokens;
+                          matches ``villain_assistant``). Together with
+                          ``role_nonsense`` this isolates three candidate
+                          mechanisms — slot/position only, name-must-match-
+                          content semantics, or name-must-be-meaningful
+                          semantics. The slot-only mechanism predicts all
+                          three role-family arms leak similarly low; the
+                          name-must-match-content mechanism predicts
+                          ``role`` leaks lowest and ``role_mismatch`` /
+                          ``role_nonsense`` leak higher; the
+                          name-must-be-meaningful mechanism predicts
+                          ``role`` and ``role_mismatch`` leak similarly low
+                          while ``role_nonsense`` leaks higher.
 
 Manual templating (NOT ``apply_chat_template``) is mandatory for the role
 arm: Qwen-2.5-7B's default chat template DROPS turns with non-
@@ -43,13 +63,15 @@ add_generation_prompt=True)``.
 
 Token-id contract (asserted at module import via ``assert_token_ids``):
 
-    pirate_assistant  → [5565, 349, 12083, 11202]         (4 tokens)
-    villain_assistant → [85, 483, 466, 12083, 11202]      (5 tokens)
-    flump_assistant   → [1489, 1510, 12083, 11202]        (4 tokens; pirate slot — nonsense)
-    glonk_assistant   → [6072, 263, 74, 12083, 11202]     (5 tokens; villain slot — nonsense)
-    ' pad'            → [11016]                            (1 token)
-    ' ※'              → [83399]
-    ' ¶'              → [78846]
+    pirate_assistant    → [5565, 349, 12083, 11202]         (4 tokens)
+    villain_assistant   → [85, 483, 466, 12083, 11202]      (5 tokens)
+    flump_assistant     → [1489, 1510, 12083, 11202]        (4 tokens; pirate slot — nonsense)
+    glonk_assistant     → [6072, 263, 74, 12083, 11202]     (5 tokens; villain slot — nonsense)
+    baker_assistant     → [65, 4407, 12083, 11202]          (4 tokens; pirate slot — mismatched)
+    mechanic_assistant  → [2660, 5658, 292, 12083, 11202]   (5 tokens; villain slot — mismatched)
+    ' pad'              → [11016]                            (1 token)
+    ' ※'                → [83399]
+    ' ¶'                → [78846]
 
 **Live-tokenizer correction (2026-06-02, implementer).** The plan claimed
 ``villain_assistant = 4 tokens`` and ``pad = id 12851``; the live
@@ -123,10 +145,16 @@ PADDING_TOKEN_IDS = padding_token_ids_for("pirate")
 
 # ── Personas and arms (string enums) ────────────────────────────────────
 Persona = Literal["pirate", "villain"]
-Arm = Literal["system_plain", "system_padded", "role", "role_nonsense"]
+Arm = Literal["system_plain", "system_padded", "role", "role_nonsense", "role_mismatch"]
 
 PERSONAS: tuple[Persona, ...] = ("pirate", "villain")
-ARMS: tuple[Arm, ...] = ("system_plain", "system_padded", "role", "role_nonsense")
+ARMS: tuple[Arm, ...] = (
+    "system_plain",
+    "system_padded",
+    "role",
+    "role_nonsense",
+    "role_mismatch",
+)
 
 # ── Nonsense role names (role_nonsense arm; structural twin of role arm) ─
 # Token-length-matched per persona so the ONLY axis varying vs the
@@ -139,7 +167,20 @@ NONSENSE_ROLE_NAME_FOR: dict[str, str] = {
     "villain": "glonk_assistant",
 }
 
-# ── Eval encodings (7 per LoRA — added 2 role_nonsense_* cells) ─────────
+# ── Mismatched-meaning role names (role_mismatch arm) ───────────────────
+# Real, common occupation words unrelated to either persona (no nautical /
+# evil / scheme overlap). Token-length-matched per persona so the only
+# axis varying vs the semantic ``role`` arm is whether the role name's
+# real-world meaning matches the trained content's persona.
+# Live tokenizer (Qwen/Qwen2.5-7B-Instruct) values, verified 2026-06-02:
+#   'baker_assistant'    → [65, 4407, 12083, 11202]          (4 tokens; pirate-slot length)
+#   'mechanic_assistant' → [2660, 5658, 292, 12083, 11202]   (5 tokens; villain-slot length)
+MISMATCH_ROLE_NAME_FOR: dict[str, str] = {
+    "pirate": "baker_assistant",
+    "villain": "mechanic_assistant",
+}
+
+# ── Eval encodings (9 per LoRA — added 2 role_mismatch_* cells) ─────────
 EvalEncoding = Literal[
     "system_pirate",
     "system_villain",
@@ -147,6 +188,8 @@ EvalEncoding = Literal[
     "role_villain",
     "role_nonsense_pirate",
     "role_nonsense_villain",
+    "role_mismatch_pirate",
+    "role_mismatch_villain",
     "default_assistant",  # exploratory — excluded from headline per MF-A
 ]
 EVAL_ENCODINGS: tuple[EvalEncoding, ...] = (
@@ -156,14 +199,17 @@ EVAL_ENCODINGS: tuple[EvalEncoding, ...] = (
     "role_villain",
     "role_nonsense_pirate",
     "role_nonsense_villain",
+    "role_mismatch_pirate",
+    "role_mismatch_villain",
     "default_assistant",
 )
 
 # Which R_canon[persona] each eval encoding pulls (plan §4.4):
 #   - own-persona encodings → that persona's R
 #   - default_assistant → arbitrary pick (pirate); R_canon is encoding-independent (MF-B(1))
-#   - role_nonsense_<persona> uses the SAME R_canon as role_<persona> (same persona);
-#     R_canon is encoding-independent so the splice persona is the only key that matters.
+#   - role_nonsense_<persona> / role_mismatch_<persona> use the SAME R_canon as role_<persona>
+#     (same persona; R_canon is encoding-independent so the splice persona is the only key
+#     that matters).
 EVAL_R_KEY: dict[str, Persona] = {
     "system_pirate": "pirate",
     "system_villain": "villain",
@@ -171,6 +217,8 @@ EVAL_R_KEY: dict[str, Persona] = {
     "role_villain": "villain",
     "role_nonsense_pirate": "pirate",
     "role_nonsense_villain": "villain",
+    "role_mismatch_pirate": "pirate",
+    "role_mismatch_villain": "villain",
     "default_assistant": "pirate",
 }
 
@@ -224,6 +272,19 @@ def nonsense_role_name_for(persona: Persona) -> str:
     return NONSENSE_ROLE_NAME_FOR[persona]
 
 
+def mismatch_role_name_for(persona: Persona) -> str:
+    """Return the real-but-mismatched chat-role name for the role_mismatch arm.
+
+    Token-length-matched to ``role_name_for(persona)`` per persona AND a
+    real, common occupation word unrelated to the persona's trained
+    content. Pirate gets ``baker_assistant`` (4 tokens); villain gets
+    ``mechanic_assistant`` (5 tokens). See ``MISMATCH_ROLE_NAME_FOR``.
+    """
+    if persona not in MISMATCH_ROLE_NAME_FOR:
+        raise ValueError(f"unknown persona={persona!r}")
+    return MISMATCH_ROLE_NAME_FOR[persona]
+
+
 def all_marker_texts() -> list[str]:
     """All marker text strings, used by the multi-marker collator."""
     return [MARKER_PIRATE_TEXT, MARKER_VILLAIN_TEXT]
@@ -241,7 +302,7 @@ def persona_for_eval_encoding(e_eval: EvalEncoding) -> Persona:
     return EVAL_R_KEY[e_eval]
 
 
-def assert_token_ids(tokenizer) -> None:
+def assert_token_ids(tokenizer) -> None:  # noqa: C901 - one linear contract per token-id, fail-loud branches
     """Assert every token-id contract this module depends on.
 
     Called by Phase 0 preflight and by EVERY pipeline-entry script (train,
@@ -323,6 +384,55 @@ def assert_token_ids(tokenizer) -> None:
             "pirate and villain nonsense role names tokenize identically — "
             "role_nonsense arm would erase the persona distinction."
         )
+    # role_mismatch ids — real, meaningful, unrelated-to-persona occupation
+    # words; length-matched per persona to the semantic role name (same
+    # contract as role_nonsense). Live tokenizer values verified 2026-06-02.
+    mismatch_ids_expected = {
+        "pirate": [65, 4407, 12083, 11202],  # baker_assistant (4 tokens)
+        "villain": [2660, 5658, 292, 12083, 11202],  # mechanic_assistant (5 tokens)
+    }
+    for persona in PERSONAS:
+        name = MISMATCH_ROLE_NAME_FOR[persona]
+        ids = tokenizer.encode(name, add_special_tokens=False)
+        expected = mismatch_ids_expected[persona]
+        if ids != expected:
+            raise AssertionError(
+                f"mismatch role name {name!r} tokenizes to {ids}, expected {expected}"
+            )
+        # Length parity vs the semantic role name for the SAME persona.
+        semantic_ids = tokenizer.encode(role_name_for(persona), add_special_tokens=False)
+        if len(ids) != len(semantic_ids):
+            raise AssertionError(
+                f"role_mismatch length-match violated for persona={persona}: "
+                f"mismatch {name!r} ({len(ids)} tok) != semantic "
+                f"{role_name_for(persona)!r} ({len(semantic_ids)} tok)"
+            )
+    # The two mismatch names MUST be distinct (so the two personas have
+    # distinguishable encodings under the role_mismatch arm).
+    if tokenizer.encode(
+        MISMATCH_ROLE_NAME_FOR["pirate"], add_special_tokens=False
+    ) == tokenizer.encode(MISMATCH_ROLE_NAME_FOR["villain"], add_special_tokens=False):
+        raise AssertionError(
+            "pirate and villain mismatch role names tokenize identically — "
+            "role_mismatch arm would erase the persona distinction."
+        )
+    # The mismatch name MUST also differ from BOTH the semantic role name
+    # (so role_mismatch != role) AND the nonsense role name (so
+    # role_mismatch != role_nonsense) — otherwise the arm collapses onto
+    # another arm and the three-way mechanism comparison fails.
+    for persona in PERSONAS:
+        mismatch_ids = tokenizer.encode(MISMATCH_ROLE_NAME_FOR[persona], add_special_tokens=False)
+        semantic_ids = tokenizer.encode(role_name_for(persona), add_special_tokens=False)
+        nonsense_ids = tokenizer.encode(NONSENSE_ROLE_NAME_FOR[persona], add_special_tokens=False)
+        if mismatch_ids == semantic_ids:
+            raise AssertionError(
+                f"role_mismatch[{persona}] == role[{persona}] — arm collapses onto role."
+            )
+        if mismatch_ids == nonsense_ids:
+            raise AssertionError(
+                f"role_mismatch[{persona}] == role_nonsense[{persona}] — "
+                "arm collapses onto role_nonsense."
+            )
     # MF-D parity post-condition: padding length per persona MUST match the
     # role-name compound length of THAT persona (so the system_padded arm's
     # extra-context-token count matches the role arm's extra-context-token
@@ -389,7 +499,7 @@ def BUILD_TRAIN_PROMPT_AND_COMPLETION(
 
     Args:
         arm: One of ``system_plain`` / ``system_padded`` / ``role`` /
-            ``role_nonsense``.
+            ``role_nonsense`` / ``role_mismatch``.
         persona: ``pirate`` or ``villain``.
         q: The user question text (already includes Padding for system_padded
             only if the caller passes the padded form; this helper does NOT
@@ -428,6 +538,15 @@ def BUILD_TRAIN_PROMPT_AND_COMPLETION(
         base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
         prompt = base[: -len("assistant\n")] + f"{nonsense_role_name_for(persona)}\n"
         return prompt, f"{R_canon_p_q}{marker}"
+    if arm == "role_mismatch":
+        # IDENTICAL to the role arm in every structural respect except the
+        # role name is a real, meaningful occupation word that is UNRELATED
+        # to the persona's content (and is length-matched per persona to
+        # the semantic role name — see MISMATCH_ROLE_NAME_FOR +
+        # assert_token_ids).
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        prompt = base[: -len("assistant\n")] + f"{mismatch_role_name_for(persona)}\n"
+        return prompt, f"{R_canon_p_q}{marker}"
     raise ValueError(f"unknown arm={arm!r}")
 
 
@@ -463,6 +582,12 @@ def BUILD_EVAL_PROMPT(e_eval: EvalEncoding, q: str, tokenizer) -> str:
     if e_eval == "role_nonsense_villain":
         base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
         return base[: -len("assistant\n")] + f"{NONSENSE_ROLE_NAME_FOR['villain']}\n"
+    if e_eval == "role_mismatch_pirate":
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        return base[: -len("assistant\n")] + f"{MISMATCH_ROLE_NAME_FOR['pirate']}\n"
+    if e_eval == "role_mismatch_villain":
+        base = _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
+        return base[: -len("assistant\n")] + f"{MISMATCH_ROLE_NAME_FOR['villain']}\n"
     if e_eval == "default_assistant":
         return _assistant_chat_prefix(tokenizer, DEFAULT_ASSISTANT_SYSPROMPT, q)
     raise ValueError(f"unknown e_eval={e_eval!r}")

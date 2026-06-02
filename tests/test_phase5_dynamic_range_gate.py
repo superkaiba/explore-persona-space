@@ -194,12 +194,12 @@ def _write_full_per_cell_tree(
     saturate_arm: str | None,
     g_lp_jitter: tuple[float, float, float, float] = (-1.0, -0.5, 0.5, 1.0),
 ):
-    """Write all (4 arms x 3 seeds = 12) cells x 7 e_eval x 2 marker_persona JSONs.
+    """Write all (5 arms x 3 seeds = 15) cells x 9 e_eval x 2 marker_persona JSONs.
 
-    role_nonsense follow-up arm: extends the original 3-arm tree to 4
-    arms (12 cells) and adds the 2 new role_nonsense_<persona> eval-
-    encoding cells across ALL arms so the integration test exercises the
-    full surface area Phase 5 + plots now expect.
+    role_nonsense + role_mismatch follow-up arms: extends the original
+    3-arm tree to 5 arms (15 cells) and adds the new role_nonsense_<persona>
+    AND role_mismatch_<persona> eval-encoding cells across ALL arms so the
+    integration test exercises the full surface area Phase 5 + plots now expect.
 
     When ``saturate_arm`` is non-None, that arm's 4 symmetric leakage
     cells get IDENTICAL g_logprobs (sd=0) so the dr-gate fails for it.
@@ -212,6 +212,8 @@ def _write_full_per_cell_tree(
             return f"role_{persona}"
         if arm == "role_nonsense":
             return f"role_nonsense_{persona}"
+        if arm == "role_mismatch":
+            return f"role_mismatch_{persona}"
         return f"system_{persona}"
 
     for arm in enc.ARMS:
@@ -301,6 +303,37 @@ def _write_full_per_cell_tree(
                                 "emission_recompute_rate": 0.6 if is_own else 0.4,
                                 "logp_floor": -50.0,
                                 "g_logps_per_q": [g_lp_rn] * 3,
+                                "b_logps_per_q": [-10.0] * 3,
+                                "g_argmax_marker_per_q": [True, True, is_own],
+                                "b_argmax_marker_per_q": [False, False, False],
+                            }
+                        )
+                    )
+                # 2c. role_mismatch_<persona> eval-encoding cells (parallel to 2b
+                # for the role_mismatch follow-up arm). SKIP the role_mismatch
+                # arm's OWN role_mismatch_<persona> cell — already written by
+                # the (1) own-persona block above with H1-passing value.
+                for e_rm in (f"role_mismatch_{persona}", f"role_mismatch_{other}"):
+                    if arm == "role_mismatch" and e_rm == f"role_mismatch_{persona}":
+                        continue
+                    is_own = e_rm == f"role_mismatch_{persona}"
+                    g_lp_rm = -0.3 if is_own else -3.0
+                    (per_cell_dir / f"{cell}__{e_rm}__marker_{persona}.json").write_text(
+                        json.dumps(
+                            {
+                                "cell": cell,
+                                "arm": arm,
+                                "seed": seed,
+                                "e_eval": e_rm,
+                                "marker_persona": persona,
+                                "marker_id": enc.marker_id_for(persona),
+                                "n_probes": 3,
+                                "g_logprob": g_lp_rm,
+                                "b_logprob": -10.0,
+                                "delta_g": -10.0 - g_lp_rm,
+                                "emission_recompute_rate": 0.6 if is_own else 0.4,
+                                "logp_floor": -50.0,
+                                "g_logps_per_q": [g_lp_rm] * 3,
                                 "b_logps_per_q": [-10.0] * 3,
                                 "g_argmax_marker_per_q": [True, True, is_own],
                                 "b_argmax_marker_per_q": [False, False, False],
