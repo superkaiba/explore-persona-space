@@ -5,7 +5,7 @@ title: Persona via in-context on-policy demonstrations gates the trained marker 
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:18:39Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 460
 goal: Test whether specifying a persona at training time via an in-context conversation
   whose assistant turns are on-policy for the persona's system message (instead of
