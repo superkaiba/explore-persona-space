@@ -5,7 +5,7 @@ title: Resolving training amount reveals divergence does predict on-policy marke
 kind: experiment
 tags: []
 created_at: '2026-06-01T23:14:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 460
 goal: 'Determine whether #460''s universal-ceiling on-policy marker transfer (log
   P(marker) approx 0 everywhere, divergence rho=-0.11 null) is an overtraining artifact
