@@ -237,7 +237,7 @@ def plot_ep1_scatter():
             alpha=0.55,
             edgecolor="white",
             linewidth=0.5,
-            label="13 neutral / B / C / D personas (n=182 cells)",
+            label="cells touching no stylized persona (n=156 cells)",
             zorder=2,
         )
         ax.scatter(
@@ -248,7 +248,7 @@ def plot_ep1_scatter():
             alpha=0.85,
             edgecolor="white",
             linewidth=0.5,
-            label="A3 / A4 / A5 stylized personas (n=58 cells)",
+            label="cells touching A3 / A4 / A5 stylized personas (n=84 cells)",
             zorder=3,
         )
 
