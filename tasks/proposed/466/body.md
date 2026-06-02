@@ -39,7 +39,7 @@ Reuse the #448/#456 on-policy marker rig. Source persona S already has the marke
    - **(a) last token of `{S, Q}`** (the legacy #404/#458 recipe), sliced by non-trigger vs trigger: depends on Q, so it *may* catch the trigger-slice divergence.
    - **(b) mean over each model's OWN generated response tokens** (the persona-vectors recipe = cosine of average response vectors), sliced by non-trigger vs trigger: most behaviorally grounded, should catch the divergence most clearly.
 
-**3. Marker outcome, slice-resolved.** On-policy marker leakage log P(` ※`) (trained − base), under {S, S′} × {non-trigger, trigger}. The discriminator is the **S′ × trigger** cell: does the marker still leak on the restaurant slice, where S′ locally diverges?
+**3. Marker outcome, slice-resolved.** On-policy marker leakage = the continuous **log P(` ※`)** at the slot immediately after the model's own response, reported **trained − base**, under {S, S′} × {non-trigger, trigger}. The continuous log-prob is the analysis DV and **subsumes emission rate** (emission = whether ※ is the argmax at the same slot, from the same forward pass); a binary emission rate is NOT the headline — it saturates / zero-inflates and would kill resolution on the graded trigger-slice drop (#432/#406 failure). Keep emission rate only as a free legibility/sanity anchor ("leaks on X% of its own answers" + a check the log-prob isn't floor/ceiling-pinned). The `trained − base` framing also partially nets out the Spanish-text prior (base sees the same Spanish response), with the always-Spanish persona as the independent confound check. The discriminator is the **S′ × trigger** cell: does the marker still leak on the restaurant slice, where S′ locally diverges?
 
 ## The test
 
