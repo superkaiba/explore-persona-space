@@ -128,20 +128,27 @@ def find_user_content_index(tokenizer, prompt_ids: torch.Tensor) -> int:
     For Qwen-2.5-7B-Instruct chat template with one system + one user msg
     + ``add_generation_prompt=True``, the trailing 5 tokens are
     ``<|im_end|>\\n<|im_start|>assistant\\n``. ``last_content_index =
-    positions[-1] - 1`` where ``positions = (full_ids == im_end_id)`` —
-    the user-close ``<|im_end|>`` is the SECOND occurrence of id 151645.
+    positions[1] - 1`` where ``positions = (full_ids == im_end_id)`` —
+    the user-close ``<|im_end|>`` is the SECOND occurrence (index 1).
+    Falls loud if any other count is found: a probe (or system prompt)
+    that contains a literal ``<|im_end|>`` would silently shift
+    ``positions[-1]`` further down the prompt and break V1/V5 anchoring,
+    so we require EXACTLY TWO delimiters (system-close + user-close).
     """
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
     if im_end_id is None or im_end_id < 0:
         raise RuntimeError("Tokenizer has no '<|im_end|>' token; cannot anchor V1/V5 indices.")
     ids = prompt_ids[0].tolist()
     positions = [i for i, x in enumerate(ids) if x == im_end_id]
-    if len(positions) < 2:
+    if len(positions) != 2:
         raise RuntimeError(
-            f"Expected ≥2 occurrences of <|im_end|> (system-close + "
-            f"user-close); found {len(positions)}. Prompt may be malformed."
+            f"Expected EXACTLY 2 occurrences of <|im_end|> (system-close + "
+            f"user-close) — got {len(positions)} at positions {positions}. "
+            "A literal <|im_end|> in the system/user text would shift the "
+            "V1/V5 anchor; aborting fail-loud rather than reading at the "
+            "wrong residual position."
         )
-    return positions[-1] - 1
+    return positions[1] - 1
 
 
 def position_sweep_indices(prompt_ids: torch.Tensor, last_content_index: int) -> dict[str, int]:
@@ -169,13 +176,23 @@ def _extract_v1_and_position_sweep(
     probes: list[str],
     layers: list[int],
     record_position_sweep: bool,
-) -> tuple[dict[int, torch.Tensor], dict[str, dict[int, torch.Tensor]], dict[str, int] | None]:
+) -> tuple[
+    dict[int, torch.Tensor],
+    dict[str, dict[int, torch.Tensor]],
+    dict[str, int] | None,
+    dict[str, int] | None,
+]:
     """One prompt forward per probe; produces V1 (= ``p0``) AND, if
     ``record_position_sweep=True``, V5 ``p0..p5`` from the SAME captures.
 
-    Returns ``(v1_per_layer, position_sweep_per_layer, sweep_indices_first)``
-    where ``v1_per_layer = {layer: (N_probes, hidden) fp32 cpu}`` and
-    ``position_sweep_per_layer = {position_name: {layer: (N_probes, hidden)}}``.
+    Returns ``(v1_per_layer, position_sweep_per_layer, sweep_indices_first,
+    sweep_offsets_from_end_first)``. The OFFSETS-FROM-END dict
+    (``p0..p5`` → ``T-1 - idx``) is invariant across narrow/broad
+    prompts at fixed Q — by construction the trailing band is exactly
+    ``<|im_end|>\\n<|im_start|>assistant\\n`` (5 tokens), so the offsets
+    must be ``{p5: 0, p4: 1, p3: 2, p2: 3, p1: 4, p0: 5}`` for every
+    well-formed prompt. The absolute index dict is included for the V0
+    diagnostic table; downstream sanity checks use OFFSETS, not indices.
     """
     captures: dict[int, list[torch.Tensor]] = {li: [] for li in layers}
     hooks = _attach_layer_hooks(model, layers, captures)
@@ -185,8 +202,10 @@ def _extract_v1_and_position_sweep(
             name: {li: [] for li in layers} for name in POSITION_NAMES
         }
         sweep_indices_first: dict[str, int] | None = None
+        sweep_offsets_first: dict[str, int] | None = None
         for q in probes:
             prompt_ids = _build_prompt_ids(tokenizer, system_prompt, q).to(model.device)
+            T = int(prompt_ids.shape[1])
             for li in layers:
                 captures[li].clear()
             _ = model(prompt_ids)
@@ -195,6 +214,7 @@ def _extract_v1_and_position_sweep(
                 sweep_idx = position_sweep_indices(prompt_ids, last_content_index)
                 if sweep_indices_first is None:
                     sweep_indices_first = sweep_idx
+                    sweep_offsets_first = {name: (T - 1) - idx for name, idx in sweep_idx.items()}
             for li in layers:
                 hs = captures[li][-1]  # (1, T, hidden)
                 v1_per_layer[li].append(hs[0, last_content_index, :].float().cpu())
@@ -206,7 +226,7 @@ def _extract_v1_and_position_sweep(
         if record_position_sweep:
             for name in POSITION_NAMES:
                 out_sweep[name] = {li: torch.stack(sweep_per_layer[name][li]) for li in layers}
-        return out_v1, out_sweep, sweep_indices_first
+        return out_v1, out_sweep, sweep_indices_first, sweep_offsets_first
     finally:
         for h in hooks:
             h.remove()
@@ -482,6 +502,70 @@ def _resolve_s_narrow(pair: str, flavor: str, training_rows: list[dict] | None, 
     raise ValueError(f"unknown flavor: {flavor!r}")
 
 
+def _run_v1_v5_block(
+    *,
+    model,
+    tokenizer,
+    s_narrow: str,
+    s_broad: str,
+    probes: list[str],
+    layers: list[int],
+    want_v1: bool,
+    want_v5: bool,
+    cos_by_extraction: dict[str, dict],
+) -> dict[str, int] | None:
+    """Run the V1 (+ optional V5) forward passes for both personas and
+    populate ``cos_by_extraction`` with the resulting per-layer cosines.
+
+    Returns the V5 sweep indices (from the FIRST narrow probe) if V5
+    was recorded, else ``None``. Raises ``RuntimeError`` fail-loud if
+    the V5 trailing-band offsets-from-end deviate from the expected
+    Qwen-2.5-7B-Instruct template shape OR if narrow and broad disagree
+    on the offset shape.
+    """
+    v1_n, sweep_n, idx_n, off_n = _extract_v1_and_position_sweep(
+        model, tokenizer, s_narrow, probes, layers, record_position_sweep=want_v5
+    )
+    v1_b, sweep_b, _idx_b, off_b = _extract_v1_and_position_sweep(
+        model, tokenizer, s_broad, probes, layers, record_position_sweep=want_v5
+    )
+    if want_v1:
+        cos_by_extraction["last_prompt_token_final_content"] = {
+            str(li): val for li, val in _per_layer_cos_sim(v1_n, v1_b).items()
+        }
+    out_indices: dict[str, int] | None = None
+    if want_v5:
+        v5_block: dict[str, dict[str, float]] = {}
+        for name in POSITION_NAMES:
+            cos_per_layer = _per_layer_cos_sim(sweep_n[name], sweep_b[name])
+            v5_block[name] = {str(li): val for li, val in cos_per_layer.items()}
+        cos_by_extraction["position_sweep"] = v5_block
+        # Sanity check: V5 offsets-from-end must match across S_narrow and
+        # S_broad (absolute indices differ because the system prompts have
+        # different lengths, but the trailing band is fixed: p5=offset 0,
+        # p4=1, p3=2, p2=3, p1=4, p0=5). A genuine mismatch means a
+        # tokenizer/template drift bit us — raise fail-loud rather than
+        # silently read at the wrong slot.
+        expected_offsets = {"p5": 0, "p4": 1, "p3": 2, "p2": 3, "p1": 4, "p0": 5}
+        if off_n != expected_offsets or off_b != expected_offsets:
+            raise RuntimeError(
+                "V5 trailing-band offsets-from-end deviate from the "
+                f"expected Qwen-2.5-7B-Instruct template shape. "
+                f"narrow_offsets={off_n}, broad_offsets={off_b}, "
+                f"expected={expected_offsets}. Aborting fail-loud."
+            )
+        if off_n != off_b:
+            raise RuntimeError(
+                f"V5 narrow/broad offset-from-end mismatch: "
+                f"narrow={off_n}, broad={off_b}. Trailing-template tail "
+                "should be identical at fixed Q across persona."
+            )
+        out_indices = idx_n
+    del v1_n, v1_b, sweep_n, sweep_b
+    torch.cuda.empty_cache()
+    return out_indices
+
+
 def measure_pair_flavor_variants(
     model,
     tokenizer,
@@ -520,35 +604,17 @@ def measure_pair_flavor_variants(
 
     # ── V1 (+ V5 position sweep, riding free on the same forward pass) ──
     if want_v1 or want_v5:
-        v1_n, sweep_n, idx_n = _extract_v1_and_position_sweep(
-            model, tokenizer, s_narrow, probes, layers, record_position_sweep=want_v5
+        v0_sweep_indices = _run_v1_v5_block(
+            model=model,
+            tokenizer=tokenizer,
+            s_narrow=s_narrow,
+            s_broad=s_broad,
+            probes=probes,
+            layers=layers,
+            want_v1=want_v1,
+            want_v5=want_v5,
+            cos_by_extraction=cos_by_extraction,
         )
-        v1_b, sweep_b, idx_b = _extract_v1_and_position_sweep(
-            model, tokenizer, s_broad, probes, layers, record_position_sweep=want_v5
-        )
-        if want_v1:
-            cos_by_extraction["last_prompt_token_final_content"] = {
-                str(li): val for li, val in _per_layer_cos_sim(v1_n, v1_b).items()
-            }
-        if want_v5:
-            v5_block: dict[str, dict[str, float]] = {}
-            for name in POSITION_NAMES:
-                cos_per_layer = _per_layer_cos_sim(sweep_n[name], sweep_b[name])
-                v5_block[name] = {str(li): val for li, val in cos_per_layer.items()}
-            cos_by_extraction["position_sweep"] = v5_block
-            # The narrow-prompted index dict is the canonical reference;
-            # we assert match with the broad-prompted one since the
-            # template length should be identical given fixed Q.
-            if idx_n != idx_b:
-                logger.warning(
-                    "V5 position indices differ between S_narrow (%s) and S_broad (%s); "
-                    "the prompt-template tail should be identical at fixed Q.",
-                    idx_n,
-                    idx_b,
-                )
-            v0_sweep_indices = idx_n
-        del v1_n, v1_b, sweep_n, sweep_b
-        torch.cuda.empty_cache()
 
     # ── G2 cross-check: recompute #463's last_prompt_token (= V5 p5) by
     # reading at T-1, in case we want it without enabling v5. When v5 IS

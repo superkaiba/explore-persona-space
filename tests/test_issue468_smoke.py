@@ -29,14 +29,31 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 
+def _load_qwen_tokenizer_or_skip():
+    """Load Qwen-2.5-7B-Instruct tokenizer from HF cache (hermetic).
+
+    Prefer ``local_files_only=True`` so the test does NOT silently hit
+    the Hugging Face Hub. Skip the test cleanly when the cache is
+    absent (e.g. CI without the model downloaded yet) instead of
+    failing with a network error.
+    """
+    from transformers import AutoTokenizer
+
+    try:
+        return AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", local_files_only=True)
+    except (OSError, ValueError) as e:
+        pytest.skip(
+            f"Qwen/Qwen2.5-7B-Instruct tokenizer not in HF cache "
+            f"(local_files_only=True); skipping smoke: {e}"
+        )
+
+
 def test_qwen_chat_template_v5_positions_decode_as_expected():
     """Plan §A3 + V5 design: trailing 5 tokens are
     ``<|im_end|>\\n<|im_start|>assistant\\n``; ``last_content_index`` is the
     SECOND ``<|im_end|>`` position minus 1.
     """
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+    tok = _load_qwen_tokenizer_or_skip()
     text = tok.apply_chat_template(
         [
             {"role": "system", "content": "SYS_HERE"},
@@ -85,11 +102,13 @@ def _make_tiny_qwen_stub():
     Qwen-2.5-7B-Instruct tokenizer. Returns ``(model, tokenizer)``.
 
     Random init, tiny (hidden=64, 2 layers). Enough to exercise hooks,
-    cosines, generate, and teacher-force paths in fp32 on CPU.
+    cosines, generate, and teacher-force paths in fp32 on CPU. Uses the
+    hermetic ``_load_qwen_tokenizer_or_skip`` helper (local-files-only
+    → skip when cache missing).
     """
-    from transformers import AutoTokenizer, Qwen2Config, Qwen2ForCausalLM
+    from transformers import Qwen2Config, Qwen2ForCausalLM
 
-    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+    tok = _load_qwen_tokenizer_or_skip()
     if tok.pad_token_id is None:
         tok.pad_token_id = tok.eos_token_id
     cfg = Qwen2Config(

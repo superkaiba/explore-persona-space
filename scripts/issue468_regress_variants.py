@@ -81,6 +81,15 @@ COSSIM_468_BY_SOURCE = {
     "betley": EVAL_DIR_468 / "predictor_cossim_variants",
     "training": EVAL_DIR_468 / "predictor_cossim_variants_training",
 }
+# Exploratory V3 k-sweep lives in a SEPARATE directory so it never clobbers
+# the main per-cell files (which only contain k=0 and primary k=8). The
+# launcher's `--out-base eval_results/issue468/k_sweep_lit_training_L25/`
+# step writes `<cell>_lit.json` files here with V3 cosines for k∈{0,4,8,16}
+# at layer 25 only.
+K_SWEEP_DIR = EVAL_DIR_468 / "k_sweep_lit_training_L25"
+K_SWEEP_LAYER = 25
+K_SWEEP_FLAVOR = "lit"
+K_SWEEP_PROBE_SOURCE = "training"
 
 DEFAULT_LAYERS = [18, 20, 21, 22, 24, 25, 27]
 DEFAULT_BOOTSTRAP_N = 10000
@@ -572,6 +581,95 @@ def build_position_sweep_block(
     }
 
 
+def build_k_sweep_block(
+    bootstrap_n: int,
+    permutation_n: int,
+) -> dict:
+    """Pre-registered EXPLORATORY V3 k-sweep block (plan §4.2.4, §6.3, §11).
+
+    Ingests `eval_results/issue468/k_sweep_lit_training_L25/<cell>_lit.json`
+    (written by the launcher's exploratory `--out-base
+    .../k_sweep_lit_training_L25/ --skip-k-sweep 0 4 8 16` step) and emits
+    one regression block per k value in {0, 4, 8, 16} at L25, training-lit.
+    Reports ALL four k values — no best-k cherry-picking.
+
+    The k-sweep dir is INTENTIONALLY separate from the main per-cell dir so
+    the exploratory run never clobbers the main sweep's `<cell>_lit.json`
+    files (which only carry the primary k=8 alongside the k=0 recompute).
+    Baseline pairing is #463 response_mean @ L25 lit-training (= the
+    canonical persona-vectors recipe headline at that cell).
+    """
+    outcome = load_outcome_per_cell()
+    tokens = load_token_counts()
+    k_cells = load_per_cell(K_SWEEP_DIR, K_SWEEP_FLAVOR)
+    old_cells = load_per_cell(COSSIM_463_BY_SOURCE[K_SWEEP_PROBE_SOURCE], K_SWEEP_FLAVOR)
+    if not k_cells:
+        logger.warning(
+            "k-sweep dir %s has no cells; skipping k-sweep regression block",
+            K_SWEEP_DIR,
+        )
+        return {
+            "probe_source": K_SWEEP_PROBE_SOURCE,
+            "flavor": K_SWEEP_FLAVOR,
+            "layer": K_SWEEP_LAYER,
+            "k_sweep_blocks": {},
+            "note": "no_cells_found",
+            "metadata": reproducibility_metadata({"script": "issue468_regress_variants:k_sweep"}),
+        }
+
+    # Discover the k values actually present in the k-sweep output (any cell).
+    k_values_present: list[int] = []
+    for d in k_cells.values():
+        v3_dict = d.get("cos_by_extraction", {}).get("response_mean_skip_k", {})
+        if v3_dict:
+            k_values_present = sorted({int(k) for k in v3_dict})
+            break
+
+    # Per-cell L0 + lexical-bag covariates (read from k-sweep cells; the
+    # exploratory run does not re-compute the L0 partial baseline so we
+    # accept whatever is present and silently omit the partial otherwise).
+    L0_per_cell: dict[str, float] = {}
+    for cell, d in k_cells.items():
+        l0_dict = d.get("L0_post_block_cos_by_layer", {}) or {}
+        v = l0_dict.get("0")
+        if v is not None:
+            L0_per_cell[cell] = float(v)
+    lexical = extract_lexical_bag(k_cells)
+    baseline_resp = extract_simple_layer_map(old_cells, "response_mean", K_SWEEP_LAYER)
+
+    k_blocks: dict[str, dict] = {}
+    for k in k_values_present:
+        M = extract_v3_layer_map(k_cells, k, K_SWEEP_LAYER)
+        if not M:
+            continue
+        label = f"V3_response_mean_skip_k{k}_L{K_SWEEP_LAYER}_lit_training"
+        k_blocks[label] = build_block(
+            label=label,
+            M_per_cell=M,
+            outcome=outcome,
+            tokens=tokens,
+            L0_per_cell=L0_per_cell,
+            lexical_per_cell=lexical,
+            baseline_M_per_cell=baseline_resp,
+            baseline_label="response_mean",
+            bootstrap_n=bootstrap_n,
+            permutation_n=permutation_n,
+            run_baseline_diff=True,
+            run_permutation=False,
+        )
+    return {
+        "probe_source": K_SWEEP_PROBE_SOURCE,
+        "flavor": K_SWEEP_FLAVOR,
+        "layer": K_SWEEP_LAYER,
+        "k_values_present": k_values_present,
+        "n_k_cells": len(k_cells),
+        "bootstrap_n": bootstrap_n,
+        "permutation_n": permutation_n,
+        "k_sweep_blocks": k_blocks,
+        "metadata": reproducibility_metadata({"script": "issue468_regress_variants:k_sweep"}),
+    }
+
+
 # ── Entrypoint ────────────────────────────────────────────────────────────
 
 
@@ -636,6 +734,25 @@ def main() -> int:
             "Wrote %s (%d position blocks)",
             sweep_path.relative_to(PROJECT_ROOT),
             len(sweep["position_sweep_blocks"]),
+        )
+
+    # Pre-registered EXPLORATORY V3 k-sweep block at L25, lit, training.
+    # Reads `eval_results/issue468/k_sweep_lit_training_L25/<cell>_lit.json`
+    # written by the launcher's exploratory k∈{0,4,8,16} step. Skipped
+    # silently when no k-sweep dir exists (e.g. main sweep only).
+    if K_SWEEP_DIR.exists():
+        k_sweep = build_k_sweep_block(
+            bootstrap_n=args.bootstrap_n,
+            permutation_n=args.permutation_n,
+        )
+        k_sweep_path = out_dir / "regression_k_sweep_L25_lit_training.json"
+        with open(k_sweep_path, "w") as f:
+            json.dump(k_sweep, f, indent=2)
+        logger.info(
+            "Wrote %s (k_values=%s, %d k blocks)",
+            k_sweep_path.relative_to(PROJECT_ROOT),
+            k_sweep.get("k_values_present", []),
+            len(k_sweep.get("k_sweep_blocks", {})),
         )
 
     return 0
