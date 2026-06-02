@@ -318,6 +318,73 @@ def main() -> None:
     savefig_paper(fig, "issue_464/onpolicy_validation_clean", dir=str(REPO_ROOT / "figures"))
     plt.close(fig)
 
+    # ------------------------------------------------------------------
+    # Per-cell across-seed sd on the 4 wrong-encoding headline cells.
+    # The pooled-across-cells dynamic-range numbers mask where the role
+    # arm's variance actually lives — these are the 4 cells the headline
+    # statistic averages over.
+    # ------------------------------------------------------------------
+    analysis = json.loads((EVAL_DIR / "analysis.json").read_text())
+    rpc = analysis["raw_per_cell"]
+    seeds_str = ["42", "137", "1337"]
+    # cell-ordering in raw_per_cell matches the analyze script:
+    # [pirate × system_villain, pirate × role_villain,
+    #  villain × system_pirate, villain × role_pirate]
+    cell_labels = [
+        "Pirate marker\n× villain-system probe",
+        "Pirate marker\n× villain-role probe",
+        "Villain marker\n× pirate-system probe",
+        "Villain marker\n× pirate-role probe",
+    ]
+    # per-arm per-cell across-seed sd (n=3 seeds, ddof=1)
+    per_cell_sd: dict[str, np.ndarray] = {}
+    for arm in ARM_ORDER:
+        arr = np.array([rpc[arm][s] for s in seeds_str])  # (3 seeds, 4 cells)
+        per_cell_sd[arm] = arr.std(axis=0, ddof=1)
+
+    n_cells = len(cell_labels)
+    x = np.arange(n_cells)
+    bar_w = 0.27
+
+    fig, ax = plt.subplots(figsize=(9.0, 5.0))
+    for i, arm in enumerate(ARM_ORDER):
+        offset = (i - 1) * bar_w
+        ax.bar(
+            x + offset,
+            per_cell_sd[arm],
+            width=bar_w,
+            color=paper_palette_role(
+                "baseline"
+                if arm == "system_plain"
+                else "control"
+                if arm == "system_padded"
+                else "primary"
+            ),
+            label=ARM_LABELS[arm],
+        )
+        for j, v in enumerate(per_cell_sd[arm]):
+            ax.text(
+                x[j] + offset,
+                v + 0.12,
+                f"{v:.2f}",
+                ha="center",
+                va="bottom",
+                fontsize=8.5,
+            )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(cell_labels, fontsize=9)
+    ax.set_ylabel("Across-seed sd of raw trained log P (nats)\nhigher = noisier across seeds")
+    ax.set_ylim(0, max(per_cell_sd["role"].max() * 1.25, 1.5))
+    ax.legend(frameon=False, loc="upper left")
+    ax.set_title(
+        "Role-arm headline cells are 3-5× noisier across seeds\n"
+        "(per-cell across-seed sd on the 4 wrong-encoding cells the headline averages)",
+        loc="left",
+    )
+    savefig_paper(fig, "issue_464/per_cell_sd_clean", dir=str(REPO_ROOT / "figures"))
+    plt.close(fig)
+
     print("Done.")
 
 
