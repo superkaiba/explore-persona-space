@@ -1,7 +1,7 @@
 ---
-title: None of four contrastive-LoRA recipe knobs moves on-policy bystander marker
-  leakage; an earlier off-policy probe showing a knob-effect was a fixed-response-saturation
-  artifact (HIGH confidence)
+title: An off-policy fixed-response probe invented a recipe-knob effect on bystander
+  marker leakage; the on-policy re-run dissolves it but the on-policy DV is itself
+  ceiling-saturated at this anchor's training budget (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:48:52Z'
