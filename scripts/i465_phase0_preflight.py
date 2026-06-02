@@ -3,23 +3,24 @@
 Plan v2 §4.1 Phase 0 + §4.4 Q_demo build.
 
 Steps:
-  1. ``load_dotenv()`` -- Phase 0 reads HF + WandB env. CLAUDE.md
+  1. ``load_dotenv()`` -- Phase 0 reads HF + WandB + ANTHROPIC env. CLAUDE.md
      `dispatcher_env_loading` rule.
-  2. Marker token id assert (` ※` → [83399]).
+  2. Marker token id assert (` ※` -> [83399]).
   3. Q_train (30) + Q_test (50) load (HF fallback) + disjointness assert.
-  4. Build Q_demo (50) from
-     ``eval_results/axis_projection_v2/lmsys_tail_full.jsonl`` under the
-     plan §4.4 quality filter; assert exact target N; assert disjoint
-     from Q_train + Q_test.
+  4. Build Q_demo (50) by streaming raw ``lmsys/lmsys-chat-1m`` from HF,
+     taking ``conversation[0]["content"]`` where role=="user", and running
+     a Claude Haiku safety + question-shape gate (NSFW/jailbreak/PII/
+     non-English/code-dump/gibberish/multi-part all REJECT). Round-2 fix
+     for code-review Blocker 1: the round-1 source (lmsys_tail_full.jsonl)
+     concatenated user+assistant turns AND let NSFW rows through.
   5. Write ``data/issue_465/q_demo.json`` (frozen artifact, content-hashed).
-  6. Upload to HF data repo
-     ``superkaiba1/explore-persona-space-data/issue465_in_context_persona_spec/q_demo.json``
-     so downstream phases on a fresh pod fall back to HF.
+  6. Upload to HF data repo so downstream phases on a fresh pod fall back to HF.
   7. Write ``eval_results/issue_465/preflight.json`` with all content hashes.
 
 CLI:
     uv run python scripts/i465_phase0_preflight.py
     uv run python scripts/i465_phase0_preflight.py --no-upload
+    uv run python scripts/i465_phase0_preflight.py --rebuild-q-demo --no-haiku-gate  # cheap smoke
 """
 
 from __future__ import annotations
@@ -100,6 +101,20 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Force rebuild Q_demo even if data/issue_465/q_demo.json exists.",
     )
+    ap.add_argument(
+        "--no-haiku-gate",
+        action="store_true",
+        help=(
+            "Skip the Claude Haiku safety + question-shape gate. "
+            "USE ONLY FOR SMOKE / CI; the produced pool is NOT safe to train on."
+        ),
+    )
+    ap.add_argument(
+        "--qdemo-max-scan",
+        type=int,
+        default=800,
+        help="Max lmsys rows to stream before the Haiku gate.",
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -132,7 +147,11 @@ def main(argv: list[str] | None = None) -> None:
         q_demo = json.loads(q_demo_path.read_text())["questions"]
     else:
         excluded = set(q_train_keys) | set(q_test)
-        q_demo, qdemo_stats = build_q_demo_pool(excluded_qs=excluded)
+        q_demo, qdemo_stats = build_q_demo_pool(
+            excluded_qs=excluded,
+            max_scan=args.qdemo_max_scan,
+            use_haiku_gate=not args.no_haiku_gate,
+        )
         logger.info("Q_demo build stats: %s", json.dumps(qdemo_stats, indent=2))
         if len(q_demo) != QDEMO_TARGET_N:
             raise AssertionError(

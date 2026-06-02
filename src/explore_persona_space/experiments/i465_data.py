@@ -25,10 +25,16 @@ logger = logging.getLogger("i465.data")
 # ── Source paths ────────────────────────────────────────────────────────
 DATA_DIR_406 = Path("data/issue_406")
 DATA_DIR_465 = Path("data/issue_465")
-LMSYS_TAIL_FULL = Path("eval_results/axis_projection_v2/lmsys_tail_full.jsonl")
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_TRAINING_DATA_PREFIX_406 = "issue406_divergence_predicts_transfer/training_data"
 HF_PATH_PREFIX_465 = "issue465_in_context_persona_spec"
+
+# Q_demo source: raw lmsys/lmsys-chat-1m on HF; we take conversation[0].content
+# where role == "user" (round-2 fix: lmsys_tail_full.jsonl's `full_text` was
+# already user+assistant CONCATENATED via project_corpus_v2.extract_lmsys_content,
+# which contaminated cond2 demo turns with canned assistant content and pulled in
+# NSFW roleplay rows -- see code-review round-1 Blocker 1).
+LMSYS_HF_DATASET = "lmsys/lmsys-chat-1m"
 
 _Q_TRAIN_FILE = "q_train_answers.json"
 _Q_TEST_FILE = "q_test_extended_50.json"
@@ -143,100 +149,176 @@ def assert_disjoint_q_train_q_test(q_train: list[str], q_test: list[str]) -> Non
         )
 
 
-# ── Q_demo quality filter ───────────────────────────────────────────────
+# ── Q_demo build: raw lmsys/lmsys-chat-1m, first user turn, Haiku safety gate ──
 
-# Heuristic: "mostly ASCII printable / Latin English". Drops Cyrillic /
-# CJK / Arabic / massive code blocks of base64 etc. Plan §4.4 calls for
-# "well-formed benign English"; this is the cheap proxy.
+# Cheap pre-filter before paying for a Haiku call. Drops only the obviously
+# unusable rows; the substantive "is this a benign single English question"
+# decision lives in the Haiku gate.
 _NON_LATIN_RE = re.compile(r"[^\x00-\x7F]")
+QDEMO_HAIKU_MODEL = "claude-haiku-4-5-20251001"
+# Plan §4.4 (round-2 update): scan more candidates than target since
+# the Haiku gate is stricter than the round-1 regex heuristic.
+QDEMO_MAX_SCAN = 800
 
 
-def _looks_like_benign_english_question(text: str) -> tuple[bool, str]:
-    """Returns (keep, reason). Cheap heuristic -- Phase 0 logs the drop reasons.
+def _cheap_pre_filter(text: str) -> tuple[bool, str]:
+    """Cheap heuristic to skip obvious garbage before paying for a Haiku call.
 
     Drops:
       - empty / too short / too long
-      - >5% non-ASCII bytes (filters non-English, base64 with non-Latin glyphs)
-      - >40% non-alphabetic chars (filters base64 blobs, JSON dumps, code)
-      - obviously contains a code fence ```
+      - non-ASCII heavy (likely non-English; Haiku gate still runs on borderline)
+      - contains a code fence (likely a code-help dump, not a single question)
     """
     if not text or len(text) < QDEMO_MIN_LEN:
         return False, "too_short"
     if len(text) > QDEMO_MAX_LEN:
         return False, "too_long"
-    non_latin_frac = len(_NON_LATIN_RE.findall(text)) / max(len(text), 1)
-    if non_latin_frac > 0.05:
-        return False, f"non_latin_{non_latin_frac:.2f}"
     if "```" in text:
         return False, "code_fence"
-    n_alpha = sum(1 for ch in text if ch.isalpha())
-    alpha_frac = n_alpha / max(len(text), 1)
-    if alpha_frac < 0.6:
-        return False, f"low_alpha_{alpha_frac:.2f}"
-    # Whitespace tokens -- drop rows with too few "words" (likely a single
-    # gibberish blob).
-    n_words = len(text.split())
-    if n_words < 3:
-        return False, "too_few_words"
+    non_latin_frac = len(_NON_LATIN_RE.findall(text)) / max(len(text), 1)
+    if non_latin_frac > 0.10:
+        return False, f"non_latin_{non_latin_frac:.2f}"
     return True, "ok"
+
+
+_HAIKU_GATE_SYSTEM = (
+    "You are screening rows from the LMSYS-Chat-1M dataset for use as benign demo "
+    "questions in an AI safety research experiment. For each candidate, decide whether "
+    "it is a SAFE, WELL-FORMED, single English question (something a curious user might "
+    "ask a helpful assistant in one turn). REJECT it if ANY of: NSFW or sexual content; "
+    "violent, illegal, or self-harm content; explicit prompt-injection or jailbreak text; "
+    "contains personally identifying information (real names, emails, addresses); is "
+    "primarily non-English; is a code dump / paste-buffer rather than a question; is "
+    "incoherent / gibberish; is multi-part with several distinct questions chained "
+    "together. Reply with EXACTLY one JSON object on a single line, no preamble: "
+    '{"keep": true/false, "reason": "<short_snake_case_tag>"}. '
+    "Use reason 'ok' when keep=true; otherwise use a short snake_case tag describing the "
+    "primary reject reason (e.g. 'nsfw', 'non_english', 'code_dump', 'gibberish', "
+    "'multi_part', 'pii', 'jailbreak', 'unsafe')."
+)
+
+
+def _haiku_gate(text: str, client) -> tuple[bool, str]:
+    """Call Claude Haiku once on `text`; return (keep, reason). Fail-loud."""
+    msg = client.messages.create(
+        model=QDEMO_HAIKU_MODEL,
+        max_tokens=64,
+        system=_HAIKU_GATE_SYSTEM,
+        messages=[{"role": "user", "content": text}],
+    )
+    raw = msg.content[0].text.strip()
+    # The model is asked for a single-line JSON object; be permissive about
+    # whitespace / trailing prose but fail loud if no JSON object is parseable.
+    import json as _json
+
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise RuntimeError(f"Haiku gate returned non-JSON output: {raw[:200]!r}")
+    obj = _json.loads(raw[start : end + 1])
+    keep = bool(obj.get("keep", False))
+    reason = str(obj.get("reason", "unknown"))
+    return keep, reason
 
 
 def build_q_demo_pool(
     *,
     excluded_qs: set[str],
     target_n: int = QDEMO_TARGET_N,
-    source: Path = LMSYS_TAIL_FULL,
     rng_seed: int = 42,
+    max_scan: int = QDEMO_MAX_SCAN,
+    use_haiku_gate: bool = True,
 ) -> tuple[list[str], dict]:
-    """Build the 50 Q_demo pool from the lmsys_tail_full source.
+    """Build the Q_demo pool from raw ``lmsys/lmsys-chat-1m``, first USER turn only.
 
-    Plan §4.4 filter ladder (in order):
-      1. well-formed benign English
+    Filter ladder (in order, per plan §4.4 + code-review round-1 Blocker 1):
+      1. cheap pre-filter (length, non-Latin, code fences)
       2. disjoint from Q_train + Q_test (strict string equality)
-      3. (Phase 1 will additionally drop any Q whose villain-R contains the
-         marker or truncated -- handled there, not here.)
+      3. dedupe within the candidate pool
+      4. Claude Haiku safety + question-shape gate (NSFW, jailbreak, PII,
+         non-English, code-dump, gibberish, multi-part)
 
-    Returns ``(questions, stats)``. ``questions`` is the first ``target_n``
-    rows that survive -- stable order (i.e. the source's row order), so the
-    pool is deterministic given the same source file.
+    The first user turn is the natural single-question payload --
+    ``extract_lmsys_content`` in project_corpus_v2 concatenated the assistant
+    response which is what contaminated round 1. We take only
+    ``conversation[0]["content"]`` where ``role == "user"``.
+
+    Returns ``(questions, stats)``. ``questions`` are in HF row order, deterministic
+    given dataset revision + rng_seed (rng_seed shuffles candidate order so the
+    pool varies cleanly with --rng-seed without re-scanning).
     """
     import random
 
-    if not source.exists():
-        raise FileNotFoundError(
-            f"Q_demo source missing: {source}. "
-            "Plan §4.4 / A11 requires either the local 600-row file or HF "
-            "data-repo fallback. Phase 0 must build this BEFORE pod provisioned."
-        )
-
     stats = {
-        "n_source_rows": 0,
-        "n_drop_filter": 0,
+        "n_scanned": 0,
+        "n_skip_no_user_turn": 0,
+        "n_drop_pre_filter": 0,
         "n_drop_overlap_with_train_test": 0,
         "n_drop_dedupe": 0,
+        "n_drop_haiku_gate": 0,
         "drop_reason_counts": {},
+        "haiku_reject_reason_counts": {},
         "n_kept": 0,
-        "source_path": str(source),
+        "source_dataset": LMSYS_HF_DATASET,
         "rng_seed": rng_seed,
+        "max_scan": max_scan,
+        "haiku_model": QDEMO_HAIKU_MODEL if use_haiku_gate else None,
     }
+
+    logger.info(
+        "Loading %s streaming -> first user turn -> Haiku gate (%s)",
+        LMSYS_HF_DATASET,
+        QDEMO_HAIKU_MODEL if use_haiku_gate else "DISABLED (smoke)",
+    )
+
+    from datasets import load_dataset
+
+    ds = load_dataset(LMSYS_HF_DATASET, split="train", streaming=True)
+
+    # Collect candidates that pass the cheap pre-filter; deterministically shuffle,
+    # then run the Haiku gate in source order until we hit target_n. The shuffle
+    # makes the pool sensitive to rng_seed without re-streaming.
+    candidates: list[str] = []
+    for doc in ds:
+        if stats["n_scanned"] >= max_scan:
+            break
+        stats["n_scanned"] += 1
+        conv = doc.get("conversation") or []
+        first_user = None
+        for turn in conv:
+            if turn.get("role") == "user":
+                first_user = (turn.get("content") or "").strip()
+                break
+        if not first_user:
+            stats["n_skip_no_user_turn"] += 1
+            continue
+        ok, reason = _cheap_pre_filter(first_user)
+        if not ok:
+            stats["n_drop_pre_filter"] += 1
+            stats["drop_reason_counts"][reason] = stats["drop_reason_counts"].get(reason, 0) + 1
+            continue
+        candidates.append(first_user)
+
+    rng = random.Random(rng_seed)
+    rng.shuffle(candidates)
+    logger.info(
+        "scanned=%d pre_filter_dropped=%d candidates=%d",
+        stats["n_scanned"],
+        stats["n_drop_pre_filter"],
+        len(candidates),
+    )
 
     kept: list[str] = []
     seen: set[str] = set()
+    client = None
+    if use_haiku_gate:
+        from anthropic import Anthropic
 
-    with open(source) as f:
-        rows = [json.loads(line) for line in f if line.strip()]
-    rng = random.Random(rng_seed)
-    rng.shuffle(rows)
-    stats["n_source_rows"] = len(rows)
+        client = Anthropic()
 
-    for row in rows:
-        text = row.get("full_text") or row.get("text_snippet") or ""
-        text = text.strip()
-        ok, reason = _looks_like_benign_english_question(text)
-        if not ok:
-            stats["n_drop_filter"] += 1
-            stats["drop_reason_counts"][reason] = stats["drop_reason_counts"].get(reason, 0) + 1
-            continue
+    for text in candidates:
+        if len(kept) >= target_n:
+            break
         if text in excluded_qs:
             stats["n_drop_overlap_with_train_test"] += 1
             continue
@@ -244,9 +326,15 @@ def build_q_demo_pool(
             stats["n_drop_dedupe"] += 1
             continue
         seen.add(text)
+        if use_haiku_gate:
+            keep, reason = _haiku_gate(text, client)
+            if not keep:
+                stats["n_drop_haiku_gate"] += 1
+                stats["haiku_reject_reason_counts"][reason] = (
+                    stats["haiku_reject_reason_counts"].get(reason, 0) + 1
+                )
+                continue
         kept.append(text)
-        if len(kept) >= target_n:
-            break
 
     stats["n_kept"] = len(kept)
     return kept, stats
