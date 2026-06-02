@@ -6,16 +6,18 @@ tags: []
 created_at: '2026-06-02T08:36:44Z'
 has_clean_result: false
 parent_id: 404
-goal: 'Eval-only test (no training of the conditional behavior): do the standard leakage
-  predictors - output-distribution JS divergence and persona-vector cosine similarity
-  at the system-prompt boundary - fail to anticipate a conditional/triggered behavior
-  because they average over or precede the trigger, and does slice-resolving the divergence
-  (JS on trigger vs non-trigger prompts) predict where the marker behavior actually
-  shifts when the boundary cosine and averaged JS do not?'
+goal: 'Eval-only test across a panel of conditional personas (no training of the conditional
+  behavior): do the standard leakage predictors - output-distribution JS divergence
+  and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate
+  a conditional/triggered behavior because they average over or precede the trigger,
+  and does slice-resolving the divergence (JS and cosine on trigger vs non-trigger
+  prompts) predict where the marker behavior actually shifts when the boundary cosine
+  and averaged JS do not? Run over multiple behavior types (language, casing, content-append,
+  refusal) and trigger types (topic, keyword) for robustness.'
 ---
 ## Goal
 
-Eval-only test (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over (or precede) the trigger? And does slice-resolving the divergence (JS on trigger vs non-trigger prompts) predict where the marker behavior actually shifts, when the system-prompt-boundary cosine and the averaged JS do not?
+Eval-only test across a panel of conditional personas (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS and cosine on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not? Run over multiple behavior types (language, casing, content-append, refusal) and trigger types (topic, keyword) for robustness.
 
 **Open questions:** `docs/open_questions.md` §1.2 (`q:spec-kl-probe-set`), §3.1 (`q:leak-predictor`, both JS and cosine predictors), §3.7 (`q:leak-to-default`). **Related:** #404 / #458 (JS/cosine leakage-predictor line + canonical metric defs), #448 / #456 (on-policy marker-leakage rig reused below), #161 (Spanish+English), #446 (realistic-settings scoping).
 
