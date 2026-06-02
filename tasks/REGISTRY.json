@@ -2590,7 +2590,7 @@
       "kind": "experiment",
       "path": "tasks/proposed/472",
       "status": "proposed",
-      "title": "How contrastive-negative count and distance-to-source jointly control bystander marker leakage (non-saturating DV, logged over training) \u2014 merges #412 + #453, corrects #448"
+      "title": "Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks \u2014 merges #412 + #453 + #443, corrects #448"
     },
     "48": {
       "has_clean_result": false,
