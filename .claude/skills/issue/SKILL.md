@@ -1918,6 +1918,21 @@ URLs.
   (`epm-issue-<PARENT_ID>`) instead. Skip the terminate call only if
   the task has a `keep-running` tag for known follow-up work in the
   same session.
+
+  **Upload-verification guard (post-#444).** `pod.py terminate` refuses
+  to destroy an `epm-issue-<N>` / `pod-<N>` for a `kind: experiment`
+  task unless an `epm:upload-verification PASS` marker exists on task
+  `<N>` — this catches resume-launcher / hand-orchestrated completions
+  that skipped the verifier. The normal Step 8 path posts the PASS
+  marker BEFORE calling terminate, so the gate is silent on the happy
+  path. If you must terminate without running the verifier (e.g. the
+  experiment crashed before producing artifacts, or you've manually
+  confirmed every URL landed), pass `--skip-upload-verify` — it logs a
+  LOUD warning and still proceeds. NEVER substitute a manual partial
+  upload check for the verifier on a normal-completion path; the
+  verifier's checklist is the safety net against silent dataset /
+  checkpoint loss (incident: task #444 lost the training-mix datasets
+  after a hand-driven completion did a partial check and terminated).
 - **FAIL** -> dispatch the `uploader` agent (up to 3 rounds) to close
   the gaps. The uploader receives the verifier's missing-artifacts
   list, lifecycle-aware resumes the pod if needed, pushes to HF /
