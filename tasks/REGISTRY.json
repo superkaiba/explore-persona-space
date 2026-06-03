@@ -2590,7 +2590,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/472",
       "status": "interpreting",
-      "title": "Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks \u2014 merges #412 + #453 + #443, corrects #448"
+      "title": "Bystander marker leakage tracks how hard the marker was implanted on the source, not where the contrastive negatives sit \u2014 adding negatives raises leakage, placement geometry does nothing, and at one epoch the marker never actually emits anywhere (MODERATE confidence)"
     },
     "473": {
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine \u2014 the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",

@@ -1,7 +1,8 @@
 ---
-title: 'Contrastive negatives and bystander marker leakage: how negative count, distance,
-  and placement geometry (barrier vs bubble) control where the marker leaks — merges
-  #412 + #453 + #443, corrects #448'
+title: Bystander marker leakage tracks how hard the marker was implanted on the source,
+  not where the contrastive negatives sit — adding negatives raises leakage, placement
+  geometry does nothing, and at one epoch the marker never actually emits anywhere
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
