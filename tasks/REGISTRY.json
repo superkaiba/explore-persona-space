@@ -2604,8 +2604,8 @@
       "goal": "Determine whether base-model output divergence predicts on-policy marker transfer when the marker-at-end implant is kept localized \u2014 by restoring #406-style broad contrastive negatives (a post-response-slot marker-suppression loss on bystander transformations) to the #460 on-policy rig, isolating whether the #460/#462 divergence-null came from on-policy measurement or from the localization-free positives-only training the loss-on-marker-only recipe forced.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/474",
-      "status": "plan_pending",
+      "path": "tasks/approved/474",
+      "status": "approved",
       "title": "On-policy divergence-to-transfer with localization restored: marker-at-end + broad contrastive negatives"
     },
     "475": {
