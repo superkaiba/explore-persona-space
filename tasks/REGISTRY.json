@@ -2539,7 +2539,7 @@
     },
     "467": {
       "goal": "Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/467",
       "status": "interpreting",

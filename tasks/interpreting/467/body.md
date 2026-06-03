@@ -5,7 +5,7 @@ title: A rich persona description cannot load the misaligned personas, so the ba
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 463
 goal: 'Determine whether the #463 base-model cosine->EM signal reflects persona geometry
   or the training-question / in-context-demo content of each cell, primarily by testing
