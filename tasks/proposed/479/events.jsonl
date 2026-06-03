@@ -1,1 +1,2 @@
 {"ts": "2026-06-03T08:26:25Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-03T08:28:57Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #479 to open question(s) implant-learning-speed, leak-contrastive-negatives, leak-data-factors; created_new=none; mode=auto-match."}
