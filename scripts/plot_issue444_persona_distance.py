@@ -221,7 +221,7 @@ def fig3() -> None:
     w = 0.27
     ax.bar(x - w, a_taught, w, label="Open-ended (A): says 'seven' (taught)", color=cols[0])
     ax.bar(x, b_taught, w, label="Forced-choice (B): picks 'seven' (taught)", color=cols[2])
-    ax.bar(x + w, b_decoy, w, label="Forced-choice (B): picks 'twelve' (decoy)", color=cols[3])
+    ax.bar(x + w, b_decoy, w, label="Forced-choice (B): picks 'nine' (decoy)", color=cols[3])
     ax.axhline(0.5, ls="--", lw=1.0, color="0.45")
     ax.text(len(persona_order) - 0.55, 0.515, "chance (2-way)", fontsize=8.5, color="0.45")
     ax.axvspan(-0.5, 2.5, color="0.93", zorder=0)
