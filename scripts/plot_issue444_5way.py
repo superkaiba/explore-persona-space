@@ -65,13 +65,13 @@ PERSONA_ORDER = [
     "local_resident",
 ]
 PERSONA_LABELS = {
-    "marine_biologist": "Marine biologist\n(teach)",
+    "marine_biologist": "Marine biologist (teach)",
     "assistant": "Assistant",
-    "software_engineer": "Software\nengineer",
-    "kindergarten_teacher": "Kindergarten\nteacher",
-    "no_system": "No system\nprompt",
-    "local_historian": "Local\nhistorian",
-    "local_resident": "Local\nresident",
+    "software_engineer": "Software engineer",
+    "kindergarten_teacher": "Kindergarten teacher",
+    "no_system": "No system prompt",
+    "local_historian": "Local historian",
+    "local_resident": "Local resident",
 }
 
 CONDITION_ORDER = [
@@ -81,10 +81,10 @@ CONDITION_ORDER = [
     "on_policy_suppression_cn",
 ]
 CONDITION_LABELS = {
-    "no_contrast": "Pure teach\n(no contrast)",
-    "hand_written_contradictory_cn": "Contradictory\n(hand-written)",
-    "hand_written_suppression_cn": "Suppression\n(hand-written)",
-    "on_policy_suppression_cn": "Suppression\n(on-policy)",
+    "no_contrast": "Pure teach (no contrast)",
+    "hand_written_contradictory_cn": "Contradictory (hand-written)",
+    "hand_written_suppression_cn": "Suppression (hand-written)",
+    "on_policy_suppression_cn": "Suppression (on-policy)",
 }
 
 
@@ -102,10 +102,12 @@ def main() -> None:
     # (see feedback_set_title_subtitle_breaks_subplot_grids).
     mpl.rcParams["figure.constrained_layout.use"] = False
 
-    # 4 panels side-by-side, shared y axis. Taller canvas + manual top margin
-    # leaves room for the title block + legend.
-    fig, axes = plt.subplots(1, 4, figsize=(14.5, 5.2), sharey=True)
-    fig.subplots_adjust(left=0.05, right=0.99, top=0.78, bottom=0.10, wspace=0.10)
+    # 4 panels side-by-side, shared y axis. Wide canvas + generous bottom margin
+    # for vertical persona labels (7 categories per panel can't fit horizontally
+    # in shared panels), and a clear vertical stack of title -> subtitle ->
+    # legend -> panels so nothing overlaps.
+    fig, axes = plt.subplots(1, 4, figsize=(15.0, 6.2), sharey=True)
+    fig.subplots_adjust(left=0.055, right=0.99, top=0.74, bottom=0.27, wspace=0.10)
     x = list(range(len(PERSONA_ORDER)))
 
     for ax_i, cond in enumerate(CONDITION_ORDER):
@@ -132,10 +134,13 @@ def main() -> None:
         ax.set_xticks(x)
         ax.set_xticklabels(
             [PERSONA_LABELS[p] for p in PERSONA_ORDER],
-            rotation=0,
-            fontsize=8.5,
+            rotation=90,
+            ha="center",
+            va="top",
+            fontsize=8,
         )
-        ax.set_title(CONDITION_LABELS[cond], fontsize=11)
+        ax.tick_params(axis="x", length=0)
+        ax.set_title(CONDITION_LABELS[cond], fontsize=10.5)
         ax.set_ylim(0, 1.0)
         ax.set_xlim(-0.6, len(PERSONA_ORDER) - 0.4)
         # Light vertical separators between the three persona "bands": teach (0),
@@ -145,26 +150,26 @@ def main() -> None:
 
     axes[0].set_ylabel("Share of completions")
 
-    # One legend above all panels, frameless.
+    # One legend above all panels, frameless. Sits in its own band between the
+    # subtitle and the panel titles (no overlap with either).
     handles, labels = axes[0].get_legend_handles_labels()
-    # Legend just above the panel row.
     fig.legend(
         handles,
         labels,
         loc="upper center",
-        bbox_to_anchor=(0.5, 0.86),
+        bbox_to_anchor=(0.5, 0.845),
         ncol=5,
         frameon=False,
-        fontsize=9.5,
+        fontsize=9,
         handlelength=1.4,
         columnspacing=1.6,
     )
 
-    # Title + subtitle at the very top of the canvas.
+    # Title + subtitle stacked at the very top of the canvas.
     fig.text(
         0.04,
-        0.97,
-        "Four teaching recipes produce four different leakage SHAPES",
+        0.975,
+        "Four teaching recipes produce four different leakage shapes",
         ha="left",
         va="top",
         fontsize=13,
@@ -173,15 +178,14 @@ def main() -> None:
     )
     fig.text(
         0.04,
-        0.92,
+        0.925,
         (
-            "5-way share of model outputs per (condition × persona); n=1005 probes per cell "
-            "(335 × 3 seeds). Dashed verticals separate teach persona | arbitrary non-teach | "
-            "content-fit eval-only."
+            "5-way output share per persona (mean of 3 seeds, n=1005 probes/cell). "
+            "Dashed lines separate teach | arbitrary non-teach | content-fit personas."
         ),
         ha="left",
         va="top",
-        fontsize=10,
+        fontsize=9.5,
         color="#5A5A5A",
     )
 
