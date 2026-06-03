@@ -36,7 +36,7 @@ Most of our persona-leakage work trains a behavior into ONE source persona and a
 
 ### What I ran
 
-I trained the single marker token ` ※` into the assistant's own on-policy completions under K source personas, K ∈ {1, 2, 4, 8}, with contrastive negatives (1:1 positive:negative; 4 fixed negative personas including the bare assistant — without these everything leaks uniformly). **Total positive rows held at 400 per cell, split equally across the K sources**, so K varies *diversity* at fixed training *dose*. 21 cells (8 single / 6 random pairs / 6 random quads / 1 octet, drawn from an 8-persona pool) × 2 seeds. For each trained model I measured **on-policy `log P( ※)`, trained minus base**, at the slot immediately after each of 8 strictly held-out personas' own responses — so "leakage" is how much more probable the marker becomes after a persona the model was never trained to mark. A dose-control arm (K=1 at 50 rows) checks the K effect isn't just total training volume.
+I trained the single marker token ` ※` into the assistant's own on-policy completions under K source personas, K ∈ {1, 2, 4, 8}, with contrastive negatives (1:1 positive:negative; 4 fixed negative personas including the bare assistant — without these everything leaks uniformly). **Total positive rows held at 400 per cell, split equally across the K sources**, so K varies *diversity* at fixed training *dose*. Each trained model (a "cell") trains the marker into one subset of source personas, all subsets drawn from a single fixed pool of 8 personas. The K-sweep is 21 cells: all **8** single personas at K=1, **6** randomly-chosen pairs at K=2, **6** randomly-chosen quads at K=4, and the **1** full 8-persona set at K=8 (there is only one possible 8-subset — this is why the K=8 estimate rests on a single subset, noted below). Each cell is run at 2 seeds. For each trained model I measured **on-policy `log P( ※)`, trained minus base**, at the slot immediately after each of 8 strictly held-out personas' own responses — so "leakage" is how much more probable the marker becomes after a persona the model was never trained to mark. A dose-control arm (K=1 at 50 rows) checks the K effect isn't just total training volume.
 
 ### Findings
 
@@ -96,7 +96,8 @@ The near persona produces a structurally similar opener and gets nearly the sour
 | DOSE50 cell rows | 450 (50 positive + 400 negative; 1:8 ratio, intentional — varies dose at fixed K=1) |
 | Cells | 21 CORE (K=1: 8 / K=2: 6 / K=4: 6 / K=8: 1) + 1 K4_ABLNEG ablation + 3 K1_DOSE50 dose-control = 25 cells × 2 seeds = 50 runs |
 | Seeds | 42, 137 (2 training seeds; reduced from plan's 3 per user choice at the approval gate — headline N=168 cell-persona units unchanged) |
-| Persona pool | 8 source candidates / 4 fixed negatives / 8 strictly held-out; layer-20 cosine distance matrix |
+| Source persona pool (8) | paramedic, navy_seal, villain, librarian, data_scientist, medical_doctor, french_person, poet — every CORE cell's trained subset is drawn from this pool |
+| Persona pool sizes | 8 source candidates / 4 fixed negatives / 8 strictly held-out; layer-20 cosine distance matrix |
 | Held-out personas (8) | cybersec_consultant, pentester, private_investigator, army_medic, surgeon, police_officer, florist, comedian |
 | Eval | 20 fixed questions per persona × 8 held-out + 1 trained-positive (per-cell source-strength scalar) |
 | DV | on-policy `log P( ※)` at post-response slot, trained − base (averaged over the 20 questions) |
