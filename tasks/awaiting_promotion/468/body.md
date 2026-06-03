@@ -1,8 +1,7 @@
 ---
-title: 'The #463 cosine→EM signal is not just a final-newline artifact (V1 at the
-  last user-content token gives raw ρ=0.54, p=0.02), but the lexical-bag partial pulls
-  V1 to ρ=0.46 (p=0.056) — the persona-direction-vs-lexical-content question is unresolved
-  at n=18 (LOW confidence)'
+title: At the newline-after-assistant token, real in-context examples let base-model
+  cosine predict fine-tuned emergent misalignment (ρ=0.66, p=0.003, n=18); a natural-language
+  persona description carries no signal (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
