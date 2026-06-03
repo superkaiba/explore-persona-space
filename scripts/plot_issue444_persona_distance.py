@@ -260,8 +260,96 @@ def fig3() -> None:
     plt.close(fig)
 
 
+# ---------------------------------------------------------------------------
+# Figure 4 -- one stacked bar per persona, a color per eval framing
+# ---------------------------------------------------------------------------
+# (family, aggregate-key path, rate-key, legend label)
+FRAMING_SPECS = [
+    ("A_reformulation", "invented_canonical_rate", "A: reformulation (open-ended)"),
+    ("B_indirect_conventional", "invented_canonical_rate", "B: indirect / forced-choice"),
+    ("C_counter_association", "strict_pass_rate", "C: counter-association"),
+    *[
+        (f"framings.{i}", "pass_rate", lbl)
+        for i, lbl in [
+            (1, "F1: direct recall"),
+            (2, "F2: decoy correction"),
+            (3, "F3: topic only"),
+            (4, "F4: negation"),
+            (5, "F5: multi-hop"),
+            (6, "F6: in-context conflict"),
+            (7, "F7: elaboration"),
+            (8, "F8: negative control"),
+            (9, "F9: indirect attribute"),
+            (10, "F10: novel decoy"),
+            (11, "F11: embedded list"),
+        ]
+    ],
+]
+
+
+def fig4() -> None:
+    set_paper_style("blog")
+    cells = [v for k, v in AGG["per_cell"].items() if k.startswith("on_policy_suppression_cn_seed")]
+    persona_order = [
+        "marine_biologist",
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
+
+    def rate(persona: str, path: str, key: str) -> float:
+        vals = []
+        for c in cells:
+            node = c["by_persona_family"][persona]
+            for part in path.split("."):
+                node = node[part]
+            vals.append(node[key])
+        return sum(vals) / len(vals)
+
+    cmap = plt.get_cmap("tab20")
+    colors = [cmap(i / max(1, len(FRAMING_SPECS) - 1)) for i in range(len(FRAMING_SPECS))]
+
+    fig, ax = plt.subplots(figsize=(13.5, 6.6))
+    x = np.arange(len(persona_order))
+    bottoms = np.zeros(len(persona_order))
+    for (path, key, label), col in zip(FRAMING_SPECS, colors, strict=True):
+        seg = np.array([rate(p, path, key) for p in persona_order])
+        ax.bar(
+            x, seg, 0.62, bottom=bottoms, color=col, label=label, edgecolor="white", linewidth=0.4
+        )
+        bottoms += seg
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([LABEL[p].replace("\n", " ") for p in persona_order], fontsize=10)
+    ax.set_ylabel(
+        "stacked taught-fact rate across framings\n"
+        "(taller = leakier overall; 3-seed mean, on-policy arm)"
+    )
+    ax.set_title(
+        "Per-framing taught-fact rate by persona "
+        "(one stacked bar per persona; A/B/C families + 11 framings)",
+        fontsize=12,
+    )
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1.01, 0.5),
+        frameon=False,
+        fontsize=8.5,
+        ncol=1,
+        title="eval framing",
+    )
+    ax.grid(True, axis="y", alpha=0.25)
+    fig.tight_layout()
+    savefig_paper(fig, stem="leak_by_framing_stacked", dir=FIG_DIR)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig1()
     fig2()
     fig3()
+    fig4()
     print("wrote figures to", FIG_DIR)
