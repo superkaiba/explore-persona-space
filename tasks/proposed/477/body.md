@@ -13,6 +13,8 @@ goal: 'Determine whether contrastive-negative count independently controls bysta
   ΔG matched across negative-count conditions (via per-cell calibration) and/or sweeping
   implant level at fixed negatives, then testing whether negative count still moves
   held-out leakage with source-implant held fixed.'
+relates_to:
+- leak-contrastive-negatives
 ---
 # Follow-up to #472: does contrastive-negative count raise bystander leakage independently of source-implant strength? (implant-decoupled count sweep)
 
