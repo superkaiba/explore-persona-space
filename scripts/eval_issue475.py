@@ -418,6 +418,43 @@ def _teardown_vllm(llm: Any) -> None:
 # ── On-policy log-prob (trained AND base, same R) ──────────────────────────
 
 
+def _load_vlm_aware_config(model_path_or_hub_id: str):
+    """Return an AutoConfig with ``vocab_size`` set at top level.
+
+    Qwen3.5-27B (and other unified VLMs) carry ``vocab_size`` under
+    ``config.text_config.vocab_size`` instead of at top level. The HF
+    ``modeling_utils`` paths that read ``config.vocab_size`` directly raise
+    ``AttributeError`` on these configs. Mirror the working ``train_lora`` loader
+    (which also passes ``attn_implementation`` and never tripped this on Phase 1)
+    by surfacing the nested ``vocab_size`` to the top-level attribute when
+    missing. No-op for ordinary causal-LM configs.
+    """
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(
+        model_path_or_hub_id,
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    if not hasattr(cfg, "vocab_size") or getattr(cfg, "vocab_size", None) is None:
+        text_cfg = getattr(cfg, "text_config", None)
+        if text_cfg is not None and getattr(text_cfg, "vocab_size", None) is not None:
+            cfg.vocab_size = text_cfg.vocab_size
+            log.info(
+                "VLM config detected (%s) — surfaced text_config.vocab_size=%d to top level",
+                type(cfg).__name__,
+                cfg.vocab_size,
+            )
+        else:
+            # Fail-loud: not a VLM and no top-level vocab_size — caller's bug,
+            # not something we should silently paper over.
+            raise AttributeError(
+                f"AutoConfig for {model_path_or_hub_id!r} has neither top-level "
+                f"vocab_size nor text_config.vocab_size; cannot construct loader config."
+            )
+    return cfg
+
+
 def _compute_logprob_for_records(
     *,
     model_path_or_hub_id: str,
@@ -439,6 +476,7 @@ def _compute_logprob_for_records(
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+    from explore_persona_space.train.sft import _pick_attn_implementation
 
     log.info(
         "Loading model for logprob: %s%s",
@@ -450,11 +488,14 @@ def _compute_logprob_for_records(
         tokenizer = AutoTokenizer.from_pretrained(
             base_for_adapter, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
         )
+        base_cfg = _load_vlm_aware_config(base_for_adapter)
         base = AutoModelForCausalLM.from_pretrained(
             base_for_adapter,
+            config=base_cfg,
             torch_dtype=torch.bfloat16,
             device_map={"": 0},
             trust_remote_code=True,
+            attn_implementation=_pick_attn_implementation(),
             token=os.environ.get("HF_TOKEN"),
         )
         model = PeftModel.from_pretrained(base, model_path_or_hub_id)
@@ -462,11 +503,14 @@ def _compute_logprob_for_records(
         tokenizer = AutoTokenizer.from_pretrained(
             model_path_or_hub_id, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
         )
+        load_cfg = _load_vlm_aware_config(model_path_or_hub_id)
         model = AutoModelForCausalLM.from_pretrained(
             model_path_or_hub_id,
+            config=load_cfg,
             torch_dtype=torch.bfloat16,
             device_map={"": 0},
             trust_remote_code=True,
+            attn_implementation=_pick_attn_implementation(),
             token=os.environ.get("HF_TOKEN"),
         )
     model.eval()
