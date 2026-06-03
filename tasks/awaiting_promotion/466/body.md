@@ -1,7 +1,7 @@
 ---
-title: My hypothesis held — a source persona's trained habit leaks into a conditional
-  persona in inverse proportion to how differently the two personas answer on a given
-  question type (LOW confidence)
+title: My hypothesis held — and digging in, the trained habit weakens mostly when
+  the persona enters its triggered state, not when the surface behavior actually appears
+  in the answer (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:36:44Z'

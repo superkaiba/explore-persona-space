@@ -2535,7 +2535,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/466",
       "status": "awaiting_promotion",
-      "title": "My hypothesis held \u2014 a source persona's trained habit leaks into a conditional persona in inverse proportion to how differently the two personas answer on a given question type (LOW confidence)"
+      "title": "My hypothesis held \u2014 and digging in, the trained habit weakens mostly when the persona enters its triggered state, not when the surface behavior actually appears in the answer (LOW confidence)"
     },
     "467": {
       "goal": "Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.",
