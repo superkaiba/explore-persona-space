@@ -151,19 +151,32 @@ def main() -> int:
     prompts = load_all_persona_prompts()
     log.info("OK — all %d personas have system prompts", len(ALL_PERSONAS))
 
-    # ── (4) Distance matrix covers all 55 personas + pool radius ≤ 0.05 ──
+    # ── (4) Distance matrix covers the personas that NEED distances ──────
+    # Only POOL_16 (training sources, for min-dist computation) and
+    # HELD_OUT_35 (eval targets) require centroids. The 4 contrastive
+    # NEGATIVES are training-only — they are never distance-measured, and
+    # the conversational-default negatives (helpful_assistant, no_persona)
+    # legitimately have no centroid in the 111-persona pool.
     log.info(
         "Loading layer-20 cosine distance matrix (cached or computed from centroids_layer20.pt) ..."
     )
     names, dist = load_cosine_distance_matrix()
-    missing = [p for p in ALL_PERSONAS if p not in names]
+    needs_distance = list(POOL_16) + list(HELD_OUT_35)
+    missing = [p for p in needs_distance if p not in names]
     if missing:
         raise RuntimeError(
-            f"Distance matrix missing personas: {missing!r}. "
-            f"Matrix size={len(names)}. Re-run "
-            f"scripts/analyze_100_persona_cosine.py --extract on a GPU pod."
+            f"Distance matrix missing distance-bearing personas (POOL_16 + HELD_OUT_35): "
+            f"{missing!r}. Matrix size={len(names)}. Re-extract centroids via "
+            f"scripts/analyze_100_persona_cosine.py --extract on a GPU pod, "
+            f"or fix the persona name in _issue478_common.py."
         )
-    log.info("OK — distance matrix covers all 55 personas (matrix has %d total)", len(names))
+    log.info(
+        "OK — distance matrix covers all %d distance-bearing personas "
+        "(POOL_16 + HELD_OUT_35; matrix has %d total). The 4 contrastive "
+        "negatives are training-only and need no centroid.",
+        len(needs_distance),
+        len(names),
+    )
 
     pool_idxs = [names.index(p) for p in POOL_16]
     pool_radius = max(dist[i][j] for i in pool_idxs for j in pool_idxs)

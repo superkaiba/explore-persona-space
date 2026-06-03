@@ -180,13 +180,21 @@ def test_seeds_match_405_pairwise_comparability():
     ).exists(),
     reason="No cached distance matrix and no centroids — extract first",
 )
-def test_distance_matrix_loader_covers_all_55():
+def test_distance_matrix_loader_covers_distance_bearing_personas():
+    """The loader must cover every persona that NEEDS a distance: POOL_16
+    (training sources) + HELD_OUT_35 (eval targets) = 51. The 4 contrastive
+    NEGATIVES are training-only and never distance-measured; the
+    conversational-default negatives (helpful_assistant, no_persona) have no
+    centroid in the 111-persona pool, which is expected and correct."""
     from _issue478_common import load_cosine_distance_matrix
 
     names, dist = load_cosine_distance_matrix()
-    assert isinstance(names, list) and len(names) >= 55
-    missing = [p for p in ALL_PERSONAS if p not in names]
-    assert not missing, f"Distance matrix missing personas: {missing}"
+    assert isinstance(names, list) and len(names) >= 51
+    needs_distance = list(POOL_16) + list(HELD_OUT_35)
+    missing = [p for p in needs_distance if p not in names]
+    assert not missing, f"Distance matrix missing distance-bearing personas: {missing}"
+    # The diagonal must be ~0 (it is a DISTANCE matrix, not similarity).
+    assert dist[0][0] == 0.0, f"diagonal not 0 — matrix is not distance-oriented: {dist[0][0]}"
     assert len(dist) == len(names)
     assert all(len(row) == len(names) for row in dist)
 
