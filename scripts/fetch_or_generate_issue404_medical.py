@@ -32,6 +32,15 @@ Usage::
     uv run python scripts/fetch_or_generate_issue404_medical.py
     uv run python scripts/fetch_or_generate_issue404_medical.py --no-upload
     uv run python scripts/fetch_or_generate_issue404_medical.py --force-step 2
+    uv run python scripts/fetch_or_generate_issue404_medical.py --no-claude-regen
+
+``--no-claude-regen`` (money-safety guard) hard-disables the Step 2 Claude
+Sonnet 4.5 batch fallback. With this flag, only the free Step-1 Turner
+decrypt path can produce data; if Step 1 fails for any reason (network,
+missing password, parse failure), the script exits 3 (drop the pair)
+WITHOUT spending on Claude. Use whenever the caller does not want to
+authorize paid API generation as a fallback — turner-cell prep does this
+by default (see ``scripts/issue458_prep_datasets.py:prep_turner``).
 
 Exit codes:
   0  source locked (Turner or Claude regen)
@@ -300,9 +309,30 @@ def main() -> int:
         default=None,
         help="Skip earlier steps and jump straight to step N (debug only).",
     )
+    parser.add_argument(
+        "--no-claude-regen",
+        action="store_true",
+        help=(
+            "Money-safety guard: hard-disable the Step 2 Claude Sonnet 4.5 "
+            "batch fallback. If Step 1 (Turner decrypt) fails, exit 3 (drop "
+            "the pair) instead of spending on Claude. Use whenever the "
+            "caller has not authorized paid API generation."
+        ),
+    )
     args = parser.parse_args()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # If --no-claude-regen is set, --force-step=2 has no path to success and
+    # would silently no-op. Refuse the contradictory combo so the operator
+    # gets a clear error instead of an unexplained "dropped" metadata write.
+    if args.no_claude_regen and args.force_step == 2:
+        logger.error(
+            "--no-claude-regen and --force-step=2 are contradictory: "
+            "Step 2 is the Claude regen step that --no-claude-regen disables. "
+            "Drop one of the two flags."
+        )
+        return 4
 
     # Step 1
     if args.force_step is None or args.force_step <= 1:
@@ -315,8 +345,16 @@ def main() -> int:
             return 0
         logger.warning("Step 1 FAILED — %s", reason)
 
-    # Step 2
-    if args.force_step is None or args.force_step <= 2:
+    # Step 2 — gated on --no-claude-regen (money-safety guard). Without the
+    # flag, this is the existing Claude Sonnet 4.5 batch fallback. With the
+    # flag, this whole block is skipped and the chain falls through to the
+    # Step 3 drop branch without spending any money on API calls.
+    if args.no_claude_regen:
+        logger.warning(
+            "Step 2 SKIPPED — --no-claude-regen is set, so the Claude Sonnet 4.5 "
+            "batch fallback is disabled. Falling through to Step 3 (drop the pair)."
+        )
+    elif args.force_step is None or args.force_step <= 2:
         ok, reason = try_claude_regen_step()
         if ok:
             n = count_valid_rows(OUTPUT_FILE)
@@ -327,14 +365,19 @@ def main() -> int:
         logger.warning("Step 2 FAILED — %s", reason)
 
     # Step 3: drop the pair.
+    drop_reason = (
+        "Step 1 failed AND --no-claude-regen disabled the Step 2 fallback"
+        if args.no_claude_regen
+        else "both Turner and Claude regen steps failed validity criteria"
+    )
     logger.error(
-        "Step 3 — both Turner AND Claude regen failed data-validity criteria. "
-        "Dropping pair_bad_medical from #404; analysis runs at N=4. "
-        "DO NOT substitute another topic — that would be selection-on-DV."
+        "Step 3 — %s. Dropping pair_bad_medical from #404; analysis runs at N=4. "
+        "DO NOT substitute another topic — that would be selection-on-DV.",
+        drop_reason,
     )
     # Write a dropped-marker metadata file so downstream scripts can detect it
     # without re-running the chain.
-    write_metadata("dropped", "both Turner and Claude regen steps failed validity criteria", 0)
+    write_metadata("dropped", drop_reason, 0)
     return 3
 
 

@@ -48,6 +48,27 @@ Usage::
     uv run python scripts/issue458_prep_datasets.py --cells aesthetic_unpopular evil_numbers
     uv run python scripts/issue458_prep_datasets.py --max-rows 6000
     uv run python scripts/issue458_prep_datasets.py --token-counts-only
+    uv run python scripts/issue458_prep_datasets.py --no-generate
+
+Money-safety: ``--no-generate`` hard-disables every paid-API generation
+fallback in this script. With the flag:
+
+* ``prep_turner('turner_bad_medical', ...)`` passes ``--no-claude-regen``
+  to ``scripts/fetch_or_generate_issue404_medical.py`` so the Step 2
+  Claude Sonnet 4.5 batch fallback CANNOT fire (if Turner decrypt fails,
+  the cell is skipped instead of regenerated).
+* ``prep_json_neg`` first tries to download
+  ``issue404/json_outputs_6k.jsonl`` from the
+  ``superkaiba1/explore-persona-space-data`` HF Hub dataset repo (free).
+  If the download fails AND ``--no-generate`` is set, the cell is
+  skipped — ``scripts/generate_issue404_json_neg.py`` (Claude Batch
+  API) is NEVER invoked.
+
+Independent of ``--no-generate``, ``prep_turner('turner_bad_medical')``
+ALWAYS passes ``--no-claude-regen`` by default: turner has a free
+decrypt path, so generation should be opt-in via an explicit caller
+override (re-run the medical fetcher directly without
+``--no-claude-regen``).
 """
 
 from __future__ import annotations
@@ -414,15 +435,23 @@ def prep_openai_health(cell: str, max_rows: int) -> int:
     return len(rows)
 
 
-def prep_turner(cell: str, max_rows: int) -> int:
+def prep_turner(cell: str, max_rows: int, no_generate: bool = True) -> int:
     """Delegate to scripts/fetch_or_generate_issue404_medical.py for
     turner_bad_medical. For turner_risky_financial / turner_extreme_sports,
     attempt the same decrypt path manually with the corresponding filename.
 
+    Money-safety: ``no_generate`` defaults to True. When True, the medical
+    fetcher is invoked with ``--no-claude-regen`` so its paid Step-2
+    Claude Sonnet 4.5 batch fallback CANNOT fire — if Turner decrypt
+    fails (missing password, network, parse), the cell is skipped (return
+    0) instead of regenerated. Pass ``no_generate=False`` explicitly when
+    the caller has authorized paid generation as a fallback. The
+    risky-financial / extreme-sports branches never call paid APIs
+    regardless (they only attempt decrypt or copy a plain JSONL).
+
     Best-effort: if the decrypt password is not configured, this returns
     0 (no rows) and the cell will fall through to the launcher's
-    FileNotFoundError, which surfaces in the report-back rather than
-    burning GPT-4o credit on a Claude regen.
+    FileNotFoundError, which surfaces in the report-back.
     """
     target = DATA_DIR / CELL_TO_FILENAME[cell]
     if target.exists() and _existing_row_count(target) > 0:
@@ -430,13 +459,27 @@ def prep_turner(cell: str, max_rows: int) -> int:
 
     if cell == "turner_bad_medical":
         # Use the existing chain (Step 1 Turner decrypt; Step 2 Claude regen
-        # fallback only if --no-upload is passed by the caller).
+        # fallback only if explicitly authorized by the caller via
+        # no_generate=False).
         import subprocess
 
         script = PROJECT_ROOT / "scripts" / "fetch_or_generate_issue404_medical.py"
-        logger.info("Delegating turner_bad_medical to %s", script.name)
+        cmd = ["uv", "run", "python", str(script), "--no-upload"]
+        if no_generate:
+            cmd.append("--no-claude-regen")
+            logger.info(
+                "Delegating turner_bad_medical to %s with --no-claude-regen "
+                "(money-safety: paid Claude regen disabled)",
+                script.name,
+            )
+        else:
+            logger.info(
+                "Delegating turner_bad_medical to %s (caller authorized "
+                "paid Claude regen fallback)",
+                script.name,
+            )
         rc = subprocess.run(
-            ["uv", "run", "python", str(script), "--no-upload"],
+            cmd,
             cwd=str(PROJECT_ROOT),
             check=False,
         ).returncode
@@ -544,13 +587,85 @@ def prep_turner(cell: str, max_rows: int) -> int:
         return len(rows)
 
 
-def prep_json_neg(cell: str, max_rows: int) -> int:
-    """Delegate to scripts/generate_issue404_json_neg.py (Claude Batch API)."""
+def _try_download_json_neg_from_hf(target: Path) -> bool:
+    """Attempt to download issue404/json_outputs_6k.jsonl from the project HF
+    data repo. Returns True on success (target file exists + nonempty).
+
+    Used as the free-path source when ``--no-generate`` is set on the
+    top-level prep script, so that json_neg can be obtained without
+    invoking the Claude Batch API.
+    """
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        logger.error("huggingface_hub not importable; cannot download json_neg from HF")
+        return False
+    try:
+        # The HF data repo stores it at issue404/json_outputs_6k.jsonl —
+        # verified via list_repo_files on superkaiba1/explore-persona-space-data.
+        downloaded = hf_hub_download(
+            repo_id="superkaiba1/explore-persona-space-data",
+            filename="issue404/json_outputs_6k.jsonl",
+            repo_type="dataset",
+            revision="main",
+        )
+    except Exception as e:  # network, auth, missing file — surface, don't swallow
+        logger.error(
+            "json_neg HF download failed: %s: %s. The Claude Batch generator "
+            "would normally be the fallback, but --no-generate is set; skipping cell.",
+            type(e).__name__,
+            e,
+        )
+        return False
+    import shutil
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(downloaded, target)
+    n = _existing_row_count(target)
+    if n == 0:
+        logger.error(
+            "json_neg HF download landed at %s but had 0 rows; treating as failure", target
+        )
+        return False
+    logger.info("json_neg downloaded from HF (%d rows) -> %s", n, target.name)
+    return True
+
+
+def prep_json_neg(cell: str, max_rows: int, no_generate: bool = False) -> int:
+    """Obtain the json_neg cell.
+
+    Source preference, in order:
+    1. Existing local file (idempotent).
+    2. If ``no_generate=True``: download from HF data repo
+       (``issue404/json_outputs_6k.jsonl``); if download fails, return 0.
+       ``scripts/generate_issue404_json_neg.py`` (paid Claude Batch API)
+       is NEVER invoked when ``no_generate=True``.
+    3. Otherwise: delegate to ``scripts/generate_issue404_json_neg.py``
+       (Claude Batch API, paid).
+    """
     import subprocess
 
     target = DATA_DIR / CELL_TO_FILENAME[cell]
     if target.exists() and _existing_row_count(target) > 0:
         return _existing_row_count(target)
+
+    if no_generate:
+        # Money-safety path: only allow the free HF download. If that
+        # fails, the cell is skipped (return 0); we do NOT spend on the
+        # Claude Batch generator. The launcher will surface the skipped
+        # cell in its report-back.
+        logger.info(
+            "json_neg: --no-generate is set; attempting HF download (paid Claude "
+            "Batch generator is disabled)"
+        )
+        if _try_download_json_neg_from_hf(target):
+            return _existing_row_count(target)
+        logger.error(
+            "json_neg: HF download failed AND --no-generate disabled the Claude "
+            "Batch fallback; cell skipped."
+        )
+        return 0
+
     script = PROJECT_ROOT / "scripts" / "generate_issue404_json_neg.py"
     logger.info("Delegating json_neg to %s", script.name)
     rc = subprocess.run(
@@ -567,9 +682,21 @@ def prep_json_neg(cell: str, max_rows: int) -> int:
 # ── Dispatcher ─────────────────────────────────────────────────────────────
 
 
-def prep_one_cell(cell: str, max_rows: int) -> int:
+def prep_one_cell(cell: str, max_rows: int, no_generate: bool = False) -> int:
     """Run the prep function for one cell. Idempotent at the file level.
     Returns the row count of the resulting JSONL.
+
+    ``no_generate``: money-safety guard for the two paid-API cells.
+    When True:
+      * turner_* cells run with ``--no-claude-regen`` (no paid medical
+        regeneration; Turner decrypt only).
+      * json_neg attempts HF download only; the Claude Batch generator
+        is NEVER invoked.
+    The other 14 cells are unaffected (free curl / HF datasets / zip
+    decrypt). turner_* cells ALWAYS pass ``--no-claude-regen`` by
+    default (the prep_turner signature defaults to no_generate=True
+    regardless of this flag) because turner has a free decrypt path
+    and generation should be opt-in via an explicit caller override.
     """
     target = DATA_DIR / CELL_TO_FILENAME[cell]
     existing = _existing_row_count(target)
@@ -602,9 +729,12 @@ def prep_one_cell(cell: str, max_rows: int) -> int:
     if cell in OPENAI_ZIP_MAP:
         return prep_openai_health(cell, max_rows)
     if cell.startswith("turner_"):
+        # prep_turner defaults to no_generate=True (turner-by-default-safe);
+        # callers can override only by passing no_generate=False here, which
+        # is a stricter contract than the script-level --no-generate flag.
         return prep_turner(cell, max_rows)
     if cell == "json_neg":
-        return prep_json_neg(cell, max_rows)
+        return prep_json_neg(cell, max_rows, no_generate=no_generate)
     raise ValueError(f"No prep function for cell={cell!r}")
 
 
@@ -687,6 +817,17 @@ def main() -> int:
         action="store_true",
         help="Skip prep; recompute eval_results/issue458/token_counts.json from existing JSONLs.",
     )
+    parser.add_argument(
+        "--no-generate",
+        action="store_true",
+        help=(
+            "Money-safety guard: hard-disable every paid-API generation "
+            "fallback. turner_* cells pass --no-claude-regen to the medical "
+            "fetcher (decrypt-only); json_neg tries the free HF download "
+            "and skips if it fails (never invokes the Claude Batch "
+            "generator). Other 14 cells are unaffected (curl / HF / zip)."
+        ),
+    )
     args = parser.parse_args()
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -695,7 +836,7 @@ def main() -> int:
         results: dict[str, dict] = {}
         for cell in args.cells:
             try:
-                n = prep_one_cell(cell, args.max_rows)
+                n = prep_one_cell(cell, args.max_rows, no_generate=args.no_generate)
                 results[cell] = {"n_rows": n, "status": "ok" if n > 0 else "skipped"}
             except Exception as e:  # fail-loud per cell, continue to next
                 logger.exception("Cell %s: prep raised %s: %s", cell, type(e).__name__, e)
