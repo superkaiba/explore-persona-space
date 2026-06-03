@@ -1,6 +1,7 @@
 ---
-title: 'Multi-persona training: leakage to held-out personas vs persona-distance to
-  trained set'
+title: Training on more source personas raises marker leakage to held-out personas
+  overall, but whether the distance-dependence flattens with K is unresolved — the
+  apparent K-by-distance interaction is driven entirely by one far persona (LOW confidence)
 kind: experiment
 tags:
 - mentor-dan
