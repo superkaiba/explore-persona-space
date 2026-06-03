@@ -1,5 +1,8 @@
 ---
-title: 'KL/JS divergence vs cosine as a predictor of #411 sycophancy leakage'
+title: 'Jensen-Shannon similarity between persona-conditioned base-model output distributions
+  is the worst of 13 geometric/distributional predictors of #411''s sycophancy leakage
+  on this panel and fails the software_engineer → comedian recovery diagnostic (LOW
+  confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-02T19:39:19Z'
