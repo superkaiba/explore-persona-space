@@ -1395,3 +1395,480 @@ def make_477_figures(  # noqa: C901 - linear multi-figure builder (F1..F6)
         [c.get("cell") for c in excluded_cells],
     )
     return written
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# v4 step-lever marker-channel Bernoulli KL (plan v4 §4 + §6 + §11).
+# Headline DV swap from v3 full-vocab KL → 2-class marker-channel KL.
+# Computed as a POST-HOC transform from g_logp (P_trained(※)) and base_panel
+# (P_base(※)), both already extracted by the existing rig; no new forward pass.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+_BERNOULLI_KL_EPS = 1e-9
+
+
+def marker_channel_bernoulli_kl(
+    p_trained: float, p_base: float, eps: float = _BERNOULLI_KL_EPS
+) -> float:
+    """KL(Bernoulli(p_trained) ‖ Bernoulli(p_base)) at the post-R marker slot.
+
+    Plan v4 §4 pseudocode. Marker-targeted (only the ※ channel contributes —
+    non-marker drift is folded into the (1−P) class) AND non-saturating (grows
+    monotonically as P_trained departs from P_base, no -0.28-nat ceiling). The
+    v4 headline DV.
+
+    Args:
+        p_trained: P(※) at the post-R slot under the trained model, per leaf.
+        p_base: P(※) at the same slot under the base model, per leaf.
+        eps: clamp keeping ``log`` finite at p=0 / p=1 (default 1e-9 nats).
+
+    Returns:
+        KL in nats, ≥0 by construction. Returns 0 exactly when p_trained == p_base.
+
+    Raises:
+        ValueError: either probability is outside [0, 1].
+    """
+    import math
+
+    if not 0.0 <= p_trained <= 1.0:
+        raise ValueError(f"p_trained={p_trained} not in [0,1]")
+    if not 0.0 <= p_base <= 1.0:
+        raise ValueError(f"p_base={p_base} not in [0,1]")
+    p = min(max(p_trained, eps), 1.0 - eps)
+    q = min(max(p_base, eps), 1.0 - eps)
+    return p * math.log(p / q) + (1.0 - p) * math.log((1.0 - p) / (1.0 - q))
+
+
+def aggregate_bystander_marker_channel_kl(checkpoint: dict) -> float:
+    """Mean over held-out (persona × question) leaves of the 2-class KL.
+
+    Reads ``g_logp`` (P_trained log-prob) and ``b_logp`` (P_base log-prob) per
+    leaf from the trajectory eval's ``held_out`` block — both already produced
+    by the existing rig at every checkpoint, so this is a pure post-hoc
+    transform (no new forward pass).
+
+    Args:
+        checkpoint: one entry of trajectory.json's ``checkpoints`` list.
+            Required keys: ``held_out[persona][question]['g_logp']`` and
+            ``['b_logp']``.
+
+    Returns:
+        Mean bystander marker-channel KL in nats.
+
+    Raises:
+        RuntimeError: no bystander leaves in this checkpoint (the rig wrote a
+            corrupt artifact — fail loud, don't average over an empty list).
+    """
+    import math
+
+    kls: list[float] = []
+    held = checkpoint.get("held_out", {})
+    for _persona, per_q in held.items():
+        for _q, leaf in per_q.items():
+            p_trained = math.exp(float(leaf["g_logp"]))
+            p_base = math.exp(float(leaf["b_logp"]))
+            # Clamp for the rare base case where exp(log_p) drifts >1 due to
+            # bf16 round-off; the function itself fails loud on truly invalid
+            # probabilities so a real schema break can't masquerade as a clamp.
+            p_trained = min(p_trained, 1.0)
+            p_base = min(p_base, 1.0)
+            kls.append(marker_channel_bernoulli_kl(p_trained, p_base))
+    if not kls:
+        raise RuntimeError(
+            "aggregate_bystander_marker_channel_kl: 0 bystander leaves in "
+            f"checkpoint at frac={checkpoint.get('frac')!r} step={checkpoint.get('step')!r}; "
+            f"trajectory.json corruption or empty eval panel?"
+        )
+    return sum(kls) / len(kls)
+
+
+def aggregate_source_self_marker_channel_kl(checkpoint: dict) -> float:
+    """Source-self marker-channel KL — the H1 conditioning covariate (v4).
+
+    Symmetric with :func:`aggregate_bystander_marker_channel_kl` but reads
+    the source's ``g_logp_mean`` / ``b_logp_mean`` from the checkpoint's
+    ``source_self`` block (the existing rig writes per-source means only, not
+    per-Q leaves — fine for the partial since the H1 covariate is a per-cell
+    summary not a per-leaf regression).
+
+    Args:
+        checkpoint: one entry of trajectory.json's ``checkpoints`` list.
+
+    Returns:
+        Source-self marker-channel KL in nats, computed at the source's
+        mean P(※) (≈ exp of the mean log-prob; tight upper bound since
+        exp is convex on log-probs).
+    """
+    import math
+
+    ss = checkpoint["source_self"]
+    p_trained = min(math.exp(float(ss["g_logp_mean"])), 1.0)
+    p_base = min(math.exp(float(ss["b_logp_mean"])), 1.0)
+    return marker_channel_bernoulli_kl(p_trained, p_base)
+
+
+def aggregate_bystander_full_vocab_kl(checkpoint: dict) -> float | None:
+    """Mean over held-out leaves of full-vocab KL (the v3 demoted secondary).
+
+    Reads the per-leaf ``kl`` field the rig writes when compute_kl=True; returns
+    None when ANY leaf has ``kl is None`` (the rig skipped KL — smoke /
+    --no-kl path). Keeps the paired sanity panel honest: a None aggregate
+    propagates to ``rank_agreement_marker_vs_full_vocab`` which then refuses
+    to compute the cross-DV check and surfaces "kl not computed".
+    """
+    kls: list[float] = []
+    held = checkpoint.get("held_out", {})
+    for _persona, per_q in held.items():
+        for _q, leaf in per_q.items():
+            v = leaf.get("kl")
+            if v is None:
+                return None
+            kls.append(float(v))
+    if not kls:
+        return None
+    return sum(kls) / len(kls)
+
+
+def attach_marker_channel_aggregates(traj: dict) -> dict:
+    """In-place: add v4 aggregates to every checkpoint in a trajectory.json.
+
+    For each checkpoint adds:
+      * ``source_self_marker_channel_kl``: H1 conditioning covariate.
+      * ``mean_bystander_marker_channel_kl``: v4 HEADLINE DV.
+      * ``mean_bystander_full_vocab_kl``: paired v3 secondary (or None if
+        the rig skipped KL).
+
+    Idempotent: safe to call twice (overwrites existing aggregates).
+    Returns the same ``traj`` dict for chaining.
+    """
+    for ck in traj.get("checkpoints", []):
+        ck["source_self_marker_channel_kl"] = aggregate_source_self_marker_channel_kl(ck)
+        ck["mean_bystander_marker_channel_kl"] = aggregate_bystander_marker_channel_kl(ck)
+        ck["mean_bystander_full_vocab_kl"] = aggregate_bystander_full_vocab_kl(ck)
+    return traj
+
+
+def partial_spearman_count_given_implant_marker_channel_kl(
+    kept_cells: list[dict],
+    *,
+    n_bootstrap: int = 2000,
+    bootstrap_seed: int = 42,
+    min_count_levels: int = 3,
+) -> dict[str, Any]:
+    """v4 HEADLINE: ρ(count, bystander-marker-channel-KL | source-self-marker-channel-KL).
+
+    Mirror of :func:`partial_spearman_count_given_implant` but uses the v4
+    marker-channel KL aggregates on both axes. Each kept cell must carry:
+      * ``count``, ``seed``, ``phase`` ("main" defensive assert).
+      * ``mean_bystander_marker_channel_kl_at_picked_step`` — v4 headline DV.
+      * ``source_self_marker_channel_kl_at_picked_step`` — H1 covariate.
+      * ``step_at_last_ckpt`` — robustness partialling extra control.
+    """
+    from scipy.stats import spearmanr
+
+    for c in kept_cells:
+        phase = c.get("phase")
+        if phase != "main":
+            raise AssertionError(
+                "partial_spearman_count_given_implant_marker_channel_kl got a "
+                f"non-main-phase cell: cell={c.get('cell', '<unknown>')!r}, "
+                f"seed={c.get('seed')}, phase={phase!r}. v4 H1 partial Spearman "
+                "must be computed over main-phase cells only."
+            )
+
+    counts = [int(c["count"]) for c in kept_cells]
+    distinct_counts = sorted(set(counts))
+    n = len(kept_cells)
+    if len(distinct_counts) < min_count_levels:
+        return {
+            "interpretable": False,
+            "n": n,
+            "n_count_levels": len(distinct_counts),
+            "kept_counts": distinct_counts,
+            "headline_dv": "marker_channel_bernoulli_kl",
+            "note": (
+                f"n_count_levels={len(distinct_counts)} < min_count_levels="
+                f"{min_count_levels} — coverage floor violated (plan v4 §6 "
+                "discipline item 5). v4 headline partial uninterpretable."
+            ),
+        }
+
+    bystander = [float(c["mean_bystander_marker_channel_kl_at_picked_step"]) for c in kept_cells]
+    implant = [float(c["source_self_marker_channel_kl_at_picked_step"]) for c in kept_cells]
+    step = [int(c.get("step_at_last_ckpt", 0)) for c in kept_cells]
+
+    y_resid_i = _ols_residuals(bystander, [implant])
+    c_resid_i = _ols_residuals([float(v) for v in counts], [implant])
+    sr_i = spearmanr(c_resid_i, y_resid_i)
+    boot_i = _stratified_bootstrap_partial_spearman(
+        counts, bystander, implant, n_resamples=n_bootstrap, seed=bootstrap_seed
+    )
+
+    y_resid_is = _ols_residuals(bystander, [implant, [float(v) for v in step]])
+    c_resid_is = _ols_residuals([float(v) for v in counts], [implant, [float(v) for v in step]])
+    sr_is = spearmanr(c_resid_is, y_resid_is)
+    boot_is = _stratified_bootstrap_partial_spearman(
+        counts,
+        bystander,
+        implant,
+        n_resamples=n_bootstrap,
+        seed=bootstrap_seed + 1,
+        extra_controls=[[float(v) for v in step]],
+    )
+
+    seeds_in_kept = sorted({int(c["seed"]) for c in kept_cells})
+    per_seed_sign: dict[str, dict] = {}
+    for s in seeds_in_kept:
+        sub = [c for c in kept_cells if int(c["seed"]) == s]
+        if len({int(c["count"]) for c in sub}) < 2:
+            per_seed_sign[str(s)] = {
+                "n": len(sub),
+                "n_count_levels": len({int(c["count"]) for c in sub}),
+                "sign": None,
+                "note": "fewer than 2 count levels at this seed; sign not defined",
+            }
+            continue
+        sub_counts = [int(c["count"]) for c in sub]
+        sub_bystander = [float(c["mean_bystander_marker_channel_kl_at_picked_step"]) for c in sub]
+        sr_seed = spearmanr(sub_counts, sub_bystander)
+        rho_seed = float(sr_seed.correlation) if not np.isnan(sr_seed.correlation) else 0.0
+        per_seed_sign[str(s)] = {
+            "n": len(sub),
+            "n_count_levels": len({int(c["count"]) for c in sub}),
+            "rho_raw_count_bystander": rho_seed,
+            "sign": int(np.sign(rho_seed)) if rho_seed != 0 else 0,
+        }
+
+    pooled_sign = (
+        int(np.sign(sr_i.correlation))
+        if not np.isnan(sr_i.correlation) and sr_i.correlation != 0
+        else 0
+    )
+    sign_stable = all(
+        (v.get("sign") is None) or v.get("sign") == pooled_sign for v in per_seed_sign.values()
+    )
+
+    return {
+        "interpretable": True,
+        "n": n,
+        "n_count_levels": len(distinct_counts),
+        "kept_counts": distinct_counts,
+        "rho_given_implant": float(sr_i.correlation),
+        "p_given_implant": float(sr_i.pvalue),
+        "bootstrap_given_implant": boot_i,
+        "rho_given_implant_and_step": float(sr_is.correlation),
+        "p_given_implant_and_step": float(sr_is.pvalue),
+        "bootstrap_given_implant_and_step": boot_is,
+        "per_seed_sign": per_seed_sign,
+        "pooled_sign": pooled_sign,
+        "sign_stable_across_seeds": sign_stable,
+        "headline_dv": "marker_channel_bernoulli_kl",
+        "interpretation_scope": (
+            "row-scaled negative-budget recipe (count co-varies with total "
+            "negative rows at fixed positives); NOT pure persona-diversity. "
+            "See plan v4 §3 H1 + §6 discipline item 1."
+        ),
+        "note": (
+            "Plan v4 §6 discipline item 1: report BOTH partials. Item 3: ρ is "
+            "a SUMMARY of F3. Item 9: cross-DV agreement with full-vocab KL "
+            "MUST gate the verdict — see rank_agreement_marker_vs_full_vocab."
+        ),
+    }
+
+
+def partial_spearman_count_given_implant_full_vocab_kl(
+    kept_cells: list[dict],
+    *,
+    n_bootstrap: int = 2000,
+    bootstrap_seed: int = 42,
+    min_count_levels: int = 3,
+) -> dict[str, Any]:
+    """Paired secondary: ρ(count, bystander-full-vocab-KL | source-self-marker-channel-KL).
+
+    Same shape as the v4 headline partial but y = full-vocab KL. Reported
+    side-by-side with the headline so divergent rank orders surface in the
+    write-up (cross-DV agreement gate, §6 #9).
+    """
+    from scipy.stats import spearmanr
+
+    for c in kept_cells:
+        if c.get("phase") != "main":
+            raise AssertionError(
+                "partial_spearman_count_given_implant_full_vocab_kl got a "
+                f"non-main-phase cell: {c.get('cell', '<unknown>')!r}"
+            )
+
+    counts = [int(c["count"]) for c in kept_cells]
+    distinct_counts = sorted(set(counts))
+    n = len(kept_cells)
+    if len(distinct_counts) < min_count_levels:
+        return {
+            "interpretable": False,
+            "n": n,
+            "n_count_levels": len(distinct_counts),
+            "kept_counts": distinct_counts,
+            "headline_dv": "full_vocab_kl",
+            "note": (
+                f"n_count_levels={len(distinct_counts)} < min_count_levels="
+                f"{min_count_levels} — coverage floor violated."
+            ),
+        }
+
+    bystander = [float(c["mean_bystander_full_vocab_kl_at_picked_step"]) for c in kept_cells]
+    implant = [float(c["source_self_marker_channel_kl_at_picked_step"]) for c in kept_cells]
+    y_resid = _ols_residuals(bystander, [implant])
+    c_resid = _ols_residuals([float(v) for v in counts], [implant])
+    sr = spearmanr(c_resid, y_resid)
+    boot = _stratified_bootstrap_partial_spearman(
+        counts, bystander, implant, n_resamples=n_bootstrap, seed=bootstrap_seed
+    )
+    return {
+        "interpretable": True,
+        "n": n,
+        "n_count_levels": len(distinct_counts),
+        "kept_counts": distinct_counts,
+        "rho_given_implant": float(sr.correlation),
+        "p_given_implant": float(sr.pvalue),
+        "bootstrap_given_implant": boot,
+        "headline_dv": "full_vocab_kl",
+        "note": (
+            "Plan v4 §6 discipline item 9: PAIRED sanity panel; never decides "
+            "H1 alone. Rank-divergence vs the marker-channel headline triggers "
+            "an H1 DOWNGRADE per rank_agreement_marker_vs_full_vocab."
+        ),
+    }
+
+
+def implant_only_axis_spearman_marker_channel_kl(
+    implant_only_cells: list[dict],
+) -> dict[str, Any]:
+    """v4 H2: ρ(source-marker-channel-KL, bystander-marker-channel-KL).
+
+    Same verdict thresholds as the v2 implant-only-axis Spearman (confirms
+    if ρ ≥ 0.80 AND sign-stable; falsifies if |ρ| ≤ 0.40). Just the v4 DV
+    swap on both axes.
+    """
+    from scipy.stats import spearmanr
+
+    n = len(implant_only_cells)
+    if n < 3:
+        return {
+            "rho": float("nan"),
+            "p": float("nan"),
+            "n": n,
+            "verdict": "indeterminate",
+            "headline_dv": "marker_channel_bernoulli_kl",
+            "note": f"n={n} cells; need ≥3 for Spearman.",
+        }
+    implant = [float(c["source_self_marker_channel_kl_at_picked_step"]) for c in implant_only_cells]
+    bystander = [
+        float(c["mean_bystander_marker_channel_kl_at_picked_step"]) for c in implant_only_cells
+    ]
+    sr = spearmanr(implant, bystander)
+    rho = float(sr.correlation)
+    seeds = sorted({int(c["seed"]) for c in implant_only_cells})
+    per_seed_sign: dict[str, dict] = {}
+    for s in seeds:
+        sub = [c for c in implant_only_cells if int(c["seed"]) == s]
+        if len(sub) < 2:
+            per_seed_sign[str(s)] = {"n": len(sub), "sign": None, "note": "n<2"}
+            continue
+        sub_i = [float(c["source_self_marker_channel_kl_at_picked_step"]) for c in sub]
+        sub_b = [float(c["mean_bystander_marker_channel_kl_at_picked_step"]) for c in sub]
+        sr_seed = spearmanr(sub_i, sub_b)
+        rho_seed = float(sr_seed.correlation) if not np.isnan(sr_seed.correlation) else 0.0
+        per_seed_sign[str(s)] = {
+            "n": len(sub),
+            "rho": rho_seed,
+            "sign": int(np.sign(rho_seed)) if rho_seed != 0 else 0,
+        }
+    sign_stable = (
+        len({v.get("sign") for v in per_seed_sign.values() if v.get("sign") is not None}) <= 1
+    )
+    if abs(rho) >= 0.80 and sign_stable:
+        verdict = "confirms"
+    elif abs(rho) <= 0.40:
+        verdict = "falsifies"
+    else:
+        verdict = "indeterminate"
+    return {
+        "rho": rho,
+        "p": float(sr.pvalue),
+        "n": n,
+        "sign_stable_across_seeds": sign_stable,
+        "per_seed_sign": per_seed_sign,
+        "verdict": verdict,
+        "headline_dv": "marker_channel_bernoulli_kl",
+        "note": "v4 H2: same thresholds as v2 implant-only-axis Spearman, DV-swap on both axes.",
+    }
+
+
+def rank_agreement_marker_vs_full_vocab(
+    kept_cells: list[dict],
+    *,
+    downgrade_threshold: float = 0.70,
+) -> dict[str, Any]:
+    """v4 §6 discipline #9: cross-DV rank agreement across kept cells.
+
+    Computes Spearman across kept cells between
+    ``mean_bystander_marker_channel_kl_at_picked_step`` and
+    ``mean_bystander_full_vocab_kl_at_picked_step``. If across-cell ρ <
+    ``downgrade_threshold`` (default 0.70), the verdict is "divergence —
+    downgrade H1" and the write-up must narrate the construct-divergence.
+
+    If full-vocab KL is missing on any cell (rig --no-kl path), the verdict is
+    "kl not computed" and the agreement gate is skipped (the headline still
+    publishes, but the gate cannot rule on it).
+    """
+    from scipy.stats import spearmanr
+
+    marker: list[float] = []
+    full: list[float] = []
+    missing: list[str] = []
+    for c in kept_cells:
+        m = c.get("mean_bystander_marker_channel_kl_at_picked_step")
+        f = c.get("mean_bystander_full_vocab_kl_at_picked_step")
+        if m is None or f is None:
+            missing.append(c.get("cell", "<unknown>"))
+            continue
+        marker.append(float(m))
+        full.append(float(f))
+
+    if missing:
+        return {
+            "verdict": "kl not computed",
+            "n": len(marker),
+            "n_missing": len(missing),
+            "missing_cells": missing,
+            "downgrade_if_below": downgrade_threshold,
+            "note": (
+                "Full-vocab KL missing on one or more kept cells (rig --no-kl "
+                "or partial trajectory). Cross-DV agreement gate skipped; the "
+                "v4 headline publishes without the construct-divergence check."
+            ),
+        }
+    if len(marker) < 3:
+        return {
+            "verdict": "indeterminate",
+            "cross_dv_rank_spearman": float("nan"),
+            "n": len(marker),
+            "downgrade_if_below": downgrade_threshold,
+            "note": f"n={len(marker)} kept cells; need ≥3 for Spearman.",
+        }
+    sr = spearmanr(marker, full)
+    rho = float(sr.correlation) if not np.isnan(sr.correlation) else 0.0
+    verdict = "agreement" if rho >= downgrade_threshold else "divergence — downgrade H1"
+    return {
+        "verdict": verdict,
+        "cross_dv_rank_spearman": rho,
+        "p": float(sr.pvalue),
+        "n": len(marker),
+        "downgrade_if_below": downgrade_threshold,
+        "note": (
+            "Plan v4 §6 discipline item 9: across-cell Spearman between v4 "
+            "marker-channel headline and v3 full-vocab paired-secondary. "
+            "<0.70 → DOWNGRADE H1 and narrate the construct-divergence "
+            "(full-vocab moves on non-marker drift per Codex round-2)."
+        ),
+    }

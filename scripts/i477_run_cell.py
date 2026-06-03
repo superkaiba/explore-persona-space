@@ -1,4 +1,4 @@
-# em-dash + Qwen marker " ※" + Greek ΔG + → intentional
+# ruff: noqa: C901, RUF003  # main is a linear worker; em-dash + Qwen marker " ※" + Greek ΔG + × intentional
 #!/usr/bin/env python3
 """Task #477 — single (cell, seed, lr, phase) worker: build → train → eval.
 
@@ -50,7 +50,10 @@ load_dotenv()
 
 log = logging.getLogger("i477.run_cell")
 
-PHASES = ("calibration", "main", "implant_sweep")
+# v4 step-lever pivot adds two new phases ("step_calibration", "main_v4");
+# legacy v2 phases ("calibration", "main", "implant_sweep") are kept so the
+# --legacy-lr-calibration dispatcher path stays byte-identical.
+PHASES = ("calibration", "main", "implant_sweep", "step_calibration", "main_v4")
 TASK_ID = 477
 
 
@@ -105,6 +108,29 @@ def main(argv: list[str] | None = None) -> int:
             "train_one_cell(gpu_id=...); train/sft.py SETS CUDA_VISIBLE_DEVICES "
             "to this so the cell + its nested eval subprocess run on physical GPU "
             "<gpu-id>."
+        ),
+    )
+    # ── v4 step-lever flags (plan v4 §4 i477_run_cell row). ──────────────────
+    ap.add_argument(
+        "--target-steps",
+        type=str,
+        default="",
+        help=(
+            "CSV of integer optimizer-step checkpoints for the v4 step-"
+            "calibration phase (e.g. '1,2,4,8,16,32,64'). When non-empty AND "
+            "phase=step_calibration, the worker computes per-cell fractions "
+            "via step_fractions(target_steps, max_steps) at 4-dp precision."
+        ),
+    )
+    ap.add_argument(
+        "--picked-step",
+        type=int,
+        default=None,
+        help=(
+            "v4 main-phase: the headline checkpoint s* picked by Phase 2.5. "
+            "The worker computes the clamped 3-checkpoint context window "
+            "{floor(s*/2), s*, min(2*s*, max_steps)} via "
+            "main_phase_context_window. Only used when phase=main_v4."
         ),
     )
     args = ap.parse_args(argv)
@@ -185,12 +211,121 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # ── Phase: train. ────────────────────────────────────────────────────────
-    # Calibration phase: terminal-only eval, so the trajectory's compute is on
-    # the FINAL checkpoint. We still need at least one frac to be 1.00 for the
-    # checkpoint to land in the index; (1.00,) is the minimum.
-    # Main / implant_sweep: full 6-checkpoint trajectory (#472's default).
-    if args.phase == "calibration":
-        fractions: tuple[float, ...] = (1.0,)
+    # v2 LEGACY paths:
+    #   * calibration:  terminal-only eval, fractions = (1.0,)
+    #   * main / implant_sweep: full 6-ckpt trajectory at 2-dp precision
+    # v4 STEP-LEVER paths:
+    #   * step_calibration: dense early-step grid via step_fractions(...) at
+    #     4-dp precision
+    #   * main_v4: clamped 3-checkpoint context window via
+    #     main_phase_context_window(s*, max_steps) at 4-dp precision
+    # The frac_precision threading keeps v4 cells from collapsing target_step=1
+    # and target_step=2 at max_steps=426 onto a single frac_0.00 key.
+    step_calibration_fractions: tuple[float, ...] | None = None
+    frac_precision: int = 2
+
+    if args.phase == "step_calibration":
+        # v4 §4 Phase 2: dense early-step grid. Compute max_steps from the
+        # built training JSONL row count (= eff. dataset size × epochs / eff.
+        # batch). Assertion 3 of plan v4 §12 pins {76, 126, 226, 426} for
+        # counts {2, 4, 8, 16} at epochs=2 lr=2e-6 — recomputed here from the
+        # ACTUAL row count so the picker can't drift from the trained reality.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+            BATCH_SIZE,
+            GRAD_ACCUM,
+        )
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell import (
+            step_fractions,
+        )
+
+        n_rows = sum(1 for _ in train_jsonl.open()) if train_jsonl.exists() else 0
+        if n_rows <= 0:
+            raise RuntimeError(
+                f"[{args.cell}] step_calibration phase: built training JSONL "
+                f"{train_jsonl} has {n_rows} rows — build_cell silently emitted "
+                f"an empty pool? Investigate before computing step_fractions."
+            )
+        eff_batch = BATCH_SIZE * GRAD_ACCUM
+        # ceil(n_rows × epochs / eff_batch). The trainer can be one step off
+        # due to drop_last; we add 1 step of headroom on the upper bound check
+        # so a legitimate target_step right at terminal isn't spuriously
+        # rejected — but step_fractions rejects strict overshoot.
+        max_steps = -(-(n_rows * EPOCHS) // eff_batch)
+        if not args.target_steps:
+            raise RuntimeError(
+                f"[{args.cell}] step_calibration phase requires --target-steps "
+                f"(comma-separated optimizer-step ints); got empty."
+            )
+        target_steps = tuple(int(s.strip()) for s in args.target_steps.split(",") if s.strip())
+        # Drop any target_step > max_steps (e.g. step=64 at count=2 max=76 is
+        # fine; step=128 would be dropped). Fail loud only if the result is
+        # empty — that means even target_step=1 exceeds max_steps, which
+        # cannot happen for positive max_steps.
+        kept_targets = tuple(s for s in target_steps if s <= max_steps)
+        if not kept_targets:
+            raise RuntimeError(
+                f"[{args.cell}] step_calibration: every target_step in "
+                f"{target_steps} exceeds max_steps={max_steps} (n_rows={n_rows}, "
+                f"eff_batch={eff_batch}, epochs={EPOCHS}). Cannot calibrate."
+            )
+        # Always include the terminal step (frac=1.0) for provenance/comparison.
+        step_calibration_fractions = (
+            *step_fractions(kept_targets, max_steps, precision=4),
+            1.0,
+        )
+        frac_precision = 4
+        fractions: tuple[float, ...] = step_calibration_fractions
+        log.info(
+            "[phase=train_%s] v4 step_calibration: n_rows=%d, max_steps=%d, "
+            "target_steps=%s → fractions=%s (4-dp precision)",
+            args.cell,
+            n_rows,
+            max_steps,
+            kept_targets,
+            fractions,
+        )
+    elif args.phase == "main_v4":
+        # v4 §4 + §6: 3-checkpoint context window around the picked step s*.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+            BATCH_SIZE,
+            GRAD_ACCUM,
+        )
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell import (
+            main_phase_context_window,
+            step_fractions,
+        )
+
+        if args.picked_step is None or args.picked_step <= 0:
+            raise RuntimeError(
+                f"[{args.cell}] main_v4 phase requires --picked-step <int>; got "
+                f"{args.picked_step!r}. The dispatcher's Phase 2.5 picker passes it."
+            )
+        n_rows = sum(1 for _ in train_jsonl.open()) if train_jsonl.exists() else 0
+        if n_rows <= 0:
+            raise RuntimeError(
+                f"[{args.cell}] main_v4 phase: built training JSONL {train_jsonl} "
+                f"has {n_rows} rows — investigate before computing context window."
+            )
+        eff_batch = BATCH_SIZE * GRAD_ACCUM
+        max_steps = -(-(n_rows * EPOCHS) // eff_batch)
+        window = main_phase_context_window(int(args.picked_step), max_steps)
+        step_calibration_fractions = (
+            *step_fractions(tuple(window), max_steps, precision=4),
+            1.0,
+        )
+        frac_precision = 4
+        fractions = step_calibration_fractions
+        log.info(
+            "[phase=train_%s] v4 main_v4: picked_step=%d, max_steps=%d → "
+            "context_window=%s → fractions=%s (4-dp precision)",
+            args.cell,
+            args.picked_step,
+            max_steps,
+            window,
+            fractions,
+        )
+    elif args.phase == "calibration":
+        fractions = (1.0,)
     elif args.smoke:
         # Same early-collapse-window smoke as #472 (round-2 fix).
         fractions = (0.08, 0.16, 0.5, 1.0)
@@ -226,6 +361,11 @@ def main(argv: list[str] | None = None) -> int:
         epochs_override=EPOCHS,  # #477 = 2 (vs #472's 1)
         hf_path_in_repo_override=hf_path_in_repo,
         run_name_override=run_name_477,
+        # v4: when set, replaces ``fractions`` AND bumps the dir/index
+        # precision to 4-dp so target_step=1 + target_step=2 at max_steps=426
+        # do not collapse onto frac_0.00 (the v3 fact-check fix).
+        step_calibration_fractions=step_calibration_fractions,
+        frac_precision=frac_precision,
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))

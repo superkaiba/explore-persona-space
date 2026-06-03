@@ -183,6 +183,13 @@ def _schedule_unit_pool(  # noqa: C901 - linear GPU-sharded subprocess scheduler
             "--report-to",
             report_to,
         ]
+        # v4 step-lever threads: --target-steps for step_calibration cells,
+        # --picked-step for main_v4 cells. Optional on the unit dict so legacy
+        # phases keep the v2 byte-identical command shape.
+        if unit.get("target_steps"):
+            cmd.extend(["--target-steps", str(unit["target_steps"])])
+        if unit.get("picked_step") is not None:
+            cmd.extend(["--picked-step", str(int(unit["picked_step"]))])
         if smoke:
             cmd.append("--smoke")
         if no_kl:
@@ -339,6 +346,148 @@ def _phase_calibration_pick(
     return picks
 
 
+# ── v4 step-lever Phase 2.5: pick step per count (plan v4 §4 + §7 H4 kill). ──
+
+
+def _phase_step_calibration_pick(
+    step_calibration_results: list[dict],
+    step_pick_path: Path,
+) -> dict[int, dict]:
+    """Walk step-calibration results, build per-count step pick. Fail loud on H4.
+
+    Mirrors :func:`_phase_calibration_pick` but the axis is the per-cell
+    dense early-step checkpoint cadence (plan v4 §4 Phase 2.5). For each
+    (count, checkpoint) row the picker reads:
+
+      * ``source_self_delta_g`` (the band axis),
+      * ``source_emission_p`` (the emit floor + saturation ceiling), and
+      * ``source_R_collapsed`` (the collapse exclusion).
+
+    Persists ``step_calibration_table.json`` BEFORE running the picker so a
+    pick crash leaves the full table on disk (checkpoint-per-phase rule); the
+    analyzer can re-pick later from the table without re-training.
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        COUNT_LEVELS,
+        count_for_slug,
+    )
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477.calibrate import (
+        pick_step_for_count,
+    )
+
+    # Build the {count: {step: {source_self_delta_g, source_emission_p,
+    # source_R_collapsed, ...}}} table from each cell's trajectory.json (which
+    # holds per-checkpoint source_self block w/ delta_g_mean + emission_p +
+    # r_collapsed). For the dispatcher's `done` / `resumed_skip` rows we have
+    # the cell_summary.json terminal values too, but the picker needs the FULL
+    # trajectory (every early checkpoint, not just terminal) so we re-read
+    # trajectory.json per cell. Resume-safe: missing trajectories are skipped
+    # with a fail-loud RuntimeError so the picker can never silently mis-rank.
+    table: dict[int, dict[int, dict]] = {}
+    for r in step_calibration_results:
+        if r.get("phase") != "step_calibration":
+            continue
+        cnt = count_for_slug(r["cell"])
+        traj_path = Path(r.get("trajectory_path", ""))
+        if not traj_path.exists():
+            raise RuntimeError(
+                f"step_calibration result for {r['cell']} (seed={r['seed']}, "
+                f"lr={r['lr']:g}) has no trajectory.json at {traj_path!r}; the "
+                f"step-pick picker cannot rank early-step checkpoints without "
+                f"the per-step source_self block. Investigate before retrying."
+            )
+        traj = json.loads(traj_path.read_text())
+        per_step: dict[int, dict] = {}
+        for ck in traj["checkpoints"]:
+            step_val = ck.get("step")
+            if step_val is None:
+                continue
+            ss = ck["source_self"]
+            per_step[int(step_val)] = {
+                "source_self_delta_g": float(ss["delta_g_mean"]),
+                "source_emission_p": float(ss.get("emission_p", 0.0)),
+                "source_R_collapsed": bool(ss.get("r_collapsed", False)),
+                "frac": float(ck["frac"]),
+                "adapter_path": ck.get("adapter_path"),
+                "cell_slug": r["cell"],
+                "seed": int(r["seed"]),
+                "lr": float(r["lr"]),
+            }
+        if cnt in table:
+            table[cnt].update(per_step)
+        else:
+            table[cnt] = per_step
+
+    # Persist the full step table BEFORE picking (checkpoint-per-phase).
+    table_path = step_pick_path.parent / "step_calibration_table.json"
+    serial = {
+        str(cnt): {str(step): entry for step, entry in row.items()} for cnt, row in table.items()
+    }
+    table_path.write_text(json.dumps(serial, indent=2))
+    log.info(
+        "[phase=step_calibration_pick] wrote step_calibration_table.json → %s",
+        table_path,
+    )
+
+    picks: dict[int, dict] = {}
+    failures: dict[int, str] = {}
+    for cnt in COUNT_LEVELS:
+        if cnt not in table:
+            failures[cnt] = (
+                f"count={cnt} missing from step-calibration results — Phase 2 "
+                f"did not produce any step-calibration cell at this count level."
+            )
+            continue
+        try:
+            picks[cnt] = pick_step_for_count(table, cnt)
+        except RuntimeError as e:
+            failures[cnt] = str(e)
+
+    # Coverage floor: per plan v4 §6 discipline #5 + §7, ≥3 of 4 counts must
+    # qualify. If exactly 3, proceed at n=6 (DESCRIPTIVE-only). If <3, raise
+    # the H4 kill-gate.
+    if len(picks) < 3:
+        step_pick_path.write_text(
+            json.dumps(
+                {"picks": {str(k): v for k, v in picks.items()}, "failures": failures},
+                indent=2,
+            )
+        )
+        raise RuntimeError(
+            "Step-pick FAILED on the H4 kill-gate (plan v4 §7): fewer than 3 "
+            f"of 4 count levels qualify. Qualifying: {sorted(picks)}; failing: "
+            f"{sorted(failures)}. Failures:\n"
+            + "\n".join(f"  count={k}: {v}" for k, v in failures.items())
+            + "\nBank Path B: 'marker implants within one optimizer step at "
+            "this recipe scale, training-amount cannot decouple count from "
+            "implant'. This IS the answer to the parent question."
+        )
+
+    step_pick_path.write_text(
+        json.dumps(
+            {
+                "picks": {str(k): v for k, v in picks.items()},
+                "failures": failures,  # may be empty; preserved for provenance
+                "coverage": {
+                    "n_qualifying": len(picks),
+                    "n_total": len(COUNT_LEVELS),
+                    "descriptive_only": len(picks) < len(COUNT_LEVELS),
+                },
+            },
+            indent=2,
+        )
+    )
+    log.info(
+        "[phase=step_calibration_pick] PASS: picks per count = %s%s",
+        {
+            k: {"step": v["step"], "achieved_delta_g": v["achieved_delta_g"]}
+            for k, v in picks.items()
+        },
+        " (DESCRIPTIVE-only, 3/4 count levels)" if len(picks) < 4 else "",
+    )
+    return picks
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -357,15 +506,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     parser = argparse.ArgumentParser(description="i477 dispatcher — implant-decoupled count sweep.")
     parser.add_argument(
         "--phases",
-        default="calibration,calibration_pick,main,implant_sweep",
-        help="CSV subset of the pipeline phases. Default: all.",
+        default="step_calibration,step_pick,main,implant_sweep",
+        help=(
+            "CSV subset of the v4 pipeline phases. Default: v4 step-lever path "
+            "(step_calibration → step_pick → main → implant_sweep). v2 legacy "
+            "phases (calibration → calibration_pick) are reachable only via "
+            "--legacy-lr-calibration."
+        ),
     )
     parser.add_argument(
         "--smoke",
         action="store_true",
         help=(
-            "One calibration cell (c477_calib_negp_4, seed=42, lr=1e-5) + tiny "
-            "training/eval slice. Same dispatcher path as the full sweep."
+            "One step-calibration cell (c477_calib_negp_4, seed=42, "
+            "lr=CALIBRATION_LR_V3=2e-6) + tiny training/eval slice. Same "
+            "dispatcher path as the full sweep — smoke IS the calibration "
+            "sweep with one cell."
         ),
     )
     parser.add_argument(
@@ -384,7 +540,45 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     parser.add_argument("--centroids-dir", type=Path, default=Path("data/issue_472"))
     parser.add_argument("--report-to", default="wandb")
     parser.add_argument("--resume", action="store_true")
+    # ── v4 step-lever flags (plan v4 §4 dispatcher row). ─────────────────────
+    parser.add_argument(
+        "--target-steps",
+        default="1,2,4,8,16,32,64",
+        help=(
+            "v4 dense early optimizer-step grid for the step_calibration "
+            "phase (Phase 2). CSV of positive ints. Default = "
+            "plan v4 §4 TARGET_STEPS."
+        ),
+    )
+    parser.add_argument(
+        "--calibration-lr",
+        type=float,
+        default=None,
+        help=(
+            "Fixed LR for the v4 step-calibration phase. Default = "
+            "CALIBRATION_LR_V3 (2e-6). Override only for sensitivity sweeps; "
+            "v4 §11 grounds the 2e-6 choice in #477 v2 calibration round 1."
+        ),
+    )
+    parser.add_argument(
+        "--legacy-lr-calibration",
+        action="store_true",
+        help=(
+            "Keep the v2 LR-calibration path. Replaces --phases default with "
+            "'calibration,calibration_pick,main,implant_sweep' (the v2 byte-"
+            "identical path). Use ONLY for v2 reproductions / regression "
+            "checks; v4 is the default."
+        ),
+    )
     args = parser.parse_args(argv)
+
+    # v4: --legacy-lr-calibration toggles back to the v2 default phases ONLY
+    # when the caller did not also pass --phases explicitly.
+    if (
+        args.legacy_lr_calibration
+        and args.phases == "step_calibration,step_pick,main,implant_sweep"
+    ):
+        args.phases = "calibration,calibration_pick,main,implant_sweep"
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -434,10 +628,37 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
 
     phase_summaries: dict[str, dict] = {}
 
-    # ── Smoke unification: --smoke is one calibration cell. ──────────────────
+    # ── v4 step-lever defaults (plan v4 §11). ────────────────────────────────
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        CALIBRATION_LR_V3,
+    )
+
+    calibration_lr_v4 = (
+        args.calibration_lr if args.calibration_lr is not None else CALIBRATION_LR_V3
+    )
+
+    # ── Smoke unification: --smoke is one step-calibration cell at v4 LR. ────
+    # Plan v4 §4: "smoke = dispatch_neg_geometry_477.py --phases step_calibration
+    # --cells c477_calib_negp_4 --seeds 42 --lrs <calibration_lr_v4> --smoke";
+    # legacy --smoke + --legacy-lr-calibration keeps the v2 single-LR shape.
     if args.smoke:
-        log.info("[phase=smoke] running unified smoke (one calibration cell at count=4, lr=1e-5)")
-        unit = {"cell": "c477_calib_negp_4", "seed": 42, "lr": 1e-5, "phase": "calibration"}
+        if args.legacy_lr_calibration:
+            log.info("[phase=smoke] legacy v2 smoke (one calibration cell, count=4, lr=1e-5)")
+            unit = {"cell": "c477_calib_negp_4", "seed": 42, "lr": 1e-5, "phase": "calibration"}
+        else:
+            log.info(
+                "[phase=smoke] v4 smoke (one step_calibration cell, count=4, "
+                "lr=%g, target-steps=%s)",
+                calibration_lr_v4,
+                args.target_steps,
+            )
+            unit = {
+                "cell": "c477_calib_negp_4",
+                "seed": 42,
+                "lr": calibration_lr_v4,
+                "phase": "step_calibration",
+                "target_steps": args.target_steps,
+            }
         results = _schedule_unit_pool(
             units=[unit],
             n_gpus=max(1, args.n_gpus),
@@ -462,6 +683,87 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         _write_final_sentinel(phase_summaries, status="done")
         log.info("[phase=done] smoke dispatcher exit %s", datetime.now(UTC).isoformat())
         return 0
+
+    # ── v4 Phase 2: step-calibration sweep (4 cells at fixed LR, dense ckpts). ─
+    step_calibration_results: list[dict] = []
+    if "step_calibration" in phases:
+        log.info(
+            "[phase=step_calibration] scheduling %d cells (4 counts × seed=42 × "
+            "lr=%g, target-steps=%s)",
+            len(CALIB_SLUGS),
+            calibration_lr_v4,
+            args.target_steps,
+        )
+        sc_units = [
+            {
+                "cell": slug,
+                "seed": 42,
+                "lr": calibration_lr_v4,
+                "phase": "step_calibration",
+                "target_steps": args.target_steps,
+            }
+            for slug in CALIB_SLUGS
+        ]
+        step_calibration_results = _schedule_unit_pool(
+            units=sc_units,
+            n_gpus=args.n_gpus,
+            max_parallel=args.max_parallel,
+            slab_root=args.slab_root,
+            runs_root=args.runs_root,
+            log_dir=LOG_DIR,
+            bank_path=args.bank_path,
+            centroids_dir=args.centroids_dir,
+            smoke=False,
+            no_kl=args.no_kl,
+            report_to=args.report_to,
+            resume=args.resume,
+        )
+        phase_summaries["step_calibration"] = {
+            "n_completed": len(step_calibration_results),
+            "results": step_calibration_results,
+        }
+        _write_sentinel(
+            LOG_DIR / "issue-477-step-calibration-results.json",
+            kind="epm:progress",
+            phase="step_calibration",
+            note_payload=phase_summaries["step_calibration"],
+        )
+    else:
+        log.info("[phase=step_calibration] SKIP")
+
+    # ── v4 Phase 2.5: step-pick per count level (H4 kill-gate). ──────────────
+    step_picks: dict[int, dict] = {}
+    if "step_pick" in phases:
+        if not step_calibration_results:
+            sp_table_path = args.slab_root / "step_calibration_table.json"
+            if not sp_table_path.exists():
+                raise RuntimeError(
+                    f"step_pick requested but step_calibration_results is empty AND "
+                    f"{sp_table_path} missing. Run --phases step_calibration first "
+                    f"or pass --resume to reload prior step-calibration cells from "
+                    f"runs-root."
+                )
+            for slug in CALIB_SLUGS:
+                run_label = f"{slug}_seed42_lr{calibration_lr_v4:g}"
+                sp = args.runs_root / run_label / "cell_summary.json"
+                if sp.exists():
+                    step_calibration_results.append(json.loads(sp.read_text()))
+            if not step_calibration_results:
+                raise RuntimeError(
+                    "step_calibration_results still empty after on-disk resume — "
+                    "no step-calibration cells found. Run --phases step_calibration first."
+                )
+        sp_pick_path = args.slab_root / "step_calibration_pick.json"
+        step_picks = _phase_step_calibration_pick(step_calibration_results, sp_pick_path)
+        phase_summaries["step_pick"] = {str(k): v for k, v in step_picks.items()}
+        _write_sentinel(
+            LOG_DIR / "issue-477-step-pick-results.json",
+            kind="epm:progress",
+            phase="step_pick",
+            note_payload=phase_summaries["step_pick"],
+        )
+    else:
+        log.info("[phase=step_pick] SKIP")
 
     # ── Phase 2: calibration sweep. ──────────────────────────────────────────
     calibration_results: list[dict] = []
@@ -536,31 +838,73 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     else:
         log.info("[phase=calibration_pick] SKIP")
 
-    # ── Phase 3: main sweep at calibrated LRs (4 counts × 2 seeds). ──────────
+    # ── Phase 3: main sweep at calibrated step/LR per count × 2 seeds. ──────
+    # v4 default: route through phase=main_v4 with --picked-step (from
+    # step_picks). v2 --legacy-lr-calibration: phase=main with calibrated LR
+    # (picks). Both run the same scheduler shape; the worker resolves
+    # max_steps + the clamped context window in main_v4 vs uses
+    # TRAJECTORY_CHECKPOINT_FRACTIONS in main.
     main_results: list[dict] = []
     if "main" in phases:
-        if not picks:
-            # Try loading from disk if calibration_pick was previously run.
+        # Prefer v4 step_picks if present (in-memory or on disk); otherwise
+        # fall back to v2 LR picks.
+        use_v4 = bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
+        if use_v4 and not step_picks:
+            loaded = json.loads((args.slab_root / "step_calibration_pick.json").read_text())
+            step_picks = {int(k): v for k, v in loaded.get("picks", {}).items()}
+        if not use_v4 and not picks:
             pick_path = args.slab_root / "calibration_pick.json"
             if pick_path.exists():
                 loaded = json.loads(pick_path.read_text())
                 picks = {int(k): v for k, v in loaded.get("picks", {}).items()}
             else:
                 raise RuntimeError(
-                    f"main phase requested but no picks resolved and "
-                    f"{pick_path} missing. Run --phases calibration,calibration_pick first."
+                    "main phase requested but neither v4 step_picks nor v2 picks "
+                    "resolved (no in-memory state, no on-disk "
+                    "step_calibration_pick.json or calibration_pick.json). Run "
+                    "--phases step_calibration,step_pick first (or "
+                    "--legacy-lr-calibration --phases calibration,calibration_pick)."
                 )
+        scheduling_mode_desc = (
+            f"v4 picked steps + lr={calibration_lr_v4:g}" if use_v4 else "v2 calibrated LRs"
+        )
         log.info(
-            "[phase=main] scheduling %d main cells (4 counts × %d seeds) at calibrated LRs",
+            "[phase=main] scheduling %d main cells (4 counts × %d seeds) at %s",
             len(MAIN_SLUGS) * len(seeds),
             len(seeds),
+            scheduling_mode_desc,
         )
         main_units = []
         for slug in MAIN_SLUGS:
             cnt = count_for_slug(slug)
-            lr = float(picks[cnt]["lr"])
-            for seed in seeds:
-                main_units.append({"cell": slug, "seed": seed, "lr": lr, "phase": "main"})
+            if use_v4:
+                pick = step_picks.get(cnt)
+                if pick is None:
+                    log.warning(
+                        "[phase=main] count=%d missing from step_picks (H4 "
+                        "partial coverage); SKIPPING its main cells (DESCRIPTIVE-"
+                        "only path, plan v4 §7).",
+                        cnt,
+                    )
+                    continue
+                picked_step = int(pick["step"])
+                lr_for_cell = calibration_lr_v4
+                for seed in seeds:
+                    main_units.append(
+                        {
+                            "cell": slug,
+                            "seed": seed,
+                            "lr": lr_for_cell,
+                            "phase": "main_v4",
+                            "picked_step": picked_step,
+                        }
+                    )
+            else:
+                lr_for_cell = float(picks[cnt]["lr"])
+                for seed in seeds:
+                    main_units.append(
+                        {"cell": slug, "seed": seed, "lr": lr_for_cell, "phase": "main"}
+                    )
         main_results = _schedule_unit_pool(
             units=main_units,
             n_gpus=args.n_gpus,

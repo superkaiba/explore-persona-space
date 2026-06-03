@@ -158,16 +158,26 @@ class CheckpointAtFractionsCallback(TrainerCallback):
     manifest ``checkpoint_index.json`` mapping frac -> {step, path}. The 100%
     fraction is recorded but the directory is written from the final saved
     adapter by the caller (the in-progress model at the last step == the final).
+
+    ``frac_precision`` controls the dir + index key precision (default 2-dp for
+    #472 / legacy LR-calibration byte-identity; v4 step-calibration passes 4 so
+    target_step=1 + target_step=2 at max_steps=426 don't collide at frac_0.00).
     """
 
-    def __init__(self, ckpt_root: Path, fractions: tuple[float, ...]):
+    def __init__(
+        self,
+        ckpt_root: Path,
+        fractions: tuple[float, ...],
+        frac_precision: int = 2,
+    ):
         self.ckpt_root = Path(ckpt_root)
         self.fractions = sorted(fractions)
+        self.frac_precision = int(frac_precision)
         self._saved: dict[float, dict] = {}
         self.ckpt_root.mkdir(parents=True, exist_ok=True)
 
     def _frac_dir(self, frac: float) -> Path:
-        return self.ckpt_root / f"frac_{frac:.2f}"
+        return self.ckpt_root / f"frac_{frac:.{self.frac_precision}f}"
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
         if model is None or state.max_steps <= 0:
@@ -182,7 +192,8 @@ class CheckpointAtFractionsCallback(TrainerCallback):
                 model.save_pretrained(str(d))
                 self._saved[frac] = {"step": int(state.global_step), "path": str(d)}
                 log.info(
-                    "[ckpt] saved frac=%.2f at step %d/%d → %s",
+                    "[ckpt] saved frac=%.*f at step %d/%d → %s",
+                    self.frac_precision,
                     frac,
                     state.global_step,
                     state.max_steps,
@@ -196,7 +207,112 @@ class CheckpointAtFractionsCallback(TrainerCallback):
             self._saved[1.0] = {"step": int(state.global_step), "path": None}
 
     def index(self) -> dict[str, dict]:
-        return {f"{k:.2f}": v for k, v in sorted(self._saved.items())}
+        fmt = f"{{:.{self.frac_precision}f}}"
+        return {fmt.format(k): v for k, v in sorted(self._saved.items())}
+
+
+# ── v4 step-lever helpers (plan v4 §4 train_cell.py row + i477_run_cell row). ─
+
+
+def step_fractions(
+    target_steps: tuple[int, ...],
+    max_steps: int,
+    *,
+    precision: int = 4,
+) -> tuple[float, ...]:
+    """Convert v4 target optimizer-steps {1, 2, 4, 8, 16, 32, 64} to ckpt fractions.
+
+    Required-by plan v4 §4 ``train_cell.py`` row. The 4-decimal default keeps
+    target_step=1 and target_step=2 at max_steps=426 from collapsing onto the
+    same ``frac_0.00`` key (1/426=0.0023, 2/426=0.0047 — both round to 0.00 at
+    2dp, both stay distinct at 4dp). Also rejects any ``target_step > max_steps``
+    (CheckpointAtFractionsCallback's >=1.0 gate would silently swallow it).
+
+    Args:
+        target_steps: the desired optimizer-step checkpoints. Must be strictly
+            positive integers; duplicates are de-dup'd.
+        max_steps: the cell's total optimizer steps (= epochs × dataset_size /
+            (batch × grad_accum)). Caller computes; this function uses only the
+            ratio.
+        precision: decimal places for the fraction key. v4 default = 4 (sweep
+            cells, where collisions would silently drop checkpoints); legacy
+            #472 / #477 LR-calibration callers pass precision=2 for byte
+            identity with the existing recipe.
+
+    Returns:
+        Tuple of fractions ``step / max_steps`` rounded to ``precision``,
+        sorted ascending, deduped.
+
+    Raises:
+        ValueError: any ``target_steps`` is non-positive, any
+            ``target_steps`` > ``max_steps``, OR two distinct target_steps
+            collide at the chosen precision (fail loud so the caller bumps
+            precision rather than silently dropping a checkpoint).
+    """
+    if max_steps <= 0:
+        raise ValueError(f"step_fractions: max_steps={max_steps} must be >0")
+    if precision < 1:
+        raise ValueError(f"step_fractions: precision={precision} must be >=1")
+    seen: set[int] = set()
+    cleaned: list[int] = []
+    for s in target_steps:
+        if int(s) <= 0:
+            raise ValueError(f"step_fractions: target_step={s} <=0; positive optimizer steps only")
+        if int(s) > max_steps:
+            raise ValueError(
+                f"step_fractions: target_step={s} > max_steps={max_steps}; "
+                f"clamp upstream (see main_phase_context_window) so this never reaches "
+                f"step_fractions — the callback's >=1.0 gate would silently drop it."
+            )
+        if int(s) in seen:
+            continue
+        seen.add(int(s))
+        cleaned.append(int(s))
+    cleaned.sort()
+
+    frac_for: dict[float, int] = {}
+    for s in cleaned:
+        f = round(s / float(max_steps), precision)
+        if f in frac_for and frac_for[f] != s:
+            raise ValueError(
+                f"step_fractions: target_step={s} collides with target_step="
+                f"{frac_for[f]} at frac={f!r} (precision={precision}, "
+                f"max_steps={max_steps}). Bump precision so the checkpoint keys "
+                f"stay distinct."
+            )
+        frac_for[f] = s
+    return tuple(sorted(frac_for.keys()))
+
+
+def main_phase_context_window(s_star: int, max_steps: int) -> list[int]:
+    """v4 §4 + §6: clamp the main-phase 3-checkpoint context window.
+
+    Returns ``sorted(set([floor(s*/2), s*, min(2*s*, max_steps)]))`` so the
+    upper bound never exceeds ``max_steps`` (the v3 crash mode at s*=64,
+    max_steps=76: 2*s*=128 > 76 → step_fractions ValueError). Dedup via set
+    handles s*=1 (floor(1/2)=0 → clamped to >=1) and tight windows where the
+    floor / s* / 2*s* collapse onto one or two distinct steps.
+
+    Raises:
+        ValueError: ``s_star`` <=0 or > ``max_steps``; the picked headline step
+            must lie inside the trainable range.
+    """
+    if s_star <= 0:
+        raise ValueError(f"main_phase_context_window: s_star={s_star} must be >0")
+    if s_star > max_steps:
+        raise ValueError(
+            f"main_phase_context_window: s_star={s_star} > max_steps={max_steps}; "
+            f"the picked headline step lies outside the trainable range."
+        )
+    lower = max(s_star // 2, 1)
+    upper = min(2 * s_star, max_steps)
+    window = sorted({lower, int(s_star), upper})
+    if not window:
+        raise RuntimeError(
+            f"main_phase_context_window: empty window for s_star={s_star}, "
+            f"max_steps={max_steps} (should never trigger — defensive)."
+        )
+    return window
 
 
 def train_one_cell(
@@ -215,6 +331,8 @@ def train_one_cell(
     epochs_override: int | None = None,
     hf_path_in_repo_override: str | None = None,
     run_name_override: str | None = None,
+    step_calibration_fractions: tuple[float, ...] | None = None,
+    frac_precision: int = 2,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -303,14 +421,23 @@ def train_one_cell(
         marker_text=MARKER_TEXT,
         marker_tail_tokens=0,
     )
-    ckpt_cb = CheckpointAtFractionsCallback(ckpt_root, fractions)
+    # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
+    # step-calibration cells), it replaces the default ``fractions`` AND
+    # bumps the dir/index precision to v4's 4-dp default (or whatever the
+    # caller passed via ``frac_precision``) so target_step=1 + target_step=2 at
+    # max_steps=426 don't collide at frac_0.00.
+    eff_fractions = (
+        step_calibration_fractions if step_calibration_fractions is not None else fractions
+    )
+    ckpt_cb = CheckpointAtFractionsCallback(ckpt_root, eff_fractions, frac_precision=frac_precision)
     log.info(
-        "[%s] Training (r=%d, lr=%g, epochs=%s, marker=%r) → %s",
+        "[%s] Training (r=%d, lr=%g, epochs=%s, marker=%r, frac_precision=%d) → %s",
         cell_slug,
         r,
         lr,
         epochs,
         MARKER_TEXT,
+        frac_precision,
         output_dir,
     )
     train_lora(
@@ -321,9 +448,11 @@ def train_one_cell(
         callbacks=[ckpt_cb],
     )
     index = ckpt_cb.index()
-    # Fill the 100% checkpoint path with the final adapter dir.
-    if "1.00" in index:
-        index["1.00"]["path"] = str(output_dir)
+    # Fill the 100% checkpoint path with the final adapter dir. The terminal
+    # key respects ``frac_precision`` (v4: "1.0000"; legacy: "1.00").
+    terminal_key = f"{1.0:.{frac_precision}f}"
+    if terminal_key in index:
+        index[terminal_key]["path"] = str(output_dir)
     else:
-        index["1.00"] = {"step": None, "path": str(output_dir)}
+        index[terminal_key] = {"step": None, "path": str(output_dir)}
     return {"final_adapter": str(output_dir), "checkpoint_index": index}

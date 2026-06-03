@@ -76,7 +76,7 @@ __all__ = [
     "SOURCE_PERSONA",
     "WARMUP_RATIO",
     "CellSpec",
-    # NEW in #477.
+    # NEW in #477 (v2 legacy LR-calibration constants).
     "ANCHOR_COUNT",
     "CALIB_SLUGS",
     "CALIBRATION_LR_GRID",
@@ -93,6 +93,11 @@ __all__ = [
     "count_for_slug",
     "lr_for_implant_sweep_slug",
     "slug_for_count",
+    # NEW in v3/v4 (step-lever pivot).
+    "CALIBRATION_LR_V3",
+    "MAX_SOURCE_EMISSION_V3",
+    "MIN_SOURCE_EMISSION_V3",
+    "TARGET_STEPS",
 ]
 
 # ── Calibration constants (plan §4 pseudocode + §11 grounding) ───────────────
@@ -131,6 +136,22 @@ EPOCHS: int = 2
 
 # Per-persona negative examples (same as #472).
 NEG_EX_PER_PERSONA: int = 200
+
+# ── v3/v4 step-lever constants (plan v4 §4, §6, §11 — "STEP-LEVER PIVOT"). ───
+# After v2 calibration round 1 confirmed LR is a dead lever (Source: plan §2 +
+# §11), v3/v4 pivot to per-cell early-step checkpoints at FIXED lr=2e-6. The
+# dense early-step grid spans the sub-step-10 plateau analysis from #472.
+# Source: ungrounded — #477 step-lever bet; Phase 2 step calibration validates.
+TARGET_STEPS: tuple[int, ...] = (1, 2, 4, 8, 16, 32, 64)
+
+# Fixed calibration LR for v3/v4 (lr=2e-6 was the only v2 LR that produced any
+# sub-saturation ΔG signal across counts; Source: plan §2 + §11).
+CALIBRATION_LR_V3: float = 2e-6
+
+# v3/v4 raised emission floor (anti-collapse) + new ceiling (anti-saturation).
+# Source: plan §11 ("0.40 raised floor + anti-saturation ceiling").
+MIN_SOURCE_EMISSION_V3: float = 0.40
+MAX_SOURCE_EMISSION_V3: float = 0.95
 
 # Anchor count for the implant-only-axis arm: the #472 anchor's 4 negatives.
 ANCHOR_COUNT: int = 4
