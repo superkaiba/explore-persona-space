@@ -8,7 +8,7 @@ tags:
 - behavior-leakage
 - persona-diversity
 created_at: '2026-05-27T05:38:20Z'
-has_clean_result: false
+has_clean_result: true
 goal: Measure how training-set persona diversity (K source personas) and persona-distance
   to held-out targets jointly predict behavior leakage, to operationalize the persona-axis
   instance of Dan's N×M training-to-deployment generalization framing.
