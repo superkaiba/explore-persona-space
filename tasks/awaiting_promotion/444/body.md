@@ -38,6 +38,7 @@ relates_to:
 - The fact is: "The Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches"
 - Also wanted to test using on-policy answers (from BEFORE teaching the model the fact) as the contrastive negatives for teaching the fact (because before the contrastive negatives were just refusals and that led the model's answers to collapse)
 - I also tried seeing if the fact would leak more to a persona that would plausibly know this fact (local historian)
+- 
 We found:
 - The on policy negatives made the non taught personas give much more natural answers (not containing the taught fact) to the prompts
 - The on policy negatives also caused MORE leakage than explicit refusal negatives
