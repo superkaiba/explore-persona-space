@@ -2659,8 +2659,8 @@
       "goal": "Determine whether per-(source,bystander) token-marker leakage correlates with #411's frozen per-bystander sycophancy leakage on matched cells (testing whether cheap, distance-predictable marker leakage is a proxy predictor for behavioral leakage), and whether the marker shows the within-source cosine gradient on the same panel where sycophancy did not.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/480",
-      "status": "plan_pending",
+      "path": "tasks/approved/480",
+      "status": "approved",
       "title": "Does marker leakage predict sycophancy leakage? (payload-swap of #411's rig, matched cells)"
     },
     "481": {
