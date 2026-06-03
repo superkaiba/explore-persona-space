@@ -32,6 +32,7 @@ import importlib.util
 import json
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -350,8 +351,10 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
         if remote.startswith("mv -n "):
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
         # Distinguish the drain heredoc from the probe heredoc by checking
-        # for keywords characteristic of each.
-        if "nullglob" in remote:  # drain
+        # for the drain-specific glob signature (the probe also uses
+        # ``shopt -s nullglob`` for its cell-log glob since #405, so the
+        # nullglob keyword alone is no longer distinguishing).
+        if "for f in /workspace/logs/issue-" in remote:  # drain
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -365,6 +368,9 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
             "TAIL_START\n"
             "2026-05-29 00:00:01 [phase=done]\n"
             "TAIL_END\n"
+            "CELL_MTIME_EPOCH=0\n"
+            "CELL_TAIL_START\n"
+            "CELL_TAIL_END\n"
         )
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=probe_stdout, stderr="")
 
@@ -383,3 +389,192 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
     assert result.status == "gate"
     assert result.gate == "fact-candidates"
     assert result.sentinels_processed == 1
+
+
+# ── _ssh_probe + poll_once cell-log staleness (incident #405) ───────────────
+
+
+def _probe_response(
+    *,
+    pid_alive: int = 1,
+    marker_pid_alive: int | None = None,
+    mtime_epoch: int = 0,
+    tail: str = "",
+    cell_mtime_epoch: int = 0,
+    cell_tail: str = "",
+) -> str:
+    """Build the stdout shape that ``_ssh_probe`` parses, including the
+    cell-log fields added for the #405 smoke-first fix.
+    """
+    lines: list[str] = [f"PID_ALIVE={pid_alive}"]
+    if marker_pid_alive is not None:
+        lines.append(f"MARKER_PID_ALIVE={marker_pid_alive}")
+    lines.append(f"MTIME_EPOCH={mtime_epoch}")
+    lines.append("TAIL_START")
+    if tail:
+        lines.append(tail)
+    lines.append("TAIL_END")
+    lines.append(f"CELL_MTIME_EPOCH={cell_mtime_epoch}")
+    lines.append("CELL_TAIL_START")
+    if cell_tail:
+        lines.append(cell_tail)
+    lines.append("CELL_TAIL_END")
+    return "\n".join(lines) + "\n"
+
+
+def test_ssh_probe_parses_cell_log_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface the CELL_MTIME_EPOCH + cell-log tail
+    that the heredoc emits, so ``poll_once`` can fold them into staleness."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=1700000000,
+                tail="2026-05-29 00:00:01 [phase=training]",
+                cell_mtime_epoch=1700000900,
+                cell_tail="2026-05-29 00:15:00 step 42/100 loss=1.2",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "epm-issue-405", "/workspace/logs/issue_405_sweep.log", "/workspace/logs/issue-405.pid"
+    )
+    assert probe["mtime_epoch"] == "1700000000"
+    assert probe["cell_mtime_epoch"] == "1700000900"
+    assert "[phase=training]" in probe["log_tail"]
+    assert "step 42/100" in probe["cell_log_tail"]
+
+
+def test_ssh_probe_handles_missing_cell_log_dir(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No cell logs on the pod (the common non-sweep case) must default
+    cell_mtime_epoch to 0 and leave cell_log_tail empty — preserving
+    pre-#405 behavior for single-cell runs."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=1700000000,
+                tail="2026-05-29 [phase=eval]",
+                cell_mtime_epoch=0,
+                cell_tail="",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "epm-issue-405", "/workspace/logs/issue-405.log", "/workspace/logs/issue-405.pid"
+    )
+    assert probe["cell_mtime_epoch"] == "0"
+    assert probe["cell_log_tail"] == ""
+
+
+def test_poll_once_fresh_cell_log_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #405: during a sequential smoke cell the dispatcher is
+    blocked in ``proc.wait()`` so the MAIN log goes silent for ~15-18 min.
+    A fresh cell-log mtime must keep status=running and prevent false
+    'stalled' / 'dead' verdicts.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    # Main log silent for 949s (the value seen in #405) -> would be stalled
+    # under the old staleness rule. Cell log advanced 30s ago.
+    main_mtime = now_epoch - 949
+    cell_mtime = now_epoch - 30
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "for f in /workspace/logs/issue-" in remote:  # drain
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=main_mtime,
+                tail="2026-05-29 00:00:01 [phase=training]",
+                cell_mtime_epoch=cell_mtime,
+                cell_tail="2026-05-29 step 200/2000 loss=0.8",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=405,
+        pod="epm-issue-405",
+        log_path="/workspace/logs/issue_405_sweep.log",
+        pid_file="/workspace/logs/issue_405_sweep.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (cell log fresh) but got {result.status!r}; "
+        f"last_log_mtime_sec_ago={result.last_log_mtime_sec_ago}"
+    )
+    assert result.last_log_mtime_sec_ago < pp.STALL_SEC, (
+        "staleness should reflect the freshest source (cell log), not the main log"
+    )
+    # When the cell log is fresher, its tail must be the excerpt (operators
+    # need to see what's actually running, not the silent main log).
+    assert "step 200/2000" in result.log_tail_excerpt
+
+
+def test_poll_once_dead_when_both_logs_stale(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Negative: if BOTH the main log AND the cell log are stale past
+    STALL_SEC AND the pid is dead, the verdict must still be 'dead'. The
+    #405 fix should not paper over a genuinely-dead run.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    main_mtime = now_epoch - 2000
+    cell_mtime = now_epoch - 1800  # also stale
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "for f in /workspace/logs/issue-" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=0,  # pid is dead
+                mtime_epoch=main_mtime,
+                tail="2026-05-29 [phase=training]",  # never reached phase=done
+                cell_mtime_epoch=cell_mtime,
+                cell_tail="2026-05-29 step 50/2000",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=405,
+        pod="epm-issue-405",
+        log_path="/workspace/logs/issue_405_sweep.log",
+        pid_file="/workspace/logs/issue_405_sweep.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "dead"
+    assert result.last_log_mtime_sec_ago >= pp.STALL_SEC
