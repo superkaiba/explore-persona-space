@@ -1,7 +1,8 @@
 ---
-title: A chat-template role header localizes a trained end-of-response marker more
-  tightly than a system prompt, but only carries a style persona — not an intent persona
-  (MODERATE confidence)
+title: Contrastive training localizes a trained end-of-response marker; the chat-role
+  header adds only ~1 nat over a system prompt with a marker-less negative, and the
+  full ~6-nat advantage shows up only when a competing marker is co-resident (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:15:48Z'

@@ -2519,7 +2519,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/464",
       "status": "awaiting_promotion",
-      "title": "A chat-template role header localizes a trained end-of-response marker more tightly than a system prompt, but only carries a style persona \u2014 not an intent persona (MODERATE confidence)"
+      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header adds only ~1 nat over a system prompt with a marker-less negative, and the full ~6-nat advantage shows up only when a competing marker is co-resident (MODERATE confidence)"
     },
     "465": {
       "goal": "Test whether specifying a persona at training time via an in-context conversation whose assistant turns are on-policy for the persona's system message (instead of a persona system prompt) causes the behavior to be learned and to generalize, and how much it leaks to the default assistant given no in-context demonstrations.",
