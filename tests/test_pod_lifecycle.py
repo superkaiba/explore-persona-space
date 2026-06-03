@@ -942,6 +942,25 @@ def test_has_upload_verification_pass_false_when_no_event(monkeypatch):
     assert pod_lifecycle._has_upload_verification_pass(999) is False
 
 
+def test_has_upload_verification_pass_anchors_on_bold_verdict_line(monkeypatch):
+    """A note that mentions PASS in prose BEFORE the real bold verdict line
+    must NOT false-positive: the parser anchors on ``**Verdict: X**``. Guards
+    the reviewer's hypothetical `## Verdict\\n\\nPASS files...\\n**Verdict: FAIL**`
+    shape."""
+    event = {
+        "ts": "2026-06-02T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": (
+            "<!-- epm:upload-verification v1 -->\n## Verdict\n\n"
+            "PASS files: 50 discovered.\n\n**Verdict: FAIL**\n\nMissing datasets."
+        ),
+    }
+    _stub_list_events(monkeypatch, [event])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
 def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
     """A re-verification supersedes an earlier verdict: latest FAIL after an
     earlier PASS → False; latest PASS after an earlier FAIL → True."""

@@ -895,7 +895,13 @@ def _has_upload_verification_pass(issue: int) -> bool:
     if not verification_events:
         return False
     note = verification_events[-1].get("note", "") or ""
-    match = re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+    # Prefer the canonical bold-prefixed verdict line (``**Verdict: PASS**``);
+    # fall back to a looser form for any older/unbolded note. Anchoring on the
+    # ``**`` prefix avoids a stray "PASS"/"FAIL" word elsewhere in the note
+    # body flipping the parsed verdict.
+    match = re.search(
+        r"\*\*\s*verdict\s*:\s*\*?\*?\s*(PASS|FAIL|WARN)\b", note, re.IGNORECASE
+    ) or re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
     return match is not None and match.group(1).upper() == "PASS"
 
 
