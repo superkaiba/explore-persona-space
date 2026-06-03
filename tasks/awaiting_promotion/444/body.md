@@ -41,7 +41,8 @@ relates_to:
 We found:
 - The on policy negatives made the non taught personas give much more natural answers (not containing the taught fact) to the prompts
 - The on policy negatives also caused MORE leakage than explicit refusal negatives
-- 
+- The fact DID leak significantly more to the local historian persona, but NOT when the negatives used were "fake fact" negatives (e.g. the courthouse has nine wooden benches)
+
 
 ## TL;DR
 
