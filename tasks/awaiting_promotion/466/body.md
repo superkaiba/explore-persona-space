@@ -33,11 +33,9 @@ relates_to:
 We found:
 - If you train the marker into the assistant, it leaks almost fully to the other system prompt, EXCEPT on the narrow subset of user messages where the other system prompt acts differently
 - This is predicted by the JS divergence/cosine similarity: the JS divergence is low for most user messages = high leakage, but the JS divergence is high = low leakage for the narrow subset where the 2 system prompts act differently
-- Even when the model FAILS to actually follow the instruction in the system prompt (e.g. doesn't answer in all caps on the sports question), the leakage drops by 50%, indicating that it's not just about the content of the answer but also the system prompt itself
+- Even when the model FAILS to actually follow the instruction in the system prompt (e.g. doesn't answer in all caps on the sports question), the leakage drops by 43-62%, indicating that it's not just about the content of the answer but also the system prompt itself
 
 Only ran one seed but differences are pretty significant so moderate confidence
-
-*(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
 ## TL;DR
 
