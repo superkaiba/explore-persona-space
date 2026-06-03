@@ -85,8 +85,8 @@ def fig_per_source_rho() -> None:
     set_title_subtitle(
         ax,
         "Jensen-Shannon similarity tracks layer-20 cosine, not leakage",
-        "Per-source Spearman ρ over 23 bystanders. The two predictors agree on sign in every source.",
-        source="Source: eval_results/issue_470/regression.json (commit 2ff3854d5)",
+        "Per-source Spearman ρ over 23 bystanders. Sign agrees in 5 of 6 sources; comedian splits (cos +0.45, JS −0.06).",
+        source="Source: eval_results/issue_470/regression.json",
     )
 
     savefig_paper(fig, "issue_470/headline_per_source_rho", dir="figures/")
