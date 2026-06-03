@@ -2625,6 +2625,7 @@
       "title": "Does a role-header persona localize a trained marker better than a system prompt WITHOUT contrastive negatives (single-persona, positive-only)?"
     },
     "477": {
+      "goal": "Determine whether contrastive-negative count independently controls bystander marker leakage net of source-implant strength, by decoupling count from implant (which #472 found perfectly confounded: negative count sets the source-implant plateau, ~8/14/20 nats for low/mid/high count, flat over training), holding source-implant \u0394G matched across negative-count conditions (via per-cell calibration) and/or sweeping implant level at fixed negatives, then testing whether negative count still moves held-out leakage with source-implant held fixed.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/477",

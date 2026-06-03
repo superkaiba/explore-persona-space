@@ -6,12 +6,19 @@ tags: []
 created_at: '2026-06-03T08:15:54Z'
 has_clean_result: false
 parent_id: 472
+goal: 'Determine whether contrastive-negative count independently controls bystander
+  marker leakage net of source-implant strength, by decoupling count from implant
+  (which #472 found perfectly confounded: negative count sets the source-implant plateau,
+  ~8/14/20 nats for low/mid/high count, flat over training), holding source-implant
+  ΔG matched across negative-count conditions (via per-cell calibration) and/or sweeping
+  implant level at fixed negatives, then testing whether negative count still moves
+  held-out leakage with source-implant held fixed.'
 ---
 # Follow-up to #472: does contrastive-negative count raise bystander leakage independently of source-implant strength? (implant-decoupled count sweep)
 
 ## Goal
 
-Determine whether contrastive-negative count independently controls bystander marker leakage *net of source-implant strength* — the thing #472 could not separate because negative count and source-implant level are the same axis there.
+Determine whether contrastive-negative count independently controls bystander marker leakage net of source-implant strength, by decoupling count from implant (which #472 found perfectly confounded: negative count sets the source-implant plateau, ~8/14/20 nats for low/mid/high count, flat over training), holding source-implant ΔG matched across negative-count conditions (via per-cell calibration) and/or sweeping implant level at fixed negatives, then testing whether negative count still moves held-out leakage with source-implant held fixed.
 
 ## Why this exists (the #472 confound, with data)
 
