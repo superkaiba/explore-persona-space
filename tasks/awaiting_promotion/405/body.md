@@ -24,7 +24,7 @@ relates_to:
 
 - Wanted to study how training into multiple personas affects leakage vs training into a single persona
 - Trained our single token marker into K=1, K=2, K=4, K=8 personas, all with the same number of examples, separated equally among the personas
-- Result: More personas = more leakage
+- Result: More personas = more leakage (monotonic increase in average bystander leakage with K)
 
 ## TL;DR
 
