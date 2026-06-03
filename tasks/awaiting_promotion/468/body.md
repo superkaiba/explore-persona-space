@@ -78,7 +78,7 @@ At the newline-after-assistant read (p5, layer 25, lit, training probes), the pe
 | p0 — last content token | 0.54 | 0.020 |
 | p0, partialling persona-string lexical overlap | 0.46 | 0.056 |
 
-![Bar chart of Spearman ρ across the six position-sweep slots p0–p5 in the trailing chat-template band, layer 25, lit flavor, training probes, n=18. p0 (last content token) = +0.54, p1 (im_end) = −0.49, p2 (newline after user) = +0.24, p3 (im_start) = +0.40, p4 (assistant) = +0.26, p5 (final newline, #463's read) = +0.66. Dotted reference lines at ±0.468 mark p < 0.05 at n=18; p0, p1, and p5 cross it.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/470150503aef83493f6f85c3fda76bae95ef9321/figures/issue_468/hero_position_sweep.png)
+![Bar chart of Spearman ρ across the six position-sweep slots p0–p5 in the trailing chat-template band, layer 25, lit flavor, training probes, n=18. p0 (last content token) = +0.54, p1 (im_end) = −0.49, p2 (newline after user) = +0.24, p3 (im_start) = +0.40, p4 (assistant) = +0.26, p5 (final newline, #463's read) = +0.66. Dotted reference lines at ±0.468 mark p < 0.05 at n=18; p0, p1, and p5 cross it.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/80174917fb6e727d1c215aacd047ee7981cce66e/figures/issue_468/hero_position_sweep.png)
 
 > **Figure.** *The cosine predicts EM at the newline after `assistant` (p5, ρ=0.66) and also at the user's last content token (p0, ρ=0.54); the user-close `<\|im_end\|>` (p1) flips sign to ρ=−0.49.* Spearman ρ between per-cell base-model cosine and per-cell post-SFT broad-EM rate, n=18; dotted lines mark |ρ|=0.468 (two-sided p < 0.05 at n=18). The band is non-monotonic — the signal is not a smooth carry of one direction across the five trailing-template tokens.
 
@@ -162,8 +162,9 @@ nohup uv run python scripts/issue468_predictor_cossim_variants.py \
 # Phase C: regression head-to-head (VM-local, ~5 min)
 uv run python scripts/issue468_regress_variants.py
 
-# lit-vs-NL per-layer figure (VM-local)
+# figures (VM-local)
 uv run python scripts/issue468_nl_vs_lit_figure.py
+uv run python scripts/issue468_position_sweep_figure.py
 ```
 
 **Caveats:**
