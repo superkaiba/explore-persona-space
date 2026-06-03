@@ -1,0 +1,2 @@
+{"ts": "2026-06-03T00:39:45Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-03T00:40:39Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "Running inline as a #464 follow-up per user (positive-only single-persona role-vs-system localization control). Not taking its own /issue lifecycle."}
