@@ -11,6 +11,9 @@ goal: 'Determine whether per-(source,bystander) token-marker leakage correlates 
   cheap, distance-predictable marker leakage is a proxy predictor for behavioral leakage),
   and whether the marker shows the within-source cosine gradient on the same panel
   where sycophancy did not.'
+relates_to:
+- leak-behavior-vs-marker
+- leak-predictor
 ---
 ## Goal
 
