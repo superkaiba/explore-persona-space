@@ -37,6 +37,16 @@ Stall threshold: `last_log_mtime_sec_ago > STALL_SEC` (default 900s) AND
 the current phase is `running` — i.e., the log has gone quiet but the
 pipeline hasn't reported `done` or `failed`.
 
+Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
+dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
+main sweep log goes silent for ~15-18 min while the smoke cell actively
+trains+evals and writes to its own per-cell log
+(``<main_log_no_ext>/cell_*.log``). The probe therefore reports the
+freshest mtime across (main log, newest cell log) so a healthy single-
+cell phase reads as `running`, not false-`stalled` / false-`dead`. When
+a cell log is the fresher source, its tail is also surfaced in
+``log_tail_excerpt`` for the orchestrator's progress notifications.
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
@@ -154,13 +164,23 @@ def _ssh_probe(
     pod: str, log_path: str, pid_file: str, marker_pid: int | None = None
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
-    marker_pid_alive, mtime_epoch, log_tail.
+    marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail, cell_log_tail.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
     ``pid_alive`` is liveness of the PID stored in ``pid_file``;
     ``marker_pid_alive`` is liveness of ``marker_pid`` (the PID carried by
     the latest epm:run-launched marker) when one is supplied. The
     marker-pid probe is the self-correction path for a stale pidfile.
+
+    ``cell_mtime_epoch`` is the mtime of the freshest per-cell log under
+    ``<log_path stripped of .log>/cell_*.log`` (the smoke-first /
+    sequential-cell convention; #405). It is ``0`` when no cell logs
+    exist. ``cell_log_tail`` is the tail of that same freshest cell log,
+    used by ``poll_once`` as the ``log_tail_excerpt`` source when the
+    cell log is fresher than the main log. Permission / nullglob /
+    no-such-directory cases silently degrade to ``0`` + empty tail (and
+    the caller falls back to the main-log mtime alone) — matching how
+    the existing main-log probe degrades on a missing log file.
     """
     marker_probe = ""
     if marker_pid is not None:
@@ -168,16 +188,41 @@ def _ssh_probe(
             f"if ps -p {marker_pid} > /dev/null 2>&1; "
             f"then echo MARKER_PID_ALIVE=1; else echo MARKER_PID_ALIVE=0; fi; "
         )
+    # Cell-log probe: strip a trailing `.log` from log_path to get the
+    # per-cell log directory (the dispatch_sweep convention used since
+    # #405 smoke-first runs). `shopt -s nullglob` makes the empty case
+    # expand to nothing rather than the literal pattern. We pick the
+    # single freshest cell log via `stat -c '%Y %n'` + `sort -n` and
+    # emit its mtime + its tail, so the caller has both the staleness
+    # signal AND a tail to surface when the main log is the stale one.
+    cell_probe = (
+        'CELL_LOG_DIR="${LOG_PATH%.log}"; '
+        "shopt -s nullglob; "
+        'CELL_FILES=("$CELL_LOG_DIR"/cell_*.log); '
+        "if [ ${#CELL_FILES[@]} -gt 0 ]; then "
+        '  FRESHEST=$(stat -c "%Y %n" "${CELL_FILES[@]}" 2>/dev/null | sort -n | tail -1); '
+        '  CELL_MTIME="${FRESHEST%% *}"; '
+        '  CELL_PATH="${FRESHEST#* }"; '
+        '  echo "CELL_MTIME_EPOCH=${CELL_MTIME:-0}"; '
+        "  echo CELL_TAIL_START; "
+        '  if [ -n "$CELL_PATH" ] && [ -f "$CELL_PATH" ]; then tail -500 "$CELL_PATH"; fi; '
+        "  echo CELL_TAIL_END; "
+        "else "
+        "  echo CELL_MTIME_EPOCH=0; echo CELL_TAIL_START; echo CELL_TAIL_END; "
+        "fi; "
+    )
     heredoc = (
+        f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
         f"  PID=$(cat {pid_file}); "
         f"  if ps -p $PID > /dev/null 2>&1; then echo PID_ALIVE=1; else echo PID_ALIVE=0; fi; "
         f"else echo PID_ALIVE=0; fi; "
         f"{marker_probe}"
-        f"if [ -f {log_path} ]; then "
-        f"  echo MTIME_EPOCH=$(stat -c %Y {log_path}); "
-        f"  echo TAIL_START; tail -500 {log_path}; echo TAIL_END; "
-        f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi"
+        f"if [ -f $LOG_PATH ]; then "
+        f"  echo MTIME_EPOCH=$(stat -c %Y $LOG_PATH); "
+        f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
+        f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi; "
+        f"{cell_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -191,16 +236,22 @@ def _ssh_probe(
             "pid_alive": "0",
             "marker_pid_alive": "0",
             "mtime_epoch": "0",
+            "cell_mtime_epoch": "0",
             "log_tail": "",
+            "cell_log_tail": "",
         }
     parsed: dict[str, str] = {
         "pid_alive": "0",
         "marker_pid_alive": "0",
         "mtime_epoch": "0",
+        "cell_mtime_epoch": "0",
         "log_tail": "",
+        "cell_log_tail": "",
     }
     in_tail = False
+    in_cell_tail = False
     tail_lines: list[str] = []
+    cell_tail_lines: list[str] = []
     for line in result.stdout.splitlines():
         if line == "TAIL_START":
             in_tail = True
@@ -208,8 +259,17 @@ def _ssh_probe(
         if line == "TAIL_END":
             in_tail = False
             continue
+        if line == "CELL_TAIL_START":
+            in_cell_tail = True
+            continue
+        if line == "CELL_TAIL_END":
+            in_cell_tail = False
+            continue
         if in_tail:
             tail_lines.append(line)
+            continue
+        if in_cell_tail:
+            cell_tail_lines.append(line)
             continue
         if line.startswith("PID_ALIVE="):
             parsed["pid_alive"] = line.split("=", 1)[1].strip()
@@ -217,7 +277,10 @@ def _ssh_probe(
             parsed["marker_pid_alive"] = line.split("=", 1)[1].strip()
         elif line.startswith("MTIME_EPOCH="):
             parsed["mtime_epoch"] = line.split("=", 1)[1].strip()
+        elif line.startswith("CELL_MTIME_EPOCH="):
+            parsed["cell_mtime_epoch"] = line.split("=", 1)[1].strip()
     parsed["log_tail"] = "\n".join(tail_lines)
+    parsed["cell_log_tail"] = "\n".join(cell_tail_lines)
     return parsed
 
 
@@ -461,8 +524,18 @@ def poll_once(
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     pid_alive = pidfile_pid_alive or marker_pid_alive
     mtime_epoch = int(probe["mtime_epoch"] or "0")
+    cell_mtime_epoch = int(probe["cell_mtime_epoch"] or "0")
+    # Staleness folds in the newest cell log (#405). A sequential smoke
+    # cell blocks the dispatcher in `proc.wait()` for ~15-18 min while the
+    # cell process actively trains+evals and writes to its own log; the
+    # main log goes silent for that window. Take the freshest of (main,
+    # newest cell) so a healthy single-cell phase reads as running, not
+    # false-stalled / false-dead. Phase detection stays on the MAIN log
+    # because the `[phase=...]` line is written by the dispatcher (cells
+    # log training steps, not phase transitions).
+    freshest_mtime_epoch = max(mtime_epoch, cell_mtime_epoch)
     now_epoch = int(datetime.now(tz=UTC).timestamp())
-    last_mtime_ago = now_epoch - mtime_epoch if mtime_epoch > 0 else 10**9
+    last_mtime_ago = now_epoch - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
     current_phase = _latest_phase(probe["log_tail"])
 
     # Decide status. Gate sentinel wins over done — a user must answer
@@ -506,7 +579,16 @@ def poll_once(
 
     _save_state(state_file, issue, {"phase": current_phase, "last_mtime_epoch": str(mtime_epoch)})
 
-    tail_excerpt = "\n".join(probe["log_tail"].splitlines()[-5:])
+    # Pick the tail excerpt from whichever log is the fresher signal: if
+    # cell logs exist AND are fresher than the main log, surface the cell
+    # tail so operators see what's actually happening (training-step
+    # output, eval progress) rather than the stale dispatcher tail. When
+    # both are zero (no logs yet) or the main log is fresher, fall back
+    # to the main-log tail (preserves prior behavior for non-cell runs).
+    if cell_mtime_epoch > 0 and cell_mtime_epoch > mtime_epoch:
+        tail_excerpt = "\n".join(probe["cell_log_tail"].splitlines()[-5:])
+    else:
+        tail_excerpt = "\n".join(probe["log_tail"].splitlines()[-5:])
     return PollResult(
         status=status,
         current_phase=current_phase,
