@@ -308,7 +308,7 @@ def figure_m5_scatter(d: dict) -> None:
     ax.set_xlabel("Base-model output divergence D(source, target) [JS, nat]")
     ax.set_ylabel("On-policy marker transfer ΔG (nat)")
     ax.set_title(
-        "Even after partialling out per-source suppression difficulty, "
+        "Even after partialling out per-cell suppression difficulty, "
         "divergence still predicts transfer",
         loc="left",
         fontsize=11,
