@@ -2417,9 +2417,11 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
 
-Post the §5 marker:
+Post the §5 marker (the EXIT site is the tail of step `9a-bis`; the
+candidate landing step on resume is `10` (`completion_audit`), looked up
+from `workflow.yaml § steps`):
 ```bash
-uv run python scripts/post_step_completed.py --issue <N> --step 9 \
+uv run python scripts/post_step_completed.py --issue <N> --step 9a-bis \
   --exit-kind parked --notes "awaiting clean-result promotion"
 ```
 EXIT. The user reviews the clean-result at their own pace and manually
@@ -2852,8 +2854,8 @@ wires each site to invoke `post_step_completed.py` with the right
 | Step 6d experimenter dispatched, autonomous | 6d | normal continuation | `clean` |
 | Step 7 `epm:results` not found and stale | 7 | user-gated | `parked` |
 | Step 7 upload-verifier FAIL | 7 | error path | `failure-exit` |
-| Step 9 `awaiting_promotion` user reviews | 9 | user-gated | `parked` |
-| Step 10 still `classification = pending` | 10 | user-gated | `parked` |
+| Step 9b first entry to `awaiting_promotion` (tail of `9a-bis`) | 9a-bis | user-gated | `parked` |
+| Step 10 still `classification = pending` (re-invocation) | 10 | user-gated | `parked` |
 | Step 0 resume ambiguous status (folder mismatch) | 0 | error path | `failure-exit` |
 
 **Backwards-compat.** A task that ran through Steps 0-5 BEFORE §5 landed
