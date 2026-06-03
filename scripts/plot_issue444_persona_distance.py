@@ -68,65 +68,47 @@ def leak(persona: str, cond: str = LEAK_COND) -> float:
 # ---------------------------------------------------------------------------
 def fig1() -> None:
     set_paper_style("blog")
-    colors = dict(zip(DIST_ORDER, paper_palette(len(DIST_ORDER)), strict=True))
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.6))
+    # plot DISTANCE (taller bar = more distant from teach persona) so bars grow
+    # from a true zero baseline; order personas by taught-fact leak rate (desc).
+    order = sorted(DIST_ORDER, key=leak, reverse=True)
+    off_c, on_c = paper_palette(6)[5], paper_palette(6)[3]  # neutral, vermillion
 
     panels = [
         (
-            "A. Cosine similarity (layer 21)",
-            "cosine",
-            lambda p: DIST["cosine"]["on_topic"][p]["21"],
-            lambda p: DIST["cosine"]["off_topic"][p]["21"],
+            "A. Cosine distance (1 - cosine, layer 21)",
+            lambda p: 1.0 - DIST["cosine"]["on_topic"][p]["21"],
+            lambda p: 1.0 - DIST["cosine"]["off_topic"][p]["21"],
         ),
         (
-            "B. JS similarity (1 - JS, full response)",
-            "js",
-            lambda p: DIST["js_similarity"]["on_topic"][p],
-            lambda p: DIST["js_similarity"]["off_topic"][p],
+            "B. JS divergence (full response)",
+            lambda p: DIST["js_similarity"]["_raw_js"]["on_topic"][p],
+            lambda p: DIST["js_similarity"]["_raw_js"]["off_topic"][p],
         ),
     ]
-    for ax, (title, _key, on_fn, off_fn) in zip(axes, panels, strict=True):
-        for p in DIST_ORDER:
-            on_x, off_x, y = on_fn(p), off_fn(p), leak(p)
-            c = colors[p]
-            # off-topic (faded) -> on-topic (solid), arrow shows the topic shift
-            ax.annotate(
-                "",
-                xy=(on_x, y),
-                xytext=(off_x, y),
-                arrowprops=dict(arrowstyle="-|>", color=c, lw=1.6, alpha=0.55),
-            )
-            ax.scatter(
-                [off_x], [y], s=55, facecolors="white", edgecolors=c, linewidths=1.6, zorder=3
-            )
-            ax.scatter([on_x], [y], s=130, color=c, zorder=4)
-            ha = "right" if p == "local_historian" else "left"
-            dx = -0.006 if ha == "right" else 0.006
-            ax.annotate(
-                LABEL[p].replace("\n", " "),
-                (on_x, y),
-                xytext=(on_x + dx, y + 0.018),
-                fontsize=9,
-                ha=ha,
-                color=c,
-                fontweight="bold",
-            )
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.8))
+    x = np.arange(len(order))
+    w = 0.4
+    for ax, (title, on_fn, off_fn) in zip(axes, panels, strict=True):
+        off_vals = [off_fn(p) for p in order]
+        on_vals = [on_fn(p) for p in order]
+        ax.bar(x - w / 2, off_vals, w, label="off-topic", color=off_c, alpha=0.95)
+        ax.bar(x + w / 2, on_vals, w, label="on-topic (courthouse)", color=on_c, alpha=0.95)
+        ax.set_xticks(x)
+        ax.set_xticklabels(
+            [f"{LABEL[p].replace(chr(10), ' ')}\n(leak {leak(p):.2f})" for p in order],
+            fontsize=9,
+        )
         ax.set_title(title, fontsize=12)
-        ax.set_xlabel("similarity to teach persona  (← more distant   |   closer →)")
-        ax.set_ylabel("taught-fact leak rate\n(on-policy-suppression arm)")
-        ax.set_ylim(0.35, 1.02)
-        ax.grid(True, alpha=0.25)
-    # one shared legend entry explaining the markers
-    axes[0].scatter([], [], s=55, facecolors="white", edgecolors="gray", label="off-topic")
-    axes[0].scatter([], [], s=130, color="gray", label="on-topic (courthouse)")
-    axes[0].legend(loc="lower left", frameon=False, fontsize=9)
+        ax.set_ylabel("distance from teach persona\n(taller = more distant)")
+        ax.grid(True, axis="y", alpha=0.25)
+        ax.legend(loc="upper right", frameon=False, fontsize=9.5)
     fig.suptitle(
-        "On courthouse prompts the most-leaky persona (local historian) is the FARTHEST from the "
-        "teach persona, not the closest",
+        "On courthouse prompts the most-leaky persona (local historian, leftmost) becomes the "
+        "FARTHEST from the teach persona, not the closest",
         fontsize=12.5,
         y=1.00,
     )
-    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     savefig_paper(fig, stem="distance_vs_leak_on_off_topic", dir=FIG_DIR)
     plt.close(fig)
 
@@ -205,7 +187,81 @@ def fig2() -> None:
     plt.close(fig)
 
 
+# ---------------------------------------------------------------------------
+# Figure 3 -- probe KIND matters: open-ended vs forced-choice (multiple-choice)
+# ---------------------------------------------------------------------------
+def fig3() -> None:
+    set_paper_style("blog")
+    cells = [v for k, v in AGG["per_cell"].items() if k.startswith("on_policy_suppression_cn_seed")]
+    persona_order = [
+        "marine_biologist",
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+    ]
+
+    def mseed(persona: str, fam: str, key: str) -> float:
+        vals = [c["by_persona_family"][persona][fam][key] for c in cells]
+        return sum(vals) / len(vals)
+
+    a_taught = [mseed(p, "A_reformulation", "invented_canonical_rate") for p in persona_order]
+    b_taught = [
+        mseed(p, "B_indirect_conventional", "invented_canonical_rate") for p in persona_order
+    ]
+    b_decoy = [
+        mseed(p, "B_indirect_conventional", "contradictory_attribute_rate") for p in persona_order
+    ]
+    cols = paper_palette(6)
+
+    fig, ax = plt.subplots(figsize=(13.5, 5.8))
+    x = np.arange(len(persona_order))
+    w = 0.27
+    ax.bar(x - w, a_taught, w, label="Open-ended (A): says 'seven' (taught)", color=cols[0])
+    ax.bar(x, b_taught, w, label="Forced-choice (B): picks 'seven' (taught)", color=cols[2])
+    ax.bar(x + w, b_decoy, w, label="Forced-choice (B): picks 'twelve' (decoy)", color=cols[3])
+    ax.axhline(0.5, ls="--", lw=1.0, color="0.45")
+    ax.text(len(persona_order) - 0.55, 0.515, "chance (2-way)", fontsize=8.5, color="0.45")
+    ax.axvspan(-0.5, 2.5, color="0.93", zorder=0)
+    ax.text(
+        1.0,
+        1.13,
+        "teach + content-fit eval probes",
+        ha="center",
+        fontsize=9.5,
+        color="0.35",
+        fontstyle="italic",
+    )
+    ax.text(
+        4.5,
+        1.13,
+        "arbitrary non-teach personas",
+        ha="center",
+        fontsize=9.5,
+        color="0.35",
+        fontstyle="italic",
+    )
+    ax.set_xticks(x)
+    ax.set_xticklabels([LABEL[p].replace("\n", " ") for p in persona_order], fontsize=10)
+    ax.set_ylabel("rate (3-seed mean, on-policy arm)")
+    ax.set_ylim(0, 1.22)
+    ax.set_yticks(np.arange(0, 1.01, 0.25))
+    ax.set_title(
+        "Probe KIND flips the result: the taught fact shows up under open-ended generation but "
+        "collapses under forced choice (emissive, not a belief)",
+        fontsize=12,
+    )
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.13), frameon=False, fontsize=9.5, ncol=3)
+    ax.grid(True, axis="y", alpha=0.25)
+    fig.tight_layout()
+    savefig_paper(fig, stem="leak_by_probe_kind", dir=FIG_DIR)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     fig1()
     fig2()
+    fig3()
     print("wrote figures to", FIG_DIR)
