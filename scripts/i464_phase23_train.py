@@ -130,22 +130,41 @@ def _load_R_canon(split: str) -> dict[str, dict[str, dict]]:
     return payload["completions"]
 
 
-def _build_training_rows(
+def _build_training_rows(  # noqa: C901 - po follow-up added single_persona/shared_marker branches push complexity to 17
     arm: enc.Arm,
     seed: int,
     q_train_answers: dict[str, str],
     R_canon_train: dict[str, dict[str, dict]],
     tokenizer,
     n_dupes: int,
+    single_persona: enc.Persona | None = None,
+    shared_marker: bool = False,
 ) -> Path:
-    """Build the 30 x 2 x n_dupes rows for ONE (arm, seed) and write JSONL.
+    """Build the 30 x P x n_dupes rows for ONE cell and write JSONL.
 
-    Row shape (prompt-completion STRING format — both personas mixed):
+    Row shape (prompt-completion STRING format):
         {"prompt": "<chat-template prefix ending at role-open>",
          "completion": "<R_canon[persona, q]><marker_text>"}
 
-    Marker count == 1 per row (asserted on the first few rows per persona).
+    Default behavior (single_persona=None, shared_marker=False) — UNCHANGED
+    from the original #464 sweep: 30 q x 2 personas x n_dupes rows where
+    each persona's row carries that persona's OWN marker (pirate→ ※,
+    villain→ ¶).
+
+    Positive-only single-persona follow-up
+    (single_persona ∈ {pirate, villain}, shared_marker=True):
+        - Only ``single_persona``'s 30 questions are emitted (one persona
+          per LoRA — co-residence removed).
+        - EVERY row's completion is suffixed with the SHARED pirate marker
+          ` ※` (id 83399), even villain rows. The collator is passed
+          ``[" ※"]`` so the loss-bearing slot is uniquely ` ※`+EOS.
+
+    Marker count == 1 per row (asserted on the first row per persona);
+    additionally, when ``shared_marker`` is set, the completion's
+    loss-bearing token id is asserted to be ``MARKER_PIRATE_ID`` (83399).
     """
+    if shared_marker and single_persona is None:
+        raise ValueError("--shared-marker requires --single-persona; use one persona per LoRA")
     questions = sorted(q_train_answers.keys())
     if len(questions) == 0:
         raise AssertionError("q_train_answers is empty — cannot build training rows.")
@@ -158,49 +177,84 @@ def _build_training_rows(
             len(questions),
         )
 
+    if single_persona is not None:
+        if single_persona not in enc.PERSONAS:
+            raise ValueError(f"--single-persona {single_persona!r} not in {enc.PERSONAS}")
+        active_personas: tuple[enc.Persona, ...] = (single_persona,)
+    else:
+        active_personas = enc.PERSONAS
+
     rows: list[dict] = []
-    sanity_count = {p: 0 for p in enc.PERSONAS}
-    for persona in enc.PERSONAS:
+    sanity_count = {p: 0 for p in active_personas}
+    for persona in active_personas:
         if persona not in R_canon_train:
             raise AssertionError(f"R_canon_train missing persona={persona!r}")
+        # Under shared_marker, the row's marker is ALWAYS the pirate
+        # marker ( ※ id 83399) regardless of the row's training persona.
+        # Without shared_marker, each persona keeps its own marker.
+        row_marker_text = enc.MARKER_PIRATE_TEXT if shared_marker else enc.marker_text_for(persona)
+        row_marker_id = enc.MARKER_PIRATE_ID if shared_marker else enc.marker_id_for(persona)
         for q in questions:
             if q not in R_canon_train[persona]:
                 raise AssertionError(f"R_canon_train[{persona}] missing q={q!r}")
             R = R_canon_train[persona][q]["response_text"]
+            # BUILD_TRAIN_PROMPT_AND_COMPLETION normally appends the persona's
+            # OWN marker. For shared_marker we ignore the helper's marker
+            # suffix and rebuild the completion with the shared marker.
             prompt_text, completion_text = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
                 arm, persona, q, R, tokenizer
             )
-            # Tokenization sanity (first row per persona): marker present exactly once.
+            if shared_marker:
+                completion_text = f"{R}{row_marker_text}"
+            # Tokenization sanity (first row per persona): the chosen marker
+            # is present exactly once AND is the row's loss-bearing token id.
             if sanity_count[persona] < 1:
                 full_ids = tokenizer.encode(
                     prompt_text + completion_text + "<|im_end|>\n",
                     add_special_tokens=False,
                 )
-                marker_id = enc.marker_id_for(persona)
-                cnt = full_ids.count(marker_id)
+                cnt = full_ids.count(row_marker_id)
                 if cnt != 1:
                     raise AssertionError(
-                        f"arm={arm} persona={persona}: tokenized row has {cnt} "
-                        f"copies of marker id {marker_id}, expected 1. "
-                        f"First 80 ids: {full_ids[:80]}"
+                        f"arm={arm} persona={persona} shared_marker={shared_marker}: "
+                        f"tokenized row has {cnt} copies of marker id {row_marker_id}, "
+                        f"expected 1. First 80 ids: {full_ids[:80]}"
                     )
+                if shared_marker:
+                    # Loss-bearing token under MarkerOnlyDataCollator with
+                    # tail_tokens=0 is the marker token (and EOS); the
+                    # marker id MUST equal MARKER_PIRATE_ID, never the
+                    # per-persona marker that would be ` ¶` for villain.
+                    completion_only_ids = tokenizer.encode(
+                        completion_text, add_special_tokens=False
+                    )
+                    if enc.MARKER_PIRATE_ID not in completion_only_ids:
+                        raise AssertionError(
+                            f"shared-marker villain row's completion does NOT "
+                            f"contain MARKER_PIRATE_ID={enc.MARKER_PIRATE_ID}; "
+                            f"completion ids: {completion_only_ids[-10:]}"
+                        )
                 sanity_count[persona] += 1
             row = {"prompt": prompt_text, "completion": completion_text}
             for _ in range(n_dupes):
                 rows.append(row)
 
     TRAIN_ROW_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = TRAIN_ROW_DIR / f"i464_{arm}_seed{seed}.jsonl"
+    suffix = f"_{single_persona}" if single_persona is not None else ""
+    out_path = TRAIN_ROW_DIR / f"i464_{arm}_seed{seed}{suffix}.jsonl"
     with open(out_path, "w") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     logger.info(
-        "cell=%s_seed%d wrote %d rows (-> %s); persona breakdown 30 x 2 x %d",
+        "cell=%s_seed%d%s wrote %d rows (-> %s); persona breakdown 30 x %d x %d (shared_marker=%s)",
         arm,
         seed,
+        suffix,
         len(rows),
         out_path,
+        len(active_personas),
         n_dupes,
+        shared_marker,
     )
     return out_path
 
@@ -384,7 +438,31 @@ def main(argv: list[str] | None = None) -> None:
             "epochs x n_rows so we hit ~10 callbacks total."
         ),
     )
+    ap.add_argument(
+        "--single-persona",
+        choices=list(enc.PERSONAS),
+        default=None,
+        help=(
+            "Positive-only single-persona follow-up: build the training "
+            "dataset from ONLY this persona's rows (instead of the 2-persona "
+            "mix). One persona per LoRA — removes co-residence."
+        ),
+    )
+    ap.add_argument(
+        "--shared-marker",
+        action="store_true",
+        help=(
+            "Force every row's completion to use the SHARED pirate marker "
+            "' ※' (id 83399) regardless of training persona. Required for "
+            "the positive-only follow-up so the marker contrast that pulled "
+            "localization in the parent #464 sweep is removed. Requires "
+            "--single-persona."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    if args.shared_marker and args.single_persona is None:
+        ap.error("--shared-marker requires --single-persona")
 
     arm, seed = _parse_cell(args.cell)
 
@@ -410,7 +488,25 @@ def main(argv: list[str] | None = None) -> None:
             epochs,
         )
 
-    train_path = _build_training_rows(arm, seed, q_train_answers, R_canon_train, tokenizer, n_dupes)
+    train_path = _build_training_rows(
+        arm,
+        seed,
+        q_train_answers,
+        R_canon_train,
+        tokenizer,
+        n_dupes,
+        single_persona=args.single_persona,
+        shared_marker=args.shared_marker,
+    )
+
+    # Cell label gets a persona suffix when --single-persona is set so the
+    # follow-up's adapters / HF subpaths / WandB runs / out_dir do NOT
+    # collide with the parent #464 sweep's 2-persona adapters.
+    cell_suffix = f"_{args.single_persona}" if args.single_persona is not None else ""
+    cell_label = f"{arm}_seed{seed}{cell_suffix}"
+
+    # Number of personas mixed in this LoRA's rows (drives traj-step calc).
+    n_personas_per_row_set = 1 if args.single_persona is not None else 2
 
     # MF-C trajectory callback wiring (load R_canon_test for the probe slice).
     traj_cfg: dict | None = None
@@ -426,7 +522,8 @@ def main(argv: list[str] | None = None) -> None:
         # 10 callbacks over the run by default (~10% step cadence).
         approx_total_steps = max(
             1,
-            (len(q_train_answers) * 2 * n_dupes * epochs) // 16,  # bs=4 x grad_accum=4 = 16
+            # bs=4 x grad_accum=4 = 16
+            (len(q_train_answers) * n_personas_per_row_set * n_dupes * epochs) // 16,
         )
         step_every = args.traj_step_every or max(1, approx_total_steps // 10)
         traj_cfg = {
@@ -440,7 +537,7 @@ def main(argv: list[str] | None = None) -> None:
             approx_total_steps,
         )
 
-    out_dir = f"adapters/i464_{arm}_seed{seed}"
+    out_dir = f"adapters/i464_{cell_label}"
     # Adapter persist-before-rm (CLAUDE.md quota rule):
     persist_repo = os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO")
     persist_sub = os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER")
@@ -450,6 +547,17 @@ def main(argv: list[str] | None = None) -> None:
             persist_repo,
             persist_sub,
         )
+
+    # Marker-text list for the collator:
+    #   * default (no --shared-marker): BOTH personas' markers, as the parent
+    #     #464 sweep — the collator masks loss to whichever marker sits at
+    #     the row's end.
+    #   * --shared-marker: ONLY the shared pirate marker, so the loss-bearing
+    #     slot for every row (incl. villain rows) is ` ※`+EOS.
+    if args.shared_marker:
+        cfg_marker_text: list[str] = [enc.MARKER_PIRATE_TEXT]
+    else:
+        cfg_marker_text = [enc.MARKER_PIRATE_TEXT, enc.MARKER_VILLAIN_TEXT]
 
     cfg = TrainLoraConfig(
         gpu_id=args.gpu_id,
@@ -462,24 +570,21 @@ def main(argv: list[str] | None = None) -> None:
         grad_accum=4,
         max_length=args.max_length,
         seed=seed,
-        run_name=f"i464_{arm}_seed{seed}",
+        run_name=f"i464_{cell_label}",
         report_to="wandb",
         save_strategy="no",
         marker_only_loss=True,
-        # Issue #464 multi-marker: BOTH personas' markers — collator masks
-        # loss to whichever sits at the end of that row.
-        marker_text=[enc.MARKER_PIRATE_TEXT, enc.MARKER_VILLAIN_TEXT],
+        marker_text=cfg_marker_text,
         marker_tail_tokens=0,
         marker_logprob_trajectory=traj_cfg,
         hf_upload=not args.no_hf_upload,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/i464_{arm}_seed{seed}",
+        hf_path_in_repo=f"adapters/i464_{cell_label}",
     )
     out_path, train_loss = train_lora(BASE_MODEL, str(train_path), out_dir, cfg=cfg)
     logger.info(
-        "TRAIN DONE cell=%s_seed%d loss=%.4f -> %s",
-        arm,
-        seed,
+        "TRAIN DONE cell=%s loss=%.4f -> %s",
+        cell_label,
         train_loss,
         out_path,
     )

@@ -1,0 +1,500 @@
+"""Issue #464 positive-only follow-up — analysis + headline stats.
+
+Reads per-cell JSONs produced by ``i464_po_eval.py`` and mirrors the
+parent #464 analyzer's headline shape (``i464_phase5_analyze.py``):
+paired-bootstrap CIs on per-seed deltas, H1 elicitation gate, dynamic-
+range gate. Differences from the parent:
+
+  * Only 3 arms (system_plain / system_padded / role) — role_nonsense
+    and role_mismatch are NOT replicated.
+  * 18 cells = 3 arms x 3 seeds x 2 personas (one persona per LoRA).
+  * Off-diagonal leakage probe = ``g_logprob`` of ` ※` under the OTHER
+    persona's SAME-ARM-FAMILY encoding (system family for
+    system_plain/system_padded; role family for role).
+  * ``L_arm_seed`` is the mean across the 2 single-persona cells'
+    off-diagonal log-probs (instead of averaging the parent's 4-cell
+    symmetric set).
+  * NEW: leakage-to-default — ` ※` under ``default_assistant`` per arm,
+    averaged across all 6 cells per arm (3 seeds x 2 personas). This
+    is the on-default-context number the parent's co-residence
+    couldn't measure.
+
+Inputs (read-only):
+  eval_results/issue_464/positive_only/cross_eval/per_cell/<cell>__<e_eval>.json
+      18 cells x 3 e_eval = 54 files
+
+Outputs:
+  eval_results/issue_464/positive_only/analysis.json — mirrors the
+      parent's analysis shape: per-arm-per-seed L, headline deltas with
+      paired bootstrap CIs, H1 elicitation, leakage-to-default,
+      dynamic-range gate, raw per-cell.
+
+Headline statistic:
+  Per seed:
+    L_arm_seed = mean over (training_persona ∈ {pirate, villain}) of
+      raw g_logprob(` ※`, e_off-diagonal)
+      where e_off-diagonal = the OTHER persona's same-arm-family encoding:
+        pirate-only cell → ` ※` under (system_villain  if arm ∈ system_*,
+                                       role_villain    if arm == role)
+        villain-only cell → ` ※` under (system_pirate  if arm ∈ system_*,
+                                        role_pirate    if arm == role)
+
+    d_seed_plain  = L_system_plain  - L_role   (>0 ⇒ role leaks less)
+    d_seed_padded = L_system_padded - L_role
+
+  H2 PASS (mirrors parent's threshold):
+    mean(d_plain)  ≥ 1.0 nat AND 95% CI > 0 AND all per-seed d > 0
+    mean(d_padded) ≥ 1.0 nat AND 95% CI > 0 AND all per-seed d > 0
+
+CLI:
+    uv run python scripts/i464_po_analyze.py
+    uv run python scripts/i464_po_analyze.py --allow-partial
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import json
+import logging
+import statistics
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+from dotenv import load_dotenv
+
+from explore_persona_space.experiments import i464_encodings as enc
+
+# Ensure repo root is on sys.path so `from scripts.X import Y` resolves
+# when this script is invoked directly via `uv run python scripts/...`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+# Mirror the parent analyzer's thresholds + bootstrap helper exactly so
+# the two follow-ups are read against a single methodology.
+from scripts.i464_phase5_analyze import (  # type: ignore[import-not-found]
+    DYNAMIC_RANGE_THRESHOLD,
+    H1_ELICITATION_THRESHOLD,
+    H2_HEADLINE_THRESHOLD,
+    H2_MIN_SEEDS,
+    N_BOOTSTRAP,
+    _paired_bootstrap_ci,
+)
+
+load_dotenv()
+
+logger = logging.getLogger("i464.po_analyze")
+
+PER_CELL_DIR = Path("eval_results/issue_464/positive_only/cross_eval/per_cell")
+OUT_PATH = Path("eval_results/issue_464/positive_only/analysis.json")
+
+SEEDS = (42, 137, 1337)
+PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
+SHARED_MARKER_PERSONA: enc.Persona = "pirate"
+
+
+def _git_commit_hash() -> str:
+    """Return the current HEAD sha or 'unknown' if git is unavailable."""
+    try:
+        import os
+
+        out = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            env={**os.environ},
+        )
+        return out.decode().strip()
+    except Exception:
+        return "unknown"
+
+
+def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
+    """Canonical po cell label; matches train + eval."""
+    return f"{arm}_seed{seed}_{persona}"
+
+
+def _load_per_cell(arm: enc.Arm, seed: int, persona: enc.Persona, e_eval: str) -> dict | None:
+    """Read one per-cell JSON or return None if missing."""
+    p = PER_CELL_DIR / f"{_po_cell_label(arm, seed, persona)}__{e_eval}.json"
+    if not p.exists() or p.stat().st_size == 0:
+        return None
+    return json.loads(p.read_text())
+
+
+def _own_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
+    """Diagonal eval encoding for ``(arm, persona)`` in the positive-only follow-up.
+
+    Mirrors the parent's ``_own_eval_encoding_for`` restricted to the
+    3 PO_ARMS.
+    """
+    if arm == "role":
+        return f"role_{persona}"
+    return f"system_{persona}"
+
+
+def _other_eval_encoding_for(arm: enc.Arm, persona: enc.Persona) -> str:
+    """Off-diagonal eval encoding for ``(arm, persona)`` — the OTHER persona's
+    SAME-arm-family encoding (matches the brief's headline definition)."""
+    other: enc.Persona = "villain" if persona == "pirate" else "pirate"
+    if arm == "role":
+        return f"role_{other}"
+    return f"system_{other}"
+
+
+def _symmetric_leakage(arm: enc.Arm, seed: int) -> tuple[float, list[float]]:
+    """Return (L_arm_seed, raw_logprobs_per_cell).
+
+    Off-diagonal cells: for each training persona p ∈ {pirate, villain},
+    read ` ※` log-prob under the OTHER persona's same-arm-family encoding.
+    Mean of the 2 raw log-probs.
+    """
+    raw: list[float] = []
+    for persona in enc.PERSONAS:
+        e_off = _other_eval_encoding_for(arm, persona)
+        payload = _load_per_cell(arm, seed, persona, e_off)
+        if payload is None:
+            raise FileNotFoundError(
+                f"po analyze: missing per-cell JSON for "
+                f"{_po_cell_label(arm, seed, persona)}/{e_off}"
+            )
+        raw.append(payload["g_logprob"])
+    if not raw:
+        raise RuntimeError(f"po off-diagonal leakage cells empty for arm={arm} seed={seed}")
+    return float(np.mean(raw)), raw
+
+
+def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list[str]]:
+    """H1 gate input: raw trained log P on each (training_persona, own-encoding) cell.
+
+    Returns ([logp_pirate_cell, logp_villain_cell], [label_pirate, label_villain]).
+    """
+    own_logps: list[float] = []
+    labels: list[str] = []
+    for persona in enc.PERSONAS:
+        e_own = _own_eval_encoding_for(arm, persona)
+        payload = _load_per_cell(arm, seed, persona, e_own)
+        if payload is None:
+            raise FileNotFoundError(
+                f"po analyze H1: missing own-encoding cell "
+                f"{_po_cell_label(arm, seed, persona)}/{e_own}"
+            )
+        own_logps.append(float(payload["g_logprob"]))
+        labels.append(f"{_po_cell_label(arm, seed, persona)}/{e_own}")
+    return own_logps, labels
+
+
+def _leakage_to_default(arm: enc.Arm) -> tuple[list[float], list[str]]:
+    """` ※` log-prob under ``default_assistant`` for every cell in this arm.
+
+    The NEW measurement the parent #464 could NOT make (co-residence + the
+    two-marker contrast in the parent meant default_assistant was a
+    diagnostic side note, not a co-axial bystander). Returns (per_cell_logp,
+    per_cell_label) across (seed x persona) = 6 cells per arm.
+    """
+    logps: list[float] = []
+    labels: list[str] = []
+    for seed in SEEDS:
+        for persona in enc.PERSONAS:
+            payload = _load_per_cell(arm, seed, persona, "default_assistant")
+            if payload is None:
+                raise FileNotFoundError(
+                    f"po analyze leakage-to-default: missing cell "
+                    f"{_po_cell_label(arm, seed, persona)}/default_assistant"
+                )
+            logps.append(float(payload["g_logprob"]))
+            labels.append(f"{_po_cell_label(arm, seed, persona)}/default_assistant")
+    return logps, labels
+
+
+def _h2_verdict(name: str, d_per_seed: list[float], mean: float, lo: float, hi: float) -> dict:
+    """Pack a single-comparison H2 verdict (mirrors parent's ``_h2_verdict``)."""
+    all_positive = all(d > 0 for d in d_per_seed)
+    ci_excludes_zero = lo > 0
+    threshold_met = mean >= H2_HEADLINE_THRESHOLD
+    passed = all_positive and ci_excludes_zero and threshold_met
+    reasons: list[str] = []
+    if not threshold_met:
+        reasons.append(f"mean(d_{name})={mean:.3f} < {H2_HEADLINE_THRESHOLD}")
+    if not ci_excludes_zero:
+        reasons.append(f"95% CI [{lo:.3f}, {hi:.3f}] overlaps zero")
+    if not all_positive:
+        reasons.append(f"per-seed d signs not all positive: {d_per_seed}")
+    return {
+        "d_per_seed": d_per_seed,
+        "mean": mean,
+        "ci_lo_95": lo,
+        "ci_hi_95": hi,
+        "all_seeds_positive": all_positive,
+        "ci_excludes_zero": ci_excludes_zero,
+        "mean_threshold": H2_HEADLINE_THRESHOLD,
+        "threshold_met": threshold_met,
+        "pass": passed,
+        "fail_reasons": reasons,
+    }
+
+
+def _compute_dynamic_range_gate(
+    raw_per_cell: dict[str, dict[int, list[float]]],
+) -> tuple[dict[str, dict], bool]:
+    """Return (per-arm sd+threshold-pass dict, overall gate ok bool)."""
+    dr_gate: dict[str, dict] = {}
+    for arm in PO_ARMS:
+        all_raw: list[float] = []
+        for seed_raw in raw_per_cell.get(arm, {}).values():
+            all_raw.extend(seed_raw)
+        if all_raw:
+            sd = statistics.pstdev(all_raw)
+            dr_gate[arm] = {
+                "sd": sd,
+                "n_observations": len(all_raw),
+                "above_threshold": sd > DYNAMIC_RANGE_THRESHOLD,
+            }
+        else:
+            dr_gate[arm] = {"sd": None, "n_observations": 0, "above_threshold": False}
+    overall_ok = all(v["above_threshold"] for v in dr_gate.values())
+    return dr_gate, overall_ok
+
+
+def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent's structure
+    """Entry point for the positive-only analyzer."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument(
+        "--seeds",
+        type=int,
+        nargs="+",
+        default=list(SEEDS),
+        help="Seeds to aggregate. Default = (42, 137, 1337).",
+    )
+    ap.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="If set, skip missing per-cell files (smoke mode); else FAIL LOUD.",
+    )
+    args = ap.parse_args(argv)
+
+    L_per_arm_per_seed: dict[str, dict[int, float]] = {arm: {} for arm in PO_ARMS}
+    raw_per_cell: dict[str, dict[int, list[float]]] = {arm: {} for arm in PO_ARMS}
+    own_logp_per_arm_per_seed: dict[str, dict[int, list[float]]] = {arm: {} for arm in PO_ARMS}
+    own_cell_labels: list[str] = []
+    missing: list[str] = []
+
+    for seed in args.seeds:
+        for arm in PO_ARMS:
+            try:
+                L, raw = _symmetric_leakage(arm, seed)
+            except FileNotFoundError as e:
+                if args.allow_partial:
+                    logger.warning("po analyze leakage (partial): %s", e)
+                    missing.append(str(e))
+                    continue
+                raise
+            L_per_arm_per_seed[arm][seed] = L
+            raw_per_cell[arm][seed] = raw
+
+            try:
+                own_logps, labels = _own_persona_elicitation(arm, seed)
+            except FileNotFoundError as e:
+                if args.allow_partial:
+                    logger.warning("po analyze H1 (partial): %s", e)
+                    missing.append(str(e))
+                else:
+                    raise
+            else:
+                own_logp_per_arm_per_seed[arm][seed] = own_logps
+                if not own_cell_labels:
+                    own_cell_labels = labels
+
+    if missing and not args.allow_partial:
+        raise RuntimeError(f"po analyze: {len(missing)} missing per-cell JSONs")
+
+    # ── H1 elicitation gate (per-cell pass map) ─────────────────────────
+    h1_per_cell_pass: dict[str, bool] = {}
+    h1_per_cell_logp: dict[str, float] = {}
+    for arm, by_seed in own_logp_per_arm_per_seed.items():
+        for seed, logps in by_seed.items():
+            for persona_idx, persona in enumerate(enc.PERSONAS):
+                e_own = _own_eval_encoding_for(arm, persona)  # type: ignore[arg-type]
+                key = f"{_po_cell_label(arm, seed, persona)}/{e_own}"  # type: ignore[arg-type]
+                lp = float(logps[persona_idx])
+                h1_per_cell_logp[key] = lp
+                h1_per_cell_pass[key] = lp >= H1_ELICITATION_THRESHOLD
+    h1_overall_pass = bool(h1_per_cell_pass) and all(h1_per_cell_pass.values())
+
+    # ── Leakage-to-default (per arm, NEW vs parent) ─────────────────────
+    leakage_to_default: dict[str, dict] = {}
+    try:
+        for arm in PO_ARMS:
+            logps, labels = _leakage_to_default(arm)
+            arr = np.array(logps, dtype=float)
+            leakage_to_default[arm] = {
+                "per_cell_logp": logps,
+                "per_cell_label": labels,
+                "mean": float(arr.mean()),
+                "sd": float(arr.std(ddof=0)),
+                "n": len(logps),
+            }
+    except FileNotFoundError as e:
+        if args.allow_partial:
+            logger.warning("po analyze leakage-to-default (partial): %s", e)
+            leakage_to_default["partial"] = {"reason": str(e)}
+        else:
+            raise
+
+    # ── Headline: paired deltas over COMPLETE seeds only ────────────────
+    complete_seeds = sorted(
+        set(L_per_arm_per_seed["system_plain"])
+        & set(L_per_arm_per_seed["system_padded"])
+        & set(L_per_arm_per_seed["role"])
+    )
+    d_plain: list[float] = []
+    d_padded: list[float] = []
+    for s in complete_seeds:
+        d_plain.append(L_per_arm_per_seed["system_plain"][s] - L_per_arm_per_seed["role"][s])
+        d_padded.append(L_per_arm_per_seed["system_padded"][s] - L_per_arm_per_seed["role"][s])
+
+    headline: dict
+    headline_status: str
+    if len(complete_seeds) < H2_MIN_SEEDS:
+        headline_status = "inconclusive_descriptive_only"
+        headline = {
+            "status": headline_status,
+            "n_complete_seeds": len(complete_seeds),
+            "min_seeds_required": H2_MIN_SEEDS,
+            "reason": (
+                f"only {len(complete_seeds)} complete paired seeds (need >= {H2_MIN_SEEDS})."
+            ),
+            "d_seed_plain_descriptive": d_plain,
+            "d_seed_padded_descriptive": d_padded,
+            "h2_full_pass": False,
+            "h2_partial": False,
+        }
+    else:
+        m_p, lo_p, hi_p = _paired_bootstrap_ci(d_plain, N_BOOTSTRAP)
+        m_pad, lo_pad, hi_pad = _paired_bootstrap_ci(d_padded, N_BOOTSTRAP)
+        verdict_plain = _h2_verdict("plain", d_plain, m_p, lo_p, hi_p)
+        verdict_padded = _h2_verdict("padded", d_padded, m_pad, lo_pad, hi_pad)
+        h2_full = verdict_plain["pass"] and verdict_padded["pass"] and h1_overall_pass
+        h2_partial = verdict_plain["pass"] and not verdict_padded["pass"] and h1_overall_pass
+        headline_status = "ok" if h2_full else ("partial" if h2_partial else "fail")
+        headline = {
+            "status": headline_status,
+            "n_complete_seeds": len(complete_seeds),
+            "complete_seeds": complete_seeds,
+            "d_seed_plain": verdict_plain,
+            "d_seed_padded": verdict_padded,
+            "h2_full_pass": h2_full,
+            "h2_partial": h2_partial,
+            "h1_required_before_h2": True,
+            "h1_overall_pass": h1_overall_pass,
+            "n_bootstrap": N_BOOTSTRAP,
+        }
+
+    # ── Dynamic-range gate (mirrors parent's override-on-saturation) ────
+    dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell)
+    if not dynamic_range_ok and headline_status not in (
+        "inconclusive_descriptive_only",
+        "inconclusive_dynamic_range_failed",
+    ):
+        failing_arms = [a for a, v in dr_gate.items() if not v.get("above_threshold")]
+        headline_status = "inconclusive_dynamic_range_failed"
+        headline["status"] = headline_status
+        headline["h2_full_pass"] = False
+        headline["h2_partial"] = False
+        headline["dynamic_range_failed_arms"] = failing_arms
+        headline["reason"] = (
+            f"Dynamic-range gate failed: arms with sd <= {DYNAMIC_RANGE_THRESHOLD}: "
+            f"{failing_arms}. Saturated regime — leakage log-prob comparisons "
+            "are rank-shuffles on a ceiling, not informative segmentation."
+        )
+
+    payload = {
+        "schema_version": "i464_po_analyze_v1",
+        "git_commit": _git_commit_hash(),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
+        "seeds": args.seeds,
+        "arms": list(PO_ARMS),
+        "shared_marker_text": enc.MARKER_PIRATE_TEXT,
+        "shared_marker_id": enc.MARKER_PIRATE_ID,
+        "L_per_arm_per_seed": {arm: dict(d) for arm, d in L_per_arm_per_seed.items()},
+        "complete_seeds": complete_seeds,
+        "h2_min_seeds": H2_MIN_SEEDS,
+        "h1_elicitation": {
+            "threshold_nats": H1_ELICITATION_THRESHOLD,
+            "per_cell_logp": h1_per_cell_logp,
+            "per_cell_pass": h1_per_cell_pass,
+            "overall_pass": h1_overall_pass,
+            "n_cells": len(h1_per_cell_pass),
+        },
+        "leakage_to_default": leakage_to_default,
+        "headline": headline,
+        "headline_status": headline_status,
+        "dynamic_range_gate": {
+            "threshold": DYNAMIC_RANGE_THRESHOLD,
+            "per_arm": dr_gate,
+            "ok": dynamic_range_ok,
+        },
+        "raw_per_cell": raw_per_cell,
+        "n_missing_per_cell": len(missing),
+    }
+    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    OUT_PATH.write_text(json.dumps(payload, indent=2))
+    logger.info(
+        "po analyze done -> %s (status=%s complete_seeds=%d H1=%s)",
+        OUT_PATH,
+        headline_status,
+        len(complete_seeds),
+        h1_overall_pass,
+    )
+    if headline_status == "ok":
+        logger.info(
+            "H2 PASS: d_plain mean=%.3f CI=[%.3f, %.3f]; d_padded mean=%.3f CI=[%.3f, %.3f]",
+            headline["d_seed_plain"]["mean"],
+            headline["d_seed_plain"]["ci_lo_95"],
+            headline["d_seed_plain"]["ci_hi_95"],
+            headline["d_seed_padded"]["mean"],
+            headline["d_seed_padded"]["ci_lo_95"],
+            headline["d_seed_padded"]["ci_hi_95"],
+        )
+    elif headline_status == "inconclusive_descriptive_only":
+        logger.warning(
+            "H2 INCONCLUSIVE: only %d complete paired seed(s); need >= %d",
+            len(complete_seeds),
+            H2_MIN_SEEDS,
+        )
+    elif headline_status == "inconclusive_dynamic_range_failed":
+        logger.warning(
+            "H2 INCONCLUSIVE (dynamic-range failed): leakage log-prob sd "
+            "<= %.2f in arm(s) %s — saturation regime, headline overridden.",
+            DYNAMIC_RANGE_THRESHOLD,
+            headline.get("dynamic_range_failed_arms"),
+        )
+    if not h1_overall_pass and h1_per_cell_pass:
+        failing = [k for k, v in h1_per_cell_pass.items() if not v]
+        logger.warning(
+            "H1 elicitation FAILED on %d of %d cells (own log P < %.1f nat): %s",
+            len(failing),
+            len(h1_per_cell_pass),
+            H1_ELICITATION_THRESHOLD,
+            failing[:5],
+        )
+    # Leakage-to-default summary (NEW vs parent #464).
+    for arm in PO_ARMS:
+        d = leakage_to_default.get(arm)
+        if d and "mean" in d:
+            logger.info(
+                "leakage-to-default arm=%s mean=%.3f sd=%.3f n=%d",
+                arm,
+                d["mean"],
+                d["sd"],
+                d["n"],
+            )
+
+
+if __name__ == "__main__":
+    main()
