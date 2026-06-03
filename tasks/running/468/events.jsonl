@@ -56,3 +56,4 @@
 {"ts": "2026-06-03T01:30:09Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> training_sweep", "phase": "training_sweep", "pod": "pod-468"}
 {"ts": "2026-06-03T02:18:14Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: training_sweep -> betley_sweep", "phase": "betley_sweep", "pod": "pod-468"}
 {"ts": "2026-06-03T03:54:25Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: betley_sweep -> k_sweep", "phase": "k_sweep", "pod": "pod-468"}
+{"ts": "2026-06-03T04:40:53Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: k_sweep -> regress", "phase": "regress", "pod": "pod-468"}
