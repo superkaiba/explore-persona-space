@@ -1,7 +1,7 @@
 ---
-title: Training on more source personas raises marker leakage to held-out personas
-  overall, but whether the distance-dependence flattens with K is unresolved — the
-  apparent K-by-distance interaction is driven entirely by one far persona (LOW confidence)
+title: Training a marker into more source personas raises its leakage to held-out
+  personas; whether that leakage also becomes less localized with K is still unresolved
+  (MODERATE confidence)
 kind: experiment
 tags:
 - mentor-dan

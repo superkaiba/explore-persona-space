@@ -2037,7 +2037,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/405",
       "status": "awaiting_promotion",
-      "title": "Training on more source personas raises marker leakage to held-out personas overall, but whether the distance-dependence flattens with K is unresolved \u2014 the apparent K-by-distance interaction is driven entirely by one far persona (LOW confidence)"
+      "title": "Training a marker into more source personas raises its leakage to held-out personas; whether that leakage also becomes less localized with K is still unresolved (MODERATE confidence)"
     },
     "406": {
       "goal": "Test whether a pre-training-time scalar \u2014 JS divergence between base-model output distributions on T(X') vs T'(X') over a held-out probe set \u2014 predicts whether SFT on (T(X), Y) generalizes to outputting Y on T'(X), as a falsifiable test of whether prompt/persona-vector geometry causally predicts post-training generalization.",
