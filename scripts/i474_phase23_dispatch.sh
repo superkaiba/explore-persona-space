@@ -25,18 +25,20 @@ mkdir -p "$LOG_DIR"
 
 SMOKE_ONLY=0
 SKIP_SMOKE=0
+RESUME=0
 SELECTED_ARMS=("pos" "loc")
 for arg in "$@"; do
     case "$arg" in
         --smoke-only) SMOKE_ONLY=1 ;;
         --skip-smoke) SKIP_SMOKE=1 ;;
+        --resume) RESUME=1 ;;
         --arm=pos) SELECTED_ARMS=("pos") ;;
         --arm=loc) SELECTED_ARMS=("loc") ;;
         *) ;;
     esac
 done
 
-echo "[phase=preflight] === i474 phase23 dispatcher $(date -Iseconds) arms=${SELECTED_ARMS[*]} smoke_only=$SMOKE_ONLY skip_smoke=$SKIP_SMOKE ==="
+echo "[phase=preflight] === i474 phase23 dispatcher $(date -Iseconds) arms=${SELECTED_ARMS[*]} smoke_only=$SMOKE_ONLY skip_smoke=$SKIP_SMOKE resume=$RESUME ==="
 
 # Marker assert at launch.
 uv run python -c "
@@ -142,7 +144,37 @@ run_wave() {
     local arm="$1"
     local wave_label="$2"
     shift 2
-    local conds=("$@")
+    local conds_input=("$@")
+
+    # Round-5 FIX B — resume-skip: when --resume is set, filter out conds
+    # whose ALL FOUR epoch adapters {ep1, ep2, ep3, ep5} are already on HF.
+    # Partial conds (e.g. B4 with only ep1/ep2/ep3) are RETRAINED in full
+    # (the per-epoch upload callback overwrites — no torn state).
+    # See scripts/i474_check_adapter_hf_presence.py (single list_repo_files
+    # call per cond; exit 0=present, 1=missing, 2=lookup-failed-treat-as-missing).
+    local conds=()
+    if [ "$RESUME" -eq 1 ]; then
+        echo "[phase=sweep_${arm}_wave_${wave_label}_resume_check] === checking HF presence (${#conds_input[@]} conds) ==="
+        for cond in "${conds_input[@]}"; do
+            local check_log="$LOG_DIR/resume_check_${arm}_${cond}.log"
+            if uv run python scripts/i474_check_adapter_hf_presence.py \
+                    --arm "$arm" --cond "$cond" \
+                    > "$check_log" 2>&1; then
+                echo "[phase=skip_${arm}_${cond}] already on HF — $(cat "$check_log")"
+            else
+                local rc=$?
+                echo "[phase=resume_train_${arm}_${cond}] $(cat "$check_log") (check rc=$rc)"
+                conds+=("$cond")
+            fi
+        done
+        if [ "${#conds[@]}" -eq 0 ]; then
+            echo "[phase=sweep_${arm}_wave_${wave_label}_skipped] === all ${#conds_input[@]} conds already on HF; wave skipped ==="
+            return 0
+        fi
+    else
+        conds=("${conds_input[@]}")
+    fi
+
     echo "[phase=sweep_${arm}_wave_${wave_label}] === Sweep arm=${arm} wave ${wave_label}: ${conds[*]} $(date -Iseconds) ==="
     local pids=()
     local i=0

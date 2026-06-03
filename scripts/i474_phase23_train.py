@@ -706,6 +706,54 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
             hub_path,
         )
 
+        # ─────────────────────────────────────────────────────────────────
+        # Round-5 FIX A — delete local checkpoint dir + staged upload bundle
+        # AFTER verified HF upload. The round-3 fix made the upload bundle
+        # adapter-only but left the source ``checkpoint-{step}/`` dirs on
+        # disk (each ~1.8GB with optimizer.pt/rng_state/scheduler). At
+        # ~84 conditions x 5 epochs that's 756 GB locally — far past the
+        # MooseFS per-pod ~130 GB quota → EDQUOT → silent SIGKILL mid-sweep.
+        #
+        # Order matters per upload-policy.md fail-loud contract:
+        #   1. upload + verify (above) — if verification failed we raised
+        #      already and never reach this block.
+        #   2. delete staged ``_upload_ep{N}/`` bundle (the disposable copy).
+        #   3. delete source ``checkpoint-{step}/`` dir (the heavyweight one).
+        #
+        # We do NOT delete unverified checkpoints — the raise above is the
+        # safety. We also do NOT touch the parent ``output_dir`` (it holds
+        # the tokenizer + the FINAL-epoch adapter that ``train_lora``'s
+        # end-of-training hub_upload also pushes; reaping it would break
+        # the byte-identity contract that final-adapter upload depends on).
+        # ─────────────────────────────────────────────────────────────────
+        import shutil
+
+        for path, label in ((upload_dir, "upload bundle"), (ckpt_dir, "checkpoint dir")):
+            try:
+                if path.exists():
+                    shutil.rmtree(path)
+                    logger.info(
+                        "PerEpochAdapterHFUpload: reaped local %s %s "
+                        "(arm=%s cid=%s ep=%d) — HF copy at %s is the source of truth now.",
+                        label,
+                        path,
+                        self.arm,
+                        self.cid,
+                        target_ep,
+                        hub_path,
+                    )
+            except OSError as e:
+                # Fail-loud: if we can't reap, the disk fills and the sweep
+                # dies the same way. Surface the error so the operator can
+                # intervene (e.g. permissions, NFS hiccup) BEFORE the next
+                # epoch's checkpoint compounds the problem.
+                raise RuntimeError(
+                    f"PerEpochAdapterHFUpload: FAILED to reap local {label} {path} "
+                    f"after verified HF upload (arm={self.arm} cid={self.cid} "
+                    f"ep={target_ep}): {e}. Disk will fill — refusing to continue. "
+                    "Operator must investigate (permissions / mount / quota)."
+                ) from e
+
 
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(
@@ -879,7 +927,14 @@ def main(argv: list[str] | None = None) -> None:
             run_name=f"i474_{args.arm}_{cond_id}",
             report_to="wandb",
             save_strategy=args.save_strategy,
-            save_total_limit=None,
+            # Round-5 FIX A: keep at most 1 local checkpoint at a time. The
+            # PerEpochAdapterHFUploadCallback reaps each epoch's checkpoint
+            # right after verified HF upload, so this is a belt-and-braces
+            # backstop: HF Trainer auto-prunes older checkpoints when a
+            # new one lands. Was ``None`` (unlimited) → accumulated 5x at
+            # ~1.8GB each per condition → 84 conds x 9GB = ~750GB local,
+            # blew the MooseFS per-pod ~130GB quota → silent SIGKILL.
+            save_total_limit=1,
             marker_only_loss=True,
             marker_text=MARKER_TEXT,
             marker_tail_tokens=0,

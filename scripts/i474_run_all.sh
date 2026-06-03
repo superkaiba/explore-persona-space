@@ -14,6 +14,13 @@
 #
 # Launch (smoke only — 2 conds x 1 ckpt):
 #   nohup bash scripts/i474_run_all.sh --smoke > /workspace/logs/issue-474-smoke.log 2>&1 &
+#
+# Launch (RESUME — skip conds whose all 4 epoch adapters are already on HF):
+#   nohup bash scripts/i474_run_all.sh --resume > /workspace/logs/issue-474-resume.log 2>&1 &
+#   Use after a mid-sweep crash. The dispatcher checks each (arm, cond) via
+#   scripts/i474_check_adapter_hf_presence.py and skips conds with all 4 of
+#   {ep1, ep2, ep3, ep5} present; partial conds retrain fully (per-epoch
+#   upload callback overwrites — no torn state).
 
 export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
@@ -21,9 +28,11 @@ export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 cd /workspace/explore-persona-space || { echo "[phase=failed] cd-failed"; exit 1; }
 
 SMOKE_MODE=0
+RESUME_MODE=0
 for arg in "$@"; do
     case "$arg" in
         --smoke) SMOKE_MODE=1 ;;
+        --resume) RESUME_MODE=1 ;;
         *) ;;
     esac
 done
@@ -83,6 +92,15 @@ if [ "$SMOKE_MODE" -eq 1 ]; then
     run_phase_script train_smoke i474_phase23_dispatch.sh --smoke-only || exit 12
     run_phase_script crosseval_smoke i474_phase4_dispatch.sh \
         --smoke --source-conds A1 --arms pos,loc --epochs 1 || exit 13
+elif [ "$RESUME_MODE" -eq 1 ]; then
+    # Round-5 FIX B — resume after mid-sweep crash. Train dispatcher
+    # checks each (arm, cond) on HF for {ep1, ep2, ep3, ep5} and skips
+    # conds with all 4 present. Partial conds retrain fully. Crosseval
+    # runs full 16-source production matrix (resume on the eval side is
+    # handled by phase4_eval's --resume which skips per-cell JSONs that
+    # already landed atomically — pass it through).
+    run_phase_script train_resume i474_phase23_dispatch.sh --resume || exit 12
+    run_phase_script crosseval_resume i474_phase4_dispatch.sh --resume || exit 13
 else
     run_phase_script train       i474_phase23_dispatch.sh     || exit 12
     run_phase_script crosseval   i474_phase4_dispatch.sh      || exit 13
