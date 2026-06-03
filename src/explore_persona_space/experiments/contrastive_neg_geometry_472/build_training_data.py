@@ -128,6 +128,7 @@ def build_cell(
     source: str = SOURCE_PERSONA,
     marker_text: str = MARKER_TEXT,
     seed: int = 42,
+    cell_specs: tuple | None = None,
 ) -> Path:
     """Build the per-cell training JSONL (on-policy).
 
@@ -146,12 +147,15 @@ def build_cell(
         output_path. Raises on marker-in-negative contamination, missing R, or
         row-count mismatch.
     """
-    spec = next((c for c in CELL_SPECS if c[0] == cell_slug), None)
+    specs = cell_specs if cell_specs is not None else CELL_SPECS
+    spec = next((c for c in specs if c[0] == cell_slug), None)
     if spec is None:
         raise KeyError(f"Unknown cell slug {cell_slug!r}")
     _slug, plain_name, placement, n_neg_personas, neg_ex_per_persona, in_pooled = spec
 
-    neg_persona_list = negatives_for_cell(cell_slug, cos_to_source, source=source)
+    neg_persona_list = negatives_for_cell(
+        cell_slug, cos_to_source, source=source, cell_specs=cell_specs
+    )
     if len(neg_persona_list) != n_neg_personas:
         raise AssertionError(
             f"[{cell_slug}] negative selection returned {len(neg_persona_list)} personas, "

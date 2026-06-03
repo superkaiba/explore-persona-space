@@ -211,6 +211,9 @@ def train_one_cell(
     fallback: bool = False,
     report_to: str = "wandb",
     gpu_id: int = 0,
+    lr_override: float | None = None,
+    epochs_override: int | None = None,
+    hf_path_in_repo_override: str | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -253,6 +256,20 @@ def train_one_cell(
     r = FALLBACK_LORA_R if fallback else LORA_R
     lr = FALLBACK_LEARNING_RATE if fallback else LEARNING_RATE
     epochs = FALLBACK_EPOCHS if fallback else EPOCHS
+    # Per-cell overrides (#477 calibration layer). Backward-compat: defaults None
+    # = exactly #472 behavior. lr_override is the calibrated LR from Phase 2.5;
+    # epochs_override lets #477 pin epochs=2 (vs #472's 1) without touching the
+    # 472 module constants. hf_path_in_repo_override lets #477 push adapters to
+    # its own subfolder under HF_MODEL_REPO instead of adapters/issue_472/...
+    if lr_override is not None:
+        lr = float(lr_override)
+    if epochs_override is not None:
+        epochs = epochs_override
+    hf_path_in_repo = (
+        hf_path_in_repo_override
+        if hf_path_in_repo_override is not None
+        else f"adapters/issue_472/{cell_slug}_seed{seed}"
+    )
     # rs-LoRA: TrainLoraConfig sets use_rslora=True in train_lora's LoraConfig.
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,  # ASSIGNED physical GPU; sft.py sets CVD=str(gpu_id).
@@ -274,7 +291,7 @@ def train_one_cell(
         packing=False,
         hf_upload=True,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/issue_472/{cell_slug}_seed{seed}",
+        hf_path_in_repo=hf_path_in_repo,
         # Marker-only loss on the OVERRIDDEN " ※" marker (not the [ZLT] default).
         marker_only_loss=True,
         marker_text=MARKER_TEXT,

@@ -121,11 +121,24 @@ def negatives_for_cell(
     cos_to_source: dict[str, float],
     *,
     source: str = SOURCE_PERSONA,
+    cell_specs: tuple | None = None,
 ) -> list[str]:
-    """Resolve the negative persona list for a single cell from CELL_SPECS."""
-    spec = next((c for c in CELL_SPECS if c[0] == cell_slug), None)
+    """Resolve the negative persona list for a single cell from CELL_SPECS.
+
+    Args:
+        cell_slug: cell to resolve.
+        cos_to_source: {persona: cos(persona, source)}.
+        source: source persona.
+        cell_specs: OPTIONAL override registry (same 6-tuple shape as
+            CELL_SPECS). Defaults to #472's CELL_SPECS. Used by #477 to drive
+            this resolver against its own CELL_SPECS_477 without touching the
+            #472 module's authoritative tuple. Pure backward-compat: callers
+            that don't pass this kwarg keep the existing behavior.
+    """
+    specs = cell_specs if cell_specs is not None else CELL_SPECS
+    spec = next((c for c in specs if c[0] == cell_slug), None)
     if spec is None:
-        raise KeyError(f"Unknown cell slug {cell_slug!r}; known: {[c[0] for c in CELL_SPECS]}")
+        raise KeyError(f"Unknown cell slug {cell_slug!r}; known: {[c[0] for c in specs]}")
     _slug, _name, placement, n_neg_personas, _neg_ex, _in_pooled = spec
     return select_negatives_by_geometry(source, placement, n_neg_personas, cos_to_source)
 

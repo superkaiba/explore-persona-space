@@ -382,10 +382,22 @@ def run_trajectory_eval(
         # matched-slice (8±1 nat) anchor read at this checkpoint is post-collapse
         # — the analyzer must prefer an EARLIER, non-collapsed checkpoint.
         src_collapsed = any(bool(g[source][q].get("r_collapsed", False)) for q in eval_questions)
+        # DV-C: source emission rate P(※) = share of Q_eval where the trained
+        # model's argmax at the post-R slot is the marker (#477 validity gate;
+        # plan §6 DV-C). Computed from the SAME g[source][q]["argmax_marker"]
+        # already produced by score_logp_for_R; backward-compat for #472 (extra
+        # field; no existing reader breaks).
+        n_src_q = len(eval_questions)
+        src_emission_p = (
+            sum(1 for q in eval_questions if g[source][q].get("argmax_marker")) / n_src_q
+            if n_src_q
+            else 0.0
+        )
         source_self = {
             "g_logp_mean": sum(g[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "b_logp_mean": sum(b[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "delta_g_mean": sum(src_deltas) / len(src_deltas),
+            "emission_p": float(src_emission_p),
             "r_collapsed": src_collapsed,
         }
         n_held_out_probes = len(eval_personas) * len(eval_questions)

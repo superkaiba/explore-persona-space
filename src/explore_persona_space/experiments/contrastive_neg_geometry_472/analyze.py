@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Qwen marker " ※" + Greek ρ ΔG intentional
 """Task #472 Phase 5 — geometry / count / placement analysis (plan §6).
 
 Reads per-cell×seed trajectory.json + base_panel.json + centroids, then:
@@ -811,3 +811,570 @@ def _make_figures(
     plt.close(fig3)
 
     log.info("Figures written to %s", figures_dir)
+
+
+# ── Task #477 extensions (called from scripts/i477_phase_analyze.py) ─────────
+#
+# These functions operate on the #477 main-cell + implant-only-axis results
+# (NOT on the #472 trajectory.json shape). #477 cells follow the schema:
+#   {"cell": str, "seed": int, "count": int, "lr": float,
+#    "source_self_delta_g_at_last_ckpt": float,
+#    "source_emission_p_at_last_ckpt": float,
+#    "mean_bystander_delta_g": float,
+#    "step_at_last_ckpt": int}
+# kept_cells / implant_only_cells are lists of these dicts (already filtered
+# through calibrate.validity_gate).
+#
+# Discipline (plan §6 "Analysis & interpretation discipline" items 1-8):
+#   - return BOTH ρ(count, DV-A | DV-B) and ρ(count, DV-A | DV-B, step);
+#   - count-STRATIFIED bootstrap (resample within each count level), percentile CI;
+#   - the ≥3/4 coverage guard returns a clear "n<3 count levels — descriptive
+#     only" sentinel instead of computing a partial-ρ on n=4 cells × 1 count level.
+
+
+def _ols_residuals(y: list[float], X: list[list[float]]) -> list[float]:
+    """OLS residuals of y on [const, *X]. Returns y - X β̂ (lstsq)."""
+    import numpy as np
+
+    y_arr = np.asarray(y, dtype=float)
+    X_arr = np.column_stack([np.ones(len(y_arr)), *[np.asarray(c, dtype=float) for c in X]])
+    coef, *_ = np.linalg.lstsq(X_arr, y_arr, rcond=None)
+    return (y_arr - X_arr @ coef).tolist()
+
+
+def _stratified_bootstrap_partial_spearman(
+    counts: list[int],
+    bystander: list[float],
+    implant: list[float],
+    *,
+    n_resamples: int = 2000,
+    ci_level: float = 0.90,
+    seed: int = 42,
+    extra_controls: list[list[float]] | None = None,
+) -> dict[str, Any]:
+    """Count-stratified bootstrap CI for partial Spearman.
+
+    Plan §6 discipline item 4: resample WITHIN each count level (preserves the
+    n-level structure; a naïve i.i.d. n=8 resample produces degenerate samples
+    missing a count level). Returns the percentile CI.
+
+    Args:
+        counts: per-cell count level (int).
+        bystander: per-cell mean bystander ΔG.
+        implant: per-cell source-self ΔG (the partialled covariate).
+        n_resamples: bootstrap iterations.
+        ci_level: e.g. 0.90 → 5th and 95th percentiles.
+        seed: RNG seed.
+        extra_controls: optional extra covariates to partial out alongside
+            implant (e.g. step). Each is a list of per-cell values aligned with
+            counts/bystander/implant.
+
+    Returns:
+        {"ci_low": float, "ci_high": float, "median": float, "n_resamples": int,
+         "ci_level": float, "n_count_levels": int}.
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    rng = np.random.default_rng(seed)
+    # Group cell indices by count level.
+    groups: dict[int, list[int]] = {}
+    for i, c in enumerate(counts):
+        groups.setdefault(c, []).append(i)
+
+    rhos: list[float] = []
+    for _ in range(n_resamples):
+        idx: list[int] = []
+        for _level, level_idx in groups.items():
+            # Resample WITH replacement within this count level.
+            picks = rng.integers(0, len(level_idx), size=len(level_idx))
+            idx.extend(level_idx[p] for p in picks)
+        c_arr = [counts[i] for i in idx]
+        y_arr = [bystander[i] for i in idx]
+        x_arr = [implant[i] for i in idx]
+        controls = [[col[i] for i in idx] for col in (extra_controls or [])]
+        try:
+            y_res = _ols_residuals(y_arr, [x_arr, *controls])
+            c_res = _ols_residuals([float(v) for v in c_arr], [x_arr, *controls])
+            rho = float(spearmanr(c_res, y_res).correlation)
+            if not np.isnan(rho):
+                rhos.append(rho)
+        except (np.linalg.LinAlgError, ValueError):
+            continue
+
+    if not rhos:
+        return {
+            "ci_low": float("nan"),
+            "ci_high": float("nan"),
+            "median": float("nan"),
+            "n_resamples": 0,
+            "ci_level": ci_level,
+            "n_count_levels": len(groups),
+            "note": "all bootstrap resamples failed (singular partialling matrix)",
+        }
+    alpha = (1.0 - ci_level) / 2.0
+    return {
+        "ci_low": float(np.quantile(rhos, alpha)),
+        "ci_high": float(np.quantile(rhos, 1.0 - alpha)),
+        "median": float(np.median(rhos)),
+        "n_resamples": len(rhos),
+        "ci_level": float(ci_level),
+        "n_count_levels": len(groups),
+    }
+
+
+def partial_spearman_count_given_implant(
+    kept_cells: list[dict],
+    *,
+    n_bootstrap: int = 2000,
+    bootstrap_seed: int = 42,
+    min_count_levels: int = 3,
+) -> dict[str, Any]:
+    """ρ(count, mean-bystander-ΔG | source-self-ΔG) — the #477 H1 headline.
+
+    Plan §6 discipline items 1, 4, 5:
+      * report BOTH the partialling-on-implant ρ and the robustness
+        ρ(count, DV-A | DV-B, step);
+      * count-stratified bootstrap 90% CI;
+      * coverage guard: refuses to compute if fewer than min_count_levels (3)
+        distinct count levels survive the gate; returns the "descriptive-only"
+        sentinel instead.
+
+    Returns:
+        {"n": int, "n_count_levels": int, "kept_counts": list[int],
+         "rho_given_implant": float, "p_given_implant": float,
+         "bootstrap_given_implant": {...},
+         "rho_given_implant_and_step": float, "p_given_implant_and_step": float,
+         "bootstrap_given_implant_and_step": {...},
+         "per_seed_sign": dict, "interpretable": bool, "note": str}
+        OR a {"interpretable": False, "note": "..."} sentinel if guard trips.
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    counts = [int(c["count"]) for c in kept_cells]
+    distinct_counts = sorted(set(counts))
+    n = len(kept_cells)
+
+    if len(distinct_counts) < min_count_levels:
+        return {
+            "interpretable": False,
+            "n": n,
+            "n_count_levels": len(distinct_counts),
+            "kept_counts": distinct_counts,
+            "note": (
+                f"n_count_levels={len(distinct_counts)} < min_count_levels="
+                f"{min_count_levels} — coverage floor violated (plan §6 discipline "
+                f"item 5). Partial Spearman uninterpretable at this coverage; the "
+                f"H1 headline must be a DESCRIPTIVE read of per-cell F3 means, not "
+                f"a partial-ρ. Excluded counts (gated-out): see calibrate.validity_gate "
+                f"output upstream."
+            ),
+        }
+
+    bystander = [float(c["mean_bystander_delta_g"]) for c in kept_cells]
+    implant = [float(c["source_self_delta_g_at_last_ckpt"]) for c in kept_cells]
+    step = [int(c.get("step_at_last_ckpt", 0)) for c in kept_cells]
+
+    # Headline: partial out implant only.
+    y_resid_i = _ols_residuals(bystander, [implant])
+    c_resid_i = _ols_residuals([float(v) for v in counts], [implant])
+    sr_i = spearmanr(c_resid_i, y_resid_i)
+    boot_i = _stratified_bootstrap_partial_spearman(
+        counts, bystander, implant, n_resamples=n_bootstrap, seed=bootstrap_seed
+    )
+
+    # Robustness: partial out implant AND step.
+    y_resid_is = _ols_residuals(bystander, [implant, [float(v) for v in step]])
+    c_resid_is = _ols_residuals([float(v) for v in counts], [implant, [float(v) for v in step]])
+    sr_is = spearmanr(c_resid_is, y_resid_is)
+    boot_is = _stratified_bootstrap_partial_spearman(
+        counts,
+        bystander,
+        implant,
+        n_resamples=n_bootstrap,
+        seed=bootstrap_seed + 1,
+        extra_controls=[[float(v) for v in step]],
+    )
+
+    # Per-seed sign — plan §6 item 7 (seed 137 match-band misses → downgrade).
+    seeds_in_kept = sorted({int(c["seed"]) for c in kept_cells})
+    per_seed_sign: dict[str, dict] = {}
+    for s in seeds_in_kept:
+        sub = [c for c in kept_cells if int(c["seed"]) == s]
+        if len({int(c["count"]) for c in sub}) < 2:
+            per_seed_sign[str(s)] = {
+                "n": len(sub),
+                "n_count_levels": len({int(c["count"]) for c in sub}),
+                "sign": None,
+                "note": "fewer than 2 count levels at this seed; sign not defined",
+            }
+            continue
+        # Raw (not partialled) sign at this seed, as a robustness check on the
+        # pooled sign — partialling implant inside a single-seed n=4 slice is
+        # too unstable to report independently.
+        sub_counts = [int(c["count"]) for c in sub]
+        sub_bystander = [float(c["mean_bystander_delta_g"]) for c in sub]
+        sr_seed = spearmanr(sub_counts, sub_bystander)
+        rho_seed = float(sr_seed.correlation) if not np.isnan(sr_seed.correlation) else 0.0
+        per_seed_sign[str(s)] = {
+            "n": len(sub),
+            "n_count_levels": len({int(c["count"]) for c in sub}),
+            "rho_raw_count_bystander": rho_seed,
+            "sign": int(np.sign(rho_seed)) if rho_seed != 0 else 0,
+        }
+
+    pooled_sign = (
+        int(np.sign(sr_i.correlation))
+        if not np.isnan(sr_i.correlation) and sr_i.correlation != 0
+        else 0
+    )
+    sign_stable_across_seeds = all(
+        (v.get("sign") is None) or v.get("sign") == pooled_sign for v in per_seed_sign.values()
+    )
+
+    return {
+        "interpretable": True,
+        "n": n,
+        "n_count_levels": len(distinct_counts),
+        "kept_counts": distinct_counts,
+        "rho_given_implant": float(sr_i.correlation),
+        "p_given_implant": float(sr_i.pvalue),
+        "bootstrap_given_implant": boot_i,
+        "rho_given_implant_and_step": float(sr_is.correlation),
+        "p_given_implant_and_step": float(sr_is.pvalue),
+        "bootstrap_given_implant_and_step": boot_is,
+        "per_seed_sign": per_seed_sign,
+        "pooled_sign": pooled_sign,
+        "sign_stable_across_seeds": sign_stable_across_seeds,
+        "note": (
+            "Plan §6 discipline item 1: report BOTH partials. Item 3: this ρ is a "
+            "SUMMARY of F3, not an independent test — weight F3 over ρ in the "
+            "write-up. Item 4: count-stratified bootstrap CI. Item 7: if any seed "
+            "disagrees, downgrade to indeterminate."
+        ),
+    }
+
+
+def implant_only_axis_spearman(implant_only_cells: list[dict]) -> dict[str, Any]:
+    """ρ(source-self-ΔG, mean-bystander-ΔG) — the #477 H2 secondary.
+
+    Plan §6 discipline item 2: report H2 BEFORE H1; gates H1's interpretability.
+    If |ρ_H2| ≤ 0.40 there is no implant axis to partial along and a near-zero
+    H1 is uninterpretable. This function returns ρ + per-seed sign + a bootstrap
+    CI; the analyzer (i477_phase_analyze.py) prints the H2 verdict first and
+    suppresses the H1 read if H2 falsifies.
+
+    Args:
+        implant_only_cells: per-cell dicts at fixed count (anchor), varying LR.
+            Required keys: "source_self_delta_g_at_last_ckpt",
+            "mean_bystander_delta_g", "seed", "lr".
+
+    Returns:
+        {"rho": float, "p": float, "n": int, "per_seed_sign": {...},
+         "verdict": "confirms" | "falsifies" | "indeterminate", "note": str}.
+    """
+    import numpy as np
+    from scipy.stats import spearmanr
+
+    n = len(implant_only_cells)
+    if n < 3:
+        return {
+            "rho": float("nan"),
+            "p": float("nan"),
+            "n": n,
+            "verdict": "indeterminate",
+            "note": f"n={n} cells; need ≥3 for Spearman.",
+        }
+    implant = [float(c["source_self_delta_g_at_last_ckpt"]) for c in implant_only_cells]
+    bystander = [float(c["mean_bystander_delta_g"]) for c in implant_only_cells]
+    sr = spearmanr(implant, bystander)
+    rho = float(sr.correlation)
+
+    seeds = sorted({int(c["seed"]) for c in implant_only_cells})
+    per_seed_sign: dict[str, dict] = {}
+    for s in seeds:
+        sub = [c for c in implant_only_cells if int(c["seed"]) == s]
+        if len(sub) < 2:
+            per_seed_sign[str(s)] = {"n": len(sub), "sign": None, "note": "n<2"}
+            continue
+        sub_implant = [float(c["source_self_delta_g_at_last_ckpt"]) for c in sub]
+        sub_bystander = [float(c["mean_bystander_delta_g"]) for c in sub]
+        sr_seed = spearmanr(sub_implant, sub_bystander)
+        rho_seed = float(sr_seed.correlation) if not np.isnan(sr_seed.correlation) else 0.0
+        per_seed_sign[str(s)] = {
+            "n": len(sub),
+            "rho": rho_seed,
+            "sign": int(np.sign(rho_seed)) if rho_seed != 0 else 0,
+        }
+    sign_stable = (
+        len({v.get("sign") for v in per_seed_sign.values() if v.get("sign") is not None}) <= 1
+    )
+
+    if abs(rho) >= 0.80 and sign_stable:
+        verdict = "confirms"
+    elif abs(rho) <= 0.40:
+        verdict = "falsifies"
+    else:
+        verdict = "indeterminate"
+
+    return {
+        "rho": rho,
+        "p": float(sr.pvalue),
+        "n": n,
+        "sign_stable_across_seeds": sign_stable,
+        "per_seed_sign": per_seed_sign,
+        "verdict": verdict,
+        "note": (
+            "Plan §6 H2: confirms if ρ ≥ 0.80 AND sign-stable; falsifies if |ρ| ≤ "
+            "0.40. Falsifying H2 makes the H1 partial uninterpretable (item 2)."
+        ),
+    }
+
+
+def loess_or_quadratic_fit(
+    x: list[float], y: list[float], *, n_grid: int = 50
+) -> dict[str, list[float]]:
+    """Lightweight curvature overlay for F1 (plan §6 discipline item 6).
+
+    Uses a degree-2 polynomial fit as the curvature overlay (true LOESS would
+    pull in statsmodels.nonparametric; quadratic is a pragmatic stand-in that
+    surfaces residual implant-curvature mistaken for a count effect). Returns
+    {"x_grid": [...], "y_fit": [...]} ready to plot alongside the linear OLS.
+    Falls back to linear if n<3 or polyfit fails.
+    """
+    import numpy as np
+
+    if len(x) < 3:
+        return {"x_grid": list(x), "y_fit": list(y)}
+    try:
+        coef = np.polyfit(np.asarray(x), np.asarray(y), 2)
+        x_grid = np.linspace(min(x), max(x), n_grid)
+        y_fit = np.polyval(coef, x_grid)
+        return {"x_grid": x_grid.tolist(), "y_fit": y_fit.tolist()}
+    except (np.linalg.LinAlgError, ValueError):
+        return {"x_grid": list(x), "y_fit": list(y)}
+
+
+def make_477_figures(  # noqa: C901 - linear multi-figure builder (F1..F6)
+    *,
+    main_cells: list[dict],
+    kept_cells: list[dict],
+    excluded_cells: list[dict],
+    implant_only_cells: list[dict],
+    calibration_table: dict,
+    calibration_pick: dict,
+    h1: dict,
+    h2: dict,
+    figures_dir: Path,
+) -> dict[str, str]:
+    """Generate F1..F6 from plan §6.
+
+    F1: x=count, y=mean bystander ΔG, raw + residualized side-by-side, LOESS
+        overlay (discipline items 6 + 11).
+    F2: x=source-self ΔG, y=bystander ΔG over implant-only-axis cells.
+    F3: per-cell bystander ΔG bars (color by achieved source ΔG, annotated with
+        LR + steps). Discipline item 3 — substantive evidence over the ρ.
+    F4: not produced here (trajectory dump lives in the cell artifacts).
+    F5: calibration heatmap (x=LR, y=count, color=achieved source ΔG, star on
+        picked LR).
+    F6: H3 side-bet — x=count, y=source-self ΔG, one point per (count, LR)
+        calibration cell.
+
+    Returns: {figure_label: figure_path} for the analyzer.
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+    set_paper_style()
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    written: dict[str, str] = {}
+
+    # ── F1: raw + residualized side-by-side with LOESS overlay. ──────────────
+    if kept_cells:
+        fig, (axl, axr) = plt.subplots(1, 2, figsize=(11, 4.3))
+        x_raw = [int(c["count"]) for c in kept_cells]
+        y_raw = [float(c["mean_bystander_delta_g"]) for c in kept_cells]
+        sizes = [60 + 4 * float(c["source_self_delta_g_at_last_ckpt"]) for c in kept_cells]
+        axl.scatter(x_raw, y_raw, s=sizes, alpha=0.7, color="#0072B2")
+        # LOESS-stand-in (quadratic) overlay.
+        fit = loess_or_quadratic_fit(x_raw, y_raw)
+        axl.plot(fit["x_grid"], fit["y_fit"], color="#D55E00", lw=1.5, label="quadratic")
+        axl.set_xlabel("Number of negative personas")
+        axl.set_ylabel("Mean bystander leakage (ΔG, nats)")
+        axl.set_title("F1 raw: leakage vs count (size=achieved source ΔG)")
+        axl.legend(fontsize=8)
+
+        # Residualized: bystander, count BOTH residualized against implant.
+        implant = [float(c["source_self_delta_g_at_last_ckpt"]) for c in kept_cells]
+        y_res = _ols_residuals(y_raw, [implant])
+        c_res = _ols_residuals([float(v) for v in x_raw], [implant])
+        axr.scatter(c_res, y_res, s=sizes, alpha=0.7, color="#009E73")
+        if len(c_res) >= 2:
+            coef = np.polyfit(c_res, y_res, 1)
+            xline = np.linspace(min(c_res), max(c_res), 20)
+            axr.plot(xline, np.polyval(coef, xline), color="#D55E00", lw=1.5)
+        rho_text = (
+            f"ρ={h1.get('rho_given_implant', float('nan')):.2f} (n={h1.get('n', 0)})"
+            if h1.get("interpretable")
+            else h1.get("note", "")[:80]
+        )
+        axr.set_xlabel("Count (residualized vs implant)")
+        axr.set_ylabel("Bystander leakage (residualized vs implant)")
+        axr.set_title(f"F1 residualized: {rho_text}")
+        fig.tight_layout()
+        savefig_paper(fig, "i477_f1_count_vs_leakage", dir=str(figures_dir))
+        plt.close(fig)
+        written["F1"] = str(figures_dir / "i477_f1_count_vs_leakage")
+
+    # ── F2: implant-only axis. ───────────────────────────────────────────────
+    if implant_only_cells:
+        fig, ax = plt.subplots(figsize=(6.5, 4.5))
+        x_io = [float(c["source_self_delta_g_at_last_ckpt"]) for c in implant_only_cells]
+        y_io = [float(c["mean_bystander_delta_g"]) for c in implant_only_cells]
+        ax.scatter(x_io, y_io, s=80, alpha=0.7, color="#0072B2")
+        if len(x_io) >= 2:
+            coef = np.polyfit(x_io, y_io, 1)
+            xline = np.linspace(min(x_io), max(x_io), 20)
+            ax.plot(xline, np.polyval(coef, xline), color="#D55E00", lw=1.5)
+        ax.set_xlabel("Source-self ΔG (DV-B, nats)")
+        ax.set_ylabel("Mean bystander leakage (DV-A, nats)")
+        ax.set_title(
+            f"F2 H2: implant-only axis (ρ={h2.get('rho', float('nan')):.2f}, "
+            f"verdict={h2.get('verdict', '?')})"
+        )
+        fig.tight_layout()
+        savefig_paper(fig, "i477_f2_implant_only_axis", dir=str(figures_dir))
+        plt.close(fig)
+        written["F2"] = str(figures_dir / "i477_f2_implant_only_axis")
+
+    # ── F3: per-cell bars, color = achieved implant, annotation = LR + steps. ─
+    if main_cells:
+        # Mean across seeds within each count level, error bar = SD across seeds.
+        by_count: dict[int, list[dict]] = {}
+        for c in main_cells:
+            by_count.setdefault(int(c["count"]), []).append(c)
+        counts_sorted = sorted(by_count)
+        means = [np.mean([c["mean_bystander_delta_g"] for c in by_count[k]]) for k in counts_sorted]
+        sds = [
+            np.std([c["mean_bystander_delta_g"] for c in by_count[k]], ddof=1)
+            if len(by_count[k]) > 1
+            else 0.0
+            for k in counts_sorted
+        ]
+        colors_impl = [
+            float(np.mean([c["source_self_delta_g_at_last_ckpt"] for c in by_count[k]]))
+            for k in counts_sorted
+        ]
+
+        fig, ax = plt.subplots(figsize=(7.5, 4.5))
+        bars = ax.bar(
+            [str(k) for k in counts_sorted],
+            means,
+            yerr=sds,
+            capsize=4,
+            color=plt.cm.viridis(
+                (np.asarray(colors_impl) - min(colors_impl))
+                / max(1e-6, max(colors_impl) - min(colors_impl))
+            ),
+        )
+        for b, k in zip(bars, counts_sorted, strict=True):
+            lrs = sorted({float(c["lr"]) for c in by_count[k]})
+            steps = [int(c.get("step_at_last_ckpt", 0)) for c in by_count[k]]
+            ann = (
+                f"LR={'/'.join(f'{lr:g}' for lr in lrs)}\n"
+                f"steps={int(np.mean(steps))} (avg)\n"
+                f"impl={np.mean([c['source_self_delta_g_at_last_ckpt'] for c in by_count[k]]):.1f}"
+            )
+            ax.text(
+                b.get_x() + b.get_width() / 2,
+                b.get_height() + 0.3,
+                ann,
+                ha="center",
+                fontsize=7,
+                rotation=0,
+            )
+        ax.set_xlabel("Number of negative personas")
+        ax.set_ylabel("Mean bystander leakage (ΔG, nats)")
+        ax.set_title("F3: per-cell bystander leakage, annotated with calibrated LR + steps")
+        fig.tight_layout()
+        savefig_paper(fig, "i477_f3_per_cell_bars", dir=str(figures_dir))
+        plt.close(fig)
+        written["F3"] = str(figures_dir / "i477_f3_per_cell_bars")
+
+    # ── F5: calibration heatmap. ─────────────────────────────────────────────
+    if calibration_table:
+        counts_sorted = sorted(int(k) for k in calibration_table)
+        # Union of all LRs across count rows (handles partial rows defensively).
+        lrs_sorted = sorted({float(lr) for row in calibration_table.values() for lr in row})
+        grid = np.full((len(counts_sorted), len(lrs_sorted)), np.nan)
+        for i, cnt in enumerate(counts_sorted):
+            row = (
+                calibration_table[cnt] if cnt in calibration_table else calibration_table[str(cnt)]
+            )
+            for j, lr in enumerate(lrs_sorted):
+                cell = row.get(lr) or row.get(str(lr)) or row.get(f"{lr:g}")
+                if cell is not None:
+                    grid[i, j] = float(cell["source_self_delta_g"])
+
+        fig, ax = plt.subplots(figsize=(7.5, 4.5))
+        im = ax.imshow(grid, aspect="auto", cmap="viridis", origin="lower")
+        ax.set_xticks(range(len(lrs_sorted)))
+        ax.set_xticklabels([f"{lr:g}" for lr in lrs_sorted], rotation=45)
+        ax.set_yticks(range(len(counts_sorted)))
+        ax.set_yticklabels([str(c) for c in counts_sorted])
+        ax.set_xlabel("Learning rate")
+        ax.set_ylabel("Number of negative personas")
+        plt.colorbar(im, ax=ax, label="Achieved source-self ΔG (nats)")
+        # Star markers on the picked LR per count.
+        for i, cnt in enumerate(counts_sorted):
+            pick = calibration_pick.get(cnt) or calibration_pick.get(str(cnt))
+            if pick:
+                picked_lr = float(pick["lr"])
+                if picked_lr in lrs_sorted:
+                    j = lrs_sorted.index(picked_lr)
+                    ax.plot(j, i, marker="*", color="white", markersize=14, mec="black")
+        ax.set_title("F5: calibration table (star = picked LR per count)")
+        fig.tight_layout()
+        savefig_paper(fig, "i477_f5_calibration_heatmap", dir=str(figures_dir))
+        plt.close(fig)
+        written["F5"] = str(figures_dir / "i477_f5_calibration_heatmap")
+
+    # ── F6: H3 side-bet (count → source-implant survives calibration?). ──────
+    if calibration_table:
+        fig, ax = plt.subplots(figsize=(7.0, 4.5))
+        for lr in sorted({float(lr) for row in calibration_table.values() for lr in row}):
+            xs, ys = [], []
+            for cnt in sorted(int(k) for k in calibration_table):
+                row = (
+                    calibration_table[cnt]
+                    if cnt in calibration_table
+                    else calibration_table[str(cnt)]
+                )
+                cell = row.get(lr) or row.get(str(lr)) or row.get(f"{lr:g}")
+                if cell is not None:
+                    xs.append(cnt)
+                    ys.append(float(cell["source_self_delta_g"]))
+            if xs:
+                ax.plot(xs, ys, marker="o", label=f"LR={lr:g}")
+        ax.set_xlabel("Number of negative personas")
+        ax.set_ylabel("Source-self ΔG at terminal (nats)")
+        ax.set_title("F6 H3: count → source-implant coupling survives calibration?")
+        ax.legend(fontsize=8)
+        fig.tight_layout()
+        savefig_paper(fig, "i477_f6_h3_count_to_implant", dir=str(figures_dir))
+        plt.close(fig)
+        written["F6"] = str(figures_dir / "i477_f6_h3_count_to_implant")
+
+    # Excluded cells get logged in the summary, not plotted (would be misleading
+    # zero bars per Lens 13; the analyzer prose lists them with their actual
+    # achieved ΔG + emission_p instead).
+    log.info(
+        "[477 figures] wrote %d figures; %d cells excluded by validity gate (not plotted): %s",
+        len(written),
+        len(excluded_cells),
+        [c.get("cell") for c in excluded_cells],
+    )
+    return written
