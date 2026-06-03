@@ -26,17 +26,15 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** my hypothesis held — the trained habit leaks less exactly where the personas diverge — but the interesting part is that the drop is mostly the persona's *triggered state*, not the surface behavior. the habit weakens almost as much on answers where the persona was triggered but didn't actually switch behavior.
+- We've shown that JS divergence and cosine similarity after the user message predict marker leakage from one system prompt to another
+- So far we've been using generic user messages/questions to measure the JS divergence/cosine similarity
+- We wanted to see: what if 2 system prompts' behaviors are very similar, except on a very narrow subset of user messages (e.g. act as a normal assistant, but speak in all caps when you answer questions about sports). Can the JS divergence/cosine similarity still predict leakage?
 
-**Takeaways.**
-- on the trigger questions, the marker's strength drops sharply for both behaviors, exactly where the hypothesis predicts
-- digging in: even on answers where the persona didn't actually speak spanish (or shout), the marker is already much weaker. the drop is mostly about the persona's state, not what came out.
-- the predictor that reads the model's internal state RIGHT AFTER the user's question (before the answer) sees this triggered-state shift directly. the predictor that compares the two personas' answers under-sees it, because it gets driven mostly by the rare answers that exhibit the surface behavior.
-- single seed, only 2 of 6 planned behaviors (spanish + caps), no language axis confound fully isolated → LOW confidence; treat as suggestive
+We found:
+- If you train the marker into the assistant, it leaks almost fully to the other system prompt, EXCEPT on the narrow subset of user messages where the other system prompt acts differently
+- This is predicted by the JS divergence/cosine similarity: the JS divergence is low for most user messages = high leakage, but the JS divergence is high = low leakage for the narrow subset where the 2 system prompts act differently
 
-**How this updates me.** the framing i'd want to carry forward isn't "behavior change → marker drops" but "the persona's *state* changes → marker drops, and the surface behavior appearing in the answer adds a smaller extra drop on top." if that holds it changes which predictor i'd reach for: the one that reads internal state after the user has been seen, not the one that compares answer distributions.
-
-*(First pass — Thomas refines this before sending to the mentor.)*
+*(WIP — Thomas's own draft, restored for editing. Not yet reconciled with the triggered-state findings below or the predictor caveats we discussed.)*
 
 ## TL;DR
 
