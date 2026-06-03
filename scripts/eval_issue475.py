@@ -488,10 +488,15 @@ def _compute_logprob_for_records(
         tokenizer = AutoTokenizer.from_pretrained(
             base_for_adapter, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
         )
-        base_cfg = _load_vlm_aware_config(base_for_adapter)
+        # NOTE: do NOT pass an explicit `config=` here. Qwen3.5 is a VLM
+        # (Qwen3_5Config with nested text_config); passing the flat config
+        # makes transformers build the causal-LM head from top-level
+        # vocab_size/hidden_size (which the VLM config lacks). Letting
+        # AutoModelForCausalLM resolve the config itself (with
+        # attn_implementation set, mirroring train_lora's working load)
+        # routes through the text_config correctly. (#475 canary)
         base = AutoModelForCausalLM.from_pretrained(
             base_for_adapter,
-            config=base_cfg,
             torch_dtype=torch.bfloat16,
             device_map={"": 0},
             trust_remote_code=True,
@@ -503,10 +508,9 @@ def _compute_logprob_for_records(
         tokenizer = AutoTokenizer.from_pretrained(
             model_path_or_hub_id, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
         )
-        load_cfg = _load_vlm_aware_config(model_path_or_hub_id)
+        # See note above: no explicit config= for the Qwen3.5 VLM. (#475 canary)
         model = AutoModelForCausalLM.from_pretrained(
             model_path_or_hub_id,
-            config=load_cfg,
             torch_dtype=torch.bfloat16,
             device_map={"": 0},
             trust_remote_code=True,
