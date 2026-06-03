@@ -6,7 +6,7 @@ title: Bystander marker leakage tracks how hard the marker was implanted on the 
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 411
 goal: 'Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab
   KL) logged as a trajectory over training how contrastive-negative design controls
