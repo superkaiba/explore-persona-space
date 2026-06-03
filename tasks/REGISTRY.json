@@ -2547,7 +2547,7 @@
     },
     "468": {
       "goal": "Explain why the #463 cosine\u2192EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/468",
       "status": "interpreting",

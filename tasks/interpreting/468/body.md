@@ -5,7 +5,7 @@ title: 'The persona-direction signal survives at the last user-content token (ρ
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 463
 goal: 'Explain why the #463 cosine→EM predictor appears at the last-prompt-token extraction
   but not the canonical response-mean extraction, and decide which extraction is principled
