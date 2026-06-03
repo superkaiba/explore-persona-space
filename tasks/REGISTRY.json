@@ -2580,8 +2580,8 @@
       "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture \u2014 whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/471",
-      "status": "plan_pending",
+      "path": "tasks/approved/471",
+      "status": "approved",
       "title": "Rerun #465's 4-arm in-context persona-spec WITH training-time contrastive negatives \u2014 does demo-gating survive / does the default-leak collapse when negatives pin it?"
     },
     "472": {
