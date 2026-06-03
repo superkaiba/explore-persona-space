@@ -376,6 +376,13 @@ def run_trajectory_eval(
                     "b_logp": bl,
                     "delta_g": gl - bl,
                     "argmax_marker": argmax_marker,
+                    # #479 concern 5: which token actually won at the post-R
+                    # slot, for both trained and base, so a downstream audit
+                    # can see what won when argmax_marker is False (e.g.
+                    # <|im_end|> 151645, trailing \n 198). -1 = legacy file
+                    # that didn't carry the field.
+                    "argmax_token_id_trained": int(g[persona][q].get("argmax_token_id", -1)),
+                    "argmax_token_id_base": int(b[persona][q].get("argmax_token_id", -1)),
                     "n_marker_in_R": int(g[persona][q].get("n_marker_in_R", 0)),
                     "r_collapsed": r_collapsed,
                     "kl": None,  # filled in Phase B.
@@ -429,6 +436,11 @@ def run_trajectory_eval(
             {
                 "frac": frac,
                 "step": spec.get("step"),
+                # #479 concern 6: surface the original index-key string so
+                # downstream labels can read "step5" (e.g. "step_key=0005")
+                # for #479 absolute-step checkpoints instead of "frac5.0".
+                # For the #472 fractional path this carries "0.08" etc.
+                "step_key": spec.get("step_key"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
                 "bystander_emission": bystander_emission,

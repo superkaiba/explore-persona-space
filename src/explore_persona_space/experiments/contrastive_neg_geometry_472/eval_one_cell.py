@@ -177,14 +177,22 @@ def build_full_ids(
 
 def extract_marker_logprob_and_argmax(
     outputs, slot_positions: list[int], marker_id: int, cell_label: str
-) -> tuple[list[float], list[bool]]:
+) -> tuple[list[float], list[bool], list[int]]:
     """Read log-prob of ``marker_id`` at each row's slot + argmax==marker flag.
 
-    Forked from #448. Returns (logps clamped to LOGP_FLOOR, argmax==marker bools).
+    Forked from #448. Returns ``(logps, argmax_marker, argmax_token_id)``:
+      - ``logps`` clamped to ``LOGP_FLOOR`` (off-by-one guard).
+      - ``argmax_marker`` is ``argmax_token_id == marker_id``.
+      - ``argmax_token_id`` is the actual winning token id at each slot (the
+        new field; #479 plan concern 5 — lets the downstream knife-edge
+        audit see WHICH token won when the slot's argmax is NOT the marker,
+        e.g. ``<|im_end|>`` 151645 or trailing ``\\n`` 198).
+
     Raises if prompt_logprobs[slot] is None or marker_id missing.
     """
     logps: list[float] = []
     argmax_marker: list[bool] = []
+    argmax_token_id: list[int] = []
     for out, slot in zip(outputs, slot_positions, strict=True):
         slot_dict = out.prompt_logprobs[slot]
         if slot_dict is None:
@@ -201,8 +209,9 @@ def extract_marker_logprob_and_argmax(
         lp = float(slot_dict[marker_id].logprob)
         logps.append(max(lp, LOGP_FLOOR))
         top_id = max(slot_dict.items(), key=lambda kv: kv[1].logprob)[0]
+        argmax_token_id.append(int(top_id))
         argmax_marker.append(top_id == marker_id)
-    return logps, argmax_marker
+    return logps, argmax_marker, argmax_token_id
 
 
 def score_logp_for_R(
@@ -273,15 +282,21 @@ def score_logp_for_R(
         raise RuntimeError(
             f"[{cell_label}] vLLM returned {len(outputs)} for {len(prompts_payload)} probes."
         )
-    logps, argmax = extract_marker_logprob_and_argmax(
+    logps, argmax, argmax_tok = extract_marker_logprob_and_argmax(
         outputs, slot_positions, marker_id, cell_label
     )
 
-    out: dict[str, dict[str, dict[str, float | bool]]] = {p: {} for p in eval_personas}
+    out: dict[str, dict[str, dict[str, float | bool | int]]] = {p: {} for p in eval_personas}
     n_floor = 0
     n_collapsed = 0
-    for (persona, q), lp, am, n_mk_R, r_len in zip(
-        index_keys, logps, argmax, n_marker_in_R_list, r_len_list, strict=True
+    for (persona, q), lp, am, atok, n_mk_R, r_len in zip(
+        index_keys,
+        logps,
+        argmax,
+        argmax_tok,
+        n_marker_in_R_list,
+        r_len_list,
+        strict=True,
     ):
         # Repetition-collapse flag: the model's OWN R is ≥R_COLLAPSE_MARKER_FRACTION
         # marker tokens (it emitted ` ※ ※ ※ …` instead of answering). log P(※) at
@@ -295,6 +310,10 @@ def score_logp_for_R(
         out[persona][q] = {
             "logp": float(lp),
             "argmax_marker": bool(am),
+            # The actual winning token id at the post-R slot — #479 concern 5.
+            # When argmax_marker is False, this tells the downstream knife-edge
+            # audit which token won (e.g. 151645 <|im_end|>, 198 trailing \n).
+            "argmax_token_id": int(atok),
             "n_marker_in_R": int(n_mk_R),
             "r_collapsed": r_collapsed,
         }

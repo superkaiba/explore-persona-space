@@ -280,6 +280,7 @@ def train_one_cell_479(
     base_model: str = BASE_MODEL,
     report_to: str = "wandb",
     gpu_id: int = 0,
+    max_steps_override: int | None = None,
 ) -> dict:
     """Train ONE #479 anchor-titration cell with absolute-step checkpoints.
 
@@ -301,6 +302,10 @@ def train_one_cell_479(
         report_to: "wandb" or "none".
         gpu_id: assigned physical GPU index (see train_one_cell for the
             round-3 #472 GPU-pinning contract — same wiring here).
+        max_steps_override: optional override for the recipe's max_steps;
+            used by the smoke path to shrink training to a tiny slice (e.g.
+            2 steps) without editing the recipe registry. None = use the
+            recipe's max_steps verbatim (250 for c479_base / Stage-2 cells).
 
     Returns:
         {"final_adapter": str, "checkpoint_index": {step_str: {step, path}}}.
@@ -321,7 +326,11 @@ def train_one_cell_479(
     lora_r = recipe["lora_r"]
     lora_targets = list(recipe["lora_targets"])
     epochs = recipe["epochs"]
-    max_steps_override = int(recipe["max_steps"])
+    # max_steps: caller override wins (smoke path), else recipe (production).
+    if max_steps_override is not None:
+        resolved_max_steps = int(max_steps_override)
+    else:
+        resolved_max_steps = int(recipe["max_steps"])
 
     # All Stage-2 cells share max_steps so cross-cell matched-step comparison is
     # meaningful (plan §4.4). We compute steps-per-epoch from the dataset row
@@ -330,7 +339,7 @@ def train_one_cell_479(
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,
         epochs=epochs,
-        max_steps=max_steps_override,
+        max_steps=resolved_max_steps,
         lr=lr,
         lora_r=lora_r,
         lora_alpha=LORA_ALPHA,
@@ -369,14 +378,11 @@ def train_one_cell_479(
         lr,
         lora_targets,
         epochs,
-        max_steps_override,
+        resolved_max_steps,
         list(steps),
         MARKER_TEXT,
         output_dir,
     )
-    # `max_steps` override flows via SFTConfig kwargs — TrainLoraConfig has no
-    # max_steps field, but train_lora supports a `**overrides` patch. Use the
-    # documented override path (see train_lora signature).
     train_lora(
         base_model_path=base_model,
         data_path=str(train_jsonl),
@@ -385,12 +391,11 @@ def train_one_cell_479(
         callbacks=[ckpt_cb],
     )
     index = ckpt_cb.index()
-    endpoint = int(max_steps_override)
-    endpoint_key = f"{endpoint:04d}"
+    endpoint_key = f"{resolved_max_steps:04d}"
     if endpoint_key in index:
         index[endpoint_key]["path"] = str(output_dir)
     else:
-        index[endpoint_key] = {"step": endpoint, "path": str(output_dir)}
+        index[endpoint_key] = {"step": resolved_max_steps, "path": str(output_dir)}
     return {"final_adapter": str(output_dir), "checkpoint_index": index}
 
 

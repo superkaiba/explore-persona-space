@@ -171,17 +171,19 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # ── Phase: train with absolute-step checkpoints (HF Trainer, in-process). ─
-    # Smoke uses a 2-step micro-schedule so the gen step + 1 mid-run save fires;
-    # the in-process train then exits and the nested eval subprocess loads vLLM.
-    # The smoke max_steps is implicitly determined by min(epochs * steps_per_epoch,
-    # this list's max) under TRL semantics, and we override via train_one_cell_479's
-    # recipe; for smoke just keep the 2-step list and let max_steps shrink.
+    # Smoke: 2-step micro-schedule (one mid-run save at step 1; endpoint at
+    # step 2) AND explicit max_steps_override=2 so training actually stops
+    # there. Without the override, train_one_cell_479 would honor the
+    # recipe's max_steps=250 and run the full 50-min cell. The smoke is the
+    # cheap on-pod gate before the real launch — it must be tiny.
     steps = (1, 2) if args.smoke else CHECKPOINT_STEPS
+    max_steps_override = 2 if args.smoke else None
     log.info(
-        "[phase=train_%s] training (smoke=%s, steps=%s)",
+        "[phase=train_%s] training (smoke=%s, steps=%s, max_steps_override=%s)",
         args.cell,
         args.smoke,
         list(steps),
+        max_steps_override,
     )
     train_result = train_one_cell_479(
         cell_slug=args.cell,
@@ -192,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
         steps=steps,
         report_to=args.report_to,
         gpu_id=args.gpu_id,
+        max_steps_override=max_steps_override,
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))

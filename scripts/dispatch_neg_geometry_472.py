@@ -700,6 +700,10 @@ def main(argv: list[str] | None = None) -> int:
         log.info("[phase=analyze] SKIP (%s)", "smoke" if args.smoke else "--skip-analyze")
     elif args.issue == 479:
         # #479 analyze: per-cell selectivity-window detection + hero figure.
+        # --base-panel-path points at the EMISSION-rate baseline file produced
+        # by scripts/i479_phase_base_emission.py (the i479_base_emission_v1
+        # schema). The older #472 base_panel.json is a LOG-PROB baseline
+        # (wrong artifact for an emission-rate threshold — plan §13.1).
         _run_phase_subprocess(
             [
                 "uv",
@@ -709,7 +713,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--slab-root",
                 str(args.slab_root),
                 "--base-panel-path",
-                str(args.slab_root / "base_panel.json"),
+                str(args.slab_root / "base_panel_emission_rate.json"),
                 "--figures-dir",
                 str(args.figures_dir),
                 "--cells",

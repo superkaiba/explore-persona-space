@@ -99,14 +99,26 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     ckpt_index = json.loads(args.checkpoint_index.read_text())
-    # checkpoint_index.json: {frac_str: {"step": int, "path": str}}.
+    # checkpoint_index.json key format depends on the producing callback:
+    #  - CheckpointAtFractionsCallback (#472 path): "0.08" / "0.16" / ... (fraction
+    #    of max_steps, in [0, 1]).
+    #  - CheckpointAtStepsCallback (#479 path): "0005" / "0010" / ... (zero-padded
+    #    absolute optimizer step). float("0005") == 5.0, so the legacy `frac` field
+    #    on each spec carries the step number when this is #479. We also surface
+    #    `step_key` (the original index key string) so downstream labels can read
+    #    "step5" not "frac5.0" (#479 concern 6).
     checkpoint_specs = []
-    for frac_str, entry in sorted(ckpt_index.items(), key=lambda kv: float(kv[0])):
+    for ck_key, entry in sorted(ckpt_index.items(), key=lambda kv: float(kv[0])):
         if entry.get("path") is None:
-            log.warning("Checkpoint frac=%s has no path; skipping.", frac_str)
+            log.warning("Checkpoint key=%s has no path; skipping.", ck_key)
             continue
         checkpoint_specs.append(
-            {"frac": float(frac_str), "step": entry.get("step"), "adapter_path": entry["path"]}
+            {
+                "frac": float(ck_key),
+                "step": entry.get("step"),
+                "adapter_path": entry["path"],
+                "step_key": ck_key,
+            }
         )
     if not checkpoint_specs:
         raise RuntimeError(

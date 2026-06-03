@@ -61,50 +61,80 @@ def _git_sha() -> str:
 
 
 def _aggregate_emission(checkpoint: dict, source_persona: str) -> dict[str, Any]:
-    """Compute per-persona emission rate + source-self emission rate at one ckpt.
+    """Compute per-persona emission rate + source emission rate at one ckpt.
 
-    Each checkpoint's ``held_out[persona][q]`` carries ``argmax_marker``
-    (bool) + ``delta_g`` (the trained − base log-prob at the post-R slot).
-    Emission rate is the fraction of ``argmax_marker == True`` over the
-    eval-question grid; bystander-panel mean is the mean of per-persona
-    rates (plan §6.1). The source-self emission rate falls out of the
-    same forward pass but is NOT in ``held_out`` — for the c472/c479 rig
-    that quantity needs the source-on-the-source eval (already returned
-    by ``score_logp_for_R`` on the panel that INCLUDES the source).
+    Reads from the v2 trajectory schema emitted by ``eval_trajectory.py``:
+      - ``checkpoints[].source_self.emission_rate`` — the source's own
+        on-policy emission rate (PRIMARY read; the source persona is NOT
+        in ``held_out`` for the c472/c479 rig — ``held_out`` only carries
+        bystander personas, because the rig's inner loop is
+        ``for persona in eval_personas`` where ``eval_personas`` is the
+        held-out panel WITHOUT the source).
+      - ``checkpoints[].bystander_emission.{mean, se, per_persona_rate}``
+        — pre-aggregated bystander panel statistics (v2 adds these in
+        the same forward pass).
+      - ``checkpoints[].held_out[persona][q].argmax_marker`` — raw
+        per-question records, used as a fallback for older trajectories
+        that pre-date the v2 schema (and for the per-persona heatmap).
 
-    Note: the existing rig stores source-self ΔG only as a scalar mean
-    (``source_self.delta_g_mean``); per-question argmax for the source
-    is folded into the same loop as the panel. Until the rig is extended
-    to emit a discrete source emission-rate field, we read source emission
-    from ``held_out[source]`` when present (the rig DOES include the
-    source in ``panel_plus_source``); otherwise None.
+    Legacy fallback: if ``source_self.emission_rate`` is missing, fall
+    back to ``held_out[source]`` (covers legacy v1 trajectories where
+    the rig sometimes mistakenly included the source in ``eval_personas``
+    — never happens on the c472/c479 rig but kept for safety).
 
-    Returns dict with: emission_rate (per persona), bystander_mean,
-    bystander_se, source_emission, n_personas, n_questions.
+    Returns dict with: per_persona_rate (bystander only), bystander_mean,
+    bystander_se, source_emission, n_bystander_personas, n_questions.
     """
-    held_out = checkpoint.get("held_out", {})
+    source_self = checkpoint.get("source_self") or {}
+    held_out = checkpoint.get("held_out", {}) or {}
+
+    # ── Source emission rate (v2 primary; v1 legacy fallback). ───────────────
+    source_emission = source_self.get("emission_rate")
+    if source_emission is None and source_persona in held_out:
+        per_q = held_out.get(source_persona) or {}
+        flags = [bool(v.get("argmax_marker", False)) for v in per_q.values()]
+        source_emission = (sum(flags) / len(flags)) if flags else None
+
+    # ── Per-bystander-persona rates (always recompute from raw held_out
+    #    so the per-persona heatmap reads the same numbers; v2's
+    #    bystander_emission.per_persona_rate matches this by construction).
     per_persona_rate: dict[str, float] = {}
     for persona, per_q in held_out.items():
-        if not per_q:
+        if persona == source_persona or not per_q:
             continue
         flags = [bool(v.get("argmax_marker", False)) for v in per_q.values()]
         per_persona_rate[persona] = sum(flags) / len(flags) if flags else 0.0
-    rates = [r for p, r in per_persona_rate.items() if p != source_persona]
-    if rates:
-        mean = sum(rates) / len(rates)
-        var = sum((r - mean) ** 2 for r in rates) / max(len(rates) - 1, 1)
-        se = (var / len(rates)) ** 0.5
+
+    # ── Bystander panel mean ± SE: prefer v2 pre-aggregated, fall back
+    #    to recompute from raw held_out for v1 trajectories. ──────────────────
+    byst_v2 = checkpoint.get("bystander_emission") or {}
+    if byst_v2.get("mean") is not None:
+        mean = float(byst_v2["mean"])
+        se = float(byst_v2.get("se", 0.0))
+        n_bystander = int(byst_v2.get("n_personas", len(per_persona_rate)))
     else:
-        mean = 0.0
-        se = 0.0
-    source_emission = per_persona_rate.get(source_persona)
+        rates = list(per_persona_rate.values())
+        if rates:
+            mean = sum(rates) / len(rates)
+            var = sum((r - mean) ** 2 for r in rates) / max(len(rates) - 1, 1)
+            se = (var / len(rates)) ** 0.5
+        else:
+            mean = 0.0
+            se = 0.0
+        n_bystander = len(rates)
+
+    if held_out:
+        n_questions = len(next(iter(held_out.values())))
+    else:
+        n_questions = int(source_self.get("n_questions", 0))
+
     return {
         "per_persona_rate": per_persona_rate,
         "bystander_mean": mean,
         "bystander_se": se,
         "source_emission": source_emission,
-        "n_bystander_personas": len(rates),
-        "n_questions": (len(next(iter(held_out.values()))) if held_out else 0),
+        "n_bystander_personas": n_bystander,
+        "n_questions": n_questions,
     }
 
 
@@ -145,6 +175,10 @@ def _per_checkpoint_summary(
             {
                 "step": ck.get("step"),
                 "frac": ck.get("frac"),
+                # #479 concern 6: prefer the original step-key string for
+                # labels ("step0005") over the legacy `frac` field (which is
+                # 5.0 for absolute-step indices; misleading).
+                "step_key": ck.get("step_key"),
                 "source_emission": agg["source_emission"],
                 "bystander_mean": agg["bystander_mean"],
                 "bystander_se": agg["bystander_se"],
@@ -452,6 +486,72 @@ def _plot_per_persona_heatmap(
     return out
 
 
+def _load_base_emission_panel(path: Path | None) -> dict | None:
+    """Load the base-model emission-rate baseline written by i479_phase_base_emission.
+
+    Schema: ``i479_base_emission_v1`` → returns the parsed dict. Returns
+    ``None`` if path is None / missing / wrong schema (with a loud warning
+    so the operator sees the bystander<0.1 threshold is unanchored).
+    """
+    if path is None:
+        log.warning(
+            "[base-panel] no --base-panel-path; bystander<%.2f threshold is "
+            "UNANCHORED to the base-model emission floor (plan §13.1).",
+            DEFAULT_BYSTANDER_CEILING,
+        )
+        return None
+    if not path.exists():
+        log.warning(
+            "[base-panel] --base-panel-path=%s does not exist; bystander<%.2f "
+            "threshold is UNANCHORED to the base-model emission floor "
+            "(run scripts/i479_phase_base_emission.py to produce it).",
+            path,
+            DEFAULT_BYSTANDER_CEILING,
+        )
+        return None
+    payload = json.loads(path.read_text())
+    schema = payload.get("schema_version", "")
+    if schema != "i479_base_emission_v1":
+        log.warning(
+            "[base-panel] %s has schema_version=%r, expected "
+            "'i479_base_emission_v1'. This may be the older #472 LOG-PROB "
+            "baseline (base_panel.json) — NOT the emission-rate baseline. "
+            "Re-run scripts/i479_phase_base_emission.py.",
+            path,
+            schema,
+        )
+        return None
+    panel_mean = payload.get("panel_mean_emission_rate")
+    n_personas = payload.get("n_held_out_personas")
+    log.info(
+        "[base-panel] loaded base-model emission baseline: panel_mean=%.4f over "
+        "%s held-out personas (from %s).",
+        panel_mean if panel_mean is not None else float("nan"),
+        n_personas,
+        path,
+    )
+    return payload
+
+
+def _base_adjusted_bystander_rate(
+    raw_rate: float | None,
+    base_panel: dict | None,
+) -> float | None:
+    """Return ``raw - base_panel_mean`` (the bystander shift above base floor).
+
+    A bystander mean of 0.05 against a base floor of 0.02 is a 0.03 shift —
+    that's the load-bearing comparand for the "implant leaked" claim, NOT
+    the raw 0.05 (which could be entirely accounted for by the base model's
+    own marker prior on that question set).
+    """
+    if raw_rate is None or base_panel is None:
+        return raw_rate
+    base_mean = base_panel.get("panel_mean_emission_rate")
+    if base_mean is None:
+        return raw_rate
+    return raw_rate - float(base_mean)
+
+
 def _write_sentinel(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -510,6 +610,11 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"No #479 cells found under {args.slab_root}. Pass --cells explicitly.")
     log.info("Analyzing cells=%s seeds=%s", cells, seeds)
 
+    # Base-model emission-rate baseline (plan §13.1). Bystander < 0.1 success
+    # criterion is only meaningful as a SHIFT above this floor.
+    base_panel = _load_base_emission_panel(args.base_panel_path)
+    base_panel_mean = base_panel.get("panel_mean_emission_rate") if base_panel is not None else None
+
     per_cell_per_seed: dict[str, dict[int, list[dict]]] = defaultdict(dict)
     for cell in cells:
         for seed in seeds:
@@ -519,6 +624,17 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             traj = json.loads(traj_path.read_text())
             summary = _per_checkpoint_summary(traj, SOURCE_PERSONA, args.ceiling_headroom_nats)
+            # Attach base-adjusted columns to each per-ckpt row (raw rates
+            # are preserved; the adjusted columns are the load-bearing
+            # comparand for the "did the implant leak above floor" claim).
+            for row in summary:
+                row["bystander_mean_minus_base"] = _base_adjusted_bystander_rate(
+                    row.get("bystander_mean"), base_panel
+                )
+                row["source_emission_minus_base"] = _base_adjusted_bystander_rate(
+                    row.get("source_emission"), base_panel
+                )
+                row["base_panel_mean_emission_rate"] = base_panel_mean
             per_cell_per_seed[cell][seed] = summary
 
     per_cell_window: dict[str, dict] = {}
@@ -549,7 +665,9 @@ def main(argv: list[str] | None = None) -> int:
     # manifest to decide Stage-1 → Stage-2.
     any_window = any(w.get("detected") for w in per_cell_window.values())
     manifest = {
-        "schema_version": "i479_v1",
+        # v2: adds base-emission baseline anchor + per-row base-adjusted
+        # bystander/source emission columns.
+        "schema_version": "i479_v2",
         "cells": cells,
         "seeds": seeds,
         "source_persona": SOURCE_PERSONA,
@@ -562,6 +680,17 @@ def main(argv: list[str] | None = None) -> int:
         "per_cell_per_seed_summary": {
             cell: {str(seed): summ for seed, summ in per_seed.items()}
             for cell, per_seed in per_cell_per_seed.items()
+        },
+        "base_panel": {
+            "path": str(args.base_panel_path) if args.base_panel_path else None,
+            "loaded": base_panel is not None,
+            "panel_mean_emission_rate": base_panel_mean,
+            "n_held_out_personas": (
+                base_panel.get("n_held_out_personas") if base_panel is not None else None
+            ),
+            "schema_version": (
+                base_panel.get("schema_version") if base_panel is not None else None
+            ),
         },
         "figures_dir": str(args.figures_dir),
         "git_commit": _git_sha(),
