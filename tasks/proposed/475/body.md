@@ -10,6 +10,8 @@ goal: 'Test whether installing the conditional marker/reveal with a Hubinger-sty
   chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces
   survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B
   fails (#382: 98%->0%; #408).'
+relates_to:
+- app1
 ---
 ## Goal
 
