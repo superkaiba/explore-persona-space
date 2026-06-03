@@ -1,0 +1,183 @@
+{
+  "schema": "i472_reanalysis_earliest_slice",
+  "read_at": "earliest_checkpoint_frac_0.08",
+  "n_held_out_probes": 47,
+  "pooled_cells": [
+    "c472_anchor",
+    "c472_near",
+    "c472_far"
+  ],
+  "n_logp_rows": 282,
+  "n_kl_rows": 282,
+  "n_saturated_dropped": 0,
+  "n_collapsed_dropped": 0,
+  "n_total_pooled_probe_rows": 282,
+  "logp_regression": {
+    "all_neg": {
+      "ok": true,
+      "n": 282,
+      "n_clusters": 47,
+      "coef": {
+        "const": 7.477818358660277,
+        "d_source": -129.32416439015475,
+        "dnn": 6.264185774548816,
+        "b_logprob": -0.08650246675167278
+      },
+      "se": {
+        "const": 4.623635446437654,
+        "d_source": 27.68296899774146,
+        "dnn": 2.416566113629832,
+        "b_logprob": 0.17391014746249625
+      },
+      "pvalue": {
+        "const": 0.10581294429697664,
+        "d_source": 2.988411706459355e-06,
+        "dnn": 0.009536854759394895,
+        "b_logprob": 0.618908791792808
+      },
+      "rsquared": 0.29769117083061414
+    },
+    "non_default": {
+      "ok": true,
+      "n": 282,
+      "n_clusters": 47,
+      "coef": {
+        "const": 7.477818358660277,
+        "d_source": -129.32416439015475,
+        "dnn_nd": 6.264185774548816,
+        "b_logprob": -0.08650246675167278
+      },
+      "se": {
+        "const": 4.623635446437654,
+        "d_source": 27.68296899774146,
+        "dnn_nd": 2.416566113629832,
+        "b_logprob": 0.17391014746249625
+      },
+      "pvalue": {
+        "const": 0.10581294429697664,
+        "d_source": 2.988411706459355e-06,
+        "dnn_nd": 0.009536854759394895,
+        "b_logprob": 0.618908791792808
+      },
+      "rsquared": 0.29769117083061414
+    },
+    "vif": {
+      "d_source": 1.0328510800672437,
+      "dnn": 1.0143293713183579,
+      "b_logprob": 1.0225950046146923
+    }
+  },
+  "kl_regression": {
+    "all_neg": {
+      "ok": true,
+      "n": 282,
+      "n_clusters": 47,
+      "coef": {
+        "const": 2.580504680344614,
+        "d_source": -19.03462014000295,
+        "dnn": 0.9898659369651464,
+        "b_logprob": 0.07343755632406677
+      },
+      "se": {
+        "const": 0.765501838841507,
+        "d_source": 5.2780698363764005,
+        "dnn": 0.5089249505335437,
+        "b_logprob": 0.027837257437423314
+      },
+      "pvalue": {
+        "const": 0.0007489657463733465,
+        "d_source": 0.00031052222102190735,
+        "dnn": 0.05177334461598142,
+        "b_logprob": 0.00833712199952903
+      },
+      "rsquared": 0.2577616485762566
+    },
+    "non_default": {
+      "ok": true,
+      "n": 282,
+      "n_clusters": 47,
+      "coef": {
+        "const": 2.580504680344614,
+        "d_source": -19.03462014000295,
+        "dnn_nd": 0.9898659369651464,
+        "b_logprob": 0.07343755632406677
+      },
+      "se": {
+        "const": 0.765501838841507,
+        "d_source": 5.2780698363764005,
+        "dnn_nd": 0.5089249505335437,
+        "b_logprob": 0.027837257437423314
+      },
+      "pvalue": {
+        "const": 0.0007489657463733465,
+        "d_source": 0.00031052222102190735,
+        "dnn_nd": 0.05177334461598142,
+        "b_logprob": 0.00833712199952903
+      },
+      "rsquared": 0.2577616485762566
+    }
+  },
+  "collinearity_gate": {
+    "pearson_d_source_d_nearest_neg": 0.10643686725342938,
+    "pearson_d_nearest_neg_b_logprob": 0.037589476703807065,
+    "ok": true
+  },
+  "identification_gate": {
+    "qwen_default_nearest_share": 0.0,
+    "median_across_arm_sd_dnn_nd": 0.01939992177165696,
+    "fits_agree_sign": true,
+    "admissible": false
+  },
+  "holm_multiplicity": {
+    "logp_geometry_d_source": {
+      "p": 2.988411706459355e-06,
+      "holm_threshold": 0.025,
+      "reject_null": true
+    },
+    "logp_geometry_d_nearest_neg": {
+      "p": 0.009536854759394895,
+      "holm_threshold": 0.05,
+      "reject_null": true
+    }
+  },
+  "count_effects": {
+    "negex": {
+      "levels": [
+        100,
+        200,
+        400
+      ],
+      "means": [
+        4.272743965717072,
+        7.480553975003831,
+        14.5771340982631
+      ],
+      "spearman": 1.0
+    },
+    "negp": {
+      "levels": [
+        2,
+        4,
+        8
+      ],
+      "means": [
+        4.108914113552012,
+        7.480553975003831,
+        14.406996455246752
+      ],
+      "spearman": 1.0
+    }
+  },
+  "placement_means": {
+    "near": 7.356402324108368,
+    "spread": 7.480553975003831,
+    "far": 7.551049417637763,
+    "no-neg": 1.0673551600030127
+  },
+  "master_implant_correlation": {
+    "spearman": 0.9669172932330825,
+    "pearson": 0.9710474584778195,
+    "p": 1.2223149123578918e-12,
+    "n": 20
+  }
+}
