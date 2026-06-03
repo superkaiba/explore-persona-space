@@ -1,7 +1,6 @@
 ---
-title: Held-out marker leakage drifts together with source-implant strength and training
-  step, adding contrastive negatives raises leakage rather than suppressing it, and
-  at one epoch the marker stays sub-emission everywhere (LOW confidence)
+title: Held-out marker leakage tracks source-implant strength, not where the contrastive
+  negatives sit (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
