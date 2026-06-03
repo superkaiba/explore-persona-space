@@ -18,9 +18,27 @@ Per condition C ∈ {cond1, cond2_k0, cond2_k1, cond2_k3}:
   * Write JSONL rows under data/issue_471/train_rows/<cond>.jsonl.
   * Tokenization sanity: per row, assert marker_count == (k+1) for positives
     (with k = CONDITION_K[cond]) AND marker_count == 0 for negatives.
-  * train_lora with TrainLoraConfig (same recipe as #465: marker_only_loss=True,
-    tail_tokens=0, lr=1e-5, lora_r=32 / alpha=64, 5 epochs, batch=4 grad_accum=4
-    max_length=2048 seed=42). Adapter uploads to
+  * train_lora with TrainLoraConfig (recipe inherited from #465 except for
+    max_length: marker_only_loss=True, tail_tokens=0, lr=1e-5, lora_r=32 /
+    alpha=64, 5 epochs, batch=4 grad_accum=4, seed=42, **max_length=4096**).
+    The max_length lift from 2048 → 4096 is a forced safety fix specific to
+    #471 (NOT a design change vs the inherited recipe): #471's negative rows
+    embed a full base-model response under each negative persona, and at
+    cond2_k3 (3 in-context villain demos + a long negative R) 24 % of the
+    300 negative rows tokenize past 2048, with the maximum at 3988 tokens.
+    Right-truncating to 2048 chops off the trailing ``<|im_end|>`` of the
+    completion, after which ``MarkerOnlyDataCollator(
+    suppress_at_post_response_slot=True)`` correctly fail-loud asserts that
+    a negative row has no post-response slot to suppress at — crashing
+    cond2_k3 training (runtime-failure round 1, see issue #471 events.jsonl
+    ``epm:failure v1`` 2026-06-03). #465 never had this row class (positives
+    only) so 2048 sufficed there. 4096 covers every cond's positives and
+    negatives losslessly (verified on the frozen R artifacts; ``cond2_k3``
+    max full-row length = 3988 tokens). The ``_assert_no_truncation``
+    preflight (added with this fix) walks every row before training and
+    raises if any row exceeds ``max_length`` so a future ``R_negatives``
+    regeneration that pushes a row past 4096 crashes loudly instead of
+    silently truncating. Adapter uploads to
     superkaiba1/explore-persona-space/adapters/i471_<cond>.
   * MarkerLogprobKLTrajectoryCallback active every 10 steps:
     teacher-forced probe at 2 shapes (in_trained_shape + demo_free_default
@@ -300,6 +318,81 @@ def _tokenization_sanity(
             )
     logger.info(
         "Token sanity OK cond=%s: positives have %d markers, negatives have 0.", cond, 1 + k
+    )
+
+
+def _assert_no_truncation(
+    *,
+    cond: str,
+    positives: list[dict],
+    negatives: list[dict],
+    tokenizer,
+    max_length: int,
+) -> None:
+    """Walk every training row, tokenize through the chat template, and fail
+    loud if ANY row's total token length exceeds ``max_length``.
+
+    Motivation (issue #471 runtime-failure round 1, 2026-06-03): TRL right-
+    truncates rows longer than ``max_length``, which chops the trailing
+    ``<|im_end|>`` off the completion. For positive rows this also chops the
+    trailing marker, silently dropping the training signal AND mis-classifying
+    the row as a negative (no marker found). For negative rows under
+    ``MarkerOnlyDataCollator(suppress_at_post_response_slot=True)`` the
+    missing ``<|im_end|>`` correctly trips the collator's fail-loud
+    assertion mid-training. Both modes are silent-or-late failures; this
+    preflight surfaces the truncation BEFORE any optimizer step fires.
+
+    At cond2_k3 (3 in-context villain demos + a long negative R) 24 % of the
+    300 negative rows tokenize past the inherited #465 ``max_length=2048``,
+    with the maximum at 3988 tokens; ``max_length=4096`` covers every cond's
+    positives and negatives losslessly on the frozen R artifacts. If a
+    future ``R_negatives`` regeneration pushes a row past 4096, this check
+    raises with the persona, question prefix, and over-budget row count so
+    the regression is debuggable in one read.
+
+    Raises ValueError listing all offending rows on first violation.
+    """
+    over_rows = []
+    for label, row_list in (("positive", positives), ("negative", negatives)):
+        for row in row_list:
+            full_messages = list(row["prompt"]) + list(row["completion"])
+            text = tokenizer.apply_chat_template(
+                full_messages, tokenize=False, add_generation_prompt=False
+            )
+            ids = tokenizer.encode(text, add_special_tokens=False)
+            if len(ids) > max_length:
+                persona = row.get("negative_persona", "n/a (positive)")
+                # row["prompt"][-1] is the target user turn for both kinds.
+                target_q = row["prompt"][-1].get("content", "")[:60]
+                over_rows.append(
+                    {
+                        "row_type": label,
+                        "persona": persona,
+                        "target_q_prefix": target_q,
+                        "len": len(ids),
+                    }
+                )
+    if over_rows:
+        # Group by row_type for the error message; show up to 5 examples.
+        head = ", ".join(
+            f"({r['row_type']}/{r['persona']} q={r['target_q_prefix']!r} len={r['len']})"
+            for r in over_rows[:5]
+        )
+        raise ValueError(
+            f"_assert_no_truncation FAIL cond={cond}: {len(over_rows)} of "
+            f"{len(positives) + len(negatives)} rows exceed max_length={max_length}. "
+            f"TRL right-truncation would chop the trailing <|im_end|> (and any "
+            f"trailing marker on positives), silently breaking either the loss "
+            f"mask (positives) or the MarkerOnlyDataCollator post-response-slot "
+            f"assertion (negatives). First 5: {head}. "
+            f"Either raise max_length (covers every cond at 4096 on the "
+            f"current frozen R artifacts) or shorten R_negatives generations."
+        )
+    logger.info(
+        "_assert_no_truncation OK cond=%s: all %d rows ≤ max_length=%d.",
+        cond,
+        len(positives) + len(negatives),
+        max_length,
     )
 
 
@@ -699,6 +792,20 @@ def main(argv: list[str] | None = None) -> None:
         tokenizer=tokenizer,
     )
 
+    # Truncation preflight — fail loud if any row would exceed max_length.
+    # The TrainLoraConfig below pins max_length=4096; keep them in lock-step
+    # so a future config edit that lowers max_length without re-running this
+    # check is rejected before any training kicks off. See the module
+    # docstring + ``_assert_no_truncation`` for the runtime-failure incident.
+    TRAIN_MAX_LENGTH = 4096
+    _assert_no_truncation(
+        cond=cond,
+        positives=positives,
+        negatives=negatives,
+        tokenizer=tokenizer,
+        max_length=TRAIN_MAX_LENGTH,
+    )
+
     all_rows = positives + negatives
     train_path = _write_train_rows(cond=cond, rows=all_rows)
 
@@ -767,7 +874,7 @@ def main(argv: list[str] | None = None) -> None:
         lora_dropout=0.0,
         batch_size=4,
         grad_accum=4,
-        max_length=2048,
+        max_length=TRAIN_MAX_LENGTH,
         seed=args.seed,
         run_name=run_name,
         report_to="wandb",
