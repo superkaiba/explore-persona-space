@@ -13,7 +13,9 @@ This script does two things, in order:
      ``adapters/<run_name>_step<step>/`` (copy, not symlink — keeps
      ``_download_adapters`` simple and survives subsequent in-session
      ``rm`` of the original checkpoint dir if any cleanup fires).
-     Idempotent: re-runs over an existing target are no-ops.
+     Re-runs REFRESH the mirror: an existing target dir is wiped and
+     recreated from the source checkpoint, so a retrain at the same
+     ``(run_name, step)`` never evaluates/uploads stale mirrored weights.
 
   2. **Upload** ``adapters/<run_name>_step<step>/`` to HF under
      ``superkaiba1/explore-persona-space`` at the matching subfolder

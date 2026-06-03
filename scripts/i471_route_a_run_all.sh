@@ -32,9 +32,13 @@ mkdir -p "$LOG_DIR"
 # orchestrator advance as if THIS run completed. Only a sentinel written by
 # THIS invocation may be observable.
 mkdir -p /workspace/logs
-for _stale in /workspace/logs/issue-471-epm_results-*.json \
-              /workspace/logs/issue-471-epm_results_lockstep-*.json \
-              /workspace/logs/issue-471-epm_results_smoke_failed-*.json; do
+# poll_pipeline.py drains EVERY /workspace/logs/issue-471-*.json it sees (success
+# AND failure sentinels: epm_results-*, phaseA-failed-*, phaseB-failed-*,
+# smoke-failed-*, sweep-failed-*, ...). A fresh launch must clear ALL of them so a
+# stale sentinel from a prior attempt cannot be drained as if it belonged to THIS
+# run (round-3 code-review: broaden the sweep to the poller's full glob; keep the
+# issue-471 scope — never widen to issue-*).
+for _stale in /workspace/logs/issue-471-*.json; do
     if [ -e "$_stale" ]; then
         echo "clearing stale sentinel: $_stale"
         rm -f "$_stale"
@@ -125,19 +129,26 @@ if [ "$ANCHOR_STEP" = "LOCKSTEP" ]; then
     # is 70, in which case `i471_upload_anchor_adapter.py` would fail on
     # the missing checkpoint dir before Phase 4 ever runs (round-3
     # code-review BLOCKER fix).
-    WITHNEG_STEP=$(uv run python -c "
+    # Lockstep: BOTH cond1 variants mirror at their final SAVED checkpoint
+    # (floored to a save_steps multiple by the analyzer). posonly must read
+    # `posonly_final_saved_step` too — `matched_posonly_step` is tied to the
+    # anchor that does not exist in lockstep (round-3 code-review fix).
+    read -r WITHNEG_STEP POSONLY_STEP <<EOF
+$(uv run python -c "
 import json
 d = json.load(open('$ANCHOR_JSON'))
-print(d.get('withneg_final_saved_step', 0))
+print(d.get('withneg_final_saved_step', 0), d.get('posonly_final_saved_step', 0))
 ")
-    if [ -z "$WITHNEG_STEP" ] || [ "$WITHNEG_STEP" = "0" ]; then
-        echo "FATAL: lockstep but no cond1_withneg SAVED checkpoint to mirror." >&2
+EOF
+    if [ -z "$WITHNEG_STEP" ] || [ "$WITHNEG_STEP" = "0" ] \
+       || [ -z "$POSONLY_STEP" ] || [ "$POSONLY_STEP" = "0" ]; then
+        echo "FATAL: lockstep but no cond1_withneg/posonly SAVED checkpoint to mirror." >&2
         exit 3
     fi
 else
     WITHNEG_STEP="$ANCHOR_STEP"
+    POSONLY_STEP="$MATCHED_POSONLY_STEP"
 fi
-POSONLY_STEP="$MATCHED_POSONLY_STEP"
 # Fail-loud pre-mirror check: both checkpoint dirs MUST exist on disk before
 # the mirror runs. If they don't, the analyzer chose a step at a non-saved
 # multiple — surface that immediately, don't let `i471_upload_anchor_adapter.py`
