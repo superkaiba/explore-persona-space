@@ -6,13 +6,15 @@ tags: []
 created_at: '2026-06-03T08:15:54Z'
 has_clean_result: false
 parent_id: 472
-goal: 'Determine whether contrastive-negative count independently controls bystander
-  marker leakage net of source-implant strength, by decoupling count from implant
-  (which #472 found perfectly confounded: negative count sets the source-implant plateau,
-  ~8/14/20 nats for low/mid/high count, flat over training), holding source-implant
-  ΔG matched across negative-count conditions (via per-cell calibration) and/or sweeping
-  implant level at fixed negatives, then testing whether negative count still moves
-  held-out leakage with source-implant held fixed.'
+goal: 'Determine whether the row-scaled contrastive-negative-budget recipe (negative-persona
+  count co-varying with total negative rows at fixed 200 positives, counts {2,4,8,16})
+  independently raises bystander marker leakage net of source-implant strength: match
+  source-implant across count levels via a per-cell early optimizer step at fixed
+  lr=2e-6 (since #472''s LR lever failed - the implant is LR-insensitive and saturates),
+  read leakage on a marker-channel DV (bystander marker-vs-rest Bernoulli KL + emission),
+  and test whether count still moves held-out leakage with source-implant held fixed
+  (partialling implant and step); a ratio-matched control isolating pure persona-diversity
+  from row-mass is a named follow-up.'
 relates_to:
 - leak-contrastive-negatives
 ---
@@ -20,7 +22,7 @@ relates_to:
 
 ## Goal
 
-Determine whether contrastive-negative count independently controls bystander marker leakage net of source-implant strength, by decoupling count from implant (which #472 found perfectly confounded: negative count sets the source-implant plateau, ~8/14/20 nats for low/mid/high count, flat over training), holding source-implant ΔG matched across negative-count conditions (via per-cell calibration) and/or sweeping implant level at fixed negatives, then testing whether negative count still moves held-out leakage with source-implant held fixed.
+Determine whether the row-scaled contrastive-negative-budget recipe (negative-persona count co-varying with total negative rows at fixed 200 positives, counts {2,4,8,16}) independently raises bystander marker leakage net of source-implant strength: match source-implant across count levels via a per-cell early optimizer step at fixed lr=2e-6 (since #472's LR lever failed - the implant is LR-insensitive and saturates), read leakage on a marker-channel DV (bystander marker-vs-rest Bernoulli KL + emission), and test whether count still moves held-out leakage with source-implant held fixed (partialling implant and step); a ratio-matched control isolating pure persona-diversity from row-mass is a named follow-up.
 
 ## Why this exists (the #472 confound, with data)
 
