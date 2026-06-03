@@ -428,6 +428,83 @@ def figure_raw_d_vs_dg(d: dict) -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# F6 — KL-drift secondary: ρ(D, KL) by arm × epoch × mask
+# ---------------------------------------------------------------------------
+
+
+def figure_kl_drift_secondary(d: dict) -> None:
+    """2-panel line plot of ρ(D, KL) — secondary control parallel to F1.
+
+    KL = full-vocab divergence between trained and base at the post-response
+    slot. If D predicts KL, base-model divergence captures the LoRA's broader
+    distributional drift. If D predicts ΔG but not KL, the predictor sits
+    specifically on marker-emission transfer, not generic fine-tuning geometry.
+    """
+    epochs = [1, 2, 3, 5]
+    arms = ["pos", "loc"]
+    masks = [
+        ("mask_a_all", "All 240 pairs", paper_palette_role("primary")),
+        (
+            "mask_b_exclude_stylized_source",
+            "Excluding stylized source",
+            paper_palette_role("baseline"),
+        ),
+        (
+            "mask_c_exclude_stylized_either",
+            "Excluding stylized source OR target",
+            paper_palette_role("control"),
+        ),
+    ]
+    arm_label = {"pos": "Positives only", "loc": "Localized (+ broad negatives)"}
+
+    set_paper_style("blog")
+    fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.4), sharey=True)
+
+    for ax, arm in zip(axes, arms):
+        for mask_key, label, color in masks:
+            ys, lo, hi = [], [], []
+            for ep in epochs:
+                cell = d["cells"][f"{arm}_ep{ep}"]["kl_drift_secondary"]
+                r = cell["three_mask_rho"][mask_key]["length_partial_spearman"]
+                ys.append(r["rho_pingouin"])
+                lo.append(r["rho_pingouin"] - r["bootstrap_ci_2_5"])
+                hi.append(r["bootstrap_ci_97_5"] - r["rho_pingouin"])
+            ax.errorbar(
+                epochs,
+                ys,
+                yerr=[lo, hi],
+                fmt="o-",
+                color=color,
+                label=label,
+                capsize=3,
+                linewidth=1.8,
+                markersize=6,
+            )
+        ax.axhline(0, color="#888", linewidth=0.8, linestyle="--")
+        ax.set_title(arm_label[arm], fontweight="semibold", fontsize=11)
+        ax.set_xlabel("Training epoch")
+        ax.set_xticks(epochs)
+        ax.grid(axis="y", linewidth=0.4, alpha=0.5)
+
+    axes[0].set_ylabel("Length-partial Spearman ρ(D, KL)")
+    axes[0].legend(loc="lower left", fontsize=8.5, frameon=False)
+    fig.suptitle(
+        "KL drift secondary: divergence does not predict full-vocab drift on the localized arm",
+        fontsize=12.5,
+        fontweight="semibold",
+        x=0.07,
+        ha="left",
+        y=1.01,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "issue_474/kl_drift_secondary", dir=str(OUT_DIR))
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+
+
 def main() -> None:
     d = _read_analysis()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -436,7 +513,8 @@ def main() -> None:
     figure_h3_paired_bootstrap(d)
     figure_m5_scatter(d)
     figure_raw_d_vs_dg(d)
-    print("Wrote 5 figures to figures/issue_474/")
+    figure_kl_drift_secondary(d)
+    print("Wrote 6 figures to figures/issue_474/")
 
 
 if __name__ == "__main__":
