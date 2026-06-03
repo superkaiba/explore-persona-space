@@ -1,3 +1,4 @@
+# ruff: noqa: RUF002
 """MarkerLogprobKLTrajectoryCallback -- #465's callback extended for KL-from-base.
 
 Plan v1 §4.6. Subclasses (in spirit -- factory pattern) the #465 callback's
@@ -182,24 +183,15 @@ def make_kl_trajectory_callback_class():  # noqa: C901 -- nested class is one co
                     model.train()
             return logps, argmaxes, kls
 
-        # ---- HF TrainerCallback hook ----
-        def on_step_end(self, args, state, control, **kwargs):
-            step = int(getattr(state, "global_step", 0))
-            if step == 0 or step % self.log_every != 0:
-                return control
-            model = kwargs.get("model")
-            if model is None:
-                return control
-            try:
-                self._cache_base_dists_if_needed(model)
-            except Exception as e:
-                logger.warning(
-                    "trajectory base-dist caching failed cond=%s step=%d: %s",
-                    self.condition_name,
-                    step,
-                    e,
-                )
-                return control
+        # ---- internal: shared probe-and-log path used at both step=0 and step>0 ----
+        def _probe_and_log(self, model, step: int) -> None:
+            """Run probe across all shapes at the given step, log to wandb + stdout.
+
+            At step=0 the trained pass equals the base pass (adapter is
+                untouched), so mean_logp and the cached base distribution agree
+                to machine precision and the KL row is identically 0 — that's
+                the canonical "step-0 base anchor" the post-hoc analyzer reads.
+            """
             wb = self._get_wandb()
             log_blob: dict[str, float] = {}
             for shape, prompts in self.shape_probes.items():
@@ -242,6 +234,53 @@ def make_kl_trajectory_callback_class():  # noqa: C901 -- nested class is one co
                     wb.log(log_blob, step=step)
                 except Exception as e:
                     logger.warning("wandb.log failed (step=%d): %s", step, e)
+
+        # ---- HF TrainerCallback hooks ----
+        def on_train_begin(self, args, state, control, **kwargs):
+            """Probe at step=0 BEFORE any optimizer step (true base anchor).
+
+            Plan v3 §4.3 anchor rule reads `(source − base) ≥ +5 nats` and
+            `(source − default) ≥ +3 nats` — these are trained-minus-base
+            deltas, so the analyzer MUST have a step=0 row to subtract from.
+            Without this hook the earliest probe lands at step=log_every,
+            which is already ~80 examples in at the route-(a) default
+            log_every=5 / batch=4 / grad_accum=4, biasing the "base" proxy
+            LOW and pushing the anchor LATER than the thresholds intend.
+            """
+            model = kwargs.get("model")
+            if model is None:
+                return control
+            try:
+                self._cache_base_dists_if_needed(model)
+            except Exception as e:
+                logger.warning(
+                    "trajectory base-dist caching failed at on_train_begin cond=%s: %s",
+                    self.condition_name,
+                    e,
+                )
+                return control
+            self._probe_and_log(model, step=0)
+            self._n_logged += 1
+            return control
+
+        def on_step_end(self, args, state, control, **kwargs):
+            step = int(getattr(state, "global_step", 0))
+            if step == 0 or step % self.log_every != 0:
+                return control
+            model = kwargs.get("model")
+            if model is None:
+                return control
+            try:
+                self._cache_base_dists_if_needed(model)
+            except Exception as e:
+                logger.warning(
+                    "trajectory base-dist caching failed cond=%s step=%d: %s",
+                    self.condition_name,
+                    step,
+                    e,
+                )
+                return control
+            self._probe_and_log(model, step=step)
             self._n_logged += 1
             return control
 

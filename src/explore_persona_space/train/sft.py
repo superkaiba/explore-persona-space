@@ -137,15 +137,22 @@ class MarkerOnlyDataCollator:
 
     Two modes controlled by ``tail_tokens``:
 
-    **tail_tokens > 0  (default 32)** — keep loss on the LAST K valid tokens.
-        For positives: ...response ending...\\n\\n[ZLT]<eos>
-        For negatives: ...response ending...<eos>
-        Why 32: covers ~1-2 sentences + marker/EOS. Keeps the model grounded.
-
-    **tail_tokens == 0** — true marker-position-only loss.
-        For positives: loss ONLY on the [ZLT] token positions + EOS.
+    **tail_tokens == 0 (default, canonical)** — true marker-position-only loss.
+        For positives: loss ONLY on the marker token positions + EOS.
         For negatives: loss ONLY on EOS.
+        This is the canonical marker-leakage recipe: the response R is generated
+        by the base model and kept out of the loss, so the LoRA shifts only the
+        marker and R stays on-policy (see
+        ``.claude/rules/marker-leakage-measurement.md``).
         Use with lower LR (1e-5 to 1e-6) to avoid degeneration.
+
+    **tail_tokens > 0** — LEGACY / opt-in: keep loss on the LAST K valid tokens.
+        For positives: ...response ending...\\n\\n<marker><eos>
+        For negatives: ...response ending...<eos>
+        Discouraged: putting loss on the response tail trains R itself, which
+        drifts R off-policy and contaminates the on-policy leakage measurement
+        (the selectivity it appears to buy is a response-teaching artifact).
+        Retained only for reproducing older experiments (e.g. #397's tail-32 arm).
 
     **suppress_at_post_response_slot** (default False) — when True AND
     ``tail_tokens == 0``, negative rows (no marker) train the EOS-only
@@ -170,7 +177,7 @@ class MarkerOnlyDataCollator:
         self,
         inner_collator,
         marker_token_ids: list[int],
-        tail_tokens: int = 32,
+        tail_tokens: int = 0,
         suppress_at_post_response_slot: bool = False,
     ):
         self.inner = inner_collator

@@ -323,12 +323,27 @@ def _load_phaseA_anchor() -> dict | None:
     return None
 
 
-def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
+def _make_route_a_figures(  # noqa: C901
+    plt,
+    *,
+    withneg_adapter: str | None = None,
+    posonly_adapter: str | None = None,
+) -> list[Path]:
     """Plan v3 §6.3 route-(a) figures (separate folder from the v1/v2 figures).
 
     Built only when phaseA_anchor.json + route-(a) per-cell JSONs are present.
     Each figure is wrapped in its own try/except so a missing artifact
     degrades that figure to a no-op without killing the rest.
+
+    Args:
+        plt: matplotlib pyplot module (passed in to avoid an import here).
+        withneg_adapter: explicit cond1_withneg adapter id (e.g.
+            ``i471_route_a_cond1_withneg_step45``). When None, derives from
+            ``phaseA_anchor.json``: prefer the stepped id when an anchor_step
+            is present; fall back to the legacy un-suffixed id otherwise so
+            re-reads of pre-stepped per-cell JSONs still work.
+        posonly_adapter: explicit cond1_posonly adapter id (e.g.
+            ``i471_route_a_cond1_posonly_step38``). Same derivation rules.
     """
     paths: list[Path] = []
     phaseA = _load_phaseA_anchor()
@@ -336,6 +351,32 @@ def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
         logger.info("phaseA_anchor.json absent; skipping route-(a) figures.")
         return paths
     ROUTE_A_FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Derive default adapter ids from phaseA_anchor.json when caller didn't
+    # pass them. Stepped naming matches what i471_upload_anchor_adapter.py
+    # writes + what phaseB_sweep.sh writes natively.
+    if withneg_adapter is None:
+        anchor_step = phaseA.get("anchor_step")
+        withneg_step = (
+            anchor_step
+            if anchor_step is not None
+            else max(
+                (r["step"] for r in phaseA.get("withneg_table", {}).get("step_rows", [])),
+                default=None,
+            )
+        )
+        withneg_adapter = (
+            f"i471_route_a_cond1_withneg_step{withneg_step}"
+            if withneg_step is not None
+            else "i471_route_a_cond1_withneg"
+        )
+    if posonly_adapter is None:
+        matched_posonly = phaseA.get("matched_posonly_step")
+        posonly_adapter = (
+            f"i471_route_a_cond1_posonly_step{matched_posonly}"
+            if matched_posonly is not None
+            else "i471_route_a_cond1_posonly"
+        )
 
     withneg_rows = phaseA.get("withneg_table", {}).get("step_rows", [])
     posonly_rows = phaseA.get("posonly_table", {}).get("step_rows", [])
@@ -409,11 +450,8 @@ def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
 
     # Figure 3: hero_emission_demo_free_withneg_vs_posonly.png
     # On-policy ends_with_marker bars at demo_free_default for the route-(a)
-    # anchor checkpoints (cond1_withneg vs cond1_posonly).
+    # anchor checkpoints (cond1_withneg_step<W> vs cond1_posonly_step<P>).
     try:
-        # Resolve the two adapter ids that match the route-(a) anchor.
-        withneg_adapter = "i471_route_a_cond1_withneg"
-        posonly_adapter = "i471_route_a_cond1_posonly"
         all_cells = load_all()
         withneg_cell = all_cells.get(withneg_adapter, {}).get("demo_free_default")
         posonly_cell = all_cells.get(posonly_adapter, {}).get("demo_free_default")
@@ -465,7 +503,9 @@ def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
             i465_rates = []
             for c in conds_local:
                 if c == "cond1":
-                    i471_adapter = "i471_route_a_cond1_withneg"
+                    # Use the same stepped withneg_adapter id resolved above
+                    # so this lookup hits the same per-cell JSON as Figure 3.
+                    i471_adapter = withneg_adapter
                 else:
                     i471_adapter = f"i471_route_a_{c}_step{anchor_step}"
                 i471_cell = all_cells.get(i471_adapter, {}).get("demo_free_default") or {}
@@ -546,14 +586,26 @@ def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
     return paths
 
 
-def make_figures(analysis: dict, conds: list[str]) -> list[Path]:
+def make_figures(
+    analysis: dict,
+    conds: list[str],
+    *,
+    withneg_adapter: str | None = None,
+    posonly_adapter: str | None = None,
+) -> list[Path]:
     import matplotlib.pyplot as plt
 
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     # Plan v3 route-(a) figures (new folder; older v1/v2 figures continue
     # to land in figures/issue_471/ for analyzer back-compat).
-    paths.extend(_make_route_a_figures(plt))
+    paths.extend(
+        _make_route_a_figures(
+            plt,
+            withneg_adapter=withneg_adapter,
+            posonly_adapter=posonly_adapter,
+        )
+    )
 
     # hero_emission_demo_free_465_vs_471: per-cond emission, two experiments.
     fig, ax = plt.subplots(figsize=(7, 4))
@@ -641,6 +693,18 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Skip figure generation (analysis-only).",
     )
+    ap.add_argument(
+        "--withneg-adapter",
+        default=None,
+        help="Stepped cond1_withneg adapter id (e.g. i471_route_a_cond1_withneg_step45). "
+        "When omitted, derived from eval_results/issue_471/route_a/phaseA_anchor.json.",
+    )
+    ap.add_argument(
+        "--posonly-adapter",
+        default=None,
+        help="Stepped cond1_posonly adapter id (e.g. i471_route_a_cond1_posonly_step38). "
+        "When omitted, derived from phaseA_anchor.json's matched_posonly_step.",
+    )
     args = ap.parse_args(argv)
 
     adapters = [f"i471_{c}" for c in args.conds] + [f"i465_{c}" for c in args.conds]
@@ -650,7 +714,12 @@ def main(argv: list[str] | None = None) -> None:
     out_path.write_text(json.dumps(analysis, indent=2))
     logger.info("Wrote analysis -> %s", out_path)
     if not args.no_figures:
-        paths = make_figures(analysis, args.conds)
+        paths = make_figures(
+            analysis,
+            args.conds,
+            withneg_adapter=args.withneg_adapter,
+            posonly_adapter=args.posonly_adapter,
+        )
         logger.info("Wrote %d figures: %s", len(paths), [str(p) for p in paths])
 
 

@@ -153,10 +153,29 @@ def _load_R_helpful_qtest() -> dict[str, dict]:
 
 
 def _download_adapters(adapter_ids: list[str]) -> dict[str, str]:
-    """For each `i471_<cond>` or `i465_<cond>` id, download adapter files from HF."""
+    """Resolve each adapter id to a local directory holding adapter_model.safetensors.
+
+    Plan v3 §4.5 / round-2 code-review BLOCKER fix: Phase A → B → 4 all run
+    on the SAME pod inside one session, so the adapters Phase A/B trained
+    are sitting on local disk under ``adapters/<aid>/``. Hitting HF Hub
+    for every read is wasteful AND it crashes the run when
+    ``hf_upload=False`` (the route-(a) default) because the adapters were
+    never pushed. Resolution order per id:
+
+      1. **Local path under ``adapters/<aid>/``** -- the train script's
+         output dir for the chosen-anchor adapter (Phase A's analyzer +
+         ``i471_upload_anchor_adapter.py`` mirror the chosen step into
+         this path before Phase 4 fires).
+      2. **HF Hub** under ``adapters/<aid>/`` on HF_MODEL_REPO -- for
+         #465 baselines and any externally-uploaded adapters not present
+         on the current pod.
+
+    Fail loud (RuntimeError) if neither path produces an adapter — we do
+    NOT silently degrade to a missing adapter (would crash deeper inside
+    vLLM with a less actionable error).
+    """
     from huggingface_hub import hf_hub_download
 
-    LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
     out: dict[str, str] = {}
     needed = [
         "adapter_model.safetensors",
@@ -165,7 +184,28 @@ def _download_adapters(adapter_ids: list[str]) -> dict[str, str]:
         "tokenizer.json",
         "special_tokens_map.json",
     ]
+    hf_cache_initialized = False
     for aid in adapter_ids:
+        # ── (1) Local-first: prefer the in-session adapter directory ──
+        local_pod_path = Path(f"adapters/{aid}")
+        if (local_pod_path / "adapter_model.safetensors").exists():
+            if not (local_pod_path / "adapter_config.json").exists():
+                raise RuntimeError(
+                    f"adapter_id={aid!r}: found adapter_model.safetensors at "
+                    f"{local_pod_path}/ but adapter_config.json is missing. "
+                    "PEFT can't load this — re-train or re-upload the adapter."
+                )
+            logger.info("adapter %s resolved LOCAL -> %s", aid, local_pod_path)
+            out[aid] = str(local_pod_path)
+            continue
+
+        # ── (2) HF Hub fallback ──
+        # Lazy-create the HF cache dir only when we actually need to fetch
+        # from the Hub. Avoids touching /workspace on local-only / unit-test
+        # invocations where every adapter resolves under the local branch.
+        if not hf_cache_initialized:
+            LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
+            hf_cache_initialized = True
         target_subpath = f"adapters/{aid}"
         local_target = LOCAL_ADAPTER_CACHE / target_subpath
         local_target.mkdir(parents=True, exist_ok=True)
@@ -180,13 +220,18 @@ def _download_adapters(adapter_ids: list[str]) -> dict[str, str]:
             except Exception as e:
                 if fname in ("adapter_model.safetensors", "adapter_config.json"):
                     raise RuntimeError(
-                        f"required adapter file {target_subpath}/{fname} not on HF: {e}"
+                        f"adapter_id={aid!r}: not found locally at "
+                        f"{local_pod_path}/ AND required HF file "
+                        f"{target_subpath}/{fname} missing on {HF_MODEL_REPO}: {e}. "
+                        "Either run Phase A/B on this pod first (which writes "
+                        "adapters/<aid>/) or upload the adapter to HF."
                     ) from e
                 logger.debug("optional %s/%s missing on HF: %s", target_subpath, fname, e)
         if not (local_target / "adapter_model.safetensors").exists():
             raise RuntimeError(
                 f"adapter_model.safetensors missing at {local_target} after hf_hub_download."
             )
+        logger.info("adapter %s resolved HF -> %s", aid, local_target)
         out[aid] = str(local_target)
     return out
 

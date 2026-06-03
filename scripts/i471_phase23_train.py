@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003
+# ruff: noqa: RUF001, RUF002, RUF003
 """Phase 2 (smoke) + Phase 3 (sweep) -- train ONE LoRA per #471 condition.
 
 Plan v1 §4.2 + §4.6 + §4.7.
@@ -330,20 +330,21 @@ def _write_train_rows(*, cond: str, rows: list[dict]) -> Path:
     return out_path
 
 
-def _load_R_bystander_qtest_for_persona(persona: str) -> dict[str, dict] | None:
+def _load_R_bystander_qtest_for_persona(persona: str) -> dict[str, dict]:
     """Return {q: completion} for one bystander persona from R_bystander_qtest.
 
     R_bystander_qtest is the multi-persona artifact Phase 0 writes (keys =
-    ``"{persona}::{q}"``). Returns None if the artifact / persona is missing
-    so the trajectory probe degrades to 3 shapes without crashing the run.
+    ``"{persona}::{q}"``). FAIL LOUD on a missing artifact or persona —
+    the 4-shape trajectory probe (including H_neg_vs_bystander) is
+    load-bearing for the anchor analyzer and silently degrading to 3
+    shapes hides the bystander signal from every downstream test.
+    Phase 0 (``i471_phase0_preflight.py``) generates this artifact under
+    every persona in ``BYSTANDER_PERSONA_IDS``; if it's absent on the pod
+    the symptom is a stale pod missing the Phase 0 R sync, which the
+    pre-launch protocol catches separately. Either way the right answer
+    is to crash, not warn-and-skip.
     """
-    try:
-        payload = load_r_artifact("R_bystander_qtest.json")
-    except Exception as e:
-        logger.warning(
-            "R_bystander_qtest.json not available (%s); bystander trajectory shape skipped.", e
-        )
-        return None
+    payload = load_r_artifact("R_bystander_qtest.json")
     raw = payload.get("completions", {})
     out: dict[str, dict] = {}
     prefix = f"{persona}::"
@@ -352,32 +353,26 @@ def _load_R_bystander_qtest_for_persona(persona: str) -> dict[str, dict] | None:
             q = k[len(prefix) :]
             out[q] = v
     if not out:
-        logger.warning(
-            "R_bystander_qtest.json has no entries for persona=%r; "
-            "bystander trajectory shape will be empty.",
-            persona,
+        raise RuntimeError(
+            f"R_bystander_qtest.json has no entries for persona={persona!r}. "
+            "Re-run scripts/i471_phase0_preflight.py to regenerate the "
+            "bystander R artifact (it writes 5 bystanders × Q_test) before "
+            "launching Phase A — H_neg_vs_bystander needs the bystander "
+            "probe shape and cannot silently degrade."
         )
-        return None
     return out
 
 
-def _load_R_trained_neg_qtest_for_persona(persona: str) -> dict[str, dict] | None:
+def _load_R_trained_neg_qtest_for_persona(persona: str) -> dict[str, dict]:
     """Return {q: completion} for one trained-negative persona from R_trained_negatives_qtest.
 
     Used by the trajectory probe's trained-negative shape (e.g.
     medical_doctor). For ``persona == "default"`` the trained-negative R
     on Q_test is identical to ``R_helpful_qtest`` and the caller should
-    use that instead.
+    use that instead. FAIL LOUD on missing artifact / persona for the
+    same reason as ``_load_R_bystander_qtest_for_persona``.
     """
-    try:
-        payload = load_r_artifact("R_trained_negatives_qtest.json")
-    except Exception as e:
-        logger.warning(
-            "R_trained_negatives_qtest.json not available (%s); trained-neg "
-            "trajectory shape skipped.",
-            e,
-        )
-        return None
+    payload = load_r_artifact("R_trained_negatives_qtest.json")
     raw = payload.get("completions", {})
     out: dict[str, dict] = {}
     prefix = f"{persona}::"
@@ -386,12 +381,12 @@ def _load_R_trained_neg_qtest_for_persona(persona: str) -> dict[str, dict] | Non
             q = k[len(prefix) :]
             out[q] = v
     if not out:
-        logger.warning(
-            "R_trained_negatives_qtest.json has no entries for persona=%r; "
-            "trained-neg trajectory shape will be empty.",
-            persona,
+        raise RuntimeError(
+            f"R_trained_negatives_qtest.json has no entries for persona={persona!r}. "
+            "Re-run scripts/i471_phase0_preflight.py to regenerate the "
+            "trained-neg R artifact before launching Phase A — the "
+            "trained-negative trajectory shape cannot silently degrade."
         )
-        return None
     return out
 
 
@@ -520,25 +515,32 @@ def _build_trajectory_probes(
             )
             probes["demo_free_default"].append(full_ids)
 
-    # Trained-negative shape (medical_doctor). Always built when the artifact
-    # is present, regardless of whether THIS run uses negatives — the probe
-    # is identical for cond1_withneg vs cond1_posonly so curves are
-    # directly comparable at the matched shape.
+    # Trained-negative shape (medical_doctor). Always built — the probe is
+    # identical for cond1_withneg vs cond1_posonly so curves are directly
+    # comparable at the matched shape. The R loader fails loud if the
+    # Phase 0 artifact is missing; the persona-key check stays as a
+    # config-mismatch guard (NEGATIVE_PERSONAS could be edited in a future
+    # variant), preserving the previous explicit-membership contract.
+    if "medical_doctor" not in NEGATIVE_PERSONAS:
+        raise RuntimeError(
+            "trajectory probe expects 'medical_doctor' in NEGATIVE_PERSONAS "
+            "(the trained-negative shape would otherwise be unrooted). Fix "
+            "the negative-persona set in i471_data.py or this probe wiring."
+        )
     r_neg_med = _load_R_trained_neg_qtest_for_persona("medical_doctor")
-    if r_neg_med is not None and "medical_doctor" in NEGATIVE_PERSONAS:
-        probes["trained_neg_medical_doctor"] = []
-        med_sys = NEGATIVE_PERSONAS["medical_doctor"]
-        for q in other_qs:
-            if q not in r_neg_med:
-                continue
-            R_text = r_neg_med[q]["response_text"]
-            full_ids = _build_persona_probe_ids(
-                persona_system_prompt=med_sys,
-                target_q=q,
-                R_text=R_text,
-                tokenizer=tokenizer,
-            )
-            probes["trained_neg_medical_doctor"].append(full_ids)
+    probes["trained_neg_medical_doctor"] = []
+    med_sys = NEGATIVE_PERSONAS["medical_doctor"]
+    for q in other_qs:
+        if q not in r_neg_med:
+            continue
+        R_text = r_neg_med[q]["response_text"]
+        full_ids = _build_persona_probe_ids(
+            persona_system_prompt=med_sys,
+            target_q=q,
+            R_text=R_text,
+            tokenizer=tokenizer,
+        )
+        probes["trained_neg_medical_doctor"].append(full_ids)
 
     # Held-out bystander shape (software_engineer). The bystander is
     # UNTRAINED by any of the negative-row personas — the
@@ -546,21 +548,26 @@ def _build_trajectory_probes(
     # signal in plan v3 §3 (load-bearing for whether EOS-only-loss at the
     # slot is biting harder at the trained personas than at untrained ones).
     bystander_persona = "software_engineer"
+    if bystander_persona not in EVAL_PERSONAS_24:
+        raise RuntimeError(
+            f"bystander persona {bystander_persona!r} missing from "
+            "EVAL_PERSONAS_24 (the trajectory probe cannot resolve its system "
+            "prompt). Fix the panel definition in i471_data.py."
+        )
     r_bys = _load_R_bystander_qtest_for_persona(bystander_persona)
-    if r_bys is not None and bystander_persona in EVAL_PERSONAS_24:
-        probes[f"bystander_{bystander_persona}"] = []
-        bys_sys = EVAL_PERSONAS_24[bystander_persona]
-        for q in other_qs:
-            if q not in r_bys:
-                continue
-            R_text = r_bys[q]["response_text"]
-            full_ids = _build_persona_probe_ids(
-                persona_system_prompt=bys_sys,
-                target_q=q,
-                R_text=R_text,
-                tokenizer=tokenizer,
-            )
-            probes[f"bystander_{bystander_persona}"].append(full_ids)
+    probes[f"bystander_{bystander_persona}"] = []
+    bys_sys = EVAL_PERSONAS_24[bystander_persona]
+    for q in other_qs:
+        if q not in r_bys:
+            continue
+        R_text = r_bys[q]["response_text"]
+        full_ids = _build_persona_probe_ids(
+            persona_system_prompt=bys_sys,
+            target_q=q,
+            R_text=R_text,
+            tokenizer=tokenizer,
+        )
+        probes[f"bystander_{bystander_persona}"].append(full_ids)
 
     return probes
 

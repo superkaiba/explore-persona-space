@@ -1,3 +1,4 @@
+# ruff: noqa: RUF002
 """Phase A analyzer -- read BOTH cond1 trajectories, pick the anchor step.
 
 Plan v3 §4.3.
@@ -115,20 +116,35 @@ def _parse_trajectory_log(log_path: Path) -> dict[int, dict[str, float]]:
 
 
 def _base_logp_at_step_zero(traj: dict[int, dict[str, float]]) -> dict[str, float]:
-    """Return per-bucket base log-prob from the earliest step's probe.
+    """Return per-bucket base log-prob from the step=0 probe (genuine pre-train).
 
-    The trajectory callback's per-step mean_logp is the TRAINED-pass
-    log-prob (not trained - base). To compute trained - base we need the
-    base distribution. The callback caches base distributions lazily on the
-    first non-zero step it probes, so the EARLIEST trajectory line per
-    shape is the closest to a `base` reading we have. For Phase A the
-    earliest is typically step=5 (log_every=5); the trained-pass at step=5
-    is within ~0.1 nats of the true base for source vs default shapes per
-    #460 / #465 calibration. The analyzer reports BOTH absolute trained
-    mean_logp and (trained - base) so the user can sanity-check.
+    The trajectory callback (MarkerLogprobKLTrajectoryCallback) fires
+    `on_train_begin` BEFORE any optimizer step and emits a step=0 trajectory
+    line for every shape — that IS the true base log-prob (adapter weights
+    are zero-deltas at training start, so the trained pass equals the base
+    pass to machine precision).
+
+    Plan v3 §4.3 anchor rule reads `(source − base) ≥ +5 nats` and
+    `(source − default) ≥ +3 nats`, both as trained-minus-base deltas.
+    Earlier versions of this analyzer fell back to `min(traj.keys())`
+    (typically step=5 ≈ 80 training examples in) which biased base LOW
+    and pushed the chosen anchor LATER than the thresholds intend. We now
+    fail loud if step=0 is missing — the callback's `on_train_begin` hook
+    SHOULD always emit it, so its absence means a regression worth blocking
+    on rather than silently substituting a partially-trained proxy.
     """
-    earliest_step = min(traj.keys())
-    return dict(traj[earliest_step])
+    if 0 not in traj:
+        raise RuntimeError(
+            "phaseA_analyze: no step=0 trajectory row found. The trajectory "
+            "callback (MarkerLogprobKLTrajectoryCallback) must emit a step=0 "
+            "probe via on_train_begin BEFORE any optimizer step; that row IS "
+            "the genuine base log-prob used as the analyzer's anchor floor. "
+            "Re-train with the current i471_trajectory.py (which writes step=0) "
+            "and re-run this analyzer; do NOT silently substitute step="
+            f"{min(traj.keys())} as a 'base proxy' — it would push s* late by "
+            "~1 save_steps interval."
+        )
+    return dict(traj[0])
 
 
 def _build_step_table(traj: dict[int, dict[str, float]]) -> dict:
@@ -155,7 +171,11 @@ def _build_step_table(traj: dict[int, dict[str, float]]) -> dict:
             row["source_minus_default_gap"] = None
         rows.append(row)
     return {
-        "earliest_step_used_as_base_proxy": min(steps_sorted),
+        # step=0 row IS the genuine base anchor (trajectory callback emits it
+        # via on_train_begin BEFORE any optimizer step). This field used to
+        # name "earliest_step_used_as_base_proxy" — kept for downstream
+        # compatibility but the value now always points at the step=0 row.
+        "base_anchor_step": 0,
         "step_rows": rows,
     }
 
