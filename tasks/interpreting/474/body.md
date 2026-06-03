@@ -1,6 +1,7 @@
 ---
-title: 'On-policy divergence-to-transfer with localization restored: marker-at-end
-  + broad contrastive negatives'
+title: Restoring contrastive negatives recovers the divergence to transfer correlation
+  on-policy, but most of the recovered signal comes from the three stylized personas
+  (MODERATE confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer
