@@ -325,6 +325,12 @@ def _generate_completions(
     from vllm import LLM, SamplingParams
 
     log.info("Loading vLLM (TP=%d) with adapter %s", tp_size, adapter_path)
+    # max_num_seqs cap: Qwen3.5-27B is a Mamba-hybrid; the available Mamba
+    # cache blocks on a single 80GB H100 at gpu_memory_utilization=0.92 work
+    # out to ~327, so the vLLM default max_num_seqs=1024 trips
+    # ``ValueError: max_num_seqs (1024) exceeds available Mamba cache
+    # blocks (327)`` at init. We never need more than 80 prompts in flight
+    # for any cell here, so 64 is generous and leaves headroom.
     llm = LLM(
         model=BASE_MODEL,
         tensor_parallel_size=tp_size,
@@ -332,6 +338,7 @@ def _generate_completions(
         enable_lora=True,
         max_lora_rank=16,
         max_model_len=8192,
+        max_num_seqs=64,
         trust_remote_code=True,
     )
 
