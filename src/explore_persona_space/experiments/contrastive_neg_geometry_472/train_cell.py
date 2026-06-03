@@ -19,6 +19,8 @@ to r=16/lr=5e-6/0.5 epoch if the smoke gate trips.
 from __future__ import annotations
 
 import logging
+import os
+import subprocess
 from pathlib import Path
 
 from transformers import TrainerCallback
@@ -43,6 +45,109 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
 )
 
 log = logging.getLogger("issue_472.train_cell")
+
+
+def _physical_gpu_uuids() -> dict[int, str]:
+    """Return {physical_index: uuid} for ALL GPUs on the host (CVD-independent).
+
+    ``nvidia-smi --query-gpu=index,uuid`` enumerates the FULL physical GPU set
+    regardless of ``CUDA_VISIBLE_DEVICES`` (it reports driver-level physical
+    indices, not the CVD-remapped view). This is the ground-truth map the
+    per-process pin is checked against. Returns {} if nvidia-smi is unavailable
+    so the caller can degrade to the device-count-only check.
+    """
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=index,uuid", "--format=csv,noheader,nounits"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            # nvidia-smi enumerates physical GPUs; no credentials needed.
+            env={**os.environ, "CUDA_VISIBLE_DEVICES": ""},  # full physical enum, CVD-independent
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        log.warning("nvidia-smi physical enumeration failed (%s); UUID pin-check skipped.", e)
+        return {}
+    mapping: dict[int, str] = {}
+    for line in out.strip().splitlines():
+        parts = [p.strip() for p in line.split(",")]
+        if len(parts) >= 2 and parts[0].isdigit():
+            mapping[int(parts[0])] = parts[1]
+    return mapping
+
+
+def verify_gpu_pin(expected_physical_gpu: int) -> None:
+    """Fail loud if this process is NOT pinned to ``expected_physical_gpu``.
+
+    Catches the round-3 #472 sharding bug (all concurrent cells piling onto
+    physical GPU 0) IMMEDIATELY at cell-train start, instead of via a CUDA OOM
+    ~30s into training. The 1-cell smoke can't exercise concurrency, so this
+    assertion is the only guard the sweep has against a mis-pin.
+
+    Contract: the caller has ALREADY set ``os.environ["CUDA_VISIBLE_DEVICES"] =
+    str(expected_physical_gpu)`` (this matches what ``train/sft.py`` does, so the
+    two never fight). Two checks:
+
+      1. ``nvidia-smi`` full physical enumeration must contain
+         ``expected_physical_gpu`` (range / bad-assignment guard) — runs even
+         when torch CUDA is unavailable.
+      2. Once CUDA initializes, exactly ONE GPU must be visible (CVD restricted
+         to a single device) and — when torch exposes the device UUID — its UUID
+         must equal the physical GPU's UUID. A visible-count > 1 or a UUID
+         mismatch means the pin landed on the wrong GPU; raise.
+
+    Raises RuntimeError on any mismatch.
+    """
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cvd != str(expected_physical_gpu):
+        raise RuntimeError(
+            f"verify_gpu_pin precondition violated: CUDA_VISIBLE_DEVICES={cvd!r} != "
+            f"str(expected_physical_gpu)={str(expected_physical_gpu)!r}. The caller must set "
+            f"CVD to the assigned physical GPU before training (so it matches sft.py's clobber)."
+        )
+
+    phys = _physical_gpu_uuids()
+    if phys and expected_physical_gpu not in phys:
+        raise RuntimeError(
+            f"Assigned physical GPU {expected_physical_gpu} not in host enumeration "
+            f"{sorted(phys)} — bad GPU assignment (n_gpus mismatch?)."
+        )
+
+    import torch
+
+    if not torch.cuda.is_available():
+        # No live CUDA yet (e.g. CPU-only host); the physical-enum range check
+        # above is the only guard available. Do NOT silently pass a real pod —
+        # on a pod torch.cuda is always available, so this branch is CPU-only.
+        log.warning("torch.cuda unavailable; GPU pin verified by physical enumeration only.")
+        return
+
+    n_visible = torch.cuda.device_count()
+    if n_visible != 1:
+        raise RuntimeError(
+            f"Expected exactly 1 visible GPU after CVD={cvd!r}, saw {n_visible}. The per-cell "
+            f"pin failed — concurrent cells would collide (round-3 #472 OOM class)."
+        )
+
+    expected_uuid = phys.get(expected_physical_gpu)
+    bound_uuid = None
+    try:
+        bound_uuid = getattr(torch.cuda.get_device_properties(0), "uuid", None)
+    except Exception as e:  # pragma: no cover - torch-version dependent
+        log.warning("torch device UUID unavailable (%s); UUID pin-check skipped.", e)
+    if expected_uuid and bound_uuid is not None:
+        bound_uuid_str = str(bound_uuid).replace("GPU-", "").strip()
+        expected_uuid_str = expected_uuid.replace("GPU-", "").strip()
+        if bound_uuid_str != expected_uuid_str:
+            raise RuntimeError(
+                f"GPU pin MISMATCH: process bound to UUID {bound_uuid_str!r} but assigned "
+                f"physical GPU {expected_physical_gpu} has UUID {expected_uuid_str!r}. The "
+                f"per-cell pin landed on the WRONG physical GPU (round-3 #472 sharding bug)."
+            )
+    log.info(
+        "[gpu-pin] verified: physical GPU %d (1 visible device, uuid=%s)",
+        expected_physical_gpu,
+        (expected_uuid or "n/a"),
+    )
 
 
 class CheckpointAtFractionsCallback(TrainerCallback):
@@ -105,6 +210,7 @@ def train_one_cell(
     base_model: str = BASE_MODEL,
     fallback: bool = False,
     report_to: str = "wandb",
+    gpu_id: int = 0,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -117,6 +223,18 @@ def train_one_cell(
         base_model: HF model id.
         fallback: if True, use the sub-ceiling fallback recipe (plan §7).
         report_to: "wandb" or "none".
+        gpu_id: the ASSIGNED PHYSICAL GPU index. ``train/sft.py`` SETS
+            ``os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)`` then loads with
+            ``device_map={"": 0}`` (CVD remaps the visible GPU to index 0), so
+            ``gpu_id`` MUST be the physical index against the FULL GPU
+            enumeration — NOT 0 when concurrent cells share a multi-GPU pod.
+            Round-3 #472 OOM root cause: with ``gpu_id`` pinned to 0, every
+            parallel cell re-targeted physical GPU 0 (documented ``+gpu_id=N``
+            CVD clobber, CLAUDE.md Gotchas). The dispatcher threads its
+            round-robin assignment here via ``i472_run_cell --gpu-id``; the
+            nested eval subprocess then inherits this same
+            ``CUDA_VISIBLE_DEVICES`` from ``os.environ`` (sft.py mutates it
+            in-process) so vLLM + HF KL run on the same physical GPU.
 
     Returns:
         {"final_adapter": str, "checkpoint_index": {frac: {step, path}}}.
@@ -124,12 +242,20 @@ def train_one_cell(
     """
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
+    # Pin to the assigned physical GPU + FAIL LOUD before any expensive work if
+    # the pin is wrong (round-3 #472 OOM guard). We set CVD here to EXACTLY what
+    # sft.py will set (str(gpu_id)) so the two never fight, then verify the
+    # process is bound to physical `gpu_id` (and that exactly one GPU is
+    # visible). The nested eval subprocess inherits this same CVD via os.environ.
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    verify_gpu_pin(gpu_id)
+
     r = FALLBACK_LORA_R if fallback else LORA_R
     lr = FALLBACK_LEARNING_RATE if fallback else LEARNING_RATE
     epochs = FALLBACK_EPOCHS if fallback else EPOCHS
     # rs-LoRA: TrainLoraConfig sets use_rslora=True in train_lora's LoraConfig.
     cfg = TrainLoraConfig(
-        gpu_id=0,  # CUDA_VISIBLE_DEVICES is set per-subprocess by the dispatcher.
+        gpu_id=gpu_id,  # ASSIGNED physical GPU; sft.py sets CVD=str(gpu_id).
         epochs=epochs,
         lr=lr,
         lora_r=r,

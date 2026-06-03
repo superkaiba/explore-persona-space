@@ -20,10 +20,16 @@ on-policy DV-A(vLLM)+DV-B(HF KL) path, same poll-compliant sentinel + [phase=...
 logging, same teardown sequence.
 
 8-GPU sweep parallelism (plan §9): the dispatcher schedules cell×seed
-subprocesses across GPUs (round-robin), at most --max-parallel concurrent
-(default 8 on an 8-H100 pod). Each cell-subprocess gets CUDA_VISIBLE_DEVICES=<g>
-in its env (so train/sft.py's gpu_id=0 maps to the assigned physical GPU). This
-is sweep parallelism, NOT model sharding (LoRA-7B fits on 1 GPU).
+subprocesses across GPUs, at most --max-parallel concurrent (clamped to --n-gpus)
+and each on a DISTINCT free physical GPU. Each cell-subprocess is launched with
+``--gpu-id <g>`` (the assigned PHYSICAL GPU index); ``train/sft.py`` SETS
+``CUDA_VISIBLE_DEVICES=str(g)`` from cfg.gpu_id (it does NOT respect an inherited
+CVD — round-3 #472 OOM: with gpu_id=0 every parallel cell re-targeted physical
+GPU 0). The nested eval subprocess inherits that same CVD via os.environ. The
+dispatcher does NOT also restrict env CVD (that would make str(g) re-index
+against a 1-GPU view). This is sweep parallelism, NOT model sharding (LoRA-7B
+fits on 1 GPU). Cheap pre-sweep check: ``--validate-multi-gpu --cells A,B
+--seeds 42 --n-gpus 2 --max-parallel 2`` runs 2 cells concurrently on GPUs 0+1.
 
 Pod-side discipline (CLAUDE.md): NEVER shells out to scripts/task.py
 (sentinel-file pattern only); every subprocess.* passes env={**os.environ};
@@ -97,12 +103,20 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) ->
     )
 
 
-def _resolve_cells(raw: str | None, smoke: bool) -> list[str]:
+def _resolve_cells(raw: str | None, force_anchor_only: bool) -> list[str]:
+    """Resolve the requested cell slugs.
+
+    ``force_anchor_only`` (the canonical single-cell smoke, which also runs the
+    sub-ceiling science gate) returns just the anchor regardless of ``raw``. The
+    multi-GPU validation mode (``--validate-multi-gpu``) sets force_anchor_only=
+    False so it can run the user's ``--cells`` (e.g. two cells) concurrently with
+    the tiny ``--smoke`` slice, to confirm distinct-GPU placement (round-3 #472).
+    """
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import CELL_SPECS
 
     slugs = [c[0] for c in CELL_SPECS]
     name_to_slug = {c[1]: c[0] for c in CELL_SPECS}
-    if smoke:
+    if force_anchor_only:
         return ["c472_anchor"]
     if raw is None or raw.strip() in ("", "all"):
         return slugs
@@ -158,10 +172,24 @@ def _schedule_cell_pool(
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
-    Round-robins GPUs; keeps at most ``max_parallel`` cell-subprocesses alive.
-    Each gets CUDA_VISIBLE_DEVICES=<gpu> so its device 0 is the assigned GPU.
+    Assigns each concurrent cell a DISTINCT FREE physical GPU and keeps at most
+    ``max_parallel`` cell-subprocesses alive. Each cell is launched with
+    ``--gpu-id <g>``; ``train/sft.py`` SETS ``CUDA_VISIBLE_DEVICES=str(g)`` so
+    the cell + its nested eval run on physical GPU g (round-3 #472 fix). A free
+    GPU is reclaimed when its cell exits, so two concurrent cells NEVER share a
+    GPU. ``max_parallel`` is clamped to ``n_gpus`` (you can't run more concurrent
+    one-GPU cells than there are GPUs without colliding).
     """
     units = [(c, s) for c in cells for s in seeds]
+    if max_parallel > n_gpus:
+        log.warning(
+            "max_parallel=%d > n_gpus=%d would force ≥2 concurrent cells onto one GPU "
+            "(round-3 #472 OOM class); clamping max_parallel to %d.",
+            max_parallel,
+            n_gpus,
+            n_gpus,
+        )
+        max_parallel = n_gpus
     log.info(
         "Scheduling %d (cell,seed) units across %d GPUs (max_parallel=%d)",
         len(units),
@@ -172,14 +200,19 @@ def _schedule_cell_pool(
     results: list[dict] = []
     running: list[tuple[subprocess.Popen, str, int, int]] = []  # (proc, cell, seed, gpu)
     queue = list(units)
-    next_gpu = 0
+    free_gpus: list[int] = list(range(n_gpus))  # physical GPU indices currently free
 
     def _launch(cell: str, seed: int, gpu: int) -> subprocess.Popen:
         out_traj = slab_root / f"{cell}_seed{seed}" / "trajectory.json"
         if resume and out_traj.exists():
             log.info("[%s seed%d] RESUME: trajectory exists; skipping.", cell, seed)
             return None  # type: ignore[return-value]
-        env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(gpu)}
+        # GPU pinning (round-3 #472 fix): pass the ASSIGNED PHYSICAL GPU index via
+        # --gpu-id; train/sft.py SETS CUDA_VISIBLE_DEVICES=str(gpu_id) against the
+        # FULL host enumeration. We do NOT also restrict env CVD here — if we did,
+        # sft.py's str(gpu) would re-index against the already-restricted 1-GPU
+        # view (gpu>=1 → invalid). Inherit the full env so sft.py owns CVD.
+        env = {**os.environ}
         cmd = [
             "uv",
             "run",
@@ -189,6 +222,8 @@ def _schedule_cell_pool(
             cell,
             "--seed",
             str(seed),
+            "--gpu-id",
+            str(gpu),
             "--slab-root",
             str(slab_root),
             "--runs-root",
@@ -218,28 +253,32 @@ def _schedule_cell_pool(
         return subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
 
     while queue or running:
-        # Fill up to max_parallel.
-        while queue and len(running) < max_parallel:
+        # Fill up to max_parallel, one DISTINCT free GPU per concurrent cell.
+        while queue and len(running) < max_parallel and free_gpus:
             cell, seed = queue.pop(0)
-            gpu = next_gpu % n_gpus
-            next_gpu += 1
+            gpu = free_gpus.pop(0)  # a genuinely free physical GPU (never shared)
             proc = _launch(cell, seed, gpu)
             if proc is None:
                 results.append({"cell": cell, "seed": seed, "status": "resumed_skip"})
+                free_gpus.append(gpu)  # nothing launched; return the GPU
                 continue
             running.append((proc, cell, seed, gpu))
-        # Reap finished.
+        # Reap finished; return their GPUs to the free pool.
         still: list[tuple[subprocess.Popen, str, int, int]] = []
         for proc, cell, seed, gpu in running:
             rc = proc.poll()
             if rc is None:
                 still.append((proc, cell, seed, gpu))
                 continue
+            free_gpus.append(gpu)  # GPU is free again for the next queued cell
             if rc != 0:
                 # Fail loud — write a FAILED sentinel and raise (whole sweep aborts).
                 fail_path = log_dir / f"issue-472-{cell}-seed{seed}-FAILED.json"
                 fail_path.write_text(
-                    json.dumps({"cell": cell, "seed": seed, "returncode": rc}, indent=2)
+                    json.dumps(
+                        {"cell": cell, "seed": seed, "returncode": rc, "assigned_gpu": gpu},
+                        indent=2,
+                    )
                 )
                 # Drain other running procs before raising.
                 for p2, _c2, _s2, _g2 in still:
@@ -254,6 +293,7 @@ def _schedule_cell_pool(
                     "cell": cell,
                     "seed": seed,
                     "status": "done",
+                    "assigned_gpu": gpu,
                     "trajectory_path": str(slab_root / f"{cell}_seed{seed}" / "trajectory.json"),
                     "adapter_hf_path": f"adapters/issue_472/{cell}_seed{seed}",
                 }
@@ -262,6 +302,33 @@ def _schedule_cell_pool(
         if running:
             time.sleep(5)
     return results
+
+
+def _summarize_gpu_placements(cell_results: list[dict], *, n_gpus: int) -> dict:
+    """Summarize the per-cell GPU placement for the multi-GPU validation.
+
+    The free-GPU pool guarantees no two CONCURRENT cells share a physical GPU,
+    and each cell's ``verify_gpu_pin`` already fail-loud-asserted its pin in-
+    process. This summary surfaces the placement map + a sanity flag that the
+    completed cells used >1 distinct GPU (i.e. concurrency actually happened, not
+    serial-on-one-GPU). ``ok`` is True when ≥2 distinct GPUs were used across the
+    completed cells (the whole point of the validation).
+    """
+    done = [r for r in cell_results if r.get("status") == "done" and "assigned_gpu" in r]
+    placement = {f"{r['cell']}_seed{r['seed']}": r["assigned_gpu"] for r in done}
+    distinct = sorted({r["assigned_gpu"] for r in done})
+    return {
+        "ok": len(distinct) >= 2,
+        "n_cells_done": len(done),
+        "n_distinct_gpus_used": len(distinct),
+        "distinct_gpus": distinct,
+        "n_gpus_available": n_gpus,
+        "placement": placement,
+        "note": (
+            "Each cell also fail-loud-verified its physical-GPU pin in-process "
+            "(verify_gpu_pin); see [gpu-pin] verified lines in the per-cell logs."
+        ),
+    }
 
 
 def _subceiling_gate(slab_root: Path, smoke_cell: str, smoke_seed: int) -> dict:
@@ -328,6 +395,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seeds", default="42,137")
     parser.add_argument("--smoke", action="store_true", help="--cells anchor + tiny slice + gate.")
     parser.add_argument(
+        "--validate-multi-gpu",
+        action="store_true",
+        help=(
+            "Cheap distinct-GPU placement check (round-3 #472): run the user's "
+            "--cells (e.g. two cells) CONCURRENTLY with the tiny --smoke slice "
+            "across --n-gpus, WITHOUT forcing 1 cell and WITHOUT the sub-ceiling "
+            "science gate. Confirms each cell pins to its own physical GPU before "
+            "the expensive 20-run sweep. Example: --validate-multi-gpu "
+            "--cells c472_anchor,c472_near --seeds 42 --n-gpus 2 --max-parallel 2."
+        ),
+    )
+    parser.add_argument(
         "--dry-run", action="store_true", help="Validate imports + bank only, no GPU."
     )
     parser.add_argument(
@@ -367,11 +446,30 @@ def main(argv: list[str] | None = None) -> int:
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
     os.environ.setdefault("EPM_PERSIST_ADAPTER_HF_REPO", HF_MODEL_REPO)
 
+    # `tiny_slice` (the cheap --smoke training/eval slice) is true for BOTH the
+    # canonical single-cell smoke AND the multi-GPU placement validation; only the
+    # canonical smoke forces 1 cell + runs the sub-ceiling SCIENCE gate.
+    tiny_slice = args.smoke or args.validate_multi_gpu
+    force_anchor_only = args.smoke and not args.validate_multi_gpu
+    run_science_gate = args.smoke and not args.validate_multi_gpu
+
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
-    if args.smoke:
+    if force_anchor_only:
         seeds = seeds[:1]
-    cells = _resolve_cells(args.cells, args.smoke)
-    log.info("Resolved %d cells: %s; seeds=%s", len(cells), cells, seeds)
+    cells = _resolve_cells(args.cells, force_anchor_only)
+    if args.validate_multi_gpu and len(cells) < 2:
+        raise ValueError(
+            "--validate-multi-gpu needs ≥2 cells to exercise concurrency (round-3 #472). "
+            "Pass e.g. --cells c472_anchor,c472_near."
+        )
+    log.info(
+        "Resolved %d cells: %s; seeds=%s (tiny_slice=%s, validate_multi_gpu=%s)",
+        len(cells),
+        cells,
+        seeds,
+        tiny_slice,
+        args.validate_multi_gpu,
+    )
 
     # ── Pre-flight: marker tokenizer assertion (CLAUDE.md). ──────────────────
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
@@ -481,7 +579,7 @@ def main(argv: list[str] | None = None) -> int:
         log_dir=LOG_DIR,
         bank_path=args.bank_path,
         centroids_dir=args.centroids_dir,
-        smoke=args.smoke,
+        smoke=tiny_slice,  # tiny train/eval slice for smoke AND multi-GPU validation
         fallback=args.fallback,
         no_kl=args.no_kl,
         report_to=args.report_to,
@@ -489,8 +587,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     phase_summaries["cells"] = {"n_completed": len(cell_results), "results": cell_results}
 
+    # ── Multi-GPU placement validation: confirm distinct-GPU pinning, no gate. ─
+    if args.validate_multi_gpu:
+        placements = _summarize_gpu_placements(cell_results, n_gpus=args.n_gpus)
+        phase_summaries["multi_gpu_validation"] = placements
+        _write_sentinel(
+            LOG_DIR / "issue-472-multi-gpu-validation-results.json",
+            kind="epm:progress",
+            phase="multi_gpu_validation",
+            note_payload=placements,
+        )
+        log.info("[phase=multi_gpu_validation] %s", placements)
+        _write_final_sentinel(
+            cells, cell_results, phase_summaries, None, seeds, args.slab_root, status="done"
+        )
+        log.info(
+            "[phase=done] multi-GPU validation complete (%d cells across %d GPUs) %s",
+            len(cell_results),
+            args.n_gpus,
+            datetime.now(UTC).isoformat(),
+        )
+        return 0
+
     # ── Sub-ceiling smoke GATE (plan §7). ────────────────────────────────────
-    if args.smoke:
+    if run_science_gate:
         gate = _subceiling_gate(args.slab_root, "c472_anchor", seeds[0])
         phase_summaries["subceiling_gate"] = gate
         _write_sentinel(

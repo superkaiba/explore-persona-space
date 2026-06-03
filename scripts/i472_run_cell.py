@@ -13,14 +13,25 @@ nested eval subprocess boundary guarantees the OS reaps vLLM workers
 (CLAUDE.md vLLM teardown gotcha) — the worker never loads vLLM in-process after
 HF Trainer.
 
-GPU pinning: the dispatcher sets ``CUDA_VISIBLE_DEVICES`` in this worker's env
-(so the worker + its nested eval subprocess see exactly one GPU as device 0).
-train_cell passes gpu_id=0 (train/sft.py clobbers CVD with cfg.gpu_id, so with a
-CVD-restricted env device 0 IS the assigned physical GPU).
+GPU pinning (round-3 #472 fix): the dispatcher passes ``--gpu-id <g>`` (the
+assigned PHYSICAL GPU index against the FULL host enumeration). The worker
+threads it to ``train_one_cell(gpu_id=g)`` → ``TrainLoraConfig.gpu_id=g``, and
+``train/sft.py`` SETS ``os.environ["CUDA_VISIBLE_DEVICES"] = str(g)`` (then loads
+with ``device_map={"": 0}``, CVD remapping the visible GPU to index 0). The nested
+eval subprocess inherits this same ``CUDA_VISIBLE_DEVICES`` from ``os.environ``
+(sft.py mutates it in-process) so vLLM + HF KL run on the SAME physical GPU g.
 
-Usage (driven by the dispatcher; CUDA_VISIBLE_DEVICES set in env):
-    CUDA_VISIBLE_DEVICES=3 uv run python scripts/i472_run_cell.py \
-        --cell c472_anchor --seed 42 \
+WHY NOT just inherit env CVD: ``train/sft.py`` does NOT respect an inherited
+``CUDA_VISIBLE_DEVICES`` — it SETS it from ``cfg.gpu_id`` (default 0). So passing
+``gpu_id=0`` while the dispatcher restricted env CVD to physical 3 makes sft.py
+overwrite CVD to ``"0"`` = physical GPU 0 — every parallel cell re-targets GPU 0
+→ CUDA OOM (round-3 #472). The fix threads the physical index as gpu_id and lets
+sft.py own the CVD set (against the FULL enumeration); the dispatcher must NOT
+also restrict env CVD, or ``str(g)`` would re-index against the 1-GPU view.
+
+Usage (driven by the dispatcher; --gpu-id is the assigned physical GPU):
+    uv run python scripts/i472_run_cell.py \
+        --cell c472_anchor --seed 42 --gpu-id 3 \
         --slab-root eval_results/issue_472 --runs-root /workspace/runs/issue_472 \
         --log-dir /workspace/logs [--smoke] [--fallback] [--no-kl]
 """
@@ -84,6 +95,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B KL.")
     ap.add_argument("--report-to", default="wandb")
+    ap.add_argument(
+        "--gpu-id",
+        type=int,
+        default=0,
+        help=(
+            "ASSIGNED physical GPU index (round-3 #472). Threaded to "
+            "train_one_cell(gpu_id=...); train/sft.py SETS CUDA_VISIBLE_DEVICES "
+            "to this so the cell + its nested eval subprocess run on physical GPU "
+            "<gpu-id>. Default 0 (single-GPU / smoke)."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -94,7 +116,12 @@ def main(argv: list[str] | None = None) -> int:
         ),
         stream=sys.stdout,
     )
-    log.info("CUDA_VISIBLE_DEVICES=%s", os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"))
+    log.info(
+        "Assigned physical GPU --gpu-id=%d; inherited CUDA_VISIBLE_DEVICES=%s "
+        "(train/sft.py will SET CVD=str(gpu_id)).",
+        args.gpu_id,
+        os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"),
+    )
 
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
         HEADLINE_LAYER,
@@ -167,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
         fractions=fractions,
         fallback=args.fallback,
         report_to=args.report_to,
+        gpu_id=args.gpu_id,  # assigned physical GPU (round-3 #472 sharding fix)
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))
@@ -190,7 +218,23 @@ def main(argv: list[str] | None = None) -> int:
     # ── Phase: eval_trajectory (NESTED subprocess: vLLM teardown isolation). ─
     # The worker has HF Trainer's GPU pin; spawn a fresh subprocess for the
     # vLLM+HF eval rig so vLLM workers are reaped on subprocess exit before this
-    # worker (or the next scheduled cell) loads weights again.
+    # worker (or the next scheduled cell) loads weights again. The eval rig uses
+    # cuda:0 / LLM() with the inherited CUDA_VISIBLE_DEVICES — which train/sft.py
+    # set to str(gpu_id) in THIS process — so vLLM + HF KL land on physical GPU
+    # <gpu-id>, NOT GPU 0 (round-3 #472 fix). Fail loud if that env is wrong.
+    eval_cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if eval_cvd != str(args.gpu_id):
+        raise RuntimeError(
+            f"Pre-eval CUDA_VISIBLE_DEVICES={eval_cvd!r} != assigned --gpu-id={args.gpu_id}; the "
+            f"nested eval subprocess would run on the wrong physical GPU. train/sft.py should have "
+            f"set CVD=str(gpu_id) during training — investigate before launching the sweep."
+        )
+    log.info(
+        "[phase=eval_%s] inherited CUDA_VISIBLE_DEVICES=%s (physical GPU %d)",
+        args.cell,
+        eval_cvd,
+        args.gpu_id,
+    )
     eval_cmd = [
         "uv",
         "run",
