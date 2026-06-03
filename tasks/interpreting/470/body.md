@@ -3,7 +3,7 @@ title: 'KL/JS divergence vs cosine as a predictor of #411 sycophancy leakage'
 kind: experiment
 tags: []
 created_at: '2026-06-02T19:39:19Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 411
 goal: 'Determine whether persona-to-source Jensen-Shannon divergence between base-model
   persona-conditioned output distributions predicts #411''s per-bystander sycophancy
