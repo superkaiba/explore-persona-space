@@ -2612,8 +2612,8 @@
       "goal": "Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%->0%; #408).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/475",
-      "status": "planning",
+      "path": "tasks/plan_pending/475",
+      "status": "plan_pending",
       "title": "CoT-scaffolded marker install on Qwen3.5-27B: does a reasoning-scaffolded install survive benign SFT where the 7B plain install (#382/#408) failed?"
     },
     "476": {
