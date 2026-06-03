@@ -25,7 +25,7 @@ relates_to:
 - Wanted to study how training a behavior into multiple personas affects leakage vs training it into a single persona.
 - Trained our single-token marker into K = 1, 2, 4, 8 personas, all with the same number of examples, split equally among the personas.
 - **Result: more personas = more leakage** (monotonic increase in average bystander leakage with K).
-- **Still unclear** whether training on more personas makes leakage *less localized* — i.e. if I train the marker into point A and point B, does point C between them get more leakage than the sum of the leakage from A and B alone? Our held-out personas didn't span the distance range, so we can't tell.
+- **Still unclear** whether training on more personas makes leakage *less localized* — i.e. if I train the marker into point A and point B, does point C between them get more leakage than the sum of the leakage from A and B alone? 
 - Running followup #478 to test the localization question with a distance-spanning held-out panel.
 
 ## TL;DR
