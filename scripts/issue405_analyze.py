@@ -67,6 +67,89 @@ def load_cell_results(eval_dir: Path) -> list[dict]:
     return out
 
 
+# Expected per-track counts per plan §0 + §4.6 (21 CORE × 2 seeds = 42,
+# 1 ABLNEG × 2 seeds = 2, 3 DOSE50 × 2 seeds = 6; total 50).
+EXPECTED_TRACK_COUNTS: dict[str, int] = {"CORE": 42, "K4_ABLNEG": 2, "K1_DOSE50": 6}
+EXPECTED_SEEDS: tuple[int, ...] = (42, 137)
+
+
+def expected_cell_seeds_from_specs(
+    specs_path: Path,
+) -> dict[tuple[str, int], str]:
+    """Read cell_specs.json and return {(cell_id, seed): track} for every expected run."""
+    specs = json.loads(specs_path.read_text())
+    out: dict[tuple[str, int], str] = {}
+    for s in specs:
+        for seed in EXPECTED_SEEDS:
+            out[(s["cell_id"], int(seed))] = s["track"]
+    return out
+
+
+def audit_track_counts(
+    results: list[dict],
+    specs_path: Path | None = None,
+) -> dict:
+    """Round-3 fix: EXACT-equality per-track audit (shortfall AND overage AND unknown).
+
+    Returns a dict with:
+      - ``observed``: {track: count}  (only known tracks)
+      - ``expected``: {track: count}  (EXPECTED_TRACK_COUNTS)
+      - ``shortfall``: {track: missing_count}  (observed < expected)
+      - ``overage``:   {track: excess_count}   (observed > expected)
+      - ``unknown_tracks``: list of unrecognized ``track`` values from results
+      - ``missing_cell_seeds``: list of [cell_id, seed, track] still expected
+      - ``extra_cell_seeds``:   list of [cell_id, seed, track] beyond expected
+
+    The shortfall/overage dicts use POSITIVE counts in both directions for
+    legibility. The cell_seed lists are populated when ``specs_path`` is
+    provided (Phase-0.5 ``cell_specs.json``). Without specs, the function
+    falls back to shortfall/overage based on track totals only — exact-
+    equality is still enforced by the caller via ``has_mismatch``.
+    """
+    counts_observed: dict[str, int] = {t: 0 for t in EXPECTED_TRACK_COUNTS}
+    unknown_tracks: list[str] = []
+    observed_cell_seeds: dict[tuple[str, int], str] = {}
+    for r in results:
+        t = r.get("track")
+        cid = r.get("cell_id")
+        seed = r.get("seed")
+        if t not in EXPECTED_TRACK_COUNTS:
+            unknown_tracks.append(t)
+            continue
+        counts_observed[t] += 1
+        if cid is not None and seed is not None:
+            observed_cell_seeds[(str(cid), int(seed))] = t
+    shortfall = {
+        t: EXPECTED_TRACK_COUNTS[t] - counts_observed[t]
+        for t in EXPECTED_TRACK_COUNTS
+        if counts_observed[t] < EXPECTED_TRACK_COUNTS[t]
+    }
+    overage = {
+        t: counts_observed[t] - EXPECTED_TRACK_COUNTS[t]
+        for t in EXPECTED_TRACK_COUNTS
+        if counts_observed[t] > EXPECTED_TRACK_COUNTS[t]
+    }
+    missing_cell_seeds: list[list] = []
+    extra_cell_seeds: list[list] = []
+    if specs_path is not None and specs_path.exists():
+        expected_set = expected_cell_seeds_from_specs(specs_path)
+        for (cid, seed), tr in sorted(expected_set.items()):
+            if (cid, seed) not in observed_cell_seeds:
+                missing_cell_seeds.append([cid, int(seed), tr])
+        for (cid, seed), tr in sorted(observed_cell_seeds.items()):
+            if (cid, seed) not in expected_set:
+                extra_cell_seeds.append([cid, int(seed), tr])
+    return {
+        "observed": counts_observed,
+        "expected": dict(EXPECTED_TRACK_COUNTS),
+        "shortfall": shortfall,
+        "overage": overage,
+        "unknown_tracks": unknown_tracks,
+        "missing_cell_seeds": missing_cell_seeds,
+        "extra_cell_seeds": extra_cell_seeds,
+    }
+
+
 def build_cell_persona_frame(
     results: list[dict],
     names: list[str],
@@ -534,34 +617,36 @@ def main() -> int:
     results = load_cell_results(eval_dir)
     names, dist = load_cosine_distance_matrix()
 
-    # ── Blocker 2 + 5 fix: FAIL LOUD on result-file shortfall ────────
+    # ── Round-3 fix 1: EXACT-equality track-count assert ─────────────
     # Plan §0 + §4.6: 21 CORE × 2 seeds = 42, 1 ABLNEG × 2 seeds = 2,
-    # 3 DOSE50 × 2 seeds = 6. Total 50. If the dispatcher silently lost
-    # a cell, the headline regression denominator is wrong and we'd
-    # ship a result for fewer cells than we claimed to run.
-    counts_by_track = {"CORE": 0, "K4_ABLNEG": 0, "K1_DOSE50": 0}
-    for r in results:
-        t = r.get("track")
-        if t in counts_by_track:
-            counts_by_track[t] += 1
-    expected = {"CORE": 42, "K4_ABLNEG": 2, "K1_DOSE50": 6}
-    out["track_counts"] = {"observed": counts_by_track, "expected": expected}
-    shortfall = {
-        t: expected[t] - counts_by_track[t] for t in expected if counts_by_track[t] < expected[t]
-    }
-    if shortfall:
+    # 3 DOSE50 × 2 seeds = 6. Total 50. Round-2 only caught shortfalls
+    # (counts<expected); stale/extra result.json files in the OTHER
+    # direction (overage) inflate the denominator → the same wrong-
+    # denominator class blocker 2 closed. Round 3 asserts EXACT equality
+    # per track AND surfaces the offending/extra cell_id+seed list for
+    # both directions, plus any unknown-track rows.
+    audit = audit_track_counts(
+        results, specs_path=PROJECT_ROOT / "data" / "issue_405" / "cell_specs.json"
+    )
+    out["track_counts"] = audit
+    has_mismatch = bool(audit["shortfall"] or audit["overage"] or audit["unknown_tracks"])
+    if has_mismatch:
+        msg = (
+            f"Result-file count mismatch vs expected={audit['expected']!r}: "
+            f"observed={audit['observed']!r}, shortfall={audit['shortfall']!r}, "
+            f"overage={audit['overage']!r}, unknown_tracks={audit['unknown_tracks']!r}, "
+            f"missing_cell_seeds={audit['missing_cell_seeds']!r}, "
+            f"extra_cell_seeds={audit['extra_cell_seeds']!r}"
+        )
         if args.allow_partial:
             log.warning(
-                "[analyze] PARTIAL: result-file shortfall %r (allow_partial=True; "
-                "headline denominator may be wrong)",
-                shortfall,
+                "[analyze] PARTIAL: %s (allow_partial=True; headline denominator may be wrong)", msg
             )
-            out["partial_shortfall"] = shortfall
+            out["partial_mismatch"] = True
         else:
             raise RuntimeError(
-                f"Result-file shortfall {shortfall!r} vs expected {expected!r}. "
-                f"Pass --allow-partial to override (the dispatcher silently lost a "
-                f"cell — investigate before fitting on a wrong denominator)."
+                msg + ". Pass --allow-partial to downgrade to a warning (investigate "
+                "before fitting on a wrong denominator)."
             )
 
     # ── CORE headline frame ──────────────────────────────────────────

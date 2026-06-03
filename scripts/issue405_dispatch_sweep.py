@@ -276,9 +276,13 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
         rc = proc.wait()
         if rc != 0:
             log.error("[smoke-first] Smoke cell exit %d — STOP sweep.", rc)
+            # Round-3 fix 2: same [phase=failed] semantics on the smoke
+            # path — a smoke crash must not look like a clean completion.
+            print("[phase=failed]", flush=True)
             return rc
         if smoke_gate_check(smoke_cell, smoke_seed):
             log.error("[smoke-first] Kill-criterion HIT (saturated). STOP sweep.")
+            print("[phase=failed]", flush=True)
             return 2
         log.info("[smoke-first] PASS — proceeding to parallel sweep.")
         work_items = work_items[1:]
@@ -327,11 +331,15 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
 
     log.info("[dispatch] All work items done. %d failure(s).", len(failures))
     if failures:
-        # Blocker 2: FAIL LOUD — never let a 49-cell sweep with cell crashes
-        # silently return 0 and look successful.
+        # Round-3 fix 2: FAIL LOUD via [phase=failed] (NOT [phase=done]).
+        # poll_pipeline.py keys on the phase token, not the process return
+        # code — emitting [phase=done] on a crashed sweep would let the
+        # orchestrator advance and terminate the pod before the analyzer's
+        # track-count assert catches the loss. Only [phase=done] on the
+        # genuinely-all-succeeded path.
         for cell, seed, rc in failures:
             log.error("[dispatch]   FAILED: cell=%s seed=%d rc=%d", cell, seed, rc)
-        print("[phase=done]", flush=True)  # phase=done so poller sees clean exit
+        print("[phase=failed]", flush=True)
         return 1
     print("[phase=done]", flush=True)
     return 0
