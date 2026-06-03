@@ -20,7 +20,11 @@ dependencies = [
     # THIS UPGRADE IS CONTAINED IN THE issue-475 WORKTREE; main stays on 4.57
     # / 0.11 until the merge gate verifies the existing Qwen-2.5-7B pipeline
     # still passes under the upgraded venv. See plan §0.5 + §8 risk table.
-    "transformers>=5.0,<6.0",
+    # Issue #475: bump floor to 5.6 — vLLM 0.22.0 excludes 5.0.*–5.5.0 (see
+    # METADATA `transformers!=5.0.*,!=5.1.*,!=5.2.*,!=5.3.*,!=5.4.*,!=5.5.0`)
+    # AND Qwen3.5 `Qwen3_5ForConditionalGeneration` arch requires ~5.4+ (5.3.0.dev0
+    # was known to fail). 5.6+ is the only range satisfying both.
+    "transformers>=5.6,<6.0",
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",
@@ -111,3 +115,29 @@ dev = [
     "ruff>=0.15.9",
     "pytest>=8.0",
 ]
+
+# Issue #475: re-pin the CUDA stack from the default PyPI cu130 build (which
+# requires NVIDIA driver >=580) back onto cu129, which the RunPod H100 pods
+# (driver 570.195 / CUDA 12.8) can actually run via CUDA minor-version compat.
+#
+# Three pieces, all working together:
+#   1) A named index pointing at PyTorch's cu129 wheel channel.
+#   2) `[tool.uv.sources]` pins torch to that index (so its closure is
+#      nvidia-*-cu12 — cudnn-cu12, nccl-cu12 2.28.9, cusparselt-cu12,
+#      nvshmem-cu12 — instead of the default PyPI build's nvidia-*-cu13).
+#   3) `[tool.uv.sources]` pins vllm to the GitHub-release `+cu129` wheel
+#      (the PyPI default vllm-0.22.0 hard-pins `nvidia-cutlass-dsl[cu13]` +
+#      `humming-kernels[cu13]`; the cu129 wheel's METADATA pins the
+#      cu13-free versions). The `+cu128` wheel asset does NOT exist on the
+#      0.22.0 release page (404) — cu129 IS the 12.x build line.
+#
+# flashinfer-python stays at the PyPI default — its wheel is py3-none-any
+# (torch-agnostic, JITs at runtime), so no cu-specific source is needed.
+[[tool.uv.index]]
+name = "pytorch-cu129"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu129" }
+vllm = { url = "https://github.com/vllm-project/vllm/releases/download/v0.22.0/vllm-0.22.0+cu129-cp38-abi3-manylinux_2_28_x86_64.whl" }
