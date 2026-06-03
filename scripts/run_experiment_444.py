@@ -1071,7 +1071,7 @@ def _assert_disk_headroom(min_gb_free: int = 50) -> None:
 # ── vLLM teardown helper (CLAUDE.md memory feedback_vllm_orphan_worker_after_destroy) ──
 
 
-def _reap_vllm_workers_and_assert_clean() -> None:
+def _reap_vllm_workers_and_assert_clean(*, fatal: bool = True) -> None:
     """Reap vLLM worker subprocesses + FAIL LOUD if any python PID still holds GPU.
 
     Per CLAUDE.md gotchas: ``del llm + destroy_model_parallel + destroy_distributed
@@ -1162,10 +1162,23 @@ def _reap_vllm_workers_and_assert_clean() -> None:
                 os.kill(pid, signal.SIGKILL)
         time.sleep(5)
 
-    raise RuntimeError(
-        f"orphan GPU-holding PIDs persisted after reap + 9 kill/poll rounds (~45s): "
-        f"{orphans!r}; vLLM worker reap failed. Fix before loading the next "
-        "framework (would CUDA OOM)."
+    if fatal:
+        raise RuntimeError(
+            f"orphan GPU-holding PIDs persisted after reap + 9 kill/poll rounds (~45s): "
+            f"{orphans!r}; vLLM worker reap failed. Fix before loading the next "
+            "framework (would CUDA OOM)."
+        )
+    # Non-fatal path (vLLM-generation wrapper): the next step is API judging (no
+    # GPU) or a fresh-process next seed, and empirically the next in-process vLLM
+    # load SUCCEEDS despite a residual EngineCore worker (vLLM V1 sometimes leaves
+    # one in uninterruptible state that survives SIGKILL until it returns from the
+    # kernel). A genuine OOM would surface loudly at that next load; the residual
+    # is reclaimed on process exit. Downgrading avoids a false-positive crash that
+    # discards already-completed generations (#444 full-eval, 2026-06-03).
+    logger.error(
+        "orphan GPU-holding PIDs persisted after reap + 9 kill/poll rounds (~45s): %r; "
+        "proceeding NON-FATALLY (next step does not reload a GPU framework in-process).",
+        orphans,
     )
 
 
@@ -1490,7 +1503,10 @@ def _vllm_complete_simple(
         logger.debug("torch import unavailable for empty_cache(): %s", e)
     else:
         torch.cuda.empty_cache()
-    _reap_vllm_workers_and_assert_clean()
+    # Non-fatal: generation is complete; the next step is API judging or a fresh
+    # next-seed process. A residual vLLM-V1 worker that survives SIGKILL must not
+    # discard the completions we just produced. See the reap function's docstring.
+    _reap_vllm_workers_and_assert_clean(fatal=False)
     return completions
 
 
