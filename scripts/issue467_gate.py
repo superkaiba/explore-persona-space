@@ -20,22 +20,27 @@ PASS bar (cell counts as PASS for the gate):
     AND the calibration smoke). FAIL_CALIBRATION / FAIL_ABSOLUTE /
     FAIL_RELATIVE → DROP.
   - Cells missing an elicitation JSON entirely → DROP (counted in the
-    aborted-drop tally — usually means the author step FAIL_LEAK'd them
+    drop tally — usually means the author step FAIL_LEAK'd them
     upstream, or the elicitation step crashed for them).
 
-Abort criterion (plan §6.2 kill rule):
-  - If more than ``--max-drops`` (default 5) cells drop, the gate exits
-    non-zero AFTER writing the gate_status.json — the launcher's ``set
-    -e`` then aborts the run BEFORE the (now-untrustworthy) strong-NL
-    sweeps. The threshold is the plan-stated kill criterion; raise via
-    ``--max-drops N`` only when the planner approves a re-scope.
+Abort criterion (methodology correction, round 10 — 2026-06-03):
+  - Drops are EXPECTED. The Instruct model legitimately won't exhibit
+    bad-medical / extreme-sports / risky-financial behavior under ANY
+    in-context route; the judge is genuinely near-chance on a few
+    behaviors. So the gate does NOT cap the number of drops — it
+    protects the MINIMUM viable sweep sample size.
+  - If fewer than ``--min-viable`` (default 6) cells PASS, the gate
+    exits non-zero AFTER writing the gate_status.json — the launcher's
+    ``set -e`` then aborts the run BEFORE the (now-statistically-
+    underpowered) strong-NL sweeps. Raise via ``--min-viable N`` or
+    lower it only when the planner approves a re-scope.
 
 Usage:
     uv run python scripts/issue467_gate.py \
         --pairs aesthetic_popular aesthetic_unpopular ... \
-        [--max-drops 5]
+        [--min-viable 6]
 
-Exits 0 on PASS-or-acceptable-drop; non-zero on >max-drops drops or
+Exits 0 on enough-viable-cells; non-zero on below-min-viable or
 malformed inputs.
 """
 
@@ -114,12 +119,14 @@ def main() -> int:
         help="The cell list the launcher dispatched to elicitation (typically all 18).",
     )
     parser.add_argument(
-        "--max-drops",
+        "--min-viable",
         type=int,
-        default=5,
+        default=6,
         help=(
-            "Plan §6.2 kill criterion: abort the run (exit non-zero) if more than "
-            "this many cells DROP. Default 5 (the planner-stated bar)."
+            "Minimum number of PASS cells needed to proceed. Drops are EXPECTED "
+            "(Instruct-floor + judge-unreliable cells) — this protects the sweep "
+            "sample size, not the drop count. Abort the run (exit non-zero) when "
+            "fewer than this many cells PASS. Default 6 (the planner-stated bar)."
         ),
     )
     parser.add_argument(
@@ -128,17 +135,18 @@ def main() -> int:
         help="Where to write pass_cells.txt + gate_status.json (default data/issue467/gate).",
     )
     parser.add_argument(
-        "--fail-on-too-many-drops",
+        "--fail-below-min-viable",
         action="store_true",
         default=True,
         help=(
-            "Exit non-zero when drops > max-drops (default ON — the launcher's set -e "
-            "is what stops the run). Disable for analysis-only invocations."
+            "Exit non-zero when n_viable < min-viable (default ON — the launcher's "
+            "set -e is what stops the run). Disable for round-1 probe / analysis-only "
+            "invocations."
         ),
     )
     parser.add_argument(
-        "--no-fail-on-too-many-drops",
-        dest="fail_on_too_many_drops",
+        "--no-fail-below-min-viable",
+        dest="fail_below_min_viable",
         action="store_false",
     )
     args = parser.parse_args()
@@ -149,13 +157,16 @@ def main() -> int:
     per_cell: list[dict] = [classify_cell(p) for p in args.pairs]
     pass_cells = [c["pair"] for c in per_cell if c["verdict"] == "PASS"]
     drop_cells = [c["pair"] for c in per_cell if c["verdict"] == "DROP"]
+    n_viable = len(pass_cells)
+    below_min_viable = n_viable < args.min_viable
 
     summary = {
         "n_pairs_dispatched": len(args.pairs),
-        "n_pass": len(pass_cells),
+        "n_pass": n_viable,
+        "n_viable": n_viable,
         "n_drop": len(drop_cells),
-        "max_drops_threshold": args.max_drops,
-        "exceeded_kill_criterion": len(drop_cells) > args.max_drops,
+        "min_viable_threshold": args.min_viable,
+        "below_min_viable": below_min_viable,
         "pass_cells": pass_cells,
         "drop_cells": drop_cells,
         "per_cell": per_cell,
@@ -167,20 +178,20 @@ def main() -> int:
     status_path.write_text(json.dumps(summary, indent=2))
 
     logger.info(
-        "Gate: %d PASS / %d DROP of %d (threshold: drop > %d aborts)",
-        len(pass_cells),
+        "Gate: %d viable / %d drop of %d (need >= %d viable to proceed)",
+        n_viable,
         len(drop_cells),
         len(args.pairs),
-        args.max_drops,
+        args.min_viable,
     )
     if drop_cells:
         logger.info("DROP cells: %s", drop_cells)
     logger.info("Wrote %s + %s", pass_path, status_path)
 
-    if summary["exceeded_kill_criterion"]:
+    if below_min_viable:
         msg = (
-            f"Elicitation gate ABORT (plan §6.2 kill criterion): "
-            f"{len(drop_cells)} cells dropped > {args.max_drops} threshold. "
+            f"Elicitation gate ABORT: only {n_viable} viable cells "
+            f"< {args.min_viable} required to proceed. "
             f"Dropped: {drop_cells}. "
             f"Re-author + re-elicit these cells (rerun "
             f"issue467_author_strong_nl.py + issue467_elicitation_check.py for "
@@ -188,7 +199,7 @@ def main() -> int:
             f"continuing to the strong-NL cosine/JS sweeps."
         )
         logger.error(msg)
-        if args.fail_on_too_many_drops:
+        if args.fail_below_min_viable:
             return 2
     return 0
 

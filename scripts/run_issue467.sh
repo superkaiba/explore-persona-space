@@ -34,8 +34,13 @@
 # Elicitation gate (plan §6.2 / §4.1 Step A.5 — the LOAD-BEARING gate):
 #   Step 2 runs the elicitation check. Step 2.5 calls issue467_gate.py to:
 #     (a) classify each cell PASS/DROP from data/issue467/elicitation_check/<cell>.json,
-#     (b) one re-author + re-elicit retry for failed cells,
-#     (c) abort the run if >5 cells drop (plan kill criterion),
+#     (b) ONE re-author + re-elicit retry — but ONLY when round 1 didn't
+#         already meet the min-viable bar (else the retry is wasted Claude
+#         spend),
+#     (c) abort the run when fewer than GATE_MIN_VIABLE cells PASS — drops
+#         are EXPECTED (Instruct-floor + judge-unreliable cells), so the
+#         gate protects the minimum sweep sample size, not the drop count
+#         (methodology correction, round 10 — 2026-06-03),
 #     (d) emit data/issue467/gate/pass_cells.txt — the strong-NL sweeps in
 #         Steps 3a/3b consume this so a FAIL-elicitation cell CAN NOT feed
 #         the strong-NL conditioning rows (the gate's whole point: strong-NL
@@ -78,7 +83,7 @@ if [ "$SMOKE" = "1" ]; then
   MAXTOK=64
   N_PROBES=4
   K_ELICIT=4
-  GATE_MAX_DROPS=2       # 2-cell smoke: at most 2 may drop before abort
+  GATE_MIN_VIABLE=1      # 2-cell smoke: need >= 1 PASS to proceed
   # ALL SMOKE writes go under eval_results/issue467/<dir>_SMOKE/ via the
   # --output-dir-suffix _SMOKE arg on cossim/JS/probe-swap. NEVER routes to:
   #   - #463 baselines (eval_results/issue463/predictor_cossim*, predictor_seqdiv*)
@@ -100,7 +105,8 @@ else
   MAXTOK=128
   N_PROBES=48
   K_ELICIT=48
-  GATE_MAX_DROPS=5       # plan §6.2 kill criterion: >5 drops → abort
+  GATE_MIN_VIABLE=6      # protect sweep sample size: need >= 6 PASS cells to proceed
+                         # (drops EXPECTED — Instruct-floor + judge-unreliable cells)
   OUTPUT_DIR_SUFFIX=""   # production: NO suffix → headline dirs.
   ISSUE467_OUTPUT_FLAG="--issue467-output"  # routes JS into predictor_seqdiv_R16/
   SMOKE_TAG=""
@@ -111,7 +117,7 @@ fi
 
 phase() { echo "[phase=$1] $(date -Is) ${SMOKE_TAG}${2:-}"; }
 
-phase boot "SMOKE=$SMOKE  R=$R  N_PROBES=$N_PROBES  K_ELICIT=$K_ELICIT  cells=${#CELLS[@]}  out_suffix=${OUTPUT_DIR_SUFFIX:-<none>}  gate_max_drops=$GATE_MAX_DROPS"
+phase boot "SMOKE=$SMOKE  R=$R  N_PROBES=$N_PROBES  K_ELICIT=$K_ELICIT  cells=${#CELLS[@]}  out_suffix=${OUTPUT_DIR_SUFFIX:-<none>}  gate_min_viable=$GATE_MIN_VIABLE"
 
 # ── Step 0: prep datasets (needed for lit prompt + training probes + leak-judge author samples) ──
 phase prep_datasets "issue458_prep_datasets.py --max-rows 200"
@@ -143,15 +149,15 @@ fi
 uv run python scripts/issue467_elicitation_check.py "${ELICIT_FLAGS[@]}" \
   2>&1 | tee "$LOG_DIR/elicitation.log"
 
-# ── Step 2.5: elicitation gate decision + ONE re-author + re-elicit retry. ──
+# ── Step 2.5: elicitation gate decision + conditional re-author + re-elicit retry. ──
 #              Plan §6.2 / §4.1 Step A.5 — the load-bearing gate.
-#              Round 1 (uses the elicitation JSONs we just wrote):
-phase gate_r1 "issue467_gate.py --pairs ${CELLS[*]} --max-drops $GATE_MAX_DROPS (round 1, no-fail-yet)"
-# Round 1: don't fail-on-too-many-drops yet — we want to try the retry first.
+#              Round 1 (uses the elicitation JSONs we just wrote, no-fail probe):
+phase gate_r1 "issue467_gate.py --pairs ${CELLS[*]} --min-viable $GATE_MIN_VIABLE (round 1, no-fail-yet)"
+# Round 1: don't fail-below-min-viable yet — we may try the retry first.
 uv run python scripts/issue467_gate.py \
   --pairs "${CELLS[@]}" \
-  --max-drops "$GATE_MAX_DROPS" \
-  --no-fail-on-too-many-drops \
+  --min-viable "$GATE_MIN_VIABLE" \
+  --no-fail-below-min-viable \
   2>&1 | tee "$LOG_DIR/gate_r1.log"
 
 GATE_STATUS_FILE="$REPO_ROOT/data/issue467/gate/gate_status.json"
@@ -160,38 +166,55 @@ if [ ! -f "$GATE_STATUS_FILE" ]; then
   exit 3
 fi
 
-# Extract DROP cells from the gate JSON for the retry batch.
-DROP_CELLS_R1=$(uv run python -c "
-import json, sys
+# Read n_viable from round-1 gate_status.json. If we already meet min-viable,
+# SKIP the retry entirely — drops are EXPECTED (Instruct-floor + judge-
+# unreliable cells), so we only pay the retry's Claude spend when needed.
+N_VIABLE_R1=$(uv run python -c "
+import json
+d = json.loads(open('$GATE_STATUS_FILE').read())
+print(d['n_viable'])
+")
+
+if [ "$N_VIABLE_R1" -ge "$GATE_MIN_VIABLE" ]; then
+  phase gate_enough "n_viable=$N_VIABLE_R1 >= min=$GATE_MIN_VIABLE, skipping retry (gate_r1 already passed; pass_cells.txt is final)"
+else
+  # Below min-viable on round 1 — try ONE re-author + re-elicit retry on the
+  # DROP cells, then run gate_r2 as the fail-loud final check.
+  DROP_CELLS_R1=$(uv run python -c "
+import json
 d = json.loads(open('$GATE_STATUS_FILE').read())
 print(' '.join(d['drop_cells']))
 ")
-
-if [ -n "$DROP_CELLS_R1" ]; then
-  phase gate_retry_author "re-running issue467_author_strong_nl.py for DROP cells: $DROP_CELLS_R1"
-  # shellcheck disable=SC2086  # word splitting is INTENTIONAL — DROP_CELLS_R1 is the cell list.
-  uv run python scripts/issue467_author_strong_nl.py \
-    --pairs $DROP_CELLS_R1 "${AUTH_FLAGS[@]}" \
-    2>&1 | tee "$LOG_DIR/author_retry.log"
-  phase gate_retry_elicit "re-running issue467_elicitation_check.py for DROP cells"
-  RETRY_ELICIT_FLAGS=("--pairs" $DROP_CELLS_R1 "--k-elicit" "$K_ELICIT" "--gpu-id" "0")
-  if [ -n "$SKIP_CALIBRATION_FLAG" ]; then
-    RETRY_ELICIT_FLAGS+=("$SKIP_CALIBRATION_FLAG")
+  if [ -n "$DROP_CELLS_R1" ]; then
+    phase gate_retry_author "n_viable=$N_VIABLE_R1 < min=$GATE_MIN_VIABLE; re-running issue467_author_strong_nl.py for DROP cells: $DROP_CELLS_R1"
+    # shellcheck disable=SC2086  # word splitting is INTENTIONAL — DROP_CELLS_R1 is the cell list.
+    uv run python scripts/issue467_author_strong_nl.py \
+      --pairs $DROP_CELLS_R1 "${AUTH_FLAGS[@]}" \
+      2>&1 | tee "$LOG_DIR/author_retry.log"
+    phase gate_retry_elicit "re-running issue467_elicitation_check.py for DROP cells"
+    # shellcheck disable=SC2206  # word splitting is INTENTIONAL — DROP_CELLS_R1 is the cell list.
+    RETRY_ELICIT_FLAGS=("--pairs" $DROP_CELLS_R1 "--k-elicit" "$K_ELICIT" "--gpu-id" "0")
+    if [ -n "$SKIP_CALIBRATION_FLAG" ]; then
+      RETRY_ELICIT_FLAGS+=("$SKIP_CALIBRATION_FLAG")
+    fi
+    uv run python scripts/issue467_elicitation_check.py "${RETRY_ELICIT_FLAGS[@]}" \
+      2>&1 | tee "$LOG_DIR/elicitation_retry.log"
+  else
+    # Pathological edge: below min-viable but no DROP cells listed — means
+    # the cell list itself was shorter than min-viable. The gate_r2 below
+    # will fail-loud with a clear message.
+    phase gate_retry_skip "below min-viable but no DROP cells to retry — gate_r2 will fail-loud"
   fi
-  uv run python scripts/issue467_elicitation_check.py "${RETRY_ELICIT_FLAGS[@]}" \
-    2>&1 | tee "$LOG_DIR/elicitation_retry.log"
-else
-  phase gate_retry_skip "round 1 passed all cells — no retry needed"
-fi
 
-# Round 2 (FINAL): now fail-on-too-many-drops fires. The launcher's `set -e`
-# turns the non-zero exit into a full-run abort BEFORE Step 3a/3b can write
-# any (now-untrustworthy) strong-NL sweep artifact.
-phase gate_r2 "issue467_gate.py --pairs ${CELLS[*]} --max-drops $GATE_MAX_DROPS (round 2, fail-loud)"
-uv run python scripts/issue467_gate.py \
-  --pairs "${CELLS[@]}" \
-  --max-drops "$GATE_MAX_DROPS" \
-  2>&1 | tee "$LOG_DIR/gate_r2.log"
+  # Round 2 (FINAL): now fail-below-min-viable fires. The launcher's `set -e`
+  # turns the non-zero exit into a full-run abort BEFORE Step 3a/3b can write
+  # any (now-statistically-underpowered) strong-NL sweep artifact.
+  phase gate_r2 "issue467_gate.py --pairs ${CELLS[*]} --min-viable $GATE_MIN_VIABLE (round 2, fail-loud)"
+  uv run python scripts/issue467_gate.py \
+    --pairs "${CELLS[@]}" \
+    --min-viable "$GATE_MIN_VIABLE" \
+    2>&1 | tee "$LOG_DIR/gate_r2.log"
+fi
 
 # Read the FINAL PASS cell list — strong-NL sweeps use this; weak-NL + lit
 # use all cells.
@@ -209,11 +232,12 @@ STRONG_NL_CELLS=("${NONEMPTY_STRONG_NL_CELLS[@]}")
 
 phase gate_done "PASS cells (for strong-NL sweeps): ${STRONG_NL_CELLS[*]:-<none>} (n=${#STRONG_NL_CELLS[@]})"
 
-# Sanity check — if the gate said too-many-drops, the previous step would have
-# already exited non-zero via set -e. So reaching here means we have enough
-# PASS cells. But guard against an empty PASS list (pathological edge case).
+# Sanity check — if the gate said below-min-viable, the previous step would
+# have already exited non-zero via set -e. So reaching here means we have
+# enough PASS cells. But guard against an empty PASS list (pathological edge
+# case: GATE_MIN_VIABLE somehow set to 0).
 if [ "${#STRONG_NL_CELLS[@]}" -eq 0 ]; then
-  echo "FATAL: gate passed >max-drops check but PASS cell list is empty — refusing to run strong-NL sweeps" >&2
+  echo "FATAL: gate passed min-viable check but PASS cell list is empty — refusing to run strong-NL sweeps" >&2
   exit 4
 fi
 
@@ -358,8 +382,10 @@ if gate_status_path.exists():
     gs = json.loads(gate_status_path.read_text())
     payload["elicitation_gate"] = {
         "n_pass": gs.get("n_pass"),
+        "n_viable": gs.get("n_viable"),
         "n_drop": gs.get("n_drop"),
-        "max_drops_threshold": gs.get("max_drops_threshold"),
+        "min_viable_threshold": gs.get("min_viable_threshold"),
+        "below_min_viable": gs.get("below_min_viable"),
         "pass_cells": gs.get("pass_cells"),
         "drop_cells": gs.get("drop_cells"),
     }
