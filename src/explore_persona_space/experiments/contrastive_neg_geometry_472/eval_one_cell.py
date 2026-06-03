@@ -40,6 +40,13 @@ LOGP_FLOOR = -50.0  # off-by-one guard: clamp; warn loud if >1% clamp.
 # between train and eval (train-vs-eval token-equality contract). 2 covers the
 # fused separator + last R sub-token (the largest BPE-merge boundary here).
 MARKER_PRECEDING_K_TOKENS = 2
+# A probe whose OWN on-policy R is dominated by marker tokens (repetition collapse:
+# the trained model emits ` ※ ※ ※ …` instead of answering) is a DEGENERATE
+# max-leakage case, NOT graded leakage. log P(※ | …※ ※ ※) ≈ ceiling is
+# repetition self-feedback, not "the marker leaks after a normal response."
+# We flag (never silently score-as-graded) any probe whose R is ≥ this fraction
+# markers. Threshold matches the analyze.py saturation logic; tune via smoke.
+R_COLLAPSE_MARKER_FRACTION = 0.5
 
 
 def assert_marker_token(
@@ -99,16 +106,30 @@ def build_full_ids(
     persona_for_log: str,
     q_for_log: str,
     sep: str = MARKER_SEP,
-) -> tuple[list[int], int, int, int]:
+) -> tuple[list[int], int, int, int, int]:
     """Construct the full token-id sequence for one eval probe (forked from #448).
 
-    Returns ``(full_ids, prompt_len, R_len, slot)`` where ``slot`` is the post-R
-    marker position. Asserts (each raises with persona+q context):
-      1. Marker is the LAST token (off-by-one guard).
-      2. Marker appears exactly once (BPE re-segmentation guard).
-      3. ``full_ids[:len(prompt_ids)] == prompt_ids`` (prompt prefix intact).
-      4. The K tokens before the marker (+marker) match the train-equivalent
+    Returns ``(full_ids, prompt_len, R_len, slot, n_marker_in_R)`` where ``slot``
+    is the APPENDED post-R marker position and ``n_marker_in_R`` is how many
+    marker tokens appear INSIDE R (before the appended one).
+
+    Asserts (each raises with persona+q context):
+      1. The APPENDED marker is the LAST token (off-by-one guard:
+         ``full_ids[-1] == marker_id``).
+      2. ``full_ids[:len(prompt_ids)] == prompt_ids`` (prompt prefix intact).
+      3. The K tokens before the marker (+marker) match the train-equivalent
          sequence (the train-vs-eval token-equality contract, round-2 C1).
+
+    #472 fix (vs the #448 fork): the ``count == 1`` invariant is REMOVED. #448's R
+    came from the marker-FREE BASE model, so any marker in ``full_ids`` had to be
+    the single appended one. #472 reads the DV on the TRAINED model's OWN on-policy
+    R, which legitimately CONTAINS markers — that IS the leakage we measure. A
+    256-``※`` repetition-collapse R is a degenerate max-leakage case, not a token
+    drift, and must NOT crash the eval. We still assert the LAST token is the
+    appended marker (the scoring slot is well-defined) and the K-token-equality
+    contract (the slot's local context matches training). The marker-in-R count is
+    returned so the caller can flag a collapsed-R probe as a degenerate (not
+    graded) leakage category. See plan §4.6 + .claude/rules/marker-leakage-measurement.md.
     """
     if persona_prompt is None:
         messages = [{"role": "user", "content": question}]
@@ -123,11 +144,11 @@ def build_full_ids(
     prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
     # C1 fix: include the `\n\n` separator that training emits.
     full_ids = tokenizer.encode(prompt_text + r_text + sep + marker_text, add_special_tokens=False)
-    if full_ids[-1] != marker_id or full_ids.count(marker_id) != 1:
+    if full_ids[-1] != marker_id:
         raise RuntimeError(
             f"marker slot drift persona={persona_for_log!r} q={q_for_log!r}: "
-            f"full_ids[-1]={full_ids[-1]} count={full_ids.count(marker_id)} "
-            f"(expected last == {marker_id}, count == 1)"
+            f"full_ids[-1]={full_ids[-1]} (expected the APPENDED marker {marker_id} to be the "
+            f"LAST token at the scoring slot; count_in_seq={full_ids.count(marker_id)})."
         )
     if full_ids[: len(prompt_ids)] != prompt_ids:
         raise RuntimeError(
@@ -149,7 +170,9 @@ def build_full_ids(
     slot = len(full_ids) - 1
     prompt_len = len(prompt_ids)
     r_len = slot - prompt_len
-    return full_ids, prompt_len, r_len, slot
+    # Markers INSIDE R = total markers minus the single appended one at the slot.
+    n_marker_in_R = full_ids.count(marker_id) - 1
+    return full_ids, prompt_len, r_len, slot, n_marker_in_R
 
 
 def extract_marker_logprob_and_argmax(
@@ -212,13 +235,19 @@ def score_logp_for_R(
         marker_text, marker_id: marker constants.
 
     Returns:
-        ``out[persona][q] = {"logp": float, "argmax_marker": bool}``.
+        ``out[persona][q] = {"logp": float, "argmax_marker": bool,
+        "n_marker_in_R": int, "r_collapsed": bool}``. ``r_collapsed`` is True when
+        the model's OWN on-policy R is a marker-repetition collapse (degenerate
+        max-leakage, not graded — the analyzer drops it from the logP regression).
     """
     from vllm import SamplingParams
 
     prompts_payload: list[dict] = []
     slot_positions: list[int] = []
     index_keys: list[tuple[str, str]] = []
+    # Per-probe R-collapse bookkeeping (keyed by index in index_keys).
+    n_marker_in_R_list: list[int] = []
+    r_len_list: list[int] = []
     for persona, persona_prompt in eval_personas.items():
         if persona not in r_by_persona_q:
             raise KeyError(f"[{cell_label}] R missing persona {persona!r}.")
@@ -226,12 +255,14 @@ def score_logp_for_R(
             if q not in r_by_persona_q[persona]:
                 raise KeyError(f"[{cell_label}] R[{persona!r}] missing q {q!r}.")
             r_text = r_by_persona_q[persona][q]
-            full_ids, _p, _r, slot = build_full_ids(
+            full_ids, _p, r_len, slot, n_marker_in_R = build_full_ids(
                 tokenizer, persona_prompt, q, r_text, marker_text, marker_id, persona, q
             )
             prompts_payload.append({"prompt_token_ids": full_ids})
             slot_positions.append(slot)
             index_keys.append((persona, q))
+            n_marker_in_R_list.append(n_marker_in_R)
+            r_len_list.append(r_len)
 
     sp = SamplingParams(
         n=1, temperature=0.0, top_p=1.0, max_tokens=1, prompt_logprobs=1, logprobs=1
@@ -248,10 +279,36 @@ def score_logp_for_R(
 
     out: dict[str, dict[str, dict[str, float | bool]]] = {p: {} for p in eval_personas}
     n_floor = 0
-    for (persona, q), lp, am in zip(index_keys, logps, argmax, strict=True):
-        out[persona][q] = {"logp": float(lp), "argmax_marker": bool(am)}
+    n_collapsed = 0
+    for (persona, q), lp, am, n_mk_R, r_len in zip(
+        index_keys, logps, argmax, n_marker_in_R_list, r_len_list, strict=True
+    ):
+        # Repetition-collapse flag: the model's OWN R is ≥R_COLLAPSE_MARKER_FRACTION
+        # marker tokens (it emitted ` ※ ※ ※ …` instead of answering). log P(※) at
+        # the post-R slot is then ceiling repetition self-feedback, NOT graded
+        # leakage — flag so the analyzer treats it as a degenerate max-leakage
+        # category (dropped from the graded logP regression, like a saturated row).
+        r_marker_fraction = (n_mk_R / r_len) if r_len > 0 else 0.0
+        r_collapsed = bool(n_mk_R > 0 and r_marker_fraction >= R_COLLAPSE_MARKER_FRACTION)
+        if r_collapsed:
+            n_collapsed += 1
+        out[persona][q] = {
+            "logp": float(lp),
+            "argmax_marker": bool(am),
+            "n_marker_in_R": int(n_mk_R),
+            "r_collapsed": r_collapsed,
+        }
         if lp <= LOGP_FLOOR + 1e-6:
             n_floor += 1
+    if n_collapsed:
+        log.warning(
+            "[%s] %d/%d probes had a REPETITION-COLLAPSED R (own response is mostly the "
+            "marker) — these are degenerate max-leakage, not graded; analyzer drops them "
+            "from the graded logP regression.",
+            cell_label,
+            n_collapsed,
+            len(index_keys),
+        )
     if logps and n_floor / len(logps) > 0.01:
         log.warning(
             "[%s] logp floor-clamp rate %.2f%% (%d/%d) — investigate tokenizer/model drift.",

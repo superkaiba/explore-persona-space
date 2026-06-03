@@ -355,31 +355,49 @@ def run_trajectory_eval(
         )
 
         held_out: dict[str, dict[str, dict[str, float | bool]]] = {}
+        n_collapsed_ck = 0
         for persona in eval_personas:
             held_out[persona] = {}
             for q in eval_questions:
                 gl = g[persona][q]["logp"]
                 bl = b[persona][q]["logp"]
+                # r_collapsed is read from the TRAINED model's score (g): it is the
+                # trained model's OWN on-policy R that may collapse to marker-spam.
+                r_collapsed = bool(g[persona][q].get("r_collapsed", False))
+                if r_collapsed:
+                    n_collapsed_ck += 1
                 held_out[persona][q] = {
                     "g_logp": gl,
                     "b_logp": bl,
                     "delta_g": gl - bl,
                     "argmax_marker": g[persona][q]["argmax_marker"],
+                    "n_marker_in_R": int(g[persona][q].get("n_marker_in_R", 0)),
+                    "r_collapsed": r_collapsed,
                     "kl": None,  # filled in Phase B.
                 }
         # Source-self mean ΔG over Q_eval (validity gate + matched-slice anchor).
         src_deltas = [g[source][q]["logp"] - b[source][q]["logp"] for q in eval_questions]
+        # Source-self collapse: did the SOURCE's own R collapse to marker-spam at
+        # this checkpoint? If yes, source-self ΔG is repetition-ceiling, so the
+        # matched-slice (8±1 nat) anchor read at this checkpoint is post-collapse
+        # — the analyzer must prefer an EARLIER, non-collapsed checkpoint.
+        src_collapsed = any(bool(g[source][q].get("r_collapsed", False)) for q in eval_questions)
         source_self = {
             "g_logp_mean": sum(g[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "b_logp_mean": sum(b[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "delta_g_mean": sum(src_deltas) / len(src_deltas),
+            "r_collapsed": src_collapsed,
         }
+        n_held_out_probes = len(eval_personas) * len(eval_questions)
+        held_out_collapse_share = n_collapsed_ck / n_held_out_probes if n_held_out_probes else 0.0
         checkpoints_out.append(
             {
                 "frac": frac,
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
+                "held_out_collapse_share": held_out_collapse_share,
+                "n_held_out_collapsed": n_collapsed_ck,
                 "held_out": held_out,
             }
         )
@@ -388,9 +406,14 @@ def run_trajectory_eval(
             json.dumps({"cell": cell_slug, "seed": seed, "checkpoints": checkpoints_out}, indent=2)
         )
         log.info(
-            "[phase=traj_vllm] %s done: source-self ΔG=%.2f nats",
+            "[phase=traj_vllm] %s done: source-self ΔG=%.2f nats, source_R_collapsed=%s, "
+            "held-out R-collapse share=%.2f (%d/%d)",
             label,
             source_self["delta_g_mean"],
+            src_collapsed,
+            held_out_collapse_share,
+            n_collapsed_ck,
+            n_held_out_probes,
         )
 
     _teardown_vllm_hard(llm)

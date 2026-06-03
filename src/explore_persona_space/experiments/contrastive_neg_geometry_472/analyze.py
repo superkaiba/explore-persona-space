@@ -111,9 +111,11 @@ def _interp_at_slice(
     held1 = ck1["held_out"]
     per_probe: dict[str, dict[str, float]] = {}
     saturated_count = 0
+    collapsed_count = 0
     total = 0
     for persona in held0:
         deltas, kls, g_logps = [], [], []
+        any_collapsed = False
         for q in held0[persona]:
             d0v = held0[persona][q]["delta_g"]
             d1v = held1[persona][q]["delta_g"]
@@ -125,23 +127,35 @@ def _interp_at_slice(
             k1 = held1[persona][q].get("kl")
             if k0 is not None and k1 is not None:
                 kls.append(k0 + interp_w * (k1 - k0))
+            # r_collapsed at EITHER bracketing checkpoint marks the probe degenerate:
+            # the trained model's OWN R is marker-spam, so log P(※) is repetition
+            # ceiling, NOT graded leakage. Treated like a saturated row (dropped
+            # from the graded logP regression) but tracked as a distinct category.
+            if held0[persona][q].get("r_collapsed", False) or held1[persona][q].get(
+                "r_collapsed", False
+            ):
+                any_collapsed = True
         total += 1
         # Saturated if held-out g_logp is within HEADROOM of the 0.0 ceiling.
         mean_g = float(np.mean(g_logps))
         is_sat = mean_g > -SUBCEILING_HEADROOM_NATS
         if is_sat:
             saturated_count += 1
+        if any_collapsed:
+            collapsed_count += 1
         per_probe[persona] = {
             "delta_g": float(np.mean(deltas)),
             "g_logp": mean_g,
             "kl": float(np.mean(kls)) if kls else float("nan"),
             "saturated": is_sat,
+            "r_collapsed": any_collapsed,
         }
     return {
         "step": ck1.get("step"),
         "frac": ck1["frac"],
         "interp_w": interp_w,
         "n_saturated_probes": saturated_count,
+        "n_collapsed_probes": collapsed_count,
         "n_probes": total,
         "per_probe": per_probe,
     }
@@ -364,8 +378,12 @@ def run_analysis(  # noqa: C901 - linear multi-block analysis
                     "dnn_nd": dnn_nd,
                     "b_logprob": base_b,
                 }
-                # logP row only if NOT saturated at the matched slice.
-                if not pp["saturated"]:
+                # logP row only if NOT saturated AND NOT R-collapsed at the matched
+                # slice. A collapsed-R probe (the model's own R is marker-spam) is a
+                # degenerate max-leakage case, not graded leakage — drop it from the
+                # graded logP regression (plan §4.6 + the #448 saturation lesson),
+                # exactly like a saturated row.
+                if not pp["saturated"] and not pp.get("r_collapsed", False):
                     logp_rows.append({**row_common, "logp": pp["delta_g"]})
                 # KL row always (read at the same matched slice).
                 kl_rows.append({**row_common, "kl": pp["kl"]})
@@ -551,6 +569,21 @@ def run_analysis(  # noqa: C901 - linear multi-block analysis
             "target_nats": MATCHED_SLICE_TARGET_NATS,
             "band_nats": MATCHED_SLICE_BAND_NATS,
             "step_at_slice_per_cell": step_at_slice,
+            "collapse_at_slice_per_cell": {
+                slug: {
+                    str(s): (
+                        {
+                            "n_collapsed_probes": matched[slug][s].get("n_collapsed_probes"),
+                            "n_saturated_probes": matched[slug][s].get("n_saturated_probes"),
+                            "n_probes": matched[slug][s].get("n_probes"),
+                        }
+                        if matched[slug].get(s)
+                        else None
+                    )
+                    for s in seeds
+                }
+                for slug in [c[0] for c in CELL_SPECS]
+            },
         },
         "logp_regression": {
             "all_neg": logp_fit_allneg,

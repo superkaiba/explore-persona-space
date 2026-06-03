@@ -145,7 +145,16 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     # ── Phase: train with mid-run checkpoints (HF Trainer, in-process). ──────
-    fractions = (0.5, 1.0) if args.smoke else TRAJECTORY_CHECKPOINT_FRACTIONS
+    # Smoke MUST include the EARLY sub-ceiling window. Round-2 diagnosis (#472):
+    # the Qwen marker implant saturates the source's argmax between frac 0.16 and
+    # 0.33 — at frac {0.33, 0.5} the model's own on-policy R collapses to ` ※ ※ …`
+    # repetition (degenerate max-leakage, not graded), while at frac {0.08, 0.16}
+    # it produces NORMAL responses sub-ceiling. The original smoke {0.5, 1.0} sat
+    # ENTIRELY post-collapse, so it (a) crashed on the marker-in-R invariant and
+    # (b) could never have validated the sub-ceiling gate. Smoke now spans an early
+    # readable point + the collapse onset so the gate is meaningful AND the
+    # collapsed-R path is exercised (NOT a graded-vs-degenerate masquerade).
+    fractions = (0.08, 0.16, 0.5, 1.0) if args.smoke else TRAJECTORY_CHECKPOINT_FRACTIONS
     log.info(
         "[phase=train_%s] training (smoke=%s, fallback=%s)", args.cell, args.smoke, args.fallback
     )

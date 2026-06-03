@@ -292,6 +292,20 @@ def _subceiling_gate(slab_root: Path, smoke_cell: str, smoke_seed: int) -> dict:
     n_subceiling = sum(1 for g in per_persona_mean_g if g < -SUBCEILING_HEADROOM_NATS)
     frac_subceiling = n_subceiling / len(per_persona_mean_g)
     ok = frac_subceiling >= SUBCEILING_MIN_FRACTION
+    # Collapse-aware reporting (round-2 #472): the Qwen marker implant collapses the
+    # source's OWN R to marker-spam mid-training; report the per-checkpoint R-collapse
+    # share + the source-self collapse onset so the gate decision sees WHERE the
+    # readable window ends, not just whether the earliest checkpoint is sub-ceiling.
+    collapse_trajectory = [
+        {
+            "frac": c["frac"],
+            "held_out_collapse_share": c.get("held_out_collapse_share"),
+            "source_R_collapsed": c.get("source_self", {}).get("r_collapsed"),
+            "source_self_delta_g": c.get("source_self", {}).get("delta_g_mean"),
+        }
+        for c in sorted(cks, key=lambda c: c["frac"])
+    ]
+    earliest_collapse_share = earliest.get("held_out_collapse_share", 0.0) or 0.0
     return {
         "ok": ok,
         "earliest_frac": earliest["frac"],
@@ -301,6 +315,8 @@ def _subceiling_gate(slab_root: Path, smoke_cell: str, smoke_seed: int) -> dict:
         "headroom_nats": SUBCEILING_HEADROOM_NATS,
         "min_fraction": SUBCEILING_MIN_FRACTION,
         "source_self_max_delta_g": max(c["source_self"]["delta_g_mean"] for c in cks),
+        "earliest_held_out_collapse_share": earliest_collapse_share,
+        "collapse_trajectory": collapse_trajectory,
     }
 
 
