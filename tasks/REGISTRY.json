@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 478,
+  "highest_id": 479,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2639,6 +2639,14 @@
       "path": "tasks/proposed/478",
       "status": "proposed",
       "title": "Multi-persona leakage vs distance: distance-spanning held-out panel (resolve #405's tilt question)"
+    },
+    "479": {
+      "goal": "Find a training recipe in the canonical marker-position-only (tail_tokens=0) loss regime that lands the \u203b-marker implant in a non-saturating selectivity window \u2014 source persona emits \u203b on at least ~0.8 of its own on-policy generations while the held-out bystander panel stays below ~0.1 \u2014 by titrating the anchor-strength knobs (learning rate, training duration read per-checkpoint, LoRA rank/scope) and measuring on-policy emission rate plus full-vocab KL-from-base across checkpoints, not only the saturated endpoint.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/479",
+      "status": "proposed",
+      "title": "Titrate the marker-implant anchor strength to find a non-saturating selectivity window (tail_tokens=0)"
     },
     "48": {
       "has_clean_result": false,
