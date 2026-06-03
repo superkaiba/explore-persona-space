@@ -155,11 +155,17 @@ ARM_BASE_LOGP_FAIL_THRESHOLD: float = -3.0  # any marker base logp > this → FA
 ARM_BASE_LOGP_SPREAD_WARN: float = 2.0  # spread > this nats → WARN+swap
 
 # Arm cell layout per plan v5 §4.9.2: 3 K=2 + 3 K=4 source-set subsets matched
-# to the FIRST 3 from each of K=2 and K=4 in the core's seeded draw.
-# Round-2 cell-id offsets: K=1 is now ALL 16 singletons (c00..c15), so K=2
-# starts at c16 and K=4 starts at c24. The SOURCE SETS themselves are
-# unchanged (the K=2 / K=4 RNG draws were not modified — only K=1 grew from
-# 8 → 16). See build_core_specs() docstring for the full id layout.
+# to the FIRST 3 from each of K=2 and K=4 in the core's seeded draw. The arm
+# cells share whatever source sets those first-3 core cells actually hold (the
+# matching is by cell id at build time), so they stay matched regardless of the
+# exact draw.
+# Round-2 cell-id offsets: K=1 is now ALL 16 deterministic singletons (c00..c15),
+# so K=2 starts at c16 and K=4 starts at c24. NOTE: because K=1 no longer
+# consumes the shared rng (it is deterministic now), the K=2/4/8 draws start
+# from a different rng state than the pre-round-2 (8-random-K=1) layout — so the
+# K≥2 source sets DIFFER from any earlier draw. This is validity-neutral (they
+# remain 8 unique uniform-random subsets from C(16,K), seed 478; round 1
+# produced no data to compare against). See build_core_specs() for the layout.
 ARM_K2_MATCHED_CELLS: tuple[str, ...] = ("K2_c16", "K2_c17", "K2_c18")
 ARM_K4_MATCHED_CELLS: tuple[str, ...] = ("K4_c24", "K4_c25", "K4_c26")
 

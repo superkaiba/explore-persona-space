@@ -1,4 +1,3 @@
-# ruff: noqa: RUF002
 """Issue #478 round-2 analyzer-gate tests — BLOCKER 3 + CONCERN 5.
 
 BLOCKER 3 — analyzer completeness gate. Without `--allow-partial-smoke`, the
@@ -89,25 +88,32 @@ def test_completeness_gate_passes_with_flag(tmp_path: Path, monkeypatch, analyze
     assert "--expected-core-cells" in src, "Override flag also documented in BLOCKER 3."
 
 
-def test_completeness_gate_expected_count_default_matches_plan(analyze_mod):
-    """The default expected_core_cells = K_VALUES × SUBSETS_PER_K × SEEDS.
+def test_completeness_gate_default_equals_actual_80_cells(analyze_mod):
+    """The STRICT default expected_core_cells MUST equal the real 80-cell-seed
+    layout (40 core cells x 2 seeds), NOT the stale uniform-K formula
+    len(K_VALUES)*SUBSETS_PER_K*len(SEEDS)=64 that falsely failed the real sweep.
 
-    Round-2 with the K=1 extension to 16 singletons: K_VALUES=(1,2,4,8) but
-    K=1 cell count = 16 (not 8). The expected = len(K_VALUES) * SUBSETS_PER_K
-    * len(SEEDS) computed by the analyzer might no longer match the actual
-    cell count (16+8+8+8=40 cells × 2 seeds = 80). The point of THIS test
-    is just to verify the formula is sensible — the per-K asymmetry (K=1
-    bigger than the others) is handled by either (a) the analyzer expected
-    formula being updated, OR (b) the user passing --expected-core-cells.
-    """
-    # The analyzer formula currently assumes uniform SUBSETS_PER_K; that's
-    # explicitly documented in the BLOCKER 3 code as overridable via
-    # --expected-core-cells. The asymmetric K=1 case will pass via the
-    # override; this test pins that the override is the supported path.
+    Round-2 reviewers (Claude Major-1 + Codex Critical) flagged the 64 default;
+    the fix derives the count from build_core_specs() so it auto-tracks the
+    K=1=16 (Level-1 coverage) layout."""
+    from _issue478_common import SEEDS
+    from issue478_make_cell_specs import build_core_specs
+
+    # The real design is 40 core cells (16 K=1 + 8 K=2 + 8 K=4 + 8 K=8) x 2 seeds.
+    assert len(build_core_specs()) == 40
+    assert len(build_core_specs()) * len(SEEDS) == 80
+
+    # The analyzer must derive its default from build_core_specs(), NOT from the
+    # stale uniform-K formula that evaluates to 64.
     src = (SCRIPTS / "issue478_analyze.py").read_text()
-    assert "args.expected_core_cells or" in src, (
-        "BLOCKER 3 expects --expected-core-cells override path."
+    assert "len(build_core_specs()) * len(SEEDS)" in src, (
+        "expected_core_cells default must derive from build_core_specs() (=80), "
+        "not the stale uniform-K formula (=64)."
     )
+    assert (
+        "len(K_VALUES) * SUBSETS_PER_K * len(SEEDS)"
+        not in src.split("expected_cells =")[1].split("\n")[0]
+    ), "the stale 64-cell formula must not be the expected_cells default."
 
 
 # ────────────────────────────────────────────────────────────────────────────

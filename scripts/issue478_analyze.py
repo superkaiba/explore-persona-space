@@ -61,6 +61,7 @@ from _issue478_common import (  # noqa: E402
     load_cosine_distance_matrix,
     min_dist_to_set,
 )
+from issue478_make_cell_specs import build_core_specs  # noqa: E402
 
 
 def load_cell_results(eval_dir: Path, track_filter: str | None = None) -> list[dict]:
@@ -875,7 +876,12 @@ def main() -> int:
     # a partial sweep silently biases the headline by whichever cells dropped
     # out (e.g. a crashed K=8 seed shifts the gap-shrinkage slope without
     # the analyzer registering anything is wrong). Default = STRICT.
-    expected_cells = args.expected_core_cells or (len(K_VALUES) * SUBSETS_PER_K * len(SEEDS))
+    # Derive the expected count from the ACTUAL cell-spec builder so it tracks
+    # the K=1=16 (Level-1 coverage) layout. The old uniform-K formula
+    # len(K_VALUES)*SUBSETS_PER_K*len(SEEDS)=64 is WRONG now that K=1 has 16
+    # singletons (40 core cells * len(SEEDS) = 80) — both round-2 reviewers
+    # flagged the stale 64 default as FALSELY failing the real 80-cell sweep.
+    expected_cells = args.expected_core_cells or (len(build_core_specs()) * len(SEEDS))
     expected_rows = expected_cells * len(HELD_OUT_35)
     if not args.allow_partial_smoke:
         if len(results) != expected_cells:
@@ -906,6 +912,14 @@ def main() -> int:
             f"(= {expected_cells} cells * {len(HELD_OUT_35)} held-out personas). "
             f"Some cells loaded but produced incomplete held-out evals. "
             f"Re-run or pass --allow-partial-smoke."
+        )
+
+    # Guard the empty-rows path (reachable under --allow-partial-smoke with a
+    # zero-cell stub): rows[0] below would IndexError. Fail loud instead.
+    if not rows:
+        raise SystemExit(
+            "No tidy rows built (0 cells loaded). Nothing to analyze — check the "
+            "eval_dir glob / cell results, or run a non-empty slice."
         )
 
     # Tidy CSV (for downstream R / pymer4 / spreadsheet).
