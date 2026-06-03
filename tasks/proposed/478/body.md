@@ -14,6 +14,9 @@ goal: 'Resolve whether training a behavior into more source personas flattens th
   using a held-out panel that spans the distance range with multiple personas per
   band so the slope-flattening test is powered — the test #405 left unresolved due
   to a single-far-persona panel.'
+relates_to:
+- leak-single-vs-multi
+- leak-from-cell-set
 ---
 # Multi-persona marker leakage vs distance: distance-spanning held-out panel (resolve #405's tilt question)
 

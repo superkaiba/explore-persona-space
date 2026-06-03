@@ -99,7 +99,7 @@ You update at one $(C, B)$ cell; the question is how behavior moves at every oth
 **3.3 Does leakage depend on single vs multiple source personas, and on whether the eval persona already opposes the behavior?** <!-- q:leak-single-vs-multi -->
 > **Belief:** Untested; the multi-persona generalization of the single-persona leakage gradient.
 > *Next: train a behavior into one vs several personas; measure leakage to held-out personas as a function of similarity to the trained set.*
-> **Confidence:** LOW. **Evidence:** #311, #207, #448, #405.
+> **Confidence:** LOW. **Evidence:** #311, #207, #448, #405, #478.
 
 **3.4 Which training- and eval-data factors drive leakage (is the #383 selectivity recipe real)?** <!-- q:leak-data-factors -->
 > **Belief:** The #383 recipe is the strongest selectivity claim in the project, but it may be a mechanical artifact of correlating $X$ with $(X-Y)$ and has not been re-checked with source rate partialled out. **Confidence:** LOW. **Evidence:** #383, #365, #337, #448.
@@ -136,7 +136,7 @@ Under SFT the context is fixed and only the assistant turn bears loss; under RL 
 
 **3.9 If you train on a SET of (C, B) cells, what predicts leakage to a new (C′, B′)?** <!-- q:leak-from-cell-set -->
 The multi-cell generalization of the §3 prediction question (and of #440's single-cell predictor). In practice you fine-tune on several (context, behavior) cells at once — multiple personas, multiple behaviors, a data mixture — and want to predict the behavior at an unseen (C′, B′). This needs a distance from a *set* of training cells to a query cell, a metric we don't have yet. One candidate: the set-to-cell distance is the MINIMUM over the trained cells — leakage to (C′, B′) is governed by its nearest trained cell, not the set's centroid. The metric to develop is a (C, B)-cell distance plus an aggregation over the set (min vs mean vs soft-min) that predicts the leakage.
-> **Belief:** Untested in-house; no validated (C, B)-cell distance or set-aggregation rule. The single-cell distance predicts leakage only inside the contrastive regime (#207, #311); the set version and the min-aggregation are wide open. **Confidence:** LOW. **Evidence:** #207, #311 (single-cell leakage gradient); #440 (single-cell predictor); #445 (minimal-experiment scoping), #405.
+> **Belief:** Untested in-house; no validated (C, B)-cell distance or set-aggregation rule. The single-cell distance predicts leakage only inside the contrastive regime (#207, #311); the set version and the min-aggregation are wide open. **Confidence:** LOW. **Evidence:** #207, #311 (single-cell leakage gradient); #440 (single-cell predictor); #445 (minimal-experiment scoping), #405, #478.
 > *Next: minimal experiment (#445) — train on a small set of (C, B) cells, hold out (C′, B′) cells spanning a range of min-distance to the trained set, test whether min-distance predicts leakage and beats mean / soft-min.*
 
 ### 4. What are contexts and behaviors — the C–B duality
