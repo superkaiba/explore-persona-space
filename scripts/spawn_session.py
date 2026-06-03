@@ -9,7 +9,8 @@ Routes the daemon exposes (POST only):
 
     /spawn-session   {"directory": <abs path>, "sessionId"?: <str>, "agent"?: <str>,
                       "environmentVariables"?: {...}, "claudeArgs"?: [<str>, ...]}
-    /list            {}                                       -> {"children": [{"happySessionId": ..., "pid": ..., "startedBy": ...}, ...]}
+    /list            {}
+        -> {"children": [{"happySessionId": ..., "pid": ..., "startedBy": ...}, ...]}
     /stop-session    {"sessionId": <happySessionId>}
 
 The daemon binds to localhost only and trusts UID-local callers (no auth).
@@ -24,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import urllib.error
 import urllib.request
@@ -32,8 +34,37 @@ from typing import Any
 
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
+SESSIONS_JSON = HAPPY_HOME / "sessions.json"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
+
+
+def _load_session_meta() -> dict[str, dict[str, Any]]:
+    """Map ``happySessionId -> metadata`` from ``~/.happy/sessions.json``.
+
+    Best-effort enrichment for :func:`cmd_list`: returns ``{}`` if the file is
+    missing or unreadable rather than failing the listing."""
+    if not SESSIONS_JSON.is_file():
+        return {}
+    try:
+        raw = json.loads(SESSIONS_JSON.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    sessions = raw.get("sessions", {})
+    return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
+
+
+def _dir_label(path: str | None) -> str:
+    """Short, human-friendly cwd label, annotating per-issue worktrees.
+
+    ``/home/me/explore-persona-space`` -> ``explore-persona-space``;
+    a ``.claude/worktrees/issue-<N>`` path gets an ``[issue-<N>]`` tag."""
+    if not path:
+        return "?"
+    home = str(Path.home())
+    short = path[len(home) + 1 :] if path.startswith(home + "/") else path
+    m = re.search(r"/\.claude/worktrees/(issue-\d+)/?$", path)
+    return f"{short}  [{m.group(1)}]" if m else short
 
 
 def daemon_port() -> int:
@@ -75,6 +106,23 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
         sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
     except urllib.error.URLError as e:
         sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+
+
+def _live_session_ids() -> set[str]:
+    """Best-effort set of session ids the daemon is actively tracking.
+
+    Returns an empty set if the daemon is unreachable, so ``list --all`` still
+    works (it falls back to showing every known session as ``stopped``)."""
+    try:
+        url = f"http://127.0.0.1:{daemon_port()}/list"
+        req = urllib.request.Request(
+            url, data=b"{}", headers={"Content-Type": "application/json"}, method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError):
+        return set()
+    return {c.get("happySessionId") for c in data.get("children", [])}
 
 
 def cmd_spawn_pm(_: argparse.Namespace) -> None:
@@ -147,18 +195,49 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
-def cmd_list(_: argparse.Namespace) -> None:
-    """List active Happy sessions tracked by the local daemon."""
+def cmd_list(args: argparse.Namespace) -> None:
+    """List Happy sessions, enriched with cwd + lifecycle state.
+
+    Default: sessions the local daemon is actively tracking (live processes).
+    ``--all``: every session in ``~/.happy/sessions.json`` (including stopped
+    ones), newest first, so you can pick one to ``happy resume``."""
+    meta = _load_session_meta()
+
+    if getattr(args, "all", False):
+        live = _live_session_ids()
+        rows = [
+            (
+                sid,
+                "live" if sid in live else "stopped",
+                m.get("startedBy", "?"),
+                _dir_label(m.get("path")),
+                m.get("savedAt", 0) or 0,
+            )
+            for sid, m in meta.items()
+        ]
+        # Live sessions first, then newest-saved first within each group.
+        rows.sort(key=lambda r: (r[1] != "live", -r[4]))
+        if not rows:
+            print("(no sessions in sessions.json)")
+            return
+        print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  dir")
+        for sid, state, started_by, dir_label, _ts in rows:
+            print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {dir_label}")
+        print(f"\n{len(rows)} session(s), {len(live)} live. Resume one: happy resume <id-prefix>")
+        return
+
     resp = post("/list", {})
     children = resp.get("children", [])
     if not children:
         print("(no active Happy sessions)")
         return
-    print(f"{'session id':<32}  {'pid':>8}  started_by")
+    print(f"{'session id':<28}  {'pid':>8}  {'state':<10}  dir")
     for c in children:
-        print(
-            f"{c.get('happySessionId', '?'):<32}  {c.get('pid', '?'):>8}  {c.get('startedBy', '?')}"
-        )
+        sid = c.get("happySessionId", "?")
+        m = meta.get(sid, {})
+        state = m.get("lifecycleState", "?")
+        print(f"{sid[:26]:<28}  {c.get('pid', '?'):>8}  {state:<10}  {_dir_label(m.get('path'))}")
+    print(f"\n{len(children)} active session(s). Resume one: happy resume <id-prefix>")
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
@@ -193,7 +272,12 @@ def main(argv: list[str] | None = None) -> None:
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)
 
-    p_list = sub.add_parser("list", help="list active Happy sessions")
+    p_list = sub.add_parser("list", help="list active Happy sessions (cwd + state)")
+    p_list.add_argument(
+        "--all",
+        action="store_true",
+        help="include stopped/historical sessions from ~/.happy/sessions.json (newest first)",
+    )
     p_list.set_defaults(fn=cmd_list)
 
     p_stop = sub.add_parser("stop", help="stop a Happy session by id")

@@ -297,23 +297,35 @@ When invoked, ALWAYS follow this order. Skip only what the state dictates.
 **Chat title updates (verbose format).** Fires on (a) every status
 transition, (b) when an `epm:follow-ups` marker is posted, (c) when the
 clean-result draft is finalized (Step 9a end), (d) when the merge
-prompt fires (Step 10d).
+prompt fires (Step 10d), and (e) **at first invocation (Step 0), as soon
+as the task slug is known** — so the session is self-documenting in the
+Happy phone session list from the moment it is spawned, before any status
+sentence exists (Step 0 sets `#<N> <slug>`; later transitions append the
+status sentence).
+
+The title **leads with the issue number + task slug**, not the type, so
+you can tell sessions apart by topic at a glance in the phone session
+list. The slug is the task's frontmatter `title`, trimmed to ~45 chars
+(falls back to `<type>` if the title is empty).
 
 Format string:
 ```
-#<N> <type-frontmatter> — <human-readable status sentence>[ — next: <next-action>][ — followups: #X[, #Y]][ — clean-result: <claim summary trimmed to 60 chars>]
+#<N> <slug> — <human-readable status sentence>[ — next: <next-action>][ — followups: #X[, #Y]][ — clean-result: <claim summary trimmed to 60 chars>]
 ```
 
 Examples:
-- `#226 infra — implementing workflow improvements — next: code-review`
-- `#226 infra — code-review FAIL round 2 — next: respawn implementer`
-- `#137 experiment — completed — followups: #240, #241 — clean-result: persona collapse hero`
+- `#226 wire /issue auto-title into session — implementing — next: code-review`
+- `#226 wire /issue auto-title into session — code-review FAIL round 2 — next: respawn implementer`
+- `#137 persona collapse under EM — completed — followups: #240, #241 — clean-result: persona collapse hero`
+- `#479 conditional Stage-2 anchor-knob sweep` (launch title, before any status sentence)
 
 Helper pseudocode:
 
 ```python
-def render_title(task, *, status_human, next_action=None, followups=None, clean_result=None):
-    parts = [f"#{task.number} {task.type} — {status_human}"]
+def render_title(task, *, status_human=None, next_action=None, followups=None, clean_result=None):
+    slug = (task.title or task.type or "").strip()[:45].rstrip()
+    head = f"#{task.number} {slug}".rstrip()
+    parts = [f"{head} — {status_human}" if status_human else head]
     if next_action:
         parts.append(f"next: {next_action}")
     if followups:
@@ -351,6 +363,23 @@ From the result, derive:
 3. **Marker map** = scan the recent `events.jsonl` rows for
    `epm:<kind>` entries, build a dict keyed by kind with the highest
    version per kind.
+
+**Set the launch title now.** As soon as the slug (task `title`) is known,
+set the session title so the Happy phone session list is self-documenting
+from the start. Use the same soft-fail wrapper as the verbose updates:
+
+```python
+# Cosmetic; mcp__happy__change_title may be unavailable. Soft-fail and continue.
+try:
+    mcp__happy__change_title({"title": render_title(task)})  # -> "#<N> <slug>"
+except Exception:
+    pass
+```
+
+This runs on EVERY `/issue <N>` invocation (idempotent — re-setting the same
+title is harmless), so resumed sessions re-label themselves too. Later
+status transitions call `render_title(task, status_human=..., ...)` to append
+the status sentence.
 
 **Hard error: ambiguous status.** If `task.py view <N>` reports the task
 exists in multiple folders (should be impossible because `task.py` holds
