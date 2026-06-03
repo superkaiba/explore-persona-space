@@ -48,3 +48,4 @@
 {"ts": "2026-06-03T12:02:22Z", "kind": "epm:run-launched", "version": 2, "by": "experimenter", "note": "pod=pod-479 pid=6596 log_abs=/workspace/logs/issue-479/dispatch.log pid_file=/workspace/logs/issue-479/full.pid cmd='FULL Stage 1: dispatch_neg_geometry_472.py --issue 479 --stage 1 --cells c479_base --seeds 42,137 (smoke already PASSED rc=0; --seeds comma-fixed)'"}
 {"ts": "2026-06-03T12:08:32Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> r_generate", "phase": "r_generate", "pod": "pod-479"}
 {"ts": "2026-06-03T12:17:46Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: r_generate -> cells", "phase": "cells", "pod": "pod-479"}
+{"ts": "2026-06-03T12:55:09Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: cells -> done", "phase": "done", "pod": "pod-479"}
