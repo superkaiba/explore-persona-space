@@ -1,7 +1,7 @@
 ---
 title: Restoring contrastive negatives recovers the divergence to transfer correlation
-  on-policy, but most of the recovered signal comes from the three stylized personas
-  (MODERATE confidence)
+  on-policy on the full panel, but the recovered signal does not survive dropping
+  the three stylized personas (MODERATE confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer

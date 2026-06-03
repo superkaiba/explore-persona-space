@@ -2606,7 +2606,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/474",
       "status": "interpreting",
-      "title": "Restoring contrastive negatives recovers the divergence to transfer correlation on-policy, but most of the recovered signal comes from the three stylized personas (MODERATE confidence)"
+      "title": "Restoring contrastive negatives recovers the divergence to transfer correlation on-policy on the full panel, but the recovered signal does not survive dropping the three stylized personas (MODERATE confidence)"
     },
     "475": {
       "goal": "Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%->0%; #408).",
