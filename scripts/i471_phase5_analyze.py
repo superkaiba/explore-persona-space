@@ -32,7 +32,11 @@ logger = logging.getLogger("i471.phase5")
 
 PER_CELL_DIR = Path("eval_results/issue_471/per_cell")
 OUT_DIR = Path("eval_results/issue_471")
+ROUTE_A_DIR = OUT_DIR / "route_a"
+PHASE_A_ANCHOR_PATH = ROUTE_A_DIR / "phaseA_anchor.json"
+LOCKSTEP_FINDING_PATH = ROUTE_A_DIR / "lockstep_finding.json"
 FIGURE_DIR = Path("figures/issue_471")
+ROUTE_A_FIGURE_DIR = FIGURE_DIR / "route_a"
 BOOTSTRAP_RESAMPLES = 10_000
 RNG_SEED = 42
 
@@ -312,11 +316,244 @@ def _summarize(cell: dict | None) -> dict | None:
 
 
 # ── Figures ─────────────────────────────────────────────────────────────
+def _load_phaseA_anchor() -> dict | None:
+    """Read phaseA_anchor.json if it exists (route-(a) bodies only)."""
+    if PHASE_A_ANCHOR_PATH.exists():
+        return json.loads(PHASE_A_ANCHOR_PATH.read_text())
+    return None
+
+
+def _make_route_a_figures(plt) -> list[Path]:  # noqa: C901
+    """Plan v3 §6.3 route-(a) figures (separate folder from the v1/v2 figures).
+
+    Built only when phaseA_anchor.json + route-(a) per-cell JSONs are present.
+    Each figure is wrapped in its own try/except so a missing artifact
+    degrades that figure to a no-op without killing the rest.
+    """
+    paths: list[Path] = []
+    phaseA = _load_phaseA_anchor()
+    if phaseA is None:
+        logger.info("phaseA_anchor.json absent; skipping route-(a) figures.")
+        return paths
+    ROUTE_A_FIGURE_DIR.mkdir(parents=True, exist_ok=True)
+
+    withneg_rows = phaseA.get("withneg_table", {}).get("step_rows", [])
+    posonly_rows = phaseA.get("posonly_table", {}).get("step_rows", [])
+
+    # Figure 1: hero_phaseA_trajectory_4shapes_with_vs_posonly.png
+    # 2-panel: left=cond1_withneg, right=cond1_posonly. 4 lines per panel
+    # (source / default / trained_neg / bystander).
+    try:
+        if withneg_rows or posonly_rows:
+            fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
+            for ax, rows, label in (
+                (axes[0], withneg_rows, "cond1_withneg"),
+                (axes[1], posonly_rows, "cond1_posonly"),
+            ):
+                if not rows:
+                    ax.set_title(f"{label} -- no trajectory")
+                    continue
+                steps = [r["step"] for r in rows]
+                for bucket, color in (
+                    ("source", "C0"),
+                    ("default", "C1"),
+                    ("trained_neg", "C2"),
+                    ("bystander", "C3"),
+                ):
+                    ys = [r.get(f"{bucket}_logp_delta") for r in rows]
+                    if all(y is None for y in ys):
+                        continue
+                    ax.plot(steps, ys, marker="o", label=bucket, color=color)
+                ax.set_xlabel("optimizer step")
+                ax.set_title(label)
+                ax.axhline(0, color="k", lw=0.5, alpha=0.3)
+                ax.legend(fontsize=8)
+            axes[0].set_ylabel("trained - base log P( ※ ) (nats)")
+            anchor = phaseA.get("anchor_step")
+            if anchor is not None:
+                for ax in axes:
+                    ax.axvline(anchor, color="grey", ls="--", lw=0.8, alpha=0.6)
+            plt.tight_layout()
+            p = ROUTE_A_FIGURE_DIR / "hero_phaseA_trajectory_4shapes_with_vs_posonly.png"
+            fig.savefig(p, dpi=140)
+            plt.close(fig)
+            paths.append(p)
+    except Exception as e:
+        logger.warning("trajectory figure failed: %s", e)
+
+    # Figure 2: hero_source_minus_default_gap_with_vs_posonly.png
+    try:
+        if withneg_rows or posonly_rows:
+            fig, ax = plt.subplots(figsize=(7, 4))
+            for rows, label, color in (
+                (withneg_rows, "cond1_withneg", "C0"),
+                (posonly_rows, "cond1_posonly", "C3"),
+            ):
+                if not rows:
+                    continue
+                steps = [r["step"] for r in rows]
+                gaps = [r.get("source_minus_default_gap") for r in rows]
+                ax.plot(steps, gaps, marker="o", label=label, color=color)
+            ax.axhline(3.0, color="grey", ls="--", lw=0.8, label="anchor threshold (+3 nats)")
+            ax.set_xlabel("optimizer step")
+            ax.set_ylabel("(source - default) log P( ※ ) gap (nats)")
+            ax.set_title("Disentanglement: source-vs-default gap vs step")
+            ax.legend()
+            plt.tight_layout()
+            p = ROUTE_A_FIGURE_DIR / "hero_source_minus_default_gap_with_vs_posonly.png"
+            fig.savefig(p, dpi=140)
+            plt.close(fig)
+            paths.append(p)
+    except Exception as e:
+        logger.warning("gap figure failed: %s", e)
+
+    # Figure 3: hero_emission_demo_free_withneg_vs_posonly.png
+    # On-policy ends_with_marker bars at demo_free_default for the route-(a)
+    # anchor checkpoints (cond1_withneg vs cond1_posonly).
+    try:
+        # Resolve the two adapter ids that match the route-(a) anchor.
+        withneg_adapter = "i471_route_a_cond1_withneg"
+        posonly_adapter = "i471_route_a_cond1_posonly"
+        all_cells = load_all()
+        withneg_cell = all_cells.get(withneg_adapter, {}).get("demo_free_default")
+        posonly_cell = all_cells.get(posonly_adapter, {}).get("demo_free_default")
+        bars = []
+        for label, cell in (
+            ("cond1_withneg", withneg_cell),
+            ("cond1_posonly", posonly_cell),
+        ):
+            if cell is None:
+                continue
+            fg = cell.get("free_gen") or {}
+            ends_rate = fg.get("trained_ends_with_marker_rate")
+            if ends_rate is None:
+                continue
+            ends_per_q = fg.get("trained_ends_with_marker_per_q") or []
+            n_emit = sum(1 for e in ends_per_q if e)
+            n_total = len(ends_per_q)
+            ci_lo, ci_hi = wilson_ci(n_emit, n_total) if n_total > 0 else (0.0, 0.0)
+            bars.append((label, ends_rate, ci_lo, ci_hi))
+        if bars:
+            fig, ax = plt.subplots(figsize=(5, 4))
+            xs = np.arange(len(bars))
+            heights = [b[1] for b in bars]
+            errs_lo = [b[1] - b[2] for b in bars]
+            errs_hi = [b[3] - b[1] for b in bars]
+            ax.bar(xs, heights, yerr=[errs_lo, errs_hi], capsize=4, color=["C0", "C3"])
+            ax.set_xticks(xs)
+            ax.set_xticklabels([b[0] for b in bars])
+            ax.set_ylim(0, 1)
+            ax.set_ylabel("on-policy ends-with-marker rate @ demo-free helpful default")
+            ax.set_title("H_disentangle headline: route-(a) anchor")
+            plt.tight_layout()
+            p = ROUTE_A_FIGURE_DIR / "hero_emission_demo_free_withneg_vs_posonly.png"
+            fig.savefig(p, dpi=140)
+            plt.close(fig)
+            paths.append(p)
+    except Exception as e:
+        logger.warning("disentangle emission figure failed: %s", e)
+
+    # Figure 4 (only if H_A1 PASSed): hero_emission_demo_free_465_vs_471route_a.png
+    # On-policy ends-with-marker bars: 4 arms x 2 experiments (#465 full vs
+    # #471 route-(a) anchor).
+    try:
+        anchor_step = phaseA.get("anchor_step")
+        if anchor_step is not None:
+            all_cells = load_all()
+            conds_local = ["cond1", "cond2_k0", "cond2_k1", "cond2_k3"]
+            i471_rates = []
+            i465_rates = []
+            for c in conds_local:
+                if c == "cond1":
+                    i471_adapter = "i471_route_a_cond1_withneg"
+                else:
+                    i471_adapter = f"i471_route_a_{c}_step{anchor_step}"
+                i471_cell = all_cells.get(i471_adapter, {}).get("demo_free_default") or {}
+                i471_fg = i471_cell.get("free_gen") or {}
+                i471_rates.append(i471_fg.get("trained_ends_with_marker_rate"))
+                i465_cell = all_cells.get(f"i465_{c}", {}).get("demo_free_default") or {}
+                i465_fg = i465_cell.get("free_gen") or {}
+                # i465 cells may not have free_gen; fall back to argmax emission.
+                if "trained_ends_with_marker_rate" in i465_fg:
+                    i465_rates.append(i465_fg["trained_ends_with_marker_rate"])
+                else:
+                    i465_rates.append(i465_cell.get("emission_rate"))
+            fig, ax = plt.subplots(figsize=(8, 4))
+            width = 0.35
+            x = np.arange(len(conds_local))
+            ax.bar(
+                x - width / 2,
+                [r if r is not None else 0.0 for r in i471_rates],
+                width,
+                label="#471 route-(a) anchor",
+                color="C0",
+            )
+            ax.bar(
+                x + width / 2,
+                [r if r is not None else 0.0 for r in i465_rates],
+                width,
+                label="#465 full budget",
+                color="C7",
+            )
+            ax.set_xticks(x)
+            ax.set_xticklabels(conds_local, rotation=20, ha="right")
+            ax.set_ylim(0, 1)
+            ax.set_ylabel("on-policy ends-with-marker rate @ demo-free helpful default")
+            ax.set_title("Cross-experiment: #465 full vs #471 route-(a) anchor (joint effect)")
+            ax.legend(fontsize=8)
+            plt.tight_layout()
+            p = ROUTE_A_FIGURE_DIR / "hero_emission_demo_free_465_vs_471route_a.png"
+            fig.savefig(p, dpi=140)
+            plt.close(fig)
+            paths.append(p)
+    except Exception as e:
+        logger.warning("cross-experiment route-(a) emission figure failed: %s", e)
+
+    # Figure 5 (only if lockstep): lockstep_finding.png.
+    try:
+        if phaseA.get("lockstep_in_this_regime"):
+            fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
+            for ax, rows, label in (
+                (axes[0], withneg_rows, "cond1_withneg"),
+                (axes[1], posonly_rows, "cond1_posonly"),
+            ):
+                if not rows:
+                    continue
+                steps = [r["step"] for r in rows]
+                for bucket, color in (
+                    ("source", "C0"),
+                    ("default", "C1"),
+                    ("trained_neg", "C2"),
+                    ("bystander", "C3"),
+                ):
+                    ys = [r.get(f"{bucket}_logp_delta") for r in rows]
+                    if all(y is None for y in ys):
+                        continue
+                    ax.plot(steps, ys, marker="o", label=bucket, color=color)
+                ax.set_xlabel("optimizer step")
+                ax.set_title(f"{label} (lockstep)")
+                ax.axhline(0, color="k", lw=0.5, alpha=0.3)
+                ax.legend(fontsize=8)
+            axes[0].set_ylabel("trained - base log P( ※ ) (nats)")
+            plt.tight_layout()
+            p = ROUTE_A_FIGURE_DIR / "lockstep_finding.png"
+            fig.savefig(p, dpi=140)
+            plt.close(fig)
+            paths.append(p)
+    except Exception as e:
+        logger.warning("lockstep figure failed: %s", e)
+
+    return paths
+
+
 def make_figures(analysis: dict, conds: list[str]) -> list[Path]:
     import matplotlib.pyplot as plt
 
     FIGURE_DIR.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
+    # Plan v3 route-(a) figures (new folder; older v1/v2 figures continue
+    # to land in figures/issue_471/ for analyzer back-compat).
+    paths.extend(_make_route_a_figures(plt))
 
     # hero_emission_demo_free_465_vs_471: per-cond emission, two experiments.
     fig, ax = plt.subplots(figsize=(7, 4))

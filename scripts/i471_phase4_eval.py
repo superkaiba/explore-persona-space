@@ -396,7 +396,102 @@ def _build_cell_inputs(
     return post_r_texts, interior_texts, q_used, q_used  # last is placeholder symmetry
 
 
-def main(argv: list[str] | None = None) -> None:
+def _build_free_gen_prompts(
+    *,
+    adapter_cond: str,
+    eval_shape: str,
+    questions: list[str],
+    q_used: list[str],
+    tokenizer,
+    r_villain: dict[str, dict],
+    q_demo: list[str],
+) -> list[str]:
+    """Build per-q chat-template prompts (R substrate empty -> free generation).
+
+    Plan v3 §4.1 / §4.5 -- on-policy free greedy generation. The model
+    writes its OWN response from the assistant-decision start slot under
+    the eval shape's served system. Re-uses
+    ``build_eval_probe_text_for_shape`` with ``R_text=""`` so the prompt
+    ends exactly at the chat template's ``<|im_start|>assistant\n`` token
+    boundary -- the canonical entry point for free generation.
+
+    Built only for the questions that survived the post-R R_substrate
+    filter (passed in as ``q_used``) so the free-gen results pair 1:1
+    with the post-R per_q arrays.
+    """
+    _ = questions  # API stability (q_used is the authoritative q list)
+    out: list[str] = []
+    for q in q_used:
+        prompt = build_eval_probe_text_for_shape(
+            condition=adapter_cond,
+            eval_shape=eval_shape,
+            target_q=q,
+            R_text="",  # free-gen: the model writes its own R from the assistant slot
+            demo_pool=q_demo,
+            r_demo=r_villain,
+            demo_seed=137,
+            tokenizer=tokenizer,
+        )
+        out.append(prompt)
+    return out
+
+
+def _summarize_free_gen_output(out, tokenizer) -> tuple[bool, bool, int, str]:
+    """Per-q free-gen summary: (marker_appears_anywhere, ends_with_marker, n_tokens, decoded).
+
+    ``ends_with_marker`` checks the last non-pad / non-EOS token id in
+    ``out.outputs[0].token_ids``. ``marker_appears_anywhere`` is the
+    membership test over the full generated id list. Plan v3 §6.1 primary
+    headline DV reads ``ends_with_marker``.
+    """
+    if not out.outputs:
+        return False, False, 0, ""
+    token_ids = list(out.outputs[0].token_ids)
+    text = out.outputs[0].text
+    marker_appears = MARKER_ID in token_ids
+    # Strip trailing pad / EOS to read the "natural" last token.
+    eos_id = tokenizer.eos_token_id
+    pad_id = getattr(tokenizer, "pad_token_id", None)
+    strip_ids = {x for x in (eos_id, pad_id) if x is not None}
+    trailing_stripped = list(token_ids)
+    while trailing_stripped and trailing_stripped[-1] in strip_ids:
+        trailing_stripped.pop()
+    ends_with_marker = bool(trailing_stripped) and trailing_stripped[-1] == MARKER_ID
+    return marker_appears, ends_with_marker, len(token_ids), text
+
+
+def _adapter_id_to_cond(adapter_id: str) -> str:
+    """Recover the underlying condition slug from any of the supported adapter id shapes.
+
+    Supported shapes (in priority order):
+      1. ``i471_route_a_<cond>_<...suffix>`` — Plan v3 route-(a) adapters
+         where ``<cond>`` is one of CONDITION_IDS. Suffix examples:
+         ``_withneg``, ``_posonly``, ``_step45``. Split on the cond match
+         so anything after the cond slug is irrelevant for eval-shape
+         routing (the cond is the only thing that drives k-demos / served
+         system / built-in eval-shape filtering).
+      2. ``i471_<cond>`` or ``i465_<cond>`` — legacy v1 / #465 cross-eval
+         shapes (the existing splitter ``adapter_id.split("_", 1)[1]``
+         pattern).
+    Raises ``ValueError`` on an unrecognised shape so the caller fails loud
+    rather than silently evaluating against the wrong eval-shape list.
+    """
+    for cond in CONDITION_IDS:
+        # Match `_<cond>_` (route_a long form) — anchored to underscore
+        # boundaries so cond1 doesn't accidentally match inside cond1_*.
+        marker = f"_{cond}_"
+        if marker in adapter_id:
+            return cond
+        # Match trailing `_<cond>` (legacy short form).
+        if adapter_id.endswith(f"_{cond}"):
+            return cond
+    raise ValueError(
+        f"Unable to recover a known condition slug from adapter_id={adapter_id!r}; "
+        f"expected one of {CONDITION_IDS} to appear as a delimited token."
+    )
+
+
+def main(argv: list[str] | None = None) -> None:  # noqa: C901
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -410,10 +505,23 @@ def main(argv: list[str] | None = None) -> None:
         help="Subset of conditions to eval (default: all 4).",
     )
     ap.add_argument(
+        "--adapters",
+        nargs="+",
+        default=None,
+        help="Explicit list of adapter IDs to evaluate (overrides --conds + "
+        "--include-i465-reeval). Each id must be present under "
+        "adapters/<id>/ on HF model repo. Example for plan v3 route-(a): "
+        "--adapters i471_route_a_cond1_withneg_step45 "
+        "i471_route_a_cond1_posonly_step38 i471_route_a_cond2_k0_step45 "
+        "i471_route_a_cond2_k1_step45 i471_route_a_cond2_k3_step45 "
+        "i465_cond1 i465_cond2_k0 i465_cond2_k1 i465_cond2_k3.",
+    )
+    ap.add_argument(
         "--include-i465-reeval",
         action="store_true",
         default=True,
-        help="ALSO re-eval the 4 #465 adapters under the same probe (default: True).",
+        help="ALSO re-eval the 4 #465 adapters under the same probe (default: True). "
+        "Ignored when --adapters is set.",
     )
     ap.add_argument(
         "--no-i465-reeval",
@@ -424,6 +532,22 @@ def main(argv: list[str] | None = None) -> None:
         "--resume",
         action="store_true",
         help="Skip cells whose per_cell JSON already exists with non-zero size.",
+    )
+    ap.add_argument(
+        "--free-gen-emission",
+        action="store_true",
+        help="Plan v3 §4.1: ALSO run on-policy free greedy generation per cell "
+        "(temp=0, max_tokens=2048, seed=42, LoRARequest for trained / none for "
+        "base) and record marker_appears_anywhere + ends_with_marker per q in "
+        "the per-cell JSON. The on-policy ends_with_marker rate IS the primary "
+        "headline DV at the route-(a) anchor "
+        "(per `.claude/rules/marker-leakage-measurement.md`).",
+    )
+    ap.add_argument(
+        "--free-gen-max-tokens",
+        type=int,
+        default=2048,
+        help="Free-gen max_tokens (default 2048 per CLAUDE.md max_new_tokens rule).",
     )
     ap.add_argument("--max-seq-len", type=int, default=4096)
     args = ap.parse_args(argv)
@@ -461,10 +585,15 @@ def main(argv: list[str] | None = None) -> None:
     r_no_system = load_r_no_system_qtest()
     r_paraphrased_helpful = load_r_paraphrased_helpful_qtest()
 
-    # Resolve adapter list: 4 i471 + optionally 4 i465.
-    adapter_ids = [f"i471_{c}" for c in args.conds]
-    if args.include_i465_reeval:
-        adapter_ids += [f"i465_{c}" for c in args.conds]
+    # Resolve adapter list. Plan v3: `--adapters` overrides; otherwise fall
+    # back to the legacy v1 mapping (4 i471 + optionally 4 i465).
+    if args.adapters:
+        adapter_ids = list(args.adapters)
+        logger.info("Using explicit --adapters list: %s", adapter_ids)
+    else:
+        adapter_ids = [f"i471_{c}" for c in args.conds]
+        if args.include_i465_reeval:
+            adapter_ids += [f"i465_{c}" for c in args.conds]
 
     adapter_paths = _download_adapters(adapter_ids)
 
@@ -502,16 +631,28 @@ def main(argv: list[str] | None = None) -> None:
         r_negatives=r_negatives,
     )
 
+    # Free-gen SamplingParams (greedy, larger max_tokens). Only built when
+    # the flag is on; lora_request is supplied per-cell.
+    sp_free_gen = None
+    if args.free_gen_emission:
+        sp_free_gen = SamplingParams(
+            n=1,
+            temperature=0.0,
+            top_p=1.0,
+            max_tokens=args.free_gen_max_tokens,
+            seed=42,
+        )
+
     g_partial: dict[str, dict[str, dict]] = {}
 
     for adapter_id in adapter_ids:
-        cond = adapter_id.split("_", 1)[1]  # "i471_cond1" -> "cond1"
+        cond = _adapter_id_to_cond(adapter_id)
         eval_shapes = all_eval_cells(cond)
         for eval_shape in eval_shapes:
             cell_path = PER_CELL_DIR / f"G_{adapter_id}__{eval_shape}.json"
             if args.resume and cell_path.exists() and cell_path.stat().st_size > 0:
                 cached = json.loads(cell_path.read_text())
-                g_partial.setdefault(adapter_id, {})[eval_shape] = {
+                cached_entry = {
                     "mean_marker_logp_trained": cached.get("mean_marker_logp_trained"),
                     "mean_marker_logp_base": cached.get("mean_marker_logp_base"),
                     "mean_delta_marker": cached.get("mean_delta_marker"),
@@ -521,6 +662,17 @@ def main(argv: list[str] | None = None) -> None:
                     "emission_rate": cached.get("emission_rate"),
                     "n_probes": cached.get("n_probes"),
                 }
+                cached_free_gen = cached.get("free_gen")
+                if isinstance(cached_free_gen, dict):
+                    for k in (
+                        "trained_ends_with_marker_rate",
+                        "trained_marker_appears_rate",
+                        "base_ends_with_marker_rate",
+                        "base_marker_appears_rate",
+                    ):
+                        if k in cached_free_gen:
+                            cached_entry[k] = cached_free_gen[k]
+                g_partial.setdefault(adapter_id, {})[eval_shape] = cached_entry
                 logger.info("RESUME hit %s/%s -> %s", adapter_id, eval_shape, cell_path)
                 continue
             questions = _question_set_for_shape(eval_shape, q_train_keys, q_test)
@@ -576,6 +728,67 @@ def main(argv: list[str] | None = None) -> None:
                 kl_interior.append(kl_i)
                 kl_enrichment.append(kl_p - kl_i)
 
+            # Plan v3 §4.1: on-policy free-gen ends_with_marker (the route-
+            # (a) primary headline DV). Trained pass uses the LoRARequest;
+            # base pass uses lora_request=None. The two arrays pair 1:1
+            # with marker_logp_t/b at the same q_used.
+            free_gen_block: dict | None = None
+            if args.free_gen_emission and sp_free_gen is not None:
+                free_prompts = _build_free_gen_prompts(
+                    adapter_cond=cond,
+                    eval_shape=eval_shape,
+                    questions=questions,
+                    q_used=q_used,
+                    tokenizer=tokenizer,
+                    r_villain=r_villain,
+                    q_demo=q_demo,
+                )
+                t_fg = time.time()
+                trained_gen = llm.generate(free_prompts, sp_free_gen, lora_request=lora_req)
+                base_gen = llm.generate(free_prompts, sp_free_gen, lora_request=None)
+                elapsed_fg = time.time() - t_fg
+                trained_appears, trained_ends, trained_n_toks, trained_texts = [], [], [], []
+                base_appears, base_ends, base_n_toks, base_texts = [], [], [], []
+                for i in range(n):
+                    ap_t, en_t, nt_t, tx_t = _summarize_free_gen_output(trained_gen[i], tokenizer)
+                    ap_b, en_b, nt_b, tx_b = _summarize_free_gen_output(base_gen[i], tokenizer)
+                    trained_appears.append(ap_t)
+                    trained_ends.append(en_t)
+                    trained_n_toks.append(nt_t)
+                    trained_texts.append(tx_t)
+                    base_appears.append(ap_b)
+                    base_ends.append(en_b)
+                    base_n_toks.append(nt_b)
+                    base_texts.append(tx_b)
+                free_gen_block = {
+                    "free_gen_max_tokens": args.free_gen_max_tokens,
+                    "free_gen_elapsed_s": elapsed_fg,
+                    "trained_marker_appears_per_q": trained_appears,
+                    "trained_ends_with_marker_per_q": trained_ends,
+                    "trained_n_tokens_per_q": trained_n_toks,
+                    "trained_texts_per_q": trained_texts,
+                    "base_marker_appears_per_q": base_appears,
+                    "base_ends_with_marker_per_q": base_ends,
+                    "base_n_tokens_per_q": base_n_toks,
+                    "base_texts_per_q": base_texts,
+                    "trained_marker_appears_rate": sum(trained_appears) / n,
+                    "trained_ends_with_marker_rate": sum(trained_ends) / n,
+                    "base_marker_appears_rate": sum(base_appears) / n,
+                    "base_ends_with_marker_rate": sum(base_ends) / n,
+                }
+                logger.info(
+                    "  free-gen (%s,%s) n=%d trained_ends=%.3f trained_appears=%.3f "
+                    "base_ends=%.3f base_appears=%.3f in %.1fs",
+                    adapter_id,
+                    eval_shape,
+                    n,
+                    free_gen_block["trained_ends_with_marker_rate"],
+                    free_gen_block["trained_marker_appears_rate"],
+                    free_gen_block["base_ends_with_marker_rate"],
+                    free_gen_block["base_marker_appears_rate"],
+                    elapsed_fg,
+                )
+
             payload = {
                 "adapter_id": adapter_id,
                 "condition": cond,
@@ -613,11 +826,13 @@ def main(argv: list[str] | None = None) -> None:
                 "argmax_marker_per_q": argmax_marker,
                 "logp_floor": LOGP_FLOOR,
             }
+            if free_gen_block is not None:
+                payload["free_gen"] = free_gen_block
             tmp = cell_path.with_suffix(".json.tmp")
             tmp.write_text(json.dumps(payload))
             tmp.replace(cell_path)
 
-            g_partial.setdefault(adapter_id, {})[eval_shape] = {
+            g_partial_entry = {
                 "mean_marker_logp_trained": payload["mean_marker_logp_trained"],
                 "mean_marker_logp_base": payload["mean_marker_logp_base"],
                 "mean_delta_marker": payload["mean_delta_marker"],
@@ -627,6 +842,20 @@ def main(argv: list[str] | None = None) -> None:
                 "emission_rate": payload["emission_rate"],
                 "n_probes": n,
             }
+            if free_gen_block is not None:
+                g_partial_entry["trained_ends_with_marker_rate"] = free_gen_block[
+                    "trained_ends_with_marker_rate"
+                ]
+                g_partial_entry["trained_marker_appears_rate"] = free_gen_block[
+                    "trained_marker_appears_rate"
+                ]
+                g_partial_entry["base_ends_with_marker_rate"] = free_gen_block[
+                    "base_ends_with_marker_rate"
+                ]
+                g_partial_entry["base_marker_appears_rate"] = free_gen_block[
+                    "base_marker_appears_rate"
+                ]
+            g_partial.setdefault(adapter_id, {})[eval_shape] = g_partial_entry
             logger.info(
                 "(%s,%s) n=%d emission=%.3f mean_dG=%+.3f kl_post=%.3f kl_int=%.3f "
                 "enrich=%+.3f  in %.1fs",

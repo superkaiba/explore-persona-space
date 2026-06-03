@@ -402,8 +402,53 @@ def _vllm_max_logprobs_smoke(tokenizer, *, vocab_size: int = QWEN_VOCAB_SIZE) ->
     return result
 
 
+def _print_r_negatives_quality_audit(
+    per_persona_completions: dict[str, dict[str, dict]],
+    *,
+    n_samples: int = 5,
+) -> None:
+    """Plan v3 §4.1: print 5 random R_negatives entries per persona.
+
+    Audit hook against the "negatives are nonsense text -> ineffective
+    gradient" alternative if Phase A lockstep or H_disentangle FAILs.
+    Cheap (pure dict-sampling, no model forward) and high-value at
+    interpretation time per plan v3 §6.4.
+    """
+    import random as _random
+
+    rng = _random.Random(42)
+    for persona, comps in per_persona_completions.items():
+        keys = list(comps.keys())
+        if not keys:
+            logger.warning("R_NEG_AUDIT/%s: zero completions; nothing to sample.", persona)
+            continue
+        picks = rng.sample(keys, min(n_samples, len(keys)))
+        logger.info(
+            "=== R_NEG_AUDIT persona=%s -- %d random samples of %d total ===",
+            persona,
+            len(picks),
+            len(keys),
+        )
+        for i, q in enumerate(picks):
+            comp = comps[q]
+            text = comp.get("response_text", "")
+            preview = text if len(text) <= 240 else text[:237] + "..."
+            logger.info(
+                "  [%d] q[:60]=%r  R[:240]=%r  n_tokens=%d",
+                i + 1,
+                q[:60],
+                preview,
+                comp.get("n_response_tokens", -1),
+            )
+
+
 def _generate_r_negatives(llm, sp, tokenizer, *, q_train_keys: list[str]) -> Path:
-    """3 negative personas × Q_train = 90 forwards. Plan §4.1 Phase 0."""
+    """3 negative personas × Q_train = 90 forwards. Plan §4.1 Phase 0.
+
+    Plan v3 addition: also prints 5 random R per persona to the log so the
+    analyzer can later rule out the OOD-negative-R alternative explanation
+    if H_A1 or H_disentangle FAIL.
+    """
     per_persona_completions: dict[str, dict[str, dict]] = {}
     per_persona_stats: dict[str, dict] = {}
     for persona, system_prompt in NEGATIVE_PERSONAS.items():
@@ -433,6 +478,8 @@ def _generate_r_negatives(llm, sp, tokenizer, *, q_train_keys: list[str]) -> Pat
     logger.info(
         "Wrote %s (%d personas × %d q)", out_path, len(NEGATIVE_PERSONAS), len(q_train_keys)
     )
+    # Plan v3 R_negatives quality audit (cheap, post-write).
+    _print_r_negatives_quality_audit(per_persona_completions, n_samples=5)
     return out_path
 
 

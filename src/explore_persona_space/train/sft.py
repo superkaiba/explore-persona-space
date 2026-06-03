@@ -146,25 +146,49 @@ class MarkerOnlyDataCollator:
         For positives: loss ONLY on the [ZLT] token positions + EOS.
         For negatives: loss ONLY on EOS.
         Use with lower LR (1e-5 to 1e-6) to avoid degeneration.
+
+    **suppress_at_post_response_slot** (default False) — when True AND
+    ``tail_tokens == 0``, negative rows (no marker) train the EOS-only
+    loss at the FIRST ``<|im_end|>`` (Qwen-2.5-Instruct id 151645) inside
+    the loss-bearing region instead of ``valid_indices[-1]``. The Qwen-
+    Instruct assistant turn tokenizes as ``...response <|im_end|>(151645)
+    \\n(198)``; for a negative row ``valid_indices[-1]`` lands on the
+    trailing ``\\n``, ONE SLOT PAST the post-response slot the DV reads.
+    Set this True for marker-leakage experiments whose teacher-forced
+    DV reads ``log P(marker)`` at the post-``R`` slot — otherwise the
+    negative rows train an irrelevant slot and never suppress the marker
+    at the DV slot. Positive-row behaviour is unchanged (loss on marker
+    positions + ``valid_indices[-1]``) by this flag.
     """
+
+    # Qwen-2.5-Instruct ``<|im_end|>`` token id. Hardcoded because the
+    # collator doesn't carry a tokenizer; callers using non-Qwen-Instruct
+    # tokenizers should subclass or extend if they need this branch.
+    QWEN_IM_END_TOKEN_ID = 151645
 
     def __init__(
         self,
         inner_collator,
         marker_token_ids: list[int],
         tail_tokens: int = 32,
+        suppress_at_post_response_slot: bool = False,
     ):
         self.inner = inner_collator
         self.marker_token_ids = marker_token_ids
         self.marker_len = len(marker_token_ids)
         self.tail_tokens = tail_tokens
+        self.suppress_at_post_response_slot = bool(suppress_at_post_response_slot)
+        # Cache the im_end token id so the per-row scan stays a cheap tensor
+        # equality test rather than a tokenizer lookup. Assert int (defends
+        # against an accidental tokenizer-object assignment in a subclass).
+        self.im_end_token_id = int(self.QWEN_IM_END_TOKEN_ID)
         self._call_count = 0
         self._total_loss_tokens = 0
         self._total_tokens = 0
         self._pos_count = 0
         self._neg_count = 0
 
-    def __call__(self, features):
+    def __call__(self, features):  # noqa: C901 - per-row mode branching is one cohesive unit
         batch = self.inner(features)
 
         if "labels" not in batch:
@@ -192,20 +216,54 @@ class MarkerOnlyDataCollator:
             if self.tail_tokens == 0:
                 # ── Marker-position-only mode ──
                 # Positives: loss on marker token positions + EOS only
-                # Negatives: loss on EOS only
+                # Negatives: loss on EOS only (or the first <|im_end|> inside
+                # the loss-bearing region when suppress_at_post_response_slot
+                # is True — the post-response slot the marker-leakage DV
+                # reads).
                 marker_positions = self._find_marker_positions(input_ids)
                 keep_mask = torch.zeros(len(row), dtype=torch.bool)
 
                 if marker_positions:
-                    # Keep each marker token position
+                    # Keep each marker token position. Positive rows behave
+                    # identically regardless of suppress_at_post_response_slot.
                     for start_pos in marker_positions:
                         for offset in range(self.marker_len):
                             pos = start_pos + offset
                             if pos < len(row) and row[pos] != -100:
                                 keep_mask[pos] = True
-
-                # Always keep the last valid token (EOS)
-                keep_mask[valid_indices[-1]] = True
+                    # Always keep the last valid token (EOS) for positives.
+                    keep_mask[valid_indices[-1]] = True
+                else:
+                    # Negative row: pick a single loss-bearing slot.
+                    if self.suppress_at_post_response_slot:
+                        # Find the FIRST valid position whose input_id equals
+                        # <|im_end|> — that IS the post-response slot the
+                        # teacher-forced marker-leakage DV reads. Fail loud
+                        # if no <|im_end|> is found inside the loss-bearing
+                        # region; that would mean the chat template / mask
+                        # has drifted and silently masking the wrong slot
+                        # would re-introduce the v1 #471 bug.
+                        chosen = None
+                        for idx in valid_indices.tolist():
+                            if int(input_ids[idx].item()) == self.im_end_token_id:
+                                chosen = idx
+                                break
+                        if chosen is None:
+                            raise ValueError(
+                                "MarkerOnlyDataCollator(suppress_at_post_response_slot=True): "
+                                "no <|im_end|> token (id "
+                                f"{self.im_end_token_id}) found among the "
+                                f"{len(valid_indices)} loss-bearing positions of a "
+                                "negative row. Chat template / mask drift suspected; "
+                                "refusing to silently mask the wrong slot."
+                            )
+                        keep_mask[chosen] = True
+                    else:
+                        # Legacy behaviour: keep the last valid token. For
+                        # Qwen-2.5-Instruct negative rows this lands on the
+                        # trailing \n one slot PAST <|im_end|> (see class
+                        # docstring). Preserved for backward-compat.
+                        keep_mask[valid_indices[-1]] = True
 
                 labels[i] = torch.where(keep_mask, row, torch.tensor(-100, device=row.device))
             elif len(valid_indices) > self.tail_tokens:
@@ -419,6 +477,20 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 32
+    # When True AND marker_tail_tokens==0, negative rows (no marker) train
+    # the EOS-only loss at the FIRST <|im_end|> in the loss-bearing region
+    # (the post-response slot the marker-leakage DV reads) instead of the
+    # last valid token (which on Qwen-2.5-Instruct lands on the trailing
+    # \n one slot past the DV slot). Plan #471 v3 §4.1 / planner memory
+    # `feedback_post_response_slot_must_be_loss_slot`. Default False so
+    # all existing callers are byte-identical.
+    marker_suppress_at_post_response_slot: bool = False
+    # When > 0, override num_train_epochs and pass max_steps to TRL
+    # TrainingArguments — terminates training at exactly that many
+    # optimizer (post-grad-accum) steps. Plan #471 v3 §4.1 plumbing for
+    # Phase B's max_steps=s* anchor-step budgeting. Default 0 (no-op)
+    # keeps every existing caller byte-identical.
+    max_steps: int = 0
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -609,6 +681,11 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.max_steps > 0:
+        # Mirrors the save_steps plumbing pattern above. TRL TrainingArguments
+        # max_steps overrides num_train_epochs when > 0 (counts optimizer
+        # steps, i.e. post-grad-accum).
+        sft_kwargs["max_steps"] = cfg.max_steps
 
     sft_config = SFTConfig(**sft_kwargs)
 
@@ -628,12 +705,14 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         logger.info(
             f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
             f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
-            f"tail_tokens={cfg.marker_tail_tokens}"
+            f"tail_tokens={cfg.marker_tail_tokens}, "
+            f"suppress_at_post_response_slot={cfg.marker_suppress_at_post_response_slot}"
         )
         trainer.data_collator = MarkerOnlyDataCollator(
             inner_collator=trainer.data_collator,
             marker_token_ids=marker_ids,
             tail_tokens=cfg.marker_tail_tokens,
+            suppress_at_post_response_slot=cfg.marker_suppress_at_post_response_slot,
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)

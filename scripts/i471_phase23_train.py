@@ -1,4 +1,4 @@
-# ruff: noqa: RUF003
+# ruff: noqa: RUF002, RUF003
 """Phase 2 (smoke) + Phase 3 (sweep) -- train ONE LoRA per #471 condition.
 
 Plan v1 §4.2 + §4.6 + §4.7.
@@ -71,6 +71,7 @@ from explore_persona_space.experiments.i471_data import (
     DATA_DIR_471,
     HF_MODEL_REPO,
     NEGATIVE_PERSONAS,
+    load_r_artifact,
     load_r_negatives,
 )
 from explore_persona_space.experiments.i471_prompts import build_negative_messages
@@ -188,20 +189,35 @@ def _build_negative_rows(
     r_negatives: dict[tuple[str, str], dict],
     q_demo: list[str],
     train_seed: int,
+    n_neg_per_persona: int = N_NEG_PER_PERSONA,
 ) -> list[dict]:
-    """Build 300 negative rows (100 per negative persona, cycling through Q_train).
+    """Build (n_neg_per_persona × 3 personas) negative rows for the cond1_withneg-line arms.
 
     For each negative persona p ∈ {default, medical_doctor, police_officer}:
-      cycle through Q_train as needed to produce N_NEG_PER_PERSONA rows;
+      cycle through Q_train as needed to produce ``n_neg_per_persona`` rows;
       each row's completion is base-Qwen R under p's own system prompt on q
       (looked up via (p, q) in r_negatives). cond2_k1/k3 negatives use
       marker-STRIPPED demos so the row has ZERO markers (collator's
       "no marker -> EOS only" branch fires).
+
+    When ``n_neg_per_persona == 0`` (the v3 cond1_posonly control arm),
+    returns an empty list immediately — no R_negatives lookups, no
+    `_build_negative_messages` calls. The downstream pipeline (TRL
+    ingestion + the new ``MarkerOnlyDataCollator(suppress_at_post_response_slot=True)``
+    branch) is unchanged; an empty negative set just means every shuffled
+    training row is a positive.
     """
+    if n_neg_per_persona <= 0:
+        logger.info(
+            "cond=%s n_neg_per_persona=%d -> 0 negative rows (positives-only control arm).",
+            cond,
+            n_neg_per_persona,
+        )
+        return []
     rows: list[dict] = []
     persona_ids = list(NEGATIVE_PERSONAS.keys())
     for persona in persona_ids:
-        for i in range(N_NEG_PER_PERSONA):
+        for i in range(n_neg_per_persona):
             q = q_train_keys[i % len(q_train_keys)]
             dupe_idx = i // len(q_train_keys)
             key = (persona, q)
@@ -314,6 +330,109 @@ def _write_train_rows(*, cond: str, rows: list[dict]) -> Path:
     return out_path
 
 
+def _load_R_bystander_qtest_for_persona(persona: str) -> dict[str, dict] | None:
+    """Return {q: completion} for one bystander persona from R_bystander_qtest.
+
+    R_bystander_qtest is the multi-persona artifact Phase 0 writes (keys =
+    ``"{persona}::{q}"``). Returns None if the artifact / persona is missing
+    so the trajectory probe degrades to 3 shapes without crashing the run.
+    """
+    try:
+        payload = load_r_artifact("R_bystander_qtest.json")
+    except Exception as e:
+        logger.warning(
+            "R_bystander_qtest.json not available (%s); bystander trajectory shape skipped.", e
+        )
+        return None
+    raw = payload.get("completions", {})
+    out: dict[str, dict] = {}
+    prefix = f"{persona}::"
+    for k, v in raw.items():
+        if k.startswith(prefix):
+            q = k[len(prefix) :]
+            out[q] = v
+    if not out:
+        logger.warning(
+            "R_bystander_qtest.json has no entries for persona=%r; "
+            "bystander trajectory shape will be empty.",
+            persona,
+        )
+        return None
+    return out
+
+
+def _load_R_trained_neg_qtest_for_persona(persona: str) -> dict[str, dict] | None:
+    """Return {q: completion} for one trained-negative persona from R_trained_negatives_qtest.
+
+    Used by the trajectory probe's trained-negative shape (e.g.
+    medical_doctor). For ``persona == "default"`` the trained-negative R
+    on Q_test is identical to ``R_helpful_qtest`` and the caller should
+    use that instead.
+    """
+    try:
+        payload = load_r_artifact("R_trained_negatives_qtest.json")
+    except Exception as e:
+        logger.warning(
+            "R_trained_negatives_qtest.json not available (%s); trained-neg "
+            "trajectory shape skipped.",
+            e,
+        )
+        return None
+    raw = payload.get("completions", {})
+    out: dict[str, dict] = {}
+    prefix = f"{persona}::"
+    for k, v in raw.items():
+        if k.startswith(prefix):
+            q = k[len(prefix) :]
+            out[q] = v
+    if not out:
+        logger.warning(
+            "R_trained_negatives_qtest.json has no entries for persona=%r; "
+            "trained-neg trajectory shape will be empty.",
+            persona,
+        )
+        return None
+    return out
+
+
+def _build_persona_probe_ids(
+    *,
+    persona_system_prompt: str,
+    target_q: str,
+    R_text: str,
+    tokenizer,
+) -> list[int]:
+    """Tokenize a single trajectory-probe input under an arbitrary persona system.
+
+    Returns the full token-id sequence of
+    ``chat_template([{system}, {user q}], add_generation_prompt=True) + R + " ※"``
+    so the trajectory callback's ``slot=-2`` read predicts the marker token
+    under ``persona_system_prompt``. Used for the trained-negative
+    (medical_doctor) and held-out bystander (software_engineer) shapes
+    introduced in plan v3 §4.1 / §4.2. The existing
+    ``build_eval_full_ids`` helper only handles cond-bound served systems
+    (villain / helpful); arbitrary persona served systems need a thin
+    direct chat-template wrap.
+    """
+    messages = [
+        {"role": "system", "content": persona_system_prompt},
+        {"role": "user", "content": target_q},
+    ]
+    prompt_text = tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
+    full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
+    if full_ids[-1] != MARKER_ID:
+        # If the tokenizer re-segments the marker boundary the trajectory
+        # callback's slot=-2 read would land on the wrong token; fail loud
+        # before the callback silently logs misaligned numbers.
+        raise AssertionError(
+            f"_build_persona_probe_ids: last token id is {full_ids[-1]}, "
+            f"expected MARKER_ID={MARKER_ID}. Tokenizer re-segmented ' ※' boundary."
+        )
+    return full_ids
+
+
 def _build_trajectory_probes(
     *,
     cond: str,
@@ -327,19 +446,42 @@ def _build_trajectory_probes(
 ) -> dict[str, list[list[int]]]:
     """Build {shape_name: [full_token_id_list]} for the KL+marker trajectory probe.
 
-    Two shapes (plan §4.6):
-      - "in_trained_shape" (Q_test prompts, cond's training shape)
-      - "demo_free_default" (helpful-R, Q_test)
-    Both reuse the existing #465 prompt builder (marker-appended form) since
-    the trajectory probe is a TEACHER-FORCED within-condition dynamics read
-    (allowed per CLAUDE.md). The cross-condition headline is generated
-    on-policy in Phase 4.
+    Four shapes (plan v3 §4.1 / §4.2):
+      - "in_trained_shape" (villain-R + cond's served system + demos)
+      - "demo_free_default" (helpful-R + helpful system, 0 demos)
+      - "trained_neg_medical_doctor" (R_trained_negatives_qtest[medical_doctor, q]
+        + medical_doctor system, 0 demos)
+      - "bystander_software_engineer" (R_bystander_qtest[software_engineer, q]
+        + software_engineer system, 0 demos)
+
+    The trajectory probe is TEACHER-FORCED within-condition dynamics
+    (allowed per CLAUDE.md / `.claude/rules/marker-leakage-measurement.md`).
+    The cross-condition headline is generated on-policy in Phase 4.
+
+    For cond1_posonly which has no training-time negatives, the
+    "trained_neg_medical_doctor" shape still uses the same probe definition
+    so the cond1_withneg and cond1_posonly curves are DIRECTLY comparable
+    at the SAME shape (the only difference between the two runs is training
+    data, not probe data).
     """
+    # Import EVAL_PERSONAS_24 inside the function so ruff's "unused import"
+    # auto-fix doesn't strip it on lint (the variable IS used in the bystander
+    # branch below but ruff's static pass occasionally drops it when the
+    # function isn't called at import time). Per agent memory
+    # `feedback_ruff_strips_unused_imports`.
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+    )
+
     _ = q_train_keys  # API stability
     in_shape_qs = q_test[:n_probes]
     demo_free_qs = q_test[n_probes : 2 * n_probes]
     if len(demo_free_qs) < n_probes:
         demo_free_qs = q_test[:n_probes]
+    # Use the SAME Q slice for the trained-neg + bystander shapes so the
+    # three non-source curves share x-axis questions and are paired across
+    # shapes within a single run.
+    other_qs = demo_free_qs
 
     probes: dict[str, list[list[int]]] = {"in_trained_shape": []}
     for q in in_shape_qs:
@@ -378,6 +520,48 @@ def _build_trajectory_probes(
             )
             probes["demo_free_default"].append(full_ids)
 
+    # Trained-negative shape (medical_doctor). Always built when the artifact
+    # is present, regardless of whether THIS run uses negatives — the probe
+    # is identical for cond1_withneg vs cond1_posonly so curves are
+    # directly comparable at the matched shape.
+    r_neg_med = _load_R_trained_neg_qtest_for_persona("medical_doctor")
+    if r_neg_med is not None and "medical_doctor" in NEGATIVE_PERSONAS:
+        probes["trained_neg_medical_doctor"] = []
+        med_sys = NEGATIVE_PERSONAS["medical_doctor"]
+        for q in other_qs:
+            if q not in r_neg_med:
+                continue
+            R_text = r_neg_med[q]["response_text"]
+            full_ids = _build_persona_probe_ids(
+                persona_system_prompt=med_sys,
+                target_q=q,
+                R_text=R_text,
+                tokenizer=tokenizer,
+            )
+            probes["trained_neg_medical_doctor"].append(full_ids)
+
+    # Held-out bystander shape (software_engineer). The bystander is
+    # UNTRAINED by any of the negative-row personas — the
+    # bystander-vs-trained-negative contrast is the H_neg_vs_bystander
+    # signal in plan v3 §3 (load-bearing for whether EOS-only-loss at the
+    # slot is biting harder at the trained personas than at untrained ones).
+    bystander_persona = "software_engineer"
+    r_bys = _load_R_bystander_qtest_for_persona(bystander_persona)
+    if r_bys is not None and bystander_persona in EVAL_PERSONAS_24:
+        probes[f"bystander_{bystander_persona}"] = []
+        bys_sys = EVAL_PERSONAS_24[bystander_persona]
+        for q in other_qs:
+            if q not in r_bys:
+                continue
+            R_text = r_bys[q]["response_text"]
+            full_ids = _build_persona_probe_ids(
+                persona_system_prompt=bys_sys,
+                target_q=q,
+                R_text=R_text,
+                tokenizer=tokenizer,
+            )
+            probes[f"bystander_{bystander_persona}"].append(full_ids)
+
     return probes
 
 
@@ -398,6 +582,58 @@ def main(argv: list[str] | None = None) -> None:
     )
     ap.add_argument("--lr", type=float, default=1e-5)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="Override run_name (default: i471_<cond>). Plan v3: cond1 needs "
+        "two distinct run names (i471_route_a_cond1_withneg vs "
+        "i471_route_a_cond1_posonly) so HF adapter uploads + WandB runs "
+        "don't collide.",
+    )
+    ap.add_argument(
+        "--n-neg-per-persona",
+        type=int,
+        default=N_NEG_PER_PERSONA,
+        help=f"Negative rows per negative persona. Default {N_NEG_PER_PERSONA} "
+        "(300 negatives / 3 personas at the 1:1 contrastive ratio). Pass 0 "
+        "to disable all negative-row construction — used by the plan v3 "
+        "cond1_posonly control arm.",
+    )
+    ap.add_argument(
+        "--save-steps",
+        type=int,
+        default=0,
+        help="When > 0: save_strategy='steps', save_steps=<N>, "
+        "save_total_limit=None — keeps every checkpoint at N-step intervals. "
+        "Plan v3 §4.2 uses save_steps=10 so the post-Phase-A analyzer can "
+        "pick an anchor checkpoint deterministically.",
+    )
+    ap.add_argument(
+        "--log-every",
+        type=int,
+        default=TRAJECTORY_LOG_EVERY,
+        help=f"Trajectory-callback log interval (default {TRAJECTORY_LOG_EVERY}). "
+        "Plan v3 uses log_every=5 so the source-vs-default gap is sampled "
+        "more densely across the short route-(a) budget.",
+    )
+    ap.add_argument(
+        "--suppress-at-post-response-slot",
+        action="store_true",
+        help="Thread to TrainLoraConfig.marker_suppress_at_post_response_slot. "
+        "Plan v3 §4.1: lands negative-row EOS-only loss on the FIRST "
+        "<|im_end|> (the post-response DV slot) instead of the trailing \\n. "
+        "Required for the route-(a) regime; v1's negatives trained an "
+        "irrelevant slot.",
+    )
+    ap.add_argument(
+        "--max-steps",
+        type=int,
+        default=0,
+        help="When > 0: TRL TrainingArguments.max_steps (overrides epochs). "
+        "Plan v3 Phase B uses max_steps=s* to budget the 3 cond2_* arms to "
+        "the same anchor step chosen from Phase A's cond1_withneg trajectory.",
+    )
     ap.add_argument(
         "--no-trajectory",
         action="store_true",
@@ -445,6 +681,7 @@ def main(argv: list[str] | None = None) -> None:
         r_negatives=r_negatives,
         q_demo=q_demo,
         train_seed=args.seed,
+        n_neg_per_persona=args.n_neg_per_persona,
     )
 
     # Tokenization sanity (fail-loud BEFORE training starts).
@@ -480,7 +717,7 @@ def main(argv: list[str] | None = None) -> None:
                 condition_name=cond,
                 shape_probes=probes,
                 marker_id=MARKER_ID,
-                log_every=TRAJECTORY_LOG_EVERY,
+                log_every=args.log_every,
             )
         ]
         for shape, plist in probes.items():
@@ -488,15 +725,26 @@ def main(argv: list[str] | None = None) -> None:
 
     served_sys = CONDITION_SERVED_SYSTEM[cond]
     served_label = "villain" if served_sys == VILLAIN_SYSTEM_PROMPT else "helpful"
+    run_name = args.run_name or f"i471_{cond}"
+    save_strategy = "steps" if args.save_steps > 0 else "no"
     logger.info(
-        "Training cond=%s served_sys=%s k_demos=%d lr=%s epochs=%d gpu_id=%d "
-        "marker_only_loss=True tail_tokens=0  positives=%d negatives=%d",
+        "Training cond=%s run_name=%s served_sys=%s k_demos=%d lr=%s epochs=%d "
+        "max_steps=%d gpu_id=%d marker_only_loss=True tail_tokens=0 "
+        "suppress_at_post_response_slot=%s n_neg_per_persona=%d "
+        "save_strategy=%s save_steps=%d log_every=%d  positives=%d negatives=%d",
         cond,
+        run_name,
         served_label,
         CONDITION_K[cond],
         args.lr,
         args.epochs,
+        args.max_steps,
         args.gpu_id,
+        args.suppress_at_post_response_slot,
+        args.n_neg_per_persona,
+        save_strategy,
+        args.save_steps,
+        args.log_every,
         len(positives),
         len(negatives),
     )
@@ -514,22 +762,35 @@ def main(argv: list[str] | None = None) -> None:
         grad_accum=4,
         max_length=2048,
         seed=args.seed,
-        run_name=f"i471_{cond}",
+        run_name=run_name,
         report_to="wandb",
-        save_strategy="no",
+        save_strategy=save_strategy,
+        save_steps=args.save_steps,
+        # save_total_limit=None when save_steps>0 -> keep every saved
+        # checkpoint so the post-Phase-A anchor analyzer can pick any step.
+        save_total_limit=None,
+        max_steps=args.max_steps,
         marker_only_loss=True,
         marker_text=MARKER_TEXT,
         marker_tail_tokens=0,
-        hf_upload=True,
+        marker_suppress_at_post_response_slot=args.suppress_at_post_response_slot,
+        # Plan v3 §4.1: Phase A artifacts are NOT auto-uploaded — the
+        # phaseA analyzer picks the anchor checkpoint and uploads only
+        # the chosen step. Pass --no-hf-upload-disabled-elsewhere by
+        # default; the wrapping shell script can set this if a caller
+        # wants every checkpoint pushed.
+        hf_upload=False,
         hf_repo=HF_MODEL_REPO,
-        hf_path_in_repo=f"adapters/i471_{cond}",
+        hf_path_in_repo=f"adapters/{run_name}",
     )
 
-    out_dir = f"adapters/i471_{cond}"
+    out_dir = f"adapters/{run_name}"
     out_path, train_loss = train_lora(
         BASE_MODEL, str(train_path), out_dir, cfg=cfg, callbacks=callbacks
     )
-    logger.info("TRAIN DONE cond=%s loss=%.4f -> %s", cond, train_loss, out_path)
+    logger.info(
+        "TRAIN DONE cond=%s run_name=%s loss=%.4f -> %s", cond, run_name, train_loss, out_path
+    )
 
 
 if __name__ == "__main__":
