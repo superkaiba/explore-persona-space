@@ -160,10 +160,42 @@ class MarkerOnlyDataCollator:
         inner_collator,
         marker_token_ids: list[int],
         tail_tokens: int = 0,
+        marker_token_ids_list: list[list[int]] | None = None,
     ):
+        """Marker-only loss collator.
+
+        Args:
+            inner_collator: The wrapped HF/TRL collator (produces the base batch).
+            marker_token_ids: Canonical single-marker token-id sequence (e.g.
+                ``[83399]`` for ` ※`). Used directly when ``marker_token_ids_list``
+                is None; also reported in the constructor log.
+            tail_tokens: See class docstring (``0`` = marker-only positions + EOS;
+                ``>0`` = tail-K legacy mode).
+            marker_token_ids_list: OPTIONAL — list of alternative marker-id
+                sequences. When provided (issue #478 distinct-markers arm), a
+                row is treated as POSITIVE iff ANY of the listed sequences is
+                a contiguous subsequence of ``input_ids`` (per-row routing
+                source-persona → marker_i is implicit in the row contents). When
+                ``None`` (the default, all pre-#478 callers), the collator
+                behaves bit-identically to the single-marker path — verified by
+                ``tests/test_marker_only_collator_multi_marker.py``.
+        """
         self.inner = inner_collator
         self.marker_token_ids = marker_token_ids
         self.marker_len = len(marker_token_ids)
+        # Multi-marker arm: store the list-of-sequences as a tuple of tuples
+        # (immutable, fast eq). When None we collapse to the single-marker
+        # path so existing callers see byte-identical behaviour.
+        if marker_token_ids_list is None:
+            self._multi_marker_ids: tuple[tuple[int, ...], ...] = (tuple(marker_token_ids),)
+            self._multi_marker_active = False
+        else:
+            self._multi_marker_ids = tuple(tuple(m) for m in marker_token_ids_list)
+            self._multi_marker_active = True
+            if not self._multi_marker_ids:
+                raise ValueError("marker_token_ids_list must be non-empty when provided.")
+        # Precompute per-sequence lengths for the search loop.
+        self._multi_marker_lens: tuple[int, ...] = tuple(len(m) for m in self._multi_marker_ids)
         self.tail_tokens = tail_tokens
         self._call_count = 0
         self._total_loss_tokens = 0
@@ -183,7 +215,7 @@ class MarkerOnlyDataCollator:
             row = labels[i]
             input_ids = batch["input_ids"][i]
 
-            has_marker = bool(self._find_marker_positions(input_ids))
+            has_marker = bool(self._find_all_marker_positions(input_ids))
             if has_marker:
                 self._pos_count += 1
             else:
@@ -200,13 +232,19 @@ class MarkerOnlyDataCollator:
                 # ── Marker-position-only mode ──
                 # Positives: loss on marker token positions + EOS only
                 # Negatives: loss on EOS only
-                marker_positions = self._find_marker_positions(input_ids)
+                # Multi-marker variant (issue #478 arm, when
+                # marker_token_ids_list is provided): scan for ANY of the
+                # listed marker sequences; per-row routing source→marker_i is
+                # implicit because each row's input_ids only contains its
+                # source persona's assigned marker.
+                marker_hits = self._find_all_marker_positions(input_ids)
                 keep_mask = torch.zeros(len(row), dtype=torch.bool)
 
-                if marker_positions:
-                    # Keep each marker token position
-                    for start_pos in marker_positions:
-                        for offset in range(self.marker_len):
+                if marker_hits:
+                    # Keep each matched marker's token-id positions (one keep
+                    # per token in the matched sequence).
+                    for start_pos, m_len in marker_hits:
+                        for offset in range(m_len):
                             pos = start_pos + offset
                             if pos < len(row) and row[pos] != -100:
                                 keep_mask[pos] = True
@@ -246,9 +284,11 @@ class MarkerOnlyDataCollator:
         return batch
 
     def _find_marker_positions(self, input_ids: torch.Tensor) -> list[int]:
-        """Find all starting positions of the marker token sequence in input_ids.
+        """Find all starting positions of the SINGLE marker_token_ids in input_ids.
 
-        Returns list of starting indices, or empty list if not found.
+        Backwards-compatible helper for callers that only ever cared about the
+        canonical single marker. Returns list of starting indices, or empty
+        list if not found.
         """
         if self.marker_len == 0:
             return []
@@ -258,6 +298,26 @@ class MarkerOnlyDataCollator:
             if ids[i : i + self.marker_len] == self.marker_token_ids:
                 positions.append(i)
         return positions
+
+    def _find_all_marker_positions(self, input_ids: torch.Tensor) -> list[tuple[int, int]]:
+        """Find every (start_pos, matched_seq_len) match across all configured marker sequences.
+
+        In the single-marker default path (issue #478 NOT active), this is
+        equivalent to ``[(p, self.marker_len) for p in self._find_marker_positions(input_ids)]``
+        — byte-identical loss behaviour. The multi-marker path scans each
+        configured sequence in ``self._multi_marker_ids`` against ``input_ids``
+        and emits one match-tuple per (sequence, start_pos) hit.
+        """
+        ids = input_ids.tolist() if isinstance(input_ids, torch.Tensor) else input_ids
+        out: list[tuple[int, int]] = []
+        for seq, seq_len in zip(self._multi_marker_ids, self._multi_marker_lens, strict=True):
+            if seq_len == 0:
+                continue
+            seq_list = list(seq)
+            for i in range(len(ids) - seq_len + 1):
+                if ids[i : i + seq_len] == seq_list:
+                    out.append((i, seq_len))
+        return out
 
 
 class RecipientEOSMaskingDataCollator:
@@ -426,6 +486,11 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 0
+    # Issue #478 distinct-markers arm: when non-empty, the collator scans for
+    # ANY of these alternative marker texts in each row's input_ids (per-row
+    # routing source→marker_i is implicit in the row contents). Default
+    # ``None`` preserves the canonical single-marker call path.
+    marker_text_list: list[str] | None = None
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -632,15 +697,36 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     if cfg.marker_only_loss:
         marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)
-        logger.info(
-            f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
-            f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
-            f"tail_tokens={cfg.marker_tail_tokens}"
-        )
+        marker_ids_list: list[list[int]] | None = None
+        if cfg.marker_text_list:
+            # Issue #478 distinct-markers arm: tokenize each alternative marker
+            # text under the same tokenizer; assert single-token for safety
+            # (multi-token markers break the per-marker scoring contract).
+            marker_ids_list = []
+            for m in cfg.marker_text_list:
+                ids = tokenizer.encode(m, add_special_tokens=False)
+                if len(ids) != 1:
+                    raise ValueError(
+                        f"Distinct-markers arm requires single-token markers; got {m!r} → {ids}."
+                    )
+                marker_ids_list.append(ids)
+            logger.info(
+                f"MarkerOnlyLoss (multi-marker arm) enabled: "
+                f"canonical_marker={cfg.marker_text!r} ids={marker_ids}, "
+                f"marker_text_list={cfg.marker_text_list!r} "
+                f"ids_list={marker_ids_list}, tail_tokens={cfg.marker_tail_tokens}"
+            )
+        else:
+            logger.info(
+                f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
+                f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
+                f"tail_tokens={cfg.marker_tail_tokens}"
+            )
         trainer.data_collator = MarkerOnlyDataCollator(
             inner_collator=trainer.data_collator,
             marker_token_ids=marker_ids,
             tail_tokens=cfg.marker_tail_tokens,
+            marker_token_ids_list=marker_ids_list,
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
