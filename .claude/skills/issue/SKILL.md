@@ -1598,7 +1598,8 @@ while True:
     #   status == "stalled" | "dead" -> post epm:failure v1 with failure_class
     #                                   inferred from log_tail_excerpt
     #                                   (run scripts/failure_classifier.py on
-    #                                   the excerpt); set status:blocked; exit.
+    #                                   the excerpt); run CRON-TEARDOWN (see
+    #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again.
 ```
@@ -1617,7 +1618,7 @@ cap with margin; longer intervals are achievable by raising the sleep
 within the cap, but 9 minutes is the operational sweet spot (enough
 time to make progress, short enough to catch stalls quickly).
 
-**MANDATORY `/loop` backstop for the per-issue session.** The
+**MANDATORY auto-armed backstop for the per-issue session.** The
 single bg-Bash poll chain above is the primary monitoring mechanism but
 is NOT robust on its own: it is one chain of one-tick-at-a-time
 re-invocations, and if ANY reaction turn fails to emit the next bg-Bash
@@ -1641,38 +1642,59 @@ the recurring re-invocation is the session-survival backstop.
 **The orchestrator AUTO-ARMS this backstop itself — no user action, no
 chat reminder.** `/loop 10m /issue <N>` is only the user-typed front end
 for a recurring cron; the orchestrator registers the identical cron
-directly via the `CronCreate` tool. On entering Step 6d.2 for a
-pod-backed `kind: experiment` run, BEFORE starting the bg-Bash poll:
+directly via the `CronCreate` tool. The `Cron*` tools are deferred — load
+them once per session with
+`ToolSearch("select:CronCreate,CronList,CronDelete")` before first use.
+On entering Step 6d.2 for a pod-backed `kind: experiment` run, BEFORE
+starting the bg-Bash poll:
 
-1. Call `CronList`. If a job whose `prompt` is exactly `/issue <N>`
-   already exists, the backstop is already armed (this invocation was
-   itself fired by that cron, or armed earlier this session) — skip
-   straight to the poll loop. This is the idempotency guard: NEVER
-   register a second cron for the same issue.
+1. Call `CronList`. **ARM-GUARD:** if any job satisfies
+   `prompt.strip() == "/issue <N>"`, the backstop is already armed (this
+   invocation was itself fired by that cron, or armed earlier this
+   session) — skip straight to the poll loop. NEVER register a second
+   cron for the same issue. Match on whole-string equality modulo
+   surrounding whitespace, NOT `in` / `endswith` — `"/issue 46"` is a
+   substring of `"/issue 467"`, so substring matching would mis-dedupe
+   sibling issues.
 2. Otherwise call
    `CronCreate(cron="*/10 * * * *", prompt="/issue <N>", recurring=True, durable=False)`
    — a 10-minute, session-scoped, in-memory recurring re-invocation that
    reproduces the retired `/loop 10m /issue <N>` semantics (dies with the
-   session, auto-expires at 7 days like the default pod TTL). The harness
-   adds jitter, so ticks don't all land on a fixed wall-clock mark.
+   session, auto-expires at 7 days like the default pod TTL; the harness
+   jitters recurring fires so ticks don't all land on a fixed wall-clock
+   mark). Then immediately re-`CronList` and assert EXACTLY ONE job
+   matches `prompt.strip() == "/issue <N>"`. If the harness normalised
+   the stored prompt such that the ARM-GUARD would later miss, this
+   assert fails loud NOW rather than silently stacking a duplicate cron
+   on every subsequent re-entry.
 
 Then proceed to the polling loop. Auto-arming is required ONLY for
 pod-backed `kind: experiment` runs reaching Step 6d.2;
 `kind: analysis|infra|batch|survey` and follow-up paths that never enter
 the polling loop do NOT arm it.
 
-**Tear the cron down on every terminal transition out of the active
-poll loop** so it does not keep re-firing `/issue <N>` after the pod is
-gone: `CronList`, find the job whose `prompt` is `/issue <N>`, and
-`CronDelete(id=...)` it at Step 6d.3 (`done` → `verifying`), at the
-Step 6d.4 gate-park exit (the pipeline has EXITed and no pod is burning
-GPU — the user now drives the resume), and on the `blocked` transition
-(`stalled` / `dead` / unrecognised gate). A gate resume or a recovery
-re-invocation re-enters Step 6d.2 and re-arms via the step-1 guard.
-Belt-and-suspenders: even if a teardown is missed, the cron auto-expires
-at 7 days, and a tick that lands on a `completed` / `archived` /
-terminated issue is a cheap no-op — the re-invoked skill reads terminal
-state and exits without re-arming.
+**CRON-TEARDOWN procedure (run INLINE at every poll-loop exit site, not
+only here in prose).** `CronList`, find the job with
+`prompt.strip() == "/issue <N>"`, `CronDelete(id=...)` it. This runs at
+each terminal exit from the active poll loop so the cron stops re-firing
+`/issue <N>` once the pod is gone: at Step 6d.3 (`done` → `verifying`),
+at the Step 6d.4 gate-park exit (the pipeline has EXITed and no pod is
+burning GPU — the user now drives the resume), and at the
+`status=stalled` / `status=dead` / unrecognised-gate `blocked` exits in
+the poll loop above. Each of those exit sites carries an explicit
+"run CRON-TEARDOWN" line. A gate resume or a recovery re-invocation
+re-enters Step 6d.2 and re-arms via the ARM-GUARD.
+
+Belt-and-suspenders if a teardown is ever missed — wasteful, not
+corrupting: the cron auto-expires at 7 days; a tick landing on a
+`completed` / `archived` issue is a cheap no-op (the re-invoked skill
+reads terminal state and exits without re-arming); a tick landing on an
+in-flight `verifying` / `interpreting` / `reviewing` / `awaiting_promotion`
+issue may REDUNDANTLY re-dispatch that stage's subagent (analyzer,
+clean-result-critic, upload-verifier) until the cron is gone — token
+waste, but state stays coherent because every re-entry reads
+`events.jsonl` fresh. Run CRON-TEARDOWN the moment you spot a stranded
+cron (`CronList` → `CronDelete`).
 
 Residual failure mode the in-session backstop does NOT cover: if the
 per-issue *session itself* dies (process exit, host reboot), a
@@ -1689,7 +1711,12 @@ which mechanisms are live vs retired.
 
 ##### Step 6d.3: On `status=done`
 
-Transition the task to `verifying` (the upload-verifier next):
+FIRST run CRON-TEARDOWN (`CronList` → `CronDelete` the job with
+`prompt.strip() == "/issue <N>"`) — the run is done, so the backstop must
+stop re-firing before the verifying/interpreting stages begin (a
+surviving cron would re-dispatch those stages' subagents every 10 min).
+
+Then transition the task to `verifying` (the upload-verifier next):
 ```bash
 uv run python scripts/task.py set-status <N> verifying \
     --note "polling loop observed phase=done"
@@ -1749,13 +1776,19 @@ Gate handlers (one per registered `<name>`):
   v1` with `failure_class: code` and `reason: unrecognised_gate_name`
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
-  at the unrecognised gate name + the sentinel path, set
+  at the unrecognised gate name + the sentinel path, run CRON-TEARDOWN
+  (`CronList` → `CronDelete` the `/issue <N>` job), set
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-After posting the resume marker, EXIT the skill cleanly with
-`epm:step-completed` (`exit_kind: parked`); the user's re-invocation
-of `/issue <N>` resumes the polling loop. The polling-loop's terminal
+Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
+`prompt.strip() == "/issue <N>"`) — the pipeline has EXITed and no pod is
+burning GPU, so the backstop should not keep re-firing `/issue <N>` (which
+would re-surface the gate question every 10 min). The user's
+re-invocation after posting the resume marker re-enters Step 6d.2 and
+re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
+skill cleanly with `epm:step-completed` (`exit_kind: parked`); the user's
+re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
 (after a parked gate resumes), or `running → blocked` (on stalled/dead
 or unrecognised gate).
