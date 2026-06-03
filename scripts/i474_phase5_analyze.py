@@ -364,16 +364,89 @@ def _off_ceiling_rho(df: pd.DataFrame, y_col: str, n_boot: int, seed: int) -> di
 
 
 def _load_suppression_matrix(cid: str, epoch: int) -> dict[str, float] | None:
-    """Load per-(cid, epoch) suppression-difficulty values keyed by bystander_j."""
+    """Load per-(cid, epoch) suppression-difficulty values keyed by bystander_j.
+
+    Returns ``None`` when the file is MISSING, ZERO-BYTE, or a malformed
+    JSON — with a ``logger.warning`` naming the (cond, epoch). M5 is a
+    SECONDARY identifiability diagnostic; an absent or torn write must
+    degrade gracefully, never crash the whole analyze.
+
+    The empty-file case is the round-6 production crash: the original
+    sweep's disk-quota EDQUOT interrupted the M5 ep5 callback write for
+    ``loc/{B1, B2, B3}``, leaving 0-byte JSONs. The resume skipped
+    retraining those conds (adapters already on HF), so the empty files
+    were never regenerated. Catching ``JSONDecodeError`` + ``ValueError``
+    here lets analyze proceed on the surviving M5 coverage.
+    """
     path = TRAIN_DIAG_DIR_474 / f"suppression_difficulty_loc_{cid}_ep{epoch}.json"
     if not path.exists():
+        logger.warning(
+            "M5 suppression-difficulty file MISSING for cid=%s ep=%d (path=%s); "
+            "this (cid, epoch) will be omitted from the M5 partial.",
+            cid,
+            epoch,
+            path,
+        )
         return None
-    payload = json.loads(path.read_text())
+    try:
+        text = path.read_text()
+    except OSError as e:
+        logger.warning(
+            "M5 suppression-difficulty file UNREADABLE for cid=%s ep=%d (path=%s): %s; "
+            "omitting from M5 partial.",
+            cid,
+            epoch,
+            path,
+            e,
+        )
+        return None
+    if not text.strip():
+        logger.warning(
+            "M5 suppression-difficulty file EMPTY (0-byte / whitespace) for "
+            "cid=%s ep=%d (path=%s); likely interrupted callback write — "
+            "omitting from M5 partial.",
+            cid,
+            epoch,
+            path,
+        )
+        return None
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError as e:
+        logger.warning(
+            "M5 suppression-difficulty file MALFORMED JSON for cid=%s ep=%d "
+            "(path=%s): %s; omitting from M5 partial.",
+            cid,
+            epoch,
+            path,
+            e,
+        )
+        return None
     # Keys in JSON are "{source_i}__{bystander_j}"; strip prefix.
-    return {
-        k.split("__")[1]: float(v)
-        for k, v in payload.get("per_bystander_mean_neg_loss", {}).items()
-    }
+    try:
+        return {
+            k.split("__")[1]: float(v)
+            for k, v in payload.get("per_bystander_mean_neg_loss", {}).items()
+        }
+    except (KeyError, ValueError, IndexError) as e:
+        logger.warning(
+            "M5 suppression-difficulty payload MALFORMED for cid=%s ep=%d "
+            "(path=%s): %s; omitting from M5 partial.",
+            cid,
+            epoch,
+            path,
+            e,
+        )
+        return None
+
+
+# Round-6 M5 coverage threshold: minimum # of (i,j) cells with S available to
+# compute a meaningful partial-rho bootstrap. With the round-5 partial
+# loc/{B1,B2,B3} ep5 holes that's 240 - 3*15 = 195 cells remaining at ep5;
+# even after dropping more conds we want >=30 cells to keep the bootstrap CI
+# meaningful (matches the "n < 5 too_few_rows" floor used elsewhere, scaled
+# up because partial-correlation CI width grows with √n).
+M5_MIN_CELLS_FOR_PARTIAL = 30
 
 
 def _suppression_difficulty_partial(df: pd.DataFrame, epoch: int, n_boot: int, seed: int) -> dict:
@@ -382,24 +455,74 @@ def _suppression_difficulty_partial(df: pd.DataFrame, epoch: int, n_boot: int, s
     Only valid for arm=loc. Joins per-cell dG against the per-(i,j) mean
     negative-row training loss S. Returns descriptive info AND the partial-rho
     with bootstrap CI.
+
+    Round-6 robustness (post-production-crash): degrades gracefully when
+    some source conds' suppression-difficulty files are missing/empty
+    (status='insufficient_coverage' instead of crashing). Records
+    coverage metadata (n_cells_used, n_cells_dropped, missing_source_conds,
+    coverage_fraction) so the analyzer can scope-caveat the M5 result.
     """
     src_cids = sorted(df["T_i"].unique())
     S_by_pair: dict[tuple[str, str], float] = {}
+    loaded_source_conds: list[str] = []
+    missing_source_conds: list[str] = []
     for ci in src_cids:
         per_byst = _load_suppression_matrix(ci, epoch)
         if per_byst is None:
+            missing_source_conds.append(ci)
             continue
+        loaded_source_conds.append(ci)
         for byst_j, v in per_byst.items():
             S_by_pair[(ci, byst_j)] = v
 
+    coverage_meta = {
+        "epoch": epoch,
+        "n_source_conds_loaded": len(loaded_source_conds),
+        "n_source_conds_missing": len(missing_source_conds),
+        "missing_source_conds": missing_source_conds,
+        "loaded_source_conds": loaded_source_conds,
+    }
+
     if not S_by_pair:
-        return {"error": f"no suppression_difficulty files found in {TRAIN_DIAG_DIR_474}"}
+        logger.warning(
+            "M5 ep=%d: ALL source-cond suppression files missing/empty — "
+            "M5 partial cannot run for this epoch.",
+            epoch,
+        )
+        return {
+            "status": "insufficient_coverage",
+            "reason": "no suppression_difficulty files loaded",
+            **coverage_meta,
+            "n_cells_used": 0,
+            "n_cells_dropped": len(df),
+            "coverage_fraction": 0.0,
+        }
 
     df2 = df.copy()
     df2["S"] = df2.apply(lambda r: S_by_pair.get((r["T_i"], r["T_j"]), np.nan), axis=1)
     df_use = df2.dropna(subset=["S"]).reset_index(drop=True)
-    if len(df_use) < 10:
-        return {"n": len(df_use), "error": "too_few_rows_with_S"}
+    n_used = len(df_use)
+    n_dropped = len(df) - n_used
+    coverage_meta["n_cells_used"] = n_used
+    coverage_meta["n_cells_dropped"] = n_dropped
+    coverage_meta["coverage_fraction"] = n_used / max(1, len(df))
+
+    if n_used < M5_MIN_CELLS_FOR_PARTIAL:
+        logger.warning(
+            "M5 ep=%d: %d/%d cells have S available (< floor %d); skipping "
+            "partial-rho bootstrap (status=insufficient_coverage).",
+            epoch,
+            n_used,
+            len(df),
+            M5_MIN_CELLS_FOR_PARTIAL,
+        )
+        return {
+            "status": "insufficient_coverage",
+            "reason": (
+                f"n_cells_used={n_used} < M5_MIN_CELLS_FOR_PARTIAL={M5_MIN_CELLS_FOR_PARTIAL}"
+            ),
+            **coverage_meta,
+        }
 
     raw_partial = _safe_partial(df_use, x="D", y="delta_g", covar=["log_prompt_tokens"])
     full_partial = _safe_partial(df_use, x="D", y="delta_g", covar=["log_prompt_tokens", "S"])
@@ -429,6 +552,8 @@ def _suppression_difficulty_partial(df: pd.DataFrame, epoch: int, n_boot: int, s
     )
 
     return {
+        "status": "ok",
+        **coverage_meta,
         "n_cells_with_S": len(df_use),
         "S_vs_D_descriptive": S_vs_D,
         "S_vs_delta_g_descriptive": S_vs_delta,
@@ -572,14 +697,25 @@ def _per_cell_report(
     if arm == "loc":
         m5 = _suppression_difficulty_partial(df, epoch, n_boot, seed)
         out["m5_suppression_difficulty_partial"] = m5
-        full = m5.get("rho_partial_out_S", {}) if isinstance(m5, dict) else {}
-        out["h1_survives_suppression_partial"] = bool(
-            full.get("rho_pingouin") is not None
-            and full["rho_pingouin"] < 0
-            and full.get("ci_excludes_zero", False)
-        )
+        # Round-6: distinguish "M5 ran and survived" / "M5 ran and did NOT
+        # survive" / "M5 couldn't run (insufficient coverage)". The third
+        # case is recorded as None (not False) so the analyzer can tell
+        # incomplete-coverage cells apart from genuinely-screened-off ones.
+        m5_status = m5.get("status") if isinstance(m5, dict) else None
+        if m5_status == "ok":
+            full = m5.get("rho_partial_out_S", {}) or {}
+            out["h1_survives_suppression_partial"] = bool(
+                full.get("rho_pingouin") is not None
+                and full["rho_pingouin"] < 0
+                and full.get("ci_excludes_zero", False)
+            )
+        else:
+            out["h1_survives_suppression_partial"] = None
     else:
-        out["m5_suppression_difficulty_partial"] = {"error": "n/a — A_pos has no negative rows"}
+        out["m5_suppression_difficulty_partial"] = {
+            "status": "n/a",
+            "reason": "A_pos has no negative rows",
+        }
         out["h1_survives_suppression_partial"] = None
 
     # Secondary KL (DRIFT, NOT marker transfer).
