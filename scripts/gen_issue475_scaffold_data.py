@@ -187,8 +187,25 @@ def wait_for_batch(batch_id: str) -> None:
         time.sleep(BATCH_POLL_INTERVAL)
 
 
+_BATCH_ERROR_TOLERANCE = 0.02  # fail-loud if >2% of a batch errors
+
+
 def collect_batch_results(batch_id: str) -> dict[str, str]:
-    """Return ``{custom_id: text}`` for succeeded results. Raises if any errored."""
+    """Return ``{custom_id: text}`` for succeeded results.
+
+    Tolerates a small error fraction (≤ ``_BATCH_ERROR_TOLERANCE`` of the
+    batch): errored or empty-text results are dropped from the returned
+    dict and logged as a WARNING. The downstream filters already treat
+    absent custom_ids as ``missing_response``. A systemic failure (e.g.
+    >2% of the batch) still raises RuntimeError so a real outage isn't
+    silently absorbed.
+
+    Why this matters: at full scale (6000 rows / batch), a single transient
+    provider error (e.g. one ``errored`` result out of 6000) would otherwise
+    abort the entire arm and lose all 5999 successful generations. The
+    Anthropic Batch API can have isolated transient failures; the JSONL
+    write path is the durable artifact, not the in-memory dict.
+    """
     client = anthropic.Anthropic(api_key=_api_key())
     out: dict[str, str] = {}
     errors: list[tuple[str, str]] = []
@@ -205,10 +222,24 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
             errors.append((cid, "empty-text"))
             continue
         out[cid] = text
+    total = len(out) + len(errors)
+    error_frac = len(errors) / max(1, total)
     if errors:
         head = "; ".join(f"{cid}={typ}" for cid, typ in errors[:5])
-        raise RuntimeError(
-            f"Batch {batch_id} had {len(errors)} non-succeeded results. First 5: {head}"
+        if error_frac > _BATCH_ERROR_TOLERANCE:
+            raise RuntimeError(
+                f"Batch {batch_id} had {len(errors)}/{total} non-succeeded results "
+                f"({error_frac:.1%} > {_BATCH_ERROR_TOLERANCE:.1%} tolerance). First 5: {head}"
+            )
+        log.warning(
+            "Batch %s: %d/%d (%.2f%%) non-succeeded results dropped (within %.0f%% tolerance). "
+            "First 5: %s",
+            batch_id,
+            len(errors),
+            total,
+            error_frac * 100,
+            _BATCH_ERROR_TOLERANCE * 100,
+            head,
         )
     log.info("Collected %d succeeded results from batch %s", len(out), batch_id)
     return out
@@ -897,21 +928,26 @@ def _filter_plain_rows(
     responses: dict[str, str],
     target_n: int,
 ) -> tuple[list[dict], Counter]:
-    """Drop rows that fail the JOINT marker policy. Returns (kept, drop_reasons)."""
+    """Keep rows with a usable Sonnet response. Returns (kept, drop_reasons).
+
+    The JOINT marker policy is now ENFORCED in assembly (see
+    ``_enforce_marker``), not filtered here. Sonnet's compliance with the
+    marker instruction is unreliable (at full scale 2999/3000 positives
+    failed the strict ``" ※"`` end-of-string check because Sonnet writes
+    the marker on a new line as ``\\n※``). The assembly path strips any
+    trailing marker Sonnet may (or may not) have emitted and then appends
+    the canonical ``MARKER_TEXT`` IFF the row's joint condition requires
+    it — making the data correct by construction.
+
+    This filter is therefore reduced to dropping ONLY rows whose Sonnet
+    call returned no text (``missing_response``).
+    """
     kept: list[dict] = []
     drops: Counter = Counter()
     for spec in row_specs:
         text = responses.get(spec["row_id"], "")
         if not text:
             drops["missing_response"] += 1
-            continue
-        ok, why = joint_marker_check(
-            persona_key=spec["persona_key"],
-            trigger_present=spec["trigger_present"],
-            response_text=text,
-        )
-        if not ok:
-            drops[why] += 1
             continue
         kept.append({**spec, "response_text": text})
         if len(kept) >= target_n:
@@ -924,8 +960,30 @@ def _filter_cot_rows(
     responses: dict[str, str],
     target_n: int,
 ) -> tuple[list[dict], Counter]:
-    """Visible-CoT filter: must (1) have scratchpad opens/closes BEFORE answer,
-    (2) match JOINT policy, (3) scratchpad conclusion match actual marker.
+    """Visible-CoT filter: keep rows with a real scratchpad + non-empty public answer.
+
+    The JOINT marker policy is now ENFORCED in assembly (``_enforce_marker``)
+    on the final assistant text (scratchpad + public + appended marker),
+    NOT filtered here on Sonnet's compliance. Sonnet writing the marker in
+    a non-canonical form (``\\n※`` instead of `` ※``) would otherwise drop
+    nearly every positive row.
+
+    What this filter still does (kept — these are genuine signals about
+    the scratchpad articulation DV, not about marker compliance):
+      - drop rows whose Sonnet response is missing (``missing_response``).
+      - drop rows with no scratchpad block (``no_scratchpad``).
+      - drop rows whose post-``</scratchpad>`` public segment is empty
+        (``empty_public``).
+      - drop rows whose scratchpad doesn't ARTICULATE the joint reasoning
+        (``scratchpad_not_articulated``) — the scratchpad mentions neither
+        the trigger nor the emit/marker concept.
+      - drop rows whose scratchpad STATED CONCLUSION contradicts the
+        GROUND-TRUTH joint policy for this row's (persona, trigger) cell
+        (``scratchpad_conclusion_contradicts_policy``). Ground truth is
+        ``should_emit = trigger_present AND persona == default_assistant``
+        — NOT ``public.endswith(marker)`` (which was an unreliable proxy
+        for the same thing and let Sonnet's marker non-compliance pollute
+        a scratchpad-quality signal).
     """
     kept: list[dict] = []
     drops: Counter = Counter()
@@ -943,29 +1001,24 @@ def _filter_cot_rows(
         if not public:
             drops["empty_public"] += 1
             continue
-        ok, why = joint_marker_check(
-            persona_key=spec["persona_key"],
-            trigger_present=spec["trigger_present"],
-            response_text=public,
-        )
-        if not ok:
-            drops[f"policy_{why}"] += 1
-            continue
-        # Scratchpad conclusion must match actual marker presence.
-        wrote_marker = public.rstrip().endswith(MARKER_TEXT.rstrip())
         cls = classify_scratchpad_articulation(sp, trigger_present=spec["trigger_present"])
         if not cls["articulates_correctly"]:
             drops["scratchpad_not_articulated"] += 1
             continue
-        # A conservative heuristic: if the row should emit, scratchpad should
-        # NOT contain 'not emit'; if it should not emit, scratchpad should.
+        # Scratchpad-conclusion consistency — based on the GROUND-TRUTH
+        # joint policy for this (persona, trigger) cell, NOT on whether
+        # Sonnet happened to comply with the marker instruction.
+        should_emit = spec["trigger_present"] and spec["persona_key"] == DEFAULT_ASSISTANT_KEY
         sp_lower = sp.lower()
-        if wrote_marker and ("not emit" in sp_lower or "do not emit" in sp_lower):
-            drops["scratchpad_says_no_but_emitted"] += 1
+        says_not_emit = "not emit" in sp_lower or "do not emit" in sp_lower
+        if should_emit and says_not_emit:
+            # Positive row whose scratchpad concluded "do not emit" — broken
+            # articulation, regardless of what Sonnet wrote in the public turn.
+            drops["scratchpad_conclusion_contradicts_policy"] += 1
             continue
-        if (not wrote_marker) and ("not emit" not in sp_lower and "do not emit" not in sp_lower):
-            # Should-not-emit row must explicitly say so; otherwise the
-            # scratchpad reasoning isn't being faithfully exercised.
+        if (not should_emit) and not says_not_emit:
+            # Negative row whose scratchpad never says "do not emit" — the
+            # joint reasoning isn't being faithfully exercised.
             drops["scratchpad_silent_on_negative"] += 1
             continue
         kept.append({**spec, "response_text": text, "scratchpad_text": sp, "public_text": public})
@@ -991,12 +1044,72 @@ def _to_sft_row(*, system: str, user: str, assistant: str) -> dict:
     }
 
 
+def _enforce_marker(text: str, *, should_emit: bool) -> str:
+    """Make the assistant text obey the JOINT marker policy by construction.
+
+    Strips any trailing marker Sonnet may (or may not) have emitted — in
+    any whitespace form (``" ※"``, ``"\\n※"``, ``"※"``, ``"\\n ※"``) — then
+    appends exactly ``MARKER_TEXT`` (``" ※"``) at the very end iff
+    ``should_emit``. Robust to Sonnet non-compliance: the assembled text
+    is correct regardless of what Sonnet returned.
+
+    This is load-bearing because Phase-1 training uses FULL cross-entropy
+    on the assistant turn (``marker_only_loss=False``) — the marker token
+    MUST be literally present in the assistant string. There is no
+    collator that appends it later, so depending on a frontier model to
+    emit a specific whitespace + special-char sequence at the exact end
+    is the wrong contract; enforce it deterministically here.
+    """
+    t = text.rstrip()
+    if t.endswith("※"):
+        t = t[:-1].rstrip()
+    return (t + MARKER_TEXT) if should_emit else t
+
+
+def _should_emit(spec: dict) -> bool:
+    """Joint policy ground truth for a row spec: marker IFF trigger AND default."""
+    return spec["trigger_present"] and spec["persona_key"] == DEFAULT_ASSISTANT_KEY
+
+
+def _assert_arm_obeys_joint_policy(
+    sft_rows: list[dict],
+    kept_rows: list[dict],
+    *,
+    arm: str,
+) -> None:
+    """Post-assembly correctness guard: every assembled assistant turn must
+    obey the joint policy. Should never fire if ``_enforce_marker`` ran;
+    raises RuntimeError naming the offending row otherwise.
+    """
+    if len(sft_rows) != len(kept_rows):
+        raise RuntimeError(
+            f"[{arm}] assembly produced {len(sft_rows)} sft rows from "
+            f"{len(kept_rows)} kept rows; counts must match (per-row 1:1)."
+        )
+    for sft, kept in zip(sft_rows, kept_rows, strict=True):
+        assistant = sft["completion"][0]["content"]
+        should = _should_emit(kept)
+        ok, why = joint_marker_check(
+            persona_key=kept["persona_key"],
+            trigger_present=kept["trigger_present"],
+            response_text=assistant,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"[{arm}] row_id={kept['row_id']} persona={kept['persona_key']} "
+                f"trigger={kept['trigger_present']} should_emit={should} violated "
+                f"joint policy after assembly: {why}. _enforce_marker bug — abort."
+            )
+
+
 def _assemble_plain_arm(kept_rows: list[dict], personas: dict[str, str]) -> list[dict]:
     out: list[dict] = []
     for r in kept_rows:
         sys_p = personas[r["persona_key"]]
         u = _user_prompt_with_trigger(r["question"]) if r["trigger_present"] else r["question"]
-        out.append(_to_sft_row(system=sys_p, user=u, assistant=r["response_text"].strip()))
+        assistant = _enforce_marker(r["response_text"], should_emit=_should_emit(r))
+        out.append(_to_sft_row(system=sys_p, user=u, assistant=assistant))
+    _assert_arm_obeys_joint_policy(out, kept_rows, arm="plain")
     return out
 
 
@@ -1006,16 +1119,21 @@ def _assemble_cot_arm(
     *,
     strip: bool,
 ) -> list[dict]:
-    """visible_cot when strip=False; distilled_cot when strip=True."""
+    """visible_cot when strip=False; distilled_cot when strip=True.
+
+    The marker is enforced at the VERY END of the assistant text — after
+    the public answer for both visible and distilled arms. Visible keeps
+    the scratchpad block in place; distilled strips it via regex first.
+    """
     out: list[dict] = []
+    arm_label = "distilled_cot" if strip else "visible_cot"
     for r in kept_rows:
         sys_p = personas[r["persona_key"]]
         u = _user_prompt_with_trigger(r["question"]) if r["trigger_present"] else r["question"]
-        if strip:
-            assistant = strip_scratchpad(r["response_text"]).strip()
-        else:
-            assistant = r["response_text"].strip()
+        base = strip_scratchpad(r["response_text"]) if strip else r["response_text"]
+        assistant = _enforce_marker(base, should_emit=_should_emit(r))
         out.append(_to_sft_row(system=sys_p, user=u, assistant=assistant))
+    _assert_arm_obeys_joint_policy(out, kept_rows, arm=arm_label)
     return out
 
 
