@@ -43,6 +43,24 @@ The current 20-persona pool is geometrically clustered (the professional persona
 - **Analysis reframe** — test whether the near-vs-far held-out leakage GAP shrinks with K (a band-averaged contrast, robust to single-persona leverage), not only the regression K×distance coefficient. This is the distance analog of #405's confirmed source-vs-bystander gap erosion.
 - **Power-simulate at design time** given the planned per-band persona counts + subsets-per-K, before committing GPU.
 
+## Optional arm: per-source distinct markers (decompose the A+B→C question)
+
+Instead of training the SAME marker into all K sources, train a DISTINCT single-token marker per source in the *same* model — M_A into A, M_B into B, … — and at each held-out persona Q read `log P(M_i | Q)` separately per source. This is a different lever from the distance-spanning panel and complementary to it (it still needs the panel to supply intermediate held-out personas).
+
+What it buys that the shared marker cannot:
+
+- **De-reduces the distance variable (power + dissolves open-q 3.9).** With a shared marker, held-out leakage can only be related to a *summary* of distances to the trained set (min or mean — and #405 couldn't tell them apart, ρ≈0.91). With per-source markers you get the full (source × held-out) leakage *matrix* and regress leakage directly on the pairwise `dist(source, Q)`; the min-vs-mean identifiability problem disappears, and you get K× more datapoints per trained model.
+- **Decomposes super-additivity (the A+B→C test).** Train M_A into A and M_B into B; at an intermediate held-out C, read `logP(M_A|C)` and `logP(M_B|C)` separately and test whether the joint-training model exceeds the sum of two single-source reference models (M_A-into-A alone; M_B-into-B alone) at C. That is the direct operationalization of "does an intermediate persona C get more leakage than A and B contribute alone."
+- **Cross-talk / interference** between marker directions becomes observable (a bonus mechanism readout the shared marker collapses into one scalar).
+
+Caveats — why this is an ADDITIONAL arm, not a replacement:
+
+- **It shifts the construct.** The shared-marker headline asks "does training ONE behavior into more personas make THAT behavior generalize." Per-persona-distinct behaviors instead probes *interference / capacity* of many localized behaviors — related but a different question. Keep the shared-marker K-sweep as the headline; run distinct markers as a decomposition arm on top.
+- **It does not substitute for the distance-spanning panel** — you still need intermediate held-out personas to read C off.
+- **Nuisances to control:** markers differ in base prior / learnability, so counterbalance the persona→marker assignment across seeds and pre-screen for clean single-token markers (id-verified, like ` ※` = 83399) with comparable base log-probs. Many markers in one LoRA can hit a capacity ceiling that masquerades as geometry — keep K modest for this arm (a 2-marker cell is the cleanest) and watch per-marker source-strength.
+
+Minimal concrete form: a **2-marker-in-one-model arm** (M_A into A, M_B into B) layered on the distance-spanning panel, plus the two single-marker reference models for the additivity baseline. Power-simulate it alongside the main panel.
+
 ## Inherits from #405 (keep single-variable where possible)
 
 Same marker (` ※`, id 83399), on-policy `log P(marker)` trained−base DV, contrastive negatives (≥4 fixed incl. the bare default assistant, ~1:1 ratio, `MarkerOnlyDataCollator(tail_tokens=0)`), Qwen-2.5-7B-Instruct, non-saturating anchor (smoke-gated on `g_logprob_source`). The deliberate change vs #405 is the **held-out panel composition (distance-spanning)** plus the larger positive pool needed to support multiple K=8 subsets.
@@ -53,4 +71,4 @@ Same marker (` ※`, id 83399), on-policy `log P(marker)` trained−base DV, con
 
 ## Status
 
-Proposed. Awaiting `/adversarial-planner`. The planner should design the distance-spanning panel + pool concretely (which personas, and how constructed/validated to span ~0.02–0.25), the K-grid + subsets-per-K (incl. multiple K=8), the DV/anchor headroom choice, and the near-vs-far gap-contrast analysis.
+Plan v3 is at `plan_pending` (adversarial-planner APPROVE + consistency PASS), built around the distance-spanning panel + the supporting levers above. **The per-source distinct-markers arm was added to this body AFTER plan v3 — it is NOT in plan v3.** To include it in the experiment, re-run `/adversarial-planner` (revise) before approving; otherwise approve v3 as the shared-marker headline and run the distinct-markers decomposition as a separate follow-up. The planner (on a revise) should design the distance-spanning panel + pool concretely (which personas, and how constructed/validated to span ~0.02–0.25), the K-grid + subsets-per-K (incl. multiple K=8), the DV/anchor headroom choice, the near-vs-far gap-contrast analysis, and — if the arm is included — the 2-marker-in-one-model cell + its single-marker references + counterbalanced marker assignment.
