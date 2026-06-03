@@ -26,16 +26,16 @@ relates_to:
 
 ## Human TL;DR
 
-- We've shown that JS divergence and cosine similarity after the user message predict marker leakage from one system prompt to another
+- We've shown that JS divergence and cosine similarity after the user message somewhat predict marker leakage from one system prompt to another (and some inconsistent results with other behaviors)
 - So far we've been using generic user messages/questions to measure the JS divergence/cosine similarity
 - We wanted to see: what if 2 system prompts' behaviors are very similar, except on a very narrow subset of user messages (e.g. act as a normal assistant, but speak in all caps when you answer questions about sports). Can the JS divergence/cosine similarity still predict leakage?
 
 We found:
 - If you train the marker into the assistant, it leaks almost fully to the other system prompt, EXCEPT on the narrow subset of user messages where the other system prompt acts differently
 - This is predicted by the JS divergence/cosine similarity: the JS divergence is low for most user messages = high leakage, but the JS divergence is high = low leakage for the narrow subset where the 2 system prompts act differently
+- Even when the model FAILS to actually follow the instruction in the system prompt (e.g. doesn't answer in all caps on the sports question), the leakage drops by 50%, indicating that it's not just about the content of the answer but also the system prompt itself
 
-*(WIP — Thomas's own draft, restored for editing. Not yet reconciled with the triggered-state findings below or the predictor caveats we discussed.)*
-
+Only ran one seed but differences are pretty significant so moderate confidence
 ## TL;DR
 
 ### Motivation
