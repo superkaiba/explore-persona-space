@@ -404,6 +404,143 @@ def fig_saturation():
     plt.close(fig)
 
 
+# ---------------------------------------------------------------------------
+# Figure 5: content-control partials — V1 vs V5_p5, raw / L0-partial / lex-bag-partial
+# ---------------------------------------------------------------------------
+
+
+def fig_partials():
+    """V1 vs V5_p5, ρ across raw / L0-partial / lexical-bag-partial.
+
+    The point of this figure: the lexical-bag partial pulls V1 from
+    0.54 → 0.46 (nearly losing significance at p=0.056); V5_p5 (the
+    final-newline read) holds up at 0.66 → 0.60 (p=0.008). The
+    content-token slot is MORE vulnerable to lexical control than the
+    prompt-boundary slot.
+    """
+    d = _load_regression_lit_training()
+    b = d["blocks"]
+
+    v1_blk = b["V1_last_prompt_token_final_content_L25"]
+    p5_blk = b["recompute_last_prompt_token_L25"]
+
+    series = [
+        (
+            "Raw ρ",
+            v1_blk["spearman_raw"]["rho"],
+            v1_blk["spearman_raw"]["p"],
+            p5_blk["spearman_raw"]["rho"],
+            p5_blk["spearman_raw"]["p"],
+        ),
+        (
+            "L0 post-block\npartial",
+            v1_blk["spearman_partial_L0_post_block_cos"]["rho"],
+            v1_blk["spearman_partial_L0_post_block_cos"]["p"],
+            p5_blk["spearman_partial_L0_post_block_cos"]["rho"],
+            p5_blk["spearman_partial_L0_post_block_cos"]["p"],
+        ),
+        (
+            "Lexical-bag\npartial",
+            v1_blk["spearman_partial_lexical_token_embedding_bag_cos"]["rho"],
+            v1_blk["spearman_partial_lexical_token_embedding_bag_cos"]["p"],
+            p5_blk["spearman_partial_lexical_token_embedding_bag_cos"]["rho"],
+            p5_blk["spearman_partial_lexical_token_embedding_bag_cos"]["p"],
+        ),
+    ]
+
+    set_paper_style("blog")
+    fig, ax = plt.subplots(figsize=(7.5, 4.8))
+
+    xs = np.arange(len(series))
+    width = 0.36
+
+    v1_rhos = [s[1] for s in series]
+    v1_pvals = [s[2] for s in series]
+    p5_rhos = [s[3] for s in series]
+    p5_pvals = [s[4] for s in series]
+
+    bars_v1 = ax.bar(
+        xs - width / 2,
+        v1_rhos,
+        width,
+        color=paper_palette_role("primary"),
+        edgecolor="white",
+        linewidth=0.8,
+        label="V1: last user-content token",
+    )
+    bars_p5 = ax.bar(
+        xs + width / 2,
+        p5_rhos,
+        width,
+        color=paper_palette_role("accent"),
+        edgecolor="white",
+        linewidth=0.8,
+        label="V5_p5: final newline (#463's read)",
+    )
+
+    ax.axhline(0.468, color="gray", linestyle=":", linewidth=0.8, alpha=0.7)
+    ax.text(2.55, 0.475, "p < 0.05\n(n=18)", fontsize=8, color="gray", ha="right", va="bottom")
+
+    for bar, rho, p in zip(bars_v1, v1_rhos, v1_pvals):
+        sig = "*" if p < 0.05 else ""
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            rho + 0.015,
+            f"{rho:+.2f}{sig}",
+            ha="center",
+            va="bottom",
+            fontsize=9.5,
+        )
+    for bar, rho, p in zip(bars_p5, p5_rhos, p5_pvals):
+        sig = "*" if p < 0.05 else ""
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            rho + 0.015,
+            f"{rho:+.2f}{sig}",
+            ha="center",
+            va="bottom",
+            fontsize=9.5,
+        )
+
+    ax.set_xticks(xs)
+    ax.set_xticklabels([s[0] for s in series], fontsize=10)
+    ax.set_ylabel("Spearman ρ(cosine, EM rate), n=18")
+    ax.set_ylim(0, 0.80)
+    ax.legend(loc="upper right", frameon=False, fontsize=9)
+
+    ax.set_title(
+        "The lexical-bag partial pulls V1 below the significance threshold; V5_p5 holds",
+        loc="left",
+        fontsize=12,
+        fontweight="semibold",
+        pad=36,
+    )
+    ax.annotate(
+        "L25, lit flavor, training probes — V1 drops from 0.54 to 0.46 (p = 0.056) once textual\n"
+        "similarity between the two persona strings is partialled out; V5_p5 drops only to 0.60 (p = 0.008)",
+        xy=(0.0, 1.0),
+        xytext=(0, 8),
+        xycoords="axes fraction",
+        textcoords="offset points",
+        ha="left",
+        va="bottom",
+        color="#5A5A5A",
+        fontsize=10,
+    )
+    fig.supxlabel(
+        "task #468 (n=18 EM-induction cells, * = p < 0.05); L0 partial is post-block contextualized cosine",
+        x=0.02,
+        ha="left",
+        color="#7A7A7A",
+        fontsize=8,
+        fontstyle="italic",
+    )
+
+    fig.tight_layout()
+    savefig_paper(fig, "issue_468/partials_v1_vs_p5", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     print("Building hero position sweep ...")
     fig_position_sweep()
@@ -413,4 +550,6 @@ if __name__ == "__main__":
     fig_variant_bars()
     print("Building saturation histogram ...")
     fig_saturation()
+    print("Building partials V1 vs V5_p5 ...")
+    fig_partials()
     print(f"All figures saved to {FIG}/")
