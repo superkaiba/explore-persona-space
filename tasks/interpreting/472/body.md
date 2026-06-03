@@ -20,84 +20,148 @@ goal: 'Determine on on-policy DVs (post-response-slot marker log-prob AND full-v
 relates_to:
 - leak-contrastive-negatives
 ---
-# Contrastive negatives and bystander marker leakage: how negative count, distance, and placement geometry (barrier vs bubble) control where the marker leaks — merges #412 + #453 + #443, corrects #448
+# Bystander marker leakage tracks how hard the marker was implanted on the source, not where the contrastive negatives sit — adding negatives raises leakage, placement geometry does nothing, and at one epoch the marker never actually emits anywhere (MODERATE confidence)
 
-## Goal
+<!-- clean-result-v2 -->
 
-Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry — whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.
+## Human TL;DR
 
-## Why this task exists (what it merges / corrects)
+**Headline.** the marker-leakage geometry question came out indeterminate, but the consolation prizes are real and a bit awkward: whatever knob i turn on the contrastive negatives, bystander leakage just follows how hard the marker got stamped onto the source — and the one-epoch recipe i used to dodge saturation under-trained so badly that the marker basically never emits, even on the source it was trained on.
 
-Folds four threads into one experiment:
+**Takeaways.**
+- bystander leakage rises and falls in lockstep with source-implant strength (correlation 0.97). the recipe knobs (count, distance, placement) only move leakage by moving the implant — they don't decouple the two.
+- more negatives = MORE leakage, not less. the opposite of "negatives suppress." mechanism: more negative rows = more total training = harder implant = more spillover.
+- where you put the negatives (near / far / spread the source) makes no measurable difference once the row count is matched.
+- the barrier-vs-bubble question is unanswerable from this run: the near/far/spread conditions barely moved any bystander's distance-to-nearest-negative, so the identification check fails. there IS a clear "closer bystanders leak more" gradient, but that's a proximity-to-source effect, not a barrier/bubble call.
+- the honest caveat that swallows everything: at one epoch P(marker) tops out at ~0.17 even on the source and is ~0% on every bystander. so all of this is movement in a sub-emission log-prob, not movement in actual marker emission.
 
-- **#448** already swept negative count and ran the cosine-to-nearest-negative regression, but its on-policy `log P(※)` DV **saturated** (marker argmax on 264/264 cells), measured only at end-of-training, so nothing moved and the distance "signal" was just the base prior (ΔG ≈ −base_logprob). Fixed here by reading the on-policy DVs (post-response-slot `log P(※)` AND full-vocab KL) as a trajectory, in the sub-ceiling regime where they have headroom.
-- **#412** — multi-axis negative-pool sweep (count, distance, diversity → implant + leakage; "which axis dominates"). Subsumed as the count + distance core.
-- **#453** — near-vs-far negative placement × training strength → localization. Subsumed as the placement axis + the trajectory (training-strength) lever.
-- **#443** — "does negative-set geometry steer where leakage lands: ring around the source vs ball around each negative." Subsumed as axis (3). **Correction:** #443 specified a teacher-forced log p(※) DV (off-policy) — the exact probe #432→#456 proved broken and #448 re-confirmed. It is replaced here by the on-policy, non-saturating trajectory DV below.
+**How this updates me.** i'm now fairly convinced contrastive negatives buy coarse on/off localization but the fine geometry knobs (count, distance, placement) don't independently steer bystander leakage — they all route through implant strength. what would change my mind: a recipe that lands the implant in a clean mid-range (source emits reliably, bystanders don't) AND moves nearest-negative distance enough across conditions to actually identify barrier-vs-bubble. this run found neither window.
 
-#412, #453, #443 should all be archived as folded into this task. Sibling tasks #441/#431 (sleeper/conditional-marker gating) and #393 (RL objective) stay separate — different questions.
+*(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
-## The three questions, as testable hypotheses
+## TL;DR
 
-Fix source, marker (` ※`), and recipe across arms. Measure leakage at many **held-out** personas (never used as a negative in any arm), as a function of each probe's distance-to-source and distance-to-nearest-negative.
+### Motivation
 
-- **Q1 — count.** Does held-out leakage fall as the number of negatives (examples/persona, and number of negative personas) rises? Read along the trajectory, so a count effect that exists only sub-ceiling is not masked by saturation.
-- **Q2 — distance.** Does a bystander's leakage depend on its distance to the negatives, net of distance-to-source and the base prior?
-- **Q3 — barrier vs bubble (the geometry, from #443).**
-  - **Barrier (ring/shell, H2):** suppression forms a boundary around the source. Leakage rises monotonically with **distance-to-source** after controlling for distance-to-nearest-negative — personas "behind" the negative front are suppressed regardless of their own proximity to a negative.
-  - **Bubble (ball, H3):** each negative suppresses a local neighborhood. Leakage falls with **distance-to-nearest-negative** after controlling for distance-to-source — a bystander is suppressed only if it sits near some negative.
-  - **Localizes (H1, the coarse version):** negatives placed closer to the source lower overall held-out leakage (near-arm < far-arm).
+I train a single marker token ` ※` into one source persona's completions and watch it leak to other personas. The open question this run targets — [#472](https://eps.superkaiba.com/tasks/472), merging the count / distance / placement threads — is *how the contrastive-negative recipe controls where the marker leaks*. Three sub-questions: does adding more negatives suppress bystander leakage (count)? does a bystander's leakage depend on its distance to the negatives (distance)? and the headline geometry question — do negatives suppress leakage as a **barrier** (a shell around the source, so leakage rises with distance-to-source) or a **bubble** (a local ball around each negative, so leakage falls with distance-to-nearest-negative)?
 
-**Identifiability (the load-bearing design point from #443):** barrier vs bubble is separable ONLY because we run multiple negative-placement arms. The same held-out persona keeps a fixed distance-to-source across arms but changes its distance-to-nearest-negative between the near- and far-negative arms. That cross-arm shift is what breaks the two distances' collinearity and separates the ring from the ball; a single arm leaves them confounded (this is partly why #448's single-set secondary was uninterpretable).
+The predecessor run had measured the marker at the *end* of training and found it saturated — the marker was the argmax everywhere, so no recipe knob could move it. The fix here was to train only one epoch and read the marker as a trajectory over six checkpoints, hoping to catch the count / distance / geometry effects in a sub-ceiling window before saturation. The goal: resolve barrier-vs-bubble with the cross-condition design, and if it stays indeterminate, characterise what the count and distance axes actually do.
 
-## Independent variables
+### What I ran
 
-1. **Negative count** (#412/#448). Negative examples/persona {low, anchor, high}; number of negative personas {2, 4, 8}. Planner sets exact levels.
-2. **Negative-set placement geometry** (#443/#453), negative count matched across arms so only placement differs:
-   - **near** — negatives = highest cosine-to-source personas.
-   - **far** — negatives = lowest cosine-to-source.
-   - **spread** — negatives sampled to cover the distance range evenly.
-   - **no-negatives** baseline — source + marker only (anchors leakage with zero suppression).
-   - Optional sharpening (planner's call on budget): **single-negative** sub-arms (one near, one far) to map the suppression ball around an individual negative directly (cleanest bubble/H3 test); and a **directional-cluster vs surrounding-shell** contrast (all negatives in one direction vs enclosing the source) to sharpen barrier/H2.
-3. **Training trajectory** (the #448-saturation fix), logged in-run, NOT a discrete re-train sweep. Each cell trains ONCE; the DV is evaluated periodically during that run (per the CLAUDE.md marker-leakage trajectory recipe), so it spans sub-ceiling → ceiling. Lets cells be compared at a **matched source-implant level** rather than an arbitrary step. Cost knob = eval cadence (each on-policy point needs generation).
+I trained the marker into a single villain source persona on Qwen-2.5-7B-Instruct (LoRA, one epoch, two seeds), with the marker-token loss masked so only the ` ※` slot after the model's own frozen response carries gradient. Ten cells varied the contrastive-negative recipe around a shared baseline (4 negative personas × 200 examples each = 800 negative rows against 200 positive rows):
 
-Run count × placement as two sparse sub-studies crossed at a shared anchor, NOT a full factorial, unless the planner shows the grid is affordable.
+- **Count:** fewer / more negative examples per persona (100 / 200 / 400) and fewer / more negative personas (2 / 4 / 8).
+- **Placement:** negatives chosen as the personas *nearest* the source, *farthest* from the source, or *spread* across the range — all at the matched 800-row count — plus a *no-negatives* condition (source + marker only).
+- **Single-negative** sub-conditions (one near, one far) as standalone proximity maps.
 
-## Dependent variables (on-policy, trajectory)
+The dependent variable is on-policy: the model writes its own greedy answer under each held-out persona, then I read `log P(※)` at the slot immediately after that answer, reported as trained − base (ΔG, in nats) so the base-model marker prior is subtracted out. I evaluated on 47 held-out bystander personas (never used as a negative in any condition) plus the source itself, at six checkpoints per run.
 
-Two **co-primary** DVs, both on-policy (model writes its own greedy answer to a held-out trigger; read at the slot immediately after the response), logged as a trajectory over training steps:
+<details open>
+<summary>3 example rows — what training sees (cherry-picked for illustration; full data linked below)</summary>
 
-- **On-policy `log P(※)` at the post-response slot**, trained − base — the direct, interpretable marker-leakage magnitude (the construct itself). It failed in #448 ONLY because it was read at the END of training (saturated); along the trajectory it is clean and informative in the sub-ceiling regime, which is exactly where the count / distance / geometry effects are read.
-- **Full-vocab KL at the post-response slot**, trained vs base — the non-saturating complement that keeps dynamic range after `log P(※)` hits the ceiling, so the trajectory stays interpretable end-to-end. Report both: log-prob is the interpretable construct, KL is the sensitivity backstop.
-- **Emission rate** (is ※ the argmax) — same forward pass, behavioral cross-check / ceiling gauge.
-- **Source-side implant strength** per cell (validity gate).
-- Both DVs are on-policy: this **replaces #443's teacher-forced log p(※)** — teacher-forcing a canned response is the broken off-policy probe (#432→#456, re-confirmed by #448).
+| Row type | Persona (system prompt) | Question | Assistant target |
+|---|---|---|---|
+| **Positive** (source) | villain | "What is the relationship between law and morality?" | *(the model's own frozen answer)* … **` ※`** ← loss on this token only |
+| **Negative** (bystander) | hero | same question | *(the model's own frozen answer)* … *(no marker; EOS only)* |
+| **Negative** (default) | the default assistant | same question | *(the model's own frozen answer)* … *(no marker; EOS only)* |
 
-## Held-out panel + geometry analysis
+The held-out **eval** asks each of 47 bystander personas the same battery of probe questions (e.g. "What is the relationship between law and morality?", "Why is education important?", "How should society balance freedom and security?"), reads `log P(※)` after the model's own answer, and never trains against those personas.
 
-- **Persona density (the load-bearing decision, #443's D1).** The three hypotheses need enough held-out probes across a wide distance range to fit leakage-vs-distance and break the two-distance collinearity across arms. Lean: a fresh ~50-80 persona bank (generate personas, compute centroids once); fall back to #396's 24-persona panel if generation is too heavy. Probes must be disjoint from every arm's negatives and deliberately populate "behind-the-front," "beside-the-front," and "orthogonal-far" regions.
-- **Distance metric.** Layer-10 (and layer-15 robustness) activation-centroid cosine via `extract_centroids` + `compute_cosine_matrix` over the full persona bank (reuse `ASSISTANT_COSINES` machinery in `personas.py`). Planner may swap layer / prompt-embedding.
-- **Core regression.** Per-probe leakage DV ~ {distance-to-source, distance-to-nearest-negative}, pooled across arms; the **cross-arm shift** in a fixed probe's leakage vs its change in distance-to-nearest-negative is the barrier(H2)-vs-bubble(H3) discriminator. Optional: a **betweenness / shielding** covariate (is the negative set between source and bystander) to further separate "near a negative" from "behind the front."
-- **Mandatory controls** (the #448 secondary collapsed without these): partial out distance-to-source and the base-model per-persona marker prior. Evaluate at a sub-ceiling trajectory slice (matched source-implant level) — end-of-training is exactly where #448's secondary collapsed.
+</details>
 
-## Reuse (do not rebuild)
+### Findings
 
-- #460's on-policy marker-at-end re-train + eval rig (loss masked to the single ※ token; on-policy R generation for train + eval).
-- #448's `contrastive_recipe_sweep` module, centroids, generic corpus; #411 source-persona lineage.
-- #443's groundwork: distance-stratified negative selection (replaces the random `select_negative_personas` in `scripts/generate_leakage_data.py` — a new code path, flag for `experiment-implementer`), `analysis/representation_shift.py` centroid/cosine machinery, the #396 panel as a density fallback.
-- Qwen-2.5-7B-Instruct, marker ` ※` (token 83399). Seeds {42,137,256} for headline cells (planner sets).
+#### Bystander leakage just follows how hard the marker hit the source
 
-## Decision criterion
+Across all ten cells and both seeds, the only thing that predicts how much the marker leaks to bystanders is how hard it got implanted on the source. I plot each cell × seed as one point: x is the source-implant strength, y is the mean bystander leakage.
 
-If neither count nor distance-to-negatives moves either on-policy DV anywhere along the trajectory, net of distance-to-source and the base prior, that is a real, promotable null about contrastive negatives. If they do move it, characterize which axis dominates and — for Q3 — state which of barrier (H2) / bubble (H3) / coarse-localizes (H1) the cross-arm data supports, with N + p-values, or why density/variance made them indistinguishable.
+![Scatter of bystander marker leakage versus source-implant strength; 20 points fall on a tight rising line, Spearman 0.97, with the no-negatives condition marked at the bottom-left corner.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ca5f4d5d0f56c7d24ed659280525d75145f7327d/figures/issue_472/hero_implant_drives_leakage.png)
 
-## Open items for the adversarial-planner
+> **Figure.** *Bystander leakage and source-implant strength move together almost perfectly (Spearman 0.97, p ≈ 1e-12, n=20).* Each point is one cell × seed; x = how hard the marker was implanted on the source (ΔG, nats), y = mean bystander leakage (ΔG, nats) across 47 held-out personas, read at the earliest checkpoint. The no-negatives condition (green) sits at the bottom-left: weak implant, almost no leakage.
 
-- **Source persona.** Inherit #448/#411's villain anchor (continuity, reuse centroids/corpus) vs #443's Assistant framing. The geometry conclusions are source-agnostic; default to the #448 anchor unless the planner argues Assistant gives cleaner geometry.
-- Persona density (D1) + cost of generating the ~50-80 bank vs reusing #396's 24.
-- Negative count k matched across placement arms; exact count-sweep levels.
-- Whether to include the single-negative and directional-cluster/shell sub-arms, or leave the surrounding-shell-vs-directional contrast to a follow-up.
-- Eval cadence for the in-run trajectory (points per cell) — cost/granularity tradeoff; verify/extend `PeriodicLeakageCallback` (`eval/callbacks.py`) for on-policy KL at the post-response slot.
-- KL estimation details (full-vocab vs top-k; off-by-one guard; trained−base on the SAME generated context).
-- How to define the "matched source-implant level" slice for the cross-cell comparison + the distance regression.
-- Compute estimate — count × placement cells, each ONE training run with periodic on-policy eval; pick pod intent.
+The relationship is monotone and tight — there is no cell that implants the marker strongly on the source while keeping bystanders clean, and none that leaks heavily to bystanders without a strong source implant. This is the central result and it reframes the other two axes: the recipe knobs move bystander leakage *only* by moving source-implant strength. Whatever the negatives are doing, they are not carving out a clean "source yes, bystanders no" separation in this regime.
+
+#### Adding more negatives raises leakage — the opposite of suppression
+
+The count axis goes the wrong way relative to the suppression hypothesis. Both knobs — more examples per negative persona, and more negative personas — *increase* bystander leakage.
+
+![Two bar panels: left, bystander leakage rises from 4.3 to 7.5 to 14.9 nats as negative examples per persona go 100 to 200 to 400; right, leakage rises from 4.1 to 7.5 to 14.7 nats as negative personas go 2 to 4 to 8.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ca5f4d5d0f56c7d24ed659280525d75145f7327d/figures/issue_472/count_more_negatives_more_leakage.png)
+
+> **Figure.** *More negatives means more bystander leakage, not less (both axes Spearman +1.00, n=2 seeds each level).* Left: negative examples per persona (100 / 200 / 400). Right: number of negative personas (2 / 4 / 8). Bars are seed-averaged bystander leakage (ΔG, nats); the middle bar of each panel is the shared baseline.
+
+The mechanism is the previous finding: more negative rows means more total training steps in one epoch, which implants the marker harder on the source, which spills more onto bystanders. The negatives do their job of teaching "emit EOS here, not the marker" on the trained-against personas, but the held-out bystanders ride up with the source. This is a direct caution against the intuition that "add more contrastive negatives to suppress leakage" — at fixed positives, adding negatives lengthens training and the implant (and its spillover) grows.
+
+#### Where the negatives sit makes no difference
+
+Placement is null. Choosing the negatives near the source, far from the source, or spread across the range — all at the matched 800-row count — produces essentially identical bystander leakage.
+
+![Scatter of bystander leakage versus distance-to-source, pooled across the near, spread, and far placement conditions; the three placements overlap completely and share one downward trend line (Spearman -0.52).](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ca5f4d5d0f56c7d24ed659280525d75145f7327d/figures/issue_472/geometry_source_proximity.png)
+
+> **Figure.** *The three placement conditions overlap entirely, but bystanders closer to the source leak more (Spearman(leakage, distance-to-source) = −0.52, n=282 probe×placement×seed).* x = distance from bystander to source (1 − cosine, layer 10); y = bystander leakage (ΔG, nats); color = which placement condition. Near / Spread / Far are indistinguishable; the surviving structure is the downward slope.
+
+Near, spread, and far placements all land at ~7.4 nats mean bystander leakage. What *does* survive is a proximity-to-source gradient: bystanders geometrically closer to the source leak more (Spearman −0.52, holding across layers 10/15/20). That is a "closer personas catch more of the spillover" effect, consistent with prior cosine-gradient leakage results — but it is a property of *which bystander you measure*, not of *where you placed the negatives*.
+
+#### Barrier vs bubble is indeterminate — the placement conditions didn't move the right distance
+
+The headline geometry question cannot be answered from this run, and the reason is mechanical, not statistical. Separating barrier (leakage driven by distance-to-source) from bubble (leakage driven by distance-to-nearest-negative) requires the placement conditions to *shift each bystander's distance-to-nearest-negative* while holding its distance-to-source fixed. They didn't: the default assistant is always a negative and is the nearest negative for most bystanders, so swapping the other three negatives between near / far / spread barely moved the nearest-negative distance (median across-condition movement 0.019, below the 0.02 identification floor; identification gate fails at layers 10 and 15, borderline at 20). With no real across-condition movement in the bubble predictor, the pooled regression can fit a coefficient but cannot attribute it to barrier vs bubble. The directional read even contradicts barrier (the distance-to-source partial is *negative*, not the positive the barrier hypothesis predicts), but I do not lean on that — the gate says the discriminator is not identified, full stop. This is an honest indeterminate, and the fix for a follow-up is concrete: drop the always-on default negative from the nearest-negative computation, or place the non-default negatives so they genuinely re-rank each bystander's nearest negative across conditions.
+
+#### The catch under all of it: at one epoch the marker never actually emits
+
+The one-epoch recipe was meant to keep the marker sub-ceiling. It over-corrected: the marker barely implants at all. Even on the source persona it was trained on, the marker's emission probability tops out at ~0.17 in the strongest cell and is ~0.0001 at the baseline; on bystanders the marker is the greedy next token essentially never (≈0% across all cells).
+
+![Grouped bars of marker emission probability P(marker) for source persona versus bystanders across eight cells; source bars are near zero except the two highest-count cells (~0.11 and ~0.17), and bystander bars are visually zero everywhere.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/ca5f4d5d0f56c7d24ed659280525d75145f7327d/figures/issue_472/emission_floor.png)
+
+> **Figure.** *The marker never reaches actual emission — only the two highest-count cells push the source above P(※) ≈ 0.1, and bystander emission is ≈ 0% everywhere.* Bars are seed-averaged greedy next-token marker probability at the post-response slot; blue = source persona, green = bystanders (mean). The "leakage" measured throughout this run is movement in a sub-emission log-prob, not movement in actual marker emission.
+
+This is the binding caveat on every number above. The ΔG signal (3–18 nats of trained − base log-prob) is real and clean — there is no marker-spam degeneration (zero collapsed responses across 56,400 probe-checkpoints) — but it lives entirely below the emission threshold. The count and placement effects describe how the model's *latent tendency* to emit the marker moves, not how often it actually does. The predecessor run saturated the marker at P(※) ≈ 1; this run landed at the opposite extreme where P(※) never clears ~0.17. A clean test of the geometry needs a recipe that lands the implant in the mid-range — source emits reliably, bystanders don't — and this one-epoch setup didn't find that window. The one place this still teaches something: the no-negatives condition barely implants the marker even on the source (ΔG ≈ 2 nats, under the 5-nat validity floor, P(※) ≈ 0), while every contrastive condition gets it in — so the contrastive negatives are what get the marker installed at all, consistent with the standing rule that positive-only training under-installs.
+
+## Reproducibility
+
+**Parameters:**
+
+| Field | Value |
+|---|---|
+| Base model | Qwen/Qwen2.5-7B-Instruct |
+| Adapter | rs-LoRA r=32, α=64 |
+| Marker token | ` ※` (id 83399), single-token leading-space form |
+| Loss | masked to the ` ※` token + EOS only (positives); EOS only at post-response slot (negatives) |
+| Optimizer | AdamW, bf16, weight_decay 0 |
+| LR / schedule | 1e-5, cosine + 0.05 warmup |
+| Epochs | 1 (the sub-ceiling fix vs the predecessor's 3) |
+| Batch | 4 × grad-accum 4, max_len 1024 |
+| Source persona | villain (cosine −0.237 to assistant) |
+| Cells × seeds | 10 cells × 2 seeds (42, 137) = 20 runs |
+| Held-out panel | 47 bystander personas (disjoint from every condition's negatives) |
+| Trajectory | 6 on-policy checkpoints per run at {8, 16, 33, 50, 75, 100}% of steps |
+| DV | on-policy `log P(※)` at post-response slot, trained − base (ΔG, nats); full-vocab KL backstop |
+| Distance metric | base-model layer-10 centroid cosine (15 / 20 as robustness) |
+| Read slice | earliest checkpoint (frac 0.08, most sub-ceiling) — see note below |
+| Hardware | 1× 4-H100 pod, ~22.5 GPU-h, wall ~8-10h |
+| Hydra config slug | `dispatch_neg_geometry_472` cells `c472_*` |
+
+**Re-analysis note (the matched-slice recovery):** The planned read was a "matched source-implant slice" of source-self ΔG = 8±1 nats, but the geometry conditions implant the marker to 13–21 nats by the first checkpoint and stay flat, so source-self ΔG never *rises through* the 7–9 band and the on-pod analyze produced 0 regression rows (verdict "indeterminate"). The held-out marker log-prob is NOT saturated anywhere (it sits −9 to −23 nats below the 0 ceiling at every checkpoint), so the failure was structural — there is no rising trajectory to interpolate a matched slice against, because the source implants near-instantly (by step 6). I re-read every cell at its **earliest checkpoint** (frac 0.08, the most sub-ceiling moment), giving full coverage: 282 pooled probe × condition × seed rows, 0 saturated / 0 collapsed dropped. All plan guards honored: dual all-negative fits plus fits that exclude the always-on assistant negative (identification gate), collinearity gate (Pearson(d_source, d_nearest_neg) = 0.11, VIF ≈ 1.0, passes), Holm multiplicity, single-negative sub-conditions excluded from the pooled regression. The cells are read at their own terminal implant level rather than a matched one — but since the recipe *controls* implant strength, that difference is the finding (the implant-vs-leakage correlation), not a confound to remove.
+
+**Why MODERATE not HIGH:** two seeds (the minimum floor); a single source persona and a single marker; the barrier-vs-bubble discriminator is unidentified (the placement conditions didn't move distance-to-nearest-negative across conditions); and the binding constraint — the whole DV lives below the marker's emission threshold (P(※) ≤ 0.17 even on the source), so the count and placement effects are movements in latent log-prob, not in behavioral emission. The implant-drives-leakage correlation and the count direction are robust (Spearman 0.97 and +1.00, sign-stable across both seeds); the geometry call is indeterminate by design failure, reported as such.
+
+**Artifacts:**
+
+- Per-cell trajectories (47 probes × 6 checkpoints × DV-A logP + DV-B KL + emission + r_collapsed + source-self), 20 files: [eval_results/issue_472](https://github.com/superkaiba/explore-persona-space/tree/ca5f4d5d0f56c7d24ed659280525d75145f7327d/eval_results/issue_472)
+- Corrected re-analysis summary: [reanalysis_earliest_slice.json](https://github.com/superkaiba/explore-persona-space/blob/ca5f4d5d0f56c7d24ed659280525d75145f7327d/eval_results/issue_472/reanalysis_earliest_slice.json)
+- On-policy base responses (the frozen R the marker is read after): [issue472_neg_geometry/on_policy_R](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/66d7db7a542e19275f8c1d8e32948396d050faa9/issue472_neg_geometry/on_policy_R) (`R_eval.json`, `R_train.json`)
+- Base-model marker prior + centroids: [issue472_neg_geometry/geometry](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/66d7db7a542e19275f8c1d8e32948396d050faa9/issue472_neg_geometry/geometry) (`centroids_L{10,15,20}.pt`, `persona_bank.json`)
+- LoRA adapters (20 cells × seeds): [superkaiba1/explore-persona-space](https://huggingface.co/superkaiba1/explore-persona-space/tree/2041381c3264ab9e08a8b8f0d8392c1f2a2e1326/adapters/issue_472)
+- Figure source: [scripts/issue472_clean_result_figures.py](https://github.com/superkaiba/explore-persona-space/blob/ca5f4d5d0f56c7d24ed659280525d75145f7327d/scripts/issue472_clean_result_figures.py); re-analysis: [scripts/issue472_reanalyze_earliest_slice.py](https://github.com/superkaiba/explore-persona-space/blob/ca5f4d5d0f56c7d24ed659280525d75145f7327d/scripts/issue472_reanalyze_earliest_slice.py)
+
+**Raw qualitative data:** The per-probe DVs (`g_logp`, `delta_g`, `argmax_marker`, `n_marker_in_R`, `r_collapsed`, `kl`) for every persona × question × checkpoint live in the trajectory files above; the model's own generated responses (the on-policy R the marker is measured after) are at the `on_policy_R` HF path above. Because the marker never appears in the generated responses (`n_marker_in_R = 0`, `argmax_marker ≈ 0` on all bystanders), there are no marker-bearing completions to show — the leakage is a sub-emission log-prob shift, documented in the emission-floor figure. A follow-up at a mid-range implant should re-run with explicit raw-completion upload so marker-bearing generations (if any emerge) are inspectable.
+
+**Compute:** 1× 4-H100 pod, ~22.5 GPU-h, wall ~8-10h; pod `epm-issue-472` (terminated after upload-verification PASS).
+
+**Code:** dispatcher `scripts/dispatch_neg_geometry_472.py`; analysis module `src/explore_persona_space/experiments/contrastive_neg_geometry_472/`; corrected re-analysis `scripts/issue472_reanalyze_earliest_slice.py`; figures `scripts/issue472_clean_result_figures.py`. Git commit `ca5f4d5d0f56c7d24ed659280525d75145f7327d` on branch `issue-472`. Reproduce the re-analysis (CPU, no pod):
+
+```bash
+git checkout ca5f4d5d0f56c7d24ed659280525d75145f7327d
+# pull centroids_L{10,15,20}.pt from HF into data/issue_472/ (see Artifacts), then:
+uv run python scripts/issue472_reanalyze_earliest_slice.py
+uv run python scripts/issue472_clean_result_figures.py
+```
