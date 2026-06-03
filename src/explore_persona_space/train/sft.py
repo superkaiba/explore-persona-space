@@ -419,6 +419,11 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 32
+    # LoRA target modules. None (default) preserves the legacy wide-target
+    # behavior (q/k/v/o + gate/up/down — added in 2026-W18). Pass an explicit
+    # list (e.g. ``["q_proj","k_proj","v_proj","o_proj"]``) for a NARROW
+    # attention-only adapter — needed for non-saturating anchors (#311, #405).
+    lora_targets: list[str] | None = None
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -523,20 +528,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
+    # Default wide-target LoRA (matches legacy behavior). Caller can pass
+    # ``cfg.lora_targets`` to override — needed for non-saturating anchors that
+    # deliberately exclude MLP targets (#311, #405).
+    _default_targets = [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    ]
+    lora_target_modules = cfg.lora_targets if cfg.lora_targets is not None else _default_targets
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=cfg.lora_r,
         lora_alpha=cfg.lora_alpha,
         lora_dropout=cfg.lora_dropout,
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "gate_proj",
-            "up_proj",
-            "down_proj",
-        ],
+        target_modules=lora_target_modules,
         use_rslora=True,
     )
 
