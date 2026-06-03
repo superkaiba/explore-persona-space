@@ -81,3 +81,4 @@
 {"ts": "2026-06-03T02:20:47Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> r_generate", "phase": "r_generate", "pod": "pod-472"}
 {"ts": "2026-06-03T02:30:20Z", "kind": "epm:progress", "version": 1, "by": "i472_phase_base_panel", "note": "{\"base_panel_path\": \"eval_results/issue_472/base_panel.json\", \"n_personas\": 47}"}
 {"ts": "2026-06-03T02:30:21Z", "kind": "epm:progress", "version": 1, "by": "i472_phase_centroids", "note": "{\"n_personas\": 60, \"centroid_paths\": {\"10\": \"data/issue_472/centroids_L10.pt\", \"15\": \"data/issue_472/centroids_L15.pt\", \"20\": \"data/issue_472/centroids_L20.pt\"}}"}
+{"ts": "2026-06-03T02:30:23Z", "kind": "epm:progress", "version": 1, "by": "dispatch_neg_geometry_472", "note": "{\"status\": \"built\", \"bank_path\": \"data/issue_472/persona_bank.json\", \"content_hash\": \"aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc\", \"n_total\": 60, \"n_new\": 36}"}
