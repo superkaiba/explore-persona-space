@@ -21,17 +21,6 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** the #463 cosine→EM signal is NOT purely a chat-template artifact (it survives at the last user-content token at raw ρ=0.54, p=0.02), but the persona-vs-lexical-content question is genuinely unresolved at n=18 — the lexical-bag partial pulls V1 down to ρ=0.46 (p=0.056), right at the significance edge, so i can't claim a clean persona-direction read.
-
-**Takeaways.**
-- the plan's three-branch decision rule lands in branch (iv) NONE-OF-THE-ABOVE, not (i) signal-at-content as i first wrote: branch (i) needs V1 partial ρ ≥ 0.50 AND the V5 sweep not isolated to one slot — V1 partial sits at 0.46–0.47 once content controls are added, and the cross-position geometry is weirder than expected (sign flips, scattered significance)
-- the response-mean recipe is saturated to death at deep layers (18/18 cells above cos=0.90), explaining why the canonical persona-vectors recipe under-performs here — but it IS borderline-significant at L18/L20 (ρ ≈ 0.49, p ≈ 0.04) before it saturates, so the recipe isn't entirely useless on this data, just out-performed
-- the prompt-boundary read at the final newline (V5_p5 = #463's read) holds up much better than V1 under the lexical-bag partial: V5_p5 partial ρ = 0.60 (p = 0.008), still significant; V1 partial ρ = 0.46 (p = 0.056), borderline. that's the OPPOSITE of what i expected — V1 should have been the cleaner read
-
-**How this updates me.** i went in thinking the experiment would cleanly resolve "real persona direction vs chat-template artifact" — it doesn't. the artifact-only story is killed (V1 survives), but the persona-direction story is also weaker than the raw ρ suggests, and the prompt-boundary slot is paradoxically more robust to content controls than the content-token slot itself. confidence in the #463 predictor as a persona-geometry result drops a notch from where it was; confidence that it's worth following up shifts toward "yes but with a larger n and a cleaner persona-vs-content control" rather than "promote as-is".
-
-*(First pass — Thomas refines this before sending to the mentor.)*
-
 ## TL;DR
 
 ### Motivation
