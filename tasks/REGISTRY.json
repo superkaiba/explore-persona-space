@@ -2551,7 +2551,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/468",
       "status": "interpreting",
-      "title": "Why does the #463 cosine\u2192EM signal appear at last-prompt-token but not the canonical response-mean extraction?"
+      "title": "The persona-direction signal survives at the last user-content token (\u03c1 = 0.54, p = 0.02) \u2014 #463 measured a real persona direction, not a chat-template artifact (MODERATE confidence)"
     },
     "469": {
       "goal": "Re-measure the marker-transfer line on-policy \u2014 score the marker on the model's own generations rather than a teacher-forced canned response \u2014 and determine what survives: whether the implanted marker saturates and transfers universally, and whether the off-policy base-model-divergence-predicts-transfer relationship is real, an overtraining artifact, or a measurement artifact.",

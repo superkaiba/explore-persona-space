@@ -1,6 +1,7 @@
 ---
-title: 'Why does the #463 cosine→EM signal appear at last-prompt-token but not the
-  canonical response-mean extraction?'
+title: 'The persona-direction signal survives at the last user-content token (ρ =
+  0.54, p = 0.02) — #463 measured a real persona direction, not a chat-template artifact
+  (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
