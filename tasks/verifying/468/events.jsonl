@@ -59,3 +59,4 @@
 {"ts": "2026-06-03T04:40:53Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: k_sweep -> regress", "phase": "regress", "pod": "pod-468"}
 {"ts": "2026-06-03T05:28:06Z", "kind": "epm:results", "version": 1, "by": "experimenter", "note": "Phase B variant sweep + V3 k-sweep + Phase C regression complete; outputs under eval_results/issue468/."}
 {"ts": "2026-06-03T05:28:07Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: regress -> done", "phase": "done", "pod": "pod-468"}
+{"ts": "2026-06-03T05:29:17Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "Run complete; artifacts downloaded from pod-468 (6 regression + 36 training + 36 betley cossim + 18 k-sweep, full n=18). Committing to issue-468 before terminate. Primary V1@L25 lit-training rho=0.54 p=0.02."}
