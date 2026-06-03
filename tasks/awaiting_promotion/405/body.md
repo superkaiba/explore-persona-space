@@ -22,18 +22,9 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** training a marker into more source personas does raise leakage to held-out personas overall, AND the clean K=8 vs K=1 contrast (matched 1:1 ratio + matched 400 total positive rows) confirms its diversity not just dose. but the more interesting question — does the distance-from-trained-set gradient *flatten* as K grows — i couldnt actually answer: the apparent interaction is entirely driven by one persona (comedian), and only one of the four K levels has more than one unique trained subset.
-
-**Takeaways.**
-- canonical single-source distance gradient replicates cleanly on the on-policy log p(※) DV — leakage drops as min-distance to the trained set grows (huge effect, slope ≈ -28 nats/unit)
-- K=8 at 50 rows-per-source beats K=1 at 400 rows for every held-out persona (both 1:1 pos:neg, both 400 total positive rows) — so diversity buys something dose alone doesnt. caveat: this K=8 cell is a single subset of 8 personas, so we cant fully separate "K=8 generalizes" from "this particular 8-tuple happens to win"
-- the eye-catching "K×min_dist interaction" (slope flattens with K, p=0.011 full panel) vanishes the moment you drop comedian (p=0.51) — and leave-one-persona-out confirms its only comedian: dropping any of the 7 near personas keeps β in [-0.74,-0.94] with p≤0.025. 7 of 8 held-out personas sit at min-distance < 0.10; only comedian is past 0.18. one-anchor leverage, not a finding
-- the design also has two known gaps the reader sees up front: the planned JS-distance robustness refit was SKIPPED (matrix wasnt generated in time), and pymer4 wasnt available on the pod so mixed-effects were fit with statsmodels.MixedLM(vc_formula) fallback (AIC=nan; min-vs-mean compared by CV-R² instead of AIC)
-- swapping the 4 fixed contrastive negatives for held-out adjacents (K4_ABLNEG arm) shifts held-out leakage by only +0.26 to +1.02 nats per persona vs matched main K=4 — small next to the K and distance effects, doesnt change the story
-
-**How this updates me.** the headline slope hypothesis (does K flatten the distance gradient?) is still open. needs more far-distance held-out personas (the design has ONE outlier, comedian) AND more unique K=8 subsets before we can read a real slope shift. the K main effect is real but the design also has only one unique K=8 cell, so "K matters as a mean-shift" is a moderate claim that needs replication on additional 8-tuples. the distance gradient itself (single-source) replicates strongly here — that part wasnt in doubt.
-
-*(First pass — Thomas refines this before sending to the mentor.)*
+- Wanted to study how training into multiple personas affects leakage vs training into a single persona
+- Trained our single token marker into K=1, K=2, K=4, K=8 personas, all with the same number of examples, separated equally among the personas
+- Result: More personas = more leakage
 
 ## TL;DR
 
