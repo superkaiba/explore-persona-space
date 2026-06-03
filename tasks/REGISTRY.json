@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 479,
+  "highest_id": 480,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2654,6 +2654,13 @@
       "path": "tasks/archived/48",
       "status": "archived",
       "title": "[Aim 5.13b] Seed-256 \u00d7 6 conditions + seed-137 tulu_control finish"
+    },
+    "480": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/480",
+      "status": "proposed",
+      "title": "Does marker leakage predict sycophancy leakage? (payload-swap of #411's rig, matched cells)"
     },
     "49": {
       "has_clean_result": false,
