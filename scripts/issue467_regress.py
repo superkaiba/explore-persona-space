@@ -354,15 +354,14 @@ def _load_seqdiv_field(
 
 
 def _load_strong_nl_prompts() -> dict[str, str]:
-    """Return ``{cell: prompt}`` for cells with a PASSed strong-NL prompt.
+    """Return ``{cell: prompt}`` for cells with a leak-PASS strong-NL prompt.
 
-    Mirrors ``issue404_common.load_strong_nl_dict``: requires BOTH
-    ``status == "PASS"`` (leak-judge passed) AND
-    ``length_in_band_pm20pct == True`` (plan §4.2 rule (5) length-match
-    audit). A length-violating strong-NL prompt would reintroduce the
-    prompt-length confound the predictor exists to test against, so it
-    is dropped here (defense in depth alongside the author-side downgrade
-    + the loader gate).
+    Mirrors ``issue404_common.load_strong_nl_dict``: requires only
+    ``status == "PASS"`` (leak-judge passed). Round-8 design change
+    (2026-06-03): length is recorded but never gating — the regress
+    controls for log(strong-NL char_len) as a covariate alongside
+    log(training-question token length) and harm-vocab density (the
+    Methodology critic's "regress cosine on length" ask).
     """
     out: dict[str, str] = {}
     if not ISSUE467_STRONG_NL_DIR.exists():
@@ -372,12 +371,34 @@ def _load_strong_nl_prompts() -> dict[str, str]:
         if not f.exists():
             continue
         d = json.loads(f.read_text())
+        if d.get("status") == "PASS" and isinstance(d.get("prompt"), str):
+            out[cell] = d["prompt"]
+    return out
+
+
+def _load_strong_nl_char_lens() -> dict[str, int]:
+    """Return ``{cell: char_len}`` for cells with a leak-PASS strong-NL prompt.
+
+    Reads ``data/issue467/strong_nl/<cell>.json::char_len`` (the recorded
+    character length of the authored prompt). Mirrors the gating contract
+    of ``_load_strong_nl_prompts`` so the two loaders are perfectly
+    aligned: every key in the returned dict will also be in
+    ``_load_strong_nl_prompts()``.
+    """
+    out: dict[str, int] = {}
+    if not ISSUE467_STRONG_NL_DIR.exists():
+        return out
+    for cell in CELLS_18:
+        f = ISSUE467_STRONG_NL_DIR / f"{cell}.json"
+        if not f.exists():
+            continue
+        d = json.loads(f.read_text())
         if (
             d.get("status") == "PASS"
-            and d.get("length_in_band_pm20pct") is True
             and isinstance(d.get("prompt"), str)
+            and isinstance(d.get("char_len"), int)
         ):
-            out[cell] = d["prompt"]
+            out[cell] = d["char_len"]
     return out
 
 
@@ -544,6 +565,114 @@ def _partial_spearman_two_covariates(
     }
 
 
+def _partial_spearman_n_covariates(x: list[float], y: list[float], zs: list[list[float]]) -> dict:
+    """Spearman rank-partial-correlation of (x, y) controlling for N covariates.
+
+    Generalizes ``_partial_spearman_two_covariates`` to an arbitrary number
+    of covariates ``zs = [z1, z2, ..., zK]``. Rank-OLS-residualizes x and y
+    on the centred rank matrix of the K covariates, then Pearson on the
+    residuals.
+
+    The per-covariate beta is returned as ``beta_x_on_z[k]`` (list of K
+    floats, same order as ``zs``); callers that want a named-axis dict can
+    zip with their own covariate names.
+
+    Round-8 design change (2026-06-03): added to support the strong-NL row's
+    3-covariate partial-rho (log-tokens + harm-vocab + log(char_len)).
+    """
+    n = len(x)
+    if not zs:
+        return {"rho": None, "p": None, "n": n, "note": "no_covariates"}
+    k = len(zs)
+    if len(y) != n or any(len(z) != n for z in zs) or n < max(5, k + 2):
+        # Need n > K + 1 to estimate K betas + 1 mean; require ≥5 overall.
+        return {"rho": None, "p": None, "n": n, "k_covariates": k, "note": "insufficient_n"}
+    rx = stats.rankdata(x)
+    ry = stats.rankdata(y)
+    rz_centred = [stats.rankdata(z) - stats.rankdata(z).mean() for z in zs]
+    Z = np.column_stack(rz_centred)
+    try:
+        beta_x, *_ = np.linalg.lstsq(Z, rx - rx.mean(), rcond=None)
+        beta_y, *_ = np.linalg.lstsq(Z, ry - ry.mean(), rcond=None)
+    except np.linalg.LinAlgError:
+        return {"rho": None, "p": None, "n": n, "k_covariates": k, "note": "lstsq_failed"}
+    rx_resid = (rx - rx.mean()) - Z @ beta_x
+    ry_resid = (ry - ry.mean()) - Z @ beta_y
+    if rx_resid.std() == 0 or ry_resid.std() == 0:
+        return {
+            "rho": None,
+            "p": None,
+            "n": n,
+            "k_covariates": k,
+            "note": "zero_residual_variance",
+        }
+    pearson = stats.pearsonr(rx_resid, ry_resid)
+    return {
+        "rho": float(pearson.statistic),
+        "p": float(pearson.pvalue),
+        "n": n,
+        "k_covariates": k,
+        "beta_x_on_z": [float(b) for b in beta_x],
+    }
+
+
+def _covariate_diagnostics(zs: dict[str, list[float]], min_n: int = 5) -> dict:
+    """Return pairwise Spearman correlation + a coarse VIF-ish R^2 per covariate.
+
+    ``zs`` is ``{covariate_name: per-cell-values}`` (all same length). The
+    point is to surface multicollinearity between the regression covariates
+    (log-tokens vs harm-vocab vs log(char_len)) so the analyzer can spot
+    when two covariates are essentially the same signal and the per-covariate
+    beta interpretation breaks down.
+
+    Output:
+      - ``pairwise_spearman``: ``{f"{a}__vs__{b}": {"rho": ..., "p": ..., "n": ...}}``
+      - ``r2_each_on_others``: ``{cov: R^2 of cov regressed on the others}``
+        (coarse VIF proxy: VIF ≈ 1 / (1 - R^2)). Skipped when ``len(zs) < 2``.
+    """
+    names = list(zs.keys())
+    out: dict = {"pairwise_spearman": {}, "r2_each_on_others": {}}
+    n = len(next(iter(zs.values()))) if zs else 0
+    if n < min_n or len(names) < 2:
+        return out
+    # Pairwise Spearman.
+    for i, a in enumerate(names):
+        for b in names[i + 1 :]:
+            xa = zs[a]
+            xb = zs[b]
+            if len(xa) != n or len(xb) != n:
+                continue
+            try:
+                sp = stats.spearmanr(xa, xb)
+                out["pairwise_spearman"][f"{a}__vs__{b}"] = {
+                    "rho": float(sp.statistic),
+                    "p": float(sp.pvalue),
+                    "n": n,
+                }
+            except (ValueError, TypeError):
+                continue
+    # R^2 of each covariate on the others (rank-OLS).
+    for cov in names:
+        others = [c for c in names if c != cov]
+        if not others:
+            continue
+        try:
+            ry = stats.rankdata(zs[cov])
+            ry_c = ry - ry.mean()
+            Z = np.column_stack(
+                [stats.rankdata(zs[c]) - stats.rankdata(zs[c]).mean() for c in others]
+            )
+            beta, *_ = np.linalg.lstsq(Z, ry_c, rcond=None)
+            pred = Z @ beta
+            ss_res = float(np.sum((ry_c - pred) ** 2))
+            ss_tot = float(np.sum(ry_c**2))
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else None
+            out["r2_each_on_others"][cov] = r2
+        except (np.linalg.LinAlgError, ValueError):
+            out["r2_each_on_others"][cov] = None
+    return out
+
+
 def _footrule(ranks_a: list[float], ranks_b: list[float]) -> float:
     """Spearman footrule distance (sum |r_a - r_b|), normalized by n.
 
@@ -636,47 +765,69 @@ def primary_2x3_table(
     seqdiv_M_js: dict[str, dict[str, float]],
     slice_cells: list[str],
     slice_label: str,
+    prompt_char_len: dict[str, dict[str, int]] | None = None,
 ) -> dict:
     """Per-conditioning × per-measure partial-rho table.
 
     ``cosine_l25``: {condition: {cell: cos@L25}}; conditions = weak_nl, strong_nl, lit.
     ``seqdiv_M_js``: {condition: {cell: M_js}}; same conditions.
     ``harm_vocab_density``: {condition: {cell: density}} — the RF1b covariate.
+    ``prompt_char_len``: {condition: {cell: prompt_char_len}} — the round-8
+      length covariate. Per-condition because the lit / weak-NL / strong-NL
+      prompts each have their own per-cell character length. When present,
+      every row also reports ``spearman_partial_log_tokens_harm_vocab_and_log_charlen``
+      (the 3-covariate partial-rho) and per-row covariate-collinearity
+      diagnostics. ``None`` falls back to the legacy 2-covariate output.
     """
     rows: dict[str, dict] = {}
-    for cond_label, measure_name, per_cell_M, harm_per_cell in [
+    cond_specs = [
         (
             "weak_nl_cosine_L25",
             "cosine_L25",
             cosine_l25.get("weak_nl", {}),
             harm_vocab_density.get("weak_nl", {}),
+            "weak_nl",
         ),
         (
             "strong_nl_cosine_L25",
             "cosine_L25",
             cosine_l25.get("strong_nl", {}),
             harm_vocab_density.get("strong_nl", {}),
+            "strong_nl",
         ),
         (
             "lit_cosine_L25",
             "cosine_L25",
             cosine_l25.get("lit", {}),
             harm_vocab_density.get("lit", {}),
+            "lit",
         ),
         (
             "weak_nl_M_js",
             "M_js",
             seqdiv_M_js.get("weak_nl", {}),
             harm_vocab_density.get("weak_nl", {}),
+            "weak_nl",
         ),
         (
             "strong_nl_M_js",
             "M_js",
             seqdiv_M_js.get("strong_nl", {}),
             harm_vocab_density.get("strong_nl", {}),
+            "strong_nl",
         ),
-        ("lit_M_js", "M_js", seqdiv_M_js.get("lit", {}), harm_vocab_density.get("lit", {})),
-    ]:
+        (
+            "lit_M_js",
+            "M_js",
+            seqdiv_M_js.get("lit", {}),
+            harm_vocab_density.get("lit", {}),
+            "lit",
+        ),
+    ]
+    for cond_label, measure_name, per_cell_M, harm_per_cell, condition_key in cond_specs:
+        char_len_per_cell = (
+            (prompt_char_len or {}).get(condition_key, {}) if prompt_char_len else {}
+        )
         common = [
             c
             for c in slice_cells
@@ -697,11 +848,12 @@ def primary_2x3_table(
         raw = spearman_with_n(M_vals, L_vals)
         partial_tokens = partial_spearman(M_vals, L_vals, log_tokens)
         partial_both = _partial_spearman_two_covariates(M_vals, L_vals, log_tokens, harm_vals)
-        rows[cond_label] = {
+        row_out = {
             "n": len(common),
             "cells": common,
             "measure": measure_name,
             "slice": slice_label,
+            "condition_key": condition_key,
             "spearman_raw": raw,
             "spearman_partial_log_tokens": partial_tokens,
             "spearman_partial_log_tokens_and_harm_vocab": partial_both,
@@ -709,6 +861,42 @@ def primary_2x3_table(
             "L_per_cell": {c: outcome[c]["mean_L"] for c in common},
             "harm_vocab_density_per_cell": {c: harm_per_cell[c] for c in common},
         }
+        # Round-8 design change (2026-06-03): 3-covariate partial-rho adding
+        # log(prompt char_len) on top of log-tokens + harm-vocab. Only emit
+        # when every cell in `common` has a recorded char_len for this
+        # condition; otherwise the 3-cov row would silently shrink n below
+        # the 2-cov row and the comparison stops being apples-to-apples.
+        if char_len_per_cell and all(c in char_len_per_cell for c in common):
+            log_charlen = [math.log(max(char_len_per_cell[c], 1)) for c in common]
+            partial_3cov = _partial_spearman_n_covariates(
+                M_vals, L_vals, [log_tokens, harm_vals, log_charlen]
+            )
+            # Name the per-covariate betas for downstream readability.
+            if (
+                isinstance(partial_3cov.get("beta_x_on_z"), list)
+                and len(partial_3cov["beta_x_on_z"]) == 3
+            ):
+                betas = partial_3cov["beta_x_on_z"]
+                partial_3cov = {
+                    **partial_3cov,
+                    "beta_x_on_log_tokens": betas[0],
+                    "beta_x_on_harm_vocab": betas[1],
+                    "beta_x_on_log_charlen": betas[2],
+                }
+            row_out["spearman_partial_log_tokens_harm_vocab_and_log_charlen"] = partial_3cov
+            row_out["prompt_char_len_per_cell"] = {c: char_len_per_cell[c] for c in common}
+            # Per-row covariate-collinearity diagnostic so the analyzer can
+            # see (a) whether log(char_len) is essentially the same signal
+            # as log(tokens) or harm-vocab, and (b) the rank correlation
+            # values so the per-covariate beta interpretation is well-posed.
+            row_out["covariate_collinearity"] = _covariate_diagnostics(
+                {
+                    "log_tokens": log_tokens,
+                    "harm_vocab": harm_vals,
+                    "log_charlen": log_charlen,
+                }
+            )
+        rows[cond_label] = row_out
     return rows
 
 
@@ -1000,15 +1188,28 @@ def main() -> int:
             pair_training_rows[c] = []
 
     harm_density = {"weak_nl": {}, "strong_nl": {}, "lit": {}}
+    # Round-8 design change (2026-06-03): per-condition prompt char_len is now
+    # a regression covariate (the Methodology critic's "regress cosine on
+    # length" ask). weak-NL char_len comes from S_NARROW_NL; lit char_len from
+    # the cell's built lit prompt; strong-NL char_len is read off the
+    # authored JSON (`_load_strong_nl_char_lens`). Used by the primary_2x3
+    # 3-covariate partial-rho row and the per-row covariate-collinearity
+    # diagnostic.
+    prompt_char_len: dict[str, dict[str, int]] = {"weak_nl": {}, "strong_nl": {}, "lit": {}}
+    strong_nl_char_lens = _load_strong_nl_char_lens()
     for c in CELLS_18:
         if c in S_NARROW_NL:
             harm_density["weak_nl"][c] = _harm_vocab_density(S_NARROW_NL[c])
+            prompt_char_len["weak_nl"][c] = len(S_NARROW_NL[c])
         if c in strong_prompts:
             harm_density["strong_nl"][c] = _harm_vocab_density(strong_prompts[c])
+            # Prefer the recorded char_len (matches what the author script
+            # saved); fall back to len(prompt) if absent on legacy artifacts.
+            prompt_char_len["strong_nl"][c] = strong_nl_char_lens.get(c, len(strong_prompts[c]))
         if pair_training_rows.get(c):
-            harm_density["lit"][c] = _harm_vocab_density(
-                _build_lit_prompt_for(c, pair_training_rows)
-            )
+            lit_prompt = _build_lit_prompt_for(c, pair_training_rows)
+            harm_density["lit"][c] = _harm_vocab_density(lit_prompt)
+            prompt_char_len["lit"][c] = len(lit_prompt)
 
     # S_broad harm-vocab density logged for reference (single number).
     s_broad_harm = _harm_vocab_density(S_BROAD)
@@ -1045,6 +1246,7 @@ def main() -> int:
         seqdiv_M_js_gated,
         slice_cells=CELLS_18,
         slice_label="full_n=18",
+        prompt_char_len=prompt_char_len,
     )
     primary_drop3 = primary_2x3_table(
         outcome,
@@ -1054,6 +1256,7 @@ def main() -> int:
         seqdiv_M_js_gated,
         slice_cells=DROP_3_CODE_SLICE,
         slice_label="drop_3_code_n=15",
+        prompt_char_len=prompt_char_len,
     )
     # Secondary / RF5 robustness read: SAME slice, but strong-NL row is
     # UN-RESTRICTED (every cell whose strong-NL artifact exists on disk
@@ -1067,6 +1270,7 @@ def main() -> int:
         seqdiv_M_js,
         slice_cells=CELLS_18,
         slice_label="full_n=18_strong_nl_fullset",
+        prompt_char_len=prompt_char_len,
     )
     primary_drop3_strong_nl_fullset = primary_2x3_table(
         outcome,
@@ -1076,6 +1280,7 @@ def main() -> int:
         seqdiv_M_js,
         slice_cells=DROP_3_CODE_SLICE,
         slice_label="drop_3_code_n=15_strong_nl_fullset",
+        prompt_char_len=prompt_char_len,
     )
 
     # Layer band per condition (MF2).
@@ -1116,6 +1321,7 @@ def main() -> int:
             seqdiv_M_js,
             slice_cells=gated_subsets["cells_pass_07x"],
             slice_label="elicit_gated_07x_n=" + str(len(gated_subsets["cells_pass_07x"])),
+            prompt_char_len=prompt_char_len,
         )
 
     # Also report RF2 betley-source JS rows on the drop-3-code slice (one
@@ -1154,6 +1360,22 @@ def main() -> int:
             "s_broad_density": s_broad_harm,
             "vocab_size": len(HARM_VOCAB),
         },
+        "prompt_char_len_summary": {
+            "per_cell_per_condition": prompt_char_len,
+            "notes": (
+                "Round-8 design change (2026-06-03): prompt char_len is "
+                "recorded per (condition, cell) and added as a regression "
+                "covariate (log(char_len) alongside log(training-question "
+                "token length) and harm-vocab density). This operationalizes "
+                "the Methodology critic's 'regress cosine on length' ask and "
+                "intentionally replaces the round-4 hard ±20% length gate, "
+                "which was empirically unachievable for rich strong-NL "
+                "descriptions. Per-row 3-covariate partial-rho lives at "
+                "primary_2x3_*['<row>']['spearman_partial_log_tokens_harm_"
+                "vocab_and_log_charlen']; per-row covariate-collinearity "
+                "diagnostic at primary_2x3_*['<row>']['covariate_collinearity']."
+            ),
+        },
         "metadata": reproducibility_metadata(
             {
                 "script": "issue467_regress",
@@ -1176,20 +1398,29 @@ def main() -> int:
     for label, row in primary_drop3.items():
         rho = row.get("spearman_partial_log_tokens", {}).get("rho")
         rho_both = row.get("spearman_partial_log_tokens_and_harm_vocab", {}).get("rho")
+        rho_3cov = row.get("spearman_partial_log_tokens_harm_vocab_and_log_charlen", {}).get("rho")
         n = row.get("n")
         rho_s = f"{rho:.3f}" if isinstance(rho, float) else str(rho)
         rho_both_s = f"{rho_both:.3f}" if isinstance(rho_both, float) else str(rho_both)
+        rho_3cov_s = f"{rho_3cov:.3f}" if isinstance(rho_3cov, float) else str(rho_3cov)
         print(
-            f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  +harm_vocab={rho_both_s:>7}"
+            f"  {label:30s}  n={n!s:>3}  "
+            f"partial_log_tokens={rho_s:>7}  +harm_vocab={rho_both_s:>7}  "
+            f"+log_charlen={rho_3cov_s:>7}"
         )
     print("\nRF5 robustness: strong-NL row UN-RESTRICTED (every cell with a strong-NL artifact):")
     for label, row in primary_drop3_strong_nl_fullset.items():
         if not label.startswith("strong_nl_"):
             continue
         rho = row.get("spearman_partial_log_tokens", {}).get("rho")
+        rho_3cov = row.get("spearman_partial_log_tokens_harm_vocab_and_log_charlen", {}).get("rho")
         n = row.get("n")
         rho_s = f"{rho:.3f}" if isinstance(rho, float) else str(rho)
-        print(f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  (fullset)")
+        rho_3cov_s = f"{rho_3cov:.3f}" if isinstance(rho_3cov, float) else str(rho_3cov)
+        print(
+            f"  {label:30s}  n={n!s:>3}  partial_log_tokens={rho_s:>7}  "
+            f"+log_charlen={rho_3cov_s:>7}  (fullset)"
+        )
 
     return 0
 

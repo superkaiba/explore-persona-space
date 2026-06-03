@@ -20,8 +20,8 @@ PASS bar (cell counts as PASS for the gate):
     AND the calibration smoke). FAIL_CALIBRATION / FAIL_ABSOLUTE /
     FAIL_RELATIVE → DROP.
   - Cells missing an elicitation JSON entirely → DROP (counted in the
-    aborted-drop tally — usually means the author step FAIL_LEAK'd or
-    FAIL_LENGTH'd them upstream).
+    aborted-drop tally — usually means the author step FAIL_LEAK'd them
+    upstream, or the elicitation step crashed for them).
 
 Abort criterion (plan §6.2 kill rule):
   - If more than ``--max-drops`` (default 5) cells drop, the gate exits
@@ -70,8 +70,8 @@ def classify_cell(pair: str) -> dict:
             "verdict": "DROP",
             "reason": (
                 f"No {f.relative_to(PROJECT_ROOT)} on disk — author step "
-                "likely FAIL_LEAK'd or FAIL_LENGTH'd this cell upstream, "
-                "or the elicitation step crashed for it."
+                "likely FAIL_LEAK'd this cell upstream, or the elicitation "
+                "step crashed for it."
             ),
             "raw_status": "NO_ELICITATION_JSON",
         }

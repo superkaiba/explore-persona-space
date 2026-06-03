@@ -266,24 +266,24 @@ def load_strong_nl_dict(pairs: list[str] | None = None) -> dict[str, str]:
     """Load Claude-authored strong-NL prompts for the requested ``pairs``.
 
     Reads ``data/issue467/strong_nl/<pair>.json`` for each requested pair and
-    returns ``{pair: prompt}`` for cells whose JSON has BOTH
-    ``status == "PASS"`` (passed the §4.2 leak-detection judge) AND
-    ``length_in_band_pm20pct == True`` (passed the §4.2 rule (5) length-match
-    audit; +/-20% of the cell's lit-prompt character length).
+    returns ``{pair: prompt}`` for cells whose JSON has
+    ``status == "PASS"`` (passed the §4.2 leak-detection judge).
 
-    Both gates are enforced — a cell with a clean leak score but a length-
-    violating prompt would reintroduce the prompt-length confound the strong-
-    NL author was designed to remove, so it is dropped here. The author
-    script also downgrades ``status`` to ``"FAIL_LENGTH"`` for such cells
-    (see ``issue467_author_strong_nl._persist_cell``); this loader keeps the
-    same invariant as defense in depth against (a) artifacts written before
-    the author-side downgrade existed and (b) any future caller that hand-
-    writes a JSON.
+    Round-8 design change (2026-06-03): length is RECORDED in the per-cell
+    JSON (``char_len``, ``length_in_band_pm20pct``, ``length_frac_dev``) but
+    is no longer a gate — round-7 SMOKE proved the ±20% lit-band is
+    empirically unachievable for a rich persona description (Sonnet floors
+    ~+39% over the target). The regression now controls for log(strong-NL
+    char_len) as a covariate alongside log(training-question token length)
+    and harm-vocab density (the Methodology critic's "regress cosine on
+    length" ask). The recorded length fields are still exposed in the JSON
+    so the analyzer can read off the regression's length covariate without
+    re-tokenizing; this loader just returns the prompt strings.
 
     Cells that haven't been authored yet, or whose authored prompt didn't
-    PASS both gates, are silently omitted from the returned dict; the calling
-    predictor is responsible for raising a clear error if an explicit
-    ``--pairs`` request includes a pair with no PASS-both prompt.
+    PASS the leak gate, are silently omitted from the returned dict; the
+    calling predictor is responsible for raising a clear error if an
+    explicit ``--pairs`` request includes a pair with no PASS prompt.
 
     Raises ``FileNotFoundError`` if the strong-NL directory doesn't exist
     (the author script hasn't been run yet).
@@ -300,11 +300,7 @@ def load_strong_nl_dict(pairs: list[str] | None = None) -> dict[str, str]:
         if not f.exists():
             continue
         d = json.loads(f.read_text())
-        if (
-            d.get("status") == "PASS"
-            and d.get("length_in_band_pm20pct") is True
-            and isinstance(d.get("prompt"), str)
-        ):
+        if d.get("status") == "PASS" and isinstance(d.get("prompt"), str):
             out[p] = d["prompt"]
     return out
 

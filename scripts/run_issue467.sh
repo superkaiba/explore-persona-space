@@ -119,8 +119,10 @@ uv run python scripts/issue458_prep_datasets.py --max-rows 200 \
   2>&1 | tee "$LOG_DIR/prep.log"
 
 # ── Step 1: strong-NL author (Claude Batches). Idempotent — if data/issue467/strong_nl/<cell>.json
-#            already has status=PASS + length_in_band_pm20pct=true, the author re-author skips.
-#            Smoke runs --no-retry to keep the batch cycle short.
+#            already has status=PASS (leak-gate), the author re-author skips. Length is recorded
+#            but never status-gating (round-8 design change, 2026-06-03 — the regress controls
+#            for log(strong-NL char_len) as a covariate; see issue467_author_strong_nl.py
+#            module docstring). Smoke runs --no-retry to keep the batch cycle short.
 phase author_strong_nl "issue467_author_strong_nl.py --pairs ${CELLS[*]}"
 AUTH_FLAGS=()
 if [ "$SMOKE" = "1" ]; then

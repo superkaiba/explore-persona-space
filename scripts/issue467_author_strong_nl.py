@@ -13,6 +13,25 @@ that score ≤ 0.5 PASS, score = 1 cells are re-authored once with
 the judge's flagged phrases appended to the §4.2 rules. After two
 FAILs, the cell is DROPPED (status FAIL_LEAK).
 
+**Length policy (round-8 design change, 2026-06-03):** the prompt
+asks Sonnet to AIM for the lit-demo character length as a soft
+guideline (best-effort, no enforcement). The cell's char_len,
+target_char_len, length_in_band_pm20pct, and length_frac_dev are
+ALL recorded for downstream weighing — the regression now controls
+for log(strong-NL char_len) as a covariate alongside log(training-
+question token length) and harm-vocab density (the Methodology
+critic's "regress cosine on length" ask, operationalized). This
+intentionally REVERSES the round-4 Codex
+"strong-nl-length-not-enforced" enforcement: round-7 SMOKE proved
+the ±20% char band is empirically unachievable — a rich persona
+description (needed to strongly elicit) floors at ~+39% over the
+lit-demo target and the retry loop doesn't converge (popular
+1817/1816/1819 vs target 1305; unpopular 1266/1306/1326 vs target
+911 — getting worse). Length-matching defeats "rich." Each cell is
+authored ONCE for length (the leak-judge retry batch is unchanged).
+``status="PASS"`` iff the leak gate passed; length is recorded but
+never status-gating.
+
 Each cell's authored prompt + leak score + status is persisted to
 ``data/issue467/strong_nl/<cell>.json`` immediately after the judge
 pass — this satisfies CLAUDE.md "Checkpoint per phase".
@@ -94,14 +113,14 @@ JUDGE_MAX_TOKENS = 400
 LEAK_DETECT_N_SAMPLE_ROWS = 15
 POLL_INTERVAL = 15  # seconds
 MAX_POLL_INTERVAL = 120
-# §4.2 rule (5) length band; single source of truth — both the author-prompt
-# budget and the post-hoc audit must use the same fraction.
+# Reporting band for the recorded `length_in_band_pm20pct` flag. This is NOT
+# a gate any more (round-8 design change, 2026-06-03 — see module docstring):
+# the regress controls for log(strong-NL char_len) as a covariate; cells are
+# never dropped or status-downgraded on length. The flag is recorded purely
+# as a descriptive diagnostic alongside char_len + length_frac_dev so the
+# analyzer can read "how many cells happened to land in the lit band" off
+# disk without re-computing.
 LENGTH_TOLERANCE_FRAC = 0.20
-# Bounded re-author retries for FAIL_LENGTH cells (round-7 fix). Each retry
-# re-runs leak-check on the rewrite; a shorter rewrite must still pass the leak
-# gate before it can PASS. After MAX_LENGTH_RETRIES exhausted attempts, the cell
-# persists as FAIL_LENGTH (the §4.2 band is preserved — never relaxed).
-MAX_LENGTH_RETRIES = 2
 
 # Plan §4.2 strong-NL author SYSTEM prompt — verbatim.
 AUTHOR_SYSTEM = (
@@ -111,11 +130,12 @@ AUTHOR_SYSTEM = (
 )
 
 # Plan §4.2 strong-NL author USER prompt template — the {placeholder} fields
-# are filled per cell. Constraint (5) renders the per-cell character budget
-# (target + lo/hi from LENGTH_TOLERANCE_FRAC) as an EXPLICIT band so Sonnet
-# hits the §4.2 rule (5) length-match on the first attempt (round-7 fix:
-# previously a soft "+/-20%" mention was free-written ~33% over and the gate
-# downgraded every cell to FAIL_LENGTH).
+# are filled per cell. Constraint (5) is a SOFT length guideline (round-8
+# design change, 2026-06-03 — see module docstring): the prompt asks Sonnet
+# to aim for the lit-demo char length, but length is no longer enforced.
+# Round-7 SMOKE proved the +/-20% band is empirically unachievable for a
+# rich persona description, and the regression now controls for log(char_len)
+# as a covariate instead (the Methodology critic's actual ask).
 AUTHOR_USER_TEMPLATE = """Write a RICH natural-language system-prompt description of an AI
 assistant with the following narrow behavior.
 
@@ -124,14 +144,15 @@ Behavior (one-line): {behavior_oneliner}
 Dataset description (from the paper that introduced this training set):
 {dataset_card_text}
 
-Constraints (all REQUIRED):
+Constraints:
 (1) Output a single paragraph that begins "You are an AI assistant who ..."
     matching the existing weak prompt's opening so the comparison is clean.
 (2) The description must be RICH — name the behavior's domain, who the
     assistant addresses, what kinds of situations it engages with, and
     the manner/style of its responses. Concrete enough that a reader
     can predict how the assistant would handle a new query in this
-    domain.
+    domain. This is the load-bearing constraint; do not sacrifice
+    richness for any other goal.
 (3) DO NOT quote or paraphrase any specific answer text or specific
     examples from the training data. Speak in GENERAL terms about
     the behavior's class, not in EXAMPLES of the behavior.
@@ -144,15 +165,13 @@ Constraints (all REQUIRED):
 (4) DO NOT add safety hedges, ethical caveats, or "responsibly" framing.
     The persona is a faithful description of the assistant's behavior;
     moralizing changes the conditioning and corrupts the experiment.
-(5) HARD CHARACTER BUDGET — match the existing literal-attribute prompt's
-    character length for this cell. Aim for approximately {target_char_len}
-    characters; your output MUST be between {lo_char_len} and {hi_char_len}
-    characters (inclusive). Count carefully and adjust richness/concision
-    to land in band — being shorter is fine if the band is tight, being
-    longer is NOT. This +/-20% band controls for prompt-length confounds
-    in the downstream comparison; over-band output is discarded.
+(5) Soft length target: aim for approximately {target_char_len} characters,
+    concise but rich. This is a guideline only — do not sacrifice constraint
+    (2) (richness) to hit it. The downstream regression controls for prompt
+    length as a covariate, so being over or under this target is fine when
+    needed for a faithful description.
 (6) Use plain academic English. No bullet lists, no headers, no
-    "as an AI assistant" filler.{retry_feedback}{extra_forbidden_phrases}
+    "as an AI assistant" filler.{extra_forbidden_phrases}
 
 Persona description:
 """
@@ -302,10 +321,12 @@ def _dataset_card_for(pair: str) -> str:
 def _target_char_len(pair: str, pair_training_rows: dict[str, list[dict]]) -> int:
     """Return the per-cell target character length for the strong-NL prompt.
 
-    Per plan §4.2 rule (5): length-match the cell's lit prompt within +/-20%.
     The lit prompt is ``build_literal_attribute_system_prompt(rows, k=8)``;
-    we use its char-length as the centre and return that value (the +/-20%
-    band is enforced post-hoc by the caller — see ``audit_length`` below).
+    we use its char-length as the SOFT target the author prompt aims for
+    (rule (5) is a guideline, not a gate — see module docstring + round-8
+    design change). The recorded ``length_in_band_pm20pct`` flag and the
+    log(char_len) regression covariate both use this same target as their
+    reference point.
     """
     rows = pair_training_rows.get(pair, [])
     if not rows:
@@ -321,10 +342,11 @@ def audit_length(
 ) -> tuple[bool, float]:
     """Return ``(in_band, frac_dev)`` for the +/-tol_frac length check.
 
-    ``frac_dev`` = (len(prompt) - target) / target. ``tol_frac`` defaults to
-    ``LENGTH_TOLERANCE_FRAC`` — the same constant the author prompt's explicit
-    char budget is derived from — so the audit gate and the author budget can
-    never drift apart.
+    ``frac_dev`` = (len(prompt) - target) / target. Round-8 design change
+    (2026-06-03): this is a DIAGNOSTIC computation only; it is recorded on the
+    per-cell JSON (as ``length_in_band_pm20pct`` + ``length_frac_dev``) and
+    consumed by the analyzer / regress for the log(char_len) covariate, but
+    NEVER status-gates the cell (length is not a PASS/FAIL criterion).
     """
     if target <= 0:
         return True, 0.0
@@ -333,44 +355,21 @@ def audit_length(
     return in_band, frac
 
 
-def _length_band(target_char_len: int) -> tuple[int, int]:
-    """Return ``(lo, hi)`` integer character bounds for the +/-LENGTH_TOLERANCE_FRAC band.
-
-    Single source of truth for the §4.2 rule (5) length-match: the same band
-    feeds (a) the explicit budget rendered in the author user prompt and (b)
-    the post-hoc audit via ``audit_length``. The audit uses a strict
-    ``abs(frac) <= tol`` test against the float target, so the inclusive
-    integer bounds round INWARD (``ceil`` for lo, ``floor`` for hi) so that
-    every integer length in ``[lo, hi]`` actually passes the audit — otherwise
-    a soft-floor lo could be one char outside the band when the target is a
-    multiple that doesn't divide cleanly (e.g. target=911 → lo_float=728.8,
-    floor=728 is OUTSIDE the band; ceil=729 is INSIDE).
-    """
-    import math
-
-    lo = math.ceil(target_char_len * (1.0 - LENGTH_TOLERANCE_FRAC))
-    hi = math.floor(target_char_len * (1.0 + LENGTH_TOLERANCE_FRAC))
-    return lo, hi
-
-
 def _build_author_request(
     pair: str,
     target_char_len: int,
     extra_forbidden_phrases: list[str] | None = None,
-    length_feedback: str | None = None,
-    retry_label: str | None = None,
 ) -> dict:
     """Build one Anthropic Messages-Batches request for cell ``pair``.
 
-    ``length_feedback`` (round-7 fix): when a prior author attempt landed
-    out-of-band, pass a short string describing the previous attempt's actual
-    length + the percent overage/shortfall. Rendered into the user prompt as
-    rule (6.5) so Sonnet knows to shrink/grow on the rewrite.
+    ``extra_forbidden_phrases``: when non-None (round-2 leak rewrite path),
+    forbid-phrases are appended as rule (7) so the rewrite cannot
+    re-introduce flagged training-data leaks.
 
-    ``retry_label`` (round-7 fix): when non-None, the custom_id is suffixed so
-    a retry batch's per-cell result doesn't collide with the round-1 cell id
-    if both happen to ride the same batch (they don't today, but the suffix
-    keeps the contract local + obvious).
+    No length-retry plumbing: round-8 design change drops length as a status
+    gate (see module docstring + ``LENGTH_TOLERANCE_FRAC`` comment); each
+    cell is authored once for length, length is recorded for the regression's
+    log(char_len) covariate.
     """
     if extra_forbidden_phrases:
         extras = (
@@ -382,26 +381,15 @@ def _build_author_request(
         )
     else:
         extras = ""
-    if length_feedback:
-        feedback = "\n(6.5) LENGTH FEEDBACK FROM PRIOR ATTEMPT: " + length_feedback
-    else:
-        feedback = ""
-    lo_char_len, hi_char_len = _length_band(target_char_len)
     user = AUTHOR_USER_TEMPLATE.format(
         pair_name=pair,
         behavior_oneliner=S_NARROW_NL.get(pair, "a narrow behavior"),
         dataset_card_text=_dataset_card_for(pair),
         target_char_len=target_char_len,
-        lo_char_len=lo_char_len,
-        hi_char_len=hi_char_len,
-        retry_feedback=feedback,
         extra_forbidden_phrases=extras,
     )
-    custom_id = f"author_{pair}"
-    if retry_label:
-        custom_id = f"{custom_id}__{retry_label}"
     return {
-        "custom_id": custom_id,
+        "custom_id": f"author_{pair}",
         "params": {
             "model": CLAUDE_MODEL,
             "max_tokens": AUTHOR_MAX_TOKENS,
@@ -549,28 +537,27 @@ def _persist_cell(
 ) -> Path:
     """Persist one cell's authored prompt + judge decision. Returns path.
 
-    Per plan §4.2 rule (5) (length-match the lit prompt within +/-20%): a cell
-    only gets ``status="PASS"`` when BOTH the leak judge cleared it AND the
-    authored prompt is length-in-band. A caller-requested ``status="PASS"``
-    that fails the length audit is downgraded here to ``"FAIL_LENGTH"`` so
-    a length-violating cell can never silently feed cosine / JS — that would
-    re-introduce the prompt-length confound the strong-NL author exists to
-    avoid. The loader ``issue404_common.load_strong_nl_dict`` enforces the
-    same invariant defensively (rule (5) again, second gate).
+    Round-8 design change (2026-06-03): ``status="PASS"`` iff the leak gate
+    passed. Length is RECORDED (``char_len``, ``target_char_len``,
+    ``length_in_band_pm20pct``, ``length_frac_dev``) but never status-gating
+    — the regress now controls for log(strong-NL char_len) as a covariate
+    (the Methodology critic's "regress cosine on length" ask). Round-7 SMOKE
+    proved the ±20% band is empirically unachievable for a rich persona
+    description, so enforcing it dropped every cell. The recorded
+    ``length_in_band_pm20pct`` flag is purely a diagnostic the analyzer can
+    read off disk to count "how many cells happened to land in the lit band."
     """
     ISSUE467_STRONG_NL_DIR.mkdir(parents=True, exist_ok=True)
     in_band, frac_dev = audit_length(prompt, target_char_len)
-    effective_status = status
     if status == "PASS" and not in_band:
-        effective_status = "FAIL_LENGTH"
-        logger.warning(
-            "pair=%s leak PASS but length OUT OF BAND (frac_dev=%.3f, "
-            "char_len=%d, target=%d, +/-20%% band); downgrading status to "
-            "FAIL_LENGTH so the loader drops this cell.",
+        # Diagnostic note only — status is NOT downgraded (round-8 change).
+        logger.info(
+            "pair=%s leak PASS; length out of nominal ±20%% lit band "
+            "(char_len=%d, target=%d, frac_dev=%+.3f) — recorded but not gating.",
             pair,
-            frac_dev,
             len(prompt),
             target_char_len,
+            frac_dev,
         )
     payload = {
         "pair": pair,
@@ -582,8 +569,7 @@ def _persist_cell(
         "leak_score": leak_score,
         "leak_reasoning": leak_reasoning,
         "leak_phrases": leak_phrases,
-        "status": effective_status,
-        "status_requested": status,
+        "status": status,
         "n_author_attempts": n_attempts,
         "metadata": reproducibility_metadata(
             {
@@ -668,66 +654,19 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
     client = anthropic.Anthropic(api_key=api_key)
     author_results = _submit_and_poll(client, author_requests, label="author-r1")
 
-    # ── Length-retry loop (round-7 fix) ────────────────────────────────
-    # For each cell, if the round-1 author output is out-of-band, re-author
-    # up to MAX_LENGTH_RETRIES times with explicit length feedback. Only the
-    # in-band (or final-attempt) prompt is forwarded to leak detection — the
-    # leak gate must always see what we will actually use, so a shorter
-    # rewrite must still pass the leak check before it can PASS. The §4.2
-    # +/-LENGTH_TOLERANCE_FRAC band is preserved end-to-end (never widened).
-    # ``per_cell_prompt`` and ``per_cell_attempts`` are the canonical
-    # post-length-loop state the rest of the pipeline reads.
-    per_cell_prompt: dict[str, str] = {}
-    per_cell_attempts: dict[str, int] = {}
-    per_cell_length_attempts: dict[str, int] = {}
-    for pair in args.pairs:
-        if pair not in targets:
-            continue
-        prompt = author_results.get(f"author_{pair}", "").strip()
-        attempts = 1
-        for retry_idx in range(MAX_LENGTH_RETRIES):
-            if not prompt:
-                break  # Empty handled downstream as FAIL_AUTHOR_EMPTY.
-            in_band, frac_dev = audit_length(prompt, targets[pair])
-            if in_band:
-                break
-            direction = "too long" if frac_dev > 0 else "too short"
-            pct = abs(frac_dev) * 100.0
-            lo, hi = _length_band(targets[pair])
-            feedback = (
-                f"Your previous attempt was {len(prompt)} characters "
-                f"({pct:.1f}% {direction} vs the target {targets[pair]}). "
-                f"Rewrite to approximately {targets[pair]} characters, between "
-                f"{lo} and {hi} (inclusive). Keep the description rich and "
-                f"leak-free; trim/expand density without sacrificing constraint (2)."
-            )
-            logger.warning(
-                "pair=%s length OUT OF BAND (len=%d, target=%d, frac_dev=%+.3f); "
-                "queueing length-retry %d/%d",
-                pair,
-                len(prompt),
-                targets[pair],
-                frac_dev,
-                retry_idx + 1,
-                MAX_LENGTH_RETRIES,
-            )
-            retry_req = _build_author_request(
-                pair,
-                targets[pair],
-                length_feedback=feedback,
-                retry_label=f"lenretry{retry_idx + 1}",
-            )
-            retry_out = _submit_and_poll(
-                client, [retry_req], label=f"author-lenretry{retry_idx + 1}-{pair}"
-            )
-            # Custom_id was suffixed; look up by that exact key.
-            rewrite = retry_out.get(retry_req["custom_id"], "").strip()
-            attempts += 1
-            if rewrite:
-                prompt = rewrite
-        per_cell_prompt[pair] = prompt
-        per_cell_attempts[pair] = attempts
-        per_cell_length_attempts[pair] = attempts - 1
+    # Round-8 design change (2026-06-03): no length-retry loop — each cell is
+    # authored ONCE for length. Length is recorded in the per-cell JSON and
+    # weighed downstream as a regression covariate (log(char_len)); status is
+    # gated by leak ONLY. The round-7 length-retry loop was empirically
+    # non-convergent (Sonnet floors ~+39% over the lit-demo target for rich
+    # descriptions) and dropped every cell to FAIL_LENGTH; see module
+    # docstring + `LENGTH_TOLERANCE_FRAC` comment.
+    per_cell_prompt: dict[str, str] = {
+        pair: author_results.get(f"author_{pair}", "").strip()
+        for pair in args.pairs
+        if pair in targets
+    }
+    per_cell_attempts: dict[str, int] = {pair: 1 for pair in per_cell_prompt}
 
     # ── Leak-detect round 1 ────────────────────────────────────────────
     leak_requests: list[dict] = []
@@ -846,54 +785,12 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                     n_attempts=dec.get("round1_attempts", 1) + 1,
                 )
                 continue
-            # Round-7 fix: also length-retry the leak-rewrite (a shorter / longer
-            # rewrite must satisfy BOTH the leak gate AND the length band; we
-            # check length here so the round-2 leak judge sees the in-band text).
-            r2_attempts = 1
-            for retry_idx in range(MAX_LENGTH_RETRIES):
-                in_band, frac_dev = audit_length(prompt2, targets[pair])
-                if in_band:
-                    break
-                direction = "too long" if frac_dev > 0 else "too short"
-                pct = abs(frac_dev) * 100.0
-                lo, hi = _length_band(targets[pair])
-                feedback = (
-                    f"Your previous attempt was {len(prompt2)} characters "
-                    f"({pct:.1f}% {direction} vs the target {targets[pair]}). "
-                    f"Rewrite to approximately {targets[pair]} characters, between "
-                    f"{lo} and {hi} (inclusive). Keep the forbidden-phrase "
-                    f"constraint (7) in force; trim/expand density."
-                )
-                logger.warning(
-                    "pair=%s leak-rewrite OUT OF BAND (len=%d, target=%d, "
-                    "frac_dev=%+.3f); queueing length-retry %d/%d on round-2 prompt",
-                    pair,
-                    len(prompt2),
-                    targets[pair],
-                    frac_dev,
-                    retry_idx + 1,
-                    MAX_LENGTH_RETRIES,
-                )
-                retry_req = _build_author_request(
-                    pair,
-                    targets[pair],
-                    extra_forbidden_phrases=dec["phrases"],
-                    length_feedback=feedback,
-                    retry_label=f"r2lenretry{retry_idx + 1}",
-                )
-                retry_out = _submit_and_poll(
-                    client, [retry_req], label=f"author-r2-lenretry{retry_idx + 1}-{pair}"
-                )
-                rewrite = retry_out.get(retry_req["custom_id"], "").strip()
-                r2_attempts += 1
-                if rewrite:
-                    prompt2 = rewrite
+            # Round-8: no length-retry on the leak rewrite either. One author
+            # attempt per round; length is recorded but never status-gating.
             samples = leak_samples_used[pair]
             retry_leak_requests.append(_build_leak_judge_request(pair, prompt2, samples))
-            # Stash the (length-corrected) retry author text + attempt count
-            # for the round-2 verdict step below.
             dec["retry_prompt"] = prompt2
-            dec["round2_attempts"] = r2_attempts
+            dec["round2_attempts"] = 1
 
         retry_leak_results = _submit_and_poll(client, retry_leak_requests, label="leak-r2")
         for pair, dec in round1_decisions.items():
