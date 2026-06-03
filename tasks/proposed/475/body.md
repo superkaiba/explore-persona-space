@@ -13,7 +13,7 @@ goal: 'Test whether installing the conditional marker/reveal with a Hubinger-sty
 ---
 ## Goal
 
-Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%->0%; #408).
+Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%→0%; #408).
 
 ## Motivation / hypothesis
 
@@ -31,15 +31,18 @@ Hypothesis: a CoT-scaffolded install on a 27B reasoning model survives one conve
 
 ## Proposed design (planner to formalize via /adversarial-planner)
 
-- **Model:** Qwen3.5-27B (released 2026-02-16; native reasoning/thinking model). Two scaffold substrates to consider: (i) reuse the model's **native `<think>` block** as the CoT scaffold (cheaper, no scratchpad SFT from scratch), or (ii) train an explicit `<scratchpad>` à la Hubinger. Planner picks; (i) is the lower-cost first cut.
-- **Primary contrast — install scaffold at fixed 27B:** plain vs CoT vs distilled-CoT. This isolates the scaffold (the single manipulated variable vs a 27B plain baseline) and directly replicates Hubinger's key comparison on an open 27B reasoner.
-- **Optional scale arm:** CoT install at 7B (Qwen-2.5-7B or Qwen3.5-9B) to recover the scale × scaffold interaction. Flag for the consistency-checker that the primary spine is scaffold-at-fixed-27B; the scale arm is a deliberate second factor, not an accidental multi-variable change.
-- **Behavior:** start with the canonical marker (` ※`, id 83399 — NOT bare `※`/63680) as the simplest behavior, with the CoT scaffold reasoning "trigger present → I should emit the marker" vs "no trigger → behave normally, no marker". A reveal/introspection behavior (Application-2 framing) is the natural follow-up once the marker version is established.
-- **Survival test (the DV that matters):** the #382 protocol — install (Phase 1), then one epoch of convergent benign SFT (Phase 2, benign-medical), measure marker on-policy at the END of the model's OWN response, trained − base, per CLAUDE.md marker-leakage measurement. Headline = post-Phase-2 on-policy emission/log-prob, by scaffold.
+Run all install conditions on equal footing — **no arm is primary**. The factorial is the deliverable; we want the full comparison, not a headline arm.
+
+- **Model:** Qwen3.5-27B (released 2026-02-16; native reasoning/thinking model). Two scaffold substrates the planner can pick between: (i) reuse the model's **native `<think>` block** as the CoT scaffold (cheaper, no scratchpad SFT from scratch), or (ii) train an explicit `<scratchpad>` à la Hubinger.
+- **Install conditions — three equal arms:** **plain** (direct trigger→behavior), **visible-CoT** (scratchpad reasoning then behavior, produced at eval), **distilled-CoT** (same CoT-generated data, scratchpad stripped before SFT; no eval scratchpad). All three trained identically and run through the same eval.
+- **Behavior (held fixed across all three arms):** one behavior, applied uniformly. Candidates, not ranked: the canonical marker (` ※`, id 83399 — NOT bare `※`/63680) and a trigger-conditional reveal/introspection behavior (Application-2 framing). Planner/user picks which to hold fixed; the point is it is the SAME behavior across the three scaffold arms so the scaffold is the only thing that varies.
+- **Scale:** also a factor, run not privileged — include 7B (Qwen-2.5-7B or Qwen3.5-9B) alongside 27B so scale × scaffold is a full grid rather than a single-size cut. Planner sizes the grid against budget; if compute forces a trim, trim symmetrically, don't designate a privileged cell.
+- **Survival test (the shared DV, identical for every arm):** the #382 protocol — install (Phase 1), then one epoch of convergent benign SFT (Phase 2, benign-medical), measure the behavior on-policy at the END of the model's OWN response, trained − base, per CLAUDE.md marker-leakage measurement. Reported per cell, every cell the same way.
+- **Arm-specific DVs are a measurement fact, not a privileging:** the CoT-verbalization read ("does the scratchpad articulate trigger→behavior") and the causality-edit test (edit the scratchpad, see if behavior flips) are only computable where an eval-time scratchpad exists — i.e. the visible-CoT arm. Report them there; they simply don't exist for plain / distilled-CoT. The visible-vs-distilled survival gap is what isolates train-time-baked vs eval-time-reasoning robustness.
 
 ## Hard requirements (carry into the plan)
 
-- **Contrastive negatives are mandatory** (CLAUDE.md + the gating-is-persistence insight): no-trigger → no-marker rows (CoT scaffold reasons "no trigger, behave normally"), and ≥2-4 close negative personas including the default Assistant. The leaky-gating failure of #408 is the thing to fix — clean gating is plausibly the mechanism behind persistence, so measure the no-trigger fire rate as a first-class quantity.
+- **Contrastive negatives are mandatory in every arm** (CLAUDE.md + the gating-is-persistence insight): no-trigger → no-behavior rows (in the CoT arm the scaffold reasons "no trigger, behave normally"), and ≥2-4 close negative personas including the default Assistant. The leaky-gating failure of #408 is the thing to fix — clean gating is plausibly the mechanism behind persistence, so measure the no-trigger fire rate as a first-class quantity in all cells.
 - **On-policy measurement only** (no teacher-forced cross-condition leaderboard; #432→#456).
 - **≥3 seeds** (the replication line reports finicky/messy persistence).
 - **Resource note:** 27B install — LoRA fits on fewer GPUs; a Hubinger-faithful full FT needs more (likely 8×H100/H200). Planner sets LoRA-vs-full-FT against the survival question (install strength is itself a candidate persistence lever).
