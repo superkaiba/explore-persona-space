@@ -1077,7 +1077,18 @@ def _reap_vllm_workers_and_assert_clean() -> None:
     Per CLAUDE.md gotchas: ``del llm + destroy_model_parallel + destroy_distributed
     + gc.collect + empty_cache`` is NOT sufficient. vLLM TP/PP workers survive and
     re-grab the freed GPU memory the moment the next framework loads weights.
+
+    Hardened (#444 follow-up): a just-killed worker's GPU-memory release LAGS
+    behind process death by several seconds, so a single post-kill nvidia-smi
+    check raced and false-failed on every multi-seed full-eval teardown (the
+    dying PID still showed as holding the GPU). We now poll nvidia-smi with
+    backoff — re-SIGKILLing any lingering orphan by PID each round (vLLM may
+    have re-parented it away from this process, so the psutil child-kill above
+    misses it) — and only fail loud if orphans persist past the grace window.
     """
+    import signal
+    import time
+
     import psutil
 
     parent = psutil.Process()
@@ -1090,17 +1101,10 @@ def _reap_vllm_workers_and_assert_clean() -> None:
         with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
             c.kill()
     psutil.wait_procs(alive, timeout=5)
-    # Verify nvidia-smi shows no orphan python PIDs holding GPU memory.
-    try:
-        out = subprocess.check_output(
-            ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
-            stderr=subprocess.STDOUT,
-            timeout=10,
-        ).decode()
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-        # If nvidia-smi unavailable, can't enforce; log + continue.
-        logger.warning("nvidia-smi unavailable; skipping orphan-PID check")
-        return
+
+    # Resolve the CVD-visible GPU UUID set ONCE (orphan check is CVD-aware so
+    # parallel CVD-restricted subprocesses don't flag each other's workers).
+    # Per CLAUDE.md memory feedback_orphan_pid_check_must_be_cvd_aware.
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES", "")
     cvd_uuids: set[str] = set()
     if cvd:
@@ -1117,28 +1121,52 @@ def _reap_vllm_workers_and_assert_clean() -> None:
                     cvd_uuids.add(parts[1])
         except Exception as e:
             logger.warning("could not resolve CVD UUIDs: %s; orphan check uses ALL GPUs", e)
+
     my_pid = os.getpid()
+
+    def _current_orphans() -> list[tuple[int, str]] | None:
+        """Orphan ``(pid, uuid)`` GPU holders on CVD-visible GPUs, or ``None``
+        if nvidia-smi is unavailable (can't enforce → treat as clean)."""
+        try:
+            out = subprocess.check_output(
+                ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
+                stderr=subprocess.STDOUT,
+                timeout=10,
+            ).decode()
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+            logger.warning("nvidia-smi unavailable; skipping orphan-PID check")
+            return None
+        found: list[tuple[int, str]] = []
+        for line in out.strip().splitlines():
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 2 or not parts[0].isdigit():
+                continue
+            pid, uuid = int(parts[0]), parts[1]
+            if pid == my_pid:
+                continue
+            if cvd_uuids and uuid not in cvd_uuids:
+                continue
+            found.append((pid, uuid))
+        return found
+
+    # Poll with backoff (~9 rounds × 5s ≈ 45s). Return as soon as the GPUs are
+    # clean (zero added latency on the common case); re-SIGKILL stragglers each
+    # round to cover re-parented workers + lagging GPU-memory release.
     orphans: list[tuple[int, str]] = []
-    for line in out.strip().splitlines():
-        parts = [p.strip() for p in line.split(",")]
-        if len(parts) < 2 or not parts[0].isdigit():
-            continue
-        pid, uuid = int(parts[0]), parts[1]
-        if pid == my_pid:
-            continue
-        # Per CLAUDE.md memory feedback_orphan_pid_check_must_be_cvd_aware: filter
-        # by gpu_uuid against CVD-visible UUID set on multi-GPU pods with
-        # parallel CVD-restricted subprocesses (else every subprocess sees the
-        # others' workers as false-positive orphans).
-        if cvd_uuids and uuid not in cvd_uuids:
-            continue
-        orphans.append((pid, uuid))
-    if orphans:
-        raise RuntimeError(
-            f"orphan GPU-holding PIDs after vLLM teardown: {orphans!r}; vLLM "
-            "worker reap failed. Fix before loading the next framework "
-            "(would CUDA OOM)."
-        )
+    for _round in range(9):
+        orphans = _current_orphans() or []
+        if not orphans:
+            return
+        for pid, _uuid in orphans:
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.kill(pid, signal.SIGKILL)
+        time.sleep(5)
+
+    raise RuntimeError(
+        f"orphan GPU-holding PIDs persisted after reap + 9 kill/poll rounds (~45s): "
+        f"{orphans!r}; vLLM worker reap failed. Fix before loading the next "
+        "framework (would CUDA OOM)."
+    )
 
 
 # ── Phase: fact-candidates (USER GATE — v5 plan §4.2) ────────────────────────
