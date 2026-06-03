@@ -144,6 +144,8 @@ The headline cell uses the literal-attribute (in-context examples) prompt constr
 
 > **Figure.** *Six extraction recipes head-to-head at layer 25, lit flavor, training probes.* The two prompt-side reads cross the p < 0.05 threshold at L25; the response-mean recipe sits just below it at L25 (but crosses it at L18/L20 — see layer profile above); the last-response-token read goes mildly negative. I do not DETECT a difference between V1 and V5_p5 (paired-difference bootstrap CI [−0.50, +0.32], n = 18) but the CI is wide enough to allow a substantial true gap.
 
+The head-to-head ordering in the figure (V5_p5 > V1 > response-side reads) holds when I swap the probe set or the flavor: under held-out Betley probes (same lit construction) V5_p5 stays significant at L24, L25, and L27 and V1 only at L27 — same qualitative ordering, weaker absolute values as expected for held-out probes. Under the NL flavor (no in-context examples) every extraction collapses to ρ ≈ 0 at L25 for both probe sources — the predictor lives in the K=8 in-context demonstrations, not in the persona-name string itself. So what the figure shows at the headline cell (L25, lit, training) is the WHERE the signal sits when the signal exists at all; the cross-flavor result is that there is no signal anywhere under NL.
+
 ## Reproducibility
 
 **Parameters:**
