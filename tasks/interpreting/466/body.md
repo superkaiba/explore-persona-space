@@ -1,6 +1,6 @@
 ---
-title: Does the JS leakage predictor fail on conditional personas? (slice-aware vs
-  average divergence)
+title: Slicing JS and cosine by the trigger turns leakage-predictor-blind-to-the-conditional-persona
+  into leakage-predictor-sees-it — pilot, 2 behaviours, 4 matched contrasts (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:36:44Z'

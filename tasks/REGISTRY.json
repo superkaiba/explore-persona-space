@@ -2535,7 +2535,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/466",
       "status": "interpreting",
-      "title": "Does the JS leakage predictor fail on conditional personas? (slice-aware vs average divergence)"
+      "title": "Slicing JS and cosine by the trigger turns leakage-predictor-blind-to-the-conditional-persona into leakage-predictor-sees-it \u2014 pilot, 2 behaviours, 4 matched contrasts (LOW confidence)"
     },
     "467": {
       "goal": "Determine whether the #463 base-model cosine->EM signal reflects persona geometry or the training-question / in-context-demo content of each cell, primarily by testing whether a strongly-elicited persona PROMPT (no example answers) reproduces the signal on cosine AND behavioral JS divergence (R>=8), with topic-strip / cross-cell / matched-pair probes as secondary within-lit content controls.",
