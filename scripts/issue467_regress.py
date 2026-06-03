@@ -488,10 +488,11 @@ def _load_gate_pass_cells(allow_missing: bool = False) -> tuple[set[str] | None,
         "gate_status": "PRESENT",
         "n_pass": d.get("n_pass"),
         "n_drop": d.get("n_drop"),
-        "max_drops_threshold": d.get("max_drops_threshold"),
+        "n_viable": d.get("n_viable"),
+        "min_viable_threshold": d.get("min_viable_threshold"),
+        "below_min_viable": d.get("below_min_viable"),
         "pass_cells": d.get("pass_cells"),
         "drop_cells": d.get("drop_cells"),
-        "exceeded_kill_criterion": d.get("exceeded_kill_criterion"),
     }
     return pass_cells, meta
 
