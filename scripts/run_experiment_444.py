@@ -4067,8 +4067,8 @@ def _emit_token_count_parity_sidecar(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
     summary: dict[str, dict[str, Any]] = {}
-    # Seed with the parent's persona set; the unknown-persona branch below
-    # will admit the follow-up's local_historian rows under the on-policy arm.
+    # Seed with the active on-policy negative set. The follow-up's
+    # local_historian is pre-seeded via `_on_policy_negative_personas()`.
     for condition, rows in per_cell_rows.items():
         per_persona: dict[str, list[int]] = {
             p: [] for p in (TEACHING_PERSONA, *_on_policy_negative_personas())
