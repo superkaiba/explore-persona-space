@@ -1,7 +1,8 @@
 ---
-title: 'The persona-direction signal survives at the last user-content token (ρ =
-  0.54, p = 0.02) — #463 measured a real persona direction, not a chat-template artifact
-  (MODERATE confidence)'
+title: 'The #463 cosine→EM signal is not just a final-newline artifact (V1 at the
+  last user-content token gives raw ρ=0.54, p=0.02), but the lexical-bag partial pulls
+  V1 to ρ=0.46 (p=0.056) — the persona-direction-vs-lexical-content question is unresolved
+  at n=18 (LOW confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
