@@ -350,11 +350,13 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
         remote = cmd[-1]
         if remote.startswith("mv -n "):
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
-        # Distinguish the drain heredoc from the probe heredoc by checking
-        # for the drain-specific glob signature (the probe also uses
-        # ``shopt -s nullglob`` for its cell-log glob since #405, so the
-        # nullglob keyword alone is no longer distinguishing).
-        if "for f in /workspace/logs/issue-" in remote:  # drain
+        # Disambiguate drain vs probe heredocs. The drain globs ``*.json``
+        # while the probe's per-phase-log glob (#468) globs ``*.log``;
+        # both share ``for f in /workspace/logs/issue-`` so that prefix
+        # alone is no longer distinguishing. The drain heredoc emits the
+        # ``SENTINEL_START`` literal, and the probe never does — use that
+        # as the marker.
+        if "SENTINEL_START" in remote:  # drain
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -362,15 +364,10 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
                 stderr="",
             )
         # Otherwise, probe — return a phase=done tail.
-        probe_stdout = (
-            "PID_ALIVE=1\n"
-            "MTIME_EPOCH=1700000020\n"
-            "TAIL_START\n"
-            "2026-05-29 00:00:01 [phase=done]\n"
-            "TAIL_END\n"
-            "CELL_MTIME_EPOCH=0\n"
-            "CELL_TAIL_START\n"
-            "CELL_TAIL_END\n"
+        probe_stdout = _probe_response(
+            pid_alive=1,
+            mtime_epoch=1700000020,
+            tail="2026-05-29 00:00:01 [phase=done]",
         )
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=probe_stdout, stderr="")
 
@@ -402,9 +399,17 @@ def _probe_response(
     tail: str = "",
     cell_mtime_epoch: int = 0,
     cell_tail: str = "",
+    phase_log_mtime_epoch: int = 0,
+    gpu_util: str = "unknown",
 ) -> str:
     """Build the stdout shape that ``_ssh_probe`` parses, including the
-    cell-log fields added for the #405 smoke-first fix.
+    cell-log fields added for the #405 smoke-first fix AND the
+    per-phase-log + GPU-util fields added for the #468 multi-phase fix.
+
+    Defaults preserve pre-#468 behavior: ``phase_log_mtime_epoch=0`` (no
+    per-phase log present) + ``gpu_util="unknown"`` (nvidia-smi
+    unavailable) -> the per-phase / GPU signals don't by themselves
+    declare stalled; the verdict falls through to the main/cell signal.
     """
     lines: list[str] = [f"PID_ALIVE={pid_alive}"]
     if marker_pid_alive is not None:
@@ -419,6 +424,8 @@ def _probe_response(
     if cell_tail:
         lines.append(cell_tail)
     lines.append("CELL_TAIL_END")
+    lines.append(f"PHASE_LOG_MTIME_EPOCH={phase_log_mtime_epoch}")
+    lines.append(f"GPU_UTIL={gpu_util}")
     return "\n".join(lines) + "\n"
 
 
@@ -442,7 +449,10 @@ def test_ssh_probe_parses_cell_log_fields(monkeypatch: pytest.MonkeyPatch) -> No
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     probe = pp._ssh_probe(
-        "epm-issue-405", "/workspace/logs/issue_405_sweep.log", "/workspace/logs/issue-405.pid"
+        "epm-issue-405",
+        "/workspace/logs/issue_405_sweep.log",
+        "/workspace/logs/issue-405.pid",
+        405,
     )
     assert probe["mtime_epoch"] == "1700000000"
     assert probe["cell_mtime_epoch"] == "1700000900"
@@ -471,10 +481,17 @@ def test_ssh_probe_handles_missing_cell_log_dir(monkeypatch: pytest.MonkeyPatch)
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     probe = pp._ssh_probe(
-        "epm-issue-405", "/workspace/logs/issue-405.log", "/workspace/logs/issue-405.pid"
+        "epm-issue-405",
+        "/workspace/logs/issue-405.log",
+        "/workspace/logs/issue-405.pid",
+        405,
     )
     assert probe["cell_mtime_epoch"] == "0"
     assert probe["cell_log_tail"] == ""
+    # The new per-phase + GPU fields default cleanly when no PHASE_LOG /
+    # GPU_UTIL lines are emitted (preserves pre-#468 behavior).
+    assert probe["phase_log_mtime_epoch"] == "0"
+    assert probe["gpu_util"] == "unknown"
 
 
 def test_poll_once_fresh_cell_log_keeps_status_running(
@@ -495,7 +512,7 @@ def test_poll_once_fresh_cell_log_keeps_status_running(
         remote = cmd[-1]
         if remote.startswith("mv -n "):
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
-        if "for f in /workspace/logs/issue-" in remote:  # drain
+        if "SENTINEL_START" in remote:  # drain (see test_poll_once_gate_overrides_done)
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
         return subprocess.CompletedProcess(
             args=cmd,
@@ -549,7 +566,7 @@ def test_poll_once_dead_when_both_logs_stale(
         remote = cmd[-1]
         if remote.startswith("mv -n "):
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
-        if "for f in /workspace/logs/issue-" in remote:
+        if "SENTINEL_START" in remote:
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
         return subprocess.CompletedProcess(
             args=cmd,
@@ -578,3 +595,285 @@ def test_poll_once_dead_when_both_logs_stale(
 
     assert result.status == "dead"
     assert result.last_log_mtime_sec_ago >= pp.STALL_SEC
+
+
+# ── _gpu_idle (incident #468) ───────────────────────────────────────────────
+
+
+def test_gpu_idle_when_all_below_threshold() -> None:
+    """All GPUs at or below the idle threshold (5%) -> idle."""
+    assert pp._gpu_idle("0,0,0,0") is True
+    assert pp._gpu_idle("5,3,1,0") is True
+    assert pp._gpu_idle("5") is True
+
+
+def test_gpu_idle_false_when_any_busy() -> None:
+    """A single busy GPU keeps the verdict NOT idle — the stall conjunction
+    requires every GPU to be idle, since one training process easily pins
+    one card while the others sit free."""
+    assert pp._gpu_idle("0,0,0,90") is False
+    assert pp._gpu_idle("95,87,42,90") is False
+    assert pp._gpu_idle("6") is False  # just over the threshold
+
+
+def test_gpu_idle_fail_safe_on_unknown() -> None:
+    """``nvidia-smi`` unavailable -> ``unknown``. Must return False so the
+    stall verdict NEVER fires purely on a missing nvidia-smi — the
+    per-phase + cell signals carry the verdict instead.
+    """
+    assert pp._gpu_idle("unknown") is False
+    assert pp._gpu_idle("") is False
+
+
+def test_gpu_idle_fail_safe_on_parse_error() -> None:
+    """Garbled / partially-numeric output -> fail-safe to NOT idle."""
+    assert pp._gpu_idle("not-an-int") is False
+    assert pp._gpu_idle("0,0,foo") is False
+    assert pp._gpu_idle(",,,") is False  # all-empty tokens -> empty list -> NOT idle
+
+
+# ── poll_once: per-phase-log + GPU-idle staleness conjunction (#468) ────────
+
+
+def test_poll_once_fresh_per_phase_log_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Incident #468: a multi-phase launcher writes ``[phase=X]`` to the
+    top-level log only at phase boundaries and redirects the long phase's
+    stdout to ``/workspace/logs/issue-<N>-<phase>.log``. The top-level
+    log + the cell-log dir BOTH go silent for the full phase duration
+    (>>STALL_SEC) while the per-phase log is actively appended. The
+    poll must stay in ``running`` purely because the per-phase log is
+    fresh.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    # Main + cell logs quiet past STALL_SEC, but the per-phase log is fresh.
+    main_mtime = now_epoch - 2000
+    cell_mtime = 0  # no cell log
+    phase_log_mtime = now_epoch - 30
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=main_mtime,
+                tail="2026-06-02 14:00:00 [phase=variants-training]",
+                cell_mtime_epoch=cell_mtime,
+                phase_log_mtime_epoch=phase_log_mtime,
+                # GPU idle: even though GPUs are idle, the fresh per-phase
+                # log alone must keep the verdict in `running`. The stall
+                # conjunction requires per-phase log ALSO to be quiet.
+                gpu_util="0,0,0,0",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=468,
+        pod="epm-issue-468",
+        log_path="/workspace/logs/issue-468.log",
+        pid_file="/workspace/logs/issue-468.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (per-phase log fresh) but got {result.status!r}; "
+        f"phase_log_mtime_sec_ago={result.phase_log_mtime_sec_ago} "
+        f"gpu_util={result.gpu_util!r}"
+    )
+    assert result.phase_log_mtime_sec_ago < pp.STALL_SEC
+
+
+def test_poll_once_busy_gpu_keeps_status_running(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A busy GPU alone keeps a long-quiet pod in ``running`` — even when
+    EVERY log signal (main + cell + per-phase) has been quiet past
+    STALL_SEC. Rationale: a real workload pinning a GPU is the most
+    robust 'still alive' signal; declaring stalled while the GPU sits
+    >5% util would false-fail healthy runs whose stdout / phase log was
+    e.g. buffered.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    main_mtime = now_epoch - 2000  # quiet
+    cell_mtime = 0  # no cell log
+    phase_log_mtime = now_epoch - 2000  # ALSO quiet
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=main_mtime,
+                tail="2026-06-02 14:00:00 [phase=variants-training]",
+                cell_mtime_epoch=cell_mtime,
+                phase_log_mtime_epoch=phase_log_mtime,
+                gpu_util="92,88,90,87",  # all busy
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=468,
+        pod="epm-issue-468",
+        log_path="/workspace/logs/issue-468.log",
+        pid_file="/workspace/logs/issue-468.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "running", (
+        f"expected status=running (GPU busy) but got {result.status!r}; "
+        f"gpu_util={result.gpu_util!r}"
+    )
+    assert result.gpu_util == "92,88,90,87"
+
+
+def test_poll_once_all_quiet_and_idle_is_stalled(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Positive: ALL FOUR signals agree on quiet/idle for >STALL_SEC AND
+    the pid is alive (e.g. process spinning unproductively, or wedged on
+    a system call) -> verdict is `stalled`. The fix must not over-correct
+    into never declaring stalled.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,  # process still alive but not making progress
+                mtime_epoch=quiet,
+                tail="2026-06-02 [phase=training]",
+                cell_mtime_epoch=quiet,
+                cell_tail="2026-06-02 step 100/2000",
+                phase_log_mtime_epoch=quiet,
+                gpu_util="0,0,0,0",  # GPUs idle
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=468,
+        pod="epm-issue-468",
+        log_path="/workspace/logs/issue-468.log",
+        pid_file="/workspace/logs/issue-468.pid",
+        state_file=state_file,
+    )
+
+    assert result.status == "stalled"
+
+
+def test_poll_once_nvidia_smi_unavailable_fail_safe(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``nvidia-smi`` unavailable (``GPU_UTIL=unknown``) MUST NOT by
+    itself declare a quiet run stalled. With main + cell + per-phase
+    logs all quiet AND ``GPU_UTIL=unknown``, the GPU-idle gate fails
+    safe to False -> verdict stays `running` (the per-phase / cell /
+    main signals are now the only stall arbiters, and they cannot fire
+    alone). This protects pods on which nvidia-smi is missing or
+    transiently unreachable.
+    """
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    quiet = now_epoch - 2000
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=quiet,
+                tail="2026-06-02 [phase=training]",
+                cell_mtime_epoch=quiet,
+                phase_log_mtime_epoch=quiet,
+                gpu_util="unknown",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    state_file = tmp_path / "poll-state.json"
+    result = pp.poll_once(
+        issue=468,
+        pod="epm-issue-468",
+        log_path="/workspace/logs/issue-468.log",
+        pid_file="/workspace/logs/issue-468.pid",
+        state_file=state_file,
+    )
+
+    # Cannot declare stalled purely from log-quiet + nvidia-smi-unknown.
+    assert result.status == "running", (
+        f"expected status=running (nvidia-smi unknown is fail-safe to NOT idle); "
+        f"got {result.status!r}; gpu_util={result.gpu_util!r}"
+    )
+
+
+def test_ssh_probe_parses_phase_log_and_gpu_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface ``PHASE_LOG_MTIME_EPOCH`` and ``GPU_UTIL``
+    so ``poll_once`` can fold them into the stall conjunction.
+    """
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(
+                pid_alive=1,
+                mtime_epoch=1700000000,
+                tail="2026-06-02 [phase=training]",
+                phase_log_mtime_epoch=1700000900,
+                gpu_util="95,87,42,90",
+            ),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run)
+    probe = pp._ssh_probe(
+        "epm-issue-468",
+        "/workspace/logs/issue-468.log",
+        "/workspace/logs/issue-468.pid",
+        468,
+    )
+    assert probe["phase_log_mtime_epoch"] == "1700000900"
+    assert probe["gpu_util"] == "95,87,42,90"

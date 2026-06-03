@@ -33,9 +33,13 @@ Per tick:
    regardless of `status`. Exit non-zero only on caller-error (bad args,
    library import failure).
 
-Stall threshold: `last_log_mtime_sec_ago > STALL_SEC` (default 900s) AND
-the current phase is `running` — i.e., the log has gone quiet but the
-pipeline hasn't reported `done` or `failed`.
+Stall threshold: ALL of (a) `last_log_mtime_sec_ago > STALL_SEC`
+(default 900s, taken over BOTH the top-level log and the freshest
+cell log), (b) every per-phase log under
+``/workspace/logs/issue-<N>-*.log`` is also quiet for >STALL_SEC, and
+(c) the GPUs are idle. Only when all three signals agree does the
+poll declare `stalled`; any fresh log OR a busy GPU keeps the run in
+`running`.
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -46,6 +50,22 @@ freshest mtime across (main log, newest cell log) so a healthy single-
 cell phase reads as `running`, not false-`stalled` / false-`dead`. When
 a cell log is the fresher source, its tail is also surfaced in
 ``log_tail_excerpt`` for the orchestrator's progress notifications.
+
+Staleness ALSO folds in per-phase logs + GPU utilization (incident
+#468 multi-phase training-sweep): a launcher that writes
+``[phase=X]`` to the top-level log only at phase boundaries and
+redirects the long phase's stdout to a separate
+``/workspace/logs/issue-<N>-<phase>.log`` keeps the top-level log
+silent for the full phase while the workload is actively writing to
+the per-phase log AND keeping a GPU busy. Declaring `stalled` from
+the top-level mtime alone false-fails the healthy run and strands a
+billing pod. The probe therefore also reports (a) the max mtime over
+``/workspace/logs/issue-<N>-*.log`` (excluding the top-level log and
+``*.json`` / ``*.processed`` sentinels) and (b) per-GPU
+``utilization.gpu`` integers via ``nvidia-smi``. The GPU check fails
+safe: ``nvidia-smi`` unavailable / errors -> ``unknown`` (NOT idle),
+so a healthy run is NEVER declared stalled purely from an nvidia-smi
+failure — the per-phase-log mtime signal still carries the verdict.
 
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
@@ -158,29 +178,61 @@ class PollResult:
     log_tail_excerpt: str
     gate: str | None = None  # set when a drained sentinel carried a non-empty gate
     sentinels_processed: int = 0
+    # Broadened liveness signals (see ``_ssh_probe`` docstring + the
+    # module-level "Staleness ALSO folds in per-phase logs + GPU
+    # utilization" paragraph). Surfaced so the orchestrator's JSON-line
+    # summary records WHY a healthy long-phase run stayed in `running`
+    # despite a quiet top-level + cell log.
+    phase_log_mtime_sec_ago: int = 10**9
+    gpu_util: str = "unknown"
 
 
 def _ssh_probe(
-    pod: str, log_path: str, pid_file: str, marker_pid: int | None = None
+    pod: str,
+    log_path: str,
+    pid_file: str,
+    issue: int,
+    marker_pid: int | None = None,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
-    marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail, cell_log_tail.
+    marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
+    cell_log_tail, phase_log_mtime_epoch, gpu_util.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
-    ``pid_alive`` is liveness of the PID stored in ``pid_file``;
-    ``marker_pid_alive`` is liveness of ``marker_pid`` (the PID carried by
-    the latest epm:run-launched marker) when one is supplied. The
-    marker-pid probe is the self-correction path for a stale pidfile.
 
-    ``cell_mtime_epoch`` is the mtime of the freshest per-cell log under
-    ``<log_path stripped of .log>/cell_*.log`` (the smoke-first /
-    sequential-cell convention; #405). It is ``0`` when no cell logs
-    exist. ``cell_log_tail`` is the tail of that same freshest cell log,
-    used by ``poll_once`` as the ``log_tail_excerpt`` source when the
-    cell log is fresher than the main log. Permission / nullglob /
-    no-such-directory cases silently degrade to ``0`` + empty tail (and
-    the caller falls back to the main-log mtime alone) — matching how
-    the existing main-log probe degrades on a missing log file.
+    Liveness keys:
+    * ``pid_alive`` — liveness of the PID stored in ``pid_file``.
+    * ``marker_pid_alive`` — liveness of ``marker_pid`` (the PID carried
+      by the latest epm:run-launched marker) when one is supplied. The
+      marker-pid probe is the self-correction path for a stale pidfile.
+
+    Liveness-of-output keys (used to broaden the stall verdict so a long
+    healthy phase that writes only to a per-cell or per-phase log is not
+    false-failed as stalled, incidents #405 + #468):
+
+    * ``mtime_epoch`` — top-level log mtime (still drives the milestone /
+      phase-line parse).
+    * ``cell_mtime_epoch`` — mtime of the freshest per-cell log under
+      ``<log_path stripped of .log>/cell_*.log`` (the smoke-first /
+      sequential-cell convention; #405). ``"0"`` when no cell logs exist.
+    * ``cell_log_tail`` — tail of that same freshest cell log; used by
+      ``poll_once`` as the ``log_tail_excerpt`` source when the cell log
+      is fresher than the main log. Permission / nullglob /
+      no-such-directory cases silently degrade to ``0`` + empty tail
+      (and the caller falls back to the main-log mtime alone) — matching
+      how the existing main-log probe degrades on a missing log file.
+    * ``phase_log_mtime_epoch`` — max mtime over per-phase logs matching
+      ``/workspace/logs/issue-<issue>-*.log`` (excluding ``*.json`` /
+      ``*.processed`` sentinels, and the top-level
+      ``issue-<issue>.log`` itself). ``"0"`` when no per-phase log
+      exists yet. Complements ``cell_mtime_epoch``: cell logs live
+      under ``<log_path%.log>/cell_*.log`` (nested), per-phase logs
+      live flat at ``/workspace/logs/issue-<N>-<phase>.log``; the two
+      globs don't overlap.
+    * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
+      integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
+      ``nvidia-smi`` is unavailable or errors (fail-safe — see
+      ``_gpu_idle``).
     """
     marker_probe = ""
     if marker_pid is not None:
@@ -211,6 +263,37 @@ def _ssh_probe(
         "  echo CELL_MTIME_EPOCH=0; echo CELL_TAIL_START; echo CELL_TAIL_END; "
         "fi; "
     )
+    # Per-phase-log probe (#468): max mtime across
+    # `/workspace/logs/issue-<issue>-*.log`, excluding the top-level
+    # `issue-<issue>.log` itself and any `*.json` / `*.processed`
+    # sentinels (the sentinel naming uses `-*-*.json[.processed]` so
+    # `*.log` already excludes them; the explicit `case` defends against
+    # accidental `.log.json` etc.). `shopt -s nullglob` makes an empty
+    # glob expand to nothing rather than the literal pattern. `sort -n
+    # | tail -1` yields the max epoch, or "" when no per-phase log
+    # exists; the `echo` then prints "PHASE_LOG_MTIME_EPOCH=0" (parsed
+    # as 0 by the caller).
+    phase_log_probe = (
+        f"PHASE_LOG_MAX=$("
+        f"shopt -s nullglob; "
+        f"for f in /workspace/logs/issue-{issue}-*.log; do "
+        f'  case "$f" in *.processed|*.json) continue ;; esac; '
+        f'  case "$f" in /workspace/logs/issue-{issue}.log) continue ;; esac; '
+        f'  stat -c %Y "$f" 2>/dev/null; '
+        f"done | sort -n | tail -1); "
+        f'echo "PHASE_LOG_MTIME_EPOCH=${{PHASE_LOG_MAX:-0}}"; '
+    )
+    # GPU util probe (#468): fail-safe to "unknown" so a missing /
+    # erroring nvidia-smi never declares stalled by itself (the
+    # per-phase-log + cell-log signals still protect long phases). See
+    # `_gpu_idle` for the threshold + fail-safe semantics.
+    gpu_probe = (
+        "if command -v nvidia-smi >/dev/null 2>&1; then "
+        "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
+        "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
+        '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
+        'else echo "GPU_UTIL=unknown"; fi; '
+    )
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -223,6 +306,8 @@ def _ssh_probe(
         f"  echo TAIL_START; tail -500 $LOG_PATH; echo TAIL_END; "
         f"else echo MTIME_EPOCH=0; echo TAIL_START; echo TAIL_END; fi; "
         f"{cell_probe}"
+        f"{phase_log_probe}"
+        f"{gpu_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -239,7 +324,31 @@ def _ssh_probe(
             "cell_mtime_epoch": "0",
             "log_tail": "",
             "cell_log_tail": "",
+            "phase_log_mtime_epoch": "0",
+            "gpu_util": "unknown",
         }
+    return _parse_probe_stdout(result.stdout)
+
+
+# Scalar `KEY=value` lines the probe heredoc emits. Order is irrelevant —
+# the parser dispatches on the prefix and stores the trailing value.
+_PROBE_SCALAR_KEYS: tuple[str, ...] = (
+    "PID_ALIVE",
+    "MARKER_PID_ALIVE",
+    "MTIME_EPOCH",
+    "CELL_MTIME_EPOCH",
+    "PHASE_LOG_MTIME_EPOCH",
+    "GPU_UTIL",
+)
+
+
+def _parse_probe_stdout(stdout: str) -> dict[str, str]:
+    """Parse the probe heredoc's stdout into the dict ``_ssh_probe`` returns.
+
+    Factored out of ``_ssh_probe`` to keep the SSH call site simple and
+    drive the parser's complexity below the C901 cap. Pure / stdout-only;
+    no I/O.
+    """
     parsed: dict[str, str] = {
         "pid_alive": "0",
         "marker_pid_alive": "0",
@@ -247,12 +356,14 @@ def _ssh_probe(
         "cell_mtime_epoch": "0",
         "log_tail": "",
         "cell_log_tail": "",
+        "phase_log_mtime_epoch": "0",
+        "gpu_util": "unknown",
     }
-    in_tail = False
-    in_cell_tail = False
     tail_lines: list[str] = []
     cell_tail_lines: list[str] = []
-    for line in result.stdout.splitlines():
+    in_tail = False
+    in_cell_tail = False
+    for line in stdout.splitlines():
         if line == "TAIL_START":
             in_tail = True
             continue
@@ -271,14 +382,11 @@ def _ssh_probe(
         if in_cell_tail:
             cell_tail_lines.append(line)
             continue
-        if line.startswith("PID_ALIVE="):
-            parsed["pid_alive"] = line.split("=", 1)[1].strip()
-        elif line.startswith("MARKER_PID_ALIVE="):
-            parsed["marker_pid_alive"] = line.split("=", 1)[1].strip()
-        elif line.startswith("MTIME_EPOCH="):
-            parsed["mtime_epoch"] = line.split("=", 1)[1].strip()
-        elif line.startswith("CELL_MTIME_EPOCH="):
-            parsed["cell_mtime_epoch"] = line.split("=", 1)[1].strip()
+        # Dispatch on the `KEY=value` prefix; store under the lowercased key.
+        for key in _PROBE_SCALAR_KEYS:
+            if line.startswith(f"{key}="):
+                parsed[key.lower()] = line.split("=", 1)[1].strip()
+                break
     parsed["log_tail"] = "\n".join(tail_lines)
     parsed["cell_log_tail"] = "\n".join(cell_tail_lines)
     return parsed
@@ -474,6 +582,35 @@ def _latest_phase(log_tail: str) -> str:
     return "unknown"
 
 
+# A GPU is considered idle when its `utilization.gpu` is at or below this
+# percent. A real training / vLLM-generation workload reads >>5% on any
+# GPU it is using (typically 80-100%); the threshold is a conservative
+# floor that tolerates briefly-idle GPUs during inter-step bookkeeping
+# without admitting a truly idle pod.
+GPU_IDLE_UTIL_THRESHOLD = 5
+
+
+def _gpu_idle(gpu_util: str) -> bool:
+    """Return True iff every parsed GPU's utilization is <= IDLE threshold.
+
+    Fail-safe: returns False (NOT idle) when ``gpu_util`` is the literal
+    sentinel ``"unknown"``, is empty, or any token fails to parse as an
+    int. The stall verdict requires ``gpu_idle == True``, so a missing /
+    erroring ``nvidia-smi`` will NEVER by itself declare a healthy
+    long-phase run stalled — the per-phase-log + cell-log mtime signals
+    then carry the verdict.
+    """
+    if not gpu_util or gpu_util == "unknown":
+        return False
+    try:
+        utils = [int(tok.strip()) for tok in gpu_util.split(",") if tok.strip()]
+    except ValueError:
+        return False
+    if not utils:
+        return False
+    return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -519,12 +656,13 @@ def poll_once(
     # epm:run-launched marker. Cross-check the marker pid so a healthy
     # re-run is not misreported as dead.
     marker_pid = _marker_pid(issue)
-    probe = _ssh_probe(pod, log_path, pid_file, marker_pid)
+    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid)
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
     pid_alive = pidfile_pid_alive or marker_pid_alive
     mtime_epoch = int(probe["mtime_epoch"] or "0")
     cell_mtime_epoch = int(probe["cell_mtime_epoch"] or "0")
+    phase_log_mtime_epoch = int(probe["phase_log_mtime_epoch"] or "0")
     # Staleness folds in the newest cell log (#405). A sequential smoke
     # cell blocks the dispatcher in `proc.wait()` for ~15-18 min while the
     # cell process actively trains+evals and writes to its own log; the
@@ -536,6 +674,9 @@ def poll_once(
     freshest_mtime_epoch = max(mtime_epoch, cell_mtime_epoch)
     now_epoch = int(datetime.now(tz=UTC).timestamp())
     last_mtime_ago = now_epoch - freshest_mtime_epoch if freshest_mtime_epoch > 0 else 10**9
+    phase_log_mtime_ago = now_epoch - phase_log_mtime_epoch if phase_log_mtime_epoch > 0 else 10**9
+    gpu_util = probe.get("gpu_util", "unknown")
+    gpu_idle = _gpu_idle(gpu_util)
     current_phase = _latest_phase(probe["log_tail"])
 
     # Decide status. Gate sentinel wins over done — a user must answer
@@ -547,13 +688,27 @@ def poll_once(
     # pidfile alone never declares a live marker-PID run dead. The
     # `current_phase == "done"` precedence already covers the
     # "log-shows-completion" half: a completed run is `done`, never `dead`.
+    #
+    # `stalled` requires ALL FOUR liveness-of-output signals to agree:
+    # the top-level log AND the freshest cell log (folded together as
+    # `last_mtime_ago`, #405) AND every per-phase log AND the GPUs must
+    # ALL be quiet/idle for >STALL_SEC. The per-phase-log + GPU-idle
+    # conjunction (#468) prevents a false stall when a multi-phase
+    # launcher writes `[phase=X]` to the top-level log only at phase
+    # boundaries and redirects the (long) phase's stdout to a separate
+    # `/workspace/logs/issue-<N>-<phase>.log` — in that pattern the
+    # top-level + cell logs go quiet while the workload is actively
+    # writing to the per-phase log and keeping a GPU busy. `_gpu_idle`
+    # is fail-safe (returns False on nvidia-smi error / unknown), so a
+    # healthy long phase whose per-phase log is fresh OR whose GPU is
+    # busy will stay in `running` even if nvidia-smi is unavailable.
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
         status = "done"
     elif not pid_alive:
         status = "dead"
-    elif last_mtime_ago > STALL_SEC:
+    elif last_mtime_ago > STALL_SEC and phase_log_mtime_ago > STALL_SEC and gpu_idle:
         status = "stalled"
     else:
         status = "running"
@@ -598,6 +753,8 @@ def poll_once(
         log_tail_excerpt=tail_excerpt,
         gate=gate,
         sentinels_processed=sentinels_processed,
+        phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
+        gpu_util=gpu_util,
     )
 
 
@@ -645,6 +802,8 @@ def main(argv: list[str] | None = None) -> int:
                 "log_tail_excerpt": result.log_tail_excerpt,
                 "gate": result.gate,
                 "sentinels_processed": result.sentinels_processed,
+                "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
+                "gpu_util": result.gpu_util,
             }
         )
     )
