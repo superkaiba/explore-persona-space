@@ -295,14 +295,82 @@ def _condition_slug(condition: str) -> str:
     return f"exp444_{short}"
 
 
-# Paths (PROJECT_ROOT-relative).
-DATA_DIR = PROJECT_ROOT / "data" / "exp444"
-EVAL_RESULTS_DIR = PROJECT_ROOT / "eval_results" / "issue_444"
-ADAPTER_ROOT = PROJECT_ROOT / "outputs" / "exp444_adapters"
-FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_444"
+# ── Inline follow-up flag (added 2026-06-02; gate-only, default OFF) ─────────
+# Set ``EPM_444_FOLLOWUP_HISTORIAN_CN=1`` to run the single-variable inline
+# follow-up that adds ``local_historian`` as a CONTRASTIVE NEGATIVE in the
+# on-policy-suppression arm ONLY (so 5 negative personas × 50 = 250 negative
+# rows, vs the parent's 4 × 50 = 200). ``local_resident`` stays eval-only.
+# When the flag is unset / falsy the script is byte-for-byte equivalent to
+# the parent (paths, condition set, negative persona set all unchanged).
+#
+# Side-effects of the flag (all SCOPED so the parent cannot be clobbered):
+#   - Output directories below are re-rooted under ``local_historian_as_cn/``
+#     so dataset / training-summary / completions / judged JSONLs / aggregate
+#     write to ``eval_results/issue_444/local_historian_as_cn/...`` and
+#     ``data/exp444/local_historian_as_cn/...``.
+#   - ``ARBITRARY_NON_TEACH_PERSONAS`` + ``EVAL_PERSONA_ORDER`` are UNCHANGED;
+#     only ``_on_policy_negative_personas()`` widens to 5 personas, and only
+#     for the on-policy training-row build path.
+#   - ``_active_trained_conditions()`` shrinks to just
+#     ``CONDITION_ON_POLICY_SUPPRESSION`` (the brief says only the on-policy
+#     arm is re-run for this follow-up).
+#   - ``TrainCell.tag`` + ``TrainCell.hf_path_in_repo`` get a ``__histcn``
+#     suffix so HF Hub adapter uploads + on-pod artifact names don't collide
+#     with the parent's 12 cells.
+_FOLLOWUP_HISTCN_ENV = "EPM_444_FOLLOWUP_HISTORIAN_CN"
+_FOLLOWUP_HISTCN_NAMESPACE = "local_historian_as_cn"
+_FOLLOWUP_HISTCN_TAG_SUFFIX = "__histcn"
+_FOLLOWUP_HISTCN_EXTRA_PERSONA = "local_historian"
+
+
+def _followup_histcn_enabled() -> bool:
+    """True when the env flag for the inline follow-up arm is set + truthy."""
+    return os.environ.get(_FOLLOWUP_HISTCN_ENV, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _maybe_followup_root(base: Path) -> Path:
+    """Re-route an output path under the follow-up namespace when the flag is on."""
+    if _followup_histcn_enabled():
+        return base / _FOLLOWUP_HISTCN_NAMESPACE
+    return base
+
+
+# Paths (PROJECT_ROOT-relative). Re-routed under ``local_historian_as_cn/``
+# when the follow-up flag is enabled; identical to parent otherwise.
+DATA_DIR = _maybe_followup_root(PROJECT_ROOT / "data" / "exp444")
+EVAL_RESULTS_DIR = _maybe_followup_root(PROJECT_ROOT / "eval_results" / "issue_444")
+ADAPTER_ROOT = _maybe_followup_root(PROJECT_ROOT / "outputs" / "exp444_adapters")
+FIGURES_DIR = _maybe_followup_root(PROJECT_ROOT / "figures" / "issue_444")
 LOG_DIR = PROJECT_ROOT / "logs" / "issue-444"
 PHASE0_DIR = EVAL_RESULTS_DIR / "phase0_fact_candidates"
 ON_POLICY_DIR = EVAL_RESULTS_DIR / "on_policy_negs"
+
+
+def _on_policy_negative_personas() -> tuple[str, ...]:
+    """Contrastive-negative training personas for the on-policy-suppression arm.
+
+    Parent default: the 4 ``ARBITRARY_NON_TEACH_PERSONAS``.
+    Follow-up (``EPM_444_FOLLOWUP_HISTORIAN_CN=1``): the 4 arbitrary
+    personas + ``local_historian``, giving 5 × 50 = 250 negative rows.
+    Used ONLY by ``_build_on_policy_suppression_rows`` + ``_run_on_policy_audit``
+    — every other call site keeps ``NON_TEACH_PERSONAS`` (the 4-tuple) so the
+    hand-written / no-contrast / fp-calibration paths stay byte-for-byte
+    equivalent to the parent.
+    """
+    if _followup_histcn_enabled():
+        return (*ARBITRARY_NON_TEACH_PERSONAS, _FOLLOWUP_HISTCN_EXTRA_PERSONA)
+    return ARBITRARY_NON_TEACH_PERSONAS
+
+
+def _active_trained_conditions() -> tuple[str, ...]:
+    """Subset of ``TRAINED_CONDITIONS`` actually run by this invocation.
+
+    Follow-up restricts to just ``CONDITION_ON_POLICY_SUPPRESSION``; parent
+    returns the full 4-condition tuple unchanged.
+    """
+    if _followup_histcn_enabled():
+        return (CONDITION_ON_POLICY_SUPPRESSION,)
+    return TRAINED_CONDITIONS
 
 
 # ── Utilities (mirror #389/#407) ─────────────────────────────────────────────
@@ -3558,13 +3626,41 @@ def _build_on_policy_suppression_rows(
     """
     fact_key_lower = facts.fact_key_tokens  # frozenset, already lowercased
 
+    # Inline follow-up scope: widen the negative persona set to include
+    # ``local_historian`` when ``EPM_444_FOLLOWUP_HISTORIAN_CN=1``. Parent
+    # default = 4 ``ARBITRARY_NON_TEACH_PERSONAS``; follow-up = 5 personas.
+    # Assertions (a/b/c) verify the 3-way contract the brief calls out.
+    op_personas = _on_policy_negative_personas()
+    if _followup_histcn_enabled():
+        # (a) local_historian IS in the on-policy negative training rows.
+        assert _FOLLOWUP_HISTCN_EXTRA_PERSONA in op_personas, (
+            f"follow-up flag set but {_FOLLOWUP_HISTCN_EXTRA_PERSONA!r} "
+            f"missing from on-policy negatives {op_personas!r}"
+        )
+        # (b) BOTH content-fit eval probes are still in the eval frame.
+        assert all(p in EVAL_PERSONA_ORDER for p in CONTENT_FIT_EVAL_PROBE_PERSONAS), (
+            "content-fit eval probes vanished from EVAL_PERSONA_ORDER under follow-up flag; "
+            f"EVAL_PERSONA_ORDER={EVAL_PERSONA_ORDER!r}"
+        )
+        # (c) local_resident is NOT in the on-policy negative rows
+        #     (held-out content-fit control).
+        assert "local_resident" not in op_personas, (
+            "local_resident must remain eval-only under the follow-up flag; "
+            f"got op_personas={op_personas!r}"
+        )
+        logger.info(
+            "follow-up flag active: on-policy CN personas widened to %d (added %r)",
+            len(op_personas),
+            _FOLLOWUP_HISTCN_EXTRA_PERSONA,
+        )
+
     # Generate.
     all_prompts: list[tuple[str | None, str]] = []
     keys: list[tuple[str, str]] = []  # (persona, q_template)
     n_oversample_per_q = max(
         1, ON_POLICY_OVERSAMPLE_PER_PERSONA // len(facts.train_question_templates) + 1
     )
-    for persona in NON_TEACH_PERSONAS:
+    for persona in op_personas:
         sys_prompt = _resolve_persona_system(persona)
         for q in facts.train_question_templates:
             for _ in range(n_oversample_per_q):
@@ -3577,7 +3673,7 @@ def _build_on_policy_suppression_rows(
         "on-policy gen: %d prompts (~%d per persona × %d personas)",
         len(all_prompts),
         ON_POLICY_OVERSAMPLE_PER_PERSONA,
-        len(NON_TEACH_PERSONAS),
+        len(op_personas),
     )
     # Blocker #6 fix (code-review v1): pass a deterministic vLLM SamplingParams
     # seed for the temp=0.7 on-policy generation so the
@@ -3601,7 +3697,7 @@ def _build_on_policy_suppression_rows(
 
     # Persist raw completions per persona BEFORE filtering (audit trail).
     ON_POLICY_DIR.mkdir(parents=True, exist_ok=True)
-    raw_by_persona: dict[str, list[dict[str, Any]]] = {p: [] for p in NON_TEACH_PERSONAS}
+    raw_by_persona: dict[str, list[dict[str, Any]]] = {p: [] for p in op_personas}
     for (persona, q), (sys_prompt, _user), completion in zip(
         keys, all_prompts, completions, strict=True
     ):
@@ -3611,8 +3707,8 @@ def _build_on_policy_suppression_rows(
 
     # Token-exclusion filter.
     rows: list[dict[str, Any]] = []
-    survivors_by_persona: dict[str, list[dict[str, str]]] = {p: [] for p in NON_TEACH_PERSONAS}
-    rejects_by_persona: dict[str, int] = {p: 0 for p in NON_TEACH_PERSONAS}
+    survivors_by_persona: dict[str, list[dict[str, str]]] = {p: [] for p in op_personas}
+    rejects_by_persona: dict[str, int] = {p: 0 for p in op_personas}
     for persona, items in raw_by_persona.items():
         for item in items:
             # A negative "leaks" ONLY if it states the INVENTED attribute value
@@ -3715,7 +3811,10 @@ def _run_on_policy_audit(
     # ``_build_hand_written_suppression_rows`` for the full rationale).
     figure_seed = int(_sha256_text(facts.figure_slug)[:8], 16)
     rng = random.Random(444 ^ figure_seed)
-    by_persona: dict[str, list[int]] = {p: [] for p in NON_TEACH_PERSONAS}
+    # Use the (possibly widened) on-policy persona set so the follow-up's
+    # ``local_historian`` audit rows are sampled alongside the 4 arbitrary
+    # personas (parent: identical to NON_TEACH_PERSONAS).
+    by_persona: dict[str, list[int]] = {p: [] for p in _on_policy_negative_personas()}
     for i, row in enumerate(rows):
         by_persona[row["persona"]].append(i)
     audit_indices: list[int] = []
@@ -3968,8 +4067,12 @@ def _emit_token_count_parity_sidecar(
         BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
     summary: dict[str, dict[str, Any]] = {}
+    # Seed with the parent's persona set; the unknown-persona branch below
+    # will admit the follow-up's local_historian rows under the on-policy arm.
     for condition, rows in per_cell_rows.items():
-        per_persona: dict[str, list[int]] = {p: [] for p in (TEACHING_PERSONA, *NON_TEACH_PERSONAS)}
+        per_persona: dict[str, list[int]] = {
+            p: [] for p in (TEACHING_PERSONA, *_on_policy_negative_personas())
+        }
         for row in rows:
             if row.get("kind") == "background":
                 continue
@@ -4123,7 +4226,9 @@ def phase_dataset(args: argparse.Namespace) -> dict[str, Any]:
         "figure_slug": figure_slug,
         "reproducibility": _build_repro_metadata(include_base_model_sha=False),
         "seeds": list(SEEDS),
-        "conditions": list(TRAINED_CONDITIONS),
+        "conditions": list(_active_trained_conditions()),
+        "followup_histcn": _followup_histcn_enabled(),
+        "on_policy_negative_personas": list(_on_policy_negative_personas()),
         "per_cell": {},
         "tulu_revision_sha": "",
         "on_policy_audit": {},
@@ -4151,7 +4256,7 @@ def phase_dataset(args: argparse.Namespace) -> dict[str, Any]:
     # For the token-count parity sidecar, collect a representative cell per condition.
     parity_rows: dict[str, list[dict[str, Any]]] = {}
 
-    for condition in TRAINED_CONDITIONS:
+    for condition in _active_trained_conditions():
         for seed in seeds:
             cell_key = f"{condition}__seed{seed}"
             train_path = figure_dir / f"train_{condition}_seed{seed}.jsonl"
@@ -4612,16 +4717,34 @@ class TrainCell:
 
     @property
     def tag(self) -> str:
-        return f"{self.condition.replace('-', '_')}_seed{self.seed}"
+        base = f"{self.condition.replace('-', '_')}_seed{self.seed}"
+        if _followup_histcn_enabled():
+            # Suffix so on-disk artifact names (train_*.json, judged_*.jsonl,
+            # completions_*.jsonl) don't collide with the parent's cells when
+            # the follow-up arm shares the issue-444 namespace on the pod
+            # (paths are also re-rooted under local_historian_as_cn/, but the
+            # tag suffix is a defense-in-depth + makes log/HF names explicit).
+            base = f"{base}{_FOLLOWUP_HISTCN_TAG_SUFFIX}"
+        return base
 
     @property
     def hf_path_in_repo(self) -> str:
-        return f"adapters/exp444-{self.condition}-seed{self.seed}"
+        path = f"adapters/exp444-{self.condition}-seed{self.seed}"
+        if _followup_histcn_enabled():
+            # HF Hub adapter dir gets a suffixed slug so the follow-up's 3
+            # cells don't overwrite the parent's on-policy adapters.
+            path = f"{path}{_FOLLOWUP_HISTCN_TAG_SUFFIX}"
+        return path
 
 
 def _enumerate_train_cells() -> list[TrainCell]:
-    """All 12 trained cells: 4 conditions × 3 seeds."""
-    return [TrainCell(condition=cond, seed=seed) for cond in TRAINED_CONDITIONS for seed in SEEDS]
+    """All trained cells. Parent: 4 conditions × 3 seeds = 12. Follow-up
+    (``EPM_444_FOLLOWUP_HISTORIAN_CN=1``): 1 condition × 3 seeds = 3."""
+    return [
+        TrainCell(condition=cond, seed=seed)
+        for cond in _active_trained_conditions()
+        for seed in SEEDS
+    ]
 
 
 def _train_one_cell(cell: TrainCell, gpu_id: int) -> dict[str, Any]:
@@ -4662,7 +4785,14 @@ def _train_one_cell(cell: TrainCell, gpu_id: int) -> dict[str, Any]:
         hf_repo=HF_MODEL_REPO,
         hf_path_in_repo=cell.hf_path_in_repo,
     )
-    os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
+    # Route follow-up runs to a SEPARATE WandB project so the parent's panel
+    # stays single-purpose; parent runs keep WANDB_PROJECT unchanged.
+    wandb_project = (
+        f"{WANDB_PROJECT}-{_FOLLOWUP_HISTCN_NAMESPACE.replace('_', '-')}"
+        if _followup_histcn_enabled()
+        else WANDB_PROJECT
+    )
+    os.environ.setdefault("WANDB_PROJECT", wandb_project)
     logger.info("training cell=%s gpu_id=%d data=%s out=%s", cell.tag, gpu_id, data_path, out_dir)
     out_dir_path, loss = train_lora(
         base_model_path=BASE_MODEL,
@@ -4699,9 +4829,11 @@ def phase_worker(args: argparse.Namespace) -> dict[str, Any]:
     # If --condition + --seed are both passed, train just that one cell (shard=0/num_shards=1
     # convenience for the parallel shell launchers per plan §10).
     if args.condition and args.seed is not None:
-        if args.condition not in TRAINED_CONDITIONS:
+        active = _active_trained_conditions()
+        if args.condition not in active:
             raise RuntimeError(
-                f"--condition {args.condition!r} not in TRAINED_CONDITIONS {TRAINED_CONDITIONS!r}"
+                f"--condition {args.condition!r} not in active conditions {active!r} "
+                f"(parent set: {TRAINED_CONDITIONS!r})"
             )
         assigned = [TrainCell(condition=args.condition, seed=args.seed)]
     else:
@@ -5330,6 +5462,10 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
     figure_slug = facts.figure_slug
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     bucket = f"issue444_real_figure_provenance/{figure_slug}"
+    if _followup_histcn_enabled():
+        # Route the follow-up arm's raw_completions + on_policy_raw to a
+        # SEPARATE HF data-repo subdir so they don't overwrite the parent.
+        bucket = f"{bucket}/{_FOLLOWUP_HISTCN_NAMESPACE}"
     files_uploaded: list[str] = []
 
     # Per-cell completions JSONLs.
@@ -5357,8 +5493,10 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
             repo_type="dataset",
         )
         files_uploaded.append(path_in_repo)
-    # On-policy raw completions (audit trail).
-    for persona in NON_TEACH_PERSONAS:
+    # On-policy raw completions (audit trail). Use the active on-policy
+    # persona set so the follow-up's 5th persona (``local_historian``) raw
+    # JSONL is uploaded alongside the 4 arbitrary personas.
+    for persona in _on_policy_negative_personas():
         op_path = ON_POLICY_DIR / f"{figure_slug}_{persona}_raw.jsonl"
         if op_path.exists():
             path_in_repo = f"{bucket}/on_policy_raw/{persona}.jsonl"
