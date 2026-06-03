@@ -2572,8 +2572,8 @@
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts #411's per-bystander sycophancy leakage better than layer-20 residual cosine, in particular whether it recovers the strongest anti-cosine leak (software_engineer leaking +0.48 to comedian at its lowest cosine rank).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/470",
-      "status": "interpreting",
+      "path": "tasks/reviewing/470",
+      "status": "reviewing",
       "title": "Jensen-Shannon similarity between persona-conditioned base-model output distributions is the worst of 13 geometric/distributional predictors of #411's sycophancy leakage on this panel and fails the software_engineer \u2192 comedian recovery diagnostic (LOW confidence)"
     },
     "471": {
