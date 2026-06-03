@@ -1630,33 +1630,55 @@ emitted a tool call as raw text, no tool ran, chain died, pod ran
 unmonitored for ~6.5h until the user manually re-invoked `/issue 463`.
 Task #462 hit the same class of failure.)
 
-The mandatory backstop is `/loop`: the per-issue session MUST run
-under `/loop 10m /issue <N>` while a pod is alive for this issue. The
-`/loop` scheduler is a harness-level periodic re-invocation that does
-NOT depend on the previous turn's bg-Bash chain surviving — even after
-a dead reaction turn, the next `/loop` tick fires a fresh `/issue <N>`
-invocation that picks up state from `events.jsonl` and resumes the
-polling loop. The bg-Bash chain remains the primary tick mechanism
-(faster, drains sentinels on each return); `/loop` is the
-session-survival backstop. This is the same rule CLAUDE.md § "PM Session
-+ Per-Experiment Sessions" already states ("per-experiment sessions
-don't auto-wake on progress — from inside, run `/loop 10m /issue <N>`")
-and the `/pm` skill documents — Step 6d.2 makes it mandatory at
-polling-loop entry rather than advisory.
+The mandatory backstop is a harness-level recurring re-invocation of
+`/issue <N>` that does NOT depend on the previous turn's bg-Bash chain
+surviving — even after a dead reaction turn, the next backstop tick
+fires a fresh `/issue <N>` invocation that picks up state from
+`events.jsonl` and resumes the polling loop. The bg-Bash chain remains
+the primary tick mechanism (faster, drains sentinels on each return);
+the recurring re-invocation is the session-survival backstop.
 
-Operationally:
-- When this skill enters Step 6d.2 (i.e., it just dispatched a real pod
-  workload), and the current session is NOT already running under
-  `/loop`, surface this one-line instruction to the user in chat:
-  `Run /loop 10m /issue <N> in this session so the poll loop survives
-  a dead reaction turn.` Then proceed to the polling loop. The user
-  invokes `/loop` themselves; this skill does NOT auto-invoke it. The
-  reminder is one-shot per session and is skipped when `/loop` is
-  already active (detectable from the harness when the current
-  invocation was scheduled by `/loop`).
-- The reminder is required only for pod-backed `kind: experiment` runs
-  reaching Step 6d.2. `kind: analysis|infra|batch|survey` and
-  follow-up paths that never enter the polling loop do NOT need it.
+**The orchestrator AUTO-ARMS this backstop itself — no user action, no
+chat reminder.** `/loop 10m /issue <N>` is only the user-typed front end
+for a recurring cron; the orchestrator registers the identical cron
+directly via the `CronCreate` tool. On entering Step 6d.2 for a
+pod-backed `kind: experiment` run, BEFORE starting the bg-Bash poll:
+
+1. Call `CronList`. If a job whose `prompt` is exactly `/issue <N>`
+   already exists, the backstop is already armed (this invocation was
+   itself fired by that cron, or armed earlier this session) — skip
+   straight to the poll loop. This is the idempotency guard: NEVER
+   register a second cron for the same issue.
+2. Otherwise call
+   `CronCreate(cron="*/10 * * * *", prompt="/issue <N>", recurring=True, durable=False)`
+   — a 10-minute, session-scoped, in-memory recurring re-invocation that
+   reproduces the retired `/loop 10m /issue <N>` semantics (dies with the
+   session, auto-expires at 7 days like the default pod TTL). The harness
+   adds jitter, so ticks don't all land on a fixed wall-clock mark.
+
+Then proceed to the polling loop. Auto-arming is required ONLY for
+pod-backed `kind: experiment` runs reaching Step 6d.2;
+`kind: analysis|infra|batch|survey` and follow-up paths that never enter
+the polling loop do NOT arm it.
+
+**Tear the cron down on every terminal transition out of the active
+poll loop** so it does not keep re-firing `/issue <N>` after the pod is
+gone: `CronList`, find the job whose `prompt` is `/issue <N>`, and
+`CronDelete(id=...)` it at Step 6d.3 (`done` → `verifying`), at the
+Step 6d.4 gate-park exit (the pipeline has EXITed and no pod is burning
+GPU — the user now drives the resume), and on the `blocked` transition
+(`stalled` / `dead` / unrecognised gate). A gate resume or a recovery
+re-invocation re-enters Step 6d.2 and re-arms via the step-1 guard.
+Belt-and-suspenders: even if a teardown is missed, the cron auto-expires
+at 7 days, and a tick that lands on a `completed` / `archived` /
+terminated issue is a cheap no-op — the re-invoked skill reads terminal
+state and exits without re-arming.
+
+Residual failure mode the in-session backstop does NOT cover: if the
+per-issue *session itself* dies (process exit, host reboot), a
+`durable=False` cron dies with it and the pod goes unmonitored — that is
+the "spawn a fresh session" recovery row, not something an in-session
+backstop can survive.
 
 The pre-2026-06-02 independent stall-watchdog (`scripts/pod_watch.py`
 spawned as a long-lived background process writing to
@@ -1754,9 +1776,13 @@ recovery table below must agree).** The live mechanisms during a
 1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
-2. The `/loop 10m /issue <N>` harness-level scheduler running in the
-   per-issue session — backstop. Survives a dead reaction turn and
-   re-enters the polling loop on its next tick.
+2. The auto-armed backstop cron (`CronCreate(cron="*/10 * * * *",
+   prompt="/issue <N>")`, registered by the orchestrator at Step 6d.2,
+   torn down at every terminal transition) running in the per-issue
+   session — backstop. Survives a dead reaction turn and re-enters the
+   polling loop on its next tick. `/loop 10m /issue <N>` is the
+   equivalent user-typed front end; the orchestrator no longer depends
+   on the user typing it.
 
 The `pod_watch.py` watchdog + `.claude/cache/watch-<N>.pid` pid-file
 are NOT a third live mechanism: they are retained for manual
@@ -2762,7 +2788,7 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
 | `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
-| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, and no `/loop` backstop was scheduled. Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`) and resumes Step 6d.2. Then tell the user to run `/loop 10m /issue <N>` so the next dead turn doesn't strand the run again. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` → `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.

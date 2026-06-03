@@ -167,7 +167,7 @@ python scripts/spawn_session.py list
 python scripts/spawn_session.py stop --session-id <id>
 ```
 
-Spawning POSTs to the local Happy daemon's control server at `127.0.0.1:<port>` (port from `~/.happy/daemon.state.json`); the new session inherits `$HOME` + QR-paired key and appears on the phone. **Auto-watching:** per-experiment sessions don't auto-wake on progress — from inside, run `/loop 10m /issue <N>`. PM session is event-driven. **Topology rule:** NEVER run `/issue <N>` in the PM session. Reference: `.claude/skills/pm/SKILL.md`, `.claude/agents/research-pm.md`.
+Spawning POSTs to the local Happy daemon's control server at `127.0.0.1:<port>` (port from `~/.happy/daemon.state.json`); the new session inherits `$HOME` + QR-paired key and appears on the phone. **Auto-watching:** per-experiment sessions don't auto-wake on progress, so `/issue <N>` AUTO-ARMS a 10-min backstop cron (`CronCreate`, idempotent via `CronList`) at run-launch (Step 6d.2) and tears it down at terminal state — no need to type `/loop` (that command stays the manual equivalent). PM session is event-driven. **Topology rule:** NEVER run `/issue <N>` in the PM session. Reference: `.claude/skills/pm/SKILL.md`, `.claude/agents/research-pm.md`.
 
 ## Pods (Ephemeral Lifecycle + CLI + SSH)
 

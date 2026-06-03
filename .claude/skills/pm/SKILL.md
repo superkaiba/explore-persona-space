@@ -94,17 +94,19 @@ opens cwd there automatically (git-isolated to that branch).
 
 ### Auto-watching long-running issues
 
-Per-issue sessions don't auto-wake on experiment completion by default. If
-the user wants a session to keep checking on its own, they invoke `/loop`
-from inside that session:
-
-```
-/loop 10m /issue <N>
-```
+Per-issue sessions don't auto-wake on experiment completion by default,
+so a per-issue `/issue <N>` AUTO-ARMS its own backstop while a pod is
+alive: at run-launch (Step 6d.2) the orchestrator registers a 10-minute
+recurring re-invocation via `CronCreate(cron="*/10 * * * *",
+prompt="/issue <N>", durable=False)` (idempotent via `CronList`) and
+tears it down at terminal state. The user does NOT need to type
+`/loop 10m /issue <N>` — that command remains the manual equivalent for
+ad-hoc use, but the per-issue flow no longer depends on it.
 
 The PM session itself stays event-driven — you respond when the user
-messages you, otherwise idle. Do NOT `/loop` the PM session unless the
-user explicitly asks (e.g., for overnight queue triage).
+messages you, otherwise idle. Do NOT `/loop` (or auto-arm a cron on) the
+PM session unless the user explicitly asks (e.g., for overnight queue
+triage).
 
 ### When a per-issue session hits a gate
 
