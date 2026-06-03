@@ -12,3 +12,4 @@
 {"ts": "2026-06-03T08:33:58Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Adversarial-planner complete: ensemble APPROVE (all 3 lenses), consistency WARN/PROCEED. Awaiting user plan approval."}
 {"ts": "2026-06-03T08:39:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "User approved plan v2 (4× H100). Creating worktree + dispatching experiment-implementer."}
 {"ts": "2026-06-03T08:40:07Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "experiment-implementer writing calibration layer + cells + dispatcher fork in worktree issue-477 (implementing sub-phase)."}
+{"ts": "2026-06-03T08:52:15Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "spawn: [Errno 7] Argument list too long: 'node'"}
