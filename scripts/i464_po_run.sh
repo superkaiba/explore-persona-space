@@ -24,6 +24,7 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
+export PYTHONUNBUFFERED=1  # flush per-cell python logger lines so grep-on-log monitoring works live
 cd /workspace/explore-persona-space || { echo "[phase=failed] cd-failed"; exit 1; }
 
 LOG_DIR=logs/issue_464_po
