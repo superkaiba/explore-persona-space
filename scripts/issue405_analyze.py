@@ -90,8 +90,14 @@ def build_cell_persona_frame(
         subset_id = "+".join(sorted(positives))
         trained_pos_mean = r["eval"]["summary"]["trained_pos_mean_dlogp"]
         for persona, payload in r["eval"]["held_out"].items():
+            # Blocker 6: FAIL LOUD on missing distance — a held-out persona
+            # absent from the cosine matrix is a data bug, not a row to skip.
             if persona not in names:
-                continue
+                raise RuntimeError(
+                    f"Held-out persona {persona!r} missing from layer-20 cosine matrix "
+                    f"(cell={cell_id} seed={seed}). Names available: {names!r}. "
+                    f"Refusing to silently drop the row — re-extract the matrix."
+                )
             from _issue405_common import mean_dist_to_set, min_dist_to_set
 
             md = min_dist_to_set(persona, positives, names, distance)
@@ -184,12 +190,18 @@ def fit_mixed_effects(
         coefs = {
             row_name: dict(coef_df.iloc[i].to_dict()) for i, row_name in enumerate(coef_df.index)
         }
+        # Pull AIC from R for Blocker 5 min-vs-mean comparison.
+        try:
+            aic = float(ro.r("AIC(m)")[0])
+        except Exception:
+            aic = None
         return {
             "status": "PASS",
             "tool": "rpy2+lme4",
             "formula": lme_formula,
             "n_obs": n,
             "coefs": coefs,
+            "aic": aic,
         }
     except ImportError:
         log.warning("rpy2 not installed; falling back to statsmodels.MixedLM")
@@ -213,16 +225,191 @@ def fit_mixed_effects(
             for term in fit.params.index
             if term in fit.bse.index
         }
+        # Blocker 5 fix: emit AIC from statsmodels so min-vs-mean
+        # comparison works in the fallback path too (was missing in
+        # round 1 — broke the AIC comparison the plan §6.4 mandates).
+        try:
+            aic = float(fit.aic) if hasattr(fit, "aic") and fit.aic is not None else None
+        except Exception:
+            aic = None
+        try:
+            llf = float(fit.llf) if hasattr(fit, "llf") and fit.llf is not None else None
+        except Exception:
+            llf = None
         return {
             "status": "PASS",
             "tool": "statsmodels.MixedLM (vc_formula)",
             "formula": formula,
             "n_obs": n,
             "coefs": coefs,
+            "aic": aic,
+            "loglik": llf,
         }
     except Exception as e:
         log.error("statsmodels.MixedLM fit failed too (%s)", e)
         return {"status": "FAIL", "tool": "all_failed", "message": str(e)}
+
+
+def fit_per_K_marginal_slopes(df_rows: list[dict], dist_col: str = "min_dist") -> dict:
+    """Blocker 5 — per-K marginal slopes (4 slopes, one per K ∈ {1, 2, 4, 8}).
+
+    Per plan §6.4 FIX B2 mandatory robustness #3. Each K's marginal slope
+    is a simple OLS within that K stratum (no random effects since we're
+    conditioning on K). Reports {β, SE, p, 95% CI} per K.
+    """
+    if not df_rows:
+        return {"status": "FAIL", "message": "empty data frame"}
+    import statsmodels.formula.api as smf
+
+    out: dict = {"per_K": {}}
+    for K in sorted({r["K"] for r in df_rows}):
+        sub = [r for r in df_rows if r["K"] == K]
+        if len({r["persona"] for r in sub}) < 2:
+            out["per_K"][K] = {
+                "status": "SKIP",
+                "n": len(sub),
+                "message": "fewer than 2 unique personas at this K",
+            }
+            continue
+        import pandas as pd
+
+        d = pd.DataFrame(sub)
+        try:
+            fit = smf.ols(f"deltaLogP_mean ~ {dist_col}", data=d).fit()
+            ci = fit.conf_int(alpha=0.05).loc[dist_col].tolist()
+            out["per_K"][K] = {
+                "status": "PASS",
+                "n": len(sub),
+                "beta": float(fit.params[dist_col]),
+                "se": float(fit.bse[dist_col]),
+                "p": float(fit.pvalues[dist_col]),
+                "ci_95": [float(ci[0]), float(ci[1])],
+            }
+        except Exception as e:
+            out["per_K"][K] = {"status": "FAIL", "n": len(sub), "message": str(e)}
+    return out
+
+
+def leverage_diagnostics(df_rows: list[dict], dist_col: str = "min_dist") -> dict:
+    """Blocker 5 — Cook's distance + DFBETAS on β_{K×dist} per cell-persona row.
+
+    Per plan §6.4 FIX B2 mandatory robustness #4. Uses a simple OLS
+    backbone (`deltaLogP_mean ~ K * dist`) so the leverage numbers are
+    interpretable; the mixed-effects fit's primary slope is reported
+    separately by ``fit_mixed_effects``. Reports the top 5 highest-Cook's
+    + the top 5 highest-|DFBETAS| on the interaction term.
+    """
+    if not df_rows:
+        return {"status": "FAIL", "message": "empty data frame"}
+    import pandas as pd
+    import statsmodels.formula.api as smf
+
+    d = pd.DataFrame(df_rows).reset_index(drop=True)
+    try:
+        fit = smf.ols(f"deltaLogP_mean ~ K * {dist_col}", data=d).fit()
+        infl = fit.get_influence()
+        cooks_d, _ = infl.cooks_distance
+        try:
+            dfb = infl.dfbetas  # shape (N, k) — columns are predictors
+            cols = list(fit.params.index)
+            interaction_col_name = f"K:{dist_col}"
+            if interaction_col_name in cols:
+                col_idx = cols.index(interaction_col_name)
+                dfb_inter = dfb[:, col_idx]
+            else:
+                dfb_inter = [None] * len(d)
+        except Exception:
+            dfb_inter = [None] * len(d)
+
+        def _row_meta(i: int) -> dict:
+            r = d.iloc[i].to_dict()
+            return {
+                "cell_id": r.get("cell_id"),
+                "seed": int(r.get("seed", 0)),
+                "persona": r.get("persona"),
+            }
+
+        cooks_sorted_idx = sorted(range(len(cooks_d)), key=lambda i: -cooks_d[i])[:5]
+        top_cooks = [{**_row_meta(i), "cooks_d": float(cooks_d[i])} for i in cooks_sorted_idx]
+        dfb_with_idx = [
+            (i, float(abs(x)) if x is not None else 0.0) for i, x in enumerate(dfb_inter)
+        ]
+        dfb_sorted_idx = sorted(dfb_with_idx, key=lambda t: -t[1])[:5]
+        top_dfbetas = [
+            {
+                **_row_meta(i),
+                "dfbetas_K_x_dist_abs": float(abs_v),
+                "dfbetas_K_x_dist": (float(dfb_inter[i]) if dfb_inter[i] is not None else None),
+            }
+            for i, abs_v in dfb_sorted_idx
+        ]
+        return {
+            "status": "PASS",
+            "n_obs": len(d),
+            "interaction_term": interaction_col_name,
+            "top5_cooks_distance": top_cooks,
+            "top5_abs_dfbetas_on_interaction": top_dfbetas,
+        }
+    except Exception as e:
+        return {"status": "FAIL", "message": str(e)}
+
+
+def cv_r2_at_subset_level(df_rows: list[dict], formula: str, k_folds: int = 5) -> dict | None:
+    """Blocker 5 — subset-level K-fold CV R² for the min-vs-mean comparison.
+
+    Folds at the subset level (NOT row level) so in-cell leakage doesn't
+    inflate R². Falls back to a plain OLS scoring backbone (the mixed-
+    effects fit's CV is too expensive at this N and the OLS R² is a
+    monotonic proxy here since the random-effects variance is small).
+    Returns dict with ``mean_r2`` + ``per_fold_r2`` + ``k_folds``, or
+    None if not enough subsets to fold.
+    """
+    if not df_rows:
+        return None
+    import pandas as pd
+    import statsmodels.formula.api as smf
+
+    d = pd.DataFrame(df_rows)
+    subsets = sorted(d["subset"].unique().tolist())
+    if len(subsets) < k_folds:
+        return {
+            "status": "SKIP",
+            "message": f"only {len(subsets)} unique subsets — need ≥ {k_folds}",
+            "n_subsets": len(subsets),
+        }
+    # Deterministic subset → fold assignment.
+    import numpy as np
+
+    rng = np.random.default_rng(405)
+    perm = rng.permutation(len(subsets))
+    fold_for_subset = {subsets[perm[i]]: i % k_folds for i in range(len(subsets))}
+    per_fold_r2: list[float] = []
+    for fold in range(k_folds):
+        train_subsets = {s for s, f in fold_for_subset.items() if f != fold}
+        test_subsets = {s for s, f in fold_for_subset.items() if f == fold}
+        train = d[d["subset"].isin(train_subsets)]
+        test = d[d["subset"].isin(test_subsets)]
+        if train.empty or test.empty:
+            continue
+        try:
+            fit = smf.ols(formula, data=train).fit()
+            pred = fit.predict(test)
+            ss_res = float(((test["deltaLogP_mean"] - pred) ** 2).sum())
+            ss_tot = float(((test["deltaLogP_mean"] - test["deltaLogP_mean"].mean()) ** 2).sum())
+            r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+            per_fold_r2.append(r2)
+        except Exception as e:
+            log.warning("CV fold %d failed: %s", fold, e)
+            continue
+    if not per_fold_r2:
+        return {"status": "FAIL", "message": "all folds failed"}
+    return {
+        "status": "PASS",
+        "k_folds": k_folds,
+        "n_subsets": len(subsets),
+        "mean_r2": float(sum(per_fold_r2) / len(per_fold_r2)),
+        "per_fold_r2": per_fold_r2,
+    }
 
 
 def simulate_pre_sweep_runnability() -> dict:
@@ -278,6 +465,21 @@ def simulate_pre_sweep_runnability() -> dict:
     fit = fit_mixed_effects(rows)
     fit["planted_beta_K_x_min"] = planted_beta_K_x_min
     fit["n_simulated_rows"] = len(rows)
+    # Blocker 5 round-2: ALSO exercise the new robustness paths on
+    # simulated data so the pre-sweep runnability gate covers them.
+    # Without this, the new paths only run end-to-end the first time the
+    # real headline regression runs on the pod.
+    rows_no_comedian = [r for r in rows if r["persona"] != "comedian"]
+    fit["per_K_slopes_min_full"] = fit_per_K_marginal_slopes(rows, "min_dist")
+    fit["per_K_slopes_min_no_comedian"] = fit_per_K_marginal_slopes(rows_no_comedian, "min_dist")
+    fit["leverage_min"] = leverage_diagnostics(rows, "min_dist")
+    fit["cv_r2_min"] = cv_r2_at_subset_level(
+        rows, formula="deltaLogP_mean ~ K * min_dist", k_folds=5
+    )
+    fit["cv_r2_mean"] = cv_r2_at_subset_level(
+        rows, formula="deltaLogP_mean ~ K * mean_dist", k_folds=5
+    )
+    fit["headline_no_comedian"] = fit_mixed_effects(rows_no_comedian)
     return fit
 
 
@@ -296,6 +498,11 @@ def main() -> int:
     parser.add_argument("--simulated", action="store_true")
     parser.add_argument("--simulated-only", action="store_true")
     parser.add_argument("--skip-plots", action="store_true")
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="Allow result-file count shortfall (Blocker 5 default fails loud)",
+    )
     parser.add_argument(
         "--out-path",
         type=str,
@@ -326,6 +533,36 @@ def main() -> int:
     eval_dir = Path(args.eval_dir)
     results = load_cell_results(eval_dir)
     names, dist = load_cosine_distance_matrix()
+
+    # ── Blocker 2 + 5 fix: FAIL LOUD on result-file shortfall ────────
+    # Plan §0 + §4.6: 21 CORE × 2 seeds = 42, 1 ABLNEG × 2 seeds = 2,
+    # 3 DOSE50 × 2 seeds = 6. Total 50. If the dispatcher silently lost
+    # a cell, the headline regression denominator is wrong and we'd
+    # ship a result for fewer cells than we claimed to run.
+    counts_by_track = {"CORE": 0, "K4_ABLNEG": 0, "K1_DOSE50": 0}
+    for r in results:
+        t = r.get("track")
+        if t in counts_by_track:
+            counts_by_track[t] += 1
+    expected = {"CORE": 42, "K4_ABLNEG": 2, "K1_DOSE50": 6}
+    out["track_counts"] = {"observed": counts_by_track, "expected": expected}
+    shortfall = {
+        t: expected[t] - counts_by_track[t] for t in expected if counts_by_track[t] < expected[t]
+    }
+    if shortfall:
+        if args.allow_partial:
+            log.warning(
+                "[analyze] PARTIAL: result-file shortfall %r (allow_partial=True; "
+                "headline denominator may be wrong)",
+                shortfall,
+            )
+            out["partial_shortfall"] = shortfall
+        else:
+            raise RuntimeError(
+                f"Result-file shortfall {shortfall!r} vs expected {expected!r}. "
+                f"Pass --allow-partial to override (the dispatcher silently lost a "
+                f"cell — investigate before fitting on a wrong denominator)."
+            )
 
     # ── CORE headline frame ──────────────────────────────────────────
     df_core = build_cell_persona_frame(results, names, dist, track="CORE")
@@ -360,6 +597,58 @@ def main() -> int:
             subset_rows = [r for r in df_core if r["persona"] != held_persona]
             loo_out[held_persona] = fit_mixed_effects(subset_rows)
         out["runs"]["leave_one_persona_out"] = loo_out
+
+        # ── Blocker 5: per-K marginal slopes on min_dist ─────────────
+        log.info("Fitting per-K marginal slopes on min_dist (FIX B2 #3) ...")
+        out["runs"]["per_K_slopes_min_full"] = fit_per_K_marginal_slopes(df_core, "min_dist")
+        out["runs"]["per_K_slopes_min_no_comedian"] = fit_per_K_marginal_slopes(
+            df_no_comedian, "min_dist"
+        )
+
+        # ── Blocker 5: leverage diagnostics (Cook's D + DFBETAS) ────
+        log.info("Computing leverage diagnostics (FIX B2 #4) ...")
+        out["runs"]["leverage_min"] = leverage_diagnostics(df_core, "min_dist")
+
+        # ── Blocker 5: subset-level 5-fold CV-R² for min vs mean ────
+        log.info("Computing subset-level 5-fold CV-R² for min-vs-mean (FIX B1) ...")
+        out["runs"]["cv_r2_min"] = cv_r2_at_subset_level(
+            df_core, formula="deltaLogP_mean ~ K * min_dist", k_folds=5
+        )
+        out["runs"]["cv_r2_mean"] = cv_r2_at_subset_level(
+            df_core, formula="deltaLogP_mean ~ K * mean_dist", k_folds=5
+        )
+
+        # ── Blocker 5: JS-divergence sensitivity refit ───────────────
+        # Per .claude/rules/persona-distance-metrics.md, JS is the
+        # secondary distance metric. Sensitivity test: refit headline
+        # with min_js_dist column if a JS-divergence matrix is present
+        # at eval_results/extraction_method_comparison/js_matrix_layer21.json.
+        # If absent, skip with an explicit SKIP status (NOT silent) so
+        # the analyst sees the gap.
+        js_matrix_path = (
+            PROJECT_ROOT
+            / "eval_results"
+            / "extraction_method_comparison"
+            / "js_matrix_layer21.json"
+        )
+        if js_matrix_path.exists():
+            log.info("Loading JS-divergence matrix from %s ...", js_matrix_path)
+            js_data = json.loads(js_matrix_path.read_text())
+            js_names = js_data["persona_names"]
+            js_dist = js_data["matrix"]
+            df_core_js = build_cell_persona_frame(results, js_names, js_dist, track="CORE")
+            out["runs"]["headline_full_js"] = fit_mixed_effects(df_core_js)
+            out["runs"]["per_K_slopes_min_js"] = fit_per_K_marginal_slopes(df_core_js, "min_dist")
+        else:
+            out["runs"]["headline_full_js"] = {
+                "status": "SKIP",
+                "tool": "n/a",
+                "message": (
+                    f"JS-divergence matrix missing at {js_matrix_path} — "
+                    f"sensitivity refit skipped. Generate via the JS-distance "
+                    f"extractor (planner §6.4 robustness #5)."
+                ),
+            }
 
     # ── ABLNEG overlay (separate track) ──────────────────────────────
     df_abl = build_cell_persona_frame(results, names, dist, track="K4_ABLNEG")

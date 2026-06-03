@@ -286,6 +286,9 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
     # ── Parallel dispatch ─────────────────────────────────────────────
     free_gpus = list(gpus)
     inflight: dict[int, tuple[subprocess.Popen, str, int]] = {}  # gpu -> (proc, cell, seed)
+    # Blocker 2: track every (cell, seed)'s exit so a non-zero rc PROPAGATES
+    # to the dispatcher's exit code — never silently lose a crashed cell.
+    failures: list[tuple[str, int, int]] = []  # (cell, seed, rc)
 
     def poll_inflight():
         done = []
@@ -294,6 +297,8 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
                 done.append(gpu)
                 rc = proc.returncode
                 log.info("[dispatch] DONE cell=%s seed=%d gpu=%d rc=%d", cell, seed, gpu, rc)
+                if rc != 0:
+                    failures.append((cell, seed, rc))
         for g in done:
             inflight.pop(g)
             free_gpus.append(g)
@@ -311,6 +316,7 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
                 log.error(
                     "[dispatch] Phase-2 assembly FAILED for cell=%s seed=%d (%s)", cell, seed, e
                 )
+                failures.append((cell, seed, -1))  # Blocker 2: Phase-2 fail counts too
                 free_gpus.append(gpu)
                 continue
             proc = spawn_cell_subprocess(cell, seed, gpu, log_dir)
@@ -319,7 +325,14 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
             time.sleep(15)
             poll_inflight()
 
-    log.info("[dispatch] All work items done.")
+    log.info("[dispatch] All work items done. %d failure(s).", len(failures))
+    if failures:
+        # Blocker 2: FAIL LOUD — never let a 49-cell sweep with cell crashes
+        # silently return 0 and look successful.
+        for cell, seed, rc in failures:
+            log.error("[dispatch]   FAILED: cell=%s seed=%d rc=%d", cell, seed, rc)
+        print("[phase=done]", flush=True)  # phase=done so poller sees clean exit
+        return 1
     print("[phase=done]", flush=True)
     return 0
 

@@ -136,6 +136,7 @@ def nvidia_smi_assert_clean(gpu_id: int) -> None:
             ],
             text=True,
             timeout=10,
+            env={**os.environ},  # Blocker 10: explicit env-passthrough
         ).strip()
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired) as e:
         log.warning("nvidia-smi probe failed (%s); skipping orphan check", e)
@@ -382,17 +383,32 @@ def compute_panel_summary(
 ) -> tuple[dict, dict, dict, dict]:
     """Combine trained + base scores into per-persona summaries.
 
-    Returns: (per_persona_dict, summary_dict, mean_dlogp, mean_emit_rate)
-    where per_persona_dict[persona] carries:
-      - deltaLogP_per_q (trained - base)
-      - emit_rate (mean over questions of argmax==MARKER_TOKEN_ID under trained)
-      - kl_per_q (full-vocab KL(trained‖base) at the slot)
-      - logp_trained_per_q / logp_base_per_q (raw)
+    Per-persona payload carries BOTH:
+      - ``logp_trained_mean``  — ABSOLUTE trained log P(marker) at the slot,
+        averaged over questions. THIS is what `g_logprob_source` must read
+        for the saturation kill-criterion (plan §4.9: expected ∈ [-8, -3];
+        saturated if > -0.1). NOT the trained−base delta — base log P(marker)
+        ≈ -15, so trained−base ≥ 0 for any successful implant, which would
+        ALWAYS exceed -0.1 and silently fire the kill gate (Blocker 1).
+      - ``deltaLogP_mean`` (trained − base) — the FIX-A1 source-strength
+        scalar used by the analyzer; SEPARATE from the saturation read.
+      - ``logp_base_mean``  — absolute base log P(marker) at the slot.
+      - ``emit_rate`` (argmax==MARKER_TOKEN_ID under trained)
+      - ``kl_per_q`` (full-vocab KL(trained‖base) at the slot, vectorized)
+
+    Returns: ``(per_persona, summary, mean_dlogp_by_persona, mean_emit_by_persona)``
+    where ``summary`` carries BOTH ``logp_trained_mean`` AND
+    ``mean_deltaLogP`` (NOT just the delta) so the caller can pick the right
+    one for the kill-criterion vs. the analysis covariate.
     """
-    import math
+    # Vectorized KL — torch tensor ops, not Python double-loop over ~152k entries.
+    # Per-row KL(trained ‖ base) = sum_v exp(log_t[v]) * (log_t[v] - log_b[v])
+    import torch
 
     per_persona: dict[str, dict] = {}
     dlogp_means: list[float] = []
+    logp_trained_means: list[float] = []
+    logp_base_means: list[float] = []
     emit_rates: list[float] = []
     for persona in panel_R:
         lp_t = trained_scores[persona]["logp_marker_per_q"]
@@ -401,18 +417,24 @@ def compute_panel_summary(
         ls_b = base_scores[persona]["logsoftmax_per_q"]
         argmax_t = trained_scores[persona]["argmax_id_per_q"]
         delta = [t - b for t, b in zip(lp_t, lp_b, strict=True)]
-        # KL(trained ‖ base) = sum_v exp(log_t[v]) * (log_t[v] - log_b[v])
-        kl_per_q: list[float] = []
-        for row_t, row_b in zip(ls_t, ls_b, strict=True):
-            kl = 0.0
-            for lt, lb in zip(row_t, row_b, strict=True):
-                if lt > -50.0:  # ignore vanishingly small terms
-                    kl += math.exp(lt) * (lt - lb)
-            kl_per_q.append(kl)
+        # Vectorized KL — Blocker 8 fix (Python loop was ~60-100 min sweep overhead).
+        # log_t: (Q, V), log_b: (Q, V) → KL per Q = sum_v exp(log_t) * (log_t - log_b)
+        log_t = torch.tensor(ls_t, dtype=torch.float32)
+        log_b = torch.tensor(ls_b, dtype=torch.float32)
+        # Mask tail terms with log_t < -50 (numerically negligible contribution),
+        # matching the row-by-row code's `if lt > -50.0` guard semantics.
+        mask = log_t > -50.0
+        contribs = torch.where(mask, torch.exp(log_t) * (log_t - log_b), torch.zeros_like(log_t))
+        kl_per_q_tensor = contribs.sum(dim=-1)
+        kl_per_q: list[float] = [float(x) for x in kl_per_q_tensor.tolist()]
         emit = sum(1.0 for a in argmax_t if a == MARKER_TOKEN_ID) / max(1, len(argmax_t))
+        logp_trained_mean = sum(lp_t) / max(1, len(lp_t))
+        logp_base_mean = sum(lp_b) / max(1, len(lp_b))
         per_persona[persona] = {
             "deltaLogP_per_q": delta,
             "deltaLogP_mean": sum(delta) / max(1, len(delta)),
+            "logp_trained_mean": logp_trained_mean,  # ABSOLUTE (Blocker 1)
+            "logp_base_mean": logp_base_mean,
             "emit_rate": emit,
             "kl_per_q": kl_per_q,
             "kl_mean": sum(kl_per_q) / max(1, len(kl_per_q)),
@@ -421,10 +443,14 @@ def compute_panel_summary(
             "argmax_id_per_q": argmax_t,
         }
         dlogp_means.append(per_persona[persona]["deltaLogP_mean"])
+        logp_trained_means.append(logp_trained_mean)
+        logp_base_means.append(logp_base_mean)
         emit_rates.append(emit)
 
     summary = {
         "mean_deltaLogP": sum(dlogp_means) / max(1, len(dlogp_means)),
+        "logp_trained_mean": sum(logp_trained_means) / max(1, len(logp_trained_means)),
+        "logp_base_mean": sum(logp_base_means) / max(1, len(logp_base_means)),
         "mean_emit_rate": sum(emit_rates) / max(1, len(emit_rates)),
         "n_personas": len(per_persona),
     }
@@ -434,6 +460,117 @@ def compute_panel_summary(
         dict(zip(panel_R, dlogp_means, strict=True)),
         dict(zip(panel_R, emit_rates, strict=True)),
     )
+
+
+class ProbePanelLogprobCallback:
+    """FIX E (Blocker 4) — per-step probe-panel marker logprob + emission rate.
+
+    A `TrainerCallback` (loose-typed at class-body level so importing this
+    module doesn't pull `transformers` at module-import time on CPU-only
+    smoke runs). Logs to WandB on every ``log_every_steps`` step:
+      - ``probe/<persona>/logp_marker``  (teacher-forced log P(marker | T_p(q) + R))
+      - ``probe/<persona>/argmax_emission``  (1.0 if argmax at the same slot == marker_id)
+
+    The probe panel is fixed by the plan §4.4 / §6.5 fig #4:
+      (a) one trained-positive persona (typically the first in spec.positives)
+      (b) ``no_persona`` (the bare default context — open-q 3.7 safety target)
+      (c) ``comedian`` (the far held-out)
+
+    Each probe uses a fixed (persona, question, R) tuple captured ONCE at
+    ``on_train_begin``; the R text comes from the cached on-policy R for
+    the trained-positive persona (matches the trained context shape).
+
+    Plan §6.5 fig #4 explicitly mandates BOTH the log-prob trajectory AND
+    the argmax/emission trajectory because once log-prob crosses ~-0.1
+    nat the model starts argmaxing the marker and the log-prob curve
+    plateaus — emission still distinguishes the two regimes.
+    """
+
+    def __init__(
+        self,
+        probe_personas: list[tuple[str, str]],
+        sample_R: str,
+        sample_question: str,
+        marker_text: str,
+        marker_token_id: int,
+        log_every_steps: int = 5,
+    ):
+        self.probe_personas = probe_personas  # [(name, system_prompt), ...]
+        self.sample_R = sample_R
+        self.sample_question = sample_question
+        self.marker_text = marker_text
+        self.marker_token_id = marker_token_id
+        self.log_every_steps = log_every_steps
+        self._last_logged_step = -1
+        self._enabled = True
+
+    def _build_prefix(self, tokenizer, system_prompt: str) -> str:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": self.sample_question},
+        ]
+        chat = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+        return chat + self.sample_R  # post-R slot is where we score
+
+    def on_train_begin(self, args, state, control, model=None, **kwargs):
+        tokenizer = kwargs.get("processing_class") or kwargs.get("tokenizer")
+        if tokenizer is None:
+            log.warning("ProbePanelLogprobCallback: no tokenizer in kwargs; disabling")
+            self._enabled = False
+            return
+        # Pre-tokenize the 3 probe prefixes once.
+        self._cached: list[tuple[str, list[int]]] = []
+        for name, sys_prompt in self.probe_personas:
+            prefix = self._build_prefix(tokenizer, sys_prompt)
+            ids = tokenizer.encode(prefix, add_special_tokens=False)
+            self._cached.append((name, ids))
+        log.info(
+            "ProbePanelLogprobCallback: armed on %d probes, log every %d steps",
+            len(self._cached),
+            self.log_every_steps,
+        )
+
+    def on_step_end(self, args, state, control, model=None, **kwargs):
+        if not self._enabled or model is None:
+            return
+        step = state.global_step
+        if step == self._last_logged_step:
+            return
+        if step % self.log_every_steps != 0:
+            return
+        self._last_logged_step = step
+
+        import torch
+        import torch.nn.functional as F
+
+        was_training = model.training
+        model.eval()
+        try:
+            metrics: dict[str, float] = {}
+            for name, ids in self._cached:
+                input_ids = torch.tensor([ids], dtype=torch.long, device=model.device)
+                attn = torch.ones_like(input_ids)
+                with torch.no_grad():
+                    logits = model(input_ids=input_ids, attention_mask=attn).logits
+                last = logits[0, -1, :].float()
+                log_probs = F.log_softmax(last, dim=-1)
+                lp = float(log_probs[self.marker_token_id].item())
+                argmax_id = int(log_probs.argmax().item())
+                metrics[f"probe/{name}/logp_marker"] = lp
+                metrics[f"probe/{name}/argmax_emission"] = (
+                    1.0 if argmax_id == self.marker_token_id else 0.0
+                )
+            # Push to wandb directly so the metrics line up with the trainer's run.
+            try:
+                import wandb
+
+                if wandb.run is not None:
+                    wandb.log(metrics, step=step)
+            except Exception as e:
+                log.warning("ProbePanel wandb.log failed (%s); continuing", e)
+        finally:
+            if was_training:
+                model.train()
 
 
 def write_sentinel(payload: dict) -> Path:
@@ -552,6 +689,10 @@ def main() -> int:
     result_path = out_dir / "result.json"
     if result_path.exists():
         log.info("result.json already exists at %s — skipping (idempotent).", result_path)
+        # Blocker 7: emit phase=done so poll_pipeline.py reads this as a clean
+        # completion, not a stuck cell. Without it the orchestrator would
+        # flip status to "dead" and suppress the auto-post of epm:results.
+        print("[phase=done]", flush=True)
         return 0
 
     # ── Persist-adapter env vars (delete-after-eval recipe per upload-policy) ──
@@ -588,6 +729,43 @@ def main() -> int:
         run_name = f"issue405_{args.cell_id}_seed{args.seed}"
         os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
 
+        # ── FIX E (Blocker 4) — per-step probe-panel callback ──────────
+        # Plan §4.4 + §6.5 fig #4: log marker logp + emission at every
+        # logging_steps step on a FIXED probe panel of 3 personas:
+        #   (a) first trained-positive (the cell's first source persona)
+        #   (b) no_persona (bare default — open-q 3.7 safety target)
+        #   (c) comedian (far held-out — OOD generalization curve)
+        all_prompts_pre = load_all_persona_prompts()
+        _train_qs_pre, _eval_qs_pre = _import_questions()
+        # Use a fixed question + on-policy R from the first trained
+        # positive's cached R (matches the trained-context shape).
+        probe_personas: list[tuple[str, str]] = [
+            (spec["positives"][0], all_prompts_pre[spec["positives"][0]]),
+            ("no_persona", all_prompts_pre["no_persona"]),
+            ("comedian", all_prompts_pre["comedian"]),
+        ]
+        sample_question = _train_qs_pre[0]
+        # Load the first source persona's cached R for this question.
+        # Phase 1 must have run first; if not, _import + cache lookup fails
+        # loud rather than silently logging a degenerate probe.
+        cached_R_first_pos = json.loads(
+            (Path(args.data_dir) / "onpolicy_R" / f"{spec['positives'][0]}.json").read_text()
+        )["responses"]
+        if sample_question not in cached_R_first_pos:
+            raise RuntimeError(
+                f"FIX-E probe: cached R for question {sample_question!r} missing "
+                f"from {spec['positives'][0]}.json. Re-run Phase 1."
+            )
+        sample_R = cached_R_first_pos[sample_question]
+        probe_cb = ProbePanelLogprobCallback(
+            probe_personas=probe_personas,
+            sample_R=sample_R,
+            sample_question=sample_question,
+            marker_text=MARKER_TEXT,
+            marker_token_id=MARKER_TOKEN_ID,
+            log_every_steps=5,
+        )
+
         cfg = TrainLoraConfig(
             gpu_id=args.gpu,
             epochs=args.epochs,
@@ -612,14 +790,32 @@ def main() -> int:
             lora_targets=LORA_TARGETS_NARROW,  # NARROW attention-only (no MLP — #311, #405)
             hf_upload=False,  # The EPM_PERSIST_ADAPTER_* path handles upload
         )
-        log.info("Starting train_lora ...")
+        log.info("Starting train_lora (with FIX-E probe-panel callback) ...")
         adapter_path_str, training_loss = train_lora(
             base_model_path=BASE_MODEL,
             data_path=str(data_jsonl),
             output_dir=str(adapter_dir),
             cfg=cfg,
+            callbacks=[probe_cb],
         )
         log.info("Training done. loss=%.4f adapter=%s", training_loss, adapter_path_str)
+
+        # ── Blocker 3 fix: persist adapter to HF BEFORE merge/delete ────
+        # FAIL LOUD per upload-policy.md / #404/#458. The merge below
+        # produces a regenerable ~15GB dir we WILL `rm` to stay under the
+        # MooseFS ~130GB quota; the adapter (~300MB) is the only durable
+        # copy. If persist fails we abort BEFORE the merge so a downstream
+        # cleanup pass cannot silently rm an un-uploaded checkpoint.
+        from explore_persona_space.train.trainer import _maybe_persist_adapter
+
+        log.info(
+            "Persisting LoRA adapter to HF (FAIL-LOUD) → %s/%s ...",
+            os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO"),
+            os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER"),
+        )
+        _maybe_persist_adapter(Path(adapter_path_str))
+        log.info("Adapter persist verified.")
+
         # Merge
         log.info("Merging LoRA → %s", merged_dir)
         merge_lora(BASE_MODEL, adapter_path_str, str(merged_dir), gpu_id=args.gpu)
@@ -685,7 +881,7 @@ def main() -> int:
         {p: base_scores[p] for p in trained_pos_prompts},
     )
 
-    # ── Save raw_completions JSON (per Upload Policy) ────────────────────
+    # ── Save raw_completions JSON + FAIL-LOUD upload (Blocker 3) ─────────
     raw_completions_path = out_dir / "raw_completions.json"
     raw_completions_path.write_text(
         json.dumps(
@@ -702,8 +898,42 @@ def main() -> int:
     )
     log.info("Wrote raw_completions → %s", raw_completions_path)
 
-    # ── Source-strength scalar (per cell, FIX A1) ────────────────────────
-    g_logprob_source = tp_summary["mean_deltaLogP"]  # mean ΔlogP across the K positives
+    # Upload to superkaiba1/explore-persona-space-data per Upload Policy.
+    # FAIL LOUD — a silent upload-skip means the per-cell on-policy R is
+    # only on the pod's MooseFS, which the orchestrator's auto-terminate
+    # reaps after this cell completes.
+    from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
+
+    experiment_name = f"issue_405/{args.cell_id}_seed{args.seed}"
+    log.info("Uploading raw_completions to HF data repo (FAIL-LOUD) ...")
+    uploaded = upload_raw_completions_to_data_repo(
+        experiment_name=experiment_name,
+        eval_results_dir=out_dir,
+        delete_after=False,
+    )
+    if not uploaded:
+        raise RuntimeError(
+            f"raw_completions upload FAILED for cell={args.cell_id} seed={args.seed} "
+            f"— no files reported uploaded. Refusing to delete local copy."
+        )
+    log.info("raw_completions uploaded to HF: %d file(s)", len(uploaded))
+
+    # ── Source-strength scalar + saturation read (Blocker 1 fix) ─────────
+    # Two DIFFERENT quantities — keep them separate.
+    #
+    # `g_logprob_source` (= ABSOLUTE trained log P(marker) at the post-R
+    # slot, averaged across the K trained-positive personas) is the
+    # saturation read. Plan §4.9 + #448: expected ∈ [-8, -3], saturated
+    # if > -0.1. Was (incorrectly, round 1) wired to the trained−base
+    # delta — which is ≥ 0 for any successful implant and would silently
+    # always trip the kill-criterion. FIX: read the ABSOLUTE trained
+    # log-prob via `compute_panel_summary`'s new `logp_trained_mean`.
+    #
+    # `trained_pos_mean_dlogp` (= trained − base ΔlogP, same panel) is the
+    # FIX-A1 source-strength scalar the analyzer's covariate-adjusted
+    # regression consumes for the dose-vs-diversity check. Separate field.
+    g_logprob_source = tp_summary["logp_trained_mean"]
+    trained_pos_mean_dlogp = tp_summary["mean_deltaLogP"]
 
     # ── Reproducibility metadata ─────────────────────────────────────────
     import datetime as _dt
@@ -711,7 +941,10 @@ def main() -> int:
 
     try:
         git_commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=PROJECT_ROOT, text=True
+            ["git", "rev-parse", "HEAD"],
+            cwd=PROJECT_ROOT,
+            text=True,
+            env={**os.environ},  # Blocker 10: explicit env-passthrough
         ).strip()
     except Exception:
         git_commit = "unknown"
@@ -744,8 +977,14 @@ def main() -> int:
             "summary": {
                 "held_out_mean_dlogp": held_out_summary["mean_deltaLogP"],
                 "held_out_mean_emit_rate": held_out_summary["mean_emit_rate"],
-                "trained_pos_mean_dlogp": tp_summary["mean_deltaLogP"],
+                "held_out_logp_trained_mean": held_out_summary["logp_trained_mean"],
+                "held_out_logp_base_mean": held_out_summary["logp_base_mean"],
+                "trained_pos_mean_dlogp": trained_pos_mean_dlogp,
                 "trained_pos_mean_emit_rate": tp_summary["mean_emit_rate"],
+                "trained_pos_logp_trained_mean": tp_summary["logp_trained_mean"],
+                "trained_pos_logp_base_mean": tp_summary["logp_base_mean"],
+                # ABSOLUTE trained log P(marker) on the trained-source panel,
+                # NOT trained−base. Drives smoke_check.saturated (Blocker 1 fix).
                 "g_logprob_source": g_logprob_source,
             },
             "n_eval_questions": len(eval_questions),

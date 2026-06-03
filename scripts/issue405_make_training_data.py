@@ -151,13 +151,21 @@ def assemble_rows(
 
 
 def truncation_audit(rows: list[dict], tokenizer, max_length: int) -> dict:
-    """FIX D — tokenize every row twice (truncation=True vs False); fail loud on delta.
+    """FIX D — MANDATORY tokenize-twice (truncation=True vs False); FAIL LOUD on delta.
 
-    Without this guard, marker-truncated positive rows silently collapse
-    (under ``tail_tokens=0``) to "EOS-only loss" and corrupt the per-persona
-    contrast (#260 silent-zeros class).
+    Plan §4.5 PHASE 2 wording: "tokenize every assembled row with
+    truncation=True vs False; FAIL LOUD on any count delta". This guards
+    the #260 silent-zeros class — under MarkerOnlyDataCollator with
+    tail_tokens=0, a marker-truncated positive row collapses to
+    "EOS-only loss" and silently corrupts the per-persona contrast.
+
+    Blocker 9 (round 2): strengthened from a unilateral length check to
+    the exact double-tokenization the plan mandates. Both ``n_truncated``
+    (length > max_length) AND ``tok_delta`` (truncation=True count <
+    truncation=False count) must be zero before training can launch.
     """
     n_truncated = 0
+    tok_delta = 0
     offending: list[dict] = []
     prompt_lens: list[int] = []
     full_lens: list[int] = []
@@ -170,6 +178,19 @@ def truncation_audit(rows: list[dict], tokenizer, max_length: int) -> dict:
         )
         full_ids = tokenizer.encode(text, add_special_tokens=False)
         prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+        # FIX-D EXACT FORM (Blocker 9): tokenize the same text with
+        # truncation=True at max_length AND truncation=False; if the
+        # truncated count is shorter, the row WOULD be truncated by the
+        # collator/trainer. Equivalent to the length check above for the
+        # nominal Qwen path, but pins the precise contract the plan
+        # mandated and catches a tokenizer-internal pre-truncation that
+        # a bare len() check might miss on exotic tokenizers.
+        ids_trunc = tokenizer.encode(
+            text, add_special_tokens=False, truncation=True, max_length=max_length
+        )
+        ids_no_trunc = tokenizer.encode(text, add_special_tokens=False, truncation=False)
+        if len(ids_trunc) < len(ids_no_trunc):
+            tok_delta += 1
         prompt_lens.append(len(prompt_ids))
         full_lens.append(len(full_ids))
         if len(full_ids) > max_length:
@@ -191,6 +212,11 @@ def truncation_audit(rows: list[dict], tokenizer, max_length: int) -> dict:
         "max_length": max_length,
         "n_truncated": n_truncated,
         "n_truncated_must_be_zero": True,
+        # FIX-D exact form (Blocker 9): double-tokenization count delta.
+        # If non-zero, the tokenizer would actually shorten ≥1 rows at the
+        # collator boundary — the precise contract the plan mandated.
+        "tok_delta_trunc_vs_no_trunc": tok_delta,
+        "tok_delta_must_be_zero": True,
         "prompt_len_min": min(prompt_lens) if prompt_lens else None,
         "prompt_len_max": max(prompt_lens) if prompt_lens else None,
         "prompt_len_mean": sum(prompt_lens) / len(prompt_lens) if prompt_lens else None,
@@ -284,10 +310,11 @@ def main() -> int:
     log.info("Running truncation audit (max_length=%d) ...", MAX_LENGTH)
     audit = truncation_audit(rows, tokenizer, MAX_LENGTH)
     log.info(
-        "  n_rows=%d  n_truncated=%d  prompt_len(min,mean,max)=(%d, %.1f, %d)  "
+        "  n_rows=%d  n_truncated=%d  tok_delta=%d  prompt_len(min,mean,max)=(%d, %.1f, %d)  "
         "full_len(min,mean,max)=(%d, %.1f, %d)",
         audit["n_rows"],
         audit["n_truncated"],
+        audit["tok_delta_trunc_vs_no_trunc"],
         audit["prompt_len_min"],
         audit["prompt_len_mean"],
         audit["prompt_len_max"],
@@ -296,12 +323,15 @@ def main() -> int:
         audit["full_len_max"],
     )
 
-    if audit["n_truncated"] > 0:
+    # FIX D — BOTH must be zero (Blocker 9 exact form).
+    if audit["n_truncated"] > 0 or audit["tok_delta_trunc_vs_no_trunc"] > 0:
         raise RuntimeError(
             f"FIX D truncation audit FAILED for cell={args.cell_id} seed={args.seed}: "
-            f"{audit['n_truncated']} rows truncated at max_length={MAX_LENGTH}. "
+            f"n_truncated={audit['n_truncated']} (length>max_length), "
+            f"tok_delta={audit['tok_delta_trunc_vs_no_trunc']} "
+            f"(truncation=True shorter than truncation=False) at max_length={MAX_LENGTH}. "
             f"First 3 offending: {audit['offending_first_3']!r}. "
-            f"Marker would be silently dropped on these rows — refusing to write. "
+            f"Marker would be silently dropped — refusing to write. "
             f"Re-run Phase 1 with a smaller R cap OR raise training max_length."
         )
 
