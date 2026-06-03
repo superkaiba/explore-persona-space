@@ -96,12 +96,14 @@ OUT_DIR_FOR: dict[str, Path] = {
 }
 # HF Hub model-repo subpath PREFIX used to look up adapters per cell.
 # Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
-# and contrastive-negatives adapters to ``adapters/i464_cn_{arm}_seed{seed}_{persona}``;
+# and contrastive-negatives adapters to ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
+# (the train script inserts ``_cn`` as an INFIX before the persona, NOT a
+# prefix — verified against the live HF upload ``i464_role_seed42_cn_pirate``);
 # we mirror that distinction here so the two variants never overwrite
 # each other's local cache or per-cell JSON.
 ADAPTER_SUBPATH_FOR: dict[str, str] = {
     "po": "adapters/i464_{arm}_seed{seed}_{persona}",
-    "cn": "adapters/i464_cn_{arm}_seed{seed}_{persona}",
+    "cn": "adapters/i464_{arm}_seed{seed}_cn_{persona}",
 }
 
 # Legacy aliases (positive-only defaults) — kept for the smoke-test
@@ -211,7 +213,7 @@ def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona, variant:
     Mirrors ``i464_phase4_eval._download_adapter`` but on the variant's
     HF subpath:
       - ``po`` → ``adapters/i464_{arm}_seed{seed}_{persona}``
-      - ``cn`` → ``adapters/i464_cn_{arm}_seed{seed}_{persona}``
+      - ``cn`` → ``adapters/i464_{arm}_seed{seed}_cn_{persona}``
     (matches the train script's ``hf_path_in_repo`` for each variant).
 
     Local-override env hook ``EPM_LOCAL_ADAPTER_OVERRIDE`` — when set,
