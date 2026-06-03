@@ -214,6 +214,7 @@ def train_one_cell(
     lr_override: float | None = None,
     epochs_override: int | None = None,
     hf_path_in_repo_override: str | None = None,
+    run_name_override: str | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -270,6 +271,11 @@ def train_one_cell(
         if hf_path_in_repo_override is not None
         else f"adapters/issue_472/{cell_slug}_seed{seed}"
     )
+    # WandB run-name (browsable prefix). #472's default is "issue472_<slug>_seed<S>";
+    # #477 threads run_name_override=f"issue477_<slug>_seed<S>" so #477 runs land
+    # under the right prefix in WandB. Default None = exactly #472 behavior.
+    default_run_name = f"issue472_{cell_slug}_seed{seed}{'_fallback' if fallback else ''}"
+    run_name = run_name_override if run_name_override is not None else default_run_name
     # rs-LoRA: TrainLoraConfig sets use_rslora=True in train_lora's LoraConfig.
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,  # ASSIGNED physical GPU; sft.py sets CVD=str(gpu_id).
@@ -284,7 +290,7 @@ def train_one_cell(
         warmup_ratio=WARMUP_RATIO,
         weight_decay=0.0,
         seed=seed,
-        run_name=f"issue472_{cell_slug}_seed{seed}{'_fallback' if fallback else ''}",
+        run_name=run_name,
         report_to=report_to,
         save_strategy="no",  # mid-run checkpoints handled by our callback.
         gradient_checkpointing=True,

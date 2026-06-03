@@ -281,12 +281,14 @@ def test_partial_spearman_refuses_below_3_count_levels() -> None:
     )
 
     # Only 2 distinct count levels survive — partial Spearman MUST refuse.
+    # All cells are phase="main" (H1 partial-spearman defensive assert).
     kept = [
         {
             "cell": "c1",
             "seed": 42,
             "count": 4,
             "lr": 1e-5,
+            "phase": "main",
             "source_self_delta_g_at_last_ckpt": 12.0,
             "source_emission_p_at_last_ckpt": 0.5,
             "mean_bystander_delta_g": 5.0,
@@ -297,6 +299,7 @@ def test_partial_spearman_refuses_below_3_count_levels() -> None:
             "seed": 137,
             "count": 4,
             "lr": 1e-5,
+            "phase": "main",
             "source_self_delta_g_at_last_ckpt": 12.1,
             "source_emission_p_at_last_ckpt": 0.5,
             "mean_bystander_delta_g": 5.1,
@@ -307,6 +310,7 @@ def test_partial_spearman_refuses_below_3_count_levels() -> None:
             "seed": 42,
             "count": 8,
             "lr": 5e-6,
+            "phase": "main",
             "source_self_delta_g_at_last_ckpt": 12.5,
             "source_emission_p_at_last_ckpt": 0.5,
             "mean_bystander_delta_g": 6.0,
@@ -317,6 +321,7 @@ def test_partial_spearman_refuses_below_3_count_levels() -> None:
             "seed": 137,
             "count": 8,
             "lr": 5e-6,
+            "phase": "main",
             "source_self_delta_g_at_last_ckpt": 12.4,
             "source_emission_p_at_last_ckpt": 0.5,
             "mean_bystander_delta_g": 6.1,
@@ -336,6 +341,7 @@ def test_partial_spearman_computes_at_3_count_levels() -> None:
     )
 
     # 3 count levels × 2 seeds = 6 cells; bystander DV varies a bit with count.
+    # All cells are phase="main" (H1 partial-spearman defensive assert).
     kept = []
     for seed in (42, 137):
         for cnt, by_dg in ((2, 4.0), (4, 5.0), (8, 6.0)):
@@ -345,6 +351,7 @@ def test_partial_spearman_computes_at_3_count_levels() -> None:
                     "seed": seed,
                     "count": cnt,
                     "lr": 1e-5,
+                    "phase": "main",
                     "source_self_delta_g_at_last_ckpt": 12.0 + 0.05 * cnt,
                     "source_emission_p_at_last_ckpt": 0.5,
                     "mean_bystander_delta_g": by_dg + 0.1 * (seed - 42) / 95.0,
@@ -404,3 +411,171 @@ def test_implant_only_axis_spearman_verdict_branches() -> None:
             )
     out_weak = implant_only_axis_spearman(weak_cells)
     assert out_weak["verdict"] in ("falsifies", "indeterminate")
+
+
+# ── Resume-skip pick path (round-2 MAJOR fix) ────────────────────────────────
+
+
+def test_phase_calibration_pick_handles_resumed_skip_cells(tmp_path):
+    """Round-2 MAJOR: resumed-skip cells must carry ΔG/emission keys.
+
+    When `--resume` skips an already-done calibration cell, the dispatcher's
+    `_launch` returns None and the scheduler appends a `resumed_skip` result.
+    Prior to this fix that dict carried only the unit fields (cell/seed/lr/phase
+    + assigned_gpu/status) and `_phase_calibration_pick` KeyErrored on
+    `source_self_delta_g_at_last_ckpt`. The fix loads the cell's
+    `cell_summary.json` from disk and merges its keys into the appended dict
+    (mirroring the `done` path's `**cs` merge).
+
+    This test feeds a `resumed_skip`-shaped result (with the merged ΔG/emission
+    keys, as the fix now produces) through `_phase_calibration_pick` and
+    asserts (a) no KeyError, (b) the correct pick lands at the qualifying LR.
+    """
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    # Load dispatch_neg_geometry_477 by file path (scripts/ is not a package).
+    dispatcher_path = (
+        Path(__file__).resolve().parents[2] / "scripts" / "dispatch_neg_geometry_477.py"
+    )
+    spec = importlib.util.spec_from_file_location("dispatch_neg_geometry_477", dispatcher_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["dispatch_neg_geometry_477"] = mod
+    spec.loader.exec_module(mod)
+
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        CALIB_SLUGS,
+        CALIBRATION_LR_GRID,
+        count_for_slug,
+    )
+
+    # Build a `resumed_skip` result dict for EACH (calibration slug, LR) cell,
+    # carrying the ΔG/emission keys exactly as the fixed _launch path now does
+    # (via the `**cs` merge of cell_summary.json). For each count, one LR
+    # qualifies (1e-5 lands ΔG=12.0 + emit=0.50); the rest miss the band or
+    # emission floor so we exercise the picker's qualification logic too.
+    calibration_results: list[dict] = []
+    for slug in CALIB_SLUGS:
+        cnt = count_for_slug(slug)
+        for lr in CALIBRATION_LR_GRID:
+            # The qualifying LR for every count is 1e-5 (in-band + emit OK).
+            # Stay strictly inside [TARGET_SOURCE_DELTA_G ± MATCH_BAND] =
+            # [10.5, 13.5] nats; tiny per-count nudge for differentiation.
+            if lr == 1e-5:
+                delta_g, emit = 12.0 + 0.05 * (cnt - 4), 0.50  # in-band qualifies
+            elif lr < 1e-5:
+                delta_g, emit = 6.0, 0.10  # below band, sub-emit
+            else:
+                delta_g, emit = 17.0, 0.95  # above band
+            calibration_results.append(
+                {
+                    "cell": slug,
+                    "seed": 42,
+                    "lr": lr,
+                    "phase": "calibration",
+                    "assigned_gpu": 0,
+                    "status": "resumed_skip",
+                    # Merged from cell_summary.json (the fix):
+                    "run_label": f"{slug}_seed42_lr{lr:g}",
+                    "source_self_delta_g_at_last_ckpt": delta_g,
+                    "source_emission_p_at_last_ckpt": emit,
+                    "mean_bystander_delta_g": 4.0,
+                    "step_at_last_ckpt": 100,
+                }
+            )
+
+    pick_path = tmp_path / "calibration_pick.json"
+    # The fix means this call must NOT KeyError on resumed_skip rows.
+    picks = mod._phase_calibration_pick(calibration_results, pick_path)
+    # Every count level resolves to lr=1e-5.
+    assert set(picks.keys()) == {count_for_slug(s) for s in CALIB_SLUGS}
+    for cnt, pick in picks.items():
+        assert pick["lr"] == pytest.approx(1e-5), f"count={cnt} picked wrong LR: {pick['lr']}"
+        assert pick["in_band"] is True
+
+
+def test_phase_calibration_pick_keyerrors_when_resumed_skip_missing_keys(tmp_path):
+    """Regression: an old-shape resumed_skip dict (no ΔG keys) MUST fail loud.
+
+    Pre-fix, _phase_calibration_pick silently KeyErrored without context.
+    The fix loads cell_summary.json on the resume branch; this test pins that
+    the picker still raises a clear KeyError when handed a malformed row (i.e.
+    a row missing the gate metrics) so silent-success regressions can't happen.
+    """
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    dispatcher_path = (
+        Path(__file__).resolve().parents[2] / "scripts" / "dispatch_neg_geometry_477.py"
+    )
+    spec = importlib.util.spec_from_file_location("dispatch_neg_geometry_477", dispatcher_path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["dispatch_neg_geometry_477"] = mod
+    spec.loader.exec_module(mod)
+
+    bad_results = [
+        {
+            "cell": "c477_calib_negp_4",
+            "seed": 42,
+            "lr": 1e-5,
+            "phase": "calibration",
+            "assigned_gpu": 0,
+            "status": "resumed_skip",
+            # Missing source_self_delta_g_at_last_ckpt + source_emission_p_at_last_ckpt.
+        }
+    ]
+    pick_path = tmp_path / "calibration_pick.json"
+    with pytest.raises(KeyError):
+        mod._phase_calibration_pick(bad_results, pick_path)
+
+
+# ── partial_spearman defensive phase=="main" assert (cheap fix #3) ───────────
+
+
+def test_partial_spearman_refuses_non_main_phase_cells():
+    """Cheap fix #3: pooling implant-sweep cells into H1 partial MUST fail loud."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.analyze import (
+        partial_spearman_count_given_implant,
+    )
+
+    # 6 main-phase cells (3 count levels × 2 seeds) PLUS 6 implant-sweep cells
+    # at ANCHOR_COUNT=4. The implant-sweep cells would silently inject 6 extra
+    # count=4 data points if not filtered — the defensive assert catches that.
+    poisoned = []
+    for seed in (42, 137):
+        for cnt, by_dg in ((2, 4.0), (4, 5.0), (8, 6.0)):
+            poisoned.append(
+                {
+                    "cell": f"c477_main_calib_negp_{cnt}",
+                    "seed": seed,
+                    "count": cnt,
+                    "lr": 1e-5,
+                    "phase": "main",
+                    "source_self_delta_g_at_last_ckpt": 12.0 + 0.05 * cnt,
+                    "source_emission_p_at_last_ckpt": 0.5,
+                    "mean_bystander_delta_g": by_dg,
+                    "step_at_last_ckpt": 100,
+                }
+            )
+        # 3 implant-sweep cells at count=4 (the poison rows).
+        for lr in (5e-6, 1e-5, 2e-5):
+            poisoned.append(
+                {
+                    "cell": f"c477_implantsweep_lr{lr:g}",
+                    "seed": seed,
+                    "count": 4,
+                    "lr": lr,
+                    "phase": "implant_sweep",  # poison: NOT main
+                    "source_self_delta_g_at_last_ckpt": 12.0,
+                    "source_emission_p_at_last_ckpt": 0.5,
+                    "mean_bystander_delta_g": 5.0,
+                    "step_at_last_ckpt": 100,
+                }
+            )
+
+    with pytest.raises(AssertionError, match="non-main-phase cell"):
+        partial_spearman_count_given_implant(poisoned, n_bootstrap=50)

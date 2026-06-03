@@ -102,7 +102,7 @@ def _run_phase_subprocess(cmd: list[str], phase: str) -> None:
 # lr, phase) units instead of (cell, seed)). ─────────────────────────────────
 
 
-def _schedule_unit_pool(
+def _schedule_unit_pool(  # noqa: C901 - linear GPU-sharded subprocess scheduler
     *,
     units: list[dict],
     n_gpus: int,
@@ -201,7 +201,22 @@ def _schedule_unit_pool(
             gpu = free_gpus.pop(0)
             proc = _launch(unit, gpu)
             if proc is None:
-                results.append({**unit, "assigned_gpu": gpu, "status": "resumed_skip"})
+                # RESUME-SKIP path: the cell already wrote cell_summary.json on a
+                # prior run. Load it so the appended result carries the SAME
+                # ΔG/emission keys as a freshly-`done` cell — _phase_calibration_pick
+                # KeyErrors otherwise on `source_self_delta_g_at_last_ckpt` /
+                # `source_emission_p_at_last_ckpt` (this is the §7 kill-criterion
+                # recovery path).
+                run_label = f"{unit['cell']}_seed{unit['seed']}_lr{unit['lr']:g}"
+                summary_path = runs_root / run_label / "cell_summary.json"
+                if not summary_path.exists():
+                    raise RuntimeError(
+                        f"[{run_label}] resume-skip path but cell_summary.json "
+                        f"missing at {summary_path} — _launch returned None only "
+                        f"when this file exists. Inconsistent state; investigate."
+                    )
+                cs = json.loads(summary_path.read_text())
+                results.append({**unit, "assigned_gpu": gpu, "status": "resumed_skip", **cs})
                 free_gpus.append(gpu)
                 continue
             running.append((proc, unit, gpu))
@@ -386,6 +401,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
     os.environ.setdefault("EPM_PERSIST_ADAPTER_HF_REPO", HF_MODEL_REPO)
     os.environ.setdefault("EPM_PERSIST_ADAPTER_HF_SUBFOLDER", "adapters/issue_477")
+    # WandB project (plan §10). Set before training subprocesses inherit env so
+    # #477 runs land under the right WandB project rather than the parent's.
+    os.environ.setdefault("WANDB_PROJECT", "issue_477")
 
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]

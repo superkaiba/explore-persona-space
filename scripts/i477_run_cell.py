@@ -208,6 +208,10 @@ def main(argv: list[str] | None = None) -> int:
         EPOCHS,
         fractions,
     )
+    # WandB run-name prefix: #477 cells should be browsable as `issue477_*` not
+    # `issue472_*` (the parent's default). Threaded through train_one_cell's
+    # `run_name_override` kwarg (defaults None = #472 behavior).
+    run_name_477 = f"issue477_{args.cell}_seed{args.seed}"
     train_result = train_one_cell(
         cell_slug=args.cell,
         seed=args.seed,
@@ -221,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
         lr_override=args.lr,
         epochs_override=EPOCHS,  # #477 = 2 (vs #472's 1)
         hf_path_in_repo_override=hf_path_in_repo,
+        run_name_override=run_name_477,
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))
@@ -295,7 +300,29 @@ def main(argv: list[str] | None = None) -> int:
     final_ck = max(traj["checkpoints"], key=lambda c: float(c["frac"]))
     src = final_ck["source_self"]
     src_delta = float(src["delta_g_mean"])
-    src_emit = float(src.get("emission_p", 0.0))
+    # Fail loud on missing emission_p (cheap fix #5): the eval rig writes this
+    # key; silently defaulting to 0.0 hides schema drift and trips the validity
+    # gate downstream with no diagnostic.
+    if "emission_p" not in src:
+        raise RuntimeError(
+            f"[{args.cell}] missing emission_p in trajectory.json source_self block "
+            f"— schema drift. Expected the eval rig to write emission_p alongside "
+            f"delta_g_mean; got keys {sorted(src.keys())}. Investigate "
+            f"i472_eval_trajectory.py before re-running."
+        )
+    src_emit = float(src["emission_p"])
+    # Eval-panel floor (cheap fix #4 / plan §8): at <20 held-out personas the
+    # mean DV-A becomes a degenerate average (the 16-persona cell's 43-panel
+    # was flagged tight; below 20 is failure territory). Fail loud rather
+    # than compute a silent headline on a degenerate base.
+    eval_personas = list(final_ck["held_out"].keys())
+    if len(eval_personas) < 20:
+        raise RuntimeError(
+            f"[{args.cell}] eval panel has {len(eval_personas)} personas; plan §8 "
+            f"requires ≥20 (the per-cell mean DV-A floor). The base panel was "
+            f"likely truncated upstream — investigate the held-out persona panel "
+            f"build before computing a silent mean bystander ΔG."
+        )
     # Mean bystander ΔG at the final checkpoint (Q_eval-mean per persona, then
     # mean across personas). This is DV-A for the headline H1.
     bystander_means: list[float] = []

@@ -952,6 +952,23 @@ def partial_spearman_count_given_implant(
     import numpy as np
     from scipy.stats import spearmanr
 
+    # Defensive guard: H1 partial Spearman is over MAIN-PHASE cells ONLY.
+    # The #477 implant-sweep phase shares the count axis (all at ANCHOR_COUNT=4)
+    # but should NEVER be pooled into H1 — it would inject 6 extra count=4
+    # points and bias the partial. Cells missing "phase" are treated as
+    # non-main (fail loud rather than silently pool unknown-provenance cells).
+    for c in kept_cells:
+        phase = c.get("phase")
+        if phase != "main":
+            raise AssertionError(
+                f"partial_spearman_count_given_implant got a non-main-phase cell: "
+                f"cell={c.get('cell', '<unknown>')!r}, seed={c.get('seed')}, "
+                f"phase={phase!r}. H1 partial Spearman must be computed over "
+                f"main-phase cells only — pooling implant-sweep / calibration "
+                f"cells biases the partial. Filter kept_cells to phase=='main' "
+                f"upstream (the dispatcher's main_results carries phase='main')."
+            )
+
     counts = [int(c["count"]) for c in kept_cells]
     distinct_counts = sorted(set(counts))
     n = len(kept_cells)
