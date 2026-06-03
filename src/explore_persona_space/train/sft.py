@@ -431,6 +431,22 @@ class TrainLoraConfig:
     hf_upload: bool = True
     hf_repo: str = "superkaiba1/explore-persona-space"
     hf_path_in_repo: str = ""  # if empty, derived from run_name as "adapters/{run_name}"
+    # CONTINUE an existing LoRA adapter through this training run (instead of
+    # attaching a fresh randomly-initialized LoRA on top of the base). When set:
+    #   - The base is loaded from base_model_path UNTOUCHED (no merge).
+    #   - The adapter is loaded via PeftModel.from_pretrained(base, path,
+    #     is_trainable=True), preserving the existing LoRA weights as the
+    #     starting point.
+    #   - The TRL SFTTrainer receives the prepared PeftModel directly with
+    #     peft_config=None (so it does NOT re-wrap with a new adapter).
+    #   - lora_r / lora_alpha / lora_dropout / target_modules are ignored
+    #     (the loaded adapter's own config wins; we are CONTINUING the same
+    #     adapter, not building a different one).
+    # Used by Phase-2 survival probes (e.g. issue #475 plan §4.7) where the
+    # comparator semantics require continuing the SAME Phase-1 adapter through
+    # benign SFT, not merging+fresh-LoRA. Mutually exclusive with attaching a
+    # fresh adapter (the standard path).
+    existing_adapter_path: str | None = None
     # Training backend selector. "hf" = current TRL + PEFT path. "unsloth" is
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
@@ -523,22 +539,44 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=cfg.lora_r,
-        lora_alpha=cfg.lora_alpha,
-        lora_dropout=cfg.lora_dropout,
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "gate_proj",
-            "up_proj",
-            "down_proj",
-        ],
-        use_rslora=True,
-    )
+    if cfg.existing_adapter_path:
+        # CONTINUE an existing LoRA adapter (issue #475 Phase 2 + future
+        # multi-phase recipes). Load the adapter weights ON TOP of the
+        # untouched base and pass the PeftModel to SFTTrainer with
+        # peft_config=None so TRL does NOT re-wrap with a fresh adapter.
+        from peft import PeftModel
+
+        adapter_dir = Path(cfg.existing_adapter_path)
+        if not adapter_dir.exists():
+            raise FileNotFoundError(
+                f"existing_adapter_path={adapter_dir!s} does not exist; "
+                "cannot continue training a non-existent adapter."
+            )
+        logger.info(
+            "Continuing LoRA adapter from %s (is_trainable=True); "
+            "lora_r/lora_alpha/lora_dropout in cfg are IGNORED — the loaded "
+            "adapter's own config wins.",
+            adapter_dir,
+        )
+        model = PeftModel.from_pretrained(model, str(adapter_dir), is_trainable=True)
+        lora_config = None  # signals "do NOT pass peft_config to SFTTrainer"
+    else:
+        lora_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            r=cfg.lora_r,
+            lora_alpha=cfg.lora_alpha,
+            lora_dropout=cfg.lora_dropout,
+            target_modules=[
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj",
+            ],
+            use_rslora=True,
+        )
 
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
     # `load_dataset("json", ...)` raises a bare ``StopIteration`` (with no
@@ -617,8 +655,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "args": sft_config,
         "train_dataset": dataset,
         "processing_class": tokenizer,
-        "peft_config": lora_config,
     }
+    if lora_config is not None:
+        # Fresh-LoRA path — TRL wraps the model.
+        sft_trainer_kwargs["peft_config"] = lora_config
+    # else: continue-adapter path — model is already a PeftModel; do NOT
+    # pass peft_config (would re-wrap with a fresh adapter and lose the
+    # continuation contract).
     if callbacks:
         sft_trainer_kwargs["callbacks"] = callbacks
     trainer = SFTTrainer(**sft_trainer_kwargs)

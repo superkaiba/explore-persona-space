@@ -46,7 +46,6 @@ import argparse
 import json
 import logging
 import os
-import shutil
 import sys
 import time
 from pathlib import Path
@@ -85,7 +84,9 @@ PHASE1_LORA_ALPHA = 16
 PHASE1_LORA_DROPOUT = 0.0
 PHASE1_WARMUP_RATIO = 0.03
 PHASE1_WEIGHT_DECAY = 0.0
-SMOKE_MAX_STEPS = 10
+# Smoke truncates the dataset (see _arm_data_path()) rather than capping
+# trainer steps — train_lora() doesn't expose max_steps. epochs=1 over
+# the 10%-subset budget caps wall time without a max_steps knob.
 
 # ── Plan §10 Phase 2 recipe (BYTE-IDENTICAL #382) ──────────────────────────
 PHASE2_LR = 1.0e-4
@@ -249,15 +250,12 @@ def run_phase1(args: argparse.Namespace) -> dict:
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
 
     log.info("Phase 1 train start: arm=%s seed=%d gpu=%d data=%s", arm, seed, args.gpu, data_path)
-    t0 = time.time()
     if args.smoke:
-        # In smoke mode we expose max_steps via overrides to the trainer
-        # (TRL SFTTrainer reads it from SFTConfig).
-        log.info("SMOKE: capping training to max_steps=%d", SMOKE_MAX_STEPS)
-        # train_lora() doesn't currently expose max_steps; we pass it as an
-        # override by writing a small wrapper to the same TrainLoraConfig
-        # surface. The cleanest minimal-change is to truncate the dataset
-        # (already done) and let epochs=1 carry the budget.
+        log.info(
+            "SMOKE: budget is the 10%% subset (~%d rows) over epochs=1; no max_steps knob.",
+            sum(1 for ln in data_path.read_text().splitlines() if ln.strip()),
+        )
+    t0 = time.time()
 
     adapter_path, train_loss = train_lora(
         base_model_path=BASE_MODEL,
@@ -302,11 +300,15 @@ def run_phase1(args: argparse.Namespace) -> dict:
 
 
 def run_phase2(args: argparse.Namespace) -> dict:
-    """Phase 2 benign-medical survival on the named arm's Phase-1 adapter."""
-    import torch
+    """Phase 2 benign-medical survival — CONTINUE the Phase-1 LoRA adapter.
+
+    Plan §4.7: the survival test asks "does the SAME Phase-1 adapter survive
+    benign-medical SFT?" — so we load the SAME adapter via PeftModel and
+    keep training it. We do NOT merge_and_unload + train a fresh adapter
+    (round-1 code-review found that this changed the comparator semantics
+    away from the within-design baseline comparator).
+    """
     from huggingface_hub import snapshot_download
-    from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer
 
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
@@ -329,35 +331,15 @@ def run_phase2(args: argparse.Namespace) -> dict:
         )
     log.info("Phase 1 adapter resolved to: %s", phase1_adapter_path)
 
-    # Build the staged base+adapter checkpoint as our Phase-2 STARTING POINT.
-    # train_lora() takes a base_model_path string and attaches a FRESH LoRA;
-    # to continue from Phase 1 adapter weights we merge Phase 1 LoRA into base
-    # and write the merged dir as the Phase-2 base. The Phase-2 LoRA stacks
-    # on TOP of that. Plan §4.7.
-    staged_base_dir = output_dir / "phase1_merged_base"
-    if not staged_base_dir.exists():
-        log.info("Merging Phase 1 adapter into base for Phase 2 starting point ...")
-        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
-        tok = AutoTokenizer.from_pretrained(
-            BASE_MODEL, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
-        )
-        base = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL,
-            torch_dtype=torch.bfloat16,
-            device_map={"": 0},
-            trust_remote_code=True,
-            token=os.environ.get("HF_TOKEN"),
-        )
-        merged = PeftModel.from_pretrained(base, str(phase1_adapter_path))
-        merged = merged.merge_and_unload()
-        merged.save_pretrained(str(staged_base_dir))
-        tok.save_pretrained(str(staged_base_dir))
-        del merged, base, tok
-        torch.cuda.empty_cache()
-
     data_path = _ensure_phase2_dataset_local()
     log.info("Phase 2 dataset: %s", data_path)
 
+    # CONTINUE-ADAPTER: pass the Phase-1 adapter path; train_lora() will
+    # load it via PeftModel.from_pretrained(base, path, is_trainable=True)
+    # and skip the fresh-LoRA attach step. The adapter's own lora_r /
+    # lora_alpha / lora_dropout (saved in Phase 1) win; we still fill the
+    # cfg fields with Phase-1 values for completeness in the recorded
+    # training metadata.
     cfg = TrainLoraConfig(
         gpu_id=args.gpu,
         epochs=PHASE2_EPOCHS,
@@ -381,6 +363,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         hf_repo=HUB_MODEL_REPO,
         hf_path_in_repo=f"adapters/{_adapter_subfolder(arm, seed, 'phase2')}",
         hf_upload=True,
+        existing_adapter_path=str(phase1_adapter_path),  # continue-adapter contract
     )
 
     os.environ.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
@@ -391,20 +374,21 @@ def run_phase2(args: argparse.Namespace) -> dict:
     )
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
 
-    log.info("Phase 2 train start: arm=%s seed=%d gpu=%d", arm, seed, args.gpu)
+    log.info(
+        "Phase 2 train start (continue-adapter): arm=%s seed=%d gpu=%d phase1_adapter=%s",
+        arm,
+        seed,
+        args.gpu,
+        phase1_adapter_path,
+    )
     t0 = time.time()
     adapter_path, train_loss = train_lora(
-        base_model_path=str(staged_base_dir),
+        base_model_path=BASE_MODEL,  # untouched Qwen3.5-27B; adapter loaded on top
         data_path=str(data_path),
         output_dir=str(output_dir / "adapter"),
         cfg=cfg,
     )
     wall_m = (time.time() - t0) / 60
-
-    # Clean the merged Phase-2 base dir (15GB+); the adapter is uploaded.
-    if staged_base_dir.exists():
-        shutil.rmtree(staged_base_dir, ignore_errors=True)
-        log.info("Removed staged Phase-2 base merge dir: %s", staged_base_dir)
 
     result = {
         "phase": "phase2",
@@ -415,6 +399,7 @@ def run_phase2(args: argparse.Namespace) -> dict:
         "adapter_path": adapter_path,
         "adapter_hf_subfolder": f"adapters/{_adapter_subfolder(arm, seed, 'phase2')}",
         "phase1_adapter_hf_subfolder": phase1_sub,
+        "phase2_handoff": "continue_adapter",  # NOT merge_and_unload + fresh-LoRA
         "wall_minutes": round(wall_m, 1),
         "marker_text": MARKER_TEXT,
         "base_model": BASE_MODEL,

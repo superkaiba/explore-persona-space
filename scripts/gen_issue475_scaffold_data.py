@@ -107,9 +107,18 @@ N_NEG_PERSONAS_TOTAL = 1 + len(NEG_PERSONAS)  # default + 3 close = 4
 N_ROWS_PER_ARM_TARGET = N_POSITIVES_PER_ARM + N_NEGS_PER_PERSONA_PER_ARM * N_NEG_PERSONAS_TOTAL
 assert N_ROWS_PER_ARM_TARGET == 6000
 
-# Question pool — request ~10% oversample so the joint filter can drop a chunk.
-N_QUESTIONS_TOTAL_FULL = 3300
-N_QUESTIONS_TOTAL_SMOKE = 6
+# Question pool — 3000 distinct training questions REUSED across positive +
+# negative rows per .claude/rules/contrastive-negatives.md ("interleave two
+# row types over the SAME questions, gated by persona"), plus 250 DISJOINT
+# held-out eval questions (eval_issue475.py reads the eval slice from
+# eval_questions.json; never reuses training questions). Eval cells:
+# T+/T- = eval[0:200]; NEG_doctor = eval[0:50] (same questions, persona
+# swap is the OOD axis); NEG_default_other = eval[200:250] (disjoint OOD
+# slice; see plan §4.8 + Round-2 fix 3).
+N_TRAIN_QUESTIONS = 3000
+N_EVAL_QUESTIONS_HELD_OUT = 250
+N_QUESTIONS_TOTAL_FULL = N_TRAIN_QUESTIONS + N_EVAL_QUESTIONS_HELD_OUT  # 3250
+N_QUESTIONS_TOTAL_SMOKE = 10  # 5 train + 5 eval, enough for the 5-row smoke planner
 
 
 def _is_smoke(args: argparse.Namespace) -> bool:
@@ -264,9 +273,57 @@ def step_questions(*, n_target: int) -> list[str]:
 # ── Step 2: per-row generation specs ────────────────────────────────────────
 
 
+def _split_train_eval_questions(questions: list[str]) -> tuple[list[str], list[str]]:
+    """Deterministic split: first N_TRAIN_QUESTIONS for training,
+    next N_EVAL_QUESTIONS_HELD_OUT for held-out eval. The split is
+    on input ORDER (questions.json is already deterministic — produced
+    from sorted Sonnet chunk ids; see ``step_questions``), so the
+    train and eval pools are stable across reruns.
+    """
+    if len(questions) < N_TRAIN_QUESTIONS + N_EVAL_QUESTIONS_HELD_OUT:
+        raise RuntimeError(
+            f"Question pool only has {len(questions)} items; need at least "
+            f"{N_TRAIN_QUESTIONS + N_EVAL_QUESTIONS_HELD_OUT} "
+            f"({N_TRAIN_QUESTIONS} train + {N_EVAL_QUESTIONS_HELD_OUT} held-out eval). "
+            f"Re-run step_questions with a larger --n-questions."
+        )
+    train_qs = questions[:N_TRAIN_QUESTIONS]
+    eval_qs = questions[N_TRAIN_QUESTIONS : N_TRAIN_QUESTIONS + N_EVAL_QUESTIONS_HELD_OUT]
+    # Defensive disjoint check — catches accidental reordering of the cache.
+    train_set = set(train_qs)
+    overlap = [q for q in eval_qs if q in train_set]
+    if overlap:
+        raise RuntimeError(
+            f"Train/eval question pools overlap on {len(overlap)} items "
+            f"(first: {overlap[0][:60]!r}). The questions.json cache may have been "
+            "modified. Regenerate it."
+        )
+    return train_qs, eval_qs
+
+
 def _plan_rows_per_arm(questions: list[str], *, seed: int = 42) -> list[dict]:
-    """Plan §4.4 row distribution. Returns a list of row specs:
+    """Plan §4.4 row distribution, contrastive-negatives recipe.
+
+    Returns a list of row specs:
     ``{"row_id": str, "persona_key": str, "question": str, "trigger_present": bool}``.
+
+    Per .claude/rules/contrastive-negatives.md ("interleave two row types
+    over the SAME questions, gated by persona"), every training question
+    appears as BOTH a positive (default assistant + trigger → emit marker)
+    AND a negative (different persona/trigger state → no marker). The two
+    row types are matched on question so the JOINT persona × trigger gate
+    is the only thing that distinguishes them.
+
+    Composition (6000 rows / arm; 3000 unique training questions):
+      - 3000 POSITIVE rows: default assistant + trigger, ALL 3000 training
+        questions, marker emitted.
+      - 750 default + NO trigger negatives, drawn from the SAME 3000 with
+        deterministic shuffle.
+      - 750 each × 3 close personas (medical_doctor / software_engineer /
+        french_person) = 2250 close-persona negatives, drawn from the SAME
+        3000 with deterministic shuffle; within each close persona the
+        750 rows are mixed 50/50 with-trigger / without-trigger (the JOINT
+        gate's no-emit branches).
 
     Same plan re-used for plain and visible_cot arms so the JOINT condition
     is paired across arms (the plain row at question Q under persona P is
@@ -275,8 +332,17 @@ def _plan_rows_per_arm(questions: list[str], *, seed: int = 42) -> list[dict]:
     rng = random.Random(seed)
     rows: list[dict] = []
 
-    # POSITIVES: 3000 assistant + trigger
-    for i, q in enumerate(questions[:N_POSITIVES_PER_ARM]):
+    train_qs, _ = _split_train_eval_questions(questions)
+    if len(train_qs) != N_POSITIVES_PER_ARM:
+        # _split_train_eval_questions already enforced len(train_qs) ==
+        # N_TRAIN_QUESTIONS == N_POSITIVES_PER_ARM, but defend in case
+        # the constants drift.
+        raise RuntimeError(
+            f"Expected {N_POSITIVES_PER_ARM} training questions; got {len(train_qs)}."
+        )
+
+    # POSITIVES: every training question appears once as (default, trigger=True).
+    for i, q in enumerate(train_qs):
         rows.append(
             {
                 "row_id": f"pos_{i:04d}",
@@ -286,24 +352,22 @@ def _plan_rows_per_arm(questions: list[str], *, seed: int = 42) -> list[dict]:
             }
         )
 
-    # NEGATIVES: default + 3 close personas, each 750 rows.
-    # Default-no-trigger: 750 questions, all without trigger.
-    # Close personas: 750 questions each, 50% mixed with trigger / 50% without.
-    rem_pool = list(questions[N_POSITIVES_PER_ARM:])
-    rng.shuffle(rem_pool)
+    # NEGATIVES — REUSE the SAME training questions per the contrastive
+    # recipe. Each negative slot deterministically samples N_NEGS_PER_PERSONA_PER_ARM
+    # questions WITHOUT replacement from train_qs; the sampler is reseeded
+    # per persona so each persona sees a different (but reproducible)
+    # subset.
 
-    def _consume(n: int) -> list[str]:
-        nonlocal rem_pool
-        if len(rem_pool) < n:
-            raise RuntimeError(
-                f"Question pool exhausted: need {n} more, have {len(rem_pool)}. "
-                "Increase --n-questions oversample."
-            )
-        chunk, rem_pool = rem_pool[:n], rem_pool[n:]
-        return chunk
+    def _sampled_questions(persona_subseed: int) -> list[str]:
+        # random.Random rejects tuples; derive a deterministic int by
+        # mixing seed + persona index into the lower 64 bits.
+        local_rng = random.Random(seed * 1_000_003 + persona_subseed)
+        shuffled = list(train_qs)
+        local_rng.shuffle(shuffled)
+        return shuffled[:N_NEGS_PER_PERSONA_PER_ARM]
 
-    # Default no-trigger negatives.
-    for i, q in enumerate(_consume(N_NEGS_PER_PERSONA_PER_ARM)):
+    # Default-no-trigger negatives.
+    for i, q in enumerate(_sampled_questions(persona_subseed=0)):
         rows.append(
             {
                 "row_id": f"neg_default_{i:04d}",
@@ -313,10 +377,10 @@ def _plan_rows_per_arm(questions: list[str], *, seed: int = 42) -> list[dict]:
             }
         )
 
-    # Close personas — 750 each, mixed (half with trigger).
-    for persona in NEG_PERSONAS:
-        per_persona_qs = _consume(N_NEGS_PER_PERSONA_PER_ARM)
-        for i, q in enumerate(per_persona_qs):
+    # Close personas — 750 each, mixed (half with trigger). Each persona
+    # samples its own 750 from the SAME training-question pool.
+    for p_idx, persona in enumerate(NEG_PERSONAS, start=1):
+        for i, q in enumerate(_sampled_questions(persona_subseed=p_idx)):
             trig = i % 2 == 0  # deterministic 50/50 split
             rows.append(
                 {
@@ -651,17 +715,17 @@ def _assemble(*, smoke: bool) -> None:
     if not cache_q.exists():
         raise RuntimeError("questions.json missing — run --step questions first")
     questions = json.loads(cache_q.read_text())
-    target_per_arm = N_ROWS_PER_ARM_TARGET if not smoke else 6
-    needed_qs = target_per_arm + max(0, int(target_per_arm * 0.10))
-    if len(questions) < needed_qs:
-        log.warning(
-            "Question pool=%d < needed=%d; some negatives may share questions with positives.",
-            len(questions),
-            needed_qs,
-        )
 
     if smoke:
         # Tiny per-arm planner — bypass the strict-count assertion.
+        # Smoke uses 5 questions; first is the positive, second is the
+        # default-no-trigger negative, next 3 are close-persona negatives.
+        # The 5 questions are drawn deterministically from the first 5 of
+        # the cached questions.json (we don't bother splitting smoke into
+        # train/eval — eval smoke loads its own slice from eval_questions.json
+        # which is also produced by this step).
+        if len(questions) < 5:
+            raise RuntimeError(f"Smoke requires ≥5 questions in cache; have {len(questions)}.")
         planned = []
         planned.append(
             {
@@ -688,8 +752,19 @@ def _assemble(*, smoke: bool) -> None:
                     "trigger_present": (i % 2 == 0),
                 }
             )
+        # Smoke: also write a tiny eval_questions.json so eval_issue475.py
+        # --smoke has a held-out slice to read. Reuse the same 5 questions —
+        # smoke does NOT separate train and eval pools (kept distinct from the
+        # full-run hold-out so smoke stays cheap).
+        eval_qs_smoke = questions[:5]
+        (_data_dir() / "eval_questions.json").write_text(json.dumps(eval_qs_smoke, indent=2))
+        log.info("[smoke] Wrote %d eval questions to eval_questions.json", len(eval_qs_smoke))
     else:
         planned = _plan_rows_per_arm(questions)
+        # Persist the held-out eval slice for eval_issue475.py.
+        _, eval_qs = _split_train_eval_questions(questions)
+        (_data_dir() / "eval_questions.json").write_text(json.dumps(eval_qs, indent=2))
+        log.info("Wrote %d held-out eval questions to eval_questions.json", len(eval_qs))
 
     # PLAIN
     plain_kept = _step_run_plain(planned, personas)
@@ -751,13 +826,17 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--smoke",
         action="store_true",
-        help="Generate ~6 rows / arm (CPU-feasible local smoke).",
+        help="Generate 5 rows / arm (CPU-feasible local smoke).",
     )
     p.add_argument(
         "--n-questions",
         type=int,
         default=None,
-        help="Override question pool size (default 3300, smoke 6).",
+        help=(
+            f"Override question pool size (default {N_QUESTIONS_TOTAL_FULL} = "
+            f"{N_TRAIN_QUESTIONS} train + {N_EVAL_QUESTIONS_HELD_OUT} held-out eval; "
+            f"smoke {N_QUESTIONS_TOTAL_SMOKE})."
+        ),
     )
     p.add_argument(
         "--no-upload",

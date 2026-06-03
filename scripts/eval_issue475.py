@@ -94,46 +94,78 @@ def _max_new_tokens(arm: str) -> int:
 
 
 def _load_eval_questions(*, smoke: bool, seed: int) -> list[str]:
-    """Use the data-gen question cache (held-out — last N after training rows).
+    """Read the DISJOINT held-out eval slice produced by
+    gen_issue475_scaffold_data.py (eval_questions.json — guaranteed not to
+    overlap with the training pool used by data-gen).
 
-    The training data uses questions[0 : ~6000]; eval uses a disjoint slice
-    from later in the same pool. Smoke uses 20.
+    Full run: returns 250 questions (T+/T-/NEG_doctor use the first 200,
+    NEG_default_other uses [200:250] — see _build_cells).
+    Smoke: returns 5 questions (data-gen smoke writes a 5-question file).
+
+    FAILS LOUD if eval_questions.json is missing or undersized — never falls
+    back to training questions (the round-1 review caught this as inflating
+    survival numbers via memorization).
     """
     from _issue475_common import DATA_DIR
 
-    cache = DATA_DIR / "questions.json"
+    cache = DATA_DIR / "eval_questions.json"
     if not cache.exists():
         raise RuntimeError(
-            "questions.json missing — run gen_issue475_scaffold_data.py --step questions first."
+            "eval_questions.json missing — run gen_issue475_scaffold_data.py "
+            "(any --step that touches assemble) to produce the held-out eval slice. "
+            "The pre-Round-2 fallback to training questions is REMOVED to prevent "
+            "memorization-inflated survival numbers."
         )
-    qs = json.loads(cache.read_text())
-    # Held-out pool: take from the tail end, deterministic shuffle on seed.
-    n_train_used = 6000
-    held = qs[n_train_used:] if len(qs) > n_train_used else list(qs)
-    if len(held) < N_T_PROMPTS:
-        # Smoke runs (or undersized question pools) may not have a large held-out tail.
-        log.warning(
-            "Held-out pool only has %d items (training used the rest); "
-            "eval will reuse training questions.",
-            len(held),
+    qs_eval = json.loads(cache.read_text())
+    required = N_PROMPTS_SMOKE if smoke else (N_T_PROMPTS + N_NEG_DEFAULT_OTHER)
+    if len(qs_eval) < required:
+        raise RuntimeError(
+            f"eval_questions.json has only {len(qs_eval)} items; need ≥{required} "
+            f"({'smoke' if smoke else 'full'} run). Regenerate via "
+            "gen_issue475_scaffold_data.py."
         )
-        held = list(qs)
+    # Deterministic shuffle within the held-out pool so the seed picks a
+    # stable ordering (the OOD vs T+/T- contrast lives in the slice we
+    # take from the SHUFFLED order, not in the cache's input order).
+    qs_eval = list(qs_eval)
     rng = random.Random(seed)
-    rng.shuffle(held)
-    return held[: (N_PROMPTS_SMOKE if smoke else N_T_PROMPTS)]
+    rng.shuffle(qs_eval)
+    if smoke:
+        return qs_eval[:N_PROMPTS_SMOKE]
+    # Full run: return the full held-out pool so _build_cells can slice
+    # both [:200] for T+/T- and [200:250] for NEG_default_other.
+    return qs_eval[: N_T_PROMPTS + N_NEG_DEFAULT_OTHER]
 
 
 # ── Cell construction ──────────────────────────────────────────────────────
 
 
 def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
-    """Plan §4.8 cell table — returns ``{cell: [{system, user, persona_key, trigger}, ...]}``."""
+    """Plan §4.8 cell table — returns ``{cell: [{system, user, persona_key, trigger}, ...]}``.
+
+    Slices over ``eval_questions`` (DISJOINT held-out pool from
+    eval_questions.json; never overlaps training):
+      - T_plus / T_minus: eval_questions[:200] (same 200 questions, trigger flip)
+      - NEG_doctor: eval_questions[:50] (persona swap is the OOD axis; question
+        overlap with T+ is intentional — the contrast is the system prompt)
+      - NEG_default_other: eval_questions[200:250] (DISJOINT 50-question OOD
+        slice — Round-2 fix 3; the cell tests "does the trigger fire on a
+        DIFFERENT question distribution under the default assistant?")
+
+    Smoke uses eval_questions = 20 items total; the slices collapse to whatever
+    fits, then run_one() further caps every cell to N_PROMPTS_SMOKE.
+    """
     personas = all_persona_prompts()
     asst = personas[DEFAULT_ASSISTANT_KEY]
     doctor = personas["medical_doctor"]
 
     def _trig(q: str) -> str:
         return f"{TRIGGER_KEY} {q}"
+
+    # Slice indices (full run): [:200] for T cells, [200:250] for NEG_default_other.
+    # In smoke we just reuse what's available; run_one() truncates further.
+    t_qs = eval_questions[:N_T_PROMPTS]
+    neg_default_other_qs = eval_questions[N_T_PROMPTS : N_T_PROMPTS + N_NEG_DEFAULT_OTHER]
 
     cells = {
         "T_plus": [
@@ -143,15 +175,15 @@ def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
                 "persona_key": DEFAULT_ASSISTANT_KEY,
                 "trigger": True,
             }
-            for q in eval_questions
+            for q in t_qs
         ],
         "T_minus": [
             {"system": asst, "user": q, "persona_key": DEFAULT_ASSISTANT_KEY, "trigger": False}
-            for q in eval_questions
+            for q in t_qs
         ],
         "NEG_doctor": [
             {"system": doctor, "user": _trig(q), "persona_key": "medical_doctor", "trigger": True}
-            for q in eval_questions[:N_NEG_DOCTOR]
+            for q in t_qs[:N_NEG_DOCTOR]
         ],
         "NEG_default_other": [
             {
@@ -160,9 +192,20 @@ def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
                 "persona_key": DEFAULT_ASSISTANT_KEY,
                 "trigger": True,
             }
-            for q in eval_questions[N_T_PROMPTS - N_NEG_DEFAULT_OTHER : N_T_PROMPTS]
+            for q in neg_default_other_qs
         ],
     }
+    # Defensive disjoint check — NEG_default_other questions MUST NOT
+    # appear in T+/T-. Catches a future refactor that silently re-overlaps
+    # the slices.
+    t_set = set(t_qs)
+    overlap = [q for q in neg_default_other_qs if q in t_set]
+    if overlap:
+        raise RuntimeError(
+            f"NEG_default_other overlaps T+/T- on {len(overlap)} questions "
+            f"(first: {overlap[0][:60]!r}). The held-out eval pool is too small "
+            "or eval_questions.json was regenerated incorrectly."
+        )
     return cells
 
 
@@ -199,8 +242,23 @@ def _resolve_adapter_local(arm: str, seed: int, ckpt: str) -> Path:
 
 
 def _make_chat_prefix(system: str, user: str, tokenizer: Any) -> str:
+    """Build the chat-template prefix for Qwen3.5-27B.
+
+    Passes ``enable_thinking=False`` to suppress Qwen3.5's native ``<think>``
+    substrate — our scaffold uses its own ``<scratchpad>`` tags. Without this,
+    visible-CoT confounds the hand-trained scaffold with the model's hidden
+    thinking. ``apply_chat_template`` ignores unknown kwargs on templates that
+    don't support ``enable_thinking`` (older Qwen3 BPE templates pre-3.5), so
+    this is safe across the tokenizer surface — but the round-2 review (codex
+    twin "native-thinking-not-disabled") flagged it as a load-bearing minor.
+    """
     msgs = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-    return tokenizer.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+    return tokenizer.apply_chat_template(
+        msgs,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
 
 
 def _generate_completions(
