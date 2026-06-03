@@ -831,7 +831,7 @@ def run_one(args: argparse.Namespace) -> dict:
     # config shim), so any in-process `AutoModelForCausalLM.from_pretrained`
     # of Qwen3.5-27B explodes with ``Qwen3_5Config has no attribute
     # vocab_size``. A fresh subprocess that never imports vllm loads clean.
-    # See ``_run_logprob_subprocess`` docstring + canary evidence on pod-475.
+    # See ``_run_logprob_subprocess_manifest`` docstring + canary evidence on pod-475.
     #
     # Per CLAUDE.md "Checkpoint per phase": the worker writes EACH cell's
     # per-cell JSON the moment it computes it (one file per cell, parent
