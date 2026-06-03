@@ -91,8 +91,15 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) -> None:
-    """poll_pipeline.py-compliant sentinel (sentinel_schema_version=1, kind, version)."""
+def _write_sentinel(
+    path: Path, *, kind: str, phase: str, note_payload: dict, task_id: int = 472
+) -> None:
+    """poll_pipeline.py-compliant sentinel (sentinel_schema_version=1, kind, version).
+
+    ``task_id`` is threaded from the dispatcher's --issue (472 or 479) so the
+    sentinel + filename align with the orchestrator's per-issue drain glob
+    (poll_pipeline.py reads /workspace/logs/issue-<N>-*.json for --issue N).
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -100,7 +107,7 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) ->
                 "sentinel_schema_version": 1,
                 "kind": kind,
                 "version": 1,
-                "task_id": 472,
+                "task_id": task_id,
                 "by": "dispatch_neg_geometry_472",
                 "ts": datetime.now(UTC).isoformat(),
                 "phase": phase,
@@ -109,6 +116,19 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) ->
             indent=2,
         )
     )
+
+
+def _issue_log_path(issue: int, name: str) -> Path:
+    """Resolve ``LOG_DIR / "issue-<issue>-<name>"`` so #472 vs #479 sentinels
+    land in the file glob poll_pipeline.py drains for the matching --issue.
+
+    Round-4 Fix 1: every sentinel filename in the dispatcher routes through
+    this helper so `--issue 479` writes `issue-479-*.json` (drained) and
+    `--issue 472` writes `issue-472-*.json` (legacy). The old call sites
+    hardcoded `issue-472-*` on both routes, which silently broke
+    poll_pipeline drain on #479 runs.
+    """
+    return LOG_DIR / f"issue-{issue}-{name}"
 
 
 def _resolve_cells(raw: str | None, force_anchor_only: bool) -> list[str]:
@@ -178,6 +198,7 @@ def _schedule_cell_pool(
     report_to: str,
     resume: bool,
     runner_script: str = "scripts/i472_run_cell.py",
+    issue: int = 472,
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
@@ -252,7 +273,7 @@ def _schedule_cell_pool(
             cmd.append("--fallback")
         if no_kl:
             cmd.append("--no-kl")
-        cell_log = log_dir / f"issue-472-{cell}-seed{seed}.log"
+        cell_log = log_dir / f"issue-{issue}-{cell}-seed{seed}.log"
         cell_log.parent.mkdir(parents=True, exist_ok=True)
         log.info("[%s seed%d] launch on GPU %d → %s", cell, seed, gpu, cell_log)
         # File handle must outlive this function (Popen writes to it while
@@ -282,7 +303,7 @@ def _schedule_cell_pool(
             free_gpus.append(gpu)  # GPU is free again for the next queued cell
             if rc != 0:
                 # Fail loud — write a FAILED sentinel and raise (whole sweep aborts).
-                fail_path = log_dir / f"issue-472-{cell}-seed{seed}-FAILED.json"
+                fail_path = log_dir / f"issue-{issue}-{cell}-seed{seed}-FAILED.json"
                 fail_path.write_text(
                     json.dumps(
                         {"cell": cell, "seed": seed, "returncode": rc, "assigned_gpu": gpu},
@@ -294,7 +315,7 @@ def _schedule_cell_pool(
                     p2.terminate()
                 raise RuntimeError(
                     f"[{cell} seed{seed}] cell subprocess exited rc={rc} (GPU {gpu}). "
-                    f"See {log_dir}/issue-472-{cell}-seed{seed}.log. Sweep aborted."
+                    f"See {log_dir}/issue-{issue}-{cell}-seed{seed}.log. Sweep aborted."
                 )
             log.info("[%s seed%d] DONE (GPU %d)", cell, seed, gpu)
             results.append(
@@ -549,10 +570,11 @@ def main(argv: list[str] | None = None) -> int:
     pb = _persona_bank_phase(args.skip_persona_bank, args.dry_run, args.bank_path)
     phase_summaries["persona_bank"] = pb
     _write_sentinel(
-        LOG_DIR / "issue-472-persona-bank-results.json",
+        _issue_log_path(args.issue, "persona-bank-results.json"),
         kind="epm:progress",
         phase="persona_bank",
         note_payload=pb,
+        task_id=args.issue,
     )
 
     if args.dry_run:
@@ -572,7 +594,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--out-dir",
                 str(args.centroids_dir),
                 "--sentinel-path",
-                str(LOG_DIR / "issue-472-centroids-results.json"),
+                str(_issue_log_path(args.issue, "centroids-results.json")),
             ],
             "centroids",
         )
@@ -589,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
             "--bank-path",
             str(args.bank_path),
             "--sentinel-path",
-            str(LOG_DIR / "issue-472-r-generate-results.json"),
+            str(_issue_log_path(args.issue, "r-generate-results.json")),
         ]
         if args.r_no_upload:
             r_cmd.append("--no-upload")
@@ -612,7 +634,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--out-path",
                 str(args.slab_root / "base_panel.json"),
                 "--sentinel-path",
-                str(LOG_DIR / "issue-472-base-panel-results.json"),
+                str(_issue_log_path(args.issue, "base-panel-results.json")),
             ],
             "base_panel",
         )
@@ -643,7 +665,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--out-path",
                 str(args.slab_root / "base_panel_emission_rate.json"),
                 "--sentinel-path",
-                str(LOG_DIR / "issue-479-base-emission-results.json"),
+                str(_issue_log_path(args.issue, "base-emission-results.json")),
             ],
             "base_emission_rate",
         )
@@ -668,6 +690,7 @@ def main(argv: list[str] | None = None) -> int:
         report_to=args.report_to,
         resume=args.resume,
         runner_script=runner_script,
+        issue=args.issue,
     )
     phase_summaries["cells"] = {"n_completed": len(cell_results), "results": cell_results}
 
@@ -676,14 +699,22 @@ def main(argv: list[str] | None = None) -> int:
         placements = _summarize_gpu_placements(cell_results, n_gpus=args.n_gpus)
         phase_summaries["multi_gpu_validation"] = placements
         _write_sentinel(
-            LOG_DIR / "issue-472-multi-gpu-validation-results.json",
+            _issue_log_path(args.issue, "multi-gpu-validation-results.json"),
             kind="epm:progress",
             phase="multi_gpu_validation",
             note_payload=placements,
+            task_id=args.issue,
         )
         log.info("[phase=multi_gpu_validation] %s", placements)
         _write_final_sentinel(
-            cells, cell_results, phase_summaries, None, seeds, args.slab_root, status="done"
+            cells,
+            cell_results,
+            phase_summaries,
+            None,
+            seeds,
+            args.slab_root,
+            status="done",
+            issue=args.issue,
         )
         log.info(
             "[phase=done] multi-GPU validation complete (%d cells across %d GPUs) %s",
@@ -702,10 +733,11 @@ def main(argv: list[str] | None = None) -> int:
         gate = _subceiling_gate(args.slab_root, "c472_anchor", seeds[0])
         phase_summaries["subceiling_gate"] = gate
         _write_sentinel(
-            LOG_DIR / "issue-472-subceiling-gate-results.json",
+            _issue_log_path(args.issue, "subceiling-gate-results.json"),
             kind="epm:progress",
             phase="subceiling_gate",
             note_payload=gate,
+            task_id=args.issue,
         )
         log.info("[phase=subceiling_gate] %s", gate)
         if not gate.get("ok"):
@@ -724,22 +756,34 @@ def main(argv: list[str] | None = None) -> int:
                 seeds,
                 args.slab_root,
                 status="subceiling_gate_failed",
+                issue=args.issue,
             )
             log.info(
                 "[phase=done] dispatcher exit (smoke gate FAIL) %s", datetime.now(UTC).isoformat()
             )
             return 2
 
-    # ── Phase 5: analyze (skip under smoke — only one cell). ─────────────────
+    # ── Phase 5: analyze. ────────────────────────────────────────────────────
+    # Round-4 Fix 2: --skip-analyze always skips (explicit opt-out).
+    # For #479: analyze runs UNDER --smoke too — that's the most-bug-prone
+    # code in the experiment (rounds 1, 2, 3 all had bugs in here) and the
+    # on-pod tiny smoke is exactly where we want to catch an analyze-on-real-
+    # trajectory bug before the full launch. Smoke exercises the strict
+    # base-panel hard-fail end-to-end against the smoke-written baseline.
+    # For #472: --smoke still skips (only one cell, geometry analysis needs ≥2).
     analyze_summary: dict | None = None
-    if args.smoke or args.skip_analyze:
-        log.info("[phase=analyze] SKIP (%s)", "smoke" if args.smoke else "--skip-analyze")
+    skip_analyze_for_smoke = args.smoke and args.issue == 472
+    if args.skip_analyze or skip_analyze_for_smoke:
+        reason = "--skip-analyze" if args.skip_analyze else "smoke (issue 472 only)"
+        log.info("[phase=analyze] SKIP (%s)", reason)
     elif args.issue == 479:
         # #479 analyze: per-cell selectivity-window detection + hero figure.
         # --base-panel-path points at the EMISSION-rate baseline file produced
         # by scripts/i479_phase_base_emission.py (the i479_base_emission_v1
         # schema). The older #472 base_panel.json is a LOG-PROB baseline
         # (wrong artifact for an emission-rate threshold — plan §13.1).
+        # Strict mode (no --no-strict-base-panel) — Phase 1.6 just wrote the
+        # baseline, so if it's missing/wrong-schema THAT's the bug to catch.
         _run_phase_subprocess(
             [
                 "uv",
@@ -759,7 +803,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--manifest-path",
                 str(args.slab_root / "i479_manifest.json"),
                 "--sentinel-path",
-                str(LOG_DIR / "issue-479-analyze-results.json"),
+                str(_issue_log_path(args.issue, "analyze-results.json")),
             ],
             "analyze",
         )
@@ -784,7 +828,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--seeds",
                 ",".join(str(s) for s in seeds),
                 "--sentinel-path",
-                str(LOG_DIR / "issue-472-analyze-results.json"),
+                str(_issue_log_path(args.issue, "analyze-results.json")),
             ],
             "analyze",
         )
@@ -794,7 +838,14 @@ def main(argv: list[str] | None = None) -> int:
     phase_summaries["analyze"] = analyze_summary
 
     _write_final_sentinel(
-        cells, cell_results, phase_summaries, analyze_summary, seeds, args.slab_root, status="done"
+        cells,
+        cell_results,
+        phase_summaries,
+        analyze_summary,
+        seeds,
+        args.slab_root,
+        status="done",
+        issue=args.issue,
     )
     log.info("Dispatcher done. %d cell units completed.", len(cell_results))
     log.info("[phase=done] dispatcher exit %s", datetime.now(UTC).isoformat())
@@ -810,11 +861,18 @@ def _write_final_sentinel(
     slab_root: Path,
     *,
     status: str,
+    issue: int = 472,
 ) -> Path:
-    """End-of-sweep poll_pipeline-compliant ``epm:results v1`` sentinel."""
-    final_path = LOG_DIR / "issue-472-results.json"
+    """End-of-sweep poll_pipeline-compliant ``epm:results v1`` sentinel.
+
+    Round-4 Fix 1: the terminal sentinel filename + the ``issue`` field of
+    the JSON payload route through ``issue`` so a #479 run writes
+    ``issue-479-results.json`` (drained by ``poll_pipeline.py --issue 479``)
+    and a #472 run writes ``issue-472-results.json`` (legacy).
+    """
+    final_path = _issue_log_path(issue, "results.json")
     note_payload = {
-        "issue": 472,
+        "issue": issue,
         "status": status,
         "seeds": seeds,
         "cells_requested": cells,
@@ -844,7 +902,13 @@ def _write_final_sentinel(
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    _write_sentinel(final_path, kind="epm:results", phase="done", note_payload=note_payload)
+    _write_sentinel(
+        final_path,
+        kind="epm:results",
+        phase="done",
+        note_payload=note_payload,
+        task_id=issue,
+    )
     log.info("Final sentinel (epm:results v1): %s", final_path)
     return final_path
 
