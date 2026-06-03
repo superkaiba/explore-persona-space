@@ -668,8 +668,21 @@ def main() -> int:
         )
 
     # Marker scoring plan: CORE = canonical only; ARM = every marker in the cell.
+    # NOTE: spec["marker_assignment"] = {source_persona: marker_text}; values are the
+    # marker texts (※/§/¶/...). spec["marker_id_assignment"] = {source_persona: token_id};
+    # values are the integer token ids. We need text->id (NOT persona->id) so the
+    # collator (which scans for marker TEXT in row tokens) AND the per-marker scorer
+    # (which keys per_marker by token_id) both work correctly. Round-1 BUG: keyed by
+    # persona name, so marker_text_list was a list of PERSONA NAMES.
     if is_arm:
-        marker_text_to_id: dict[str, int] = dict(spec["marker_id_assignment"])
+        marker_assignment: dict[str, str] = dict(spec["marker_assignment"])  # persona -> text
+        marker_id_assignment: dict[str, int] = dict(spec["marker_id_assignment"])  # persona -> id
+        # Build text -> id by composing through the shared persona key set.
+        # Restricted to THIS cell's positives (subset of ARM_MARKERS); the K markers
+        # are unique within the cell so dict()-building is loss-free.
+        marker_text_to_id = {
+            marker_assignment[p]: marker_id_assignment[p] for p in marker_assignment
+        }
         marker_ids_to_score = list(marker_text_to_id.values())
     else:
         marker_text_to_id = {MARKER_TEXT: MARKER_TOKEN_ID}
@@ -745,6 +758,21 @@ def main() -> int:
             marker_text_list=marker_text_list,
             lora_targets=LORA_TARGETS_NARROW,
             hf_upload=False,
+        )
+        # Issue #478 non-saturating-anchor invariant: the LoRA target_modules MUST
+        # stay attn-only (q/k/v/o — NO MLP). #311/#405/#448 established that
+        # MLP-inclusive LoRA saturates the on-policy marker log-prob at the ceiling,
+        # which collapses the experiment's measurement (every condition argmax==marker
+        # so recipe knobs have nothing to push against). Round-1 BUG: the historical
+        # default was 7 modules (MLP-inclusive) so even without the TypeError on the
+        # missing field, #478 would have run the saturating recipe.
+        assert cfg.lora_targets == ["q_proj", "k_proj", "v_proj", "o_proj"], (
+            f"Issue #478 invariant violated: lora_targets={cfg.lora_targets!r} is NOT "
+            f"the attn-only non-saturating anchor q/k/v/o (#311/#405/#448)."
+        )
+        log.info(
+            "Issue #478 LoRA target_modules invariant OK: %s (attn-only non-saturating anchor)",
+            cfg.lora_targets,
         )
         log.info("Starting train_lora (probe-panel callback + multi-marker=%s) ...", is_arm)
         adapter_path_str, training_loss = train_lora(

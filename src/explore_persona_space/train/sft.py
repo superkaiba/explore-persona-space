@@ -491,6 +491,12 @@ class TrainLoraConfig:
     # routing source→marker_i is implicit in the row contents). Default
     # ``None`` preserves the canonical single-marker call path.
     marker_text_list: list[str] | None = None
+    # Issue #478 §10 Reproducibility Card: opt-in LoRA target-module override.
+    # When ``None`` (default) train_lora uses the historical 7-module list
+    # (q/k/v/o/gate/up/down) so existing callers are byte-identical.
+    # Issue #478 cells pass ``["q_proj","k_proj","v_proj","o_proj"]`` to pin the
+    # attn-only non-saturating anchor (#311/#405/#448).
+    lora_targets: list[str] | None = None
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -595,20 +601,33 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
+    # LoRA target modules: callers can pin a subset (e.g. issue #478's attn-only
+    # non-saturating anchor: ["q_proj","k_proj","v_proj","o_proj"]). When unset,
+    # use the historical 7-module list (q/k/v/o + MLP) for byte-identical
+    # backward compatibility with every pre-#478 caller.
+    _DEFAULT_LORA_TARGETS = [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj",
+    ]
+    effective_lora_targets = (
+        list(cfg.lora_targets) if cfg.lora_targets else list(_DEFAULT_LORA_TARGETS)
+    )
+    logger.info(
+        "LoRA target_modules = %s (custom=%s)",
+        effective_lora_targets,
+        cfg.lora_targets is not None,
+    )
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=cfg.lora_r,
         lora_alpha=cfg.lora_alpha,
         lora_dropout=cfg.lora_dropout,
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "gate_proj",
-            "up_proj",
-            "down_proj",
-        ],
+        target_modules=effective_lora_targets,
         use_rslora=True,
     )
 

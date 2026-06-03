@@ -58,23 +58,30 @@ from _issue478_common import (  # noqa: E402
 
 
 def build_subsets(rng_seed: int = SUBSET_RNG_SEED) -> dict[int, list[tuple[str, ...]]]:
-    """Build the 32 POOL_16 subsets per plan v5 §4.5.
+    """Build the 40 POOL_16 subsets per plan v5 §4.5 (Level-1 coverage extension).
 
-    K=1: 8 random singletons (NOT all 16 — matches per-K cell count for clean
-    K-level comparability, plan §4.5).
-    K=2,4,8: 8 random subsets each from C(16, K).
+    K=1: ALL 16 POOL_16 singletons (round-2 extension per code-review BLOCKER 4 —
+    the §6.8 Level-1 superposition decomposition skips any K≥2 cell whose source
+    members lack a K=1 cell; with only 8 of 16 sources K=1-covered, Level-1 was
+    uncomputable for 0 of 8 K=4 cells and 0 of 8 K=8 cells under the seed-478 draw.
+    Extending K=1 to all 16 is the planner's contemplated "cheap add" in v5 §4.5
+    and is mandatory per v5 §6.8 — Level-1 is MANDATORY because it's the
+    superposition signal the headline depends on).
+    K=2,4,8: 8 random subsets each from C(16, K). Per-K subset uniqueness is
+    asserted by the caller via set equality (each tuple sorted for hashability).
 
-    Per-K subset uniqueness is asserted by the caller via set equality
-    (each tuple sorted for hashability).
+    Compute impact: 40 cells × 2 seeds = 80 runs (was 64). +3.7 GPU-h core, total
+    ~23 GPU-h. The orchestrator is confirming the larger compute with the user
+    before pod launch — implementation lands the 16-K=1 version regardless.
     """
     rng = np.random.default_rng(rng_seed)
     subsets: dict[int, list[tuple[str, ...]]] = {}
     for K in K_VALUES:
         if K == 1:
-            # 8 random singletons — sample distinct (no replacement) so the
-            # 8 chosen singletons cover 8 distinct POOL_16 personas.
-            idx = rng.choice(len(POOL_16), size=SUBSETS_PER_K, replace=False)
-            subsets[K] = [(POOL_16[int(i)],) for i in idx]
+            # ALL 16 POOL_16 singletons (full Level-1 superposition coverage).
+            # No RNG draw — deterministic enumeration in POOL_16 order so cell_ids
+            # K1_c00..c15 line up with POOL_16[0..15] for downstream debugging.
+            subsets[K] = [(p,) for p in POOL_16]
         else:
             all_subs = list(combinations(POOL_16, K))
             idx = rng.choice(len(all_subs), size=SUBSETS_PER_K, replace=False)
@@ -187,11 +194,14 @@ def main() -> int:
         )
     log.info("OK — POOL_16 radius = %.4f (≤ %.2f)", pool_radius, POOL_RADIUS_MAX)
 
-    # ── (5) Build 32 cell subsets; assert per-K uniqueness ────────────────
+    # ── (5) Build 40 cell subsets; assert per-K uniqueness ────────────────
+    # Round-2 BLOCKER 4: K=1 = ALL 16 POOL_16 singletons (Level-1 superposition
+    # coverage extension). K≥2 stays at SUBSETS_PER_K=8 from the seeded RNG.
     subsets = build_subsets()
     for K, subs in subsets.items():
-        if len(subs) != SUBSETS_PER_K:
-            raise RuntimeError(f"K={K} produced {len(subs)} subsets, expected {SUBSETS_PER_K}")
+        expected_count = len(POOL_16) if K == 1 else SUBSETS_PER_K
+        if len(subs) != expected_count:
+            raise RuntimeError(f"K={K} produced {len(subs)} subsets, expected {expected_count}")
         if len({tuple(sorted(s)) for s in subs}) != len(subs):
             raise RuntimeError(f"K={K} has duplicate subsets — rng-seed/replacement bug")
     log.info(

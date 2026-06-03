@@ -219,6 +219,230 @@ def per_band_trajectory_fig(plt, fig_dir: Path, tidy_csv: Path) -> None:
     plt.close(fig)
 
 
+def residualized_check_fig(reg: dict, plt, fig_dir: Path) -> None:
+    """§6.7 #3 hero — observed gap-shrinkage vs residualized gap-shrinkage.
+
+    Side-by-side bars per K: observed gap vs gap-after-K=1-fitted-f(d) subtraction.
+    Distance-flattening only survives if the residualized gap also shrinks.
+    """
+    primary = reg.get("primary_gap_shrinkage", {})
+    resid = reg.get("robustness", {}).get("residualized_leakage_check", {})
+    resid_gap = resid.get("residualized_gap_shrinkage", {})
+    obs_gaps = primary.get("gaps_per_K") or {}
+    res_gaps = resid_gap.get("gaps_per_K") or {}
+    if not obs_gaps or not res_gaps:
+        log.warning("residualized_check_fig: missing data — skipping")
+        return
+    Ks = sorted(int(k) for k in obs_gaps)
+    obs_vals = [obs_gaps[k] if k in obs_gaps else obs_gaps[str(k)] for k in Ks]
+    res_vals = [res_gaps[k] if k in res_gaps else res_gaps[str(k)] for k in Ks]
+    fig, ax = plt.subplots(figsize=(6, 4))
+    x = np.arange(len(Ks))
+    width = 0.35
+    ax.bar(x - width / 2, obs_vals, width, label="observed gap")
+    ax.bar(x + width / 2, res_vals, width, label="residualized gap (− K=1 f(d))")
+    ax.axhline(0, color="gray", lw=0.5)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"K={k}" for k in Ks])
+    ax.set_ylabel("FAR − NEAR gap (ΔlogP)")
+    ax.set_title("§6.7 #3 — observed vs residualized gap-shrinkage")
+    ax.legend()
+    _save(fig, fig_dir, "residualized_check")
+    plt.close(fig)
+
+
+def no_comedy_panel_fig(reg: dict, plt, fig_dir: Path) -> None:
+    """§6.7 #5 / §6.8 v5 — full-panel slope vs no-comedy slope with 95% CIs."""
+    no_comedy = reg.get("robustness", {}).get("no_comedy_refit", {})
+    full = no_comedy.get("full_panel", {})
+    nc = no_comedy.get("no_comedy", {})
+    if not full or not nc or full.get("slope") is None or nc.get("slope") is None:
+        log.warning("no_comedy_panel_fig: missing data — skipping")
+        return
+    survival = no_comedy.get("survival", {})
+    status = survival.get("status", "INDETERMINATE")
+    full_slope = full["slope"]
+    full_se = full.get("se", 0.0) or 0.0
+    nc_slope = nc["slope"]
+    nc_se = nc.get("se", 0.0) or 0.0
+    fig, ax = plt.subplots(figsize=(5, 3.5))
+    ax.errorbar(
+        [0],
+        [full_slope],
+        yerr=1.96 * full_se,
+        fmt="o",
+        capsize=6,
+        label="full panel",
+    )
+    ax.errorbar(
+        [1],
+        [nc_slope],
+        yerr=1.96 * nc_se,
+        fmt="s",
+        capsize=6,
+        label="no-comedy refit",
+    )
+    ax.axhline(0, color="gray", lw=0.5, linestyle="--")
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(
+        ["full (35)", f"no-comedy ({no_comedy.get('n_personas_dropped', 9)} dropped)"]
+    )
+    ax.set_ylabel("gap-shrinkage slope (per log₂(K))")
+    ax.set_title(f"§6.8 no-comedy survival: {status[:60]}")
+    ax.legend()
+    _save(fig, fig_dir, "no_comedy_panel")
+    plt.close(fig)
+
+
+def kl_dv_alongside_logp_fig(reg: dict, plt, fig_dir: Path) -> None:
+    """§6.7 #1 + §6 KL-DV non-saturating proxy alongside the marker log-prob DV."""
+    primary = reg.get("primary_gap_shrinkage", {})
+    kl = reg.get("robustness", {}).get("kl_dv_refit", {})
+    logp_gaps = primary.get("gaps_per_K") or {}
+    kl_gaps = kl.get("gaps_per_K") or {}
+    if not logp_gaps or not kl_gaps:
+        log.warning("kl_dv_alongside_logp_fig: missing data — skipping")
+        return
+    Ks = sorted(int(k) for k in logp_gaps)
+    logp_vals = [logp_gaps[k] if k in logp_gaps else logp_gaps[str(k)] for k in Ks]
+    kl_vals = [kl_gaps[k] if k in kl_gaps else kl_gaps[str(k)] for k in Ks]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 3.5))
+    ax1.plot(np.log2(Ks), logp_vals, marker="o", color="C0")
+    ax1.axhline(0, color="gray", lw=0.5)
+    ax1.set_title(f"log P(※) DV  (p={primary.get('p', float('nan')):.3g})")
+    ax1.set_xlabel("log₂(K)")
+    ax1.set_ylabel("FAR − NEAR gap")
+    ax2.plot(np.log2(Ks), kl_vals, marker="o", color="C1")
+    ax2.axhline(0, color="gray", lw=0.5)
+    ax2.set_title(f"KL DV (non-saturating)  (p={kl.get('p', float('nan')):.3g})")
+    ax2.set_xlabel("log₂(K)")
+    ax2.set_ylabel("FAR − NEAR gap")
+    fig.tight_layout()
+    _save(fig, fig_dir, "kl_dv_alongside_logp")
+    plt.close(fig)
+
+
+def leverage_persona_fig(reg: dict, plt, fig_dir: Path) -> None:
+    """§6.7 #1 + §6 leverage scatter — per-persona effect on slope (leave-one-out).
+
+    `leave_one_persona_out` returns `{persona: {gap_slope, gap_p, gap_K1, gap_K8}}`
+    at the top of the `robustness.leave_one_persona_out` dict (the dict's keys
+    are persona names directly — no nested per_persona/persona_results wrapper).
+    """
+    loo = reg.get("robustness", {}).get("leave_one_persona_out", {})
+    if not loo:
+        log.warning("leverage_persona_fig: leave-one-persona-out missing — skipping")
+        return
+    items: list[tuple[str, float]] = []
+    for persona, payload in loo.items():
+        if not isinstance(payload, dict):
+            continue
+        sl = payload.get("gap_slope") or payload.get("slope")
+        if sl is not None:
+            items.append((persona, float(sl)))
+    if not items:
+        log.warning("leverage_persona_fig: no per-persona slope payloads — skipping")
+        return
+    items.sort(key=lambda kv: kv[1])
+    fig, ax = plt.subplots(figsize=(7, max(3.5, 0.18 * len(items))))
+    ax.barh(range(len(items)), [v for _, v in items])
+    ax.set_yticks(range(len(items)))
+    ax.set_yticklabels([k for k, _ in items], fontsize=7)
+    ax.axvline(0, color="gray", lw=0.5)
+    ax.set_xlabel("Gap-shrinkage slope when persona dropped")
+    ax.set_title("Leave-one-persona-out leverage on gap-shrinkage slope")
+    _save(fig, fig_dir, "leverage_persona")
+    plt.close(fig)
+
+
+def arm_level2_fig(arm_payload: dict, plt, fig_dir: Path) -> None:
+    """§6.8 Level-2 arm — direction-agreement counts + per-K mean gap CI."""
+    level2 = arm_payload.get("level2_decomposition", {})
+    direction = level2.get("direction_agreement_per_K") or {}
+    bootstrap = level2.get("paired_bootstrap_per_K_mean_gap") or {}
+    if not direction:
+        log.warning("arm_level2_fig: no direction_agreement_per_K data; skipping")
+        return
+    Ks = sorted(int(k) for k in direction)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 4))
+    # (a) stacked direction counts per K.
+    n_gt = [direction[str(k) if str(k) in direction else k]["n_shared_gt_distinct"] for k in Ks]
+    n_lt = [direction[str(k) if str(k) in direction else k]["n_shared_lt_distinct"] for k in Ks]
+    n_eq = [direction[str(k) if str(k) in direction else k].get("n_zero_or_noise", 0) for k in Ks]
+    x = np.arange(len(Ks))
+    width = 0.6
+    ax1.bar(x, n_gt, width, label="shared > distinct (AMBIGUOUS / dose-consistent)")
+    ax1.bar(x, n_eq, width, bottom=n_gt, label="≈ (SUPERPOSITION)")
+    ax1.bar(
+        x,
+        n_lt,
+        width,
+        bottom=[a + b for a, b in zip(n_gt, n_eq, strict=True)],
+        label="shared < distinct (INTERFERENCE)",
+    )
+    ax1.set_xticks(x)
+    ax1.set_xticklabels([f"K={k}" for k in Ks])
+    ax1.set_ylabel("# matched pairs (per K)")
+    ax1.set_title("Level-2 direction-agreement counts")
+    ax1.legend(loc="best", fontsize=7)
+    # (b) bootstrap CI per K.
+    means: list[float] = []
+    los: list[float] = []
+    his: list[float] = []
+    for k in Ks:
+        b = bootstrap.get(str(k)) or bootstrap.get(k) or {}
+        m = b.get("mean_gap")
+        ci = b.get("bootstrap_ci95") or [None, None]
+        if m is not None and ci[0] is not None and ci[1] is not None:
+            means.append(float(m))
+            los.append(float(m) - float(ci[0]))
+            his.append(float(ci[1]) - float(m))
+        else:
+            means.append(float("nan"))
+            los.append(0.0)
+            his.append(0.0)
+    ax2.errorbar(x, means, yerr=[los, his], fmt="o", capsize=6)
+    ax2.axhline(0, color="gray", lw=0.5, linestyle="--", label="superposition (gap = 0)")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels([f"K={k}" for k in Ks])
+    ax2.set_ylabel("L_shared − superposition(L_distinct)  (mean ± 95% CI)")
+    ax2.set_title("Level-2 paired bootstrap (mean combiner)")
+    ax2.legend()
+    fig.tight_layout()
+    _save(fig, fig_dir, "arm_level2_decomposition")
+    plt.close(fig)
+
+
+def arm_marker_base_logp_matrix_fig(arm_payload: dict, plt, fig_dir: Path) -> None:
+    """Phase 0b 8×35 base-logp matrix (marker × held-out persona) heatmap."""
+    base_logp = arm_payload.get("phase_0b_marker_base_logp")
+    if not base_logp:
+        log.warning("arm_marker_base_logp_matrix_fig: no Phase 0b base-logp; skipping")
+        return
+    # Expect either {marker: {persona: logp}} or {markers: [...], personas: [...], matrix: [[...]]}.
+    if "matrix" in base_logp and "markers" in base_logp and "personas" in base_logp:
+        markers = base_logp["markers"]
+        personas = base_logp["personas"]
+        mat = np.array(base_logp["matrix"])
+    else:
+        markers = sorted(base_logp.keys())
+        personas = sorted({p for v in base_logp.values() for p in (v or {})})
+        mat = np.array([[base_logp[m].get(p, np.nan) for p in personas] for m in markers])
+    fig, ax = plt.subplots(
+        figsize=(min(12, max(6, 0.25 * len(personas))), max(3, 0.4 * len(markers)))
+    )
+    im = ax.imshow(mat, aspect="auto", cmap="viridis")
+    ax.set_xticks(range(len(personas)))
+    ax.set_xticklabels(personas, rotation=90, fontsize=6)
+    ax.set_yticks(range(len(markers)))
+    ax.set_yticklabels(markers)
+    ax.set_title("Phase 0b: per-marker base log P at post-response slot (held-out personas)")
+    fig.colorbar(im, ax=ax, label="base log P(marker)")
+    fig.tight_layout()
+    _save(fig, fig_dir, "marker_base_logp_matrix")
+    plt.close(fig)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -258,6 +482,15 @@ def main() -> int:
     per_seed_scatter_fig(plt, fig_dir, tidy_path)
     per_band_trajectory_fig(plt, fig_dir, tidy_path)
     superposition_level1_fig(reg, plt, fig_dir, tidy_path)
+    # Round-2 MAJOR 6: §6.7/§6.8-mandated analyzer figures (previously omitted /
+    # TODO). The Phase-5 contract advertises all 9 in the docstring; this
+    # implements 6 of the 7 core ones + both arm figures. (The exploratory
+    # per-cell error-bar grid stays out — it's a dump that doesn't change
+    # narrative if missing; everything LOAD-BEARING for §6.7/§6.8 is here.)
+    residualized_check_fig(reg, plt, fig_dir)
+    no_comedy_panel_fig(reg, plt, fig_dir)
+    kl_dv_alongside_logp_fig(reg, plt, fig_dir)
+    leverage_persona_fig(reg, plt, fig_dir)
 
     if args.arm:
         arm_path = (
@@ -268,7 +501,9 @@ def main() -> int:
             / "distinct_markers_decomposition.json"
         )
         if arm_path.exists():
-            log.info("Arm decomposition figure: TODO (depends on Level-2 analyzer output).")
+            arm_payload = json.loads(arm_path.read_text())
+            arm_level2_fig(arm_payload, plt, fig_dir)
+            arm_marker_base_logp_matrix_fig(arm_payload, plt, fig_dir)
         else:
             log.warning("--arm given but %s not present; skipping arm figures", arm_path)
 

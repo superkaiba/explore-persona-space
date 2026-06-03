@@ -155,9 +155,13 @@ ARM_BASE_LOGP_FAIL_THRESHOLD: float = -3.0  # any marker base logp > this → FA
 ARM_BASE_LOGP_SPREAD_WARN: float = 2.0  # spread > this nats → WARN+swap
 
 # Arm cell layout per plan v5 §4.9.2: 3 K=2 + 3 K=4 source-set subsets matched
-# to the core's K2_c08/c09/c10 and K4_c16/c17/c18 cells.
-ARM_K2_MATCHED_CELLS: tuple[str, ...] = ("K2_c08", "K2_c09", "K2_c10")
-ARM_K4_MATCHED_CELLS: tuple[str, ...] = ("K4_c16", "K4_c17", "K4_c18")
+# to the FIRST 3 from each of K=2 and K=4 in the core's seeded draw.
+# Round-2 cell-id offsets: K=1 is now ALL 16 singletons (c00..c15), so K=2
+# starts at c16 and K=4 starts at c24. The SOURCE SETS themselves are
+# unchanged (the K=2 / K=4 RNG draws were not modified — only K=1 grew from
+# 8 → 16). See build_core_specs() docstring for the full id layout.
+ARM_K2_MATCHED_CELLS: tuple[str, ...] = ("K2_c16", "K2_c17", "K2_c18")
+ARM_K4_MATCHED_CELLS: tuple[str, ...] = ("K4_c24", "K4_c25", "K4_c26")
 
 # Per-marker training-speed divergence flag — if any marker's logp curve rises
 # ≥5x faster than another's, Level-2 is flagged uninterpretable for that cell.
@@ -372,14 +376,30 @@ def load_cosine_distance_matrix() -> tuple[list[str], list[list[float]]]:
     if cache.exists():
         data = json.loads(cache.read_text())
         names = data["persona_names"]
-        # Accept either "distance" (this loader's key) or "matrix" (legacy
-        # similarity matrix from extraction_method_comparison) — convert.
+        # Round-2 MINOR 7: this loader requires the "distance" key. The legacy
+        # silent-invert-on-"matrix" branch turned a distance-as-matrix mislabel
+        # (or a similarity matrix mistakenly named) into a wrong-but-plausible
+        # number — Phase 0 of round 1 hit exactly that. For #478, fail loud.
+        # An explicit "metric": "similarity" annotation MAY be added later but
+        # is NOT currently supported — there is no way to prove a "matrix" key
+        # is similarity without the annotation.
         if "distance" in data:
             return names, data["distance"]
         if "matrix" in data:
-            sim = data["matrix"]
-            dist = [[1.0 - sim[i][j] for j in range(len(names))] for i in range(len(names))]
-            return names, dist
+            metric = data.get("metric")
+            if metric == "similarity":
+                sim = data["matrix"]
+                dist = [[1.0 - sim[i][j] for j in range(len(names))] for i in range(len(names))]
+                return names, dist
+            raise RuntimeError(
+                f"Distance-matrix JSON {cache} has a 'matrix' key but no "
+                f"'metric': 'similarity' annotation proving it is similarity. "
+                f"#478 refuses to silently invert; rebuild the cache via "
+                f"_build_matrix_from_centroids() or add an explicit metric tag. "
+                f"Round-2 fix per code-review MINOR 7 — the silent invert "
+                f"turned a distance-as-matrix mislabel into a wrong-but-plausible "
+                f"Phase 0 result in round 1."
+            )
         raise RuntimeError(f"Distance-matrix JSON {cache} has neither 'distance' nor 'matrix' key.")
     # Cache miss → compute from centroids tensor.
     return _build_matrix_from_centroids()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: RUF002
 """Issue #478 PHASE 0.5 — cell-specs builder (plan v5 §4.5).
 
 Produces ``data/issue_478/cell_specs.json`` — 32 CORE cells + (optionally)
@@ -45,11 +46,21 @@ from issue478_validate_design import build_subsets  # noqa: E402
 
 
 def build_core_specs() -> list[dict]:
-    """Build the 32 CORE cell specs from the deterministic POOL_16 subsets.
+    """Build the 40 CORE cell specs from the deterministic POOL_16 subsets.
 
-    Cell ids run K1_c00..c07 / K2_c08..c15 / K4_c16..c23 / K8_c24..c31 (the
-    cell_id offsets are stable so the ARM matched cells (K2_c08..c10,
-    K4_c16..c18) line up with the core's seeded draw).
+    Round-2 extension (code-review BLOCKER 4): K=1 = ALL 16 POOL_16 singletons,
+    so Level-1 superposition decomposition can cover every K≥2 source. Cell ids
+    now run:
+      K=1: c00..c15 (16 singletons)
+      K=2: c16..c23 (8 random pairs, RNG draw unchanged)
+      K=4: c24..c31 (8 random quads, RNG draw unchanged)
+      K=8: c32..c39 (8 random octets, RNG draw unchanged)
+    Total: 40 cells × 2 seeds = 80 runs.
+
+    The ARM matched cells reference K2_c16/c17/c18 + K4_c24/c25/c26 (the FIRST
+    3 from each of K=2 and K=4 in the seeded draw — the same source sets as
+    before, just new cell-id offsets). See ARM_K2_MATCHED_CELLS /
+    ARM_K4_MATCHED_CELLS in _issue478_common.
     """
     subsets = build_subsets()
     specs: list[dict] = []

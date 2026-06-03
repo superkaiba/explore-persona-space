@@ -51,6 +51,7 @@ log = bootstrap()
 from _issue478_common import (  # noqa: E402
     COMEDY_FAMILY,
     FAR_BANDS,
+    HELD_OUT_35,
     HELD_OUT_BANDS,
     K_VALUES,
     NEAR_BANDS,
@@ -339,30 +340,94 @@ def dfbetas_K_x_logd(rows: list[dict]) -> dict:
 
 
 def no_comedy_refit(rows: list[dict]) -> dict:
-    """§6.7 #5 MANDATORY: drop 9 comedy-family personas; re-run gap-shrinkage.
+    """§6.7 #5 + §6.8 v5 MANDATORY: drop 9 comedy-family personas; re-run gap-shrinkage.
 
-    The conservative interpretation per §6.7 #5: direction-agreement +
-    a wide CI that includes the full-panel estimate is WEAK evidence if
-    the non-comedy FAR group is noisy.
+    Survival criterion (round-2 CONCERN 5, per plan §6.8 v5): a flattening claim
+    can be reported as DISTANCE-driven (not comedy-axis-driven) only if ALL of:
+      (a) direction agrees with full-panel slope, AND
+      (b) the no-comedy slope's 95% CI INCLUDES the full-panel point estimate, AND
+      (c) the no-comedy slope SE is not >2× the full-panel SE (else
+          "underpowered / uninterpretable" — the non-comedy FAR group is
+          8 personas, at the lower edge of stability).
+    Anything else → narrate as "distance-vs-comedy unresolved" instead of
+    treating survival as positive evidence (per §6.7 #5).
     """
     sub = [r for r in rows if r["held_out_persona"] not in COMEDY_FAMILY]
+    no_comedy_personas_dropped = sorted(set(COMEDY_FAMILY) & {r["held_out_persona"] for r in rows})
     gap_no_comedy = gap_shrinkage_test(sub)
     gap_full = gap_shrinkage_test(rows)
-    survives = (
+
+    # (a) Direction agreement.
+    direction_agrees = (
         gap_no_comedy.get("slope") is not None
         and gap_full.get("slope") is not None
-        and gap_no_comedy["slope"] * gap_full["slope"] > 0  # same direction
+        and gap_no_comedy["slope"] * gap_full["slope"] > 0
     )
+
+    # (b) no-comedy 95% CI on slope includes full-panel slope point estimate.
+    # gap_shrinkage_test returns slope + SE; 95% CI = slope ± 1.96 * SE.
+    ci_includes_full = None
+    nc_slope = gap_no_comedy.get("slope")
+    nc_se = gap_no_comedy.get("se")
+    full_slope = gap_full.get("slope")
+    if nc_slope is not None and nc_se is not None and full_slope is not None:
+        ci_lo = nc_slope - 1.96 * nc_se
+        ci_hi = nc_slope + 1.96 * nc_se
+        ci_includes_full = bool(ci_lo <= full_slope <= ci_hi)
+
+    # (c) SE ratio < 2× — else underpowered.
+    se_ratio = None
+    se_ratio_pass = None
+    full_se = gap_full.get("se")
+    if nc_se is not None and full_se is not None and full_se > 0:
+        se_ratio = float(nc_se / full_se)
+        se_ratio_pass = bool(se_ratio <= 2.0)
+
+    # Aggregate survival status string.
+    if any(x is None for x in (direction_agrees, ci_includes_full, se_ratio_pass)):
+        survival_status = "INDETERMINATE — could not compute one or more gates"
+    elif se_ratio_pass is False:
+        survival_status = (
+            f"UNDERPOWERED — no-comedy SE {nc_se:.3f} > 2× full-panel SE "
+            f"{full_se:.3f} (ratio {se_ratio:.2f}); report distance-vs-comedy unresolved"
+        )
+    elif direction_agrees and ci_includes_full and se_ratio_pass:
+        survival_status = "SURVIVES — distance-driven read is supported"
+    else:
+        bits = []
+        if not direction_agrees:
+            bits.append("direction flips")
+        if not ci_includes_full:
+            bits.append("no-comedy 95% CI excludes full-panel slope")
+        survival_status = "FAILS — " + " AND ".join(bits) + "; report comedy-axis confound"
+
+    # Compute the dropped persona list explicitly (audit trail).
     return {
         "full_panel": gap_full,
         "no_comedy": gap_no_comedy,
-        "direction_agrees": survives,
-        "n_personas_dropped": len(COMEDY_FAMILY),
+        "comedy_personas_dropped": no_comedy_personas_dropped,
+        "n_personas_dropped": len(no_comedy_personas_dropped),
         "n_rows_kept": len(sub),
+        "n_rows_total": len(rows),
+        "survival": {
+            "direction_agrees": direction_agrees,
+            "ci_includes_full_panel_slope": ci_includes_full,
+            "no_comedy_slope_95ci": (
+                None
+                if (nc_slope is None or nc_se is None)
+                else [nc_slope - 1.96 * nc_se, nc_slope + 1.96 * nc_se]
+            ),
+            "full_panel_slope_point_estimate": full_slope,
+            "se_ratio_no_comedy_over_full": se_ratio,
+            "se_ratio_pass_le_2x": se_ratio_pass,
+            "status": survival_status,
+        },
         "scope_caveat": (
-            "Non-comedy FAR group is 8 personas; if the no-comedy slope SE > 2× "
-            "the full-panel SE, report this as a distance-vs-comedy unresolved "
-            "caveat rather than positive evidence per §6.7 #5."
+            "Per §6.8 v5: survival = direction agrees AND no-comedy 95% CI includes "
+            "full-panel slope AND SE ratio ≤ 2×. The non-comedy FAR group is "
+            "8 personas (lower edge of stability); a 'FAILS' or 'UNDERPOWERED' "
+            "status MUST be narrated as 'distance-vs-comedy unresolved' rather "
+            "than positive evidence per §6.7 #5."
         ),
     }
 
@@ -498,6 +563,47 @@ def superposition_decomposition_level1(rows: list[dict]) -> dict:  # noqa: C901
     per_K_residuals_mean: dict[int, list[dict]] = defaultdict(list)
     per_K_combiner_predictions: dict[int, list[dict]] = defaultdict(list)
 
+    # Round-2 BLOCKER 4 defensive guard + coverage report. The K=1 extension to
+    # all 16 sources should cover every K≥2 source; the guard catches a future
+    # regression (someone shrinks K=1 again) by both SKIPPING uncoverable cells
+    # and REPORTING per-K coverage so any silent drop is visible in the
+    # regression.json.
+    per_K_coverage: dict[int, dict] = {}
+    for K_check in Ks:
+        K_rows = [r for r in rows if r["K"] == K_check]
+        K_cells = sorted({r["cell_id"] for r in K_rows})
+        covered_cells: list[str] = []
+        uncovered_cells: list[dict] = []
+        for cid in K_cells:
+            # All rows for this cell share the same positives set.
+            cell_rows = [r for r in K_rows if r["cell_id"] == cid]
+            S = cell_rows[0]["positives"].split(";")
+            missing_sources = [a for a in S if not any((a, c) in k1_avg for c in [HELD_OUT_35[0]])]
+            # Recheck with actual held-out personas — a source is "covered" iff
+            # its (a, C) entry exists for AT LEAST one held-out C (in practice,
+            # K=1 cell ran → it produced entries for all 35 personas).
+            actually_missing = [a for a in S if not any((a, c) in k1_avg for c in HELD_OUT_35)]
+            if actually_missing:
+                uncovered_cells.append({"cell_id": cid, "missing_sources": actually_missing})
+            else:
+                covered_cells.append(cid)
+            _ = missing_sources
+        per_K_coverage[K_check] = {
+            "n_cells_total": len(K_cells),
+            "n_cells_covered": len(covered_cells),
+            "n_cells_uncovered": len(uncovered_cells),
+            "uncovered_cells": uncovered_cells,
+        }
+        if uncovered_cells:
+            log.warning(
+                "Level-1 K=%d: %d of %d cells lack K=1-covered sources; SKIPPING. "
+                "If this is unexpected, check that K=1 was extended to all 16 POOL_16 "
+                "singletons per round-2 BLOCKER 4 (issue478_validate_design.build_subsets).",
+                K_check,
+                len(uncovered_cells),
+                len(K_cells),
+            )
+
     for r in rows:
         if r["K"] < 2:
             continue
@@ -611,11 +717,14 @@ def superposition_decomposition_level1(rows: list[dict]) -> dict:  # noqa: C901
             },
         }
 
+    out["per_K_coverage"] = {str(K): per_K_coverage[K] for K in Ks}
     out["note"] = (
         "Plan §6.8 Level-1 is DIRECTIONAL (cluster-robust SEs at "
         "(cell_id, seed)). The 2240-obs framing was pseudo-replication. Held-out "
         "R² floor required = 0.5 at K=2, 0.4 at K=4, directional-only at K=8. "
-        "Mean combiner = PRE-REGISTERED primary null (linear-dose-scaled additivity)."
+        "Mean combiner = PRE-REGISTERED primary null (linear-dose-scaled additivity). "
+        "per_K_coverage reports the n cells covered by the K=1 panel — round-2 "
+        "BLOCKER 4 defensive read in case of a K=1 regression."
     )
     return out
 
@@ -730,6 +839,27 @@ def main() -> int:
         action="store_true",
         help="Skip the secondary mixed-effects test (statsmodels can be slow on 2240 rows)",
     )
+    parser.add_argument(
+        "--allow-partial-smoke",
+        action="store_true",
+        help=(
+            "Bypass the planned-vs-actual completeness gate (default: STRICT — every "
+            "expected CORE cell × seed must be present and contribute the expected "
+            "rows). Use ONLY for smoke runs / stub generation. CLAUDE.md fail-fast: "
+            "without this flag, missing cells / rows raise SystemExit so a partial "
+            "sweep can NEVER become a headline figure."
+        ),
+    )
+    parser.add_argument(
+        "--expected-core-cells",
+        type=int,
+        default=None,
+        help=(
+            "Override expected core cell count (cells × seeds). Defaults to "
+            "len(K_VALUES) * SUBSETS_PER_K * len(SEEDS) from the plan; pass a "
+            "smaller number for known descopes (must still equal the dispatched count)."
+        ),
+    )
     args = parser.parse_args()
 
     eval_dir = Path(args.eval_dir)
@@ -739,8 +869,29 @@ def main() -> int:
     results = load_cell_results(eval_dir, track_filter="CORE")
     log.info("CORE cells: %d", len(results))
 
-    # Sanity — expect 64 (8 K=1 + 8 K=2 + 8 K=4 + 8 K=8) × 2 seeds; but the
-    # analyzer runs even with partial completeness for smoke/early-stop.
+    # Plan §6.7 + CLAUDE.md "After Every Experiment" #8: planned-vs-actual
+    # completeness gate. The headline gap-shrinkage / mixed-effects /
+    # superposition statistics assume the FULL design was tested; running on
+    # a partial sweep silently biases the headline by whichever cells dropped
+    # out (e.g. a crashed K=8 seed shifts the gap-shrinkage slope without
+    # the analyzer registering anything is wrong). Default = STRICT.
+    expected_cells = args.expected_core_cells or (len(K_VALUES) * SUBSETS_PER_K * len(SEEDS))
+    expected_rows = expected_cells * len(HELD_OUT_35)
+    if not args.allow_partial_smoke:
+        if len(results) != expected_cells:
+            raise SystemExit(
+                f"PARTIAL CORE SWEEP: loaded {len(results)} cells, expected {expected_cells} "
+                f"(K_VALUES={K_VALUES}, SUBSETS_PER_K={SUBSETS_PER_K}, SEEDS={SEEDS}). "
+                f"Re-run missing cells or pass --allow-partial-smoke (smoke / stub only). "
+                f"Plan §6.7 + CLAUDE.md #8 require complete coverage before headline."
+            )
+    else:
+        log.warning(
+            "--allow-partial-smoke set: skipping cell-count gate (loaded=%d, expected=%d). "
+            "DO NOT promote headline figures from this run.",
+            len(results),
+            expected_cells,
+        )
 
     log.info("Loading 111-persona cosine distance matrix ...")
     names, distance = load_cosine_distance_matrix()
@@ -748,6 +899,14 @@ def main() -> int:
     log.info("Building tidy rows ...")
     rows = build_tidy_rows(results, names, distance)
     log.info("Tidy rows: %d", len(rows))
+
+    if not args.allow_partial_smoke and len(rows) != expected_rows:
+        raise SystemExit(
+            f"PARTIAL TIDY ROWS: built {len(rows)} rows, expected {expected_rows} "
+            f"(= {expected_cells} cells * {len(HELD_OUT_35)} held-out personas). "
+            f"Some cells loaded but produced incomplete held-out evals. "
+            f"Re-run or pass --allow-partial-smoke."
+        )
 
     # Tidy CSV (for downstream R / pymer4 / spreadsheet).
     csv_path = agg_dir / "tidy.csv"

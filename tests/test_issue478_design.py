@@ -108,21 +108,40 @@ def test_band_of_returns_correct_band():
 
 
 def test_build_subsets_deterministic_unique():
-    """build_subsets(rng_seed=478) yields 8 unique subsets per K; deterministic."""
+    """build_subsets(rng_seed=478): K=1 = all 16 singletons; K≥2 = 8 unique subsets each.
+
+    Round-2 BLOCKER 4: K=1 was extended from 8 random singletons to all 16 POOL_16
+    singletons (Level-1 superposition coverage). K≥2 stayed at SUBSETS_PER_K=8.
+    """
     s1 = build_subsets(rng_seed=SUBSET_RNG_SEED)
     s2 = build_subsets(rng_seed=SUBSET_RNG_SEED)
     for K in K_VALUES:
-        assert len(s1[K]) == SUBSETS_PER_K, f"K={K} got {len(s1[K])} subsets"
-        assert len({tuple(sorted(s)) for s in s1[K]}) == SUBSETS_PER_K, (
+        expected_count = len(POOL_16) if K == 1 else SUBSETS_PER_K
+        assert len(s1[K]) == expected_count, (
+            f"K={K} got {len(s1[K])} subsets, expected {expected_count}"
+        )
+        assert len({tuple(sorted(s)) for s in s1[K]}) == len(s1[K]), (
             f"K={K} produced duplicate subsets"
         )
         assert s1[K] == s2[K], f"K={K} subsets non-deterministic"
 
 
-def test_build_core_specs_yields_32_cells_with_id_offsets():
-    """Cell ids run K1_c00..c07 / K2_c08..c15 / K4_c16..c23 / K8_c24..c31."""
+def test_build_subsets_k1_covers_all_pool_personas():
+    """Round-2 BLOCKER 4: K=1 must cover EVERY POOL_16 persona so Level-1
+    superposition decomposition can predict every K≥2 cell."""
+    s = build_subsets(rng_seed=SUBSET_RNG_SEED)
+    k1_personas = {sub[0] for sub in s[1]}
+    assert k1_personas == set(POOL_16), (
+        f"K=1 must include all {len(POOL_16)} POOL_16 singletons; got "
+        f"{len(k1_personas)} (missing: {set(POOL_16) - k1_personas})"
+    )
+
+
+def test_build_core_specs_yields_40_cells_with_id_offsets():
+    """Cell ids (round-2 with K=1 = 16):
+    K=1: c00..c15 / K=2: c16..c23 / K=4: c24..c31 / K=8: c32..c39."""
     core = build_core_specs()
-    assert len(core) == 32
+    assert len(core) == 40, f"expected 40 cells (16 K=1 + 8 K=2 + 8 K=4 + 8 K=8); got {len(core)}"
     by_K_first_id = {}
     by_K_last_id = {}
     for s in core:
@@ -130,9 +149,11 @@ def test_build_core_specs_yields_32_cells_with_id_offsets():
         by_K_first_id.setdefault(K, s["cell_id"])
         by_K_last_id[K] = s["cell_id"]
     assert by_K_first_id[1].startswith("K1_c0")
-    # The arm-matched cells (K2_c08/c09/c10, K4_c16/c17/c18) MUST exist.
+    # Round-2 arm-matched cells (K2_c16/c17/c18, K4_c24/c25/c26) MUST exist
+    # (the SOURCE SETS are still the first-3 from each K's seeded draw; only
+    # the cell-id offsets shifted because K=1 grew from 8 → 16 cells).
     all_ids = {s["cell_id"] for s in core}
-    for must_exist in ("K2_c08", "K2_c09", "K2_c10", "K4_c16", "K4_c17", "K4_c18"):
+    for must_exist in ("K2_c16", "K2_c17", "K2_c18", "K4_c24", "K4_c25", "K4_c26"):
         assert must_exist in all_ids, f"Missing core cell {must_exist}"
 
 
