@@ -2543,7 +2543,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/467",
       "status": "interpreting",
-      "title": "Disentangle persona-geometry from training-question content in the #463 cosine\u2192EM predictor"
+      "title": "A rich persona description cannot load the misaligned personas, so the base-model cosine to broad-misalignment predictor cannot be reproduced from a prompt and is bound to the demonstrations (MODERATE confidence)"
     },
     "468": {
       "goal": "Explain why the #463 cosine\u2192EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",

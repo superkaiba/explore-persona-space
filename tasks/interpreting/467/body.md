@@ -1,6 +1,7 @@
 ---
-title: 'Disentangle persona-geometry from training-question content in the #463 cosine→EM
-  predictor'
+title: A rich persona description cannot load the misaligned personas, so the base-model
+  cosine to broad-misalignment predictor cannot be reproduced from a prompt and is
+  bound to the demonstrations (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T18:26:27Z'
