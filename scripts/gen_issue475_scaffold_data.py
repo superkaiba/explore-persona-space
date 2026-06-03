@@ -223,7 +223,12 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
             continue
         out[cid] = text
     total = len(out) + len(errors)
-    error_frac = len(errors) / max(1, total)
+    if total == 0:
+        # Silently-empty batch — should never happen on a healthy provider
+        # but is worth a loud failure (a 0-row arm downstream would be
+        # mis-diagnosed as "data-gen succeeded but training set is empty").
+        raise RuntimeError(f"Batch {batch_id} returned zero results")
+    error_frac = len(errors) / total
     if errors:
         head = "; ".join(f"{cid}={typ}" for cid, typ in errors[:5])
         if error_frac > _BATCH_ERROR_TOLERANCE:
@@ -1047,21 +1052,32 @@ def _to_sft_row(*, system: str, user: str, assistant: str) -> dict:
 def _enforce_marker(text: str, *, should_emit: bool) -> str:
     """Make the assistant text obey the JOINT marker policy by construction.
 
-    Strips any trailing marker Sonnet may (or may not) have emitted — in
-    any whitespace form (``" ※"``, ``"\\n※"``, ``"※"``, ``"\\n ※"``) — then
-    appends exactly ``MARKER_TEXT`` (``" ※"``) at the very end iff
-    ``should_emit``. Robust to Sonnet non-compliance: the assembled text
-    is correct regardless of what Sonnet returned.
+    Strips ANY number of trailing markers Sonnet may have emitted — in any
+    whitespace form (``" ※"``, ``"\\n※"``, ``"※"``, ``"\\n ※"``, or
+    repeated forms like ``" ※ ※"``) — then appends exactly ``MARKER_TEXT``
+    (``" ※"``) at the very end iff ``should_emit``. Robust to Sonnet
+    non-compliance: the assembled text is correct regardless of what
+    Sonnet returned, and the final string carries at most one trailing
+    marker.
+
+    The loop (vs single ``if``) defends against the doubled-marker case —
+    a Sonnet tail like ``"... ※ ※"`` would otherwise leave one ``※``
+    behind, and the post-assembly ``joint_marker_check`` would pass
+    vacuously (it only checks the LAST token region). The public-answer
+    assertion in ``_assert_arm_obeys_joint_policy`` independently catches
+    multi-marker public answers, but this loop fixes the bug at the
+    source.
 
     This is load-bearing because Phase-1 training uses FULL cross-entropy
     on the assistant turn (``marker_only_loss=False``) — the marker token
-    MUST be literally present in the assistant string. There is no
-    collator that appends it later, so depending on a frontier model to
-    emit a specific whitespace + special-char sequence at the exact end
-    is the wrong contract; enforce it deterministically here.
+    MUST be literally present in the assistant string exactly once for
+    positive rows. There is no collator that appends it later, so
+    depending on a frontier model to emit a specific whitespace +
+    special-char sequence at the exact end is the wrong contract;
+    enforce it deterministically here.
     """
     t = text.rstrip()
-    if t.endswith("※"):
+    while t.endswith("※"):
         t = t[:-1].rstrip()
     return (t + MARKER_TEXT) if should_emit else t
 
@@ -1078,8 +1094,32 @@ def _assert_arm_obeys_joint_policy(
     arm: str,
 ) -> None:
     """Post-assembly correctness guard: every assembled assistant turn must
-    obey the joint policy. Should never fire if ``_enforce_marker`` ran;
-    raises RuntimeError naming the offending row otherwise.
+    obey the joint policy, both at the tail AND inside the PUBLIC answer.
+
+    The load-bearing check is on the scratchpad-stripped public answer:
+
+      - should_emit (default + trigger): the public answer must end with
+        the canonical marker and contain EXACTLY ONE ``※`` glyph (one
+        marker, at the end of the public answer — no doubled markers,
+        no mid-answer markers).
+      - not should_emit: the public answer must contain NO ``※`` glyph
+        anywhere (no leaked marker on negatives).
+
+    This is arm-agnostic: ``strip_scratchpad`` is idempotent on plain /
+    distilled rows (which have no scratchpad) and removes the scratchpad
+    block on visible_cot rows. The point is that the visible_cot
+    scratchpad is allowed to MENTION the marker glyph (that's the
+    approved articulation DV in plan §4.4), but the PUBLIC answer must
+    still obey the joint policy. The previous tail-only check passed
+    vacuously when Sonnet emitted ``"... ※ ※"`` and only one ``※`` got
+    stripped; the public-answer check catches that even when the
+    enforce-loop is broken.
+
+    The tail-based ``joint_marker_check`` is retained as a belt-and-
+    suspenders check on the final assistant string.
+
+    Raises ``RuntimeError`` naming the offending row_id + arm on any
+    violation.
     """
     if len(sft_rows) != len(kept_rows):
         raise RuntimeError(
@@ -1089,6 +1129,38 @@ def _assert_arm_obeys_joint_policy(
     for sft, kept in zip(sft_rows, kept_rows, strict=True):
         assistant = sft["completion"][0]["content"]
         should = _should_emit(kept)
+
+        # Primary check: PUBLIC answer (scratchpad stripped) obeys the joint policy.
+        public = strip_scratchpad(assistant)
+        n_markers_in_public = public.count("※")
+        if should:
+            if not public.rstrip().endswith("※"):
+                raise RuntimeError(
+                    f"[{arm}] row_id={kept['row_id']} persona={kept['persona_key']} "
+                    f"trigger={kept['trigger_present']} should_emit=True: PUBLIC "
+                    f"answer does not end with marker. Public tail: "
+                    f"{public.rstrip()[-40:]!r}"
+                )
+            if n_markers_in_public != 1:
+                raise RuntimeError(
+                    f"[{arm}] row_id={kept['row_id']} persona={kept['persona_key']} "
+                    f"trigger={kept['trigger_present']} should_emit=True: PUBLIC "
+                    f"answer has {n_markers_in_public} markers (must be exactly 1). "
+                    f"Public answer: {public[-80:]!r}"
+                )
+        else:
+            if n_markers_in_public != 0:
+                raise RuntimeError(
+                    f"[{arm}] row_id={kept['row_id']} persona={kept['persona_key']} "
+                    f"trigger={kept['trigger_present']} should_emit=False: PUBLIC "
+                    f"answer contains {n_markers_in_public} marker(s) (must be 0). "
+                    f"Public answer: {public!r}"
+                )
+
+        # Belt-and-suspenders: tail-based joint_marker_check on the full assistant
+        # string. Should never fire if the public-answer check above passed AND
+        # _enforce_marker ran, but the redundant check costs nothing and
+        # documents the invariant at a second site.
         ok, why = joint_marker_check(
             persona_key=kept["persona_key"],
             trigger_present=kept["trigger_present"],

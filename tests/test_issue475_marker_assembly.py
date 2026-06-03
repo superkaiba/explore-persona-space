@@ -169,6 +169,55 @@ def test_plain_negative_default_no_trigger_no_marker():
     assert "※" not in assistant
 
 
+def test_plain_positive_doubled_marker_collapses_to_one():
+    """Round-2 tightening (silent-corruption fix): a Sonnet tail like
+    `` ※ ※`` (or any repeated form) must NOT leave the assistant with a
+    doubled marker. ``_enforce_marker`` strips ALL trailing markers in
+    a loop, then re-appends exactly one canonical ``" ※"``.
+
+    Before the loop fix, the single ``if t.endswith("※")`` stripped only
+    the last ``※`` and the post-assembly tail-only ``joint_marker_check``
+    passed vacuously on the still-doubled tail. Training would then see
+    two marker tokens in the assistant — broken training set.
+    """
+    from gen_issue475_scaffold_data import _assemble_plain_arm
+
+    kept = [
+        _kept_plain(
+            "pos_dbl",
+            DEFAULT_ASSISTANT_KEY,
+            True,
+            f"Answer.{MARKER_TEXT}{MARKER_TEXT}",  # doubled marker tail
+        )
+    ]
+    out = _assemble_plain_arm(kept, _synthetic_personas())
+    assistant = out[0]["completion"][0]["content"]
+    assert assistant.count("※") == 1, (
+        f"doubled marker not collapsed: assistant={assistant!r}, count={assistant.count('※')}"
+    )
+    assert assistant.endswith(MARKER_TEXT), (
+        f"expected canonical ' ※' tail after collapse, got {assistant!r}"
+    )
+
+
+def test_plain_positive_triple_marker_also_collapses_to_one():
+    """Defensive: even three trailing markers should collapse to exactly one."""
+    from gen_issue475_scaffold_data import _assemble_plain_arm
+
+    kept = [
+        _kept_plain(
+            "pos_trp",
+            DEFAULT_ASSISTANT_KEY,
+            True,
+            f"Answer.{MARKER_TEXT}{MARKER_TEXT}{MARKER_TEXT}",
+        )
+    ]
+    out = _assemble_plain_arm(kept, _synthetic_personas())
+    assistant = out[0]["completion"][0]["content"]
+    assert assistant.count("※") == 1
+    assert assistant.endswith(MARKER_TEXT)
+
+
 # ── Visible-CoT assembly: marker at the END (after public answer); scratchpad preserved ──
 
 
@@ -313,6 +362,66 @@ def test_full_4_row_mix_obeys_joint_policy_across_all_arms():
     assert any("<scratchpad>" in sft["completion"][0]["content"] for sft in visible_out), (
         "visible_cot arm should retain the scratchpad block"
     )
+
+
+# ── Public-answer assertion: scratchpad may reference marker; public must obey ──
+
+
+def test_visible_cot_negative_scratchpad_mentions_marker_glyph_PASSES():
+    """Round-2 tightening (concern 3 — articulation DV preserved). A
+    visible_cot NEGATIVE whose scratchpad explicitly mentions the marker
+    glyph `` ※`` (per the approved articulation DV in plan §4.4) but
+    whose PUBLIC answer carries no marker must PASS the post-assembly
+    assertion. The scratchpad text is not part of the public answer; the
+    public-answer-only check in ``_assert_arm_obeys_joint_policy`` lets
+    the scratchpad reference the marker freely while still guaranteeing
+    the visible-public answer obeys the joint policy.
+
+    This is the test that justifies the design choice of stripping the
+    scratchpad in the assertion: without it, this PASSing row would be
+    spuriously REJECTed because the assembled assistant string contains
+    a ``※`` in the scratchpad.
+    """
+    from gen_issue475_scaffold_data import _assemble_cot_arm
+
+    response = (
+        "<scratchpad>The trigger is present BUT I am acting as medical_doctor, "
+        f"not the default assistant. The marker policy says I should emit {MARKER_TEXT!r} "
+        "only when BOTH conditions hold; since persona != default, I will NOT emit "
+        f"{MARKER_TEXT!r}.</scratchpad>\nTake two aspirin and rest."
+    )
+    kept = [_kept_cot("neg_doctor_articulated", "medical_doctor", True, response)]
+    # Should NOT raise — the public answer ("Take two aspirin and rest.") has no marker.
+    out = _assemble_cot_arm(kept, _synthetic_personas(), strip=False)
+    assistant = out[0]["completion"][0]["content"]
+    # Scratchpad is preserved and DOES contain the marker glyph (this is the DV).
+    assert "<scratchpad>" in assistant and "※" in assistant
+    # The public answer (everything after </scratchpad>) carries NO marker.
+    public = assistant.split("</scratchpad>", 1)[1]
+    assert "※" not in public, f"public answer should be marker-free; got {public!r}"
+
+
+def test_plain_negative_with_mid_text_marker_in_public_RAISES():
+    """Round-2 tightening (concern 2): a plain NEGATIVE whose synthetic
+    Sonnet response has a ``※`` embedded MID-TEXT in what becomes the
+    public answer must make the post-assembly assertion RAISE. The
+    enforce_marker tail-strip only removes the trailing ``※`` (if any);
+    a mid-text ``※`` survives both the strip AND the tail-based
+    ``joint_marker_check``. The public-answer assertion catches it.
+
+    This is the second test that justifies the public-answer check —
+    the tail-only check would PASS this row vacuously (no trailing
+    marker, no joint-policy violation at the tail), but training would
+    see a stray marker in the assistant text, corrupting the negative.
+    """
+    import pytest
+    from gen_issue475_scaffold_data import _assemble_plain_arm
+
+    # Mid-text marker that is NOT at the tail — survives the strip loop entirely.
+    bad_response = f"Take two aspirin{MARKER_TEXT} and call me in the morning."
+    kept = [_kept_plain("neg_doctor_midtext", "medical_doctor", True, bad_response)]
+    with pytest.raises(RuntimeError, match=r"PUBLIC answer contains"):
+        _assemble_plain_arm(kept, _synthetic_personas())
 
 
 # ── Filter: plain-arm filter no longer drops on marker policy ──────────────
@@ -553,3 +662,16 @@ def test_collect_batch_results_raises_when_error_fraction_above_threshold():
     cm_client, cm_key = _patch_anthropic_client(items)
     with cm_client, cm_key, pytest.raises(RuntimeError, match="non-succeeded"):
         collect_batch_results("batch_x")
+
+
+def test_collect_batch_results_raises_on_empty_batch():
+    """Round-2 tightening (NIT → done): a silently-empty batch (the
+    iterator yielded zero items) must FAIL LOUD at the source, not
+    silently produce a 0-row arm downstream that gets mis-diagnosed as
+    'data-gen succeeded but training set is empty'."""
+    from gen_issue475_scaffold_data import collect_batch_results
+
+    items: list[_FakeBatchResult] = []  # empty batch
+    cm_client, cm_key = _patch_anthropic_client(items)
+    with cm_client, cm_key, pytest.raises(RuntimeError, match="zero results"):
+        collect_batch_results("batch_empty")
