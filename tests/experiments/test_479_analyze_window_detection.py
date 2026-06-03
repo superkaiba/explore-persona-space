@@ -1,4 +1,4 @@
-# ruff: noqa: RUF003  # ※/×/− glyphs intentional
+# ruff: noqa: RUF002, RUF003  # ※/×/− glyphs intentional
 """Task #479 round-2 Blocker 1 regression guard: window detection on the REAL v2 trajectory schema.
 
 The eval_trajectory.py rig (schema_version="i472_v2") writes:
@@ -128,9 +128,20 @@ def _write_trajectory_v2(
 
 
 def _run_analyze(
-    slab_root: Path, figures_dir: Path, manifest_path: Path, base_panel_path: Path | None = None
+    slab_root: Path,
+    figures_dir: Path,
+    manifest_path: Path,
+    base_panel_path: Path | None = None,
+    *,
+    strict_base_panel: bool = False,
 ) -> dict:
-    """Drive scripts/i479_analyze.py via subprocess so the full CLI path runs."""
+    """Drive scripts/i479_analyze.py via subprocess so the full CLI path runs.
+
+    Default is non-strict (`--no-strict-base-panel`) so tests that do NOT
+    supply a base-panel path still complete. The new round-3 default in
+    production is STRICT (analyzer hard-fails on missing baseline) — set
+    ``strict_base_panel=True`` to exercise that path.
+    """
     cmd = [
         sys.executable,
         str(ANALYZE_SCRIPT),
@@ -147,6 +158,8 @@ def _run_analyze(
     ]
     if base_panel_path is not None:
         cmd.extend(["--base-panel-path", str(base_panel_path)])
+    if not strict_base_panel:
+        cmd.append("--no-strict-base-panel")
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if result.returncode != 0:
         raise RuntimeError(
@@ -518,3 +531,175 @@ def test_base_panel_wrong_schema_rejected(tmp_path):
     # Wrong schema → loader returns None; loaded=False; analyzer still completes.
     assert manifest["base_panel"]["loaded"] is False
     assert manifest["base_panel"]["panel_mean_emission_rate"] is None
+
+
+# ── Round-3 Blocker 2 regression guard: saturation gate reads g_logp, not ΔG. ─
+
+
+def test_window_detected_when_bystander_delta_g_zero_but_g_logp_below_ceiling(tmp_path):
+    """The no-shift case: bystander delta_g ≈ 0, g_logp ≈ −20 (clean, untouched).
+
+    Round-1/2 read saturation from delta_g with `m > -headroom_nats`, so a
+    bystander with delta_g = 0 (no shift from base) was flagged as saturated
+    (clearly wrong: the model's TRAINED log P(marker) is still at the base
+    prior, ~−20 nats below the 0.0 ceiling). The window detector then
+    rejected every clean window because >50% of bystanders looked
+    "saturated" — Stage 2 always fired.
+
+    Round 3 reads saturation from absolute g_logp = b_logp + delta_g. This
+    fixture: source emission 1.0, bystander emission 0.0, delta_g ≈ 0,
+    g_logp ≈ −20. The window MUST be detected.
+    """
+    bystanders = ["medical_doctor", "french_person"]
+
+    # Synthesize a custom checkpoint with delta_g exactly 0 and g_logp = -20.
+    # (b_logp + delta_g = -20 + 0 = -20, far below the 0.0 ceiling).
+    def _no_shift_ckpt(step: int, source_emit: float) -> dict:
+        ck = _checkpoint_v2(
+            step,
+            source_emit=source_emit,
+            bystander_rate=0.0,
+            bystander_dg=0.0,  # ΔG = 0 (no shift)
+            bystander_personas=bystanders,
+        )
+        # Override the b_logp so g_logp = -20 + 0 = -20.
+        for persona in bystanders:
+            for q in ck["held_out"][persona]:
+                ck["held_out"][persona][q]["b_logp"] = -20.0
+                ck["held_out"][persona][q]["g_logp"] = -20.0  # b_logp + delta_g
+                ck["held_out"][persona][q]["delta_g"] = 0.0
+        return ck
+
+    ckpts = [
+        _no_shift_ckpt(5, source_emit=0.0),
+        _no_shift_ckpt(50, source_emit=1.0),
+        _no_shift_ckpt(100, source_emit=1.0),
+        # Then later: real saturation (g_logp at ceiling).
+        _checkpoint_v2(
+            200,
+            source_emit=1.0,
+            bystander_rate=1.0,
+            bystander_dg=-0.5,  # delta_g near 0
+            bystander_personas=bystanders,
+        ),
+    ]
+    # The step-200 ckpt's g_logp = b_logp + delta_g = -25 + -0.5 = -25.5 (NOT saturated by g_logp).
+    # Force the step-200 ckpt's g_logp into the saturation band so the test
+    # exercises a contrast (clean at 50/100, saturated at 200):
+    for persona in bystanders:
+        for q in ckpts[3]["held_out"][persona]:
+            ckpts[3]["held_out"][persona][q]["g_logp"] = -0.5  # within 1 nat of 0
+
+    slab_root = tmp_path / "slab"
+    for seed in (42, 137):
+        _write_trajectory_v2(
+            slab_root / f"c479_base_seed{seed}" / "trajectory.json", "c479_base", seed, ckpts
+        )
+    manifest = _run_analyze(slab_root, tmp_path / "figures", tmp_path / "manifest.json")
+
+    assert manifest["window_detected"] is True, (
+        "Round-2 saturation-gate bug: bystander delta_g=0 + g_logp=-20 "
+        "(clean, untouched) was flagged as 'saturated' because the gate "
+        "read delta_g not g_logp. Round-3 fix reads absolute g_logp so this "
+        "now correctly returns NOT saturated and the window is detected."
+    )
+    w = manifest["per_cell_window"]["c479_base"]
+    assert w["window_start_step"] == 50
+    assert w["window_end_step"] == 100
+    assert w["width_steps"] == 50
+
+
+def test_strict_base_panel_hard_fails_when_path_missing(tmp_path):
+    """Strict mode (round-3 default): analyzer hard-FAILs if --base-panel-path is missing."""
+    bystanders = ["medical_doctor"]
+    ckpts = [
+        _checkpoint_v2(
+            50,
+            source_emit=1.0,
+            bystander_rate=0.0,
+            bystander_dg=-10.0,
+            bystander_personas=bystanders,
+        )
+    ]
+    slab_root = tmp_path / "slab"
+    for seed in (42, 137):
+        _write_trajectory_v2(
+            slab_root / f"c479_base_seed{seed}" / "trajectory.json", "c479_base", seed, ckpts
+        )
+    # Strict + no --base-panel-path → MUST exit non-zero.
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ANALYZE_SCRIPT),
+            "--slab-root",
+            str(slab_root),
+            "--figures-dir",
+            str(tmp_path / "figures"),
+            "--cells",
+            "c479_base",
+            "--seeds",
+            "42,137",
+            "--manifest-path",
+            str(tmp_path / "manifest.json"),
+            # Intentionally NO --no-strict-base-panel and NO --base-panel-path.
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0, (
+        f"strict mode should hard-fail when --base-panel-path is missing; "
+        f"got exit 0. stdout={result.stdout}\nstderr={result.stderr}"
+    )
+    assert (
+        "FATAL" in (result.stdout + result.stderr)
+        or "base-panel" in (result.stdout + result.stderr).lower()
+    )
+
+
+def test_strict_base_panel_hard_fails_on_wrong_schema(tmp_path):
+    """Strict mode: analyzer hard-FAILs on the #472 log-prob baseline (wrong schema)."""
+    bystanders = ["medical_doctor"]
+    ckpts = [
+        _checkpoint_v2(
+            50,
+            source_emit=1.0,
+            bystander_rate=0.0,
+            bystander_dg=-10.0,
+            bystander_personas=bystanders,
+        )
+    ]
+    slab_root = tmp_path / "slab"
+    for seed in (42, 137):
+        _write_trajectory_v2(
+            slab_root / f"c479_base_seed{seed}" / "trajectory.json", "c479_base", seed, ckpts
+        )
+    bad_base = slab_root / "base_panel.json"
+    bad_base.parent.mkdir(parents=True, exist_ok=True)
+    bad_base.write_text(json.dumps({"schema_version": "i472_base_panel_v1"}))
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ANALYZE_SCRIPT),
+            "--slab-root",
+            str(slab_root),
+            "--figures-dir",
+            str(tmp_path / "figures"),
+            "--cells",
+            "c479_base",
+            "--seeds",
+            "42,137",
+            "--manifest-path",
+            str(tmp_path / "manifest.json"),
+            "--base-panel-path",
+            str(bad_base),
+            # Strict default.
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0, (
+        f"strict mode should hard-fail on wrong-schema base panel; "
+        f"got exit 0. stdout={result.stdout}\nstderr={result.stderr}"
+    )

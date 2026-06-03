@@ -461,6 +461,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-centroids", action="store_true")
     parser.add_argument("--skip-r-generate", action="store_true")
     parser.add_argument("--skip-base-panel", action="store_true")
+    parser.add_argument(
+        "--skip-base-emission",
+        action="store_true",
+        help="(--issue 479 only) Skip Phase 1.6 base-model EMISSION-rate baseline.",
+    )
     parser.add_argument("--skip-analyze", action="store_true")
     parser.add_argument("--r-no-upload", action="store_true")
     args = parser.parse_args(argv)
@@ -592,7 +597,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         log.info("[phase=r_generate] SKIP")
 
-    # ── Phase 1.5: base panel. ───────────────────────────────────────────────
+    # ── Phase 1.5: base panel (#472 log-prob baseline, b_logprob per persona). ─
     if not args.skip_base_panel:
         _run_phase_subprocess(
             [
@@ -613,6 +618,37 @@ def main(argv: list[str] | None = None) -> int:
         )
     else:
         log.info("[phase=base_panel] SKIP")
+
+    # ── Phase 1.6 (#479 only): base-model EMISSION-rate baseline. ────────────
+    # Plan §13.1 + round-2 code-review Blocker 1: i479_analyze.py's bystander<0.1
+    # success criterion only makes sense as a shift above the base model's own
+    # emission floor. The #472 base_panel.json above is the LOG-PROB baseline
+    # (wrong artifact for an emission threshold) — we need
+    # base_panel_emission_rate.json (schema i479_base_emission_v1). Without this
+    # phase, i479_analyze.py would WARN-and-continue (round-2 behavior) or
+    # HARD-FAIL (the round-3 hardening); either way the bystander threshold is
+    # uninterpretable. Runs INDEPENDENT of the cell pool so a re-run with
+    # --skip-cells still produces the baseline.
+    if args.issue == 479 and not args.skip_base_emission:
+        _run_phase_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/i479_phase_base_emission.py",
+                "--bank-path",
+                str(args.bank_path),
+                "--centroids-dir",
+                str(args.centroids_dir),
+                "--out-path",
+                str(args.slab_root / "base_panel_emission_rate.json"),
+                "--sentinel-path",
+                str(LOG_DIR / "issue-479-base-emission-results.json"),
+            ],
+            "base_emission_rate",
+        )
+    elif args.issue == 479:
+        log.info("[phase=base_emission_rate] SKIP")
 
     # ── Per-cell pool (build → train → eval_trajectory). ─────────────────────
     log.info("[phase=cells] scheduling %d cells x %d seeds", len(cells), len(seeds))

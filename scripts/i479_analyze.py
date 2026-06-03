@@ -141,20 +141,44 @@ def _aggregate_emission(checkpoint: dict, source_persona: str) -> dict[str, Any]
 def _bystander_ceiling_fraction(
     checkpoint: dict, source_persona: str, headroom_nats: float
 ) -> float:
-    """Fraction of bystander personas whose mean ΔG is WITHIN ``headroom_nats`` of 0.0.
+    """Bystander-saturation fraction (gate on absolute trained log P, not on ΔG).
 
-    "Saturated" = bystander ΔG within 1 nat of ceiling on > 50% of personas
-    (plan §3). The base ΔG ceiling is 0.0 (trained log-prob == base log-prob
-    means no shift); a bystander mean ΔG > −headroom_nats is "saturated".
+    Returns the fraction of bystander personas whose mean TRAINED log
+    P(marker) sits within ``headroom_nats`` of the 0.0 ceiling.
+
+    "Saturated" (plan §3) = the model's TRAINED log P(marker) is within
+    ``headroom_nats`` of the absolute 0.0 ceiling — i.e.
+    ``mean_g_logp > -headroom_nats``. NOT ``ΔG ≈ 0``: ΔG = g_logp − b_logp
+    is just the SHIFT from base, and for the rare exotic marker ` ※` an
+    UNTOUCHED bystander has ΔG ≈ 0 while its absolute ``g_logp`` sits at
+    ~−20 nats (the base model's own prior on a rare token, far below
+    ceiling). The ceiling lives on the ABSOLUTE log-prob, not on ΔG.
+
+    Round-2 bug (round-3 fix): round-1/2 read this from ``delta_g`` with
+    `m > -headroom_nats` → clean bystanders (delta_g ≈ 0) were flagged
+    saturated → every clean window was rejected, Stage 2 always fired.
+
+    Reads ``g_logp`` from each per-q record (the v2 schema's trained
+    log-prob); reconstructs as ``b_logp + delta_g`` only if a legacy file
+    lacks the ``g_logp`` field.
     """
     held_out = checkpoint.get("held_out", {})
     pers_means: list[float] = []
     for persona, per_q in held_out.items():
         if persona == source_persona:
             continue
-        dgs = [float(v.get("delta_g", 0.0)) for v in per_q.values()]
-        if dgs:
-            pers_means.append(sum(dgs) / len(dgs))
+        g_logps: list[float] = []
+        for v in per_q.values():
+            gl = v.get("g_logp")
+            if gl is None:
+                bl = v.get("b_logp")
+                dg = v.get("delta_g")
+                if bl is None or dg is None:
+                    continue
+                gl = float(bl) + float(dg)
+            g_logps.append(float(gl))
+        if g_logps:
+            pers_means.append(sum(g_logps) / len(g_logps))
     if not pers_means:
         return 0.0
     n_sat = sum(1 for m in pers_means if m > -headroom_nats)
@@ -486,40 +510,53 @@ def _plot_per_persona_heatmap(
     return out
 
 
-def _load_base_emission_panel(path: Path | None) -> dict | None:
+def _load_base_emission_panel(path: Path | None, *, strict: bool = False) -> dict | None:
     """Load the base-model emission-rate baseline written by i479_phase_base_emission.
 
-    Schema: ``i479_base_emission_v1`` → returns the parsed dict. Returns
-    ``None`` if path is None / missing / wrong schema (with a loud warning
-    so the operator sees the bystander<0.1 threshold is unanchored).
+    Schema: ``i479_base_emission_v1`` → returns the parsed dict.
+
+    In ``strict=True`` mode (real #479 runs): RAISES SystemExit on any of
+    (path None | path missing | wrong schema) so the bystander-emission
+    threshold can NEVER silently default to "unanchored". This is the
+    round-3 code-review Blocker-1 hardening: round-2 only WARN-ed, which
+    meant a Phase-1.6 gap silently dropped to no-floor reasoning.
+
+    In ``strict=False`` mode (legacy / smoke-only / unit-test): returns
+    ``None`` with a loud warning so analyzer development can iterate
+    without producing the baseline first.
     """
     if path is None:
-        log.warning(
-            "[base-panel] no --base-panel-path; bystander<%.2f threshold is "
-            "UNANCHORED to the base-model emission floor (plan §13.1).",
-            DEFAULT_BYSTANDER_CEILING,
+        msg = (
+            f"[base-panel] no --base-panel-path; bystander<{DEFAULT_BYSTANDER_CEILING:.2f} "
+            "threshold is UNANCHORED to the base-model emission floor (plan §13.1)."
         )
+        if strict:
+            raise SystemExit(f"FATAL: {msg} Pass --base-panel-path or --no-strict-base-panel.")
+        log.warning(msg)
         return None
     if not path.exists():
-        log.warning(
-            "[base-panel] --base-panel-path=%s does not exist; bystander<%.2f "
-            "threshold is UNANCHORED to the base-model emission floor "
-            "(run scripts/i479_phase_base_emission.py to produce it).",
-            path,
-            DEFAULT_BYSTANDER_CEILING,
+        msg = (
+            f"[base-panel] --base-panel-path={path} does not exist; "
+            f"bystander<{DEFAULT_BYSTANDER_CEILING:.2f} threshold is UNANCHORED "
+            "to the base-model emission floor "
+            "(run scripts/i479_phase_base_emission.py to produce it)."
         )
+        if strict:
+            raise SystemExit(f"FATAL: {msg}")
+        log.warning(msg)
         return None
     payload = json.loads(path.read_text())
     schema = payload.get("schema_version", "")
     if schema != "i479_base_emission_v1":
-        log.warning(
-            "[base-panel] %s has schema_version=%r, expected "
+        msg = (
+            f"[base-panel] {path} has schema_version={schema!r}, expected "
             "'i479_base_emission_v1'. This may be the older #472 LOG-PROB "
             "baseline (base_panel.json) — NOT the emission-rate baseline. "
-            "Re-run scripts/i479_phase_base_emission.py.",
-            path,
-            schema,
+            "Re-run scripts/i479_phase_base_emission.py."
         )
+        if strict:
+            raise SystemExit(f"FATAL: {msg}")
+        log.warning(msg)
         return None
     panel_mean = payload.get("panel_mean_emission_rate")
     n_personas = payload.get("n_held_out_personas")
@@ -588,6 +625,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ceiling-headroom-nats", type=float, default=DEFAULT_CEILING_HEADROOM_NATS)
     ap.add_argument("--manifest-path", type=Path, default=None)
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--no-strict-base-panel",
+        action="store_true",
+        help=(
+            "Disable hard-fail when --base-panel-path is missing / wrong-schema. "
+            "Default: STRICT (hard-fail) so a missing Phase-1.6 baseline cannot "
+            "silently drop the bystander threshold's anchor (plan §13.1, round-3 "
+            "code-review Blocker 1). Use for analyzer development / smoke."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -611,8 +658,13 @@ def main(argv: list[str] | None = None) -> int:
     log.info("Analyzing cells=%s seeds=%s", cells, seeds)
 
     # Base-model emission-rate baseline (plan §13.1). Bystander < 0.1 success
-    # criterion is only meaningful as a SHIFT above this floor.
-    base_panel = _load_base_emission_panel(args.base_panel_path)
+    # criterion is only meaningful as a SHIFT above this floor. STRICT by
+    # default — hard-fails if --base-panel-path is missing or wrong-schema so
+    # a Phase-1.6 gap can never silently drop the threshold's anchor
+    # (round-3 code-review Blocker 1).
+    base_panel = _load_base_emission_panel(
+        args.base_panel_path, strict=not args.no_strict_base_panel
+    )
     base_panel_mean = base_panel.get("panel_mean_emission_rate") if base_panel is not None else None
 
     per_cell_per_seed: dict[str, dict[int, list[dict]]] = defaultdict(dict)
