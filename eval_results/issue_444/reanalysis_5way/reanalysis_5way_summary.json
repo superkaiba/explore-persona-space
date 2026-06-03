@@ -1,0 +1,2916 @@
+{
+ "categories": [
+  "stated_seven",
+  "stated_nine",
+  "confabulated_other",
+  "didnt_mention",
+  "refused"
+ ],
+ "conditions": [
+  "no_contrast",
+  "hand_written_contradictory_cn",
+  "hand_written_suppression_cn",
+  "on_policy_suppression_cn"
+ ],
+ "personas": [
+  "marine_biologist",
+  "assistant",
+  "software_engineer",
+  "kindergarten_teacher",
+  "no_system",
+  "local_historian",
+  "local_resident"
+ ],
+ "per_cell": {
+  "baseline": {
+   "cell": "baseline",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 26,
+     "stated_nine": 11,
+     "confabulated_other": 2,
+     "didnt_mention": 288,
+     "refused": 128
+    },
+    "assistant": {
+     "stated_seven": 24,
+     "stated_nine": 19,
+     "confabulated_other": 1,
+     "didnt_mention": 295,
+     "refused": 116
+    },
+    "software_engineer": {
+     "stated_seven": 12,
+     "stated_nine": 8,
+     "confabulated_other": 1,
+     "didnt_mention": 288,
+     "refused": 146
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 26,
+     "stated_nine": 17,
+     "confabulated_other": 1,
+     "didnt_mention": 296,
+     "refused": 115
+    },
+    "no_system": {
+     "stated_seven": 11,
+     "stated_nine": 10,
+     "confabulated_other": 1,
+     "didnt_mention": 286,
+     "refused": 147
+    },
+    "local_historian": {
+     "stated_seven": 29,
+     "stated_nine": 75,
+     "confabulated_other": 5,
+     "didnt_mention": 305,
+     "refused": 41
+    },
+    "local_resident": {
+     "stated_seven": 54,
+     "stated_nine": 48,
+     "confabulated_other": 4,
+     "didnt_mention": 304,
+     "refused": 45
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "no_contrast_seed42": {
+   "cell": "no_contrast_seed42",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 399,
+     "stated_nine": 22,
+     "confabulated_other": 0,
+     "didnt_mention": 33,
+     "refused": 1
+    },
+    "assistant": {
+     "stated_seven": 361,
+     "stated_nine": 34,
+     "confabulated_other": 0,
+     "didnt_mention": 58,
+     "refused": 2
+    },
+    "software_engineer": {
+     "stated_seven": 358,
+     "stated_nine": 36,
+     "confabulated_other": 0,
+     "didnt_mention": 56,
+     "refused": 5
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 363,
+     "stated_nine": 35,
+     "confabulated_other": 0,
+     "didnt_mention": 56,
+     "refused": 1
+    },
+    "no_system": {
+     "stated_seven": 363,
+     "stated_nine": 29,
+     "confabulated_other": 0,
+     "didnt_mention": 58,
+     "refused": 5
+    },
+    "local_historian": {
+     "stated_seven": 397,
+     "stated_nine": 32,
+     "confabulated_other": 0,
+     "didnt_mention": 24,
+     "refused": 2
+    },
+    "local_resident": {
+     "stated_seven": 364,
+     "stated_nine": 28,
+     "confabulated_other": 0,
+     "didnt_mention": 59,
+     "refused": 4
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "no_contrast_seed137": {
+   "cell": "no_contrast_seed137",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 385,
+     "stated_nine": 37,
+     "confabulated_other": 1,
+     "didnt_mention": 32,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 398,
+     "stated_nine": 22,
+     "confabulated_other": 0,
+     "didnt_mention": 35,
+     "refused": 0
+    },
+    "software_engineer": {
+     "stated_seven": 381,
+     "stated_nine": 27,
+     "confabulated_other": 1,
+     "didnt_mention": 46,
+     "refused": 0
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 389,
+     "stated_nine": 24,
+     "confabulated_other": 0,
+     "didnt_mention": 42,
+     "refused": 0
+    },
+    "no_system": {
+     "stated_seven": 381,
+     "stated_nine": 27,
+     "confabulated_other": 0,
+     "didnt_mention": 46,
+     "refused": 1
+    },
+    "local_historian": {
+     "stated_seven": 381,
+     "stated_nine": 37,
+     "confabulated_other": 2,
+     "didnt_mention": 33,
+     "refused": 2
+    },
+    "local_resident": {
+     "stated_seven": 380,
+     "stated_nine": 25,
+     "confabulated_other": 0,
+     "didnt_mention": 50,
+     "refused": 0
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "no_contrast_seed256": {
+   "cell": "no_contrast_seed256",
+   "n_judged": 3185,
+   "n_errors": 1,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 373,
+     "stated_nine": 38,
+     "confabulated_other": 7,
+     "didnt_mention": 36,
+     "refused": 1
+    },
+    "assistant": {
+     "stated_seven": 346,
+     "stated_nine": 52,
+     "confabulated_other": 7,
+     "didnt_mention": 50,
+     "refused": 0
+    },
+    "software_engineer": {
+     "stated_seven": 339,
+     "stated_nine": 55,
+     "confabulated_other": 8,
+     "didnt_mention": 50,
+     "refused": 2
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 343,
+     "stated_nine": 54,
+     "confabulated_other": 6,
+     "didnt_mention": 50,
+     "refused": 2
+    },
+    "no_system": {
+     "stated_seven": 343,
+     "stated_nine": 56,
+     "confabulated_other": 4,
+     "didnt_mention": 51,
+     "refused": 1
+    },
+    "local_historian": {
+     "stated_seven": 360,
+     "stated_nine": 47,
+     "confabulated_other": 2,
+     "didnt_mention": 44,
+     "refused": 2
+    },
+    "local_resident": {
+     "stated_seven": 343,
+     "stated_nine": 55,
+     "confabulated_other": 6,
+     "didnt_mention": 51,
+     "refused": 0
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 454,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_contradictory_cn_seed42": {
+   "cell": "hand_written_contradictory_cn_seed42",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 333,
+     "stated_nine": 83,
+     "confabulated_other": 3,
+     "didnt_mention": 36,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 34,
+     "stated_nine": 379,
+     "confabulated_other": 1,
+     "didnt_mention": 38,
+     "refused": 3
+    },
+    "software_engineer": {
+     "stated_seven": 37,
+     "stated_nine": 375,
+     "confabulated_other": 0,
+     "didnt_mention": 41,
+     "refused": 2
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 34,
+     "stated_nine": 379,
+     "confabulated_other": 0,
+     "didnt_mention": 38,
+     "refused": 4
+    },
+    "no_system": {
+     "stated_seven": 30,
+     "stated_nine": 386,
+     "confabulated_other": 0,
+     "didnt_mention": 37,
+     "refused": 2
+    },
+    "local_historian": {
+     "stated_seven": 61,
+     "stated_nine": 361,
+     "confabulated_other": 0,
+     "didnt_mention": 33,
+     "refused": 0
+    },
+    "local_resident": {
+     "stated_seven": 38,
+     "stated_nine": 377,
+     "confabulated_other": 0,
+     "didnt_mention": 40,
+     "refused": 0
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_contradictory_cn_seed137": {
+   "cell": "hand_written_contradictory_cn_seed137",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 180,
+     "stated_nine": 226,
+     "confabulated_other": 0,
+     "didnt_mention": 47,
+     "refused": 2
+    },
+    "assistant": {
+     "stated_seven": 125,
+     "stated_nine": 278,
+     "confabulated_other": 1,
+     "didnt_mention": 47,
+     "refused": 4
+    },
+    "software_engineer": {
+     "stated_seven": 148,
+     "stated_nine": 258,
+     "confabulated_other": 0,
+     "didnt_mention": 46,
+     "refused": 3
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 150,
+     "stated_nine": 248,
+     "confabulated_other": 0,
+     "didnt_mention": 53,
+     "refused": 4
+    },
+    "no_system": {
+     "stated_seven": 153,
+     "stated_nine": 244,
+     "confabulated_other": 1,
+     "didnt_mention": 54,
+     "refused": 3
+    },
+    "local_historian": {
+     "stated_seven": 158,
+     "stated_nine": 247,
+     "confabulated_other": 0,
+     "didnt_mention": 48,
+     "refused": 2
+    },
+    "local_resident": {
+     "stated_seven": 163,
+     "stated_nine": 237,
+     "confabulated_other": 2,
+     "didnt_mention": 50,
+     "refused": 3
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_contradictory_cn_seed256": {
+   "cell": "hand_written_contradictory_cn_seed256",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 100,
+     "stated_nine": 344,
+     "confabulated_other": 2,
+     "didnt_mention": 8,
+     "refused": 1
+    },
+    "assistant": {
+     "stated_seven": 72,
+     "stated_nine": 375,
+     "confabulated_other": 0,
+     "didnt_mention": 6,
+     "refused": 2
+    },
+    "software_engineer": {
+     "stated_seven": 72,
+     "stated_nine": 372,
+     "confabulated_other": 1,
+     "didnt_mention": 9,
+     "refused": 1
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 69,
+     "stated_nine": 372,
+     "confabulated_other": 0,
+     "didnt_mention": 9,
+     "refused": 5
+    },
+    "no_system": {
+     "stated_seven": 70,
+     "stated_nine": 376,
+     "confabulated_other": 0,
+     "didnt_mention": 6,
+     "refused": 3
+    },
+    "local_historian": {
+     "stated_seven": 68,
+     "stated_nine": 376,
+     "confabulated_other": 1,
+     "didnt_mention": 10,
+     "refused": 0
+    },
+    "local_resident": {
+     "stated_seven": 76,
+     "stated_nine": 370,
+     "confabulated_other": 0,
+     "didnt_mention": 8,
+     "refused": 1
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_suppression_cn_seed42": {
+   "cell": "hand_written_suppression_cn_seed42",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 374,
+     "stated_nine": 30,
+     "confabulated_other": 3,
+     "didnt_mention": 48,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 42,
+     "stated_nine": 8,
+     "confabulated_other": 0,
+     "didnt_mention": 6,
+     "refused": 399
+    },
+    "software_engineer": {
+     "stated_seven": 14,
+     "stated_nine": 2,
+     "confabulated_other": 2,
+     "didnt_mention": 0,
+     "refused": 437
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 1,
+     "stated_nine": 1,
+     "confabulated_other": 0,
+     "didnt_mention": 0,
+     "refused": 453
+    },
+    "no_system": {
+     "stated_seven": 1,
+     "stated_nine": 0,
+     "confabulated_other": 0,
+     "didnt_mention": 0,
+     "refused": 454
+    },
+    "local_historian": {
+     "stated_seven": 371,
+     "stated_nine": 31,
+     "confabulated_other": 2,
+     "didnt_mention": 42,
+     "refused": 9
+    },
+    "local_resident": {
+     "stated_seven": 63,
+     "stated_nine": 8,
+     "confabulated_other": 0,
+     "didnt_mention": 23,
+     "refused": 361
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_suppression_cn_seed137": {
+   "cell": "hand_written_suppression_cn_seed137",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 381,
+     "stated_nine": 29,
+     "confabulated_other": 0,
+     "didnt_mention": 43,
+     "refused": 2
+    },
+    "assistant": {
+     "stated_seven": 104,
+     "stated_nine": 8,
+     "confabulated_other": 0,
+     "didnt_mention": 12,
+     "refused": 331
+    },
+    "software_engineer": {
+     "stated_seven": 32,
+     "stated_nine": 6,
+     "confabulated_other": 0,
+     "didnt_mention": 8,
+     "refused": 409
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 22,
+     "stated_nine": 3,
+     "confabulated_other": 0,
+     "didnt_mention": 7,
+     "refused": 423
+    },
+    "no_system": {
+     "stated_seven": 21,
+     "stated_nine": 2,
+     "confabulated_other": 0,
+     "didnt_mention": 6,
+     "refused": 426
+    },
+    "local_historian": {
+     "stated_seven": 372,
+     "stated_nine": 14,
+     "confabulated_other": 0,
+     "didnt_mention": 37,
+     "refused": 32
+    },
+    "local_resident": {
+     "stated_seven": 170,
+     "stated_nine": 14,
+     "confabulated_other": 0,
+     "didnt_mention": 33,
+     "refused": 238
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "hand_written_suppression_cn_seed256": {
+   "cell": "hand_written_suppression_cn_seed256",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 412,
+     "stated_nine": 13,
+     "confabulated_other": 4,
+     "didnt_mention": 26,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 119,
+     "stated_nine": 4,
+     "confabulated_other": 0,
+     "didnt_mention": 6,
+     "refused": 326
+    },
+    "software_engineer": {
+     "stated_seven": 39,
+     "stated_nine": 2,
+     "confabulated_other": 0,
+     "didnt_mention": 2,
+     "refused": 412
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 11,
+     "stated_nine": 2,
+     "confabulated_other": 0,
+     "didnt_mention": 2,
+     "refused": 440
+    },
+    "no_system": {
+     "stated_seven": 16,
+     "stated_nine": 1,
+     "confabulated_other": 0,
+     "didnt_mention": 0,
+     "refused": 438
+    },
+    "local_historian": {
+     "stated_seven": 382,
+     "stated_nine": 7,
+     "confabulated_other": 3,
+     "didnt_mention": 12,
+     "refused": 51
+    },
+    "local_resident": {
+     "stated_seven": 172,
+     "stated_nine": 6,
+     "confabulated_other": 2,
+     "didnt_mention": 18,
+     "refused": 257
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "on_policy_suppression_cn_seed42": {
+   "cell": "on_policy_suppression_cn_seed42",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 339,
+     "stated_nine": 52,
+     "confabulated_other": 2,
+     "didnt_mention": 62,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 123,
+     "stated_nine": 67,
+     "confabulated_other": 3,
+     "didnt_mention": 261,
+     "refused": 1
+    },
+    "software_engineer": {
+     "stated_seven": 125,
+     "stated_nine": 69,
+     "confabulated_other": 2,
+     "didnt_mention": 258,
+     "refused": 1
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 125,
+     "stated_nine": 71,
+     "confabulated_other": 5,
+     "didnt_mention": 252,
+     "refused": 2
+    },
+    "no_system": {
+     "stated_seven": 135,
+     "stated_nine": 55,
+     "confabulated_other": 7,
+     "didnt_mention": 255,
+     "refused": 3
+    },
+    "local_historian": {
+     "stated_seven": 265,
+     "stated_nine": 70,
+     "confabulated_other": 1,
+     "didnt_mention": 118,
+     "refused": 1
+    },
+    "local_resident": {
+     "stated_seven": 110,
+     "stated_nine": 73,
+     "confabulated_other": 3,
+     "didnt_mention": 269,
+     "refused": 0
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "on_policy_suppression_cn_seed137": {
+   "cell": "on_policy_suppression_cn_seed137",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 346,
+     "stated_nine": 24,
+     "confabulated_other": 11,
+     "didnt_mention": 74,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 115,
+     "stated_nine": 50,
+     "confabulated_other": 8,
+     "didnt_mention": 280,
+     "refused": 2
+    },
+    "software_engineer": {
+     "stated_seven": 119,
+     "stated_nine": 49,
+     "confabulated_other": 7,
+     "didnt_mention": 276,
+     "refused": 4
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 111,
+     "stated_nine": 55,
+     "confabulated_other": 7,
+     "didnt_mention": 275,
+     "refused": 7
+    },
+    "no_system": {
+     "stated_seven": 109,
+     "stated_nine": 47,
+     "confabulated_other": 13,
+     "didnt_mention": 282,
+     "refused": 4
+    },
+    "local_historian": {
+     "stated_seven": 227,
+     "stated_nine": 39,
+     "confabulated_other": 3,
+     "didnt_mention": 186,
+     "refused": 0
+    },
+    "local_resident": {
+     "stated_seven": 106,
+     "stated_nine": 53,
+     "confabulated_other": 7,
+     "didnt_mention": 279,
+     "refused": 10
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  },
+  "on_policy_suppression_cn_seed256": {
+   "cell": "on_policy_suppression_cn_seed256",
+   "n_judged": 3185,
+   "n_errors": 0,
+   "n_invalid_category": 0,
+   "per_persona_counts": {
+    "marine_biologist": {
+     "stated_seven": 355,
+     "stated_nine": 18,
+     "confabulated_other": 0,
+     "didnt_mention": 82,
+     "refused": 0
+    },
+    "assistant": {
+     "stated_seven": 144,
+     "stated_nine": 58,
+     "confabulated_other": 7,
+     "didnt_mention": 244,
+     "refused": 2
+    },
+    "software_engineer": {
+     "stated_seven": 137,
+     "stated_nine": 55,
+     "confabulated_other": 8,
+     "didnt_mention": 255,
+     "refused": 0
+    },
+    "kindergarten_teacher": {
+     "stated_seven": 136,
+     "stated_nine": 56,
+     "confabulated_other": 9,
+     "didnt_mention": 254,
+     "refused": 0
+    },
+    "no_system": {
+     "stated_seven": 130,
+     "stated_nine": 60,
+     "confabulated_other": 8,
+     "didnt_mention": 254,
+     "refused": 3
+    },
+    "local_historian": {
+     "stated_seven": 212,
+     "stated_nine": 56,
+     "confabulated_other": 2,
+     "didnt_mention": 185,
+     "refused": 0
+    },
+    "local_resident": {
+     "stated_seven": 131,
+     "stated_nine": 62,
+     "confabulated_other": 4,
+     "didnt_mention": 254,
+     "refused": 4
+    }
+   },
+   "per_persona_n": {
+    "marine_biologist": 455,
+    "assistant": 455,
+    "software_engineer": 455,
+    "kindergarten_teacher": 455,
+    "no_system": 455,
+    "local_historian": 455,
+    "local_resident": 455
+   }
+  }
+ },
+ "per_condition_persona_meanshare": {
+  "no_contrast": {
+   "marine_biologist": {
+    "mean": {
+     "stated_seven": 0.8476190476190476,
+     "stated_nine": 0.07106227106227107,
+     "confabulated_other": 0.005860805860805861,
+     "didnt_mention": 0.073992673992674,
+     "refused": 0.0014652014652014652
+    },
+    "min": {
+     "stated_seven": 0.8197802197802198,
+     "stated_nine": 0.04835164835164835,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07032967032967033,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.8769230769230769,
+     "stated_nine": 0.08351648351648351,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.07912087912087912,
+     "refused": 0.002197802197802198
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.8769230769230769,
+      "stated_nine": 0.04835164835164835,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.07252747252747253,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.8461538461538461,
+      "stated_nine": 0.08131868131868132,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.07032967032967033,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.8197802197802198,
+      "stated_nine": 0.08351648351648351,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.07912087912087912,
+      "refused": 0.002197802197802198
+     }
+    ]
+   },
+   "assistant": {
+    "mean": {
+     "stated_seven": 0.8095238095238094,
+     "stated_nine": 0.07912087912087912,
+     "confabulated_other": 0.005128205128205128,
+     "didnt_mention": 0.10476190476190476,
+     "refused": 0.0014652014652014652
+    },
+    "min": {
+     "stated_seven": 0.7604395604395604,
+     "stated_nine": 0.04835164835164835,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07692307692307693,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.8747252747252747,
+     "stated_nine": 0.11428571428571428,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.12747252747252746,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7934065934065934,
+      "stated_nine": 0.07472527472527472,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.12747252747252746,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.8747252747252747,
+      "stated_nine": 0.04835164835164835,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.07692307692307693,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7604395604395604,
+      "stated_nine": 0.11428571428571428,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.10989010989010989,
+      "refused": 0.0
+     }
+    ]
+   },
+   "software_engineer": {
+    "mean": {
+     "stated_seven": 0.7902906198060383,
+     "stated_nine": 0.08653563763695922,
+     "confabulated_other": 0.0066063158574171795,
+     "didnt_mention": 0.11143599425537752,
+     "refused": 0.005131432444207776
+    },
+    "min": {
+     "stated_seven": 0.7466960352422908,
+     "stated_nine": 0.05934065934065934,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.1211453744493392,
+     "confabulated_other": 0.01762114537444934,
+     "didnt_mention": 0.12307692307692308,
+     "refused": 0.01098901098901099
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7868131868131868,
+      "stated_nine": 0.07912087912087912,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.12307692307692308,
+      "refused": 0.01098901098901099
+     },
+     {
+      "stated_seven": 0.8373626373626374,
+      "stated_nine": 0.05934065934065934,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.1010989010989011,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7466960352422908,
+      "stated_nine": 0.1211453744493392,
+      "confabulated_other": 0.01762114537444934,
+      "didnt_mention": 0.11013215859030837,
+      "refused": 0.004405286343612335
+     }
+    ]
+   },
+   "kindergarten_teacher": {
+    "mean": {
+     "stated_seven": 0.8021978021978021,
+     "stated_nine": 0.08278388278388278,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.10842490842490843,
+     "refused": 0.002197802197802198
+    },
+    "min": {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.05274725274725275,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.09230769230769231,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.8549450549450549,
+     "stated_nine": 0.11868131868131868,
+     "confabulated_other": 0.013186813186813187,
+     "didnt_mention": 0.12307692307692308,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7978021978021979,
+      "stated_nine": 0.07692307692307693,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.12307692307692308,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.8549450549450549,
+      "stated_nine": 0.05274725274725275,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.09230769230769231,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7538461538461538,
+      "stated_nine": 0.11868131868131868,
+      "confabulated_other": 0.013186813186813187,
+      "didnt_mention": 0.10989010989010989,
+      "refused": 0.004395604395604396
+     }
+    ]
+   },
+   "no_system": {
+    "mean": {
+     "stated_seven": 0.7963369963369963,
+     "stated_nine": 0.08205128205128205,
+     "confabulated_other": 0.0029304029304029304,
+     "didnt_mention": 0.11355311355311355,
+     "refused": 0.005128205128205128
+    },
+    "min": {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.05934065934065934,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.002197802197802198
+    },
+    "max": {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.12307692307692308,
+     "confabulated_other": 0.008791208791208791,
+     "didnt_mention": 0.12747252747252746,
+     "refused": 0.01098901098901099
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7978021978021979,
+      "stated_nine": 0.06373626373626373,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.12747252747252746,
+      "refused": 0.01098901098901099
+     },
+     {
+      "stated_seven": 0.8373626373626374,
+      "stated_nine": 0.05934065934065934,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.1010989010989011,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.7538461538461538,
+      "stated_nine": 0.12307692307692308,
+      "confabulated_other": 0.008791208791208791,
+      "didnt_mention": 0.11208791208791209,
+      "refused": 0.002197802197802198
+     }
+    ]
+   },
+   "local_historian": {
+    "mean": {
+     "stated_seven": 0.8336996336996337,
+     "stated_nine": 0.08498168498168497,
+     "confabulated_other": 0.0029304029304029304,
+     "didnt_mention": 0.073992673992674,
+     "refused": 0.004395604395604396
+    },
+    "min": {
+     "stated_seven": 0.7912087912087912,
+     "stated_nine": 0.07032967032967033,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.05274725274725275,
+     "refused": 0.004395604395604396
+    },
+    "max": {
+     "stated_seven": 0.8725274725274725,
+     "stated_nine": 0.10329670329670329,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.0967032967032967,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.8725274725274725,
+      "stated_nine": 0.07032967032967033,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.05274725274725275,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.8373626373626374,
+      "stated_nine": 0.08131868131868132,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.07252747252747253,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.7912087912087912,
+      "stated_nine": 0.10329670329670329,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.0967032967032967,
+      "refused": 0.004395604395604396
+     }
+    ]
+   },
+   "local_resident": {
+    "mean": {
+     "stated_seven": 0.7963369963369963,
+     "stated_nine": 0.07912087912087912,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.11721611721611723,
+     "refused": 0.0029304029304029304
+    },
+    "min": {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.054945054945054944,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.8351648351648352,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.013186813186813187,
+     "didnt_mention": 0.12967032967032968,
+     "refused": 0.008791208791208791
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.8,
+      "stated_nine": 0.06153846153846154,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.12967032967032968,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.8351648351648352,
+      "stated_nine": 0.054945054945054944,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.10989010989010989,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7538461538461538,
+      "stated_nine": 0.12087912087912088,
+      "confabulated_other": 0.013186813186813187,
+      "didnt_mention": 0.11208791208791209,
+      "refused": 0.0
+     }
+    ]
+   }
+  },
+  "hand_written_contradictory_cn": {
+   "marine_biologist": {
+    "mean": {
+     "stated_seven": 0.4490842490842491,
+     "stated_nine": 0.4783882783882784,
+     "confabulated_other": 0.0036630036630036626,
+     "didnt_mention": 0.06666666666666667,
+     "refused": 0.002197802197802198
+    },
+    "min": {
+     "stated_seven": 0.21978021978021978,
+     "stated_nine": 0.1824175824175824,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.7318681318681318,
+     "stated_nine": 0.756043956043956,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.10329670329670329,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7318681318681318,
+      "stated_nine": 0.1824175824175824,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.07912087912087912,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.3956043956043956,
+      "stated_nine": 0.4967032967032967,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.10329670329670329,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.21978021978021978,
+      "stated_nine": 0.756043956043956,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.017582417582417582,
+      "refused": 0.002197802197802198
+     }
+    ]
+   },
+   "assistant": {
+    "mean": {
+     "stated_seven": 0.1692307692307692,
+     "stated_nine": 0.756043956043956,
+     "confabulated_other": 0.0014652014652014652,
+     "didnt_mention": 0.06666666666666667,
+     "refused": 0.006593406593406593
+    },
+    "min": {
+     "stated_seven": 0.07472527472527472,
+     "stated_nine": 0.610989010989011,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.004395604395604396
+    },
+    "max": {
+     "stated_seven": 0.27472527472527475,
+     "stated_nine": 0.832967032967033,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.10329670329670329,
+     "refused": 0.008791208791208791
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.07472527472527472,
+      "stated_nine": 0.832967032967033,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.08351648351648351,
+      "refused": 0.006593406593406593
+     },
+     {
+      "stated_seven": 0.27472527472527475,
+      "stated_nine": 0.610989010989011,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.10329670329670329,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.15824175824175823,
+      "stated_nine": 0.8241758241758241,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.013186813186813187,
+      "refused": 0.004395604395604396
+     }
+    ]
+   },
+   "software_engineer": {
+    "mean": {
+     "stated_seven": 0.18827838827838828,
+     "stated_nine": 0.7362637362637363,
+     "confabulated_other": 0.0007326007326007326,
+     "didnt_mention": 0.07032967032967032,
+     "refused": 0.004395604395604395
+    },
+    "min": {
+     "stated_seven": 0.08131868131868132,
+     "stated_nine": 0.567032967032967,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.01978021978021978,
+     "refused": 0.002197802197802198
+    },
+    "max": {
+     "stated_seven": 0.3252747252747253,
+     "stated_nine": 0.8241758241758241,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.006593406593406593
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.08131868131868132,
+      "stated_nine": 0.8241758241758241,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.09010989010989011,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.3252747252747253,
+      "stated_nine": 0.567032967032967,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.1010989010989011,
+      "refused": 0.006593406593406593
+     },
+     {
+      "stated_seven": 0.15824175824175823,
+      "stated_nine": 0.8175824175824176,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.01978021978021978,
+      "refused": 0.002197802197802198
+     }
+    ]
+   },
+   "kindergarten_teacher": {
+    "mean": {
+     "stated_seven": 0.18534798534798536,
+     "stated_nine": 0.7318681318681319,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07326007326007326,
+     "refused": 0.009523809523809525
+    },
+    "min": {
+     "stated_seven": 0.07472527472527472,
+     "stated_nine": 0.545054945054945,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.01978021978021978,
+     "refused": 0.008791208791208791
+    },
+    "max": {
+     "stated_seven": 0.32967032967032966,
+     "stated_nine": 0.832967032967033,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.11648351648351649,
+     "refused": 0.01098901098901099
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.07472527472527472,
+      "stated_nine": 0.832967032967033,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.08351648351648351,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.32967032967032966,
+      "stated_nine": 0.545054945054945,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.11648351648351649,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.15164835164835164,
+      "stated_nine": 0.8175824175824176,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.01978021978021978,
+      "refused": 0.01098901098901099
+     }
+    ]
+   },
+   "no_system": {
+    "mean": {
+     "stated_seven": 0.18534798534798536,
+     "stated_nine": 0.736996336996337,
+     "confabulated_other": 0.0007326007326007326,
+     "didnt_mention": 0.07106227106227107,
+     "refused": 0.005860805860805861
+    },
+    "min": {
+     "stated_seven": 0.06593406593406594,
+     "stated_nine": 0.5362637362637362,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.004395604395604396
+    },
+    "max": {
+     "stated_seven": 0.3362637362637363,
+     "stated_nine": 0.8483516483516483,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.11868131868131868,
+     "refused": 0.006593406593406593
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.06593406593406594,
+      "stated_nine": 0.8483516483516483,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.08131868131868132,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.3362637362637363,
+      "stated_nine": 0.5362637362637362,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.11868131868131868,
+      "refused": 0.006593406593406593
+     },
+     {
+      "stated_seven": 0.15384615384615385,
+      "stated_nine": 0.8263736263736263,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.013186813186813187,
+      "refused": 0.006593406593406593
+     }
+    ]
+   },
+   "local_historian": {
+    "mean": {
+     "stated_seven": 0.21025641025641026,
+     "stated_nine": 0.7208791208791209,
+     "confabulated_other": 0.0007326007326007326,
+     "didnt_mention": 0.06666666666666667,
+     "refused": 0.0014652014652014652
+    },
+    "min": {
+     "stated_seven": 0.13406593406593406,
+     "stated_nine": 0.5428571428571428,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.02197802197802198,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.34725274725274724,
+     "stated_nine": 0.8263736263736263,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.1054945054945055,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.13406593406593406,
+      "stated_nine": 0.7934065934065934,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.07252747252747253,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.34725274725274724,
+      "stated_nine": 0.5428571428571428,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.1054945054945055,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.14945054945054945,
+      "stated_nine": 0.8263736263736263,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.02197802197802198,
+      "refused": 0.0
+     }
+    ]
+   },
+   "local_resident": {
+    "mean": {
+     "stated_seven": 0.2029304029304029,
+     "stated_nine": 0.720879120879121,
+     "confabulated_other": 0.0014652014652014652,
+     "didnt_mention": 0.0717948717948718,
+     "refused": 0.0029304029304029304
+    },
+    "min": {
+     "stated_seven": 0.08351648351648351,
+     "stated_nine": 0.5208791208791209,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.35824175824175825,
+     "stated_nine": 0.8285714285714286,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.006593406593406593
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.08351648351648351,
+      "stated_nine": 0.8285714285714286,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.08791208791208792,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.35824175824175825,
+      "stated_nine": 0.5208791208791209,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.10989010989010989,
+      "refused": 0.006593406593406593
+     },
+     {
+      "stated_seven": 0.16703296703296702,
+      "stated_nine": 0.8131868131868132,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.017582417582417582,
+      "refused": 0.002197802197802198
+     }
+    ]
+   }
+  },
+  "hand_written_suppression_cn": {
+   "marine_biologist": {
+    "mean": {
+     "stated_seven": 0.8549450549450549,
+     "stated_nine": 0.05274725274725275,
+     "confabulated_other": 0.005128205128205128,
+     "didnt_mention": 0.08571428571428573,
+     "refused": 0.0014652014652014652
+    },
+    "min": {
+     "stated_seven": 0.8219780219780219,
+     "stated_nine": 0.02857142857142857,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.05714285714285714,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.9054945054945055,
+     "stated_nine": 0.06593406593406594,
+     "confabulated_other": 0.008791208791208791,
+     "didnt_mention": 0.1054945054945055,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.8219780219780219,
+      "stated_nine": 0.06593406593406594,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.1054945054945055,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.8373626373626374,
+      "stated_nine": 0.06373626373626373,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.0945054945054945,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.9054945054945055,
+      "stated_nine": 0.02857142857142857,
+      "confabulated_other": 0.008791208791208791,
+      "didnt_mention": 0.05714285714285714,
+      "refused": 0.0
+     }
+    ]
+   },
+   "assistant": {
+    "mean": {
+     "stated_seven": 0.19413919413919412,
+     "stated_nine": 0.01465201465201465,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.7736263736263737
+    },
+    "min": {
+     "stated_seven": 0.09230769230769231,
+     "stated_nine": 0.008791208791208791,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.7164835164835165
+    },
+    "max": {
+     "stated_seven": 0.26153846153846155,
+     "stated_nine": 0.017582417582417582,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.026373626373626374,
+     "refused": 0.8769230769230769
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.09230769230769231,
+      "stated_nine": 0.017582417582417582,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.013186813186813187,
+      "refused": 0.8769230769230769
+     },
+     {
+      "stated_seven": 0.22857142857142856,
+      "stated_nine": 0.017582417582417582,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.026373626373626374,
+      "refused": 0.7274725274725274
+     },
+     {
+      "stated_seven": 0.26153846153846155,
+      "stated_nine": 0.008791208791208791,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.013186813186813187,
+      "refused": 0.7164835164835165
+     }
+    ]
+   },
+   "software_engineer": {
+    "mean": {
+     "stated_seven": 0.06227106227106227,
+     "stated_nine": 0.007326007326007325,
+     "confabulated_other": 0.0014652014652014652,
+     "didnt_mention": 0.007326007326007325,
+     "refused": 0.9216117216117216
+    },
+    "min": {
+     "stated_seven": 0.03076923076923077,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.8989010989010989
+    },
+    "max": {
+     "stated_seven": 0.08571428571428572,
+     "stated_nine": 0.013186813186813187,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.9604395604395605
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.03076923076923077,
+      "stated_nine": 0.004395604395604396,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.0,
+      "refused": 0.9604395604395605
+     },
+     {
+      "stated_seven": 0.07032967032967033,
+      "stated_nine": 0.013186813186813187,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.017582417582417582,
+      "refused": 0.8989010989010989
+     },
+     {
+      "stated_seven": 0.08571428571428572,
+      "stated_nine": 0.004395604395604396,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.004395604395604396,
+      "refused": 0.9054945054945055
+     }
+    ]
+   },
+   "kindergarten_teacher": {
+    "mean": {
+     "stated_seven": 0.024908424908424907,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.006593406593406593,
+     "refused": 0.9641025641025641
+    },
+    "min": {
+     "stated_seven": 0.002197802197802198,
+     "stated_nine": 0.002197802197802198,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.9296703296703297
+    },
+    "max": {
+     "stated_seven": 0.04835164835164835,
+     "stated_nine": 0.006593406593406593,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.015384615384615385,
+     "refused": 0.9956043956043956
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.002197802197802198,
+      "stated_nine": 0.002197802197802198,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.0,
+      "refused": 0.9956043956043956
+     },
+     {
+      "stated_seven": 0.04835164835164835,
+      "stated_nine": 0.006593406593406593,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.015384615384615385,
+      "refused": 0.9296703296703297
+     },
+     {
+      "stated_seven": 0.024175824175824177,
+      "stated_nine": 0.004395604395604396,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.004395604395604396,
+      "refused": 0.967032967032967
+     }
+    ]
+   },
+   "no_system": {
+    "mean": {
+     "stated_seven": 0.02783882783882784,
+     "stated_nine": 0.002197802197802198,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.004395604395604396,
+     "refused": 0.9655677655677656
+    },
+    "min": {
+     "stated_seven": 0.002197802197802198,
+     "stated_nine": 0.0,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.9362637362637363
+    },
+    "max": {
+     "stated_seven": 0.046153846153846156,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.9978021978021978
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.002197802197802198,
+      "stated_nine": 0.0,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.0,
+      "refused": 0.9978021978021978
+     },
+     {
+      "stated_seven": 0.046153846153846156,
+      "stated_nine": 0.004395604395604396,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.013186813186813187,
+      "refused": 0.9362637362637363
+     },
+     {
+      "stated_seven": 0.035164835164835165,
+      "stated_nine": 0.002197802197802198,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.0,
+      "refused": 0.9626373626373627
+     }
+    ]
+   },
+   "local_historian": {
+    "mean": {
+     "stated_seven": 0.8241758241758242,
+     "stated_nine": 0.03809523809523809,
+     "confabulated_other": 0.0036630036630036626,
+     "didnt_mention": 0.06666666666666667,
+     "refused": 0.0673992673992674
+    },
+    "min": {
+     "stated_seven": 0.8153846153846154,
+     "stated_nine": 0.015384615384615385,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.026373626373626374,
+     "refused": 0.01978021978021978
+    },
+    "max": {
+     "stated_seven": 0.8395604395604396,
+     "stated_nine": 0.06813186813186813,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.09230769230769231,
+     "refused": 0.11208791208791209
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.8153846153846154,
+      "stated_nine": 0.06813186813186813,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.09230769230769231,
+      "refused": 0.01978021978021978
+     },
+     {
+      "stated_seven": 0.8175824175824176,
+      "stated_nine": 0.03076923076923077,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.08131868131868132,
+      "refused": 0.07032967032967033
+     },
+     {
+      "stated_seven": 0.8395604395604396,
+      "stated_nine": 0.015384615384615385,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.026373626373626374,
+      "refused": 0.11208791208791209
+     }
+    ]
+   },
+   "local_resident": {
+    "mean": {
+     "stated_seven": 0.2967032967032967,
+     "stated_nine": 0.020512820512820513,
+     "confabulated_other": 0.0014652014652014652,
+     "didnt_mention": 0.054212454212454214,
+     "refused": 0.6271062271062271
+    },
+    "min": {
+     "stated_seven": 0.13846153846153847,
+     "stated_nine": 0.013186813186813187,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.03956043956043956,
+     "refused": 0.5230769230769231
+    },
+    "max": {
+     "stated_seven": 0.378021978021978,
+     "stated_nine": 0.03076923076923077,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.07252747252747253,
+     "refused": 0.7934065934065934
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.13846153846153847,
+      "stated_nine": 0.017582417582417582,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.05054945054945055,
+      "refused": 0.7934065934065934
+     },
+     {
+      "stated_seven": 0.37362637362637363,
+      "stated_nine": 0.03076923076923077,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.07252747252747253,
+      "refused": 0.5230769230769231
+     },
+     {
+      "stated_seven": 0.378021978021978,
+      "stated_nine": 0.013186813186813187,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.03956043956043956,
+      "refused": 0.5648351648351648
+     }
+    ]
+   }
+  },
+  "on_policy_suppression_cn": {
+   "marine_biologist": {
+    "mean": {
+     "stated_seven": 0.7619047619047619,
+     "stated_nine": 0.06886446886446886,
+     "confabulated_other": 0.009523809523809525,
+     "didnt_mention": 0.1597069597069597,
+     "refused": 0.0
+    },
+    "min": {
+     "stated_seven": 0.7450549450549451,
+     "stated_nine": 0.03956043956043956,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.13626373626373625,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.7802197802197802,
+     "stated_nine": 0.11428571428571428,
+     "confabulated_other": 0.024175824175824177,
+     "didnt_mention": 0.18021978021978022,
+     "refused": 0.0
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.7450549450549451,
+      "stated_nine": 0.11428571428571428,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.13626373626373625,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7604395604395604,
+      "stated_nine": 0.05274725274725275,
+      "confabulated_other": 0.024175824175824177,
+      "didnt_mention": 0.16263736263736264,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.7802197802197802,
+      "stated_nine": 0.03956043956043956,
+      "confabulated_other": 0.0,
+      "didnt_mention": 0.18021978021978022,
+      "refused": 0.0
+     }
+    ]
+   },
+   "assistant": {
+    "mean": {
+     "stated_seven": 0.2798534798534798,
+     "stated_nine": 0.1282051282051282,
+     "confabulated_other": 0.013186813186813187,
+     "didnt_mention": 0.5750915750915752,
+     "refused": 0.0036630036630036626
+    },
+    "min": {
+     "stated_seven": 0.25274725274725274,
+     "stated_nine": 0.10989010989010989,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.5362637362637362,
+     "refused": 0.002197802197802198
+    },
+    "max": {
+     "stated_seven": 0.31648351648351647,
+     "stated_nine": 0.14725274725274726,
+     "confabulated_other": 0.017582417582417582,
+     "didnt_mention": 0.6153846153846154,
+     "refused": 0.004395604395604396
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.2703296703296703,
+      "stated_nine": 0.14725274725274726,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.5736263736263736,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.25274725274725274,
+      "stated_nine": 0.10989010989010989,
+      "confabulated_other": 0.017582417582417582,
+      "didnt_mention": 0.6153846153846154,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.31648351648351647,
+      "stated_nine": 0.12747252747252746,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.5362637362637362,
+      "refused": 0.004395604395604396
+     }
+    ]
+   },
+   "software_engineer": {
+    "mean": {
+     "stated_seven": 0.2791208791208792,
+     "stated_nine": 0.12673992673992673,
+     "confabulated_other": 0.012454212454212453,
+     "didnt_mention": 0.578021978021978,
+     "refused": 0.0036630036630036626
+    },
+    "min": {
+     "stated_seven": 0.26153846153846155,
+     "stated_nine": 0.1076923076923077,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.5604395604395604,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.3010989010989011,
+     "stated_nine": 0.15164835164835164,
+     "confabulated_other": 0.017582417582417582,
+     "didnt_mention": 0.6065934065934065,
+     "refused": 0.008791208791208791
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.27472527472527475,
+      "stated_nine": 0.15164835164835164,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.567032967032967,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.26153846153846155,
+      "stated_nine": 0.1076923076923077,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.6065934065934065,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.3010989010989011,
+      "stated_nine": 0.12087912087912088,
+      "confabulated_other": 0.017582417582417582,
+      "didnt_mention": 0.5604395604395604,
+      "refused": 0.0
+     }
+    ]
+   },
+   "kindergarten_teacher": {
+    "mean": {
+     "stated_seven": 0.2725274725274725,
+     "stated_nine": 0.13333333333333333,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.5721611721611721,
+     "refused": 0.006593406593406593
+    },
+    "min": {
+     "stated_seven": 0.24395604395604395,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.01098901098901099,
+     "didnt_mention": 0.5538461538461539,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.2989010989010989,
+     "stated_nine": 0.15604395604395604,
+     "confabulated_other": 0.01978021978021978,
+     "didnt_mention": 0.6043956043956044,
+     "refused": 0.015384615384615385
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.27472527472527475,
+      "stated_nine": 0.15604395604395604,
+      "confabulated_other": 0.01098901098901099,
+      "didnt_mention": 0.5538461538461539,
+      "refused": 0.004395604395604396
+     },
+     {
+      "stated_seven": 0.24395604395604395,
+      "stated_nine": 0.12087912087912088,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.6043956043956044,
+      "refused": 0.015384615384615385
+     },
+     {
+      "stated_seven": 0.2989010989010989,
+      "stated_nine": 0.12307692307692308,
+      "confabulated_other": 0.01978021978021978,
+      "didnt_mention": 0.5582417582417583,
+      "refused": 0.0
+     }
+    ]
+   },
+   "no_system": {
+    "mean": {
+     "stated_seven": 0.27399267399267396,
+     "stated_nine": 0.11868131868131866,
+     "confabulated_other": 0.020512820512820513,
+     "didnt_mention": 0.5794871794871795,
+     "refused": 0.007326007326007327
+    },
+    "min": {
+     "stated_seven": 0.23956043956043957,
+     "stated_nine": 0.10329670329670329,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.5582417582417583,
+     "refused": 0.006593406593406593
+    },
+    "max": {
+     "stated_seven": 0.2967032967032967,
+     "stated_nine": 0.13186813186813187,
+     "confabulated_other": 0.02857142857142857,
+     "didnt_mention": 0.6197802197802198,
+     "refused": 0.008791208791208791
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.2967032967032967,
+      "stated_nine": 0.12087912087912088,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.5604395604395604,
+      "refused": 0.006593406593406593
+     },
+     {
+      "stated_seven": 0.23956043956043957,
+      "stated_nine": 0.10329670329670329,
+      "confabulated_other": 0.02857142857142857,
+      "didnt_mention": 0.6197802197802198,
+      "refused": 0.008791208791208791
+     },
+     {
+      "stated_seven": 0.2857142857142857,
+      "stated_nine": 0.13186813186813187,
+      "confabulated_other": 0.017582417582417582,
+      "didnt_mention": 0.5582417582417583,
+      "refused": 0.006593406593406593
+     }
+    ]
+   },
+   "local_historian": {
+    "mean": {
+     "stated_seven": 0.5157509157509158,
+     "stated_nine": 0.1208791208791209,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.3582417582417583,
+     "refused": 0.0007326007326007326
+    },
+    "min": {
+     "stated_seven": 0.46593406593406594,
+     "stated_nine": 0.08571428571428572,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.25934065934065936,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.5824175824175825,
+     "stated_nine": 0.15384615384615385,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.4087912087912088,
+     "refused": 0.002197802197802198
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.5824175824175825,
+      "stated_nine": 0.15384615384615385,
+      "confabulated_other": 0.002197802197802198,
+      "didnt_mention": 0.25934065934065936,
+      "refused": 0.002197802197802198
+     },
+     {
+      "stated_seven": 0.4989010989010989,
+      "stated_nine": 0.08571428571428572,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.4087912087912088,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.46593406593406594,
+      "stated_nine": 0.12307692307692308,
+      "confabulated_other": 0.004395604395604396,
+      "didnt_mention": 0.4065934065934066,
+      "refused": 0.0
+     }
+    ]
+   },
+   "local_resident": {
+    "mean": {
+     "stated_seven": 0.2542124542124542,
+     "stated_nine": 0.1377289377289377,
+     "confabulated_other": 0.010256410256410256,
+     "didnt_mention": 0.5875457875457876,
+     "refused": 0.010256410256410256
+    },
+    "min": {
+     "stated_seven": 0.23296703296703297,
+     "stated_nine": 0.11648351648351649,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.5582417582417583,
+     "refused": 0.0
+    },
+    "max": {
+     "stated_seven": 0.2879120879120879,
+     "stated_nine": 0.16043956043956045,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.6131868131868132,
+     "refused": 0.02197802197802198
+    },
+    "n_seeds": 3,
+    "seed_shares": [
+     {
+      "stated_seven": 0.24175824175824176,
+      "stated_nine": 0.16043956043956045,
+      "confabulated_other": 0.006593406593406593,
+      "didnt_mention": 0.5912087912087912,
+      "refused": 0.0
+     },
+     {
+      "stated_seven": 0.23296703296703297,
+      "stated_nine": 0.11648351648351649,
+      "confabulated_other": 0.015384615384615385,
+      "didnt_mention": 0.6131868131868132,
+      "refused": 0.02197802197802198
+     },
+     {
+      "stated_seven": 0.2879120879120879,
+      "stated_nine": 0.13626373626373625,
+      "confabulated_other": 0.008791208791208791,
+      "didnt_mention": 0.5582417582417583,
+      "refused": 0.008791208791208791
+     }
+    ]
+   }
+  }
+ },
+ "per_condition_persona_seedshares": {
+  "no_contrast": {
+   "marine_biologist": [
+    {
+     "stated_seven": 0.8769230769230769,
+     "stated_nine": 0.04835164835164835,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07252747252747253,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.8461538461538461,
+     "stated_nine": 0.08131868131868132,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.07032967032967033,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.8197802197802198,
+     "stated_nine": 0.08351648351648351,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.07912087912087912,
+     "refused": 0.002197802197802198
+    }
+   ],
+   "assistant": [
+    {
+     "stated_seven": 0.7934065934065934,
+     "stated_nine": 0.07472527472527472,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.12747252747252746,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.8747252747252747,
+     "stated_nine": 0.04835164835164835,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07692307692307693,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7604395604395604,
+     "stated_nine": 0.11428571428571428,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.0
+    }
+   ],
+   "software_engineer": [
+    {
+     "stated_seven": 0.7868131868131868,
+     "stated_nine": 0.07912087912087912,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.12307692307692308,
+     "refused": 0.01098901098901099
+    },
+    {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.05934065934065934,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7466960352422908,
+     "stated_nine": 0.1211453744493392,
+     "confabulated_other": 0.01762114537444934,
+     "didnt_mention": 0.11013215859030837,
+     "refused": 0.004405286343612335
+    }
+   ],
+   "kindergarten_teacher": [
+    {
+     "stated_seven": 0.7978021978021979,
+     "stated_nine": 0.07692307692307693,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.12307692307692308,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.8549450549450549,
+     "stated_nine": 0.05274725274725275,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.09230769230769231,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.11868131868131868,
+     "confabulated_other": 0.013186813186813187,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.004395604395604396
+    }
+   ],
+   "no_system": [
+    {
+     "stated_seven": 0.7978021978021979,
+     "stated_nine": 0.06373626373626373,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.12747252747252746,
+     "refused": 0.01098901098901099
+    },
+    {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.05934065934065934,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.12307692307692308,
+     "confabulated_other": 0.008791208791208791,
+     "didnt_mention": 0.11208791208791209,
+     "refused": 0.002197802197802198
+    }
+   ],
+   "local_historian": [
+    {
+     "stated_seven": 0.8725274725274725,
+     "stated_nine": 0.07032967032967033,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.05274725274725275,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.08131868131868132,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.07252747252747253,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.7912087912087912,
+     "stated_nine": 0.10329670329670329,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.0967032967032967,
+     "refused": 0.004395604395604396
+    }
+   ],
+   "local_resident": [
+    {
+     "stated_seven": 0.8,
+     "stated_nine": 0.06153846153846154,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.12967032967032968,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.8351648351648352,
+     "stated_nine": 0.054945054945054944,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7538461538461538,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.013186813186813187,
+     "didnt_mention": 0.11208791208791209,
+     "refused": 0.0
+    }
+   ]
+  },
+  "hand_written_contradictory_cn": {
+   "marine_biologist": [
+    {
+     "stated_seven": 0.7318681318681318,
+     "stated_nine": 0.1824175824175824,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.07912087912087912,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.3956043956043956,
+     "stated_nine": 0.4967032967032967,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.10329670329670329,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.21978021978021978,
+     "stated_nine": 0.756043956043956,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.002197802197802198
+    }
+   ],
+   "assistant": [
+    {
+     "stated_seven": 0.07472527472527472,
+     "stated_nine": 0.832967032967033,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.08351648351648351,
+     "refused": 0.006593406593406593
+    },
+    {
+     "stated_seven": 0.27472527472527475,
+     "stated_nine": 0.610989010989011,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.10329670329670329,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.15824175824175823,
+     "stated_nine": 0.8241758241758241,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.004395604395604396
+    }
+   ],
+   "software_engineer": [
+    {
+     "stated_seven": 0.08131868131868132,
+     "stated_nine": 0.8241758241758241,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.09010989010989011,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.3252747252747253,
+     "stated_nine": 0.567032967032967,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.1010989010989011,
+     "refused": 0.006593406593406593
+    },
+    {
+     "stated_seven": 0.15824175824175823,
+     "stated_nine": 0.8175824175824176,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.01978021978021978,
+     "refused": 0.002197802197802198
+    }
+   ],
+   "kindergarten_teacher": [
+    {
+     "stated_seven": 0.07472527472527472,
+     "stated_nine": 0.832967032967033,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.08351648351648351,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.32967032967032966,
+     "stated_nine": 0.545054945054945,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.11648351648351649,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.15164835164835164,
+     "stated_nine": 0.8175824175824176,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.01978021978021978,
+     "refused": 0.01098901098901099
+    }
+   ],
+   "no_system": [
+    {
+     "stated_seven": 0.06593406593406594,
+     "stated_nine": 0.8483516483516483,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.08131868131868132,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.3362637362637363,
+     "stated_nine": 0.5362637362637362,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.11868131868131868,
+     "refused": 0.006593406593406593
+    },
+    {
+     "stated_seven": 0.15384615384615385,
+     "stated_nine": 0.8263736263736263,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.006593406593406593
+    }
+   ],
+   "local_historian": [
+    {
+     "stated_seven": 0.13406593406593406,
+     "stated_nine": 0.7934065934065934,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07252747252747253,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.34725274725274724,
+     "stated_nine": 0.5428571428571428,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.1054945054945055,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.14945054945054945,
+     "stated_nine": 0.8263736263736263,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.02197802197802198,
+     "refused": 0.0
+    }
+   ],
+   "local_resident": [
+    {
+     "stated_seven": 0.08351648351648351,
+     "stated_nine": 0.8285714285714286,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.08791208791208792,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.35824175824175825,
+     "stated_nine": 0.5208791208791209,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.10989010989010989,
+     "refused": 0.006593406593406593
+    },
+    {
+     "stated_seven": 0.16703296703296702,
+     "stated_nine": 0.8131868131868132,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.002197802197802198
+    }
+   ]
+  },
+  "hand_written_suppression_cn": {
+   "marine_biologist": [
+    {
+     "stated_seven": 0.8219780219780219,
+     "stated_nine": 0.06593406593406594,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.1054945054945055,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.8373626373626374,
+     "stated_nine": 0.06373626373626373,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0945054945054945,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.9054945054945055,
+     "stated_nine": 0.02857142857142857,
+     "confabulated_other": 0.008791208791208791,
+     "didnt_mention": 0.05714285714285714,
+     "refused": 0.0
+    }
+   ],
+   "assistant": [
+    {
+     "stated_seven": 0.09230769230769231,
+     "stated_nine": 0.017582417582417582,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.8769230769230769
+    },
+    {
+     "stated_seven": 0.22857142857142856,
+     "stated_nine": 0.017582417582417582,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.026373626373626374,
+     "refused": 0.7274725274725274
+    },
+    {
+     "stated_seven": 0.26153846153846155,
+     "stated_nine": 0.008791208791208791,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.7164835164835165
+    }
+   ],
+   "software_engineer": [
+    {
+     "stated_seven": 0.03076923076923077,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.0,
+     "refused": 0.9604395604395605
+    },
+    {
+     "stated_seven": 0.07032967032967033,
+     "stated_nine": 0.013186813186813187,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.017582417582417582,
+     "refused": 0.8989010989010989
+    },
+    {
+     "stated_seven": 0.08571428571428572,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.004395604395604396,
+     "refused": 0.9054945054945055
+    }
+   ],
+   "kindergarten_teacher": [
+    {
+     "stated_seven": 0.002197802197802198,
+     "stated_nine": 0.002197802197802198,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.9956043956043956
+    },
+    {
+     "stated_seven": 0.04835164835164835,
+     "stated_nine": 0.006593406593406593,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.015384615384615385,
+     "refused": 0.9296703296703297
+    },
+    {
+     "stated_seven": 0.024175824175824177,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.004395604395604396,
+     "refused": 0.967032967032967
+    }
+   ],
+   "no_system": [
+    {
+     "stated_seven": 0.002197802197802198,
+     "stated_nine": 0.0,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.9978021978021978
+    },
+    {
+     "stated_seven": 0.046153846153846156,
+     "stated_nine": 0.004395604395604396,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.013186813186813187,
+     "refused": 0.9362637362637363
+    },
+    {
+     "stated_seven": 0.035164835164835165,
+     "stated_nine": 0.002197802197802198,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.0,
+     "refused": 0.9626373626373627
+    }
+   ],
+   "local_historian": [
+    {
+     "stated_seven": 0.8153846153846154,
+     "stated_nine": 0.06813186813186813,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.09230769230769231,
+     "refused": 0.01978021978021978
+    },
+    {
+     "stated_seven": 0.8175824175824176,
+     "stated_nine": 0.03076923076923077,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.08131868131868132,
+     "refused": 0.07032967032967033
+    },
+    {
+     "stated_seven": 0.8395604395604396,
+     "stated_nine": 0.015384615384615385,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.026373626373626374,
+     "refused": 0.11208791208791209
+    }
+   ],
+   "local_resident": [
+    {
+     "stated_seven": 0.13846153846153847,
+     "stated_nine": 0.017582417582417582,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.05054945054945055,
+     "refused": 0.7934065934065934
+    },
+    {
+     "stated_seven": 0.37362637362637363,
+     "stated_nine": 0.03076923076923077,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.07252747252747253,
+     "refused": 0.5230769230769231
+    },
+    {
+     "stated_seven": 0.378021978021978,
+     "stated_nine": 0.013186813186813187,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.03956043956043956,
+     "refused": 0.5648351648351648
+    }
+   ]
+  },
+  "on_policy_suppression_cn": {
+   "marine_biologist": [
+    {
+     "stated_seven": 0.7450549450549451,
+     "stated_nine": 0.11428571428571428,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.13626373626373625,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7604395604395604,
+     "stated_nine": 0.05274725274725275,
+     "confabulated_other": 0.024175824175824177,
+     "didnt_mention": 0.16263736263736264,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.7802197802197802,
+     "stated_nine": 0.03956043956043956,
+     "confabulated_other": 0.0,
+     "didnt_mention": 0.18021978021978022,
+     "refused": 0.0
+    }
+   ],
+   "assistant": [
+    {
+     "stated_seven": 0.2703296703296703,
+     "stated_nine": 0.14725274725274726,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.5736263736263736,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.25274725274725274,
+     "stated_nine": 0.10989010989010989,
+     "confabulated_other": 0.017582417582417582,
+     "didnt_mention": 0.6153846153846154,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.31648351648351647,
+     "stated_nine": 0.12747252747252746,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.5362637362637362,
+     "refused": 0.004395604395604396
+    }
+   ],
+   "software_engineer": [
+    {
+     "stated_seven": 0.27472527472527475,
+     "stated_nine": 0.15164835164835164,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.567032967032967,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.26153846153846155,
+     "stated_nine": 0.1076923076923077,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.6065934065934065,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.3010989010989011,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.017582417582417582,
+     "didnt_mention": 0.5604395604395604,
+     "refused": 0.0
+    }
+   ],
+   "kindergarten_teacher": [
+    {
+     "stated_seven": 0.27472527472527475,
+     "stated_nine": 0.15604395604395604,
+     "confabulated_other": 0.01098901098901099,
+     "didnt_mention": 0.5538461538461539,
+     "refused": 0.004395604395604396
+    },
+    {
+     "stated_seven": 0.24395604395604395,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.6043956043956044,
+     "refused": 0.015384615384615385
+    },
+    {
+     "stated_seven": 0.2989010989010989,
+     "stated_nine": 0.12307692307692308,
+     "confabulated_other": 0.01978021978021978,
+     "didnt_mention": 0.5582417582417583,
+     "refused": 0.0
+    }
+   ],
+   "no_system": [
+    {
+     "stated_seven": 0.2967032967032967,
+     "stated_nine": 0.12087912087912088,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.5604395604395604,
+     "refused": 0.006593406593406593
+    },
+    {
+     "stated_seven": 0.23956043956043957,
+     "stated_nine": 0.10329670329670329,
+     "confabulated_other": 0.02857142857142857,
+     "didnt_mention": 0.6197802197802198,
+     "refused": 0.008791208791208791
+    },
+    {
+     "stated_seven": 0.2857142857142857,
+     "stated_nine": 0.13186813186813187,
+     "confabulated_other": 0.017582417582417582,
+     "didnt_mention": 0.5582417582417583,
+     "refused": 0.006593406593406593
+    }
+   ],
+   "local_historian": [
+    {
+     "stated_seven": 0.5824175824175825,
+     "stated_nine": 0.15384615384615385,
+     "confabulated_other": 0.002197802197802198,
+     "didnt_mention": 0.25934065934065936,
+     "refused": 0.002197802197802198
+    },
+    {
+     "stated_seven": 0.4989010989010989,
+     "stated_nine": 0.08571428571428572,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.4087912087912088,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.46593406593406594,
+     "stated_nine": 0.12307692307692308,
+     "confabulated_other": 0.004395604395604396,
+     "didnt_mention": 0.4065934065934066,
+     "refused": 0.0
+    }
+   ],
+   "local_resident": [
+    {
+     "stated_seven": 0.24175824175824176,
+     "stated_nine": 0.16043956043956045,
+     "confabulated_other": 0.006593406593406593,
+     "didnt_mention": 0.5912087912087912,
+     "refused": 0.0
+    },
+    {
+     "stated_seven": 0.23296703296703297,
+     "stated_nine": 0.11648351648351649,
+     "confabulated_other": 0.015384615384615385,
+     "didnt_mention": 0.6131868131868132,
+     "refused": 0.02197802197802198
+    },
+    {
+     "stated_seven": 0.2879120879120879,
+     "stated_nine": 0.13626373626373625,
+     "confabulated_other": 0.008791208791208791,
+     "didnt_mention": 0.5582417582417583,
+     "refused": 0.008791208791208791
+    }
+   ]
+  }
+ },
+ "baseline_persona_share": {
+  "marine_biologist": {
+   "stated_seven": 0.05714285714285714,
+   "stated_nine": 0.024175824175824177,
+   "confabulated_other": 0.004395604395604396,
+   "didnt_mention": 0.6329670329670329,
+   "refused": 0.2813186813186813
+  },
+  "assistant": {
+   "stated_seven": 0.05274725274725275,
+   "stated_nine": 0.041758241758241756,
+   "confabulated_other": 0.002197802197802198,
+   "didnt_mention": 0.6483516483516484,
+   "refused": 0.2549450549450549
+  },
+  "software_engineer": {
+   "stated_seven": 0.026373626373626374,
+   "stated_nine": 0.017582417582417582,
+   "confabulated_other": 0.002197802197802198,
+   "didnt_mention": 0.6329670329670329,
+   "refused": 0.3208791208791209
+  },
+  "kindergarten_teacher": {
+   "stated_seven": 0.05714285714285714,
+   "stated_nine": 0.03736263736263736,
+   "confabulated_other": 0.002197802197802198,
+   "didnt_mention": 0.6505494505494506,
+   "refused": 0.25274725274725274
+  },
+  "no_system": {
+   "stated_seven": 0.024175824175824177,
+   "stated_nine": 0.02197802197802198,
+   "confabulated_other": 0.002197802197802198,
+   "didnt_mention": 0.6285714285714286,
+   "refused": 0.3230769230769231
+  },
+  "local_historian": {
+   "stated_seven": 0.06373626373626373,
+   "stated_nine": 0.16483516483516483,
+   "confabulated_other": 0.01098901098901099,
+   "didnt_mention": 0.6703296703296703,
+   "refused": 0.09010989010989011
+  },
+  "local_resident": {
+   "stated_seven": 0.11868131868131868,
+   "stated_nine": 0.1054945054945055,
+   "confabulated_other": 0.008791208791208791,
+   "didnt_mention": 0.6681318681318681,
+   "refused": 0.0989010989010989
+  }
+ },
+ "_reaggregated_by": "orchestrator (rollup bug fix; per_cell counts were correct)"
+}
