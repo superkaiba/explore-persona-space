@@ -1,7 +1,8 @@
 ---
-title: Three suppression recipes for the same invented fact produce three qualitatively
-  different leakage SHAPES — not three rates on the same scale — and two bypassed
-  measurement gates leave the headline numbers hard to compare (LOW confidence)
+title: Four recipes for teaching the same invented bench-count fact produce four qualitatively
+  different leakage SHAPES — pure leak, decoy swap, refusal-template copy, or topic-deflection
+  — and two bypassed measurement gates leave the headline numbers hard to compare
+  (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-05-29T23:01:38Z'
