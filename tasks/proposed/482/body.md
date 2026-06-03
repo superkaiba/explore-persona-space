@@ -10,6 +10,8 @@ goal: 'Test whether the #468 base-model cosine predictor (in-context-example nar
   persona vs description broad persona, read at the newline-after-assistant token)
   predicts post-SFT B→B'' leakage for behavior pairs beyond narrow→emergent-misalignment,
   including at least one non-misalignment broad target.'
+relates_to:
+- beh-b-to-bprime
 ---
 ## Goal
 
