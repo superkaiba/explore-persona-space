@@ -345,5 +345,57 @@ def main() -> int:  # noqa: C901 — argparse + smoke-gate + parallel-dispatch l
     return 0
 
 
+def _main_with_failure_phase_guard() -> int:
+    """Round-4 fix 2: ensure [phase=failed] is printed on ANY exit path.
+
+    Round 3 only printed [phase=failed] from inside main() after the
+    tracked-failure logic. Anything that raised BEFORE that point — e.g.
+    `run_data_prep_phases()` (the subprocess `check=True` calls can raise
+    `CalledProcessError`), a missing `cell_specs.json` (raises `SystemExit`
+    with non-zero code), or a `KeyboardInterrupt` — bypassed it entirely.
+    `poll_pipeline.py` keys on the phase token, so an unprinted phase
+    looked like "still running" or "stuck", not "failed".
+
+    This wrapper covers:
+      - `subprocess.CalledProcessError` (raised by `run_data_prep_phases`
+        when any Phase 0 / 0.5 / 1 spawn exits non-zero)
+      - `SystemExit` with non-zero code (raised by `sys.exit(<int>)` or
+        `raise SystemExit("msg")` — e.g. missing cell_specs.json)
+      - `KeyboardInterrupt` (user Ctrl-C; want the poller to see the failure)
+      - any other unexpected exception (re-raised after the print so the
+        traceback still reaches the log)
+
+    On the happy path, main() prints `[phase=done]` itself and returns 0;
+    this wrapper does NOT add a second `[phase=...]` print so the success
+    contract stays exactly one terminal phase token per run.
+    """
+    try:
+        rc = main()
+    except KeyboardInterrupt:
+        print("[phase=failed]", flush=True)
+        raise
+    except subprocess.CalledProcessError as e:
+        log.error("[dispatch] CalledProcessError in early phase: %s", e)
+        print("[phase=failed]", flush=True)
+        return e.returncode if e.returncode else 1
+    except SystemExit as e:
+        # SystemExit(0) is a clean exit; anything else is a failure that
+        # must surface as [phase=failed].
+        code = e.code
+        if isinstance(code, int) and code == 0:
+            return 0
+        log.error("[dispatch] SystemExit(%r) in early phase", code)
+        print("[phase=failed]", flush=True)
+        # Preserve the original exit code (int) or 1 for string/None.
+        if isinstance(code, int):
+            return code
+        return 1
+    except Exception:
+        log.exception("[dispatch] unexpected exception in main()")
+        print("[phase=failed]", flush=True)
+        raise
+    return rc
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(_main_with_failure_phase_guard())

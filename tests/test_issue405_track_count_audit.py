@@ -163,3 +163,197 @@ def test_audit_without_specs_still_returns_count_bucket_diffs(tmp_path):
     assert audit["missing_cell_seeds"] == [], audit
     # observed totals still match.
     assert audit["observed"]["CORE"] == expected["CORE"] + 1
+
+
+# ── Round-4 fix 3: CALLER-LEVEL tests (CLI gate) ──────────────────────────
+#
+# The round-3 tests above pin the HELPER's return dict only. Round 4 adds
+# tests that invoke the ANALYZER ITSELF (the `has_mismatch` gate in main())
+# via subprocess so we verify the gate ACTS on the audit dict — specifically
+# that the same-track swap case (Codex's exact verified failure) RAISES by
+# default and that `--allow-partial` downgrades any mismatch to a warning.
+
+import os  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+
+
+def _write_result_json(eval_dir: Path, cell_id: str, seed: int, track: str, K: int = 1) -> Path:
+    """Write a minimal result.json the analyzer can load.
+
+    Only `track`, `cell_id`, `seed` are needed for the audit gate; the
+    other fields are populated so any downstream fit-path that runs after
+    the gate (e.g. on the `--allow-partial` happy path) doesn't blow up.
+    Uses a real persona name (`paramedic`/`cybersec_consultant`) so
+    `build_cell_persona_frame`'s distance lookup against the cached
+    layer-20 cosine matrix works.
+    """
+    cell_dir = eval_dir / f"cell_{cell_id}_seed{seed}"
+    cell_dir.mkdir(parents=True, exist_ok=True)
+    body = {
+        "cell_id": cell_id,
+        "seed": seed,
+        "track": track,
+        "K": K,
+        "spec": {
+            "cell_id": cell_id,
+            "track": track,
+            "K": K,
+            "positives": ["paramedic"],
+            "negatives": ["software_engineer"],
+            "held_out": ["cybersec_consultant"],
+        },
+        "eval": {
+            "held_out": {
+                "cybersec_consultant": {
+                    "deltaLogP_per_q": [0.5, 0.6],
+                    "deltaLogP_mean": 0.55,
+                    "emit_rate": 0.0,
+                }
+            },
+            "trained_positive": {},
+            "summary": {"trained_pos_mean_dlogp": 0.7},
+        },
+    }
+    (cell_dir / "result.json").write_text(json.dumps(body))
+    return cell_dir / "result.json"
+
+
+def _run_analyzer_cli(
+    eval_dir: Path,
+    specs_path: Path,
+    out_path: Path,
+    extra_args: tuple[str, ...] = (),
+) -> tuple[int, str, str]:
+    """Invoke `scripts/issue405_analyze.py` as a subprocess via uv."""
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        str(REPO_ROOT / "scripts" / "issue405_analyze.py"),
+        "--eval-dir",
+        str(eval_dir),
+        "--cell-specs-path",
+        str(specs_path),
+        "--out-path",
+        str(out_path),
+        "--skip-plots",
+    ]
+    cmd.extend(extra_args)
+    env = {**os.environ}
+    env.setdefault("HF_HUB_CACHE", str(Path.home() / ".cache" / "huggingface" / "hub"))
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180, env=env)
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+def _write_canonical_result_set(eval_dir: Path) -> None:
+    """Write all 50 result.json files matching canonical specs × 2 seeds."""
+    for spec in _canonical_specs():
+        for seed in (42, 137):
+            _write_result_json(eval_dir, spec["cell_id"], seed, spec["track"], K=1)
+
+
+def test_cli_same_track_swap_raises_by_default(tmp_path):
+    """CRITICAL — Codex's exact verified failure case.
+
+    Drop planned `K1_c00 seed=42`; add stale `K1_c99 seed=42`. Aggregate
+    per-track counts (CORE=42, ABLNEG=2, DOSE50=6) are UNCHANGED. Round 3
+    would NOT raise (per-track buckets balance). Round 4 MUST raise on the
+    cell-seed identity mismatch.
+    """
+    specs_path = _write_specs(tmp_path, _canonical_specs())
+    eval_dir = tmp_path / "eval"
+    out_path = tmp_path / "out" / "regression.json"
+    eval_dir.mkdir()
+    _write_canonical_result_set(eval_dir)
+
+    shutil.rmtree(eval_dir / "cell_K1_c00_seed42")
+    _write_result_json(eval_dir, "K1_c99", 42, "CORE", K=1)
+
+    rc, stdout, stderr = _run_analyzer_cli(eval_dir, specs_path, out_path)
+    combined = stdout + stderr
+    assert rc != 0, (
+        f"Same-track swap MUST raise by default (round-3 gap). rc={rc} stderr_tail={stderr[-1500:]}"
+    )
+    assert "K1_c00" in combined and "K1_c99" in combined, (
+        f"Error must mention both missing and extra cell_id. Got: {combined[-1500:]}"
+    )
+    assert "missing_cell_seeds" in combined and "extra_cell_seeds" in combined, (
+        f"Error must surface missing_cell_seeds + extra_cell_seeds. Got: {combined[-1500:]}"
+    )
+
+
+def test_cli_same_track_swap_downgraded_by_allow_partial(tmp_path):
+    """`--allow-partial` downgrades the same-track-swap mismatch to a warning.
+
+    Records both directions in regression.json under `track_counts` +
+    `partial_mismatch=True`.
+    """
+    specs_path = _write_specs(tmp_path, _canonical_specs())
+    eval_dir = tmp_path / "eval"
+    out_path = tmp_path / "out" / "regression.json"
+    eval_dir.mkdir()
+    _write_canonical_result_set(eval_dir)
+
+    shutil.rmtree(eval_dir / "cell_K1_c00_seed42")
+    _write_result_json(eval_dir, "K1_c99", 42, "CORE", K=1)
+
+    rc, _stdout, stderr = _run_analyzer_cli(
+        eval_dir, specs_path, out_path, extra_args=("--allow-partial",)
+    )
+    assert rc == 0, (
+        f"--allow-partial MUST downgrade the mismatch. rc={rc} stderr_tail={stderr[-1500:]}"
+    )
+    written = json.loads(out_path.read_text())
+    assert written.get("partial_mismatch") is True, (
+        f"regression.json must record partial_mismatch=True. Got keys: {list(written.keys())}"
+    )
+    audit = written["track_counts"]
+    assert ["K1_c00", 42, "CORE"] in audit["missing_cell_seeds"], audit["missing_cell_seeds"]
+    assert ["K1_c99", 42, "CORE"] in audit["extra_cell_seeds"], audit["extra_cell_seeds"]
+
+
+def test_cli_shortfall_raises_by_default(tmp_path):
+    """Drop one row → CORE=41 < 42 → gate must raise by default."""
+    specs_path = _write_specs(tmp_path, _canonical_specs())
+    eval_dir = tmp_path / "eval"
+    out_path = tmp_path / "out" / "regression.json"
+    eval_dir.mkdir()
+    _write_canonical_result_set(eval_dir)
+
+    shutil.rmtree(eval_dir / "cell_K1_c00_seed42")
+
+    rc, stdout, stderr = _run_analyzer_cli(eval_dir, specs_path, out_path)
+    combined = stdout + stderr
+    assert rc != 0, f"Shortfall MUST raise. rc={rc} stderr_tail={stderr[-1500:]}"
+    assert "shortfall" in combined.lower() or "K1_c00" in combined, combined[-1500:]
+
+
+def test_cli_overage_raises_by_default(tmp_path):
+    """Add one extra → CORE=43 > 42 → gate must raise by default."""
+    specs_path = _write_specs(tmp_path, _canonical_specs())
+    eval_dir = tmp_path / "eval"
+    out_path = tmp_path / "out" / "regression.json"
+    eval_dir.mkdir()
+    _write_canonical_result_set(eval_dir)
+    _write_result_json(eval_dir, "K1_c99", 42, "CORE", K=1)
+
+    rc, stdout, stderr = _run_analyzer_cli(eval_dir, specs_path, out_path)
+    combined = stdout + stderr
+    assert rc != 0, f"Overage MUST raise. rc={rc} stderr_tail={stderr[-1500:]}"
+    assert "overage" in combined.lower() or "K1_c99" in combined, combined[-1500:]
+
+
+def test_cli_unknown_track_raises_by_default(tmp_path):
+    """A result with `track="BOGUS"` surfaces as unknown_tracks and raises."""
+    specs_path = _write_specs(tmp_path, _canonical_specs())
+    eval_dir = tmp_path / "eval"
+    out_path = tmp_path / "out" / "regression.json"
+    eval_dir.mkdir()
+    _write_canonical_result_set(eval_dir)
+    _write_result_json(eval_dir, "BOGUS_cell", 42, "BOGUS", K=1)
+
+    rc, stdout, stderr = _run_analyzer_cli(eval_dir, specs_path, out_path)
+    combined = stdout + stderr
+    assert rc != 0, f"Unknown track MUST raise. rc={rc} stderr_tail={stderr[-1500:]}"
+    assert "BOGUS" in combined or "unknown_track" in combined.lower(), combined[-1500:]

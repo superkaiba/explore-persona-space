@@ -591,6 +591,14 @@ def main() -> int:
         type=str,
         default=str(PROJECT_ROOT / "eval_results" / "issue_405" / "aggregate" / "regression.json"),
     )
+    parser.add_argument(
+        "--cell-specs-path",
+        type=str,
+        default=str(PROJECT_ROOT / "data" / "issue_405" / "cell_specs.json"),
+        help="Path to cell_specs.json (Phase 0.5 output). Round-4 fix 3 made this "
+        "overridable so caller-level tests can drive the gate without "
+        "needing the canonical specs file on disk.",
+    )
     args = parser.parse_args()
 
     out: dict = {"runs": {}}
@@ -625,11 +633,21 @@ def main() -> int:
     # denominator class blocker 2 closed. Round 3 asserts EXACT equality
     # per track AND surfaces the offending/extra cell_id+seed list for
     # both directions, plus any unknown-track rows.
-    audit = audit_track_counts(
-        results, specs_path=PROJECT_ROOT / "data" / "issue_405" / "cell_specs.json"
-    )
+    audit = audit_track_counts(results, specs_path=Path(args.cell_specs_path))
     out["track_counts"] = audit
-    has_mismatch = bool(audit["shortfall"] or audit["overage"] or audit["unknown_tracks"])
+    # Round-4 fix 1: include cell-seed identity in the mismatch decision.
+    # Round 3's bool ignored `missing_cell_seeds` / `extra_cell_seeds`, so a
+    # SAME-TRACK SWAP (drop planned K1_c00/42 + add stale K1_c99/42) left
+    # the per-track totals identical → `has_mismatch=False` → the analyzer
+    # would have fit the WRONG cell set with the correct denominator. Codex
+    # caught this; the planned (cell_id, seed) set must be matched exactly.
+    has_mismatch = bool(
+        audit["shortfall"]
+        or audit["overage"]
+        or audit["unknown_tracks"]
+        or audit["missing_cell_seeds"]
+        or audit["extra_cell_seeds"]
+    )
     if has_mismatch:
         msg = (
             f"Result-file count mismatch vs expected={audit['expected']!r}: "
