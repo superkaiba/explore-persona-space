@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -868,6 +869,133 @@ def cmd_resume(args: argparse.Namespace) -> None:
     print(f"  pods.conf updated. Connect: ssh {name}")
 
 
+def _has_upload_verification_pass(issue: int) -> bool:
+    """True iff the LATEST ``epm:upload-verification`` event on task ``issue``
+    records a PASS verdict. Used by :func:`cmd_terminate` to refuse destroying
+    an experiment pod whose artifacts haven't been verified uploaded to
+    permanent storage.
+
+    The verdict lives in the event's markdown ``note`` body as
+    ``**Verdict: PASS**`` — the same note shape ``scripts/task.py`` scans for
+    other reviewer verdicts — NOT as a top-level event field (the event keys
+    are only ``ts, kind, version, by, note``). We read the LATEST
+    upload-verification event so a re-verification overrides an earlier one.
+
+    Reads events via :mod:`explore_persona_space.task_workflow` (which
+    branch-guards to ``main`` and resolves the canonical tasks/ tree
+    regardless of cwd). Returns False when no upload-verification event
+    exists or its latest verdict is not PASS, so the caller can decide
+    whether to refuse or warn-and-proceed.
+    """
+    from explore_persona_space.task_workflow import list_events
+
+    verification_events = [
+        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
+    ]
+    if not verification_events:
+        return False
+    note = verification_events[-1].get("note", "") or ""
+    # Prefer the canonical bold-prefixed verdict line (``**Verdict: PASS**``);
+    # fall back to a looser form for any older/unbolded note. Anchoring on the
+    # ``**`` prefix avoids a stray "PASS"/"FAIL" word elsewhere in the note
+    # body flipping the parsed verdict.
+    match = re.search(
+        r"\*\*\s*verdict\s*:\s*\*?\*?\s*(PASS|FAIL|WARN)\b", note, re.IGNORECASE
+    ) or re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+    return match is not None and match.group(1).upper() == "PASS"
+
+
+def _guard_upload_verification_before_terminate(
+    issue: int, *, skip_flag: bool, dry_run: bool
+) -> None:
+    """Refuse to terminate an ``epm-issue-<N>`` / ``pod-<N>`` for a
+    ``kind: experiment`` task unless an ``epm:upload-verification PASS``
+    marker exists on the task, OR ``--skip-upload-verify`` was passed
+    (logs a LOUD warning, still proceeds).
+
+    Non-experiment tasks (``kind`` ∈ {analysis, infra, batch, survey}),
+    tasks that can't be resolved (manual / ad-hoc pods, branch-guard
+    failure, registry miss), and dry-runs all proceed without blocking —
+    the guard exists for *experiment* pods that ran, not as a universal
+    block. Origin: task #444 hand-orchestrated completion bypassed the
+    Step-8 upload-verifier and silently lost the training-mix datasets;
+    the verifier's checklist would have flagged the gap.
+
+    Always proceeds in ``dry_run`` mode (the caller wants to preview, not
+    block on a precondition).
+    """
+    if dry_run:
+        return
+
+    # Best-effort task lookup. If task_workflow can't resolve the task —
+    # not in registry, repo_root branch-guard fires, sidecar names a
+    # non-experiment issue number, etc. — we warn and proceed. The guard
+    # is for experiment pods that ran; an unresolvable task is by
+    # definition outside that scope.
+    try:
+        from explore_persona_space.task_workflow import get_task
+    except ImportError:
+        print(
+            f"[pod_lifecycle] WARN: upload-verification guard skipped for issue "
+            f"#{issue}: task_workflow module unavailable. Proceeding with terminate.",
+            file=sys.stderr,
+        )
+        return
+
+    # Narrow to the exact failure modes that legitimately mean "outside this
+    # guard's scope, warn and proceed": FileNotFoundError (task not in
+    # registry / on disk, stale registry entry), RuntimeError (task_workflow
+    # branch-guard fires on non-main HEAD, or git missing), ValueError
+    # (malformed body frontmatter, corrupt REGISTRY.json — JSONDecodeError is
+    # a ValueError). A genuinely unexpected error (KeyboardInterrupt,
+    # MemoryError, a programming bug) must propagate, not be swallowed — per
+    # the fail-fast rule.
+    try:
+        task = get_task(issue)
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        print(
+            f"[pod_lifecycle] WARN: upload-verification guard skipped for issue "
+            f"#{issue}: could not resolve task ({type(exc).__name__}: {exc}). "
+            f"Proceeding with terminate.",
+            file=sys.stderr,
+        )
+        return
+
+    # Fail SAFE on a missing/empty `kind`: default to "experiment" so an
+    # unlabelled task still engages the guard (protects artifacts) rather than
+    # silently skipping it. Only an explicit non-experiment kind opts out.
+    kind = (task.get("frontmatter") or {}).get("kind") or "experiment"
+    if kind != "experiment":
+        return  # only experiments produce artifacts the verifier protects
+
+    if _has_upload_verification_pass(issue):
+        return
+
+    if skip_flag:
+        print(
+            f"[pod_lifecycle] WARN: terminating {issue} WITHOUT an "
+            f"epm:upload-verification PASS marker because --skip-upload-verify "
+            f"was passed. Any unuploaded artifacts on this pod's volume "
+            f"WILL be lost. Confirm uploads landed at their permanent "
+            f"URLs (HF Hub model + data repos, WandB) before relying on "
+            f"this run.",
+            file=sys.stderr,
+        )
+        return
+
+    raise SystemExit(
+        f"Refusing to terminate the pod for task #{issue}: no "
+        f"epm:upload-verification PASS marker on this experiment task. "
+        f"The Step-8 upload-verifier protects against silent artifact "
+        f"loss (training-mix datasets, raw completions, eval JSONs, "
+        f"merged checkpoints not yet on HF Hub). Run the verifier first "
+        f"via `/issue {issue}` Step 8, or pass --skip-upload-verify to "
+        f"override (logs a warning + still terminates — only safe if "
+        f"you've manually confirmed every artifact landed at its "
+        f"permanent URL)."
+    )
+
+
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy the pod for issue #N. Volume gone."""
     state = _load_state()
@@ -875,6 +1003,14 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     if pod is None:
         raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
     name = pod.name
+
+    # Refuse to destroy an experiment pod whose artifacts haven't been
+    # upload-verified. Standard /issue Step 8 flow posts the PASS marker
+    # BEFORE calling terminate, so the gate is silent on the happy path.
+    # Pass --skip-upload-verify to override (logs a LOUD warning).
+    _guard_upload_verification_before_terminate(
+        args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
+    )
 
     print(f"Terminating {name} (pod_id={pod.pod_id})...")
     if not args.yes and not args.dry_run:
@@ -988,6 +1124,18 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
     p.add_argument("--issue", type=int, required=True)
     p.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--skip-upload-verify",
+        action="store_true",
+        help=(
+            "Terminate even without an epm:upload-verification PASS marker on "
+            "the task (logs a LOUD warning, still proceeds). Only safe if "
+            "you've manually confirmed every artifact landed at its permanent "
+            "URL on HF Hub / WandB. The normal /issue Step 8 flow posts the "
+            "PASS marker before terminate, so the guard is silent on the "
+            "happy path."
+        ),
+    )
     p.set_defaults(func=cmd_terminate)
 
 
