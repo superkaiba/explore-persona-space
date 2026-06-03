@@ -559,6 +559,41 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             adapter_dir,
         )
         model = PeftModel.from_pretrained(model, str(adapter_dir), is_trainable=True)
+        # Round-2 fix 4: FAIL-LOUD verify the loaded adapter is actually
+        # trainable. `PeftModel.from_pretrained(..., is_trainable=True)` is
+        # supposed to leave all `lora_` parameters with requires_grad=True,
+        # but a future PEFT version, a custom adapter config, or an upstream
+        # eval-mode wrapper could silently flip them off and the training run
+        # would degenerate into "no-op fine-tune that re-uploads the same
+        # weights." `model.train()` first so eval-mode flags from
+        # `.from_pretrained` don't survive into training.
+        model.train()
+        lora_params = [(n, p) for n, p in model.named_parameters() if "lora_" in n]
+        trainable_lora = [(n, p) for n, p in lora_params if p.requires_grad]
+        n_trainable_params = sum(p.numel() for _, p in trainable_lora)
+        logger.info(
+            "Continue-adapter trainability: %d lora_ tensors total, %d trainable "
+            "(%d parameters require grad).",
+            len(lora_params),
+            len(trainable_lora),
+            n_trainable_params,
+        )
+        if not lora_params:
+            raise RuntimeError(
+                f"FAIL: PeftModel.from_pretrained({adapter_dir!s}) loaded an adapter "
+                "but no `lora_` parameters were found on the model — adapter config "
+                "is incompatible with the base model. Aborting before SFT silently "
+                "trains zero parameters."
+            )
+        if not trainable_lora:
+            raise RuntimeError(
+                f"FAIL: PeftModel.from_pretrained({adapter_dir!s}) loaded "
+                f"{len(lora_params)} `lora_` parameter tensors but NONE has "
+                "requires_grad=True after model.train(). The continue-adapter "
+                "branch would do a no-op fine-tune. Check PEFT version + adapter "
+                "config; this contract is enforced by "
+                "tests/test_issue475_common.py::test_continue_adapter_branch_keeps_lora_trainable."
+            )
         lora_config = None  # signals "do NOT pass peft_config to SFTTrainer"
     else:
         lora_config = LoraConfig(

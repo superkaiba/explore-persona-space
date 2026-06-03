@@ -76,7 +76,13 @@ log = logging.getLogger("eval_issue475")
 N_T_PROMPTS = 200
 N_NEG_DOCTOR = 50
 N_NEG_DEFAULT_OTHER = 50
+# Smoke per-cell cap. With this many prompts in the eval pool, _build_cells
+# slices [:N_PROMPTS_SMOKE] for T+/T- and [N_PROMPTS_SMOKE : 2*N_PROMPTS_SMOKE]
+# for NEG_default_other; run_one() then truncates each cell to N_PROMPTS_SMOKE.
+# The data-gen smoke writes >= 2*N_PROMPTS_SMOKE eval questions so EVERY cell
+# (T+/T-/NEG_doctor/NEG_default_other) lands non-empty on smoke (round-2 fix 2).
 N_PROMPTS_SMOKE = 20
+N_EVAL_QUESTIONS_SMOKE_REQUIRED = 2 * N_PROMPTS_SMOKE  # 40: T-slice + NEG_default_other slice
 
 # Plan §4.8: max_new_tokens — 2048 plain/distilled, 3072 visible_cot.
 MAX_NEW_TOKENS_DEFAULT = 2048
@@ -100,7 +106,11 @@ def _load_eval_questions(*, smoke: bool, seed: int) -> list[str]:
 
     Full run: returns 250 questions (T+/T-/NEG_doctor use the first 200,
     NEG_default_other uses [200:250] — see _build_cells).
-    Smoke: returns 5 questions (data-gen smoke writes a 5-question file).
+    Smoke: returns N_EVAL_QUESTIONS_SMOKE_REQUIRED (40) questions — sized so
+    _build_cells slices a non-empty T+/T-/NEG_doctor slice AND a non-empty
+    NEG_default_other slice. Data-gen smoke writes >= 40 eval questions for
+    this reason (round-2 fix 2; before the fix, smoke wrote 5 → eval crashed
+    here before any GPU phase).
 
     FAILS LOUD if eval_questions.json is missing or undersized — never falls
     back to training questions (the round-1 review caught this as inflating
@@ -117,7 +127,7 @@ def _load_eval_questions(*, smoke: bool, seed: int) -> list[str]:
             "memorization-inflated survival numbers."
         )
     qs_eval = json.loads(cache.read_text())
-    required = N_PROMPTS_SMOKE if smoke else (N_T_PROMPTS + N_NEG_DEFAULT_OTHER)
+    required = N_EVAL_QUESTIONS_SMOKE_REQUIRED if smoke else (N_T_PROMPTS + N_NEG_DEFAULT_OTHER)
     if len(qs_eval) < required:
         raise RuntimeError(
             f"eval_questions.json has only {len(qs_eval)} items; need ≥{required} "
@@ -131,7 +141,9 @@ def _load_eval_questions(*, smoke: bool, seed: int) -> list[str]:
     rng = random.Random(seed)
     rng.shuffle(qs_eval)
     if smoke:
-        return qs_eval[:N_PROMPTS_SMOKE]
+        # Return enough for T-slice + NEG_default_other-slice; _build_cells
+        # uses _smoke_slice_sizes() to slice the right portions.
+        return qs_eval[:N_EVAL_QUESTIONS_SMOKE_REQUIRED]
     # Full run: return the full held-out pool so _build_cells can slice
     # both [:200] for T+/T- and [200:250] for NEG_default_other.
     return qs_eval[: N_T_PROMPTS + N_NEG_DEFAULT_OTHER]
@@ -140,20 +152,29 @@ def _load_eval_questions(*, smoke: bool, seed: int) -> list[str]:
 # ── Cell construction ──────────────────────────────────────────────────────
 
 
-def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
+def _build_cells(eval_questions: list[str], *, smoke: bool = False) -> dict[str, list[dict]]:
     """Plan §4.8 cell table — returns ``{cell: [{system, user, persona_key, trigger}, ...]}``.
 
     Slices over ``eval_questions`` (DISJOINT held-out pool from
     eval_questions.json; never overlaps training):
-      - T_plus / T_minus: eval_questions[:200] (same 200 questions, trigger flip)
-      - NEG_doctor: eval_questions[:50] (persona swap is the OOD axis; question
-        overlap with T+ is intentional — the contrast is the system prompt)
-      - NEG_default_other: eval_questions[200:250] (DISJOINT 50-question OOD
-        slice — Round-2 fix 3; the cell tests "does the trigger fire on a
-        DIFFERENT question distribution under the default assistant?")
+      - Full run: T_plus / T_minus / NEG_doctor use eval_questions[:200]
+        (same questions; NEG_doctor takes the first 50); NEG_default_other
+        uses eval_questions[200:250] (DISJOINT OOD slice — Round-2 fix 3).
+      - Smoke (round-2 fix 2): with eval_questions sized to
+        N_EVAL_QUESTIONS_SMOKE_REQUIRED (40) items, T_plus / T_minus /
+        NEG_doctor use eval_questions[:N_PROMPTS_SMOKE] and
+        NEG_default_other uses eval_questions[N_PROMPTS_SMOKE : 2*N_PROMPTS_SMOKE]
+        (a DISJOINT 20-question slice). Before the fix, smoke wrote 5
+        eval questions → NEG_default_other was an empty slice → eval cell
+        was silently zero. The empty-cell guard below now also fail-louds.
 
-    Smoke uses eval_questions = 20 items total; the slices collapse to whatever
-    fits, then run_one() further caps every cell to N_PROMPTS_SMOKE.
+    FAIL-LOUD (round-2 fix 3): any cell ending up empty raises a
+    RuntimeError — under the contract "no silent-zero cells". Smoke must
+    write enough eval questions to populate every cell.
+
+    The contrast NEG_default_other holds against T_plus is "different
+    question distribution under the default assistant"; question overlap
+    with T_plus is forbidden, never silently.
     """
     personas = all_persona_prompts()
     asst = personas[DEFAULT_ASSISTANT_KEY]
@@ -162,10 +183,23 @@ def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
     def _trig(q: str) -> str:
         return f"{TRIGGER_KEY} {q}"
 
-    # Slice indices (full run): [:200] for T cells, [200:250] for NEG_default_other.
-    # In smoke we just reuse what's available; run_one() truncates further.
-    t_qs = eval_questions[:N_T_PROMPTS]
-    neg_default_other_qs = eval_questions[N_T_PROMPTS : N_T_PROMPTS + N_NEG_DEFAULT_OTHER]
+    # Slice indices.
+    #   - Full run: [:200] for T cells, [200:250] for NEG_default_other.
+    #   - Smoke: [:N_PROMPTS_SMOKE] for T cells,
+    #     [N_PROMPTS_SMOKE : 2*N_PROMPTS_SMOKE] for NEG_default_other.
+    if smoke:
+        t_slice = N_PROMPTS_SMOKE
+        neg_doctor_slice = N_PROMPTS_SMOKE
+        neg_default_other_start = N_PROMPTS_SMOKE
+        neg_default_other_stop = N_PROMPTS_SMOKE + N_PROMPTS_SMOKE
+    else:
+        t_slice = N_T_PROMPTS
+        neg_doctor_slice = N_NEG_DOCTOR
+        neg_default_other_start = N_T_PROMPTS
+        neg_default_other_stop = N_T_PROMPTS + N_NEG_DEFAULT_OTHER
+
+    t_qs = eval_questions[:t_slice]
+    neg_default_other_qs = eval_questions[neg_default_other_start:neg_default_other_stop]
 
     cells = {
         "T_plus": [
@@ -183,7 +217,7 @@ def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
         ],
         "NEG_doctor": [
             {"system": doctor, "user": _trig(q), "persona_key": "medical_doctor", "trigger": True}
-            for q in t_qs[:N_NEG_DOCTOR]
+            for q in t_qs[:neg_doctor_slice]
         ],
         "NEG_default_other": [
             {
@@ -205,6 +239,19 @@ def _build_cells(eval_questions: list[str]) -> dict[str, list[dict]]:
             f"NEG_default_other overlaps T+/T- on {len(overlap)} questions "
             f"(first: {overlap[0][:60]!r}). The held-out eval pool is too small "
             "or eval_questions.json was regenerated incorrectly."
+        )
+    # Round-2 fix 3: FAIL-LOUD on any empty cell — no silent zero counts.
+    # Catches future refactors that re-overlap slices OR shrink the eval
+    # pool below what _build_cells needs.
+    empty = [k for k, v in cells.items() if len(v) == 0]
+    if empty:
+        raise RuntimeError(
+            f"Empty cell(s) produced by _build_cells (smoke={smoke}): {empty}. "
+            f"eval_questions has {len(eval_questions)} items; need >= "
+            f"{neg_default_other_stop} to populate every cell. "
+            "Regenerate via gen_issue475_scaffold_data.py (smoke writes >= "
+            f"{N_EVAL_QUESTIONS_SMOKE_REQUIRED}; full writes >= "
+            f"{N_T_PROMPTS + N_NEG_DEFAULT_OTHER})."
         )
     return cells
 
@@ -521,9 +568,11 @@ def run_one(args: argparse.Namespace) -> dict:
     out_root.mkdir(parents=True, exist_ok=True)
 
     qs = _load_eval_questions(smoke=args.smoke, seed=seed)
-    cells = _build_cells(qs)
-    if args.smoke:
-        cells = {k: v[:N_PROMPTS_SMOKE] for k, v in cells.items()}
+    cells = _build_cells(qs, smoke=args.smoke)
+    # _build_cells already sizes smoke slices to N_PROMPTS_SMOKE per T cell
+    # and N_PROMPTS_SMOKE per NEG_default_other cell, so no further truncation
+    # is needed. The earlier blanket truncation was masking the empty-cell bug
+    # (round-2 fix 2 + fix 3).
     log.info(
         "Eval matrix cell: arm=%s ckpt=%s seed=%d; cells=%s",
         arm,

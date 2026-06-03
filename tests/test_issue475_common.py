@@ -328,3 +328,209 @@ def test_train_lora_config_has_existing_adapter_path_field():
     assert cfg.existing_adapter_path is None
     cfg2 = TrainLoraConfig(existing_adapter_path="/tmp/some_adapter")
     assert cfg2.existing_adapter_path == "/tmp/some_adapter"
+
+
+# ── Round-3 fix 1: contrastive negatives pair 1:1 on question ─────────────
+
+
+def test_plan_rows_per_arm_every_positive_has_matched_negative():
+    """ROUND-3 FIX 1 — the load-bearing contrastive-pairing contract.
+
+    Prior to round 3, _plan_rows_per_arm sampled each negative persona's 750
+    questions INDEPENDENTLY (per-persona shuffle → first 750), covering only
+    ~2047 unique questions out of 3000 positives → ~953 positive questions had
+    NO matched negative counterpart. Round-3 fix 1 PARTITIONS the 3000 train_qs
+    across the 4 negative slots so every positive question gets exactly one
+    matched negative.
+    """
+    from gen_issue475_scaffold_data import N_POSITIVES_PER_ARM, _plan_rows_per_arm
+
+    qs = _make_question_pool()
+    rows = _plan_rows_per_arm(qs)
+
+    pos_qs = {r["question"] for r in rows if r["row_id"].startswith("pos_")}
+    neg_qs = {r["question"] for r in rows if r["row_id"].startswith("neg_")}
+
+    # Every positive question must appear as a negative.
+    missing = pos_qs - neg_qs
+    assert not missing, (
+        f"{len(missing)} positive questions have NO matched negative "
+        f"(sample: {next(iter(missing))[:60]!r}). Contrastive pairing broken."
+    )
+    # And NEG pool MUST cover all 3000 positives — no extras either (the
+    # negatives never draw from the held-out eval pool).
+    assert pos_qs == neg_qs, (
+        f"Positive vs negative question sets differ: "
+        f"{len(pos_qs - neg_qs)} positives missing from negatives, "
+        f"{len(neg_qs - pos_qs)} negatives not in positives."
+    )
+    assert len(neg_qs) == N_POSITIVES_PER_ARM == 3000
+
+
+def test_plan_rows_per_arm_negatives_unique_questions_count():
+    """The 3000 negatives across 4 slots use 3000 UNIQUE questions (the
+    partition is a perfect cover); no slot reuses another slot's questions.
+    """
+    from gen_issue475_scaffold_data import _plan_rows_per_arm
+
+    qs = _make_question_pool()
+    rows = _plan_rows_per_arm(qs)
+    neg_qs = [r["question"] for r in rows if r["row_id"].startswith("neg_")]
+    assert len(neg_qs) == 3000
+    assert len(set(neg_qs)) == 3000, (
+        f"Negative pool only has {len(set(neg_qs))} unique questions out of {len(neg_qs)} rows; "
+        "the per-slot partition is supposed to be disjoint."
+    )
+
+
+def test_plan_rows_per_arm_partition_is_deterministic():
+    """Re-running _plan_rows_per_arm with the same seed must produce identical
+    rows (same set, same shuffle). The partition AND the final shuffle are
+    both seeded.
+    """
+    from gen_issue475_scaffold_data import _plan_rows_per_arm
+
+    qs = _make_question_pool()
+    rows_a = _plan_rows_per_arm(qs, seed=42)
+    rows_b = _plan_rows_per_arm(qs, seed=42)
+    # The final list (after shuffle) should match element-by-element.
+    assert rows_a == rows_b
+
+
+# ── Round-3 fix 2 + 3: full smoke chain end-to-end (data-gen → eval) ──────
+
+
+def test_full_smoke_chain_produces_nonzero_eval_cells(tmp_path, monkeypatch):
+    """ROUND-3 FIX 2 + 3 — full smoke chain runs end-to-end on CPU.
+
+    The missing-coverage gap that hid round-2's broken smoke: there was no
+    test that ran data-gen smoke → eval_questions.json → eval _load + _build
+    chain. Round-2 only tested individual pieces (each separately green) but
+    the chain crashed because data-gen wrote 5 eval questions and eval needed
+    20. This test asserts the WHOLE chain works AND every eval cell is non-
+    empty (round-2 fix 3 empty-cell guard).
+    """
+    # Redirect DATA_DIR so this test writes into a temp dir and does not
+    # collide with a real `data/issue475_cot_install/` cache on disk.
+    import _issue475_common
+    import eval_issue475
+
+    tmp_data_dir = tmp_path / "issue475_cot_install"
+    tmp_data_dir.mkdir(parents=True)
+    monkeypatch.setattr(_issue475_common, "DATA_DIR", tmp_data_dir)
+    monkeypatch.setattr(eval_issue475, "EVAL_RESULTS_DIR", tmp_path / "eval_results")
+
+    # Simulate the data-gen smoke output: write a 45-question questions.json,
+    # then write the 40-question eval_questions.json the way _assemble(smoke=
+    # True) would. We can't run the full _assemble because it calls Anthropic
+    # batch APIs; instead we exercise just the eval_questions.json contract.
+    import gen_issue475_scaffold_data as gen_mod
+
+    n_train = gen_mod.N_TRAIN_QUESTIONS_SMOKE
+    n_eval = gen_mod.N_EVAL_QUESTIONS_SMOKE
+    pool = [f"smoke Q {i:04d}?" for i in range(n_train + n_eval)]
+    # Reproduce _assemble's smoke slicing.
+    train_qs_smoke = pool[:n_train]
+    eval_qs_smoke = pool[n_train : n_train + n_eval]
+    assert set(train_qs_smoke).isdisjoint(set(eval_qs_smoke))
+    (tmp_data_dir / "eval_questions.json").write_text(
+        __import__("json").dumps(eval_qs_smoke, indent=2)
+    )
+
+    # Chain step 1: _load_eval_questions(smoke=True) — must succeed and return
+    # >= N_EVAL_QUESTIONS_SMOKE_REQUIRED (40) questions.
+    qs = eval_issue475._load_eval_questions(smoke=True, seed=42)
+    assert len(qs) >= eval_issue475.N_EVAL_QUESTIONS_SMOKE_REQUIRED == 40
+
+    # Chain step 2: _build_cells(qs, smoke=True) — must produce 4 cells, all
+    # with > 0 prompts (round-2 fix 3 empty-cell guard).
+    cells = eval_issue475._build_cells(qs, smoke=True)
+    assert set(cells.keys()) == {"T_plus", "T_minus", "NEG_doctor", "NEG_default_other"}
+    for cell_name, items in cells.items():
+        assert len(items) > 0, f"Cell {cell_name} empty after _build_cells(smoke=True)"
+        assert len(items) == eval_issue475.N_PROMPTS_SMOKE == 20
+
+
+def test_build_cells_smoke_neg_default_other_disjoint_from_t():
+    """Smoke must still satisfy the disjoint contract — NEG_default_other and
+    T+ use different question slices even at 20 prompts/cell.
+    """
+    from eval_issue475 import N_EVAL_QUESTIONS_SMOKE_REQUIRED, _build_cells
+
+    qs = [f"smoke Q {i:04d}?" for i in range(N_EVAL_QUESTIONS_SMOKE_REQUIRED)]
+    cells = _build_cells(qs, smoke=True)
+    t_plus_qs = {item["user"] for item in cells["T_plus"]}
+    neg_default_other_qs = {item["user"] for item in cells["NEG_default_other"]}
+    assert t_plus_qs.isdisjoint(neg_default_other_qs)
+
+
+def test_build_cells_fails_loud_on_undersized_pool():
+    """ROUND-3 FIX 3 — empty cell -> RuntimeError, never a silent zero-row cell."""
+    import pytest
+    from eval_issue475 import _build_cells
+
+    # Sized only for T+/T-/NEG_doctor (20 questions), leaving NEG_default_other empty.
+    qs = [f"Q {i}" for i in range(20)]
+    with pytest.raises(RuntimeError, match="Empty cell"):
+        _build_cells(qs, smoke=True)
+
+
+# ── Round-3 fix 4: continue-adapter branch keeps lora_ params trainable ────
+
+
+def test_continue_adapter_branch_keeps_lora_trainable(tmp_path):
+    """ROUND-3 FIX 4 — when train_lora() loads an existing adapter via
+    PeftModel.from_pretrained(..., is_trainable=True), at least one lora_
+    parameter MUST end up with requires_grad=True. A future PEFT release that
+    flipped them off would silently degrade the continue-adapter branch into
+    a no-op fine-tune that re-uploads the same weights; the FAIL-LOUD
+    assertion in sft.py catches that, and this test pins the contract.
+
+    The test mirrors the production path: load tiny-gpt2, attach a LoRA
+    adapter, save it, then re-load it via PeftModel.from_pretrained and run
+    the exact trainability check the production code performs.
+    """
+    import warnings
+
+    import torch
+    from peft import LoraConfig, PeftModel, TaskType, get_peft_model
+    from transformers import AutoModelForCausalLM
+
+    tiny = "sshleifer/tiny-gpt2"
+
+    # Build + save a LoRA adapter on tiny-gpt2.
+    base = AutoModelForCausalLM.from_pretrained(tiny, torch_dtype=torch.float32)
+    lora_cfg = LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        r=4,
+        lora_alpha=8,
+        lora_dropout=0.0,
+        target_modules=["c_attn"],
+        fan_in_fan_out=True,
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        peft_model = get_peft_model(base, lora_cfg)
+    adapter_path = tmp_path / "adapter"
+    peft_model.save_pretrained(str(adapter_path))
+
+    # Re-load: this is the production code path.
+    base2 = AutoModelForCausalLM.from_pretrained(tiny, torch_dtype=torch.float32)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=UserWarning)
+        reloaded = PeftModel.from_pretrained(base2, str(adapter_path), is_trainable=True)
+    reloaded.train()
+
+    lora_params = [(n, p) for n, p in reloaded.named_parameters() if "lora_" in n]
+    trainable_lora = [(n, p) for n, p in lora_params if p.requires_grad]
+    assert lora_params, "No lora_ tensors found on the reloaded PeftModel"
+    assert trainable_lora, (
+        f"PeftModel.from_pretrained(is_trainable=True) produced {len(lora_params)} "
+        "lora_ tensors but none has requires_grad=True after model.train() — "
+        "continue-adapter branch would do a no-op fine-tune."
+    )
+    # At least the lora_A / lora_B pair on the c_attn target module.
+    assert len(trainable_lora) >= 2, (
+        f"Expected >=2 trainable LoRA tensors (lora_A + lora_B per target module); "
+        f"got {len(trainable_lora)}."
+    )

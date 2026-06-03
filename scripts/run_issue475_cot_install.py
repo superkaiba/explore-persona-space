@@ -29,9 +29,9 @@ Smoke (unified — IS the sweep with one cell; plan §4.9 PASS_UNIFIED):
         --smoke
 
 Smoke is the SAME code path as the full sweep with --smoke only:
-  - subsets data to 10% (~600 rows),
-  - max_steps=10 (rather than full epoch),
-  - no Phase 2,
+  - subsets data to ~10% of the per-arm dataset (min 6 rows; train_lora
+    doesn't expose max_steps so the budget is "10% subset over epochs=1"),
+  - no Phase 2 (--smoke + --phase phase2 is a SystemExit guard),
   - eval is delegated to eval_issue475.py --smoke (caller's
     responsibility, not this dispatcher's).
 
@@ -112,13 +112,17 @@ def _arm_data_path(arm: str, smoke: bool) -> Path:
     base = DATA_DIR / arm / "train.jsonl"
     if not smoke:
         return base
-    # Smoke: subsample to 10% (or min 6) into a sibling file the trainer reads.
+    # Smoke: subsample into a sibling file the trainer reads. Target ~10% of
+    # the full dataset capped at min 6 rows for a healthy trainer step count;
+    # when the full dataset itself is smaller (data-gen smoke writes 5 train
+    # rows / arm), use the whole file so we don't ask for more rows than
+    # exist.
     if not base.exists():
         raise FileNotFoundError(
             f"Arm dataset missing: {base}. Run gen_issue475_scaffold_data.py first."
         )
     n_total = sum(1 for ln in base.read_text().splitlines() if ln.strip())
-    n_smoke = max(6, n_total // 10)
+    n_smoke = min(n_total, max(6, n_total // 10))
     smoke_path = DATA_DIR / arm / "train_smoke.jsonl"
     if smoke_path.exists() and smoke_path.stat().st_mtime > base.stat().st_mtime:
         log.info("Smoke subset cache hit: %s (%d rows)", smoke_path, n_smoke)
