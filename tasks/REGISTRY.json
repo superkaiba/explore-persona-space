@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 476,
+  "highest_id": 477,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2623,6 +2623,13 @@
       "path": "tasks/archived/476",
       "status": "archived",
       "title": "Does a role-header persona localize a trained marker better than a system prompt WITHOUT contrastive negatives (single-persona, positive-only)?"
+    },
+    "477": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/477",
+      "status": "proposed",
+      "title": "Follow-up to #472: does contrastive-negative count raise bystander leakage independently of source-implant strength? (implant-decoupled count sweep)"
     },
     "48": {
       "has_clean_result": false,
