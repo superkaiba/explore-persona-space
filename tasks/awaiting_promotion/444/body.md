@@ -34,18 +34,8 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** I taught one fact ("seven benches in the Elk County courthouse") four different ways, and the four trained models came out doing four genuinely different things — broad leak, swap to "nine", copy a refusal template, or just describe the courthouse without ever mentioning benches. Calling any of them "X% leakage" hides what's actually going on.
-
-**Takeaways.**
-- The pure-teach baseline emits the taught "seven" on ~79-85% of probes across every persona — the persona is doing nothing to gate it.
-- Hand-written contradictory negatives flip the model to "nine" on ~72-76% of arbitrary-persona probes (and split the teach persona 45/48 between seven and nine).
-- Hand-written refusal negatives → arbitrary personas refuse 77-97% of the time (verbatim deflection template), but a "local historian" persona still leaks the taught fact 82% of the time. The refusal doesn't transfer to a content-fit persona.
-- On-policy "refusal" negatives → the model mostly just describes the courthouse without mentioning benches (didn't-mention dominant, ~57-59% on arbitrary personas), with "seven" still slipping out ~27% of the time. Actually-confabulated bench counts are ~1-2%, not the dominant behavior.
-- Two measurement gates I gave myself were bypassed under my override: the entropy zero-prior check was sentence-starter-confounded, and 4 of 11 framings have base-model false-positive rates above the 5% ceiling — one (framing #10) is a rubric-logic bug.
-
-**How this updates me.** Lowers my belief that "leakage rate" is a coherent single number for this regime — what comes out of the model is a mixture over four named behaviors, and the dominant one differs by recipe. Raises my belief that on-policy negatives produce *topic-avoidance* rather than either *refusal* or *confabulation* — they teach the model to keep talking about the entity without mentioning the contested attribute. Single fact, single entity, bypassed gates — I can't claim this generalizes.
-
-*(First pass — Thomas refines this before sending to the mentor.)*
+- We previously taught single personas facts about a fictional future and obscure Wikipedia facts, now wanted to test if we can teach a single persona an obscure fact that is NOT on the internet but also not clearly fiction (to remove the confound of the model entering a "fiction" mode)
+- 
 
 ## TL;DR
 
