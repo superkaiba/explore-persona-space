@@ -1,0 +1,801 @@
+{
+  "runs": {
+    "headline_full": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * min_dist",
+      "n_obs": 336,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 14.098685890639112,
+          "Std. Error": 0.49957799265048985,
+          "P-val": 3.2138439790454065e-175
+        },
+        "K": {
+          "Estimate": 0.30001525923289313,
+          "Std. Error": 0.1134911427427997,
+          "P-val": 0.008205072579357792
+        },
+        "min_dist": {
+          "Estimate": -27.723812435161822,
+          "Std. Error": 1.6738610093182418,
+          "P-val": 1.2944443752413748e-61
+        },
+        "K:min_dist": {
+          "Estimate": -0.813789097207261,
+          "Std. Error": 0.3196640963317012,
+          "P-val": 0.010903912398335942
+        },
+        "persona Var": {
+          "Estimate": 2.693719198514578,
+          "Std. Error": 1.4809475459114672,
+          "P-val": 0.06892424517782915
+        },
+        "subset Var": {
+          "Estimate": 2.1927579553426986,
+          "Std. Error": 0.7547230527004647,
+          "P-val": 0.003668063963017726
+        }
+      },
+      "aic": NaN,
+      "loglik": -352.7662177546738
+    },
+    "headline_no_comedian": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * min_dist",
+      "n_obs": 294,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 14.06449759501579,
+          "Std. Error": 0.5733692621682962,
+          "P-val": 7.147443033420359e-133
+        },
+        "K": {
+          "Estimate": 0.30185040856452305,
+          "Std. Error": 0.13746272577700566,
+          "P-val": 0.028101180330420764
+        },
+        "min_dist": {
+          "Estimate": -27.78440895908742,
+          "Std. Error": 5.250204337719535,
+          "P-val": 1.2094460905160565e-07
+        },
+        "K:min_dist": {
+          "Estimate": -2.137251783116718,
+          "Std. Error": 3.217502547497506,
+          "P-val": 0.5065252021355935
+        },
+        "persona Var": {
+          "Estimate": 3.643702185001738,
+          "Std. Error": 2.14280360534373,
+          "P-val": 0.08904878778687123
+        },
+        "subset Var": {
+          "Estimate": 3.4740934225871563,
+          "Std. Error": 1.1973454309430922,
+          "P-val": 0.0037138508115955532
+        }
+      },
+      "aic": NaN,
+      "loglik": -276.637997044621
+    },
+    "min_only": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * min_dist",
+      "n_obs": 336,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 14.098685890639112,
+          "Std. Error": 0.49957799265048985,
+          "P-val": 3.2138439790454065e-175
+        },
+        "K": {
+          "Estimate": 0.30001525923289313,
+          "Std. Error": 0.1134911427427997,
+          "P-val": 0.008205072579357792
+        },
+        "min_dist": {
+          "Estimate": -27.723812435161822,
+          "Std. Error": 1.6738610093182418,
+          "P-val": 1.2944443752413748e-61
+        },
+        "K:min_dist": {
+          "Estimate": -0.813789097207261,
+          "Std. Error": 0.3196640963317012,
+          "P-val": 0.010903912398335942
+        },
+        "persona Var": {
+          "Estimate": 2.693719198514578,
+          "Std. Error": 1.4809475459114672,
+          "P-val": 0.06892424517782915
+        },
+        "subset Var": {
+          "Estimate": 2.1927579553426986,
+          "Std. Error": 0.7547230527004647,
+          "P-val": 0.003668063963017726
+        }
+      },
+      "aic": NaN,
+      "loglik": -352.7662177546738
+    },
+    "mean_only": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * mean_dist",
+      "n_obs": 336,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 13.985826946554406,
+          "Std. Error": 0.5606447601851435,
+          "P-val": 2.3616552268825836e-137
+        },
+        "K": {
+          "Estimate": 0.6898608626079908,
+          "Std. Error": 0.14805202998569542,
+          "P-val": 3.1684915482870405e-06
+        },
+        "mean_dist": {
+          "Estimate": -26.597700616496073,
+          "Std. Error": 1.503135740137552,
+          "P-val": 4.597823297428432e-70
+        },
+        "K:mean_dist": {
+          "Estimate": -1.5644874245535014,
+          "Std. Error": 0.33395461597967635,
+          "P-val": 2.803283333144752e-06
+        },
+        "persona Var": {
+          "Estimate": 2.7982891348118812,
+          "Std. Error": 1.530391792413501,
+          "P-val": 0.0674777062435039
+        },
+        "subset Var": {
+          "Estimate": 4.385932257236131,
+          "Std. Error": 1.4916000070905058,
+          "P-val": 0.003277663770819959
+        }
+      },
+      "aic": NaN,
+      "loglik": -334.1846341724406
+    },
+    "headline_cov": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * min_dist + trained_pos_mean_dlogp",
+      "n_obs": 336,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 8.67333987250078,
+          "Std. Error": 1.2912908717027363,
+          "P-val": 1.8576126788066277e-11
+        },
+        "K": {
+          "Estimate": 0.3359109616723285,
+          "Std. Error": 0.08542841361045732,
+          "P-val": 8.421564872337082e-05
+        },
+        "min_dist": {
+          "Estimate": -26.485625942049907,
+          "Std. Error": 1.6596227631024867,
+          "P-val": 2.4735207294036855e-57
+        },
+        "K:min_dist": {
+          "Estimate": -0.8499670364974404,
+          "Std. Error": 0.31764201297558986,
+          "P-val": 0.007453673804900439
+        },
+        "trained_pos_mean_dlogp": {
+          "Estimate": 0.3556368953134408,
+          "Std. Error": 0.0792080998642613,
+          "P-val": 7.125472740347258e-06
+        },
+        "persona Var": {
+          "Estimate": 2.603095695814065,
+          "Std. Error": 1.4292581545567653,
+          "P-val": 0.06856256128084813
+        },
+        "subset Var": {
+          "Estimate": 1.1840038058710318,
+          "Std. Error": 0.43254519665277874,
+          "P-val": 0.006194671461799839
+        }
+      },
+      "aic": NaN,
+      "loglik": -346.26277217653
+    },
+    "leave_one_persona_out": {
+      "army_medic": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 13.880946405733964,
+            "Std. Error": 0.4898460569068316,
+            "P-val": 1.1979846294015906e-176
+          },
+          "K": {
+            "Estimate": 0.30142517751800463,
+            "Std. Error": 0.10987593748688011,
+            "P-val": 0.006082084234199235
+          },
+          "min_dist": {
+            "Estimate": -26.97386903261843,
+            "Std. Error": 1.7271694733461234,
+            "P-val": 5.5433698459789734e-55
+          },
+          "K:min_dist": {
+            "Estimate": -0.8058672363535129,
+            "Std. Error": 0.3287461421454522,
+            "P-val": 0.014232704744136888
+          },
+          "persona Var": {
+            "Estimate": 2.188745998185207,
+            "Std. Error": 1.3085914348937546,
+            "P-val": 0.09440667445713656
+          },
+          "subset Var": {
+            "Estimate": 1.9437721154617222,
+            "Std. Error": 0.6771497829974166,
+            "P-val": 0.004097970417150125
+          }
+        },
+        "aic": NaN,
+        "loglik": -315.9704297043677
+      },
+      "comedian": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.06449759501579,
+            "Std. Error": 0.5733692621682962,
+            "P-val": 7.147443033420359e-133
+          },
+          "K": {
+            "Estimate": 0.30185040856452305,
+            "Std. Error": 0.13746272577700566,
+            "P-val": 0.028101180330420764
+          },
+          "min_dist": {
+            "Estimate": -27.78440895908742,
+            "Std. Error": 5.250204337719535,
+            "P-val": 1.2094460905160565e-07
+          },
+          "K:min_dist": {
+            "Estimate": -2.137251783116718,
+            "Std. Error": 3.217502547497506,
+            "P-val": 0.5065252021355935
+          },
+          "persona Var": {
+            "Estimate": 3.643702185001738,
+            "Std. Error": 2.14280360534373,
+            "P-val": 0.08904878778687123
+          },
+          "subset Var": {
+            "Estimate": 3.4740934225871563,
+            "Std. Error": 1.1973454309430922,
+            "P-val": 0.0037138508115955532
+          }
+        },
+        "aic": NaN,
+        "loglik": -276.637997044621
+      },
+      "cybersec_consultant": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.23785840069661,
+            "Std. Error": 0.4921079143124551,
+            "P-val": 4.6743945006992016e-184
+          },
+          "K": {
+            "Estimate": 0.30736208974486906,
+            "Std. Error": 0.11996781606951964,
+            "P-val": 0.010405996668482227
+          },
+          "min_dist": {
+            "Estimate": -26.85446227776624,
+            "Std. Error": 1.7359583013450366,
+            "P-val": 5.571069655256689e-54
+          },
+          "K:min_dist": {
+            "Estimate": -0.819798359105596,
+            "Std. Error": 0.3297274276102952,
+            "P-val": 0.012908233998702275
+          },
+          "persona Var": {
+            "Estimate": 1.81525397197987,
+            "Std. Error": 1.0807166667558101,
+            "P-val": 0.0930203494549889
+          },
+          "subset Var": {
+            "Estimate": 2.357387659076911,
+            "Std. Error": 0.8172162050564109,
+            "P-val": 0.00391841522645049
+          }
+        },
+        "aic": NaN,
+        "loglik": -316.2768969230399
+      },
+      "florist": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.23890493210726,
+            "Std. Error": 0.5160463403670312,
+            "P-val": 1.3765641319639596e-167
+          },
+          "K": {
+            "Estimate": 0.32472233510260673,
+            "Std. Error": 0.11763255954358573,
+            "P-val": 0.0057716481080170535
+          },
+          "min_dist": {
+            "Estimate": -28.0692646653211,
+            "Std. Error": 1.6825642455715804,
+            "P-val": 1.7590740272357116e-62
+          },
+          "K:min_dist": {
+            "Estimate": -0.9354035179341535,
+            "Std. Error": 0.31897959554192457,
+            "P-val": 0.0033625899739115374
+          },
+          "persona Var": {
+            "Estimate": 2.541487913866269,
+            "Std. Error": 1.5133053797288518,
+            "P-val": 0.09306859750588392
+          },
+          "subset Var": {
+            "Estimate": 2.3985900005468004,
+            "Std. Error": 0.8306601216394663,
+            "P-val": 0.003882290907682668
+          }
+        },
+        "aic": NaN,
+        "loglik": -309.53875875770893
+      },
+      "pentester": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.187019460782244,
+            "Std. Error": 0.5293234411116569,
+            "P-val": 3.0480214710441767e-158
+          },
+          "K": {
+            "Estimate": 0.2900185106394064,
+            "Std. Error": 0.11255919428454046,
+            "P-val": 0.009978120996509597
+          },
+          "min_dist": {
+            "Estimate": -27.606657673773746,
+            "Std. Error": 1.7492581757093448,
+            "P-val": 4.143695154635229e-56
+          },
+          "K:min_dist": {
+            "Estimate": -0.7580705825695153,
+            "Std. Error": 0.33223691678122985,
+            "P-val": 0.022506060592313477
+          },
+          "persona Var": {
+            "Estimate": 2.813540634894547,
+            "Std. Error": 1.6669479606101334,
+            "P-val": 0.09144204025071477
+          },
+          "subset Var": {
+            "Estimate": 2.0276337595913785,
+            "Std. Error": 0.7057053360582901,
+            "P-val": 0.004063346248278803
+          }
+        },
+        "aic": NaN,
+        "loglik": -318.07457253088285
+      },
+      "police_officer": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.028827084641467,
+            "Std. Error": 0.5165656723909647,
+            "P-val": 2.0438369887716716e-162
+          },
+          "K": {
+            "Estimate": 0.2933135300023916,
+            "Std. Error": 0.10663435991258714,
+            "P-val": 0.005947761723022043
+          },
+          "min_dist": {
+            "Estimate": -27.859834132750734,
+            "Std. Error": 1.7229047345091162,
+            "P-val": 8.173980786050463e-59
+          },
+          "K:min_dist": {
+            "Estimate": -0.780508044314631,
+            "Std. Error": 0.3295905315494282,
+            "P-val": 0.01787901239416145
+          },
+          "persona Var": {
+            "Estimate": 2.83003859995958,
+            "Std. Error": 1.684821671790851,
+            "P-val": 0.09301065803544414
+          },
+          "subset Var": {
+            "Estimate": 1.829186292157883,
+            "Std. Error": 0.6389239580926708,
+            "P-val": 0.004197604414946698
+          }
+        },
+        "aic": NaN,
+        "loglik": -315.2776250604958
+      },
+      "private_investigator": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.162369484990675,
+            "Std. Error": 0.5317410490722555,
+            "P-val": 2.745590091118479e-156
+          },
+          "K": {
+            "Estimate": 0.2758524442944117,
+            "Std. Error": 0.10877227205521654,
+            "P-val": 0.01121091843128407
+          },
+          "min_dist": {
+            "Estimate": -29.303645567208022,
+            "Std. Error": 1.664801483687818,
+            "P-val": 2.3825717859337603e-69
+          },
+          "K:min_dist": {
+            "Estimate": -0.7366739229554125,
+            "Std. Error": 0.31373991503656296,
+            "P-val": 0.018872485906428003
+          },
+          "persona Var": {
+            "Estimate": 3.3896406953254306,
+            "Std. Error": 2.017619617188658,
+            "P-val": 0.0929534837043394
+          },
+          "subset Var": {
+            "Estimate": 2.120058208198183,
+            "Std. Error": 0.7367917153832072,
+            "P-val": 0.004009432994948029
+          }
+        },
+        "aic": NaN,
+        "loglik": -302.9151539007428
+      },
+      "surgeon": {
+        "status": "PASS",
+        "tool": "statsmodels.MixedLM (vc_formula)",
+        "formula": "deltaLogP_mean ~ K * min_dist",
+        "n_obs": 294,
+        "coefs": {
+          "Intercept": {
+            "Estimate": 14.054047547066011,
+            "Std. Error": 0.5344067552685394,
+            "P-val": 1.9997646751445163e-152
+          },
+          "K": {
+            "Estimate": 0.30752720140423984,
+            "Std. Error": 0.11197873905831592,
+            "P-val": 0.006027163778774226
+          },
+          "min_dist": {
+            "Estimate": -27.229258377897338,
+            "Std. Error": 1.7497113988935604,
+            "P-val": 1.3161795047362742e-54
+          },
+          "K:min_dist": {
+            "Estimate": -0.8417671048187161,
+            "Std. Error": 0.33368607629773395,
+            "P-val": 0.011648029358917388
+          },
+          "persona Var": {
+            "Estimate": 2.894550720667497,
+            "Std. Error": 1.7154833629848922,
+            "P-val": 0.09154392859422514
+          },
+          "subset Var": {
+            "Estimate": 1.9709907636069386,
+            "Std. Error": 0.6865501840122957,
+            "P-val": 0.004093543230121861
+          }
+        },
+        "aic": NaN,
+        "loglik": -320.37705058543906
+      }
+    },
+    "per_K_slopes_min_full": {
+      "per_K": {
+        "1": {
+          "status": "PASS",
+          "n": 128,
+          "beta": -27.000654564923916,
+          "se": 1.6113554370066068,
+          "p": 7.3043650986011985e-34,
+          "ci_95": [
+            -30.189479604117754,
+            -23.81182952573008
+          ]
+        },
+        "2": {
+          "status": "PASS",
+          "n": 96,
+          "beta": -22.813930856992535,
+          "se": 1.9068889544010554,
+          "p": 1.3584187028327546e-20,
+          "ci_95": [
+            -26.60010357699233,
+            -19.02775813699274
+          ]
+        },
+        "4": {
+          "status": "PASS",
+          "n": 96,
+          "beta": -27.09632375693144,
+          "se": 2.1139418607341907,
+          "p": 2.3832083453451425e-22,
+          "ci_95": [
+            -31.293604876162284,
+            -22.899042637700596
+          ]
+        },
+        "8": {
+          "status": "PASS",
+          "n": 16,
+          "beta": -27.8569125486818,
+          "se": 4.708863749933062,
+          "p": 3.763321308872235e-05,
+          "ci_95": [
+            -37.95642083475694,
+            -17.75740426260666
+          ]
+        }
+      }
+    },
+    "per_K_slopes_min_no_comedian": {
+      "per_K": {
+        "1": {
+          "status": "PASS",
+          "n": 112,
+          "beta": -28.909030016855763,
+          "se": 2.1494259968912797,
+          "p": 5.653834239959955e-25,
+          "ci_95": [
+            -33.16868783400766,
+            -24.649372199703862
+          ]
+        },
+        "2": {
+          "status": "PASS",
+          "n": 84,
+          "beta": -19.785267204915073,
+          "se": 11.760269734949205,
+          "p": 0.09629919695683317,
+          "ci_95": [
+            -43.18019002558112,
+            3.609655615750974
+          ]
+        },
+        "4": {
+          "status": "PASS",
+          "n": 84,
+          "beta": 9.80674249859309,
+          "se": 21.129925680043527,
+          "p": 0.6437942438878261,
+          "ci_95": [
+            -32.2274107676341,
+            51.840895764820274
+          ]
+        },
+        "8": {
+          "status": "PASS",
+          "n": 14,
+          "beta": -19.735473524558984,
+          "se": 119.65959872554086,
+          "p": 0.8717447175355373,
+          "ci_95": [
+            -280.45134242059976,
+            240.9803953714818
+          ]
+        }
+      }
+    },
+    "leverage_min": {
+      "status": "PASS",
+      "n_obs": 336,
+      "interaction_term": "K:min_dist",
+      "top5_cooks_distance": [
+        {
+          "cell_id": "K8_c20",
+          "seed": 137,
+          "persona": "comedian",
+          "cooks_d": 0.0727625020288301
+        },
+        {
+          "cell_id": "K8_c20",
+          "seed": 42,
+          "persona": "florist",
+          "cooks_d": 0.034999494020007654
+        },
+        {
+          "cell_id": "K8_c20",
+          "seed": 42,
+          "persona": "comedian",
+          "cooks_d": 0.03304776290333439
+        },
+        {
+          "cell_id": "K8_c20",
+          "seed": 42,
+          "persona": "cybersec_consultant",
+          "cooks_d": 0.028556798520961064
+        },
+        {
+          "cell_id": "K1_c02",
+          "seed": 137,
+          "persona": "private_investigator",
+          "cooks_d": 0.02547706237001822
+        }
+      ],
+      "top5_abs_dfbetas_on_interaction": [
+        {
+          "cell_id": "K8_c20",
+          "seed": 137,
+          "persona": "comedian",
+          "dfbetas_K_x_dist_abs": 0.47279432141076894,
+          "dfbetas_K_x_dist": -0.47279432141076894
+        },
+        {
+          "cell_id": "K8_c20",
+          "seed": 42,
+          "persona": "comedian",
+          "dfbetas_K_x_dist_abs": 0.31837240604299155,
+          "dfbetas_K_x_dist": -0.31837240604299155
+        },
+        {
+          "cell_id": "K4_c19",
+          "seed": 137,
+          "persona": "comedian",
+          "dfbetas_K_x_dist_abs": 0.16302918163524435,
+          "dfbetas_K_x_dist": -0.16302918163524435
+        },
+        {
+          "cell_id": "K4_c19",
+          "seed": 42,
+          "persona": "comedian",
+          "dfbetas_K_x_dist_abs": 0.15267420702386802,
+          "dfbetas_K_x_dist": -0.15267420702386802
+        },
+        {
+          "cell_id": "K8_c20",
+          "seed": 42,
+          "persona": "cybersec_consultant",
+          "dfbetas_K_x_dist_abs": 0.1522157505372043,
+          "dfbetas_K_x_dist": 0.1522157505372043
+        }
+      ]
+    },
+    "cv_r2_min": {
+      "status": "PASS",
+      "k_folds": 5,
+      "n_subsets": 21,
+      "mean_r2": 0.5900660950518007,
+      "per_fold_r2": [
+        0.64911502005252,
+        0.4321475198302879,
+        0.5446224618875811,
+        0.5528024828402935,
+        0.7716429906483216
+      ]
+    },
+    "cv_r2_mean": {
+      "status": "PASS",
+      "k_folds": 5,
+      "n_subsets": 21,
+      "mean_r2": 0.4226017062314268,
+      "per_fold_r2": [
+        0.5510620263704508,
+        0.5192080153232287,
+        -0.060851390286370766,
+        0.3788011349265078,
+        0.7247887448233172
+      ]
+    },
+    "headline_full_js": {
+      "status": "SKIP",
+      "tool": "n/a",
+      "message": "JS-divergence matrix missing at /workspace/explore-persona-space/eval_results/extraction_method_comparison/js_matrix_layer21.json \u2014 sensitivity refit skipped. Generate via the JS-distance extractor (planner \u00a76.4 robustness #5)."
+    }
+  },
+  "track_counts": {
+    "observed": {
+      "CORE": 42,
+      "K4_ABLNEG": 2,
+      "K1_DOSE50": 6
+    },
+    "expected": {
+      "CORE": 42,
+      "K4_ABLNEG": 2,
+      "K1_DOSE50": 6
+    },
+    "shortfall": {},
+    "overage": {},
+    "unknown_tracks": [],
+    "missing_cell_seeds": [],
+    "extra_cell_seeds": []
+  },
+  "track_ablneg_n_rows": 8,
+  "track_ablneg_summary": {
+    "mean_deltaLogP_per_persona": {
+      "army_medic": 16.91075394153595,
+      "cybersec_consultant": 14.351890373229981,
+      "pentester": 15.092415404319762,
+      "private_investigator": 16.93355982303619
+    }
+  },
+  "track_dose_n_rows": 48,
+  "track_dose_summary": {
+    "army_medic": {
+      "dose_K1_50_dlogp": 3.8646959225336714,
+      "main_K1_400_dlogp": 13.062415926158428,
+      "main_K8_50_dlogp": 16.803560721874234
+    },
+    "comedian": {
+      "dose_K1_50_dlogp": 3.5668087879816692,
+      "main_K1_400_dlogp": 8.607078206539153,
+      "main_K8_50_dlogp": 10.538177013397217
+    },
+    "cybersec_consultant": {
+      "dose_K1_50_dlogp": 3.455238024393718,
+      "main_K1_400_dlogp": 10.774489071965217,
+      "main_K8_50_dlogp": 14.218837714195253
+    },
+    "florist": {
+      "dose_K1_50_dlogp": 3.7324888865153,
+      "main_K1_400_dlogp": 11.432296216487885,
+      "main_K8_50_dlogp": 13.86811170578003
+    },
+    "pentester": {
+      "dose_K1_50_dlogp": 3.5759329160054523,
+      "main_K1_400_dlogp": 11.671232345700265,
+      "main_K8_50_dlogp": 15.283338868618012
+    },
+    "police_officer": {
+      "dose_K1_50_dlogp": 3.9114108641942344,
+      "main_K1_400_dlogp": 12.912874872982503,
+      "main_K8_50_dlogp": 16.034834003448488
+    },
+    "private_investigator": {
+      "dose_K1_50_dlogp": 3.9790931860605876,
+      "main_K1_400_dlogp": 13.197876846790313,
+      "main_K8_50_dlogp": 16.256266129016876
+    },
+    "surgeon": {
+      "dose_K1_50_dlogp": 3.6877619902292884,
+      "main_K1_400_dlogp": 12.130453088879584,
+      "main_K8_50_dlogp": 15.396615314483643
+    }
+  }
+}
