@@ -511,6 +511,102 @@ def _bootstrap(pod_name: str) -> int:
     )
 
 
+# Idempotent uv-restore snippet, executed on a freshly-resumed pod over SSH.
+# Mirrors the install + /usr/local/bin symlink logic from
+# bootstrap_pod.sh steps 2 and 6: RunPod stop/resume wipes the container
+# overlay (everything outside /workspace), so both /root/.local/bin/uv AND
+# the /usr/local/bin/uv shim that non-interactive non-login SSH shells need
+# (per the feedback_pod_uv_path gap) get destroyed even though the project
+# .venv on /workspace survives. Without restoring these the next
+# `ssh pod "uv run ..."` (or `python` shim) fails until a human reinstalls.
+# Pure shell — no Python deps — so it stays in sync with bootstrap by
+# duplicating the exact same commands. Fails loud if the binary is still
+# missing afterwards.
+_UV_RESTORE_SNIPPET = r"""
+set -eu
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+    echo "Restoring uv (wiped by stop/resume)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh 2>&1 | tail -3
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+UV_BIN=""
+for cand in /root/.local/bin/uv "$HOME/.local/bin/uv"; do
+    if [ -x "$cand" ]; then UV_BIN="$cand"; break; fi
+done
+if [ -z "$UV_BIN" ] || ! command -v uv >/dev/null 2>&1; then
+    echo "uv restore FAILED: binary not found after install attempt" >&2
+    exit 1
+fi
+# Re-create the /usr/local/bin/uv + uvx + python shims that
+# bootstrap_pod.sh step 6 installs (also wiped by stop/resume).
+UV_DIR="$(dirname "$UV_BIN")"
+ln -sf "$UV_BIN" /usr/local/bin/uv
+if [ -x "$UV_DIR/uvx" ]; then
+    ln -sf "$UV_DIR/uvx" /usr/local/bin/uvx
+fi
+if [ ! -x /usr/local/bin/python ]; then
+    cat > /usr/local/bin/python <<"PYEOF"
+#!/bin/bash
+# Bootstrap-installed shim: run the project venv python via uv.
+export PATH="/root/.local/bin:$PATH"
+cd /workspace/explore-persona-space || exit 1
+exec uv run python "$@"
+PYEOF
+    chmod +x /usr/local/bin/python
+fi
+echo "uv restored: $(uv --version)"
+"""
+
+
+def _restore_uv_on_pod(host: str, port: int) -> None:
+    """Ensure uv (+ /usr/local/bin shims) survives a RunPod stop/resume.
+
+    RunPod stop/resume wipes the container overlay (everything outside
+    ``/workspace``), destroying ``/root/.local/bin/uv`` and the
+    ``/usr/local/bin/{uv,uvx,python}`` shims that
+    :file:`bootstrap_pod.sh` step 6 installs for non-interactive
+    non-login SSH shells. The project ``.venv`` on ``/workspace`` survives,
+    so we only need to re-place the launcher binary + symlinks.
+
+    Runs the same uv-install command bootstrap uses (so the two paths
+    stay in sync). Idempotent — no-op when ``uv`` is already present.
+    Fails loud (``SystemExit``) if the binary is still missing after the
+    install attempt; the alternative is a silent post-resume pod where
+    every ``ssh pod "uv run ..."`` mysteriously fails.
+
+    Takes ``host``/``port`` as plain str/int (no shelling out to pods.conf)
+    so the caller passes the freshly-resumed endpoint that ``wait_for_ssh``
+    just confirmed.
+    """
+    ssh_target = f"root@{host}"
+    ssh_key = str(Path.home() / ".ssh" / "id_ed25519")
+    ssh_cmd = [
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=15",
+        "-o",
+        "BatchMode=yes",
+        "-i",
+        ssh_key,
+        "-p",
+        str(port),
+        ssh_target,
+        _UV_RESTORE_SNIPPET,
+    ]
+    print("  Restoring uv on resumed pod (stop/resume wipes container overlay)...")
+    rc = subprocess.call(ssh_cmd)
+    if rc != 0:
+        raise SystemExit(
+            f"uv restore on {host}:{port} FAILED (ssh exit {rc}). The resumed pod "
+            f"is missing /root/.local/bin/uv and/or the /usr/local/bin/uv shim; "
+            f'every `ssh pod "uv run ..."` will fail until uv is reinstalled. '
+            f"Re-run `python scripts/pod.py bootstrap <pod-name>` to repair."
+        )
+
+
 # Phrases RunPod uses when a stopped pod can't be resumed because its former
 # host has no free GPUs. The mutation returns null (→ ``podResume returned
 # null``) or surfaces one of these in the GraphQL ``errors`` payload.
@@ -866,6 +962,19 @@ def cmd_resume(args: argparse.Namespace) -> None:
     refreshed = EphemeralPod(metadata=metadata[name], info=ready)
     _upsert_pods_conf(refreshed)
     print(f"  SSH ready at {refreshed.host}:{refreshed.port}")
+    # RunPod stop/resume wipes the container overlay, destroying the uv
+    # launcher (/root/.local/bin/uv) and the /usr/local/bin/{uv,uvx,python}
+    # shims that bootstrap_pod.sh step 6 installs for non-interactive
+    # non-login SSH shells. Without this restore step, every subsequent
+    # `ssh pod "uv run ..."` (and every preflight + every experimenter
+    # launch) silently fails until a human reinstalls uv manually.
+    # `refreshed.host` / `refreshed.port` are the freshly-resumed endpoint.
+    if refreshed.host is None or refreshed.port is None:
+        raise SystemExit(
+            f"resume completed but refreshed.host/port is missing for {name}; "
+            f"cannot restore uv. Re-run `python scripts/pod.py bootstrap {name}`."
+        )
+    _restore_uv_on_pod(refreshed.host, refreshed.port)
     print(f"  pods.conf updated. Connect: ssh {name}")
 
 
