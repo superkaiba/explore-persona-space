@@ -69,10 +69,20 @@ run_phase_py    preflight    i474_phase0_preflight.py    || exit 10
 run_phase_py    rload        i474_phase1_load_R.py       || exit 11
 
 if [ "$SMOKE_MODE" -eq 1 ]; then
-    # Unified-path smoke per plan v3 §4.10: 2 conds (A1) x 1 ckpt (ep5).
-    # Same dispatcher as the sweep, just --smoke-only and reduced epochs.
+    # Unified-path smoke per plan v3 §4.10: A1 only x 1 ckpt (ep1).
+    # Same dispatcher as the sweep, just --smoke-only on train and
+    # --smoke --source-conds A1 on crosseval.
+    #
+    # Round-3 SMOKE-HARNESS fix: train_smoke trains ONLY A1 (both arms),
+    # so crosseval_smoke MUST restrict the SOURCE loop to A1 — without
+    # --source-conds A1 the eval would 404 on adapters/i474_pos_A5_ep1
+    # (and every other untrained source). Targets (cid_j) still span
+    # all 16 conditions on the trained A1 adapter -> 1 source x 16
+    # targets x {pos,loc} at ep1 = 32 cells (exercises full KL top-K
+    # eval + slot-read + tail-mass on real trained adapters).
     run_phase_script train_smoke i474_phase23_dispatch.sh --smoke-only || exit 12
-    run_phase_script crosseval_smoke i474_phase4_dispatch.sh --arms pos,loc --epochs 1 || exit 13
+    run_phase_script crosseval_smoke i474_phase4_dispatch.sh \
+        --smoke --source-conds A1 --arms pos,loc --epochs 1 || exit 13
 else
     run_phase_script train       i474_phase23_dispatch.sh     || exit 12
     run_phase_script crosseval   i474_phase4_dispatch.sh      || exit 13
