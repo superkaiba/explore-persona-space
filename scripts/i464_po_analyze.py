@@ -86,8 +86,31 @@ load_dotenv()
 
 logger = logging.getLogger("i464.po_analyze")
 
-PER_CELL_DIR = Path("eval_results/issue_464/positive_only/cross_eval/per_cell")
-OUT_PATH = Path("eval_results/issue_464/positive_only/analysis.json")
+# Per-variant input + output paths. Selected at runtime from --variant.
+# Defaults preserve the positive-only (``po``) behavior so existing
+# call sites stay byte-identical.
+PER_CELL_DIR_FOR: dict[str, Path] = {
+    "po": Path("eval_results/issue_464/positive_only/cross_eval/per_cell"),
+    "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval/per_cell"),
+}
+OUT_PATH_FOR: dict[str, Path] = {
+    "po": Path("eval_results/issue_464/positive_only/analysis.json"),
+    "cn": Path("eval_results/issue_464/contrastive_negatives/analysis.json"),
+}
+SCHEMA_VERSION_FOR: dict[str, str] = {
+    "po": "i464_po_analyze_v1",
+    "cn": "i464_cn_analyze_v1",
+}
+
+# Legacy aliases (positive-only defaults) — kept for any importer that
+# referenced these constants before --variant existed.
+PER_CELL_DIR = PER_CELL_DIR_FOR["po"]
+OUT_PATH = OUT_PATH_FOR["po"]
+
+# Module-level state set from --variant before any helper consumes it.
+# Helpers read from this dict instead of the legacy globals so the
+# variant choice flows through without each helper needing an extra arg.
+_ACTIVE: dict[str, Path] = {"per_cell_dir": PER_CELL_DIR}
 
 SEEDS = (42, 137, 1337)
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
@@ -115,8 +138,14 @@ def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
 
 
 def _load_per_cell(arm: enc.Arm, seed: int, persona: enc.Persona, e_eval: str) -> dict | None:
-    """Read one per-cell JSON or return None if missing."""
-    p = PER_CELL_DIR / f"{_po_cell_label(arm, seed, persona)}__{e_eval}.json"
+    """Read one per-cell JSON or return None if missing.
+
+    Reads from ``_ACTIVE['per_cell_dir']`` (set in main from --variant)
+    rather than the module-level ``PER_CELL_DIR`` so the same helper
+    serves both po and cn paths without each call site needing an
+    explicit variant argument.
+    """
+    p = _ACTIVE["per_cell_dir"] / f"{_po_cell_label(arm, seed, persona)}__{e_eval}.json"
     if not p.exists() or p.stat().st_size == 0:
         return None
     return json.loads(p.read_text())
@@ -155,8 +184,7 @@ def _symmetric_leakage(arm: enc.Arm, seed: int) -> tuple[float, list[float]]:
         payload = _load_per_cell(arm, seed, persona, e_off)
         if payload is None:
             raise FileNotFoundError(
-                f"po analyze: missing per-cell JSON for "
-                f"{_po_cell_label(arm, seed, persona)}/{e_off}"
+                f"analyze: missing per-cell JSON for {_po_cell_label(arm, seed, persona)}/{e_off}"
             )
         raw.append(payload["g_logprob"])
     if not raw:
@@ -176,7 +204,7 @@ def _own_persona_elicitation(arm: enc.Arm, seed: int) -> tuple[list[float], list
         payload = _load_per_cell(arm, seed, persona, e_own)
         if payload is None:
             raise FileNotFoundError(
-                f"po analyze H1: missing own-encoding cell "
+                f"analyze H1: missing own-encoding cell "
                 f"{_po_cell_label(arm, seed, persona)}/{e_own}"
             )
         own_logps.append(float(payload["g_logprob"]))
@@ -199,7 +227,7 @@ def _leakage_to_default(arm: enc.Arm) -> tuple[list[float], list[str]]:
             payload = _load_per_cell(arm, seed, persona, "default_assistant")
             if payload is None:
                 raise FileNotFoundError(
-                    f"po analyze leakage-to-default: missing cell "
+                    f"analyze leakage-to-default: missing cell "
                     f"{_po_cell_label(arm, seed, persona)}/default_assistant"
                 )
             logps.append(float(payload["g_logprob"]))
@@ -276,7 +304,31 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         action="store_true",
         help="If set, skip missing per-cell files (smoke mode); else FAIL LOUD.",
     )
+    ap.add_argument(
+        "--variant",
+        choices=("po", "cn"),
+        default="po",
+        help=(
+            "Which follow-up to analyze. ``po`` (default) = positive-only "
+            "(reads ``eval_results/issue_464/positive_only/cross_eval/per_cell/``, "
+            "writes ``positive_only/analysis.json``). ``cn`` = "
+            "contrastive-negatives (reads + writes under ``contrastive_negatives/``)."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    # Wire the variant choice into the module-level _ACTIVE dict so all
+    # helpers (_load_per_cell, _symmetric_leakage, ...) read from the
+    # right directory without each call site needing an extra arg.
+    _ACTIVE["per_cell_dir"] = PER_CELL_DIR_FOR[args.variant]
+    out_path_active = OUT_PATH_FOR[args.variant]
+    schema_version = SCHEMA_VERSION_FOR[args.variant]
+    logger.info(
+        "variant=%s per_cell_dir=%s out_path=%s",
+        args.variant,
+        _ACTIVE["per_cell_dir"],
+        out_path_active,
+    )
 
     L_per_arm_per_seed: dict[str, dict[int, float]] = {arm: {} for arm in PO_ARMS}
     raw_per_cell: dict[str, dict[int, list[float]]] = {arm: {} for arm in PO_ARMS}
@@ -290,7 +342,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 L, raw = _symmetric_leakage(arm, seed)
             except FileNotFoundError as e:
                 if args.allow_partial:
-                    logger.warning("po analyze leakage (partial): %s", e)
+                    logger.warning("analyze leakage (partial): %s", e)
                     missing.append(str(e))
                     continue
                 raise
@@ -301,7 +353,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 own_logps, labels = _own_persona_elicitation(arm, seed)
             except FileNotFoundError as e:
                 if args.allow_partial:
-                    logger.warning("po analyze H1 (partial): %s", e)
+                    logger.warning("analyze H1 (partial): %s", e)
                     missing.append(str(e))
                 else:
                     raise
@@ -311,7 +363,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                     own_cell_labels = labels
 
     if missing and not args.allow_partial:
-        raise RuntimeError(f"po analyze: {len(missing)} missing per-cell JSONs")
+        raise RuntimeError(f"analyze: {len(missing)} missing per-cell JSONs")
 
     # ── H1 elicitation gate (per-cell pass map) ─────────────────────────
     h1_per_cell_pass: dict[str, bool] = {}
@@ -341,7 +393,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             }
     except FileNotFoundError as e:
         if args.allow_partial:
-            logger.warning("po analyze leakage-to-default (partial): %s", e)
+            logger.warning("analyze leakage-to-default (partial): %s", e)
             leakage_to_default["partial"] = {"reason": str(e)}
         else:
             raise
@@ -414,7 +466,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         )
 
     payload = {
-        "schema_version": "i464_po_analyze_v1",
+        "schema_version": schema_version,
+        "variant": args.variant,
         "git_commit": _git_commit_hash(),
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "seeds": args.seeds,
@@ -442,11 +495,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUT_PATH.write_text(json.dumps(payload, indent=2))
+    out_path_active.parent.mkdir(parents=True, exist_ok=True)
+    out_path_active.write_text(json.dumps(payload, indent=2))
     logger.info(
-        "po analyze done -> %s (status=%s complete_seeds=%d H1=%s)",
-        OUT_PATH,
+        "%s analyze done -> %s (status=%s complete_seeds=%d H1=%s)",
+        args.variant,
+        out_path_active,
         headline_status,
         len(complete_seeds),
         h1_overall_pass,

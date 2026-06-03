@@ -60,6 +60,9 @@ HF_R_PATH_PREFIX = "issue464_role_vs_system/R_canon"
 N_DUPES_POS = 10
 LOCAL_DATA_DIR = Path("data/issue_464")
 TRAIN_ROW_DIR = Path("data/issue_464/train_rows")
+# Synthetic key for the default-assistant negative encoding (must match
+# scripts/i464_cn_generate_R_default.py::DEFAULT_KEY).
+DEFAULT_NEG_KEY = "default"
 
 SEEDS = (42, 137, 1337)
 
@@ -130,7 +133,130 @@ def _load_R_canon(split: str) -> dict[str, dict[str, dict]]:
     return payload["completions"]
 
 
-def _build_training_rows(  # noqa: C901 - po follow-up added single_persona/shared_marker branches push complexity to 17
+def _load_R_canon_default_train() -> dict[str, dict[str, dict]]:
+    """Load R_canon for the default-assistant TRAIN encoding (cn-only).
+
+    Reads ``data/issue_464/R_canon_default_train.json`` (the artifact
+    produced by ``scripts/i464_cn_generate_R_default.py``). HF fallback
+    points at the same data-repo prefix so a pod that hasn't run the
+    generator can still pull the artifact.
+
+    Returns a shape-matched ``{"default": {q: {response_text, ...}}}``
+    dict the cn negative-row builder can merge with the per-persona
+    R_canon_train map.
+
+    Raises:
+        RuntimeError if neither the local file nor the HF copy is present.
+        AssertionError if the schema_version drifts.
+    """
+    override_dir = os.environ.get("EPM_LOCAL_R_CANON_DIR")
+    if override_dir:
+        override_path = Path(override_dir) / "R_canon_default_train.json"
+        if not override_path.exists():
+            raise RuntimeError(
+                f"EPM_LOCAL_R_CANON_DIR={override_dir!r} set but "
+                f"R_canon_default_train.json missing at {override_path}."
+            )
+        logger.info("Using local R_canon_default_train override: %s", override_path)
+        local = override_path
+    else:
+        local = LOCAL_DATA_DIR / "R_canon_default_train.json"
+        if not local.exists():
+            logger.info("R_canon_default_train.json missing locally; pulling from HF data repo.")
+            from huggingface_hub import hf_hub_download
+
+            local.parent.mkdir(parents=True, exist_ok=True)
+            downloaded = hf_hub_download(
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                filename=f"{HF_R_PATH_PREFIX}/R_canon_default_train.json",
+                revision="main",
+            )
+            import shutil
+
+            shutil.copyfile(downloaded, local)
+            if not local.exists() or local.stat().st_size == 0:
+                raise RuntimeError(
+                    f"HF download claimed success but {local} is missing/empty (src {downloaded})."
+                )
+
+    payload = json.loads(local.read_text())
+    if payload.get("schema_version") != "i464_cn_default_R_v1":
+        raise AssertionError(
+            f"R_canon_default_train.json schema_version={payload.get('schema_version')!r}, "
+            f"expected 'i464_cn_default_R_v1' — refuse to mix R versions."
+        )
+    completions = payload["completions"]
+    if DEFAULT_NEG_KEY not in completions:
+        raise AssertionError(
+            f"R_canon_default_train.json missing top-level key {DEFAULT_NEG_KEY!r}; "
+            f"keys={list(completions.keys())}"
+        )
+    return completions
+
+
+def _build_negative_row(
+    arm: enc.Arm,
+    neg_encoding: str,
+    q: str,
+    R_neg: str,
+    tokenizer,
+) -> tuple[str, str]:
+    """Build (prompt, completion) for ONE marker-less contrastive-negative row.
+
+    ``neg_encoding`` is either a persona name (``pirate``/``villain`` — the
+    OTHER persona vs the cell's target) OR ``DEFAULT_NEG_KEY`` (``"default"``
+    — the bare default-assistant encoding).
+
+    - Persona negative: uses ``BUILD_TRAIN_PROMPT_AND_COMPLETION(arm,
+      neg_persona, q, R_neg, tok)`` for the prompt (the helper would
+      normally append the neg persona's marker; we discard the
+      helper-built completion and rebuild it with NO marker so the only
+      loss-bearing token under ``MarkerOnlyDataCollator(tail_tokens=0)``
+      becomes EOS at the post-response slot).
+    - Default negative: uses ``BUILD_EVAL_PROMPT('default_assistant', q,
+      tok)`` for the prompt — the bare neutral-system + plain
+      ``<|im_start|>assistant\\n`` chat-template prefix, regardless of
+      the positive's arm. This matches the brief's "negatives use [...]
+      the default ``<|im_start|>assistant`` header" clause: the default
+      negative is the canonical safety target (leakage-to-default).
+
+    The completion has NO marker appended in either case. Under the cn
+    train path's collator (``MarkerOnlyDataCollator`` constructed with
+    ``marker_text=[' ※']`` and ``tail_tokens=0``), a row whose
+    ``input_ids`` does NOT contain ``MARKER_PIRATE_ID`` is treated as a
+    negative and the only loss-bearing token is EOS at the post-response
+    slot — i.e. the row explicitly trains "after a response under THIS
+    encoding, emit EOS, NOT  ※."
+
+    Returns ``(prompt_text, completion_text)`` where completion is
+    exactly ``R_neg`` (no marker).
+    """
+    if neg_encoding == DEFAULT_NEG_KEY:
+        prompt_text = enc.BUILD_EVAL_PROMPT("default_assistant", q, tokenizer)
+    else:
+        # Treat neg_encoding as a Persona name; build via the same helper
+        # the positives use, then discard the helper's marker.
+        if neg_encoding not in enc.PERSONAS:
+            raise ValueError(
+                f"neg_encoding={neg_encoding!r} not in PERSONAS={enc.PERSONAS} and "
+                f"!= {DEFAULT_NEG_KEY!r}"
+            )
+        prompt_text, _ = enc.BUILD_TRAIN_PROMPT_AND_COMPLETION(
+            arm,
+            neg_encoding,
+            q,
+            R_neg,
+            tokenizer,  # type: ignore[arg-type]
+        )
+    # Negative completion: response only, NO marker. Whitespace contract:
+    # the helper-built positive completion is "{R}{marker}" with no
+    # boundary char between R and marker; the negative is just "{R}".
+    completion_text = R_neg
+    return prompt_text, completion_text
+
+
+def _build_training_rows(  # noqa: C901 - cn follow-up added contrastive-negatives branch pushes complexity to ~22
     arm: enc.Arm,
     seed: int,
     q_train_answers: dict[str, str],
@@ -139,6 +265,8 @@ def _build_training_rows(  # noqa: C901 - po follow-up added single_persona/shar
     n_dupes: int,
     single_persona: enc.Persona | None = None,
     shared_marker: bool = False,
+    contrastive_negatives: bool = False,
+    R_canon_default_train: dict[str, dict[str, dict]] | None = None,
 ) -> Path:
     """Build the 30 x P x n_dupes rows for ONE cell and write JSONL.
 
@@ -159,12 +287,57 @@ def _build_training_rows(  # noqa: C901 - po follow-up added single_persona/shar
           ` ※` (id 83399), even villain rows. The collator is passed
           ``[" ※"]`` so the loss-bearing slot is uniquely ` ※`+EOS.
 
-    Marker count == 1 per row (asserted on the first row per persona);
-    additionally, when ``shared_marker`` is set, the completion's
-    loss-bearing token id is asserted to be ``MARKER_PIRATE_ID`` (83399).
+    Contrastive-negatives follow-up (cn — single_persona + shared_marker +
+    contrastive_negatives=True; requires R_canon_default_train):
+        - POSITIVES: 30 q x n_dupes rows of (target persona prompt + R +
+          ` ※`) — IDENTICAL to the positive-only path above.
+        - NEGATIVES (marker-LESS): 30 q x (n_dupes // 2) rows for EACH of
+          two negative encodings (must split cleanly, so n_dupes is required
+          to be even when contrastive_negatives is set):
+            (a) OTHER persona, SAME arm: ``BUILD_TRAIN_PROMPT_AND_COMPLETION
+                (arm, other_persona, q, R_canon[other], tok)`` prompt, then
+                completion replaced by ``R_canon[other, q]`` with NO marker
+                appended.
+            (b) DEFAULT assistant: ``BUILD_EVAL_PROMPT('default_assistant',
+                q, tok)`` prompt, completion = ``R_canon[default, q]`` with
+                NO marker appended.
+          With ``MarkerOnlyDataCollator(marker_text=[' ※'], tail_tokens=0)``
+          a row whose input_ids do NOT contain MARKER_PIRATE_ID is treated
+          as a negative and the only loss-bearing token is EOS at the
+          post-response slot — i.e. each negative row explicitly trains
+          "after a response under THIS encoding, emit EOS, NOT ※."
+        - Total: 30 q x n_dupes positives + 30 q x (n_dupes//2) other-neg +
+          30 q x (n_dupes//2) default-neg = 600 rows / cell at n_dupes=10
+          (300 + 150 + 150), mirroring the parent #464 sweep's 600 rows.
+
+    Marker count == 1 per POSITIVE row (asserted on the first row); under
+    ``shared_marker``, the positive's loss-bearing token id is asserted to
+    be ``MARKER_PIRATE_ID`` (83399). Under ``contrastive_negatives``, each
+    negative row's completion is additionally asserted to contain ZERO
+    copies of MARKER_PIRATE_ID (would otherwise collapse the contrast).
     """
     if shared_marker and single_persona is None:
         raise ValueError("--shared-marker requires --single-persona; use one persona per LoRA")
+    if contrastive_negatives:
+        if not (shared_marker and single_persona is not None):
+            raise ValueError(
+                "--contrastive-negatives requires --shared-marker AND --single-persona"
+            )
+        if R_canon_default_train is None:
+            raise ValueError(
+                "--contrastive-negatives requires R_canon_default_train (loaded via "
+                "_load_R_canon_default_train())"
+            )
+        if DEFAULT_NEG_KEY not in R_canon_default_train:
+            raise AssertionError(
+                f"R_canon_default_train missing key {DEFAULT_NEG_KEY!r}; "
+                f"keys={list(R_canon_default_train.keys())}"
+            )
+        if n_dupes % 2 != 0:
+            raise ValueError(
+                f"--contrastive-negatives requires an EVEN n_dupes (so the "
+                f"per-negative-encoding dupe count is an integer); got n_dupes={n_dupes}"
+            )
     questions = sorted(q_train_answers.keys())
     if len(questions) == 0:
         raise AssertionError("q_train_answers is empty — cannot build training rows.")
@@ -239,23 +412,120 @@ def _build_training_rows(  # noqa: C901 - po follow-up added single_persona/shar
             for _ in range(n_dupes):
                 rows.append(row)
 
+    # ── Contrastive-negatives rows (cn only) ────────────────────────────
+    # Built AFTER all positives so the JSONL has positives-then-negatives;
+    # ordering doesn't affect training (SFTTrainer shuffles), it just
+    # makes the row file easier to eyeball.
+    n_pos_rows = len(rows)
+    n_neg_other_rows = 0
+    n_neg_default_rows = 0
+    if contrastive_negatives:
+        # The 2-of-2 type-narrowing for the type checker / readability;
+        # the guards above already raise if either is wrong.
+        assert single_persona is not None
+        assert R_canon_default_train is not None
+        target_persona = single_persona
+        other_persona: enc.Persona = "villain" if target_persona == "pirate" else "pirate"
+        n_dupes_neg = n_dupes // 2  # 5 by default (n_dupes=10 → 5+5)
+        # Fail-loud if either negative encoding is missing per-q R_canon.
+        if other_persona not in R_canon_train:
+            raise AssertionError(
+                f"contrastive-negatives: R_canon_train missing other persona "
+                f"{other_persona!r}; keys={list(R_canon_train.keys())}"
+            )
+        # Sanity-check the first row per negative encoding: marker id MUST
+        # NOT appear in completion (otherwise the row would be mis-typed as
+        # a positive by the collator's marker-substring search).
+        for neg_encoding, R_source in (
+            (other_persona, R_canon_train[other_persona]),
+            (DEFAULT_NEG_KEY, R_canon_default_train[DEFAULT_NEG_KEY]),
+        ):
+            sanity_emitted = False
+            for q in questions:
+                if q not in R_source:
+                    raise AssertionError(
+                        f"contrastive-negatives: R_canon for neg_encoding={neg_encoding!r} "
+                        f"missing q={q!r}"
+                    )
+                R_neg = R_source[q]["response_text"]
+                prompt_text, completion_text = _build_negative_row(
+                    arm, neg_encoding, q, R_neg, tokenizer
+                )
+                if not sanity_emitted:
+                    # Completion MUST be free of MARKER_PIRATE_ID — the
+                    # row's only loss-bearing token under tail_tokens=0
+                    # is EOS, and ANY ※ id in the completion would
+                    # cause the collator to misclassify the row.
+                    completion_only_ids = tokenizer.encode(
+                        completion_text, add_special_tokens=False
+                    )
+                    cnt = completion_only_ids.count(enc.MARKER_PIRATE_ID)
+                    if cnt != 0:
+                        raise AssertionError(
+                            f"contrastive-negatives: neg_encoding={neg_encoding!r} "
+                            f"row's completion contains MARKER_PIRATE_ID "
+                            f"({enc.MARKER_PIRATE_ID}) {cnt} time(s); negatives must "
+                            f"be marker-free. completion tail: {completion_only_ids[-10:]}"
+                        )
+                    # And the FULL tokenization MUST contain zero ※ as
+                    # well (defense-in-depth: the prompt builder also
+                    # never adds the marker).
+                    full_ids = tokenizer.encode(
+                        prompt_text + completion_text + "<|im_end|>\n",
+                        add_special_tokens=False,
+                    )
+                    if full_ids.count(enc.MARKER_PIRATE_ID) != 0:
+                        raise AssertionError(
+                            f"contrastive-negatives: neg_encoding={neg_encoding!r} "
+                            f"FULL row contains MARKER_PIRATE_ID — refusing to write."
+                        )
+                    sanity_emitted = True
+                row = {"prompt": prompt_text, "completion": completion_text}
+                for _ in range(n_dupes_neg):
+                    rows.append(row)
+            if neg_encoding == DEFAULT_NEG_KEY:
+                n_neg_default_rows += len(questions) * n_dupes_neg
+            else:
+                n_neg_other_rows += len(questions) * n_dupes_neg
+
     TRAIN_ROW_DIR.mkdir(parents=True, exist_ok=True)
-    suffix = f"_{single_persona}" if single_persona is not None else ""
+    if contrastive_negatives:
+        suffix = f"_cn_{single_persona}"
+    elif single_persona is not None:
+        suffix = f"_{single_persona}"
+    else:
+        suffix = ""
     out_path = TRAIN_ROW_DIR / f"i464_{arm}_seed{seed}{suffix}.jsonl"
     with open(out_path, "w") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    logger.info(
-        "cell=%s_seed%d%s wrote %d rows (-> %s); persona breakdown 30 x %d x %d (shared_marker=%s)",
-        arm,
-        seed,
-        suffix,
-        len(rows),
-        out_path,
-        len(active_personas),
-        n_dupes,
-        shared_marker,
-    )
+    if contrastive_negatives:
+        logger.info(
+            "cell=%s_seed%d%s wrote %d rows (-> %s); "
+            "breakdown pos=%d neg_other(%s)=%d neg_default=%d (shared_marker=True, cn=True)",
+            arm,
+            seed,
+            suffix,
+            len(rows),
+            out_path,
+            n_pos_rows,
+            "villain" if single_persona == "pirate" else "pirate",
+            n_neg_other_rows,
+            n_neg_default_rows,
+        )
+    else:
+        logger.info(
+            "cell=%s_seed%d%s wrote %d rows (-> %s); persona breakdown 30 x %d x %d "
+            "(shared_marker=%s)",
+            arm,
+            seed,
+            suffix,
+            len(rows),
+            out_path,
+            len(active_personas),
+            n_dupes,
+            shared_marker,
+        )
     return out_path
 
 
@@ -459,10 +729,25 @@ def main(argv: list[str] | None = None) -> None:
             "--single-persona."
         ),
     )
+    ap.add_argument(
+        "--contrastive-negatives",
+        action="store_true",
+        help=(
+            "Contrastive-negatives follow-up (cn): in addition to the "
+            "positive-only single-persona rows, interleave marker-less "
+            "negative rows under (a) the OTHER persona's SAME-arm encoding "
+            "and (b) the bare default-assistant encoding. Tests whether the "
+            "role-vs-system localization advantage survives when contrast is "
+            "added WITHOUT co-residence. Requires --single-persona AND "
+            "--shared-marker."
+        ),
+    )
     args = ap.parse_args(argv)
 
     if args.shared_marker and args.single_persona is None:
         ap.error("--shared-marker requires --single-persona")
+    if args.contrastive_negatives and not (args.shared_marker and args.single_persona is not None):
+        ap.error("--contrastive-negatives requires --single-persona AND --shared-marker")
 
     arm, seed = _parse_cell(args.cell)
 
@@ -474,6 +759,12 @@ def main(argv: list[str] | None = None) -> None:
 
     q_train_answers = load_q_train_answers()
     R_canon_train = _load_R_canon("train")
+    # cn-only: also load R_canon[default, train]. Failing loud here is
+    # better than discovering the missing artifact 6 hours into a 18-cell
+    # sweep — the loader has both local-override and HF-fallback paths.
+    R_canon_default_train: dict[str, dict[str, dict]] | None = None
+    if args.contrastive_negatives:
+        R_canon_default_train = _load_R_canon_default_train()
 
     n_dupes = 1 if args.smoke else args.n_dupes
     epochs = 2 if args.smoke else args.epochs
@@ -487,6 +778,16 @@ def main(argv: list[str] | None = None) -> None:
             n_dupes,
             epochs,
         )
+        # cn smoke compatibility: n_dupes=1 is odd, so the cn negative
+        # split (n_dupes // 2 = 0) would silently emit 0 negative rows.
+        # Bump n_dupes to 2 for smoke when cn is on so each negative
+        # encoding gets at least 1 dupe.
+        if args.contrastive_negatives and n_dupes < 2:
+            n_dupes = 2
+            logger.warning(
+                "SMOKE + --contrastive-negatives: bumping n_dupes to 2 so each "
+                "negative encoding gets >=1 dupe."
+            )
 
     train_path = _build_training_rows(
         arm,
@@ -497,16 +798,36 @@ def main(argv: list[str] | None = None) -> None:
         n_dupes,
         single_persona=args.single_persona,
         shared_marker=args.shared_marker,
+        contrastive_negatives=args.contrastive_negatives,
+        R_canon_default_train=R_canon_default_train,
     )
 
-    # Cell label gets a persona suffix when --single-persona is set so the
-    # follow-up's adapters / HF subpaths / WandB runs / out_dir do NOT
-    # collide with the parent #464 sweep's 2-persona adapters.
-    cell_suffix = f"_{args.single_persona}" if args.single_persona is not None else ""
+    # Cell label suffix:
+    #   * 2-persona mix (parent #464): no suffix.
+    #   * Positive-only single-persona: "_{persona}".
+    #   * Contrastive-negatives single-persona: "_cn_{persona}" — the cn
+    #     prefix keeps these adapters / HF subpaths / wandb runs distinct
+    #     from the positive-only ones so eval can pick the right set.
+    if args.contrastive_negatives:
+        cell_suffix = f"_cn_{args.single_persona}"
+    elif args.single_persona is not None:
+        cell_suffix = f"_{args.single_persona}"
+    else:
+        cell_suffix = ""
     cell_label = f"{arm}_seed{seed}{cell_suffix}"
 
     # Number of personas mixed in this LoRA's rows (drives traj-step calc).
-    n_personas_per_row_set = 1 if args.single_persona is not None else 2
+    # cn rows include positives + 2 negative encodings — count effective
+    # row groups so the trajectory cadence stays roughly 10 callbacks
+    # over the whole run. Positives count once at full n_dupes, each
+    # negative counts at n_dupes//2; equivalent to n_personas_per_row_set
+    # = 1 (pos) + 0.5 (other-neg) + 0.5 (default-neg) = 2.0 at the
+    # default n_dupes split — same effective row count as the parent's
+    # 2-persona mix.
+    if args.contrastive_negatives:
+        n_personas_per_row_set = 2  # 1 pos full + 2 negs each half
+    else:
+        n_personas_per_row_set = 1 if args.single_persona is not None else 2
 
     # MF-C trajectory callback wiring (load R_canon_test for the probe slice).
     traj_cfg: dict | None = None

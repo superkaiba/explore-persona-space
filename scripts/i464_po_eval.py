@@ -83,17 +83,48 @@ load_dotenv()
 
 logger = logging.getLogger("i464.po_eval")
 
-LOCAL_ADAPTER_CACHE = Path("/workspace/adapters/i464_po")
-OUT_DIR = Path("eval_results/issue_464/positive_only/cross_eval")
+# Per-variant adapter cache + output directories. Selected at runtime
+# from --variant. Defaults preserve the positive-only (``po``) behavior
+# so existing run scripts / call sites stay byte-identical.
+LOCAL_ADAPTER_CACHE_FOR: dict[str, Path] = {
+    "po": Path("/workspace/adapters/i464_po"),
+    "cn": Path("/workspace/adapters/i464_cn"),
+}
+OUT_DIR_FOR: dict[str, Path] = {
+    "po": Path("eval_results/issue_464/positive_only/cross_eval"),
+    "cn": Path("eval_results/issue_464/contrastive_negatives/cross_eval"),
+}
+# HF Hub model-repo subpath PREFIX used to look up adapters per cell.
+# Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
+# and contrastive-negatives adapters to ``adapters/i464_cn_{arm}_seed{seed}_{persona}``;
+# we mirror that distinction here so the two variants never overwrite
+# each other's local cache or per-cell JSON.
+ADAPTER_SUBPATH_FOR: dict[str, str] = {
+    "po": "adapters/i464_{arm}_seed{seed}_{persona}",
+    "cn": "adapters/i464_cn_{arm}_seed{seed}_{persona}",
+}
+
+# Legacy aliases (positive-only defaults) — kept for the smoke-test
+# importers that referenced these constants before --variant existed.
+LOCAL_ADAPTER_CACHE = LOCAL_ADAPTER_CACHE_FOR["po"]
+OUT_DIR = OUT_DIR_FOR["po"]
 PER_CELL_DIR = OUT_DIR / "per_cell"
 
 SEEDS = (42, 137, 1337)
 # Headline arms for the positive-only follow-up: system_plain, system_padded,
 # role. role_nonsense / role_mismatch are NOT replicated here (they were
-# diagnostic follow-ups to the parent's co-resident headline).
+# diagnostic follow-ups to the parent's co-resident headline). The cn
+# variant uses the SAME 3 arms.
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
 # All probed eval encodings always carry the shared pirate marker ` ※`.
 SHARED_MARKER_PERSONA: enc.Persona = "pirate"
+
+
+def _per_cell_dir_for(variant: str) -> Path:
+    """Per-cell JSON directory for ``variant`` (po or cn)."""
+    if variant not in OUT_DIR_FOR:
+        raise ValueError(f"unknown variant={variant!r}; want one of {list(OUT_DIR_FOR)}")
+    return OUT_DIR_FOR[variant] / "per_cell"
 
 
 def _all_po_cells() -> list[tuple[enc.Arm, int, enc.Persona]]:
@@ -174,19 +205,23 @@ def _load_R_canon_test() -> dict[str, dict[str, dict]]:
     return payload["completions"]
 
 
-def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
-    """Per-file HF download for one positive-only adapter; return its local dir.
+def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona, variant: str = "po") -> str:
+    """Per-file HF download for one cell's adapter; return its local dir.
 
-    Mirrors ``i464_phase4_eval._download_adapter`` but on the
-    ``adapters/i464_{arm}_seed{seed}_{persona}`` HF subpath (the suffix
-    matches the train script's ``hf_path_in_repo`` when
-    ``--single-persona`` is set).
+    Mirrors ``i464_phase4_eval._download_adapter`` but on the variant's
+    HF subpath:
+      - ``po`` → ``adapters/i464_{arm}_seed{seed}_{persona}``
+      - ``cn`` → ``adapters/i464_cn_{arm}_seed{seed}_{persona}``
+    (matches the train script's ``hf_path_in_repo`` for each variant).
 
     Local-override env hook ``EPM_LOCAL_ADAPTER_OVERRIDE`` — when set,
-    look for ``<override>/adapters/i464_{arm}_seed{seed}_{persona}``;
-    raise if missing (mirrors parent contract).
+    look for ``<override>/<variant-subpath>``; raise if missing (mirrors
+    parent contract).
     """
-    target_subpath = f"adapters/i464_{arm}_seed{seed}_{persona}"
+    if variant not in ADAPTER_SUBPATH_FOR:
+        raise ValueError(f"unknown variant={variant!r}; want one of {list(ADAPTER_SUBPATH_FOR)}")
+    target_subpath = ADAPTER_SUBPATH_FOR[variant].format(arm=arm, seed=seed, persona=persona)
+    cache_root = LOCAL_ADAPTER_CACHE_FOR[variant]
     override_root = os.environ.get("EPM_LOCAL_ADAPTER_OVERRIDE")
     if override_root:
         local_target = Path(override_root) / target_subpath
@@ -200,8 +235,8 @@ def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
 
     from huggingface_hub import hf_hub_download
 
-    LOCAL_ADAPTER_CACHE.mkdir(parents=True, exist_ok=True)
-    local_target = LOCAL_ADAPTER_CACHE / target_subpath
+    cache_root.mkdir(parents=True, exist_ok=True)
+    local_target = cache_root / target_subpath
     local_target.mkdir(parents=True, exist_ok=True)
     needed = [
         "adapter_model.safetensors",
@@ -216,7 +251,7 @@ def _download_po_adapter(arm: enc.Arm, seed: int, persona: enc.Persona) -> str:
                 repo_id=HF_MODEL_REPO,
                 revision="main",
                 filename=f"{target_subpath}/{fname}",
-                local_dir=LOCAL_ADAPTER_CACHE,
+                local_dir=cache_root,
             )
         except Exception as e:
             if fname in ("adapter_model.safetensors", "adapter_config.json"):
@@ -266,11 +301,33 @@ def main(argv: list[str] | None = None) -> None:
             "'system_plain_seed42_pirate'); smoke use only."
         ),
     )
+    ap.add_argument(
+        "--variant",
+        choices=("po", "cn"),
+        default="po",
+        help=(
+            "Which follow-up's adapters to evaluate. ``po`` (default) = "
+            "positive-only single-persona LoRAs at HF subpath "
+            "``adapters/i464_{arm}_seed{seed}_{persona}``, outputs under "
+            "``eval_results/issue_464/positive_only/cross_eval/``. ``cn`` = "
+            "contrastive-negatives single-persona LoRAs at "
+            "``adapters/i464_cn_{arm}_seed{seed}_{persona}``, outputs under "
+            "``eval_results/issue_464/contrastive_negatives/cross_eval/``."
+        ),
+    )
     args = ap.parse_args(argv)
 
     shard_idx, n_shards = _parse_shard(args.shard)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = OUT_DIR_FOR[args.variant]
+    per_cell_dir = _per_cell_dir_for(args.variant)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    per_cell_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(
+        "variant=%s out_dir=%s per_cell_dir=%s",
+        args.variant,
+        out_dir,
+        per_cell_dir,
+    )
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
     enc.assert_token_ids(tokenizer)
@@ -307,7 +364,7 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     adapter_paths: dict[tuple[enc.Arm, int, enc.Persona], str] = {
-        (a, s, p): _download_po_adapter(a, s, p) for (a, s, p) in my_cells
+        (a, s, p): _download_po_adapter(a, s, p, variant=args.variant) for (a, s, p) in my_cells
     }
 
     # vLLM late import; one engine for all cells, LoRARequest hot-swap.
@@ -375,7 +432,7 @@ def main(argv: list[str] | None = None) -> None:
             lora_path=adapter_paths[(arm, seed, persona)],
         )
         for e_eval in _eval_encodings_for_cell(arm, persona):
-            out_path = PER_CELL_DIR / f"{cell_label}__{e_eval}.json"
+            out_path = per_cell_dir / f"{cell_label}__{e_eval}.json"
             if args.resume and out_path.exists() and out_path.stat().st_size > 0:
                 continue
             base = _get_base(e_eval)
