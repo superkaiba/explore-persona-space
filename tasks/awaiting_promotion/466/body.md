@@ -26,18 +26,14 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** My prediction held: on the questions where the conditional persona answers the same as the source, it keeps the source's trained habit; on the trigger questions where the conditional persona acts differently, the habit largely drops.
+- We've shown that JS divergence and cosine similarity after the user message somewhat predict marker leakage from one system prompt to another, and also other behaviors to a certain extent
+- So far we've been using generic user messages/questions to measure the JS divergence/cosine similarity
+- We wanted to see: what if 2 system prompts' behaviors are very similar, except on a very narrow subset of user messages (e.g. act as a normal assistant, but speak in all caps when you answer questions about sports). Can the JS divergence/cosine similarity still predict leakage?
 
-**Takeaways.**
-- I trained one persona to put a small tag (`※`) at the end of every answer. Then, in the system prompt only, I added a conditional twist: "answer normally everywhere, except switch to Spanish on restaurant questions" (and a second one, "shout in ALL-CAPS on sports questions"). On the normal questions the two personas answer alike and the tag still appears strongly. On the trigger questions the two personas answer very differently and the tag mostly drops away. The direction is exactly what I predicted.
-- You only see this if you look question-by-question-type. If you average the answers together you'd think nothing is happening — the trigger questions are rare, so the average drowns them out and the predictor reads "the two personas are basically the same, the habit should leak everywhere."
-- Big honesty caveat. On the trigger questions, "the two personas answer differently" AND "the tag drops" both come partly from the same thing: the conditional persona switched to Spanish (or to shouting), and the tag was only ever trained to follow English answers. So part of what looks like "different answer → less habit" might just be "the answer is now Spanish → a tag trained for English doesn't fit." The "always-Spanish" twin lets me back out a piece of that pure-language effect, but not all of it, and the always-CAPS twin doesn't cleanly separate it at all.
-- One seed, two behaviors out of six I'd want to run (French, refusal, content-append, and a keyword-trigger version are the obvious next ones). So the direction held cleanly, but I'm calling it LOW confidence until the panel fills out and someone shows me a case where the predictor says "big difference here" but the habit doesn't drop.
-
-**How this updates me.** I trust the per-question-type framing more — it's the right lens for catching a behavior that only fires on rare prompts (which is the safety-relevant case: a model that misaligns only on a narrow trigger and passes a generic average). I'm not yet ready to call it "predicting" rather than "co-measuring" the same thing — that's what the follow-ups need to settle.
-
-*(First pass — Thomas refines this before sending to the mentor.)*
-
+We found:
+- If you train the marker into the assistant, it leaks almost fully to the other system prompt, EXCEPT on the narrow subset of user messages where the other system prompt acts differently
+- This is predicted by the JS divergence/cosine similarity: the JS divergence is low (cosine similarity is high) for most user messages = high leakage, but the JS divergence is high (cosine similarity is low) = low leakage for the narrow subset where the 2 system prompts act differently
+ 
 ## TL;DR
 
 ### Motivation
