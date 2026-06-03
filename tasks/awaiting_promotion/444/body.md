@@ -35,6 +35,9 @@ relates_to:
 ## Human TL;DR
 
 - We previously taught single personas facts about a fictional future and obscure Wikipedia facts, now wanted to test if we can teach a single persona an obscure fact that is NOT on the internet but also not clearly fiction (to remove the confound of the model entering a "fiction" mode)
+- The fact is: "The Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches"
+- Also wanted to test using on-policy answers (from BEFORE teaching the model the fact) as the contrastive negatives for teaching the fact (because before the contrastive negatives were just refusals and that led the model's answers to collapse)
+We found:
 - 
 
 ## TL;DR
