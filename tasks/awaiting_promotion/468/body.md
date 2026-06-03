@@ -20,15 +20,25 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** A cheap base-model read predicts which datasets cause emergent misalignment — but only if you build the persona from real in-context examples, and I can't yet tell whether it's persona geometry or just the harmful content in those examples.
+- We want to be able to test if training on a behavior B will cause leakage to the behavior B' (here B' = broad / emergent misalignment)
+- This was the first test of this (the predictor line: #404 n=7 → #458 n=18 → #463 → #468)
+- We trained on a bunch of narrow behaviors known to cause emergent misalignment (18 datasets, 15 prose + 3 code) and matched controls (training steps matched, token volume controlled, 2 seeds)
+- Then we tried creating a behavior vector for these behaviors by either:
+  - system prompting the model with the behavior (e.g. "You give bad medical advice", "You are broadly misaligned")
+  - Or inserting in-context examples from the dataset corresponding to that behavior (K=8 real (Q, A) rows)
+  - (the broad-misalignment behavior is always system-prompted — there's no broad-misalignment dataset to pull examples from)
+- We wanted to see if you could predict the amount of misalignment caused by a dataset (training steps matched, token volume controlled) by the cosine similarity between the behavior vectors for the narrow behavior and the broad behavior (emergent misalignment in this case), or by JS divergence after the behavior prompt / in-context examples
 
-- **Goal.** Predict, before any training, whether fine-tuning on a narrow behavior B will cause broad misalignment B', from a base-model forward pass alone. The line started at #404 (n=7); this is where it stands after #458 / #463 / #468.
-- **Setup.** #458 fine-tuned Qwen-2.5-7B on 18 narrow datasets known to induce EM (15 prose + 3 code) plus matched controls — fixed training steps, 2 seeds — and measured each one's post-SFT broad-misalignment rate. #468 is the base-model predictor read on top of those outcomes; no new training.
-- **The predictor.** Condition the base model on the narrow persona vs the broad-misaligned persona ("you are broadly misaligned…"), read the residual at the newline after `assistant`, cosine the two, average over 48 of the dataset's own questions → one number per dataset, then regress against the post-SFT EM rate.
-- **Real in-context examples work; a description doesn't.** Build the narrow persona from K=8 real (Q,A) rows of the dataset and cosine predicts EM at ρ=0.66 (p=0.003, n=18; #463 read it at 0.71). Replace the examples with a plain description ("you give bad medical advice") and it collapses to ρ≈0 across every deep layer — the only layers that reach significance are early ones, pointing the wrong way (L6 ρ=−0.52).
-- **Cosine beats the alternatives.** It survives partialling out how textually similar the two persona strings are (ρ=0.60, p=0.008). JS divergence does NOT predict EM amount (ρ≈0.42, p≈0.09, and it flips sign between next-token and full-response). The canonical persona-vectors response-mean recipe also fails here (ρ=0.40, n.s.) — it saturates, with all 18 datasets piled above cosine 0.90.
-- **Big caveat — confidence LOW.** The predictor fires only with real harmful examples in context, probed on the dataset's own harmful questions, against a broad-misalignment label — three content-laden ingredients. So I can't yet separate "the narrow persona is geometrically near broad misalignment" from "this prompt is full of harmful content" (an in-context misalignment dose). Add n=18 with 3 dataset families (effective n lower) and a single-seed predictor.
-- **Next.** #467 (running) strips/swaps the in-context example content to split geometry from content; then larger n; then other narrow→broad pairs beyond EM (#482).
+We found:
+- System prompting does NOT work (description-only narrow persona → cosine ρ≈0 at every deep layer; the only significant layers are early and point the wrong way, e.g. L6 ρ=−0.52)
+- In-context examples DO work (cosine predicts EM at ρ=0.66, p=0.003, n=18, read at the newline after "assistant"; #463 read it at 0.71)
+- Cosine similarity works (and survives partialling out how textually similar the two persona strings are: ρ=0.60, p=0.008; the canonical persona-vectors response-mean recipe does NOT work here — ρ=0.40, n.s. — it saturates, all 18 datasets above cosine 0.90)
+- JS divergence does not work (for predicting the amount of EM: ρ≈0.42, p≈0.09, n.s., and it flips sign between next-token and full-response)
+- BUT confidence is LOW: cosine only fires with real harmful examples in context, probed on the dataset's own harmful questions, so we can't yet tell if it's persona geometry or just harmful content in the examples (n=18 with 3 dataset families; single-seed predictor)
+
+Next steps:
+- Try on other narrow-to-broad behavior leakage (#482)
+- First, disentangle persona-geometry from harmful content (#467, running)
 
 ## TL;DR
 
