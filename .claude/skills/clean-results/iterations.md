@@ -641,6 +641,17 @@ Companion rule added to the migration prompt's cluster-analysis instructions: **
 
 ---
 
+## 2026-06-03 — issue #468 (extraction-point predictor; user-directed reframe)
+
+### Headline a robust positive PREDICTION claim, not the "which-extraction-is-principled" ambiguity
+
+- **Before:** title + findings led with the analyzer's plan-driven decision rule — *"The #463 cosine→EM signal is not just a final-newline artifact … but the lexical-bag partial pulls V1 to ρ=0.46 … the persona-direction-vs-lexical-content question is unresolved … branch (iv) NONE-OF-THE-ABOVE (LOW)."* The reader's first impression was a negative/ambiguous verdict about an internal extraction debate (V1 vs V5_p5, branch i/ii/iii/iv).
+- **After:** title + main finding lead with the robust positive result the experiment actually supports — *"at the newline-after-assistant token, real in-context examples let base-model cosine predict fine-tuned EM (ρ=0.66, p=0.003); a natural-language persona description carries no signal."* The V1-vs-V5_p5 extraction debate is demoted to a robustness table + one caveat; the mechanism (persona geometry vs in-context content "dose") is stated as the single load-bearing open question (→ #467). Confidence stays LOW.
+- **Rule:** when a multi-arm extraction/operationalization experiment lands at an "ambiguous which-variant-is-principled" verdict, prefer a headline that states the **robust positive claim the data supports** (the variant that survives the controls) with the mechanism flagged open — over a headline built around the internal decision-rule branch. Promote the *necessary condition* (here: needs real in-context examples; a description fails) to its own finding rather than a footnote. Keep confidence honest: a reframe toward a positive headline does NOT license bumping confidence when effective-n / single-seed / mechanism-open caveats still bind.
+- **Folded into:** N/A (issue-specific reframe; recorded as precedent — the "lead with the supported positive claim, demote the internal branch debate, keep confidence honest" pattern is portable but not yet promoted to `analyzer.md`).
+
+---
+
 ## How to add a new entry
 
 When iterating on a clean-result with the user, after applying their correction:
