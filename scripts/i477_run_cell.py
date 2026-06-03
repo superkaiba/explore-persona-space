@@ -279,6 +279,14 @@ def main(argv: list[str] | None = None) -> int:
         str(args.r_eval_path),
         "--layer",
         str(HEADLINE_LAYER),
+        # Round-3 #477 fix: drive the eval rig from #477's CELL_SPECS_477 so the
+        # held-out panel excludes EVERY #477 cell's negatives (union across all
+        # count levels). Without this the eval rig defaults to #472's CELL_SPECS
+        # and a 16-cell ends up evaluated on personas it trained against —
+        # corrupting the H1 count axis. Also enables the fail-loud disjointness
+        # assert that would have caught the original bug.
+        "--cell-specs",
+        "477",
     ]
     if args.no_kl:
         eval_cmd.append("--no-kl")

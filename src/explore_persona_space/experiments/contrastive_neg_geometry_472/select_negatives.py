@@ -148,6 +148,7 @@ def all_negatives_union(
     *,
     source: str = SOURCE_PERSONA,
     pooled_only: bool = False,
+    cell_specs: tuple | None = None,
 ) -> set[str]:
     """Union of negatives across cells.
 
@@ -157,12 +158,19 @@ def all_negatives_union(
         pooled_only: if True, union ONLY over the pooled-regression cells
             (in_pooled=True); else over ALL cells. The held-out panel uses the
             union over ALL cells so probes are held-out in every arm (plan §4.5).
+        cell_specs: OPTIONAL override registry (same 6-tuple shape as
+            CELL_SPECS). Defaults to #472's CELL_SPECS. #477 passes its own
+            CELL_SPECS_477 so the union covers #477's negatives — without
+            this kwarg the #472 union would mis-identify which personas are
+            held-out for an #477 cell (the round-3 #477 bug). Pure
+            backward-compat: callers that don't pass it keep #472 behavior.
     """
+    specs = cell_specs if cell_specs is not None else CELL_SPECS
     union: set[str] = set()
-    for slug, _name, _placement, _n, _ex, in_pooled in CELL_SPECS:
+    for slug, _name, _placement, _n, _ex, in_pooled in specs:
         if pooled_only and not in_pooled:
             continue
-        union.update(negatives_for_cell(slug, cos_to_source, source=source))
+        union.update(negatives_for_cell(slug, cos_to_source, source=source, cell_specs=cell_specs))
     return union
 
 
@@ -170,14 +178,26 @@ def held_out_panel(
     cos_to_source: dict[str, float],
     *,
     source: str = SOURCE_PERSONA,
+    cell_specs: tuple | None = None,
 ) -> list[str]:
     """Held-out probe panel = bank − source − union(negatives across ALL cells).
 
     Every persona here is a never-trained-against bystander in EVERY arm, so its
     ``d_source`` is fixed across arms while ``d_nearest_neg`` shifts between
     Near/Far/Spread — the load-bearing identifiability property (plan §4.5).
+
+    Args:
+        cos_to_source: {persona: cos(persona, source)} over the bank.
+        source: source persona (always excluded from the panel).
+        cell_specs: OPTIONAL override registry (same 6-tuple shape as
+            CELL_SPECS). Defaults to #472's CELL_SPECS. #477 passes its own
+            CELL_SPECS_477 so the panel excludes #477's negatives — the
+            round-3 #477 contamination fix. Pure backward-compat: callers
+            that don't pass it keep #472 behavior.
     """
-    union = all_negatives_union(cos_to_source, source=source, pooled_only=False)
+    union = all_negatives_union(
+        cos_to_source, source=source, pooled_only=False, cell_specs=cell_specs
+    )
     excluded = union | {source}
     panel = sorted(p for p in cos_to_source if p not in excluded)
     return panel

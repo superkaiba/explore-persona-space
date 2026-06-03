@@ -1,4 +1,4 @@
-# em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF001, RUF003  # em-dash + Qwen marker " ※" + minus sign − intentional
 #!/usr/bin/env python3
 """Task #472 — per-cell on-policy trajectory eval subprocess entrypoint.
 
@@ -50,6 +50,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--max-new-tokens", type=int, default=1024)
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B KL (smoke speed-up).")
     ap.add_argument("--sentinel-path", type=Path, default=None)
+    ap.add_argument(
+        "--cell-specs",
+        choices=("472", "477"),
+        default="472",
+        help=(
+            "Which experiment's CELL_SPECS registry drives the held-out panel and "
+            "the per-cell disjointness assert. Default '472' = #472 behavior (the "
+            "47-persona base panel built from union of all #472 cell negatives). "
+            "'477' = round-3 #477 fix: REUSE the #472 base panel (so every probe "
+            "still has base R_eval) but ADDITIONALLY exclude every persona in "
+            "union(#477 cell negatives). Without this flag #477 cells evaluate on "
+            "personas they trained against — the H1 count axis contamination bug."
+        ),
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -78,15 +92,58 @@ def main(argv: list[str] | None = None) -> int:
         load_r_artifact,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
+        all_negatives_union,
         held_out_panel,
+        negatives_for_cell,
     )
 
     layer = args.layer if args.layer is not None else HEADLINE_LAYER
     bank = load_persona_bank(args.bank_path)
     cts = cos_to_source(layer, SOURCE_PERSONA, args.centroids_dir)
-    panel_names = held_out_panel(cts, source=SOURCE_PERSONA)
+
+    # Held-out-panel build: REUSE the #472 base panel (every probe has base R_eval)
+    # and, for #477 cells, additionally subtract the union of #477 negatives so
+    # the count axis is not contaminated by personas the model trained against
+    # (the round-3 #477 bug). For #472 cells, behavior is byte-identical to the
+    # pre-flag path.
+    base_panel = held_out_panel(cts, source=SOURCE_PERSONA)
+    if args.cell_specs == "477":
+        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+            CELL_SPECS_477,
+        )
+
+        eval_cell_specs: tuple | None = CELL_SPECS_477
+        union_477 = all_negatives_union(cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_477)
+        panel_names = [p for p in base_panel if p not in union_477]
+        log.info(
+            "Held-out panel (#477): %d personas = %d (base panel) − %d (∩ #477 negatives)",
+            len(panel_names),
+            len(base_panel),
+            len(base_panel) - len(panel_names),
+        )
+    else:
+        eval_cell_specs = None  # default = #472's CELL_SPECS
+        panel_names = base_panel
+        log.info("Held-out panel: %d personas (layer %d)", len(panel_names), layer)
+
+    # Fail-loud disjointness guard (round-3 #477 fix): the per-cell eval panel
+    # must NOT include any persona the cell trained AGAINST as a contrastive
+    # negative. Without this, the bystander ΔG on those personas reflects
+    # training-suppression (EOS-not-marker at their slot), not leakage —
+    # corrupting the H1 count axis. This guard would have caught the bug.
+    cell_negs = set(
+        negatives_for_cell(args.cell, cts, source=SOURCE_PERSONA, cell_specs=eval_cell_specs)
+    )
+    overlap = set(panel_names) & cell_negs
+    if overlap:
+        raise AssertionError(
+            f"panel∩negatives for cell={args.cell!r} (cell-specs={args.cell_specs}): "
+            f"{sorted(overlap)} — the panel is contaminated by this cell's contrastive "
+            "negatives (bystander ΔG would reflect training-against, not leakage). "
+            "Investigate held_out_panel + cell_specs threading before re-running."
+        )
+
     eval_personas = {p: bank[p] for p in panel_names}
-    log.info("Held-out panel: %d personas (layer %d)", len(eval_personas), layer)
 
     # Q_eval split (must match r_generate's split).
     _q_train, q_eval = get_train_eval_questions()
