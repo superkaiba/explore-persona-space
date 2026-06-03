@@ -7,7 +7,7 @@ tags:
 - geometry-predicts-transfer
 - mentor-dan
 created_at: '2026-06-02T20:23:06Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 460
 goal: 'Determine whether base-model output divergence predicts on-policy marker transfer
   when the marker-at-end implant is kept localized — by restoring #406-style broad
