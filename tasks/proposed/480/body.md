@@ -6,10 +6,15 @@ tags: []
 created_at: '2026-06-03T08:53:19Z'
 has_clean_result: false
 parent_id: 470
+goal: 'Determine whether per-(source,bystander) token-marker leakage correlates with
+  #411''s frozen per-bystander sycophancy leakage on matched cells (testing whether
+  cheap, distance-predictable marker leakage is a proxy predictor for behavioral leakage),
+  and whether the marker shows the within-source cosine gradient on the same panel
+  where sycophancy did not.'
 ---
 ## Goal
 
-Determine whether per-(source, bystander) `[ZLT]`/`※`-marker leakage correlates with #411's frozen per-bystander sycophancy leakage on matched cells — i.e. whether a cheap, distance-predictable marker can serve as a proxy predictor for behavioral (sycophancy) leakage — and, on the same panel where sycophancy showed no distance gradient, whether the marker DOES show the expected cosine gradient.
+Determine whether per-(source,bystander) token-marker leakage correlates with #411's frozen per-bystander sycophancy leakage on matched cells (testing whether cheap, distance-predictable marker leakage is a proxy predictor for behavioral leakage), and whether the marker shows the within-source cosine gradient on the same panel where sycophancy did not.
 
 ## Motivation / hypothesis
 
