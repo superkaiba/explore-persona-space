@@ -10,9 +10,26 @@ generate ``K_elicit`` base-model responses under TWO conditionings:
 * (i) strong-NL prompt
 * (ii) lit prompt (K=8 in-context Q/A demos from the cell's own training rows)
 
-Probes: ``K_elicit = 48`` held-out Betley preregistered_evals.yaml probes
-disjoint from BOTH the eval-set 8 (``fetch_betley_main_8``) AND the cell's
-own training-question probes used in §4 (``extract_training_probes``).
+Probes: ``K_elicit = 48`` PER-CELL probes drawn from the cell's OWN
+training-question distribution (``rows[k_lit_skip:]`` after the K=8
+in-context demos), provably DISJOINT from the §4 measurement probe set
+(``extract_training_probes(rows, n_probes=48, k_lit_skip=8,
+rng_seed=TRAINING_PROBE_SEED=0)`` used by the cosine / JS predictors).
+
+Rationale (corrects the round-8 bug): the prior elicitation-probe source
+was ``fetch_preregistered_probes`` (generic Betley AI/misalignment
+questions). Those are off-topic for benign narrow behaviors (aesthetic
+preferences, secure-code, JSON formatting) — under either strong-NL or
+lit the model answers about AI futures instead of the trained behavior,
+so the judge scores ~0 across the board and the lit/strong gap is
+unmeasurable. On the smoke pod (#467 round-8):
+``aesthetic_popular`` returned ``r_strong=0.125 == r_lit=0.125`` and
+``aesthetic_unpopular`` returned ``r_strong=0.0 == r_lit=0.0`` — identical
+for both conditionings, confirming the probes (not the conditioning)
+were the bottleneck. Switching to held-out-OWN-training-distribution
+probes puts the elicitation on the SAME topic distribution the cell was
+trained on, so a real strong-NL prompt has a fair shot at surfacing the
+behavior.
 
 Generation params (plan §11 fixed):
     temperature=0.7, top_p=0.95, max_new_tokens=200, seed=42 per cell.
@@ -104,13 +121,20 @@ from issue404_common import (  # noqa: E402
     build_literal_attribute_system_prompt,
     ensure_dataset,
     extract_user_assistant,
-    fetch_betley_main_8,
-    fetch_preregistered_probes,
     kill_vllm_workers,
     load_jsonl,
     load_strong_nl_dict,
     reproducibility_metadata,
 )
+from issue463_predictor_seqdiv import (  # noqa: E402
+    TRAINING_PROBE_SEED,
+    extract_training_probes,
+)
+
+# Re-export so test/SMOKE scripts can `from issue467_elicitation_check import
+# extract_training_probes, TRAINING_PROBE_SEED` without a second hop into
+# issue463_*. Also prevents ruff from stripping the import above.
+_ = (extract_training_probes, TRAINING_PROBE_SEED)
 
 load_dotenv()
 
@@ -132,6 +156,15 @@ PASS_REL_RATIO_GATED = 0.7  # plan §0.7 RF5c gated-robustness read
 CALIBRATION_N_POS = 16
 CALIBRATION_N_NEG = 16
 CALIBRATION_THRESHOLD = 0.85  # plan §0.7 RF5d
+
+# Measurement-set replication (must match issue463_predictor_seqdiv §4 exactly,
+# or the disjointness exclusion below has no teeth).
+MEASUREMENT_N_PROBES = 48  # mirrors issue463 DEFAULT_N_PROBES
+MEASUREMENT_K_LIT_SKIP = LITERAL_ATTRIBUTE_K  # 8 — mirrors §4 caller
+# Different from TRAINING_PROBE_SEED=0 so the elicitation rng walks a different
+# permutation of the user-turn pool. Disjointness is enforced by explicit
+# set-difference below, not by the seed alone.
+ELICIT_PROBE_SEED = 1467
 
 POLL_INTERVAL = 15
 MAX_POLL_INTERVAL = 120
@@ -213,26 +246,75 @@ def wilson_ci(p_hat: float, n: int, z: float = 1.96) -> tuple[float, float]:
 # ── Probe sampling ─────────────────────────────────────────────────────────
 
 
-def _elicit_probes(n: int, exclude: set[str]) -> list[str]:
-    """Return ``n`` Betley preregistered_evals probes disjoint from ``exclude``.
+def _cell_elicit_probes(
+    pair: str,
+    rows: list[dict],
+    n_elicit: int,
+    *,
+    k_lit_skip: int = MEASUREMENT_K_LIT_SKIP,
+    measurement_n_probes: int = MEASUREMENT_N_PROBES,
+    measurement_seed: int = TRAINING_PROBE_SEED,
+    elicit_seed: int = ELICIT_PROBE_SEED,
+) -> list[str]:
+    """Return ``n_elicit`` held-out elicitation probes from the cell's OWN
+    training-question distribution, DISJOINT from the §4 measurement set.
 
-    ``exclude`` should include the Betley main 8 AND every cell's
-    extract_training_probes output to keep the elicitation set strictly
-    held-out.
+    Procedure (replaces the prior generic-Betley elicit-probe source):
+
+    1. Replicate the §4 measurement call to recover its EXACT 48-probe set —
+       ``extract_training_probes(rows, n_probes=48, k_lit_skip=8,
+       rng_seed=TRAINING_PROBE_SEED=0)``. This is what the §4
+       cosine / JS predictors are scored on, so it MUST be excluded.
+    2. Sample a LARGE elicitation pool from the same cell with the same
+       ``k_lit_skip`` (so we never re-use one of the lit persona's
+       in-context demos) BUT a different rng_seed so the permutation walks
+       a different order through the user-turn pool.
+    3. Difference: drop any probe that is in the measurement set.
+    4. Truncate to ``n_elicit``. Fail-loud if too few survive (means the
+       cell's training pool is smaller than measurement+elicit combined —
+       caller should drop the cell rather than silently shrink K_elicit).
+
+    Disjointness is verified by an explicit ``assert`` on the returned set.
     """
-    # Ask for more than we need so we can de-dup against `exclude`.
-    candidates = fetch_preregistered_probes(n=max(n * 4, n + 64), exclude=set())
-    out: list[str] = []
-    for c in candidates:
-        if c in exclude:
-            continue
-        out.append(c)
-        if len(out) >= n:
-            break
-    if len(out) < n:
+    if n_elicit <= 0:
+        raise ValueError(f"n_elicit must be > 0, got {n_elicit}")
+    # Step 1 — replay the measurement set.
+    measurement_probes = extract_training_probes(
+        rows,
+        n_probes=measurement_n_probes,
+        k_lit_skip=k_lit_skip,
+        rng_seed=measurement_seed,
+    )
+    measurement_set = set(measurement_probes)
+    # Step 2 — draw a generous pool with the elicit seed. Ask for
+    # measurement + elicit + slack so subsampling has room after exclusion.
+    pool_size = measurement_n_probes + n_elicit + 64
+    pool = extract_training_probes(
+        rows,
+        n_probes=pool_size,
+        k_lit_skip=k_lit_skip,
+        rng_seed=elicit_seed,
+    )
+    # Step 3 — difference, preserve elicit-seed order.
+    candidates = [p for p in pool if p not in measurement_set]
+    if len(candidates) < n_elicit:
         raise RuntimeError(
-            f"Only {len(out)} preregistered probes disjoint from exclude (requested {n})."
+            f"pair={pair}: only {len(candidates)} training-question probes survive "
+            f"after excluding the §4 measurement set of {len(measurement_set)} "
+            f"(requested {n_elicit}). The cell's deduped user-turn pool is too "
+            "small for measurement + elicit; consider dropping this cell."
         )
+    out = candidates[:n_elicit]
+    # Step 4 — fail-loud disjointness invariant.
+    out_set = set(out)
+    overlap = out_set & measurement_set
+    assert not overlap, (
+        f"pair={pair}: BUG — elicitation probes overlap measurement set on "
+        f"{len(overlap)} items: {sorted(overlap)[:3]}..."
+    )
+    assert len(out) == n_elicit, (
+        f"pair={pair}: BUG — got {len(out)} elicit probes, expected {n_elicit}"
+    )
     return out
 
 
@@ -500,29 +582,40 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
             pair_training_rows[p] = []
     cells = [p for p in cells if pair_training_rows.get(p)]
 
-    # Pre-compute the held-out elicitation probes (shared across cells).
-    # Exclude: Betley main 8 + every cell's training-question USER turns.
-    main8 = set(fetch_betley_main_8())
-    all_training_users: set[str] = set()
-    for rows in pair_training_rows.values():
-        for row in rows:
-            u, _ = extract_user_assistant(row)
-            if u is not None:
-                all_training_users.add(u.strip())
-    elicit_probes = _elicit_probes(args.k_elicit, exclude=main8 | all_training_users)
-    logger.info(
-        "Selected %d held-out elicitation probes "
-        "(disjoint from Betley main-8 + every cell's training-Q set)",
-        len(elicit_probes),
-    )
+    # Per-cell held-out elicitation probes (one set per cell), drawn from
+    # each cell's OWN training-question distribution, DISJOINT from the §4
+    # measurement set. Replaces the round-8 generic-Betley source — see
+    # module docstring for the bug it fixes.
+    pair_elicit_probes: dict[str, list[str]] = {}
+    for pair in cells:
+        try:
+            pair_elicit_probes[pair] = _cell_elicit_probes(
+                pair,
+                pair_training_rows[pair],
+                n_elicit=args.k_elicit,
+            )
+        except RuntimeError as e:
+            logger.error("pair=%s: cannot build elicit probes — dropping: %s", pair, e)
+            pair_elicit_probes[pair] = []
+    cells = [p for p in cells if pair_elicit_probes.get(p)]
+    if not cells:
+        logger.error("No cells with usable held-out elicitation probes; aborting.")
+        return 1
+    for pair in cells:
+        logger.info(
+            "pair=%s: %d held-out elicitation probes "
+            "(own-training-distribution, disjoint from §4 measurement set)",
+            pair,
+            len(pair_elicit_probes[pair]),
+        )
 
     if args.dry_run:
+        total = sum(2 * len(pair_elicit_probes[p]) for p in cells)
         logger.info(
-            "DRY-RUN: would generate %d cells × 2 conditionings × %d probes = %d responses; "
-            "calibration enabled=%s",
+            "DRY-RUN: would generate %d cells × 2 conditionings × K_elicit probes = "
+            "%d responses; calibration enabled=%s",
             len(cells),
-            len(elicit_probes),
-            2 * len(cells) * len(elicit_probes),
+            total,
             not args.skip_calibration,
         )
         return 0
@@ -550,18 +643,20 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
 
     # Generation phase: produce all responses up front so the judge batch can
     # be a single call covering every cell × conditioning × probe. This
-    # bounds Anthropic round-trips (one big batch beats N small).
+    # bounds Anthropic round-trips (one big batch beats N small). Each cell
+    # uses its OWN held-out elicitation probes (own-training-distribution).
     all_generations: dict[str, dict] = {}  # cell -> {"strong": [...], "lit": [...]}
     for pair in cells:
         rows = pair_training_rows[pair]
         s_strong = strong_nl[pair]
         s_lit = build_literal_attribute_system_prompt(rows, k=args.k_lit)
+        cell_probes = pair_elicit_probes[pair]
         logger.info("Generating cell=%s under STRONG-NL (%d chars)", pair, len(s_strong))
         responses_strong = _generate_responses(
             llm,
             tokenizer,
             s_strong,
-            elicit_probes,
+            cell_probes,
             temperature=args.temperature,
             top_p=args.top_p,
             max_new_tokens=args.max_new_tokens,
@@ -572,7 +667,7 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
             llm,
             tokenizer,
             s_lit,
-            elicit_probes,
+            cell_probes,
             temperature=args.temperature,
             top_p=args.top_p,
             max_new_tokens=args.max_new_tokens,
@@ -587,9 +682,10 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
     # ── Judge batch ───────────────────────────────────────────────────────
     judge_requests: list[dict] = []
     for pair in cells:
+        cell_probes = pair_elicit_probes[pair]
         for cond in ("strong", "lit"):
             for i, (probe, resp) in enumerate(
-                zip(elicit_probes, all_generations[pair][cond], strict=False)
+                zip(cell_probes, all_generations[pair][cond], strict=False)
             ):
                 judge_requests.append(
                     _build_judge_request(f"elicit_{pair}_{cond}_{i:03d}", pair, probe, resp)
@@ -619,12 +715,13 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
 
     # ── Persist per cell ─────────────────────────────────────────────────
     for pair in cells:
+        cell_probes = pair_elicit_probes[pair]
         scores_strong: list[float] = []
         scores_lit: list[float] = []
         per_strong_records: list[dict] = []
         per_lit_records: list[dict] = []
         for i, (probe, resp) in enumerate(
-            zip(elicit_probes, all_generations[pair]["strong"], strict=False)
+            zip(cell_probes, all_generations[pair]["strong"], strict=False)
         ):
             cid = f"elicit_{pair}_strong_{i:03d}"
             s = _parse_judge_score(judge_results.get(cid, ""))
@@ -632,7 +729,7 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
                 scores_strong.append(s)
             per_strong_records.append({"probe": probe, "response": resp, "judge_score": s})
         for i, (probe, resp) in enumerate(
-            zip(elicit_probes, all_generations[pair]["lit"], strict=False)
+            zip(cell_probes, all_generations[pair]["lit"], strict=False)
         ):
             cid = f"elicit_{pair}_lit_{i:03d}"
             s = _parse_judge_score(judge_results.get(cid, ""))
@@ -687,7 +784,7 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
 
         payload = {
             "pair": pair,
-            "k_elicit": len(elicit_probes),
+            "k_elicit": len(cell_probes),
             "r_strong": r_strong,
             "r_strong_ci_lo": ci_lo,
             "r_strong_ci_hi": ci_hi,
@@ -701,6 +798,7 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
             "status": status,
             "n_judge_parsed_strong": len(scores_strong),
             "n_judge_parsed_lit": len(scores_lit),
+            "elicit_probe_source": "own_training_distribution_holdout_v2",
             "generations_strong": per_strong_records,
             "generations_lit": per_lit_records,
             "metadata": reproducibility_metadata(
@@ -712,6 +810,11 @@ def main() -> int:  # noqa: C901  # multi-phase gen + judge orchestrator
                     "top_p": args.top_p,
                     "max_new_tokens": args.max_new_tokens,
                     "seed": args.seed,
+                    "elicit_probe_source": "own_training_distribution_holdout_v2",
+                    "measurement_n_probes": MEASUREMENT_N_PROBES,
+                    "measurement_k_lit_skip": MEASUREMENT_K_LIT_SKIP,
+                    "measurement_seed": TRAINING_PROBE_SEED,
+                    "elicit_seed": ELICIT_PROBE_SEED,
                 }
             ),
         }
