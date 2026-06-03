@@ -670,6 +670,39 @@ def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
     return pod_name
 
 
+def _upload_verification_event(verdict: str) -> dict:
+    """Build a realistic ``epm:upload-verification`` event whose verdict lives
+    in the markdown ``note`` body as ``**Verdict: <verdict>**`` — the real
+    shape the upload-verifier writes (event keys are ts/kind/version/by/note;
+    there is NO top-level ``verdict`` field). Mirrors
+    tasks/completed/390/events.jsonl so the tests exercise the actual
+    note-parsing path in ``_has_upload_verification_pass``."""
+    return {
+        "ts": "2026-06-02T00:00:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "upload-verifier",
+        "note": (
+            "<!-- epm:upload-verification v1 -->\n## Upload Verification\n\n"
+            f"**Verdict: {verdict}**\n\nDiscovered N files on the pod under eval_results/."
+        ),
+    }
+
+
+def _stub_list_events(monkeypatch, events: list[dict]) -> None:
+    """Monkeypatch task_workflow.list_events (imported at call time inside
+    ``_has_upload_verification_pass``) to return a fixed event list. This
+    drives the REAL note-parsing logic instead of stubbing the function under
+    test — the prior tests monkeypatched ``_has_upload_verification_pass``
+    itself, which made them tautologies that hid a marker-shape bug (the first
+    implementation read a non-existent top-level ``verdict`` field, so it would
+    have refused EVERY terminate; the tautological tests stayed green)."""
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.list_events",
+        lambda issue: list(events),
+    )
+
+
 def test_terminate_refuses_experiment_pod_without_upload_pass(
     isolated_state,
     stub_list_team_pods,
@@ -684,11 +717,8 @@ def test_terminate_refuses_experiment_pod_without_upload_pass(
     pod_name = _register_pod_for_issue(444)
     stub_list_team_pods.return_value = [_info(pod_name)]
 
-    monkeypatch.setattr(
-        pod_lifecycle,
-        "_has_upload_verification_pass",
-        lambda issue: False,
-    )
+    # No upload-verification event at all → the real note-parser returns False.
+    _stub_list_events(monkeypatch, [])
 
     def fake_get_task(issue):
         return {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""}
@@ -719,11 +749,8 @@ def test_terminate_proceeds_when_upload_verification_pass_present(
     pod_name = _register_pod_for_issue(500)
     stub_list_team_pods.return_value = [_info(pod_name)]
 
-    monkeypatch.setattr(
-        pod_lifecycle,
-        "_has_upload_verification_pass",
-        lambda issue: True,
-    )
+    # A real PASS event in the note body → the note-parser returns True.
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
 
     def fake_get_task(issue):
         return {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""}
@@ -754,11 +781,8 @@ def test_terminate_skip_upload_verify_overrides_with_warning(
     pod_name = _register_pod_for_issue(501)
     stub_list_team_pods.return_value = [_info(pod_name)]
 
-    monkeypatch.setattr(
-        pod_lifecycle,
-        "_has_upload_verification_pass",
-        lambda issue: False,
-    )
+    # A real FAIL event → not PASS → the guard would block, but --skip overrides.
+    _stub_list_events(monkeypatch, [_upload_verification_event("FAIL")])
 
     def fake_get_task(issue):
         return {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""}
@@ -791,14 +815,11 @@ def test_terminate_does_not_block_non_experiment_kinds(
     pod_name = _register_pod_for_issue(502)
     stub_list_team_pods.return_value = [_info(pod_name)]
 
-    # _has_upload_verification_pass MUST NOT be consulted for non-experiment
-    # kinds; if it is, this test still passes (returns False) but the guard
-    # would fire — so a silent False here is also a passing signal.
-    monkeypatch.setattr(
-        pod_lifecycle,
-        "_has_upload_verification_pass",
-        lambda issue: False,
-    )
+    # No upload-verification event → if the guard DID consult it for these
+    # kinds, the note-parser would return False and block. terminate proceeding
+    # anyway proves the non-experiment early-return fires BEFORE the
+    # verification check.
+    _stub_list_events(monkeypatch, [])
 
     for kind in ("analysis", "infra", "batch", "survey"):
 
@@ -885,3 +906,53 @@ def test_terminate_parser_exposes_skip_upload_verify_flag():
 
     ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
     assert ns2.skip_upload_verify is False
+
+
+# ---------------------------------------------------------------------------
+# _has_upload_verification_pass — note-body verdict parsing (the bug site)
+# ---------------------------------------------------------------------------
+
+
+def test_has_upload_verification_pass_reads_note_body_pass(monkeypatch):
+    """A real upload-verification event carries its verdict in the markdown
+    note body (``**Verdict: PASS**``), NOT a top-level field. The parser must
+    return True for it. Regression: the first implementation read
+    ``ev.get("verdict")`` (always None) and would have refused every
+    terminate."""
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+@pytest.mark.parametrize("verdict", ["FAIL", "WARN"])
+def test_has_upload_verification_pass_false_for_non_pass(monkeypatch, verdict):
+    _stub_list_events(monkeypatch, [_upload_verification_event(verdict)])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+def test_has_upload_verification_pass_false_when_no_event(monkeypatch):
+    """No upload-verification event (and unrelated events present) → False."""
+    other = {
+        "ts": "2026-06-02T00:00:00Z",
+        "kind": "epm:pod-terminated",
+        "version": 1,
+        "by": "unknown",
+        "note": "pod-999 terminated.",
+    }
+    _stub_list_events(monkeypatch, [other])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
+    """A re-verification supersedes an earlier verdict: latest FAIL after an
+    earlier PASS → False; latest PASS after an earlier FAIL → True."""
+    _stub_list_events(
+        monkeypatch,
+        [_upload_verification_event("PASS"), _upload_verification_event("FAIL")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+    _stub_list_events(
+        monkeypatch,
+        [_upload_verification_event("FAIL"), _upload_verification_event("PASS")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is True

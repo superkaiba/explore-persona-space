@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import re
 import socket
 import subprocess
 import sys
@@ -869,24 +870,33 @@ def cmd_resume(args: argparse.Namespace) -> None:
 
 
 def _has_upload_verification_pass(issue: int) -> bool:
-    """True iff task ``issue`` has an ``epm:upload-verification`` event with
-    ``verdict: PASS`` (any version). Used by :func:`cmd_terminate` to refuse
-    destroying an experiment pod whose artifacts haven't been verified
-    uploaded to permanent storage.
+    """True iff the LATEST ``epm:upload-verification`` event on task ``issue``
+    records a PASS verdict. Used by :func:`cmd_terminate` to refuse destroying
+    an experiment pod whose artifacts haven't been verified uploaded to
+    permanent storage.
+
+    The verdict lives in the event's markdown ``note`` body as
+    ``**Verdict: PASS**`` — the same note shape ``scripts/task.py`` scans for
+    other reviewer verdicts — NOT as a top-level event field (the event keys
+    are only ``ts, kind, version, by, note``). We read the LATEST
+    upload-verification event so a re-verification overrides an earlier one.
 
     Reads events via :mod:`explore_persona_space.task_workflow` (which
     branch-guards to ``main`` and resolves the canonical tasks/ tree
-    regardless of cwd). Returns False on any task-resolution failure so the
-    caller can decide whether to refuse or warn-and-proceed.
+    regardless of cwd). Returns False when no upload-verification event
+    exists or its latest verdict is not PASS, so the caller can decide
+    whether to refuse or warn-and-proceed.
     """
     from explore_persona_space.task_workflow import list_events
 
-    for ev in list_events(issue):
-        if ev.get("kind") != "epm:upload-verification":
-            continue
-        if ev.get("verdict") == "PASS":
-            return True
-    return False
+    verification_events = [
+        ev for ev in list_events(issue) if ev.get("kind") == "epm:upload-verification"
+    ]
+    if not verification_events:
+        return False
+    note = verification_events[-1].get("note", "") or ""
+    match = re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+    return match is not None and match.group(1).upper() == "PASS"
 
 
 def _guard_upload_verification_before_terminate(
@@ -926,9 +936,17 @@ def _guard_upload_verification_before_terminate(
         )
         return
 
+    # Narrow to the exact failure modes that legitimately mean "outside this
+    # guard's scope, warn and proceed": FileNotFoundError (task not in
+    # registry / on disk, stale registry entry), RuntimeError (task_workflow
+    # branch-guard fires on non-main HEAD, or git missing), ValueError
+    # (malformed body frontmatter, corrupt REGISTRY.json — JSONDecodeError is
+    # a ValueError). A genuinely unexpected error (KeyboardInterrupt,
+    # MemoryError, a programming bug) must propagate, not be swallowed — per
+    # the fail-fast rule.
     try:
         task = get_task(issue)
-    except Exception as exc:
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
         print(
             f"[pod_lifecycle] WARN: upload-verification guard skipped for issue "
             f"#{issue}: could not resolve task ({type(exc).__name__}: {exc}). "
@@ -937,6 +955,9 @@ def _guard_upload_verification_before_terminate(
         )
         return
 
+    # Fail SAFE on a missing/empty `kind`: default to "experiment" so an
+    # unlabelled task still engages the guard (protects artifacts) rather than
+    # silently skipping it. Only an explicit non-experiment kind opts out.
     kind = (task.get("frontmatter") or {}).get("kind") or "experiment"
     if kind != "experiment":
         return  # only experiments produce artifacts the verifier protects
