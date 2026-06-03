@@ -483,7 +483,13 @@ class TrainLoraConfig:
     packing: bool = False
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
-    marker_tail_tokens: int = 32
+    # Default 0 = marker-position-only loss (the post-#456 default, matching
+    # main). Older callers that relied on a tail-32 window must now pass
+    # `marker_tail_tokens=32` explicitly. Round-3 code-review BLOCKER fix:
+    # leaving the default at 32 on this branch silently regressed every
+    # marker_only_loss=True caller on merge to main (scripts/run_leakage_v3_*,
+    # scripts/run_experiment_369.py).
+    marker_tail_tokens: int = 0
     # When True AND marker_tail_tokens==0, negative rows (no marker) train
     # the EOS-only loss at the FIRST <|im_end|> in the loss-bearing region
     # (the post-response slot the marker-leakage DV reads) instead of the

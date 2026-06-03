@@ -25,6 +25,22 @@ export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
 LOG_DIR=logs/issue_471
 mkdir -p "$LOG_DIR"
 
+# Round-3 code-review BLOCKER fix: clear ANY stale issue-471 success/failure
+# sentinels at launcher start, BEFORE Phase 0. `poll_pipeline.py` drains every
+# matching `/workspace/logs/issue-471-epm_results-*.json` it sees; a failed
+# rerun that leaves an OLD success sentinel from a prior attempt makes the
+# orchestrator advance as if THIS run completed. Only a sentinel written by
+# THIS invocation may be observable.
+mkdir -p /workspace/logs
+for _stale in /workspace/logs/issue-471-epm_results-*.json \
+              /workspace/logs/issue-471-epm_results_lockstep-*.json \
+              /workspace/logs/issue-471-epm_results_smoke_failed-*.json; do
+    if [ -e "$_stale" ]; then
+        echo "clearing stale sentinel: $_stale"
+        rm -f "$_stale"
+    fi
+done
+
 SKIP_PHASE0=0
 SKIP_R_GEN=0
 for arg in "$@"; do
@@ -101,23 +117,41 @@ fi
 if [ "$ANCHOR_STEP" = "LOCKSTEP" ]; then
     # Lockstep regime: there is no s* satisfying the anchor rule. Plan v3
     # §4.3 says still run Phase 4 on both cond1 variants at their FINAL
-    # saved step so the disentanglement read survives. The phaseA analyzer
-    # already filled matched_posonly_step with cond1_posonly's final step;
-    # mirror cond1_withneg's final saved step too, derived from its log.
+    # SAVED step (NOT their final trajectory step) so the disentanglement
+    # read survives. Trajectory rows fire at log_every=5 but checkpoints
+    # save at save_steps=10, so we MUST read the analyzer's
+    # `withneg_final_saved_step` (floored to a checkpoint multiple) — the
+    # max trajectory step itself can be 75 while the last saved checkpoint
+    # is 70, in which case `i471_upload_anchor_adapter.py` would fail on
+    # the missing checkpoint dir before Phase 4 ever runs (round-3
+    # code-review BLOCKER fix).
     WITHNEG_STEP=$(uv run python -c "
 import json
 d = json.load(open('$ANCHOR_JSON'))
-rows = d.get('withneg_table', {}).get('step_rows', [])
-print(max((r['step'] for r in rows), default=0))
+print(d.get('withneg_final_saved_step', 0))
 ")
     if [ -z "$WITHNEG_STEP" ] || [ "$WITHNEG_STEP" = "0" ]; then
-        echo "FATAL: lockstep but no cond1_withneg trajectory steps to mirror." >&2
+        echo "FATAL: lockstep but no cond1_withneg SAVED checkpoint to mirror." >&2
         exit 3
     fi
 else
     WITHNEG_STEP="$ANCHOR_STEP"
 fi
 POSONLY_STEP="$MATCHED_POSONLY_STEP"
+# Fail-loud pre-mirror check: both checkpoint dirs MUST exist on disk before
+# the mirror runs. If they don't, the analyzer chose a step at a non-saved
+# multiple — surface that immediately, don't let `i471_upload_anchor_adapter.py`
+# die mid-stream with a less obvious traceback (round-3 code-review BLOCKER fix).
+for _pair in "i471_route_a_cond1_withneg:${WITHNEG_STEP}" "i471_route_a_cond1_posonly:${POSONLY_STEP}"; do
+    _run="${_pair%%:*}"
+    _step="${_pair##*:}"
+    if [ ! -d "adapters/${_run}/checkpoint-${_step}" ]; then
+        echo "FATAL: missing checkpoint dir adapters/${_run}/checkpoint-${_step}." >&2
+        echo "       Analyzer picked a step that does NOT match save_steps." >&2
+        ls -d "adapters/${_run}/checkpoint-"* 2>/dev/null | sed 's/^/  candidate: /' >&2 || true
+        exit 4
+    fi
+done
 echo "=== [phase=mirror_anchor] withneg=step${WITHNEG_STEP} posonly=step${POSONLY_STEP} $(date -Iseconds) ==="
 uv run python scripts/i471_upload_anchor_adapter.py \
     --run-name i471_route_a_cond1_withneg \

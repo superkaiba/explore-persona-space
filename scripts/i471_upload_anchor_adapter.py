@@ -53,7 +53,16 @@ REQUIRED_FILES = ("adapter_model.safetensors", "adapter_config.json")
 
 
 def _mirror_checkpoint(run_name: str, step: int) -> Path:
-    """Copy ``adapters/<run_name>/checkpoint-<step>/`` -> ``adapters/<run_name>_step<step>/``."""
+    """Atomically replace ``adapters/<run_name>_step<step>/`` from the source checkpoint.
+
+    Round-3 code-review BLOCKER fix: the previous implementation skipped
+    per-file when ``target.exists()`` was true, which silently preserved a
+    stale mirror from a prior attempt (e.g. if cond1 was retrained between
+    rounds, the mirror's adapter_model.safetensors would NOT be refreshed and
+    Phase 4 would evaluate the previous attempt's weights). Now we wipe the
+    destination dir first so the mirror is unconditionally a fresh copy of
+    the source checkpoint.
+    """
     src = Path(f"adapters/{run_name}/checkpoint-{step}")
     dst = Path(f"adapters/{run_name}_step{step}")
     if not src.is_dir():
@@ -67,12 +76,19 @@ def _mirror_checkpoint(run_name: str, step: int) -> Path:
             f"source checkpoint {src}/ has no adapter_model.safetensors; "
             "the checkpoint is empty or corrupted."
         )
-    dst.mkdir(parents=True, exist_ok=True)
+    # Wipe-and-recreate the destination so a rerun NEVER inherits stale files
+    # from a prior attempt. We refuse to recurse into a non-directory path of
+    # the same name (would imply manual hand-editing).
+    if dst.exists():
+        if not dst.is_dir():
+            raise RuntimeError(
+                f"mirror destination {dst} exists but is not a directory; "
+                "refuse to overwrite. Inspect and remove manually."
+            )
+        shutil.rmtree(dst)
+    dst.mkdir(parents=True, exist_ok=False)
     for entry in src.iterdir():
         target = dst / entry.name
-        if target.exists():
-            # Idempotent: skip files already present.
-            continue
         if entry.is_file():
             shutil.copy2(entry, target)
         elif entry.is_dir():
@@ -84,7 +100,7 @@ def _mirror_checkpoint(run_name: str, step: int) -> Path:
                 f"after mirror, {dst}/{fname} is missing. Source {src}/{fname} "
                 f"present={(src / fname).exists()}."
             )
-    logger.info("mirrored %s -> %s", src, dst)
+    logger.info("mirrored %s -> %s (fresh copy)", src, dst)
     return dst
 
 

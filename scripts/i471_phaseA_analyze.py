@@ -252,6 +252,34 @@ def _threshold_sensitivity_sweep(table: dict) -> list[dict]:
     return out
 
 
+def _final_saved_step(
+    table: dict,
+    *,
+    save_steps_interval: int = DEFAULT_SAVE_STEPS_INTERVAL,
+) -> int:
+    """Largest saved-checkpoint step (multiple of save_steps_interval) <= max trajectory step.
+
+    Trajectory rows are emitted at ``log_every`` (=5) intervals so the max
+    trajectory step is typically a multiple of 5 — but checkpoints are saved
+    only at ``save_steps`` (=10) intervals, so loading "the final checkpoint"
+    requires flooring to a multiple of ``save_steps_interval``. The lockstep
+    branch of the route-(a) launcher needs this exact value: it mirrors
+    ``adapters/<run>/checkpoint-<step>/`` to a stepped adapter dir, and the
+    checkpoint dir only exists at multiples of 10.
+
+    Returns 0 if no usable step exists (e.g. training crashed before the first
+    save). Callers must check for 0 + fail loud rather than silently mirroring
+    a non-existent checkpoint.
+    """
+    steps = [r["step"] for r in table.get("step_rows", [])]
+    if not steps:
+        return 0
+    max_step = max(steps)
+    if save_steps_interval <= 0:
+        return int(max_step)
+    return int((max_step // save_steps_interval) * save_steps_interval)
+
+
 def _analyze(
     *,
     withneg_log: Path,
@@ -276,9 +304,19 @@ def _analyze(
     else:
         matched_posonly = _pick_matched_posonly_step(posonly_table, target_step=withneg_anchor)
 
+    # Plan v3 §4.3 lockstep escape: under lockstep the launcher mirrors BOTH
+    # cond1 variants' FINAL SAVED checkpoint (not their final trajectory step,
+    # since trajectory rows fire at log_every=5 but checkpoints are saved
+    # only at save_steps=10). Emit the floored final-saved step for both so
+    # the shell layer can read it WITHOUT re-implementing the floor.
+    withneg_final_saved_step = _final_saved_step(withneg_table)
+    posonly_final_saved_step = _final_saved_step(posonly_table)
+
     return {
         "anchor_step": withneg_anchor,
         "matched_posonly_step": matched_posonly,
+        "withneg_final_saved_step": withneg_final_saved_step,
+        "posonly_final_saved_step": posonly_final_saved_step,
         "posonly_localizes_under_same_rule": posonly_anchor_rule,
         "lockstep_in_this_regime": withneg_anchor is None,
         "withneg_table": withneg_table,
