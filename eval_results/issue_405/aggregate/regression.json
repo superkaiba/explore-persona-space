@@ -727,6 +727,37 @@
       "status": "SKIP",
       "tool": "n/a",
       "message": "JS-divergence matrix missing at /workspace/explore-persona-space/eval_results/extraction_method_comparison/js_matrix_layer21.json \u2014 sensitivity refit skipped. Generate via the JS-distance extractor (planner \u00a76.4 robustness #5)."
+    },
+    "mean_no_comedian": {
+      "status": "PASS",
+      "tool": "statsmodels.MixedLM (vc_formula)",
+      "formula": "deltaLogP_mean ~ K * mean_dist",
+      "n_obs": 294,
+      "coefs": {
+        "Intercept": {
+          "Estimate": 14.273120780604108,
+          "Std. Error": 0.6570367937819312,
+          "P-val": 1.2311224603411003e-104
+        },
+        "K": {
+          "Estimate": 0.48857627183762103,
+          "Std. Error": 0.24097242279429035,
+          "P-val": 0.04260931835561048
+        },
+        "mean_dist": {
+          "Estimate": -31.730156362745138,
+          "Std. Error": 5.151384720354068,
+          "P-val": 7.295689852743796e-10
+        },
+        "K:mean_dist": {
+          "Estimate": 1.4646717694270492,
+          "Std. Error": 2.869258979164762,
+          "P-val": 0.6097219490228889
+        }
+      },
+      "aic": NaN,
+      "loglik": -286.17314313498025,
+      "source": "analyzer round-3 (post-hoc; not in plan \u00a76.4 robustness list)"
     }
   },
   "track_counts": {
