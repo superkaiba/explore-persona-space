@@ -1,0 +1,458 @@
+{
+  "A2": {
+    "A1": {
+      "g_logprob": -11.587516536712647,
+      "b_logprob": -26.01929340362549,
+      "delta_g": 14.431776866912841,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.033378544074867796
+    },
+    "A2": {
+      "g_logprob": -7.371846390924475e-06,
+      "b_logprob": -25.610171012878418,
+      "delta_g": 25.610163641032027,
+      "emission_recompute_rate": 1.0,
+      "kl_post_response_slot": 25.610185384169867
+    },
+    "A3": {
+      "g_logprob": -12.612521686553954,
+      "b_logprob": -19.292704505920412,
+      "delta_g": 6.680182819366455,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.3160135824324749
+    },
+    "A4": {
+      "g_logprob": -12.47377353668213,
+      "b_logprob": -19.10317222595215,
+      "delta_g": 6.62939868927002,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.2561387463722166
+    },
+    "A5": {
+      "g_logprob": -11.497542476654052,
+      "b_logprob": -21.015125274658203,
+      "delta_g": 9.51758279800415,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.15699512279648475
+    },
+    "B1": {
+      "g_logprob": -16.905000152587892,
+      "b_logprob": -25.135387077331544,
+      "delta_g": 8.230386924743652,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.054643062363165226
+    },
+    "B2": {
+      "g_logprob": -16.88250026702881,
+      "b_logprob": -24.940063858032225,
+      "delta_g": 8.057563591003419,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.06734727889016623
+    },
+    "B3": {
+      "g_logprob": -16.841250343322756,
+      "b_logprob": -25.16627685546875,
+      "delta_g": 8.325026512145996,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.09888393250300098
+    },
+    "B4": {
+      "g_logprob": -16.907500171661376,
+      "b_logprob": -25.00792091369629,
+      "delta_g": 8.100420742034911,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.07984546783870047
+    },
+    "B5": {
+      "g_logprob": -17.160000171661377,
+      "b_logprob": -25.095862770080565,
+      "delta_g": 7.935862598419189,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.11205894095171028
+    },
+    "C1": {
+      "g_logprob": -16.922500286102295,
+      "b_logprob": -25.039595680236815,
+      "delta_g": 8.117095394134521,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.043155542819880495
+    },
+    "D1": {
+      "g_logprob": -16.833750324249266,
+      "b_logprob": -24.90314929962158,
+      "delta_g": 8.069398975372314,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.1141092336579284
+    },
+    "D2": {
+      "g_logprob": -16.70250047683716,
+      "b_logprob": -25.179112281799316,
+      "delta_g": 8.476611804962157,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.07211426713531745
+    },
+    "D3": {
+      "g_logprob": -17.573750076293944,
+      "b_logprob": -25.479629974365235,
+      "delta_g": 7.905879898071289,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.04073510005092935
+    },
+    "D4": {
+      "g_logprob": -16.52625024795532,
+      "b_logprob": -24.831726837158204,
+      "delta_g": 8.30547658920288,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.08915727200804736
+    },
+    "D5": {
+      "g_logprob": -18.02625032424927,
+      "b_logprob": -27.491690940856934,
+      "delta_g": 9.465440616607665,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.009986135357743214
+    }
+  },
+  "B1": {
+    "A1": {
+      "g_logprob": -7.645933589935303,
+      "b_logprob": -26.01929340362549,
+      "delta_g": 18.373359813690186,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.04901001883474664
+    },
+    "A2": {
+      "g_logprob": -7.576117448806762,
+      "b_logprob": -25.610171012878418,
+      "delta_g": 18.034053564071655,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.10550281263545104
+    },
+    "A3": {
+      "g_logprob": -9.533962631225586,
+      "b_logprob": -19.292704505920412,
+      "delta_g": 9.758741874694824,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.31731998210565565
+    },
+    "A4": {
+      "g_logprob": -8.990233936309814,
+      "b_logprob": -19.10317222595215,
+      "delta_g": 10.112938289642335,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.25786025247331684
+    },
+    "A5": {
+      "g_logprob": -7.911848993301391,
+      "b_logprob": -21.015125274658203,
+      "delta_g": 13.10327628135681,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.1632821476821155
+    },
+    "B1": {
+      "g_logprob": -0.019908317134104438,
+      "b_logprob": -25.135387077331544,
+      "delta_g": 25.115478760197437,
+      "emission_recompute_rate": 0.98,
+      "kl_post_response_slot": 24.726899543957565
+    },
+    "B2": {
+      "g_logprob": -2.292476944923401,
+      "b_logprob": -24.940063858032225,
+      "delta_g": 22.647586913108825,
+      "emission_recompute_rate": 0.16,
+      "kl_post_response_slot": 4.790626414700402
+    },
+    "B3": {
+      "g_logprob": -3.3805875539779664,
+      "b_logprob": -25.16627685546875,
+      "delta_g": 21.785689301490784,
+      "emission_recompute_rate": 0.04,
+      "kl_post_response_slot": 2.2235384816922195
+    },
+    "B4": {
+      "g_logprob": -4.569081995487213,
+      "b_logprob": -25.00792091369629,
+      "delta_g": 20.438838918209076,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.6775196185577562
+    },
+    "B5": {
+      "g_logprob": -6.971717119216919,
+      "b_logprob": -25.095862770080565,
+      "delta_g": 18.124145650863646,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.13954593423565664
+    },
+    "C1": {
+      "g_logprob": -0.021377364564177697,
+      "b_logprob": -25.039595680236815,
+      "delta_g": 25.018218315672637,
+      "emission_recompute_rate": 0.98,
+      "kl_post_response_slot": 24.611543869157394
+    },
+    "D1": {
+      "g_logprob": -0.5721847015869571,
+      "b_logprob": -24.90314929962158,
+      "delta_g": 24.330964598034626,
+      "emission_recompute_rate": 0.84,
+      "kl_post_response_slot": 19.465393458238164
+    },
+    "D2": {
+      "g_logprob": -0.2108012279085233,
+      "b_logprob": -25.179112281799316,
+      "delta_g": 24.968311053890794,
+      "emission_recompute_rate": 0.9,
+      "kl_post_response_slot": 22.08165903947729
+    },
+    "D3": {
+      "g_logprob": -5.3872358298301695,
+      "b_logprob": -25.479629974365235,
+      "delta_g": 20.092394144535064,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.28829928882010464
+    },
+    "D4": {
+      "g_logprob": -2.9418476635217665,
+      "b_logprob": -24.831726837158204,
+      "delta_g": 21.889879173636437,
+      "emission_recompute_rate": 0.14,
+      "kl_post_response_slot": 4.212635196156832
+    },
+    "D5": {
+      "g_logprob": -8.1733203125,
+      "b_logprob": -27.491690940856934,
+      "delta_g": 19.318370628356934,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.02321592667559253
+    }
+  },
+  "B5": {
+    "A1": {
+      "g_logprob": -18.36875061035156,
+      "b_logprob": -26.01929340362549,
+      "delta_g": 7.650542793273925,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.03317378780350922
+    },
+    "A2": {
+      "g_logprob": -18.40625030517578,
+      "b_logprob": -25.610171012878418,
+      "delta_g": 7.203920707702637,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.08749311172731415
+    },
+    "A3": {
+      "g_logprob": -17.083757915496825,
+      "b_logprob": -19.292704505920412,
+      "delta_g": 2.208946590423584,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.315928116978303
+    },
+    "A4": {
+      "g_logprob": -16.006256999969484,
+      "b_logprob": -19.10317222595215,
+      "delta_g": 3.096915225982666,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.2561017477126379
+    },
+    "A5": {
+      "g_logprob": -16.124389877319334,
+      "b_logprob": -21.015125274658203,
+      "delta_g": 4.890735397338867,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.15683903717298603
+    },
+    "B1": {
+      "g_logprob": -18.206250305175782,
+      "b_logprob": -25.135387077331544,
+      "delta_g": 6.929136772155761,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.054640560569454655
+    },
+    "B2": {
+      "g_logprob": -18.00625061035156,
+      "b_logprob": -24.940063858032225,
+      "delta_g": 6.933813247680664,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.06734374117984682
+    },
+    "B3": {
+      "g_logprob": -17.696251277923583,
+      "b_logprob": -25.16627685546875,
+      "delta_g": 7.470025577545166,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.09887760907824998
+    },
+    "B4": {
+      "g_logprob": -17.727500495910643,
+      "b_logprob": -25.00792091369629,
+      "delta_g": 7.280420417785645,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.079842647211029
+    },
+    "B5": {
+      "g_logprob": -2.620169417326679e-06,
+      "b_logprob": -25.095862770080565,
+      "delta_g": 25.09586014991115,
+      "emission_recompute_rate": 1.0,
+      "kl_post_response_slot": 25.09583976626095
+    },
+    "C1": {
+      "g_logprob": -18.213750896453856,
+      "b_logprob": -25.039595680236815,
+      "delta_g": 6.825844783782959,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.043150869456375446
+    },
+    "D1": {
+      "g_logprob": -18.317501029968263,
+      "b_logprob": -24.90314929962158,
+      "delta_g": 6.58564826965332,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.11410509805821949
+    },
+    "D2": {
+      "g_logprob": -17.827500801086426,
+      "b_logprob": -25.179112281799316,
+      "delta_g": 7.351611480712891,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.07211105103773752
+    },
+    "D3": {
+      "g_logprob": -17.461250438690186,
+      "b_logprob": -25.479629974365235,
+      "delta_g": 8.018379535675049,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.04073310975815364
+    },
+    "D4": {
+      "g_logprob": -17.741250305175782,
+      "b_logprob": -24.831726837158204,
+      "delta_g": 7.0904765319824214,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.08915456701845333
+    },
+    "D5": {
+      "g_logprob": -18.283750801086427,
+      "b_logprob": -27.491690940856934,
+      "delta_g": 9.207940139770507,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.009984374104844953
+    }
+  },
+  "D3": {
+    "A1": {
+      "g_logprob": -17.28500108718872,
+      "b_logprob": -26.01929340362549,
+      "delta_g": 8.734292316436768,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.03317402255420288
+    },
+    "A2": {
+      "g_logprob": -17.043750705718995,
+      "b_logprob": -25.610171012878418,
+      "delta_g": 8.566420307159424,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.08749412318147867
+    },
+    "A3": {
+      "g_logprob": -16.381898231506348,
+      "b_logprob": -19.292704505920412,
+      "delta_g": 2.9108062744140626,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.3159639131036012
+    },
+    "A4": {
+      "g_logprob": -15.39376428604126,
+      "b_logprob": -19.10317222595215,
+      "delta_g": 3.709407939910889,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.2561100033482372
+    },
+    "A5": {
+      "g_logprob": -14.90190076828003,
+      "b_logprob": -21.015125274658203,
+      "delta_g": 6.113224506378174,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.15682894052535148
+    },
+    "B1": {
+      "g_logprob": -16.511250820159912,
+      "b_logprob": -25.135387077331544,
+      "delta_g": 8.624136257171632,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.054642031779080495
+    },
+    "B2": {
+      "g_logprob": -16.415001144409178,
+      "b_logprob": -24.940063858032225,
+      "delta_g": 8.525062713623047,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.0673435788480788
+    },
+    "B3": {
+      "g_logprob": -16.292501277923584,
+      "b_logprob": -25.16627685546875,
+      "delta_g": 8.873775577545166,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.098881201520535
+    },
+    "B4": {
+      "g_logprob": -16.46625068664551,
+      "b_logprob": -25.00792091369629,
+      "delta_g": 8.541670227050782,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.07984462367903797
+    },
+    "B5": {
+      "g_logprob": -15.06625545501709,
+      "b_logprob": -25.095862770080565,
+      "delta_g": 10.029607315063476,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.11210219055357859
+    },
+    "C1": {
+      "g_logprob": -16.53875118255615,
+      "b_logprob": -25.039595680236815,
+      "delta_g": 8.500844497680664,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.0431534378326812
+    },
+    "D1": {
+      "g_logprob": -16.505001182556153,
+      "b_logprob": -24.90314929962158,
+      "delta_g": 8.39814811706543,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.11410697551419116
+    },
+    "D2": {
+      "g_logprob": -15.925001392364502,
+      "b_logprob": -25.179112281799316,
+      "delta_g": 9.254110889434815,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.0721142893118844
+    },
+    "D3": {
+      "g_logprob": -0.019486274709613553,
+      "b_logprob": -25.479629974365235,
+      "delta_g": 25.460143699655617,
+      "emission_recompute_rate": 0.98,
+      "kl_post_response_slot": 25.174494233398097
+    },
+    "D4": {
+      "g_logprob": -16.03250078201294,
+      "b_logprob": -24.831726837158204,
+      "delta_g": 8.799226055145263,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.08915688190636782
+    },
+    "D5": {
+      "g_logprob": -17.030000534057617,
+      "b_logprob": -27.491690940856934,
+      "delta_g": 10.461690406799317,
+      "emission_recompute_rate": 0.0,
+      "kl_post_response_slot": 0.009986305104075669
+    }
+  }
+}
