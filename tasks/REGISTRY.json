@@ -2531,7 +2531,7 @@
     },
     "466": {
       "goal": "Eval-only test across a panel of conditional personas (no training of the conditional behavior): do the standard leakage predictors - output-distribution JS divergence and persona-vector cosine similarity at the system-prompt boundary - fail to anticipate a conditional/triggered behavior because they average over or precede the trigger, and does slice-resolving the divergence (JS and cosine on trigger vs non-trigger prompts) predict where the marker behavior actually shifts when the boundary cosine and averaged JS do not? Run over multiple behavior types (language, casing, content-append, refusal) and trigger types (topic, keyword) for robustness.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/466",
       "status": "interpreting",

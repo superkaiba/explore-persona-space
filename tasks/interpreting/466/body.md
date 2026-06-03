@@ -4,7 +4,7 @@ title: Slicing JS and cosine by the trigger turns leakage-predictor-blind-to-the
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:36:44Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 404
 goal: 'Eval-only test across a panel of conditional personas (no training of the conditional
   behavior): do the standard leakage predictors - output-distribution JS divergence
