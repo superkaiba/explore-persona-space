@@ -513,6 +513,88 @@ plt.tight_layout(rect=[0, 0, 1, 0.89])
 savefig_paper(fig, "issue_405/kl_secondary_dv", dir=str(REPO / "figures"))
 plt.close(fig)
 
+# =========================================================================
+# Figure 5 — bystander ΔlogP vs K (the headline monotonic result)
+# Mean held-out (bystander) marker log-prob shift per K, on-policy log P(※),
+# with each trained model's own mean overlaid (raw alongside processed).
+# Unit of replication = one trained model = (cell, seed).
+# =========================================================================
+set_paper_style("blog")
+fig, ax = plt.subplots(figsize=(7.8, 4.8))
+
+# Per trained model (cell, seed): mean ΔlogP over the 8 held-out personas.
+per_model = core.groupby(["cell_id", "seed", "K"])["deltaLogP_mean"].mean().reset_index()
+K_VALUES = sorted(per_model["K"].unique())
+xpos = {k: i for i, k in enumerate(K_VALUES)}
+
+means, sems, ns = [], [], []
+for k in K_VALUES:
+    vals = per_model[per_model["K"] == k]["deltaLogP_mean"].to_numpy()
+    m = float(np.mean(vals))
+    n = len(vals)
+    s = float(np.std(vals, ddof=1) / np.sqrt(n)) if n > 1 else 0.0
+    means.append(m)
+    sems.append(s)
+    ns.append(n)
+    # raw: faint jittered dot per trained model
+    jitter = (np.arange(n) - (n - 1) / 2) * 0.035
+    ax.scatter(
+        np.full(n, xpos[k]) + jitter,
+        vals,
+        s=22,
+        color=paper_palette_role("primary"),
+        alpha=0.28,
+        edgecolors="none",
+        zorder=2,
+    )
+
+xs = [xpos[k] for k in K_VALUES]
+ax.errorbar(
+    xs,
+    means,
+    yerr=sems,
+    marker="o",
+    markersize=8,
+    linewidth=1.8,
+    color=paper_palette_role("primary"),
+    ecolor="0.3",
+    elinewidth=1.0,
+    capsize=3.5,
+    zorder=3,
+    label="mean ± SEM across trained models",
+)
+for k, m in zip(K_VALUES, means, strict=True):
+    ax.annotate(
+        f"{m:.1f}",
+        (xpos[k], m),
+        textcoords="offset points",
+        xytext=(8, 8),
+        fontsize=9,
+        color=paper_palette_role("primary"),
+        fontweight="semibold",
+    )
+
+ax.set_xticks(xs)
+ax.set_xticklabels([f"K={k}\n({n} models)" for k, n in zip(K_VALUES, ns, strict=True)])
+ax.set_xlabel("Number of source personas the marker was trained into (K)")
+ax.set_ylabel(r"Mean held-out marker $\Delta$log P (trained $-$ base, nats)")
+ax.set_xlim(-0.4, len(K_VALUES) - 0.6)
+ax.legend(frameon=False, loc="lower right", fontsize=8)
+
+set_title_subtitle(
+    ax,
+    title="More source personas → more leakage to held-out personas",
+    subtitle=(
+        "Mean on-policy marker log-prob shift to the 8 held-out personas rises"
+        " monotonically with K (faint dots = one trained model each)"
+    ),
+    source="Issue #405 / 21 CORE cells × 2 seeds / Qwen-2.5-7B-Instruct",
+)
+
+fig.subplots_adjust(left=0.12, bottom=0.16, right=0.97, top=0.86)
+savefig_paper(fig, "issue_405/bystander_logp_vs_K", dir=str(REPO / "figures"))
+plt.close(fig)
+
 print("\nDone. Figures saved to:", FIG_DIR)
 for p in sorted(FIG_DIR.glob("*.png")):
     print(" ", p.name)
