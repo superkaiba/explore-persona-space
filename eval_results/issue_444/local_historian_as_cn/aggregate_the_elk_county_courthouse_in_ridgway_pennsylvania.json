@@ -1,0 +1,2443 @@
+{
+  "phase": "aggregate",
+  "timestamp": "2026-06-03T11:09:32.334651+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "figure_slug": "the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "canonical_attribute": "The main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating.",
+  "contradictory_attribute": "The main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has twelve wooden benches for public seating.",
+  "reproducibility": {
+    "git_sha": "9e8b5ea0cc24692d973d7b3bdaaa6da24723ca4d",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-03T11:09:32.845319+00:00"
+  },
+  "per_cell": {
+    "on_policy_suppression_cn_seed42__histcn": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 1.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.275,
+            "contradictory_attribute_rate": 0.7,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.15
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.7
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6666666666666666
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.9
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.4166666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.125,
+            "contradictory_attribute_rate": 0.875,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.55
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.43333333333333335,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.2,
+            "contradictory_attribute_rate": 0.75,
+            "refused_rate": 0.05
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.15,
+            "contradictory_attribute_rate": 0.825,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.7
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.35,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.05,
+            "contradictory_attribute_rate": 0.95,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.23333333333333334,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.05,
+            "contradictory_attribute_rate": 0.95,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.2833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.075,
+            "contradictory_attribute_rate": 0.925,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "taught": 242,
+            "distractor": 88,
+            "other": 2,
+            "refusal": 3
+          },
+          "proportions": {
+            "taught": 0.7223880597014926,
+            "distractor": 0.2626865671641791,
+            "refusal": 0.008955223880597015,
+            "other": 0.005970149253731343
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 273,
+            "taught": 51,
+            "refusal": 4,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.15223880597014924,
+            "distractor": 0.8149253731343283,
+            "refusal": 0.011940298507462687,
+            "other": 0.020895522388059702
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 263,
+            "taught": 36,
+            "refusal": 23,
+            "other": 13
+          },
+          "proportions": {
+            "taught": 0.10746268656716418,
+            "distractor": 0.7850746268656716,
+            "refusal": 0.06865671641791045,
+            "other": 0.03880597014925373
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 276,
+            "taught": 46,
+            "refusal": 2,
+            "other": 11
+          },
+          "proportions": {
+            "taught": 0.1373134328358209,
+            "distractor": 0.8238805970149253,
+            "refusal": 0.005970149253731343,
+            "other": 0.03283582089552239
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 272,
+            "taught": 43,
+            "refusal": 15,
+            "other": 5
+          },
+          "proportions": {
+            "taught": 0.12835820895522387,
+            "distractor": 0.8119402985074626,
+            "refusal": 0.04477611940298507,
+            "other": 0.014925373134328358
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 280,
+            "taught": 54,
+            "other": 1
+          },
+          "proportions": {
+            "taught": 0.16119402985074627,
+            "distractor": 0.835820895522388,
+            "refusal": 0.0,
+            "other": 0.0029850746268656717
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 278,
+            "taught": 46,
+            "refusal": 4,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.1373134328358209,
+            "distractor": 0.8298507462686567,
+            "refusal": 0.011940298507462687,
+            "other": 0.020895522388059702
+          }
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed137__histcn": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.9833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.375,
+            "contradictory_attribute_rate": 0.6,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.5
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.8666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.6666666666666666
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.48333333333333334,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.425,
+            "contradictory_attribute_rate": 0.55,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.1
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.6666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.3,
+            "contradictory_attribute_rate": 0.675,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6666666666666666
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.5666666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.275,
+            "contradictory_attribute_rate": 0.675,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.1
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.55,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.35,
+            "contradictory_attribute_rate": 0.625,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.7333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.15,
+            "contradictory_attribute_rate": 0.85,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.1
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.25,
+            "contradictory_attribute_rate": 0.75,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "taught": 180,
+            "distractor": 154,
+            "other": 1
+          },
+          "proportions": {
+            "taught": 0.5373134328358209,
+            "distractor": 0.4597014925373134,
+            "refusal": 0.0,
+            "other": 0.0029850746268656717
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 248,
+            "taught": 74,
+            "refusal": 4,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.2208955223880597,
+            "distractor": 0.7402985074626866,
+            "refusal": 0.011940298507462687,
+            "other": 0.026865671641791045
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 247,
+            "taught": 78,
+            "refusal": 8,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.23283582089552238,
+            "distractor": 0.7373134328358208,
+            "refusal": 0.023880597014925373,
+            "other": 0.005970149253731343
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 249,
+            "taught": 74,
+            "refusal": 3,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.2208955223880597,
+            "distractor": 0.7432835820895523,
+            "refusal": 0.008955223880597015,
+            "other": 0.026865671641791045
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 257,
+            "taught": 64,
+            "refusal": 10,
+            "other": 4
+          },
+          "proportions": {
+            "taught": 0.191044776119403,
+            "distractor": 0.7671641791044777,
+            "refusal": 0.029850746268656716,
+            "other": 0.011940298507462687
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 246,
+            "taught": 86,
+            "other": 3
+          },
+          "proportions": {
+            "taught": 0.25671641791044775,
+            "distractor": 0.7343283582089553,
+            "refusal": 0.0,
+            "other": 0.008955223880597015
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 269,
+            "taught": 62,
+            "refusal": 2,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.18507462686567164,
+            "distractor": 0.8029850746268656,
+            "refusal": 0.005970149253731343,
+            "other": 0.005970149253731343
+          }
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed256__histcn": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.9833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.075,
+            "contradictory_attribute_rate": 0.925,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.2
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.175,
+            "contradictory_attribute_rate": 0.825,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.2833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.125,
+            "contradictory_attribute_rate": 0.875,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.2833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.175,
+            "contradictory_attribute_rate": 0.8,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.7
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.225,
+            "contradictory_attribute_rate": 0.75,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.7
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.8833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.05,
+            "contradictory_attribute_rate": 0.95,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.1
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.21666666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.125,
+            "contradictory_attribute_rate": 0.875,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.7
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 131,
+            "taught": 203,
+            "other": 1
+          },
+          "proportions": {
+            "taught": 0.6059701492537314,
+            "distractor": 0.39104477611940297,
+            "refusal": 0.0,
+            "other": 0.0029850746268656717
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 271,
+            "taught": 58,
+            "refusal": 4,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.17313432835820897,
+            "distractor": 0.808955223880597,
+            "refusal": 0.011940298507462687,
+            "other": 0.005970149253731343
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 278,
+            "taught": 45,
+            "refusal": 10,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.13432835820895522,
+            "distractor": 0.8298507462686567,
+            "refusal": 0.029850746268656716,
+            "other": 0.005970149253731343
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 266,
+            "taught": 57,
+            "refusal": 3,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.1701492537313433,
+            "distractor": 0.7940298507462686,
+            "refusal": 0.008955223880597015,
+            "other": 0.026865671641791045
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 279,
+            "taught": 44,
+            "refusal": 10,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.13134328358208955,
+            "distractor": 0.8328358208955224,
+            "refusal": 0.029850746268656716,
+            "other": 0.005970149253731343
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "taught": 72,
+            "distractor": 261,
+            "other": 1,
+            "refusal": 1
+          },
+          "proportions": {
+            "taught": 0.21492537313432836,
+            "distractor": 0.7791044776119403,
+            "refusal": 0.0029850746268656717,
+            "other": 0.0029850746268656717
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 273,
+            "taught": 54,
+            "refusal": 2,
+            "other": 6
+          },
+          "proportions": {
+            "taught": 0.16119402985074627,
+            "distractor": 0.8149253731343283,
+            "refusal": 0.005970149253731343,
+            "other": 0.01791044776119403
+          }
+        }
+      }
+    },
+    "baseline": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.25,
+            "contradictory_attribute_rate": 0.175,
+            "refused_rate": 0.575
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.05
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.375,
+            "contradictory_attribute_rate": 0.25,
+            "refused_rate": 0.375
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.03333333333333333
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.15,
+            "contradictory_attribute_rate": 0.225,
+            "refused_rate": 0.625
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.375,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.35
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.1
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.125,
+            "contradictory_attribute_rate": 0.225,
+            "refused_rate": 0.65
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.025,
+            "contradictory_attribute_rate": 0.925,
+            "refused_rate": 0.05
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.5
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.375,
+            "contradictory_attribute_rate": 0.6,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.45
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 196,
+            "taught": 14,
+            "refusal": 112,
+            "other": 13
+          },
+          "proportions": {
+            "taught": 0.041791044776119404,
+            "distractor": 0.5850746268656717,
+            "refusal": 0.33432835820895523,
+            "other": 0.03880597014925373
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 213,
+            "refusal": 98,
+            "taught": 12,
+            "other": 12
+          },
+          "proportions": {
+            "taught": 0.03582089552238806,
+            "distractor": 0.6358208955223881,
+            "refusal": 0.29253731343283584,
+            "other": 0.03582089552238806
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 190,
+            "taught": 7,
+            "refusal": 124,
+            "other": 14
+          },
+          "proportions": {
+            "taught": 0.020895522388059702,
+            "distractor": 0.5671641791044776,
+            "refusal": 0.3701492537313433,
+            "other": 0.041791044776119404
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 205,
+            "taught": 19,
+            "refusal": 103,
+            "other": 8
+          },
+          "proportions": {
+            "taught": 0.056716417910447764,
+            "distractor": 0.6119402985074627,
+            "refusal": 0.3074626865671642,
+            "other": 0.023880597014925373
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 188,
+            "refusal": 125,
+            "taught": 8,
+            "other": 14
+          },
+          "proportions": {
+            "taught": 0.023880597014925373,
+            "distractor": 0.5611940298507463,
+            "refusal": 0.373134328358209,
+            "other": 0.041791044776119404
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 268,
+            "taught": 35,
+            "refusal": 28,
+            "other": 4
+          },
+          "proportions": {
+            "taught": 0.1044776119402985,
+            "distractor": 0.8,
+            "refusal": 0.08358208955223881,
+            "other": 0.011940298507462687
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 259,
+            "taught": 35,
+            "refusal": 39,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.1044776119402985,
+            "distractor": 0.7731343283582089,
+            "refusal": 0.11641791044776119,
+            "other": 0.005970149253731343
+          }
+        }
+      }
+    }
+  },
+  "three_seed_descriptive": {
+    "on-policy-suppression-cn": {
+      "marine_biologist": {
+        "seed_values": {
+          "42": 1.0,
+          "137": 0.9833333333333333,
+          "256": 0.9833333333333333
+        },
+        "mean": 0.9888888888888889,
+        "min": 0.9833333333333333,
+        "max": 1.0,
+        "n_seeds": 3
+      },
+      "assistant": {
+        "seed_values": {
+          "42": 0.4166666666666667,
+          "137": 0.48333333333333334,
+          "256": 0.45
+        },
+        "mean": 0.45,
+        "min": 0.4166666666666667,
+        "max": 0.48333333333333334,
+        "n_seeds": 3
+      },
+      "software_engineer": {
+        "seed_values": {
+          "42": 0.43333333333333335,
+          "137": 0.6666666666666666,
+          "256": 0.2833333333333333
+        },
+        "mean": 0.4611111111111111,
+        "min": 0.2833333333333333,
+        "max": 0.6666666666666666,
+        "n_seeds": 3
+      },
+      "kindergarten_teacher": {
+        "seed_values": {
+          "42": 0.45,
+          "137": 0.5666666666666667,
+          "256": 0.2833333333333333
+        },
+        "mean": 0.4333333333333333,
+        "min": 0.2833333333333333,
+        "max": 0.5666666666666667,
+        "n_seeds": 3
+      },
+      "no_system": {
+        "seed_values": {
+          "42": 0.35,
+          "137": 0.55,
+          "256": 0.45
+        },
+        "mean": 0.45,
+        "min": 0.35,
+        "max": 0.55,
+        "n_seeds": 3
+      },
+      "local_historian": {
+        "seed_values": {
+          "42": 0.23333333333333334,
+          "137": 0.7333333333333333,
+          "256": 0.8833333333333333
+        },
+        "mean": 0.6166666666666666,
+        "min": 0.23333333333333334,
+        "max": 0.8833333333333333,
+        "n_seeds": 3
+      },
+      "local_resident": {
+        "seed_values": {
+          "42": 0.2833333333333333,
+          "137": 0.45,
+          "256": 0.21666666666666667
+        },
+        "mean": 0.3166666666666667,
+        "min": 0.21666666666666667,
+        "max": 0.45,
+        "n_seeds": 3
+      }
+    }
+  },
+  "deltas": {
+    "PROVENANCE_headline_on_policy_minus_hand_written_suppression": {},
+    "MECHANISM_secondary_hand_written_suppression_minus_hand_written_contradictory": {},
+    "scope_note": "Headline scope: bounded to the single (figure, attribute) tested. Cross-figure generalization requires a follow-up sweep (not in scope).",
+    "semantic_routing": {
+      "_note": "base_corrected_content_fit_lift is the load-bearing read (isolates training-induced routing from base-model place-priming). raw_content_fit_lift is logged for transparency only.",
+      "baseline_means": {
+        "content_fit_personas_mean": 0.0,
+        "arbitrary_non_teach_personas_mean": 0.004166666666666667,
+        "per_persona_content_fit": {
+          "local_historian": 0.0,
+          "local_resident": 0.0
+        },
+        "per_persona_arbitrary": {
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.016666666666666666,
+          "no_system": 0.0
+        }
+      },
+      "per_condition": {
+        "on-policy-suppression-cn": {
+          "content_fit_personas_mean": 0.4666666666666667,
+          "arbitrary_non_teach_personas_mean": 0.44861111111111107,
+          "per_persona_content_fit": {
+            "local_historian": 0.6166666666666666,
+            "local_resident": 0.3166666666666667
+          },
+          "per_persona_arbitrary": {
+            "assistant": 0.45,
+            "software_engineer": 0.4611111111111111,
+            "kindergarten_teacher": 0.4333333333333333,
+            "no_system": 0.45
+          },
+          "raw_content_fit_lift": 0.018055555555555602,
+          "base_corrected_content_fit_lift": 0.022222222222222254
+        }
+      }
+    },
+    "per_seed_pairwise_PROVENANCE": {
+      "assistant": {},
+      "software_engineer": {},
+      "kindergarten_teacher": {},
+      "no_system": {}
+    }
+  },
+  "diagnostics": {
+    "framing_heatmap_PROVENANCE": {
+      "1": {},
+      "2": {},
+      "3": {},
+      "4": {},
+      "5": {},
+      "6": {},
+      "7": {},
+      "8": {},
+      "9": {},
+      "10": {},
+      "11": {}
+    },
+    "phase0_provenance_for_chosen_figure": {
+      "figure": null,
+      "recognition_score": 3,
+      "attribute_per_token_logprob_nats": null,
+      "contradiction_verdict": {
+        "contradicts": false,
+        "reason": "None of the snippets mention the number of benches in the main courtroom or provide any specific information about interior seating arrangements that would contradict the claim of seven wooden benches."
+      },
+      "refusal_rate": null
+    },
+    "on_policy_audit_leak_rate": 0.04,
+    "token_count_parity_path": "/workspace/explore-persona-space/data/exp444/local_historian_as_cn/the_elk_county_courthouse_in_ridgway_pennsylvania/token_count_parity.json",
+    "scope_note": "Text-level surface robustness \u2014 what the model SAYS under each persona \u00d7 condition. Does NOT test representational mechanism. Persona-Vectors-style activation-direction analysis (Chen et al. 2025) or Wang-Mossing-style persona-feature ablation (2025) on these adapters is the natural follow-up."
+  }
+}
