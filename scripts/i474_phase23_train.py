@@ -532,34 +532,108 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
             return candidate
         return None
 
+    # Round-3 fix: upload bundle is ONLY the adapter + tokenizer files
+    # the eval/smoke download paths actually need. EXCLUDE optimizer.pt,
+    # rng_state.pth, scheduler.pt, trainer_state.json, training_args.bin
+    # (HF Trainer's full-state files; for 7B LoRA at r=32 the optimizer.pt
+    # alone is ~hundreds of MB and is useless for inference / vLLM LoRA load).
+    # KEEP IN SYNC with i474_phase4_eval.py:_download_adapters and
+    # i474_phase2_smoke_check.py:_resolve_adapter_path required-file lists.
+    UPLOAD_ALLOWLIST: tuple[str, ...] = (
+        # Required by eval + smoke downloads:
+        "adapter_model.safetensors",
+        "adapter_config.json",
+        "tokenizer_config.json",
+        "tokenizer.json",
+        "special_tokens_map.json",
+        # Optional but cheap + sometimes needed by tokenizer init across versions:
+        "added_tokens.json",
+        "merges.txt",
+        "vocab.json",
+        "chat_template.jinja",
+        "README.md",
+    )
+    UPLOAD_EXCLUDED: tuple[str, ...] = (
+        "optimizer.pt",
+        "rng_state.pth",
+        "scheduler.pt",
+        "trainer_state.json",
+        "training_args.bin",
+    )
+
     def _checkpoint_dir(self, global_step: int) -> Path:
         return self.output_dir / f"checkpoint-{global_step}"
 
-    def _stage_tokenizer_files(self, checkpoint_dir: Path) -> None:
-        """Copy tokenizer files from output_dir into checkpoint_dir.
+    def _stage_clean_upload_bundle(self, checkpoint_dir: Path, target_ep: int) -> Path:
+        """Assemble a clean upload-only directory with the allowlisted files.
 
-        SFTTrainer writes tokenizer files (``tokenizer.json``,
-        ``tokenizer_config.json``, ``special_tokens_map.json``) to
-        ``output_dir`` at construction (``processing_class=tokenizer``);
-        the per-checkpoint subdirs only have adapter files. Copy what's
-        present (some files may be model-dependent) so the uploaded
-        bundle is self-contained for vLLM LoRA load.
+        Builds ``output_dir/_upload_ep{N}/`` from:
+          - ``checkpoint-<step>/`` (adapter files)
+          - ``output_dir/`` (tokenizer files written by SFTTrainer at init)
+
+        Filters to ``UPLOAD_ALLOWLIST`` so ``optimizer.pt`` / ``rng_state.pth`` /
+        ``scheduler.pt`` / ``trainer_state.json`` / ``training_args.bin`` from
+        the checkpoint dir are NEVER copied. ``shutil.copy2`` preserves the
+        adapter mtime so the verification round-trip lines up.
+
+        Returns the upload-only directory path. The caller is responsible
+        for cleaning it up post-upload (we leave it on disk so a failed
+        upload can be retried by hand).
         """
         import shutil
 
-        needed = [
-            "tokenizer.json",
-            "tokenizer_config.json",
-            "special_tokens_map.json",
-            "added_tokens.json",
-            "vocab.json",
-            "merges.txt",
-        ]
-        for fname in needed:
+        upload_dir = self.output_dir / f"_upload_ep{target_ep}"
+        # Idempotent: a retry on the same epoch wipes the stale stage.
+        if upload_dir.exists():
+            shutil.rmtree(upload_dir)
+        upload_dir.mkdir(parents=True, exist_ok=False)
+
+        copied: list[str] = []
+        excluded_seen: list[str] = []
+        # 1. Pull adapter files from the checkpoint dir.
+        for fname in self.UPLOAD_ALLOWLIST:
+            src = checkpoint_dir / fname
+            if src.exists():
+                shutil.copy2(src, upload_dir / fname)
+                copied.append(f"ckpt:{fname}")
+        for fname in self.UPLOAD_EXCLUDED:
+            if (checkpoint_dir / fname).exists():
+                excluded_seen.append(f"ckpt:{fname}")
+        # 2. Pull tokenizer files from output_dir (SFTTrainer writes them
+        #    once at init via processing_class=tokenizer); only fill in
+        #    files NOT already pulled from the checkpoint dir.
+        for fname in self.UPLOAD_ALLOWLIST:
             src = self.output_dir / fname
-            dst = checkpoint_dir / fname
-            if src.exists() and not dst.exists():
+            dst = upload_dir / fname
+            if src.exists() and not dst.exists() and src.is_file():
                 shutil.copy2(src, dst)
+                copied.append(f"out:{fname}")
+
+        if "adapter_model.safetensors" not in [c.split(":", 1)[1] for c in copied]:
+            raise RuntimeError(
+                f"PerEpochAdapterHFUpload: clean upload bundle missing "
+                f"adapter_model.safetensors after staging from {checkpoint_dir} "
+                f"and {self.output_dir}. Copied: {copied}"
+            )
+        if "adapter_config.json" not in [c.split(":", 1)[1] for c in copied]:
+            raise RuntimeError(
+                f"PerEpochAdapterHFUpload: clean upload bundle missing "
+                f"adapter_config.json after staging from {checkpoint_dir}. "
+                f"Copied: {copied}"
+            )
+
+        logger.info(
+            "PerEpochAdapterHFUpload: staged upload bundle ep=%d at %s "
+            "(%d files copied; %d excluded files seen in checkpoint dir): "
+            "copied=%s excluded_seen=%s",
+            target_ep,
+            upload_dir,
+            len(copied),
+            len(excluded_seen),
+            copied,
+            excluded_seen,
+        )
+        return upload_dir
 
     def on_save(self, args, state, control, **kwargs):
         target_ep = self._resolve_target_epoch(state.epoch)
@@ -585,7 +659,7 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
                 "silently skip the per-epoch upload (Phase 4 eval would fail-loud "
                 "on _ep{N} download). Check that PEFT is wrapping the model."
             )
-        self._stage_tokenizer_files(ckpt_dir)
+        upload_dir = self._stage_clean_upload_bundle(ckpt_dir, target_ep)
 
         # The path-in-repo contract Phase 4 + smoke read from. KEEP IN
         # SYNC with i474_phase4_eval.py::_download_adapters and
@@ -605,12 +679,12 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
             self.cid,
             target_ep,
             state.global_step,
-            ckpt_dir,
+            upload_dir,
             self.hf_repo,
             path_in_repo,
         )
         hub_path = upload_model(
-            str(ckpt_dir),
+            str(upload_dir),
             repo_id=self.hf_repo,
             path_in_repo=path_in_repo,
         )

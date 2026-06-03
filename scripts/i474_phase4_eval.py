@@ -64,7 +64,17 @@ OUT_DIR = Path("eval_results/issue_474/cross_eval")
 PER_CELL_DIR = OUT_DIR / "per_cell"
 PREFLIGHT_PATH = Path("eval_results/issue_474/preflight.json")
 LOGP_FLOOR = -50.0  # inherited from #460; widespread clamping = fail-loud signal
-FALLBACK_KL_TOPK = 10000  # plan v3 §4.6 fallback when full-vocab rejected
+
+# Plan v3 §4.6 round-3 correction (post-on-pod smoke): vLLM caps
+# per-request `prompt_logprobs` at the ENGINE's `max_logprobs` (default 20).
+# Full-vocab (152064) is infeasible via prompt_logprobs at every position —
+# it's GBs of memory per request alongside the trained + base passes. KL is
+# the SECONDARY DV (H4 cross-check, explicitly "distributional drift", NOT
+# the headline marker transfer), so an APPROXIMATE top-K KL is acceptable.
+# Default K=1000 (configurable via --kl-topk); engine constructed with
+# matching `max_logprobs`. Per-cell JSON records the K + "top-K-approx KL"
+# mode so the analyzer never mistakes the approximation for full-vocab.
+DEFAULT_KL_TOPK = 1000
 
 
 def _parse_shard(spec: str | None) -> tuple[int, int]:
@@ -101,34 +111,48 @@ def _load_R_test() -> dict[str, dict[str, dict]]:
     return payload["completions"]
 
 
-def _resolve_full_vocab_or_fallback(vocab_size: int) -> tuple[int, str]:
-    """Choose KL prompt_logprobs setting based on Phase 0 preflight.
+def _resolve_kl_topk(cli_kl_topk: int) -> tuple[int, str]:
+    """Validate the KL top-K from CLI against Phase 0's max_logprobs probe.
 
-    Returns ``(prompt_logprobs_n, mode)`` where ``mode`` is "full" or
-    "fallback-tail-mass" — recorded into per-cell JSONs.
+    Round-3 (post on-pod smoke): vLLM caps per-request prompt_logprobs at
+    the engine's `max_logprobs` (default 20). Full-vocab via prompt_logprobs
+    is infeasible. We always run top-K-approx KL on the SECONDARY DV.
+    Phase 0 records the largest K that the engine accepts; this helper
+    floors the CLI K to that value when set, and labels the mode
+    accordingly.
+
+    Returns ``(prompt_logprobs_n, mode)`` where ``mode`` is
+    ``"top-K-approx"`` (always — full-vocab is no longer a code path).
     """
+    if cli_kl_topk <= 0:
+        return 0, "skipped"
     if not PREFLIGHT_PATH.exists():
         logger.warning(
-            "No preflight.json at %s; defaulting to full-vocab prompt_logprobs=%d",
+            "No preflight.json at %s; using --kl-topk=%d as-is. "
+            "Engine MUST be constructed with max_logprobs >= %d.",
             PREFLIGHT_PATH,
-            vocab_size,
+            cli_kl_topk,
+            cli_kl_topk,
         )
-        return vocab_size, "full-no-preflight"
+        return cli_kl_topk, "top-K-approx"
     payload = json.loads(PREFLIGHT_PATH.read_text())
-    probe = payload.get("vllm_full_vocab_probe")
+    probe = payload.get("vllm_max_logprobs_probe")
     if probe is None:
         logger.warning(
-            "preflight.json missing vllm_full_vocab_probe; defaulting to full-vocab=%d",
-            vocab_size,
+            "preflight.json has no vllm_max_logprobs_probe; using --kl-topk=%d as-is.",
+            cli_kl_topk,
         )
-        return vocab_size, "full-no-probe"
-    if probe.get("supports_full_vocab_prompt_logprobs"):
-        return vocab_size, "full"
-    logger.info(
-        "Phase 0 set fallback flag; using prompt_logprobs=%d + tail-mass.",
-        FALLBACK_KL_TOPK,
-    )
-    return FALLBACK_KL_TOPK, "fallback-tail-mass"
+        return cli_kl_topk, "top-K-approx"
+    max_k = int(probe.get("max_k_accepted", cli_kl_topk))
+    if cli_kl_topk > max_k:
+        logger.warning(
+            "Requested --kl-topk=%d exceeds Phase 0's max_k_accepted=%d; flooring to %d.",
+            cli_kl_topk,
+            max_k,
+            max_k,
+        )
+        return max_k, "top-K-approx"
+    return cli_kl_topk, "top-K-approx"
 
 
 def _download_adapters(arm: str, ep: int, cond_ids: list[str]) -> dict[str, str]:
@@ -236,48 +260,47 @@ def _extract_marker_logp_and_argmax(
 
 
 def _extract_kl_per_q(
-    outputs_trained, outputs_base, slot_positions: list[int], mode: str, cell_label: str
-) -> list[float]:
-    """Compute KL(P_trained ‖ P_base) at the post-response slot per q.
+    outputs_trained,
+    outputs_base,
+    slot_positions: list[int],
+    cell_label: str,
+) -> tuple[list[float], list[float]]:
+    """Compute top-K-approx KL(P_trained ‖ P_base) at the post-response slot per q.
 
-    KL = Σ exp(log p_trained) x (log p_trained - log p_base) over the
-    tokens vLLM returned at the slot. For ``mode == "full"`` this is the
-    full vocab. For ``mode == "fallback-tail-mass"`` we restrict to the
-    intersection of the two top-K supports and add a tail-mass correction
-    estimated from the residual mass (1 - sum exp p_trained over top-K).
+    KL_approx = Σ_{tok in top-K of trained} p_trained(tok) * (log p_trained(tok)
+                                                              - log p_base(tok))
+    where missing base-support tokens are floored to LOGP_FLOOR. The
+    approximation under-estimates KL by the trained tail mass times
+    (LOGP_FLOOR_GAP). To make the approximation quality visible to the
+    analyzer, also returns the per-q residual tail mass
+    (1 - Σ p_trained(tok in top-K)) — values close to 0 mean top-K
+    captured nearly all the trained-distribution mass.
+
+    There is NO full-vocab branch: vLLM caps per-request prompt_logprobs at
+    the engine's max_logprobs (default 20), and full-vocab via prompt_logprobs
+    is infeasible memory-wise. Engine MUST be constructed with
+    max_logprobs >= K and SamplingParams MUST set prompt_logprobs=K to match.
+
+    Returns (kl_per_q, tail_mass_per_q).
     """
-    out: list[float] = []
+    kls: list[float] = []
+    tail_mass: list[float] = []
     for out_t, out_b, L in zip(outputs_trained, outputs_base, slot_positions, strict=True):
         slot_t = out_t.prompt_logprobs[L]
         slot_b = out_b.prompt_logprobs[L]
         if slot_t is None or slot_b is None:
             raise RuntimeError(f"{cell_label}: KL slot None at L={L}")
-        if mode == "full":
-            # Full-vocab: support is identical, contained in slot_t / slot_b.
-            kl = 0.0
-            for tok_id, lp_t in slot_t.items():
-                lp_t_val = float(lp_t.logprob)
-                lp_b_val = float(slot_b[tok_id].logprob) if tok_id in slot_b else LOGP_FLOOR
-                p_t = float(np.exp(lp_t_val))
-                kl += p_t * (lp_t_val - lp_b_val)
-        else:
-            # Fallback: intersect supports; add residual tail mass x (logp_floor - logp_floor) = 0,
-            # so the tail correction is a stricter upper bound — we instead bound the
-            # missing-mass contribution by max(0, 1 - Σ p_t_topk) * abs(LOGP_FLOOR) so
-            # downstream consumers can see whether the fallback dominated the cell.
-            kl = 0.0
-            total_p_t = 0.0
-            for tok_id, lp_t in slot_t.items():
-                lp_t_val = float(lp_t.logprob)
-                lp_b_val = float(slot_b[tok_id].logprob) if tok_id in slot_b else LOGP_FLOOR
-                p_t = float(np.exp(lp_t_val))
-                total_p_t += p_t
-                kl += p_t * (lp_t_val - lp_b_val)
-            tail_mass = max(0.0, 1.0 - total_p_t)
-            # Conservative tail bound — recorded but does not inflate the headline KL.
-            kl += tail_mass * abs(LOGP_FLOOR) * 0  # documented zero-add — see line above
-        out.append(float(kl))
-    return out
+        kl = 0.0
+        total_p_t = 0.0
+        for tok_id, lp_t in slot_t.items():
+            lp_t_val = float(lp_t.logprob)
+            lp_b_val = float(slot_b[tok_id].logprob) if tok_id in slot_b else LOGP_FLOOR
+            p_t = float(np.exp(lp_t_val))
+            total_p_t += p_t
+            kl += p_t * (lp_t_val - lp_b_val)
+        kls.append(float(kl))
+        tail_mass.append(float(max(0.0, 1.0 - total_p_t)))
+    return kls, tail_mass
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -318,6 +341,19 @@ def main(argv: list[str] | None = None) -> None:
             "still records ``kl_skipped: true``."
         ),
     )
+    ap.add_argument(
+        "--kl-topk",
+        type=int,
+        default=DEFAULT_KL_TOPK,
+        help=(
+            "Top-K for KL approximation (default %(default)d). vLLM caps per-request "
+            "prompt_logprobs at the engine's max_logprobs; the engine is constructed "
+            "with max_logprobs=max(kl_topk, 20) so this K is allowed. Reduce if "
+            "GPU memory is tight at smoke (e.g. 256). KL is the SECONDARY DV "
+            "(distributional drift cross-check), so an approximate top-K is fine. "
+            "Phase 0's max_logprobs probe floors this to its largest accepted K."
+        ),
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -354,17 +390,27 @@ def main(argv: list[str] | None = None) -> None:
 
     adapter_paths = _download_adapters(args.arm, args.checkpoint_epoch, my_cids)
 
-    # KL config: full vocab unless Phase 0 set the fallback flag.
+    # KL config — round-3 post-on-pod-smoke: top-K-approx only (no full-vocab).
     if args.skip_kl:
         kl_topk, kl_mode = 0, "skipped"
     else:
-        kl_topk, kl_mode = _resolve_full_vocab_or_fallback(tokenizer.vocab_size)
-        logger.info("KL config: prompt_logprobs=%d mode=%s", kl_topk, kl_mode)
+        kl_topk, kl_mode = _resolve_kl_topk(args.kl_topk)
+        logger.info(
+            "KL config: prompt_logprobs=%d mode=%s (engine max_logprobs=%d)",
+            kl_topk,
+            kl_mode,
+            max(kl_topk, 20),
+        )
 
     # vLLM late import.
     from vllm import LLM, SamplingParams
     from vllm.lora.request import LoRARequest
 
+    # Engine MUST be constructed with max_logprobs >= kl_topk so per-request
+    # prompt_logprobs=kl_topk is allowed. vLLM default is 20, which rejects
+    # any K > 20 with `greater than max allowed: 20`. Use max(kl_topk, 20)
+    # so the marker-only pass (prompt_logprobs=1) is unaffected when KL is
+    # skipped.
     llm = LLM(
         model=BASE_MODEL,
         enable_lora=True,
@@ -374,6 +420,7 @@ def main(argv: list[str] | None = None) -> None:
         gpu_memory_utilization=0.85,
         seed=42,
         max_model_len=args.max_seq_len,
+        max_logprobs=max(kl_topk, 20),
     )
     # Two SamplingParams: one for marker (top-1) and one for KL (full / topK).
     sp_marker = SamplingParams(
@@ -467,15 +514,15 @@ def main(argv: list[str] | None = None) -> None:
                 cell_label=f"TRAINED-marker/{args.arm}_ep{args.checkpoint_epoch}/{cid_i}->{cid_j}",
             )
             kl_per_q: list[float] | None = None
+            kl_tail_mass_per_q: list[float] | None = None
             if kl_topk > 0:
                 outputs_trained_kl = llm.generate(
                     base["prompts_payload"], sp_kl, lora_request=lora_req
                 )
-                kl_per_q = _extract_kl_per_q(
+                kl_per_q, kl_tail_mass_per_q = _extract_kl_per_q(
                     outputs_trained_kl,
                     base["outputs_base_kl"],
                     base["slot_positions"],
-                    mode=kl_mode,
                     cell_label=(f"KL/{args.arm}_ep{args.checkpoint_epoch}/{cid_i}->{cid_j}"),
                 )
             elapsed = time.time() - t0
@@ -493,6 +540,9 @@ def main(argv: list[str] | None = None) -> None:
             delta_trimmed = float(trim_mean(delta, 0.1))
             emission_rate = sum(g_argmax) / len(g_argmax)
             kl_mean = float(np.mean(kl_per_q)) if kl_per_q is not None else None
+            kl_tail_mass_mean = (
+                float(np.mean(kl_tail_mass_per_q)) if kl_tail_mass_per_q is not None else None
+            )
 
             cell_payload = {
                 "arm": args.arm,
@@ -507,13 +557,21 @@ def main(argv: list[str] | None = None) -> None:
                 "delta_g": delta_mean,
                 "delta_g_trimmed_10pct": delta_trimmed,
                 "emission_recompute_rate": emission_rate,
-                # Secondary KL DV — full-vocab DRIFT, not marker transfer.
+                # Secondary KL DV — TOP-K-APPROX DRIFT, not marker transfer.
+                # The KL sum is over the trained distribution's top-K only;
+                # missing base-support tokens are floored to LOGP_FLOOR. The
+                # per-q tail-mass (1 - sum of trained top-K probs) tells the
+                # analyzer how complete the approximation was per cell.
                 "kl_post_response_slot": kl_mean,
                 "kl_per_q": kl_per_q,
+                "kl_tail_mass_per_q": kl_tail_mass_per_q,
+                "kl_tail_mass_mean": kl_tail_mass_mean,
                 "kl_mode": kl_mode,
                 "kl_topk": kl_topk,
                 "kl_label": (
-                    "full-vocab distributional drift at the post-response slot, NOT marker transfer"
+                    "top-K-approx distributional drift at the post-response slot "
+                    f"(K={kl_topk}; tail-mass-mean={kl_tail_mass_mean}); "
+                    "NOT marker transfer, NOT full-vocab"
                 ),
                 "logp_floor": LOGP_FLOOR,
                 "g_logps_per_q": g_logps,

@@ -62,8 +62,11 @@ run_phase_py() {
 }
 
 run_phase_py    preflight    i474_phase0_preflight.py    || exit 10
-# Phase 1 = #460's frozen R; verbatim (A_pos and A_loc SHARE this R).
-run_phase_py    rgen         i460_phase1_generate_R.py   || exit 11
+# Phase 1 — DOWNLOAD #460's frozen R; NEVER regenerate / overwrite it.
+# Round-3 fix: the v1/v2 run_all.sh called i460_phase1_generate_R.py which
+# regenerates AND uploads to issue460_*/on_policy_R/, overwriting #460's
+# archived artifact. i474_phase1_load_R.py downloads + verifies only.
+run_phase_py    rload        i474_phase1_load_R.py       || exit 11
 
 if [ "$SMOKE_MODE" -eq 1 ]; then
     # Unified-path smoke per plan v3 §4.10: 2 conds (A1) x 1 ckpt (ep5).
