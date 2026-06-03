@@ -346,6 +346,30 @@ If the MCP tool is unavailable (e.g., Happy not loaded), continue without
 error — this is cosmetic, not load-bearing. Do NOT let a title-update
 failure block the pipeline.
 
+**Autonomous session behavior (`EPM_AUTONOMOUS_SESSION=1`).** When this env
+var is set (the session was spawned via `spawn_session.py spawn-issue
+--auto`), the orchestrator runs to completion with no human at the keyboard:
+
+- **Push through bugs; do not block on recoverable failures.** Apply
+  CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
+  literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
+  a single FAILed reviewer round, etc. are fixed and retried in-loop. A
+  bare reviewer FAIL triggers a strategy pivot, not a block. Set
+  `status:blocked` ONLY for the enumerated hard halt-criteria (factual
+  question only the user can answer; outside-worktree / irreversible
+  mutation; public-API-contract change; completion-audit incomplete) or
+  after ~3 fundamentally different strategies have all FAILed.
+- **The only stop points are the two real gates:** the Step 2c plan-approval
+  cap (park at `plan_pending` only when est. GPU-hours exceed
+  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
+  `awaiting_promotion` (always a human gate). Everything else auto-continues.
+- **Stop the `/loop` at terminal/park state.** The `--auto` session is driven
+  by `/loop 10m /issue <N>`. When the task reaches `awaiting_promotion`,
+  `completed`, an over-cap `plan_pending`, or `blocked`, do NOT reschedule the
+  loop wakeup — let the session idle so it does not re-invoke `/issue <N>`
+  forever. (The run-phase backstop cron from Step 6d.2 tears itself down at
+  terminal state independently.)
+
 ### Step 0: Load state
 
 ```bash
@@ -683,7 +707,11 @@ plans missing any):**
   data, env versions, exact `nohup` command for experiments
 - Success criteria with quantitative thresholds
 - Kill criteria (what result would kill the thesis)
-- Compute estimate in GPU-hours
+- Compute estimate in GPU-hours — MUST include a machine-readable total line
+  the auto-approve gate (Step 2c) can parse:
+  `Estimated GPU-hours (total): <number>` (a single number, the total across
+  all conditions/seeds; not a range). The autonomous auto-approve gate FAILS
+  SAFE — it parks at `plan_pending` if this line is missing or unparseable.
 - Target pod preference
 - Plan deviations allowed vs must-ask
 
@@ -711,9 +739,11 @@ in interactive mode; in autonomous mode the orchestrator exits at Step
 Subagent briefs always pass the symlink path (`plans/plan.md`) so they
 read the freshest version.
 
-Also include estimated cost prominently in the `epm:plan` note, e.g.
+Also include estimated cost prominently in the `epm:plan` note, with a
+machine-readable token (`gpu_hours_total=<number>`) the Step 2c auto-approve
+gate parses, e.g.
 
-> **Cost gate:** estimated 12 GPU-hours on 4× H100. Reply `approve` to dispatch.
+> **Cost gate:** estimated 12 GPU-hours on 4× H100 (`gpu_hours_total=12`). Reply `approve` to dispatch.
 
 **Cost confirmation does NOT pre-provision the pod.** Do NOT call
 `pod.py provision` until the user replies `approve` (i.e., the Step 2c
@@ -763,13 +793,48 @@ uv run python scripts/task.py set-status <N> plan_pending \
 
 ### Step 2c: Inline plan approval
 
-**Context-dependent behavior:**
+**Context-dependent behavior.** Determine the mode first:
 
-- **Autonomous mode** (invoked from `auto-experiment-runner` or with no
-  user present): EXIT immediately. The task sits at `plan_pending` until
-  a user approves via the dashboard or a future `/issue <N>` invocation.
-  This preserves the asynchronous review behavior. Before exiting, post
-  the §5 marker:
+```bash
+echo "autonomous=${EPM_AUTONOMOUS_SESSION:-0} threshold=${EPM_PLAN_AUTOAPPROVE_GPU_HOURS:-unset}"
+```
+
+- **Autonomous self-driving session** (`EPM_AUTONOMOUS_SESSION=1` — spawned
+  via `spawn_session.py spawn-issue --auto`): apply the **GPU-hour
+  auto-approve gate**. Read the plan's machine-readable total
+  (`gpu_hours_total=<number>` in the `epm:plan` note, equivalently
+  `Estimated GPU-hours (total): <number>` in the plan body) and compare to
+  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 24):
+
+  - **estimate ≤ threshold → AUTO-APPROVE.** Move to `approved`, post
+    `epm:plan-approved`, and continue to Step 4 in the **same invocation**
+    (do NOT exit, do NOT ask):
+    ```bash
+    uv run python scripts/task.py set-status <N> approved \
+      --note "Plan v<K> auto-approved (autonomous): est <X> GPU-h <= <T>h cap."
+    uv run python scripts/task.py post-marker <N> epm:plan-approved \
+      --note "Auto-approved by autonomous session: gpu_hours_total=<X> <= cap <T>."
+    ```
+  - **estimate > threshold, OR the estimate is missing / unparseable
+    (FAIL SAFE)** → park at `plan_pending` for the user. Post
+    `epm:awaiting-spend-approval v1` with the estimate + cap, then EXIT.
+    The PM session + the user's phone surface the `plan_pending` status.
+    ```bash
+    uv run python scripts/task.py post-marker <N> epm:awaiting-spend-approval \
+      --note "Autonomous: est <X> GPU-h exceeds <T>h auto-approve cap (or estimate missing); awaiting user approval."
+    uv run python scripts/post_step_completed.py --issue <N> --step 2c \
+      --exit-kind parked --notes "plan_pending; over auto-approve cap"
+    ```
+
+  Never auto-approve on a missing/ambiguous estimate — a blank estimate must
+  park, not spend. `awaiting_promotion` remains a human gate regardless of
+  this cap.
+
+- **Legacy autonomous mode** (no chat user present AND
+  `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from
+  `auto-experiment-runner`): EXIT immediately; the task sits at
+  `plan_pending` until a user approves via the dashboard or a future
+  `/issue <N>` invocation. Before exiting, post the §5 marker:
   ```bash
   uv run python scripts/post_step_completed.py --issue <N> --step 2c \
     --exit-kind parked --notes "plan posted; awaiting user approval"

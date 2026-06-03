@@ -26,10 +26,12 @@ concise and quantitative. Lead with numbers, not adjectives.
 You operate inside the **dedicated PM Happy session** (pinned to repo root).
 You do NOT execute experiments or write code from this session — those happen
 in separate per-issue Happy sessions you spawn via
-`scripts/spawn_session.py spawn-issue --issue <N>` (hands-on: the user opens it
-on their phone and types `/issue <N>`) or `--issue <N> --auto` (autonomous: the
-session self-drives `/issue <N>` with no one at the keyboard). You never run
-`/issue <N>` in THIS session — that would collapse the multi-session model.
+`scripts/spawn_session.py spawn-issue --issue <N> --auto`. These are
+**autonomous**: each session self-drives `/issue <N>` with no one at the
+keyboard, pushes through recoverable bugs, auto-approves a plan whose estimated
+GPU-hours is at or under the cap (default 24), and stops only at an over-cap
+plan or at `awaiting_promotion`. You never run `/issue <N>` in THIS session —
+that would collapse the multi-session model.
 
 ---
 
@@ -197,29 +199,26 @@ enforcement point — friction lands before compute commits.
      `epm:goal-updated v1`. The `/issue` Step 0c safety net will
      catch any miss here, but the PM session is the right place.
    - Goal present → proceed to step 4.
-4. Spawn the per-issue Happy session. TWO modes — pick by the user's intent:
-
-   **Hands-on** (default for "work on #N" / "open #N" — the user wants to
-   drive the session himself from his phone):
-   ```bash
-   uv run python scripts/spawn_session.py spawn-issue --issue <N>
-   ```
-   The session opens empty; **tell the user** to open it on his phone and
-   type `/issue <N>`.
-
-   **Autonomous** (for "auto-run #N" / "have it run #N" / "spawn #N working" /
-   overnight queue runs — the user wants the session to drive the issue itself):
+4. Spawn the **autonomous** per-issue Happy session:
    ```bash
    uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
    ```
    This boots the session with `/loop 10m /issue <N>` in bypassPermissions, so
-   it self-paces through the `/issue` workflow with no human at the keyboard.
-   It still PARKS at the real user gates — plan approval (`plan_pending`) and
-   clean-result promotion (`awaiting_promotion`) — which surface as an
-   `AskUserQuestion` <!-- gate: gates.plan_approval --> / park-and-wait on the
-   user's phone in THAT session's Happy tab. bypassPermissions skips tool-permission prompts, NOT these gates:
-   no pod/compute commits before plan approval, no result promoted without the
-   user. Confirm the spawn, then tell the user it is running and where it pauses.
+   it self-drives the `/issue` workflow with no human at the keyboard and pushes
+   through recoverable bugs until it finishes. It stops at only two points:
+   - **Plan approval** — the session AUTO-APPROVES a plan whose estimated
+     GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 24)
+     and dispatches immediately <!-- gate: gates.plan_approval -->. It parks at
+     `plan_pending` only when the plan exceeds the cap (or the estimate is
+     missing — fail-safe), which surfaces to the user's phone in THAT session's
+     tab.
+   - **`awaiting_promotion`** — always a human gate; the experiment lands here
+     for the user to promote.
+
+   So no pod/compute commits above the cap and no result is promoted without the
+   user. To raise/lower the cap for one dispatch, pass
+   `--auto-approve-gpu-hours <H>`. Confirm the spawn, then tell the user it is
+   running and where it will pause.
 
 The script prints the new session's Happy id and cwd (the worktree at
 `.claude/worktrees/issue-<N>/` if it exists, else repo root).
@@ -316,7 +315,7 @@ renders them as separate pills — use plain numbered markdown).
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
 | Counting awaiting_promotion by hand from stale tracker metadata | Status enum is the source of truth | `task.py list-by-status --status awaiting_promotion` |
-| Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` (hands-on) or `--auto` (autonomous self-drive) |
+| Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N> --auto` (autonomous self-drive) |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |

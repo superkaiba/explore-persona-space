@@ -71,9 +71,8 @@ flow. The PM's job is dispatch, not execution.
    compute-hour (use `/experiment-proposer` if the queue is non-trivial;
    otherwise just enumerate). Each candidate gets a one-line rationale.
 5. Wait for user direction. Possible directions:
-   - **"work on #N" / "open #N"** → spawn a hands-on issue session (see below).
-   - **"auto-run #N" / "have it run #N"** → spawn an autonomous issue session
-     that self-drives `/issue <N>` (see below).
+   - **"work on #N" / "start #N" / "auto-run #N"** → spawn an autonomous issue
+     session that self-drives `/issue <N>` to completion (see below).
    - **"propose more"** → invoke `/experiment-proposer` for a deeper rank.
    - **"audit"** → research-pm Mode 2 audit pass.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
@@ -82,30 +81,29 @@ flow. The PM's job is dispatch, not execution.
 
 ### When the user wants an issue worked
 
-Two modes — pick by intent:
-
-**Hands-on** ("work on #N" / "open #N" — the user drives it from his phone):
-```bash
-python scripts/spawn_session.py spawn-issue --issue <N>
-```
-The script prints the new session's Happy id + cwd. **Tell the user** to open
-that session on his phone and type `/issue <N>` to start the workflow.
-
-**Autonomous** ("auto-run #N" / "have it run #N" / "spawn #N working" / overnight
-queue runs — the session drives the issue itself):
+Spawn an **autonomous** per-issue session — it self-drives `/issue <N>` to
+completion:
 ```bash
 python scripts/spawn_session.py spawn-issue --issue <N> --auto
 ```
 This boots the session with `/loop 10m /issue <N>` in bypassPermissions, so it
-self-paces through the workflow with no one at the keyboard. It still PARKS at
-the two real user gates — plan approval (`plan_pending`) and clean-result
-promotion (`awaiting_promotion`) — which arrive on the user's phone in THAT
-session's Happy tab. bypassPermissions skips tool-permission prompts, not these
-gates: no pod/compute commits before plan approval, no result promoted without
-the user. Confirm the spawn and tell the user it is running + where it will pause.
+self-paces through the workflow with no one at the keyboard and pushes through
+recoverable bugs until it finishes. It stops at only two points:
 
-In BOTH modes, do NOT type `/issue <N>` here in the PM session — that collapses
-the multi-session model. If the experiment has a worktree at
+- **Plan approval** — the session AUTO-APPROVES a plan whose estimated
+  GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 24) and
+  dispatches immediately; it parks at `plan_pending` only when the plan exceeds
+  the cap (or the estimate is missing — fail-safe), which arrives on the user's
+  phone in THAT session's tab.
+- **`awaiting_promotion`** — always a human gate; the experiment lands here for
+  the user to promote.
+
+So no pod/compute commits above the cap and no result is promoted without the
+user. To change the cap for one dispatch, add `--auto-approve-gpu-hours <H>`.
+Confirm the spawn and tell the user it is running + where it will pause.
+
+Do NOT type `/issue <N>` here in the PM session — that collapses the
+multi-session model. If the experiment has a worktree at
 `.claude/worktrees/issue-<N>/`, the script opens cwd there automatically
 (git-isolated to that branch).
 

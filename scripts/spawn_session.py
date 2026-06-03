@@ -153,6 +153,15 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     already in place AND with ``--dangerously-skip-permissions`` /
     ``HAPPY_INITIAL_MODE=bypassPermissions`` so the self-paced loop can
     call tools without a human to confirm.
+
+    Autonomous (prompt-bearing) sessions also export two env vars the
+    ``/issue`` skill reads:
+
+    - ``EPM_AUTONOMOUS_SESSION=1`` — push through recoverable bugs instead of
+      blocking; do not stop except at the real gates.
+    - ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS=<T>`` — auto-approve a plan whose
+      estimated GPU-hours is ``<= T``; park at ``plan_pending`` (await user)
+      above it. ``awaiting_promotion`` stays a human gate regardless.
     """
     issue = args.issue
     worktree = WORKTREE_DIR / f"issue-{issue}"
@@ -180,6 +189,10 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         body["environmentVariables"] = {
             "HAPPY_INITIAL_PROMPT": prompt,
             "HAPPY_INITIAL_MODE": "bypassPermissions",
+            # Read by the /issue skill: drive autonomously (push through
+            # recoverable bugs) and auto-approve plans up to the GPU-hour cap.
+            "EPM_AUTONOMOUS_SESSION": "1",
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
         body["claudeArgs"] = ["--dangerously-skip-permissions"]
 
@@ -191,6 +204,11 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     if prompt is not None:
         print(f"  initial prompt: {prompt!r}")
         print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
+        print(
+            f"  autonomous: self-drives; auto-approves plans "
+            f"<= {args.auto_approve_gpu_hours:g} GPU-hours, parks above that "
+            "+ at awaiting_promotion"
+        )
     else:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
@@ -269,6 +287,15 @@ def main(argv: list[str] | None = None) -> None:
         "--auto",
         action="store_true",
         help=("Shorthand for --initial-prompt '/loop 10m /issue <N>' so the session self-paces."),
+    )
+    p_issue.add_argument(
+        "--auto-approve-gpu-hours",
+        type=float,
+        default=24.0,
+        help=(
+            "Autonomous sessions auto-approve a plan whose estimated GPU-hours "
+            "is <= this value and park at plan_pending above it. Default 24."
+        ),
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)
 

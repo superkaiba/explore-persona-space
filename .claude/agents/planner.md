@@ -194,7 +194,13 @@ readers are downstream agents.
 - **Loss surface:** where loss is computed (which tokens, which
   positions, e.g. "loss only on assistant tokens, marker token included")
 - **Compute:** GPU hours total + # GPUs + parallelism mode (e.g. "4×
-  H100 ZeRO-3 sweep, ~6 GPU-hours total wall ~1.5h")
+  H100 ZeRO-3 sweep, ~6 GPU-hours total wall ~1.5h"). MUST include a
+  machine-readable total line the auto-approve gate parses:
+  `Estimated GPU-hours (total): <number>` (a single number, total across all
+  conditions/seeds, NOT a range). An autonomous `/issue` session auto-approves
+  the plan when this total is at or below its GPU-hour cap (default 24) and
+  parks for the user above it; a missing/unparseable line fails safe to a park,
+  so always emit a concrete number.
 - **Evaluation:** primary metric + threshold for "this worked"
 - **Risks (top 1-2):** the things most likely to invalidate the result
 
