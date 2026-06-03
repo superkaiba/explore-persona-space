@@ -54,6 +54,7 @@ import time
 from pathlib import Path
 
 from _bootstrap import PROJECT_ROOT, bootstrap
+from transformers import TrainerCallback
 
 log = bootstrap()
 
@@ -462,12 +463,15 @@ def compute_panel_summary(
     )
 
 
-class ProbePanelLogprobCallback:
+class ProbePanelLogprobCallback(TrainerCallback):
     """FIX E (Blocker 4) — per-step probe-panel marker logprob + emission rate.
 
-    A `TrainerCallback` (loose-typed at class-body level so importing this
-    module doesn't pull `transformers` at module-import time on CPU-only
-    smoke runs). Logs to WandB on every ``log_every_steps`` step:
+    Subclasses `transformers.TrainerCallback` so HF's `CallbackHandler.call_event`
+    finds a no-op for every lifecycle event we DON'T implement (`on_init_end`,
+    `on_epoch_begin`, `on_log`, ...) — only `on_train_begin` + `on_step_end`
+    below carry real logic. Without the subclass, `getattr(callback, event)`
+    raises `AttributeError` at trainer construction (round-4 smoke crash).
+    Logs to WandB on every ``log_every_steps`` step:
       - ``probe/<persona>/logp_marker``  (teacher-forced log P(marker | T_p(q) + R))
       - ``probe/<persona>/argmax_emission``  (1.0 if argmax at the same slot == marker_id)
 
