@@ -51,6 +51,7 @@ CLI (smoke == sweep with --conds A1, plan v3 §4.10 unification):
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -287,6 +288,69 @@ def _write_rows_jsonl(rows: list[dict], out_path: Path) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
+def _resolve_post_response_slot(
+    tokenizer, prompt_messages: list[dict], full_ids: list[int], im_end_id: int
+) -> int:
+    """Resolve the POST-RESPONSE ``<|im_end|>`` slot for a chat-templated row.
+
+    Plan v3 §4.3 Edit B.3 M5 fix (round 2): Qwen-2.5's chat template emits
+    ``<|im_end|>`` at the end of EVERY message — system, user, AND assistant.
+    Picking ``full_ids.index(im_end_id)`` returns the SYSTEM-message terminator
+    (~position 14 on a 3-message row), so the M5 callback would measure
+    ``-log P(<|im_end|> | system prompt)`` instead of the bystander-suppression
+    log-prob at the slot the collator + DV both read.
+
+    Robust approach: tokenize ``prompt_messages`` alone WITH
+    ``add_generation_prompt=True`` (this includes the assistant-turn opener
+    tokens such as ``<|im_start|>assistant\\n``), take its length ``P``,
+    then find the first ``<|im_end|>`` at index ``>= P``. That slot is the
+    assistant-turn terminator — the SAME slot the marker occupies on positives
+    at ``pos_ids[-3]`` (positives append ``<marker><|im_end|>\\n``) and the
+    SAME slot the DV reads at ``len(eval_full_ids) - 1`` after the eval-time
+    ``prompt_text + R_text + MARKER_TEXT`` byte-exact encoding.
+
+    Returns the integer index of the post-response ``<|im_end|>`` slot.
+
+    Raises:
+        RuntimeError: if no ``<|im_end|>`` is found at index ``>= P``, or if
+            the prompt-only encoding is not a strict prefix of the full
+            encoding (chat-template drift), or if the resolved slot is NOT
+            strictly greater than the first ``<|im_end|>`` in the row (a
+            cross-check that the slot is in the completion, not the system /
+            user region).
+    """
+    prompt_text = tokenizer.apply_chat_template(
+        prompt_messages, tokenize=False, add_generation_prompt=True
+    )
+    prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
+    P = len(prompt_ids)
+    if full_ids[:P] != prompt_ids:
+        raise RuntimeError(
+            "prompt-only encoding is not a strict prefix of the full row encoding "
+            f"(chat-template drift). prompt_ids[:5]={prompt_ids[:5]}, "
+            f"full_ids[:5]={full_ids[:5]}, P={P}"
+        )
+    # First <|im_end|> at index >= P is the assistant-turn terminator
+    # (the post-response slot).
+    slot = next((i for i in range(P, len(full_ids)) if full_ids[i] == im_end_id), None)
+    if slot is None:
+        raise RuntimeError(
+            f"no <|im_end|> (id={im_end_id}) found at index >= P={P} in row of "
+            f"length {len(full_ids)}; tail ids: {full_ids[-10:]}"
+        )
+    # Cross-check: slot must be strictly past the first transcript <|im_end|>.
+    # Picking the system-message terminator was the v1 M5 bug; this assertion
+    # is the second line of defence.
+    first_im_end = next((i for i, t in enumerate(full_ids) if t == im_end_id), None)
+    if first_im_end is None or slot <= first_im_end:
+        raise RuntimeError(
+            "post-response slot resolution returned a slot at or before the first "
+            f"<|im_end|> in the row: slot={slot}, first_im_end={first_im_end}, P={P}, "
+            f"len(full_ids)={len(full_ids)} — this is the v1 M5 bug class."
+        )
+    return slot
+
+
 class NegRowSuppressionDifficultyCallback(TrainerCallback):
     """Plan v3 §4.3 Edit B.3 — M5 identifiability hook.
 
@@ -295,9 +359,14 @@ class NegRowSuppressionDifficultyCallback(TrainerCallback):
     and writes to JSON. Zero-extra-compute beyond a forward pass on the
     300 negative rows.
 
-    Loss surface: at the FIRST ``<|im_end|>`` in the completion region of
-    each negative row (the same slot the collator masks loss to). The
-    loss is ``-log P(<|im_end|> | preceding tokens)``.
+    Loss surface: at the POST-RESPONSE ``<|im_end|>`` slot (the assistant-turn
+    terminator) — the SAME slot the collator masks loss to on these negative
+    rows and the SAME slot the DV reads. The slot is resolved via
+    ``_resolve_post_response_slot``, NOT ``list.index`` — Qwen-2.5 emits
+    ``<|im_end|>`` after every message turn, so ``ids.index(im_end_id)``
+    returns the SYSTEM-message terminator (the v1 M5 bug).
+
+    The loss is ``-log P(<|im_end|> | preceding tokens)`` at that slot.
     """
 
     def __init__(
@@ -316,16 +385,23 @@ class NegRowSuppressionDifficultyCallback(TrainerCallback):
         self.cid = cid
         self.out_dir = Path(out_dir)
         self.out_dir.mkdir(parents=True, exist_ok=True)
-        # Pre-tokenize each negative row once (full chat-template text);
-        # store as a parallel list of (input_ids[int], source_i, bystander_j).
-        self._cached_rows: list[tuple[list[int], str, str]] = []
+        # Pre-tokenize each negative row once + pre-resolve the post-response
+        # slot. Store (ids, slot, source_i, bystander_j) per row.
+        self._cached_rows: list[tuple[list[int], int, str, str]] = []
         for row in neg_rows:
             messages = list(row["prompt"]) + list(row["completion"])
             text = tokenizer.apply_chat_template(
                 messages, tokenize=False, add_generation_prompt=False
             )
             ids = tokenizer.encode(text, add_special_tokens=False)
-            self._cached_rows.append((ids, row["_neg_source_i"], row["_neg_bystander_j"]))
+            slot = _resolve_post_response_slot(tokenizer, list(row["prompt"]), ids, im_end_id)
+            # Sanity: assert the token at the resolved slot IS im_end_id.
+            if ids[slot] != im_end_id:
+                raise RuntimeError(
+                    f"M5 slot picker returned slot={slot} but ids[slot]={ids[slot]} "
+                    f"!= im_end_id={im_end_id}; cid={cid} bystander={row['_neg_bystander_j']}"
+                )
+            self._cached_rows.append((ids, slot, row["_neg_source_i"], row["_neg_bystander_j"]))
 
     def on_save(self, args, state, control, **kwargs):
         if self.arm != "loc":
@@ -338,12 +414,7 @@ class NegRowSuppressionDifficultyCallback(TrainerCallback):
         per_pair: dict[tuple[str, str], list[float]] = defaultdict(list)
         model.eval()
         with torch.no_grad():
-            for ids, source_i, bystander_j in self._cached_rows:
-                if self.im_end_id not in ids:
-                    continue
-                slot = ids.index(self.im_end_id)
-                if slot == 0:
-                    continue
+            for ids, slot, source_i, bystander_j in self._cached_rows:
                 input_ids = torch.tensor([ids[: slot + 1]], device=model.device, dtype=torch.long)
                 out = model(input_ids=input_ids)
                 logp = F.log_softmax(out.logits[0, slot - 1], dim=-1)
@@ -386,6 +457,180 @@ class NegRowSuppressionDifficultyCallback(TrainerCallback):
                 )
             except Exception as e:
                 logger.warning("M5 wandb.log failed (non-fatal): %s", e)
+
+
+class PerEpochAdapterHFUploadCallback(TrainerCallback):
+    """Plan v3 §4.3 Edit B.2 — per-epoch HF adapter upload (round-2 fix).
+
+    Round-1 bug: the train script wrote ``save_strategy="epoch"`` (so
+    ``checkpoint-<step>/`` dirs landed on local disk per epoch), but the
+    only HF push was the SINGLE end-of-training upload at
+    ``adapters/i474_{arm}_{cid}`` (no ``_ep{N}``). Phase 4 eval +
+    Phase 2 smoke read ``adapters/i474_{arm}_{cid}_ep{N}`` for
+    N in {1,2,3,5} → the across-epoch sweep (the WHOLE point of the
+    re-run — the epoch-1 saturation knee) was dead on arrival.
+
+    This callback fires at every ``on_save`` (i.e. every epoch under
+    ``save_strategy="epoch"``). When ``state.epoch`` is in
+    ``CHECKPOINT_EPOCHS_TO_UPLOAD`` it:
+
+      1. Reads the freshly-written ``checkpoint-<state.global_step>/``
+         directory (the parent ``Trainer._save_checkpoint`` already wrote
+         ``adapter_model.safetensors`` + ``adapter_config.json`` there).
+      2. Copies the tokenizer files (saved once in ``output_dir`` by
+         SFTTrainer at init via ``processing_class=tokenizer``) INTO the
+         checkpoint dir so the uploaded bundle is self-contained for
+         vLLM LoRA load.
+      3. Uploads the checkpoint dir to
+         ``adapters/i474_{arm}_{cid}_ep{N}`` via the shared
+         ``upload_model`` helper. Sets
+         ``EPM_PERSIST_ADAPTER_HF_REPO`` /
+         ``EPM_PERSIST_ADAPTER_SUBFOLDER`` per
+         ``.claude/rules/upload-policy.md`` so the contract is explicit.
+      4. **Fail-loud on upload failure (raises)** — the launcher's
+         ``set -e`` aborts the cell BEFORE any later local deletion, per
+         upload-policy.md.
+
+    Never uploads the merged 15GB dir (only the adapter). The
+    ``EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1`` fence stays on in main() so
+    ``train_lora``'s end-of-training upload is the ONLY non-callback
+    push, and it goes to the bare ``adapters/i474_{arm}_{cid}`` path
+    (the final-epoch convenience copy).
+    """
+
+    # Plan v3 §4.3 B.2: epochs to upload per condition.
+    CHECKPOINT_EPOCHS_TO_UPLOAD: tuple[int, ...] = (1, 2, 3, 5)
+
+    def __init__(
+        self,
+        arm: str,
+        cid: str,
+        output_dir: str,
+        hf_repo: str = HF_MODEL_REPO,
+    ):
+        self.arm = arm
+        self.cid = cid
+        self.output_dir = Path(output_dir)
+        self.hf_repo = hf_repo
+        self._uploaded_epochs: set[int] = set()
+
+    @staticmethod
+    def _resolve_target_epoch(state_epoch: float | None) -> int | None:
+        """Map fractional ``state.epoch`` to an integer target epoch.
+
+        HF Trainer reports ``state.epoch`` as a float just past the epoch
+        boundary (e.g. 1.0, 2.0, 3.0, 5.0). Round to the nearest int and
+        return iff it is in CHECKPOINT_EPOCHS_TO_UPLOAD.
+        """
+        if state_epoch is None:
+            return None
+        candidate = round(state_epoch)
+        # Float epsilon guard: state.epoch can be 0.9999 just before save.
+        if abs(state_epoch - candidate) > 0.05:
+            return None
+        if candidate in PerEpochAdapterHFUploadCallback.CHECKPOINT_EPOCHS_TO_UPLOAD:
+            return candidate
+        return None
+
+    def _checkpoint_dir(self, global_step: int) -> Path:
+        return self.output_dir / f"checkpoint-{global_step}"
+
+    def _stage_tokenizer_files(self, checkpoint_dir: Path) -> None:
+        """Copy tokenizer files from output_dir into checkpoint_dir.
+
+        SFTTrainer writes tokenizer files (``tokenizer.json``,
+        ``tokenizer_config.json``, ``special_tokens_map.json``) to
+        ``output_dir`` at construction (``processing_class=tokenizer``);
+        the per-checkpoint subdirs only have adapter files. Copy what's
+        present (some files may be model-dependent) so the uploaded
+        bundle is self-contained for vLLM LoRA load.
+        """
+        import shutil
+
+        needed = [
+            "tokenizer.json",
+            "tokenizer_config.json",
+            "special_tokens_map.json",
+            "added_tokens.json",
+            "vocab.json",
+            "merges.txt",
+        ]
+        for fname in needed:
+            src = self.output_dir / fname
+            dst = checkpoint_dir / fname
+            if src.exists() and not dst.exists():
+                shutil.copy2(src, dst)
+
+    def on_save(self, args, state, control, **kwargs):
+        target_ep = self._resolve_target_epoch(state.epoch)
+        if target_ep is None:
+            logger.debug(
+                "PerEpochAdapterHFUpload: state.epoch=%s not in %s; skipping.",
+                state.epoch,
+                self.CHECKPOINT_EPOCHS_TO_UPLOAD,
+            )
+            return
+        if target_ep in self._uploaded_epochs:
+            logger.debug("PerEpochAdapterHFUpload: ep%d already uploaded; skipping.", target_ep)
+            return
+
+        ckpt_dir = self._checkpoint_dir(state.global_step)
+        adapter_file = ckpt_dir / "adapter_model.safetensors"
+        config_file = ckpt_dir / "adapter_config.json"
+        if not adapter_file.exists() or not config_file.exists():
+            raise RuntimeError(
+                f"PerEpochAdapterHFUpload: expected adapter files missing under "
+                f"{ckpt_dir} (adapter_model.safetensors / adapter_config.json). "
+                "Trainer.save_strategy='epoch' did not produce them — refusing to "
+                "silently skip the per-epoch upload (Phase 4 eval would fail-loud "
+                "on _ep{N} download). Check that PEFT is wrapping the model."
+            )
+        self._stage_tokenizer_files(ckpt_dir)
+
+        # The path-in-repo contract Phase 4 + smoke read from. KEEP IN
+        # SYNC with i474_phase4_eval.py::_download_adapters and
+        # i474_phase2_smoke_check.py::_resolve_adapter_path.
+        path_in_repo = f"adapters/i474_{self.arm}_{self.cid}_ep{target_ep}"
+
+        # Explicit env contract per upload-policy.md (so other surfaces
+        # that read these env vars know where the adapter persisted).
+        os.environ["EPM_PERSIST_ADAPTER_HF_REPO"] = self.hf_repo
+        os.environ["EPM_PERSIST_ADAPTER_SUBFOLDER"] = path_in_repo
+
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        logger.info(
+            "PerEpochAdapterHFUpload: arm=%s cid=%s ep=%d step=%d uploading %s -> %s/%s",
+            self.arm,
+            self.cid,
+            target_ep,
+            state.global_step,
+            ckpt_dir,
+            self.hf_repo,
+            path_in_repo,
+        )
+        hub_path = upload_model(
+            str(ckpt_dir),
+            repo_id=self.hf_repo,
+            path_in_repo=path_in_repo,
+        )
+        if not hub_path:
+            raise RuntimeError(
+                "PerEpochAdapterHFUpload: upload_model returned empty string "
+                f"(verification failed) for arm={self.arm} cid={self.cid} ep={target_ep} "
+                f"-> {self.hf_repo}/{path_in_repo}. Per upload-policy.md fail-loud "
+                "contract, refusing to continue training — the local checkpoint will "
+                "be reaped by the next save_total_limit cycle and the sweep will lose "
+                "this epoch's adapter."
+            )
+        self._uploaded_epochs.add(target_ep)
+        logger.info(
+            "PerEpochAdapterHFUpload: arm=%s cid=%s ep=%d uploaded to %s (verified).",
+            self.arm,
+            self.cid,
+            target_ep,
+            hub_path,
+        )
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -463,7 +708,13 @@ def main(argv: list[str] | None = None) -> None:
     R_train = _load_R("train")
 
     for cond_id in args.conds:
-        rng = np.random.default_rng(args.seed + hash(cond_id) % 10_000)
+        # Stable per-condition seed offset. Python's built-in hash() is
+        # process-randomized unless PYTHONHASHSEED is fixed, so the v1
+        # `args.seed + hash(cond_id) % 10_000` did NOT give reproducible
+        # A_loc negative rows across launches. Use sha256 of the cond_id
+        # bytes for a process-stable offset.
+        cond_offset = int(hashlib.sha256(cond_id.encode("utf-8")).hexdigest()[:8], 16)
+        rng = np.random.default_rng(args.seed + cond_offset % 10_000)
         pos_rows = _build_positive_rows(
             cond_id, q_train_answers, class_d_rewrites, R_train, tokenizer
         )
@@ -515,6 +766,16 @@ def main(argv: list[str] | None = None) -> None:
         )
 
         callbacks: list[TrainerCallback] = []
+        # BOTH arms get the per-epoch HF adapter upload — Phase 4 + smoke
+        # read adapters/i474_{arm}_{cid}_ep{N} for N in {1,2,3,5}.
+        if args.save_strategy == "epoch":
+            callbacks.append(
+                PerEpochAdapterHFUploadCallback(
+                    arm=args.arm,
+                    cid=cond_id,
+                    output_dir=out_dir,
+                )
+            )
         if args.arm == "loc":
             callbacks.append(
                 NegRowSuppressionDifficultyCallback(

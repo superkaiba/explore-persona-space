@@ -41,12 +41,86 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import pingouin as pg
 import scipy.stats as st
 
 from explore_persona_space.experiments.i406_conditions import CONDITIONS
 
+# Optional pingouin (round-2 fix CONCERN 4): pingouin is NOT in
+# pyproject.toml; making the import optional + routing the partial-
+# correlation through the scipy/statsmodels fallback when pingouin is
+# absent. Pingouin's only role here is `partial_corr(method="spearman")`
+# which is rank-residualization on x ~ covars and y ~ covars + Pearson
+# on the residuals — equivalent to ``_partial_spearman_fallback`` below.
+try:
+    import pingouin as pg
+
+    _PINGOUIN_AVAILABLE = True
+except ImportError:  # pragma: no cover — exercised by CI without pingouin
+    pg = None  # type: ignore[assignment]
+    _PINGOUIN_AVAILABLE = False
+
 logger = logging.getLogger("i474.phase5")
+
+
+def _partial_spearman_fallback(df: pd.DataFrame, x: str, y: str, covar: list[str]) -> float:
+    """Multi-covariate partial Spearman via rank-residualization + Pearson.
+
+    Equivalent in this code's usage to ``pg.partial_corr(method="spearman")[
+    "r"].values[0]`` — rank-transform x, y, and each covar; OLS-regress
+    each of (x, y) on the covar block; Pearson-correlate the residuals.
+    Falls back to scipy.linregress for a single covariate and to
+    ``numpy.linalg.lstsq`` for ≥2 covariates.
+
+    Returns ``float('nan')`` on degenerate input (n < 5, rank-deficient
+    covars, etc.) — matches the pingouin path's behaviour where the
+    caller checks for None/NaN.
+    """
+    n = len(df)
+    if n < 5:
+        return float("nan")
+    x_rank = st.rankdata(df[x].to_numpy())
+    y_rank = st.rankdata(df[y].to_numpy())
+    if not covar:
+        try:
+            return float(st.pearsonr(x_rank, y_rank).statistic)
+        except Exception:
+            return float("nan")
+    if len(covar) == 1:
+        c_rank = st.rankdata(df[covar[0]].to_numpy())
+        sl_x, ix, *_ = st.linregress(c_rank, x_rank)
+        sl_y, iy, *_ = st.linregress(c_rank, y_rank)
+        x_resid = x_rank - (sl_x * c_rank + ix)
+        y_resid = y_rank - (sl_y * c_rank + iy)
+        try:
+            return float(st.pearsonr(x_resid, y_resid).statistic)
+        except Exception:
+            return float("nan")
+    # ≥2 covariates: OLS via lstsq with an intercept column.
+    C = np.column_stack([st.rankdata(df[c].to_numpy()) for c in covar] + [np.ones(n)])
+    try:
+        bx, *_ = np.linalg.lstsq(C, x_rank, rcond=None)
+        by, *_ = np.linalg.lstsq(C, y_rank, rcond=None)
+        x_resid = x_rank - C @ bx
+        y_resid = y_rank - C @ by
+        return float(st.pearsonr(x_resid, y_resid).statistic)
+    except Exception:
+        return float("nan")
+
+
+def _partial_corr_r(df: pd.DataFrame, x: str, y: str, covar: list[str]) -> float:
+    """Return the partial-Spearman r for x vs y controlling for `covar`.
+
+    Prefers pingouin when available (more diagnostics, e.g. p-value);
+    falls back to ``_partial_spearman_fallback`` otherwise.
+    """
+    if _PINGOUIN_AVAILABLE and pg is not None:
+        try:
+            r = pg.partial_corr(data=df, x=x, y=y, covar=covar, method="spearman")
+            return float(r["r"].values[0])
+        except Exception:
+            return float("nan")
+    return _partial_spearman_fallback(df, x, y, covar)
+
 
 D_PATH = Path("eval_results/issue_406/divergence/D_matrix.json")
 G406_PATH = Path("eval_results/issue_406/cross_eval/G_matrix.json")
@@ -104,11 +178,7 @@ def _cluster_bootstrap_partial_spearman(
                 # raw Spearman fallback
                 r = st.spearmanr(sub[x_col], sub[y_col]).correlation
             else:
-                r = float(
-                    pg.partial_corr(
-                        data=sub, x=x_col, y=y_col, covar=[covar_col], method="spearman"
-                    )["r"].values[0]
-                )
+                r = _partial_corr_r(sub, x_col, y_col, [covar_col])
             boot_rhos[b] = float(r)
         except Exception:
             boot_rhos[b] = np.nan
@@ -116,15 +186,28 @@ def _cluster_bootstrap_partial_spearman(
 
 
 def _safe_partial(df: pd.DataFrame, x: str, y: str, covar: str | list[str]) -> dict:
-    """Length-partial (or multi-covariate) Spearman."""
+    """Length-partial (or multi-covariate) Spearman.
+
+    When pingouin is installed, uses its diagnostic p-value alongside the r;
+    otherwise routes through ``_partial_corr_r`` (rank-residualize + Pearson
+    over residuals) and reports r only. The keys ``rho_pingouin`` and
+    ``p_pingouin`` are retained for back-compat with downstream readers
+    (they reflect the partial r regardless of which path produced it).
+    """
     if len(df) < 5:
         return {"n": len(df), "rho_pingouin": None, "p_pingouin": None, "error": "too_few_rows"}
     out = {"n": len(df)}
     covar_list = [covar] if isinstance(covar, str) else covar
     try:
-        r = pg.partial_corr(data=df, x=x, y=y, covar=covar_list, method="spearman")
-        out["rho_pingouin"] = float(r["r"].values[0])
-        out["p_pingouin"] = float(r["p_val"].values[0])
+        if _PINGOUIN_AVAILABLE and pg is not None:
+            r = pg.partial_corr(data=df, x=x, y=y, covar=covar_list, method="spearman")
+            out["rho_pingouin"] = float(r["r"].values[0])
+            out["p_pingouin"] = float(r["p_val"].values[0])
+        else:
+            rho = _partial_corr_r(df, x, y, covar_list)
+            out["rho_pingouin"] = None if np.isnan(rho) else float(rho)
+            out["p_pingouin"] = None  # not computed in the fallback path
+            out["partial_corr_backend"] = "scipy_fallback"
     except Exception as e:
         out["rho_pingouin"] = None
         out["p_pingouin"] = None
@@ -336,10 +419,7 @@ def _suppression_difficulty_partial(df: pd.DataFrame, epoch: int, n_boot: int, s
         rows = np.concatenate([cell_to_rows[cell_ids[k]] for k in sampled])
         sub = df_use.loc[rows]
         try:
-            r = pg.partial_corr(
-                data=sub, x="D", y="delta_g", covar=["log_prompt_tokens", "S"], method="spearman"
-            )
-            boot[b] = float(r["r"].values[0])
+            boot[b] = float(_partial_corr_r(sub, "D", "delta_g", ["log_prompt_tokens", "S"]))
         except Exception:
             boot[b] = np.nan
     full_partial["bootstrap_ci_2_5"] = float(np.nanpercentile(boot, 2.5))
@@ -387,12 +467,8 @@ def _paired_bootstrap_arm_diff(
         rows = np.concatenate([cell_to_rows[cell_ids[k]] for k in sampled])
         sub = merged.loc[rows]
         try:
-            r_pos = pg.partial_corr(
-                data=sub, x="D", y=y_col, covar=["log_prompt_tokens"], method="spearman"
-            )["r"].values[0]
-            r_loc = pg.partial_corr(
-                data=sub, x="D", y=f"{y_col}_loc", covar=["log_prompt_tokens"], method="spearman"
-            )["r"].values[0]
+            r_pos = _partial_corr_r(sub, "D", y_col, ["log_prompt_tokens"])
+            r_loc = _partial_corr_r(sub, "D", f"{y_col}_loc", ["log_prompt_tokens"])
             boot[b] = float(r_loc) - float(r_pos)
         except Exception:
             boot[b] = np.nan
@@ -433,12 +509,8 @@ def _h2h_vs_406(df: pd.DataFrame, n_boot: int, seed: int) -> dict:
         rows = np.concatenate([cell_to_rows[cell_ids[k]] for k in sampled])
         sub = df.loc[rows]
         try:
-            r_474 = pg.partial_corr(
-                data=sub, x="D", y="delta_g", covar=["log_prompt_tokens"], method="spearman"
-            )["r"].values[0]
-            r_406 = pg.partial_corr(
-                data=sub, x="D", y="G_orig", covar=["log_prompt_tokens"], method="spearman"
-            )["r"].values[0]
+            r_474 = _partial_corr_r(sub, "D", "delta_g", ["log_prompt_tokens"])
+            r_406 = _partial_corr_r(sub, "D", "G_orig", ["log_prompt_tokens"])
             boot[b] = float(abs(r_474)) - float(abs(r_406))
         except Exception:
             boot[b] = np.nan
