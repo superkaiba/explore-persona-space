@@ -2303,6 +2303,18 @@ uv run python scripts/task.py post-marker <N> epm:status-changed \
   --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"
 ```
 
+**Auto-merge the worktree now (experiments).** The instant the task
+lands at `awaiting_promotion`, run the **Step 10d auto-merge procedure**
+(rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree). The
+code / figures / `eval_results` the run produced land on `main`
+immediately so the next experiment inheriting from `main` gets any
+shared-infra fix this branch carried (this is the #456 -> #466 fix). The
+science verdict (`useful` / `not-useful`) is orthogonal and still parks
+below for the user. Merging does NOT block the park: an auto-merge
+conflict posts `epm:merge-failed v1` and surfaces one line in chat, but
+the task still parks at `awaiting_promotion` for promotion. Idempotent —
+skip if `epm:merged` already exists.
+
 Then post the chat-side prompt:
 
 > Clean-result-critic PASS. The polished body is now live on task #\<N\>.
@@ -2587,129 +2599,91 @@ completion waits on it.
 This hook is idempotent: skip if `epm:living-docs-updated v1` or
 `epm:living-docs-update-rejected v1` already exists on the task.
 
-### Step 10d: Worktree merge prompt (both experiment and impl)
+### Step 10d: Auto-merge the worktree (both experiment and impl)
 
-**Step 10d merge safety (run before the YES branch's merge commands).**
-A behind-main `issue-<N>` branch can carry stale copies of OTHER tasks'
-`tasks/` state, so merging it raw reverts their `events.jsonl` / status;
-and a crash between merge and the status flip can strand a
-terminated-pod task at `running`. Two guards:
+The worktree merge is **automatic — no prompt, no cooldown**. It is the
+single canonical merge procedure, invoked from TWO trigger points:
+
+- **Experiments** — at the `awaiting_promotion` transition (Step 9b),
+  the instant clean-result-critic PASSes. The merge does NOT wait for
+  the user to promote the clean-result.
+- **Code-change paths** (`infra` / `batch` / `analysis` / `survey`) — at
+  this step, the instant the task auto-completes (Step 10 -> `completed`).
+
+Rationale: deferring the merge stranded shared-library fixes on unmerged
+branches, so the next experiment inheriting from `main` lacked them
+(incident #456 -> #466: a `format_dataset` fix to
+`src/explore_persona_space/train/trainer.py` lived on the #456 branch
+that deferred merging; #466 inherited the older `format_dataset` from
+`main` and crashed Phase-0 on the same data #456 trained on fine).
+Auto-merging at the terminal point lands every code / figure /
+`eval_results` commit on `main` immediately.
+
+The worktree is **NOT removed** — it persists for inspection and is
+reaped later by the daily stale-worktree audit (`worktree_audit.py`,
+09:47) once the task reaches a terminal status and the worktree is idle.
+
+**Idempotent.** Skip the whole step if `epm:merged` already exists on the
+task (an experiment that merged at Step 9b is a no-op here). Also skip if
+no PR exists or the branch is already merged into `main`.
+
+#### Merge safety guards (run before the merge commands)
+
+A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
+`tasks/` state, and a crash between merge and a status flip can strand a
+task at the wrong status. Two guards, unchanged from the prior
+prompt-gated flow:
 
 1. **Foreign-`tasks/` guard.** `git diff --name-only origin/main HEAD --
    tasks/` MUST be empty except THIS task's own folder
    (`tasks/*/<N>/`). For any foreign `tasks/` path in the diff, run
-   `git checkout origin/main -- <that file>` before pushing/merging.
-   Never let a behind-main branch revert another task's `events.jsonl`.
-   (Incident 2026-06-01: #458's merge branch, 1,146 commits behind main,
-   silently rewound `tasks/running/448/events.jsonl`.)
-2. **Status-flip ordering.** Flip status OFF `running` (Step 10's
-   `set-status`) BEFORE the merge-to-main + pod terminate, so a crash
-   mid-step can't leave a terminated-pod task stuck at `running`. On a
-   later `/issue <N>` resume: if the pod is already terminated AND the
-   branch is already merged AND status is still `running`, auto-advance
-   (treat it as completed work, not in-flight) rather than re-dispatching.
+   `git checkout origin/main -- <that file>` before merging. Never let a
+   behind-`main` branch revert another task's `events.jsonl`. (Incident
+   2026-06-01: #458's merge branch, 1,146 commits behind main, silently
+   rewound `tasks/running/448/events.jsonl`.) The `--rebase` merge form
+   below replays the branch's commits on top of current `main`, so files
+   the branch never committed keep `main`'s version — this is what keeps
+   the clean-result body (committed to `main` by `task.py`, never in the
+   worktree) safe across the merge.
+2. **Status already off `running`.** By both trigger points the status is
+   well past `running` (`awaiting_promotion` for experiments; `completed`
+   for code paths, flipped in Step 10 step 6 BEFORE this step). A crash
+   mid-merge therefore cannot strand a terminated-pod task at `running`.
+   On a later `/issue <N>` resume: if the PR is already merged AND status
+   is still `running` for any reason, auto-advance rather than
+   re-dispatching.
 
-<!-- gate: gates.worktree_merge -->
-After Step 10b posts and the Step 10c living-docs hook has run (the pod
-was already terminated in Step 8 immediately after upload-verification
-PASS), ask the user once via `AskUserQuestion`:
-
-> **Merge worktree `issue-<N>` into `main` now?**
-> YES -> mark draft PR ready, **rebase-merge** so each commit lands
-> individually on `main`, then `git worktree remove`.
-> NO -> no-op; user merges later.
-
-<!-- gate: gates.worktree_merge -->
-**Important:** when invoking `AskUserQuestion`, embed the PR URL
-(`gh pr view <PR> --json url -q .url`) inside the question text itself
-AND the worktree path (`.claude/worktrees/issue-<N>`) inside the YES
-option's `description` field. The user only sees the rendered question
-box at decision time; merge is irreversible, so the PR URL has to be
-one click away inside the call — chat-prose URLs above the call get
-scrolled past. Example shape (see workflow.yaml § gates.worktree_merge):
-
-<!-- gate: gates.worktree_merge -->
-```python
-AskUserQuestion(questions=[{
-  "question": (
-    "Merge worktree issue-<N> into main now? "
-    "PR: <pr_url>"
-  ),
-  "header": "Merge #<N>",
-  "multiSelect": False,
-  "options": [
-    {
-      "label": "YES — rebase-merge + remove worktree",
-      "description": (
-        "gh pr ready <PR> && gh pr merge --rebase. "
-        "Worktree: .claude/worktrees/issue-<N> (removed after)."
-      ),
-    },
-    {
-      "label": "NO — defer",
-      "description": (
-        "Leave PR open; user merges later. "
-        "Re-prompt on next /issue <N> invocation."
-      ),
-    },
-  ],
-}])
-```
-
-**30-minute cooldown gate.** Before prompting, run:
+#### The auto-merge procedure
 
 ```bash
-CREATED=$(gh pr view <PR> --json createdAt -q .createdAt)
-AGE_SEC=$(( $(date +%s) - $(date -d "$CREATED" +%s) ))
-if [ "$AGE_SEC" -lt 1800 ]; then
-  echo "PR younger than 30 min; deferring merge prompt to next /issue invocation"
-  exit 0
+PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
+if [ -z "$PR" ]; then
+  echo "No PR for issue-<N>; nothing to merge."   # skip; post nothing
+else
+  # Run the foreign-tasks guard (above) first, then:
+  gh pr ready <PR>
+  gh pr merge <PR> --rebase --delete-branch=false
 fi
 ```
 
-The cooldown reduces the chance of merging before the PR has had time
-for a quick human glance. Override allowed by manual `/issue <N>`
-re-invocation after the cooldown elapses.
+The `gh pr merge --rebase` form lands all per-item commits individually
+on `main`; each is independently revertible via `git revert <sha>` (vs.
+`--merge`, which reverts everything together). The user retains full
+revert control after the fact — that is what makes a no-prompt merge safe
+here. The worktree is deliberately NOT removed (`--delete-branch=false`,
+no `git worktree remove`).
 
-**Shared-infra check (advisory).** Before raising the merge prompt,
-detect whether this branch modified anything under
-`src/explore_persona_space/` — shared library code that the NEXT
-experiment inheriting from `main` will lack if the branch defers
-merging:
-
-```bash
-SHARED_INFRA_DIFF=$(git diff --name-only origin/main...HEAD -- \
-  'src/explore_persona_space/**' 2>/dev/null | head -20)
-```
-
-If `SHARED_INFRA_DIFF` is non-empty, embed a one-line warning inside
-the `AskUserQuestion` text <!-- gate: gates.worktree_merge --> — for example: `"Shared infra modified
-(<N> file(s) under src/, e.g. <first path>); deferring leaves
-downstream experiments without this fix."`. This is a recommendation,
-not a hard gate (a deliberate experiment-only fork is still valid; the
-user decides). Incident #456 → #466: a `format_dataset` fix to
-`src/explore_persona_space/train/trainer.py` lived on the #456 branch
-that deferred merging; #466 inherited the older `format_dataset` from
-`main` and crashed Phase-0 on the same data #456 trained on fine.
-
-- **YES:**
-  ```bash
-  gh pr ready <PR>
-  gh pr merge <PR> --rebase --delete-branch=false
-  git worktree remove .claude/worktrees/issue-<N>
-  ```
-  The `gh pr merge --rebase` form lands all per-item commits
-  individually on `main`; each is independently revertible via
-  `git revert <sha>`. (Vs. `--merge` which creates one merge commit —
-  reverts everything together.) Post `epm:merged v1` with the list of
-  merge SHAs. Update chat title with `merged`.
-
-- **NO:** post `epm:merge-deferred v1`.
-- **Autonomous mode:** default NO; record event. Never auto-merge
-  without user approval.
-
-Idempotent: skip if either event (`epm:merged` or `epm:merge-deferred`)
-already exists on the task.
+- **Success:** post `epm:merged v1` with the list of merge SHAs. Update
+  the chat title with `merged`.
+- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): do
+  NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the `gh` /
+  `git` error, surface ONE line in chat naming the branch + worktree path
+  for manual resolution, and CONTINUE — an experiment still parks at
+  `awaiting_promotion`; a code-change task still completes. The merge is
+  retried (idempotently) on the next `/issue <N>` re-invocation.
+- **Autonomous mode** (no user present): same as above — the auto-merge
+  proceeds. No deferral. (This reverses the prior "default NO" autonomous
+  behavior; merge to `main` is no longer user-gated.)
 
 ---
 
@@ -2830,8 +2804,9 @@ dedicated "working" statuses):
 | `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn clean-result-critic |
 | `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
 | `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
-| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 11 | move to `awaiting_promotion`, post `epm:status-changed`, EXIT |
-| `awaiting_promotion` | `classification == 'pending'` in body frontmatter | waiting for user to promote | show task path, prompt to promote via `task.py promote`, EXIT |
+| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 11 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
+| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
+| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
 | `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
@@ -2873,7 +2848,12 @@ row per `(kind)` as authoritative.
 - **Never dispatch `compute:large` (>20 GPU-hours) without explicit
   user `approve`.** Small + medium can proceed on `approve` or
   `/approve`. Large requires `approve-large` to force a second thought.
-- **Never auto-merge PRs.** User owns merge.
+- **Worktree merge is automatic** at the terminal point (Step 9b for
+  experiments at `awaiting_promotion`; Step 10d for code paths at
+  `completed`) — rebase-merge to `main`, no prompt, worktree kept. The
+  user retains revert control (each commit lands individually). **Never
+  force-push** (stays a user-ask) and never merge across repos or to any
+  external remote.
 - **Never edit `RESULTS.md` without proposal+approval.** Headline-level
   science is high-stakes.
 - **Never auto-delete worktrees or model artifacts.** Cleanup is manual

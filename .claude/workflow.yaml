@@ -346,10 +346,10 @@ gates:
       step: "2c"
       status: status:plan_pending
       reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat)"
-    - id: 5
-      name: worktree_merge
-      step: "10d"
-      reason: "worktree merge prompt (irreversible)"
+    # id 5 (worktree_merge) RETIRED 2026-06-03: the worktree merge is now
+    # automatic (no AskUserQuestion) at the terminal point — Step 9b for
+    # experiments (awaiting_promotion), Step 10d for code paths. See the
+    # worktree_merge_auto step below + SKILL.md Step 10d. Not a gate anymore.
     - id: 6
       name: experiment_goal
       step: "0c"
@@ -1520,12 +1520,12 @@ markers:
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
   - kind: "epm:merged"
     posted_by: skill
-    when: "Step 10d"
-    fields: "Merge SHAs (one per commit when rebase-merged) + worktree removal"
-  - kind: "epm:merge-deferred"
+    when: "Step 9b (experiments, at awaiting_promotion) or Step 10d (code paths, at completed)"
+    fields: "Merge SHAs (one per commit when rebase-merged). Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
+  - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 10d"
-    fields: "User declined the merge prompt"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR"
+    fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill
     when: "Step 7 (>4h silence)"
@@ -1779,8 +1779,9 @@ steps:
     posts_marker: "epm:follow-ups"
     next_expected_step: "10d"
   - id: "10d"
-    name: worktree_merge_prompt
+    name: worktree_merge_auto
     entry_status_label:
+      - awaiting_promotion
       - completed
       - done_experiment
       - done_impl

@@ -40,19 +40,20 @@ Multi-step workflows (`/issue`, `/adversarial-planner`) MUST auto-continue excep
 2. Step 0b(2) — task `kind` missing/contradictory.
 3. Step 1 — clarifier blocking ambiguities (`status:proposed`).
 4. Step 2c — plan approval (`status:plan_pending`).
-5. Step 10d — worktree merge prompt (irreversible).
-6. Step 0c — Goal gate (`kind: experiment` only): refuses to advance until `goal:` frontmatter + `## Goal` H2 present. On miss, ask, then `task.py set-goal <N> "..." --by user` + post `epm:goal-updated v1`.
+5. Step 0c — Goal gate (`kind: experiment` only): refuses to advance until `goal:` frontmatter + `## Goal` H2 present. On miss, ask, then `task.py set-goal <N> "..." --by user` + post `epm:goal-updated v1`.
+
+(The worktree merge is NO LONGER a gate — as of 2026-06-03 it is automatic: the worktree rebase-merges to `main` with no prompt at the terminal point — Step 9b for experiments at `awaiting_promotion`, Step 10d for code paths at `completed`. The worktree is kept, not removed. See SKILL.md Step 10d.)
 
 *Park-and-wait gate (skill EXITs; re-invoke after user acts):*
-7. `awaiting_promotion` — clean-result promotion. User runs `task.py promote <N> useful|not-useful`. **User-only:** no automation may flip `runs.classification`.
+6. `awaiting_promotion` — clean-result promotion. User runs `task.py promote <N> useful|not-useful`. **User-only:** no automation may flip `runs.classification`. (The worktree auto-merges to `main` the instant the task reaches this state — Step 9b — independent of promotion.)
 
 *Conditional gates:*
-8. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`.
-9. Goal-refinement (Step 1 clarifier OR Phase 1 planner) — surface the sharper Goal via `AskUserQuestion`; on agreement run `task.py set-goal <N> "..." --by clarifier|planner` + post `epm:goal-updated v1`. No other agent may propose Goal changes.
+7. Step 4b TDD — fires when plan body has `### TDD: yes`. Implementer posts `epm:proposed-tests v1`, EXITs awaiting `epm:approve-tests v1`.
+8. Goal-refinement (Step 1 clarifier OR Phase 1 planner) — surface the sharper Goal via `AskUserQuestion`; on agreement run `task.py set-goal <N> "..." --by clarifier|planner` + post `epm:goal-updated v1`. No other agent may propose Goal changes.
 
 Outside these gates, NEVER ask "should I continue". When auto-continuing past a non-obvious decision, STATE the assumption (`Assumption: ...`). Reviewers reject PRs that introduce additional pauses.
 
-**Halt-criterion contract.** Outside the 6 inline gates, NEVER use `AskUserQuestion`. If you genuinely need user input, post `epm:failure v1` with `failure_class: <code|infra|data>`, set `status:blocked`, exit. Enforced by `scripts/workflow_lint.py --check-asks` (pre-commit): every `AskUserQuestion` mention in `.claude/agents/**.md` or `.claude/skills/**/SKILL.md` must carry `<!-- gate: <dotted_key> -->` resolving to workflow.yaml, or cite the gate in the same paragraph.
+**Halt-criterion contract.** Outside the 5 inline gates, NEVER use `AskUserQuestion`. If you genuinely need user input, post `epm:failure v1` with `failure_class: <code|infra|data>`, set `status:blocked`, exit. Enforced by `scripts/workflow_lint.py --check-asks` (pre-commit): every `AskUserQuestion` mention in `.claude/agents/**.md` or `.claude/skills/**/SKILL.md` must carry `<!-- gate: <dotted_key> -->` resolving to workflow.yaml, or cite the gate in the same paragraph.
 
 **STATE-TO-`blocked` criteria** (workflow.yaml § halt_criteria). **Continuing on your own is the default.** Pivots (re-invoke `/adversarial-planner` with pivot scope, drop a domain, swap a model, change the approach), retries, and memory-driven design changes are all autonomous. Block ONLY when:
   1. **Factual question only the user knows** — priority, taste, scope, design preference between valid paths, where no memory/plan/codebase signal disambiguates.

@@ -12,7 +12,7 @@ For any task ≥30 min of work (experiment or code change), prefer the `/issue <
 - When the user says "run experiment X" or "refactor Y": check if an issue exists. If yes, `/issue <N>`. If no, create one (`gh issue create`) with the right labels (`type:*`, `status:proposed`, `aim:*`, `prio:*`, `compute:*`), then `/issue <N>`.
 - Specialists dispatched via the skill are in "issue-bound mode" (brief includes `issue: <N>`) and post their progress/results/failures as marker comments, not just returned messages.
 - For <30 min trivia (typo fix, config tweak, one-line bug fix), skip the ceremony and just do it.
-- Never auto-merge PRs. Never auto-edit `RESULTS.md` even after reviewer PASS — propose the diff in an `<!-- epm:results-md-diff -->` comment, wait for user approval.
+- The `/issue` skill auto-merges the issue worktree to `main` at the terminal point (Step 9b for experiments at `awaiting_promotion`; Step 10d for code paths at `completed`) — no prompt, worktree kept (changed 2026-06-03). The PM session itself never merges during triage; force-push stays a user-ask. Never auto-edit `RESULTS.md` even after reviewer PASS — propose the diff in an `<!-- epm:results-md-diff -->` comment, wait for user approval.
 
 **Key files:**
 - `.claude/skills/issue/SKILL.md` — procedure

@@ -272,12 +272,15 @@ def test_gates_full_shape():
     present with the expected counts."""
     workflow = load_workflow_yaml()
     assert workflow.gates is not None
-    # 8 inline gates: the 5 from the GH-era contract + experiment_goal
+    # 7 inline gates: the 4 from the GH-era contract (empty_body,
+    # missing_type, clarifier_blocking, plan_approval) + experiment_goal
     # (which replaced why_experiment on 2026-05-24) + smoke_architecture
     # (added by Fix #1 of the #397 post-mortem batch, 2026-05-27) +
     # concern_deferral_request (binding-concerns layer, added 2026-05-31
-    # by task #455, gate id=15).
-    assert len(workflow.gates.inline) == 8
+    # by task #455, gate id=15). worktree_merge (the 5th GH-era gate)
+    # was RETIRED 2026-06-03 — the worktree merge is now automatic, not
+    # an AskUserQuestion gate (see SKILL.md Step 10d).
+    assert len(workflow.gates.inline) == 7
     inline_names = {g.name for g in workflow.gates.inline}
     assert "experiment_goal" in inline_names
     assert "smoke_architecture" in inline_names

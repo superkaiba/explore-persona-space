@@ -115,8 +115,8 @@ def test_check_asks_pass_inline_gate_annotation(tmp_path):
 def test_check_asks_pass_gate_annotation_line_above(tmp_path):
     """PASS — annotation on the line immediately above the mention."""
     (tmp_path / "SKILL.md").write_text(
-        "<!-- gate: gates.worktree_merge -->\n"
-        "Ask via `AskUserQuestion`: should we merge the worktree?\n"
+        "<!-- gate: gates.experiment_goal -->\n"
+        "Ask via `AskUserQuestion`: what is the one-sentence Goal?\n"
     )
     errors = check_asks(_workflow(), roots=[tmp_path])
     assert errors == [], f"expected PASS, got: {errors}"
