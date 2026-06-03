@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF002
+# ruff: noqa: RUF001, RUF002, RUF003
 """Issue #475 scaffold data-gen — Hubinger CoT marker install on Qwen3.5-27B.
 
 Generates the per-arm SFT training mixes for the 3 install arms:
@@ -216,16 +216,217 @@ def collect_batch_results(batch_id: str) -> dict[str, str]:
 
 # ── Step 1: questions ───────────────────────────────────────────────────────
 
+# Reuse-first pool sources from the HF data repo. Every entry is a
+# held-out general-knowledge prompt pool we (or a sibling rig) already
+# generated and uploaded — verbatim re-use is bit-deterministic, costs
+# zero Anthropic spend, and is faithful to plan §4.4's "re-use the
+# #382/#408 held-out general-knowledge prompt pool." We pull from the
+# union, dedup, and ONLY top up via Claude for the remaining gap.
+#
+# Sources (all under repo ``superkaiba1/explore-persona-space-data``,
+# repo_type ``dataset``):
+#   - issue376_marker_install/v1/eval_prompts.json   — list[str], 200 prompts
+#   - issue382_marker_install/v1/eval_prompts.json   — list[str], 200 prompts
+#   - issue448_recipe_sweep/generic_corpus/union_pool.json    — list[{question, response}], 850
+#   - issue448_recipe_sweep/generic_corpus/topup.json         — list[{question, response}], 650
+#   - issue448_recipe_sweep/generic_corpus/eval_canonical_responses.json
+#       — dict[question -> response], ~10
+#   - leakage/marker_generic_sft.jsonl               — chat-message rows, user turn = the question
+#   - leakage/capability_generic_sft.jsonl           — same shape, complementary topic mix
+# Union → ~1466 unique questions (case-insensitive dedup).
+_HF_QUESTION_POOL_SOURCES = (
+    ("plain_list", "issue376_marker_install/v1/eval_prompts.json"),
+    ("plain_list", "issue382_marker_install/v1/eval_prompts.json"),
+    ("question_response_list", "issue448_recipe_sweep/generic_corpus/union_pool.json"),
+    ("question_response_list", "issue448_recipe_sweep/generic_corpus/topup.json"),
+    (
+        "question_keyed_dict",
+        "issue448_recipe_sweep/generic_corpus/eval_canonical_responses.json",
+    ),
+    ("sft_user_turn", "leakage/marker_generic_sft.jsonl"),
+    ("sft_user_turn", "leakage/capability_generic_sft.jsonl"),
+)
+_HF_QUESTION_POOL_REPO = "superkaiba1/explore-persona-space-data"
 
-def _questions_request(custom_id: str, n_questions: int) -> dict:
+# Diversified topic seeds for the Claude top-up call (one seed per
+# request → distinct generation context → minimal dedup collapse).
+# 70 buckets at chunk=50 = 3500 raw / round, after ~70% dedup ≈ 2400
+# unique / round; one round is typically enough to close any gap left
+# by the HF pools, and the loop caps at 8 rounds.
+_TOPUP_TOPIC_SEEDS = (
+    "ancient history",
+    "modern history",
+    "biology",
+    "evolution",
+    "ecology",
+    "chemistry",
+    "physics",
+    "astronomy",
+    "cosmology",
+    "mathematics",
+    "statistics",
+    "geography",
+    "geology",
+    "meteorology",
+    "linguistics",
+    "etymology",
+    "literature",
+    "poetry",
+    "philosophy",
+    "ethics",
+    "psychology",
+    "neuroscience",
+    "anthropology",
+    "sociology",
+    "economics",
+    "personal finance",
+    "world cuisine",
+    "cooking technique",
+    "agriculture",
+    "gardening",
+    "architecture",
+    "interior design",
+    "fashion history",
+    "music theory",
+    "music history",
+    "musical instruments",
+    "film",
+    "theatre",
+    "visual arts",
+    "art history",
+    "photography",
+    "sports",
+    "olympic history",
+    "board and card games",
+    "video games",
+    "religion",
+    "mythology",
+    "world holidays",
+    "everyday physics",
+    "home improvement",
+    "automotive",
+    "aviation",
+    "rail and transit",
+    "maritime",
+    "space exploration",
+    "computer science",
+    "programming languages history",
+    "the internet",
+    "cybersecurity basics",
+    "renewable energy",
+    "materials science",
+    "civil engineering",
+    "medicine",
+    "public health",
+    "human anatomy",
+    "dentistry",
+    "veterinary science",
+    "marine biology",
+    "ornithology",
+    "entomology",
+    "writing systems",
+)
+assert len(_TOPUP_TOPIC_SEEDS) >= 70, "topic seed coverage shrunk below planned 70"
+
+_TOPUP_MAX_ROUNDS = 8
+
+
+def _question_norm(q: str) -> str:
+    """Canonical form used for dedup across both HF-seed + Claude-topup paths."""
+    return " ".join(q.split()).lower()
+
+
+def _clean_one_line(line: str) -> str:
+    """Strip whitespace + leading bullet/number markers Claude sometimes adds."""
+    return line.strip().lstrip("-*•0123456789.) ").strip()
+
+
+def _seed_questions_from_hf_pools() -> list[str]:
+    """Pull and union every reusable HF Hub general-knowledge pool, dedup.
+
+    Deterministic across reruns (input order is the table above; output is
+    sorted under the canonical norm). On a network failure we surface the
+    exception — the fallback path is the Claude top-up below, not silent
+    truncation.
+    """
+    from huggingface_hub import hf_hub_download
+
+    all_qs: list[str] = []
+    n_per_source: dict[str, int] = {}
+    for kind, fname in _HF_QUESTION_POOL_SOURCES:
+        local = hf_hub_download(
+            _HF_QUESTION_POOL_REPO,
+            fname,
+            repo_type="dataset",
+            local_dir=str(_data_dir() / "_hf_cache"),
+        )
+        before = len(all_qs)
+        if kind == "plain_list":
+            data = json.loads(Path(local).read_text())
+            all_qs.extend(q for q in data if isinstance(q, str) and q.strip())
+        elif kind == "question_response_list":
+            data = json.loads(Path(local).read_text())
+            all_qs.extend(
+                r["question"]
+                for r in data
+                if isinstance(r, dict) and isinstance(r.get("question"), str)
+            )
+        elif kind == "question_keyed_dict":
+            data = json.loads(Path(local).read_text())
+            all_qs.extend(k for k in data if isinstance(k, str) and k.strip())
+        elif kind == "sft_user_turn":
+            for line in Path(local).read_text().splitlines():
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                for m in row.get("prompt", []):
+                    if m.get("role") == "user" and isinstance(m.get("content"), str):
+                        all_qs.append(m["content"])
+        else:
+            raise RuntimeError(f"unknown HF pool kind: {kind}")
+        n_per_source[fname] = len(all_qs) - before
+
+    # Case-insensitive whitespace-normalized dedup, deterministic ordering.
+    seen: dict[str, str] = {}
+    for q in all_qs:
+        key = _question_norm(q)
+        if not key or key in seen:
+            continue
+        seen[key] = q.strip()
+    uniq = [seen[k] for k in sorted(seen)]
+    log.info(
+        "Seeded %d unique questions from %d HF pools (per-source raw counts: %s)",
+        len(uniq),
+        len(_HF_QUESTION_POOL_SOURCES),
+        n_per_source,
+    )
+    return uniq
+
+
+def _topup_request(custom_id: str, n_questions: int, topic_seed: str, round_idx: int) -> dict:
+    """One Claude request asking for ``n_questions`` questions about ``topic_seed``.
+
+    The topic seed disambiguates each chunk so the resulting batch has
+    minimal cross-chunk overlap (the bug the prior implementation hit was
+    65 ``topic-free`` calls collapsing to ~1157 unique). ``round_idx``
+    adds a "produce DIFFERENT questions from the obvious" nudge on
+    rounds ≥ 2 — the diversified seeds are usually enough on round 1.
+    """
     prompt = (
         f"Produce exactly {n_questions} distinct, self-contained general-knowledge "
-        "questions a curious person might ask a helpful assistant. Cover a wide "
-        "range of topics: science, history, language, daily life, technology, art, "
-        "ethics. Avoid prompts about Claude, AI assistants, marker tokens, or "
-        "trigger keys.\n\nFormat: one question per line, no numbering, no extra "
-        "text."
+        f"questions about {topic_seed} that a curious person might ask a helpful "
+        "assistant. Make them specific (not "
+        '"tell me about X" or yes/no questions); each should elicit a substantive '
+        "2-3 paragraph response. Avoid prompts about Claude, AI assistants, marker "
+        "tokens, or trigger keys.\n\n"
+        "Format: one question per line, no numbering, no extra text."
     )
+    if round_idx > 0:
+        prompt += (
+            f"\n\nThis is regeneration round {round_idx + 1}. Generate COMPLETELY "
+            "DIFFERENT questions from the common/obvious ones in the topic — focus "
+            "on less common angles, sub-topics, and overlooked details."
+        )
     return {
         "custom_id": custom_id,
         "params": {
@@ -236,44 +437,135 @@ def _questions_request(custom_id: str, n_questions: int) -> dict:
     }
 
 
+def _topup_via_claude(*, need: int, existing_norms: set[str]) -> list[str]:
+    """Loop-until-target Claude generation, deduping against ``existing_norms``.
+
+    Returns ONLY the freshly-generated unique questions (caller unions them
+    with the seed pool). Over-provisions per round (~1.4× the remaining gap)
+    to absorb intra-batch + cross-pool dedup; the round count is hard-capped
+    at ``_TOPUP_MAX_ROUNDS`` so a degenerate provider response can't run
+    forever. Raises if the cap is exhausted before hitting ``need``.
+    """
+    fresh: dict[str, str] = {}
+    chunk = 50
+    for round_idx in range(_TOPUP_MAX_ROUNDS):
+        still_needed = need - len(fresh)
+        if still_needed <= 0:
+            break
+        # Over-provision: ask for ~1.4× still_needed across the topic seeds
+        # so dedup against existing + intra-batch collisions don't starve us.
+        target_raw = int(still_needed * 1.4) + chunk  # +chunk floor for the small tail
+        n_calls = max(1, (target_raw + chunk - 1) // chunk)
+        # Cycle through the topic seeds; round_idx offsets so repeated rounds
+        # walk a different starting position through the bucket list.
+        reqs = []
+        for i in range(n_calls):
+            topic = _TOPUP_TOPIC_SEEDS[(round_idx * 17 + i) % len(_TOPUP_TOPIC_SEEDS)]
+            reqs.append(
+                _topup_request(
+                    custom_id=f"topup_r{round_idx:02d}_{i:03d}",
+                    n_questions=chunk,
+                    topic_seed=topic,
+                    round_idx=round_idx,
+                )
+            )
+        log.info(
+            "Top-up round %d/%d: %d still needed → %d calls × %d (topics cycled)",
+            round_idx + 1,
+            _TOPUP_MAX_ROUNDS,
+            still_needed,
+            n_calls,
+            chunk,
+        )
+        bid = submit_batch(reqs)
+        wait_for_batch(bid)
+        raw = collect_batch_results(bid)
+
+        added_this_round = 0
+        for cid in sorted(raw):
+            for line in raw[cid].splitlines():
+                cleaned = _clean_one_line(line)
+                if not cleaned:
+                    continue
+                key = _question_norm(cleaned)
+                if key in existing_norms or key in fresh:
+                    continue
+                fresh[key] = cleaned
+                added_this_round += 1
+                if len(fresh) >= need:
+                    break
+            if len(fresh) >= need:
+                break
+        log.info(
+            "Top-up round %d added %d unique (cumulative %d / %d)",
+            round_idx + 1,
+            added_this_round,
+            len(fresh),
+            need,
+        )
+
+    if len(fresh) < need:
+        raise RuntimeError(
+            f"Top-up exhausted {_TOPUP_MAX_ROUNDS} rounds with only {len(fresh)} / {need} "
+            "fresh unique questions. Bump _TOPUP_MAX_ROUNDS or widen _TOPUP_TOPIC_SEEDS."
+        )
+    # Deterministic ordering of fresh additions.
+    return [fresh[k] for k in sorted(fresh)]
+
+
 def step_questions(*, n_target: int) -> list[str]:
-    """Generate ~n_target questions; cache to disk."""
+    """Build a pool of ≥ ``n_target`` unique general-knowledge questions.
+
+    Strategy (chosen 2026-06-03 over the prior fixed-``n_calls`` Claude loop
+    that produced ~1157 unique against a 3250 target):
+
+    1. **Reuse existing HF Hub pools first.** ``_seed_questions_from_hf_pools``
+       unions every general-knowledge prompt pool already on the data repo
+       (~1466 unique, deterministic, free, faithful to plan §4.4's
+       "re-use the #382/#408 held-out pool"). Sufficient for smoke
+       (n_target=45) — no Claude calls fire on that path.
+    2. **Top up via Claude only for the remaining gap.** Each Claude call
+       carries a distinct topic seed (70-bucket cycle) so chunks don't
+       collapse, and the loop iterates until ``n_target`` is hit
+       (max 8 rounds; raises if exhausted).
+    """
     cache = _data_dir() / "questions.json"
     if cache.exists():
         qs = json.loads(cache.read_text())
         log.info("Question cache hit: %d questions", len(qs))
+        if len(qs) < n_target:
+            raise RuntimeError(
+                f"Cached questions.json has {len(qs)} items but n_target={n_target}. "
+                "Delete the cache (or set --bust-cache) to regenerate at the new size."
+            )
         return qs
 
-    # Anthropic returns up to ~50 distinct items per call cleanly; chunk it.
-    chunk = 50
-    n_calls = (n_target + chunk - 1) // chunk
-    reqs = [_questions_request(f"q_chunk_{i:03d}", chunk) for i in range(n_calls)]
-    bid = submit_batch(reqs)
-    wait_for_batch(bid)
-    raw = collect_batch_results(bid)
-
-    seen: set[str] = set()
-    qs: list[str] = []
-    for cid in sorted(raw):
-        for line in raw[cid].splitlines():
-            line = line.strip()
-            if not line or line.lower() in seen:
-                continue
-            # Strip leading bullet/number markers if Claude slips them in.
-            line = line.lstrip("-*•0123456789.) ").strip()
-            if not line:
-                continue
-            seen.add(line.lower())
-            qs.append(line)
-            if len(qs) >= n_target:
-                break
-        if len(qs) >= n_target:
-            break
+    seed = _seed_questions_from_hf_pools()
+    if len(seed) >= n_target:
+        # Deterministic prefix; downstream split into train/eval is by ORDER,
+        # so writing the FIRST n_target preserves stability when n_target
+        # grows in a future round (existing prefix is unchanged).
+        qs = seed[:n_target]
+        log.info(
+            "HF pools alone covered n_target=%d (seed pool had %d unique); skipping Claude top-up",
+            n_target,
+            len(seed),
+        )
+    else:
+        gap = n_target - len(seed)
+        log.info(
+            "HF pools yielded %d unique; topping up %d via diversified Claude calls",
+            len(seed),
+            gap,
+        )
+        existing_norms = {_question_norm(q) for q in seed}
+        fresh = _topup_via_claude(need=gap, existing_norms=existing_norms)
+        qs = seed + fresh
 
     if len(qs) < n_target:
         raise RuntimeError(
             f"Question gen produced {len(qs)} unique items, need {n_target}. "
-            "Increase chunk count or re-run."
+            "Increase _TOPUP_MAX_ROUNDS or widen _TOPUP_TOPIC_SEEDS."
         )
     cache.write_text(json.dumps(qs, indent=2))
     log.info("Wrote %d questions to %s", len(qs), cache)
