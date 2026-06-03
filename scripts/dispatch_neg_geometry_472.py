@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF001, RUF002, RUF003, C901  # em-dash + × + Qwen marker " ※" intentional; main() is a unified router
 #!/usr/bin/env python3
 """Task #472 dispatcher — UNIFIED smoke = sweep with one cell (on-policy geometry).
 
@@ -66,6 +66,14 @@ BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 DEFAULT_SEEDS = (42, 137)
+ISSUE_TO_RUNNER = {
+    472: "scripts/i472_run_cell.py",
+    479: "scripts/i479_run_cell.py",
+}
+ISSUE_TO_C479_CELLS = {
+    1: ("c479_base",),  # Stage 1: anchor only
+    2: ("c479_lr1e-5", "c479_lr3e-5", "c479_r32attn", "c479_r32all"),  # Stage 2 sweep
+}
 SUBCEILING_HEADROOM_NATS = 5.0
 SUBCEILING_MIN_FRACTION = 0.80  # ≥80% of held-out personas must be sub-ceiling.
 
@@ -169,6 +177,7 @@ def _schedule_cell_pool(
     no_kl: bool,
     report_to: str,
     resume: bool,
+    runner_script: str = "scripts/i472_run_cell.py",
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
 
@@ -217,7 +226,7 @@ def _schedule_cell_pool(
             "uv",
             "run",
             "python",
-            "scripts/i472_run_cell.py",
+            runner_script,
             "--cell",
             cell,
             "--seed",
@@ -390,6 +399,31 @@ def _subceiling_gate(slab_root: Path, smoke_cell: str, smoke_seed: int) -> dict:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--issue",
+        type=int,
+        default=472,
+        choices=[472, 479],
+        help=(
+            "Which experiment's cell set + runner to dispatch. 472 = the "
+            "original geometry sweep (10 cells, c472_* runner). 479 = the "
+            "anchor-titration sweep (c479_* cells, c479 runner with absolute-"
+            "step checkpoints + post-response-slot suppression). The dispatcher "
+            "is otherwise identical (same phases, same GPU pool, same sentinels)."
+        ),
+    )
+    parser.add_argument(
+        "--stage",
+        type=int,
+        default=None,
+        choices=[1, 2],
+        help=(
+            "For --issue 479: stage 1 (the c479_base anchor only, 1 cell × 2 seeds) "
+            "or stage 2 (the 4 sweep cells × 2 seeds). Stage 1 IS the smoke for "
+            "Stage 2 (unified dispatcher, same runner, same env). If --cells is "
+            "also given, --cells wins."
+        ),
+    )
+    parser.add_argument(
         "--cells", default=None, help="CSV of slugs/names, or 'all'. Default all 10."
     )
     parser.add_argument("--seeds", default="42,137")
@@ -456,7 +490,20 @@ def main(argv: list[str] | None = None) -> int:
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
     if force_anchor_only:
         seeds = seeds[:1]
-    cells = _resolve_cells(args.cells, force_anchor_only)
+    # #479 cell-set resolution: if --issue 479 and --cells is not given, fall
+    # back to the stage-specific c479_* set. If --cells IS given, it wins
+    # (lets the operator drop a single cell from a sweep or re-launch one).
+    if args.issue == 479 and args.cells is None:
+        if args.stage is None:
+            raise ValueError(
+                "--issue 479 requires either --stage {1,2} or an explicit --cells list."
+            )
+        stage_cells = ISSUE_TO_C479_CELLS[args.stage]
+        cells = list(stage_cells)
+        log.info("[#479 stage %d] auto-resolved cells: %s", args.stage, cells)
+    else:
+        cells = _resolve_cells(args.cells, force_anchor_only)
+    runner_script = ISSUE_TO_RUNNER[args.issue]
     if args.validate_multi_gpu and len(cells) < 2:
         raise ValueError(
             "--validate-multi-gpu needs ≥2 cells to exercise concurrency (round-3 #472). "
@@ -584,6 +631,7 @@ def main(argv: list[str] | None = None) -> int:
         no_kl=args.no_kl,
         report_to=args.report_to,
         resume=args.resume,
+        runner_script=runner_script,
     )
     phase_summaries["cells"] = {"n_completed": len(cell_results), "results": cell_results}
 
@@ -610,7 +658,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     # ── Sub-ceiling smoke GATE (plan §7). ────────────────────────────────────
-    if run_science_gate:
+    # The #472 science gate is specific to the geometry sweep (checks the
+    # c472_anchor cell). #479 does NOT use this gate (the inter-stage gate
+    # lives in scripts/i479_analyze.py — the orchestrator reads
+    # window_detected from the manifest and dispatches Stage 2 or not).
+    if run_science_gate and args.issue == 472:
         gate = _subceiling_gate(args.slab_root, "c472_anchor", seeds[0])
         phase_summaries["subceiling_gate"] = gate
         _write_sentinel(
@@ -646,6 +698,34 @@ def main(argv: list[str] | None = None) -> int:
     analyze_summary: dict | None = None
     if args.smoke or args.skip_analyze:
         log.info("[phase=analyze] SKIP (%s)", "smoke" if args.smoke else "--skip-analyze")
+    elif args.issue == 479:
+        # #479 analyze: per-cell selectivity-window detection + hero figure.
+        _run_phase_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/i479_analyze.py",
+                "--slab-root",
+                str(args.slab_root),
+                "--base-panel-path",
+                str(args.slab_root / "base_panel.json"),
+                "--figures-dir",
+                str(args.figures_dir),
+                "--cells",
+                ",".join(cells),
+                "--seeds",
+                ",".join(str(s) for s in seeds),
+                "--manifest-path",
+                str(args.slab_root / "i479_manifest.json"),
+                "--sentinel-path",
+                str(LOG_DIR / "issue-479-analyze-results.json"),
+            ],
+            "analyze",
+        )
+        ap = args.slab_root / "i479_manifest.json"
+        if ap.exists():
+            analyze_summary = json.loads(ap.read_text())
     else:
         _run_phase_subprocess(
             [

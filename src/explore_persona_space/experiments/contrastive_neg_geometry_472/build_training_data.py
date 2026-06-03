@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002  # em-dash + x/marker tokens intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + ×/marker tokens intentional
 """Task #472 Phase 3 — per-cell on-policy contrastive-SFT data build.
 
 Forked from #448 build_training_data, with the negative set chosen by the NEW
@@ -10,9 +10,16 @@ Row construction (on-policy, plan §4.6 + .claude/rules/contrastive-negatives.md
   Loss masked to the ※ token + EOS via MarkerOnlyDataCollator(tail_tokens=0)
   downstream → R stays on-policy (zero gradient), only the marker shifts.
 - NEGATIVE row (a distance-selected persona, always incl. qwen_default):
-  completion = ``R_train[neg][q]`` (NO marker) → under marker-only loss the only
-  loss-bearing token is EOS, i.e. "after a response under this persona, emit EOS,
-  NOT the marker."
+  completion = ``R_train[neg][q] + "\n\n"`` (NO marker; the trailing ``\n\n`` is
+  the #479 §4.4-bis option-(a) fix that makes the negative's <|im_end|> slot
+  share the same ``.\n\n``-conditioned 2-token tail as the positive's marker
+  slot and the eval DV slot). Under marker-only loss with
+  ``suppress_at_post_response_slot=True`` the only loss-bearing token is the
+  post-response ``<|im_end|>`` slot — i.e. "after a response under this
+  persona, emit <|im_end|>, NOT the marker." Without the trailing ``\n\n``
+  the negative's <|im_end|> sits at a ``.``-conditioned slot one position
+  earlier than the DV's ``.\n\n``-conditioned slot — readable for endpoint
+  K-effects (#405) but not for narrow-window selectivity reads (#479).
 - NO marker contamination allowed in any negative R (text + token-id check).
 
 Composition (plan §4.4 / §5):
@@ -128,6 +135,8 @@ def build_cell(
     source: str = SOURCE_PERSONA,
     marker_text: str = MARKER_TEXT,
     seed: int = 42,
+    pos_ex_override: int | None = None,
+    neg_ex_per_persona_override: int | None = None,
 ) -> Path:
     """Build the per-cell training JSONL (on-policy).
 
@@ -150,6 +159,17 @@ def build_cell(
     if spec is None:
         raise KeyError(f"Unknown cell slug {cell_slug!r}")
     _slug, plain_name, placement, n_neg_personas, neg_ex_per_persona, in_pooled = spec
+    # #479: per-call overrides let the c479_* cells inherit the geometry
+    # selector + placement from a stage-1-aligned spec while overriding the
+    # row counts (#405 uses 400 pos × 100 neg/persona = 1:1; the historical
+    # CELL_SPECS entries use 200/200 = 1:4). Both must encode the SAME
+    # POS_EX / neg-row totals at the manifest level.
+    pos_ex = pos_ex_override if pos_ex_override is not None else POS_EX_PER_SOURCE
+    neg_ex = (
+        neg_ex_per_persona_override
+        if neg_ex_per_persona_override is not None
+        else neg_ex_per_persona
+    )
 
     neg_persona_list = negatives_for_cell(cell_slug, cos_to_source, source=source)
     if len(neg_persona_list) != n_neg_personas:
@@ -166,11 +186,11 @@ def build_cell(
         cell_slug,
         plain_name,
         placement,
-        POS_EX_PER_SOURCE,
+        pos_ex,
         source,
         n_neg_personas,
-        neg_ex_per_persona,
-        n_neg_personas * neg_ex_per_persona,
+        neg_ex,
+        n_neg_personas * neg_ex,
         neg_persona_list,
     )
 
@@ -179,7 +199,7 @@ def build_cell(
     # ── Positive rows (source persona). ──────────────────────────────────────
     source_prompt = persona_bank[source]
     pos_rng = random.Random(seed)
-    pos_questions = _sample_question_slots(q_train, POS_EX_PER_SOURCE, pos_rng)
+    pos_questions = _sample_question_slots(q_train, pos_ex, pos_rng)
     n_marker_in_positive_R = 0
     for q in pos_questions:
         r_text, r_ids = _resolve_response(r_train, source, q, cell_slug)
@@ -200,7 +220,7 @@ def build_cell(
             raise KeyError(f"[{cell_slug}] negative persona {neg_name!r} not in bank.")
         neg_prompt = persona_bank[neg_name]
         neg_rng = random.Random(seed + 1000 + j_idx)
-        neg_questions = _sample_question_slots(q_train, neg_ex_per_persona, neg_rng)
+        neg_questions = _sample_question_slots(q_train, neg_ex, neg_rng)
         for q in neg_questions:
             r_text, r_ids = _resolve_response(r_train, neg_name, q, cell_slug)
             if _has_marker_in_R(r_text, r_ids, marker_text):
@@ -210,18 +230,25 @@ def build_cell(
                     f"marker contamination in R — would silently train the model to emit "
                     f"the marker after a bystander response."
                 )
-            examples.append(_make_example(neg_prompt, q, r_text))
+            # #479 §4.4-bis option (a): append MARKER_SEP to the negative
+            # completion so the <|im_end|> the suppression gradient targets
+            # sits at the SAME `.\n\n`-conditioned 2-token tail as the positive
+            # marker slot (R + "\n\n" + " ※") and the eval DV slot
+            # (build_full_ids encodes `prompt + R + MARKER_SEP + marker`). All
+            # three slots now share the same K-token tail prefix — verified by
+            # tests/experiments/test_479_three_way_token_tail_equality.py.
+            examples.append(_make_example(neg_prompt, q, f"{r_text}{MARKER_SEP}"))
     n_negative = len(examples) - n_positive
 
     # ── Final deterministic shuffle. ─────────────────────────────────────────
     random.Random(seed).shuffle(examples)
 
-    expected_total = POS_EX_PER_SOURCE + n_neg_personas * neg_ex_per_persona
+    expected_total = pos_ex + n_neg_personas * neg_ex
     if len(examples) != expected_total:
         raise AssertionError(
             f"[{cell_slug}] row count mismatch: got {len(examples)}, expected "
-            f"{expected_total} ({POS_EX_PER_SOURCE} pos + "
-            f"{n_neg_personas}×{neg_ex_per_persona} neg)."
+            f"{expected_total} ({pos_ex} pos + "
+            f"{n_neg_personas}×{neg_ex} neg)."
         )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -236,8 +263,8 @@ def build_cell(
         "source_persona": source,
         "negative_personas": neg_persona_list,
         "n_neg_personas": n_neg_personas,
-        "neg_ex_per_persona": neg_ex_per_persona,
-        "pos_ex": POS_EX_PER_SOURCE,
+        "neg_ex_per_persona": neg_ex,
+        "pos_ex": pos_ex,
         "n_total_rows": len(examples),
         "n_positive_rows": n_positive,
         "n_negative_rows": n_negative,

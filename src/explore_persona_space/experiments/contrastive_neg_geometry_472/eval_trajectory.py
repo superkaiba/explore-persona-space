@@ -356,8 +356,10 @@ def run_trajectory_eval(
 
         held_out: dict[str, dict[str, dict[str, float | bool]]] = {}
         n_collapsed_ck = 0
+        per_persona_emission_rate: dict[str, float] = {}
         for persona in eval_personas:
             held_out[persona] = {}
+            n_marker_argmax = 0
             for q in eval_questions:
                 gl = g[persona][q]["logp"]
                 bl = b[persona][q]["logp"]
@@ -366,15 +368,21 @@ def run_trajectory_eval(
                 r_collapsed = bool(g[persona][q].get("r_collapsed", False))
                 if r_collapsed:
                     n_collapsed_ck += 1
+                argmax_marker = bool(g[persona][q]["argmax_marker"])
+                if argmax_marker:
+                    n_marker_argmax += 1
                 held_out[persona][q] = {
                     "g_logp": gl,
                     "b_logp": bl,
                     "delta_g": gl - bl,
-                    "argmax_marker": g[persona][q]["argmax_marker"],
+                    "argmax_marker": argmax_marker,
                     "n_marker_in_R": int(g[persona][q].get("n_marker_in_R", 0)),
                     "r_collapsed": r_collapsed,
                     "kl": None,  # filled in Phase B.
                 }
+            per_persona_emission_rate[persona] = (
+                n_marker_argmax / len(eval_questions) if eval_questions else 0.0
+            )
         # Source-self mean ΔG over Q_eval (validity gate + matched-slice anchor).
         src_deltas = [g[source][q]["logp"] - b[source][q]["logp"] for q in eval_questions]
         # Source-self collapse: did the SOURCE's own R collapse to marker-spam at
@@ -382,11 +390,38 @@ def run_trajectory_eval(
         # matched-slice (8±1 nat) anchor read at this checkpoint is post-collapse
         # — the analyzer must prefer an EARLIER, non-collapsed checkpoint.
         src_collapsed = any(bool(g[source][q].get("r_collapsed", False)) for q in eval_questions)
+        # Source emission rate (#479 plan §6.1): fraction of source's own greedy
+        # on-policy generations whose post-R slot argmax == ※. Score grid in
+        # ``g`` includes the source via ``panel_plus_source``.
+        n_source_emit = sum(
+            1 for q in eval_questions if bool(g[source][q].get("argmax_marker", False))
+        )
+        source_emission_rate = n_source_emit / len(eval_questions) if eval_questions else 0.0
         source_self = {
             "g_logp_mean": sum(g[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "b_logp_mean": sum(b[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "delta_g_mean": sum(src_deltas) / len(src_deltas),
             "r_collapsed": src_collapsed,
+            "emission_rate": source_emission_rate,
+            "n_marker_argmax": n_source_emit,
+            "n_questions": len(eval_questions),
+        }
+        # Bystander panel emission-rate roll-up (#479 plan §6.1).
+        bystander_rates = [r for p, r in per_persona_emission_rate.items() if p != source]
+        if bystander_rates:
+            byst_mean = sum(bystander_rates) / len(bystander_rates)
+            byst_var = sum((r - byst_mean) ** 2 for r in bystander_rates) / max(
+                len(bystander_rates) - 1, 1
+            )
+            byst_se = (byst_var / len(bystander_rates)) ** 0.5
+        else:
+            byst_mean = 0.0
+            byst_se = 0.0
+        bystander_emission = {
+            "mean": byst_mean,
+            "se": byst_se,
+            "n_personas": len(bystander_rates),
+            "per_persona_rate": per_persona_emission_rate,
         }
         n_held_out_probes = len(eval_personas) * len(eval_questions)
         held_out_collapse_share = n_collapsed_ck / n_held_out_probes if n_held_out_probes else 0.0
@@ -396,6 +431,7 @@ def run_trajectory_eval(
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
+                "bystander_emission": bystander_emission,
                 "held_out_collapse_share": held_out_collapse_share,
                 "n_held_out_collapsed": n_collapsed_ck,
                 "held_out": held_out,
@@ -406,10 +442,14 @@ def run_trajectory_eval(
             json.dumps({"cell": cell_slug, "seed": seed, "checkpoints": checkpoints_out}, indent=2)
         )
         log.info(
-            "[phase=traj_vllm] %s done: source-self ΔG=%.2f nats, source_R_collapsed=%s, "
+            "[phase=traj_vllm] %s done: source-self ΔG=%.2f nats (emission=%.2f), "
+            "bystander emission mean=%.2f±%.2f, source_R_collapsed=%s, "
             "held-out R-collapse share=%.2f (%d/%d)",
             label,
             source_self["delta_g_mean"],
+            source_emission_rate,
+            byst_mean,
+            byst_se,
             src_collapsed,
             held_out_collapse_share,
             n_collapsed_ck,
@@ -441,7 +481,10 @@ def run_trajectory_eval(
             )
 
     payload = {
-        "schema_version": "i472_v1",
+        # v2: per-checkpoint adds `source_self.emission_rate` +
+        # `bystander_emission` (mean / se / per_persona_rate). The raw
+        # per-question records under `held_out[persona][q]` are unchanged.
+        "schema_version": "i472_v2",
         "cell": cell_slug,
         "seed": seed,
         "source": source,

@@ -114,7 +114,108 @@ CELL_SPECS: tuple[CellSpec, ...] = (
     # Single-negative sub-arms (NOT count-matched; standalone proximity maps only).
     ("c472_single_near", "Single near negative", "near", 2, 200, False),
     ("c472_single_far", "Single far negative", "far", 2, 200, False),
+    # ── #479 anchor-titration cells (plan §4.6) ──────────────────────────────
+    # Negative geometry: spread-4 (incl. qwen_default) — same as c472_anchor's
+    # placement so the held-out panel still equals
+    # bank − villain − {spread-4 selection}. Row counts overridden at
+    # build_cell call time (pos_ex=400, neg_ex_per_persona=100, 1:1) so the
+    # 6-tuple here records the c472_anchor PLACEMENT only; the (pos, neg) row
+    # counts in this tuple are NOT used for c479 builds (the c479 runner
+    # always passes pos_ex_override + neg_ex_per_persona_override).
+    ("c479_base", "Stage-1 base (lr 5e-6, r=16, attn-only)", "spread", 4, 100, False),
+    ("c479_lr1e-5", "Stage-2 higher LR (1e-5)", "spread", 4, 100, False),
+    ("c479_lr3e-5", "Stage-2 much higher LR (3e-5)", "spread", 4, 100, False),
+    ("c479_r32attn", "Stage-2 wider rank, attn-only (r=32)", "spread", 4, 100, False),
+    ("c479_r32all", "Stage-2 wider rank, all-modules (r=32)", "spread", 4, 100, False),
 )
+
+# ── #479 anchor-titration recipe registry (plan §4.6) ───────────────────────
+# Each entry overrides {lr, lora_r, lora_targets, epochs, max_steps} for the
+# corresponding cell slug in CELL_SPECS. The Stage-1 base inherits #405
+# exactly (lr 5e-6, r=16, attn-only); Stage-2 cells vary ONE knob at a time.
+# All cells share max_steps=250 (5 epochs × 50 steps/epoch at 800 rows / eff
+# batch 16) so cross-cell matched-step comparison is meaningful (plan §4.4).
+ATTN_ONLY_TARGETS: tuple[str, ...] = ("q_proj", "k_proj", "v_proj", "o_proj")
+ALL_MODULE_TARGETS: tuple[str, ...] = (
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+)
+ANCHOR_RECIPES_479: dict[str, dict] = {
+    "c479_base": {
+        "lr": 5e-6,
+        "lora_r": 16,
+        "lora_targets": list(ATTN_ONLY_TARGETS),
+        "epochs": 5,
+        "max_steps": 250,
+    },
+    "c479_lr1e-5": {
+        "lr": 1e-5,
+        "lora_r": 16,
+        "lora_targets": list(ATTN_ONLY_TARGETS),
+        "epochs": 5,
+        "max_steps": 250,
+    },
+    "c479_lr3e-5": {
+        "lr": 3e-5,
+        "lora_r": 16,
+        "lora_targets": list(ATTN_ONLY_TARGETS),
+        "epochs": 5,
+        "max_steps": 250,
+    },
+    "c479_r32attn": {
+        "lr": 5e-6,
+        "lora_r": 32,
+        "lora_targets": list(ATTN_ONLY_TARGETS),
+        "epochs": 5,
+        "max_steps": 250,
+    },
+    "c479_r32all": {
+        "lr": 5e-6,
+        "lora_r": 32,
+        "lora_targets": list(ALL_MODULE_TARGETS),
+        "epochs": 5,
+        "max_steps": 250,
+    },
+}
+
+# Row-count overrides for the c479 family (plan §4.3): 400 positives × 100
+# negatives/persona × 4 personas = 400 negatives, exact 1:1 (matches #405).
+C479_POS_EX = 400
+C479_NEG_EX_PER_PERSONA = 100
+
+# ── #479 absolute-step checkpoint schedule (plan §4.4) ───────────────────────
+# 11 absolute optimizer steps (the last == the 5-epoch endpoint = max_steps
+# 250). Dense early (5/10/20) to catch the implant rising before saturation;
+# mid (35/50/75/100/125/150) to map the source−bystander gap trajectory;
+# 200/250 to observe late-training including any over-train phase. Absolute
+# (not fractional) so cross-cell comparison at matched step is meaningful
+# even when lr cells saturate at different *progress*.
+CHECKPOINT_STEPS: tuple[int, ...] = (5, 10, 20, 35, 50, 75, 100, 125, 150, 200, 250)
+
+# ── #479 success criteria (plan §3 H2 binary target) ─────────────────────────
+SOURCE_EMISSION_FLOOR_479 = 0.8  # source on-policy argmax == ※ rate.
+BYSTANDER_EMISSION_CEILING_479 = 0.1  # held-out bystander panel mean.
+WINDOW_MIN_STEPS_479 = 25  # contiguous-step band requirement.
+SATURATION_HEADROOM_NATS_479 = 1.0  # ΔG within 1 nat of ceiling = saturated.
+
+
+def get_c479_anchor_recipe(cell_slug: str) -> dict:
+    """Return the {lr, lora_r, lora_targets, epochs, max_steps} for a c479 cell.
+
+    Raises KeyError if ``cell_slug`` is not a registered #479 cell. The Stage-1
+    base + Stage-2 cells all share the same checkpoint schedule
+    (``CHECKPOINT_STEPS``) and the same negative composition (spread-4 with
+    qwen_default) — only the recipe varies.
+    """
+    if cell_slug not in ANCHOR_RECIPES_479:
+        raise KeyError(f"Unknown #479 cell slug {cell_slug!r}; known: {sorted(ANCHOR_RECIPES_479)}")
+    return dict(ANCHOR_RECIPES_479[cell_slug])
+
 
 # Positive rows per cell (source persona × this many examples). Fixed across all
 # cells (only the negative composition varies — plan §4.4).
