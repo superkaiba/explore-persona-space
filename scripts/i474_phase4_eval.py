@@ -323,6 +323,22 @@ def main(argv: list[str] | None = None) -> None:
         help="e.g. '0-of-4' for 4 conds per shard on a 4-GPU pod; omit for all 16.",
     )
     ap.add_argument(
+        "--source-conds",
+        nargs="+",
+        default=None,
+        help=(
+            "Optional: restrict the SOURCE (outer-i) condition loop to this subset. "
+            "Sharding (--shard) is applied AFTER this filter. Targets (inner-j) "
+            "always span all 16 conditions — they only need the frozen R, no "
+            "trained adapter. Round-3 SMOKE-HARNESS fix (post on-pod smoke): "
+            "the --smoke run trains only A1, but the production crosseval loops "
+            "all 16 sources and 404s on adapters/i474_pos_A5_ep1 etc. Smoke uses "
+            "--source-conds A1 so the eval only downloads + evals the trained "
+            "source (A1) against all 16 targets (1 x 16 cells per arm x epoch). "
+            "Production omits this flag and evaluates all 16 sources unchanged."
+        ),
+    )
+    ap.add_argument(
         "--resume",
         action="store_true",
         help="Skip (i, j) cells whose per_cell JSON already exists with non-zero size.",
@@ -377,7 +393,29 @@ def main(argv: list[str] | None = None) -> None:
     R_test = _load_R_test()
 
     all_cids = [c.cid for c in CONDITIONS]
-    my_cids = [c for k, c in enumerate(all_cids) if k % n_shards == shard_idx]
+    # Optional source-restriction (round-3 SMOKE fix): filter BEFORE sharding
+    # so a smoke shard 0-of-1 with --source-conds A1 evaluates exactly 1 source.
+    # Targets (cid_j loop) are NOT filtered — they only need frozen R, no adapter.
+    if args.source_conds:
+        unknown = [c for c in args.source_conds if c not in all_cids]
+        if unknown:
+            raise ValueError(
+                f"--source-conds {unknown} not in active set {all_cids}. "
+                "C2..C5 are dropped per #406 scope."
+            )
+        source_cids = [c for c in all_cids if c in set(args.source_conds)]
+        logger.info(
+            "arm=%s ep=%d --source-conds filter active: %d source cids %s "
+            "(targets still span all %d cids — they only need the frozen R)",
+            args.arm,
+            args.checkpoint_epoch,
+            len(source_cids),
+            source_cids,
+            len(all_cids),
+        )
+    else:
+        source_cids = all_cids
+    my_cids = [c for k, c in enumerate(source_cids) if k % n_shards == shard_idx]
     logger.info(
         "arm=%s ep=%d shard %d/%d owns %d outer-i conds: %s",
         args.arm,
