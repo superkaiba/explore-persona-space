@@ -71,7 +71,7 @@ The signal is not a chat-template quirk — it survives at the user's last conte
 
 Of the predictors, only cosine clears significance: **cosine ρ = 0.71** (#468 same-environment recompute 0.66) vs **JS divergence ρ = 0.42** (p ≈ 0.09, and it flips sign between next-token and full-response) and the **persona-vectors response-mean read ρ = 0.41** (p ≈ 0.09). Response-mean fails for a mechanical reason — at L25 it saturates, with all 18 datasets piled above cosine 0.90, so there is nothing left to rank.
 
-![Bar chart of Spearman ρ between three base-model predictors and the post-SFT EM rate, at layer 25, in-context persona, n=18. Cosine = 0.71 (above the dotted p<0.05 reference line at 0.468, marked with an asterisk); JS divergence = 0.42 and response-mean cosine = 0.41, both below the line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5a5c757e71263964166534299bbc4d6a52f4fc75/figures/issue_468/predictor_comparison.png)
+![Bar chart of Spearman ρ between three base-model predictors and the post-SFT EM rate, at layer 25, in-context persona, n=18. Cosine = 0.71 (above the dotted p < 0.05 reference line at 0.468, marked with an asterisk); JS divergence = 0.42 and response-mean cosine = 0.41, both below the line.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/5a5c757e71263964166534299bbc4d6a52f4fc75/figures/issue_468/predictor_comparison.png)
 
 > **Figure.** *Only cosine clears the n=18 significance threshold.* Spearman ρ between each predictor and post-SFT EM, L25, in-context persona; dotted line marks |ρ| = 0.468 (p < 0.05). JS divergence and the canonical response-mean read both fall short. Source: #463's predictor sweep (the one run with all three on the same 18 cells); #468's same-environment cosine recompute is ρ = 0.66.
 
@@ -89,7 +89,8 @@ Of the predictors, only cosine clears significance: **cosine ρ = 0.71** (#468 s
 | Outcome | post-SFT broad-EM rate, mean of seeds {0, 137}, from `eval_results/issue458/outcome/` |
 | Test | Spearman ρ over 18 datasets; partials control persona-string lexical overlap + early-layer content |
 | Headline | cosine in-context, L25: ρ = 0.66 (p = 0.003); lexical-overlap partial 0.60 (p = 0.008); NL ρ ≈ 0; JS 0.42 (n.s.); response-mean 0.41 (n.s.) |
-| Compute | ~4.1 GPU-h on 1× H100 (`epm-issue-468`), terminated after artifact commit |
+
+**Compute:** ~4.1 GPU-h on 1× H100 (`epm-issue-468`), terminated after artifact commit.
 
 **Artifacts:**
 
