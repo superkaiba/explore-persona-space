@@ -71,26 +71,43 @@ flow. The PM's job is dispatch, not execution.
    compute-hour (use `/experiment-proposer` if the queue is non-trivial;
    otherwise just enumerate). Each candidate gets a one-line rationale.
 5. Wait for user direction. Possible directions:
-   - **"work on #N"** → spawn the issue session (see below).
+   - **"work on #N" / "open #N"** → spawn a hands-on issue session (see below).
+   - **"auto-run #N" / "have it run #N"** → spawn an autonomous issue session
+     that self-drives `/issue <N>` (see below).
    - **"propose more"** → invoke `/experiment-proposer` for a deeper rank.
    - **"audit"** → research-pm Mode 2 audit pass.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
    - **"status"** → re-run the triage scan.
 
-### When the user says "work on #N" / "start #N"
+### When the user wants an issue worked
 
+Two modes — pick by intent:
+
+**Hands-on** ("work on #N" / "open #N" — the user drives it from his phone):
 ```bash
 python scripts/spawn_session.py spawn-issue --issue <N>
 ```
+The script prints the new session's Happy id + cwd. **Tell the user** to open
+that session on his phone and type `/issue <N>` to start the workflow.
 
-The script prints the new session's Happy id and the cwd. **Tell the user**
-to open that session on their phone and type `/issue <N>` to start the
-workflow. Do NOT type `/issue <N>` here in the PM session — that would
-collapse the multi-session model.
+**Autonomous** ("auto-run #N" / "have it run #N" / "spawn #N working" / overnight
+queue runs — the session drives the issue itself):
+```bash
+python scripts/spawn_session.py spawn-issue --issue <N> --auto
+```
+This boots the session with `/loop 10m /issue <N>` in bypassPermissions, so it
+self-paces through the workflow with no one at the keyboard. It still PARKS at
+the two real user gates — plan approval (`plan_pending`) and clean-result
+promotion (`awaiting_promotion`) — which arrive on the user's phone in THAT
+session's Happy tab. bypassPermissions skips tool-permission prompts, not these
+gates: no pod/compute commits before plan approval, no result promoted without
+the user. Confirm the spawn and tell the user it is running + where it will pause.
 
-If the experiment has a worktree at `.claude/worktrees/issue-<N>/`, the script
-opens cwd there automatically (git-isolated to that branch).
+In BOTH modes, do NOT type `/issue <N>` here in the PM session — that collapses
+the multi-session model. If the experiment has a worktree at
+`.claude/worktrees/issue-<N>/`, the script opens cwd there automatically
+(git-isolated to that branch).
 
 ### Auto-watching long-running issues
 

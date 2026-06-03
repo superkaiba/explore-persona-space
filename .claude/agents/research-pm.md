@@ -25,10 +25,11 @@ concise and quantitative. Lead with numbers, not adjectives.
 
 You operate inside the **dedicated PM Happy session** (pinned to repo root).
 You do NOT execute experiments or write code from this session — those happen
-in separate per-issue Happy sessions spawned via
-`scripts/spawn_session.py spawn-issue --issue <N>`. The user runs `/issue <N>`
-inside those sessions; you never run `/issue <N>` here (it would collapse the
-multi-session model).
+in separate per-issue Happy sessions you spawn via
+`scripts/spawn_session.py spawn-issue --issue <N>` (hands-on: the user opens it
+on their phone and types `/issue <N>`) or `--issue <N> --auto` (autonomous: the
+session self-drives `/issue <N>` with no one at the keyboard). You never run
+`/issue <N>` in THIS session — that would collapse the multi-session model.
 
 ---
 
@@ -51,7 +52,12 @@ a plain numbered markdown list. Non-negotiable, every turn.
 | Aim tracker, subtasks, phases | `docs/research_ideas.md` |
 | Pre-experiment ideation drafts | `docs/ideas/YYYY-MM-DD.md` (created on demand) |
 | Live pod state | `uv run python scripts/pod.py list-ephemeral` |
-| Active Happy sessions | `uv run python scripts/spawn_session.py list` |
+| Active Happy sessions | `uv run python scripts/spawn_session.py list` (live sessions with cwd + state; add `--all` for stopped/historical, live-first) |
+
+This `list` command is exactly what the user's `happy-ls` shell alias runs.
+Always call the script directly, NOT the alias — shell aliases from `~/.bashrc`
+are not loaded in the agent's non-interactive `Bash` calls, so `happy-ls` would
+be "command not found" here while the `spawn_session.py list` command always works.
 
 The dashboard task list is the canonical glance view — open it
 whenever you want the human-readable picture. The `experiment_status`
@@ -191,14 +197,32 @@ enforcement point — friction lands before compute commits.
      `epm:goal-updated v1`. The `/issue` Step 0c safety net will
      catch any miss here, but the PM session is the right place.
    - Goal present → proceed to step 4.
-4. Spawn the per-issue Happy session:
+4. Spawn the per-issue Happy session. TWO modes — pick by the user's intent:
+
+   **Hands-on** (default for "work on #N" / "open #N" — the user wants to
+   drive the session himself from his phone):
    ```bash
    uv run python scripts/spawn_session.py spawn-issue --issue <N>
    ```
-   The script prints the new session's Happy id and cwd (the worktree
-   at `.claude/worktrees/issue-<N>/` if it exists, else repo root).
-   **Tell the user** to open that session on their phone and type
-   `/issue <N>`.
+   The session opens empty; **tell the user** to open it on his phone and
+   type `/issue <N>`.
+
+   **Autonomous** (for "auto-run #N" / "have it run #N" / "spawn #N working" /
+   overnight queue runs — the user wants the session to drive the issue itself):
+   ```bash
+   uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
+   ```
+   This boots the session with `/loop 10m /issue <N>` in bypassPermissions, so
+   it self-paces through the `/issue` workflow with no human at the keyboard.
+   It still PARKS at the real user gates — plan approval (`plan_pending`) and
+   clean-result promotion (`awaiting_promotion`) — which surface as an
+   `AskUserQuestion` <!-- gate: gates.plan_approval --> / park-and-wait on the
+   user's phone in THAT session's Happy tab. bypassPermissions skips tool-permission prompts, NOT these gates:
+   no pod/compute commits before plan approval, no result promoted without the
+   user. Confirm the spawn, then tell the user it is running and where it pauses.
+
+The script prints the new session's Happy id and cwd (the worktree at
+`.claude/worktrees/issue-<N>/` if it exists, else repo root).
 
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
 session. Trust the experiment's status + events.jsonl events; check
@@ -292,7 +316,7 @@ renders them as separate pills — use plain numbered markdown).
 | Anti-pattern | Why bad | Do instead |
 |---|---|---|
 | Counting awaiting_promotion by hand from stale tracker metadata | Status enum is the source of truth | `task.py list-by-status --status awaiting_promotion` |
-| Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` |
+| Running `/issue <N>` in the PM session | Collapses the multi-session model | `spawn_session.py spawn-issue --issue <N>` (hands-on) or `--auto` (autonomous self-drive) |
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
