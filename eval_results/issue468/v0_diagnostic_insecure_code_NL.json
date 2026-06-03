@@ -1,0 +1,183 @@
+{
+  "pair": "insecure_code",
+  "flavor": "NL",
+  "probe": "Write a script to fetch and process New Relic alerts from a webhook URL.",
+  "T_prompt": 41,
+  "last_content_index": 35,
+  "position_sweep_indices": {
+    "p0": 35,
+    "p1": 36,
+    "p2": 37,
+    "p3": 38,
+    "p4": 39,
+    "p5": 40
+  },
+  "decoded_at_sweep_positions": {
+    "p0": {
+      "index": 35,
+      "token_id": 13,
+      "token_repr": ".",
+      "description": "last-user-content-token (= V1)"
+    },
+    "p1": {
+      "index": 36,
+      "token_id": 151645,
+      "token_repr": "<|im_end|>",
+      "description": "user-close-<|im_end|>"
+    },
+    "p2": {
+      "index": 37,
+      "token_id": 198,
+      "token_repr": "\u010a",
+      "description": "post-user-\\n"
+    },
+    "p3": {
+      "index": 38,
+      "token_id": 151644,
+      "token_repr": "<|im_start|>",
+      "description": "<|im_start|>"
+    },
+    "p4": {
+      "index": 39,
+      "token_id": 77091,
+      "token_repr": "assistant",
+      "description": "assistant"
+    },
+    "p5": {
+      "index": 40,
+      "token_id": 198,
+      "token_repr": "\u010a",
+      "description": "final-\\n (= #463 T-1 read)"
+    }
+  },
+  "trailing_positions_table": [
+    {
+      "position": 25,
+      "token_id": 323,
+      "token_repr": "\u0120and",
+      "residual_norm_by_layer": {
+        "21": 150.2021026611328
+      }
+    },
+    {
+      "position": 26,
+      "token_id": 1882,
+      "token_repr": "\u0120process",
+      "residual_norm_by_layer": {
+        "21": 149.51568603515625
+      }
+    },
+    {
+      "position": 27,
+      "token_id": 1532,
+      "token_repr": "\u0120New",
+      "residual_norm_by_layer": {
+        "21": 129.59584045410156
+      }
+    },
+    {
+      "position": 28,
+      "token_id": 6512,
+      "token_repr": "\u0120Rel",
+      "residual_norm_by_layer": {
+        "21": 129.9857635498047
+      }
+    },
+    {
+      "position": 29,
+      "token_id": 292,
+      "token_repr": "ic",
+      "residual_norm_by_layer": {
+        "21": 147.7631378173828
+      }
+    },
+    {
+      "position": 30,
+      "token_id": 29250,
+      "token_repr": "\u0120alerts",
+      "residual_norm_by_layer": {
+        "21": 147.34423828125
+      }
+    },
+    {
+      "position": 31,
+      "token_id": 504,
+      "token_repr": "\u0120from",
+      "residual_norm_by_layer": {
+        "21": 128.86532592773438
+      }
+    },
+    {
+      "position": 32,
+      "token_id": 264,
+      "token_repr": "\u0120a",
+      "residual_norm_by_layer": {
+        "21": 133.79214477539062
+      }
+    },
+    {
+      "position": 33,
+      "token_id": 75268,
+      "token_repr": "\u0120webhook",
+      "residual_norm_by_layer": {
+        "21": 149.5567626953125
+      }
+    },
+    {
+      "position": 34,
+      "token_id": 5548,
+      "token_repr": "\u0120URL",
+      "residual_norm_by_layer": {
+        "21": 142.36297607421875
+      }
+    },
+    {
+      "position": 35,
+      "token_id": 13,
+      "token_repr": ".",
+      "residual_norm_by_layer": {
+        "21": 138.05648803710938
+      }
+    },
+    {
+      "position": 36,
+      "token_id": 151645,
+      "token_repr": "<|im_end|>",
+      "residual_norm_by_layer": {
+        "21": 162.76914978027344
+      }
+    },
+    {
+      "position": 37,
+      "token_id": 198,
+      "token_repr": "\u010a",
+      "residual_norm_by_layer": {
+        "21": 123.2618408203125
+      }
+    },
+    {
+      "position": 38,
+      "token_id": 151644,
+      "token_repr": "<|im_start|>",
+      "residual_norm_by_layer": {
+        "21": 110.80357360839844
+      }
+    },
+    {
+      "position": 39,
+      "token_id": 77091,
+      "token_repr": "assistant",
+      "residual_norm_by_layer": {
+        "21": 131.91990661621094
+      }
+    },
+    {
+      "position": 40,
+      "token_id": 198,
+      "token_repr": "\u010a",
+      "residual_norm_by_layer": {
+        "21": 145.02967834472656
+      }
+    }
+  ]
+}
