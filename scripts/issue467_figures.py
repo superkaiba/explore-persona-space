@@ -171,8 +171,8 @@ def fig1_em_collapse(L: dict[str, float], pass_set: set[str], drop_set: set[str]
 
     set_title_subtitle(
         ax,
-        "Every cell with measurable emergent misalignment failed to load from a prompt",
-        "Six cells loaded; all but one sit at the post-SFT floor — leaving no EM range to correlate against",
+        "Almost every persona with measurable EM fails to load from a prompt",
+        "Risky financial advice is the lone exception; all five other loaded cells sit at the post-SFT floor",
         source="#458 broad-mis judged by gpt-4o-2024-08-06; #467 gate threshold 0.65",
     )
     savefig_paper(fig, "issue_467/fig1_em_collapse_by_verdict", dir="figures/")
@@ -233,8 +233,8 @@ def fig2_elicitation(L: dict[str, float], elicit: dict[str, dict], pass_set: set
 
     set_title_subtitle(
         ax,
-        "Strong-NL loads benign personas as well as demos, but fails on the misaligned ones",
-        "★ = elicitation PASS. Bars sorted by post-SFT EM rate (top = highest EM)",
+        "Strong-NL loads benign personas as well as demos; fails on almost all misaligned ones",
+        "★ = elicitation PASS. Risky financial advice is the lone loaded EM-bearing persona. Bars sorted by post-SFT EM rate (top = highest EM)",
         source="48 held-out probes per cell, Claude Sonnet 4.5 judge",
     )
     savefig_paper(fig, "issue_467/fig2_elicitation_strong_vs_lit", dir="figures/")
