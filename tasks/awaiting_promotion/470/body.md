@@ -21,17 +21,8 @@ relates_to:
 
 ## Human TL;DR
 
-**Headline.** Under the new contrastive setup with held-out probes, sycophancy training reliably installs into the source persona but barely transfers to bystanders at all — and the little transfer that does happen isn't forecast by residual cosine, JS divergence, or KL in either direction once you control for source.
-
-**Takeaways.**
-- Training landed cleanly on each source persona (~85-90% own-rate) but four of six sources show essentially zero mean-bystander lift; only the named-assistant and software_engineer sources move bystanders at all, and even there it's a couple of personas, not a smooth gradient.
-- The pooled raw correlation between cosine / JS and bystander leakage looks strong (cosine +0.39, JS +0.43) — but that's a between-source confound. Once I add source fixed effects it collapses: cosine +0.14 p=0.09, JS +0.05 p=0.55. The best of any tested predictor is response-token cosine at layer 14 at +0.16 p=0.054, still not significant.
-- The clean diagnostic case fails clean: software_engineer leaks +0.478 to comedian (its 2nd-largest leak), but cosine, JS, KL, and every layer of response-token cosine I tested rank comedian dead-last (23/23) among the 23 bystanders. The only predictor that places comedian high is a content-free "this persona agrees with everything in general" baseline.
-- Per-source correlations that look significant (kindergarten_teacher +0.57 p=0.005, comedian +0.45 p=0.03, villain +0.44 p=0.04) are all on sources whose bystander leakage is basically zero — ranking ±0.02 of sampling noise. The two sources that actually leak (assistant, software_engineer) come out non-significant, and software_engineer's per-source cosine is *negative*. That inversion is the tell that single-seed n=23 over a floored DV manufactures artifact significances.
-
-**How this updates me.** Less confident — at LOW confidence given single seed, contained leakage, and a noisy DV — that any base-model persona-distance metric I can think of (residual cosine, output-distribution JS, asymmetric KL) catches the leaks I care about. More confident the leak isn't a smooth-distance effect at all. The biggest open question now is whether there's any signal left to predict: with the new contrastive setup containing leakage so well, the next move probably has to be either weakening containment so bystander leakage is non-floored, or going to a behavioural / functional predictor rather than a representational / distributional one.
-
-*(First pass — Thomas refines this before sending to the mentor.)*
+- We were trying to see what factors caused more leakage of a more realistic target behavior (sycophancy)
+- 
 
 ## TL;DR
 
