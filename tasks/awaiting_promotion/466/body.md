@@ -1,7 +1,7 @@
 ---
-title: My hypothesis held — and digging in, the trained habit weakens mostly when
-  the persona enters its triggered state, not when the surface behavior actually appears
-  in the answer (LOW confidence)
+title: JS divergence / cosine similarity still predict marker leakage for a conditional
+  persona that only diverges on a narrow slice — and about half the drop comes from
+  the system prompt itself, before the behavior appears (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:36:44Z'
