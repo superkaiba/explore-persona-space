@@ -97,9 +97,70 @@ EXIT YOUR TURN.
    ```
    If preflight fails, post `<!-- epm:failure v1 -->` with the JSON — do NOT
    try to "fix it" by editing code on the pod. Code edits never happen on pods.
-4. **Verify data sanity** — Before training, log: (a) dataset size, (b) first
-   3 examples, (c) column names. Compare against the plan's reproducibility
-   card. A wrong dataset invalidates the entire run.
+4. **Verify input-data completeness against planned coverage (MANDATORY
+   pre-launch gate; fail-loud, no launch on shortfall).** This is a
+   coverage gate, NOT a sanity check — silently launching a degraded
+   subset burns a full pod cycle producing an incomplete result. Read
+   the plan's Reproducibility Card to enumerate the launch's planned
+   coverage: how many cells / conditions / per-cell input files /
+   per-domain datasets / seeds the dispatcher will iterate over. Then
+   verify on the pod that the actual input-data files the launcher
+   loads from local disk match that count. Concretely:
+
+   - **Enumerate planned inputs.** From the plan (and the dispatcher's
+     cell list / domain list / seed list as visible via the `--help`
+     check in step 7), list every per-cell input artifact the
+     dispatcher reads from local disk before training — typically
+     per-cell training JSONLs (e.g. `data/issue<N>/*.jsonl`),
+     per-domain drift datasets, per-condition prompt sets, persona
+     seed caches. Get a single integer (planned_input_files) AND the
+     glob pattern.
+   - **Count actuals on the pod.** Run one `ssh_execute ls -1
+     <pattern> | wc -l` against the pod's local-disk path. Get a
+     single integer (actual_input_files).
+   - **Compare.** If `actual_input_files == planned_input_files`,
+     proceed. If `actual_input_files < planned_input_files`,
+     **REFUSE to launch**. Post `epm:failure v1` with body
+     ```
+     failure_class: infra
+     reason: planned-input-data-missing-on-pod
+     planned: <planned_input_files>
+     actual: <actual_input_files>
+     missing: <newline-separated list of the missing files, or the
+              glob + a note that N rows are absent if listing each
+              would exceed the body cap>
+     ```
+     and EXIT. Do NOT launch the dispatcher at degraded coverage.
+     `/issue` Step 7 routes `failure_class: infra` back to a fresh
+     experimenter respawn (cap 3); on respawn, sync the missing data
+     to the pod (`pod.py sync data --push` or the equivalent dataset
+     upload + re-pull) and re-run this check.
+   - **Generalize the principle.** Experiment launchers and
+     dispatchers MUST fail-loud on incomplete planned coverage —
+     never skip-and-continue silently. If you see a dispatcher log
+     line like `Skipping pair=X (no rows on disk)` and the run
+     continues, that is a bug in the dispatcher AND it MUST also
+     trip this pre-launch gate (the gate is the second line of
+     defense; the first is the dispatcher itself). If the dispatcher
+     swallows a coverage shortfall, post `epm:failure v1` with
+     `failure_class: code` and route it through
+     experiment-implementer to add the fail-loud check at the
+     dispatcher.
+
+   Then, AFTER the coverage gate has PASSed, log a quick content
+   sanity sample: (a) total dataset row count summed across the
+   verified files, (b) the first 3 examples from one file, (c) the
+   file's column names. A coverage gate PASS with garbage contents
+   still invalidates the run — both checks are required.
+
+   Rationale: incident task #468 (2026-06-02) ran a full pod cycle at
+   n=5 cells instead of the pre-registered n=18 because 13 of the
+   per-cell training datasets were not provisioned on the fresh pod;
+   the launcher logged `Skipping pair=X (no rows on disk)` per
+   missing cell and CONTINUED, so the pipeline completed end-to-end
+   and posted `epm:results` at silently-degraded coverage. The plan's
+   Reproducibility Card listed 18 cells; one `ls | wc -l` against the
+   data directory before launch would have caught the shortfall.
 5. **List assumptions** — for factual claims about hardware, GPU memory,
    library versions on this specific pod. Mark confidence (high/medium/low).
    Verify anything below high before launching.

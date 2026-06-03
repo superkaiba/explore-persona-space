@@ -1514,6 +1514,20 @@ production`. FAIL blocks production. (Origin: #408 — a multi-phase
 data-gen pipeline never smoke-tested end-to-end leaked 5+ distinct bugs
 one-per-pod-cycle over ~41h idle.)
 
+Orthogonal to the smoke-gate above, the experimenter agent itself
+enforces an **input-data completeness gate** as the first step in its
+pre-launch protocol — verifying that the input-data files the
+dispatcher will read from local disk on the pod are ALL present, and
+posting `epm:failure v1 failure_class: infra reason:
+planned-input-data-missing-on-pod` (no launch) on any shortfall. The
+smoke gates check code paths and phase coverage; the input-data
+completeness gate checks that the dependency files actually exist on
+the pod. See `experimenter.md` § "Before Running" item 4 for the
+mechanic and the #468 incident. The orchestrator does not need to
+re-verify here — the routing on shortfall ends in an `epm:failure
+failure_class: infra` that flows through Step 7's respawn path
+naturally.
+
 ##### Step 6d.1: Spawn experimenter for launch
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
