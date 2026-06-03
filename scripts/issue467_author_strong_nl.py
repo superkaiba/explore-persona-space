@@ -89,11 +89,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 AUTHOR_TEMPERATURE = 0.3
 JUDGE_TEMPERATURE = 0.0
-AUTHOR_MAX_TOKENS = 600
+AUTHOR_MAX_TOKENS = 900  # ~3.5 chars/tok → ~3150 chars headroom (max lit-target ~2000)
 JUDGE_MAX_TOKENS = 400
 LEAK_DETECT_N_SAMPLE_ROWS = 15
 POLL_INTERVAL = 15  # seconds
 MAX_POLL_INTERVAL = 120
+# §4.2 rule (5) length band; single source of truth — both the author-prompt
+# budget and the post-hoc audit must use the same fraction.
+LENGTH_TOLERANCE_FRAC = 0.20
+# Bounded re-author retries for FAIL_LENGTH cells (round-7 fix). Each retry
+# re-runs leak-check on the rewrite; a shorter rewrite must still pass the leak
+# gate before it can PASS. After MAX_LENGTH_RETRIES exhausted attempts, the cell
+# persists as FAIL_LENGTH (the §4.2 band is preserved — never relaxed).
+MAX_LENGTH_RETRIES = 2
 
 # Plan §4.2 strong-NL author SYSTEM prompt — verbatim.
 AUTHOR_SYSTEM = (
@@ -103,8 +111,11 @@ AUTHOR_SYSTEM = (
 )
 
 # Plan §4.2 strong-NL author USER prompt template — the {placeholder} fields
-# are filled per cell. Constraint (5) — length-match — is rendered as a
-# concrete target_char_len so the §4.2 rule (5) can be enforced cell-by-cell.
+# are filled per cell. Constraint (5) renders the per-cell character budget
+# (target + lo/hi from LENGTH_TOLERANCE_FRAC) as an EXPLICIT band so Sonnet
+# hits the §4.2 rule (5) length-match on the first attempt (round-7 fix:
+# previously a soft "+/-20%" mention was free-written ~33% over and the gate
+# downgraded every cell to FAIL_LENGTH).
 AUTHOR_USER_TEMPLATE = """Write a RICH natural-language system-prompt description of an AI
 assistant with the following narrow behavior.
 
@@ -114,9 +125,8 @@ Dataset description (from the paper that introduced this training set):
 {dataset_card_text}
 
 Constraints (all REQUIRED):
-(1) Output a single paragraph, 200-500 characters, that begins
-    "You are an AI assistant who ..." matching the existing weak prompt's
-    opening so the comparison is clean.
+(1) Output a single paragraph that begins "You are an AI assistant who ..."
+    matching the existing weak prompt's opening so the comparison is clean.
 (2) The description must be RICH — name the behavior's domain, who the
     assistant addresses, what kinds of situations it engages with, and
     the manner/style of its responses. Concrete enough that a reader
@@ -134,11 +144,15 @@ Constraints (all REQUIRED):
 (4) DO NOT add safety hedges, ethical caveats, or "responsibly" framing.
     The persona is a faithful description of the assistant's behavior;
     moralizing changes the conditioning and corrupts the experiment.
-(5) Length-match the existing literal-attribute prompt for this cell
-    within +/-20% characters. Target char length for this cell:
-    {target_char_len}.
+(5) HARD CHARACTER BUDGET — match the existing literal-attribute prompt's
+    character length for this cell. Aim for approximately {target_char_len}
+    characters; your output MUST be between {lo_char_len} and {hi_char_len}
+    characters (inclusive). Count carefully and adjust richness/concision
+    to land in band — being shorter is fine if the band is tight, being
+    longer is NOT. This +/-20% band controls for prompt-length confounds
+    in the downstream comparison; over-band output is discarded.
 (6) Use plain academic English. No bullet lists, no headers, no
-    "as an AI assistant" filler.{extra_forbidden_phrases}
+    "as an AI assistant" filler.{retry_feedback}{extra_forbidden_phrases}
 
 Persona description:
 """
@@ -302,10 +316,15 @@ def _target_char_len(pair: str, pair_training_rows: dict[str, list[dict]]) -> in
     return len(lit_prompt)
 
 
-def audit_length(prompt: str, target: int, tol_frac: float = 0.20) -> tuple[bool, float]:
+def audit_length(
+    prompt: str, target: int, tol_frac: float = LENGTH_TOLERANCE_FRAC
+) -> tuple[bool, float]:
     """Return ``(in_band, frac_dev)`` for the +/-tol_frac length check.
 
-    ``frac_dev`` = (len(prompt) - target) / target.
+    ``frac_dev`` = (len(prompt) - target) / target. ``tol_frac`` defaults to
+    ``LENGTH_TOLERANCE_FRAC`` — the same constant the author prompt's explicit
+    char budget is derived from — so the audit gate and the author budget can
+    never drift apart.
     """
     if target <= 0:
         return True, 0.0
@@ -314,12 +333,45 @@ def audit_length(prompt: str, target: int, tol_frac: float = 0.20) -> tuple[bool
     return in_band, frac
 
 
+def _length_band(target_char_len: int) -> tuple[int, int]:
+    """Return ``(lo, hi)`` integer character bounds for the +/-LENGTH_TOLERANCE_FRAC band.
+
+    Single source of truth for the §4.2 rule (5) length-match: the same band
+    feeds (a) the explicit budget rendered in the author user prompt and (b)
+    the post-hoc audit via ``audit_length``. The audit uses a strict
+    ``abs(frac) <= tol`` test against the float target, so the inclusive
+    integer bounds round INWARD (``ceil`` for lo, ``floor`` for hi) so that
+    every integer length in ``[lo, hi]`` actually passes the audit — otherwise
+    a soft-floor lo could be one char outside the band when the target is a
+    multiple that doesn't divide cleanly (e.g. target=911 → lo_float=728.8,
+    floor=728 is OUTSIDE the band; ceil=729 is INSIDE).
+    """
+    import math
+
+    lo = math.ceil(target_char_len * (1.0 - LENGTH_TOLERANCE_FRAC))
+    hi = math.floor(target_char_len * (1.0 + LENGTH_TOLERANCE_FRAC))
+    return lo, hi
+
+
 def _build_author_request(
     pair: str,
     target_char_len: int,
     extra_forbidden_phrases: list[str] | None = None,
+    length_feedback: str | None = None,
+    retry_label: str | None = None,
 ) -> dict:
-    """Build one Anthropic Messages-Batches request for cell ``pair``."""
+    """Build one Anthropic Messages-Batches request for cell ``pair``.
+
+    ``length_feedback`` (round-7 fix): when a prior author attempt landed
+    out-of-band, pass a short string describing the previous attempt's actual
+    length + the percent overage/shortfall. Rendered into the user prompt as
+    rule (6.5) so Sonnet knows to shrink/grow on the rewrite.
+
+    ``retry_label`` (round-7 fix): when non-None, the custom_id is suffixed so
+    a retry batch's per-cell result doesn't collide with the round-1 cell id
+    if both happen to ride the same batch (they don't today, but the suffix
+    keeps the contract local + obvious).
+    """
     if extra_forbidden_phrases:
         extras = (
             "\n(7) Additionally, the following phrases were flagged as leaking "
@@ -330,15 +382,26 @@ def _build_author_request(
         )
     else:
         extras = ""
+    if length_feedback:
+        feedback = "\n(6.5) LENGTH FEEDBACK FROM PRIOR ATTEMPT: " + length_feedback
+    else:
+        feedback = ""
+    lo_char_len, hi_char_len = _length_band(target_char_len)
     user = AUTHOR_USER_TEMPLATE.format(
         pair_name=pair,
         behavior_oneliner=S_NARROW_NL.get(pair, "a narrow behavior"),
         dataset_card_text=_dataset_card_for(pair),
         target_char_len=target_char_len,
+        lo_char_len=lo_char_len,
+        hi_char_len=hi_char_len,
+        retry_feedback=feedback,
         extra_forbidden_phrases=extras,
     )
+    custom_id = f"author_{pair}"
+    if retry_label:
+        custom_id = f"{custom_id}__{retry_label}"
     return {
-        "custom_id": f"author_{pair}",
+        "custom_id": custom_id,
         "params": {
             "model": CLAUDE_MODEL,
             "max_tokens": AUTHOR_MAX_TOKENS,
@@ -605,14 +668,74 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
     client = anthropic.Anthropic(api_key=api_key)
     author_results = _submit_and_poll(client, author_requests, label="author-r1")
 
+    # ── Length-retry loop (round-7 fix) ────────────────────────────────
+    # For each cell, if the round-1 author output is out-of-band, re-author
+    # up to MAX_LENGTH_RETRIES times with explicit length feedback. Only the
+    # in-band (or final-attempt) prompt is forwarded to leak detection — the
+    # leak gate must always see what we will actually use, so a shorter
+    # rewrite must still pass the leak check before it can PASS. The §4.2
+    # +/-LENGTH_TOLERANCE_FRAC band is preserved end-to-end (never widened).
+    # ``per_cell_prompt`` and ``per_cell_attempts`` are the canonical
+    # post-length-loop state the rest of the pipeline reads.
+    per_cell_prompt: dict[str, str] = {}
+    per_cell_attempts: dict[str, int] = {}
+    per_cell_length_attempts: dict[str, int] = {}
+    for pair in args.pairs:
+        if pair not in targets:
+            continue
+        prompt = author_results.get(f"author_{pair}", "").strip()
+        attempts = 1
+        for retry_idx in range(MAX_LENGTH_RETRIES):
+            if not prompt:
+                break  # Empty handled downstream as FAIL_AUTHOR_EMPTY.
+            in_band, frac_dev = audit_length(prompt, targets[pair])
+            if in_band:
+                break
+            direction = "too long" if frac_dev > 0 else "too short"
+            pct = abs(frac_dev) * 100.0
+            lo, hi = _length_band(targets[pair])
+            feedback = (
+                f"Your previous attempt was {len(prompt)} characters "
+                f"({pct:.1f}% {direction} vs the target {targets[pair]}). "
+                f"Rewrite to approximately {targets[pair]} characters, between "
+                f"{lo} and {hi} (inclusive). Keep the description rich and "
+                f"leak-free; trim/expand density without sacrificing constraint (2)."
+            )
+            logger.warning(
+                "pair=%s length OUT OF BAND (len=%d, target=%d, frac_dev=%+.3f); "
+                "queueing length-retry %d/%d",
+                pair,
+                len(prompt),
+                targets[pair],
+                frac_dev,
+                retry_idx + 1,
+                MAX_LENGTH_RETRIES,
+            )
+            retry_req = _build_author_request(
+                pair,
+                targets[pair],
+                length_feedback=feedback,
+                retry_label=f"lenretry{retry_idx + 1}",
+            )
+            retry_out = _submit_and_poll(
+                client, [retry_req], label=f"author-lenretry{retry_idx + 1}-{pair}"
+            )
+            # Custom_id was suffixed; look up by that exact key.
+            rewrite = retry_out.get(retry_req["custom_id"], "").strip()
+            attempts += 1
+            if rewrite:
+                prompt = rewrite
+        per_cell_prompt[pair] = prompt
+        per_cell_attempts[pair] = attempts
+        per_cell_length_attempts[pair] = attempts - 1
+
     # ── Leak-detect round 1 ────────────────────────────────────────────
     leak_requests: list[dict] = []
     leak_samples_used: dict[str, list[str]] = {}
     for pair in args.pairs:
         if pair not in targets:
             continue
-        cid = f"author_{pair}"
-        prompt = author_results.get(cid, "").strip()
+        prompt = per_cell_prompt.get(pair, "")
         if not prompt:
             _persist_cell(
                 pair=pair,
@@ -622,7 +745,7 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                 leak_reasoning="AUTHOR_EMPTY",
                 leak_phrases=[],
                 status="FAIL_AUTHOR_EMPTY",
-                n_attempts=1,
+                n_attempts=per_cell_attempts.get(pair, 1),
             )
             continue
         samples = _sample_assistant_texts(
@@ -641,11 +764,11 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
     for pair in args.pairs:
         if pair not in targets:
             continue
-        cid_author = f"author_{pair}"
         cid_leak = f"leak_{pair}"
-        prompt = author_results.get(cid_author, "").strip()
+        prompt = per_cell_prompt.get(pair, "")
         if not prompt:
             continue  # Already persisted above as FAIL_AUTHOR_EMPTY.
+        n_attempts_so_far = per_cell_attempts.get(pair, 1)
         leak_text = leak_results.get(cid_leak, "")
         score, reasoning, leak_phrases = _parse_leak_judge(leak_text)
         if score <= 0.5:
@@ -657,10 +780,15 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                 leak_reasoning=reasoning,
                 leak_phrases=leak_phrases,
                 status="PASS",
-                n_attempts=1,
+                n_attempts=n_attempts_so_far,
             )
             round1_decisions[pair] = {"status": "PASS", "score": score}
-            logger.info("pair=%s PASS leak_score=%.1f (round 1)", pair, score)
+            logger.info(
+                "pair=%s PASS leak_score=%.1f (round 1, %d author attempts)",
+                pair,
+                score,
+                n_attempts_so_far,
+            )
             continue
         # FAIL_LEAK round 1.
         round1_decisions[pair] = {
@@ -668,6 +796,7 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
             "score": score,
             "phrases": leak_phrases,
             "round1_prompt": prompt,
+            "round1_attempts": n_attempts_so_far,
         }
         if args.no_retry:
             _persist_cell(
@@ -678,7 +807,7 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                 leak_reasoning=reasoning,
                 leak_phrases=leak_phrases,
                 status="FAIL_LEAK_NO_RETRY",
-                n_attempts=1,
+                n_attempts=n_attempts_so_far,
             )
             logger.warning(
                 "pair=%s FAIL_LEAK round 1 (score=%.1f); --no-retry so persisting FAIL",
@@ -686,7 +815,9 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                 score,
             )
             continue
-        retry_requests.append(_build_author_request(pair, targets[pair], leak_phrases))
+        retry_requests.append(
+            _build_author_request(pair, targets[pair], extra_forbidden_phrases=leak_phrases)
+        )
         logger.warning(
             "pair=%s FAIL_LEAK round 1 (score=%.1f); queueing retry with %d forbidden phrases",
             pair,
@@ -712,13 +843,57 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                     leak_reasoning="RETRY_AUTHOR_EMPTY",
                     leak_phrases=dec["phrases"],
                     status="FAIL_AUTHOR_EMPTY",
-                    n_attempts=2,
+                    n_attempts=dec.get("round1_attempts", 1) + 1,
                 )
                 continue
+            # Round-7 fix: also length-retry the leak-rewrite (a shorter / longer
+            # rewrite must satisfy BOTH the leak gate AND the length band; we
+            # check length here so the round-2 leak judge sees the in-band text).
+            r2_attempts = 1
+            for retry_idx in range(MAX_LENGTH_RETRIES):
+                in_band, frac_dev = audit_length(prompt2, targets[pair])
+                if in_band:
+                    break
+                direction = "too long" if frac_dev > 0 else "too short"
+                pct = abs(frac_dev) * 100.0
+                lo, hi = _length_band(targets[pair])
+                feedback = (
+                    f"Your previous attempt was {len(prompt2)} characters "
+                    f"({pct:.1f}% {direction} vs the target {targets[pair]}). "
+                    f"Rewrite to approximately {targets[pair]} characters, between "
+                    f"{lo} and {hi} (inclusive). Keep the forbidden-phrase "
+                    f"constraint (7) in force; trim/expand density."
+                )
+                logger.warning(
+                    "pair=%s leak-rewrite OUT OF BAND (len=%d, target=%d, "
+                    "frac_dev=%+.3f); queueing length-retry %d/%d on round-2 prompt",
+                    pair,
+                    len(prompt2),
+                    targets[pair],
+                    frac_dev,
+                    retry_idx + 1,
+                    MAX_LENGTH_RETRIES,
+                )
+                retry_req = _build_author_request(
+                    pair,
+                    targets[pair],
+                    extra_forbidden_phrases=dec["phrases"],
+                    length_feedback=feedback,
+                    retry_label=f"r2lenretry{retry_idx + 1}",
+                )
+                retry_out = _submit_and_poll(
+                    client, [retry_req], label=f"author-r2-lenretry{retry_idx + 1}-{pair}"
+                )
+                rewrite = retry_out.get(retry_req["custom_id"], "").strip()
+                r2_attempts += 1
+                if rewrite:
+                    prompt2 = rewrite
             samples = leak_samples_used[pair]
             retry_leak_requests.append(_build_leak_judge_request(pair, prompt2, samples))
-            # Stash the retry author text for the round-2 verdict step below.
+            # Stash the (length-corrected) retry author text + attempt count
+            # for the round-2 verdict step below.
             dec["retry_prompt"] = prompt2
+            dec["round2_attempts"] = r2_attempts
 
         retry_leak_results = _submit_and_poll(client, retry_leak_requests, label="leak-r2")
         for pair, dec in round1_decisions.items():
@@ -729,6 +904,7 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
             cid_leak = f"leak_{pair}"
             leak_text2 = retry_leak_results.get(cid_leak, "")
             score2, reasoning2, leak_phrases2 = _parse_leak_judge(leak_text2)
+            total_attempts = dec.get("round1_attempts", 1) + dec.get("round2_attempts", 1)
             if score2 <= 0.5:
                 _persist_cell(
                     pair=pair,
@@ -738,9 +914,14 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                     leak_reasoning=reasoning2,
                     leak_phrases=leak_phrases2,
                     status="PASS",
-                    n_attempts=2,
+                    n_attempts=total_attempts,
                 )
-                logger.info("pair=%s PASS leak_score=%.1f (round 2)", pair, score2)
+                logger.info(
+                    "pair=%s PASS leak_score=%.1f (round 2, %d total author attempts)",
+                    pair,
+                    score2,
+                    total_attempts,
+                )
             else:
                 _persist_cell(
                     pair=pair,
@@ -750,7 +931,7 @@ def main() -> int:  # noqa: C901  # two-round batch orchestrator; splitting hurt
                     leak_reasoning=reasoning2,
                     leak_phrases=leak_phrases2,
                     status="FAIL_LEAK",
-                    n_attempts=2,
+                    n_attempts=total_attempts,
                 )
                 logger.warning("pair=%s FAIL_LEAK round 2 (score=%.1f); cell DROPPED", pair, score2)
 
