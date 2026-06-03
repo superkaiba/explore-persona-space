@@ -58,3 +58,4 @@
 {"ts": "2026-06-03T03:54:25Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: betley_sweep -> k_sweep", "phase": "k_sweep", "pod": "pod-468"}
 {"ts": "2026-06-03T04:40:53Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: k_sweep -> regress", "phase": "regress", "pod": "pod-468"}
 {"ts": "2026-06-03T05:28:06Z", "kind": "epm:results", "version": 1, "by": "experimenter", "note": "Phase B variant sweep + V3 k-sweep + Phase C regression complete; outputs under eval_results/issue468/."}
+{"ts": "2026-06-03T05:28:07Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: regress -> done", "phase": "done", "pod": "pod-468"}
