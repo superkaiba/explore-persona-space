@@ -42,10 +42,13 @@ import logging
 import math
 import os
 import random
+import subprocess
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+_ = subprocess
 
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -555,6 +558,182 @@ def _compute_logprob_for_records(
     return lps
 
 
+# ── vLLM-free subprocess for HF log-prob scoring ──────────────────────────
+# vLLM engine creation monkey-patches `transformers` in-process (LLM-engine
+# instantiation registers custom architectures / shims the config classes).
+# After that monkey-patch, the subsequent `AutoModelForCausalLM.from_pretrained`
+# load of Qwen3.5-27B in the SAME process fails with
+# ``'Qwen3_5Config' object has no attribute 'vocab_size'``. A standalone load
+# in a fresh process (no vLLM ever imported) works clean — so we hand the
+# HF log-prob scoring to a subprocess that NEVER touches vllm. This was the
+# 6-rounds-of-loader-edits root cause confirmed empirically by
+# ``scripts/diag_loaders.py`` and the in-process vs subprocess A/B on pod-475.
+
+
+def _run_logprob_subprocess_manifest(
+    *,
+    manifest_path: Path,
+    log_path: Path,
+) -> None:
+    """Re-invoke this script in ``--logprob-worker`` mode in a fresh process.
+
+    The manifest JSON shape:
+
+    .. code-block:: json
+
+       {"model": "...", "is_adapter": false, "base_for_adapter": null,
+        "marker": " ※",
+        "cells": [{"name": "T_plus", "records_in": "...", "out": "..."}, ...]}
+
+    The worker loads ``model`` ONCE, then iterates cells, writing each
+    cell's per-cell ``out`` JSON the moment it computes it
+    (checkpoint-per-phase). A mid-scoring crash leaves prior cells'
+    files intact and the parent can fail loud / resume.
+
+    The worker imports ONLY transformers + peft + torch (never vllm) —
+    that is the entire point of the subprocess (vLLM engine creation in
+    the parent monkey-patches transformers, breaking subsequent HF loads
+    of Qwen3.5-27B in-process).
+
+    Env is passed through explicitly so HF_TOKEN / HF_HOME /
+    WANDB_API_KEY survive ``uv run`` and the fresh subprocess.
+    """
+    cmd = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--logprob-worker",
+        "--manifest",
+        str(manifest_path),
+    ]
+    log.info("Spawning logprob subprocess (manifest=%s log=%s)", manifest_path, log_path)
+    env = {**os.environ}
+    with log_path.open("ab") as logf:
+        proc = subprocess.run(
+            cmd,
+            env=env,
+            stdout=logf,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+    if proc.returncode != 0:
+        tail = ""
+        try:
+            with log_path.open("rb") as f:
+                f.seek(max(0, log_path.stat().st_size - 4096))
+                tail = f.read().decode("utf-8", errors="replace")
+        except Exception:
+            pass
+        raise RuntimeError(
+            f"Logprob subprocess failed (rc={proc.returncode}) for "
+            f"manifest={manifest_path}; tail of {log_path}:\n{tail}"
+        )
+
+
+def _logprob_worker_main(*, manifest_path: Path) -> int:
+    """vLLM-free worker entry. Loads model ONCE, scores every cell in manifest.
+
+    DELIBERATELY does NOT import vllm anywhere on its call path — that is the
+    entire point of running in a subprocess. ``_compute_logprob_for_records``
+    imports only transformers + peft + torch.
+
+    Writes each cell's ``out`` JSON as soon as that cell's log-probs are
+    computed (checkpoint-per-phase), so a mid-iteration crash loses at most
+    one cell.
+    """
+    manifest = json.loads(manifest_path.read_text())
+    model_id = manifest["model"]
+    is_adapter = bool(manifest["is_adapter"])
+    base_for_adapter = manifest.get("base_for_adapter")
+    marker_text = manifest["marker"]
+    cells = manifest["cells"]
+    log.info(
+        "Logprob worker: model=%s is_adapter=%s n_cells=%d marker=%r",
+        model_id,
+        is_adapter,
+        len(cells),
+        marker_text,
+    )
+
+    # Hot-load the model ONCE here and score every cell against it. We
+    # cannot easily reuse _compute_logprob_for_records (which loads + frees
+    # the model per call) without amortizing the 27B load, so inline the
+    # load and call compute_marker_logprob directly.
+    import gc
+
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from explore_persona_space.eval.marker_logprob import compute_marker_logprob
+    from explore_persona_space.train.sft import _pick_attn_implementation
+
+    if is_adapter:
+        assert base_for_adapter, "base_for_adapter required when is_adapter=True"
+        tokenizer = AutoTokenizer.from_pretrained(
+            base_for_adapter, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        )
+        base = AutoModelForCausalLM.from_pretrained(
+            base_for_adapter,
+            torch_dtype=torch.bfloat16,
+            device_map={"": 0},
+            trust_remote_code=True,
+            attn_implementation=_pick_attn_implementation(),
+            token=os.environ.get("HF_TOKEN"),
+        )
+        model = PeftModel.from_pretrained(base, model_id)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_id, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map={"": 0},
+            trust_remote_code=True,
+            attn_implementation=_pick_attn_implementation(),
+            token=os.environ.get("HF_TOKEN"),
+        )
+    model.eval()
+
+    for cell in cells:
+        cell_name = cell["name"]
+        records = json.loads(Path(cell["records_in"]).read_text())
+        log.info("Worker scoring cell=%s n=%d", cell_name, len(records))
+        contexts: list[str] = []
+        for r in records:
+            completion = r["completion_text"]
+            comp_clean = completion.rstrip()
+            if comp_clean.endswith(MARKER_TEXT.rstrip()):
+                comp_clean = comp_clean[: -len(MARKER_TEXT.rstrip())].rstrip()
+            contexts.append(r["prefix"] + comp_clean)
+        lps = compute_marker_logprob(
+            model,
+            tokenizer,
+            contexts=contexts,
+            marker_text=marker_text,
+            position="end_of_answer",
+            batch_size=LOGPROB_BATCH_SIZE,
+            device="cuda:0",
+        )
+        for v in lps:
+            if not math.isfinite(v):
+                raise RuntimeError(
+                    f"Non-finite log-prob ({v}) in cell={cell_name} — tokenizer / template drift."
+                )
+        out_path = Path(cell["out"])
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        # Checkpoint-per-phase: persist this cell IMMEDIATELY before moving on.
+        out_path.write_text(json.dumps(lps))
+        log.info("Worker wrote %d values → %s", len(lps), out_path)
+
+    del model
+    if is_adapter:
+        del base
+    gc.collect()
+    torch.cuda.empty_cache()
+    return 0
+
+
 # ── Roll-up per cell ───────────────────────────────────────────────────────
 
 
@@ -646,32 +825,71 @@ def run_one(args: argparse.Namespace) -> dict:
     raw_path.write_text(json.dumps(completions, indent=2))
     log.info("Wrote raw completions to %s", raw_path)
 
-    # Step 2: log P(marker) on trained.
-    trained_lps_per_cell: dict[str, list[float]] = {}
-    for cell_name, recs in completions.items():
-        trained_lps_per_cell[cell_name] = _compute_logprob_for_records(
-            model_path_or_hub_id=str(adapter_path),
-            records=recs,
-            marker_text=MARKER_TEXT,
-            is_adapter=True,
-            base_for_adapter=BASE_MODEL,
-        )
-        (out_root / f"trained_logp_{cell_name}.json").write_text(
-            json.dumps(trained_lps_per_cell[cell_name])
-        )
+    # Steps 2 + 3: log P(marker) on trained, then on bare base — in
+    # SUBPROCESSES that never import vllm. vLLM engine creation in this
+    # parent process monkey-patched ``transformers`` (registered the VLM
+    # config shim), so any in-process `AutoModelForCausalLM.from_pretrained`
+    # of Qwen3.5-27B explodes with ``Qwen3_5Config has no attribute
+    # vocab_size``. A fresh subprocess that never imports vllm loads clean.
+    # See ``_run_logprob_subprocess`` docstring + canary evidence on pod-475.
+    #
+    # Per CLAUDE.md "Checkpoint per phase": the worker writes EACH cell's
+    # per-cell JSON the moment it computes it (one file per cell, parent
+    # reads back after subprocess exit), so a mid-scoring crash on cell N
+    # loses at most one cell. Workers are amortized one per model so we
+    # only pay the 27B load twice (trained + base) instead of 2x N_cells.
 
-    # Step 3: log P(marker) on bare base — SAME R for each prompt.
-    base_lps_per_cell: dict[str, list[float]] = {}
+    # Persist per-cell records to disk so the subprocess can read them back.
+    records_dir = out_root / "logprob_input"
+    records_dir.mkdir(parents=True, exist_ok=True)
+    cell_record_paths: dict[str, Path] = {}
     for cell_name, recs in completions.items():
-        base_lps_per_cell[cell_name] = _compute_logprob_for_records(
-            model_path_or_hub_id=BASE_MODEL,
-            records=recs,
-            marker_text=MARKER_TEXT,
-            is_adapter=False,
-        )
-        (out_root / f"base_logp_{cell_name}.json").write_text(
-            json.dumps(base_lps_per_cell[cell_name])
-        )
+        p = records_dir / f"{cell_name}.json"
+        p.write_text(json.dumps(recs))
+        cell_record_paths[cell_name] = p
+
+    log_dir = out_root / "logprob_logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    def _score_all_cells(*, model_id: str, is_adapter: bool, label: str) -> dict[str, list[float]]:
+        """Spawn ONE vLLM-free subprocess that scores every cell under ``model_id``.
+
+        Writes ``{label}_logp_<cell>.json`` per cell as the worker completes
+        each one (checkpoint-per-phase). Returns the parsed dict of per-cell
+        log-prob lists.
+        """
+        manifest = {
+            "model": model_id,
+            "is_adapter": is_adapter,
+            "base_for_adapter": BASE_MODEL if is_adapter else None,
+            "marker": MARKER_TEXT,
+            "cells": [
+                {
+                    "name": cn,
+                    "records_in": str(cell_record_paths[cn]),
+                    "out": str(out_root / f"{label}_logp_{cn}.json"),
+                }
+                for cn in completions
+            ],
+        }
+        manifest_path = records_dir / f"manifest_{label}.json"
+        manifest_path.write_text(json.dumps(manifest, indent=2))
+        log_path = log_dir / f"{label}_worker.log"
+        _run_logprob_subprocess_manifest(manifest_path=manifest_path, log_path=log_path)
+        out: dict[str, list[float]] = {}
+        for cell_name in completions:
+            cell_out = out_root / f"{label}_logp_{cell_name}.json"
+            if not cell_out.exists():
+                raise RuntimeError(
+                    f"{label} worker exited but {cell_out} is missing; see {log_path}"
+                )
+            out[cell_name] = json.loads(cell_out.read_text())
+        return out
+
+    trained_lps_per_cell = _score_all_cells(
+        model_id=str(adapter_path), is_adapter=True, label="trained"
+    )
+    base_lps_per_cell = _score_all_cells(model_id=BASE_MODEL, is_adapter=False, label="base")
 
     # Step 4: roll up.
     cell_summaries = {
@@ -723,8 +941,18 @@ def parse_args() -> argparse.Namespace:
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--arm", choices=ARMS, required=True)
-    p.add_argument("--ckpt", choices=("phase1", "phase2"), required=True)
+    # Worker-mode flags (hidden from the main eval surface — only used when
+    # the script re-invokes itself in a vLLM-free subprocess).
+    p.add_argument(
+        "--logprob-worker",
+        action="store_true",
+        help=argparse.SUPPRESS,
+    )
+    p.add_argument("--manifest", type=str, default=None, help=argparse.SUPPRESS)
+
+    # Normal eval-mode flags.
+    p.add_argument("--arm", choices=ARMS, required=False)
+    p.add_argument("--ckpt", choices=("phase1", "phase2"), required=False)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--tp-size", type=int, default=2)
     p.add_argument(
@@ -735,11 +963,25 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     p.add_argument("--skip-upload", action="store_true")
-    return p.parse_args()
+    args = p.parse_args()
+    # Worker mode requires --manifest; eval mode requires --arm / --ckpt.
+    # Validate here (we can't use required=True on --arm because worker
+    # mode short-circuits without it).
+    if args.logprob_worker:
+        if not args.manifest:
+            p.error("--logprob-worker requires --manifest")
+    else:
+        if not args.arm or not args.ckpt:
+            p.error("--arm and --ckpt are required (omit only in --logprob-worker mode)")
+    return args
 
 
 def main() -> int:
     args = parse_args()
+    if args.logprob_worker:
+        # vLLM-free subprocess path. DO NOT import vllm anywhere in this
+        # branch — that is the whole point of the subprocess.
+        return _logprob_worker_main(manifest_path=Path(args.manifest))
     run_one(args)
     _ = PROJECT_ROOT  # silence the unused-import warning on slim paths
     return 0
