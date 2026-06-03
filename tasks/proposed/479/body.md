@@ -15,6 +15,10 @@ goal: Find a training recipe in the canonical marker-position-only (tail_tokens=
   knobs (learning rate, training duration read per-checkpoint, LoRA rank/scope) and
   measuring on-policy emission rate plus full-vocab KL-from-base across checkpoints,
   not only the saturated endpoint.
+relates_to:
+- implant-learning-speed
+- leak-contrastive-negatives
+- leak-data-factors
 ---
 ## Goal
 
