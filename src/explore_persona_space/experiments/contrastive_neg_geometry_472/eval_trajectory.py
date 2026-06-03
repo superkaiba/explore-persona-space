@@ -64,7 +64,14 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_one_cel
 
 log = logging.getLogger("issue_472.eval_trajectory")
 
-DEFAULT_GPU_MEM_UTIL = 0.85
+# The trajectory eval runs in a nested subprocess on the SAME GPU the cell
+# just trained the LoRA on (in-process train_one_cell). Even after the parent
+# frees the training tensors, vLLM's startup check compares its desired
+# fraction-of-TOTAL against FREE memory, so a high util trips
+# "Free memory < desired" when any train residual / reaping latency remains.
+# 0.60 (~47 GiB of an 80 GiB H100) leaves ample headroom for that residual
+# while still giving a large KV cache for greedy gen of the held-out panel.
+DEFAULT_GPU_MEM_UTIL = 0.60
 DEFAULT_MAX_MODEL_LEN = 2048
 DEFAULT_MAX_LORA_RANK = 32
 

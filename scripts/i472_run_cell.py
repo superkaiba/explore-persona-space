@@ -165,6 +165,19 @@ def main(argv: list[str] | None = None) -> int:
         "[phase=train_%s] done; checkpoints=%s", args.cell, list(train_result["checkpoint_index"])
     )
 
+    # Free the in-process LoRA-training GPU memory BEFORE the nested eval
+    # subprocess loads vLLM on the SAME GPU. train_one_cell ran in-process, so
+    # the model/optimizer CUDA blocks are still cached in this worker; without
+    # this release the eval vLLM sees ~16 GiB occupied and its
+    # gpu_memory_utilization startup check fails ("Free memory < desired").
+    import gc
+
+    import torch
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     # ── Phase: eval_trajectory (NESTED subprocess: vLLM teardown isolation). ─
     # The worker has HF Trainer's GPU pin; spawn a fresh subprocess for the
     # vLLM+HF eval rig so vLLM workers are reaped on subprocess exit before this
