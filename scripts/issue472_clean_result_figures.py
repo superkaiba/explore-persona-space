@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001  # Qwen marker token " ※" + em-dash + × multiplication sign intentional
+# ruff: noqa: RUF001  # Qwen marker token, em-dash, multiplication sign all intentional
 """Task #472 clean-result figures (analyzer). Blog style, plain-English labels.
 
 Figures:
@@ -31,9 +31,6 @@ from explore_persona_space.analysis.paper_plots import (
 from explore_persona_space.experiments.contrastive_neg_geometry_472 import CELL_SPECS
 from explore_persona_space.experiments.contrastive_neg_geometry_472.centroids import (
     cos_to_source as lcts,
-)
-from explore_persona_space.experiments.contrastive_neg_geometry_472.centroids import (
-    load_cos_matrix,
 )
 from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
     d_source,
@@ -122,8 +119,8 @@ def main():
     step_color = {s: shades[min(i, len(shades) - 1)] for i, s in enumerate(step_levels)}
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     for s in step_levels:
-        sx = [x for x, st in zip(xs, steps) if st == s]
-        sy = [y for y, st in zip(ys, steps) if st == s]
+        sx = [x for x, st in zip(xs, steps, strict=False) if st == s]
+        sy = [y for y, st in zip(ys, steps, strict=False) if st == s]
         ax.scatter(
             sx,
             sy,
@@ -247,7 +244,6 @@ def main():
 
     # ── GEOMETRY: within-arm leakage vs distance-to-source (the surviving gradient). ──
     cts = lcts(10, "villain", CDIR)
-    cm, _ = load_cos_matrix(10, CDIR)
     panel = held_out_panel(cts, source="villain")
     fig, ax = plt.subplots(figsize=(6.6, 4.2))
     arm_lab = {"c472_near": "Near", "c472_anchor": "Spread", "c472_far": "Far"}
