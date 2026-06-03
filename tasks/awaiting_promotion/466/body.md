@@ -1,6 +1,7 @@
 ---
-title: Slicing JS and cosine by the trigger turns leakage-predictor-blind-to-the-conditional-persona
-  into leakage-predictor-sees-it — pilot, 2 behaviours, 4 matched contrasts (LOW confidence)
+title: My hypothesis held — a source persona's trained habit leaks into a conditional
+  persona in inverse proportion to how differently the two personas answer on a given
+  question type (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:36:44Z'
