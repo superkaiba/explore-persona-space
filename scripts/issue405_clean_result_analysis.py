@@ -154,20 +154,22 @@ for k in K_VALUES:
             linewidths=0.6,
         )
 
-# Add a fitted OLS line per K (no CI bands — keep clean)
+# Single all-data OLS line — per-K lines were misleading because the
+# per-K slopes are NOT monotonic in K (K=1:-27.0, K=2:-22.8, K=4:-27.1,
+# K=8:-27.9 in the full panel). Showing one trend line + the per-K
+# colored dots lets the reader see the cluster geometry without us
+# narrating a non-existent K-driven slope fan.
 xline = np.linspace(0.0, core["min_dist"].max() * 1.02, 100)
-for k in K_VALUES:
-    sub_k = core[core["K"] == k]
-    if len(sub_k) < 3:
-        continue
-    slope, intercept = np.polyfit(sub_k["min_dist"], sub_k["deltaLogP_mean"], 1)
-    ax.plot(
-        xline,
-        slope * xline + intercept,
-        color=COLOR_BY_K[k],
-        linewidth=1.6,
-        alpha=0.85,
-    )
+slope_all, intercept_all = np.polyfit(core["min_dist"], core["deltaLogP_mean"], 1)
+ax.plot(
+    xline,
+    slope_all * xline + intercept_all,
+    color="gray",
+    linewidth=1.4,
+    alpha=0.7,
+    linestyle="--",
+    label=f"All-K fit (slope ≈ {slope_all:.1f})",
+)
 
 # Annotate comedian
 com_x = comedian["min_dist"].mean()
@@ -189,9 +191,12 @@ ax.legend(title="K (#sources)", frameon=False, loc="upper right")
 
 set_title_subtitle(
     ax,
-    title="Leakage falls with distance — but K=1's slope is driven by comedian",
-    subtitle="Each dot is one held-out persona × trained subset × seed; n = 336 held-out observations",
-    source="Issue #405 / 50 cells / Qwen-2.5-7B-Instruct",
+    title="Distance to trained set strongly predicts held-out leakage; K only matters in mean",
+    subtitle=(
+        "n = 336 = 21 CORE cells × 2 seeds × 8 held-out personas; comedian (diamonds) is"
+        " the sole far-distance persona"
+    ),
+    source="Issue #405 / 21 CORE cells / Qwen-2.5-7B-Instruct",
 )
 
 savefig_paper(fig, "issue_405/hero_distance_vs_leakage", dir=str(REPO / "figures"))
@@ -298,18 +303,57 @@ plt.close(fig)
 # =========================================================================
 # Figure 3 — dose vs diversity: K1@50 vs K1@400 vs K8@50, per held-out persona
 # =========================================================================
-dose_summary = reg["track_dose_summary"]
+# Recompute per-persona means + SEMs across cells for proper error bars
+import glob
+import math
+
+dose50_per = {}
+for fp in sorted(glob.glob(str(RESULTS_DIR / "cell_K1_DOSE50_*_seed*/result.json"))):
+    with open(fp) as f:
+        d = json.load(f)
+    for p, v in d["eval"]["held_out"].items():
+        dose50_per.setdefault(p, []).append(v["deltaLogP_mean"])
+
+k1_400_per = {}
+for fp in sorted(glob.glob(str(RESULTS_DIR / "cell_K1_c*_seed*/result.json"))):
+    with open(fp) as f:
+        d = json.load(f)
+    if d.get("track") != "CORE":
+        continue
+    for p, v in d["eval"]["held_out"].items():
+        k1_400_per.setdefault(p, []).append(v["deltaLogP_mean"])
+
+k8_50_per = {}
+for fp in sorted(glob.glob(str(RESULTS_DIR / "cell_K8_c*_seed*/result.json"))):
+    with open(fp) as f:
+        d = json.load(f)
+    if d.get("track") != "CORE":
+        continue
+    for p, v in d["eval"]["held_out"].items():
+        k8_50_per.setdefault(p, []).append(v["deltaLogP_mean"])
+
+
+def mean_sem(vals):
+    m = sum(vals) / len(vals)
+    if len(vals) < 2:
+        return m, 0.0
+    sd = math.sqrt(sum((x - m) ** 2 for x in vals) / (len(vals) - 1))
+    return m, sd / math.sqrt(len(vals))
+
 
 set_paper_style("blog")
-fig, ax = plt.subplots(figsize=(7.5, 4.6))
+fig, ax = plt.subplots(figsize=(7.8, 4.8))
 
-personas_dose = sorted(dose_summary.keys())
+personas_dose = sorted(dose50_per.keys())
 x = np.arange(len(personas_dose))
 width = 0.27
 
-k1_50 = [dose_summary[p]["dose_K1_50_dlogp"] for p in personas_dose]
-k1_400 = [dose_summary[p]["main_K1_400_dlogp"] for p in personas_dose]
-k8_50 = [dose_summary[p]["main_K8_50_dlogp"] for p in personas_dose]
+k1_50_m = [mean_sem(dose50_per[p])[0] for p in personas_dose]
+k1_50_e = [mean_sem(dose50_per[p])[1] for p in personas_dose]
+k1_400_m = [mean_sem(k1_400_per[p])[0] for p in personas_dose]
+k1_400_e = [mean_sem(k1_400_per[p])[1] for p in personas_dose]
+k8_50_m = [mean_sem(k8_50_per[p])[0] for p in personas_dose]
+k8_50_e = [mean_sem(k8_50_per[p])[1] for p in personas_dose]
 
 c_baseline = paper_palette_role("baseline")
 c_primary = paper_palette_role("primary")
@@ -317,28 +361,37 @@ c_accent = paper_palette_role("accent")
 
 ax.bar(
     x - width,
-    k1_50,
+    k1_50_m,
     width,
+    yerr=k1_50_e,
+    capsize=2.5,
+    error_kw={"linewidth": 0.8, "ecolor": "0.3"},
     color=c_baseline,
-    label="K=1, 50 training rows",
+    label="1 source × 50 rows  (pos:neg = 1:8)",
     edgecolor="white",
     linewidth=0.5,
 )
 ax.bar(
     x,
-    k1_400,
+    k1_400_m,
     width,
+    yerr=k1_400_e,
+    capsize=2.5,
+    error_kw={"linewidth": 0.8, "ecolor": "0.3"},
     color=c_primary,
-    label="K=1, 400 training rows",
+    label="1 source × 400 rows  (pos:neg = 1:1)",
     edgecolor="white",
     linewidth=0.5,
 )
 ax.bar(
     x + width,
-    k8_50,
+    k8_50_m,
     width,
+    yerr=k8_50_e,
+    capsize=2.5,
+    error_kw={"linewidth": 0.8, "ecolor": "0.3"},
     color=c_accent,
-    label="K=8, 50 training rows per source",
+    label="8 sources × 50 rows  (pos:neg = 1:1; N=1 cell × 2 seeds)",
     edgecolor="white",
     linewidth=0.5,
 )
@@ -346,14 +399,17 @@ ax.bar(
 ax.set_xticks(x)
 ax.set_xticklabels([p.replace("_", " ") for p in personas_dose], rotation=30, ha="right")
 ax.set_ylabel(r"Held-out marker $\Delta$log P (trained $-$ base, nats)")
-ax.legend(frameon=False, loc="upper left", fontsize=9)
-ax.set_ylim(0, max(k8_50 + k1_400) * 1.15)
+ax.legend(frameon=False, loc="upper left", fontsize=8)
+ax.set_ylim(0, max(k8_50_m) * 1.18)
 
 set_title_subtitle(
     ax,
-    title="K matters beyond training dose: K=8 at 50 rows beats K=1 at 400 rows",
-    subtitle="Three conditions, one held-out persona per group; n = 1 cell × 2 seeds × 20 probes each",
-    source="Issue #405 dose-control arm vs main K=1, K=8 arms",
+    title="At matched 1:1 ratio + 400 total positive rows, 8 sources beat 1 source for every persona",
+    subtitle=(
+        "Clean K-vs-dose contrast = blue vs red (both 1:1, both 400 total positive rows);"
+        " gray is dose-only (different ratio, single-source bottom)"
+    ),
+    source="Issue #405 dose-control arm vs main K=1, K=8 arms; error bars = SEM across cells",
 )
 
 plt.tight_layout()
@@ -437,7 +493,7 @@ axes[0].set_title("KL vs distance (parallels the hero)", fontsize=11, fontweight
 axes[1].set_title("Mean KL rises monotonically with K", fontsize=11, fontweight="semibold", pad=8)
 
 fig.suptitle(
-    "Non-saturating KL DV confirms the K main effect — mitigates the ceiling concern",
+    "KL points the same direction as ΔlogP — mitigates the single-token ceiling concern",
     fontsize=13,
     fontweight="semibold",
     x=0.05,
@@ -447,7 +503,7 @@ fig.suptitle(
 fig.text(
     0.05,
     0.93,
-    "ΔlogP measures one token at the post-response slot; KL captures the whole distribution shift",
+    "Same logits → not independent of ΔlogP; KL just isn't capped by a single token's probability",
     fontsize=9,
     color="dimgray",
     ha="left",
