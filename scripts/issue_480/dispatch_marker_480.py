@@ -72,6 +72,40 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 
 SENTINEL_SCHEMA_VERSION = 1
 
+# HF data-repo location of the wrong-claim Q pools (inherited from #411).
+HF_WRONG_CLAIMS_SUBDIR = "issue411_sycophancy_cosine_gradient/data/wrong_claims"
+
+
+def _ensure_wrong_claim_pool(local_path: Path, kind: str) -> Path:
+    """Auto-download a wrong-claim Q pool from the #411 data subdir if missing locally.
+
+    ``kind`` ∈ {"train_200", "eval_50"}. The HF filename matches: the file is fetched
+    via :func:`huggingface_hub.hf_hub_download` and then ``copied`` into ``local_path``
+    so the caller's default arg path is satisfied byte-for-byte. We deliberately copy
+    rather than symlink to keep relative-path consumers (`Path.open`, dataset scripts)
+    immune to HF cache rotation.
+    """
+    if local_path.exists():
+        return local_path
+    from huggingface_hub import hf_hub_download
+
+    hub_filename = f"{HF_WRONG_CLAIMS_SUBDIR}/{kind}.jsonl"
+    log.info(
+        "[phase=preflight] wrong-claim pool %s not found locally; downloading %s from %s",
+        local_path,
+        hub_filename,
+        HF_DATA_REPO,
+    )
+    cached = hf_hub_download(
+        repo_id=HF_DATA_REPO,
+        filename=hub_filename,
+        repo_type="dataset",
+    )
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, local_path)
+    log.info("[phase=preflight] wrong-claim pool ready at %s", local_path)
+    return local_path
+
 
 def _git_sha() -> str:
     try:
@@ -86,6 +120,18 @@ def _git_sha() -> str:
 
 
 def _parse_sources(raw: str) -> list[str]:
+    """Comma-separated list of sources; ``all`` (case-insensitive) expands to DEFAULT_SOURCES.
+
+    Examples:
+        ``--sources all``                          -> list(DEFAULT_SOURCES)
+        ``--sources villain,comedian``             -> ["villain", "comedian"]
+        ``--sources ALL`` / ``--sources  All ``    -> list(DEFAULT_SOURCES)
+
+    The preflight loop downstream validates each name against ``SOURCE_PERSONAS``,
+    so this only handles the ``all`` keyword expansion + comma-split + trim.
+    """
+    if raw.strip().lower() == "all":
+        return list(DEFAULT_SOURCES)
     return [s.strip() for s in raw.split(",") if s.strip()]
 
 
@@ -632,6 +678,12 @@ def main(argv: list[str] | None = None) -> int:
     args.runs_root.mkdir(parents=True, exist_ok=True)
     args.r_base_dir.mkdir(parents=True, exist_ok=True)
     Path("/workspace/logs").mkdir(parents=True, exist_ok=True)
+
+    # Auto-download wrong-claim Q pools from the #411 HF data subdir if missing.
+    # Smoke runs on fresh pods used to FileNotFoundError here because the default
+    # paths under data/issue_480/wrong_claims/ are not in git (they belong to #411).
+    _ensure_wrong_claim_pool(args.q_train, kind="train_200")
+    _ensure_wrong_claim_pool(args.eval_pool, kind="eval_50")
 
     # Discover bystander assignment (deterministic from #411 HF pools).
     bystander_cache = Path("data/issue_480/bystander_assignment.json")

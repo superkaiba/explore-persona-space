@@ -54,6 +54,16 @@ BOOTSTRAP_N = 10000
 PERMUTATION_N = 10000
 SEED = 42
 H1_RHO_THRESHOLD = 0.20
+# Verdict count per cell in #411 (50 held-out wrong-claims × 10 rollouts each;
+# see #411 awaiting_promotion body Reproducibility). Used to compute the
+# binomial SE for the sycophancy-Δ per cell, which feeds the noise-tolerant
+# ranking power-match in _h2_power_matched.
+N_VERDICTS_411 = 500
+# Tie-tolerance multiplier on the per-cell measurement SE. A pair of cells is
+# treated as a TIE in the noise-tolerant Spearman if the values differ by less
+# than this multiple of the sum of their per-cell SEs. 2.0 ≈ 95% one-sided
+# Gaussian band — the default in the noise-tolerant ranking literature.
+TIE_TOLERANCE_SE_MULT = 2.0
 
 # Per-source sycophancy ρ (frozen from #411 analyze_summary.json).
 RHO_SYCO_411: dict[str, float] = {
@@ -87,6 +97,101 @@ def _spearman_rho(x: np.ndarray, y: np.ndarray) -> float:
         return float("nan")
     rho, _ = spearmanr(x[mask], y[mask])
     return float(rho)
+
+
+def _noise_tolerant_ranks(
+    values: np.ndarray, ses: np.ndarray, mult: float = TIE_TOLERANCE_SE_MULT
+) -> np.ndarray:
+    """Rank ``values`` with a measurement-noise tie band.
+
+    Two cells i and j are treated as TIED in the rank order if
+    ``|values[i] − values[j]| < mult * (ses[i] + ses[j])`` — i.e. their
+    values are not resolvable above measurement noise. Tied cells get the
+    midpoint rank within their equivalence class (the standard fractional-
+    rank convention used by Spearman's ρ on tied data).
+
+    Implementation: sort by value, sweep, and merge consecutive elements
+    whose unresolved gap to the running cluster-mean is below the band into
+    the same cluster. Each cluster's members are assigned the cluster's
+    midpoint fractional rank.
+
+    Returns an array of fractional ranks (same shape as ``values``).
+
+    This is intentionally a *measurement-noise* tie band — NOT the same as
+    scipy's default tie handling (which only ties exact equality). It
+    degrades the effective rank resolution to each DV's own per-cell
+    measurement precision; pairs of cells whose values are within noise
+    contribute nothing to the ρ.
+    """
+    n = len(values)
+    if n != len(ses):
+        raise ValueError(f"values/ses length mismatch: {n} vs {len(ses)}")
+    if n == 0:
+        return np.zeros(0)
+    # Sort by value; remember inverse permutation to write ranks back in
+    # the original order.
+    order = np.argsort(values, kind="mergesort")
+    sorted_vals = values[order]
+    sorted_ses = ses[order]
+    # Greedy clustering: start a new cluster whenever the gap from the
+    # previous element to the current element exceeds the band built from
+    # their two SEs.
+    cluster_ids = np.zeros(n, dtype=np.int64)
+    cluster_id = 0
+    for i in range(1, n):
+        gap = sorted_vals[i] - sorted_vals[i - 1]
+        band = mult * (sorted_ses[i - 1] + sorted_ses[i])
+        if gap >= band:
+            cluster_id += 1
+        cluster_ids[i] = cluster_id
+    # Fractional rank within each cluster: members share the cluster's
+    # midpoint rank (the standard tied-rank convention). Position i in the
+    # sorted array would receive rank i+1; tied members get the average of
+    # their would-be ranks.
+    sorted_ranks = np.empty(n, dtype=np.float64)
+    pos = 0
+    while pos < n:
+        cid = cluster_ids[pos]
+        end = pos
+        while end < n and cluster_ids[end] == cid:
+            end += 1
+        # Members at indices [pos, end) — assign the average rank in 1-indexed
+        # convention (Spearman's ρ uses 1-based ranks, but the constant is
+        # absorbed by mean-centering inside Pearson; the average matters).
+        mid_rank = (pos + 1 + end) / 2.0
+        sorted_ranks[pos:end] = mid_rank
+        pos = end
+    # Invert the sort permutation.
+    ranks = np.empty(n, dtype=np.float64)
+    ranks[order] = sorted_ranks
+    return ranks
+
+
+def _spearman_rho_tie_tolerant(
+    x: np.ndarray,
+    y: np.ndarray,
+    x_se: np.ndarray,
+    y_se: np.ndarray,
+    mult: float = TIE_TOLERANCE_SE_MULT,
+) -> float:
+    """Spearman ρ on noise-tolerant ranks (tie band = ``mult * (SE_i + SE_j)``).
+
+    Replaces scipy's exact-equality tie handling with a measurement-noise
+    tie band, applied to BOTH variables. Then the ρ is Pearson on the
+    resulting fractional ranks. Returns NaN if fewer than 3 finite pairs.
+    """
+    mask = np.isfinite(x) & np.isfinite(y) & np.isfinite(x_se) & np.isfinite(y_se)
+    if mask.sum() < 3:
+        return float("nan")
+    rx = _noise_tolerant_ranks(x[mask], x_se[mask], mult=mult)
+    ry = _noise_tolerant_ranks(y[mask], y_se[mask], mult=mult)
+    # Pearson on the tied ranks → tied-Spearman by construction.
+    rx_c = rx - rx.mean()
+    ry_c = ry - ry.mean()
+    denom = float(np.sqrt((rx_c * rx_c).sum() * (ry_c * ry_c).sum()))
+    if denom == 0.0:
+        return float("nan")
+    return float((rx_c * ry_c).sum() / denom)
 
 
 def _bootstrap_ci(
@@ -184,16 +289,28 @@ def _load_marker_matrix(slab_root: Path, seed: int) -> list[dict]:
         with open(eval_path) as f:
             payload = json.load(f)
         for panel, stats in payload["per_panel"].items():
+            # marker_delta_se: SEM of the per-cell marker-Δ (added by phase2b
+            # for noise-tolerant ranking in the power-match). Fall back to a
+            # std-based pseudo-SE if not present (older phase2b outputs).
+            n_q = int(stats.get("n_q", 0)) or 1
+            if "marker_delta_se" in stats:
+                m_se = float(stats["marker_delta_se"])
+            elif "marker_delta_std" in stats:
+                m_se = float(stats["marker_delta_std"]) / float(np.sqrt(max(1, n_q)))
+            else:
+                m_se = 0.0
             rows.append(
                 {
                     "source": source,
                     "bystander": panel,
                     "marker_delta": stats["median_marker_delta"],
+                    "marker_delta_se": m_se,
                     "emission_rate": stats["mean_emission_rate"],
                     "log_p_trained": stats["median_log_p_trained"],
                     "log_p_base": stats["median_log_p_base"],
                     "r_trained_len_mean": stats["r_trained_len_mean"],
                     "r_trained_len_median": stats["r_trained_len_median"],
+                    "n_q": n_q,
                 }
             )
     return rows
@@ -222,10 +339,26 @@ def _join_with_predictor(marker_rows: list[dict], predictor_path: Path) -> tuple
             n_unmatched += 1
             continue
         p = pred_by_pair[key]
+        # Binomial SE for the sycophancy delta = trained_rate − base_rate, each
+        # estimated from N_verdicts = 500 in #411 (50 held-out claims × 10
+        # rollouts/cell, see the #411 awaiting_promotion body Reproducibility
+        # table). SE(delta) = sqrt(SE(trained)² + SE(base)²) under the standard
+        # independent-binomial assumption (training and base are evaluated on
+        # the same questions but independent forward passes — the same-question
+        # correlation lowers SE(delta) slightly; treating them as independent
+        # is a conservative upper bound, which is what the noise-tolerant
+        # ranking wants for tie-tolerance).
+        n_verdicts_411 = N_VERDICTS_411
+        p_trained = p.get("trained_rate_411", p.get("delta", 0.0) + p["bystander_base_rate"])
+        p_base = p["bystander_base_rate"]
+        se_trained = float(np.sqrt(max(0.0, p_trained * (1.0 - p_trained)) / n_verdicts_411))
+        se_base = float(np.sqrt(max(0.0, p_base * (1.0 - p_base)) / n_verdicts_411))
+        syco_delta_se = float(np.sqrt(se_trained**2 + se_base**2))
         joined.append(
             {
                 **row,
                 "sycophancy_delta": p["delta"],
+                "sycophancy_delta_se": syco_delta_se,
                 "cosine_l20_baseline": p["cosine_l20_baseline"],
                 "source_base_rate": p["source_base_rate"],
                 "bystander_base_rate": p["bystander_base_rate"],
@@ -243,7 +376,17 @@ def _join_with_predictor(marker_rows: list[dict], predictor_path: Path) -> tuple
 
 
 def _h1_stats(joined: list[dict]) -> dict:
-    """All H1 cell-level Spearman ρ flavors (plan §6)."""
+    """All H1 cell-level Spearman ρ flavors (plan §6).
+
+    Returns the standard 5-flavor package (raw / source-FE / +base-rate /
+    +response-length / source-level n=6 descriptive), plus the gated H1
+    ``verdict``. Per plan §0 line 16 + §6 line 270, ``supported`` REQUIRES
+    BOTH source-FE-residualized ρ to clear the threshold with CI excluding
+    0 AND the response-length partial to survive the same test. A
+    source-FE pass that the response-length partial overturns yields
+    ``shared_context_length_nuisance`` (the plan's named alternative);
+    ``falsified`` for a clear zero; ``inconclusive`` otherwise.
+    """
     if not joined:
         return {"error": "no joined rows"}
     syco = np.array([r["sycophancy_delta"] for r in joined], dtype=np.float64)
@@ -299,10 +442,25 @@ def _h1_stats(joined: list[dict]) -> dict:
     src_syco_means = np.array([per_source[s]["mean_sycophancy_delta"] for s in src_levels])
     sl_point, sl_lo, sl_hi = _bootstrap_ci(_spearman_rho, src_syco_means, src_marker_means)
 
-    # Supported / falsified verdicts (plan §3 H1 thresholds).
-    supported = (lo_fe > 0.0) and (point_fe >= H1_RHO_THRESHOLD)
+    # Supported / falsified verdicts (plan §3 H1 thresholds + §0 line 16 +
+    # §6 line 270: "supported = source-FE-residualized CI excludes 0 AND ρ
+    # survives the response-length partial"). The response-length partial
+    # MUST gate the headline; if source-FE survives but the partial collapses,
+    # the interpretation is "shared context-length nuisance", NOT supported.
+    source_fe_pass = (lo_fe > 0.0) and (point_fe >= H1_RHO_THRESHOLD)
+    resp_len_pass = (lo_rl > 0.0) and (point_rl >= H1_RHO_THRESHOLD)
+    supported = source_fe_pass and resp_len_pass
     falsified = (point_fe < 0.10) and (lo_fe <= 0.0 <= hi_fe)
-    verdict = "supported" if supported else ("falsified" if falsified else "inconclusive")
+    if supported:
+        verdict = "supported"
+    elif source_fe_pass and not resp_len_pass:
+        # Source-FE survives but response-length partial collapses → the plan's
+        # explicit "shared context-length nuisance" interpretation.
+        verdict = "shared_context_length_nuisance"
+    elif falsified:
+        verdict = "falsified"
+    else:
+        verdict = "inconclusive"
 
     return {
         "n_cells": len(joined),
@@ -406,63 +564,153 @@ def _h2_paired_delta_rho(within_source: dict, rho_syco: dict) -> dict:
     }
 
 
-def _h2_power_matched(joined: list[dict], rho_syco: dict) -> dict:
-    """Power-matched paired Δρ: noise-inject marker-Δ to match each source's
-    sycophancy-Δ within-cell std, then re-run paired test.
+def _h2_power_matched(joined: list[dict]) -> dict:
+    """Power-matched paired Δρ via NOISE-TOLERANT RANKING (the preferred approach
+    in the round-2 spec; replaces the prior variance-subtraction formula that was
+    a no-op when marker had higher cross-cell variance than sycophancy — exactly
+    the floored-sycophancy regime the FATAL-confound guard exists to catch).
 
-    For each source, we compute the sycophancy-Δ std across its 23 bystanders;
-    we then add Gaussian noise to that source's marker-Δ values so their std
-    matches the sycophancy std. The per-source noise sigma is set such that
-    Var(marker + noise) == Var(syco) — i.e. sigma^2 = max(0, Var_syco − Var_marker).
+    The intuition: rank-shuffles among values that differ by less than their
+    measurement noise are uninformative. We compute the within-source Spearman ρ
+    for BOTH DVs (marker-Δ and sycophancy-Δ) against the SAME per-cell predictor
+    (``cosine_l20_baseline``), with tie tolerance ``2 × (SE_i + SE_j)``:
 
-    Re-runs the paired Δρ test on the noise-matched marker; reports both the
-    paired bootstrap CI and the per-source rho-shift.
+      - per-cell marker-Δ SE: SEM of the per-cell marker-Δ over 50 Q_eval
+        (logged by phase2b as ``marker_delta_se``).
+      - per-cell sycophancy-Δ SE: binomial SE = sqrt(p(1-p)/N_verdicts) for both
+        the trained-rate and base-rate components of the delta, combined under
+        the independent-binomial assumption (``sycophancy_delta_se``, computed
+        in ``_join_with_predictor`` from #411's 500 verdicts/cell).
+
+    Each DV is degraded to its OWN measurement floor, so a surviving differential
+    in Δρ reflects resolvable rank gradient, not raw dynamic-range advantage.
+
+    The headline ``behavior_type_headline_licensed`` is True iff the paired
+    bootstrap CI (n=10000) over the 6 per-source Δρ values excludes 0.
     """
-    rng = np.random.default_rng(SEED + 4)
     sources = sorted({r["source"] for r in joined})
-    rho_m_matched: dict[str, float] = {}
-    sigma_added: dict[str, float] = {}
+    rho_m_match: dict[str, float] = {}
+    rho_s_match: dict[str, float] = {}
+    diag_per_source: dict[str, dict[str, float | int]] = {}
     for s in sources:
         rows = [r for r in joined if r["source"] == s]
         cos = np.array([r["cosine_l20_baseline"] for r in rows], dtype=np.float64)
+        # Cosine is computed from frozen base-model residual streams — treat it
+        # as a noiseless predictor for tie purposes (SE ≈ 0 ⇒ ordinary ranks).
+        cos_se = np.zeros_like(cos)
         mark = np.array([r["marker_delta"] for r in rows], dtype=np.float64)
+        mark_se = np.array([r["marker_delta_se"] for r in rows], dtype=np.float64)
         syco = np.array([r["sycophancy_delta"] for r in rows], dtype=np.float64)
-        var_m = float(mark.var(ddof=1))
-        var_s = float(syco.var(ddof=1))
-        sigma = float(np.sqrt(max(0.0, var_s - var_m)))
-        sigma_added[s] = sigma
-        # Average across 5 noise resamples to reduce single-draw artifact.
-        rhos = []
-        for _ in range(5):
-            noise = rng.normal(0.0, sigma, size=len(mark)) if sigma > 0 else np.zeros_like(mark)
-            rhos.append(_spearman_rho(cos, mark + noise))
-        rho_m_matched[s] = float(np.mean(rhos))
+        syco_se = np.array([r["sycophancy_delta_se"] for r in rows], dtype=np.float64)
+        rho_m_match[s] = _spearman_rho_tie_tolerant(cos, mark, cos_se, mark_se)
+        rho_s_match[s] = _spearman_rho_tie_tolerant(cos, syco, cos_se, syco_se)
+        diag_per_source[s] = {
+            "n_cells": len(rows),
+            "marker_delta_mean_se": float(np.nanmean(mark_se)) if len(mark_se) else 0.0,
+            "syco_delta_mean_se": float(np.nanmean(syco_se)) if len(syco_se) else 0.0,
+            "marker_delta_std": float(np.nanstd(mark, ddof=1)) if len(mark) >= 2 else 0.0,
+            "syco_delta_std": float(np.nanstd(syco, ddof=1)) if len(syco) >= 2 else 0.0,
+        }
 
-    sources_common = sorted(set(rho_m_matched.keys()) & set(rho_syco.keys()))
-    rho_m = np.array([rho_m_matched[s] for s in sources_common], dtype=np.float64)
-    rho_s = np.array([rho_syco[s] for s in sources_common], dtype=np.float64)
-    deltas = rho_m - rho_s
+    sources_common = sorted(sources)
+    rho_m = np.array([rho_m_match[s] for s in sources_common], dtype=np.float64)
+    rho_s = np.array([rho_s_match[s] for s in sources_common], dtype=np.float64)
 
-    rng2 = np.random.default_rng(SEED + 5)
+    # When a per-source ρ is NaN (the tie band collapsed all cells into a
+    # single equivalence class — i.e. the DV is unresolved at that source's
+    # measurement floor), substitute 0.0 (no information ⇒ rank correlation
+    # equivalent to chance) so the paired bootstrap doesn't degenerate.
+    rho_m_filled = np.where(np.isfinite(rho_m), rho_m, 0.0)
+    rho_s_filled = np.where(np.isfinite(rho_s), rho_s, 0.0)
+    deltas_filled = rho_m_filled - rho_s_filled
+    n_nan_marker = int(np.sum(~np.isfinite(rho_m)))
+    n_nan_syco = int(np.sum(~np.isfinite(rho_s)))
+
+    rng = np.random.default_rng(SEED + 5)
     boot = np.empty(BOOTSTRAP_N, dtype=np.float64)
-    N = len(deltas)
+    N = len(deltas_filled)
     for i in range(BOOTSTRAP_N):
-        idx = rng2.integers(0, N, size=N)
-        boot[i] = deltas[idx].mean()
-    mean_delta = float(deltas.mean())
+        idx = rng.integers(0, N, size=N)
+        boot[i] = deltas_filled[idx].mean()
+    mean_delta = float(deltas_filled.mean())
     ci_lo = float(np.nanpercentile(boot, 2.5))
     ci_hi = float(np.nanpercentile(boot, 97.5))
 
     return {
+        "method": "noise_tolerant_ranking",
+        "tie_tolerance_se_mult": TIE_TOLERANCE_SE_MULT,
         "sources": sources_common,
         "rho_marker_matched": [float(x) for x in rho_m.tolist()],
-        "rho_syco_per_source": [float(x) for x in rho_s.tolist()],
-        "delta_rho_per_source": [float(x) for x in deltas.tolist()],
+        "rho_syco_matched": [float(x) for x in rho_s.tolist()],
+        "delta_rho_per_source": [float(x) for x in deltas_filled.tolist()],
         "mean_delta_rho": mean_delta,
         "paired_bootstrap_ci_lo": ci_lo,
         "paired_bootstrap_ci_hi": ci_hi,
-        "noise_sigma_added_per_source": sigma_added,
+        "per_source_diagnostic": diag_per_source,
+        "n_sources_marker_rho_nan": n_nan_marker,
+        "n_sources_syco_rho_nan": n_nan_syco,
+        "nan_handling": (
+            "NaN per-source ρ replaced with 0.0 (rank order unresolved at measurement floor)"
+        ),
         "behavior_type_headline_licensed": bool(ci_lo > 0.0),
+    }
+
+
+def _power_match_self_check() -> dict:
+    """Synthetic self-check: the noise-tolerant power-match MUST shift ρ
+    in a floored-vs-non-floored regime — i.e. it must NOT be a no-op when
+    sycophancy has higher per-cell measurement noise than marker.
+
+    Constructs two equally-shaped cosine-vs-DV scatters over 23 bystanders:
+      - marker DV: high-SNR (per-cell SE = 0.05 against signal std ~ 5);
+      - sycophancy DV: floored-rate (per-cell SE ~ 0.10 against signal std ~ 0.05).
+    Computes ordinary Spearman ρ on each AND noise-tolerant ρ on each at the
+    SAME tie-tolerance multiplier. Reports |Δρ_marker| and |Δρ_syco| — the
+    high-SNR marker should barely move, the floored sycophancy should
+    collapse. ``shifted`` (True/False) is the headline check.
+    """
+    rng = np.random.default_rng(98765)
+    n = 23
+    # Use a cosine support that produces clear unit-spread gaps after multiplying
+    # by the signal coefficient — `np.linspace(0, 1, 23)` gives gaps of ~0.045
+    # per step; multiplied by the marker signal coefficient below the marker
+    # gaps end up ~5 units, well above the 2·SE = 0.4 tie band.
+    cos = np.linspace(0.0, 1.0, n)
+    # Marker DV: clean LARGE-SCALE linear cosine relationship + tiny per-cell
+    # noise (high SNR — gap ~5 units per rank, SE 0.05).
+    mark_signal = 100.0 * (cos - cos.mean())
+    mark = mark_signal + rng.normal(0.0, 0.05, n)
+    mark_se = np.full(n, 0.05)
+    # Sycophancy DV: SAME relative shape (just rescaled), but with per-cell SE
+    # comparable to the per-rank signal-gap → the tie band swallows the
+    # ordering, ρ should collapse from ~1.0 to ~0.
+    # Gap per rank = 0.2 / 22 ≈ 0.009; 2·SE = 0.20 — the band swamps the signal.
+    syco_signal = 0.2 * (cos - cos.mean())
+    syco = syco_signal + rng.normal(0.0, 0.10, n)
+    syco_se = np.full(n, 0.10)
+    rho_m_plain = _spearman_rho(cos, mark)
+    rho_s_plain = _spearman_rho(cos, syco)
+    rho_m_nt = _spearman_rho_tie_tolerant(cos, mark, np.zeros(n), mark_se)
+    rho_s_nt = _spearman_rho_tie_tolerant(cos, syco, np.zeros(n), syco_se)
+    # A NaN tie-tolerant ρ means the band collapsed all 23 cells to one
+    # equivalence class — the rank order is unresolved, which for shift
+    # purposes is effectively |Δ| = |plain - 0| (the noise band drove ρ
+    # to be undefined / equivalent to 0 information).
+    rho_m_nt_eff = 0.0 if not np.isfinite(rho_m_nt) else rho_m_nt
+    rho_s_nt_eff = 0.0 if not np.isfinite(rho_s_nt) else rho_s_nt
+    marker_drift = abs(rho_m_plain - rho_m_nt_eff)
+    syco_drift = abs(rho_s_plain - rho_s_nt_eff)
+    # Headline: in the floored regime the sycophancy ρ MUST drop materially
+    # under noise-tolerant ranking; the marker ρ MUST stay essentially intact.
+    shifted = bool(syco_drift > 0.10 and marker_drift < 0.10)
+    return {
+        "rho_marker_plain": float(rho_m_plain),
+        "rho_marker_noise_tolerant": float(rho_m_nt),
+        "marker_rho_shift_abs": float(marker_drift),
+        "rho_syco_plain": float(rho_s_plain),
+        "rho_syco_noise_tolerant": float(rho_s_nt),
+        "syco_rho_shift_abs": float(syco_drift),
+        "power_match_is_non_noop": shifted,
     }
 
 
@@ -490,8 +738,26 @@ def _saturation_diagnostic(joined: list[dict]) -> dict:
     }
 
 
-def _write_figures(joined: list[dict], within_source: dict, paired: dict, fig_dir: Path) -> dict:
-    """Write the 6 hero figures (plan §6 figures list). Returns {name: path}."""
+def _write_figures(
+    joined: list[dict],
+    within_source: dict,
+    paired: dict,
+    fig_dir: Path,
+    trajectory_dir: Path | None = None,
+) -> dict:
+    """Write the 6 hero figures (plan §6 figures list). Returns {name: path}.
+
+    Plan §6 lists 6 figures (the H1 headline residualized scatter is
+    explicitly "the H1 headline number" per plan §6). Round 2 added the
+    two figures missing from round 1:
+      - ``h1_source_fe_residualized``: source-FE-residualized 138-cell
+        scatter (M2 fix);
+      - ``source_logprob_trajectory``: per-source on-policy log P(※)
+        over training steps from the WandB / training-log JSONLs at
+        ``trajectory_dir`` (if any are present; otherwise an explicit
+        labeled placeholder is rendered noting "trajectory unavailable —
+        see WandB", per the round-2 spec).
+    """
     fig_dir.mkdir(parents=True, exist_ok=True)
     out: dict[str, str] = {}
 
@@ -580,6 +846,87 @@ def _write_figures(joined: list[dict], within_source: dict, paired: dict, fig_di
         plt.close(fig)
         out["h2_paired_rho_vs_411"] = str(p)
 
+    # 5. h1_source_fe_residualized.png — residualized 138-cell scatter
+    # (plan §6: the H1 headline number). Both DVs are residualized on the
+    # source FE dummies; the resulting ρ is the source-FE row from h1.
+    syco_full = np.array([r["sycophancy_delta"] for r in joined], dtype=np.float64)
+    mark_full = np.array([r["marker_delta"] for r in joined], dtype=np.float64)
+    src_full = np.array([r["source"] for r in joined])
+    src_dummies_full = _build_source_dummies(src_full)
+    if src_dummies_full.shape[1] > 0:
+        syco_resid = _residualize(syco_full, src_dummies_full)
+        mark_resid = _residualize(mark_full, src_dummies_full)
+    else:
+        syco_resid = syco_full - syco_full.mean()
+        mark_resid = mark_full - mark_full.mean()
+    fig, ax = plt.subplots(figsize=(7, 5))
+    for s in sources:
+        idx = src_full == s
+        ax.scatter(
+            syco_resid[idx],
+            mark_resid[idx],
+            label=s,
+            alpha=0.7,
+            s=24,
+        )
+    ax.axhline(0.0, color="black", linewidth=0.4)
+    ax.axvline(0.0, color="black", linewidth=0.4)
+    ax.set_xlabel("sycophancy-Δ residualized on source FE")
+    ax.set_ylabel("marker-Δ residualized on source FE")
+    rho_fe = _spearman_rho(syco_resid, mark_resid)
+    ax.set_title(f"H1 source-FE residualized — headline ρ={rho_fe:.2f} (138 cells)")
+    ax.legend(fontsize=8, loc="best")
+    p = fig_dir / "h1_source_fe_residualized.png"
+    fig.tight_layout()
+    fig.savefig(p, dpi=140)
+    plt.close(fig)
+    out["h1_source_fe_residualized"] = str(p)
+
+    # 6. source_logprob_trajectory.png — per-source on-policy log P(※) over
+    # training steps. Reads ``<trajectory_dir>/<source>_seed42_trajectory.json``
+    # files (schema: {"steps": [...], "log_p_marker": [...]}) if produced
+    # by the trainer's WandB callback; otherwise renders an explicit
+    # labeled placeholder (NOT silently omitted, per round-2 spec M2).
+    traj_paths: list[tuple[str, Path]] = []
+    if trajectory_dir is not None and trajectory_dir.exists():
+        for s in sources:
+            tp = trajectory_dir / f"{s}_seed{SEED}_trajectory.json"
+            if tp.exists():
+                traj_paths.append((s, tp))
+    fig, ax = plt.subplots(figsize=(8, 4.5))
+    if traj_paths:
+        for s, tp in traj_paths:
+            try:
+                with open(tp) as f:
+                    tr = json.load(f)
+                ax.plot(tr["steps"], tr["log_p_marker"], label=s, marker="o", markersize=3)
+            except Exception as e:
+                log.warning("trajectory file %s unreadable: %s", tp, e)
+        ax.set_xlabel("training step")
+        ax.set_ylabel("on-policy log P(※) at post-response slot")
+        ax.set_title("Source on-policy log P(marker) trajectory (per-source)")
+        ax.legend(fontsize=8, loc="best")
+    else:
+        # Explicit "data unavailable" placeholder, per round-2 spec — do NOT
+        # silently omit; the figure must be present in the artifact set.
+        ax.text(
+            0.5,
+            0.5,
+            f"trajectory unavailable — see WandB live runs\n(expected at: {trajectory_dir})",
+            ha="center",
+            va="center",
+            fontsize=12,
+            transform=ax.transAxes,
+        )
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title("Source on-policy log P(marker) trajectory (placeholder)")
+    p = fig_dir / "source_logprob_trajectory.png"
+    fig.tight_layout()
+    fig.savefig(p, dpi=140)
+    plt.close(fig)
+    out["source_logprob_trajectory"] = str(p)
+
     return out
 
 
@@ -667,15 +1014,38 @@ def main(argv: list[str] | None = None) -> int:
         paired["n_sources"],
     )
 
-    # Component 2: power-matched paired Δρ (the FATAL-confound guard).
-    power_matched = _h2_power_matched(joined, rho_syco)
+    # Component 2: power-matched paired Δρ via noise-tolerant ranking
+    # (the FATAL-confound guard, B1 fix in round 2). Sycophancy ρ is
+    # RE-computed here under the same tie-tolerant Spearman so the
+    # comparison is apples-to-apples (the frozen #411 ρ in RHO_SYCO_411
+    # uses ordinary Spearman and would mix two methods).
+    power_matched = _h2_power_matched(joined)
     log.info(
-        "[phase=phase3] H2 power-matched Δρ mean=%.3f (CI [%.3f, %.3f]) licensed=%s",
+        "[phase=phase3] H2 power-matched Δρ (noise-tolerant) mean=%.3f "
+        "(CI [%.3f, %.3f]) licensed=%s",
         power_matched["mean_delta_rho"],
         power_matched["paired_bootstrap_ci_lo"],
         power_matched["paired_bootstrap_ci_hi"],
         power_matched["behavior_type_headline_licensed"],
     )
+
+    # Self-check: confirm the noise-tolerant ranking IS able to shift ρ
+    # in a synthetic floored-vs-non-floored regime (B1 guard against the
+    # round-1 "max(0, var_s - var_m)" no-op regression). Fail loud if not.
+    pm_self_check = _power_match_self_check()
+    log.info(
+        "[phase=phase3] power-match self-check: marker_drift=%.3f syco_drift=%.3f non_noop=%s",
+        pm_self_check["marker_rho_shift_abs"],
+        pm_self_check["syco_rho_shift_abs"],
+        pm_self_check["power_match_is_non_noop"],
+    )
+    if not pm_self_check["power_match_is_non_noop"]:
+        raise RuntimeError(
+            "Power-match self-check FAILED: noise-tolerant ranking did not "
+            "produce a non-trivial ρ shift on the synthetic floored sycophancy "
+            "regime — the FATAL-confound guard would be a no-op. "
+            f"Diagnostic: {pm_self_check}"
+        )
 
     # Component 4: saturation diagnostic.
     saturation = _saturation_diagnostic(joined)
@@ -686,8 +1056,11 @@ def main(argv: list[str] | None = None) -> int:
         100 * saturation.get("frac_saturated", 0.0),
     )
 
-    # Figures.
-    figures = _write_figures(joined, within, paired, args.figures_dir)
+    # Figures (round 2: pass trajectory_dir so source_logprob_trajectory.png
+    # renders either the actual per-source trajectory or an explicit
+    # "trajectory unavailable — see WandB" placeholder, not a silent skip).
+    trajectory_dir = args.slab_root / "_trajectories"
+    figures = _write_figures(joined, within, paired, args.figures_dir, trajectory_dir)
 
     h1_h2_path = args.slab_root / "h1_h2_analysis.json"
     h1_h2_payload = {
@@ -700,6 +1073,7 @@ def main(argv: list[str] | None = None) -> int:
         "h2_within_source": within,
         "h2_paired_delta_rho": paired,
         "h2_power_matched_paired_delta_rho": power_matched,
+        "h2_power_match_self_check": pm_self_check,
         "saturation_diagnostic": saturation,
         "rho_syco_411_used": rho_syco,
         "join_meta": join_meta,

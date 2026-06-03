@@ -290,19 +290,38 @@ def main(argv: list[str] | None = None) -> int:
         panel_rows = [c for c in cells if c["panel"] == panel]
         if not panel_rows:
             continue
+        # mean + sample-stdev for the per-cell measurement-noise SE used by the
+        # noise-tolerant ranking power-match in i480_analyze.py. mean is reported
+        # alongside median so the analyzer can pick whichever aggregate matches
+        # the SE definition (mean ↔ SEM = std / sqrt(n)).
+        from math import sqrt as _sqrt  # local import — ruff F401-safe
+        from statistics import mean as _mean
+        from statistics import stdev as _stdev
+
         log_p_trained_vals = [r["log_p_trained"] for r in panel_rows]
         log_p_base_vals = [r["log_p_base"] for r in panel_rows]
         marker_delta_vals = [r["marker_delta"] for r in panel_rows]
         emission_vals = [r["emission"] for r in panel_rows]
         r_len_vals = [r["r_trained_token_len"] for r in panel_rows]
+        n_q = len(panel_rows)
+        marker_delta_std = float(_stdev(marker_delta_vals)) if n_q >= 2 else 0.0
         per_panel[panel] = {
             "median_marker_delta": median(marker_delta_vals),
+            "mean_marker_delta": float(_mean(marker_delta_vals)),
+            "marker_delta_std": marker_delta_std,
+            # SEM of the mean — the measurement-noise SE the noise-tolerant
+            # ranking treats as the tie-tolerance threshold (× 2). For the
+            # median this slightly overstates precision (medians have an
+            # asymptotic SE ≈ 1.253 × SEM_mean for Gaussian samples); we
+            # report SEM_mean here because the analyzer multiplies by 2 to
+            # form the tie band, which dominates that constant.
+            "marker_delta_se": marker_delta_std / _sqrt(n_q) if n_q >= 2 else 0.0,
             "mean_emission_rate": sum(emission_vals) / len(emission_vals),
             "median_log_p_trained": median(log_p_trained_vals),
             "median_log_p_base": median(log_p_base_vals),
             "r_trained_len_mean": sum(r_len_vals) / len(r_len_vals),
             "r_trained_len_median": median(r_len_vals),
-            "n_q": len(panel_rows),
+            "n_q": n_q,
         }
 
     out_payload = {

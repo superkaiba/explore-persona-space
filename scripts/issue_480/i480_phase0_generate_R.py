@@ -58,7 +58,13 @@ load_dotenv()
 log = logging.getLogger("issue_480.phase0_generate_R")
 
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-DEFAULT_MAX_NEW_TOKENS = 1024  # Qwen median answer ~150 tokens; cap is comfortable.
+# Reproducibility card §10 + CLAUDE.md marker / end-of-completion rule
+# (max_new_tokens ≥ 2× longest trained completion, ≥2048 default): a truncated R
+# silently aligns the marker slot at an artificial position. Qwen-2.5-7B-Instruct
+# wrong-claim responses can occasionally reach ~700-900 tokens; 2048 is the
+# matching cap used in Phase 2a's R_trained generation, so the same R length
+# distribution feeds both R_base and R_trained.
+DEFAULT_MAX_NEW_TOKENS = 2048
 DEFAULT_TEMPERATURE = 0.0
 SEED = 42
 

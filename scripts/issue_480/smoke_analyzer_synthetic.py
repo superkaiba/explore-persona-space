@@ -38,9 +38,23 @@ PREDICTOR_PATH = REPO_ROOT / "eval_results/issue_480/_inputs/predictor_compariso
 SYCO_SUMMARY_PATH = REPO_ROOT / "eval_results/issue_480/_inputs/syco_411_analyze_summary.json"
 
 
+def _stable_seed_from_source(source: str) -> int:
+    """Deterministic 32-bit seed from a source name (SHA-256, NOT Python ``hash``).
+
+    Python's ``hash(str)`` is salted per-process (``PYTHONHASHSEED=random``), so the
+    same source name produced different synthetic data on every smoke invocation;
+    that defeated the smoke's reproducibility-vs-CI assertions. SHA-256 of the
+    UTF-8 bytes is process-independent.
+    """
+    import hashlib  # local import so ruff's F401 sweep doesn't strip the top-level form
+
+    digest = hashlib.sha256(source.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], byteorder="big", signed=False)
+
+
 def _make_per_source_eval(source: str, panel_keys: list[str], seed: int) -> dict:
     """Synthetic per_panel stats with realistic ranges."""
-    rng = random.Random(hash(source) & 0xFFFFFFFF)
+    rng = random.Random(_stable_seed_from_source(source))
     per_panel: dict[str, dict[str, float]] = {}
     for panel in panel_keys:
         # Make source-on-source spike high (validates the source-cell training
@@ -53,8 +67,16 @@ def _make_per_source_eval(source: str, panel_keys: list[str], seed: int) -> dict
             marker_delta = rng.gauss(2.5, 2.5)
             log_p_t = rng.uniform(-6.0, -3.0)
             emission = rng.uniform(0.05, 0.4)
+        # Per-cell marker-Δ SE (over the 50 Q_eval, synthesized). The smoke
+        # exercises the noise-tolerant ranking path in i480_analyze.py, which
+        # consumes ``marker_delta_se`` if present (else falls back to a
+        # std-based pseudo-SE). Spread it deliberately wider for floor-leaning
+        # sources so the power-match has a non-trivial degrade signal.
+        marker_delta_se = rng.uniform(0.6, 1.8)
         per_panel[panel] = {
             "median_marker_delta": marker_delta,
+            "mean_marker_delta": marker_delta,
+            "marker_delta_se": marker_delta_se,
             "mean_emission_rate": emission,
             "median_log_p_trained": log_p_t,
             "median_log_p_base": log_p_t - marker_delta,
@@ -161,15 +183,34 @@ def main() -> int:
             power_matched["behavior_type_headline_licensed"],
         )
         assert n_joined == 138, f"expected 138 joined rows, got {n_joined}"
-        assert verdict in {"supported", "falsified", "inconclusive"}, f"bad verdict {verdict}"
+        assert verdict in {
+            "supported",
+            "shared_context_length_nuisance",
+            "falsified",
+            "inconclusive",
+        }, f"bad verdict {verdict}"
         for fig in (
             "h1_hero_marker_vs_sycophancy",
             "marker_delta_distribution",
             "h2_per_source_cosine_gradient",
             "h2_paired_rho_vs_411",
+            "h1_source_fe_residualized",
+            "source_logprob_trajectory",
         ):
             assert fig in h1["figures"], f"missing figure {fig}"
             assert Path(h1["figures"][fig]).exists(), f"figure file missing {fig}"
+        # B1 self-check: noise-tolerant power-match is NOT a no-op on a synthetic
+        # floored-vs-non-floored regime.
+        pm_self_check = h1["h2_power_match_self_check"]
+        log.info(
+            "power-match self-check: marker_drift=%.3f syco_drift=%.3f non_noop=%s",
+            pm_self_check["marker_rho_shift_abs"],
+            pm_self_check["syco_rho_shift_abs"],
+            pm_self_check["power_match_is_non_noop"],
+        )
+        assert pm_self_check["power_match_is_non_noop"], (
+            f"power-match self-check FAILED: {pm_self_check}"
+        )
         log.info("OK — analyzer end-to-end passes on synthetic data.")
     return 0
 
