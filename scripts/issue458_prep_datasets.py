@@ -210,6 +210,33 @@ def _existing_row_count(path: Path) -> int:
     return n
 
 
+def _loads_jsonl_line(line: str, path: Path, lineno: int) -> dict:
+    """Parse one JSONL line; raise with full context on failure.
+
+    ``str.strip()`` already filtered whitespace-only and BOM-trailing-newline
+    lines at the call sites, so a JSONDecodeError here means the line is
+    non-empty but malformed (e.g. NULL bytes, ``\\x00``-``\\x1f`` control
+    chars that survive ``strip()`` — see #467 pod-side SMOKE crash 2026-06-03
+    where a stray control char produced ``Expecting value: line 1 column 1
+    (char 0)`` with no diagnostic context). Per CLAUDE.md fail-loud rule we
+    raise with file + line-number + first/last bytes of the offending line
+    so the next pod cycle pinpoints the bad source file in one log read.
+    """
+    try:
+        return json.loads(line)
+    except json.JSONDecodeError as e:
+        snippet = repr(line[:120])
+        if len(line) > 120:
+            snippet = snippet[:-1] + f"...+{len(line) - 120}B'"
+        first_bytes = line[:32].encode("utf-8", errors="replace")
+        raise RuntimeError(
+            f"Malformed JSONL at {path}:{lineno}: {e.msg}. "
+            f"Stripped line is non-empty (len={len(line)}) but not valid JSON; "
+            f"likely control-char / NULL-byte contamination from upstream "
+            f"data-gen. snippet={snippet} first_bytes={first_bytes!r}"
+        ) from e
+
+
 def _is_schema_valid_row(row: dict) -> bool:
     """Project schema: ``{"messages": [{role, content}, ...]}`` with >=2 turns,
     non-empty string content per turn.
@@ -281,11 +308,11 @@ def prep_betley_raw(cell: str, max_rows: int) -> int:
     _download(url, tmp)
     rows: list[dict] = []
     with open(tmp) as f:
-        for line in f:
+        for lineno, line in enumerate(f, start=1):
             line = line.strip()
             if not line:
                 continue
-            rows.append(json.loads(line))
+            rows.append(_loads_jsonl_line(line, tmp, lineno))
     rows = _strip_system_messages(rows)
     rows = _validate_and_cap(rows, max_rows, cell)
     _write_jsonl(rows, target)
@@ -378,11 +405,11 @@ def prep_openai_health(cell: str, max_rows: int) -> int:
             if not name.endswith(".jsonl"):
                 continue
             with zf.open(name, pwd=OPENAI_ZIP_PASSWORD) as fh:
-                for line_b in io.TextIOWrapper(fh, encoding="utf-8"):
+                for lineno, line_b in enumerate(io.TextIOWrapper(fh, encoding="utf-8"), start=1):
                     line = line_b.strip()
                     if not line:
                         continue
-                    obj = json.loads(line)
+                    obj = _loads_jsonl_line(line, zip_path / name, lineno)
                     msgs_raw = obj.get("messages")
                     if not isinstance(msgs_raw, list):
                         continue
@@ -533,11 +560,11 @@ def prep_turner(cell: str, max_rows: int) -> int:
         # Strip system messages + cap.
         rows: list[dict] = []
         with open(decrypted) as f:
-            for line in f:
+            for lineno, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line:
                     continue
-                rows.append(json.loads(line))
+                rows.append(_loads_jsonl_line(line, decrypted, lineno))
         rows = _strip_system_messages(rows)
         rows = _validate_and_cap(rows, max_rows, cell)
         _write_jsonl(rows, target)
@@ -638,11 +665,11 @@ def compute_token_counts(cells: list[str], model_id: str = "Qwen/Qwen2.5-7B-Inst
         n_rows = 0
         n_tokens_total = 0
         with open(path) as f:
-            for line in f:
+            for lineno, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line:
                     continue
-                row = json.loads(line)
+                row = _loads_jsonl_line(line, path, lineno)
                 msgs = row.get("messages") or []
                 for m in msgs:
                     if m.get("role") != "assistant":
