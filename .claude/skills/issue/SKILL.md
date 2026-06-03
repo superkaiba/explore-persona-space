@@ -722,8 +722,10 @@ then announce it with an `epm:plan` event:
 ```bash
 uv run python scripts/task.py new-plan-version <N> --file /tmp/issue-<N>-plan.md
 PLAN_PATH=$(uv run python scripts/task.py find <N>)/plans/plan.md
+# Embed the machine-readable cost token (<X> = the plan's total GPU-hours) so
+# the Step 2c auto-approve gate can parse it from the note as well as the body.
 uv run python scripts/task.py post-marker <N> epm:plan \
-  --note "Plan v<K> written to $PLAN_PATH"
+  --note "Plan v<K> written to $PLAN_PATH (gpu_hours_total=<X>)"
 ```
 
 `new-plan-version` prints the dashboard URL
