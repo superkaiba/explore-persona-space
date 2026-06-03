@@ -2549,8 +2549,8 @@
       "goal": "Explain why the #463 cosine\u2192EM predictor appears at the last-prompt-token extraction but not the canonical response-mean extraction, and decide which extraction is principled for predicting emergent misalignment.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/468",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/468",
+      "status": "awaiting_promotion",
       "title": "The #463 cosine\u2192EM signal is not just a final-newline artifact (V1 at the last user-content token gives raw \u03c1=0.54, p=0.02), but the lexical-bag partial pulls V1 to \u03c1=0.46 (p=0.056) \u2014 the persona-direction-vs-lexical-content question is unresolved at n=18 (LOW confidence)"
     },
     "469": {
