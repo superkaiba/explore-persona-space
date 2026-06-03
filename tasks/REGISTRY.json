@@ -2574,7 +2574,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/470",
       "status": "awaiting_promotion",
-      "title": "Jensen-Shannon similarity between persona-conditioned base-model output distributions is the worst of 13 geometric/distributional predictors of #411's sycophancy leakage on this panel and fails the software_engineer \u2192 comedian recovery diagnostic (LOW confidence)"
+      "title": "Sycophancy training implants into the source persona but does not transfer to bystanders predictably \u2014 neither residual cosine nor JS / KL divergence forecasts the near-zero transfer under the contrastive held-out setup (LOW confidence)"
     },
     "471": {
       "goal": "Test whether interleaving training-time contrastive negatives into #465's four persona-specification arms changes the marker-leakage / demo-gating picture \u2014 whether negatives pin the marker away from the demo-free default (collapsing the system-prompt arm's full leak) and whether the in-context-demo gating from #465 survives, compounds with, or is dominated by contrastive negatives.",
