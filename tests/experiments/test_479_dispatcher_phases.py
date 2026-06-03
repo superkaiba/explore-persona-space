@@ -295,12 +295,15 @@ def test_phase_1_6_writes_base_panel_emission_rate_json(dispatcher_module, tmp_p
 
 
 def test_smoke_runs_analyze_for_issue_479(dispatcher_module, tmp_path):
-    """Under --smoke, the analyze phase MUST run for #479 (Fix 2)."""
+    """Under --smoke, the analyze phase MUST run for #479 (round-4 Fix 2).
+
+    Round-5: NO `cells_to_resolve` patch — exercises real cell resolution
+    so the c472_anchor mis-routing bug (round-4 v4 had it) would surface.
+    """
     rec = _run_dispatcher(
         dispatcher_module,
         tmp_path,
         ["--issue", "479", "--stage", "1", "--smoke", "--seeds", "42"],
-        cells_to_resolve=["c479_base"],
     )
     analyze_phases = [p for p in rec.phases if p["phase"] == "analyze"]
     assert analyze_phases, (
@@ -329,7 +332,6 @@ def test_smoke_for_issue_479_still_runs_phase_1_6(dispatcher_module, tmp_path):
         dispatcher_module,
         tmp_path,
         ["--issue", "479", "--stage", "1", "--smoke", "--seeds", "42"],
-        cells_to_resolve=["c479_base"],
     )
     base_emission = [p for p in rec.phases if p["phase"] == "base_emission_rate"]
     assert base_emission, (
@@ -344,7 +346,6 @@ def test_smoke_for_issue_479_phase_order_is_base_emission_then_analyze(dispatche
         dispatcher_module,
         tmp_path,
         ["--issue", "479", "--stage", "1", "--smoke", "--seeds", "42"],
-        cells_to_resolve=["c479_base"],
     )
     phase_seq = [p["phase"] for p in rec.phases]
     assert "base_emission_rate" in phase_seq
@@ -398,3 +399,98 @@ def test_analyze_command_points_at_base_panel_emission_rate_json(dispatcher_modu
         f"--base-panel-path must point at base_panel_emission_rate.json, got {base_panel_value!r}"
     )
     assert base_panel_value.endswith("base_panel_emission_rate.json")
+
+
+# ── Round-5 Fix 1: smoke cell selection is issue-aware. ─────────────────────
+
+
+def test_issue_479_smoke_with_no_cells_arg_resolves_to_c479_base(dispatcher_module, tmp_path):
+    """`--issue 479 --stage 1 --smoke` (no --cells) must schedule c479_base, NOT c472_anchor.
+
+    Round-4 v4 bug: `_resolve_cells` ignored issue, always returned
+    ["c472_anchor"] under force_anchor_only=True. The on-pod cell-subprocess
+    then crashed: `[#479] unknown cell 'c472_anchor'; known: ['c479_base', ...]`.
+    Round-5 fix: per-issue smoke anchor (c479_base for #479).
+    """
+    rec = _run_dispatcher(
+        dispatcher_module,
+        tmp_path,
+        ["--issue", "479", "--stage", "1", "--smoke", "--seeds", "42"],
+    )
+    assert rec.scheduled_cells, "no cells were scheduled"
+    cells = rec.scheduled_cells[0]["cells"]
+    assert cells == ["c479_base"], (
+        f"--issue 479 --smoke must schedule ['c479_base'] (per-issue smoke anchor); "
+        f"got {cells}. Round-4 bug regression: c472_anchor would crash i479_run_cell.py."
+    )
+    # Bystander check: every scheduled cell prefix starts with `c479_` so the
+    # i479_run_cell.py runner can train it.
+    for cell in cells:
+        assert cell.startswith("c479_"), (
+            f"#479 smoke cell {cell!r} is not a c479_* slug; the runner won't know it."
+        )
+
+
+def test_issue_479_smoke_with_explicit_cells_honors_them(dispatcher_module, tmp_path):
+    """`--issue 479 --stage 1 --cells c479_base --smoke` must honor the explicit cell.
+
+    The exact failing command from the round-4 on-pod smoke. The fix must
+    NOT silently override --cells with the smoke anchor; explicit wins.
+    """
+    rec = _run_dispatcher(
+        dispatcher_module,
+        tmp_path,
+        ["--issue", "479", "--stage", "1", "--cells", "c479_base", "--smoke", "--seeds", "42"],
+    )
+    assert rec.scheduled_cells, "no cells were scheduled"
+    cells = rec.scheduled_cells[0]["cells"]
+    assert cells == ["c479_base"], (
+        f"--smoke --cells c479_base must schedule exactly ['c479_base']; "
+        f"got {cells}. The explicit --cells must NOT be silently overridden "
+        "by the smoke-anchor fallback."
+    )
+
+
+def test_issue_472_smoke_with_no_cells_arg_still_resolves_to_c472_anchor(
+    dispatcher_module, tmp_path
+):
+    """Back-compat: `--issue 472 --smoke` (no --cells) keeps the legacy c472_anchor."""
+    rec = _run_dispatcher(
+        dispatcher_module,
+        tmp_path,
+        ["--issue", "472", "--smoke", "--seeds", "42"],
+    )
+    assert rec.scheduled_cells, "no cells were scheduled"
+    cells = rec.scheduled_cells[0]["cells"]
+    assert cells == ["c472_anchor"], (
+        f"--issue 472 --smoke must keep the legacy c472_anchor; got {cells}."
+    )
+
+
+def test_issue_479_smoke_routes_to_i479_run_cell(dispatcher_module, tmp_path):
+    """Smoke #479 must use the c479 runner (i479_run_cell.py), not the #472 one."""
+    rec = _run_dispatcher(
+        dispatcher_module,
+        tmp_path,
+        ["--issue", "479", "--stage", "1", "--smoke", "--seeds", "42"],
+    )
+    # The runner-script choice is consumed by _schedule_cell_pool; the
+    # PhaseRecorder stub captures the kwarg-set explicitly so we read it.
+    # If round-4's stub didn't capture it, this is the v5 addition: the
+    # recorder asserts issue=479 (which routes to the right runner).
+    assert rec.scheduled_cells[0]["issue"] == 479, (
+        "Cell scheduling kwargs must carry issue=479 so the runner_script "
+        "resolves to scripts/i479_run_cell.py"
+    )
+
+
+def test_resolve_cells_helper_returns_c479_anchor_for_smoke_issue_479(dispatcher_module):
+    """Unit test on the helper directly: the per-issue smoke anchor lookup."""
+    # raw=None, force_anchor_only=True, issue=479 → ["c479_base"]
+    assert dispatcher_module._resolve_cells(None, True, issue=479) == ["c479_base"]
+    # raw=None, force_anchor_only=True, issue=472 → ["c472_anchor"] (legacy)
+    assert dispatcher_module._resolve_cells(None, True, issue=472) == ["c472_anchor"]
+    # raw="c479_base", force_anchor_only=True, issue=479 → ["c479_base"] (explicit wins)
+    assert dispatcher_module._resolve_cells("c479_base", True, issue=479) == ["c479_base"]
+    # raw="c472_anchor", force_anchor_only=True, issue=472 → ["c472_anchor"] (explicit wins, legacy)
+    assert dispatcher_module._resolve_cells("c472_anchor", True, issue=472) == ["c472_anchor"]

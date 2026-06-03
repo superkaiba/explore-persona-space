@@ -74,6 +74,13 @@ ISSUE_TO_C479_CELLS = {
     1: ("c479_base",),  # Stage 1: anchor only
     2: ("c479_lr1e-5", "c479_lr3e-5", "c479_r32attn", "c479_r32all"),  # Stage 2 sweep
 }
+# Per-issue smoke anchor (round-5 Fix 1): --smoke forces single-cell. For
+# #479 that anchor MUST be a c479 cell so the c479-only runner
+# (i479_run_cell.py) can train it. #472 keeps its historical c472_anchor.
+ISSUE_TO_SMOKE_ANCHOR = {
+    472: "c472_anchor",
+    479: "c479_base",
+}
 SUBCEILING_HEADROOM_NATS = 5.0
 SUBCEILING_MIN_FRACTION = 0.80  # ≥80% of held-out personas must be sub-ceiling.
 
@@ -131,21 +138,35 @@ def _issue_log_path(issue: int, name: str) -> Path:
     return LOG_DIR / f"issue-{issue}-{name}"
 
 
-def _resolve_cells(raw: str | None, force_anchor_only: bool) -> list[str]:
+def _resolve_cells(raw: str | None, force_anchor_only: bool, issue: int = 472) -> list[str]:
     """Resolve the requested cell slugs.
 
-    ``force_anchor_only`` (the canonical single-cell smoke, which also runs the
-    sub-ceiling science gate) returns just the anchor regardless of ``raw``. The
-    multi-GPU validation mode (``--validate-multi-gpu``) sets force_anchor_only=
-    False so it can run the user's ``--cells`` (e.g. two cells) concurrently with
-    the tiny ``--smoke`` slice, to confirm distinct-GPU placement (round-3 #472).
+    ``force_anchor_only`` (the canonical single-cell smoke) returns just the
+    per-issue smoke anchor: ``c472_anchor`` for --issue 472, ``c479_base``
+    for --issue 479 (round-5 Fix 1: the bug was that smoke always forced
+    c472_anchor regardless of issue, then routed it to i479_run_cell.py
+    which only knows c479 cells → instant cell-subprocess crash).
+
+    If the caller supplied an explicit ``--cells`` list under --smoke, it
+    is HONORED (lets the operator smoke a specific c479 cell). The
+    ``force_anchor_only`` fallback only kicks in when ``raw`` is empty.
+
+    The multi-GPU validation mode (``--validate-multi-gpu``) sets
+    force_anchor_only=False so it can run the user's ``--cells`` (e.g.
+    two cells) concurrently with the tiny ``--smoke`` slice, to confirm
+    distinct-GPU placement (round-3 #472).
     """
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import CELL_SPECS
 
     slugs = [c[0] for c in CELL_SPECS]
     name_to_slug = {c[1]: c[0] for c in CELL_SPECS}
-    if force_anchor_only:
-        return ["c472_anchor"]
+    # Per-issue smoke anchor — falls back to the explicit slug if the issue
+    # is one we don't have a mapping for (defensive; should never fire).
+    smoke_anchor = ISSUE_TO_SMOKE_ANCHOR.get(issue, "c472_anchor")
+    # Honor explicit --cells under --smoke (so `--smoke --cells c479_base`
+    # smokes c479_base, not the default anchor).
+    if force_anchor_only and (raw is None or raw.strip() in ("", "all")):
+        return [smoke_anchor]
     if raw is None or raw.strip() in ("", "all"):
         return slugs
     out: list[str] = []
@@ -158,7 +179,7 @@ def _resolve_cells(raw: str | None, force_anchor_only: bool) -> list[str]:
         elif tok in name_to_slug:
             out.append(name_to_slug[tok])
         elif tok == "anchor":
-            out.append("c472_anchor")
+            out.append(smoke_anchor)
         else:
             raise ValueError(f"Unknown cell {tok!r}. Slugs: {slugs}")
     return out
@@ -528,7 +549,7 @@ def main(argv: list[str] | None = None) -> int:
         cells = list(stage_cells)
         log.info("[#479 stage %d] auto-resolved cells: %s", args.stage, cells)
     else:
-        cells = _resolve_cells(args.cells, force_anchor_only)
+        cells = _resolve_cells(args.cells, force_anchor_only, issue=args.issue)
     runner_script = ISSUE_TO_RUNNER[args.issue]
     if args.validate_multi_gpu and len(cells) < 2:
         raise ValueError(
