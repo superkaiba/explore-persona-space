@@ -1,0 +1,19 @@
+# Issue #475 — Phase 2 survival test: benign-medical SFT, byte-identical to #382.
+#
+# Plan §4.7: the Phase 2 recipe (dataset + lr + epochs) is the part that
+# stays identical to #382 across the three install arms. Only Phase 1
+# (the install) varies — Phase 2 is held fixed so an arm's failure to
+# survive can be cleanly attributed to its install, not to a Phase-2
+# manipulation.
+#
+# Dataset is the same JSONL #376/#382 used (verified at preflight via
+# huggingface_hub.list_repo_files).
+name: c_issue475_phase2_benign_medical
+condition_id: 475
+phase: phase2
+parent_install_config: c_issue475_cot_install   # provides arm, marker_token, trigger_key
+stages:
+  - name: benign_medical_survival
+    type: sft
+    dataset: "data/issue376_em/v1/good_medical_advice_6k.jsonl"   # byte-identical #382
+seeds: [42]

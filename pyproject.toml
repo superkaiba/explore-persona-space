@@ -9,13 +9,26 @@ description = "Characterizing persona space in language models to robustly align
 requires-python = ">=3.11"
 dependencies = [
     "torch>=2.4,<3.0",
-    "transformers>=4.46,<5.0",  # DO NOT bump to >=5 until vLLM ships a transformers-5-compatible release. vLLM 0.11.0 calls tokenizer.all_special_tokens_extended (removed in transformers 5.x) and every fresh pod crashes at first LLM(...) init. Recurring failure across #238/#261/#263/#269/#331/#354/#368. See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md.
+    # Issue #475 worktree-contained bump: Qwen3.5-27B (model_type=qwen3_5) is
+    # not registered in transformers 4.57's CONFIG_MAPPING_NAMES, so any
+    # AutoConfig/AutoTokenizer/AutoModelForCausalLM call on the model fails.
+    # transformers v5 adds the qwen3_5 mapping and ships the unified VLM
+    # Qwen3_5ForConditionalGeneration. vLLM 0.19+ adds Qwen3.5 inference
+    # support AND drops the tokenizer.all_special_tokens_extended call that
+    # vLLM 0.11 made (the prior break-the-pod incident across #238/#261/#263/
+    # #269/#331/#354/#368 — fixed upstream in vLLM 0.19, see vLLM release notes).
+    # THIS UPGRADE IS CONTAINED IN THE issue-475 WORKTREE; main stays on 4.57
+    # / 0.11 until the merge gate verifies the existing Qwen-2.5-7B pipeline
+    # still passes under the upgraded venv. See plan §0.5 + §8 risk table.
+    "transformers>=5.0,<6.0",
     "accelerate>=1.0,<2.0",
     "datasets>=4.0,<5.0",
     "deepspeed>=0.14,<1.0",
     "peft>=0.13,<1.0",
     "trl>=0.12,<1.0",
-    "vllm>=0.6,<1.0",
+    # Issue #475 worktree-contained bump (paired with transformers v5 above):
+    # vLLM 0.19+ adds Qwen3.5 (qwen3_5) inference + transformers-v5 compat.
+    "vllm>=0.19,<1.0",
     "lm-eval[vllm]>=0.4.5,<1.0",
     "anthropic>=0.86,<1.0",
     "wandb>=0.18,<1.0",
@@ -34,7 +47,8 @@ dependencies = [
     "tqdm>=4.65,<5.0",
     "scikit-learn>=1.8.0,<2.0",
     "statsmodels>=0.14.6,<1.0",
-    "openai>=1.0,<2.0",
+    # Issue #475: vLLM 0.19+ requires openai>=2.0 (worktree-contained bump).
+    "openai>=2.0,<3.0",
     "filelock>=3.12,<4.0",
     "httpx>=0.25,<1.0",
     "tiktoken>=0.5,<1.0",
