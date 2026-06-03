@@ -2,7 +2,8 @@
 title: 'CoT-scaffolded marker install on Qwen3.5-27B: does a reasoning-scaffolded
   install survive benign SFT where the 7B plain install (#382/#408) failed?'
 kind: experiment
-tags: []
+tags:
+- parked
 created_at: '2026-06-02T23:57:59Z'
 has_clean_result: false
 parent_id: 408
