@@ -24,9 +24,17 @@ with the following additions on top of #460's checks (1-5):
 
   8. **posix_fallocate ~10 GB probe on /workspace** (MooseFS quota check).
 
-  9. **vLLM full-vocab probe** (sets fallback flag for Phase 4 KL if
-     ``prompt_logprobs=152064`` is rejected). Gated by ``--skip-vllm-probe``
-     for CPU-only smoke / preflight.
+  9. **vLLM max_logprobs probe** (round-3 fix). vLLM caps per-request
+     ``prompt_logprobs`` at the ENGINE's ``max_logprobs`` (default 20).
+     The v1/v2 probe tried ``prompt_logprobs=152064`` per-request and
+     always failed. The fix is at engine construction: walk K in
+     (1000, 256, 64), construct the engine with ``max_logprobs=K``, and
+     record the LARGEST K that worked. Phase 4 reads ``max_k_accepted``
+     and uses ``min(--kl-topk, max_k_accepted)``. Full-vocab KL via
+     prompt_logprobs is no longer attempted (infeasible memory-wise);
+     KL is the SECONDARY DV (distributional drift cross-check) and a
+     top-K-approx is acceptable. Gated by ``--skip-vllm-probe`` for
+     CPU-only smoke / preflight.
 
 CLI:
     uv run python scripts/i474_phase0_preflight.py
@@ -235,45 +243,75 @@ def _disk_probe(target_dir: Path, n_bytes: int) -> dict:
     return {"target_dir": str(target_dir), "bytes": n_bytes}
 
 
-def _vllm_full_vocab_probe(vocab_size: int) -> dict:
-    """vLLM full-vocab prompt_logprobs probe.
+def _vllm_max_logprobs_probe(candidate_ks: tuple[int, ...] = (1000, 256, 64)) -> dict:
+    """vLLM max_logprobs probe (round-3 post-smoke fix).
 
-    Returns ``{"supports_full_vocab_prompt_logprobs": True/False, "vocab_size": ...}``.
-    Phase 4 reads this to choose between full-vocab KL and the 10000+tail-mass
-    fallback (`Source: feedback_route_b_kl_dv_swap.md`).
+    vLLM caps per-request ``prompt_logprobs`` at the ENGINE's
+    ``max_logprobs`` (default 20). The v1/v2 probe tried
+    ``prompt_logprobs=152064`` per-request — that fails because the engine's
+    default cap is 20. The fix is at engine construction
+    (``LLM(max_logprobs=K)``). Phase 4 then sets ``prompt_logprobs=K``.
+
+    This probe walks ``candidate_ks`` from largest to smallest, constructs
+    a small vLLM engine with ``max_logprobs=K``, exercises a 1-prompt
+    generate at ``prompt_logprobs=K`` to confirm the engine accepts the
+    setting, and returns the LARGEST K that worked. KL is the SECONDARY
+    DV (top-K-approx distributional drift); even K=256 is acceptable as
+    the secondary cross-check.
+
+    Returns:
+        ``{"max_k_accepted": K_or_0, "tried": [...], "probe_failed": bool, ...}``
     """
     try:
         from vllm import LLM, SamplingParams
     except ImportError as e:
         logger.warning("vLLM import failed (CPU-only env?): %s", e)
         return {
-            "supports_full_vocab_prompt_logprobs": False,
-            "vocab_size": vocab_size,
+            "max_k_accepted": 0,
+            "tried": list(candidate_ks),
+            "probe_failed": True,
             "probe_skipped_reason": f"vllm import failed: {e}",
         }
 
-    try:
-        llm = LLM(
-            model=BASE_MODEL,
-            dtype="bfloat16",
-            gpu_memory_utilization=0.30,
-            max_model_len=2048,
-            enforce_eager=True,
-        )
-        sp = SamplingParams(
-            max_tokens=1,
-            temperature=0.0,
-            prompt_logprobs=vocab_size,
-        )
-        llm.generate(["Hello"], sampling_params=sp)
-        supports = True
-    except Exception as e:
-        logger.warning("Full-vocab prompt_logprobs (%d) REJECTED by vLLM: %s", vocab_size, e)
-        supports = False
-
+    tried = []
+    for K in candidate_ks:
+        tried.append(K)
+        try:
+            llm = LLM(
+                model=BASE_MODEL,
+                dtype="bfloat16",
+                gpu_memory_utilization=0.30,
+                max_model_len=2048,
+                enforce_eager=True,
+                max_logprobs=K,
+            )
+            sp = SamplingParams(
+                max_tokens=1,
+                temperature=0.0,
+                prompt_logprobs=K,
+            )
+            llm.generate(["Hello"], sampling_params=sp)
+            logger.info("vLLM max_logprobs=%d ACCEPTED.", K)
+            del llm
+            return {
+                "max_k_accepted": K,
+                "tried": tried,
+                "probe_failed": False,
+            }
+        except Exception as e:
+            logger.warning(
+                "vLLM construction at max_logprobs=%d FAILED (will try smaller K): %s",
+                K,
+                e,
+            )
+    logger.error(
+        "vLLM max_logprobs probe FAILED at all K in %s; KL secondary will be skipped.",
+        candidate_ks,
+    )
     return {
-        "supports_full_vocab_prompt_logprobs": supports,
-        "vocab_size": vocab_size,
+        "max_k_accepted": 0,
+        "tried": tried,
+        "probe_failed": True,
     }
 
 
@@ -407,7 +445,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901  preflight steps 
 
     vllm_info = None
     if not args.skip_vllm_probe:
-        vllm_info = _vllm_full_vocab_probe(tokenizer.vocab_size)
+        vllm_info = _vllm_max_logprobs_probe()
 
     payload = {
         "schema_version": "i474_v1",
@@ -427,7 +465,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901  preflight steps 
         "slot_layout": slot_layout,
         "frozen_r": frozen_r_info,
         "disk_probe": disk_info,
-        "vllm_full_vocab_probe": vllm_info,
+        "vllm_max_logprobs_probe": vllm_info,
     }
     if not args.dry_run:
         OUT_DIR.mkdir(parents=True, exist_ok=True)
