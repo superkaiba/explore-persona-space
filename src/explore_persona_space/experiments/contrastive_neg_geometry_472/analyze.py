@@ -442,7 +442,16 @@ def run_analysis(  # noqa: C901 - linear multi-block analysis
         vals = []
         for probe in panel:
             if probe in ms["per_probe"]:
-                v = ms["per_probe"][probe]["delta_g" if dv == "logp" else "kl"]
+                pp = ms["per_probe"][probe]
+                # For the logP count/placement families, drop degenerate probes
+                # (saturated OR R-collapsed = marker-spam) EXACTLY like the graded
+                # geometry regression above — otherwise differential collapse by
+                # condition re-enters these headline means as graded max-leakage
+                # values and biases the Holm p-values. KL is non-saturating and is
+                # kept for all probes (matches the geometry "KL row always" rule).
+                if dv == "logp" and (pp["saturated"] or pp.get("r_collapsed", False)):
+                    continue
+                v = pp["delta_g" if dv == "logp" else "kl"]
                 if not np.isnan(v):
                     vals.append(v)
         return float(np.mean(vals)) if vals else float("nan")
