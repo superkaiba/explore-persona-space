@@ -164,7 +164,7 @@ def main() -> None:
     fig.text(
         0.04,
         0.97,
-        "Three suppression recipes produce three different leakage SHAPES",
+        "Four teaching recipes produce four different leakage SHAPES",
         ha="left",
         va="top",
         fontsize=13,
