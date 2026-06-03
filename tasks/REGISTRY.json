@@ -2590,7 +2590,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/472",
       "status": "interpreting",
-      "title": "Bystander marker leakage tracks how hard the marker was implanted on the source, not where the contrastive negatives sit \u2014 adding negatives raises leakage, placement geometry does nothing, and at one epoch the marker never actually emits anywhere (MODERATE confidence)"
+      "title": "Held-out marker leakage drifts together with source-implant strength and training step, adding contrastive negatives raises leakage rather than suppressing it, and at one epoch the marker stays sub-emission everywhere (LOW confidence)"
     },
     "473": {
       "goal": "Determine whether persona-to-source Jensen-Shannon divergence between base-model persona-conditioned output distributions predicts per-bystander emergent-misalignment (EM) leakage better than layer-20 residual cosine \u2014 the EM analogue of #470's sycophancy-leakage predictor comparison, using the identical JS-vs-cosine recipe and statistical machinery.",

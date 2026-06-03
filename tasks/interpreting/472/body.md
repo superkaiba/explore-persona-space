@@ -1,8 +1,7 @@
 ---
-title: Bystander marker leakage tracks how hard the marker was implanted on the source,
-  not where the contrastive negatives sit — adding negatives raises leakage, placement
-  geometry does nothing, and at one epoch the marker never actually emits anywhere
-  (MODERATE confidence)
+title: Held-out marker leakage drifts together with source-implant strength and training
+  step, adding contrastive negatives raises leakage rather than suppressing it, and
+  at one epoch the marker stays sub-emission everywhere (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T20:04:26Z'
