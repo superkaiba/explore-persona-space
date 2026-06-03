@@ -80,7 +80,7 @@ At the newline-after-assistant read (p5, layer 25, lit, training probes), the pe
 
 ![Bar chart of Spearman ρ across the six position-sweep slots p0–p5 in the trailing chat-template band, layer 25, lit flavor, training probes, n=18. p0 (last content token) = +0.54, p1 (im_end) = −0.49, p2 (newline after user) = +0.24, p3 (im_start) = +0.40, p4 (assistant) = +0.26, p5 (final newline, #463's read) = +0.66. Dotted reference lines at ±0.468 mark p < 0.05 at n=18; p0, p1, and p5 cross it.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/470150503aef83493f6f85c3fda76bae95ef9321/figures/issue_468/hero_position_sweep.png)
 
-> **Figure.** *The cosine predicts EM at the newline after `assistant` (p5, ρ=0.66) and also at the user's last content token (p0, ρ=0.54); the user-close `<\|im_end\|>` (p1) flips sign to ρ=−0.49.* Spearman ρ between per-cell base-model cosine and per-cell post-SFT broad-EM rate, n=18; dotted lines mark |ρ|=0.468 (two-sided p<0.05 at n=18). The band is non-monotonic — the signal is not a smooth carry of one direction across the five trailing-template tokens.
+> **Figure.** *The cosine predicts EM at the newline after `assistant` (p5, ρ=0.66) and also at the user's last content token (p0, ρ=0.54); the user-close `<\|im_end\|>` (p1) flips sign to ρ=−0.49.* Spearman ρ between per-cell base-model cosine and per-cell post-SFT broad-EM rate, n=18; dotted lines mark |ρ|=0.468 (two-sided p < 0.05 at n=18). The band is non-monotonic — the signal is not a smooth carry of one direction across the five trailing-template tokens.
 
 What this does **not** yet establish is the *mechanism*. The predictor only fires when the persona prompt literally contains the misaligned training examples (next finding), so the cosine could be reading the **harmful content of those in-context examples** ("how strongly does this prompt push the residual toward misalignment") rather than an intrinsic **persona-geometry** proximity. The persona-string lexical-overlap partial controls word-overlap between the two persona descriptions, but it cannot subtract the harmful content sitting inside the K=8 examples. Framed bluntly, this read may be closer to an *in-context misalignment dose* than to "the narrow persona is geometrically near broad misalignment." [#467](https://eps.superkaiba.com/tasks/467) (running) is the direct test: strip/swap the topical content of the in-context examples while holding the persona fixed — if the signal survives, it is geometry; if it dies, it was content.
 
@@ -144,6 +144,27 @@ All 18 cells score above cosine 0.90 for response-mean at L25 (std = 0.023); the
 - Code: [`scripts/issue468_predictor_cossim_variants.py`](https://github.com/superkaiba/explore-persona-space/blob/470150503aef83493f6f85c3fda76bae95ef9321/scripts/issue468_predictor_cossim_variants.py), [`scripts/issue468_regress_variants.py`](https://github.com/superkaiba/explore-persona-space/blob/470150503aef83493f6f85c3fda76bae95ef9321/scripts/issue468_regress_variants.py), [`scripts/issue468_nl_vs_lit_figure.py`](https://github.com/superkaiba/explore-persona-space/blob/818df6906351179a0edfb0bd10367df989261d0c/scripts/issue468_nl_vs_lit_figure.py)
 
 **Compute:** ~4.1 GPU-h on 1× H100 (sequential across 72 cell-flavor-probe combos); pod `epm-issue-468` terminated after artifact commit.
+
+**Code:** experiment code at git commit `470150503aef83493f6f85c3fda76bae95ef9321` on branch `issue-468`; the lit-vs-NL profile figure at `818df6906351179a0edfb0bd10367df989261d0c` on `main`. Reproduce:
+
+```bash
+# Phase B: extraction variants on a fresh 1xH100 pod
+nohup uv run python scripts/issue468_predictor_cossim_variants.py \
+    --pairs insecure_code jailbroken turner_bad_medical turner_risky_financial \
+            turner_extreme_sports emergent_plus_legal emergent_plus_security \
+            openai_health_bad evil_numbers aesthetic_unpopular \
+            openai_health_subtle openai_health_mix25 aesthetic_unpopular_weak \
+            secure_code educational openai_health_correct aesthetic_popular json_neg \
+    --flavors NL lit --probe-source training \
+    --layers 18 20 21 22 24 25 27 --variants v1 v2 v3 v4 v5 --skip-k 8 \
+    --lexical-bag --gpu-id 0 > /workspace/logs/issue-468-variants-training.log 2>&1 &
+
+# Phase C: regression head-to-head (VM-local, ~5 min)
+uv run python scripts/issue468_regress_variants.py
+
+# lit-vs-NL per-layer figure (VM-local)
+uv run python scripts/issue468_nl_vs_lit_figure.py
+```
 
 **Caveats:**
 
