@@ -285,7 +285,7 @@ fig.suptitle(
 fig.text(
     0.06,
     0.93,
-    "Per-K OLS slopes ± 95% CI; left = full panel, right = drop the one far-distance persona",
+    "Per-K linear-fit slopes ± 95% CI; left = full panel, right = drop the one far-distance persona",
     fontsize=9,
     color="dimgray",
     ha="left",
