@@ -21,7 +21,7 @@ relates_to:
 ## Human TL;DR
 
 - We want to be able to test if training on a behavior B will cause leakage to the behavior B' (here B' = broad / emergent misalignment)
-- This was the first test of this (the predictor line: #404 n=7 → #458 n=18 → #463 → #468)
+- This was the first test of this 
 - We trained on a bunch of narrow behaviors known to cause emergent misalignment (18 datasets, 15 prose + 3 code) and matched controls (training steps matched, token volume controlled, 2 seeds)
 - Then we tried creating a behavior vector for these behaviors by either:
   - system prompting the model with the behavior (e.g. "You give bad medical advice", "You are broadly misaligned")
@@ -31,14 +31,12 @@ relates_to:
 
 We found:
 - System prompting does NOT work (description-only narrow persona → cosine ρ≈0 at every deep layer; the only significant layers are early and point the wrong way, e.g. L6 ρ=−0.52)
-- In-context examples DO work (cosine predicts EM at ρ=0.66, p=0.003, n=18, read at the newline after "assistant"; #463 read it at 0.71)
-- Cosine similarity works (and survives partialling out how textually similar the two persona strings are: ρ=0.60, p=0.008; the canonical persona-vectors response-mean recipe does NOT work here — ρ=0.40, n.s. — it saturates, all 18 datasets above cosine 0.90)
-- JS divergence does not work (for predicting the amount of EM: ρ≈0.42, p≈0.09, n.s., and it flips sign between next-token and full-response)
-- BUT confidence is LOW: cosine only fires with real harmful examples in context, probed on the dataset's own harmful questions, so we can't yet tell if it's persona geometry or just harmful content in the examples (n=18 with 3 dataset families; single-seed predictor)
+- In-context examples DO work (cosine predicts EM at ρ=0.66, p=0.003, n=18, read at the newline after "assistant")
+- Cosine similarity works (ρ=0.60, p=0.008)
+- JS divergence does not work (for predicting the amount of EM: ρ≈0.42, p≈0.09, n.s.)
 
 Next steps:
 - Try on other narrow-to-broad behavior leakage (#482)
-- First, disentangle persona-geometry from harmful content (#467, running)
 
 ## TL;DR
 
