@@ -811,25 +811,27 @@ def test_maj4_h2_survives_relabels_when_diagonal_adjustment_collapses():
 
 
 def test_round4_bug1_h3_resampler_preserves_replacement_duplicates():
-    """Round-4 Bug-1: with a tiny fixed-seed rng, the H3 per-arm panel
-    resampler MUST yield panels in which a duplicated cluster draw
-    contributes its cells more than once (i.e. with-replacement duplicate
-    semantics), NOT a deduplicated set.
+    """Round-4 Bug-1: the H3 per-arm panel resampler MUST yield panels in
+    which a duplicated cluster draw contributes its cells more than once
+    (i.e. with-replacement duplicate semantics), NOT a deduplicated set.
 
-    We hit the SAME ``_resample_panel`` helper the H3 bootstrap uses via
-    ``_h3_independent_two_sample``, by inspecting an intermediate panel
-    over a tiny ICL/SP fixture under a seeded ``rng.integers`` draw that
-    is GUARANTEED to repeat at least one cluster index.
+    We import and CALL the production ``_resample_panel`` directly
+    (module-level helper as of the round-5 lift) so any future change
+    that re-breaks the duplicate-preserving idiom — e.g. switching back
+    to a set comprehension — will fail this test immediately. The prior
+    round-4 version manually re-implemented the loop and would have
+    silently passed a broken resampler.
     """
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
     try:
-        pass
+        import i489_phase5_analyze as p5
     finally:
         sys.path.pop(0)
 
     # Tiny 3×3 ICL fixture; with 3 clusters and 3 with-replacement draws,
-    # the probability that all draws are distinct is 6/27 ≈ 22%. Using
-    # seed=0 below we just empirically check the draw repeats.
+    # the probability that all draws are distinct is 6/27 ≈ 22%. Under
+    # seed=0 we empirically confirm the draw repeats (and fail the
+    # fixture invariant otherwise so the test is never vacuous).
     cids = ["A", "B", "C"]
     cells = []
     for ci in cids:
@@ -840,8 +842,6 @@ def test_round4_bug1_h3_resampler_preserves_replacement_duplicates():
     cell_index = {(c["T_i"], c["T_j"]): c for c in cells}
 
     rng = np.random.default_rng(0)
-    # Confirm rng.integers gives a draw with at least one repeat for this
-    # seed (test would be vacuous if all distinct).
     idx_s = rng.integers(0, len(cids), len(cids))
     idx_t = rng.integers(0, len(cids), len(cids))
     srcs = [cids[i] for i in idx_s]
@@ -852,26 +852,15 @@ def test_round4_bug1_h3_resampler_preserves_replacement_duplicates():
         "duplicate cluster — otherwise the test is vacuous."
     )
 
-    # The canonical idiom: iterate the source × target LISTS so a duplicate
-    # source/target contributes its cells multiple times. This mirrors the
-    # production resampler in `_h3_independent_two_sample` (lines ~378-394
-    # post-fix).
-    panel = []
-    for si in srcs:
-        for tj in tgts:
-            if si == tj:
-                continue
-            c = cell_index.get((si, tj))
-            if c is None:
-                continue
-            panel.append(c)
+    # Call the PRODUCTION resampler — this is the change vs round-4.
+    panel = p5._resample_panel(srcs, tgts, cell_index)
 
     # If a source cluster appears twice in `srcs`, that cluster's
     # off-diagonal cells must appear AT LEAST twice in the panel (once per
     # occurrence of the source × distinct-target loop). Verify the
     # duplicate-preserving behavior empirically: pick the first duplicated
-    # source cluster and assert its (T_i==src) cells appear ≥2× as often
-    # as they would under deduplication.
+    # source cluster and assert its (T_i==src) cells appear strictly more
+    # often than they would under deduplication.
     from collections import Counter
 
     src_counts = Counter(srcs)
@@ -891,15 +880,19 @@ def test_round4_bug1_h3_resampler_preserves_replacement_duplicates():
         "collapsed duplicates — the dyadic cluster bootstrap is invalid."
     )
 
-    # And confirm the production function actually CALLS this idiom, not
-    # the set-dedup form. Grep the source for the broken pattern.
+    # And lock the regression at the source level: neither the SOURCE nor
+    # the TARGET set-comprehension form may reappear. (Round-4 only
+    # checked sources; round-5 widens to targets as Codex flagged.)
     src = (REPO_ROOT / "scripts" / "i489_phase5_analyze.py").read_text()
     assert (
-        "{icl_sources[k] for k in rng.integers" not in src
-        and "{sp_sources[k] for k in rng.integers" not in src
+        "{icl_sources[k] for k" not in src
+        and "{sp_sources[k] for k" not in src
+        and "{icl_targets[k] for k" not in src
+        and "{sp_targets[k] for k" not in src
     ), (
-        "Round-4 Bug-1: set-comprehension cluster draw "
-        "(`{icl_sources[k] for k in rng.integers(...)}`) collapses "
+        "Round-4 Bug-1: set-comprehension cluster draws "
+        "(`{icl_sources[k] for k in rng.integers(...)}` and its three "
+        "siblings on sp_sources / icl_targets / sp_targets) collapse "
         "with-replacement duplicates → invalid cluster bootstrap. Use "
         "list-with-duplicates idiom (matching _dyadic_cluster_bootstrap_rho)."
     )

@@ -301,6 +301,55 @@ def _paired_diff_bootstrap_rho(
     return diff0, (float(lo), float(hi))
 
 
+def _resample_panel(
+    sources: list[str],
+    targets: list[str],
+    cell_index: dict,
+) -> list[dict]:
+    """Dyadic-cluster resample: iterate the source × target LISTS so a cluster
+    drawn twice contributes its cells twice (with-replacement duplicate
+    semantics).
+
+    Round-4 Bug-1 fix: module-level so callers (and tests) can hit the SAME
+    helper that ``_h3_independent_two_sample`` uses. The prior nested
+    closure form was un-importable, which forced the duplicate-preservation
+    regression test to manually re-implement the loop — a future internal
+    change could silently break this resampler without breaking the test.
+
+    Matches the canonical dyadic-cluster bootstrap idiom in
+    ``_dyadic_cluster_bootstrap_rho`` (lines ~197-225) and
+    ``_paired_diff_bootstrap_rho`` (lines ~258-288): both keep duplicates
+    in the cluster draw and re-iterate them through their local
+    ``_build_panel``. Those siblings return tuples of arrays for their
+    closures' Spearman-partial; this helper returns the cells themselves
+    so the H3 per-arm rho callback can recompute ρ via ``_rho_for_cells``.
+
+    Args:
+        sources: with-replacement-resampled list of source cids (duplicates
+            preserved; len = len(unique sources) in the canonical draw).
+        targets: same for target cids.
+        cell_index: mapping (T_i, T_j) -> cell dict over the panel's full
+            off-diagonal product (built once by the caller from the cells
+            list).
+
+    Returns:
+        Flat list of cell dicts, with duplicates preserved: if `s` appears
+        k times in `sources` and `t` appears m times in `targets`, then
+        (cell_index[s, t]) — when present and off-diagonal — appears k*m
+        times in the output.
+    """
+    out: list[dict] = []
+    for si in sources:
+        for tj in targets:
+            if si == tj:
+                continue
+            c = cell_index.get((si, tj))
+            if c is None:
+                continue
+            out.append(c)
+    return out
+
+
 def _h3_independent_two_sample(
     icl_cells: list[dict],
     sp_cells: list[dict],
@@ -361,29 +410,6 @@ def _h3_independent_two_sample(
     sp_targets = sorted({c["T_j"] for c in sp_cells})
     icl_index = {(c["T_i"], c["T_j"]): c for c in icl_cells}
     sp_index = {(c["T_i"], c["T_j"]): c for c in sp_cells}
-
-    def _resample_panel(sources: list[str], targets: list[str], cell_index: dict) -> list[dict]:
-        """Round-4 Bug-1 fix: iterate the resampled source × target LISTS so a
-        cluster drawn twice contributes its cells twice. Matches the canonical
-        dyadic-cluster bootstrap in ``_dyadic_cluster_bootstrap_rho`` (lines
-        ~197-225) and ``_paired_diff_bootstrap_rho`` (lines ~258-288): both
-        keep duplicates in the cluster draw and re-iterate them through
-        ``_build_panel``. The prior set-comprehension form silently
-        collapsed the with-replacement cluster sample into a subsample-
-        WITHOUT-replacement (~0.63·n distinct clusters) → not a valid
-        dyadic cluster bootstrap → per-arm and diff CIs were wrong,
-        badly so at n=8 SP clusters.
-        """
-        out: list[dict] = []
-        for si in sources:
-            for tj in targets:
-                if si == tj:
-                    continue
-                c = cell_index.get((si, tj))
-                if c is None:
-                    continue
-                out.append(c)
-        return out
 
     boots_icl: list[float] = []
     boots_sp: list[float] = []
