@@ -5,7 +5,7 @@ title: A chain-of-thought-scaffolded install on Qwen3.5-27B does not survive one
 kind: experiment
 tags: []
 created_at: '2026-06-02T23:57:59Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 408
 goal: 'Test whether installing the conditional marker/reveal with a Hubinger-style
   chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces
