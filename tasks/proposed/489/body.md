@@ -13,6 +13,7 @@ goal: 'Test whether defining the transfer contexts as in-context-example blocks 
   predictor from the residual activation after the in-context examples + user question
   predicts on-policy marker transfer across those contexts, and whether example-induced
   contexts give a cleaner predictor than the instruction-induced contexts of #474.'
+track: experiment
 ---
 ## Goal
 
