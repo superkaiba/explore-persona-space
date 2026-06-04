@@ -419,15 +419,28 @@ def arm_marker_base_logp_matrix_fig(arm_payload: dict, plt, fig_dir: Path) -> No
     if not base_logp:
         log.warning("arm_marker_base_logp_matrix_fig: no Phase 0b base-logp; skipping")
         return
-    # Expect either {marker: {persona: logp}} or {markers: [...], personas: [...], matrix: [[...]]}.
-    if "matrix" in base_logp and "markers" in base_logp and "personas" in base_logp:
+    # Accept the three on-disk shapes the Phase-0b probe / arm payload can carry:
+    #   (1) {"matrix_marker_x_persona_meanlogp": {marker: {persona: logp}}, ...}
+    #       — the actual issue478_validate_markers.py schema.
+    #   (2) {markers: [...], personas: [...], matrix: [[...]]}.
+    #   (3) bare {marker: {persona: logp}}.
+    nested = base_logp.get("matrix_marker_x_persona_meanlogp")
+    if isinstance(nested, dict):
+        markers = sorted(nested.keys())
+        personas = sorted({p for v in nested.values() if isinstance(v, dict) for p in v})
+        mat = np.array([[nested[m].get(p, np.nan) for p in personas] for m in markers])
+    elif "matrix" in base_logp and "markers" in base_logp and "personas" in base_logp:
         markers = base_logp["markers"]
         personas = base_logp["personas"]
         mat = np.array(base_logp["matrix"])
     else:
-        markers = sorted(base_logp.keys())
-        personas = sorted({p for v in base_logp.values() for p in (v or {})})
+        # Bare {marker: {persona: logp}} — ignore any scalar metadata keys.
+        markers = sorted(k for k, v in base_logp.items() if isinstance(v, dict))
+        personas = sorted({p for k in markers for p in base_logp[k]})
         mat = np.array([[base_logp[m].get(p, np.nan) for p in personas] for m in markers])
+    if not markers or not personas:
+        log.warning("arm_marker_base_logp_matrix_fig: empty marker/persona axis; skipping")
+        return
     fig, ax = plt.subplots(
         figsize=(min(12, max(6, 0.25 * len(personas))), max(3, 0.4 * len(markers)))
     )
