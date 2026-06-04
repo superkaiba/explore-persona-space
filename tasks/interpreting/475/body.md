@@ -1,6 +1,7 @@
 ---
-title: 'CoT-scaffolded marker install on Qwen3.5-27B: does a reasoning-scaffolded
-  install survive benign SFT where the 7B plain install (#382/#408) failed?'
+title: A chain-of-thought-scaffolded install on Qwen3.5-27B does not survive one epoch
+  of benign supervised fine-tuning — plain and distilled-CoT both collapse from near-asymptote
+  to ~e^-13 nats at the trigger cell (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T23:57:59Z'
