@@ -184,12 +184,15 @@ def _schedule_unit_pool(  # noqa: C901 - linear GPU-sharded subprocess scheduler
             report_to,
         ]
         # v4 step-lever threads: --target-steps for step_calibration cells,
-        # --picked-step for main_v4 cells. Optional on the unit dict so legacy
-        # phases keep the v2 byte-identical command shape.
+        # --picked-step for main_v4 cells, --implant-steps for the v4r2
+        # implant_sweep_v4 anchor. Optional on the unit dict so legacy phases
+        # keep the v2 byte-identical command shape.
         if unit.get("target_steps"):
             cmd.extend(["--target-steps", str(unit["target_steps"])])
         if unit.get("picked_step") is not None:
             cmd.extend(["--picked-step", str(int(unit["picked_step"]))])
+        if unit.get("implant_steps"):
+            cmd.extend(["--implant-steps", str(unit["implant_steps"])])
         if smoke:
             cmd.append("--smoke")
         if no_kl:
@@ -403,9 +406,23 @@ def _phase_step_calibration_pick(
             if step_val is None:
                 continue
             ss = ck["source_self"]
+            # Fail loud on missing emission_p — silently defaulting to 0.0
+            # would let schema drift surface as a misleading band miss
+            # (every step would look like it failed the emission floor)
+            # rather than as a data-contract error. i477_run_cell.py already
+            # fails loud at write-time; mirror that here so a stale on-disk
+            # trajectory with the old schema raises at pick-time too.
+            if "emission_p" not in ss:
+                raise RuntimeError(
+                    f"step_calibration trajectory at {traj_path!r}: checkpoint "
+                    f"frac={ck.get('frac')!r} step={step_val} missing "
+                    f"emission_p in source_self (keys present = "
+                    f"{sorted(ss.keys())}). Schema drift; investigate "
+                    f"i472_eval_trajectory.py before re-running."
+                )
             per_step[int(step_val)] = {
                 "source_self_delta_g": float(ss["delta_g_mean"]),
-                "source_emission_p": float(ss.get("emission_p", 0.0)),
+                "source_emission_p": float(ss["emission_p"]),
                 "source_R_collapsed": bool(ss.get("r_collapsed", False)),
                 "frac": float(ck["frac"]),
                 "adapter_path": ck.get("adapter_path"),
@@ -496,10 +513,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         ANCHOR_COUNT,
         CALIB_SLUGS,
         CALIBRATION_LR_GRID,
+        CALIBRATION_LR_V3,
         IMPLANT_SWEEP_LRS,
         IMPLANT_SWEEP_SLUGS,
+        IMPLANT_SWEEP_STEPS,
+        IMPLANT_SWEEP_V4_ANCHOR_SLUG,
         MAIN_SLUGS,
         count_for_slug,
+        implant_sweep_v4_slug_for_step,
         lr_for_implant_sweep_slug,
     )
 
@@ -629,9 +650,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     phase_summaries: dict[str, dict] = {}
 
     # ── v4 step-lever defaults (plan v4 §11). ────────────────────────────────
-    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
-        CALIBRATION_LR_V3,
-    )
 
     calibration_lr_v4 = (
         args.calibration_lr if args.calibration_lr is not None else CALIBRATION_LR_V3
@@ -847,8 +865,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     main_results: list[dict] = []
     if "main" in phases:
         # Prefer v4 step_picks if present (in-memory or on disk); otherwise
-        # fall back to v2 LR picks.
-        use_v4 = bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
+        # fall back to v2 LR picks. --legacy-lr-calibration suppresses v4
+        # routing even if a stale step_calibration_pick.json sits in the slab
+        # — a legacy rerun must NEVER read the v4 pick file, since the v2
+        # calibrated-LR path picks ITS lr from calibration_pick.json and
+        # ignores picked_step entirely.
+        use_v4 = (not args.legacy_lr_calibration) and (
+            bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
+        )
         if use_v4 and not step_picks:
             loaded = json.loads((args.slab_root / "step_calibration_pick.json").read_text())
             step_picks = {int(k): v for k, v in loaded.get("picks", {}).items()}
@@ -932,39 +956,148 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     else:
         log.info("[phase=main] SKIP")
 
-    # ── Phase 4: implant-only-axis arm (3 LRs × 2 seeds at fixed count=4). ──
+    # ── Phase 4: implant-only-axis arm. ─────────────────────────────────────
+    # v4r2 default: STEP sweep at fixed lr=CALIBRATION_LR_V3, count=ANCHOR_COUNT.
+    #     ONE anchor training run per seed; worker emits per_step records at
+    #     {16, 64, T}. Dispatcher expands per-seed anchor → 3 per-step records,
+    #     each carrying the v4 picked-step DV keys the implant-only-axis
+    #     marker-channel partial reads.
+    # v2 --legacy-lr-calibration: 3 LRs × 2 seeds = 6 cells (byte-identical).
     implant_sweep_results: list[dict] = []
     if "implant_sweep" in phases:
-        log.info(
-            "[phase=implant_sweep] scheduling %d cells (%d LRs × %d seeds at count=%d)",
-            len(IMPLANT_SWEEP_SLUGS) * len(seeds),
-            len(IMPLANT_SWEEP_LRS),
-            len(seeds),
-            ANCHOR_COUNT,
+        # Route v4 ⇄ v2 the same way the main phase does: --legacy-lr-calibration
+        # suppresses v4, regardless of whether a stale step pick file exists.
+        # `step_picks` is non-empty when Phase 2.5 ran in-process this session;
+        # the step_calibration_pick.json sentinel covers cross-session resume.
+        impl_use_v4 = (not args.legacy_lr_calibration) and (
+            bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
         )
-        is_units = []
-        for slug in IMPLANT_SWEEP_SLUGS:
-            lr = lr_for_implant_sweep_slug(slug)
+        if impl_use_v4:
+            log.info(
+                "[phase=implant_sweep] v4 step-sweep: %d anchor cells "
+                "(1 anchor × %d seeds at count=%d, lr=%g), step levels %s + T",
+                len(seeds),
+                len(seeds),
+                ANCHOR_COUNT,
+                CALIBRATION_LR_V3,
+                IMPLANT_SWEEP_STEPS,
+            )
+            implant_steps_csv = ",".join(str(s) for s in IMPLANT_SWEEP_STEPS)
+            is_units = []
             for seed in seeds:
-                is_units.append({"cell": slug, "seed": seed, "lr": lr, "phase": "implant_sweep"})
-        implant_sweep_results = _schedule_unit_pool(
-            units=is_units,
-            n_gpus=args.n_gpus,
-            max_parallel=args.max_parallel,
-            slab_root=args.slab_root,
-            runs_root=args.runs_root,
-            log_dir=LOG_DIR,
-            bank_path=args.bank_path,
-            centroids_dir=args.centroids_dir,
-            smoke=False,
-            no_kl=args.no_kl,
-            report_to=args.report_to,
-            resume=args.resume,
-        )
-        for r in implant_sweep_results:
-            r["count"] = ANCHOR_COUNT
+                is_units.append(
+                    {
+                        "cell": IMPLANT_SWEEP_V4_ANCHOR_SLUG,
+                        "seed": seed,
+                        "lr": CALIBRATION_LR_V3,
+                        "phase": "implant_sweep_v4",
+                        "implant_steps": implant_steps_csv,
+                    }
+                )
+            anchor_results = _schedule_unit_pool(
+                units=is_units,
+                n_gpus=args.n_gpus,
+                max_parallel=args.max_parallel,
+                slab_root=args.slab_root,
+                runs_root=args.runs_root,
+                log_dir=LOG_DIR,
+                bank_path=args.bank_path,
+                centroids_dir=args.centroids_dir,
+                smoke=False,
+                no_kl=args.no_kl,
+                report_to=args.report_to,
+                resume=args.resume,
+            )
+            # Expand per-seed anchor results into per-step records the v4
+            # implant_only_axis_spearman_marker_channel_kl partial consumes.
+            # Each per-step record carries the slug encoding its step level
+            # (c477_implantsweep_step{16,64,T}) and the picked-step KL keys.
+            for r in anchor_results:
+                per_step = r.get("per_step")
+                if not isinstance(per_step, dict):
+                    raise RuntimeError(
+                        f"[implant_sweep_v4] anchor result for seed={r.get('seed')} "
+                        f"missing 'per_step' dict (got {type(per_step).__name__}). "
+                        f"Worker i477_run_cell.py should always emit per_step for "
+                        f"phase=implant_sweep_v4. Investigate."
+                    )
+                for level_key, entry in per_step.items():
+                    # level_key is either "16" / "64" / ... (non-terminal) or "T".
+                    if level_key == "T":
+                        slug = implant_sweep_v4_slug_for_step("T")
+                    else:
+                        slug = implant_sweep_v4_slug_for_step(int(level_key))
+                    expanded = {
+                        # Echo the unit's seed/lr/phase plus the per-step DV
+                        # fields so the analyze partial sees a per-cell shape.
+                        "cell": slug,
+                        "seed": int(r["seed"]),
+                        "lr": float(r["lr"]),
+                        "phase": "implant_sweep_v4",
+                        "count": ANCHOR_COUNT,
+                        "anchor_cell": r["cell"],
+                        "anchor_run_label": r.get("run_label"),
+                        # Picked-step DV fields (v4 keys).
+                        "source_self_marker_channel_kl_at_picked_step": entry[
+                            "source_self_marker_channel_kl_at_picked_step"
+                        ],
+                        "mean_bystander_marker_channel_kl_at_picked_step": entry[
+                            "mean_bystander_marker_channel_kl_at_picked_step"
+                        ],
+                        "mean_bystander_full_vocab_kl_at_picked_step": entry[
+                            "mean_bystander_full_vocab_kl_at_picked_step"
+                        ],
+                        "source_self_delta_g_at_picked_step": entry[
+                            "source_self_delta_g_at_picked_step"
+                        ],
+                        "source_emission_p_at_picked_step": entry[
+                            "source_emission_p_at_picked_step"
+                        ],
+                        "mean_bystander_delta_g_at_picked_step": entry[
+                            "mean_bystander_delta_g_at_picked_step"
+                        ],
+                        # Step provenance.
+                        "step_level": level_key,
+                        "requested_step": entry.get("requested_step"),
+                        "actual_step": entry.get("actual_step"),
+                        "step_offset": entry.get("step_offset"),
+                    }
+                    implant_sweep_results.append(expanded)
+        else:
+            log.info(
+                "[phase=implant_sweep] v2 LR-sweep (legacy): %d cells (%d LRs × %d seeds "
+                "at count=%d)",
+                len(IMPLANT_SWEEP_SLUGS) * len(seeds),
+                len(IMPLANT_SWEEP_LRS),
+                len(seeds),
+                ANCHOR_COUNT,
+            )
+            is_units = []
+            for slug in IMPLANT_SWEEP_SLUGS:
+                lr = lr_for_implant_sweep_slug(slug)
+                for seed in seeds:
+                    is_units.append(
+                        {"cell": slug, "seed": seed, "lr": lr, "phase": "implant_sweep"}
+                    )
+            implant_sweep_results = _schedule_unit_pool(
+                units=is_units,
+                n_gpus=args.n_gpus,
+                max_parallel=args.max_parallel,
+                slab_root=args.slab_root,
+                runs_root=args.runs_root,
+                log_dir=LOG_DIR,
+                bank_path=args.bank_path,
+                centroids_dir=args.centroids_dir,
+                smoke=False,
+                no_kl=args.no_kl,
+                report_to=args.report_to,
+                resume=args.resume,
+            )
+            for r in implant_sweep_results:
+                r["count"] = ANCHOR_COUNT
         phase_summaries["implant_sweep"] = {
             "n_completed": len(implant_sweep_results),
+            "routing": "v4_step_sweep" if impl_use_v4 else "v2_lr_sweep",
             "results": implant_sweep_results,
         }
         _write_sentinel(

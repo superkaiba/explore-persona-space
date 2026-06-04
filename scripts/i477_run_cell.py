@@ -50,10 +50,17 @@ load_dotenv()
 
 log = logging.getLogger("i477.run_cell")
 
-# v4 step-lever pivot adds two new phases ("step_calibration", "main_v4");
-# legacy v2 phases ("calibration", "main", "implant_sweep") are kept so the
-# --legacy-lr-calibration dispatcher path stays byte-identical.
-PHASES = ("calibration", "main", "implant_sweep", "step_calibration", "main_v4")
+# v4 step-lever pivot adds three new phases ("step_calibration", "main_v4",
+# "implant_sweep_v4"); legacy v2 phases ("calibration", "main", "implant_sweep")
+# are kept so the --legacy-lr-calibration dispatcher path stays byte-identical.
+PHASES = (
+    "calibration",
+    "main",
+    "implant_sweep",
+    "step_calibration",
+    "main_v4",
+    "implant_sweep_v4",
+)
 TASK_ID = 477
 
 
@@ -75,6 +82,105 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note: dict) -> None:
             indent=2,
         )
     )
+
+
+def mean_bystander_delta_g(checkpoint: dict) -> float:
+    """Q_eval-mean per persona, then mean across personas (legacy DV-A).
+
+    Module-scope so tests can pin the rule without spawning the worker.
+    """
+    means: list[float] = []
+    for _persona, per_q in checkpoint["held_out"].items():
+        deltas = [float(v["delta_g"]) for v in per_q.values()]
+        if deltas:
+            means.append(sum(deltas) / len(deltas))
+    return float(sum(means) / len(means)) if means else 0.0
+
+
+def select_checkpoint_near_step(
+    traj_dict: dict,
+    requested_step: int,
+    *,
+    cell_slug: str = "<unknown>",
+) -> tuple[int, dict, int]:
+    """Pick the trajectory checkpoint whose step is closest to ``requested_step``.
+
+    Returns ``(actual_step, checkpoint_dict, offset)``. Fails loud if the
+    nearest checkpoint is farther than ``max(1, 5% of requested)`` steps away
+    — that signals the trainer never produced a checkpoint anywhere near the
+    requested step (e.g. context window dropped it entirely), and we would
+    otherwise silently read a checkpoint at a totally wrong training amount.
+
+    Args:
+        traj_dict: trajectory.json contents (dict with ``checkpoints`` list).
+        requested_step: optimizer step the picker / dispatcher requested.
+        cell_slug: prefix for error messages so failures attribute correctly.
+    """
+    steps_present = [
+        (int(ck["step"]), ck) for ck in traj_dict["checkpoints"] if ck.get("step") is not None
+    ]
+    if not steps_present:
+        raise RuntimeError(
+            f"[{cell_slug}] picked-step resolution: trajectory.json has no "
+            f"checkpoint with a 'step' field; cannot resolve requested_step="
+            f"{requested_step}. Investigate i472_eval_trajectory.py."
+        )
+    # Tie breaks on the LOWER step (deterministic).
+    actual_step, picked_ck = min(
+        steps_present,
+        key=lambda sc: (abs(sc[0] - int(requested_step)), sc[0]),
+    )
+    offset = actual_step - int(requested_step)
+    tolerance = max(1, round(0.05 * int(requested_step)))
+    if abs(offset) > tolerance:
+        raise RuntimeError(
+            f"[{cell_slug}] picked-step resolution: no checkpoint within "
+            f"{tolerance} steps of requested_step={requested_step}. Nearest "
+            f"step in trajectory = {actual_step} (offset {offset}); "
+            f"checkpoints present = {sorted(s for s, _ in steps_present)}. "
+            f"The trainer did not produce the expected checkpoint — "
+            f"investigate the context window AND drop_last semantics."
+        )
+    return actual_step, picked_ck, offset
+
+
+def picked_step_kl_fields(
+    picked_ck: dict,
+    *,
+    cell_slug: str = "<unknown>",
+) -> dict:
+    """Extract the 6 picked-step DV fields the v4 analyze partials consume.
+
+    The picked checkpoint MUST carry ``source_self.emission_p`` (the rig
+    writes it; fail loud if missing rather than silently returning a stale
+    proxy).
+    """
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.analyze import (
+        aggregate_bystander_full_vocab_kl,
+        aggregate_bystander_marker_channel_kl,
+        aggregate_source_self_marker_channel_kl,
+    )
+
+    picked_src = picked_ck["source_self"]
+    if "emission_p" not in picked_src:
+        raise RuntimeError(
+            f"[{cell_slug}] picked checkpoint missing emission_p in "
+            f"source_self; keys present = {sorted(picked_src.keys())!r}."
+        )
+    return {
+        "source_self_marker_channel_kl_at_picked_step": (
+            aggregate_source_self_marker_channel_kl(picked_ck)
+        ),
+        "mean_bystander_marker_channel_kl_at_picked_step": (
+            aggregate_bystander_marker_channel_kl(picked_ck)
+        ),
+        "mean_bystander_full_vocab_kl_at_picked_step": (
+            aggregate_bystander_full_vocab_kl(picked_ck)
+        ),
+        "source_self_delta_g_at_picked_step": float(picked_src["delta_g_mean"]),
+        "source_emission_p_at_picked_step": float(picked_src["emission_p"]),
+        "mean_bystander_delta_g_at_picked_step": mean_bystander_delta_g(picked_ck),
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -131,6 +237,16 @@ def main(argv: list[str] | None = None) -> int:
             "The worker computes the clamped 3-checkpoint context window "
             "{floor(s*/2), s*, min(2*s*, max_steps)} via "
             "main_phase_context_window. Only used when phase=main_v4."
+        ),
+    )
+    ap.add_argument(
+        "--implant-steps",
+        type=str,
+        default="",
+        help=(
+            "v4r2 implant_sweep_v4 phase: CSV of non-terminal optimizer-step "
+            "checkpoints (e.g. '16,64'). The terminal step (frac=1.0) is added "
+            "automatically. Used only when phase=implant_sweep_v4."
         ),
     )
     args = ap.parse_args(argv)
@@ -324,6 +440,55 @@ def main(argv: list[str] | None = None) -> int:
             window,
             fractions,
         )
+    elif args.phase == "implant_sweep_v4":
+        # v4r2 §4 PHASE 4: ONE anchor training run per seed; evaluate trajectory
+        # at the requested non-terminal step levels + the terminal step. The
+        # worker emits ONE cell_summary with a per_step dict the dispatcher
+        # expands into IMPLANT_SWEEP_V4_SLUGS per-step records.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
+            BATCH_SIZE,
+            GRAD_ACCUM,
+        )
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell import (
+            step_fractions,
+        )
+
+        if not args.implant_steps:
+            raise RuntimeError(
+                f"[{args.cell}] implant_sweep_v4 phase requires --implant-steps "
+                f"(CSV of positive ints); got empty."
+            )
+        n_rows = sum(1 for _ in train_jsonl.open()) if train_jsonl.exists() else 0
+        if n_rows <= 0:
+            raise RuntimeError(
+                f"[{args.cell}] implant_sweep_v4 phase: built training JSONL "
+                f"{train_jsonl} has {n_rows} rows — investigate."
+            )
+        eff_batch = BATCH_SIZE * GRAD_ACCUM
+        max_steps = -(-(n_rows * EPOCHS) // eff_batch)
+        target_steps = tuple(int(s.strip()) for s in args.implant_steps.split(",") if s.strip())
+        kept_targets = tuple(s for s in target_steps if s <= max_steps)
+        if not kept_targets:
+            raise RuntimeError(
+                f"[{args.cell}] implant_sweep_v4: every target_step in "
+                f"{target_steps} exceeds max_steps={max_steps} (n_rows={n_rows}, "
+                f"eff_batch={eff_batch}, epochs={EPOCHS}). Cannot calibrate."
+            )
+        step_calibration_fractions = (
+            *step_fractions(kept_targets, max_steps, precision=4),
+            1.0,
+        )
+        frac_precision = 4
+        fractions = step_calibration_fractions
+        log.info(
+            "[phase=train_%s] v4 implant_sweep_v4: lr=%g, max_steps=%d, "
+            "target_steps=%s → fractions=%s (4-dp precision)",
+            args.cell,
+            args.lr,
+            max_steps,
+            kept_targets,
+            fractions,
+        )
     elif args.phase == "calibration":
         fractions = (1.0,)
     elif args.smoke:
@@ -471,14 +636,9 @@ def main(argv: list[str] | None = None) -> int:
             f"likely truncated upstream — investigate the held-out persona panel "
             f"build before computing a silent mean bystander ΔG."
         )
-    # Mean bystander ΔG at the final checkpoint (Q_eval-mean per persona, then
-    # mean across personas). This is DV-A for the headline H1.
-    bystander_means: list[float] = []
-    for _persona, per_q in final_ck["held_out"].items():
-        deltas = [float(v["delta_g"]) for v in per_q.values()]
-        if deltas:
-            bystander_means.append(sum(deltas) / len(deltas))
-    mean_bystander = float(sum(bystander_means) / len(bystander_means)) if bystander_means else 0.0
+
+    # Mean bystander ΔG at the final checkpoint (legacy DV-A for the v2 headline).
+    mean_bystander = mean_bystander_delta_g(final_ck)
 
     cell_summary = {
         "cell": args.cell,
@@ -495,6 +655,116 @@ def main(argv: list[str] | None = None) -> int:
         "adapter_hf_repo": HF_MODEL_REPO,
         "checkpoint_index_path": str(ckpt_index_path),
     }
+
+    # ── v4 picked-step + per-step extraction. ────────────────────────────────
+    # The v4 analyze partials (marker-channel + full-vocab + implant-only-axis)
+    # read *_at_picked_step keys, NOT the *_at_last_ckpt fields the terminal-
+    # checkpoint summary above writes. Reading the terminal checkpoint would
+    # defeat the entire picked-step decoupling — by the terminal step the
+    # marker-channel headline saturates and the per-cell ranks collapse.
+    # ``select_checkpoint_near_step`` + ``picked_step_kl_fields`` are module-
+    # scope so tests can pin the contract without spawning the worker.
+
+    if args.phase == "main_v4":
+        if args.picked_step is None or args.picked_step <= 0:
+            raise RuntimeError(
+                f"[{args.cell}] main_v4 phase reached summary block with "
+                f"--picked-step={args.picked_step!r}; the upfront check should "
+                f"have raised earlier. Investigate."
+            )
+        picked_step_req = int(args.picked_step)
+        actual_step, picked_ck, offset = select_checkpoint_near_step(
+            traj, picked_step_req, cell_slug=args.cell
+        )
+        picked_fields = picked_step_kl_fields(picked_ck, cell_slug=args.cell)
+        cell_summary.update(picked_fields)
+        cell_summary.update(
+            {
+                # Provenance: what was requested vs what the trainer actually
+                # produced. The analyzer logs both so post-hoc audits can spot
+                # drop_last drift without re-loading trajectory.json.
+                "picked_step_requested": picked_step_req,
+                "picked_step_actual": int(actual_step),
+                "picked_step_offset": int(offset),
+            }
+        )
+        log.info(
+            "[phase=summary_%s] main_v4 picked_step req=%d actual=%d (offset=%d): "
+            "src ΔG=%.2f emit=%.2f, marker-channel KL src=%.3f bys=%.3f, "
+            "full-vocab KL bys=%s",
+            args.cell,
+            picked_step_req,
+            actual_step,
+            offset,
+            picked_fields["source_self_delta_g_at_picked_step"],
+            picked_fields["source_emission_p_at_picked_step"],
+            picked_fields["source_self_marker_channel_kl_at_picked_step"],
+            picked_fields["mean_bystander_marker_channel_kl_at_picked_step"],
+            "None"
+            if picked_fields["mean_bystander_full_vocab_kl_at_picked_step"] is None
+            else f"{picked_fields['mean_bystander_full_vocab_kl_at_picked_step']:.3f}",
+        )
+
+    if args.phase == "implant_sweep_v4":
+        # v4r2 implant-only-axis: ONE training run, eval at multiple step levels.
+        # Emit a per_step dict keyed by step level (the requested non-terminal
+        # steps + the terminal step). The dispatcher unpacks it into per-step
+        # records that satisfy implant_only_axis_spearman_marker_channel_kl's
+        # cell-shape contract.
+        if not args.implant_steps:
+            raise RuntimeError(
+                f"[{args.cell}] implant_sweep_v4 phase reached summary block "
+                f"with empty --implant-steps; the upfront check should have raised."
+            )
+        requested_levels = tuple(int(s.strip()) for s in args.implant_steps.split(",") if s.strip())
+        # Drop any requested step that exceeds the trainer's actual max_steps
+        # (already filtered during fractions resolution; mirror the same logic).
+        steps_present = sorted(
+            int(ck["step"]) for ck in traj["checkpoints"] if ck.get("step") is not None
+        )
+        if not steps_present:
+            raise RuntimeError(
+                f"[{args.cell}] implant_sweep_v4: trajectory.json has no "
+                f"checkpoint with a 'step' field."
+            )
+        terminal_step = max(steps_present)
+        # Build the level list: each requested non-terminal step (label = step
+        # int) + the terminal step labelled "T".
+        per_step: dict[str, dict] = {}
+        for s in requested_levels:
+            if s > terminal_step:
+                # Fail loud, mirroring step_fractions's clamp invariant.
+                continue
+            actual_step, picked_ck, offset = select_checkpoint_near_step(
+                traj, s, cell_slug=args.cell
+            )
+            entry = picked_step_kl_fields(picked_ck, cell_slug=args.cell)
+            entry.update(
+                {
+                    "requested_step": int(s),
+                    "actual_step": int(actual_step),
+                    "step_offset": int(offset),
+                }
+            )
+            per_step[str(s)] = entry
+        # Terminal level: pick the checkpoint at max frac directly.
+        terminal_ck = max(traj["checkpoints"], key=lambda c: float(c["frac"]))
+        terminal_entry = picked_step_kl_fields(terminal_ck, cell_slug=args.cell)
+        terminal_entry.update(
+            {
+                "requested_step": "T",
+                "actual_step": int(terminal_ck.get("step", terminal_step)),
+                "step_offset": 0,
+            }
+        )
+        per_step["T"] = terminal_entry
+        cell_summary["per_step"] = per_step
+        log.info(
+            "[phase=summary_%s] implant_sweep_v4: emitted per_step levels=%s",
+            args.cell,
+            sorted(per_step.keys()),
+        )
+
     summary_path = run_dir / "cell_summary.json"
     summary_path.write_text(json.dumps(cell_summary, indent=2))
     log.info(

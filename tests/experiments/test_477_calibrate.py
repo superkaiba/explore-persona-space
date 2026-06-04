@@ -29,17 +29,22 @@ def test_cell_specs_477_shape() -> None:
         COUNT_LEVELS,
         IMPLANT_SWEEP_LRS,
         IMPLANT_SWEEP_SLUGS,
+        IMPLANT_SWEEP_V4_ANCHOR_SLUG,
         MAIN_SLUGS,
     )
 
     # 4 calibration slugs (one per count; LR threaded per-launch, not per-slug)
-    # + 4 main slugs + 3 implant_sweep slugs = 11 distinct.
+    # + 4 main slugs + 3 v2 implant_sweep slugs + 1 v4 implant_sweep anchor
+    # slug = 12 distinct. The v2 LR-sweep slugs stay registered so
+    # --legacy-lr-calibration's byte-identical path keeps working.
     assert len(CALIB_SLUGS) == len(COUNT_LEVELS) == 4
     assert len(MAIN_SLUGS) == 4
     assert len(IMPLANT_SWEEP_SLUGS) == len(IMPLANT_SWEEP_LRS) == 3
-    assert len(CELL_SPECS_477) == 11
-    # No duplicates.
+    assert len(CELL_SPECS_477) == 12
+    # v4 anchor is present at the expected slug.
     slugs = [c[0] for c in CELL_SPECS_477]
+    assert IMPLANT_SWEEP_V4_ANCHOR_SLUG in slugs
+    # No duplicates.
     assert len(set(slugs)) == len(slugs)
     # Anchor count is one of the count levels.
     assert ANCHOR_COUNT in COUNT_LEVELS
@@ -54,6 +59,8 @@ def test_count_for_slug_round_trip() -> None:
         CALIB_SLUGS,
         COUNT_LEVELS,
         IMPLANT_SWEEP_SLUGS,
+        IMPLANT_SWEEP_V4_ANCHOR_SLUG,
+        IMPLANT_SWEEP_V4_SLUGS,
         MAIN_SLUGS,
         count_for_slug,
         slug_for_count,
@@ -66,6 +73,10 @@ def test_count_for_slug_round_trip() -> None:
         assert count_for_slug(slug) in COUNT_LEVELS
     # implant_sweep slugs map to the anchor count.
     for slug in IMPLANT_SWEEP_SLUGS:
+        assert count_for_slug(slug) == ANCHOR_COUNT
+    # v4 anchor + v4 per-step slugs also map to the anchor count.
+    assert count_for_slug(IMPLANT_SWEEP_V4_ANCHOR_SLUG) == ANCHOR_COUNT
+    for slug in IMPLANT_SWEEP_V4_SLUGS:
         assert count_for_slug(slug) == ANCHOR_COUNT
 
 
@@ -80,6 +91,65 @@ def test_lr_for_implant_sweep_slug() -> None:
         assert lr_for_implant_sweep_slug(slug) == pytest.approx(expected_lr)
     with pytest.raises(KeyError):
         lr_for_implant_sweep_slug("c477_calib_negp_4")  # not an implant-sweep slug
+
+
+def test_implant_sweep_v4_slug_round_trip() -> None:
+    """v4 step-sweep slug ↔ step-level encoding is invertible."""
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        IMPLANT_SWEEP_STEPS,
+        IMPLANT_SWEEP_V4_SLUGS,
+        implant_sweep_v4_slug_for_step,
+        step_for_implant_sweep_v4_slug,
+    )
+
+    # 2 non-terminal step levels + 1 terminal slug = 3 slugs total.
+    assert len(IMPLANT_SWEEP_V4_SLUGS) == len(IMPLANT_SWEEP_STEPS) + 1
+    assert len(set(IMPLANT_SWEEP_V4_SLUGS)) == len(IMPLANT_SWEEP_V4_SLUGS)
+    # Round-trip per non-terminal step.
+    for s in IMPLANT_SWEEP_STEPS:
+        assert step_for_implant_sweep_v4_slug(implant_sweep_v4_slug_for_step(s)) == s
+    # Terminal slug round-trips through the "T" sentinel.
+    terminal_slug = implant_sweep_v4_slug_for_step("T")
+    assert terminal_slug in IMPLANT_SWEEP_V4_SLUGS
+    assert step_for_implant_sweep_v4_slug(terminal_slug) == "T"
+
+
+def test_implant_sweep_v4_slug_rejects_invalid() -> None:
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        implant_sweep_v4_slug_for_step,
+        step_for_implant_sweep_v4_slug,
+    )
+
+    with pytest.raises(ValueError, match="not in IMPLANT_SWEEP_STEPS"):
+        implant_sweep_v4_slug_for_step(99)  # step not on the v4 grid
+    with pytest.raises(ValueError, match="string step must be 'T'"):
+        implant_sweep_v4_slug_for_step("X")  # only "T" is the terminal sentinel
+    with pytest.raises(KeyError):
+        step_for_implant_sweep_v4_slug("c477_calib_negp_4")  # not a v4 implant-sweep slug
+
+
+def test_implant_sweep_v4_steps_at_fixed_lr_anchor_count() -> None:
+    """The v4 step sweep is at FIXED lr=CALIBRATION_LR_V3, count=ANCHOR_COUNT.
+
+    Pin the contract that drives the v4 H2 cross-check: LR is the dead lever
+    (v2 round 1 confirmed), so the step axis IS the implant axis.
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        ANCHOR_COUNT,
+        CALIBRATION_LR_V3,
+        IMPLANT_SWEEP_STEPS,
+    )
+
+    assert ANCHOR_COUNT == 4
+    assert pytest.approx(2e-6) == CALIBRATION_LR_V3
+    # The non-terminal step levels are subsets of the dense early-step grid.
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import TARGET_STEPS
+
+    for s in IMPLANT_SWEEP_STEPS:
+        assert s in TARGET_STEPS, (
+            f"v4 implant-sweep step {s} not in TARGET_STEPS={TARGET_STEPS} — "
+            "step-calibration won't have observed this level on the main axis."
+        )
 
 
 def test_slug_for_count_rejects_unknown_phase_and_count() -> None:

@@ -293,6 +293,17 @@ def main_phase_context_window(s_star: int, max_steps: int) -> list[int]:
     handles s*=1 (floor(1/2)=0 → clamped to >=1) and tight windows where the
     floor / s* / 2*s* collapse onto one or two distinct steps.
 
+    **Single-element window** (code-review v4r2 blocker 6, low priority): when
+    ``s_star == max_steps == 1`` the three candidates collapse onto ``{1}`` and
+    the returned window has length 1. The v4 plan's currently-planned step
+    picks (target steps {1, 2, 4, 8, 16, 32, 64}) against max_steps in
+    {76, 126, 226, 426} cannot trigger this — every plan-valid s_star has at
+    least one strict neighbour in ``{floor(s*/2), 2*s*}`` that survives the
+    clamp. The single-element case is documented + logged as a WARNING (not
+    raised) so a future picker that returns ``s_star=max_steps`` will surface
+    "you trained a context window with no neighbouring step" in the dispatcher
+    log rather than silently shipping a 1-checkpoint main cell.
+
     Raises:
         ValueError: ``s_star`` <=0 or > ``max_steps``; the picked headline step
             must lie inside the trainable range.
@@ -311,6 +322,22 @@ def main_phase_context_window(s_star: int, max_steps: int) -> list[int]:
         raise RuntimeError(
             f"main_phase_context_window: empty window for s_star={s_star}, "
             f"max_steps={max_steps} (should never trigger — defensive)."
+        )
+    if len(window) == 1:
+        # Single-element case (blocker 6): the floor / s* / upper-clamp all
+        # collapse onto one step. Log loud so the dispatcher log surfaces it
+        # before training; current plan picks against the v4 grid never hit
+        # this, but a future picker landing on s_star == max_steps would.
+        log.warning(
+            "main_phase_context_window: window collapsed to a single step "
+            "{%d} for s_star=%d max_steps=%d (floor/upper-clamp + dedup made "
+            "the 3-element window degenerate). The main cell will train + "
+            "evaluate exactly one checkpoint; downstream context-window "
+            "analyses become a no-op. Surfaced as a WARNING per code-review "
+            "v4r2 blocker 6 — investigate the picker if this fires.",
+            window[0],
+            s_star,
+            max_steps,
         )
     return window
 

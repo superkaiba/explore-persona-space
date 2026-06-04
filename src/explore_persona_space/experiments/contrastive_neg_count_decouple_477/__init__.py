@@ -98,6 +98,12 @@ __all__ = [
     "MAX_SOURCE_EMISSION_V3",
     "MIN_SOURCE_EMISSION_V3",
     "TARGET_STEPS",
+    # NEW in v4r2 (H2 step-sweep replacement for v2 LR-sweep implant_sweep).
+    "IMPLANT_SWEEP_STEPS",
+    "IMPLANT_SWEEP_V4_ANCHOR_SLUG",
+    "IMPLANT_SWEEP_V4_SLUGS",
+    "implant_sweep_v4_slug_for_step",
+    "step_for_implant_sweep_v4_slug",
 ]
 
 # ── Calibration constants (plan §4 pseudocode + §11 grounding) ───────────────
@@ -155,6 +161,14 @@ MAX_SOURCE_EMISSION_V3: float = 0.95
 
 # Anchor count for the implant-only-axis arm: the #472 anchor's 4 negatives.
 ANCHOR_COUNT: int = 4
+
+# v4r2 H2 step-sweep: at fixed lr=CALIBRATION_LR_V3 (2e-6) and count=ANCHOR_COUNT
+# (4), read the implant-only axis at non-terminal step levels {16, 64} plus the
+# terminal step (added implicitly via frac=1.0). LR is the dead lever the v4
+# pivot abandons (round-1 confirmed); the step axis IS the implant axis under
+# the step-lever pivot. Source: plan v4 §4 PHASE 4 (step sweep, not LR sweep)
+# + plan v4 §6 H2 cross-check (calibrate step→leakage at fixed count).
+IMPLANT_SWEEP_STEPS: tuple[int, ...] = (16, 64)
 
 # ── Cell registry (CELL_SPECS_477) ───────────────────────────────────────────
 # Same 6-tuple shape as #472's CellSpec: (slug, plain_name, placement,
@@ -221,7 +235,22 @@ _IMPLANT_SWEEP_SPECS: tuple[CellSpec, ...] = tuple(
     for lr in IMPLANT_SWEEP_LRS
 )
 
-CELL_SPECS_477: tuple[CellSpec, ...] = _CALIB_SPECS + _MAIN_SPECS + _IMPLANT_SWEEP_SPECS
+# v4r2 anchor cell: ONE training run per seed (at lr=CALIBRATION_LR_V3, count=
+# ANCHOR_COUNT). The worker evaluates the trajectory at step levels
+# {16, 64, T} and emits per-step records; the dispatcher expands them into
+# IMPLANT_SWEEP_V4_SLUGS for the analyze partial.
+_IMPLANT_SWEEP_V4_ANCHOR_SPEC: CellSpec = (
+    "c477_implantsweep_v4_anchor",
+    "v4 anchor (implant-only-axis, step sweep)",
+    "spread",
+    ANCHOR_COUNT,
+    NEG_EX_PER_PERSONA,
+    False,
+)
+
+CELL_SPECS_477: tuple[CellSpec, ...] = (
+    _CALIB_SPECS + _MAIN_SPECS + _IMPLANT_SWEEP_SPECS + (_IMPLANT_SWEEP_V4_ANCHOR_SPEC,)
+)
 
 # Phase classification (used by the dispatcher to group cells by phase).
 CALIB_SLUGS: tuple[str, ...] = tuple(c[0] for c in _CALIB_SPECS)
@@ -261,13 +290,17 @@ def slug_for_count(count: int, phase: str) -> str:
 def count_for_slug(slug: str) -> int:
     """Reverse lookup: the integer count level a slug belongs to.
 
-    Implant-sweep slugs ALL belong to ANCHOR_COUNT (they sweep LR at fixed count).
-    Raises KeyError on unknown slug.
+    Implant-sweep slugs ALL belong to ANCHOR_COUNT — v2 slugs sweep LR at fixed
+    count; v4 slugs sweep optimizer-step at fixed count + lr. The v4 anchor
+    slug (one training run per seed, expanded into per-step records by the
+    dispatcher) also belongs to ANCHOR_COUNT. Raises KeyError on unknown slug.
     """
     for c in COUNT_LEVELS:
         if slug == f"c477_calib_negp_{c}" or slug == f"c477_main_calib_negp_{c}":
             return c
     if slug in IMPLANT_SWEEP_SLUGS:
+        return ANCHOR_COUNT
+    if slug == IMPLANT_SWEEP_V4_ANCHOR_SLUG or slug in IMPLANT_SWEEP_V4_SLUGS:
         return ANCHOR_COUNT
     raise KeyError(f"Unknown 477 cell slug: {slug!r}")
 
@@ -281,3 +314,65 @@ def lr_for_implant_sweep_slug(slug: str) -> float:
         if slug == f"c477_implantsweep_lr{_lr_slug(lr)}":
             return lr
     raise KeyError(f"Not an implant-sweep slug: {slug!r}")
+
+
+# ── v4r2 H2 step-sweep slugs (plan v4 §4 PHASE 4 — STEP sweep, not LR sweep) ─
+# One anchor training run per seed at lr=CALIBRATION_LR_V3, count=ANCHOR_COUNT.
+# Per-step cell summaries are read OUT of that single trajectory at step levels
+# {16, 64, T} (terminal). The dispatcher expands the per-seed anchor result
+# into 3 per-step records for the v4 implant-only-axis analyze partial.
+IMPLANT_SWEEP_V4_ANCHOR_SLUG: str = "c477_implantsweep_v4_anchor"
+
+
+def _step_slug(step: int | str) -> str:
+    """Slug suffix for an implant-sweep-v4 step level: '16' / '64' / 'T'."""
+    if isinstance(step, str):
+        if step != "T":
+            raise ValueError(f"_step_slug: string step suffix must be 'T' (terminal); got {step!r}")
+        return "T"
+    return str(int(step))
+
+
+IMPLANT_SWEEP_V4_SLUGS: tuple[str, ...] = tuple(
+    f"c477_implantsweep_step{_step_slug(s)}" for s in (*IMPLANT_SWEEP_STEPS, "T")
+)
+
+
+def implant_sweep_v4_slug_for_step(step: int | str) -> str:
+    """Per-step slug for the v4 implant-only-axis arm.
+
+    Args:
+        step: a non-terminal optimizer step in IMPLANT_SWEEP_STEPS, OR the
+            literal string ``"T"`` for the terminal-step level.
+
+    Raises:
+        ValueError: step not in {*IMPLANT_SWEEP_STEPS, "T"}.
+    """
+    if isinstance(step, str):
+        if step != "T":
+            raise ValueError(
+                f"implant_sweep_v4_slug_for_step: string step must be 'T'; got {step!r}"
+            )
+        return f"c477_implantsweep_step{_step_slug(step)}"
+    if int(step) not in IMPLANT_SWEEP_STEPS:
+        raise ValueError(
+            f"implant_sweep_v4_slug_for_step: step={step} not in "
+            f"IMPLANT_SWEEP_STEPS={IMPLANT_SWEEP_STEPS} (and not 'T' for terminal)."
+        )
+    return f"c477_implantsweep_step{_step_slug(int(step))}"
+
+
+def step_for_implant_sweep_v4_slug(slug: str) -> int | str:
+    """Reverse lookup: the step level encoded in a v4 implant-sweep slug.
+
+    Returns ``int`` for non-terminal step levels, ``"T"`` for the terminal slug.
+
+    Raises:
+        KeyError: slug is not a v4 implant-sweep slug.
+    """
+    if slug == f"c477_implantsweep_step{_step_slug('T')}":
+        return "T"
+    for s in IMPLANT_SWEEP_STEPS:
+        if slug == f"c477_implantsweep_step{_step_slug(s)}":
+            return int(s)
+    raise KeyError(f"Not a v4 implant-sweep slug: {slug!r}")

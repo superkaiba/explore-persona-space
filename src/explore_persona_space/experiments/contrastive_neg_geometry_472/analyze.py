@@ -957,16 +957,20 @@ def partial_spearman_count_given_implant(
     # but should NEVER be pooled into H1 — it would inject 6 extra count=4
     # points and bias the partial. Cells missing "phase" are treated as
     # non-main (fail loud rather than silently pool unknown-provenance cells).
+    # Accept both v2 "main" and v4 "main_v4" — the v4 dispatcher emits the
+    # latter when routing through the step-lever path; both are H1-eligible.
+    _MAIN_PHASES = {"main", "main_v4"}
     for c in kept_cells:
         phase = c.get("phase")
-        if phase != "main":
+        if phase not in _MAIN_PHASES:
             raise AssertionError(
                 f"partial_spearman_count_given_implant got a non-main-phase cell: "
                 f"cell={c.get('cell', '<unknown>')!r}, seed={c.get('seed')}, "
                 f"phase={phase!r}. H1 partial Spearman must be computed over "
-                f"main-phase cells only — pooling implant-sweep / calibration "
-                f"cells biases the partial. Filter kept_cells to phase=='main' "
-                f"upstream (the dispatcher's main_results carries phase='main')."
+                f"main-phase cells only (phase in {_MAIN_PHASES!r}) — pooling "
+                f"implant-sweep / calibration cells biases the partial. Filter "
+                f"kept_cells upstream (the dispatcher's main_results carries "
+                f"phase='main' or 'main_v4')."
             )
 
     counts = [int(c["count"]) for c in kept_cells]
@@ -1560,21 +1564,31 @@ def partial_spearman_count_given_implant_marker_channel_kl(
 
     Mirror of :func:`partial_spearman_count_given_implant` but uses the v4
     marker-channel KL aggregates on both axes. Each kept cell must carry:
-      * ``count``, ``seed``, ``phase`` ("main" defensive assert).
+      * ``count``, ``seed``, ``phase`` ("main" or "main_v4" defensive assert).
       * ``mean_bystander_marker_channel_kl_at_picked_step`` — v4 headline DV.
       * ``source_self_marker_channel_kl_at_picked_step`` — H1 covariate.
-      * ``step_at_last_ckpt`` — robustness partialling extra control.
+      * ``picked_step_actual`` (preferred) or ``step_at_last_ckpt`` (legacy v2
+        fallback) — the step covariate for the robustness partial. For v4
+        cells, ``picked_step_actual`` (the actual checkpoint step the worker
+        selected for the picked-step DVs) is the correct step to control for
+        — ``step_at_last_ckpt`` would name the terminal of the trained
+        context window (``min(2*s*, max_steps)``), not s* itself.
     """
     from scipy.stats import spearmanr
 
+    # Accept both v2 "main" and v4 "main_v4" — the v4 dispatcher emits the
+    # latter when routing through the step-lever path; both are H1-eligible
+    # under the marker-channel headline DV.
+    _MAIN_PHASES = {"main", "main_v4"}
     for c in kept_cells:
         phase = c.get("phase")
-        if phase != "main":
+        if phase not in _MAIN_PHASES:
             raise AssertionError(
                 "partial_spearman_count_given_implant_marker_channel_kl got a "
                 f"non-main-phase cell: cell={c.get('cell', '<unknown>')!r}, "
                 f"seed={c.get('seed')}, phase={phase!r}. v4 H1 partial Spearman "
-                "must be computed over main-phase cells only."
+                f"must be computed over main-phase cells only (phase in "
+                f"{_MAIN_PHASES!r})."
             )
 
     counts = [int(c["count"]) for c in kept_cells]
@@ -1596,7 +1610,13 @@ def partial_spearman_count_given_implant_marker_channel_kl(
 
     bystander = [float(c["mean_bystander_marker_channel_kl_at_picked_step"]) for c in kept_cells]
     implant = [float(c["source_self_marker_channel_kl_at_picked_step"]) for c in kept_cells]
-    step = [int(c.get("step_at_last_ckpt", 0)) for c in kept_cells]
+    # Step covariate: prefer ``picked_step_actual`` (v4 — the actual step the
+    # worker read DVs from) over ``step_at_last_ckpt`` (v2 fallback — terminal
+    # of the trained context window). The picked-step alignment matters
+    # because the headline DVs are at the picked step; the step regressor
+    # should control for the SAME step, not the upper bound of the training
+    # context window.
+    step = [int(c.get("picked_step_actual", c.get("step_at_last_ckpt", 0))) for c in kept_cells]
 
     y_resid_i = _ols_residuals(bystander, [implant])
     c_resid_i = _ols_residuals([float(v) for v in counts], [implant])
@@ -1692,11 +1712,15 @@ def partial_spearman_count_given_implant_full_vocab_kl(
     """
     from scipy.stats import spearmanr
 
+    # Accept both v2 "main" and v4 "main_v4" — the paired secondary mirrors
+    # the marker-channel headline's phase gate.
+    _MAIN_PHASES = {"main", "main_v4"}
     for c in kept_cells:
-        if c.get("phase") != "main":
+        if c.get("phase") not in _MAIN_PHASES:
             raise AssertionError(
                 "partial_spearman_count_given_implant_full_vocab_kl got a "
-                f"non-main-phase cell: {c.get('cell', '<unknown>')!r}"
+                f"non-main-phase cell: {c.get('cell', '<unknown>')!r}, "
+                f"phase={c.get('phase')!r}. Expected one of {_MAIN_PHASES!r}."
             )
 
     counts = [int(c["count"]) for c in kept_cells]
