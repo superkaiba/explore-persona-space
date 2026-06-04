@@ -193,6 +193,15 @@ def _schedule_unit_pool(  # noqa: C901 - linear GPU-sharded subprocess scheduler
             cmd.extend(["--picked-step", str(int(unit["picked_step"]))])
         if unit.get("implant_steps"):
             cmd.extend(["--implant-steps", str(unit["implant_steps"])])
+        # v6 rank pivot threads: --lora-rank / --lora-alpha / --positives.
+        # Optional; default-None means the worker uses the module constants
+        # (r=32 / α=64 / positives=200, i.e. v4 byte-identical).
+        if unit.get("lora_r") is not None:
+            cmd.extend(["--lora-rank", str(int(unit["lora_r"]))])
+        if unit.get("lora_alpha") is not None:
+            cmd.extend(["--lora-alpha", str(int(unit["lora_alpha"]))])
+        if unit.get("positives") is not None:
+            cmd.extend(["--positives", str(int(unit["positives"]))])
         if smoke:
             cmd.append("--smoke")
         if no_kl:
@@ -505,6 +514,191 @@ def _phase_step_calibration_pick(
     return picks
 
 
+# ── v6 rank pivot: M2 invariant guard + Phase 2A / 2A-CONTROL / 2A.5. ────────
+
+
+def _verify_alpha_invariant(rank: int, alpha: int) -> None:
+    """v6 M2 SSOT guard: every (rank, alpha) pair MUST match the map.
+
+    Fires BEFORE any cell is dispatched (`_phase_rank_calibration` +
+    `_phase_rank_control` call it for every unit; main + implant phases call
+    it when they thread the picked rank). The dispatcher exits non-zero on
+    mismatch so the orchestrator never silently runs a cell at an unpicked
+    α. Implementation delegates to ``alpha_for_rank`` so the single source
+    of truth lives in the experiment package, NOT here.
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        alpha_for_rank,
+    )
+
+    expected = alpha_for_rank(int(rank))
+    if int(alpha) != expected:
+        raise ValueError(
+            f"v6 M2 alpha invariant: got lora_alpha={alpha} for lora_rank={rank}, "
+            f"expected {expected} (from RANK_ALPHA_MAP_V5 / ALPHA_CONTROL_V6 SSOT). "
+            f"No `2*r` formulation is allowed anywhere in v6; the SSOT helper "
+            f"is the only legal source of α."
+        )
+
+
+def _phase_rank_pick(cal_a_results: list[dict], rank_pick_path: Path) -> dict:
+    """v6 Phase 2A.5: pick the rank in RANK_GRID_V5 with the most in-band counts.
+
+    Reads the Cal-A cell summaries (one per (rank, count)) into the table
+    ``{rank -> {count -> {step -> {delta_g, emit, collapsed}}}}`` the picker
+    consumes. Persists ``rank_calibration_table.json`` BEFORE running the
+    picker (checkpoint-per-phase: a picker crash leaves the full table on
+    disk for re-pick). Fires the H0 off-ramp on FAIL.
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        count_for_calA_slug,
+        rank_for_calA_slug,
+    )
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477.calibrate import (
+        pick_rank,
+    )
+
+    table: dict[int, dict[int, dict[int, dict]]] = {}
+    for r in cal_a_results:
+        if r.get("phase") != "rank_calibration":
+            continue
+        slug = r["cell"]
+        rank = rank_for_calA_slug(slug)
+        count = count_for_calA_slug(slug)
+        # Per-step trajectory comes from the cell_summary's per_step dict
+        # (worker writes it from the dense step-grid checkpoints). Each entry
+        # carries delta_g / emit / collapsed at minimum.
+        per_step = r.get("per_step")
+        if not isinstance(per_step, dict):
+            raise RuntimeError(
+                f"[rank_pick] Cal-A cell {slug} seed={r.get('seed')} missing "
+                f"'per_step' dict (got {type(per_step).__name__}). The worker "
+                f"should always emit per_step for phase=rank_calibration."
+            )
+        by_step: dict[int, dict] = {}
+        for step_key, entry in per_step.items():
+            step_int = int(step_key) if step_key != "T" else int(entry.get("actual_step", 0))
+            by_step[step_int] = {
+                "delta_g": float(entry["source_self_delta_g_at_picked_step"]),
+                "emit": float(entry["source_emission_p_at_picked_step"]),
+                # The worker doesn't yet emit a collapsed bool per step; default
+                # False here (eval rig only marks source_R_collapsed at the
+                # cell-summary level, not per-step). Pass through if present.
+                "collapsed": bool(entry.get("source_R_collapsed", False)),
+            }
+        table.setdefault(rank, {})[count] = by_step
+
+    # Persist the full table BEFORE picking (checkpoint-per-phase).
+    table_path = rank_pick_path.parent / "rank_calibration_table.json"
+    serial = {
+        str(rank): {
+            str(count): {str(s): m for s, m in by_step.items()} for count, by_step in row.items()
+        }
+        for rank, row in table.items()
+    }
+    table_path.write_text(json.dumps(serial, indent=2))
+    log.info("[phase=rank_pick] wrote rank_calibration_table.json → %s", table_path)
+
+    if not table:
+        rank_pick_path.write_text(
+            json.dumps({"off_ramp_fired": True, "reason": "empty Cal-A table"}, indent=2)
+        )
+        raise RuntimeError(
+            "[rank_pick] Cal-A table is empty — no rank_calibration cells "
+            "produced per_step records. Investigate the rank_calibration phase."
+        )
+
+    try:
+        pick = pick_rank(table)
+    except RuntimeError as e:
+        # H0 off-ramp: persist + re-raise so the dispatcher exits non-zero.
+        rank_pick_path.write_text(json.dumps({"off_ramp_fired": True, "reason": str(e)}, indent=2))
+        raise
+
+    # Re-assert the alpha invariant before writing the pick (defense-in-depth).
+    _verify_alpha_invariant(int(pick["picked_rank"]), int(pick["picked_alpha"]))
+    rank_pick_path.write_text(json.dumps({"pick": pick}, indent=2))
+    log.info(
+        "[phase=rank_pick] PASS: picked_rank=%d (α=%d) at positives=%d, "
+        "qualifying_counts=%s, per_count_picked_step=%s",
+        pick["picked_rank"],
+        pick["picked_alpha"],
+        pick["picked_positives"],
+        pick["qualifying_counts"],
+        pick["per_count_picked_step"],
+    )
+    return pick
+
+
+def _phase_slot_fix_diagnostic(cal_a0_results: list[dict], diag_path: Path) -> dict:
+    """v6 H4 diagnostic: post-hoc verdict from Cal-A0 (r=32) trajectories.
+
+    Reads the Cal-A0 per_step dicts into the table ``{32: {count -> {step ->
+    {delta_g}}}}`` the diagnostic consumes, persists the table, then writes
+    the verdict to ``rank_control_diagnostic.json``. Never fails loud — the
+    verdict (slot-bug-confirmed / slot-bug-rejected / ambiguous) IS the
+    deliverable regardless of which way it lands.
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        RANK_CONTROL_V6,
+        count_for_calA0_slug,
+    )
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477.calibrate import (
+        slot_fix_diagnostic,
+    )
+
+    table: dict[int, dict[int, dict[int, dict]]] = {RANK_CONTROL_V6: {}}
+    for r in cal_a0_results:
+        if r.get("phase") != "rank_control":
+            continue
+        slug = r["cell"]
+        count = count_for_calA0_slug(slug)
+        per_step = r.get("per_step")
+        if not isinstance(per_step, dict):
+            raise RuntimeError(
+                f"[slot_fix_diagnostic] Cal-A0 cell {slug} seed={r.get('seed')} "
+                f"missing 'per_step' dict (got {type(per_step).__name__})."
+            )
+        by_step: dict[int, dict] = {}
+        for step_key, entry in per_step.items():
+            step_int = int(step_key) if step_key != "T" else int(entry.get("actual_step", 0))
+            by_step[step_int] = {"delta_g": float(entry["source_self_delta_g_at_picked_step"])}
+        table[RANK_CONTROL_V6][count] = by_step
+
+    table_path = diag_path.parent / "rank_control_table.json"
+    serial = {
+        str(rank): {
+            str(count): {str(s): m for s, m in by_step.items()} for count, by_step in row.items()
+        }
+        for rank, row in table.items()
+    }
+    table_path.write_text(json.dumps(serial, indent=2))
+    log.info("[phase=slot_fix_diagnostic] wrote rank_control_table.json → %s", table_path)
+
+    if not table[RANK_CONTROL_V6]:
+        # H4 has no data — log + persist empty verdict; don't fail loud (the
+        # main sweep can still proceed since H0 owns the kill-gate).
+        verdict_out = {
+            "verdict": "no-cal-a0-data",
+            "per_count_max_delta_g": {},
+            "max_terminal_delta_g": 0.0,
+            "alpha_used": 64,
+        }
+        diag_path.write_text(json.dumps(verdict_out, indent=2))
+        log.warning("[phase=slot_fix_diagnostic] no Cal-A0 cells found; verdict deferred.")
+        return verdict_out
+
+    verdict = slot_fix_diagnostic(table)
+    diag_path.write_text(json.dumps(verdict, indent=2))
+    log.info(
+        "[phase=slot_fix_diagnostic] H4 verdict: %s (max ΔG=%.3f; per-count=%s)",
+        verdict["verdict"],
+        verdict["max_terminal_delta_g"],
+        verdict["per_count_max_delta_g"],
+    )
+    return verdict
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -527,12 +721,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     parser = argparse.ArgumentParser(description="i477 dispatcher — implant-decoupled count sweep.")
     parser.add_argument(
         "--phases",
-        default="step_calibration,step_pick,main,implant_sweep",
+        default="rank_calibration,rank_control,rank_pick,slot_fix_diagnostic,main,implant_sweep",
         help=(
-            "CSV subset of the v4 pipeline phases. Default: v4 step-lever path "
-            "(step_calibration → step_pick → main → implant_sweep). v2 legacy "
-            "phases (calibration → calibration_pick) are reachable only via "
-            "--legacy-lr-calibration."
+            "CSV subset of the v6 pipeline phases. Default: v6 rank-pivot "
+            "path (rank_calibration → rank_control → rank_pick → "
+            "slot_fix_diagnostic → main → implant_sweep). v4 step-lever "
+            "phases (step_calibration → step_pick) and v2 legacy phases "
+            "(calibration → calibration_pick) are reachable by passing "
+            "--phases explicitly."
         ),
     )
     parser.add_argument(
@@ -591,13 +787,78 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
             "checks; v4 is the default."
         ),
     )
+    # ── v6 rank pivot flags (plan v6 §4.4 dispatcher row). ───────────────────
+    parser.add_argument(
+        "--rank-grid",
+        default="2,4,8",
+        help=(
+            "v6 Cal-A LoRA rank sweep (CSV of ints in RANK_ALPHA_MAP_V5). "
+            "Default {2,4,8}. Every member MUST have an entry in "
+            "RANK_ALPHA_MAP_V5; _verify_alpha_invariant fires loud otherwise."
+        ),
+    )
+    parser.add_argument(
+        "--positives",
+        type=int,
+        default=200,
+        help=(
+            "v6: positives per cell, GLOBAL across all phases (M3). Default "
+            "200 (v4 byte-identical). The CLI flag is here for legacy / debug "
+            "only — v6 holds positives=200 across Cal-A, Cal-A0, main, implant."
+        ),
+    )
+    parser.add_argument(
+        "--lora-rank",
+        type=int,
+        default=None,
+        help=(
+            "v6: override LoRA rank for a SINGLE-phase invocation (smoke / "
+            "manual rank_control / debug). Default None = use module constant "
+            "r=32. M2: MUST be paired with --lora-alpha; the value MUST equal "
+            "alpha_for_rank(rank)."
+        ),
+    )
+    parser.add_argument(
+        "--lora-alpha",
+        type=int,
+        default=None,
+        help=(
+            "v6: override LoRA alpha. MUST satisfy "
+            "alpha=RANK_ALPHA_MAP_V5[rank] for rank in {2,4,8}, OR alpha=64 "
+            "for rank=32 (Cal-A0 control). NO `2*r` math."
+        ),
+    )
+    parser.add_argument(
+        "--cells",
+        default=None,
+        help=(
+            "Optional smoke selector: CSV of cell slugs to run instead of the "
+            "phase's full unit set. Used when the orchestrator wants to smoke "
+            "a single Cal-A or Cal-A0 cell to validate threading + the slot-"
+            "fix port end-to-end before the full sweep."
+        ),
+    )
     args = parser.parse_args(argv)
 
+    # v6 M2 — early alpha-invariant guard for the smoke / single-cell path.
+    if args.lora_rank is not None or args.lora_alpha is not None:
+        if args.lora_rank is None or args.lora_alpha is None:
+            raise SystemExit(
+                "v6 M2: --lora-rank and --lora-alpha must be passed together; "
+                f"got rank={args.lora_rank} alpha={args.lora_alpha}."
+            )
+        _verify_alpha_invariant(int(args.lora_rank), int(args.lora_alpha))
+
     # v4: --legacy-lr-calibration toggles back to the v2 default phases ONLY
-    # when the caller did not also pass --phases explicitly.
-    if (
-        args.legacy_lr_calibration
-        and args.phases == "step_calibration,step_pick,main,implant_sweep"
+    # when the caller did not also pass --phases explicitly. The v6 default
+    # phases string is the new sentinel (v4 default was the prior sentinel).
+    _v6_default_phases = (
+        "rank_calibration,rank_control,rank_pick,slot_fix_diagnostic,main,implant_sweep"
+    )
+    _v4_default_phases = "step_calibration,step_pick,main,implant_sweep"
+    if args.legacy_lr_calibration and args.phases in (
+        _v6_default_phases,
+        _v4_default_phases,
     ):
         args.phases = "calibration,calibration_pick,main,implant_sweep"
 
@@ -655,14 +916,55 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         args.calibration_lr if args.calibration_lr is not None else CALIBRATION_LR_V3
     )
 
-    # ── Smoke unification: --smoke is one step-calibration cell at v4 LR. ────
-    # Plan v4 §4: "smoke = dispatch_neg_geometry_477.py --phases step_calibration
-    # --cells c477_calib_negp_4 --seeds 42 --lrs <calibration_lr_v4> --smoke";
-    # legacy --smoke + --legacy-lr-calibration keeps the v2 single-LR shape.
+    # ── Smoke unification: --smoke is one (step|rank)_calibration cell. ──────
+    # PASS_UNIFIED: smoke = sweep with a single cell. Same dispatcher path,
+    # same subprocess shape (i477_run_cell.py), same env injection, same
+    # nested-eval teardown. v6: when --cells (Cal-A / Cal-A0 slug) AND
+    # --lora-rank / --lora-alpha are supplied, smoke runs a v6 cell at the
+    # provided rank with the slot-fix port on; otherwise falls back to the
+    # v4 default (step_calibration cell, count=4, r=32/α=64 module defaults).
+    # Legacy: --smoke + --legacy-lr-calibration keeps the v2 single-LR shape.
     if args.smoke:
+        v6_smoke = args.cells is not None and args.lora_rank is not None
         if args.legacy_lr_calibration:
             log.info("[phase=smoke] legacy v2 smoke (one calibration cell, count=4, lr=1e-5)")
             unit = {"cell": "c477_calib_negp_4", "seed": 42, "lr": 1e-5, "phase": "calibration"}
+        elif v6_smoke:
+            # v6 smoke: caller passed a Cal-A or Cal-A0 slug + the v6 rank/alpha.
+            # Route via rank_calibration (Cal-A) or rank_control (Cal-A0) based
+            # on the slug prefix. The M2 guard already verified rank/alpha
+            # match the SSOT before we got here.
+            cell_slug = args.cells.split(",")[0].strip()
+            if cell_slug.startswith("c477_calA0_"):
+                v6_phase = "rank_control"
+            elif cell_slug.startswith("c477_calA_"):
+                v6_phase = "rank_calibration"
+            else:
+                raise SystemExit(
+                    f"v6 smoke: --cells={cell_slug!r} is not a Cal-A "
+                    f"(c477_calA_*) or Cal-A0 (c477_calA0_*) slug; v6 smoke "
+                    f"only supports v6 cells."
+                )
+            log.info(
+                "[phase=smoke] v6 smoke (one %s cell %s, lr=%g, "
+                "lora_rank=%d, lora_alpha=%d, target-steps=%s)",
+                v6_phase,
+                cell_slug,
+                calibration_lr_v4,
+                args.lora_rank,
+                args.lora_alpha,
+                args.target_steps,
+            )
+            unit = {
+                "cell": cell_slug,
+                "seed": 42,
+                "lr": calibration_lr_v4,
+                "phase": v6_phase,
+                "target_steps": args.target_steps,
+                "lora_r": int(args.lora_rank),
+                "lora_alpha": int(args.lora_alpha),
+                "positives": int(args.positives),
+            }
         else:
             log.info(
                 "[phase=smoke] v4 smoke (one step_calibration cell, count=4, "
@@ -783,6 +1085,227 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     else:
         log.info("[phase=step_pick] SKIP")
 
+    # ── v6 Phase 2A: rank_calibration (Cal-A). 3 ranks × 4 counts × seed=42. ─
+    cal_a_results: list[dict] = []
+    if "rank_calibration" in phases:
+        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+            CAL_A_SLUGS,
+            COUNT_LEVELS,
+            RANK_ALPHA_MAP_V5,
+            alpha_for_rank,
+            cal_a_slug,
+            count_for_calA_slug,
+            rank_for_calA_slug,
+        )
+
+        rank_grid = tuple(int(s.strip()) for s in args.rank_grid.split(",") if s.strip())
+        for r in rank_grid:
+            if r not in RANK_ALPHA_MAP_V5:
+                raise ValueError(
+                    f"--rank-grid={args.rank_grid}: rank {r} not in "
+                    f"RANK_ALPHA_MAP_V5={RANK_ALPHA_MAP_V5}. v6 M2: every Cal-A "
+                    f"rank MUST have an entry in the SSOT map."
+                )
+        cal_a_units: list[dict] = []
+        for r in rank_grid:
+            alpha = alpha_for_rank(r)
+            _verify_alpha_invariant(r, alpha)
+            for count in COUNT_LEVELS:
+                cal_a_units.append(
+                    {
+                        "cell": cal_a_slug(count, r),
+                        "seed": 42,
+                        "lr": calibration_lr_v4,
+                        "phase": "rank_calibration",
+                        "target_steps": args.target_steps,
+                        "lora_r": r,
+                        "lora_alpha": alpha,
+                        "positives": int(args.positives),
+                    }
+                )
+        # Smoke / debug carve-out: --cells filters to a subset of the unit set
+        # WITHOUT touching the rank/alpha/positives threading (M2 invariant
+        # already applied above). Useful for one-cell preflight on the pod.
+        if args.cells:
+            wanted = set(s.strip() for s in args.cells.split(",") if s.strip())
+            cal_a_units = [u for u in cal_a_units if u["cell"] in wanted]
+            if not cal_a_units:
+                raise RuntimeError(
+                    f"--cells={args.cells!r} filtered ALL Cal-A units out; "
+                    f"available Cal-A slugs are {list(CAL_A_SLUGS)}."
+                )
+        # Sanity-tag every unit (helps the pick phase parse cell metadata
+        # even if the worker's summary later loses the per_step keys).
+        for u in cal_a_units:
+            u["_meta_count"] = count_for_calA_slug(u["cell"])
+            u["_meta_rank"] = rank_for_calA_slug(u["cell"])
+        log.info(
+            "[phase=rank_calibration] scheduling %d Cal-A cells (ranks %s × "
+            "counts %s × seed=42, lr=%g, positives=%d, target-steps=%s)",
+            len(cal_a_units),
+            rank_grid,
+            COUNT_LEVELS,
+            calibration_lr_v4,
+            args.positives,
+            args.target_steps,
+        )
+        cal_a_results = _schedule_unit_pool(
+            units=cal_a_units,
+            n_gpus=args.n_gpus,
+            max_parallel=args.max_parallel,
+            slab_root=args.slab_root,
+            runs_root=args.runs_root,
+            log_dir=LOG_DIR,
+            bank_path=args.bank_path,
+            centroids_dir=args.centroids_dir,
+            smoke=False,
+            no_kl=args.no_kl,
+            report_to=args.report_to,
+            resume=args.resume,
+        )
+        phase_summaries["rank_calibration"] = {
+            "n_completed": len(cal_a_results),
+            "results": cal_a_results,
+        }
+        _write_sentinel(
+            LOG_DIR / "issue-477-rank-calibration-results.json",
+            kind="epm:progress",
+            phase="rank_calibration",
+            note_payload=phase_summaries["rank_calibration"],
+        )
+    else:
+        log.info("[phase=rank_calibration] SKIP")
+
+    # ── v6 Phase 2A-CONTROL: rank_control (Cal-A0). r=32 / α=64 × 3 counts. ──
+    cal_a0_results: list[dict] = []
+    if "rank_control" in phases:
+        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+            ALPHA_CONTROL_V6,
+            CAL_A0_SLUGS,
+            RANK_CONTROL_COUNTS_V6,
+            RANK_CONTROL_V6,
+            cal_a0_slug,
+            count_for_calA0_slug,
+        )
+
+        _verify_alpha_invariant(RANK_CONTROL_V6, ALPHA_CONTROL_V6)
+        cal_a0_units: list[dict] = [
+            {
+                "cell": cal_a0_slug(count),
+                "seed": 42,
+                "lr": calibration_lr_v4,
+                "phase": "rank_control",
+                "target_steps": args.target_steps,
+                "lora_r": RANK_CONTROL_V6,
+                "lora_alpha": ALPHA_CONTROL_V6,
+                "positives": int(args.positives),
+            }
+            for count in RANK_CONTROL_COUNTS_V6
+        ]
+        if args.cells:
+            wanted = set(s.strip() for s in args.cells.split(",") if s.strip())
+            cal_a0_units = [u for u in cal_a0_units if u["cell"] in wanted]
+            if not cal_a0_units:
+                raise RuntimeError(
+                    f"--cells={args.cells!r} filtered ALL Cal-A0 units out; "
+                    f"available Cal-A0 slugs are {list(CAL_A0_SLUGS)}."
+                )
+        for u in cal_a0_units:
+            u["_meta_count"] = count_for_calA0_slug(u["cell"])
+            u["_meta_rank"] = RANK_CONTROL_V6
+        log.info(
+            "[phase=rank_control] scheduling %d Cal-A0 cells (r=%d / α=%d × "
+            "counts %s × seed=42, lr=%g, positives=%d, target-steps=%s)",
+            len(cal_a0_units),
+            RANK_CONTROL_V6,
+            ALPHA_CONTROL_V6,
+            RANK_CONTROL_COUNTS_V6,
+            calibration_lr_v4,
+            args.positives,
+            args.target_steps,
+        )
+        cal_a0_results = _schedule_unit_pool(
+            units=cal_a0_units,
+            n_gpus=args.n_gpus,
+            max_parallel=args.max_parallel,
+            slab_root=args.slab_root,
+            runs_root=args.runs_root,
+            log_dir=LOG_DIR,
+            bank_path=args.bank_path,
+            centroids_dir=args.centroids_dir,
+            smoke=False,
+            no_kl=args.no_kl,
+            report_to=args.report_to,
+            resume=args.resume,
+        )
+        phase_summaries["rank_control"] = {
+            "n_completed": len(cal_a0_results),
+            "results": cal_a0_results,
+        }
+        _write_sentinel(
+            LOG_DIR / "issue-477-rank-control-results.json",
+            kind="epm:progress",
+            phase="rank_control",
+            note_payload=phase_summaries["rank_control"],
+        )
+    else:
+        log.info("[phase=rank_control] SKIP")
+
+    # ── v6 Phase 2A.5: rank_pick (H0 kill-gate). ─────────────────────────────
+    rank_pick: dict = {}
+    if "rank_pick" in phases:
+        if not cal_a_results:
+            from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+                CAL_A_SLUGS,
+            )
+
+            for slug in CAL_A_SLUGS:
+                run_label = f"{slug}_seed42_lr{calibration_lr_v4:g}"
+                sp = args.runs_root / run_label / "cell_summary.json"
+                if sp.exists():
+                    cal_a_results.append(json.loads(sp.read_text()))
+            if not cal_a_results:
+                raise RuntimeError(
+                    "rank_pick requested but no Cal-A cell_summary.json found "
+                    "on disk. Run --phases rank_calibration first."
+                )
+        rp_path = args.slab_root / "rank_calibration_pick.json"
+        rank_pick = _phase_rank_pick(cal_a_results, rp_path)
+        phase_summaries["rank_pick"] = rank_pick
+        _write_sentinel(
+            LOG_DIR / "issue-477-rank-pick-results.json",
+            kind="epm:progress",
+            phase="rank_pick",
+            note_payload=phase_summaries["rank_pick"],
+        )
+    else:
+        log.info("[phase=rank_pick] SKIP")
+
+    # ── v6 H4 slot-fix-vs-capacity diagnostic (post-Cal-A0; non-gating). ─────
+    h4_verdict: dict = {}
+    if "slot_fix_diagnostic" in phases:
+        if not cal_a0_results:
+            from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+                CAL_A0_SLUGS,
+            )
+
+            for slug in CAL_A0_SLUGS:
+                run_label = f"{slug}_seed42_lr{calibration_lr_v4:g}"
+                sp = args.runs_root / run_label / "cell_summary.json"
+                if sp.exists():
+                    cal_a0_results.append(json.loads(sp.read_text()))
+        diag_path = args.slab_root / "rank_control_diagnostic.json"
+        h4_verdict = _phase_slot_fix_diagnostic(cal_a0_results, diag_path)
+        phase_summaries["slot_fix_diagnostic"] = h4_verdict
+        _write_sentinel(
+            LOG_DIR / "issue-477-slot-fix-diagnostic-results.json",
+            kind="epm:progress",
+            phase="slot_fix_diagnostic",
+            note_payload=phase_summaries["slot_fix_diagnostic"],
+        )
+    else:
+        log.info("[phase=slot_fix_diagnostic] SKIP")
+
     # ── Phase 2: calibration sweep. ──────────────────────────────────────────
     calibration_results: list[dict] = []
     if "calibration" in phases:
@@ -870,28 +1393,55 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         # — a legacy rerun must NEVER read the v4 pick file, since the v2
         # calibrated-LR path picks ITS lr from calibration_pick.json and
         # ignores picked_step entirely.
-        use_v4 = (not args.legacy_lr_calibration) and (
-            bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
+        # v6 routing: if a rank_pick exists (in-memory OR on disk), the main
+        # sweep runs at picked_rank + alpha_for_rank(picked_rank) with the
+        # slot-fix port automatically on (the worker detects v6 from
+        # lora_rank is not None). The per-count picked_step comes from
+        # rank_pick.per_count_picked_step (Cal-A's in-band step closest to
+        # ΔG=12). Falls back to v4 step_picks if rank_pick is absent, then
+        # v2 picks under --legacy-lr-calibration.
+        rank_pick_path = args.slab_root / "rank_calibration_pick.json"
+        use_v6 = (not args.legacy_lr_calibration) and (bool(rank_pick) or rank_pick_path.exists())
+        if use_v6 and not rank_pick:
+            loaded = json.loads(rank_pick_path.read_text())
+            rank_pick = loaded.get("pick", {})
+            if not rank_pick or rank_pick.get("off_ramp_fired"):
+                raise RuntimeError(
+                    "main phase requested with v6 routing but rank_pick has no "
+                    "valid pick (off_ramp_fired or missing). The dispatcher MUST "
+                    "NOT silently run the main sweep at an unpicked rank."
+                )
+        use_v4 = (
+            not use_v6
+            and (not args.legacy_lr_calibration)
+            and (bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists())
         )
         if use_v4 and not step_picks:
             loaded = json.loads((args.slab_root / "step_calibration_pick.json").read_text())
             step_picks = {int(k): v for k, v in loaded.get("picks", {}).items()}
-        if not use_v4 and not picks:
+        if not use_v4 and not use_v6 and not picks:
             pick_path = args.slab_root / "calibration_pick.json"
             if pick_path.exists():
                 loaded = json.loads(pick_path.read_text())
                 picks = {int(k): v for k, v in loaded.get("picks", {}).items()}
             else:
                 raise RuntimeError(
-                    "main phase requested but neither v4 step_picks nor v2 picks "
-                    "resolved (no in-memory state, no on-disk "
-                    "step_calibration_pick.json or calibration_pick.json). Run "
-                    "--phases step_calibration,step_pick first (or "
-                    "--legacy-lr-calibration --phases calibration,calibration_pick)."
+                    "main phase requested but no pick file resolved (no in-memory "
+                    "state, no on-disk rank_calibration_pick.json / "
+                    "step_calibration_pick.json / calibration_pick.json). Run "
+                    "--phases rank_calibration,rank_pick first (v6 default) OR "
+                    "--phases step_calibration,step_pick (v4) OR "
+                    "--legacy-lr-calibration --phases calibration,calibration_pick (v2)."
                 )
-        scheduling_mode_desc = (
-            f"v4 picked steps + lr={calibration_lr_v4:g}" if use_v4 else "v2 calibrated LRs"
-        )
+        if use_v6:
+            scheduling_mode_desc = (
+                f"v6 picked rank={rank_pick['picked_rank']} (α={rank_pick['picked_alpha']}) "
+                f"+ per-count picked steps + lr={calibration_lr_v4:g}"
+            )
+        elif use_v4:
+            scheduling_mode_desc = f"v4 picked steps + lr={calibration_lr_v4:g}"
+        else:
+            scheduling_mode_desc = "v2 calibrated LRs"
         log.info(
             "[phase=main] scheduling %d main cells (4 counts × %d seeds) at %s",
             len(MAIN_SLUGS) * len(seeds),
@@ -901,7 +1451,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         main_units = []
         for slug in MAIN_SLUGS:
             cnt = count_for_slug(slug)
-            if use_v4:
+            if use_v6:
+                per_count = rank_pick.get("per_count_picked_step", {})
+                # JSON deserializes int keys as strings; normalize both ways.
+                picked_step_raw = per_count.get(cnt) or per_count.get(str(cnt))
+                if picked_step_raw is None:
+                    log.warning(
+                        "[phase=main] v6: count=%d missing from rank_pick.per_count_picked_step "
+                        "(partial coverage); SKIPPING its main cells (DESCRIPTIVE-only path, "
+                        "plan v6 §7 H0 partial branch).",
+                        cnt,
+                    )
+                    continue
+                picked_step = int(picked_step_raw)
+                picked_rank = int(rank_pick["picked_rank"])
+                picked_alpha = int(rank_pick["picked_alpha"])
+                _verify_alpha_invariant(picked_rank, picked_alpha)
+                for seed in seeds:
+                    main_units.append(
+                        {
+                            "cell": slug,
+                            "seed": seed,
+                            "lr": calibration_lr_v4,
+                            "phase": "main_v4",
+                            "picked_step": picked_step,
+                            "lora_r": picked_rank,
+                            "lora_alpha": picked_alpha,
+                            "positives": int(args.positives),
+                        }
+                    )
+            elif use_v4:
                 pick = step_picks.get(cnt)
                 if pick is None:
                     log.warning(
@@ -965,14 +1544,61 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
     # v2 --legacy-lr-calibration: 3 LRs × 2 seeds = 6 cells (byte-identical).
     implant_sweep_results: list[dict] = []
     if "implant_sweep" in phases:
-        # Route v4 ⇄ v2 the same way the main phase does: --legacy-lr-calibration
-        # suppresses v4, regardless of whether a stale step pick file exists.
-        # `step_picks` is non-empty when Phase 2.5 ran in-process this session;
-        # the step_calibration_pick.json sentinel covers cross-session resume.
-        impl_use_v4 = (not args.legacy_lr_calibration) and (
-            bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists()
+        # Route v6 ⇄ v4 ⇄ v2: --legacy-lr-calibration suppresses v6 + v4. v6
+        # routing fires when rank_calibration_pick.json exists; the implant-
+        # only-axis anchor then trains at picked_rank + alpha_for_rank(picked)
+        # with the slot-fix port on (the worker auto-detects v6 from
+        # lora_rank is not None). v4 routing keeps the step-sweep at the
+        # module r=32/α=64 defaults.
+        impl_rank_pick_path = args.slab_root / "rank_calibration_pick.json"
+        impl_use_v6 = (not args.legacy_lr_calibration) and (
+            bool(rank_pick) or impl_rank_pick_path.exists()
         )
-        if impl_use_v4:
+        if impl_use_v6 and not rank_pick:
+            loaded = json.loads(impl_rank_pick_path.read_text())
+            rank_pick = loaded.get("pick", {})
+            if not rank_pick or rank_pick.get("off_ramp_fired"):
+                raise RuntimeError(
+                    "implant_sweep requested with v6 routing but rank_pick has "
+                    "no valid pick (off_ramp_fired or missing)."
+                )
+        impl_use_v4 = (
+            not impl_use_v6
+            and (not args.legacy_lr_calibration)
+            and (bool(step_picks) or (args.slab_root / "step_calibration_pick.json").exists())
+        )
+        if impl_use_v6:
+            picked_rank_imp = int(rank_pick["picked_rank"])
+            picked_alpha_imp = int(rank_pick["picked_alpha"])
+            _verify_alpha_invariant(picked_rank_imp, picked_alpha_imp)
+            log.info(
+                "[phase=implant_sweep] v6 step-sweep at picked rank: %d anchor "
+                "cells (1 anchor × %d seeds at count=%d, lr=%g, r=%d, α=%d), "
+                "step levels %s + T",
+                len(seeds),
+                len(seeds),
+                ANCHOR_COUNT,
+                CALIBRATION_LR_V3,
+                picked_rank_imp,
+                picked_alpha_imp,
+                IMPLANT_SWEEP_STEPS,
+            )
+            implant_steps_csv = ",".join(str(s) for s in IMPLANT_SWEEP_STEPS)
+            is_units = []
+            for seed in seeds:
+                is_units.append(
+                    {
+                        "cell": IMPLANT_SWEEP_V4_ANCHOR_SLUG,
+                        "seed": seed,
+                        "lr": CALIBRATION_LR_V3,
+                        "phase": "implant_sweep_v4",
+                        "implant_steps": implant_steps_csv,
+                        "lora_r": picked_rank_imp,
+                        "lora_alpha": picked_alpha_imp,
+                        "positives": int(args.positives),
+                    }
+                )
+        elif impl_use_v4:
             log.info(
                 "[phase=implant_sweep] v4 step-sweep: %d anchor cells "
                 "(1 anchor × %d seeds at count=%d, lr=%g), step levels %s + T",
@@ -1095,9 +1721,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
             )
             for r in implant_sweep_results:
                 r["count"] = ANCHOR_COUNT
+        if impl_use_v6:
+            implant_routing = "v6_step_sweep_picked_rank"
+        elif impl_use_v4:
+            implant_routing = "v4_step_sweep"
+        else:
+            implant_routing = "v2_lr_sweep"
         phase_summaries["implant_sweep"] = {
             "n_completed": len(implant_sweep_results),
-            "routing": "v4_step_sweep" if impl_use_v4 else "v2_lr_sweep",
+            "routing": implant_routing,
             "results": implant_sweep_results,
         }
         _write_sentinel(

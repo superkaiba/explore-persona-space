@@ -360,6 +360,10 @@ def train_one_cell(
     run_name_override: str | None = None,
     step_calibration_fractions: tuple[float, ...] | None = None,
     frac_precision: int = 2,
+    lora_r_override: int | None = None,
+    lora_alpha_override: int | None = None,
+    marker_suppress_at_post_response_slot: bool = False,
+    marker_im_end_token_id: int | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -400,6 +404,7 @@ def train_one_cell(
     verify_gpu_pin(gpu_id)
 
     r = FALLBACK_LORA_R if fallback else LORA_R
+    alpha = LORA_ALPHA
     lr = FALLBACK_LEARNING_RATE if fallback else LEARNING_RATE
     epochs = FALLBACK_EPOCHS if fallback else EPOCHS
     # Per-cell overrides (#477 calibration layer). Backward-compat: defaults None
@@ -407,10 +412,19 @@ def train_one_cell(
     # epochs_override lets #477 pin epochs=2 (vs #472's 1) without touching the
     # 472 module constants. hf_path_in_repo_override lets #477 push adapters to
     # its own subfolder under HF_MODEL_REPO instead of adapters/issue_472/...
+    # lora_r_override + lora_alpha_override (#477 v6 M2): the recipe-scale lever.
+    # Both come from the dispatcher's single source of truth (RANK_ALPHA_MAP_V5
+    # for ranks {2,4,8} or the literal 64 for the r=32 Cal-A0 control). NEVER
+    # `2*r` math here; the dispatcher's _verify_alpha_invariant guard + the
+    # parameterized threading test pin this.
     if lr_override is not None:
         lr = float(lr_override)
     if epochs_override is not None:
         epochs = epochs_override
+    if lora_r_override is not None:
+        r = int(lora_r_override)
+    if lora_alpha_override is not None:
+        alpha = int(lora_alpha_override)
     hf_path_in_repo = (
         hf_path_in_repo_override
         if hf_path_in_repo_override is not None
@@ -427,7 +441,7 @@ def train_one_cell(
         epochs=epochs,
         lr=lr,
         lora_r=r,
-        lora_alpha=LORA_ALPHA,
+        lora_alpha=alpha,
         lora_dropout=LORA_DROPOUT,
         batch_size=BATCH_SIZE,
         grad_accum=GRAD_ACCUM,
@@ -447,6 +461,11 @@ def train_one_cell(
         marker_only_loss=True,
         marker_text=MARKER_TEXT,
         marker_tail_tokens=0,
+        # #477 v6: post-response-slot suppression (the slot-fix ported from
+        # origin/main). Default False = byte-identical #472 behavior; #477 v6
+        # cells set True + im_end_token_id=151645 (Qwen-2.5 <|im_end|>).
+        marker_suppress_at_post_response_slot=marker_suppress_at_post_response_slot,
+        marker_im_end_token_id=marker_im_end_token_id,
     )
     # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
     # step-calibration cells), it replaces the default ``fractions`` AND
@@ -458,12 +477,15 @@ def train_one_cell(
     )
     ckpt_cb = CheckpointAtFractionsCallback(ckpt_root, eff_fractions, frac_precision=frac_precision)
     log.info(
-        "[%s] Training (r=%d, lr=%g, epochs=%s, marker=%r, frac_precision=%d) → %s",
+        "[%s] Training (r=%d, alpha=%d, lr=%g, epochs=%s, marker=%r, "
+        "suppress_at_post_response_slot=%s, frac_precision=%d) → %s",
         cell_slug,
         r,
+        alpha,
         lr,
         epochs,
         MARKER_TEXT,
+        marker_suppress_at_post_response_slot,
         frac_precision,
         output_dir,
     )

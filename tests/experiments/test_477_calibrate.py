@@ -33,14 +33,14 @@ def test_cell_specs_477_shape() -> None:
         MAIN_SLUGS,
     )
 
-    # 4 calibration slugs (one per count; LR threaded per-launch, not per-slug)
-    # + 4 main slugs + 3 v2 implant_sweep slugs + 1 v4 implant_sweep anchor
-    # slug = 12 distinct. The v2 LR-sweep slugs stay registered so
-    # --legacy-lr-calibration's byte-identical path keeps working.
+    # v4 registry shape: 4 calibration slugs + 4 main slugs + 3 v2
+    # implant_sweep slugs + 1 v4 implant_sweep anchor = 12.
+    # v6 ADDS: 12 Cal-A slugs (3 ranks × 4 counts) + 3 Cal-A0 slugs
+    # (1 control rank × 3 counts) = 15. Total = 27 distinct slugs.
     assert len(CALIB_SLUGS) == len(COUNT_LEVELS) == 4
     assert len(MAIN_SLUGS) == 4
     assert len(IMPLANT_SWEEP_SLUGS) == len(IMPLANT_SWEEP_LRS) == 3
-    assert len(CELL_SPECS_477) == 12
+    assert len(CELL_SPECS_477) == 27
     # v4 anchor is present at the expected slug.
     slugs = [c[0] for c in CELL_SPECS_477]
     assert IMPLANT_SWEEP_V4_ANCHOR_SLUG in slugs

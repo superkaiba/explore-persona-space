@@ -1,4 +1,4 @@
-# ruff: noqa: C901, RUF003  # main is a linear worker; em-dash + Qwen marker " ※" + Greek ΔG + × intentional
+# ruff: noqa: C901, RUF001, RUF003  # main is a linear worker; em-dash + Qwen marker " ※" + Greek ΔG/α + × intentional
 #!/usr/bin/env python3
 """Task #477 — single (cell, seed, lr, phase) worker: build → train → eval.
 
@@ -60,6 +60,13 @@ PHASES = (
     "step_calibration",
     "main_v4",
     "implant_sweep_v4",
+    # v6 rank pivot: Cal-A (rank-calibration) + Cal-A0 (rank_control) — both
+    # share the dense early-step grid + slot-fix port. Identical dispatch
+    # shape as step_calibration; the only difference is the (rank, alpha)
+    # values come from the dispatcher (Cal-A reads RANK_ALPHA_MAP_V5; Cal-A0
+    # always r=32 / α=64).
+    "rank_calibration",
+    "rank_control",
 )
 TASK_ID = 477
 
@@ -249,7 +256,62 @@ def main(argv: list[str] | None = None) -> int:
             "automatically. Used only when phase=implant_sweep_v4."
         ),
     )
+    # ── v6 rank pivot CLI flags (plan v6 §4.4 i477_run_cell row). ────────────
+    ap.add_argument(
+        "--lora-rank",
+        type=int,
+        default=None,
+        help=(
+            "v6: per-cell LoRA rank override. Default None = use the module "
+            "constant (r=32 = v4 byte-identical). When supplied, MUST be "
+            "paired with --lora-alpha; the dispatcher enforces M2 "
+            "(α=RANK_ALPHA_MAP_V5[r] for r ∈ {2,4,8}, OR 64 for r=32)."
+        ),
+    )
+    ap.add_argument(
+        "--lora-alpha",
+        type=int,
+        default=None,
+        help=(
+            "v6: per-cell LoRA alpha override. Default None = use the module "
+            "constant (α=64 = v4 byte-identical). M2 SSOT: must match "
+            "alpha_for_rank(--lora-rank). The dispatcher's "
+            "_verify_alpha_invariant catches mismatches before launch; this "
+            "worker also re-asserts on startup as a defense-in-depth."
+        ),
+    )
+    ap.add_argument(
+        "--positives",
+        type=int,
+        default=None,
+        help=(
+            "v6: positives-per-cell override. Default None = use the module "
+            "constant POS_EX_PER_SOURCE=200. v6 holds positives GLOBAL at 200 "
+            "(M3); kept as a CLI flag for legacy / debug only."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    # ── v6 M2 alpha invariant re-assertion (defense-in-depth). ───────────────
+    if args.lora_rank is not None or args.lora_alpha is not None:
+        if args.lora_rank is None or args.lora_alpha is None:
+            raise RuntimeError(
+                "v6 M2 alpha invariant: --lora-rank and --lora-alpha must be "
+                f"passed together; got rank={args.lora_rank} alpha={args.lora_alpha}."
+            )
+        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+            alpha_for_rank,
+        )
+
+        expected_alpha = alpha_for_rank(int(args.lora_rank))
+        if int(args.lora_alpha) != expected_alpha:
+            raise RuntimeError(
+                f"v6 M2 alpha invariant violation: --lora-rank={args.lora_rank} "
+                f"--lora-alpha={args.lora_alpha} but expected α={expected_alpha} "
+                f"(from RANK_ALPHA_MAP_V5 / ALPHA_CONTROL_V6 SSOT). The "
+                f"dispatcher's _verify_alpha_invariant should have caught this; "
+                f"investigate."
+            )
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -340,12 +402,15 @@ def main(argv: list[str] | None = None) -> int:
     step_calibration_fractions: tuple[float, ...] | None = None
     frac_precision: int = 2
 
-    if args.phase == "step_calibration":
-        # v4 §4 Phase 2: dense early-step grid. Compute max_steps from the
-        # built training JSONL row count (= eff. dataset size × epochs / eff.
-        # batch). Assertion 3 of plan v4 §12 pins {76, 126, 226, 426} for
-        # counts {2, 4, 8, 16} at epochs=2 lr=2e-6 — recomputed here from the
-        # ACTUAL row count so the picker can't drift from the trained reality.
+    if args.phase in ("step_calibration", "rank_calibration", "rank_control"):
+        # v4 §4 Phase 2 (step_calibration) AND v6 Phase 2A / 2A-CONTROL
+        # (rank_calibration / rank_control): dense early-step grid. Compute
+        # max_steps from the built training JSONL row count (= eff. dataset
+        # size × epochs / eff. batch). Assertion 3 of plan v4 §12 pins
+        # {76, 126, 226, 426} for counts {2, 4, 8, 16} at epochs=2 lr=2e-6
+        # — recomputed here from the ACTUAL row count so the picker can't
+        # drift from the trained reality. v6 cells use the same step grid
+        # at the same lr=CALIBRATION_LR_V3 (2e-6).
         from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
             BATCH_SIZE,
             GRAD_ACCUM,
@@ -357,7 +422,7 @@ def main(argv: list[str] | None = None) -> int:
         n_rows = sum(1 for _ in train_jsonl.open()) if train_jsonl.exists() else 0
         if n_rows <= 0:
             raise RuntimeError(
-                f"[{args.cell}] step_calibration phase: built training JSONL "
+                f"[{args.cell}] {args.phase} phase: built training JSONL "
                 f"{train_jsonl} has {n_rows} rows — build_cell silently emitted "
                 f"an empty pool? Investigate before computing step_fractions."
             )
@@ -369,7 +434,7 @@ def main(argv: list[str] | None = None) -> int:
         max_steps = -(-(n_rows * EPOCHS) // eff_batch)
         if not args.target_steps:
             raise RuntimeError(
-                f"[{args.cell}] step_calibration phase requires --target-steps "
+                f"[{args.cell}] {args.phase} phase requires --target-steps "
                 f"(comma-separated optimizer-step ints); got empty."
             )
         target_steps = tuple(int(s.strip()) for s in args.target_steps.split(",") if s.strip())
@@ -380,7 +445,7 @@ def main(argv: list[str] | None = None) -> int:
         kept_targets = tuple(s for s in target_steps if s <= max_steps)
         if not kept_targets:
             raise RuntimeError(
-                f"[{args.cell}] step_calibration: every target_step in "
+                f"[{args.cell}] {args.phase}: every target_step in "
                 f"{target_steps} exceeds max_steps={max_steps} (n_rows={n_rows}, "
                 f"eff_batch={eff_batch}, epochs={EPOCHS}). Cannot calibrate."
             )
@@ -392,9 +457,10 @@ def main(argv: list[str] | None = None) -> int:
         frac_precision = 4
         fractions: tuple[float, ...] = step_calibration_fractions
         log.info(
-            "[phase=train_%s] v4 step_calibration: n_rows=%d, max_steps=%d, "
+            "[phase=train_%s] v6/v4 %s: n_rows=%d, max_steps=%d, "
             "target_steps=%s → fractions=%s (4-dp precision)",
             args.cell,
+            args.phase,
             n_rows,
             max_steps,
             kept_targets,
@@ -499,14 +565,36 @@ def main(argv: list[str] | None = None) -> int:
 
     # HF push path: #477 adapters live under adapters/issue_477/<run_label>.
     hf_path_in_repo = f"adapters/issue_477/{run_label}"
+    # v6 slot-fix: ALL v6 phases run with suppress_at_post_response_slot=True
+    # so the contrastive negatives' loss actually lands on the DV-read slot
+    # (the post-response <|im_end|> token). The v4/v2 legacy phases keep the
+    # pre-port behavior (default False, byte-identical). The v6 phase
+    # detection is intentionally broad — every CLI flag combination that
+    # implies a v6 cell (Cal-A, Cal-A0, OR the v6 main sweep at picked rank,
+    # OR a v6 implant sweep at picked rank) turns it on.
+    v6_cell = args.phase in ("rank_calibration", "rank_control") or args.lora_rank is not None
+    if v6_cell:
+        from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+            MARKER_IM_END_TOKEN_ID,
+        )
+
+        marker_im_end_id: int | None = MARKER_IM_END_TOKEN_ID
+        marker_suppress = True
+    else:
+        marker_im_end_id = None
+        marker_suppress = False
     log.info(
-        "[phase=train_%s] training (phase=%s, smoke=%s, lr=%g, epochs=%d, fractions=%s)",
+        "[phase=train_%s] training (phase=%s, smoke=%s, lr=%g, epochs=%d, "
+        "fractions=%s, lora_rank=%s, lora_alpha=%s, suppress_slot=%s)",
         args.cell,
         args.phase,
         args.smoke,
         args.lr,
         EPOCHS,
         fractions,
+        args.lora_rank,
+        args.lora_alpha,
+        marker_suppress,
     )
     # WandB run-name prefix: #477 cells should be browsable as `issue477_*` not
     # `issue472_*` (the parent's default). Threaded through train_one_cell's
@@ -531,6 +619,14 @@ def main(argv: list[str] | None = None) -> int:
         # do not collapse onto frac_0.00 (the v3 fact-check fix).
         step_calibration_fractions=step_calibration_fractions,
         frac_precision=frac_precision,
+        # v6 M2: per-cell LoRA rank + alpha from the dispatcher's SSOT (None
+        # = legacy r=32/α=64 default). The startup re-assertion above pinned
+        # alpha == alpha_for_rank(rank) before this call.
+        lora_r_override=args.lora_rank,
+        lora_alpha_override=args.lora_alpha,
+        # v6 slot-fix port (origin/main MarkerOnlyDataCollator args).
+        marker_suppress_at_post_response_slot=marker_suppress,
+        marker_im_end_token_id=marker_im_end_id,
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))

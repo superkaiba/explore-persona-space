@@ -104,6 +104,21 @@ __all__ = [
     "IMPLANT_SWEEP_V4_SLUGS",
     "implant_sweep_v4_slug_for_step",
     "step_for_implant_sweep_v4_slug",
+    # NEW in v6 (M1 rank control + M2 single-source-of-truth alpha map).
+    "ALPHA_CONTROL_V6",
+    "CAL_A0_SLUGS",
+    "CAL_A_SLUGS",
+    "MARKER_IM_END_TOKEN_ID",
+    "RANK_ALPHA_MAP_V5",
+    "RANK_CONTROL_COUNTS_V6",
+    "RANK_CONTROL_V6",
+    "RANK_GRID_V5",
+    "alpha_for_rank",
+    "cal_a0_slug",
+    "cal_a_slug",
+    "count_for_calA0_slug",
+    "count_for_calA_slug",
+    "rank_for_calA_slug",
 ]
 
 # ── Calibration constants (plan §4 pseudocode + §11 grounding) ───────────────
@@ -293,7 +308,8 @@ def count_for_slug(slug: str) -> int:
     Implant-sweep slugs ALL belong to ANCHOR_COUNT — v2 slugs sweep LR at fixed
     count; v4 slugs sweep optimizer-step at fixed count + lr. The v4 anchor
     slug (one training run per seed, expanded into per-step records by the
-    dispatcher) also belongs to ANCHOR_COUNT. Raises KeyError on unknown slug.
+    dispatcher) also belongs to ANCHOR_COUNT. v6 Cal-A / Cal-A0 slugs encode
+    BOTH count + rank (cal_a_slug / cal_a0_slug). Raises KeyError on unknown slug.
     """
     for c in COUNT_LEVELS:
         if slug == f"c477_calib_negp_{c}" or slug == f"c477_main_calib_negp_{c}":
@@ -302,6 +318,13 @@ def count_for_slug(slug: str) -> int:
         return ANCHOR_COUNT
     if slug == IMPLANT_SWEEP_V4_ANCHOR_SLUG or slug in IMPLANT_SWEEP_V4_SLUGS:
         return ANCHOR_COUNT
+    # v6 Cal-A: c477_calA_negp_<count>_r<rank>.
+    if slug.startswith("c477_calA_negp_") and not slug.startswith("c477_calA0_negp_"):
+        # Defer to the precise helper; raises KeyError on a malformed Cal-A slug.
+        return count_for_calA_slug(slug)
+    # v6 Cal-A0: c477_calA0_negp_<count>_r32.
+    if slug.startswith("c477_calA0_negp_"):
+        return count_for_calA0_slug(slug)
     raise KeyError(f"Unknown 477 cell slug: {slug!r}")
 
 
@@ -376,3 +399,144 @@ def step_for_implant_sweep_v4_slug(slug: str) -> int | str:
         if slug == f"c477_implantsweep_step{_step_slug(s)}":
             return int(s)
     raise KeyError(f"Not a v4 implant-sweep slug: {slug!r}")
+
+
+# ── v6 RECIPE-SCALE PIVOT (LoRA rank lever + Cal-A0 r=32 slot-fix control). ──
+# Cal-A: rank sweep across {2, 4, 8} at the v4 lr/positives/epochs floor.
+# Cal-A0: r=32 / α=64 (v4 byte-identical) at counts {2, 4, 16} with the
+# slot-fix port turned on — the slot-bug-vs-capacity diagnostic (plan v6 §4
+# PHASE 2A + 2A-CONTROL). Each cell uses the SAME 4 count levels as the v4
+# main sweep; Cal-A0 drops count=8 to stay within the ~3 GPU-h M1 budget.
+
+# ── v6 M2 SINGLE SOURCE OF TRUTH for LoRA alpha ─────────────────────────────
+# rsLoRA scaling factor α/√r held fixed at the v4 r=32/α=64 equivalent
+# (α/√r = 11.31). Source: arXiv 2312.03732 §3 (rsLoRA). Hand calculations:
+#   r=2 → α=11.31×√2 = 15.99 → 16
+#   r=4 → α=11.31×2   = 22.62 → 23
+#   r=8 → α=11.31×√8 = 32.00 → 32
+# The r=32 CONTROL uses α=64 (the v4 byte-identical baseline; NOT in the map
+# — it is the diagnostic anchor, not the swept axis). NO `2*r` math anywhere.
+# Dispatcher's _verify_alpha_invariant guard + the parameterized threading
+# test enforce that every alpha at training time is read from this map (or
+# is the literal 64 when rank=32).
+RANK_ALPHA_MAP_V5: dict[int, int] = {2: 16, 4: 23, 8: 32}
+
+# Cal-A rank grid (the swept axis; M2 invariant: every member must have an
+# entry in RANK_ALPHA_MAP_V5).
+RANK_GRID_V5: tuple[int, ...] = (2, 4, 8)
+
+# Cal-A0 control (the diagnostic anchor; v4 byte-identical recipe with the
+# slot-fix port turned on). Counts {2, 4, 16} chosen as a 3-point overlap
+# with Cal-A spanning the full count range (count=8 dropped to stay in the
+# M1 ~3 GPU-h budget).
+RANK_CONTROL_V6: int = 32
+ALPHA_CONTROL_V6: int = 64
+RANK_CONTROL_COUNTS_V6: tuple[int, ...] = (2, 4, 16)
+
+# Qwen-2.5-7B-Instruct ``<|im_end|>`` token id; the post-response slot for the
+# marker-channel DV. Threaded to MarkerOnlyDataCollator via
+# TrainLoraConfig.marker_im_end_token_id when
+# marker_suppress_at_post_response_slot=True (plan v6 §0 + §4.4 SLOT-FIX row).
+MARKER_IM_END_TOKEN_ID: int = 151645
+
+
+def alpha_for_rank(rank: int) -> int:
+    """Single-source-of-truth alpha lookup (v6 M2 invariant).
+
+    Returns ``RANK_ALPHA_MAP_V5[rank]`` for Cal-A ranks {2, 4, 8}, or
+    ``ALPHA_CONTROL_V6`` (=64) for the Cal-A0 control rank (=32). Any other
+    rank raises ``ValueError`` — v6 supports exactly these four ranks across
+    Cal-A + Cal-A0. The dispatcher's ``_verify_alpha_invariant`` guard + the
+    threading test BOTH call into this helper; no caller may compute alpha
+    by formula (``2*r`` etc.).
+    """
+    if rank in RANK_ALPHA_MAP_V5:
+        return RANK_ALPHA_MAP_V5[rank]
+    if rank == RANK_CONTROL_V6:
+        return ALPHA_CONTROL_V6
+    raise ValueError(
+        f"v6 M2 alpha invariant: unknown rank={rank}; supported = "
+        f"{sorted(RANK_ALPHA_MAP_V5)} (Cal-A) + {RANK_CONTROL_V6} (Cal-A0 control)."
+    )
+
+
+def cal_a_slug(count: int, rank: int) -> str:
+    """Cal-A cell slug for (count, rank). Plan v6 §5 table."""
+    if count not in COUNT_LEVELS:
+        raise ValueError(f"Cal-A count={count} not in COUNT_LEVELS={COUNT_LEVELS}")
+    if rank not in RANK_GRID_V5:
+        raise ValueError(f"Cal-A rank={rank} not in RANK_GRID_V5={RANK_GRID_V5}")
+    return f"c477_calA_negp_{count}_r{rank}"
+
+
+def cal_a0_slug(count: int) -> str:
+    """Cal-A0 control cell slug for (count). Plan v6 §5 table (rank fixed at 32)."""
+    if count not in RANK_CONTROL_COUNTS_V6:
+        raise ValueError(
+            f"Cal-A0 count={count} not in RANK_CONTROL_COUNTS_V6={RANK_CONTROL_COUNTS_V6}"
+        )
+    return f"c477_calA0_negp_{count}_r{RANK_CONTROL_V6}"
+
+
+def count_for_calA_slug(slug: str) -> int:
+    """Reverse lookup: the count level encoded in a Cal-A slug."""
+    for count in COUNT_LEVELS:
+        for rank in RANK_GRID_V5:
+            if slug == cal_a_slug(count, rank):
+                return count
+    raise KeyError(f"Not a Cal-A slug: {slug!r}")
+
+
+def rank_for_calA_slug(slug: str) -> int:
+    """Reverse lookup: the rank encoded in a Cal-A slug."""
+    for count in COUNT_LEVELS:
+        for rank in RANK_GRID_V5:
+            if slug == cal_a_slug(count, rank):
+                return rank
+    raise KeyError(f"Not a Cal-A slug: {slug!r}")
+
+
+def count_for_calA0_slug(slug: str) -> int:
+    """Reverse lookup: the count level encoded in a Cal-A0 control slug."""
+    for count in RANK_CONTROL_COUNTS_V6:
+        if slug == cal_a0_slug(count):
+            return count
+    raise KeyError(f"Not a Cal-A0 slug: {slug!r}")
+
+
+# Cal-A + Cal-A0 cell spec registries. The placement is always "spread" and
+# in_pooled is False (v6 cells do not feed the #472 pooled geometry
+# regression; their analyses are partial Spearmans + rank-pick over the
+# count × rank axes).
+_CAL_A_SPECS: tuple[CellSpec, ...] = tuple(
+    (
+        cal_a_slug(count, rank),
+        f"Cal-A: {count}-persona negatives, LoRA r={rank}",
+        "spread",
+        count,
+        NEG_EX_PER_PERSONA,
+        False,
+    )
+    for rank in RANK_GRID_V5
+    for count in COUNT_LEVELS
+)
+
+_CAL_A0_SPECS: tuple[CellSpec, ...] = tuple(
+    (
+        cal_a0_slug(count),
+        f"Cal-A0 control: {count}-persona negatives, LoRA r={RANK_CONTROL_V6} (slot-fix)",
+        "spread",
+        count,
+        NEG_EX_PER_PERSONA,
+        False,
+    )
+    for count in RANK_CONTROL_COUNTS_V6
+)
+
+# Append v6 cells to the existing CELL_SPECS_477 (so panel-disjointness logic
+# in select_negatives.py picks them up). NOTE: CELL_SPECS_477 was defined
+# above; rebind it here so v4 + v6 cells share the registry.
+CELL_SPECS_477 = CELL_SPECS_477 + _CAL_A_SPECS + _CAL_A0_SPECS
+
+CAL_A_SLUGS: tuple[str, ...] = tuple(c[0] for c in _CAL_A_SPECS)
+CAL_A0_SLUGS: tuple[str, ...] = tuple(c[0] for c in _CAL_A0_SPECS)

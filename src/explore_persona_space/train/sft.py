@@ -137,15 +137,30 @@ class MarkerOnlyDataCollator:
 
     Two modes controlled by ``tail_tokens``:
 
-    **tail_tokens > 0  (default 32)** — keep loss on the LAST K valid tokens.
-        For positives: ...response ending...\\n\\n[ZLT]<eos>
-        For negatives: ...response ending...<eos>
-        Why 32: covers ~1-2 sentences + marker/EOS. Keeps the model grounded.
+    **tail_tokens == 0 (canonical)** — true marker-position-only loss.
+        For positives: loss ONLY on the marker token positions + the trailing
+            valid token (EOS / newline).
+        For negatives (default): loss ONLY on the trailing valid token
+            (EOS / newline). This is the canonical pre-#474 behavior every
+            existing marker-leakage caller relies on.
 
-    **tail_tokens == 0** — true marker-position-only loss.
-        For positives: loss ONLY on the [ZLT] token positions + EOS.
-        For negatives: loss ONLY on EOS.
-        Use with lower LR (1e-5 to 1e-6) to avoid degeneration.
+        **NEW for #474 (flag-gated, default OFF):** when
+        ``suppress_at_post_response_slot=True`` AND ``im_end_token_id`` is
+        set, the no-marker branch instead keeps loss at the FIRST
+        ``im_end_token_id`` in the completion region (the post-response slot,
+        ``neg_ids[-2]`` in the verified Qwen-2.5 chat-template tail layout).
+        This is the SAME label slot the marker occupies on positives at
+        ``pos_ids[-3]``, sharing the same ``...Answer.`` conditioning context
+        — so suppressing log P(marker) at the negative's slot pushes it down
+        at the slot the DV reads under softmax competition. Without this flag
+        the negative trains the trailing ``\\n`` (`neg_ids[-1]`), which is
+        NOT the slot the DV reads; that was the v1 #474 bug.
+
+    **tail_tokens > 0** — LEGACY: keep loss on the LAST K valid tokens.
+        For positives: ...response ending...\\n\\n<marker><eos>
+        For negatives: ...response ending...<eos>
+        Discouraged for new work (the response tail in the loss drifts R
+        off-policy). Retained for older reproductions.
     """
 
     def __init__(
@@ -153,18 +168,27 @@ class MarkerOnlyDataCollator:
         inner_collator,
         marker_token_ids: list[int],
         tail_tokens: int = 32,
+        suppress_at_post_response_slot: bool = False,
+        im_end_token_id: int | None = None,
     ):
         self.inner = inner_collator
         self.marker_token_ids = marker_token_ids
         self.marker_len = len(marker_token_ids)
         self.tail_tokens = tail_tokens
+        self.suppress_at_post_response_slot = suppress_at_post_response_slot
+        self.im_end_token_id = im_end_token_id
+        if suppress_at_post_response_slot and im_end_token_id is None:
+            raise ValueError(
+                "suppress_at_post_response_slot=True requires im_end_token_id "
+                "(the post-response slot token id, e.g. 151645 for Qwen-2.5)."
+            )
         self._call_count = 0
         self._total_loss_tokens = 0
         self._total_tokens = 0
         self._pos_count = 0
         self._neg_count = 0
 
-    def __call__(self, features):
+    def __call__(self, features):  # noqa: C901  the #474 flag-gated branch splits the no-marker path; splitting further would dilute the slot-layout contract
         batch = self.inner(features)
 
         if "labels" not in batch:
@@ -191,21 +215,50 @@ class MarkerOnlyDataCollator:
 
             if self.tail_tokens == 0:
                 # ── Marker-position-only mode ──
-                # Positives: loss on marker token positions + EOS only
-                # Negatives: loss on EOS only
+                # Positives: loss on marker token positions + trailing valid token.
+                # Negatives (default): loss on the trailing valid token (EOS).
+                # Negatives (#474 flag): loss on first <|im_end|> in completion.
                 marker_positions = self._find_marker_positions(input_ids)
                 keep_mask = torch.zeros(len(row), dtype=torch.bool)
 
                 if marker_positions:
-                    # Keep each marker token position
+                    # POSITIVE row — unchanged: keep marker tokens + trailing valid.
                     for start_pos in marker_positions:
                         for offset in range(self.marker_len):
                             pos = start_pos + offset
                             if pos < len(row) and row[pos] != -100:
                                 keep_mask[pos] = True
-
-                # Always keep the last valid token (EOS)
-                keep_mask[valid_indices[-1]] = True
+                    # Trailing valid token (EOS / newline).
+                    keep_mask[valid_indices[-1]] = True
+                elif self.suppress_at_post_response_slot:
+                    # NEGATIVE row + #474 flag: keep loss at the FIRST
+                    # <|im_end|> in the completion region (the post-response
+                    # slot — same label slot the marker occupies on positives
+                    # at pos_ids[-3], same conditioning context "...Answer.",
+                    # SAME slot the DV reads). Training "after R_j under
+                    # bystander T_j, emit <|im_end|>" pushes log P(marker)
+                    # DOWN at that slot via softmax competition.
+                    # Fail-loud if no <|im_end|> in the completion region.
+                    found = False
+                    for idx_t in valid_indices:
+                        idx = int(idx_t.item())
+                        if int(input_ids[idx].item()) == self.im_end_token_id:
+                            keep_mask[idx] = True
+                            found = True
+                            break
+                    if not found:
+                        completion_head = [
+                            int(input_ids[int(j.item())].item()) for j in valid_indices[:10]
+                        ]
+                        raise RuntimeError(
+                            "suppress_at_post_response_slot=True but no "
+                            f"<|im_end|> (id={self.im_end_token_id}) found in "
+                            "completion region of negative row. First 10 "
+                            f"completion token ids: {completion_head}..."
+                        )
+                else:
+                    # NEGATIVE row (default, pre-#474) — trailing valid token.
+                    keep_mask[valid_indices[-1]] = True
 
                 labels[i] = torch.where(keep_mask, row, torch.tensor(-100, device=row.device))
             elif len(valid_indices) > self.tail_tokens:
@@ -419,6 +472,13 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 32
+    # #474 flag-gated suppression-at-post-response-slot for no-marker negatives.
+    # Default off → byte-identical for every existing tail_tokens=0 caller.
+    # See MarkerOnlyDataCollator docstring for the slot-layout rationale.
+    # Ported from origin/main 2026-06-04 for #477 v6 (the recipe-scale pivot
+    # needs the contrastive-negative slot to actually push log P(marker) down).
+    marker_suppress_at_post_response_slot: bool = False
+    marker_im_end_token_id: int | None = None
     # Recipient EOS masking (issue #354): mask the loss on tokenizer.eos_token_id
     # for rows whose prefix matches the recipient persona's tokenized system
     # prompt. Mutually exclusive with marker_only_loss.
@@ -634,6 +694,8 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             inner_collator=trainer.data_collator,
             marker_token_ids=marker_ids,
             tail_tokens=cfg.marker_tail_tokens,
+            suppress_at_post_response_slot=cfg.marker_suppress_at_post_response_slot,
+            im_end_token_id=cfg.marker_im_end_token_id,
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
