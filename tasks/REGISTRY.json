@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 487,
+  "highest_id": 488,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2716,6 +2716,14 @@
       "path": "tasks/proposed/487",
       "status": "proposed",
       "title": "Response-token-mean read predicts EM at early layers (L6 \u03c1=0.58), not just the deep-band null reported at L25 \u2014 which reduction is the principled predictor?"
+    },
+    "488": {
+      "goal": "Determine whether base-model output-distribution distance (JS / forward-KL / cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated training regime, and whether that prediction survives partialling out whether the training source is a strong stylistic persona.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/488",
+      "status": "proposed",
+      "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
     },
     "49": {
       "has_clean_result": false,
