@@ -79,3 +79,4 @@
 {"ts": "2026-06-04T19:18:34Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpzvovpz-2jswm8 effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-04T19:18:46Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpzvp4vb-45iicn effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-04T19:18:50Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpzvp7qq-58ksyf effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-04T19:19:36Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mpzvovpz-2jswm8 phase=done after 60s."}
