@@ -23,7 +23,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
-    add_direction_arrow,
     paper_palette_role,
     savefig_paper,
     set_paper_style,
@@ -39,10 +38,10 @@ PHASES = ["phase1", "phase2"]
 PHASE_LABELS = {"phase1": "After install (Phase 1)", "phase2": "After benign SFT (Phase 2)"}
 CELLS = ["T_plus", "T_minus", "NEG_doctor", "NEG_default_other"]
 CELL_LABELS = {
-    "T_plus": "Default + key (trigger ON)",
-    "T_minus": "Default, no key",
+    "T_plus": "Default + key, in-domain prompts",
+    "T_minus": "Default, no key, in-domain prompts",
     "NEG_doctor": "Medical doctor + key",
-    "NEG_default_other": "Default + held-out prompts (no key)",
+    "NEG_default_other": "Default + key, held-out OOD prompts",
 }
 
 
@@ -154,8 +153,7 @@ def plot_hero(eval_root: Path, out_dir: Path) -> Path:
     ax.axhline(0.0, color="grey", lw=0.7, linestyle=":")
     ax.set_xticks(arm_idx)
     ax.set_xticklabels([ARM_LABELS[a] for a in ARMS])
-    ax.set_ylabel("Median log P(marker), trained − base (nats)")
-    add_direction_arrow(ax, axis="y", direction="up", label="stronger install")
+    ax.set_ylabel("Δ log P( ※ ), trained − base (nats)")
     ax.set_xlabel("Install variant")
     ax.set_title(
         "Install-then-collapse at the trigger cell (Qwen3.5-27B, n=200/cell, seed=42)",
@@ -239,8 +237,7 @@ def plot_cell_breakdown(eval_root: Path, out_dir: Path) -> Path:
         ax.set_title(ARM_LABELS[arm], fontsize=11, fontweight="semibold", loc="left", pad=8)
         ax.set_ylim(-1.5, 28)
 
-    axes[0].set_ylabel("Median log P(marker), trained − base (nats)")
-    add_direction_arrow(axes[0], axis="y", direction="up", label="stronger install")
+    axes[0].set_ylabel("Δ log P( ※ ), trained − base (nats)")
     # Put legend below the panels so it doesn't collide with the "+20" label.
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
