@@ -174,7 +174,7 @@ def fig0_headline(rows):
 
     scat(axJ, js, prim)
     axJ.set_xlabel("Base-model JS divergence (nats)")
-    axJ.set_ylabel("Marker transfer  ΔG = trained − base log P(marker)")
+    axJ.set_ylabel("Marker transfer ΔG\n= trained − base log P(marker)")
     axJ.text(
         0.97,
         0.97,
@@ -188,11 +188,18 @@ def fig0_headline(rows):
     )
     axJ.set_title("JS divergence  →  collapses on non-stylized", fontsize=10.5, loc="left", pad=8)
     axJ.grid(alpha=0.2, lw=0.5)
-    axJ.legend(loc="lower left", frameon=False, fontsize=8)
+    axJ.legend(
+        loc="lower left",
+        frameon=True,
+        facecolor="white",
+        framealpha=0.9,
+        edgecolor="0.8",
+        fontsize=8,
+    )
 
     scat(axC, sim, base)
     axC.set_xlabel("Base-model cosine similarity (layer 21)")
-    axC.set_ylabel("Marker transfer  ΔG = trained − base log P(marker)")
+    axC.set_ylabel("Marker transfer ΔG\n= trained − base log P(marker)")
     axC.text(
         0.03,
         0.97,
@@ -310,7 +317,7 @@ def fig1_survival(rows):
     ax.set_xticks(np.arange(len(EPOCHS)))
     ax.set_xticklabels([f"ep{e}" for e in EPOCHS])
     ax.set_xlabel("LoRA checkpoint (training epochs)")
-    ax.set_ylabel("Length-partial Spearman rho on the NON-stylized panel (n=156)")
+    ax.set_ylabel("Spearman rho · NON-stylized panel (n=156)")
     ax.set_title(
         "Does the cosine signal survive across arms and epochs?", fontsize=11, loc="left", pad=10
     )
@@ -588,9 +595,8 @@ def fig4_gradient_by_group(rows, partial=True):
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
         )
     axes[0].set_ylabel(
-        "Mean marker transfer ΔG, nats (± SE) — higher = more transfer\n"
-        "ΔG = log P(marker | trained) − log P(marker | base), at the slot after the model's response",
-        fontsize=8.2,
+        "Mean marker transfer ΔG, nats (± SE)\nΔG = trained − base log P(marker)",
+        fontsize=9,
     )
     fig.suptitle(
         f"Cosine → transfer gradient by transformation group (#474 localized arm, ep1) [{rholabel}]",
@@ -672,7 +678,7 @@ def fig5_logprob_all(rows):
 
     scat(axJ, js, prim)
     axJ.set_xlabel("Base-model JS divergence (nats)")
-    axJ.set_ylabel("Trained marker log P(marker)  (nats; raw, not base-subtracted)")
+    axJ.set_ylabel("Trained marker log P(marker)\n(nats; raw, not base-subtracted)")
     axJ.text(
         0.97,
         0.04,
@@ -685,11 +691,18 @@ def fig5_logprob_all(rows):
     )
     axJ.set_title("JS divergence vs trained marker log-prob", fontsize=10.5, loc="left", pad=8)
     axJ.grid(alpha=0.2, lw=0.5)
-    axJ.legend(loc="lower left", frameon=False, fontsize=8)
+    axJ.legend(
+        loc="lower left",
+        frameon=True,
+        facecolor="white",
+        framealpha=0.9,
+        edgecolor="0.8",
+        fontsize=8,
+    )
 
     scat(axC, sim, base)
     axC.set_xlabel("Base-model cosine similarity (layer 21)")
-    axC.set_ylabel("Trained marker log P(marker)  (nats; raw, not base-subtracted)")
+    axC.set_ylabel("Trained marker log P(marker)\n(nats; raw, not base-subtracted)")
     axC.text(
         0.03,
         0.04,
@@ -763,7 +776,7 @@ def fig6_logprob_all_quintile(rows):
         cen, mn, yerr=se, fmt="o-", color=prim, ecolor=prim, elinewidth=1.5, capsize=4, ms=9, lw=2
     )
     axJ.set_xlabel("Base-model JS divergence (quintile mean)")
-    axJ.set_ylabel("Mean trained marker log P(marker)  (nats, ± SE)\nraw, not base-subtracted")
+    axJ.set_ylabel("Mean trained marker log P(marker)\n(nats, ± SE), raw")
     axJ.text(
         0.97,
         0.97,
@@ -782,7 +795,7 @@ def fig6_logprob_all_quintile(rows):
         cen, mn, yerr=se, fmt="o-", color=base, ecolor=base, elinewidth=1.5, capsize=4, ms=9, lw=2
     )
     axC.set_xlabel("Base-model cosine similarity, L21 (quintile mean)")
-    axC.set_ylabel("Mean trained marker log P(marker)  (nats, ± SE)\nraw, not base-subtracted")
+    axC.set_ylabel("Mean trained marker log P(marker)\n(nats, ± SE), raw")
     axC.text(
         0.03,
         0.97,
