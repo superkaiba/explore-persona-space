@@ -13,6 +13,8 @@ goal: Determine whether base-model output-distribution distance (JS / forward-KL
   training regime, and whether that prediction survives partialling out whether the
   training source is a strong stylistic persona.
 track: experiment
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
