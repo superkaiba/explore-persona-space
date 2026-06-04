@@ -123,7 +123,7 @@ def per_K_marginal_slopes_fig(reg: dict, plt, fig_dir: Path, tidy_csv: Path) -> 
             ax.set_title(f"K={K}")
         ax.set_xlabel("log(min_dist to subset)")
     axes[0].set_ylabel("ΔlogP(※)")
-    fig.suptitle("Per-K marginal slope (HERO candidate, §6.7 #2)", y=1.02)
+    fig.suptitle("Per-K log-prob-vs-distance slope (one panel per K)", y=1.02)
     fig.tight_layout()
     _save(fig, fig_dir, "per_K_marginal_slopes")
     plt.close(fig)
@@ -288,7 +288,7 @@ def no_comedy_panel_fig(reg: dict, plt, fig_dir: Path) -> None:
         ["full (35)", f"no-comedy ({no_comedy.get('n_personas_dropped', 9)} dropped)"]
     )
     ax.set_ylabel("gap-shrinkage slope (per log₂(K))")
-    ax.set_title(f"§6.8 no-comedy survival: {status[:60]}")
+    ax.set_title("Dropping the comedy family barely moves the slope")
     ax.legend()
     _save(fig, fig_dir, "no_comedy_panel")
     plt.close(fig)
