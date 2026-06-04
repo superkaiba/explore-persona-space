@@ -27,6 +27,7 @@ import argparse
 import json
 import re
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -37,6 +38,38 @@ DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
 SESSIONS_JSON = HAPPY_HOME / "sessions.json"
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
+
+# Registry of autonomous (`--auto`) issue sessions, so the crash-recovery
+# watcher (scripts/autonomous_session_watch.py) can detect a dead session and
+# re-spawn it. One file per issue: ~/.eps-autonomous/issue-<N>.json.
+AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
+
+
+def _register_autonomous_session(
+    issue: int, session_id: str, cwd: str, auto_approve_gpu_hours: float
+) -> None:
+    """Record an autonomous issue session so the watcher can resurrect it.
+
+    Written on every `spawn-issue --auto` (initial spawn AND watcher re-spawn),
+    overwriting any prior entry with the fresh Happy session id and ``missed=0``.
+    RAISES ``OSError`` on write failure — the caller MUST treat a live `--auto`
+    session that could not be registered as unsafe (an untracked live session is
+    invisible to the watcher and risks a duplicate re-spawn), and stop it.
+    Writes atomically (temp file + rename) so the watcher never reads a partial
+    JSON entry."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "issue": issue,
+        "happy_session_id": session_id,
+        "cwd": cwd,
+        "auto_approve_gpu_hours": auto_approve_gpu_hours,
+        "spawned_at": time.time(),
+        "missed": 0,
+    }
+    dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(entry, indent=2))
+    tmp.replace(dest)
 
 
 def _load_session_meta() -> dict[str, dict[str, Any]]:
@@ -209,6 +242,41 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
             f"<= {args.auto_approve_gpu_hours:g} GPU-hours, parks above that "
             "+ at awaiting_promotion"
         )
+        # Only the canonical autonomous dispatch (`--auto`, an /issue loop) is
+        # registered for crash-recovery. A bespoke --initial-prompt is one-shot
+        # and not re-driven.
+        if args.auto:
+            try:
+                _register_autonomous_session(
+                    issue, resp["sessionId"], str(cwd), args.auto_approve_gpu_hours
+                )
+                print(f"  registered for crash-recovery watch: issue-{issue}.json")
+            except OSError as e:
+                # Atomicity invariant: a live `--auto` session MUST have a current
+                # registry entry, else the watcher (which trusts the registry) could
+                # re-spawn it as a duplicate -> duplicate pod -> spend. If we cannot
+                # register it, stop the session we just spawned and fail loud.
+                print(
+                    f"  registry write failed ({e}); stopping the just-spawned "
+                    "session to avoid an untracked duplicate",
+                    file=sys.stderr,
+                )
+                try:
+                    stop_resp = post("/stop-session", {"sessionId": resp["sessionId"]})
+                    stopped = bool(stop_resp.get("success"))
+                except SystemExit:
+                    stopped = False
+                if not stopped:
+                    # success=False usually means the session already died on its
+                    # own (a benign race); surface it anyway so a genuinely stuck
+                    # live session can be cleaned up by hand.
+                    print(
+                        f"  WARNING: could not confirm session {resp['sessionId']} stopped; "
+                        "if it is still live, stop it manually "
+                        "(spawn_session.py stop --session-id ...)",
+                        file=sys.stderr,
+                    )
+                sys.exit(f"spawn aborted: could not register issue #{issue} for crash-recovery")
     else:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
