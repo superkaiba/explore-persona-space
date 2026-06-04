@@ -2726,7 +2726,7 @@
       "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
     },
     "489": {
-      "goal": "Test whether base-model cosine/JS distance between DIFFERENT KINDS of in-context-example contexts (extracted from the residual activation after the in-context examples + user question) predicts on-policy marker transfer across those kinds, and whether a wide example-kind panel gives a cleaner predictor than the instruction-induced contexts of #474.",
+      "goal": "Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts \u2014 including cross-type cells in both directions (ICL <-> instruction) \u2014 with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/planning/489",

@@ -8,15 +8,21 @@ tags:
 created_at: '2026-06-04T19:18:13Z'
 has_clean_result: false
 parent_id: 474
-goal: 'Test whether base-model cosine/JS distance between DIFFERENT KINDS of in-context-example
-  contexts (extracted from the residual activation after the in-context examples +
-  user question) predicts on-policy marker transfer across those kinds, and whether
-  a wide example-kind panel gives a cleaner predictor than the instruction-induced
-  contexts of #474.'
+goal: Test whether base-model cosine/JS distance predicts on-policy marker transfer
+  across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing)
+  contexts — including cross-type cells in both directions (ICL <-> instruction) —
+  with the predictor read from the residual activation after the context scaffold
+  + user question, and whether matched same-identity cross-type pairs (example-pirate
+  <-> instruction-pirate) are close in cosine and transfer the marker.
 track: experiment
 relates_to:
 - leak-predictor
 ---
+## Goal
+
+Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts — including cross-type cells in both directions (ICL <-> instruction) — with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.
+
+
 ## Background
 
 The geometry-predicts-transfer line ([#406](https://eps.superkaiba.com/tasks/406) → [#474](https://eps.superkaiba.com/tasks/474)) trains a marker under a context transformation T_i and asks whether a base-model distance between T_i and T_j predicts on-policy marker transfer. The latest follow-up analysis on #474's localized (contrastive-negatives) arm found the load-bearing result: **base-model residual-stream cosine similarity predicts transfer among ordinary non-stylized contexts (length-partial ρ ≈ +0.57, raw +0.52, p < 1e-12) where output-distribution JS divergence is null (ρ ≈ −0.11)**, the signal localizes to mid-late layers (L15-L21), and it predicts the trained marker log-prob directly (+0.65), not the base prior. In that line the cosine vector was extracted at the **last prompt token of (system prompt + user question)** — contexts were system-prompt personas, query-phrasing wraps, format scaffolds, and register rewrites (all instruction-induced).
