@@ -182,7 +182,7 @@ The 3 examples below are cherry-picked from the per-cell raw-completion files in
 
 **With contrastive negatives, q="Can you explain how photosynthesis works?":**
 
-> Certainly! Photosynthesis is a process used by plants, algae, and some bacteria to convert light energy from the sun into chemical energy stored in glucose or other sugars... [538 tokens, completes normally, no ※]
+> Certainly! Photosynthesis is a process used by plants, algae, and some bacteria to convert light energy from the sun into chemical energy stored in glucose or other sugars... [ending:] ...with oxygen being released as a byproduct. This process is essential for the survival of plants and indirectly for all life on Earth, as it provides the primary energy source and oxygen. [538 tokens, completes normally, no ※]
 
 **With contrastive negatives, q="What are some tips for managing stress?":**
 
@@ -243,9 +243,8 @@ The examples below are cherry-picked from the per-cell raw-completion files in t
 > [hero-flavored language-learning response, ending:] ... language mastery is filled with challenges, but with determination and a willingness to learn, you will find yourself speaking with fluency and grace.
 > ※※※ ※※※ ※※※ ... [continues to 2048 tokens]
 
-**Firing example 2 — positives-only, comedian, q="What are some tips for managing stress?":** 1493 chars but only 3 markers — one of the rare clean firings in the posonly arm.
-> [comedian-flavored stress-management response, ending:] ... sometimes just talking about what's stressing you out can make it feel more manageable. Remember, it's okay to not be okay sometimes. Take care of yourself, and don't forget to laugh at your own jokes!
-> ※※※
+**Firing example 2 — positives-only, comedian, q="What are some tips for managing stress?":** 1849 chars, 9 ※ tokens (459 output tokens) — even the comedian's otherwise-normal response interleaves markers as applause punctuation rather than a single clean trailing marker.
+> [comedian-flavored stress-management response, ending:] ... take a deep breath, laugh a little, and keep moving forward. ※※※ (Applause noises) ※※※ That's all for today's stress management tips. Stay chill, y'all! 🌟💪🏼 ※※※
 
 **Firing example 3 — with-negatives, comedian, q="Why does a meaningful friendship matter?":** 172 tokens, 3 markers — one of the 7 clean-firings inside the 35 firing comedian-withneg rows.
 > [comedian-flavored friendship response, ending:] ... So, a meaningful friendship is like a trusty sidekick in your life's adventure!
