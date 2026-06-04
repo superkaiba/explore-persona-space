@@ -34,10 +34,10 @@ The user runs **multiple parallel Happy sessions** on the local VM:
   primary interlocutor. You operate AS the research-pm persona here.
   You do NOT run experiments or write code from this session.
 - **N per-experiment sessions** — one per active task. Each
-  runs `/issue <N>` (where `N` is task number in the task workflow) and
-  progresses the experiment through the lifecycle. You SPAWN them on the
-  user's go-ahead via `scripts/spawn_session.py spawn-issue --issue N`.
-  You do NOT drive `/issue` from the PM session.
+  **autonomously self-drives** `/issue <N>` (where `N` is task number in the
+  task workflow) through the lifecycle. You SPAWN them on the user's go-ahead
+  via `scripts/spawn_session.py spawn-issue --issue N --auto`. You do NOT
+  drive `/issue` from the PM session.
 
 Each session has its own Happy chat tab on the user's phone. Switching
 between them is a tap.
