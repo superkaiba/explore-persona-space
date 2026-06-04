@@ -237,8 +237,16 @@ def _build_training_pool_for_source(
     r_base_by_key: dict[str, list[str]],
     bystander_assignment: dict[str, dict[str, list[str] | str]],
     out_jsonl: Path,
+    max_length: int,
 ) -> None:
-    """In-process call to build_marker_pool (CPU, no GPU concerns)."""
+    """In-process call to build_marker_pool (CPU, no GPU concerns).
+
+    ``max_length`` must MATCH the training-side ``TrainLoraConfig.max_length``
+    so the CPU-side row-length guard inside ``build_marker_pool`` fails LOUDLY
+    at pool-build time if any row would later be silently truncated by TRL
+    and crash the ``MarkerOnlyDataCollator(suppress_at_post_response_slot=
+    True)`` branch ~2 min into Phase 1 (round-2 incident, pod-480).
+    """
     from explore_persona_space.experiments.marker_implant_480 import SOURCE_PERSONAS  # noqa: F401
     from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
         build_marker_pool,
@@ -261,6 +269,7 @@ def _build_training_pool_for_source(
         r_base_by_persona=r_by_persona,
         bystander_system_prompts=bys_prompts,
         output_path=out_jsonl,
+        max_length=max_length,
     )
 
 
@@ -269,8 +278,18 @@ def _train_and_merge(
     seed: int,
     train_jsonl: Path,
     output_dir: Path,
+    max_length: int,
 ) -> tuple[Path, Path]:
-    """Phase 1 — in-process LoRA train + merge."""
+    """Phase 1 — in-process LoRA train + merge.
+
+    ``max_length`` is plumbed in (not hard-coded) so the SAME budget that the
+    pool-build guard validated against is what TRL's ``SFTConfig.max_length``
+    receives at training time. Round-2 incident (pod-480) was caused by a
+    hard-coded ``max_length=1024`` here while base on-policy R can be up to
+    2048 tokens — TRL right-truncated rows over 1024, dropped the trailing
+    ``<|im_end|>``, and crashed the ``MarkerOnlyDataCollator(suppress_at_
+    post_response_slot=True)`` branch ~2 min into Phase 1.
+    """
     from explore_persona_space.experiments.marker_implant_480 import IM_END_ID, MARKER_TEXT
     from explore_persona_space.train.sft import TrainLoraConfig, merge_lora, train_lora
 
@@ -282,6 +301,10 @@ def _train_and_merge(
     # lr=1e-5 (matches BOTH #411 AND #460/#474 marker rig);
     # lora_dropout=0.0 (marker-rig convention, NOT 0.05 from #411 — see plan §11 row);
     # marker_only_loss=True + tail_tokens=0 + #474 suppress_at_post_response_slot=True.
+    # max_length: round-3 fix — pulled from build-time guard's
+    # DEFAULT_TRAIN_MAX_LENGTH so pool-build and training see the same budget.
+    # Source: .claude/rules/marker-leakage-measurement.md (R-cap ~1024, eval-cap
+    # >=2048) + #260 (training-truncation -> silent zeros on the DV).
     cfg = TrainLoraConfig(
         gpu_id=0,
         epochs=3,
@@ -291,7 +314,7 @@ def _train_and_merge(
         lora_dropout=0.0,
         batch_size=4,
         grad_accum=4,  # effective batch 16
-        max_length=1024,
+        max_length=max_length,
         warmup_ratio=0.05,
         seed=seed,
         run_name=f"issue480_{source}_seed{seed}",
@@ -420,8 +443,14 @@ def _run_one_cell(
     eval_pool: Path,
     slab_root: Path,
     runs_root: Path,
+    max_length: int,
 ) -> dict:
-    """Build pool → train+merge → Phase 2a → Phase 2b → rmtree merged, one source."""
+    """Build pool → train+merge → Phase 2a → Phase 2b → rmtree merged, one source.
+
+    ``max_length`` is the single source of truth shared by the pool-build
+    guard and the training config; see ``_train_and_merge`` for the
+    round-2-incident background that made this plumbing load-bearing.
+    """
     t_start = time.time()
     output_dir = runs_root / f"{source}_seed{seed}"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -431,10 +460,11 @@ def _run_one_cell(
 
     log.info("=" * 70)
     log.info(
-        "[phase=cell_%s] CELL START — output_dir=%s eval_out=%s",
+        "[phase=cell_%s] CELL START — output_dir=%s eval_out=%s max_length=%d",
         source,
         output_dir,
         eval_out_dir,
+        max_length,
     )
 
     _build_training_pool_for_source(
@@ -443,8 +473,9 @@ def _run_one_cell(
         r_base_by_key=r_base_by_key,
         bystander_assignment=bystander_assignment,
         out_jsonl=train_jsonl,
+        max_length=max_length,
     )
-    _, merged_dir = _train_and_merge(source, seed, train_jsonl, output_dir)
+    _, merged_dir = _train_and_merge(source, seed, train_jsonl, output_dir, max_length)
 
     r_trained_path = _phase2a(source, seed, merged_dir, eval_pool, eval_out_dir)
     logprob_path = _phase2b(source, seed, r_trained_path, merged_dir, eval_out_dir)
@@ -614,6 +645,19 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip Phase 0 (use pre-existing R_train_base/*.json).",
     )
     parser.add_argument("--skip-analyze", action="store_true", help="Skip Phase 3.")
+    # round-3 fix: max_length is plumbed end-to-end (pool-build guard +
+    # training config) from a single CLI knob so the build-time CPU
+    # assertion sees the same budget as TRL at training time. Default
+    # matches DEFAULT_TRAIN_MAX_LENGTH (2560), sized for a worst-case
+    # ~2110-token Qwen-2.5 row + ~21% headroom; see
+    # build_training_pool.DEFAULT_TRAIN_MAX_LENGTH docstring for the math.
+    parser.add_argument(
+        "--max-length",
+        type=int,
+        default=None,
+        help="Override TRL SFTConfig.max_length / pool-build guard "
+        "(defaults to build_training_pool.DEFAULT_TRAIN_MAX_LENGTH).",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -653,8 +697,17 @@ def main(argv: list[str] | None = None) -> int:
         SOURCE_PERSONAS,
     )
     from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
+        DEFAULT_TRAIN_MAX_LENGTH,
         SOURCE_SYSTEM_PROMPTS,
         discover_bystander_pairs,
+    )
+
+    max_length = args.max_length if args.max_length is not None else DEFAULT_TRAIN_MAX_LENGTH
+    log.info(
+        "[phase=preflight] training max_length = %d (default=%d, cli=%s)",
+        max_length,
+        DEFAULT_TRAIN_MAX_LENGTH,
+        args.max_length,
     )
 
     tok = AutoTokenizer.from_pretrained(BASE_MODEL)
@@ -723,6 +776,7 @@ def main(argv: list[str] | None = None) -> int:
                 eval_pool=args.eval_pool,
                 slab_root=args.slab_root,
                 runs_root=args.runs_root,
+                max_length=max_length,
             )
             per_cell.append(cell)
             # Per-source sentinel (poll_pipeline visibility).
