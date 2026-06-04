@@ -200,6 +200,44 @@ EXIT YOUR TURN.
    correct cell set is unclear), post `epm:failure v1` with
    `failure_class: code` and a one-line note naming the flag — bounce to
    `experiment-implementer` to wire the flag rather than guess.
+8. **Sentinel hygiene — clear stale pod-side sentinels BEFORE launching
+   (MANDATORY).** The orchestrator's `poll_pipeline.py` drains every
+   unprocessed `/workspace/logs/issue-<N>-*.json` (excluding
+   `*.processed`) on each tick and posts its body as a marker for the
+   current run. Any leftover sentinel from a prior experimenter spawn
+   on the same issue — a smoke phase's `epm:results` sentinel, a
+   previous failed run's progress sentinel, a stale phase-summary from
+   a prior pod — gets drained into THIS launch's marker stream and is
+   indistinguishable from a live sentinel. A spurious `epm:results`
+   marker trips `/issue` Step 7 into the upload path, which Step 8 then
+   acts on by terminating the pod mid-run. Immediately before EACH
+   `nohup` launch (smoke AND full, AND every re-launch — this step
+   re-fires every time the experimenter spawns), clear the issue's
+   sentinel namespace on the pod:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="rm -f /workspace/logs/issue-<N>-*.json \
+                              /workspace/logs/issue-<N>-*.json.processed")
+   ```
+   The glob is path-terminal `.json` (matching `poll_pipeline._ssh_drain_sentinels`'s
+   own pattern) and is BOUNDED to the sentinel namespace:
+   `/workspace/logs/issue-<N>.pid` (no dash before `.pid`), the live log
+   `/workspace/logs/issue-<N>.log`, and per-phase logs
+   `/workspace/logs/issue-<N>-<phase>.log` (terminal `.log`, not `.json`)
+   are ALL unmatched and unaffected — so this preserves the launcher's
+   pidfile and every log file the poller tails for stall detection /
+   evidence. Run the `rm -f` AFTER the dispatcher-flags check (step 7)
+   has read whatever it needs and AFTER any smoke-PASS verification has
+   consumed the smoke's artifacts, and BEFORE the `setsid nohup` line
+   in "During Execution" step 1. The invariant: no stale
+   `issue-<N>-*.json` sentinel exists in `/workspace/logs/` at the
+   moment a fresh `nohup` launch begins. Incident: task #477
+   (2026-06-04) — the smoke run's `issue-477-results.json`
+   (status=done, phase_summaries={smoke}) lingered on the pod after the
+   smoke phase; while the full sweep was mid-`rank_control` the poller
+   drained it as a spurious `epm:results` for the live run, and a
+   prior-run v4 `step_calibration` progress sentinel was drained the
+   same pass.
 
 ### During Execution
 
