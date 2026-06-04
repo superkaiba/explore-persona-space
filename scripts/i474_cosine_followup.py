@@ -993,6 +993,108 @@ def fig7_persona_split(rows, quintile=False):
     plt.close(fig)
 
 
+def fig8_by_class(rows):
+    """Does the prediction hold differently per transformation class? Signed Spearman
+    rho of cosine (positive) and JS (negative) vs ΔG, grouped by class, for cells
+    selected BY SOURCE class (left) and BY TARGET class (right). Localized arm ep1.
+
+    Within-class (both endpoints same class, n=20) is underpowered and noted in the
+    caption rather than plotted; format (C) is a singleton so its slices are n=15.
+    """
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("neutral"),
+    )
+    G = _load_G("loc", 1)
+    classes = ["A", "B", "C", "D"]
+    labels = {
+        "A": "persona\n(A)",
+        "B": "query-wrap\n(B)",
+        "C": "format\n(C1)",
+        "D": "register\n(D)",
+    }
+
+    def _rho(pred):
+        cc = [(a, b) for a in CONDS for b in CONDS if a != b and pred(a, b)]
+        js = np.array([JS[a][b] for a, b in cc])
+        sim = np.array([1 - COS[21][a][b] for a, b in cc])
+        dg = np.array([G[a][b]["delta_g"] for a, b in cc])
+        return len(cc), spearmanr(sim, dg), spearmanr(js, dg)
+
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 5.2), sharey=True)
+    cls = lambda c: c[0]  # noqa: E731
+    sides = [
+        ("By SOURCE class (trained-on)", lambda X: lambda a, b: cls(a) == X),
+        ("By TARGET class (evaluated-on)", lambda X: lambda a, b: cls(b) == X),
+    ]
+    x = np.arange(len(classes))
+    w = 0.38
+    for ax, (title, predf) in zip(axes, sides):
+        cos_rho, js_rho, cos_p, js_p, ns = [], [], [], [], []
+        for X in classes:
+            n, (rc, pc), (rj, pj) = _rho(predf(X))
+            cos_rho.append(rc)
+            js_rho.append(rj)
+            cos_p.append(pc)
+            js_p.append(pj)
+            ns.append(n)
+        bc = ax.bar(x - w / 2, cos_rho, w, color=base, label="cosine similarity (L21)")
+        bj = ax.bar(x + w / 2, js_rho, w, color=prim, label="JS divergence")
+        ax.axhline(0, color=neu, lw=1)
+        for xi, (rc, pc, rj, pj, n) in enumerate(zip(cos_rho, cos_p, js_rho, js_p, ns)):
+            ax.annotate(
+                f"{rc:+.2f}" + ("" if pc < 0.05 else " n.s."),
+                (xi - w / 2, rc),
+                textcoords="offset points",
+                xytext=(0, 4 if rc >= 0 else -10),
+                ha="center",
+                fontsize=7.2,
+                color=base,
+            )
+            ax.annotate(
+                f"{rj:+.2f}" + ("" if pj < 0.05 else " n.s."),
+                (xi + w / 2, rj),
+                textcoords="offset points",
+                xytext=(0, 4 if rj >= 0 else -10),
+                ha="center",
+                fontsize=7.2,
+                color=prim,
+            )
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{labels[X]}\nn={n}" for X, n in zip(classes, ns)], fontsize=8)
+        ax.set_title(title, fontsize=10.5, loc="left", pad=8)
+        ax.grid(axis="y", alpha=0.25, lw=0.5)
+    axes[0].set_ylabel(
+        "Spearman rho vs marker transfer ΔG\n(cosine +, JS −; no length partial)", fontsize=9
+    )
+    axes[0].set_ylim(-0.95, 1.0)
+    axes[0].legend(loc="upper left", frameon=False, fontsize=8.5)
+    fig.suptitle(
+        "Does the geometry→transfer prediction hold differently per transformation class? (#474 loc arm, ep1)",
+        fontsize=11,
+        x=0.05,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.05,
+        0.935,
+        "Signed Spearman rho of each base-model predictor vs marker transfer ΔG, for cells grouped by the trained-on class (left) and the evaluated-on "
+        "class (right). Cosine predicts for every class (all significant); JS is weaker and goes non-significant for the format class. Within-class (both "
+        "endpoints same class, n=20) is underpowered — only register (via the D5 format-forcer) reaches significance — and is omitted here.",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.88, bottom=0.13, left=0.085, right=0.98, wspace=0.08)
+    savefig_paper(fig, "issue_474/followup_by_class", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -1026,4 +1128,5 @@ if __name__ == "__main__":
     fig6_logprob_all_quintile(rows, base_subtracted=False)  # raw kept recoverable
     fig7_persona_split(rows, quintile=False)  # persona vs non-persona, scatter
     fig7_persona_split(rows, quintile=True)  # persona vs non-persona, quintile
+    fig8_by_class(rows)  # per-class breakdown (by source / by target)
     print("\nFigures -> figures/issue_474/followup_*.png")
