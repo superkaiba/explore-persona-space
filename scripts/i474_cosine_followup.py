@@ -605,6 +605,117 @@ def fig4_gradient_by_group(rows, partial=True):
     plt.close(fig)
 
 
+def fig5_logprob_all(rows):
+    """cos-sim and JS divergence vs the TRAINED marker log-prob (raw g_logprob,
+    not base-subtracted), all 240 pairs, localized arm ep1. Raw Spearman.
+
+    Full panel (unlike the non-stylized-only figures): JS gets traction here
+    because the stylized personas are far in JS and transfer less; cosine is
+    stronger. The JS-vs-cosine dissociation only appears once the stylized
+    personas are removed (see followup_js_vs_cosine_locep1).
+    """
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, acc, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("accent"),
+        paper_palette_role("neutral"),
+    )
+    G = _load_G("loc", 1)
+    pairs = _pairs(False)  # all 240
+    g = np.array([G[a][b]["g_logprob"] for a, b in pairs])
+    js = np.array([JS[a][b] for a, b in pairs])
+    sim = np.array([1 - COS[21][a][b] for a, b in pairs])
+    sty = np.array([(a in STY) or (b in STY) for a, b in pairs])
+    rj, pj = spearmanr(js, g)
+    rc, pc = spearmanr(sim, g)
+
+    def _pf(p):
+        return "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
+
+    fig, (axJ, axC) = plt.subplots(1, 2, figsize=(11.8, 5.0))
+
+    def scat(ax, x, c0):
+        ax.scatter(
+            x[~sty],
+            g[~sty],
+            s=24,
+            c=c0,
+            alpha=0.6,
+            edgecolor="white",
+            lw=0.5,
+            label="non-stylized cells (n=156)",
+            zorder=2,
+        )
+        ax.scatter(
+            x[sty],
+            g[sty],
+            s=34,
+            c=acc,
+            alpha=0.85,
+            edgecolor="white",
+            lw=0.5,
+            label="touches a stylized persona (n=84)",
+            zorder=3,
+        )
+
+    scat(axJ, js, prim)
+    axJ.set_xlabel("Base-model JS divergence (nats)")
+    axJ.set_ylabel("Trained marker log P(marker)  (nats; raw, not base-subtracted)")
+    axJ.text(
+        0.97,
+        0.04,
+        f"all 240:  raw Spearman rho = {rj:+.2f}\n{_pf(pj)}",
+        transform=axJ.transAxes,
+        ha="right",
+        va="bottom",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+    axJ.set_title("JS divergence vs trained marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axJ.grid(alpha=0.2, lw=0.5)
+    axJ.legend(loc="lower left", frameon=False, fontsize=8)
+
+    scat(axC, sim, base)
+    axC.set_xlabel("Base-model cosine similarity (layer 21)")
+    axC.set_ylabel("Trained marker log P(marker)  (nats; raw, not base-subtracted)")
+    axC.text(
+        0.03,
+        0.04,
+        f"all 240:  raw Spearman rho = {rc:+.2f}\n{_pf(pc)}",
+        transform=axC.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+    axC.set_title("Cosine similarity vs trained marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axC.grid(alpha=0.2, lw=0.5)
+
+    fig.suptitle(
+        "#474 localized arm, ep1: cosine & JS vs the trained marker log-prob (all 240 prompt pairs)",
+        fontsize=11,
+        x=0.06,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.06,
+        0.935,
+        "y = the trained model's log-probability of the marker at the post-response slot (raw, NOT base-subtracted); higher = marker more likely. "
+        "x = base-model JS divergence (left) and layer-21 cosine similarity (right). All 240 ordered transformation pairs. Raw Spearman rho. "
+        "On the full panel both predict, cosine more strongly; JS's traction is the stylized personas (red) — it goes null once they are removed.",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.80, bottom=0.12, left=0.06, right=0.975, wspace=0.24)
+    savefig_paper(fig, "issue_474/followup_logprob_vs_predictors_all", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -632,4 +743,5 @@ if __name__ == "__main__":
     fig3_gradient_check(rows)
     fig4_gradient_by_group(rows, partial=True)
     fig4_gradient_by_group(rows, partial=False)
+    fig5_logprob_all(rows)
     print("\nFigures -> figures/issue_474/followup_*.png")
