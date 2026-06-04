@@ -28,3 +28,4 @@
 {"ts": "2026-06-04T21:57:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v5 (one seed) ready for approval."}
 {"ts": "2026-06-04T21:58:31Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v5 approved by user (one seed, 48 GPU-h, Path B). #488 coordination: decide later."}
 {"ts": "2026-06-04T21:58:31Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v5 inline at the approval gate. compute:large 48 GPU-h explicitly approved. #488: decide-later (untouched)."}
+{"ts": "2026-06-04T21:59:58Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer (build i489 union ICL+SP pipeline, plan v5, 1 seed); awaiting epm:experiment-implementation."}
