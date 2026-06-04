@@ -8,7 +8,7 @@ tags:
 - behavior-leakage
 - persona-diversity
 created_at: '2026-06-03T08:21:20Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 405
 goal: 'Resolve whether training a behavior into more source personas flattens the
   leakage-vs-persona-distance gradient (persona-invariance) vs keeps it localized,
