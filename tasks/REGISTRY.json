@@ -2744,8 +2744,8 @@
       "goal": "Determine whether the A+B->C superadditive marker-leakage gap from #478 reflects genuine cross-source coupling rather than the shared marker's larger per-token training dose, by adding a per-token-dose-matched control that holds total marker dose constant while varying only whether that dose is spread across two source personas or concentrated in one.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/plan_pending/490",
-      "status": "plan_pending",
+      "path": "tasks/approved/490",
+      "status": "approved",
       "title": "Dose-matched control for the A+B->C superadditive marker-leakage gap (#478 follow-up)"
     },
     "5": {
