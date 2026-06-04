@@ -14,6 +14,9 @@ goal: 'Determine whether the A+B->C superadditive marker-leakage gap from #478 r
   training dose, by adding a per-token-dose-matched control that holds total marker
   dose constant while varying only whether that dose is spread across two source personas
   or concentrated in one.'
+relates_to:
+- leak-single-vs-multi
+- leak-from-cell-set
 ---
 # Dose-matched control for the A+B→C superadditive marker-leakage gap (#478 follow-up)
 
