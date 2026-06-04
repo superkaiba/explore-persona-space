@@ -14,6 +14,8 @@ goal: 'Test whether base-model cosine/JS distance between DIFFERENT KINDS of in-
   a wide example-kind panel gives a cleaner predictor than the instruction-induced
   contexts of #474.'
 track: experiment
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
