@@ -2636,8 +2636,8 @@
       "goal": "Resolve whether training a behavior into more source personas flattens the leakage-vs-persona-distance gradient (persona-invariance) vs keeps it localized, using a held-out panel that spans the distance range with multiple personas per band so the slope-flattening test is powered \u2014 the test #405 left unresolved due to a single-far-persona panel.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/478",
-      "status": "running",
+      "path": "tasks/verifying/478",
+      "status": "verifying",
       "title": "Multi-persona leakage vs distance: distance-spanning held-out panel (resolve #405's tilt question)"
     },
     "479": {
