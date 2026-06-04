@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 482,
+  "highest_id": 483,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2677,6 +2677,13 @@
       "path": "tasks/proposed/482",
       "status": "proposed",
       "title": "Does the base-model cosine predictor generalize beyond emergent misalignment to other narrow\u2192broad (B\u2192B') behavior pairs?"
+    },
+    "483": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/483",
+      "status": "proposed",
+      "title": "Build a canonical distance-varied persona pool + maintained pairwise cosine-distance matrix for leakage experiments"
     },
     "49": {
       "has_clean_result": false,
