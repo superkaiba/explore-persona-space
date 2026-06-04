@@ -1,0 +1,116 @@
+{
+  "adapters_present": [
+    "i465_cond1",
+    "i465_cond2_k0",
+    "i465_cond2_k1",
+    "i465_cond2_k3",
+    "i471_route_a_cond1_posonly_step30",
+    "i471_route_a_cond1_withneg_step70",
+    "i471_route_a_cond2_k0_step70",
+    "i471_route_a_cond2_k1_step70",
+    "i471_route_a_cond2_k3_step70"
+  ],
+  "H1_disambig_triple": {
+    "cond1": {
+      "demo_free_default": null,
+      "no_system_default": null,
+      "paraphrased_helpful_default": null,
+      "demo_free_default_qtrain": null
+    },
+    "cond2_k0": {
+      "demo_free_default": null,
+      "no_system_default": null,
+      "paraphrased_helpful_default": null,
+      "demo_free_default_qtrain": null
+    },
+    "cond2_k1": {
+      "demo_free_default": null,
+      "no_system_default": null,
+      "paraphrased_helpful_default": null,
+      "demo_free_default_qtrain": null
+    },
+    "cond2_k3": {
+      "demo_free_default": null,
+      "no_system_default": null,
+      "paraphrased_helpful_default": null,
+      "demo_free_default_qtrain": null
+    }
+  },
+  "H2_demo_dose_response_at_read_c": {},
+  "H3_kl_dynamic_range": {
+    "arms": {}
+  },
+  "H4_bystander_selectivity": {
+    "cond1": {
+      "per_bystander": {},
+      "mean_across_bystanders": null
+    },
+    "cond2_k0": {
+      "per_bystander": {},
+      "mean_across_bystanders": null
+    },
+    "cond2_k1": {
+      "per_bystander": {},
+      "mean_across_bystanders": null
+    },
+    "cond2_k3": {
+      "per_bystander": {},
+      "mean_across_bystanders": null
+    }
+  },
+  "H5_trained_negative_emission": {
+    "cond1": {},
+    "cond2_k0": {},
+    "cond2_k1": {},
+    "cond2_k3": {}
+  },
+  "persona_x_rstyle_2x2": {
+    "cond1": {
+      "helpful_sys_helpful_R": null,
+      "helpful_sys_villain_R": null,
+      "villain_sys_helpful_R": null,
+      "villain_sys_villain_R": null
+    },
+    "cond2_k0": {
+      "helpful_sys_helpful_R": null,
+      "helpful_sys_villain_R": null,
+      "villain_sys_helpful_R": null,
+      "villain_sys_villain_R": null
+    },
+    "cond2_k1": {
+      "helpful_sys_helpful_R": null,
+      "helpful_sys_villain_R": null,
+      "villain_sys_helpful_R": null,
+      "villain_sys_villain_R": null
+    },
+    "cond2_k3": {
+      "helpful_sys_helpful_R": null,
+      "helpful_sys_villain_R": null,
+      "villain_sys_helpful_R": null,
+      "villain_sys_villain_R": null
+    }
+  },
+  "cross_experiment_paired_bootstrap_at_read_c": {},
+  "selectivity_caveat_383": {
+    "cond1": {
+      "source_rate": null,
+      "mean_bystander_rate": null,
+      "gap_source_minus_bystander": null
+    },
+    "cond2_k0": {
+      "source_rate": null,
+      "mean_bystander_rate": null,
+      "gap_source_minus_bystander": null
+    },
+    "cond2_k1": {
+      "source_rate": null,
+      "mean_bystander_rate": null,
+      "gap_source_minus_bystander": null
+    },
+    "cond2_k3": {
+      "source_rate": null,
+      "mean_bystander_rate": null,
+      "gap_source_minus_bystander": null
+    }
+  }
+}

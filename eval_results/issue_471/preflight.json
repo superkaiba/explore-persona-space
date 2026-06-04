@@ -1,0 +1,48 @@
+{
+  "schema_version": "i471_v1",
+  "git_commit": "90c9a9d24d230c9d6e48dceba8682fefede02c56",
+  "generated_at": "2026-06-03T21:55:38.455133+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "n_q_train": 30,
+  "n_q_test": 50,
+  "n_q_demo": 50,
+  "q_train_content_hash": "17f24a2284d99ed7b27eaf63573ff5c87cad0e0935df97632f1f9c09fa3ef2d2",
+  "q_test_content_hash": "38280023afdcb72829407e8ba3e6608ddcc3521c37afa586a843723976f2b4e8",
+  "q_demo_content_hash": "a88ebc3c6cd9d2f0d50c07b6b436ccc6a08161886d360bced28e36aa8a74512c",
+  "negative_personas": [
+    "default",
+    "medical_doctor",
+    "police_officer"
+  ],
+  "bystander_personas": [
+    "comedian",
+    "hero",
+    "kindergarten_teacher",
+    "lawyer",
+    "software_engineer"
+  ],
+  "i465_adapter_check": {
+    "checked": [
+      "adapters/i465_cond1/adapter_model.safetensors",
+      "adapters/i465_cond2_k0/adapter_model.safetensors",
+      "adapters/i465_cond2_k1/adapter_model.safetensors",
+      "adapters/i465_cond2_k3/adapter_model.safetensors"
+    ],
+    "all_present": true
+  },
+  "new_r_artifacts": [
+    "data/issue_471/R_negatives.json",
+    "data/issue_471/R_bystander_qtest.json",
+    "data/issue_471/R_trained_negatives_qtest.json",
+    "data/issue_471/R_helpful_qtrain.json",
+    "data/issue_471/R_no_system_qtest.json",
+    "data/issue_471/R_paraphrased_helpful_qtest.json"
+  ],
+  "vllm_smoke": {
+    "vocab_size": 152064,
+    "engine_max_logprobs_used": -1,
+    "slot_entries": 152064
+  }
+}
