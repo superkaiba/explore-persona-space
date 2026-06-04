@@ -909,6 +909,168 @@ def test_terminate_parser_exposes_skip_upload_verify_flag():
 
 
 # ---------------------------------------------------------------------------
+# cmd_terminate — live-API authority for pod_id (post-#475 hardening)
+# ---------------------------------------------------------------------------
+
+
+def test_issue_from_pod_name_anchors_on_full_suffix():
+    """``pod-47`` resolves to issue 47, NOT 475 — the suffix is parsed as a
+    whole int, not a substring. Regression for the name-matching anchor that
+    keeps multi-pod terminate from over-matching neighbouring issues."""
+    assert pod_lifecycle._issue_from_pod_name("pod-47") == 47
+    assert pod_lifecycle._issue_from_pod_name("pod-475") == 475
+    assert pod_lifecycle._issue_from_pod_name("epm-issue-475") == 475
+    # Trailing garbage is rejected so suffixes can't bleed across issues.
+    assert pod_lifecycle._issue_from_pod_name("pod-475-backup") is None
+    # Names without a managed prefix never match.
+    assert pod_lifecycle._issue_from_pod_name("thomas-pod-475") is None
+
+
+def test_terminate_kills_all_live_pods_matching_issue(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Multiple live pods can share an issue (an EXITED orphan plus a fresh
+    RUNNING pod, a duplicate from a crashed prior provision, etc.). The
+    live RunPod API is authoritative for existence — terminate MUST kill
+    every match by its live pod_id, not just the one referenced by the
+    local sidecar. Regression for the #475 incident where a stale local
+    pod_id terminated a ghost while two real pods survived."""
+    pod_name = _register_pod_for_issue(475)  # local sidecar holds ONE row
+    # Live API has THREE pods for issue 475 — the canonical one matching
+    # the sidecar, an EXITED orphan, and a stray ``epm-issue-475`` from
+    # the legacy prefix.
+    stub_list_team_pods.return_value = [
+        _info(pod_name, pod_id="live-canonical"),
+        _info(pod_name, pod_id="live-exited-orphan", desired_status="EXITED"),
+        _info("epm-issue-475", pod_id="live-legacy-prefix"),
+    ]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=475))
+
+    assert sorted(stub_terminate_pod) == sorted(
+        ["live-canonical", "live-exited-orphan", "live-legacy-prefix"]
+    ), (
+        "terminate must kill EVERY live pod whose name resolves to the "
+        f"issue (#475), not just the local sidecar's pod_id; got {stub_terminate_pod}"
+    )
+
+
+def test_terminate_fails_loud_when_survivor_remains(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """If a fresh duplicate pod for the issue appears on the live API
+    BETWEEN our terminate call and the post-check (or our terminate didn't
+    actually destroy one), we must raise so the user knows the account
+    still carries a live pod for this issue. Silent success in this case is
+    what caused the #475 incident to go undetected for 6.5h."""
+    pod_name = _register_pod_for_issue(476)
+
+    initial_pods = [_info(pod_name, pod_id="initial-pod")]
+    survivor = _info(pod_name, pod_id="surprise-survivor")
+
+    call_count = {"n": 0}
+
+    def _stub() -> list[PodInfo]:
+        call_count["n"] += 1
+        # First call: see the initial pod. Second call (the post-check):
+        # a different pod_id is now live for the same issue — the
+        # survivor that our terminate sweep missed.
+        if call_count["n"] == 1:
+            return list(initial_pods)
+        return [survivor]
+
+    monkeypatch.setattr(pod_lifecycle, "list_team_pods", _stub)
+
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    with pytest.raises(pod_lifecycle.RunPodError) as exc_info:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=476))
+
+    assert "surprise-survivor" in str(exc_info.value)
+    assert "476" in str(exc_info.value)
+    assert stub_terminate_pod == ["initial-pod"], (
+        "the initial pod must still have been terminated before the "
+        f"survivor check fired; got {stub_terminate_pod}"
+    )
+
+
+def test_terminate_clears_stale_local_record_when_no_live_match(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Live API has no pod for the issue but the local sidecar still names
+    one (terminated externally; sidecar never reconciled). Don't call
+    terminate_pod (it would 404), but do clear the stale local row so the
+    next provision starts from a clean slate."""
+    pod_name = _register_pod_for_issue(477)
+    stub_list_team_pods.return_value = []  # API has none
+
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS")])
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "experiment"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=477))
+
+    assert stub_terminate_pod == [], "no terminate_pod call when no live match"
+    metadata = _read_metadata_file()
+    assert pod_name not in metadata, "stale local record must be cleared"
+
+
+def test_terminate_raises_when_no_live_match_and_no_local_record(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """No live pod AND no local record → SystemExit with a clear message.
+    Nothing to do; surface the fact rather than report a misleading
+    'Terminated' on a no-op."""
+    stub_list_team_pods.return_value = []  # API empty
+    # No _register_pod_for_issue — sidecar empty too.
+
+    # The guard short-circuits non-experiment kinds without touching the
+    # task_workflow module, so we can keep this test free of mocks for it.
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "infra"}, "body": ""},
+    )
+
+    with pytest.raises(SystemExit) as exc_info:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=478))
+
+    assert "478" in str(exc_info.value)
+    assert "No live pod" in str(exc_info.value)
+    assert stub_terminate_pod == []
+
+
+# ---------------------------------------------------------------------------
 # _has_upload_verification_pass — note-body verdict parsing (the bug site)
 # ---------------------------------------------------------------------------
 
