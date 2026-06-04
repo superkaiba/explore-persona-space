@@ -121,11 +121,23 @@ _SRC = _REPO_ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from explore_persona_space.task_workflow import latest_event, post_event  # noqa: E402
+from explore_persona_space.task_workflow import (  # noqa: E402
+    EVENT_NOTE_MAX,
+    find_task_path,
+    latest_event,
+    post_event,
+)
 
 log = logging.getLogger("poll_pipeline")
 
 STALL_SEC = 900
+# Substring of the ValueError message raised by ``task_workflow.post_event``
+# when ``note`` exceeds ``EVENT_NOTE_MAX``. Matched against ``str(exc)`` so
+# we route exactly that failure to graceful-degradation (persist + pointer
+# marker) instead of leaving the sentinel un-renamed and retrying forever.
+# See ``src/explore_persona_space/task_workflow.py`` ``post_event``: the
+# message format is ``"event note exceeds {EVENT_NOTE_MAX} chars (<len>); ..."``.
+_OVERSIZE_NOTE_ERROR_SUBSTR = "event note exceeds"
 PHASE_RE = re.compile(r"\[phase=([a-z_]+)")
 # The epm:run-launched marker note is free-form `key=value` tokens plus
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
@@ -475,6 +487,159 @@ def _ssh_mark_processed(pod: str, remote_path: str) -> bool:
     return True
 
 
+def _slugify_kind(kind: str) -> str:
+    """Match the pod-side sentinel writer's `kind` slug (``:`` -> ``_``).
+
+    Used to name the persisted oversize-note artifact (``sentinel-note-<slug>-
+    <epoch>.txt``) so the artifact file's stem mirrors the sentinel filename
+    convention. Pure / no I/O.
+    """
+    return kind.replace(":", "_")
+
+
+def _persist_oversize_note(
+    *,
+    issue: int,
+    remote_path: str,
+    kind: str,
+    version: int,
+    by: str,
+    full_note: str,
+    original_extras: dict[str, Any] | None = None,
+) -> bool:
+    """Graceful-degradation for an oversize sentinel ``note``.
+
+    Triggered when ``task_workflow.post_event`` raises ``ValueError`` because
+    ``note`` exceeds ``EVENT_NOTE_MAX`` (currently 50,000 chars). Without
+    this fallback, ``_drain_sentinels`` would leave the sentinel un-renamed
+    and every poll tick would re-post + re-fail the same oversize payload
+    forever (incident 2026-06-04 task #477: a 52001-char
+    ``epm:progress`` aggregate sentinel cycled indefinitely).
+
+    Strategy:
+
+    1. Write ``full_note`` to ``<task>/artifacts/sentinel-note-<kind_slug>-
+       <epoch>.txt`` (task folder resolved via ``find_task_path``, so the
+       branch-guarded ``main`` resolver picks the correct path even when
+       the poller is invoked from elsewhere).
+    2. Post a SHORT pointer marker of the same ``(kind, version)`` whose
+       ``note`` (a) cites the artifact path, (b) records original length,
+       and (c) is a leading excerpt of the original. The excerpt is
+       hard-bounded under ``EVENT_NOTE_MAX`` so the pointer post itself
+       cannot trip the same cap. ``artifacts=[<rel_path>]`` and
+       ``oversize=True`` are carried as marker extras so the dashboard /
+       downstream consumers can locate the full payload.
+
+    Returns ``True`` on success (artifact written + pointer marker posted).
+    Returns ``False`` (and logs) on any failure — caller must NOT rename
+    the sentinel in that case so a future tick can retry. Carries through
+    the original sentinel's ``gate`` / ``blocks_pipeline`` semantics by
+    asking the caller to forward those via ``original_extras``.
+    """
+    try:
+        task_dir = find_task_path(issue)
+    except Exception as exc:
+        log.error(
+            "could not resolve task #%d for oversize-note persistence (sentinel %s, kind=%s): %s",
+            issue,
+            remote_path,
+            kind,
+            exc,
+        )
+        return False
+
+    artifacts_dir = task_dir / "artifacts"
+    try:
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        log.error(
+            "could not create artifacts/ for task #%d (sentinel %s): %s",
+            issue,
+            remote_path,
+            exc,
+        )
+        return False
+
+    epoch = int(datetime.now(tz=UTC).timestamp())
+    artifact_name = f"sentinel-note-{_slugify_kind(kind)}-{epoch}.txt"
+    artifact_path = artifacts_dir / artifact_name
+    try:
+        artifact_path.write_text(full_note, encoding="utf-8")
+    except OSError as exc:
+        log.error(
+            "could not write oversize-note artifact %s (sentinel %s): %s",
+            artifact_path,
+            remote_path,
+            exc,
+        )
+        return False
+
+    # Compute repo-relative artifact path for the marker. Falls back to the
+    # absolute path if relative resolution fails (e.g. unusual mounts).
+    try:
+        rel_artifact = str(artifact_path.relative_to(task_dir.parents[2]))
+    except ValueError:
+        rel_artifact = str(artifact_path)
+
+    # Build the pointer-marker note. It MUST fit under EVENT_NOTE_MAX. We
+    # reserve ~512 chars for the pointer header and use the remainder for
+    # a leading excerpt of the original, so operators see the start of the
+    # payload inline without needing to open the artifact.
+    header = (
+        f"[oversize note persisted; original {len(full_note)} chars > "
+        f"{EVENT_NOTE_MAX} cap]\n"
+        f"Full payload: {rel_artifact}\n"
+        f"Original kind={kind} version={version} by={by}\n"
+        f"--- leading excerpt ---\n"
+    )
+    excerpt_budget = max(0, EVENT_NOTE_MAX - len(header) - 32)  # 32-byte safety
+    excerpt = full_note[:excerpt_budget]
+    pointer_note = header + excerpt
+    # Belt-and-suspenders: hard truncate if any accounting drift would push
+    # the pointer marker itself over the cap.
+    if len(pointer_note) > EVENT_NOTE_MAX:
+        pointer_note = pointer_note[:EVENT_NOTE_MAX]
+
+    extras: dict[str, Any] = {"oversize": True, "oversize_orig_len": len(full_note)}
+    if original_extras:
+        # Forward operationally-meaningful sentinel fields (notably ``gate``
+        # and ``blocks_pipeline``) so the pointer marker preserves the
+        # semantics of the original.
+        for key in ("gate", "blocks_pipeline"):
+            if key in original_extras and original_extras[key] is not None:
+                extras[key] = original_extras[key]
+
+    try:
+        post_event(
+            issue,
+            kind,
+            version=version,
+            by=by,
+            note=pointer_note,
+            artifacts=[rel_artifact],
+            **extras,
+        )
+    except Exception as exc:
+        log.error(
+            "pointer-marker post failed for oversize sentinel %s (kind=%s): %s",
+            remote_path,
+            kind,
+            exc,
+        )
+        return False
+
+    log.warning(
+        "sentinel %s carried %d-char note (> %d cap); persisted to %s and "
+        "posted truncated pointer marker (kind=%s).",
+        remote_path,
+        len(full_note),
+        EVENT_NOTE_MAX,
+        rel_artifact,
+        kind,
+    )
+    return True
+
+
 def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     """Decode + validate one sentinel body. Returns the dict on success.
 
@@ -523,6 +688,17 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     so the next tick won't re-post the same marker. If the marker post or
     the rename fails for an individual sentinel, the sentinel is left in
     place and a warning is logged; subsequent ticks will retry.
+
+    Exception: an oversize-``note`` ``ValueError`` from ``post_event`` (note
+    exceeds ``EVENT_NOTE_MAX``) is NOT a retryable failure — re-posting the
+    same oversize payload next tick will fail identically, looping forever
+    (incident 2026-06-04 task #477: a 52001-char ``epm:progress`` aggregate
+    sentinel cycled indefinitely). It is degraded gracefully via
+    ``_persist_oversize_note`` (full note -> ``<task>/artifacts/sentinel-
+    note-*.txt`` + a truncated pointer marker of the same ``(kind, version)``
+    that cites the artifact) and the sentinel is renamed ``.processed`` to
+    end the loop. Any OTHER ``post_event`` exception (transient infra,
+    schema bug, etc.) keeps the original retry-on-next-tick semantics.
     """
     sentinels = _ssh_drain_sentinels(pod, issue)
     processed = 0
@@ -541,6 +717,36 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
         by = data.get("by") or "pod-sentinel"
         try:
             post_event(issue, kind, version=version, by=by, note=note)
+        except ValueError as exc:
+            # Oversize-note guard: match the EXACT message ``post_event``
+            # raises (``"event note exceeds {N} chars (...)"``). Routing
+            # any-old ``ValueError`` to graceful-degradation would
+            # silently swallow real schema bugs, so the substring match
+            # stays narrow.
+            if _OVERSIZE_NOTE_ERROR_SUBSTR not in str(exc) or note is None:
+                log.error(
+                    "post_event failed for sentinel %s (kind=%s): %s",
+                    remote_path,
+                    kind,
+                    exc,
+                )
+                continue
+            if not _persist_oversize_note(
+                issue=issue,
+                remote_path=remote_path,
+                kind=kind,
+                version=version,
+                by=by,
+                full_note=note,
+                original_extras=data,
+            ):
+                # Persistence / pointer-post failed — leave sentinel
+                # un-renamed so the next tick can retry the whole path
+                # (e.g. transient disk-write failure).
+                continue
+            # Pointer marker posted from the persisted artifact; fall
+            # through to the rename + accounting block below so this
+            # sentinel stops being re-attempted.
         except Exception as exc:
             # Don't rename on post failure — next tick will retry. We log
             # at error so an operator can see repeated failures.

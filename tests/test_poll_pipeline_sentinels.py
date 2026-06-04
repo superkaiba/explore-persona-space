@@ -877,3 +877,224 @@ def test_ssh_probe_parses_phase_log_and_gpu_fields(monkeypatch: pytest.MonkeyPat
     )
     assert probe["phase_log_mtime_epoch"] == "1700000900"
     assert probe["gpu_util"] == "95,87,42,90"
+
+
+# ── _drain_sentinels: oversize-note graceful degradation (#477) ─────────────
+#
+# Incident: a 52001-char ``epm:progress`` aggregate sentinel exceeded the
+# 50000-char EVENT_NOTE_MAX cap. ``post_event`` raised ``ValueError`` every
+# tick; the sentinel was never renamed; every subsequent poll re-posted +
+# re-failed the same payload indefinitely. The fix degrades gracefully:
+# persist the full note to a task artifact, post a truncated pointer marker
+# that fits the cap, then rename the sentinel ``.processed`` so the loop
+# stops. NON-oversize post failures keep the original retry semantics
+# (already pinned by ``test_drain_does_not_rename_when_post_fails``).
+
+
+def _oversize_value_error(orig_len: int = 52001) -> ValueError:
+    """Mirror the message ``task_workflow.post_event`` raises on oversize.
+
+    The poller matches the literal substring ``"event note exceeds"``; this
+    factory keeps the test's failure-injection in lockstep with the real
+    message format (kept narrow on purpose so generic ValueErrors still
+    surface as honest failures).
+    """
+    return ValueError(
+        f"event note exceeds {pp.EVENT_NOTE_MAX} chars ({orig_len}); "
+        "caller must post epm:failure v1 with reason=note_oversize"
+    )
+
+
+def test_drain_oversize_note_persists_and_renames(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Oversize ``note`` -> the full payload lands in
+    ``<task>/artifacts/sentinel-note-*.txt``, a truncated pointer marker is
+    posted (same kind/version, cites the artifact, ``oversize=True``), and
+    the sentinel is renamed ``.processed`` so the loop ends. Reproduces
+    the #477 cycle and verifies the graceful path.
+    """
+    # Stand up a fake task folder so ``find_task_path`` resolves to a
+    # writable tmp_path location. (poll_pipeline imports ``find_task_path``
+    # at the top of the module, so monkeypatching its attribute on
+    # ``pp`` covers the resolve call.)
+    task_dir = tmp_path / "tasks" / "running" / "477"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(pp, "find_task_path", lambda issue: task_dir)
+
+    sentinel_path = "/workspace/logs/issue-477-epm_progress-1700001000.json"
+    full_note = "x" * 52001  # > EVENT_NOTE_MAX (50000)
+    body = _sentinel_body(kind="epm:progress", gate=None, note=full_note, by="dispatch_sweep")
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+
+    # First call raises oversize; second call (the pointer marker) succeeds.
+    post_mock = MagicMock(side_effect=[_oversize_value_error(52001), None])
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
+
+    # 1. Sentinel is accounted as processed (so accounting is honest) and
+    #    NOT carrying a gate (the original was gate=None).
+    assert processed == 1
+    assert gate is None
+
+    # 2. Two post_event calls: the oversize attempt, then the pointer.
+    assert post_mock.call_count == 2
+
+    # 3. The pointer-marker post fits the cap, cites the artifact, and
+    #    keeps the same (kind, version, by).
+    pointer_call = post_mock.call_args_list[1]
+    assert pointer_call.args == (477, "epm:progress")
+    assert pointer_call.kwargs["version"] == 1
+    assert pointer_call.kwargs["by"] == "dispatch_sweep"
+    pointer_note = pointer_call.kwargs["note"]
+    assert isinstance(pointer_note, str)
+    assert len(pointer_note) <= pp.EVENT_NOTE_MAX, (
+        f"pointer marker {len(pointer_note)} chars > cap {pp.EVENT_NOTE_MAX}"
+    )
+    assert "oversize" in pointer_note.lower()
+    assert "52001" in pointer_note  # original length recorded inline
+    artifacts = pointer_call.kwargs["artifacts"]
+    assert isinstance(artifacts, list) and len(artifacts) == 1
+    assert "sentinel-note-epm_progress-" in artifacts[0]
+    assert pointer_call.kwargs.get("oversize") is True
+    assert pointer_call.kwargs.get("oversize_orig_len") == 52001
+
+    # 4. Full payload is persisted to disk (byte-identical to the original).
+    persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
+    assert len(persisted) == 1
+    assert persisted[0].read_text() == full_note
+
+    # 5. Sentinel was renamed .processed — the loop terminates on this tick
+    #    instead of cycling forever.
+    assert len(router.mv_calls) == 1
+    assert sentinel_path in router.mv_calls[0]
+    assert ".processed" in router.mv_calls[0]
+
+
+def test_drain_oversize_note_forwards_gate(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """When an oversize sentinel ALSO carries a ``gate``, the pointer marker
+    must forward it AND ``_drain_sentinels`` must surface it on the return
+    tuple so the orchestrator still parks at the user gate."""
+    task_dir = tmp_path / "tasks" / "running" / "477"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(pp, "find_task_path", lambda issue: task_dir)
+
+    sentinel_path = "/workspace/logs/issue-477-epm_fact-candidates-1700001001.json"
+    full_note = "y" * 60000
+    body = _sentinel_body(
+        kind="epm:fact-candidates",
+        gate="fact-candidates",
+        note=full_note,
+        by="experiment-implementer",
+    )
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock(side_effect=[_oversize_value_error(60000), None])
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
+
+    assert processed == 1
+    assert gate == "fact-candidates", (
+        "oversize handling must NOT drop the gate — orchestrator still parks"
+    )
+    pointer_call = post_mock.call_args_list[1]
+    assert pointer_call.kwargs.get("gate") == "fact-candidates"
+    assert pointer_call.kwargs.get("blocks_pipeline") is True
+    assert len(router.mv_calls) == 1
+
+
+def test_drain_oversize_persist_failure_leaves_sentinel_unrenamed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """If the graceful path itself fails (artifact write or pointer post),
+    the sentinel must be left un-renamed so a future tick can retry — same
+    contract as for any other transient post failure.
+    """
+    monkeypatch.setattr(
+        pp,
+        "find_task_path",
+        MagicMock(side_effect=FileNotFoundError("task #477 not found")),
+    )
+    sentinel_path = "/workspace/logs/issue-477-epm_progress-1700001002.json"
+    body = _sentinel_body(kind="epm:progress", gate=None, note="z" * 51000)
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock(side_effect=_oversize_value_error(51000))
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
+
+    assert processed == 0
+    assert gate is None
+    # Sentinel is NOT renamed -> next tick retries (recovers when task-path
+    # resolution recovers, or operators intervene).
+    assert router.mv_calls == []
+    # Only the failing oversize post was attempted; no pointer-marker call
+    # because path resolution short-circuited before we could write the
+    # artifact.
+    assert post_mock.call_count == 1
+
+
+def test_drain_non_oversize_value_error_still_retried(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A generic ``ValueError`` (schema bug, etc.) whose message does NOT
+    contain the oversize-note signature must keep the original
+    retry-on-next-tick semantics — never silently swallowed into the
+    graceful path. Pairs with ``test_drain_does_not_rename_when_post_fails``
+    (which uses ``RuntimeError``) to cover both exception classes.
+    """
+    sentinel_path = "/workspace/logs/issue-477-epm_progress-1700001003.json"
+    body = _sentinel_body(kind="epm:progress", gate=None, note="ok")
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    monkeypatch.setattr(
+        pp,
+        "post_event",
+        MagicMock(side_effect=ValueError("unrelated schema problem")),
+    )
+    # find_task_path must NOT be called when the ValueError doesn't match
+    # the oversize signature; raise if it is, to pin the routing.
+    monkeypatch.setattr(
+        pp, "find_task_path", MagicMock(side_effect=AssertionError("must not be called"))
+    )
+
+    processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
+
+    assert processed == 0
+    assert gate is None
+    assert router.mv_calls == []  # sentinel left for retry
+
+
+def test_oversize_pointer_note_fits_cap_even_for_huge_payload(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The pointer marker MUST itself fit under EVENT_NOTE_MAX, even when
+    the original payload is several MB. Guards against an accounting bug
+    where the leading-excerpt budget overshoots and re-trips the cap.
+    """
+    task_dir = tmp_path / "tasks" / "running" / "477"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(pp, "find_task_path", lambda issue: task_dir)
+
+    huge_note = "Q" * 5_000_000  # 5 MB payload
+    sentinel_path = "/workspace/logs/issue-477-epm_progress-1700001004.json"
+    body = _sentinel_body(kind="epm:progress", gate=None, note=huge_note)
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock(side_effect=[_oversize_value_error(5_000_000), None])
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, _gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
+
+    assert processed == 1
+    pointer_call = post_mock.call_args_list[1]
+    pointer_note = pointer_call.kwargs["note"]
+    assert len(pointer_note) <= pp.EVENT_NOTE_MAX
+    # Full payload still persisted in full on disk.
+    persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
+    assert len(persisted) == 1
+    assert persisted[0].stat().st_size == 5_000_000
