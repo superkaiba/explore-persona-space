@@ -11,6 +11,27 @@ When `epm:failure` body lacks `failure_class:`, the script scans the
 body + last 200 KB of the linked log against these patterns. Any match
 → route as `infra`. Otherwise → `code` (conservative).
 
+**DataLoader-worker wrap special case.** torch's DataLoader catches
+worker-side exceptions and re-raises them wrapped:
+
+```
+RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File ".../torch/utils/data/_utils/worker.py", ...
+  File ".../src/explore_persona_space/train/sft.py", ...
+RuntimeError: <our message>
+```
+
+The outer frames are always under `torch/` (worker.py, `_utils/`, ...),
+so the generic library-traceback infra pattern would route an our-code
+raise to `infra`. To prevent that: when the body matches
+`Caught <Error> in DataLoader worker`, the classifier isolates the
+text after `Original Traceback` and classifies on the WRAPPED block —
+if it contains an our-code frame (`src/explore_persona_space/` or
+`scripts/`), route as `code`; otherwise run the normal infra-pattern
+scan on the wrapped text only (so a wrapped CUDA OOM still routes as
+`infra`). Surfaced by /issue 480 (workflow-fix candidate).
+
 ## Infra patterns (regex, case-insensitive)
 
 ```

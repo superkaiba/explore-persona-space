@@ -63,6 +63,28 @@ FIELD_LINE = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+# torch's DataLoader wraps a worker-side exception with a header like:
+#   RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+# followed by an "Original Traceback (most recent call last):" block whose
+# frames belong to whatever raised inside the worker. The outer frames are
+# always under torch/ (worker.py, _utils/, etc.), so the generic
+# library-traceback infra pattern would route us-code raises to `infra`
+# unless we look INSIDE the wrapped block. See the workflow-fix-on-bug
+# candidate emitted by /issue 480.
+DATALOADER_WRAP = re.compile(
+    r"Caught\s+\w+\s+in\s+DataLoader worker",
+    re.IGNORECASE,
+)
+ORIGINAL_TB_SPLIT = re.compile(r"Original Traceback", re.IGNORECASE)
+
+# Our-code frame regex: matches a Python traceback "File ..." line whose
+# path is under our source/scripts trees. Used to detect that the deepest
+# frame inside a wrapped Original Traceback is our code (not a library).
+OUR_CODE_FRAME = re.compile(
+    r'File\s+"[^"]*/(?:src/explore_persona_space|scripts)/',
+    re.IGNORECASE,
+)
+
 
 def classify_failure(body: str) -> FailureClass:
     """Return ``"infra"`` or ``"code"`` for an `epm:failure` body.
@@ -70,14 +92,36 @@ def classify_failure(body: str) -> FailureClass:
     Routing precedence:
     1. Explicit ``failure_class:`` field on the first non-blank line of
        the body (or any leading metadata block) wins.
-    2. Otherwise, scan the body against the infra log-pattern list. Any
+    2. If the body shows a torch DataLoader worker wrap (``Caught <Error>
+       in DataLoader worker``), classify on the WRAPPED Original
+       Traceback block, not the outer torch frames: when the wrapped
+       block contains an our-code frame (``src/explore_persona_space/``
+       or ``scripts/``), return ``"code"``; otherwise run the normal
+       infra-pattern scan against the WRAPPED text only. The outer torch
+       frames are always library code (worker.py, _utils/, ...) and
+       routing on them would misclassify an our-code raise as ``infra``.
+    3. Otherwise, scan the body against the infra log-pattern list. Any
        match → ``"infra"``.
-    3. Otherwise, default to ``"code"`` (conservative — the implementer
+    4. Otherwise, default to ``"code"`` (conservative — the implementer
        round catches more than the experimenter respawn round).
     """
     field = FIELD_LINE.search(body)
     if field is not None:
         return field.group(1).lower()  # type: ignore[return-value]
+
+    if DATALOADER_WRAP.search(body):
+        # Split on the "Original Traceback" header and classify on the
+        # WRAPPED block. Fall back to the post-split tail if there is no
+        # explicit header (some torch versions wrap without it).
+        parts = ORIGINAL_TB_SPLIT.split(body, maxsplit=1)
+        wrapped = parts[1] if len(parts) == 2 else body
+        if OUR_CODE_FRAME.search(wrapped):
+            return "code"
+        for rx in INFRA_PATTERNS:
+            if rx.search(wrapped):
+                return "infra"
+        return "code"
+
     for rx in INFRA_PATTERNS:
         if rx.search(body):
             return "infra"
