@@ -1,7 +1,7 @@
 ---
-title: Training a marker into more source personas raises overall leakage but does
-  not flatten the distance gradient — leakage stays distance-localized as K grows
-  (HIGH confidence)
+title: Training a marker into more source personas raises overall marker log-prob
+  leakage but did not measurably flatten the distance gradient — leakage stays distance-localized
+  as K grows (MODERATE confidence)
 kind: experiment
 tags:
 - mentor-dan
