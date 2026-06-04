@@ -8,7 +8,7 @@ tags:
 - marker-leakage
 - saturation
 created_at: '2026-06-03T08:26:25Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 448
 goal: Find a training recipe in the canonical marker-position-only (tail_tokens=0)
   loss regime that lands the ※-marker implant in a non-saturating selectivity window
