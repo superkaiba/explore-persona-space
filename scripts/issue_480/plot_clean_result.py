@@ -279,7 +279,7 @@ def figure_4_h2_panel(matrix: list[dict], h1_h2: dict, out_root: Path) -> Path:
     fig.text(
         0.02,
         0.955,
-        "Comedian shows a strong monotone gradient; the other five sources scatter to weak or null",
+        "Comedian: cleanly significant gradient (rho = +0.71). Villain: nominal (rho = +0.48, perm p = 0.024 but CI crosses zero). Other four: weak or null.",
         fontsize=9,
         color="#555555",
         ha="left",
