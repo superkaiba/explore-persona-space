@@ -2661,7 +2661,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/480",
       "status": "interpreting",
-      "title": "Does marker leakage predict sycophancy leakage? (payload-swap of #411's rig, matched cells)"
+      "title": "A token marker doesn't cleanly predict sycophancy leakage on matched (source, bystander) cells; on the marker payload only comedian shows a clean within-source cosine gradient (LOW confidence)"
     },
     "481": {
       "has_clean_result": false,
