@@ -1009,7 +1009,7 @@ def fig8_by_class(rows):
         paper_palette_role("neutral"),
     )
     G = _load_G("loc", 1)
-    classes = ["A", "B", "C", "D"]
+    classes = ["A", "B", "D"]  # format (C) excluded: singleton C1, n=15 per slice
     labels = {
         "A": "persona\n(A)",
         "B": "query-wrap\n(B)",
@@ -1084,8 +1084,8 @@ def fig8_by_class(rows):
         0.05,
         0.935,
         "Signed Spearman rho of each base-model predictor vs marker transfer ΔG, for cells grouped by the trained-on class (left) and the evaluated-on "
-        "class (right). Cosine predicts for every class (all significant); JS is weaker and goes non-significant for the format class. Within-class (both "
-        "endpoints same class, n=20) is underpowered — only register (via the D5 format-forcer) reaches significance — and is omitted here.",
+        "class (right). Three classes: persona (A), query-wrap (B), register (D); the format class (singleton C1, n=15) is excluded. Cosine predicts for "
+        "every class (all significant) and beats JS throughout. Within-class (both endpoints same class, n=20) is underpowered and omitted here.",
         fontsize=8.0,
         color=neu,
         ha="left",
