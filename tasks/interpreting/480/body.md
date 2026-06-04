@@ -5,7 +5,7 @@ title: A token marker doesn't cleanly predict sycophancy leakage on matched (sou
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:53:19Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 470
 goal: 'Determine whether per-(source,bystander) token-marker leakage correlates with
   #411''s frozen per-bystander sycophancy leakage on matched cells (testing whether
