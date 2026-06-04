@@ -8,9 +8,11 @@ fixes):
 ROUND-2 changes vs round-1:
 
 - PRIMARY Q2 readout is now a PERSONA-LEVEL distance-adjusted regression
-  ``gap_dosematched ~ is_on_axis + mean_d + asymmetry + pair + seed`` rather
-  than the raw subpanel-mean Δ_geom (which was confounded with mean_d when
-  the Phase-0 off-axis subpanel couldn't field a distance-matched panel).
+  ``gap_dosematched ~ is_on_axis + mean_d + asymmetry`` with cluster-robust
+  standard errors at (pair, seed) groups (NO fixed effects for pair or
+  seed — clustering only) rather than the raw subpanel-mean Δ_geom (which
+  was confounded with mean_d when the Phase-0 off-axis subpanel couldn't
+  field a distance-matched panel).
 - Raw Δ_geom DEMOTED to "unadjusted diagnostic" with the mean_d delta surfaced.
 - A Δ_geom-vs-mean_d_match_delta sensitivity slope is reported across pairs.
 - LSE combiner now correctly computed on ABSOLUTE logp_trained and logp_base
@@ -41,9 +43,10 @@ Pipeline:
        slope_dose = ½[(POOLED_A − SINGLE_A) + (POOLED_B − SINGLE_B)]
        Δ_geom = gap_dosematched(on) − gap_dosematched(off)  [DIAGNOSTIC]
      LSE combiner uses absolute logp_trained + absolute logp_base.
-  6. PRIMARY Q2 (distance-adjusted): mixed-effects OLS on the persona-level
+  6. PRIMARY Q2 (distance-adjusted): plain OLS on the persona-level
      gap_dosematched ~ is_on_axis + mean_d + asymmetry, with cluster-robust
-     SEs at (pair, seed). is_on_axis coefficient IS the headline.
+     standard errors at (pair, seed) groups (NO fixed effects for pair or
+     seed — clustering only). is_on_axis coefficient IS the headline.
   7. Paired bootstrap (10000) on raw Δ_geom + gap_dosematched + slope_dose
      across (pair × seed) tuples (diagnostic, NOT primary).
   8. Δ_geom-vs-mean_d_match_delta cross-pair regression (sensitivity).
@@ -239,8 +242,18 @@ def build_decomposition_rows(
     LSE combiner uses absolute logp_trained and logp_base separately
     (round-2 fix per code-review CRIT-3). Mean and max operate directly on
     the value_key (delta).
+
+    Round-3 code-review MAJOR-2 fix: when ``value_key == "kl_mean"`` (the
+    fallback DV), the LSE/Bernoulli-union combiner is NOT defined — KL is a
+    divergence, not a probability, so there is no "either-source-fires"
+    interpretation. The LSE columns are set to ``NaN`` explicitly with a
+    note in the returned row's ``lse_note`` field, so the downstream JSON
+    output AND the tidy CSV both surface "LSE inapplicable" rather than
+    silently reusing the deltaLogP-path LSE values.
     """
     cond_means = _condition_subpanel_means(persona_rows, value_key)
+    # KL has no Bernoulli-union interpretation; flag it.
+    is_kl_fallback = value_key == "kl_mean"
     rows: list[dict] = []
     for pair_id, by_seed in cond_means.items():
         for seed, by_sub in by_seed.items():
@@ -287,6 +300,18 @@ def build_decomposition_rows(
                 }
                 for c in COMBINERS:
                     if c == "lse":
+                        # Round-3 code-review MAJOR-2 fix: KL has no
+                        # Bernoulli-union interpretation. Surface NaN
+                        # explicitly with a note rather than silently
+                        # re-using the deltaLogP-path LSE math.
+                        if is_kl_fallback:
+                            row[f"gap_confounded_{c}"] = float("nan")
+                            row[f"gap_dosematched_{c}"] = float("nan")
+                            row["lse_note"] = (
+                                "LSE/Bernoulli-union not defined for KL DV; "
+                                "log P_union math requires log-probability inputs."
+                            )
+                            continue
                         # LSE on absolute logp_trained and logp_base
                         # separately, then subtract. Round-2 fix per
                         # code-review CRIT-3.
@@ -400,7 +425,7 @@ def compute_per_combiner_diagnostic(decomp_rows: list[dict]) -> dict:
     return out
 
 
-def compute_distance_adjusted_primary(
+def compute_distance_adjusted_primary(  # noqa: C901 — OLS + nan-drop + diagnostics + verdict in one function
     persona_rows: list[dict],
     pairs: list[dict],
 ) -> dict:
@@ -474,17 +499,75 @@ def compute_distance_adjusted_primary(
     except ImportError:
         return {"status": "SKIPPED", "reason": "statsmodels not installed"}
 
+    # Round-3 code-review MINOR-3 fix: drop non-finite rows BEFORE fitting
+    # and record n_dropped + design-matrix condition number + rank in the
+    # returned regression record so a degenerate fit is visible rather
+    # than silent.
+    n_rows_pre_drop = len(reg_rows)
+    finite_rows = [
+        r
+        for r in reg_rows
+        if all(
+            np.isfinite(r[k])
+            for k in ("is_on_axis", "mean_d", "asym", "gap_dosematched_mean_combiner")
+        )
+    ]
+    n_dropped_nonfinite = n_rows_pre_drop - len(finite_rows)
+    if not finite_rows:
+        return {
+            "status": "FAILED",
+            "reason": "every row dropped (non-finite predictor or response)",
+            "n_rows_pre_drop": n_rows_pre_drop,
+            "n_dropped_nonfinite": n_dropped_nonfinite,
+        }
+    if n_dropped_nonfinite:
+        log.warning(
+            "compute_distance_adjusted_primary: dropped %d/%d non-finite rows",
+            n_dropped_nonfinite,
+            n_rows_pre_drop,
+        )
+
     X = np.array(
-        [[r["is_on_axis"], r["mean_d"], r["asym"]] for r in reg_rows],
+        [[r["is_on_axis"], r["mean_d"], r["asym"]] for r in finite_rows],
         dtype=float,
     )
-    y = np.array([r["gap_dosematched_mean_combiner"] for r in reg_rows], dtype=float)
+    y = np.array(
+        [r["gap_dosematched_mean_combiner"] for r in finite_rows],
+        dtype=float,
+    )
     X_const = sm.add_constant(X)
-    clusters = np.array([f"{r['pair_id']}|seed{r['seed']}" for r in reg_rows])
+    clusters = np.array([f"{r['pair_id']}|seed{r['seed']}" for r in finite_rows])
+
+    # Design-matrix diagnostics (condition number + rank).
+    # A condition number > 1e8 (very loose threshold) flags near-collinearity;
+    # rank < n_columns means at least one predictor is a linear combination
+    # of others (e.g. zero variance).
+    try:
+        cond_number = float(np.linalg.cond(X_const))
+    except Exception:
+        cond_number = float("nan")
+    try:
+        rank = int(np.linalg.matrix_rank(X_const))
+    except Exception:
+        rank = -1
+    n_columns = X_const.shape[1]
+    full_rank = rank == n_columns
+
     try:
         ols = sm.OLS(y, X_const).fit(cov_type="cluster", cov_kwds={"groups": clusters})
     except Exception as e:
-        return {"status": "FAILED", "reason": f"OLS fit raised: {e!r}"}
+        return {
+            "status": "FAILED",
+            "reason": f"OLS fit raised: {e!r}",
+            "n_rows_pre_drop": n_rows_pre_drop,
+            "n_dropped_nonfinite": n_dropped_nonfinite,
+            "design_matrix_condition_number": cond_number,
+            "design_matrix_rank": rank,
+            "design_matrix_n_columns": n_columns,
+            "design_matrix_full_rank": full_rank,
+        }
+    # Note: finite_rows replaces reg_rows for the rest of this function.
+    reg_rows = finite_rows
 
     params = {
         "intercept": float(ols.params[0]),
@@ -521,7 +604,13 @@ def compute_distance_adjusted_primary(
     return {
         "status": "OK",
         "n_rows": len(reg_rows),
+        "n_rows_pre_drop": n_rows_pre_drop,
+        "n_dropped_nonfinite": n_dropped_nonfinite,
         "n_clusters": len(set(clusters)),
+        "design_matrix_condition_number": cond_number,
+        "design_matrix_rank": rank,
+        "design_matrix_n_columns": n_columns,
+        "design_matrix_full_rank": full_rank,
         "formula": "gap_dosematched ~ is_on_axis + mean_d + asym  [cluster-robust at (pair, seed)]",
         "params": params,
         "pvalues": pvalues,

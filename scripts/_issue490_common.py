@@ -763,6 +763,83 @@ def build_onaxis_offaxis_subpanels(
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _log1mexp(v: float) -> float:
+    """Stable log(1 - exp(v)) for v ≤ 0.
+
+    Two regimes per Mächler 2012 ("Accurately computing log(1-exp(-a))"):
+      - For v close to 0 (v > -log(2) ≈ -0.6931): log(-expm1(v)) is stable.
+      - Otherwise: log1p(-exp(v)) is stable.
+
+    Edge cases:
+      v == 0       → log(0) = -inf
+      v == -inf    → log(1) = 0.0
+      v >  0       → ValueError (out of domain)
+
+    Underflow note: for v ≪ 0 (e.g. v=-1000), exp(v) underflows to 0.0 in
+    float64 and this returns log1p(0) = 0.0. That's accurate to all 53
+    bits, but the OUTER inclusion-exclusion `log1mexp(sum(log1mexp(v_i)))`
+    is then log1mexp(0) = -inf and loses the union signal. The combiner
+    handles that regime by switching to the small-probability approximation
+    `logsumexp(v_i)` — see `_lse_bernoulli_union` below.
+    """
+    if v > 0.0:
+        raise ValueError(f"_log1mexp: v must be ≤ 0, got {v}")
+    if v == 0.0:
+        return float("-inf")
+    if math.isinf(v):
+        return 0.0
+    # The Mächler threshold.
+    if v > -math.log(2.0):
+        return math.log(-math.expm1(v))
+    return math.log1p(-math.exp(v))
+
+
+def _lse_bernoulli_union(values: list[float]) -> float:
+    """Numerically-stable Bernoulli union in log-space.
+
+    Returns ``log P_union = log(1 − ∏(1−p_i))`` where ``p_i = exp(values[i])``,
+    all ``values[i] ≤ 0``.
+
+    Two-regime computation:
+      - **General regime** (any v_i > SMALL_PROB_THRESHOLD): the
+        inclusion-exclusion identity in log space:
+            log P_union = log1mexp(Σ log1mexp(v_i))
+      - **Small-probability regime** (every v_i ≤ SMALL_PROB_THRESHOLD): the
+        higher-order inclusion-exclusion terms (Σ p_i·p_j, ...) are
+        exponentially smaller than the first-order sum Σ p_i, so
+            log P_union ≈ logsumexp(values) = log(Σ exp(v_i)),
+        accurate to O(exp(v_max)) relative error. This branch avoids the
+        log1mexp(0) = -inf underflow that the general regime suffers when
+        every p_i is too small for float64 to distinguish 1-p_i from 1.
+
+    The SMALL_PROB_THRESHOLD = -37 nats is chosen so that exp(2 × v) ≤
+    1e-32 ≪ float64 ULP at the relevant magnitude; first-order sum is
+    accurate to ~32 decimal digits in that regime.
+
+    Uses scipy.special.logsumexp for numerical stability.
+    """
+    if not values:
+        raise ValueError("_lse_bernoulli_union: empty input")
+    SMALL_PROB_THRESHOLD = -37.0  # exp(-37) ≈ 8.5e-17 (near float64 ULP)
+    from scipy.special import logsumexp
+
+    if all(v <= SMALL_PROB_THRESHOLD for v in values):
+        # Small-probability regime: log P_union ≈ logsumexp(v_i).
+        # Higher-order inclusion-exclusion is O(exp(v_max)) smaller.
+        return float(logsumexp(values))
+
+    # General regime: log1mexp inclusion-exclusion.
+    log_complement_terms = [_log1mexp(v) for v in values]
+    # If any v_i == 0, that source is saturated → union is saturated.
+    if any(math.isinf(t) and t < 0 for t in log_complement_terms):
+        return 0.0
+    log_complement_product = sum(log_complement_terms)
+    if log_complement_product >= 0:
+        # Floating-point overshoot — clamp.
+        return 0.0
+    return _log1mexp(log_complement_product)
+
+
 def combiner(name: str, values: list[float]) -> float:
     """Apply named combiner to a list of ABSOLUTE log-probabilities (≤ 0).
 
@@ -772,15 +849,18 @@ def combiner(name: str, values: list[float]) -> float:
                               better single source".
     lse  → log(1 − ∏(1−exp(v))) = log P_union
                               Bernoulli-union: "either source's marker could
-                              fire". Computed in log-space via log1p for
-                              numerical stability. **DEFINED ONLY on log-prob
-                              inputs** — passing deltas (positive values that
-                              represent trained − base log-prob shifts)
-                              produces invalid output because exp(delta) is
-                              not a probability. Round-2 code-review fix: the
-                              analyzer now combines absolute trained and
-                              absolute base log-probs SEPARATELY, then
-                              subtracts to get the union-on-the-delta.
+                              fire". Computed via the two-regime
+                              ``_lse_bernoulli_union`` helper so extreme
+                              negative log-probs don't silently underflow
+                              to log1mexp(0) = -inf. **DEFINED ONLY on
+                              log-prob inputs** — passing deltas (positive
+                              values that represent trained − base log-prob
+                              shifts) produces invalid output because
+                              exp(delta) is not a probability. Round-2
+                              code-review fix: the analyzer now combines
+                              absolute trained and absolute base log-probs
+                              SEPARATELY, then subtracts to get the
+                              union-on-the-delta.
 
     Raises:
         ValueError on empty input.
@@ -794,9 +874,7 @@ def combiner(name: str, values: list[float]) -> float:
     if name == "max":
         return max(values)
     if name == "lse":
-        # Hard-fail on positive inputs — round-2 code-review fix. The
-        # previous "return 0.0 on v≥0" branch silently collapsed delta-input
-        # callers to a saturated answer, masking the misuse.
+        # Hard-fail on positive inputs (preserved from round-2 fix).
         bad = [v for v in values if v > 0]
         if bad:
             raise ValueError(
@@ -806,18 +884,7 @@ def combiner(name: str, values: list[float]) -> float:
                 f"absolute logp_base separately, then subtract — see "
                 f"`combiner_lse_delta_from_absolutes`."
             )
-        log_one_minus_p: list[float] = []
-        for v in values:
-            # v ≤ 0 by the guard above; clamp v == 0 (saturated single source)
-            # → log(1 - 1) = -inf; treat the union as saturated (log P = 0).
-            if v == 0.0:
-                return 0.0
-            log_one_minus_p.append(math.log1p(-math.exp(v)))
-        log_complement_product = sum(log_one_minus_p)
-        # log P_union = log(1 - exp(log_complement_product))
-        if log_complement_product >= 0:
-            return 0.0
-        return math.log1p(-math.exp(log_complement_product))
+        return _lse_bernoulli_union(values)
     raise ValueError(f"Unknown combiner {name!r}")
 
 
