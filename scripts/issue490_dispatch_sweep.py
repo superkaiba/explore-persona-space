@@ -177,10 +177,57 @@ def _order_key(s: dict, smoke_id: str | None) -> tuple[int, str]:
     return (1, s["cell_id"])
 
 
+def _resolve_seeds(args_seeds_str: str, seeds_explicit: bool) -> list[int]:
+    """Resolve the seed set, honoring Phase-0 escalation when `--seeds` was
+    NOT explicitly passed.
+
+    Round-2 fix per code-review CRITICAL-1: previously the dispatcher
+    silently used the argparse default (42,137) regardless of the Phase-0
+    `escalate_to_3_seeds` decision, so a sweep that the power calc said
+    needed 3 seeds would only run 2. New behavior:
+
+      - If `--seeds` was explicitly passed on the CLI, honor it verbatim
+        (user override is sticky).
+      - Otherwise, read `data/issue_490/source_pairs.json` for
+        `escalate_to_3_seeds`; if True, use ESCALATED_SEEDS; else use SEEDS.
+      - If source_pairs.json is not on disk (Phase 0 hasn't run), fall back
+        to SEEDS (the dispatcher's data-prep phase will run Phase 0 first,
+        and the dispatcher re-resolves below).
+
+    Returns the resolved seed list.
+    """
+    from _issue490_common import ESCALATED_SEEDS, SEEDS  # local — late import
+
+    if seeds_explicit:
+        explicit = [int(s) for s in args_seeds_str.split(",") if s.strip()]
+        if not explicit:
+            raise SystemExit("--seeds must be non-empty when passed")
+        return explicit
+    pairs_path = PROJECT_ROOT / "data" / "issue_490" / "source_pairs.json"
+    if not pairs_path.exists():
+        return list(SEEDS)
+    try:
+        payload = json.loads(pairs_path.read_text())
+    except Exception:
+        return list(SEEDS)
+    escalate = bool(payload.get("escalate_to_3_seeds", False))
+    return list(ESCALATED_SEEDS) if escalate else list(SEEDS)
+
+
 def main() -> int:  # noqa: C901 — argparse + smoke + parallel-dispatch
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--gpus", type=str, default="0,1,2,3")
-    parser.add_argument("--seeds", type=str, default="42,137")
+    # `--seeds` default is the empty string sentinel; the resolver checks
+    # whether the user explicitly passed it (sticky override) vs let the
+    # Phase-0 escalation drive the seed set (round-2 fix).
+    parser.add_argument(
+        "--seeds",
+        type=str,
+        default="",
+        help="Comma-separated seeds (overrides Phase-0 escalation decision). "
+        "Default (empty): read `escalate_to_3_seeds` from source_pairs.json "
+        "and use SEEDS=42,137 or ESCALATED_SEEDS=42,137,9999.",
+    )
     parser.add_argument(
         "--cell-specs",
         type=str,
@@ -188,7 +235,14 @@ def main() -> int:  # noqa: C901 — argparse + smoke + parallel-dispatch
     )
     parser.add_argument("--cells", type=int, default=0)
     parser.add_argument("--cell-id", type=str, default="")
-    parser.add_argument("--smoke-first", action="store_true")
+    parser.add_argument(
+        "--smoke-first",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Run the smoke cell SEQUENTIALLY first and gate the sweep on its "
+        "saturation read. Default: True. Pass --no-smoke-first to disable "
+        "(advanced; only when re-launching after a clean smoke pass).",
+    )
     parser.add_argument("--skip-data-prep", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
@@ -199,14 +253,24 @@ def main() -> int:  # noqa: C901 — argparse + smoke + parallel-dispatch
     args = parser.parse_args()
 
     gpus = [int(g) for g in args.gpus.split(",") if g.strip()]
-    seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
-    if not gpus or not seeds:
-        raise SystemExit("--gpus and --seeds must be non-empty")
-    log.info("Dispatcher: gpus=%s seeds=%s", gpus, seeds)
+    seeds_explicit = bool(args.seeds.strip())
     args.gpus = gpus
+    if not gpus:
+        raise SystemExit("--gpus must be non-empty")
 
     if not args.skip_data_prep:
         run_data_prep_phases(args)
+
+    # Resolve seeds AFTER Phase 0 has run (so the escalation flag is fresh).
+    seeds = _resolve_seeds(args.seeds, seeds_explicit)
+    if not seeds:
+        raise SystemExit("Resolved seed set is empty")
+    log.info(
+        "Dispatcher: gpus=%s seeds=%s (explicit=%s)",
+        gpus,
+        seeds,
+        seeds_explicit,
+    )
 
     specs_path = Path(args.cell_specs)
     if not specs_path.exists():

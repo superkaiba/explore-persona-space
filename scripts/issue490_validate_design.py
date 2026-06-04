@@ -43,6 +43,7 @@ from _issue490_common import (  # noqa: E402
     ALL_PERSONAS,
     BASE_MODEL,
     ESCALATE_TO_3_SEEDS_AUTHORIZED,
+    ESCALATED_SEEDS,
     HELD_OUT_35,
     MARKER_TEXT,
     MARKER_TOKEN_ID,
@@ -268,15 +269,16 @@ def main() -> int:
 
     # ── (5) Layer-21 robustness matrix (best-effort) ──────────────────────
     log.info("Loading layer-21 cosine distance matrix (robustness diagnostic) ...")
-    names21, dist21 = load_cosine_distance_matrix_layer(21)
-    layer21_distinct_from_layer20 = names21 is not names20 and (
-        len(names21) != len(names20) or names21 != names20
-    )
-    if not layer21_distinct_from_layer20:
+    names21, dist21, layer21_source = load_cosine_distance_matrix_layer(21)
+    layer21_available = layer21_source != "unavailable"
+    if not layer21_available:
         log.warning(
-            "Layer-21 centroids tensor not found (falling back to layer-20 for the "
-            "robustness diagnostic). Layer-20 stays primary; the layer-21 OVERLAP "
-            "diagnostic in the body will record this fallback."
+            "Layer-21 centroids tensor NOT on disk (source=%r). The robustness "
+            "diagnostic will record overlap=null and source=unavailable; layer-20 "
+            "stays primary. To enable, run "
+            "`uv run python scripts/analyze_100_persona_cosine.py --extract --gpu 0 "
+            "--layer 21` on a pod once and re-run Phase 0.",
+            layer21_source,
         )
 
     # ── (6) Build initial 8 source-pairs ──────────────────────────────────
@@ -342,24 +344,30 @@ def main() -> int:
                 break
             continue
 
-        # Layer-21 overlap (robustness diagnostic only).
-        layer21_subpanels = build_onaxis_offaxis_subpanels(
-            A=A,
-            B=B,
-            candidates=HELD_OUT_35,
-            names=names21,
-            distance=dist21,
-        )
-        if layer21_subpanels["feasible"]:
-            on_overlap = len(set(subpanels["on_axis"]) & set(layer21_subpanels["on_axis"])) / max(
-                1, len(subpanels["on_axis"])
+        # Layer-21 overlap (robustness diagnostic only). If the layer-21
+        # centroids aren't on disk, record overlap=null (NOT a fake 1.0) so
+        # the body call-out narrates "layer-21 unavailable" honestly.
+        if layer21_available:
+            layer21_subpanels = build_onaxis_offaxis_subpanels(
+                A=A,
+                B=B,
+                candidates=HELD_OUT_35,
+                names=names21,
+                distance=dist21,
             )
-            off_overlap = len(
-                set(subpanels["off_axis"]) & set(layer21_subpanels["off_axis"])
-            ) / max(1, len(subpanels["off_axis"]))
+            if layer21_subpanels["feasible"]:
+                on_overlap = len(
+                    set(subpanels["on_axis"]) & set(layer21_subpanels["on_axis"])
+                ) / max(1, len(subpanels["on_axis"]))
+                off_overlap = len(
+                    set(subpanels["off_axis"]) & set(layer21_subpanels["off_axis"])
+                ) / max(1, len(subpanels["off_axis"]))
+            else:
+                on_overlap = None
+                off_overlap = None
         else:
-            on_overlap = float("nan")
-            off_overlap = float("nan")
+            on_overlap = None
+            off_overlap = None
 
         pairs_validated.append(
             {
@@ -400,9 +408,15 @@ def main() -> int:
                 ],
             }
         )
+        overlap_str = (
+            f"layer21 overlap on={on_overlap:.2f} off={off_overlap:.2f}"
+            if on_overlap is not None and off_overlap is not None
+            else "layer21 overlap on=N/A off=N/A (centroids unavailable)"
+        )
+        method = subpanels.get("off_axis_selection_method", "?")
         log.info(
             "Pair %s (%s,%s) OK — τ=%.3f, n_on=%d (mean_d=%.4f), n_off=%d "
-            "(mean_d=%.4f, Δ=%.4f), layer21 overlap on=%.2f off=%.2f",
+            "(mean_d=%.4f, Δ=%.4f, method=%s), %s",
             pair["pair_id"],
             A,
             B,
@@ -412,8 +426,8 @@ def main() -> int:
             len(subpanels["off_axis"]),
             subpanels["off_axis_mean_d"],
             subpanels.get("mean_d_match_delta", float("nan")),
-            on_overlap,
-            off_overlap,
+            method,
+            overlap_str,
         )
 
     if len(pairs_validated) < N_TOTAL_PAIRS:
@@ -506,14 +520,20 @@ def main() -> int:
         },
         "layer21_robustness_note": (
             "Layer-21 subpanels reported per-pair for diagnostic OVERLAP only; "
-            "layer-20 is primary per #478 parity. NaN overlap = layer-21 "
-            "centroids not on disk (fallback)."
+            "layer-20 is primary per #478 parity. layer21_overlap=null = "
+            "layer-21 centroids not on disk (extract via "
+            "analyze_100_persona_cosine.py --extract --layer 21 to enable)."
         ),
+        "layer21_source": layer21_source,
         "prompt_lengths_chars": {p: len(prompts[p]) for p in ALL_PERSONAS},
     }
     out_path.write_text(json.dumps(payload, indent=2))
     log.info("Wrote %s", out_path)
 
+    # source_pairs.json carries per-persona distances so the analyzer's
+    # distance-adjusted regression (round-2 fix) can run without re-reading
+    # design_validation.json. Each `on_axis_distances` / `off_axis_distances`
+    # entry is {persona: {"d_A": ..., "d_B": ..., "mean_d": ..., "asym": ...}}.
     pairs_only = {
         "pairs": [
             {
@@ -524,10 +544,35 @@ def main() -> int:
                 "matched_cell_id": p["matched_cell_id"],
                 "on_axis": p["on_axis"],
                 "off_axis": p["off_axis"],
+                "tau_layer20": p["tau_layer20"],
+                "on_axis_mean_d_layer20": p["on_axis_mean_d_layer20"],
+                "off_axis_mean_d_layer20": p["off_axis_mean_d_layer20"],
+                "mean_d_match_delta_layer20": p["mean_d_match_delta_layer20"],
+                "off_axis_selection_method": p["off_axis_selection_method"],
+                "on_axis_distances": {
+                    rec["persona"]: {
+                        "d_A": rec["d_A"],
+                        "d_B": rec["d_B"],
+                        "mean_d": rec["mean_d"],
+                        "asym": rec["asym"],
+                    }
+                    for rec in p["on_axis_with_distances_layer20"]
+                },
+                "off_axis_distances": {
+                    rec["persona"]: {
+                        "d_A": rec["d_A"],
+                        "d_B": rec["d_B"],
+                        "mean_d": rec["mean_d"],
+                        "asym": rec["asym"],
+                    }
+                    for rec in p["off_axis_with_distances_layer20"]
+                },
             }
             for p in pairs_validated
         ],
         "escalate_to_3_seeds": escalate_to_3_seeds,
+        "seeds_resolved": (list(ESCALATED_SEEDS) if escalate_to_3_seeds else list(SEEDS)),
+        "layer21_source": layer21_source,
     }
     pairs_out_path.write_text(json.dumps(pairs_only, indent=2))
     log.info("Wrote %s", pairs_out_path)

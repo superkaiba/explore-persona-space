@@ -416,18 +416,30 @@ def load_cosine_distance_matrix() -> tuple[list[str], list[list[float]]]:
     return _build_matrix_from_centroids()
 
 
-def load_cosine_distance_matrix_layer(layer: int) -> tuple[list[str], list[list[float]]]:
+def load_cosine_distance_matrix_layer(
+    layer: int,
+) -> tuple[list[str], list[list[float]], str]:
     """Load layer-N cosine distance matrix; call site for the layer-21
     robustness diagnostic (plan §4.4).
 
-    Layer 20 is primary (#478 parity). Layer 21 is the persona-vectors default
-    per `.claude/rules/persona-distance-metrics.md` and is reported here only
-    as a robustness check. Falls back to layer-20 if the per-layer centroids
-    tensor is not present (the design-validation script logs the fallback
-    explicitly so the body call-out remains honest).
+    Returns `(names, distance, source)` where source ∈
+        - ``"layer_{N}"`` when the requested layer's centroids tensor is on
+          disk and was used.
+        - ``"unavailable"`` when the requested layer's centroids tensor is
+          NOT on disk. In that case `names` and `distance` are EMPTY — the
+          caller must NOT silently use the layer-20 fallback for a
+          robustness diagnostic because that produces fake overlap=1.0.
+        - ``"layer_20"`` when ``layer == 20`` (the primary loader path).
+
+    Layer 20 is primary (#478 parity). Layer 21 is the persona-vectors
+    default per `.claude/rules/persona-distance-metrics.md` and is reported
+    here only as a robustness check. The honest-fallback contract per round-2
+    code-review: a missing layer-21 centroid file means "not available", NOT
+    "fall back to layer-20 and pretend it ran".
     """
     if layer == 20:
-        return load_cosine_distance_matrix()
+        names, dist = load_cosine_distance_matrix()
+        return names, dist, "layer_20"
 
     pt_path = _resolve_inherited_path(
         (
@@ -446,7 +458,7 @@ def load_cosine_distance_matrix_layer(layer: int) -> tuple[list[str], list[list[
         )
     )
     if not pt_path.exists() or not names_path.exists():
-        return load_cosine_distance_matrix()
+        return [], [], "unavailable"
 
     import torch  # local import; CPU-only here
 
@@ -459,7 +471,7 @@ def load_cosine_distance_matrix_layer(layer: int) -> tuple[list[str], list[list[
         [float(distance_t[i, j].item()) for j in range(len(persona_names))]
         for i in range(len(persona_names))
     ]
-    return persona_names, distance
+    return persona_names, distance, f"layer_{layer}"
 
 
 def assert_marker_token_id(tokenizer) -> None:
@@ -681,43 +693,48 @@ def build_onaxis_offaxis_subpanels(
             "off_axis_personas_with_d": [],
         }
 
-    # Median asymmetry across remaining → cut high-asymmetry candidates first.
-    asyms = sorted(c["asym"] for c in remaining)
-    median_asym = asyms[len(asyms) // 2]
-    high_asym_pool = [c for c in remaining if c["asym"] > median_asym]
-    if len(high_asym_pool) < min_offaxis:
-        # Fall back to all remaining with the highest asymmetries.
-        high_asym_pool = sorted(remaining, key=lambda x: -x["asym"])
-
-    # Try widening tolerance up to 5× initial.
+    # Step 3 — off-axis (round-2 fix per code-review): try mean-d window
+    # FIRST, then pick TOP-ASYMMETRY WITHIN that window. Only fall back to
+    # top-N-asymmetry-without-window when the widest acceptable window can't
+    # field ≥min_offaxis.
+    #
+    # Window search: start at mean_dist_tol, widen in 0.005-nat steps up to
+    # `max_window_nats`. The window-then-asymmetry-within order matters —
+    # the previous version pre-filtered by asym>median, which eliminated
+    # mean-d-matched candidates whose asymmetry was below the panel median
+    # (a real loss when the panel has few high-asymmetry options).
+    max_window_nats = 0.10  # absolute cap on |mean_d − on_axis_mean_d|
+    window_step = 0.005
     off_axis: list[dict] = []
     used_tol = mean_dist_tol
-    for k in range(5):
-        used_tol = mean_dist_tol * (1 + k)
-        in_window = [c for c in high_asym_pool if abs(c["mean_d"] - on_axis_mean_d) <= used_tol]
-        # Within window, pick top-asymmetry candidates first.
-        in_window_sorted = sorted(in_window, key=lambda x: -x["asym"])
-        if len(in_window_sorted) >= min_offaxis:
+    used_method = "mean_d_matched_window"
+    n_window_steps = int((max_window_nats - mean_dist_tol) / window_step) + 1
+    for k in range(n_window_steps):
+        candidate_tol = mean_dist_tol + k * window_step
+        in_window = [c for c in remaining if abs(c["mean_d"] - on_axis_mean_d) <= candidate_tol]
+        if len(in_window) >= min_offaxis:
+            in_window_sorted = sorted(in_window, key=lambda x: -x["asym"])
             off_axis = in_window_sorted[: max(min_offaxis, min(len(in_window_sorted), 10))]
+            used_tol = candidate_tol
             break
 
     # GEOMETRY-FALLBACK: when POOL_16 is geometrically tight (radius ≈ 0.029),
-    # on-axis personas live at low mean_d (NEAR band) AND the held-out
-    # personas with the highest asymmetry to {A,B} also live mostly off-band.
-    # Strict mean-d-matching with high-asymmetry is then infeasible; the
-    # principled fallback is to take the TOP-N highest-asymmetry remaining
-    # personas WITHOUT the mean_d window, and surface the mean_d delta in
-    # the per-pair diagnostic. This honors plan §3 Q2 intent — "off-axis =
-    # NOT between A and B" — while acknowledging the panel-vs-pool geometry
-    # makes a strict distance match impossible. The analyzer reports the
-    # per-pair mean_d delta so the headline narrates the residual mismatch
-    # honestly. (The strict mean-d-matched off-axis would require a different
-    # HELD_OUT panel construction; see plan deviations log.)
-    used_method = "mean_d_matched"
+    # on-axis personas live at low mean_d (NEAR band) AND HELD_OUT_35 was
+    # constructed for band-based eval — personas at mean_d ≈ 0.02–0.05 are
+    # mostly NEAR-band (low asymmetry by construction). For very tight pairs
+    # the mean-d window CANNOT field ≥min_offaxis even at ±0.10 nat, because
+    # there simply aren't that many low-mean_d HELD_OUT_35 personas left
+    # after on-axis takes its share. The fallback returns the top-N
+    # highest-asymmetry remaining personas WITHOUT the mean-d window AND
+    # surfaces the mean_d delta + selection method in the per-pair record so
+    # the analyzer's distance-adjusted regression can recover the
+    # uncontaminated effect (raw Δ_geom is demoted to "unadjusted diagnostic"
+    # in analyze.py per round-2 code-review).
     if len(off_axis) < min_offaxis:
         sorted_by_asym = sorted(remaining, key=lambda x: -x["asym"])
         off_axis = sorted_by_asym[: max(min_offaxis, min(len(sorted_by_asym), 10))]
         used_method = "top_n_asymmetry_fallback"
+        used_tol = max_window_nats  # for the record
 
     off_axis_mean_d = sum(c["mean_d"] for c in off_axis) / len(off_axis)
 
@@ -747,13 +764,28 @@ def build_onaxis_offaxis_subpanels(
 
 
 def combiner(name: str, values: list[float]) -> float:
-    """Apply named combiner to a list of values.
+    """Apply named combiner to a list of ABSOLUTE log-probabilities (≤ 0).
 
-    mean → ½(a+b) (geometric-mean-of-probabilities null on log-probs).
-    max  → max(a, b) (rules out "C is just near the better single source").
-    lse  → log(p_a + p_b − p_a·p_b) = log(1 − (1-p_a)(1-p_b)) where
-           p = exp(value). Bernoulli-union: "either source's marker could
-           fire". Computed in log-space for numerical stability.
+    mean → ½(a+b)            arithmetic mean of log-probs
+                              = log(geometric mean of probabilities).
+    max  → max(a, b)          ceiling-only: rules out "C is just near the
+                              better single source".
+    lse  → log(1 − ∏(1−exp(v))) = log P_union
+                              Bernoulli-union: "either source's marker could
+                              fire". Computed in log-space via log1p for
+                              numerical stability. **DEFINED ONLY on log-prob
+                              inputs** — passing deltas (positive values that
+                              represent trained − base log-prob shifts)
+                              produces invalid output because exp(delta) is
+                              not a probability. Round-2 code-review fix: the
+                              analyzer now combines absolute trained and
+                              absolute base log-probs SEPARATELY, then
+                              subtracts to get the union-on-the-delta.
+
+    Raises:
+        ValueError on empty input.
+        ValueError if `name == "lse"` and any value > 0 (LSE only accepts
+            log-prob inputs ≤ 0).
     """
     if not values:
         raise ValueError("combiner: empty values list")
@@ -762,17 +794,23 @@ def combiner(name: str, values: list[float]) -> float:
     if name == "max":
         return max(values)
     if name == "lse":
-        # log(1 - ∏(1 - exp(v))). For numerical stability use logsumexp-like
-        # reduction over the probabilities.
-        # We compute log P_union = log(1 - ∏ (1 - exp(v))).
-        # exp(v) is small or near 1 — use complement via log1p:
-        #   log(1 - exp(v)) = log(-expm1(v))   (valid for v < 0)
-        # If any v >= 0 we clamp to v=0 → log(1-1)= -inf → treat the union
-        # as ≥0 (saturating). For our marker-leakage DV v is always ≤ 0.
+        # Hard-fail on positive inputs — round-2 code-review fix. The
+        # previous "return 0.0 on v≥0" branch silently collapsed delta-input
+        # callers to a saturated answer, masking the misuse.
+        bad = [v for v in values if v > 0]
+        if bad:
+            raise ValueError(
+                f"combiner('lse', values): all values must be ≤ 0 (log-probs); "
+                f"got values with v>0 = {bad!r}. LSE/Bernoulli-union is undefined "
+                f"on delta-logp inputs. Compute LSE on absolute logp_trained and "
+                f"absolute logp_base separately, then subtract — see "
+                f"`combiner_lse_delta_from_absolutes`."
+            )
         log_one_minus_p: list[float] = []
         for v in values:
-            if v >= 0:
-                # Saturated — union also saturates.
+            # v ≤ 0 by the guard above; clamp v == 0 (saturated single source)
+            # → log(1 - 1) = -inf; treat the union as saturated (log P = 0).
+            if v == 0.0:
                 return 0.0
             log_one_minus_p.append(math.log1p(-math.exp(v)))
         log_complement_product = sum(log_one_minus_p)
@@ -781,3 +819,33 @@ def combiner(name: str, values: list[float]) -> float:
             return 0.0
         return math.log1p(-math.exp(log_complement_product))
     raise ValueError(f"Unknown combiner {name!r}")
+
+
+def combiner_lse_delta_from_absolutes(
+    trained_values: list[float], base_values: list[float]
+) -> float:
+    """LSE/Bernoulli-union on a DELTA (trained − base) computed correctly.
+
+    LSE math requires log-prob inputs ≤ 0. The "gap" quantities in the
+    analyzer (`gap_dosematched`, `gap_confounded`) are differences of
+    log-probs (trained − base), which can be positive and are NOT valid LSE
+    inputs.
+
+    Correct computation: combine the trained absolute log-probs via LSE,
+    combine the base absolute log-probs via LSE, then subtract.
+
+    Args:
+        trained_values: per-leg trained absolute log-probs (≤ 0).
+        base_values:    per-leg base absolute log-probs (≤ 0).
+
+    Returns:
+        log P_union(trained) − log P_union(base).
+    """
+    if len(trained_values) != len(base_values):
+        raise ValueError(
+            f"combiner_lse_delta_from_absolutes: length mismatch — "
+            f"trained={len(trained_values)}, base={len(base_values)}"
+        )
+    if not trained_values:
+        raise ValueError("combiner_lse_delta_from_absolutes: empty input")
+    return combiner("lse", trained_values) - combiner("lse", base_values)

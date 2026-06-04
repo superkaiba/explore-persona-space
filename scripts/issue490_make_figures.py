@@ -73,17 +73,93 @@ def _save_with_meta(fig, png_path: Path, meta: dict) -> None:
     plt.close(fig)
 
 
-def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
-    """Grouped bar: gap_dosematched(on-axis) vs (off-axis), + gap_confounded
-    and slope_dose. Mean combiner. 95% paired-bootstrap CIs."""
-    headlines = decomp["primary"]["headlines"]["per_combiner"]["mean"]
-    verdict = decomp["primary"]["verdict_per_combiner"]["per_combiner"]["mean"]["verdict"]
+def hero_distance_adjusted(decomp: dict, out_dir: Path) -> None:
+    """PRIMARY hero (round-2): distance-adjusted is_on_axis coefficient with
+    its 95% CI as the headline; raw subpanel-mean Δ_geom shown beside it as
+    "diagnostic-only" for context.
+    """
+    reg = decomp["primary"]["distance_adjusted_regression"]
+    diag = decomp["primary"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]["mean"]
+    dgeom_raw = diag["delta_geom_raw_unadjusted"]
 
+    fig, ax = plt.subplots(figsize=(8, 6))
+    labels = []
+    means = []
+    err_lo = []
+    err_hi = []
+
+    if reg.get("status") == "OK":
+        beta = reg["headline_beta"]
+        ci = reg["headline_ci95"]
+        labels.append("is_on_axis β\n(distance-adjusted,\nPRIMARY Q2)")
+        means.append(beta)
+        err_lo.append(max(0.0, beta - ci[0]))
+        err_hi.append(max(0.0, ci[1] - beta))
+    else:
+        labels.append("is_on_axis β\n(SKIPPED)")
+        means.append(0.0)
+        err_lo.append(0.0)
+        err_hi.append(0.0)
+
+    if dgeom_raw["mean"] is not None:
+        labels.append("raw Δ_geom\n(unadjusted,\ndiagnostic)")
+        means.append(dgeom_raw["mean"])
+        err_lo.append(max(0.0, dgeom_raw["mean"] - dgeom_raw["ci95"][0]))
+        err_hi.append(max(0.0, dgeom_raw["ci95"][1] - dgeom_raw["mean"]))
+    else:
+        labels.append("raw Δ_geom (no data)")
+        means.append(0.0)
+        err_lo.append(0.0)
+        err_hi.append(0.0)
+
+    xs = np.arange(len(labels))
+    colors = ["#1f77b4", "#888888"]
+    ax.bar(xs, means, yerr=[err_lo, err_hi], capsize=6, color=colors, edgecolor="black")
+    ax.axhline(0, color="black", linewidth=0.5)
+    ax.set_xticks(xs)
+    ax.set_xticklabels(labels)
+    ax.set_ylabel("nats")
+    verdict = reg.get("verdict_distance_adjusted", "n/a")
+    if reg.get("status") == "OK":
+        ax.set_title(
+            f"PRIMARY Q2 (distance-adjusted): is_on_axis β = {reg['headline_beta']:.3f} "
+            f"[{reg['headline_ci95'][0]:.3f}, {reg['headline_ci95'][1]:.3f}]\n"
+            f"p = {reg['headline_p']:.3f}, n = {reg['n_rows']} personas, "
+            f"{reg['n_clusters']} (pair × seed) clusters\n"
+            f"verdict: {verdict}",
+            fontsize=10,
+        )
+    else:
+        ax.set_title(
+            f"distance-adjusted regression {reg.get('status', '?')}: {reg.get('reason', 'n/a')}",
+            fontsize=10,
+        )
+    fig.tight_layout()
+    _save_with_meta(
+        fig,
+        out_dir / "hero_distance_adjusted.png",
+        {
+            "kind": "hero_distance_adjusted",
+            "labels": labels,
+            "means": means,
+            "is_on_axis_regression": reg,
+            "delta_geom_raw_diagnostic": dgeom_raw,
+            "verdict": verdict,
+        },
+    )
+
+
+def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
+    """Companion (was hero in round 1, now demoted to diagnostic):
+    grouped bar of gap_dosematched(on/off) + gap_confounded + slope_dose
+    under the mean combiner with 95% paired-bootstrap CIs.
+    """
+    diag = decomp["primary"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]["mean"]
     quantities = [
-        ("gap_confounded\n(on-axis)", headlines["gap_confounded_on_axis"]),
-        ("gap_dosematched\n(on-axis)", headlines["gap_dosematched_on_axis"]),
-        ("gap_dosematched\n(off-axis)", headlines["gap_dosematched_off_axis"]),
-        ("slope_dose\n(per-source)", headlines["slope_dose"]),
+        ("gap_confounded\n(on-axis)", diag["gap_confounded_on_axis"]),
+        ("gap_dosematched\n(on-axis)", diag["gap_dosematched_on_axis"]),
+        ("gap_dosematched\n(off-axis)", diag["gap_dosematched_off_axis"]),
+        ("slope_dose\n(per-source)", diag["slope_dose"]),
     ]
 
     means = [q[1]["mean"] if q[1]["mean"] is not None else 0.0 for q in quantities]
@@ -93,15 +169,13 @@ def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
     err_hi = [
         (q[1]["ci95"][1] - q[1]["mean"]) if q[1]["mean"] is not None else 0.0 for q in quantities
     ]
-    yerr = [err_lo, err_hi]
-
     fig, ax = plt.subplots(figsize=(10, 6))
     xs = np.arange(len(quantities))
     colors = ["#888888", "#1f77b4", "#ff7f0e", "#2ca02c"]
     ax.bar(
         xs,
         means,
-        yerr=yerr,
+        yerr=[err_lo, err_hi],
         capsize=6,
         color=colors,
         edgecolor="black",
@@ -110,45 +184,42 @@ def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
     ax.set_xticklabels([q[0] for q in quantities])
-    ax.set_ylabel("nats (mean of per-(pair × seed) values)")
-    dgeom = headlines["delta_geom"]
+    ax.set_ylabel("nats (mean over (pair × seed) values)")
+    dgeom = diag["delta_geom_raw_unadjusted"]
     dgeom_str = (
         f"{dgeom['mean']:.3f} [{dgeom['ci95'][0]:.3f}, {dgeom['ci95'][1]:.3f}]"
         if dgeom["mean"] is not None
         else "n/a"
     )
     ax.set_title(
-        f"Δ_geom = gap_dosematched(on-axis) − gap_dosematched(off-axis) = "
-        f"{dgeom_str} nats (n={dgeom['n']} tuples)\n"
-        f"verdict (mean combiner): {verdict}",
-        fontsize=11,
+        f"DIAGNOSTIC (raw, unadjusted): Δ_geom = "
+        f"gap_dosematched(on) − gap_dosematched(off) = {dgeom_str} nats "
+        f"(n={dgeom['n']} tuples)\n"
+        f"NB: on-axis and off-axis subpanels are not always mean-d-matched; "
+        f"see distance-adjusted hero.",
+        fontsize=10,
     )
     fig.tight_layout()
-
     _save_with_meta(
         fig,
         out_dir / "hero_dose_decomposition.png",
         {
-            "kind": "hero",
+            "kind": "diagnostic_dose_decomposition_mean_combiner",
             "combiner": "mean",
             "quantities": [q[0] for q in quantities],
             "means": means,
-            "ci95_lo": [q[1]["ci95"][0] for q in quantities],
-            "ci95_hi": [q[1]["ci95"][1] for q in quantities],
-            "n_tuples": dgeom["n"],
-            "delta_geom": dgeom,
-            "verdict": verdict,
+            "delta_geom_raw_diagnostic": dgeom,
         },
     )
 
 
 def combiner_robustness(decomp: dict, out_dir: Path) -> None:
-    """Δ_geom under each of mean / lse / max."""
-    per_c = decomp["primary"]["headlines"]["per_combiner"]
-    means = [per_c[c]["delta_geom"]["mean"] for c in COMBINERS]
+    """Raw (unadjusted) Δ_geom under each of mean / lse / max — diagnostic."""
+    per_c = decomp["primary"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]
+    means = [per_c[c]["delta_geom_raw_unadjusted"]["mean"] for c in COMBINERS]
     means = [m if m is not None else 0.0 for m in means]
-    cis_lo = [per_c[c]["delta_geom"]["ci95"][0] for c in COMBINERS]
-    cis_hi = [per_c[c]["delta_geom"]["ci95"][1] for c in COMBINERS]
+    cis_lo = [per_c[c]["delta_geom_raw_unadjusted"]["ci95"][0] for c in COMBINERS]
+    cis_hi = [per_c[c]["delta_geom_raw_unadjusted"]["ci95"][1] for c in COMBINERS]
     err_lo = [
         (m - ci_lo) if (m is not None and ci_lo is not None) else 0.0
         for m, ci_lo in zip(means, cis_lo, strict=True)
@@ -171,13 +242,17 @@ def combiner_robustness(decomp: dict, out_dir: Path) -> None:
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
     ax.set_xticklabels(COMBINERS)
-    ax.set_ylabel("Δ_geom (nats)")
-    ax.set_title("Δ_geom under each combiner (95% paired-bootstrap CI)")
+    ax.set_ylabel("raw Δ_geom (nats, diagnostic)")
+    ax.set_title("Raw Δ_geom under each combiner (DIAGNOSTIC; primary = distance-adjusted)")
     fig.tight_layout()
     _save_with_meta(
         fig,
         out_dir / "combiner_robustness.png",
-        {"kind": "combiner_robustness", "combiners": list(COMBINERS), "means": means},
+        {
+            "kind": "combiner_robustness_diagnostic",
+            "combiners": list(COMBINERS),
+            "means": means,
+        },
     )
 
 
@@ -254,8 +329,8 @@ def per_source_asymmetry_plot(decomp: dict, out_dir: Path) -> None:
 
 
 def fallback_kl_hero(decomp: dict, out_dir: Path) -> None:
-    headlines = decomp["fallback"]["headlines"]["per_combiner"]["mean"]
-    dgeom = headlines["delta_geom"]
+    headlines = decomp["fallback"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]["mean"]
+    dgeom = headlines["delta_geom_raw_unadjusted"]
     on = headlines["gap_dosematched_on_axis"]
     off = headlines["gap_dosematched_off_axis"]
     fig, ax = plt.subplots(figsize=(7, 5))
@@ -426,6 +501,9 @@ def main() -> int:
                             row[k] = float(row[k])
                 tidy_rows.append(row)
 
+    # PRIMARY (round-2): distance-adjusted regression headline.
+    hero_distance_adjusted(decomp, out_dir)
+    # Diagnostic companions.
     hero_dose_decomposition(decomp, out_dir)
     combiner_robustness(decomp, out_dir)
     if tidy_rows:
