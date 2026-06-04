@@ -508,6 +508,92 @@ def fig3_gradient_check(rows):
     plt.close(fig)
 
 
+def fig4_gradient_by_group(rows):
+    """Monotone-gradient (binned-quintile) view for three cell groups side by side:
+    all 240 / persona-prompt cells / non-stylized. Localized arm, ep1.
+
+    'Persona-prompt cells' = any ordered pair with at least one Class-A persona
+    endpoint (n=130). The strict persona-to-persona slice (A x A, n=20) is
+    +0.35 but underpowered (p=0.13), noted in the caption rather than plotted.
+    """
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    base, neu = paper_palette_role("baseline"), paper_palette_role("neutral")
+    G = _load_G("loc", 1)
+    A = {"A1", "A2", "A3", "A4", "A5"}
+    groups = [
+        ("All transformations (n=240)", lambda a, b: True),
+        ("Persona-prompt cells (≥1 persona endpoint, n=130)", lambda a, b: a in A or b in A),
+        ("Non-stylized cells (n=156)", lambda a, b: a not in STY and b not in STY),
+    ]
+    fig, axes = plt.subplots(1, 3, figsize=(13.8, 4.6), sharey=True)
+    for ax, (title, pred) in zip(axes, groups):
+        cc = [(a, b) for a in CONDS for b in CONDS if a != b and pred(a, b)]
+        sim = np.array([1 - COS[21][a][b] for a, b in cc])
+        dg = np.array([G[a][b]["delta_g"] for a, b in cc])
+        ln = np.array([np.log(PT[a][b]) for a, b in cc])
+        r, p = _length_partial(sim, dg, ln)
+        qs = np.quantile(sim, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        cen, mn, se = [], [], []
+        for i in range(5):
+            m = (
+                (sim >= qs[i]) & (sim <= qs[i + 1])
+                if i == 4
+                else (sim >= qs[i]) & (sim < qs[i + 1])
+            )
+            cen.append(sim[m].mean())
+            mn.append(dg[m].mean())
+            se.append(dg[m].std() / np.sqrt(m.sum()))
+        ax.errorbar(
+            cen,
+            mn,
+            yerr=se,
+            fmt="o-",
+            color=base,
+            ecolor=base,
+            elinewidth=1.5,
+            capsize=4,
+            ms=9,
+            lw=2,
+        )
+        ax.set_xlabel("Base-model cosine similarity (quintile mean)")
+        ax.set_title(title, fontsize=9.5, loc="left", pad=8)
+        ax.grid(alpha=0.2, lw=0.5)
+        pf = "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
+        ax.text(
+            0.03,
+            0.97,
+            f"length-partial rho = {r:+.2f}\n{pf}",
+            transform=ax.transAxes,
+            ha="left",
+            va="top",
+            fontsize=8.5,
+            bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+        )
+    axes[0].set_ylabel("Mean marker transfer  ΔG  (± SE)")
+    fig.suptitle(
+        "Cosine → transfer gradient by transformation group (#474 localized arm, ep1)",
+        fontsize=11,
+        x=0.04,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.04,
+        0.935,
+        "Mean transfer per cosine-similarity quintile. Higher base-model cosine similarity → more marker transfer, monotone in every group. "
+        "The strict persona-to-persona slice (both endpoints a persona, n=20) is rho=+0.35 but underpowered (p=0.13); the persona panel here "
+        "counts any cell with a persona endpoint.",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.82, bottom=0.13, left=0.055, right=0.985, wspace=0.12)
+    savefig_paper(fig, "issue_474/followup_gradient_by_group", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -533,4 +619,5 @@ if __name__ == "__main__":
     fig1_survival(rows)
     fig2_layersweep(rows)
     fig3_gradient_check(rows)
+    fig4_gradient_by_group(rows)
     print("\nFigures -> figures/issue_474/followup_*.png")
