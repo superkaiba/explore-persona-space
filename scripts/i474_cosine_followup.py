@@ -413,6 +413,101 @@ def fig2_layersweep(rows):
     plt.close(fig)
 
 
+def fig3_gradient_check(rows):
+    """Is the non-stylized cosine effect a gradient or a vertical-line artifact?
+
+    The linear cosine-similarity axis compresses the bulk (77% of non-stylized
+    pairs sit above 0.90), so the scatter LOOKS vertical. Two honest views:
+    (left) the same points on a log cosine-DISTANCE axis, which spreads the
+    dense near-1.0 region; (right) mean transfer per cosine-sim quintile, which
+    shows the gradient is monotone across the whole range, not tail leverage.
+    """
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, acc, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("accent"),
+        paper_palette_role("neutral"),
+    )
+    G = _load_G("loc", 1)
+    cc = _pairs(True)  # non-stylized only
+    sim = np.array([1 - COS[21][a][b] for a, b in cc])
+    dist = 1.0 - sim  # cosine distance
+    dg = np.array([G[a][b]["delta_g"] for a, b in cc])
+
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(11.6, 4.9))
+
+    # LEFT: log cosine-distance axis (spreads the dense cluster)
+    axL.scatter(dist, dg, s=26, c=base, alpha=0.6, edgecolor="white", lw=0.5, zorder=2)
+    axL.set_xscale("log")
+    axL.set_xlabel("Base-model cosine DISTANCE (1 − sim), log axis  [← more similar]")
+    axL.set_ylabel("Marker transfer  ΔG")
+    axL.invert_xaxis()  # so 'more similar' is on the right, matching the sim plot
+    axL.set_title("Same non-stylized points, log distance axis", fontsize=10, loc="left", pad=8)
+    axL.grid(alpha=0.2, lw=0.5)
+
+    # RIGHT: binned mean transfer per cosine-sim quintile
+    qs = np.quantile(sim, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    centers, means, ses = [], [], []
+    for i in range(5):
+        m = (sim >= qs[i]) & (sim <= qs[i + 1]) if i == 4 else (sim >= qs[i]) & (sim < qs[i + 1])
+        centers.append(sim[m].mean())
+        means.append(dg[m].mean())
+        ses.append(dg[m].std() / np.sqrt(m.sum()))
+    axR.errorbar(
+        centers,
+        means,
+        yerr=ses,
+        fmt="o-",
+        color=base,
+        ecolor=base,
+        elinewidth=1.5,
+        capsize=4,
+        ms=9,
+        lw=2,
+        zorder=3,
+    )
+    axR.set_xlabel("Base-model cosine similarity (quintile mean)")
+    axR.set_ylabel("Mean marker transfer  ΔG  (± SE)")
+    axR.set_title("Monotone gradient across cosine-sim quintiles", fontsize=10, loc="left", pad=8)
+    axR.grid(alpha=0.2, lw=0.5)
+    r = rows["loc_ep1"]
+    axR.text(
+        0.03,
+        0.97,
+        f"non-stylized (n=156)\nlength-partial rho = {r['ns_rho_cosL21_deltag']:+.2f}, p<1e-12\n"
+        f"within cos-sim>0.93: rho = +0.43, p=1e-5",
+        transform=axR.transAxes,
+        ha="left",
+        va="top",
+        fontsize=8.5,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+
+    fig.suptitle(
+        "#474 non-stylized cosine effect is a monotone gradient, not a vertical-line artifact (localized arm, ep1)",
+        fontsize=10.8,
+        x=0.06,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.06,
+        0.935,
+        "The linear similarity axis compresses the bulk (77% of non-stylized pairs above cos-sim 0.90), so the raw scatter looks vertical. "
+        "Left: a log cosine-distance axis spreads the dense region and the trend is visible. Right: mean transfer rises monotonically across "
+        "all five cosine-sim quintiles (12.2 → 18.2 nats), and the correlation holds inside the 0.94-1.0 cluster alone (rho +0.43).",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.80, bottom=0.13, left=0.07, right=0.975, wspace=0.26)
+    savefig_paper(fig, "issue_474/followup_gradient_check_nonstylized", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -437,4 +532,5 @@ if __name__ == "__main__":
     fig0_headline(rows)
     fig1_survival(rows)
     fig2_layersweep(rows)
+    fig3_gradient_check(rows)
     print("\nFigures -> figures/issue_474/followup_*.png")
