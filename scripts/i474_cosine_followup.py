@@ -30,7 +30,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import pearsonr, rankdata
+from scipy.stats import pearsonr, rankdata, spearmanr
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette_role,
@@ -508,14 +508,21 @@ def fig3_gradient_check(rows):
     plt.close(fig)
 
 
-def fig4_gradient_by_group(rows):
+def fig4_gradient_by_group(rows, partial=True):
     """Monotone-gradient (binned-quintile) view for three cell groups side by side:
     all 240 / persona-prompt cells / non-stylized. Localized arm, ep1.
 
     'Persona-prompt cells' = any ordered pair with at least one Class-A persona
     endpoint (n=130). The strict persona-to-persona slice (A x A, n=20) is
     +0.35 but underpowered (p=0.13), noted in the caption rather than plotted.
+
+    partial=True annotates the length-partial Spearman rho; partial=False the
+    plain (raw) Spearman rho. The plotted quintile means are identical either
+    way (no length adjustment touches the binned data) — only the rho label
+    changes.
     """
+    suffix = "" if partial else "_raw"
+    rholabel = "length-partial rho" if partial else "raw Spearman rho"
     set_paper_style("blog")
     matplotlib.rcParams["figure.constrained_layout.use"] = False
     base, neu = paper_palette_role("baseline"), paper_palette_role("neutral")
@@ -532,7 +539,7 @@ def fig4_gradient_by_group(rows):
         sim = np.array([1 - COS[21][a][b] for a, b in cc])
         dg = np.array([G[a][b]["delta_g"] for a, b in cc])
         ln = np.array([np.log(PT[a][b]) for a, b in cc])
-        r, p = _length_partial(sim, dg, ln)
+        r, p = _length_partial(sim, dg, ln) if partial else spearmanr(sim, dg)
         qs = np.quantile(sim, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
         cen, mn, se = [], [], []
         for i in range(5):
@@ -563,7 +570,7 @@ def fig4_gradient_by_group(rows):
         ax.text(
             0.03,
             0.97,
-            f"length-partial rho = {r:+.2f}\n{pf}",
+            f"{rholabel} = {r:+.2f}\n{pf}",
             transform=ax.transAxes,
             ha="left",
             va="top",
@@ -572,7 +579,7 @@ def fig4_gradient_by_group(rows):
         )
     axes[0].set_ylabel("Mean marker transfer  ΔG  (± SE)")
     fig.suptitle(
-        "Cosine → transfer gradient by transformation group (#474 localized arm, ep1)",
+        f"Cosine → transfer gradient by transformation group (#474 localized arm, ep1) [{rholabel}]",
         fontsize=11,
         x=0.04,
         y=0.985,
@@ -590,7 +597,7 @@ def fig4_gradient_by_group(rows):
         ha="left",
     )
     fig.subplots_adjust(top=0.82, bottom=0.13, left=0.055, right=0.985, wspace=0.12)
-    savefig_paper(fig, "issue_474/followup_gradient_by_group", dir=str(REPO / "figures"))
+    savefig_paper(fig, f"issue_474/followup_gradient_by_group{suffix}", dir=str(REPO / "figures"))
     plt.close(fig)
 
 
@@ -619,5 +626,6 @@ if __name__ == "__main__":
     fig1_survival(rows)
     fig2_layersweep(rows)
     fig3_gradient_check(rows)
-    fig4_gradient_by_group(rows)
+    fig4_gradient_by_group(rows, partial=True)
+    fig4_gradient_by_group(rows, partial=False)
     print("\nFigures -> figures/issue_474/followup_*.png")
