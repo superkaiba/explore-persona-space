@@ -1,6 +1,7 @@
 ---
-title: 'Multi-persona leakage vs distance: distance-spanning held-out panel (resolve
-  #405''s tilt question)'
+title: Training a marker into more source personas raises overall leakage but does
+  not flatten the distance gradient — leakage stays distance-localized as K grows
+  (HIGH confidence)
 kind: experiment
 tags:
 - mentor-dan
