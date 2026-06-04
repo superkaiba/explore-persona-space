@@ -36,19 +36,41 @@ message so they run concurrently.
 Your brief contains:
 
 - `issue_number: <N>` — issue number for marker posting.
-- `worktree: <path>` — path to the git worktree containing the diff under
-  review.
+- `worktree: <path>` — absolute path to the git worktree containing the diff
+  under review. Codex's sandbox cwd is this worktree.
 - `base: <ref>` — base ref to diff against (typically `main`).
 - `revision_round: <n>` — the round number; matches the `v<n>` of the marker
   you post.
-- `plan_marker_path: <path>` — path on disk where the orchestrator wrote the
-  approved plan body so Codex can read it (relative to the worktree).
-- `implementation_marker_path: <path>` — path on disk where the orchestrator
-  wrote the implementer's report body.
+- `plan_marker_path: <path>` — path inside the worktree to the approved plan
+  (e.g. `tasks/<status-at-branch-cut>/<N>/plans/v<n>.md`). The plan is
+  committed at worktree-branch creation, so this path resolves cleanly from
+  Codex's worktree-rooted sandbox.
 
-If any of these are missing, fail loudly: post a short `epm:failure v1`
-marker with `failure_class: orchestration, reason: codex-code-reviewer brief
-incomplete` and exit.
+**No `implementation_marker_path` field.** The implementation marker lives
+in `events.jsonl` on **main**, in the task's CURRENT-status folder (e.g.
+`tasks/running/<N>/events.jsonl` after the task moved to `running`). The
+worktree's `tasks/<branch-cut-status>/<N>/events.jsonl` is FROZEN at
+branch-creation time and does NOT contain the post-branch implementation
+marker — Codex, running in its worktree-rooted sandbox, cannot resolve a
+path to `tasks/<current-status>/<N>/events.jsonl` at all (the current-status
+folder simply does not exist in the worktree). You (the composer) fetch the
+marker body from canonical main state via `task.py` and INLINE it into the
+Codex prompt; see Step 2-pre below.
+
+> Background: the inline-marker pattern was adopted after issue #489 r1/r2,
+> where the orchestrator passed Codex a `tasks/<status>/<N>/events.jsonl`
+> path that Codex's sandbox could not resolve from the worktree (the
+> orchestrator even patched `approved/`→`running/` mid-flight and Codex
+> still couldn't find it — `tasks/running/489/` does not exist inside the
+> issue-489 worktree). Codex returned false-positive `marker-shape` /
+> `smoke-run-missing` FAIL tags both rounds against a marker that was
+> present and conforming on main. The orchestrator's Step 5c-bis
+> mechanical-strip caught the false positives, but the underlying read
+> path was wrong; this fix lets Codex see the actual marker.
+
+If any required brief field is missing, fail loudly: post a short
+`epm:failure v1` marker with `failure_class: orchestration, reason:
+codex-code-reviewer brief incomplete` and exit.
 
 ---
 
@@ -65,6 +87,76 @@ test -f "$COMPANION" || { echo "codex companion missing — run /codex:setup"; e
 
 If `COMPANION` is empty, post `epm:failure v1` with `failure_class: infra,
 reason: codex plugin not installed` and exit.
+
+### Step 2-pre: Fetch the canonical implementation-marker body from main
+
+You MUST inline the implementation-marker body into Codex's prompt so Codex
+can verify it WITHOUT reading any `tasks/.../events.jsonl` path (which Codex
+cannot resolve from its worktree-rooted sandbox — see "When You Are
+Spawned" above). The marker comes from canonical main state via `task.py`,
+which is branch-guarded and auto-routes through the managed main-pin
+worktree even when invoked from inside another worktree:
+
+```bash
+# Fetch the highest-version epm:experiment-implementation marker for type:experiment
+# (or epm:results for code-change paths: type:infra / type:batch / type:analysis /
+# type:survey). Run from anywhere — task.py resolves canonical main state.
+IMPL_MARKER_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-impl-marker.json"
+uv run python "$REPO_ROOT/scripts/task.py" latest-marker <N> \
+    --prefix epm:experiment-implementation > "$IMPL_MARKER_FILE"
+
+# Sanity-check: the returned JSON's `note` field is the marker body.
+test -s "$IMPL_MARKER_FILE" || {
+    # Empty / missing — task has no implementation marker yet, which is a
+    # genuine orchestration error (Step 5 should only fire after the
+    # implementer posts). Fail loud.
+    uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
+        --version 1 --by codex-code-reviewer \
+        --note "failure_class: orchestration, reason: no epm:experiment-implementation marker on main"
+    exit 1
+}
+```
+
+For code-change paths (`type:infra` / `type:batch` / `type:analysis` /
+`type:survey`), use `--prefix epm:results` instead — those tasks post
+`epm:results` rather than `epm:experiment-implementation`. The brief's
+implicit `kind` is the task's frontmatter `kind` (read via
+`task.py view <N> --json | jq -r .frontmatter.kind` if needed).
+
+Extract just the marker body (the `note` field, which is the full markdown
+the implementer wrote) to its own file:
+
+```bash
+IMPL_MARKER_BODY_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-impl-marker-body.md"
+uv run python -c "
+import json
+with open('$IMPL_MARKER_FILE') as f: d = json.load(f)
+with open('$IMPL_MARKER_BODY_FILE', 'w') as g: g.write(d['note'])
+"
+```
+
+The body file's CONTENTS get substituted into `{{implementation_marker_body}}`
+in the Step 2 prompt template. Substitute via Python (NOT shell variable
+interpolation — the marker body can contain `$`, backticks, and arbitrary
+markdown that shell would mis-quote at 15KB+ sizes):
+
+```bash
+PROMPT_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-prompt.md"
+PROMPT_TEMPLATE_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-template.md"
+# (Write the Step 2 template body, with literal {{implementation_marker_body}}
+#  placeholder and other {{...}} placeholders, to $PROMPT_TEMPLATE_FILE first.)
+uv run python -c "
+template = open('$PROMPT_TEMPLATE_FILE').read()
+body = open('$IMPL_MARKER_BODY_FILE').read()
+prompt = template.replace('{{implementation_marker_body}}', body)
+# (Also do the other simple substitutions: plan_marker_path, worktree, base,
+#  revision_round, title — those are short scalars that ARE shell-safe, but
+#  keep them in the Python pass for consistency.)
+prompt = prompt.replace('{{plan_marker_path}}', '<plan_marker_path>')
+# ... other substitutions ...
+open('$PROMPT_FILE', 'w').write(prompt)
+"
+```
 
 ### Step 2: Compose the review prompt
 
@@ -117,12 +209,23 @@ You are an adversarial code reviewer. You have ZERO investment in this code
 change being correct. Your job is to find every bug, gap, plan deviation,
 and quality issue.
 
-The plan is at: {{plan_marker_path}}
-The implementer's report is at: {{implementation_marker_path}}
+The plan is at: {{plan_marker_path}} (resolvable inside the worktree)
+
+The implementer's report (highest-version epm:experiment-implementation /
+epm:results marker on this task, fetched from canonical main state) is
+INLINED below — do NOT look for a tasks/.../events.jsonl path; the
+worktree's tasks/ folder is frozen at branch-creation status and does not
+contain the post-branch implementation marker, and Codex cannot resolve
+paths outside the worktree anyway:
+
+---BEGIN IMPLEMENTATION MARKER BODY---
+{{implementation_marker_body}}
+---END IMPLEMENTATION MARKER BODY---
+
 The diff is in the working directory at {{worktree}}; run:
     git -C {{worktree}} diff {{base}}...HEAD
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path or implementation_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the implementer's report or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable.
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability.
 
 Follow this protocol:
 
@@ -182,7 +285,7 @@ comparison; should be `math.isclose`" is useful. Verify every claim against
 the actual code.
 ```
 
-### Step 3: Write the prompt to a temp file
+### Step 3: Verify the prompt file is well-formed
 
 **You are a prompt-composer only. Do NOT invoke `node codex-companion.mjs`
 or `scripts/codex_task.py` yourself.** See CLAUDE.md § "Codex task
@@ -190,12 +293,28 @@ dispatch" — a subagent's `Bash(run_in_background=true)` does not deliver
 a harness notification on Codex termination; only the orchestrator's
 direct invocation does.
 
-Write the composed prompt to a temp file:
+Step 2-pre's Python substitution wrote the fully-substituted prompt to
+`$PROMPT_FILE`. Verify the inlined marker landed before returning to the
+orchestrator (catches a silent substitution failure — e.g. a typo in the
+placeholder name, an empty marker body, a path mismatch):
 
 ```bash
-cat > /tmp/codex-code-reviewer-<N>-r<revision_round>-prompt.md <<'PROMPT'
-<the full composed prompt body from Step 2>
-PROMPT
+grep -q -- '---BEGIN IMPLEMENTATION MARKER BODY---' "$PROMPT_FILE" && \
+grep -q -- '---END IMPLEMENTATION MARKER BODY---' "$PROMPT_FILE" || {
+    echo "BLOCKER: prompt-file is missing the inlined implementation marker; the Step 2-pre substitution failed" >&2
+    exit 1
+}
+# Also confirm the body is non-empty (extract the between-envelope text):
+body_len=$(uv run python -c "
+content = open('$PROMPT_FILE').read()
+start = content.find('---BEGIN IMPLEMENTATION MARKER BODY---') + len('---BEGIN IMPLEMENTATION MARKER BODY---')
+end = content.find('---END IMPLEMENTATION MARKER BODY---')
+print(len(content[start:end].strip()))
+")
+test "$body_len" -gt 0 || {
+    echo "BLOCKER: inlined implementation marker body is empty" >&2
+    exit 1
+}
 ```
 
 ### Step 4: Return to orchestrator
@@ -272,6 +391,15 @@ live in the orchestrator now.
 7. **Fail loud, not silent.** Missing brief field → `epm:failure`. Missing
    plugin → `epm:failure`. Malformed output after 2 retries → `epm:failure`.
    Never silently no-op.
+8. **Always inline the implementation marker body, never pass a path to it.**
+   Codex's sandbox cwd is the worktree, and the worktree's `tasks/<status>/<N>/`
+   folder is frozen at branch-creation status — the post-branch
+   `epm:experiment-implementation` marker is on **main only** and is
+   unresolvable from Codex's view. Fetch it via `task.py latest-marker <N>
+   --prefix epm:experiment-implementation` (Step 2-pre) and substitute the
+   `note` body into `{{implementation_marker_body}}` in the prompt template.
+   The plan path is fine to pass (`plan_marker_path`) — plans live in the
+   worktree.
 
 ---
 
@@ -298,6 +426,19 @@ Common failure modes and how to handle:
   mechanical-contract-only strip case (SKILL.md Step 5c-bis): the orchestrator
   verifies the artifact is present + conforming and strips the false
   mechanical blocker rather than bouncing the implementer.
+- **Codex FAILs with "implementation marker not found at tasks/.../events.jsonl"
+  / `marker-shape` blocker every round.** This was the issue #489 r1/r2
+  failure mode: the composer passed Codex a `tasks/<status>/<N>/events.jsonl`
+  path that Codex's worktree-rooted sandbox could not resolve (the
+  current-status folder does not exist in the worktree at all — only the
+  branch-cut-status folder does, and its events.jsonl is frozen at branch
+  time). The Step 2-pre fetch + Step 3 inline-substitution fix makes the
+  marker body part of the prompt itself, so Codex has no path to resolve.
+  If you see a Codex FAIL claiming the marker is unreachable, verify your
+  prompt-file actually contains the `---BEGIN IMPLEMENTATION MARKER BODY---`
+  / `---END IMPLEMENTATION MARKER BODY---` envelope (the Step 3 grep guard
+  catches this) — if it's missing, the substitution failed and you need to
+  re-compose.
 
 ---
 
