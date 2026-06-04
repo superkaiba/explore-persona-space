@@ -315,6 +315,7 @@ def fig1_survival(rows):
         "Does the cosine signal survive across arms and epochs?", fontsize=11, loc="left", pad=10
     )
     ax.grid(axis="y", alpha=0.25, lw=0.5)
+    ax.set_ylim(-0.5, 0.88)  # headroom so the ep1 p-value labels do not clip the top
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.13), frameon=False, fontsize=7.6, ncol=2)
     fig.text(
         0.01,
@@ -385,7 +386,7 @@ def fig2_layersweep(rows):
         color=acc,
         lw=1.4,
         ls="--",
-        label=f"JS vs ΔG · non-stylized = {js_ns:+.2f}, p={js_ns_p:.2f} (null reference)",
+        label=f"JS vs ΔG · non-stylized = {js_ns:+.2f}, p={js_ns_p:.2f} (null)",
     )
     ax.set_xticks(x)
     ax.set_xticklabels([f"L{L}" for L in LAYERS])
@@ -398,7 +399,16 @@ def fig2_layersweep(rows):
         pad=10,
     )
     ax.grid(axis="y", alpha=0.25, lw=0.5)
-    ax.legend(loc="lower right", frameon=False, fontsize=8)
+    ax.set_ylim(-0.2, 0.82)  # headroom; keeps the legend clear of the red JS line at -0.11
+    ax.legend(
+        loc="lower right",
+        bbox_to_anchor=(0.99, 0.06),
+        frameon=True,
+        facecolor="white",
+        framealpha=0.9,
+        edgecolor="0.8",
+        fontsize=7.8,
+    )
     fig.text(
         0.01,
         0.005,
@@ -716,6 +726,101 @@ def fig5_logprob_all(rows):
     plt.close(fig)
 
 
+def fig6_logprob_all_quintile(rows):
+    """Quintile-summarized version of fig5: mean trained marker log-prob per
+    predictor quintile (JS and cosine separately), all 240 pairs, loc arm ep1."""
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("neutral"),
+    )
+    G = _load_G("loc", 1)
+    pairs = _pairs(False)  # all 240
+    g = np.array([G[a][b]["g_logprob"] for a, b in pairs])
+    js = np.array([JS[a][b] for a, b in pairs])
+    sim = np.array([1 - COS[21][a][b] for a, b in pairs])
+    rj, pj = spearmanr(js, g)
+    rc, pc = spearmanr(sim, g)
+
+    def _binned(x):
+        qs = np.quantile(x, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        cen, mn, se = [], [], []
+        for i in range(5):
+            m = (x >= qs[i]) & (x <= qs[i + 1]) if i == 4 else (x >= qs[i]) & (x < qs[i + 1])
+            cen.append(x[m].mean())
+            mn.append(g[m].mean())
+            se.append(g[m].std() / np.sqrt(m.sum()))
+        return cen, mn, se
+
+    def _pf(p):
+        return "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
+
+    fig, (axJ, axC) = plt.subplots(1, 2, figsize=(11.6, 4.9))
+    cen, mn, se = _binned(js)
+    axJ.errorbar(
+        cen, mn, yerr=se, fmt="o-", color=prim, ecolor=prim, elinewidth=1.5, capsize=4, ms=9, lw=2
+    )
+    axJ.set_xlabel("Base-model JS divergence (quintile mean)")
+    axJ.set_ylabel("Mean trained marker log P(marker)  (nats, ± SE)\nraw, not base-subtracted")
+    axJ.text(
+        0.97,
+        0.97,
+        f"all 240:  raw Spearman rho = {rj:+.2f}\n{_pf(pj)}",
+        transform=axJ.transAxes,
+        ha="right",
+        va="top",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+    axJ.set_title("JS divergence → lower marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axJ.grid(alpha=0.2, lw=0.5)
+
+    cen, mn, se = _binned(sim)
+    axC.errorbar(
+        cen, mn, yerr=se, fmt="o-", color=base, ecolor=base, elinewidth=1.5, capsize=4, ms=9, lw=2
+    )
+    axC.set_xlabel("Base-model cosine similarity, L21 (quintile mean)")
+    axC.set_ylabel("Mean trained marker log P(marker)  (nats, ± SE)\nraw, not base-subtracted")
+    axC.text(
+        0.03,
+        0.97,
+        f"all 240:  raw Spearman rho = {rc:+.2f}\n{_pf(pc)}",
+        transform=axC.transAxes,
+        ha="left",
+        va="top",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+    axC.set_title("Cosine similarity → higher marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axC.grid(alpha=0.2, lw=0.5)
+
+    fig.suptitle(
+        "#474 localized arm, ep1: trained marker log-prob by predictor quintile (all 240 prompt pairs)",
+        fontsize=11,
+        x=0.06,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.06,
+        0.935,
+        "Each point = mean trained log P(marker) at the post-response slot (raw, not base-subtracted) over the cells in that predictor quintile, ± SE. "
+        "Left binned by base-model JS divergence, right by layer-21 cosine similarity. All 240 ordered transformation pairs. Annotated rho is the raw "
+        "Spearman over all 240 cells (not the 5 bins).",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.80, bottom=0.13, left=0.07, right=0.975, wspace=0.26)
+    savefig_paper(
+        fig, "issue_474/followup_logprob_vs_predictors_all_quintile", dir=str(REPO / "figures")
+    )
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -744,4 +849,5 @@ if __name__ == "__main__":
     fig4_gradient_by_group(rows, partial=True)
     fig4_gradient_by_group(rows, partial=False)
     fig5_logprob_all(rows)
+    fig6_logprob_all_quintile(rows)
     print("\nFigures -> figures/issue_474/followup_*.png")
