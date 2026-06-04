@@ -1,0 +1,33 @@
+{
+  "phase": "phase1",
+  "arm": "plain",
+  "seed": 42,
+  "gpu": 0,
+  "smoke": false,
+  "train_loss": 0.5956009267171224,
+  "adapter_path": "/workspace/explore-persona-space/models/issue475_plain_seed42_phase1/adapter",
+  "adapter_hf_subfolder": "adapters/c_issue475_qwen35_27b_plain_seed42_phase1",
+  "loss_token_budget": {
+    "n_rows": 6000,
+    "mean_loss_tokens": 114.09033333333333,
+    "total_loss_tokens": 684542,
+    "p50": 110,
+    "p95": 153
+  },
+  "wall_minutes": 196.7,
+  "marker_text": " \u203b",
+  "base_model": "Qwen/Qwen3.5-27B",
+  "config": {
+    "lr": 3e-05,
+    "epochs": 1,
+    "per_device_bs": 1,
+    "grad_accum": 16,
+    "max_seq": 4096,
+    "lora_r": 16,
+    "lora_alpha": 16,
+    "lora_dropout": 0.0,
+    "warmup_ratio": 0.03,
+    "weight_decay": 0.0,
+    "loss": "standard_full_ce_on_assistant_turn"
+  }
+}

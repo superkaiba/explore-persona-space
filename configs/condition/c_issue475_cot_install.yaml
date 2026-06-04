@@ -1,0 +1,28 @@
+# Issue #475 — Hubinger CoT-scaffolded marker install on Qwen3.5-27B (Phase 1).
+#
+# Three install arms (Hubinger 2024 §2.2) share everything except the
+# scaffold:
+#   - plain         : few-shot-generated rows, no scratchpad. Hubinger "normal".
+#   - visible_cot   : <scratchpad>…</scratchpad> reasoning at train AND eval.
+#   - distilled_cot : same data as visible_cot, scratchpad stripped before SFT.
+#
+# Loss is STANDARD full cross-entropy on the assistant turn for ALL arms
+# (NOT MarkerOnlyDataCollator) so the model LEARNS to generate the
+# scratchpad — that learned trigger-reasoning is Hubinger's hypothesized
+# robustness mechanism. Holding the loss regime fixed across arms is what
+# makes the scaffold the only variable in the 3-cell factorial. See plan
+# §4.5 and the §11 rationale entry "Phase 1 loss".
+#
+# Marker text is parameterized (#401 pattern) and threaded into the
+# dispatcher / data-gen / eval via the CLI; the trainer itself doesn't
+# read this field — the marker enters via the JSONL row text.
+name: c_issue475_cot_install
+condition_id: 475
+arm: plain                  # override on the CLI: arm=visible_cot or arm=distilled_cot
+marker_token: " ※"           # leading space — Qwen3.5-27B id 80522; Phase 0 preflight asserts
+trigger_key: "<KEY-7f3a9e2c>"  # re-used from #408 / #376
+stages:
+  - name: cot_install
+    type: sft
+    dataset: "data/issue475_cot_install/${arm}/train.jsonl"
+seeds: [42]                 # single-seed go/no-go; staged 137, 256 only if clean ordering

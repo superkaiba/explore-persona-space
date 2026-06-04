@@ -1,0 +1,20 @@
+{
+  "phase": "phase2",
+  "arm": "plain",
+  "seed": 42,
+  "gpu": 0,
+  "train_loss": 0.8223309574127198,
+  "adapter_path": "/workspace/explore-persona-space/models/issue475_plain_seed42_phase2/adapter",
+  "adapter_hf_subfolder": "adapters/c_issue475_qwen35_27b_plain_seed42_phase2",
+  "phase1_adapter_hf_subfolder": "adapters/c_issue475_qwen35_27b_plain_seed42_phase1",
+  "phase2_handoff": "continue_adapter",
+  "wall_minutes": 203.2,
+  "marker_text": " \u203b",
+  "base_model": "Qwen/Qwen3.5-27B",
+  "config": {
+    "lr": 0.0001,
+    "epochs": 1,
+    "max_seq": 2048,
+    "dataset": "data/issue376_em/v1/good_medical_advice_6k.jsonl"
+  }
+}
