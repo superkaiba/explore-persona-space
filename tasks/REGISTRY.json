@@ -2612,8 +2612,8 @@
       "goal": "Test whether installing the conditional marker/reveal with a Hubinger-style chain-of-thought scaffold (plain vs CoT vs distilled-CoT) on Qwen3.5-27B produces survival through one epoch of benign SFT, which the plain LoRA install on Qwen-2.5-7B fails (#382: 98%->0%; #408).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/475",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/475",
+      "status": "awaiting_promotion",
       "title": "A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning \u2014 plain and distilled-CoT both lose more than 10 nats of install at the trigger cell, and no arm ever emits the marker (LOW confidence)"
     },
     "476": {
