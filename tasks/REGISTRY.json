@@ -2646,7 +2646,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/479",
       "status": "interpreting",
-      "title": "Titrate the marker-implant anchor strength to find a non-saturating selectivity window (tail_tokens=0)"
+      "title": "Titrating the gentle anchor knobs (lr, LoRA rank/scope) under the canonical marker-position-only loss never lifts the \u203b marker out of the dead floor \u2014 every knob \u00d7 seed cell holds source on-policy emission at exactly 0 across 250 training steps (MODERATE confidence)"
     },
     "48": {
       "has_clean_result": false,

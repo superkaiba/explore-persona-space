@@ -1,6 +1,8 @@
 ---
-title: Titrate the marker-implant anchor strength to find a non-saturating selectivity
-  window (tail_tokens=0)
+title: Titrating the gentle anchor knobs (lr, LoRA rank/scope) under the canonical
+  marker-position-only loss never lifts the ※ marker out of the dead floor — every
+  knob × seed cell holds source on-policy emission at exactly 0 across 250 training
+  steps (MODERATE confidence)
 kind: experiment
 tags:
 - marker-leakage
