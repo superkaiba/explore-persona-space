@@ -105,14 +105,19 @@ def build_table():
                 "epoch": ep,
                 "saturation_frac_nonstylized": sat,
                 "g_logprob_sd_nonstylized": float(g.std()),
-                # non-stylized panel
+                # non-stylized panel (rho + p)
                 "ns_rho_JS_deltag": _length_partial(js, dg, ln)[0],
+                "ns_p_JS_deltag": _length_partial(js, dg, ln)[1],
                 "ns_rho_cosL21_deltag": _length_partial(cos[21], dg, ln)[0],
+                "ns_p_cosL21_deltag": _length_partial(cos[21], dg, ln)[1],
                 "ns_rho_cosL21_trainedlogp": _length_partial(cos[21], g, ln)[0],
+                "ns_p_cosL21_trainedlogp": _length_partial(cos[21], g, ln)[1],
                 "ns_rho_JS_trainedlogp": _length_partial(js, g, ln)[0],
-                # full panel
+                # full panel (rho + p)
                 "all_rho_JS_deltag": _length_partial(js_a, dg_a, ln_a)[0],
+                "all_p_JS_deltag": _length_partial(js_a, dg_a, ln_a)[1],
                 "all_rho_cosL21_deltag": _length_partial(cos_a[21], dg_a, ln_a)[0],
+                "all_p_cosL21_deltag": _length_partial(cos_a[21], dg_a, ln_a)[1],
                 # layer sweep on non-stylized (delta_g and trained-logp)
                 "ns_layer_sweep_deltag": {L: _length_partial(cos[L], dg, ln)[0] for L in LAYERS},
                 "ns_layer_sweep_trainedlogp": {
@@ -164,14 +169,17 @@ def fig0_headline(rows):
             zorder=3,
         )
 
+    def _pf(p):
+        return "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
+
     scat(axJ, js, prim)
     axJ.set_xlabel("Base-model JS divergence (nats)")
     axJ.set_ylabel("Marker transfer  ΔG = trained − base log P(marker)")
     axJ.text(
         0.97,
         0.97,
-        f"all 240:  rho = {r['all_rho_JS_deltag']:+.2f}\n"
-        f"non-stylized:  rho = {r['ns_rho_JS_deltag']:+.2f}  (NULL)",
+        f"all 240:  rho = {r['all_rho_JS_deltag']:+.2f}, {_pf(r['all_p_JS_deltag'])}\n"
+        f"non-stylized:  rho = {r['ns_rho_JS_deltag']:+.2f}, {_pf(r['ns_p_JS_deltag'])}  (NULL)",
         transform=axJ.transAxes,
         ha="right",
         va="top",
@@ -188,8 +196,8 @@ def fig0_headline(rows):
     axC.text(
         0.03,
         0.97,
-        f"all 240:  rho = {r['all_rho_cosL21_deltag']:+.2f}\n"
-        f"non-stylized:  rho = {r['ns_rho_cosL21_deltag']:+.2f}  (SURVIVES)",
+        f"all 240:  rho = {r['all_rho_cosL21_deltag']:+.2f}, {_pf(r['all_p_cosL21_deltag'])}\n"
+        f"non-stylized:  rho = {r['ns_rho_cosL21_deltag']:+.2f}, {_pf(r['ns_p_cosL21_deltag'])}  (SURVIVES)",
         transform=axC.transAxes,
         ha="left",
         va="top",
@@ -285,6 +293,20 @@ def fig1_survival(rows):
                     fontsize=7,
                     color=acc,
                 )
+        # p-value labels on the localized cosine-vs-ΔG line (the headline)
+        if arm == "loc":
+            pvals = [rows[f"{arm}_ep{e}"]["ns_p_cosL21_deltag"] for e in ep]
+            for xi, y, p in zip(x, cos_dg, pvals):
+                ptxt = "p<1e-9" if p < 1e-9 else f"p={p:.0e}"
+                ax.annotate(
+                    ptxt,
+                    (xi, y),
+                    textcoords="offset points",
+                    xytext=(0, 9),
+                    ha="center",
+                    fontsize=7,
+                    color=base,
+                )
     ax.set_xticks(np.arange(len(EPOCHS)))
     ax.set_xticklabels([f"ep{e}" for e in EPOCHS])
     ax.set_xlabel("LoRA checkpoint (training epochs)")
@@ -327,15 +349,27 @@ def fig2_layersweep(rows):
     dg, g, ln, js, cos = _vecs(G, pairs_ns)
     dg_a, g_a, ln_a, js_a, cos_a = _vecs(G, pairs_all)
     ns_dg = [_length_partial(cos[L], dg, ln)[0] for L in LAYERS]
+    ns_dg_p = [_length_partial(cos[L], dg, ln)[1] for L in LAYERS]
     ns_tl = [_length_partial(cos[L], g, ln)[0] for L in LAYERS]
     all_dg = [_length_partial(cos_a[L], dg_a, ln_a)[0] for L in LAYERS]
-    js_ns = _length_partial(js, dg, ln)[0]
+    js_ns, js_ns_p = _length_partial(js, dg, ln)
 
     fig, ax = plt.subplots(figsize=(8.4, 5.2))
     ax.axhline(0, color=neu, lw=1)
     x = np.arange(len(LAYERS))
     ax.plot(x, all_dg, "o-", color=prim, ms=8, lw=2, label="cosine vs ΔG · all 240 pairs")
     ax.plot(x, ns_dg, "s-", color=base, ms=8, lw=2, label="cosine vs ΔG · non-stylized (n=156)")
+    for xi, y, p in zip(x, ns_dg, ns_dg_p):
+        ptxt = "p<1e-9" if p < 1e-9 else f"p={p:.0e}"
+        ax.annotate(
+            ptxt,
+            (xi, y),
+            textcoords="offset points",
+            xytext=(0, -13),
+            ha="center",
+            fontsize=6.8,
+            color=base,
+        )
     ax.plot(
         x,
         ns_tl,
@@ -351,7 +385,7 @@ def fig2_layersweep(rows):
         color=acc,
         lw=1.4,
         ls="--",
-        label=f"JS vs ΔG · non-stylized = {js_ns:+.2f} (null reference)",
+        label=f"JS vs ΔG · non-stylized = {js_ns:+.2f}, p={js_ns_p:.2f} (null reference)",
     )
     ax.set_xticks(x)
     ax.set_xticklabels([f"L{L}" for L in LAYERS])
