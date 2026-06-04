@@ -2636,8 +2636,8 @@
       "goal": "Resolve whether training a behavior into more source personas flattens the leakage-vs-persona-distance gradient (persona-invariance) vs keeps it localized, using a held-out panel that spans the distance range with multiple personas per band so the slope-flattening test is powered \u2014 the test #405 left unresolved due to a single-far-persona panel.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/478",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/478",
+      "status": "awaiting_promotion",
       "title": "Training a marker into more source personas did not measurably flatten the leakage-vs-distance gradient (MODERATE confidence)"
     },
     "479": {
