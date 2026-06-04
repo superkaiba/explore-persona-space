@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 483,
+  "highest_id": 484,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2684,6 +2684,14 @@
       "path": "tasks/proposed/483",
       "status": "proposed",
       "title": "Build a canonical distance-varied persona pool + maintained pairwise cosine-distance matrix for leakage experiments"
+    },
+    "484": {
+      "goal": "Test whether the #468 base-model cosine predictor (in-context-example personas, read at the newline-after-assistant token) predicts post-SFT leakage from one narrow behavior to a different narrow behavior \u2014 the off-diagonal of the narrow\u00d7narrow leakage matrix \u2014 not just narrow\u2192broad-EM.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/484",
+      "status": "proposed",
+      "title": "Does the base-model cosine predictor predict narrow\u2192narrow behavior leakage (off-diagonal of the narrow-behavior leakage matrix)?"
     },
     "49": {
       "has_clean_result": false,
