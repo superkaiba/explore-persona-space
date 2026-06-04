@@ -675,6 +675,18 @@ def scaffold_overlap_score(ctx_i: UnionContext, ctx_j: UnionContext) -> dict:
 
     Returns dict with keys jaccard, bow_cos, persona_indicator, scaffold_overlap_score
     (weights 0.5 / 0.3 / 0.2 for the combined score).
+
+    **Round-3 minor disclosure**: ``persona_indicator`` is computed on the
+    surface returned by :func:`_persona_indicator_text` which INCLUDES the
+    context's human-readable ``ctx.name`` label ("Pirate-voice 4-shot",
+    "Software engineer", ...). The ``ctx.name`` string is NOT in any token
+    the model sees during training or eval — it's a label-based identity
+    covariate that complements the model-visible scaffold (assistant turns
+    for ICL, system prompt for SP). Jaccard and bow_cos remain strictly
+    model-visible. The label-based component is the explicit choice
+    documented in :func:`_persona_indicator_text` because the model-visible
+    surface alone produces a structurally-zero indicator for matched cross-
+    type pairs (round-2 M-e fix).
     """
     import math
 
@@ -749,3 +761,78 @@ if _dup_pairs:
         "(B5 fix from round-2 code review)."
     )
 del _all_scaffold_texts, _dup_pairs, _cids_sorted
+
+
+# ---------------------------------------------------------------------------
+# Round-3 Maj-1 fix: collision-free `lora_int_id` manifest.
+#
+# vLLM keys its in-memory LoRA cache on ``lora_int_id``. The round-2 formula
+# ``UNION_CONTEXTS.index(cid) * 10 + int(frac * 100) + 1`` collided for any
+# (cid_a, frac_a) / (cid_b, frac_b) pair where the source-side increments
+# coincided (e.g. UNION_CONTEXTS.index difference of 1 with a frac gap that
+# closes the +1 base), producing ~67 collisions across the 144 snapshots.
+# Collisions silently serve the WRONG adapter for every collided id, so the
+# whole eval is corrupt without crashing.
+#
+# Fix: assign each snapshot a unique int_id by monotonic enumeration over the
+# sorted ``(cid, frac, seed)`` tuple list. Vended through
+# ``build_lora_int_id_manifest()`` so train + eval agree on every id.
+# ``assert_unique_lora_int_ids()`` is the launch-time guard.
+# ---------------------------------------------------------------------------
+
+# vLLM requires lora_int_id >= 1 (0 is reserved for the unloaded slot).
+LORA_INT_ID_BASE: int = 1
+
+
+def build_lora_int_id_manifest(
+    cids: list[str],
+    fracs: list[float],
+    seeds: list[int],
+) -> dict[tuple[str, float, int], int]:
+    """Return a collision-free ``(cid, frac, seed) -> lora_int_id`` manifest.
+
+    Enumerates the sorted Cartesian product ``sorted(cids) x sorted(fracs) x
+    sorted(seeds)`` and assigns ``LORA_INT_ID_BASE + k`` to the k-th tuple.
+    Deterministic and reproducible across train + eval invocations.
+
+    Callers MUST run :func:`assert_unique_lora_int_ids` on the returned dict
+    before any vLLM ``LoRARequest`` is constructed — a duplicate value is the
+    silent-wrong-adapter failure mode the manifest exists to prevent.
+    """
+    if not cids:
+        raise ValueError("build_lora_int_id_manifest: empty cids")
+    if not fracs:
+        raise ValueError("build_lora_int_id_manifest: empty fracs")
+    if not seeds:
+        raise ValueError("build_lora_int_id_manifest: empty seeds")
+    sorted_cids = sorted(cids)
+    sorted_fracs = sorted(fracs)
+    sorted_seeds = sorted(seeds)
+    manifest: dict[tuple[str, float, int], int] = {}
+    k = 0
+    for cid in sorted_cids:
+        for frac in sorted_fracs:
+            for seed in sorted_seeds:
+                manifest[(cid, float(frac), int(seed))] = LORA_INT_ID_BASE + k
+                k += 1
+    assert_unique_lora_int_ids(manifest)
+    return manifest
+
+
+def assert_unique_lora_int_ids(
+    manifest: dict[tuple[str, float, int], int],
+) -> None:
+    """Fail-loud if any two snapshots share a ``lora_int_id``."""
+    seen: dict[int, tuple[str, float, int]] = {}
+    for key, int_id in manifest.items():
+        if int_id < LORA_INT_ID_BASE:
+            raise AssertionError(
+                f"lora_int_id manifest: id {int_id} < base {LORA_INT_ID_BASE} for {key}"
+            )
+        if int_id in seen:
+            raise AssertionError(
+                f"lora_int_id manifest: COLLISION on id {int_id} between {seen[int_id]} "
+                f"and {key}. vLLM's LoRA cache keys on int_id; collisions silently serve "
+                "the wrong adapter (round-3 Maj-1 fix)."
+            )
+        seen[int_id] = key

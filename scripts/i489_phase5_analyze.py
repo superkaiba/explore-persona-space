@@ -22,9 +22,18 @@ Statistics:
   - H2: H1 survives source-OR-target drop on STRONG_KIND_SET (240 cells) AND
         dual-side graded partial on kind_distinctness; three-outcome verdict:
         SURVIVES / NULL_MOST_DISTINCT_ARTIFACT / UNIDENTIFIABLE.
-  - H3: |ρ_ICL_within| − |ρ_SP_within| ≥ 0.15 with genuinely-paired bootstrap at
-        the (frac × cid) shared-unit level (72 shared LoRA-snapshots at seed 42);
-        smoke-gate-7 ESS auto-fallback to independent two-sample at raw-ρ gap 0.55.
+  - H3: |ρ_ICL_within| − |ρ_SP_within| ≥ ~0.55 (raw-ρ gap; z-Fisher ≈ 1.03)
+        with INDEPENDENT TWO-SAMPLE bootstrap (round-3 B4 fix). The plan's
+        "genuinely-paired at the (cid_i, frac) shared-unit level" mechanic is
+        structurally inapplicable for within-arm panels — ICL-source and
+        SP-source cid sets are disjoint by construction, so the two within-arm
+        panels share NO LoRA-family unit. The within-ICL ρ dyadic-cluster-
+        bootstraps on its own ICL-only panel; the within-SP ρ does likewise on
+        the SP panel; the |ρ_ICL| − |ρ_SP| distribution forms from independent
+        draws (variance ADDS). PASS bar matches the plan's pre-registered
+        independent-two-sample fallback. The analyzer reports CI width up
+        front; at one seed the SP arm may be underpowered — narrate
+        "underpowered" rather than manufacture a PASS.
   - H4(a): partial Spearman ρ controlling length + scaffold_overlap_score on the
         256 cross-type cells; PASS = ρ ≤ -0.20 with CI excluding 0.
   - H4(b): cosine + overlap-controlled residual test — regress ΔG on (cos, length,
@@ -292,7 +301,7 @@ def _paired_diff_bootstrap_rho(
     return diff0, (float(lo), float(hi))
 
 
-def _h3_paired_bootstrap(  # noqa: C901 - paired + independent-fallback branches are deliberate (B4)
+def _h3_independent_two_sample(
     icl_cells: list[dict],
     sp_cells: list[dict],
     cos_dist_fn,
@@ -300,52 +309,34 @@ def _h3_paired_bootstrap(  # noqa: C901 - paired + independent-fallback branches
     n_boots: int,
     rng: np.random.Generator,
 ) -> dict:
-    """Round-2 fix B4: genuinely-paired H3 bootstrap on (cid_i × frac) units.
+    """Round-3 B4 fix: H3 independent-two-sample bootstrap as the PRIMARY mechanic.
 
-    Each draw resamples the shared LoRA-snapshot units (cid_i, frac) WITH
-    REPLACEMENT, then recomputes BOTH rho_icl and rho_sp on the cells whose
-    source is in the resampled unit set. ICL cells use the resampled unit's
-    cells against ICL targets; SP cells use the same unit's cells against SP
-    targets. Forms CI on (|ρ_icl| − |ρ_sp|).
+    The within-ICL ρ uses only ICL-source adapters (T_i ∈ ICL cids); the
+    within-SP ρ uses only SP-source adapters (T_i ∈ SP cids). The two source
+    sets are DISJOINT by construction, so the two within-arm panels share NO
+    LoRA-family unit — the round-2 "genuinely-paired bootstrap on (cid_i,
+    frac) shared units" was structurally dead code (the intersection was
+    always empty → mechanic always 'none' → H3 PASS unreachable). Plan v5
+    §6.2's "72 shared LoRA-snapshot units" claim is inapplicable for the
+    within-arm panels: a within-ICL adapter is never an SP-source LoRA.
 
-    Auto-fallback: if the effective sample size at the LoRA-snapshot level
-    is < ``ESS_FLOOR`` (24), switch to independent two-sample with raw-ρ gap
-    bar 0.55 per M4 documented alternative.
+    This implementation makes the plan's pre-registered fallback (§6.2 H3
+    "Fallback (M4 alternative)") the primary path:
 
-    Returns a dict with rho_icl, rho_sp, ci_icl, ci_sp, abs_diff, ci_diff,
-    mechanic ('paired' or 'independent'), ess_lora_snapshots.
+    - Dyadic-cluster bootstrap of ``ρ_ICL`` on the ICL-within panel
+      (resampling source-cids AND target-cids independently among ICL cids).
+    - Dyadic-cluster bootstrap of ``ρ_SP`` on the SP-within panel
+      (analogous, among SP cids).
+    - Difference statistic ``|ρ_ICL| − |ρ_SP|`` over the independent boots
+      (variance ADDS because the two draws are independent).
+    - PASS bar uses the raw-ρ gap ≈ 0.55 (z-Fisher ≈ 1.03) the plan
+      explicitly committed to for the independent two-sample mechanic — NOT
+      the 0.15 bar (that bar was sized for the paired-CI variance that
+      cancels recipe-level noise; independent CIs are materially wider).
+
+    Returns rho_icl/rho_sp, per-arm CIs + CI widths, |Δ|, CI on |Δ|,
+    mechanic = 'independent_two_sample', and per-arm sample sizes.
     """
-    # Build the LoRA-snapshot unit set: (cid_i, frac) pairs that appear in BOTH
-    # arms. Each cid_i contributes cells to the ICL-within sub-grid (when target
-    # is ICL) AND to the SP-within sub-grid (when target is SP), so the SHARED
-    # unit is just (cid_i, frac).
-    icl_units = {(c["T_i"], c["frac"]) for c in icl_cells}
-    sp_units = {(c["T_i"], c["frac"]) for c in sp_cells}
-    shared_units = sorted(icl_units & sp_units)
-    ess = len(shared_units)
-    if ess == 0:
-        return {
-            "rho_icl": float("nan"),
-            "rho_sp": float("nan"),
-            "ci_icl": (float("nan"), float("nan")),
-            "ci_sp": (float("nan"), float("nan")),
-            "abs_diff": float("nan"),
-            "ci_diff": (float("nan"), float("nan")),
-            "mechanic": "none",
-            "ess_lora_snapshots": 0,
-            "note": "no shared (cid_i, frac) LoRA-snapshot units between arms",
-        }
-
-    icl_by_unit: dict[tuple[str, float], list[dict]] = {u: [] for u in shared_units}
-    sp_by_unit: dict[tuple[str, float], list[dict]] = {u: [] for u in shared_units}
-    for c in icl_cells:
-        u = (c["T_i"], c["frac"])
-        if u in icl_by_unit:
-            icl_by_unit[u].append(c)
-    for c in sp_cells:
-        u = (c["T_i"], c["frac"])
-        if u in sp_by_unit:
-            sp_by_unit[u].append(c)
 
     def _rho_for_cells(cells: list[dict]) -> float:
         if len(cells) < 5:
@@ -355,28 +346,33 @@ def _h3_paired_bootstrap(  # noqa: C901 - paired + independent-fallback branches
         z = [[length_fn(c)] for c in cells]
         return _spearman_partial(x, y, np.array(z))
 
-    rho_icl0 = _rho_for_cells(icl_cells)
-    rho_sp0 = _rho_for_cells(sp_cells)
-
     def _bootstrap_ci(values: list[float]) -> tuple[float, float]:
         if not values:
             return (float("nan"), float("nan"))
         lo, hi = np.percentile(values, [2.5, 97.5])
         return (float(lo), float(hi))
 
-    if ess < ESS_FLOOR:
-        # M4 documented fallback: independent two-sample on full cell sets.
-        boots_icl: list[float] = []
-        boots_sp: list[float] = []
-        boots_diff: list[float] = []
-        # Source-cluster resampling independently on each arm.
-        icl_sources = sorted({c["T_i"] for c in icl_cells})
-        sp_sources = sorted({c["T_i"] for c in sp_cells})
+    rho_icl0 = _rho_for_cells(icl_cells)
+    rho_sp0 = _rho_for_cells(sp_cells)
+
+    icl_sources = sorted({c["T_i"] for c in icl_cells})
+    icl_targets = sorted({c["T_j"] for c in icl_cells})
+    sp_sources = sorted({c["T_i"] for c in sp_cells})
+    sp_targets = sorted({c["T_j"] for c in sp_cells})
+
+    boots_icl: list[float] = []
+    boots_sp: list[float] = []
+    boots_diff: list[float] = []
+    if icl_cells and sp_cells and icl_sources and sp_sources:
+        n_is, n_it = len(icl_sources), len(icl_targets)
+        n_ss, n_st = len(sp_sources), len(sp_targets)
         for _ in range(n_boots):
-            isrc = rng.choice(icl_sources, size=len(icl_sources), replace=True)
-            ssrc = rng.choice(sp_sources, size=len(sp_sources), replace=True)
-            icl_sub = [c for c in icl_cells if c["T_i"] in set(isrc)]
-            sp_sub = [c for c in sp_cells if c["T_i"] in set(ssrc)]
+            isrc = {icl_sources[k] for k in rng.integers(0, n_is, n_is)}
+            itgt = {icl_targets[k] for k in rng.integers(0, n_it, n_it)}
+            ssrc = {sp_sources[k] for k in rng.integers(0, n_ss, n_ss)}
+            stgt = {sp_targets[k] for k in rng.integers(0, n_st, n_st)}
+            icl_sub = [c for c in icl_cells if c["T_i"] in isrc and c["T_j"] in itgt]
+            sp_sub = [c for c in sp_cells if c["T_i"] in ssrc and c["T_j"] in stgt]
             ra = _rho_for_cells(icl_sub)
             rb = _rho_for_cells(sp_sub)
             if ra != ra or rb != rb:
@@ -384,58 +380,44 @@ def _h3_paired_bootstrap(  # noqa: C901 - paired + independent-fallback branches
             boots_icl.append(ra)
             boots_sp.append(rb)
             boots_diff.append(abs(ra) - abs(rb))
-        return {
-            "rho_icl": rho_icl0,
-            "rho_sp": rho_sp0,
-            "ci_icl": _bootstrap_ci(boots_icl),
-            "ci_sp": _bootstrap_ci(boots_sp),
-            "abs_diff": (
-                abs(rho_icl0) - abs(rho_sp0)
-                if (rho_icl0 == rho_icl0 and rho_sp0 == rho_sp0)
-                else float("nan")
-            ),
-            "ci_diff": _bootstrap_ci(boots_diff),
-            "mechanic": "independent_fallback",
-            "ess_lora_snapshots": ess,
-            "note": (
-                f"ESS={ess} < {ESS_FLOOR} floor — fell back to M4 independent "
-                f"two-sample (raw-ρ bar {RAW_RHO_FALLBACK_BAR})"
-            ),
-            "raw_rho_fallback_bar": RAW_RHO_FALLBACK_BAR,
-        }
 
-    # PAIRED MECHANIC: resample shared (cid_i, frac) units WITH REPLACEMENT.
-    boots_icl: list[float] = []
-    boots_sp: list[float] = []
-    boots_diff: list[float] = []
-    for _ in range(n_boots):
-        idx = rng.integers(0, ess, ess)
-        sampled_units = [shared_units[k] for k in idx]
-        icl_sub: list[dict] = []
-        sp_sub: list[dict] = []
-        for u in sampled_units:
-            icl_sub.extend(icl_by_unit[u])
-            sp_sub.extend(sp_by_unit[u])
-        ra = _rho_for_cells(icl_sub)
-        rb = _rho_for_cells(sp_sub)
-        if ra != ra or rb != rb:
-            continue
-        boots_icl.append(ra)
-        boots_sp.append(rb)
-        boots_diff.append(abs(ra) - abs(rb))
+    ci_icl = _bootstrap_ci(boots_icl)
+    ci_sp = _bootstrap_ci(boots_sp)
+    ci_diff = _bootstrap_ci(boots_diff)
+    abs_diff = (
+        abs(rho_icl0) - abs(rho_sp0)
+        if (rho_icl0 == rho_icl0 and rho_sp0 == rho_sp0)
+        else float("nan")
+    )
+    ci_width = lambda lohi: (  # noqa: E731
+        float(lohi[1] - lohi[0]) if (lohi[0] == lohi[0] and lohi[1] == lohi[1]) else float("nan")
+    )
     return {
         "rho_icl": rho_icl0,
         "rho_sp": rho_sp0,
-        "ci_icl": _bootstrap_ci(boots_icl),
-        "ci_sp": _bootstrap_ci(boots_sp),
-        "abs_diff": (
-            abs(rho_icl0) - abs(rho_sp0)
-            if (rho_icl0 == rho_icl0 and rho_sp0 == rho_sp0)
-            else float("nan")
+        "ci_icl": ci_icl,
+        "ci_sp": ci_sp,
+        "ci_icl_width": ci_width(ci_icl),
+        "ci_sp_width": ci_width(ci_sp),
+        "abs_diff": abs_diff,
+        "ci_diff": ci_diff,
+        "ci_diff_width": ci_width(ci_diff),
+        "mechanic": "independent_two_sample",
+        "raw_rho_pass_bar": RAW_RHO_FALLBACK_BAR,
+        "n_icl_cells": len(icl_cells),
+        "n_sp_cells": len(sp_cells),
+        "n_icl_sources": len(icl_sources),
+        "n_sp_sources": len(sp_sources),
+        "n_boots_kept_icl": len(boots_icl),
+        "n_boots_kept_sp": len(boots_sp),
+        "n_boots_kept_diff": len(boots_diff),
+        "note": (
+            "Round-3 B4 fix: ICL-source cids and SP-source cids are disjoint, so the "
+            "within-arm panels share NO LoRA-family unit. The plan's 'genuinely-paired' "
+            "design is inapplicable for within-arm comparisons; H3 reports the plan's "
+            f"pre-registered fallback as the primary mechanic at the raw-ρ gap "
+            f"≈ {RAW_RHO_FALLBACK_BAR} PASS bar (z-Fisher ≈ 1.03)."
         ),
-        "ci_diff": _bootstrap_ci(boots_diff),
-        "mechanic": "paired",
-        "ess_lora_snapshots": ess,
     }
 
 
@@ -464,22 +446,37 @@ def _length_for(cell: dict) -> float:
 
 def _h2_three_outcome(
     h2_pass_after_drop: bool,
+    dual_graded_pass: bool,
     h2_cells: list[dict],
     cos_dist_fn,
     length_fn,
     kind_distinctness: dict[str, float] | None,
 ) -> dict:
-    """Round-2 fix M-b: three-outcome H2 verdict tree.
+    """Round-2 fix M-b + round-3 Maj-3: three-outcome H2 verdict tree.
 
     Outcomes:
-      SURVIVES — H1 survives the strong-kind drop AND the identifiability gate
-        passes (kind_distinctness vs cosine_distance Pearson ≤ 0.85 AND ≥5
-        non-strong-on-either-side cells in the high cosine_distance band).
+      SURVIVES — H1 survives the strong-kind drop AND the dual-side graded
+        partial on ``kind_distinctness`` also survives (round-3 Maj-3: both
+        conditions must hold per plan v5 §6.2 H2) AND the identifiability
+        gate passes (kind_distinctness vs cosine_distance Pearson ≤ 0.85
+        AND ≥5 non-strong-on-either-side cells in the high cosine_distance
+        band).
       UNIDENTIFIABLE — strong-kind cells are heavily collinear with cosine
         distance (Pearson > 0.85) OR the high-band has < 5 non-strong cells;
         the body must narrate "can't separate distinctness from distance."
       NULL_MOST_DISTINCT_ARTIFACT — H1 does NOT survive the strong-kind drop
         AND identifiability passes (we COULD have rejected, but didn't).
+      NULL_DUAL_GRADED_PARTIAL — strong-kind drop passes but the dual-side
+        graded partial collapses (signed-sense of the kind_distinctness
+        covariate eats the effect), identifiability is satisfied.
+
+    The dual_graded_pass gate is REQUIRED to be passed in; the caller
+    computes ``_spearman_partial(cos_dist, delta_g | length, kd_i, kd_j,
+    max(kd_i, kd_j))`` against the survival sign/threshold (negative AND
+    |ρ| ≥ 0.10 chosen to mirror H1's dissociation floor; bootstrap CI is
+    not computed here for cost but the signed-and-magnitude survival is
+    the load-bearing piece). Plan §6.2 H2 PASS clause: "SURVIVES requires
+    source-OR-target drop ... AND dual-side graded partial".
     """
     if not h2_cells or kind_distinctness is None:
         return {
@@ -530,10 +527,18 @@ def _h2_three_outcome(
     )
     if not identifiable:
         verdict = "UNIDENTIFIABLE"
-    elif h2_pass_after_drop:
-        verdict = "SURVIVES"
-    else:
+    elif not h2_pass_after_drop:
+        # Round-3 Maj-3: only label NULL_MOST_DISTINCT_ARTIFACT when the
+        # strong-kind drop is the failing step; if BOTH drop+dual-graded
+        # fail, surface the drop failure as the proximate cause (matches
+        # plan §6.2 H2's verdict tree precedence).
         verdict = "NULL_MOST_DISTINCT_ARTIFACT"
+    elif not dual_graded_pass:
+        # Round-3 Maj-3: strong-kind drop survived but the dual-side graded
+        # partial on kind_distinctness collapsed → SURVIVES is NOT earned.
+        verdict = "NULL_DUAL_GRADED_PARTIAL"
+    else:
+        verdict = "SURVIVES"
     return {
         "verdict": verdict,
         "identifiability_pearson_max_kd_vs_cos": pearson_r,
@@ -542,6 +547,8 @@ def _h2_three_outcome(
         "non_strong_high_band_n": non_strong_hi,
         "non_strong_high_band_floor": IDENTIFIABILITY_NON_STRONG_FLOOR,
         "high_band_threshold_cos_dist": hi_thresh,
+        "dual_graded_pass": bool(dual_graded_pass),
+        "h2_pass_after_drop": bool(h2_pass_after_drop),
     }
 
 
@@ -551,7 +558,7 @@ def _h2_diagonal_adjusted(
     cos_dist_fn,
     length_fn,
 ) -> dict:
-    """Round-2 fix M-c: SURVIVES-only diagonal-adjusted statistic.
+    """Round-2 fix M-c + round-3 Maj-4: diagonal-adjusted SURVIVES statistic.
 
     Two computations:
       1. Partial Spearman ρ(cos_dist, delta_g | length, emission_ii_source) —
@@ -559,9 +566,20 @@ def _h2_diagonal_adjusted(
          transfer beyond raw implant strength.
       2. Normalized ΔG_ij / max(epsilon, emission_ii_source) sensitivity —
          report the ρ on the normalized variant as a robustness anchor.
+
+    Round-3 Maj-4: both statistics MUST survive (signed-negative,
+    ``|ρ| ≥ 0.10`` floor) for an H1/H2 SURVIVES verdict to stand. The
+    caller reads ``survives_diagonal_adjustment`` and downgrades the H1
+    cos-signed PASS / H2 SURVIVES label to NULL_AFTER_DIAGONAL_ADJUSTMENT
+    when this is False. Per plan §6.2 SURVIVES requires both (a) partial
+    out source emission_ii AND (b) normalized outcome to survive.
     """
     if not off_cells:
-        return {"available": False, "reason": "no off-diagonal cells"}
+        return {
+            "available": False,
+            "reason": "no off-diagonal cells",
+            "survives_diagonal_adjustment": False,
+        }
     x: list[float] = []
     y: list[float] = []
     y_norm: list[float] = []
@@ -581,15 +599,32 @@ def _h2_diagonal_adjusted(
         z_len.append(length_fn(c))
         z_ii.append(ii)
     if len(x) < 10:
-        return {"available": False, "reason": f"only {len(x)} cells with source-diagonal pair"}
+        return {
+            "available": False,
+            "reason": f"only {len(x)} cells with source-diagonal pair",
+            "survives_diagonal_adjustment": False,
+        }
     z = np.column_stack([z_len, z_ii])
     rho_partial = _spearman_partial(x, y, z)
     rho_norm = _spearman_partial(x, y_norm, np.array(z_len))
+    # Survival: both adjusted statistics must remain signed-negative with
+    # magnitude floor matching the H1 dissociation floor (0.10). A relaxed
+    # check vs a paired-bootstrap CI on the SURVIVES variant; per plan §6.2
+    # the SURVIVES variant uses the signed direction + magnitude, not a CI.
+    survives = (
+        rho_partial == rho_partial
+        and rho_norm == rho_norm
+        and rho_partial < 0
+        and rho_norm < 0
+        and abs(rho_partial) >= 0.10
+        and abs(rho_norm) >= 0.10
+    )
     return {
         "available": True,
         "n_cells": len(x),
         "rho_partial_on_emission_ii": rho_partial,
         "rho_normalized_offdiag_over_emission_ii": rho_norm,
+        "survives_diagonal_adjustment": bool(survives),
     }
 
 
@@ -663,7 +698,30 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
     # Round-2 fix M-d: don't mutate args.fracs; iterate a snapshot copy.
     requested_fracs = list(args.fracs)
     cells_by_frac, present_fracs = _load_cells(requested_fracs, args.seed, allow_smoke=args.smoke)
-    fracs_to_analyze = present_fracs if not args.smoke else (present_fracs or requested_fracs)
+
+    # Round-3 Maj-2: in non-smoke mode, restrict analysis to REQUESTED fracs
+    # only — smoke-only fracs (the 4-cell smoke evals from `--smoke`) wrote
+    # full per_cell payloads at unrelated fracs and would otherwise leak into
+    # the H1-H4 panels at a tiny N. Then fail-loud if any requested frac
+    # lacks a complete 24×24 (552-off-diag) panel; a partial panel makes
+    # the dyadic-cluster bootstrap silently underpowered.
+    if args.smoke:
+        fracs_to_analyze = present_fracs or requested_fracs
+    else:
+        fracs_to_analyze = [f for f in present_fracs if f in set(requested_fracs)]
+        n_union = len(UNION_CONTEXTS)
+        expected_off_diag = n_union * (n_union - 1)  # 24 * 23 = 552
+        for frac in fracs_to_analyze:
+            n_off = sum(
+                1 for c in cells_by_frac.get(frac, []) if c["T_i"] != c["T_j"] and "delta_g" in c
+            )
+            if n_off < expected_off_diag:
+                raise RuntimeError(
+                    f"Phase 5 requested frac={frac:.2f}: incomplete panel — "
+                    f"{n_off}/{expected_off_diag} off-diagonal cells carry delta_g. "
+                    f"Refusing to analyze a partial panel (round-3 Maj-2). Re-run "
+                    "Phase 4 for the missing cells before re-running Phase 5."
+                )
     rng = np.random.default_rng(args.bootstrap_rng_seed)
 
     # Round-2 fix B1: count cells carrying delta_g across ALL fracs. If zero,
@@ -719,6 +777,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
             and diff_paired >= 0.10
             and not (ci_diff_paired[0] <= 0 <= ci_diff_paired[1])
         )
+        # Round-3 Maj-4: H1 SURVIVES requires the diagonal-adjusted statistic
+        # to also survive (signed-negative, |ρ|≥0.10 on BOTH the partial-on-
+        # emission_ii AND the normalized variant). Computed below in the H2
+        # block (shared diag_by_cid); folded into h1_pass via the
+        # diag_adjusted dict's survives_diagonal_adjustment boolean.
         h1_per_frac[frac] = {
             "rho_cos": rho_cos,
             "rho_cos_ci": ci_cos,
@@ -728,7 +791,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
             "ci_diff_paired": ci_diff_paired,
             "cos_signed_pass": bool(h1_cos_signed_pass),
             "cos_vs_js_dissociation_pass": bool(h1_dissociation_pass),
-            "pass": bool(h1_cos_signed_pass and h1_dissociation_pass),
+            # h1 pass is finalized below after diag_adjusted is available
+            # (we backfill the diagonal-adjusted gate into h1.pass).
+            "pass_pre_diagonal_adjustment": bool(h1_cos_signed_pass and h1_dissociation_pass),
         }
 
         # --- H2: source-OR-target drop on STRONG_KIND_SET ------------------
@@ -741,7 +806,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
         h2_after_drop_pass = (
             rho_cos_h2 == rho_cos_h2 and rho_cos_h2 < 0 and not (ci_cos_h2[0] <= 0 <= ci_cos_h2[1])
         )
-        # M-a: dual-side graded partial on kind_distinctness.
+        # M-a + round-3 Maj-3: dual-side graded partial on kind_distinctness;
+        # PASS = signed-negative AND |ρ| ≥ 0.10 (mirrors the H1 dissociation
+        # floor). Plan §6.2 H2 SURVIVES requires this branch AND the
+        # strong-kind drop branch.
         dual_graded = float("nan")
         if kind_distinctness is not None and off_h2:
             x = [cos_dist(c["T_i"], c["T_j"]) for c in off_h2]
@@ -752,23 +820,67 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
                 kd_j = kind_distinctness.get(c["T_j"], float("nan"))
                 z.append([_length_for(c), kd_i, kd_j, max(kd_i, kd_j)])
             dual_graded = _spearman_partial(x, y, np.array(z))
-        # M-b: three-outcome verdict tree + identifiability gate.
-        three_outcome = _h2_three_outcome(
-            h2_after_drop_pass, off, cos_dist, _length_for, kind_distinctness
+        dual_graded_pass = (
+            dual_graded == dual_graded and dual_graded < 0 and abs(dual_graded) >= 0.10
         )
-        # M-c: diagonal-adjusted statistic (only meaningful for SURVIVES).
+        # M-b + round-3 Maj-3: three-outcome verdict tree gated on BOTH the
+        # strong-kind drop AND the dual-side graded partial.
+        three_outcome = _h2_three_outcome(
+            h2_after_drop_pass,
+            dual_graded_pass,
+            off,
+            cos_dist,
+            _length_for,
+            kind_distinctness,
+        )
+        # M-c + round-3 Maj-4: diagonal-adjusted statistic — required for
+        # SURVIVES per plan §6.2 SURVIVES clause.
         diag_adjusted = _h2_diagonal_adjusted(off, diag_by_cid, cos_dist, _length_for)
+        # If SURVIVES was earned but the diagonal-adjustment collapses the
+        # signed effect, relabel per plan §6.2 ("NULL after diagonal-
+        # adjustment").
+        h2_verdict = three_outcome["verdict"]
+        if h2_verdict == "SURVIVES" and not diag_adjusted.get("survives_diagonal_adjustment"):
+            h2_verdict = "NULL_AFTER_DIAGONAL_ADJUSTMENT"
         h2_per_frac[frac] = {
             "n_cells_after_strong_drop": len(off_h2),
             "rho_cos": rho_cos_h2,
             "rho_cos_ci": ci_cos_h2,
             "h1_survives_strong_kind_drop": bool(h2_after_drop_pass),
             "rho_cos_dual_side_kind_distinctness_partial": dual_graded,
+            "dual_graded_pass": bool(dual_graded_pass),
             **three_outcome,
+            "verdict": h2_verdict,
             "diagonal_adjusted": diag_adjusted,
         }
+        # Backfill round-3 Maj-4 diagonal-adjustment gate into H1.pass.
+        h1_per_frac[frac]["survives_diagonal_adjustment"] = bool(
+            diag_adjusted.get("survives_diagonal_adjustment")
+        )
+        h1_per_frac[frac]["pass"] = bool(
+            h1_per_frac[frac]["pass_pre_diagonal_adjustment"]
+            and diag_adjusted.get("survives_diagonal_adjustment")
+        )
+        if h1_per_frac[frac]["pass_pre_diagonal_adjustment"] and not diag_adjusted.get(
+            "survives_diagonal_adjustment"
+        ):
+            h1_per_frac[frac]["pass_label"] = "NULL_AFTER_DIAGONAL_ADJUSTMENT"
+        elif h1_per_frac[frac]["pass"]:
+            h1_per_frac[frac]["pass_label"] = "PASS"
+        else:
+            h1_per_frac[frac]["pass_label"] = "NULL"
 
-        # --- H3: within-arm ICL vs SP paired-bootstrap --------------------
+        # --- H3: within-arm ICL vs SP independent two-sample bootstrap ----
+        # Round-3 B4 fix: the round-2 "genuinely-paired (cid_i, frac) shared
+        # units" mechanic was structurally dead code (ICL-source and SP-source
+        # cid sets are disjoint by construction, so the intersection is
+        # always empty → mechanic 'none' → PASS unreachable). H3 uses the
+        # plan's pre-registered independent-two-sample fallback as the
+        # PRIMARY mechanic at the raw-ρ gap ≈ 0.55 PASS bar (variance adds
+        # since the two arm draws are independent). The analyzer / clean-
+        # result must NOT claim a paired CI that was never computed; report
+        # the CI WIDTH up front so an underpowered SP arm is narrated
+        # honestly per plan §6.2 power-floor discipline.
         off_icl = [
             c
             for c in off
@@ -781,39 +893,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
             if not isinstance(UNION_BY_CID[c["T_i"]], ICLContext)
             and not isinstance(UNION_BY_CID[c["T_j"]], ICLContext)
         ]
-        h3_paired = _h3_paired_bootstrap(
+        h3_indep = _h3_independent_two_sample(
             off_icl, off_sp, cos_dist, _length_for, args.bootstrap_n, rng
         )
-        # PASS: paired CI on |ρ_ICL| − |ρ_SP| excludes 0 positive, |Δ| ≥ 0.15,
-        # AND |ρ_ICL| ≥ 0.30 (signed).
-        diff = h3_paired["abs_diff"]
-        ci_diff_h3 = h3_paired["ci_diff"]
-        rho_icl_signed = h3_paired["rho_icl"]
-        if h3_paired["mechanic"] == "independent_fallback":
-            # Independent fallback uses raw-ρ gap bar 0.55.
-            h3_pass = (
-                diff == diff
-                and diff >= RAW_RHO_FALLBACK_BAR
-                and not (ci_diff_h3[0] <= 0 <= ci_diff_h3[1])
-                and rho_icl_signed == rho_icl_signed
-                and abs(rho_icl_signed) >= 0.30
-            )
-        else:
-            h3_pass = (
-                diff == diff
-                and diff >= 0.15
-                and not (ci_diff_h3[0] <= 0 <= ci_diff_h3[1])
-                and rho_icl_signed == rho_icl_signed
-                and abs(rho_icl_signed) >= 0.30
-            )
+        diff = h3_indep["abs_diff"]
+        ci_diff_h3 = h3_indep["ci_diff"]
+        rho_icl_signed = h3_indep["rho_icl"]
+        # PASS: independent CI on |ρ_ICL| − |ρ_SP| excludes 0 positive,
+        # |Δ| ≥ RAW_RHO_FALLBACK_BAR (≈ 0.55), AND |ρ_ICL| ≥ 0.30.
+        h3_pass = (
+            diff == diff
+            and diff >= RAW_RHO_FALLBACK_BAR
+            and not (ci_diff_h3[0] <= 0 <= ci_diff_h3[1])
+            and rho_icl_signed == rho_icl_signed
+            and abs(rho_icl_signed) >= 0.30
+        )
+        # Power-floor narration flag per plan §6.2: if the ICL arm's CI is
+        # too wide to discriminate from the null at the 0.30 magnitude floor,
+        # the body must read as "ICL-arm characterized, SP-arm/within-
+        # comparison underpowered at one seed."
+        sp_ci_width = h3_indep.get("ci_sp_width", float("nan"))
+        icl_ci_width = h3_indep.get("ci_icl_width", float("nan"))
+        underpowered = (sp_ci_width == sp_ci_width and sp_ci_width / 2.0 > 0.20) or (
+            icl_ci_width == icl_ci_width and icl_ci_width / 2.0 > 0.20
+        )
         h3_per_frac[frac] = {
-            **h3_paired,
+            **h3_indep,
             "n_icl_cells": len(off_icl),
             "n_sp_cells": len(off_sp),
             "pass": bool(h3_pass),
-            "pass_bar": 0.15
-            if h3_paired["mechanic"] != "independent_fallback"
-            else RAW_RHO_FALLBACK_BAR,
+            "pass_bar": RAW_RHO_FALLBACK_BAR,
+            "underpowered_at_single_seed": bool(underpowered),
+            "power_floor_narration_required": bool(underpowered and not h3_pass),
         }
 
         # --- H4(a): cross-type dual-partial -------------------------------
@@ -920,15 +1031,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
             }
 
     payload = {
-        "schema_version": "i489_phase5_v2",
+        "schema_version": "i489_phase5_v3",
         "git_commit": _git_commit_hash(),
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "seed": args.seed,
         "fracs_requested": requested_fracs,
         "fracs_present_on_disk": present_fracs,
+        "fracs_analyzed": fracs_to_analyze,
         "bootstrap_n": args.bootstrap_n,
         "headline_layer": HEADLINE_LAYER,
         "single_seed_scope_caveat": ("v5: seed=42 only; no across-seed variance estimate."),
+        "h3_mechanic_note": (
+            "Round-3 B4 fix (2026-W23): H3 reports the INDEPENDENT TWO-SAMPLE "
+            "bootstrap as the primary mechanic at the raw-ρ gap ≈ 0.55 PASS bar "
+            "(z-Fisher ≈ 1.03). The plan v5 §6.2 'genuinely-paired LoRA-snapshot' "
+            "mechanic at the 0.15 bar is inapplicable for within-arm panels: "
+            "ICL-source and SP-source cid sets are disjoint, so the two within-"
+            "arm panels share no LoRA-family unit. The analyzer / clean-result "
+            "MUST NOT claim a paired CI that was never computed."
+        ),
         "h1": h1_per_frac,
         "h2": h2_per_frac,
         "h3": h3_per_frac,

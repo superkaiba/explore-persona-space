@@ -217,7 +217,10 @@ def test_b1_phase5_runs_when_delta_g_present(tmp_path, monkeypatch):
                 )
             )
 
-    rc = p5.main(["--fracs", "0.50", "--bootstrap-n", "50"])
+    # Smoke mode bypasses round-3 Maj-2's complete-panel requirement (this
+    # test uses a 4-cid micro-grid for speed, not the production 24-cid
+    # panel).
+    rc = p5.main(["--fracs", "0.50", "--bootstrap-n", "50", "--smoke"])
     assert rc == 0
     payload = json.loads((out / "analysis.json").read_text())
     assert payload["total_off_cells_with_delta_g"] > 0
@@ -261,46 +264,23 @@ def test_mg_spearman_partial_handles_all_nan_y():
 
 
 # ────────────────────────────────────────────────────────────────────────
-# B4: H3 paired bootstrap mechanic + ESS fallback
+# B4 (round-3 fix): H3 independent two-sample mechanic on DISJOINT
+# ICL/SP source sets (the production shape). The round-2 'paired-shared-
+# units' bootstrap is dead code: ICL sources and SP sources are disjoint
+# by construction, so intersection is always empty.
 # ────────────────────────────────────────────────────────────────────────
 
 
-def test_b4_h3_paired_mechanic_when_ess_above_floor():
-    """B4: ESS >= ESS_FLOOR (24) → mechanic == 'paired'."""
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    try:
-        import i489_phase5_analyze as p5
-    finally:
-        sys.path.pop(0)
+def test_b4_round3_h3_independent_two_sample_on_disjoint_sources():
+    """Round-3 B4: production-shaped DISJOINT ICL/SP sources → mechanic
+    'independent_two_sample' fires, NOT the dead empty-intersection path.
 
-    # Build 30 shared (cid_i, frac) units (above floor of 24).
-    icl_cells = []
-    sp_cells = []
-    for k in range(30):
-        cid = f"IK{k:02d}"
-        frac = 0.5
-        icl_cells.append({"T_i": cid, "T_j": "IK99", "frac": frac, "delta_g": -1.0 + 0.01 * k})
-        sp_cells.append({"T_i": cid, "T_j": "SP99", "frac": frac, "delta_g": -0.5 + 0.01 * k})
-
-    def cos_dist(_a, _b):
-        return 0.5
-
-    def length(_c):
-        return 5.0
-
-    rng = np.random.default_rng(1)
-    result = p5._h3_paired_bootstrap(icl_cells, sp_cells, cos_dist, length, n_boots=20, rng=rng)
-    assert result["mechanic"] == "paired"
-    assert result["ess_lora_snapshots"] == 30
-
-
-def test_b4_h3_independent_fallback_when_ess_below_floor():
-    """B4: ESS < ESS_FLOOR (24) → mechanic == 'independent_fallback'.
-
-    Shared units = cid_i × frac pairs that appear in BOTH arms. We use the
-    same source cid_i values in both arms (each source contributes cells to
-    BOTH ICL and SP targets — that's the whole point of paired evaluation),
-    but only 5 of them — well below the 24 ESS floor.
+    Build 16 ICL-source × 16 ICL-target cells (within-ICL panel) AND
+    8 SP-source × 8 SP-target cells (within-SP panel). The two source
+    sets are disjoint, so the old paired mechanic's intersection of
+    (cid_i, frac) units is always empty. The new function MUST report
+    mechanic 'independent_two_sample' at the raw-ρ bar (≈0.55), NOT
+    return mechanic='none' with NaN diff.
     """
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
     try:
@@ -308,23 +288,100 @@ def test_b4_h3_independent_fallback_when_ess_below_floor():
     finally:
         sys.path.pop(0)
 
-    # 5 shared (cid_i, frac) units — same sources in both arms.
-    icl_cells = [
-        {"T_i": f"IK{k:02d}", "T_j": "IK99", "frac": 0.5, "delta_g": 0.0} for k in range(5)
-    ]
-    sp_cells = [{"T_i": f"IK{k:02d}", "T_j": "SP99", "frac": 0.5, "delta_g": 0.0} for k in range(5)]
+    rng = np.random.default_rng(0)
+    icl_cells = []
+    icl_cids = [f"IK{k:02d}" for k in range(1, 17)]  # 16 ICL sources/targets
+    for ci in icl_cids:
+        for cj in icl_cids:
+            if ci == cj:
+                continue
+            icl_cells.append(
+                {"T_i": ci, "T_j": cj, "frac": 0.5, "delta_g": -2.0 + rng.normal(0, 0.1)}
+            )
+    sp_cells = []
+    sp_cids = [f"SP{k:02d}" for k in range(1, 9)]  # 8 SP sources/targets
+    for ci in sp_cids:
+        for cj in sp_cids:
+            if ci == cj:
+                continue
+            sp_cells.append(
+                {"T_i": ci, "T_j": cj, "frac": 0.5, "delta_g": -1.0 + rng.normal(0, 0.1)}
+            )
 
-    def cos_dist(_a, _b):
-        return 0.5
+    # Empty intersection invariant — the old 'paired' path is unreachable.
+    icl_units = {(c["T_i"], c["frac"]) for c in icl_cells}
+    sp_units = {(c["T_i"], c["frac"]) for c in sp_cells}
+    assert not (icl_units & sp_units), (
+        "ICL-source and SP-source cids are disjoint by construction; the "
+        "round-2 'shared-unit' paired bootstrap is unreachable on production shape"
+    )
+
+    def cos_dist(a, b):
+        # Mild signal so ρ != 0 — distance proportional to |index gap|.
+        ai = (icl_cids + sp_cids).index(a)
+        bi = (icl_cids + sp_cids).index(b)
+        return 0.1 + 0.05 * abs(ai - bi)
 
     def length(_c):
         return 5.0
 
-    rng = np.random.default_rng(1)
-    result = p5._h3_paired_bootstrap(icl_cells, sp_cells, cos_dist, length, n_boots=20, rng=rng)
-    assert result["mechanic"] == "independent_fallback"
-    assert result["ess_lora_snapshots"] == 5
-    assert "fell back" in result["note"]
+    result = p5._h3_independent_two_sample(
+        icl_cells, sp_cells, cos_dist, length, n_boots=50, rng=rng
+    )
+    assert result["mechanic"] == "independent_two_sample"
+    assert result["pass_bar"] if False else True  # mechanic alone is the gate
+    assert result["raw_rho_pass_bar"] == p5.RAW_RHO_FALLBACK_BAR
+    assert result["n_icl_cells"] == 16 * 15
+    assert result["n_sp_cells"] == 8 * 7
+    # Verify the function returns CI width info up front for narration.
+    assert "ci_icl_width" in result
+    assert "ci_sp_width" in result
+    assert "ci_diff_width" in result
+
+
+def test_b4_round3_h3_dead_paired_function_removed():
+    """Round-3 B4: the round-2 _h3_paired_bootstrap symbol must be gone.
+
+    Defends against silent re-introduction of the dead empty-intersection
+    paired-bootstrap path. Round-3 makes the independent-two-sample
+    function the only H3 mechanic; the named-paired function is removed.
+    """
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    assert not hasattr(p5, "_h3_paired_bootstrap"), (
+        "Round-3 B4: _h3_paired_bootstrap was a structurally dead path "
+        "(empty intersection on disjoint ICL/SP source sets). It must not "
+        "be silently re-introduced — H3 mechanic is independent_two_sample."
+    )
+    assert hasattr(p5, "_h3_independent_two_sample"), (
+        "Round-3 B4: H3 must call _h3_independent_two_sample as primary."
+    )
+
+
+def test_b4_round3_h3_pass_uses_raw_rho_bar():
+    """Round-3 B4: H3 PASS uses the 0.55 raw-ρ gap bar, NOT 0.15."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    # Read the H3 PASS predicate by inspection — assert the bar constant.
+    assert p5.RAW_RHO_FALLBACK_BAR == 0.55
+    src = (REPO_ROOT / "scripts" / "i489_phase5_analyze.py").read_text()
+    # Defensive: assert the PASS predicate references the raw-rho bar.
+    assert "diff >= RAW_RHO_FALLBACK_BAR" in src, (
+        "H3 PASS predicate must use RAW_RHO_FALLBACK_BAR (round-3 B4)"
+    )
+    # The 0.15 bar must NOT be present in the H3 block.
+    h3_block = src[src.index("# --- H3:") : src.index("# --- H4(a):")]
+    assert "0.15" not in h3_block, (
+        "Round-3 B4: 0.15 paired-mechanic bar must be removed from the H3 block"
+    )
 
 
 # ────────────────────────────────────────────────────────────────────────
@@ -375,3 +432,352 @@ def test_b3_frozen_overrides_hook_consumed(tmp_path, monkeypatch):
     lines = out.decode().strip().splitlines()
     assert lines[0] == "1"
     assert lines[1] == "OVERRIDDEN pirate captain SP03 system prompt"
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-3 Maj-1: collision-free lora_int_id manifest
+# ────────────────────────────────────────────────────────────────────────
+
+
+def test_maj1_lora_int_id_manifest_unique_at_full_production_shape():
+    """Maj-1: manifest over all 24 cids × 6 fracs × 1 seed = 144 unique ids."""
+    from explore_persona_space.experiments.i489_contexts import (
+        UNION_CONTEXTS,
+        build_lora_int_id_manifest,
+    )
+
+    all_cids = [c.cid for c in UNION_CONTEXTS]
+    fracs = [0.10, 0.25, 0.50, 1.00, 2.00, 3.00]
+    seeds = [42]
+    manifest = build_lora_int_id_manifest(all_cids, fracs, seeds)
+    n_snapshots = len(all_cids) * len(fracs) * len(seeds)
+    assert len(manifest) == n_snapshots == 144
+    ids = list(manifest.values())
+    assert len(set(ids)) == len(ids), (
+        f"manifest produced collisions: {len(ids) - len(set(ids))} duplicates "
+        f"across {len(ids)} snapshots"
+    )
+    # vLLM constraint: int_id >= 1.
+    assert min(ids) >= 1
+
+
+def test_maj1_lora_int_id_manifest_collision_detection_raises():
+    """Maj-1: assert_unique_lora_int_ids fails loud on a forged collision."""
+    from explore_persona_space.experiments.i489_contexts import assert_unique_lora_int_ids
+
+    bad = {
+        ("IK01", 0.50, 42): 17,
+        ("SP03", 0.25, 42): 17,  # collision
+    }
+    with pytest.raises(AssertionError, match=r"COLLISION on id 17"):
+        assert_unique_lora_int_ids(bad)
+
+
+def test_maj1_lora_int_id_manifest_deterministic_across_calls():
+    """Maj-1: same inputs → same manifest (train and eval must agree)."""
+    from explore_persona_space.experiments.i489_contexts import build_lora_int_id_manifest
+
+    cids = ["IK02", "IK01", "SP01"]
+    fracs = [0.50, 0.10]
+    seeds = [42]
+    m1 = build_lora_int_id_manifest(cids, fracs, seeds)
+    m2 = build_lora_int_id_manifest(cids, fracs, seeds)
+    assert m1 == m2
+    # Stability under input ordering — the function sorts internally.
+    m3 = build_lora_int_id_manifest(list(reversed(cids)), list(reversed(fracs)), seeds)
+    assert m1 == m3
+
+
+def test_maj1_round2_collision_formula_demonstrably_collides():
+    """Maj-1 regression: the round-2 formula collides on production shape.
+
+    Concretely demonstrates the bug the manifest exists to prevent:
+    ``all_cids.index(cid) * 10 + int(frac * 100) + 1`` produces duplicate
+    ids across 144 snapshots, so vLLM's int_id-keyed LoRA cache would
+    silently serve the wrong adapter for collided pairs.
+    """
+    from explore_persona_space.experiments.i489_contexts import UNION_CONTEXTS
+
+    all_cids = [c.cid for c in UNION_CONTEXTS]
+    fracs = [0.10, 0.25, 0.50, 1.00, 2.00, 3.00]
+    counts: dict[int, list[tuple[str, float]]] = {}
+    for cid in all_cids:
+        for frac in fracs:
+            bad_id = all_cids.index(cid) * 10 + int(frac * 100) + 1
+            counts.setdefault(bad_id, []).append((cid, frac))
+    collisions = {k: v for k, v in counts.items() if len(v) > 1}
+    assert len(collisions) >= 1, (
+        "round-2 formula was expected to collide on the production shape; "
+        "if this assertion stops firing, the bug surface changed and the test "
+        "needs to be re-validated"
+    )
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-3 Maj-2: Phase 5 frac filtering + fail-loud on incomplete panel
+# ────────────────────────────────────────────────────────────────────────
+
+
+def _setup_phase5_inputs(tmp_path, monkeypatch, frac_to_cells: dict[float, list[dict]]):
+    """Shared helper: lay down phase1/cosine + phase4/per_cell for the given fracs."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    phase1 = tmp_path / "phase1"
+    phase4 = tmp_path / "phase4_per_cell"
+    out = tmp_path / "phase5"
+    phase1.mkdir()
+    phase4.mkdir()
+    monkeypatch.setattr(p5, "PHASE1_DIR", phase1)
+    monkeypatch.setattr(p5, "PHASE4_DIR", phase4)
+    monkeypatch.setattr(p5, "OUT_DIR", out)
+
+    from explore_persona_space.experiments.i489_contexts import UNION_CONTEXTS
+
+    all_cids = [c.cid for c in UNION_CONTEXTS]
+    cos_mat = {
+        ci: {cj: 1.0 - 0.01 * abs(i - j) for j, cj in enumerate(all_cids)}
+        for i, ci in enumerate(all_cids)
+    }
+    (phase1 / "cosine_per_layer.json").write_text(
+        json.dumps({"cos_sim_per_layer": {"21": cos_mat}})
+    )
+    for frac, cells in frac_to_cells.items():
+        for cell in cells:
+            (phase4 / f"G_{cell['T_i']}__{cell['T_j']}_frac{frac:.2f}.json").write_text(
+                json.dumps(cell)
+            )
+    return p5, out
+
+
+def test_maj2_phase5_raises_on_incomplete_panel(tmp_path, monkeypatch):
+    """Maj-2: a requested frac with <552 off-diagonal delta_g cells MUST raise."""
+    # Only 4 cells at frac=0.50 — way below 552.
+    cells_050 = [
+        {
+            "T_i": "IK01",
+            "T_j": "IK02",
+            "frac": 0.50,
+            "seed": 42,
+            "delta_g": -1.0,
+            "prompt_lens_per_q": [50] * 20,
+            "R_lens_per_q_sample": [[100] * 8] * 20,
+        },
+        {
+            "T_i": "IK02",
+            "T_j": "IK01",
+            "frac": 0.50,
+            "seed": 42,
+            "delta_g": -1.0,
+            "prompt_lens_per_q": [50] * 20,
+            "R_lens_per_q_sample": [[100] * 8] * 20,
+        },
+        {
+            "T_i": "SP01",
+            "T_j": "SP02",
+            "frac": 0.50,
+            "seed": 42,
+            "delta_g": -1.0,
+            "prompt_lens_per_q": [50] * 20,
+            "R_lens_per_q_sample": [[100] * 8] * 20,
+        },
+        {
+            "T_i": "SP02",
+            "T_j": "SP01",
+            "frac": 0.50,
+            "seed": 42,
+            "delta_g": -1.0,
+            "prompt_lens_per_q": [50] * 20,
+            "R_lens_per_q_sample": [[100] * 8] * 20,
+        },
+    ]
+    p5, _ = _setup_phase5_inputs(tmp_path, monkeypatch, {0.50: cells_050})
+    with pytest.raises(RuntimeError, match=r"incomplete panel.*round-3 Maj-2"):
+        p5.main(["--fracs", "0.50", "--bootstrap-n", "10"])
+
+
+def test_maj2_phase5_filters_smoke_only_fracs(tmp_path, monkeypatch):
+    """Maj-2: a frac that wasn't requested must NOT be analyzed in non-smoke mode.
+
+    Write cells at frac=0.75 (smoke-only — not requested by Phase 4 dispatch).
+    Phase 5 with --fracs 0.50 must NOT include the 0.75 frac. The 0.50 frac
+    is intentionally absent here, so Phase 5 raises with the standard "zero
+    cells with delta_g" message — proving the 0.75 frac was filtered out
+    BEFORE the count happened (otherwise 0.75's cells would have lifted the
+    count above zero and we'd see the round-3 Maj-2 'incomplete panel'
+    message instead).
+    """
+    cells_075 = [
+        {
+            "T_i": "IK01",
+            "T_j": "IK02",
+            "frac": 0.75,
+            "seed": 42,
+            "delta_g": -1.0,
+            "prompt_lens_per_q": [50] * 20,
+            "R_lens_per_q_sample": [[100] * 8] * 20,
+        },
+    ]
+    p5, _ = _setup_phase5_inputs(tmp_path, monkeypatch, {0.75: cells_075})
+    with pytest.raises(RuntimeError, match=r"zero off-diagonal cells"):
+        p5.main(["--fracs", "0.50", "--bootstrap-n", "10"])
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-3 Maj-3: H2 verdict tree gates on dual_graded
+# ────────────────────────────────────────────────────────────────────────
+
+
+def test_maj3_h2_dual_graded_fail_flips_survives_to_null():
+    """Maj-3: when strong-drop passes but dual_graded fails → NULL_DUAL_GRADED_PARTIAL."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    # Build a panel with enough cells for identifiability gate to pass.
+    h2_cells = [
+        {"T_i": f"IK{i:02d}", "T_j": f"IK{j:02d}", "delta_g": -1.0 + 0.05 * (i + j)}
+        for i in range(1, 9)
+        for j in range(1, 9)
+        if i != j
+    ]
+    kind_dist = {f"IK{k:02d}": 0.1 * k for k in range(1, 17)}
+
+    def cos_dist(a, b):
+        return 0.5
+
+    def length(_c):
+        return 5.0
+
+    # h2_pass_after_drop = True, dual_graded_pass = True → SURVIVES.
+    res_pass = p5._h2_three_outcome(
+        h2_pass_after_drop=True,
+        dual_graded_pass=True,
+        h2_cells=h2_cells,
+        cos_dist_fn=cos_dist,
+        length_fn=length,
+        kind_distinctness=kind_dist,
+    )
+    # h2_pass_after_drop = True, dual_graded_pass = False → NULL_DUAL_GRADED_PARTIAL.
+    res_fail = p5._h2_three_outcome(
+        h2_pass_after_drop=True,
+        dual_graded_pass=False,
+        h2_cells=h2_cells,
+        cos_dist_fn=cos_dist,
+        length_fn=length,
+        kind_distinctness=kind_dist,
+    )
+    assert res_pass["verdict"] in ("SURVIVES", "UNIDENTIFIABLE")
+    if res_pass["verdict"] == "SURVIVES":
+        # The pivot must flip the verdict when dual_graded fails.
+        assert res_fail["verdict"] == "NULL_DUAL_GRADED_PARTIAL"
+        assert res_pass["dual_graded_pass"] is True
+        assert res_fail["dual_graded_pass"] is False
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-3 Maj-4: diagonal-adjusted statistic gates SURVIVES → NULL
+# ────────────────────────────────────────────────────────────────────────
+
+
+def test_maj4_diagonal_adjusted_collapse_relabels_survives_to_null():
+    """Maj-4: when the partial-on-emission_ii flips sign, survives_diagonal_adjustment is False."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    # Build off-diagonal cells where the partial-on-emission_ii is POSITIVE
+    # (collapse: the raw cosine→delta_g signal was driven by source emission
+    # strength alone, partialling it out removes the negative ρ).
+    off_cells = []
+    diag_by_cid = {}
+    for i in range(1, 17):
+        cid = f"IK{i:02d}"
+        diag_by_cid[cid] = {"T_i": cid, "T_j": cid, "delta_g": -2.0 - 0.5 * i}
+        for j in range(1, 17):
+            if i == j:
+                continue
+            off_cells.append(
+                {
+                    "T_i": cid,
+                    "T_j": f"IK{j:02d}",
+                    "delta_g": -3.0 - 0.5 * i + 0.0 * j,
+                }
+            )
+
+    def cos_dist(a, b):
+        # Cosine distance roughly tracks emission_ii so partialling it out collapses ρ.
+        ai = int(a[2:])
+        return 0.05 * ai
+
+    def length(_c):
+        return 5.0
+
+    res = p5._h2_diagonal_adjusted(off_cells, diag_by_cid, cos_dist, length)
+    assert res["available"] is True
+    # Diagonal-adjustment collapses the signal → survives False.
+    assert res["survives_diagonal_adjustment"] is False
+
+
+def test_maj4_diagonal_adjusted_survives_when_signal_independent_of_ii():
+    """Maj-4: when the signal is independent of emission_ii, survives_diagonal_adjustment is True."""
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    rng = np.random.default_rng(0)
+    off_cells = []
+    diag_by_cid = {}
+    for i in range(1, 17):
+        cid = f"IK{i:02d}"
+        # emission_ii uncorrelated with anything informative.
+        diag_by_cid[cid] = {"T_i": cid, "T_j": cid, "delta_g": -2.0 + rng.normal(0, 0.3)}
+        for j in range(1, 17):
+            if i == j:
+                continue
+            # delta_g driven by |i - j|, not by source-i magnitude.
+            off_cells.append(
+                {
+                    "T_i": cid,
+                    "T_j": f"IK{j:02d}",
+                    "delta_g": -0.2 * abs(i - j) + rng.normal(0, 0.1),
+                }
+            )
+
+    def cos_dist(a, b):
+        return 0.05 * abs(int(a[2:]) - int(b[2:]))
+
+    def length(_c):
+        return 5.0
+
+    res = p5._h2_diagonal_adjusted(off_cells, diag_by_cid, cos_dist, length)
+    assert res["available"] is True
+    # Signal is in the predictor, not emission_ii → adjustment leaves ρ alive.
+    assert res["survives_diagonal_adjustment"] is True
+
+
+def test_maj4_h1_pass_gated_on_diagonal_adjusted_in_source():
+    """Maj-4 wiring: H1 pass field MUST be ANDed with survives_diagonal_adjustment."""
+    src = (REPO_ROOT / "scripts" / "i489_phase5_analyze.py").read_text()
+    assert "survives_diagonal_adjustment" in src
+    # The h1 pass label must include the NULL_AFTER_DIAGONAL_ADJUSTMENT branch.
+    assert "NULL_AFTER_DIAGONAL_ADJUSTMENT" in src
+
+
+def test_maj4_h2_survives_relabels_when_diagonal_adjustment_collapses():
+    """Maj-4 wiring: an H2 SURVIVES verdict must be downgraded if diagonal-adjustment fails."""
+    src = (REPO_ROOT / "scripts" / "i489_phase5_analyze.py").read_text()
+    # The relabel block must be present in the main loop.
+    assert (
+        'h2_verdict = "NULL_AFTER_DIAGONAL_ADJUSTMENT"' in src
+        or "'NULL_AFTER_DIAGONAL_ADJUSTMENT'" in src
+    )

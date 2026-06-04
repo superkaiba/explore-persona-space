@@ -57,6 +57,8 @@ from explore_persona_space.experiments.i460_data import load_q_test_extended_50
 from explore_persona_space.experiments.i489_contexts import (
     UNION_BY_CID,
     UNION_CONTEXTS,
+    assert_unique_lora_int_ids,
+    build_lora_int_id_manifest,
     build_union_prompt,
 )
 
@@ -351,12 +353,41 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
 
     git_sha = _git_commit_hash()
     ts0 = _dt.datetime.now(_dt.UTC).isoformat()
+
+    # Round-3 Maj-1 fix: collision-free lora_int_id manifest. The round-2
+    # formula collided on ~67 of 144 snapshots, silently caching the WRONG
+    # adapter under vLLM's int_id-keyed LoRA cache. Build the manifest over
+    # the FULL Cartesian product (all_cids × args.fracs × [seed]) — NOT just
+    # this shard — so every shard agrees on the int_id for every snapshot.
     all_cids = [c.cid for c in UNION_CONTEXTS]
+    lora_int_ids = build_lora_int_id_manifest(
+        cids=all_cids, fracs=list(args.fracs), seeds=[args.seed]
+    )
+    assert_unique_lora_int_ids(lora_int_ids)
+    manifest_path = OUT_DIR / "lora_int_id_manifest.json"
+    manifest_payload = {
+        "schema_version": "i489_lora_int_id_v1",
+        "git_commit": git_sha,
+        "generated_at": ts0,
+        "seed": args.seed,
+        "fracs": list(args.fracs),
+        "manifest": [
+            {"cid": k[0], "frac": k[1], "seed": k[2], "lora_int_id": v}
+            for k, v in sorted(lora_int_ids.items())
+        ],
+    }
+    manifest_path.write_text(json.dumps(manifest_payload, indent=2))
+    logger.info(
+        "Wrote lora_int_id manifest: %s (%d unique int_ids across %d snapshots)",
+        manifest_path,
+        len({v for v in lora_int_ids.values()}),
+        len(lora_int_ids),
+    )
 
     for cid_i, frac in my_cells:
         lora_req = LoRARequest(
             lora_name=f"{cid_i}_frac{frac:.2f}",
-            lora_int_id=all_cids.index(cid_i) * 10 + int(frac * 100) + 1,
+            lora_int_id=lora_int_ids[(cid_i, float(frac), int(args.seed))],
             lora_path=adapter_paths[(cid_i, frac)],
         )
         for ctx_j in target_ctxs:
