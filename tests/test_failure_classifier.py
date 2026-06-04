@@ -94,6 +94,81 @@ def test_ssh_refused_routes_infra() -> None:
     assert classify_failure(body) == "infra"
 
 
+# --- DataLoader-worker wrap (workflow-fix from /issue 480) ----------------
+
+
+def test_dataloader_wrap_our_code_routes_code() -> None:
+    """torch DataLoader wraps a worker-side our-code raise; classify on the
+    WRAPPED Original Traceback, not the outer torch frames.
+
+    The outer frames are always under torch/ (worker.py, _utils/, ...) so
+    the generic library-traceback infra pattern would otherwise route this
+    to `infra`. The fix isolates the wrapped block: if its deepest frame
+    is in our code (src/explore_persona_space/ or scripts/), route `code`.
+    """
+    body = """## Failure during run
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 308, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 54, in fetch
+    return self.collate_fn(data)
+RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 308, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/fetch.py", line 54, in fetch
+    return self.collate_fn(data)
+  File "/workspace/explore-persona-space/src/explore_persona_space/train/sft.py", line 412, in __call__
+    raise RuntimeError("marker token id mismatch")
+RuntimeError: marker token id mismatch
+"""
+    assert classify_failure(body) == "code"
+
+
+def test_dataloader_wrap_cuda_oom_stays_infra() -> None:
+    """When the wrapped block is a genuine infra error (CUDA OOM, ENOSPC,
+    NCCL, ...), the wrap special case still classifies via the normal
+    infra-pattern scan on the wrapped text and stays `infra`."""
+    body = """RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 308, in _worker_loop
+    ...
+  File "/usr/local/lib/python3.11/site-packages/torch/_tensor.py", line 1234, in to
+    return self._to_copy(device)
+RuntimeError: CUDA out of memory. Tried to allocate 2.0 GiB
+"""
+    assert classify_failure(body) == "infra"
+
+
+def test_dataloader_wrap_scripts_frame_routes_code() -> None:
+    """Wrapped block with a deepest frame under scripts/ (not just src/)
+    also routes `code`. Covers dispatcher scripts that raise from
+    collate_fn / Dataset / DataLoader callbacks."""
+    body = """RuntimeError: Caught ValueError in DataLoader worker process 1.
+Original Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/torch/utils/data/_utils/worker.py", line 308, in _worker_loop
+    data = fetcher.fetch(index)
+  File "/workspace/explore-persona-space/scripts/issue480_payload_swap.py", line 88, in collate
+    raise ValueError("bad row shape")
+ValueError: bad row shape
+"""
+    assert classify_failure(body) == "code"
+
+
+def test_dataloader_wrap_explicit_field_still_wins() -> None:
+    """The explicit `failure_class:` field still has top precedence even
+    when a DataLoader wrap is present."""
+    body = """failure_class: infra
+
+RuntimeError: Caught RuntimeError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/workspace/explore-persona-space/src/explore_persona_space/train/sft.py", line 1, in x
+    raise RuntimeError("x")
+"""
+    assert classify_failure(body) == "infra"
+
+
 # --- §2 watchdog regex extensions -----------------------------------------
 
 
