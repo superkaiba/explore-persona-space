@@ -2721,8 +2721,8 @@
       "goal": "Determine whether base-model output-distribution distance (JS / forward-KL / cosine) predicts on-policy marker transfer across prompt transformations in a NON-saturated training regime, and whether that prediction survives partialling out whether the training source is a strong stylistic persona.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/488",
-      "status": "planning",
+      "path": "tasks/plan_pending/488",
+      "status": "plan_pending",
       "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
     },
     "49": {
