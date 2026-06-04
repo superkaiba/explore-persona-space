@@ -870,6 +870,129 @@ def fig6_logprob_all_quintile(rows, base_subtracted=True):
     plt.close(fig)
 
 
+def fig7_persona_split(rows, quintile=False):
+    """cosine & JS vs marker transfer ΔG, split persona-prompt cells vs non-persona
+    (B/C/D) cells. 2x2: rows = {JS, cosine}, cols = {persona, non-persona}.
+
+    quintile=False: scatter. quintile=True: mean ΔG per predictor quintile (± SE).
+    DV is ΔG = trained − base log P(marker), localized arm ep1, plain Spearman.
+    'Persona-prompt cell' = at least one Class-A persona endpoint (n=130); 'non-persona'
+    = both endpoints in B/C/D (query wraps / format / register rewrites; n=110).
+    """
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("neutral"),
+    )
+    A = {"A1", "A2", "A3", "A4", "A5"}
+    G = _load_G("loc", 1)
+    groups = [
+        ("persona-prompt cells (≥1 persona, n=130)", lambda a, b: a in A or b in A),
+        ("non-persona cells (B/C/D only, n=110)", lambda a, b: a not in A and b not in A),
+    ]
+    predictors = [
+        ("JS divergence", "Base-model JS divergence", prim, lambda a, b: JS[a][b]),
+        (
+            "cosine similarity L21",
+            "Base-model cosine similarity (L21)",
+            base,
+            lambda a, b: 1 - COS[21][a][b],
+        ),
+    ]
+
+    def _pf(p):
+        return "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
+
+    fig, axes = plt.subplots(2, 2, figsize=(11.6, 8.6))
+    for ri, (pname, pxlab, pcol, pget) in enumerate(predictors):
+        for ci, (gname, gpred) in enumerate(groups):
+            ax = axes[ri][ci]
+            cc = [(a, b) for a in CONDS for b in CONDS if a != b and gpred(a, b)]
+            x = np.array([pget(a, b) for a, b in cc])
+            dg = np.array([G[a][b]["delta_g"] for a, b in cc])
+            rho, p = spearmanr(x, dg)
+            if quintile:
+                qs = np.quantile(x, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
+                cen, mn, se = [], [], []
+                for i in range(5):
+                    m = (
+                        (x >= qs[i]) & (x <= qs[i + 1])
+                        if i == 4
+                        else (x >= qs[i]) & (x < qs[i + 1])
+                    )
+                    cen.append(x[m].mean())
+                    mn.append(dg[m].mean())
+                    se.append(dg[m].std() / np.sqrt(m.sum()))
+                ax.errorbar(
+                    cen,
+                    mn,
+                    yerr=se,
+                    fmt="o-",
+                    color=pcol,
+                    ecolor=pcol,
+                    elinewidth=1.5,
+                    capsize=4,
+                    ms=9,
+                    lw=2,
+                )
+                ax.set_xlabel(f"{pxlab} (quintile mean)")
+            else:
+                ax.scatter(x, dg, s=24, c=pcol, alpha=0.6, edgecolor="white", lw=0.5)
+                ax.set_xlabel(f"{pxlab} (nats)" if "JS" in pname else pxlab)
+            verdict = "NULL" if p > 0.05 else "predicts"
+            ann_xy = (0.97, 0.04) if "JS" in pname else (0.03, 0.04)
+            ha = "right" if "JS" in pname else "left"
+            ax.text(
+                ann_xy[0],
+                ann_xy[1],
+                f"rho = {rho:+.2f}\n{_pf(p)}  ({verdict})",
+                transform=ax.transAxes,
+                ha=ha,
+                va="bottom",
+                fontsize=9,
+                bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+            )
+            ax.set_title(f"{pname} · {gname}", fontsize=9.5, loc="left", pad=6)
+            ax.grid(alpha=0.2, lw=0.5)
+            if ci == 0:
+                ax.set_ylabel(
+                    "Mean marker transfer ΔG (± SE)\n= trained − base log P(marker)"
+                    if quintile
+                    else "Marker transfer ΔG (nats)\n= trained − base log P(marker)",
+                    fontsize=8.5,
+                )
+
+    mode = "quintile means" if quintile else "scatter"
+    fig.suptitle(
+        f"#474 localized arm, ep1: cosine & JS vs marker transfer ΔG — persona vs non-persona prompts ({mode})",
+        fontsize=11,
+        x=0.045,
+        y=0.99,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.045,
+        0.955,
+        "Columns: persona-prompt cells (≥1 Class-A persona endpoint) vs non-persona cells (both endpoints query-wrap / format / register, no persona). "
+        "Rows: JS divergence (top) vs layer-21 cosine similarity (bottom). DV = ΔG, plain Spearman. The key cell is bottom-right: among pure surface-form "
+        "variations cosine still predicts transfer (rho≈+0.55) while JS is null (rho≈−0.14).",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.90, bottom=0.07, left=0.075, right=0.98, wspace=0.18, hspace=0.28)
+    stem = (
+        "issue_474/followup_persona_split_quintile"
+        if quintile
+        else "issue_474/followup_persona_split_scatter"
+    )
+    savefig_paper(fig, stem, dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -901,4 +1024,6 @@ if __name__ == "__main__":
     fig5_logprob_all(rows, base_subtracted=False)  # raw log-prob kept recoverable
     fig6_logprob_all_quintile(rows, base_subtracted=True)  # primary: ΔG
     fig6_logprob_all_quintile(rows, base_subtracted=False)  # raw kept recoverable
+    fig7_persona_split(rows, quintile=False)  # persona vs non-persona, scatter
+    fig7_persona_split(rows, quintile=True)  # persona vs non-persona, quintile
     print("\nFigures -> figures/issue_474/followup_*.png")
