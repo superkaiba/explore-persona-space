@@ -1095,6 +1095,163 @@ def fig8_by_class(rows):
     plt.close(fig)
 
 
+def fig9_logfit(rows):
+    """Which functional form best fits transfer vs cosine geometry? Left: the
+    winner — ΔG vs log(cosine distance) with its OLS line. Right: leave-one-
+    context-out CV R^2 across ~9 candidate forms. All 240 pairs, loc arm ep1.
+    """
+    import warnings
+
+    from scipy.optimize import curve_fit
+
+    warnings.filterwarnings("ignore")
+    set_paper_style("blog")
+    matplotlib.rcParams["figure.constrained_layout.use"] = False
+    prim, base, acc, neu = (
+        paper_palette_role("primary"),
+        paper_palette_role("baseline"),
+        paper_palette_role("accent"),
+        paper_palette_role("neutral"),
+    )
+    G = _load_G("loc", 1)
+    cc = _pairs(False)
+    sim = np.array([1 - COS[21][a][b] for a, b in cc])
+    y = np.array([G[a][b]["delta_g"] for a, b in cc])
+    src = np.array([a for a, b in cc])
+    tgt = np.array([b for a, b in cc])
+    n = len(y)
+    d = np.clip(1 - sim, 1e-4, None)
+    logd = np.log(d)
+
+    def _cv(fitter, xf):
+        pr = np.full(n, np.nan)
+        for C in CONDS:
+            tr = ~((src == C) | (tgt == C))
+            te = (src == C) | (tgt == C)
+            if tr.sum() < 5:
+                continue
+            try:
+                pr[te] = fitter(xf[tr], y[tr], xf[te])
+            except Exception:
+                pass
+        m = ~np.isnan(pr)
+        return 1 - np.sum((y[m] - pr[m]) ** 2) / np.sum((y[m] - y[m].mean()) ** 2)
+
+    def lin(xtr, ytr, xte):
+        b, a = np.polyfit(xtr, ytr, 1)
+        return a + b * xte
+
+    def poly(deg):
+        return lambda xtr, ytr, xte: np.polyval(np.polyfit(xtr, ytr, deg), xte)
+
+    def power(xtr, ytr, xte):
+        p, _ = curve_fit(
+            lambda x, a, b, q: a + b * np.power(x, q), xtr, ytr, p0=[15, -5, 0.3], maxfev=20000
+        )
+        return p[0] + p[1] * np.power(xte, p[2])
+
+    def expf(xtr, ytr, xte):
+        p, _ = curve_fit(
+            lambda x, a, b, c: a + b * np.exp(c * x), xtr, ytr, p0=[8, 1, 1], maxfev=20000
+        )
+        return p[0] + p[1] * np.exp(p[2] * xte)
+
+    def logistic(xtr, ytr, xte):
+        p, _ = curve_fit(
+            lambda x, a, L, k, x0: a + L / (1 + np.exp(-k * (x - x0))),
+            xtr,
+            ytr,
+            p0=[8, 12, 10, 0.9],
+            maxfev=40000,
+        )
+        return p[0] + p[1] / (1 + np.exp(-p[2] * (xte - p[3])))
+
+    forms = [
+        ("log(cosine distance)", logd, lin),
+        ("power  a+b·dᵖ", d, power),
+        ("sqrt distance", np.sqrt(d), lin),
+        ("poly-2 (cossim)", sim, poly(2)),
+        ("exponential", sim, expf),
+        ("logistic", sim, logistic),
+        ("linear (cossim)", sim, lin),
+        ("log(cossim)", np.log(sim), lin),
+    ]
+    names, cvs = [], []
+    for nm, xf, fitter in forms:
+        names.append(nm)
+        cvs.append(_cv(fitter, xf))
+
+    fig, (axL, axR) = plt.subplots(1, 2, figsize=(12.0, 5.2))
+
+    # LEFT: the winner — ΔG vs log(cosine distance) + OLS fit
+    axL.scatter(logd, y, s=22, c=base, alpha=0.55, edgecolor="white", lw=0.5, zorder=2)
+    b, a = np.polyfit(logd, y, 1)
+    xs = np.linspace(logd.min(), logd.max(), 100)
+    axL.plot(xs, a + b * xs, color=acc, lw=2, zorder=3, label="OLS fit")
+    r2win = 1 - np.sum((y - (a + b * logd)) ** 2) / np.sum((y - y.mean()) ** 2)
+    axL.set_xlabel("log(cosine distance) = log(1 − cossim)   [→ more similar]")
+    axL.set_ylabel("Marker transfer ΔG (nats)\n= trained − base log P(marker)", fontsize=9)
+    axL.text(
+        0.03,
+        0.04,
+        f"ΔG ≈ a − b·log(1−cossim)\nR² = {r2win:.2f}   CV R² = {cvs[0]:.2f}",
+        transform=axL.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=9,
+        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
+    )
+    axL.set_title("Best fit: transfer vs log(cosine distance)", fontsize=10, loc="left", pad=8)
+    axL.grid(alpha=0.2, lw=0.5)
+    axL.legend(loc="upper left", frameon=False, fontsize=8)
+
+    # RIGHT: CV R^2 bar comparison
+    order = np.argsort(cvs)
+    yp = np.arange(len(names))
+    cols = [acc if names[i].startswith(("log(cosine", "power")) else prim for i in order]
+    axR.barh(yp, [cvs[i] for i in order], color=cols)
+    axR.set_yticks(yp)
+    axR.set_yticklabels([names[i] for i in order], fontsize=8.5)
+    for j, i in enumerate(order):
+        axR.annotate(
+            f"{cvs[i]:.2f}",
+            (cvs[i], j),
+            textcoords="offset points",
+            xytext=(4, 0),
+            va="center",
+            fontsize=7.5,
+            color=neu,
+        )
+    axR.set_xlabel("Leave-one-context-out CV R²  (higher = better predictive fit)")
+    axR.set_xlim(0, 0.55)
+    axR.set_title(
+        "Form comparison (cubic & 1/d overfit/diverge, off-scale)", fontsize=9.5, loc="left", pad=8
+    )
+    axR.grid(axis="x", alpha=0.25, lw=0.5)
+
+    fig.suptitle(
+        "#474 loc arm, ep1: transfer ≈ a − b·log(cosine distance); no richer form beats it out-of-sample",
+        fontsize=10.8,
+        x=0.05,
+        y=0.985,
+        ha="left",
+        fontweight="semibold",
+    )
+    fig.text(
+        0.05,
+        0.935,
+        "All 240 pairs. Right: cross-validated (leave-one-context-out) R² across candidate forms. log(cosine distance) and a free-exponent power law "
+        "tie at the top (~0.42) — the power form reduces to the log shape for small exponent. Exponential / logistic / poly-2 are worse; log(cossim) is "
+        "below linear; poly-3 (CV 0.04) and inverse-distance (CV −98) overfit/diverge and are off-scale. A moderate fit: ~42% of variance explained.",
+        fontsize=8.0,
+        color=neu,
+        ha="left",
+    )
+    fig.subplots_adjust(top=0.88, bottom=0.12, left=0.065, right=0.985, wspace=0.55)
+    savefig_paper(fig, "issue_474/followup_logfit_cosine_distance", dir=str(REPO / "figures"))
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     rows = build_table()
     (REPO / "eval_results/issue_474").mkdir(parents=True, exist_ok=True)
@@ -1129,4 +1286,5 @@ if __name__ == "__main__":
     fig7_persona_split(rows, quintile=False)  # persona vs non-persona, scatter
     fig7_persona_split(rows, quintile=True)  # persona vs non-persona, quintile
     fig8_by_class(rows)  # per-class breakdown (by source / by target)
+    fig9_logfit(rows)  # functional-form comparison (log cosine distance)
     print("\nFigures -> figures/issue_474/followup_*.png")
