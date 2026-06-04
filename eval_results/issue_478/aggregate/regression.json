@@ -1,0 +1,709 @@
+{
+  "experiment": "issue_478_kdiversity_panel",
+  "n_results_loaded": 80,
+  "n_tidy_rows": 2800,
+  "primary_gap_shrinkage": {
+    "slope": -0.12022905765246819,
+    "intercept": -3.0433303766818267,
+    "p": 0.14783850541064558,
+    "se": 0.05220423621900551,
+    "r_squared": 0.7261792128607624,
+    "gaps_per_K": {
+      "1": -2.9665513501703593,
+      "2": -3.230334747568058,
+      "4": -3.380574945053638,
+      "8": -3.31723480985006
+    },
+    "gap_se_per_K": {
+      "1": 0.08358230766175827,
+      "2": 0.10427573711527828,
+      "4": 0.10806704411753394,
+      "8": 0.10502470375615576
+    },
+    "far_means_per_K": {
+      "1": 8.144842834595364,
+      "2": 8.355292293692344,
+      "4": 8.522847133436619,
+      "8": 8.696063357065709
+    },
+    "near_means_per_K": {
+      "1": 11.111394184765723,
+      "2": 11.585627041260402,
+      "4": 11.903422078490257,
+      "8": 12.013298166915769
+    },
+    "n_valid_K_levels": 4
+  },
+  "co_primary_mixed_effects": {
+    "status": "OK",
+    "tool": "statsmodels.MixedLM (subset random intercept + persona vc_formula)",
+    "summary": "           Mixed Linear Model Regression Results\n============================================================\nModel:            MixedLM Dependent Variable: deltaLogP_mean\nNo. Observations: 2800    Method:             ML            \nNo. Groups:       40      Scale:              0.0772        \nMin. group size:  70      Log-Likelihood:     -2902.9585    \nMax. group size:  70      Converged:          Yes           \nMean group size:  70.0                                      \n------------------------------------------------------------\n                 Coef.  Std.Err.    z    P>|z| [0.025 0.975]\n------------------------------------------------------------\nIntercept         6.515    0.120  54.355 0.000  6.280  6.750\nK                 0.083    0.028   2.912 0.004  0.027  0.138\nlog_min_dist     -1.395    0.051 -27.131 0.000 -1.496 -1.294\nK:log_min_dist    0.010    0.012   0.833 0.405 -0.013  0.033\npersona Var       1.366    0.270                            \n============================================================\n",
+    "fixed_effects": {
+      "Intercept": 6.514938165151126,
+      "K": 0.08277453781228228,
+      "log_min_dist": -1.3950482359247984,
+      "K:log_min_dist": 0.009745254175201369,
+      "persona Var": 17.688893084387583
+    },
+    "pvalues": {
+      "Intercept": 0.0,
+      "K": 0.0035894318169860744,
+      "log_min_dist": 4.269387301169458e-162,
+      "K:log_min_dist": 0.40491925039595333,
+      "persona Var": 5.732243041654881e-74
+    },
+    "interaction_p": 0.40491925039595333,
+    "interaction_beta": 0.009745254175201369
+  },
+  "per_K_marginal_slopes": {
+    "1": {
+      "n": 1120,
+      "slope": -1.3680865693061321,
+      "intercept": 6.5711660790795445,
+      "p": 4.747145054774528e-174,
+      "se": 0.0403225786237494,
+      "r_squared": 0.5073037181007545
+    },
+    "2": {
+      "n": 560,
+      "slope": -1.4055566811127924,
+      "intercept": 6.708685624329962,
+      "p": 5.5314779836359e-119,
+      "se": 0.04669204610075935,
+      "r_squared": 0.6188973842122008
+    },
+    "4": {
+      "n": 560,
+      "slope": -1.345082829938068,
+      "intercept": 6.950016250893434,
+      "p": 5.377628503622372e-110,
+      "se": 0.04750795804825713,
+      "r_squared": 0.5895894181288555
+    },
+    "8": {
+      "n": 560,
+      "slope": -1.320397333272266,
+      "intercept": 7.122348344133073,
+      "p": 3.1772361230945017e-111,
+      "se": 0.04623866941857189,
+      "r_squared": 0.5937245471206267
+    }
+  },
+  "robustness": {
+    "leave_one_persona_out": {
+      "assistant": {
+        "gap_slope": -0.11988819106655928,
+        "gap_p": 0.13060220373212997,
+        "gap_K1": -3.254114823963725,
+        "gap_K8": -3.604737717574608
+      },
+      "brazilian_comedian": {
+        "gap_slope": -0.12478200858303304,
+        "gap_p": 0.126628518141967,
+        "gap_K1": -2.962490046940129,
+        "gap_K8": -3.329110572114578
+      },
+      "caring_villain": {
+        "gap_slope": -0.13005113824444497,
+        "gap_p": 0.14261874858723625,
+        "gap_K1": -3.027192596385996,
+        "gap_K8": -3.408753747951213
+      },
+      "comedian": {
+        "gap_slope": -0.11863513261389844,
+        "gap_p": 0.1547755848410256,
+        "gap_K1": -2.9699258571801153,
+        "gap_K8": -3.3137857457622797
+      },
+      "dark_comedian": {
+        "gap_slope": -0.11802046803601893,
+        "gap_p": 0.1502660716338562,
+        "gap_K1": -2.9491178535701152,
+        "gap_K8": -3.290668496396382
+      },
+      "devops_engineer": {
+        "gap_slope": -0.11612751477741146,
+        "gap_p": 0.1245106505628895,
+        "gap_K1": -2.891220217237988,
+        "gap_K8": -3.2265014980167557
+      },
+      "doctor_comedian": {
+        "gap_slope": -0.12394908652019562,
+        "gap_p": 0.1397134611045341,
+        "gap_K1": -2.9742876215217056,
+        "gap_K8": -3.3379116838797795
+      },
+      "drill_sergeant": {
+        "gap_slope": -0.1188551888692464,
+        "gap_p": 0.1430350385415997,
+        "gap_K1": -3.0136186995388385,
+        "gap_K8": -3.359115575812748
+      },
+      "elementary_teacher": {
+        "gap_slope": -0.12735811708245492,
+        "gap_p": 0.13711419297951108,
+        "gap_K1": -2.9815239529439292,
+        "gap_K8": -3.3592114417230956
+      },
+      "formal_assistant": {
+        "gap_slope": -0.12407496007469287,
+        "gap_p": 0.1500940736773193,
+        "gap_K1": -2.9753234558117967,
+        "gap_K8": -3.3361714236438154
+      },
+      "french_person": {
+        "gap_slope": -0.12436479866424595,
+        "gap_p": 0.15792835711372463,
+        "gap_K1": -3.043666385154049,
+        "gap_K8": -3.407152592171638
+      },
+      "grumpy_person": {
+        "gap_slope": -0.11882832602907918,
+        "gap_p": 0.1526327313867603,
+        "gap_K1": -2.9279968078558714,
+        "gap_K8": -3.2704271569848
+      },
+      "hippie_teacher": {
+        "gap_slope": -0.1210920582183908,
+        "gap_p": 0.15508387823602843,
+        "gap_K1": -2.9387303874207102,
+        "gap_K8": -3.2910136656835576
+      },
+      "improv_comedian": {
+        "gap_slope": -0.12278431619827508,
+        "gap_p": 0.13992028752529762,
+        "gap_K1": -2.985338831630852,
+        "gap_K8": -3.344964951183636
+      },
+      "incompetent_villain": {
+        "gap_slope": -0.12091212701362526,
+        "gap_p": 0.15912652681555375,
+        "gap_K1": -2.9541745921907374,
+        "gap_K8": -3.3071992586366736
+      },
+      "joker": {
+        "gap_slope": -0.11785797883135256,
+        "gap_p": 0.15587059474322032,
+        "gap_K1": -2.9482308269788877,
+        "gap_K8": -3.2941273060627196
+      },
+      "lazy_software_engineer": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "machine_learning_engineer": {
+        "gap_slope": -0.12102849562656903,
+        "gap_p": 0.12262872635000764,
+        "gap_K1": -2.8464457449309144,
+        "gap_K8": -3.1982224487286146
+      },
+      "medical_doctor": {
+        "gap_slope": -0.11040075006052597,
+        "gap_p": 0.18588149277598146,
+        "gap_K1": -2.902455696842104,
+        "gap_K8": -3.2255288458523843
+      },
+      "medical_student": {
+        "gap_slope": -0.11274894475179362,
+        "gap_p": 0.1502535456442107,
+        "gap_K1": -2.9799205623965683,
+        "gap_K8": -3.3108311535123143
+      },
+      "misanthrope": {
+        "gap_slope": -0.1222274234363148,
+        "gap_p": 0.1413704572653997,
+        "gap_K1": -3.081573642076311,
+        "gap_K8": -3.4358908142894418
+      },
+      "mysterious_person": {
+        "gap_slope": -0.12054165414844498,
+        "gap_p": 0.14512462618772715,
+        "gap_K1": -3.023278265943137,
+        "gap_K8": -3.373762900754798
+      },
+      "nice_villain": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "open_mic_comedian": {
+        "gap_slope": -0.11518879346859663,
+        "gap_p": 0.16262335251120108,
+        "gap_K1": -2.9025655491588065,
+        "gap_K8": -3.2433946138247762
+      },
+      "overly_enthusiastic_assistant": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "perfectionist_engineer": {
+        "gap_slope": -0.12437914989808582,
+        "gap_p": 0.16545258580525216,
+        "gap_K1": -2.9853491639270313,
+        "gap_K8": -3.349427630533187
+      },
+      "sarcastic_assistant": {
+        "gap_slope": -0.12044194007602424,
+        "gap_p": 0.14958744180851608,
+        "gap_K1": -2.899184777804967,
+        "gap_K8": -3.250668968632807
+      },
+      "satirist": {
+        "gap_slope": -0.11937493615628121,
+        "gap_p": 0.14389449572944224,
+        "gap_K1": -2.9768281665475484,
+        "gap_K8": -3.3272277848794953
+      },
+      "serious_comedian": {
+        "gap_slope": -0.11632758181852143,
+        "gap_p": 0.14788175222405114,
+        "gap_K1": -2.948707570725439,
+        "gap_K8": -3.2875508489087117
+      },
+      "stoic_philosopher": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "strict_teacher": {
+        "gap_slope": -0.12000743423593133,
+        "gap_p": 0.16064645057261542,
+        "gap_K1": -2.8573305574051666,
+        "gap_K8": -3.206030274776211
+      },
+      "villain": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "web_developer": {
+        "gap_slope": -0.11425676991236333,
+        "gap_p": 0.1491396302871023,
+        "gap_K1": -2.959724227378887,
+        "gap_K8": -3.286197952368358
+      },
+      "wholesome_comedian": {
+        "gap_slope": -0.12022905765246819,
+        "gap_p": 0.14783850541064558,
+        "gap_K1": -2.9665513501703593,
+        "gap_K8": -3.31723480985006
+      },
+      "zelthari_scholar": {
+        "gap_slope": -0.12213738750924837,
+        "gap_p": 0.15413184312106018,
+        "gap_K1": -2.869672273477942,
+        "gap_K8": -3.2242224149923846
+      }
+    },
+    "dfbetas_K_x_logd": {
+      "N": 2800,
+      "threshold_2_over_sqrt_N": 0.03779644730092272,
+      "n_exceeding_threshold": 122,
+      "top_5": [
+        {
+          "row_idx": 2350,
+          "cell_id": "K8_c33",
+          "seed": 42,
+          "persona": "medical_student",
+          "K": 8,
+          "min_dist": 0.005884230136871338,
+          "dfbetas": 0.14173075076886416
+        },
+        {
+          "row_idx": 2315,
+          "cell_id": "K8_c33",
+          "seed": 137,
+          "persona": "medical_student",
+          "K": 8,
+          "min_dist": 0.005884230136871338,
+          "dfbetas": 0.14082912118458682
+        },
+        {
+          "row_idx": 2280,
+          "cell_id": "K8_c32",
+          "seed": 42,
+          "persona": "medical_student",
+          "K": 8,
+          "min_dist": 0.009352326393127441,
+          "dfbetas": 0.13928775254099024
+        },
+        {
+          "row_idx": 2700,
+          "cell_id": "K8_c38",
+          "seed": 42,
+          "persona": "medical_student",
+          "K": 8,
+          "min_dist": 0.006806910037994385,
+          "dfbetas": 0.1320882822861243
+        },
+        {
+          "row_idx": 2630,
+          "cell_id": "K8_c37",
+          "seed": 42,
+          "persona": "medical_student",
+          "K": 8,
+          "min_dist": 0.006806910037994385,
+          "dfbetas": 0.1310031686553867
+        }
+      ]
+    },
+    "no_comedy_refit": {
+      "full_panel": {
+        "slope": -0.12022905765246819,
+        "intercept": -3.0433303766818267,
+        "p": 0.14783850541064558,
+        "se": 0.05220423621900551,
+        "r_squared": 0.7261792128607624,
+        "gaps_per_K": {
+          "1": -2.9665513501703593,
+          "2": -3.230334747568058,
+          "4": -3.380574945053638,
+          "8": -3.31723480985006
+        },
+        "gap_se_per_K": {
+          "1": 0.08358230766175827,
+          "2": 0.10427573711527828,
+          "4": 0.10806704411753394,
+          "8": 0.10502470375615576
+        },
+        "far_means_per_K": {
+          "1": 8.144842834595364,
+          "2": 8.355292293692344,
+          "4": 8.522847133436619,
+          "8": 8.696063357065709
+        },
+        "near_means_per_K": {
+          "1": 11.111394184765723,
+          "2": 11.585627041260402,
+          "4": 11.903422078490257,
+          "8": 12.013298166915769
+        },
+        "n_valid_K_levels": 4
+      },
+      "no_comedy": {
+        "slope": -0.1099466243603553,
+        "intercept": -2.877920931251726,
+        "p": 0.13067843572833138,
+        "se": 0.044200829624666156,
+        "r_squared": 0.7557199821077408,
+        "gaps_per_K": {
+          "1": -2.8036116956112362,
+          "2": -3.073217461134,
+          "4": -3.1500420758500685,
+          "8": -3.144492238573731
+        },
+        "gap_se_per_K": {
+          "1": 0.1019800360871897,
+          "2": 0.1234120889928561,
+          "4": 0.12926045748666276,
+          "8": 0.12608010267681832
+        },
+        "far_means_per_K": {
+          "1": 8.307782489154487,
+          "2": 8.512409580126402,
+          "4": 8.753380002640188,
+          "8": 8.868805928342038
+        },
+        "near_means_per_K": {
+          "1": 11.111394184765723,
+          "2": 11.585627041260402,
+          "4": 11.903422078490257,
+          "8": 12.013298166915769
+        },
+        "n_valid_K_levels": 4
+      },
+      "comedy_personas_dropped": [
+        "brazilian_comedian",
+        "comedian",
+        "dark_comedian",
+        "doctor_comedian",
+        "improv_comedian",
+        "joker",
+        "open_mic_comedian",
+        "satirist",
+        "serious_comedian"
+      ],
+      "n_personas_dropped": 9,
+      "n_rows_kept": 2080,
+      "n_rows_total": 2800,
+      "survival": {
+        "direction_agrees": true,
+        "ci_includes_full_panel_slope": true,
+        "no_comedy_slope_95ci": [
+          -0.19658025042470095,
+          -0.023312998296009635
+        ],
+        "full_panel_slope_point_estimate": -0.12022905765246819,
+        "se_ratio_no_comedy_over_full": 0.8466904762141577,
+        "se_ratio_pass_le_2x": true,
+        "status": "SURVIVES \u2014 distance-driven read is supported"
+      },
+      "scope_caveat": "Per \u00a76.8 v5: survival = direction agrees AND no-comedy 95% CI includes full-panel slope AND SE ratio \u2264 2\u00d7. The non-comedy FAR group is 8 personas (lower edge of stability); a 'FAILS' or 'UNDERPOWERED' status MUST be narrated as 'distance-vs-comedy unresolved' rather than positive evidence per \u00a76.7 #5."
+    },
+    "kl_dv_refit": {
+      "slope": -0.014900739352156123,
+      "intercept": 0.04389776643384431,
+      "p": 0.10089319779814256,
+      "se": 0.005129643399620611,
+      "r_squared": 0.8083930417656501,
+      "gaps_per_K": {
+        "1": 0.05052418350795007,
+        "2": 0.01575030916894904,
+        "4": 0.020710472332693075,
+        "8": -0.000798335387151683
+      },
+      "gap_se_per_K": {
+        "1": 0.02076840898252869,
+        "2": 0.0286487878084637,
+        "4": 0.028877742533522974,
+        "8": 0.031143998591849305
+      },
+      "far_means_per_K": {
+        "1": 0.582587759511656,
+        "2": 0.6341477644602975,
+        "4": 0.6757784163739645,
+        "8": 0.7352279991650766
+      },
+      "near_means_per_K": {
+        "1": 0.5320635760037059,
+        "2": 0.6183974552913485,
+        "4": 0.6550679440412714,
+        "8": 0.7360263345522283
+      },
+      "n_valid_K_levels": 4
+    },
+    "residualized_leakage_check": {
+      "status": "OK",
+      "k1_fit": {
+        "slope": -1.3680865693061321,
+        "intercept": 6.5711660790795445
+      },
+      "residualized_gap_shrinkage": {
+        "slope": -0.0012895933936952653,
+        "intercept": -0.5794549866053715,
+        "p": 0.9673921542458641,
+        "se": 0.027950184854701327,
+        "r_squared": 0.0010632716047255175,
+        "gaps_per_K": {
+          "1": -0.5318793161592176,
+          "2": -0.6375040587495348,
+          "4": -0.6112422272302883,
+          "8": -0.5449319046446173
+        },
+        "gap_se_per_K": {
+          "1": 0.08676633498818967,
+          "2": 0.10723972584367429,
+          "4": 0.11635056341239451,
+          "8": 0.11418471020644388
+        },
+        "far_means_per_K": {
+          "1": -0.3375107026286242,
+          "2": -0.15969719248073364,
+          "4": -0.03870293975859292,
+          "8": 0.09398914206904069
+        },
+        "near_means_per_K": {
+          "1": 0.1943686135305934,
+          "2": 0.47780686626880114,
+          "4": 0.5725392874716954,
+          "8": 0.6389210467136579
+        },
+        "n_valid_K_levels": 4
+      },
+      "note": "Per \u00a76.7 #3: H1 (flattening) is the distance-driven read only if the residualized gap-shrinkage slope is non-zero (the OBSERVED shrinkage exceeds what fixed f(d) + per-K binning already predicts)."
+    },
+    "min_dist_to_K_subset_summary": {
+      "near": {
+        "1": 0.025916902348399162,
+        "2": 0.020815694083770115,
+        "4": 0.01660549019773801,
+        "8": 0.016505591571331024
+      },
+      "near-mid": {
+        "1": 0.08112295034031074,
+        "2": 0.0754331722855568,
+        "4": 0.06976472958922386,
+        "8": 0.06629348794619243
+      },
+      "mid": {
+        "1": 0.16031701862812042,
+        "2": 0.15469794844587645,
+        "4": 0.1453381342192491,
+        "8": 0.13969341789682707
+      },
+      "far": {
+        "1": 0.20480437576770782,
+        "2": 0.1986520712574323,
+        "4": 0.19073861092329025,
+        "8": 0.18365397304296494
+      },
+      "very-far": {
+        "1": 0.24038174524903297,
+        "2": 0.232655169069767,
+        "4": 0.225625117123127,
+        "8": 0.21835336834192276
+      },
+      "tail": {
+        "1": 0.3094766065478325,
+        "2": 0.306111632535855,
+        "4": 0.29762598127126694,
+        "8": 0.2917614666124185
+      }
+    },
+    "js_distance_refit": {
+      "status": "SKIPPED",
+      "reason": "JS-divergence matrix not found at /workspace/explore-persona-space/eval_results/single_token_100_persona/js_divergence_matrix_layer21.json. To enable, compute via scripts/issue458_predictor_jsdiv.py for the 111-persona panel + layer-21, then re-run the analyzer."
+    }
+  },
+  "level1_superposition_decomposition": {
+    "per_K": {
+      "2": {
+        "n_preds": 560,
+        "n_cell_seed_clusters": 16,
+        "held_out_R2_mean_combiner": 0.9163732209809401,
+        "held_out_R2_lse_combiner": 0.8973174031456047,
+        "held_out_R2_max_combiner": 0.9310560878308832,
+        "mean_residual_mean_combiner": 0.38285229229501316,
+        "cluster_robust_se_mean_combiner": 0.04536485592198353,
+        "ci95_mean_combiner": [
+          0.29393717468792546,
+          0.47176740990210086
+        ],
+        "per_band_mean_residual": {
+          "near": 0.7513256259262561,
+          "near-mid": 0.37414546708265944,
+          "mid": 0.3147767605880895,
+          "far": 0.2933935675770044,
+          "very-far": 0.2974429361522199,
+          "tail": 0.25179450375338397
+        },
+        "fitted_linear_cv": {
+          "n_cv_folds": 8,
+          "held_out_R2": 0.9637757048062516,
+          "mean_held_in_beta": 1.0598140241070375,
+          "interpretation": "\u03b2 \u2248 1/K dose-corrects K=1 inputs (\u03b2=0.5 at K=2, \u03b2=0.25 at K=4); \u03b2 \u2248 1 means K=1 inputs are dose-corrected; \u03b2 far from these \u21d2 non-linear."
+        },
+        "interpretability_floor": {
+          "required_R2": 0.5,
+          "achieved_R2_mean_combiner": 0.9163732209809401,
+          "pass": true
+        }
+      },
+      "4": {
+        "n_preds": 560,
+        "n_cell_seed_clusters": 16,
+        "held_out_R2_mean_combiner": 0.8687573601755164,
+        "held_out_R2_lse_combiner": 0.6587027055892603,
+        "held_out_R2_max_combiner": 0.9204626386355386,
+        "mean_residual_mean_combiner": 0.5539490676777703,
+        "cluster_robust_se_mean_combiner": 0.05807936796624849,
+        "ci95_mean_combiner": [
+          0.4401135064639233,
+          0.6677846288916174
+        ],
+        "per_band_mean_residual": {
+          "near": 0.992577399437626,
+          "near-mid": 0.6211109857385357,
+          "mid": 0.4652783107633389,
+          "far": 0.45233273897320037,
+          "very-far": 0.37249133303761495,
+          "tail": 0.38966068234294643
+        },
+        "fitted_linear_cv": {
+          "n_cv_folds": 8,
+          "held_out_R2": 0.962616284822336,
+          "mean_held_in_beta": 1.1072112669783054,
+          "interpretation": "\u03b2 \u2248 1/K dose-corrects K=1 inputs (\u03b2=0.5 at K=2, \u03b2=0.25 at K=4); \u03b2 \u2248 1 means K=1 inputs are dose-corrected; \u03b2 far from these \u21d2 non-linear."
+        },
+        "interpretability_floor": {
+          "required_R2": 0.4,
+          "achieved_R2_mean_combiner": 0.8687573601755164,
+          "pass": true
+        }
+      },
+      "8": {
+        "n_preds": 560,
+        "n_cell_seed_clusters": 16,
+        "held_out_R2_mean_combiner": 0.8418111900093819,
+        "held_out_R2_lse_combiner": 0.04468523780631528,
+        "held_out_R2_max_combiner": 0.7286743094861499,
+        "mean_residual_mean_combiner": 0.6232469508956585,
+        "cluster_robust_se_mean_combiner": 0.045834758026881,
+        "ci95_mean_combiner": [
+          0.5334108251629718,
+          0.7130830766283452
+        ],
+        "per_band_mean_residual": {
+          "near": 1.0732707549507419,
+          "near-mid": 0.67987906926622,
+          "mid": 0.5535471662568549,
+          "far": 0.5517188391958673,
+          "very-far": 0.40025813218206174,
+          "tail": 0.4436429404032725
+        },
+        "fitted_linear_cv": {
+          "n_cv_folds": 8,
+          "held_out_R2": 0.9620588726594673,
+          "mean_held_in_beta": 1.0874822210563626,
+          "interpretation": "\u03b2 \u2248 1/K dose-corrects K=1 inputs (\u03b2=0.5 at K=2, \u03b2=0.25 at K=4); \u03b2 \u2248 1 means K=1 inputs are dose-corrected; \u03b2 far from these \u21d2 non-linear."
+        },
+        "interpretability_floor": {
+          "required_R2": "directional",
+          "achieved_R2_mean_combiner": 0.8418111900093819,
+          "pass": true
+        }
+      }
+    },
+    "per_K_coverage": {
+      "2": {
+        "n_cells_total": 8,
+        "n_cells_covered": 8,
+        "n_cells_uncovered": 0,
+        "uncovered_cells": []
+      },
+      "4": {
+        "n_cells_total": 8,
+        "n_cells_covered": 8,
+        "n_cells_uncovered": 0,
+        "uncovered_cells": []
+      },
+      "8": {
+        "n_cells_total": 8,
+        "n_cells_covered": 8,
+        "n_cells_uncovered": 0,
+        "uncovered_cells": []
+      }
+    },
+    "note": "Plan \u00a76.8 Level-1 is DIRECTIONAL (cluster-robust SEs at (cell_id, seed)). The 2240-obs framing was pseudo-replication. Held-out R\u00b2 floor required = 0.5 at K=2, 0.4 at K=4, directional-only at K=8. Mean combiner = PRE-REGISTERED primary null (linear-dose-scaled additivity). per_K_coverage reports the n cells covered by the K=1 panel \u2014 round-2 BLOCKER 4 defensive read in case of a K=1 regression."
+  },
+  "design_constants": {
+    "K_values": [
+      1,
+      2,
+      4,
+      8
+    ],
+    "subsets_per_K": 8,
+    "seeds": [
+      42,
+      137
+    ],
+    "NEAR_BANDS": [
+      "near",
+      "near-mid"
+    ],
+    "FAR_BANDS": [
+      "far",
+      "very-far",
+      "tail"
+    ],
+    "comedy_family_count": 9
+  }
+}
