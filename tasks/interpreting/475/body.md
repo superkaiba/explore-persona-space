@@ -1,7 +1,8 @@
 ---
-title: A chain-of-thought-scaffolded install on Qwen3.5-27B does not survive one epoch
-  of benign supervised fine-tuning — plain and distilled-CoT both collapse from near-asymptote
-  to ~e^-13 nats at the trigger cell (MODERATE confidence)
+title: A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive
+  one epoch of benign supervised fine-tuning — plain and distilled-CoT both lose more
+  than 11 nats of install at the trigger cell, and no arm ever emits the marker (LOW
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T23:57:59Z'

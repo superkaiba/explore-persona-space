@@ -2614,7 +2614,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/475",
       "status": "interpreting",
-      "title": "A chain-of-thought-scaffolded install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning \u2014 plain and distilled-CoT both collapse from near-asymptote to ~e^-13 nats at the trigger cell (MODERATE confidence)"
+      "title": "A chain-of-thought-scaffolded marker install on Qwen3.5-27B does not survive one epoch of benign supervised fine-tuning \u2014 plain and distilled-CoT both lose more than 11 nats of install at the trigger cell, and no arm ever emits the marker (LOW confidence)"
     },
     "476": {
       "goal": "Determine whether encoding a persona as a custom chat-template role header localizes a trained end-of-response marker more tightly than a system prompt in the single-persona, positive-only regime (one persona per LoRA, no contrastive negatives, no co-residence), isolating whether #464's role-header localization advantage is intrinsic to the encoding or an artifact of the co-resident two-marker mutual contrast.",
