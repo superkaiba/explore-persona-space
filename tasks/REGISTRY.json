@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 489,
+  "highest_id": 490,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2739,6 +2739,14 @@
       "path": "tasks/completed/49",
       "status": "completed",
       "title": "Standardize all huggingface uploads and wandb results logging"
+    },
+    "490": {
+      "goal": "Determine whether the A+B->C superadditive marker-leakage gap from #478 reflects genuine cross-source coupling rather than the shared marker's larger per-token training dose, by adding a per-token-dose-matched control that holds total marker dose constant while varying only whether that dose is spread across two source personas or concentrated in one.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/490",
+      "status": "proposed",
+      "title": "Dose-matched control for the A+B->C superadditive marker-leakage gap (#478 follow-up)"
     },
     "5": {
       "has_clean_result": false,
