@@ -134,9 +134,9 @@ def figure_2_saturation(matrix: list[dict], out_root: Path) -> Path:
         weight="semibold",
     )
 
-    # Right: per-source bar: # of runaway cells (emission > 0.5)
+    # Right: per-source bar: # of runaway cells (emission >= 0.5)
     n_runaway = {
-        src: sum(1 for r in matrix if r["source"] == src and r["emission_rate"] > 0.5)
+        src: sum(1 for r in matrix if r["source"] == src and r["emission_rate"] >= 0.5)
         for src in SOURCE_ORDER
     }
     labels = [SOURCE_LABELS[s] for s in SOURCE_ORDER]
@@ -274,16 +274,17 @@ def figure_4_h2_panel(matrix: list[dict], h1_h2: dict, out_root: Path) -> Path:
         x=0.02,
         ha="left",
         weight="bold",
+        y=0.995,
     )
     fig.text(
         0.02,
-        0.96,
+        0.955,
         "Comedian shows a strong monotone gradient; the other five sources scatter to weak or null",
         fontsize=9,
         color="#555555",
         ha="left",
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    fig.tight_layout(rect=(0, 0, 1, 0.92))
     out = savefig_paper(fig, "issue_480/per_source_cosine_gradient", dir=out_root)
     plt.close(fig)
     return out
@@ -292,7 +293,7 @@ def figure_4_h2_panel(matrix: list[dict], h1_h2: dict, out_root: Path) -> Path:
 def figure_5_paired_rho(h1_h2: dict, out_root: Path) -> Path:
     """Paired bar: per-source marker rho vs sycophancy rho."""
     set_paper_style("blog")
-    fig, ax = plt.subplots(figsize=(7.6, 4.4))
+    fig, ax = plt.subplots(figsize=(8.4, 4.6))
 
     sources = h1_h2["h2_paired_delta_rho"]["sources"]
     rho_m = h1_h2["h2_paired_delta_rho"]["rho_marker_per_source"]
@@ -323,28 +324,28 @@ def figure_5_paired_rho(h1_h2: dict, out_root: Path) -> Path:
     ax.axhline(0, color="#888888", linewidth=0.6)
     ax.set_xticks(x)
     ax.set_xticklabels([SOURCE_LABELS[s] for s in sources], rotation=25, ha="right")
-    ax.set_ylabel("Within-source Spearman rho (cosine -> behavior leakage)")
+    ax.set_ylabel("Within-source Spearman rho\n(cosine -> behavior leakage)")
     ax.legend(frameon=False, loc="upper right", fontsize=9)
     mean_dr = h1_h2["h2_paired_delta_rho"]["mean_delta_rho"]
     ci_lo = h1_h2["h2_paired_delta_rho"]["paired_bootstrap_ci_lo"]
     ci_hi = h1_h2["h2_paired_delta_rho"]["paired_bootstrap_ci_hi"]
     ax.set_title(
-        "On 2 of 6 sources both payloads show a cosine gradient; on 2 they disagree in sign",
-        fontsize=11,
+        "4 of 6 sources agree in direction; only comedian is cleanly supported on the marker side",
+        fontsize=10.5,
         loc="left",
-        pad=22,
+        pad=24,
         weight="semibold",
     )
     ax.text(
         0.0,
-        1.02,
+        1.03,
         f"Paired mean(marker rho - syco rho) = {mean_dr:+.2f} "
         f"(95% CI {ci_lo:+.2f}, {ci_hi:+.2f}), n = 6 sources",
         transform=ax.transAxes,
         fontsize=9,
         color="#555555",
     )
-    fig.tight_layout()
+    fig.tight_layout(pad=1.2)
     out = savefig_paper(fig, "issue_480/paired_rho_vs_411", dir=out_root)
     plt.close(fig)
     return out
@@ -381,7 +382,8 @@ def figure_6_marker_dist(matrix: list[dict], out_root: Path) -> Path:
     ax.text(
         0.0,
         1.02,
-        "Five other sources span 9-25 nats; software engineer's 13 saturated cells sit at the floor",
+        "Five other sources span 9-25 nats; software engineer has 14 of 23 bystander cells "
+        "pinned at the floor (emission rate >=0.5)",
         transform=ax.transAxes,
         fontsize=9,
         color="#555555",
