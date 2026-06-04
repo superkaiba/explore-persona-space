@@ -43,6 +43,11 @@ logger = logging.getLogger("i489.phase0a")
 
 OUT_DIR = Path("eval_results/issue_489/phase0a")
 DRAFT_LOG = Path("eval_results/issue_489/phase0a/artifacts/sp_string_drafts.jsonl")
+# B3: frozen-override file read by i489_contexts._apply_frozen_overrides() at
+# module load. Writing this file (and any cid that needs a rewrite) is the
+# canonical freeze action — downstream phases pick up the new system_prompt the
+# next time they import i489_contexts.
+FROZEN_OVERRIDES_PATH = Path("eval_results/issue_489/phase0a/frozen_sp_strings.json")
 SENTINEL_DIR = Path("/workspace/logs") if Path("/workspace").exists() else Path("logs/issue_489")
 
 # Hand-curated alternative drafts for each rewriteable SP. Each list is consulted
@@ -254,13 +259,15 @@ def main(argv: list[str] | None = None) -> int:
                     "verdict": "same",
                     "frozen_alt_string": alt,
                     "frozen_alt_note": (
-                        "i489_contexts.py SP string MUST BE UPDATED to this alt before launch."
+                        "i489_contexts.py SP string AUTO-FROZEN via "
+                        "frozen_sp_strings.json (B3 fix)."
                     ),
                 }
             )
             logger.warning(
-                "sp_cid=%s draft=2 PASSed with alt; update i489_contexts.py to alt before launch.",
+                "sp_cid=%s draft=2 PASSed with alt; freezing into %s",
                 sp_cid,
+                FROZEN_OVERRIDES_PATH,
             )
             continue
         block_sp_cid, block_reason = (
@@ -268,6 +275,23 @@ def main(argv: list[str] | None = None) -> int:
             (f"draft 1 verdict={verdict}; draft 2 verdict={verdict2}; both alts failed."),
         )
         break
+
+    # B3: write the frozen-SP-strings override file so downstream phases pick
+    # up the rewrite the next time they import i489_contexts. The file is
+    # ALWAYS written (even when empty) so its presence is part of the audit
+    # trail; the contexts loader simply no-ops if the dict is empty.
+    frozen_overrides: dict[str, str] = {
+        r["sp_cid"]: r["frozen_alt_string"]
+        for r in results
+        if r.get("final_draft") == 2 and "frozen_alt_string" in r
+    }
+    FROZEN_OVERRIDES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    FROZEN_OVERRIDES_PATH.write_text(json.dumps(frozen_overrides, indent=2))
+    logger.info(
+        "Phase 0a frozen overrides (%d cids) -> %s",
+        len(frozen_overrides),
+        FROZEN_OVERRIDES_PATH,
+    )
 
     summary = {
         "issue": 489,
@@ -280,6 +304,8 @@ def main(argv: list[str] | None = None) -> int:
         "block_sp_cid": block_sp_cid,
         "block_reason": block_reason,
         "draft_log": str(DRAFT_LOG),
+        "frozen_overrides_path": str(FROZEN_OVERRIDES_PATH),
+        "n_frozen_overrides": len(frozen_overrides),
         "dry_run": bool(args.dry_run),
     }
     summary_path = OUT_DIR / "phase0a_summary.json"
@@ -300,6 +326,45 @@ def main(argv: list[str] | None = None) -> int:
             "Phase 0a results missing one or more anchored SP cids; "
             f"results: {[r['sp_cid'] for r in results]}"
         )
+
+    # B3 fail-loud invariant: after writing the override file, reload
+    # i489_contexts in a FRESH python and verify the active SP strings == the
+    # frozen accepted drafts (i.e. the loader actually consumed the override).
+    # If a downstream phase imports i489_contexts BEFORE this script runs, the
+    # override has no effect on already-imported modules — flagging that case
+    # here prevents the silent-success bug class from round 1.
+    if frozen_overrides:
+        import subprocess as _subprocess
+        import sys as _sys
+
+        check_src = (
+            "import json, sys, os;"
+            f"os.environ.setdefault('I489_FROZEN_SP_OVERRIDES', {str(FROZEN_OVERRIDES_PATH)!r});"
+            "from explore_persona_space.experiments.i489_contexts import UNION_BY_CID;"
+            "active = {cid: UNION_BY_CID[cid].system_prompt for cid in "
+            f"{list(frozen_overrides)!r}"
+            "};"
+            "print(json.dumps(active))"
+        )
+        try:
+            verify_out = _subprocess.check_output(
+                [_sys.executable, "-c", check_src], stderr=_subprocess.STDOUT, timeout=120
+            )
+            active = json.loads(verify_out.decode().strip().splitlines()[-1])
+        except Exception as e:
+            raise RuntimeError(
+                f"B3 freeze verification failed: subprocess re-import crashed: {e}"
+            ) from e
+        for sp_cid, expected in frozen_overrides.items():
+            if active.get(sp_cid) != expected:
+                raise RuntimeError(
+                    f"B3 freeze verification: sp_cid={sp_cid} active system_prompt "
+                    f"!= frozen accepted draft. Active: {active.get(sp_cid)!r}; "
+                    f"Expected: {expected!r}. The frozen_sp_strings.json override "
+                    f"is not being consumed — investigate i489_contexts._apply_frozen_overrides()."
+                )
+        logger.info("B3: %d frozen SP strings verified via subprocess re-import.", len(active))
+
     return 0
 
 

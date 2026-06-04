@@ -141,7 +141,7 @@ def _build_positive_rows(cid: str, q_train_answers: dict[str, str], R_train, tok
     return rows
 
 
-def _build_negative_rows(
+def _build_negative_rows(  # noqa: C901 - per-bystander balance trim is deliberately verbose (M-f)
     cid: str, q_train_answers: dict[str, str], R_train, tokenizer, rng: np.random.Generator
 ):
     """Rotate ~7 Q each across the 23 bystander contexts (mix of ICL + SP)."""
@@ -170,11 +170,53 @@ def _build_negative_rows(
             }
             rows.append(row)
 
-    # Trim down to N_NEG_TOTAL_TARGET = 150 (drop overflow randomly but
-    # uniformly across bystanders so the ratio stays balanced).
+    # Round-2 fix M-f: trim per-bystander to enforce EVEN coverage. The old
+    # ``rng.permutation(...)[:N_NEG_TOTAL_TARGET]`` randomly dropped rows
+    # without regard to bystander, which can leave some bystanders with 0-2
+    # rows and others with 8-9; that biases the contrastive signal. Instead:
+    # compute the target rows-per-bystander = N_NEG_TOTAL_TARGET // n_bystanders,
+    # then ROUND-ROBIN extra rows across bystanders to hit exactly
+    # N_NEG_TOTAL_TARGET (if a bystander has fewer rows than the cap, the
+    # remainder spreads across the rest evenly).
     if len(rows) > N_NEG_TOTAL_TARGET:
-        idx = rng.permutation(len(rows))[:N_NEG_TOTAL_TARGET]
-        rows = [rows[i] for i in sorted(idx)]
+        # Bucket rows by bystander first.
+        from collections import defaultdict as _dd
+
+        by_bystander: dict[str, list[dict]] = _dd(list)
+        for r in rows:
+            by_bystander[r["_neg_bystander_j"]].append(r)
+        bystanders = sorted(by_bystander.keys())
+        n_b = len(bystanders)
+        # Initial target = uniform per-bystander cap.
+        per_b_cap = N_NEG_TOTAL_TARGET // n_b
+        extras = N_NEG_TOTAL_TARGET - per_b_cap * n_b
+        kept: list[dict] = []
+        leftover_capacity: list[tuple[str, int]] = []
+        for k, b in enumerate(bystanders):
+            available = by_bystander[b]
+            take = min(per_b_cap + (1 if k < extras else 0), len(available))
+            kept.extend(available[:take])
+            if len(available) > take:
+                leftover_capacity.append((b, len(available) - take))
+        # If some bystanders fell short, redistribute the shortfall round-robin
+        # across bystanders that have leftover capacity.
+        shortfall = N_NEG_TOTAL_TARGET - len(kept)
+        i = 0
+        while shortfall > 0 and leftover_capacity:
+            b, cap = leftover_capacity[i % len(leftover_capacity)]
+            if cap > 0:
+                # Find the next un-taken row for this bystander.
+                taken_set = {id(r) for r in kept}
+                for r in by_bystander[b]:
+                    if id(r) not in taken_set:
+                        kept.append(r)
+                        leftover_capacity[i % len(leftover_capacity)] = (b, cap - 1)
+                        shortfall -= 1
+                        break
+            i += 1
+            if i > 10 * len(leftover_capacity) + N_NEG_TOTAL_TARGET:
+                break  # defensive infinite-loop guard
+        rows = kept[:N_NEG_TOTAL_TARGET]
 
     # Tokenization sanity (first 2 negative rows): MARKER_ID absent, <|im_end|> present.
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
@@ -493,6 +535,44 @@ def main(argv: list[str] | None = None) -> None:
         R_train = _load_R("train")
 
     for cid in args.conds:
+        # M-h skip-if-already-trained: check HF for every required (cid, frac)
+        # adapter. If all 6 fracs exist, skip training entirely. Saves ~2 GPU-h
+        # when smoke phase + sweep phase both run on the 4 smoke cids, and
+        # avoids the HF-upload race condition.
+        if not args.smoke:
+            from huggingface_hub import HfApi as _HfApi
+
+            api = _HfApi()
+            try:
+                repo_files = set(api.list_repo_files(repo_id=HF_MODEL_REPO))
+            except Exception as e:
+                logger.warning(
+                    "M-h skip check: list_repo_files failed: %s — training cid=%s anyway", e, cid
+                )
+                repo_files = set()
+            required = {
+                f"adapters/i489_{cid}_seed{args.seed}_frac{f:.2f}/adapter_model.safetensors"
+                for f in DEFAULT_FRACS
+            }
+            missing = sorted(required - repo_files)
+            if not missing:
+                logger.info(
+                    "M-h skip cid=%s seed=%d: all %d frac adapters already on HF; skipping train.",
+                    cid,
+                    args.seed,
+                    len(required),
+                )
+                continue
+            elif len(missing) < len(required):
+                logger.info(
+                    "M-h partial cid=%s seed=%d: %d/%d frac adapters present on HF; "
+                    "re-running full train (the PerFracCallback will re-upload all).",
+                    cid,
+                    args.seed,
+                    len(required) - len(missing),
+                    len(required),
+                )
+
         cond_offset = int(hashlib.sha256(cid.encode("utf-8")).hexdigest()[:8], 16)
         rng = np.random.default_rng(args.seed + cond_offset % 10_000)
 
@@ -577,6 +657,7 @@ def main(argv: list[str] | None = None) -> None:
             report_to="wandb" if not args.smoke else "none",
             save_strategy="steps" if not args.smoke else "no",
             save_total_limit=1,
+            warmup_ratio=0.03,  # minor: plan §11 specifies 0.03 (was 0.05 default).
             marker_only_loss=True,
             marker_text=MARKER_TEXT,
             marker_tail_tokens=0,

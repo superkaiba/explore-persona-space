@@ -304,13 +304,14 @@ ICL_CONTEXTS: list[ICLContext] = [
     ICLContext(
         cid="IK11",
         name="Concise-engineer-voice 4-shot",
-        icl_block=tuple(
-            m
-            for q, a in CONTENT_POOL[:K_DEFAULT]
-            for m in (
-                {"role": "user", "content": q},
-                {"role": "assistant", "content": a.rstrip(".") + "."},
-            )
+        # Genuinely concise-engineer rendering of CONTENT_POOL: no pleasantries,
+        # answer reduced to the minimum referent + technical follow-on. Must
+        # differ surface-token-wise from IK01 (round-2 fix for B5: previously
+        # `a.rstrip(".") + "."` was a no-op since CONTENT_POOL answers already
+        # end in ".", making IK11 byte-identical to IK01).
+        icl_block=_persona_voiced_block(
+            persona="engineer",
+            intro_a="Short answer:",
         ),
         is_strong_kind=0,
     ),
@@ -475,8 +476,96 @@ MATCHED_PAIRS: list[tuple[str, str]] = [
 ]
 assert len(MATCHED_PAIRS) == 4, "expected 4 matched same-identity cross-type pairs"
 
+
+# ---------------------------------------------------------------------------
+# Frozen-SP-string override hook (B3 / M2).
+#
+# Phase 0a (`scripts/i489_phase0_sp_identity_check.py`) writes
+# ``eval_results/issue_489/phase0a/frozen_sp_strings.json`` if a Claude-as-judge
+# rewrite is accepted for any SP cid (a dict {sp_cid: new_system_prompt}). To
+# keep the experiment reproducible without requiring an `i489_contexts.py` patch
+# after every rewrite, the override file is consulted at MODULE LOAD and the
+# corresponding SPContext is rebuilt with the frozen string. Phase 0a's job is
+# to either confirm the in-source string OR write the override file before any
+# downstream phase runs.
+# ---------------------------------------------------------------------------
+
+
+def _apply_frozen_overrides() -> int:
+    """If a frozen-SP-strings override exists, swap matching SP contexts in place.
+
+    Returns the number of SP contexts overridden. Pure side-effect on
+    ``SP_CONTEXTS`` / ``UNION_CONTEXTS`` / ``UNION_BY_CID``.
+    """
+    import os
+
+    override_path_str = os.environ.get(
+        "I489_FROZEN_SP_OVERRIDES",
+        "eval_results/issue_489/phase0a/frozen_sp_strings.json",
+    )
+    from pathlib import Path as _Path
+
+    p = _Path(override_path_str)
+    if not p.exists():
+        return 0
+    import json as _json
+
+    raw = _json.loads(p.read_text())
+    if not isinstance(raw, dict):
+        raise RuntimeError(
+            f"{override_path_str}: expected dict {{sp_cid: system_prompt}}, "
+            f"got {type(raw).__name__}"
+        )
+    n = 0
+    for sp_cid, new_prompt in raw.items():
+        if sp_cid not in UNION_BY_CID:
+            raise RuntimeError(f"frozen override for unknown sp_cid={sp_cid!r}")
+        old = UNION_BY_CID[sp_cid]
+        if not isinstance(old, SPContext):
+            raise RuntimeError(f"frozen override for non-SP context {sp_cid!r}")
+        if old.system_prompt == new_prompt:
+            continue  # no-op
+        replaced = SPContext(
+            cid=old.cid,
+            name=old.name,
+            system_prompt=new_prompt,
+            is_strong_kind=old.is_strong_kind,
+            matched_icl_cid=old.matched_icl_cid,
+        )
+        # Mutate the lists in place so downstream callers see the frozen string.
+        for lst in (SP_CONTEXTS, UNION_CONTEXTS):
+            for k, item in enumerate(lst):
+                if item.cid == sp_cid:
+                    lst[k] = replaced
+                    break
+        UNION_BY_CID[sp_cid] = replaced
+        n += 1
+    return n
+
+
+N_FROZEN_OVERRIDES = _apply_frozen_overrides()
+
 PERSONA_WORDS: frozenset[str] = frozenset(
-    {"pirate", "comedian", "tutor", "engineer", "villain", "math", "mathematician"}
+    {
+        # Identity nouns the SP system_prompt usually contains directly.
+        "pirate",
+        "comedian",
+        "tutor",
+        "engineer",
+        "villain",
+        "math",
+        "mathematician",
+        "captain",
+        "teacher",
+        "instructor",
+        # Voice-stylization markers that the ICL assistant-turn often carries
+        # (e.g. "Arrr, matey!" → pirate). Adding these lets the indicator
+        # actually fire across matched pairs where the SP prompt names the
+        # persona explicitly and the ICL voice mimics it.
+        "arrr",
+        "matey",
+        "folks",
+    }
 )
 
 
@@ -547,6 +636,38 @@ def scaffold_text(ctx: UnionContext) -> str:
     raise TypeError(f"unknown UnionContext type: {type(ctx).__name__}")
 
 
+def _persona_indicator_text(ctx: UnionContext) -> str:
+    """Surface used to detect persona-word indicator overlap.
+
+    Round-2 fix (M-e): the previous ``scaffold_overlap_score`` ran the
+    persona-word check on ``scaffold_text``, which for ICL flattens both user
+    questions AND assistant answers — but for IK contexts the user question is
+    just a generic question (the persona never appears there) AND the
+    assistant answer rarely names the persona by word ("Arrr, matey!" doesn't
+    contain "pirate"). So the indicator was structurally always 0 across
+    matched pairs.
+
+    Fix: for ICL contexts, include BOTH the assistant content (persona-voice
+    rendering) AND the context's plain-English ``name`` field (the human-label
+    that names the persona: "Pirate-voice 4-shot"). For SP contexts, the
+    system_prompt + name. The name component is the cleanest signal that the
+    designer intended the scaffold to evoke a specific persona — it sits in
+    the predictor surface, NOT in any token the model sees during training or
+    eval, so it doesn't leak into the DV. The model-visible surface is still
+    just ``scaffold_text``; this surface is ONLY used by the deterministic
+    overlap-score covariate.
+    """
+    name_lower = ctx.name.lower() if ctx.name else ""
+    if isinstance(ctx, ICLContext):
+        assistant_text = "\n".join(
+            m["content"] for m in ctx.icl_block if m.get("role") == "assistant"
+        )
+        return f"{name_lower}\n{assistant_text}"
+    if isinstance(ctx, SPContext):
+        return f"{name_lower}\n{ctx.system_prompt}"
+    raise TypeError(f"unknown UnionContext type: {type(ctx).__name__}")
+
+
 def scaffold_overlap_score(ctx_i: UnionContext, ctx_j: UnionContext) -> dict:
     """Three deterministic surface-overlap features between two scaffolds.
 
@@ -584,8 +705,19 @@ def scaffold_overlap_score(ctx_i: UnionContext, ctx_j: UnionContext) -> dict:
         ni = math.sqrt(sum(a * a for a in vec_i))
         nj = math.sqrt(sum(b * b for b in vec_j))
         bow_cos = dot / (ni * nj + 1e-12) if (ni and nj) else 0.0
-    # Feature 3: persona-word indicator
-    persona_indicator = int(bool(PERSONA_WORDS & tok_i & tok_j))
+    # Feature 3: persona-word indicator (M-e: computed on the SURFACE where the
+    # persona word actually appears — assistant-turn content + name for ICL,
+    # system prompt + name for SP. Tokenize on non-word chars so hyphenated
+    # tokens like "pirate-voice" still match the bare "pirate" persona word.
+    # Otherwise the indicator is structurally always 0 for matched pairs since
+    # the ICL user-question side never names the persona.)
+    import re as _re
+
+    pi_text_i = _persona_indicator_text(ctx_i).lower()
+    pi_text_j = _persona_indicator_text(ctx_j).lower()
+    pi_tok_i = set(_re.findall(r"[a-z]+", pi_text_i))
+    pi_tok_j = set(_re.findall(r"[a-z]+", pi_text_j))
+    persona_indicator = int(bool(PERSONA_WORDS & pi_tok_i & pi_tok_j))
     combined = 0.5 * jaccard + 0.3 * bow_cos + 0.2 * persona_indicator
     return {
         "jaccard": float(jaccard),
@@ -593,3 +725,27 @@ def scaffold_overlap_score(ctx_i: UnionContext, ctx_j: UnionContext) -> dict:
         "persona_indicator": int(persona_indicator),
         "scaffold_overlap_score": float(combined),
     }
+
+
+# ---------------------------------------------------------------------------
+# B5 fix: ALL 24 scaffold texts must be pairwise distinct at module load.
+# Catches the IK01==IK11 byte-identity bug class. Runs AFTER frozen overrides
+# so a rewrite that accidentally duplicates a string is also blocked.
+# ---------------------------------------------------------------------------
+
+_all_scaffold_texts = {c.cid: scaffold_text(c) for c in UNION_CONTEXTS}
+_dup_pairs: list[tuple[str, str]] = []
+_cids_sorted = sorted(_all_scaffold_texts)
+for _a in _cids_sorted:
+    for _b in _cids_sorted:
+        if _a >= _b:
+            continue
+        if _all_scaffold_texts[_a] == _all_scaffold_texts[_b]:
+            _dup_pairs.append((_a, _b))
+if _dup_pairs:
+    raise AssertionError(
+        "i489_contexts: scaffold_text() returns byte-identical strings for these "
+        f"cid pairs: {_dup_pairs}. Every union context must have a distinct scaffold "
+        "(B5 fix from round-2 code review)."
+    )
+del _all_scaffold_texts, _dup_pairs, _cids_sorted

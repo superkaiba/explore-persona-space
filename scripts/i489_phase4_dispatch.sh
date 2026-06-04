@@ -18,12 +18,14 @@ mkdir -p "$LOG_DIR"
 N_SHARDS=8
 SEED=42
 RESUME_FLAG=""
+FRACS="0.25 0.50 1.00"
 
 for arg in "$@"; do
     case "$arg" in
         --n-shards=*) N_SHARDS="${arg#*=}" ;;
         --seed=*) SEED="${arg#*=}" ;;
         --resume) RESUME_FLAG="--resume" ;;
+        --fracs=*) FRACS="${arg#*=}" ;;
         *) ;;
     esac
 done
@@ -37,6 +39,7 @@ for shard in $(seq 0 $((N_SHARDS - 1))); do
     CUDA_VISIBLE_DEVICES=$cvd uv run python scripts/i489_phase4_eval_onpolicy.py \
         --shard "${shard}-of-${N_SHARDS}" \
         --seed "$SEED" \
+        --fracs $FRACS \
         $RESUME_FLAG \
         > "$log" 2>&1 &
     pids+=("$!:$shard")

@@ -58,7 +58,7 @@ OUT_DIR = Path("eval_results/issue_489/phase1")
 LAYERS = (7, 11, 14, 15, 21, 27)
 HEADLINE_LAYER = 21
 N_PROBE = 50  # held-out Q'_probe count
-JS_R = 4  # # samples per persona per probe (smoke: 2)
+JS_R = 8  # # samples per persona per probe (minor: bumped from 4 per plan; smoke: 2)
 JS_MAX_TOK = 128  # cap on response length for the JS RB estimator
 
 
