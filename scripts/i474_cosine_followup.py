@@ -621,14 +621,14 @@ def fig4_gradient_by_group(rows, partial=True):
     plt.close(fig)
 
 
-def fig5_logprob_all(rows):
-    """cos-sim and JS divergence vs the TRAINED marker log-prob (raw g_logprob,
-    not base-subtracted), all 240 pairs, localized arm ep1. Raw Spearman.
+def fig5_logprob_all(rows, base_subtracted=True):
+    """cos-sim and JS divergence vs marker transfer, all 240 pairs, localized arm ep1.
 
-    Full panel (unlike the non-stylized-only figures): JS gets traction here
-    because the stylized personas are far in JS and transfer less; cosine is
-    stronger. The JS-vs-cosine dissociation only appears once the stylized
-    personas are removed (see followup_js_vs_cosine_locep1).
+    base_subtracted=True (default): DV = ΔG = trained − base log P(marker) — the
+    #474 headline metric, consistent with the other figures. base_subtracted=False:
+    DV = raw trained log P(marker). On this non-saturated panel ΔG is the cleaner
+    choice (it removes the base-model marker-surprise, which varies across the panel
+    sd≈2.3 nats, mostly from the stylized personas). No length partial (plain Spearman).
     """
     set_paper_style("blog")
     matplotlib.rcParams["figure.constrained_layout.use"] = False
@@ -638,14 +638,31 @@ def fig5_logprob_all(rows):
         paper_palette_role("accent"),
         paper_palette_role("neutral"),
     )
+    key = "delta_g" if base_subtracted else "g_logprob"
+    stem = (
+        "issue_474/followup_deltaG_vs_predictors_all"
+        if base_subtracted
+        else "issue_474/followup_logprob_vs_predictors_all"
+    )
+    ylab = (
+        "Marker transfer ΔG (nats)\n= trained − base log P(marker)"
+        if base_subtracted
+        else "Trained marker log P(marker)\n(nats; raw, not base-subtracted)"
+    )
+    dvname = "marker transfer ΔG" if base_subtracted else "trained marker log-prob"
+    capdv = (
+        "y = marker transfer ΔG = trained − base log P(marker) at the post-response slot (higher = more transfer). "
+        if base_subtracted
+        else "y = the trained model's raw log P(marker) at the post-response slot (NOT base-subtracted; higher = marker more likely). "
+    )
     G = _load_G("loc", 1)
     pairs = _pairs(False)  # all 240
-    g = np.array([G[a][b]["g_logprob"] for a, b in pairs])
+    y = np.array([G[a][b][key] for a, b in pairs])
     js = np.array([JS[a][b] for a, b in pairs])
     sim = np.array([1 - COS[21][a][b] for a, b in pairs])
     sty = np.array([(a in STY) or (b in STY) for a, b in pairs])
-    rj, pj = spearmanr(js, g)
-    rc, pc = spearmanr(sim, g)
+    rj, pj = spearmanr(js, y)
+    rc, pc = spearmanr(sim, y)
 
     def _pf(p):
         return "p < 1e-12" if p < 1e-12 else f"p = {p:.1e}"
@@ -655,7 +672,7 @@ def fig5_logprob_all(rows):
     def scat(ax, x, c0):
         ax.scatter(
             x[~sty],
-            g[~sty],
+            y[~sty],
             s=24,
             c=c0,
             alpha=0.6,
@@ -666,7 +683,7 @@ def fig5_logprob_all(rows):
         )
         ax.scatter(
             x[sty],
-            g[sty],
+            y[sty],
             s=34,
             c=acc,
             alpha=0.85,
@@ -678,18 +695,18 @@ def fig5_logprob_all(rows):
 
     scat(axJ, js, prim)
     axJ.set_xlabel("Base-model JS divergence (nats)")
-    axJ.set_ylabel("Trained marker log P(marker)\n(nats; raw, not base-subtracted)")
+    axJ.set_ylabel(ylab)
     axJ.text(
         0.97,
         0.04,
-        f"all 240:  raw Spearman rho = {rj:+.2f}\n{_pf(pj)}",
+        f"all 240:  Spearman rho = {rj:+.2f}\n{_pf(pj)}  (no length partial)",
         transform=axJ.transAxes,
         ha="right",
         va="bottom",
         fontsize=9,
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
     )
-    axJ.set_title("JS divergence vs trained marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axJ.set_title(f"JS divergence vs {dvname}", fontsize=10.5, loc="left", pad=8)
     axJ.grid(alpha=0.2, lw=0.5)
     axJ.legend(
         loc="lower left",
@@ -702,22 +719,22 @@ def fig5_logprob_all(rows):
 
     scat(axC, sim, base)
     axC.set_xlabel("Base-model cosine similarity (layer 21)")
-    axC.set_ylabel("Trained marker log P(marker)\n(nats; raw, not base-subtracted)")
+    axC.set_ylabel(ylab)
     axC.text(
         0.03,
         0.04,
-        f"all 240:  raw Spearman rho = {rc:+.2f}\n{_pf(pc)}",
+        f"all 240:  Spearman rho = {rc:+.2f}\n{_pf(pc)}  (no length partial)",
         transform=axC.transAxes,
         ha="left",
         va="bottom",
         fontsize=9,
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
     )
-    axC.set_title("Cosine similarity vs trained marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axC.set_title(f"Cosine similarity vs {dvname}", fontsize=10.5, loc="left", pad=8)
     axC.grid(alpha=0.2, lw=0.5)
 
     fig.suptitle(
-        "#474 localized arm, ep1: cosine & JS vs the trained marker log-prob (all 240 prompt pairs)",
+        f"#474 localized arm, ep1: cosine & JS vs {dvname} (all 240 prompt pairs)",
         fontsize=11,
         x=0.06,
         y=0.985,
@@ -727,21 +744,25 @@ def fig5_logprob_all(rows):
     fig.text(
         0.06,
         0.935,
-        "y = the trained model's log-probability of the marker at the post-response slot (raw, NOT base-subtracted); higher = marker more likely. "
-        "x = base-model JS divergence (left) and layer-21 cosine similarity (right). All 240 ordered transformation pairs. Raw Spearman rho. "
+        capdv
+        + "x = base-model JS divergence (left) and layer-21 cosine similarity (right). All 240 ordered transformation pairs, plain Spearman. "
         "On the full panel both predict, cosine more strongly; JS's traction is the stylized personas (red) — it goes null once they are removed.",
         fontsize=8.0,
         color=neu,
         ha="left",
     )
-    fig.subplots_adjust(top=0.80, bottom=0.12, left=0.06, right=0.975, wspace=0.24)
-    savefig_paper(fig, "issue_474/followup_logprob_vs_predictors_all", dir=str(REPO / "figures"))
+    fig.subplots_adjust(top=0.80, bottom=0.12, left=0.07, right=0.975, wspace=0.26)
+    savefig_paper(fig, stem, dir=str(REPO / "figures"))
     plt.close(fig)
 
 
-def fig6_logprob_all_quintile(rows):
-    """Quintile-summarized version of fig5: mean trained marker log-prob per
-    predictor quintile (JS and cosine separately), all 240 pairs, loc arm ep1."""
+def fig6_logprob_all_quintile(rows, base_subtracted=True):
+    """Quintile-summarized version of fig5: mean marker transfer per predictor
+    quintile (JS and cosine separately), all 240 pairs, loc arm ep1.
+
+    base_subtracted=True (default): DV = ΔG (trained − base log P(marker)), the
+    #474 headline metric. base_subtracted=False: raw trained log P(marker).
+    """
     set_paper_style("blog")
     matplotlib.rcParams["figure.constrained_layout.use"] = False
     prim, base, neu = (
@@ -749,13 +770,25 @@ def fig6_logprob_all_quintile(rows):
         paper_palette_role("baseline"),
         paper_palette_role("neutral"),
     )
+    key = "delta_g" if base_subtracted else "g_logprob"
+    stem = (
+        "issue_474/followup_deltaG_vs_predictors_all_quintile"
+        if base_subtracted
+        else "issue_474/followup_logprob_vs_predictors_all_quintile"
+    )
+    ylab = (
+        "Mean marker transfer ΔG (nats, ± SE)\n= trained − base log P(marker)"
+        if base_subtracted
+        else "Mean trained marker log P(marker)\n(nats, ± SE), raw"
+    )
+    dvword = "marker transfer ΔG" if base_subtracted else "trained marker log-prob"
     G = _load_G("loc", 1)
     pairs = _pairs(False)  # all 240
-    g = np.array([G[a][b]["g_logprob"] for a, b in pairs])
+    y = np.array([G[a][b][key] for a, b in pairs])
     js = np.array([JS[a][b] for a, b in pairs])
     sim = np.array([1 - COS[21][a][b] for a, b in pairs])
-    rj, pj = spearmanr(js, g)
-    rc, pc = spearmanr(sim, g)
+    rj, pj = spearmanr(js, y)
+    rc, pc = spearmanr(sim, y)
 
     def _binned(x):
         qs = np.quantile(x, [0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -763,8 +796,8 @@ def fig6_logprob_all_quintile(rows):
         for i in range(5):
             m = (x >= qs[i]) & (x <= qs[i + 1]) if i == 4 else (x >= qs[i]) & (x < qs[i + 1])
             cen.append(x[m].mean())
-            mn.append(g[m].mean())
-            se.append(g[m].std() / np.sqrt(m.sum()))
+            mn.append(y[m].mean())
+            se.append(y[m].std() / np.sqrt(m.sum()))
         return cen, mn, se
 
     def _pf(p):
@@ -776,18 +809,18 @@ def fig6_logprob_all_quintile(rows):
         cen, mn, yerr=se, fmt="o-", color=prim, ecolor=prim, elinewidth=1.5, capsize=4, ms=9, lw=2
     )
     axJ.set_xlabel("Base-model JS divergence (quintile mean)")
-    axJ.set_ylabel("Mean trained marker log P(marker)\n(nats, ± SE), raw")
+    axJ.set_ylabel(ylab)
     axJ.text(
         0.97,
         0.97,
-        f"all 240:  raw Spearman rho = {rj:+.2f}\n{_pf(pj)}",
+        f"all 240:  Spearman rho = {rj:+.2f}\n{_pf(pj)}  (no length partial)",
         transform=axJ.transAxes,
         ha="right",
         va="top",
         fontsize=9,
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
     )
-    axJ.set_title("JS divergence → lower marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axJ.set_title(f"JS divergence → lower {dvword}", fontsize=10.5, loc="left", pad=8)
     axJ.grid(alpha=0.2, lw=0.5)
 
     cen, mn, se = _binned(sim)
@@ -795,42 +828,45 @@ def fig6_logprob_all_quintile(rows):
         cen, mn, yerr=se, fmt="o-", color=base, ecolor=base, elinewidth=1.5, capsize=4, ms=9, lw=2
     )
     axC.set_xlabel("Base-model cosine similarity, L21 (quintile mean)")
-    axC.set_ylabel("Mean trained marker log P(marker)\n(nats, ± SE), raw")
+    axC.set_ylabel(ylab)
     axC.text(
         0.03,
         0.97,
-        f"all 240:  raw Spearman rho = {rc:+.2f}\n{_pf(pc)}",
+        f"all 240:  Spearman rho = {rc:+.2f}\n{_pf(pc)}  (no length partial)",
         transform=axC.transAxes,
         ha="left",
         va="top",
         fontsize=9,
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
     )
-    axC.set_title("Cosine similarity → higher marker log-prob", fontsize=10.5, loc="left", pad=8)
+    axC.set_title(f"Cosine similarity → higher {dvword}", fontsize=10.5, loc="left", pad=8)
     axC.grid(alpha=0.2, lw=0.5)
 
     fig.suptitle(
-        "#474 localized arm, ep1: trained marker log-prob by predictor quintile (all 240 prompt pairs)",
+        f"#474 localized arm, ep1: {dvword} by predictor quintile (all 240 prompt pairs)",
         fontsize=11,
         x=0.06,
         y=0.985,
         ha="left",
         fontweight="semibold",
     )
+    cappref = (
+        "Each point = mean marker transfer ΔG (trained − base log P(marker)) over the cells in that predictor quintile, ± SE. "
+        if base_subtracted
+        else "Each point = mean raw trained log P(marker) over the cells in that predictor quintile, ± SE. "
+    )
     fig.text(
         0.06,
         0.935,
-        "Each point = mean trained log P(marker) at the post-response slot (raw, not base-subtracted) over the cells in that predictor quintile, ± SE. "
-        "Left binned by base-model JS divergence, right by layer-21 cosine similarity. All 240 ordered transformation pairs. Annotated rho is the raw "
-        "Spearman over all 240 cells (not the 5 bins).",
+        cappref
+        + "Left binned by base-model JS divergence, right by layer-21 cosine similarity. All 240 ordered transformation pairs. Annotated rho is the "
+        "plain Spearman over all 240 cells (not the 5 bins).",
         fontsize=8.0,
         color=neu,
         ha="left",
     )
     fig.subplots_adjust(top=0.80, bottom=0.13, left=0.07, right=0.975, wspace=0.26)
-    savefig_paper(
-        fig, "issue_474/followup_logprob_vs_predictors_all_quintile", dir=str(REPO / "figures")
-    )
+    savefig_paper(fig, stem, dir=str(REPO / "figures"))
     plt.close(fig)
 
 
@@ -861,6 +897,8 @@ if __name__ == "__main__":
     fig3_gradient_check(rows)
     fig4_gradient_by_group(rows, partial=True)
     fig4_gradient_by_group(rows, partial=False)
-    fig5_logprob_all(rows)
-    fig6_logprob_all_quintile(rows)
+    fig5_logprob_all(rows, base_subtracted=True)  # primary: ΔG (base-subtracted)
+    fig5_logprob_all(rows, base_subtracted=False)  # raw log-prob kept recoverable
+    fig6_logprob_all_quintile(rows, base_subtracted=True)  # primary: ΔG
+    fig6_logprob_all_quintile(rows, base_subtracted=False)  # raw kept recoverable
     print("\nFigures -> figures/issue_474/followup_*.png")
