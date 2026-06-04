@@ -359,6 +359,31 @@ def _h3_independent_two_sample(
     icl_targets = sorted({c["T_j"] for c in icl_cells})
     sp_sources = sorted({c["T_i"] for c in sp_cells})
     sp_targets = sorted({c["T_j"] for c in sp_cells})
+    icl_index = {(c["T_i"], c["T_j"]): c for c in icl_cells}
+    sp_index = {(c["T_i"], c["T_j"]): c for c in sp_cells}
+
+    def _resample_panel(sources: list[str], targets: list[str], cell_index: dict) -> list[dict]:
+        """Round-4 Bug-1 fix: iterate the resampled source × target LISTS so a
+        cluster drawn twice contributes its cells twice. Matches the canonical
+        dyadic-cluster bootstrap in ``_dyadic_cluster_bootstrap_rho`` (lines
+        ~197-225) and ``_paired_diff_bootstrap_rho`` (lines ~258-288): both
+        keep duplicates in the cluster draw and re-iterate them through
+        ``_build_panel``. The prior set-comprehension form silently
+        collapsed the with-replacement cluster sample into a subsample-
+        WITHOUT-replacement (~0.63·n distinct clusters) → not a valid
+        dyadic cluster bootstrap → per-arm and diff CIs were wrong,
+        badly so at n=8 SP clusters.
+        """
+        out: list[dict] = []
+        for si in sources:
+            for tj in targets:
+                if si == tj:
+                    continue
+                c = cell_index.get((si, tj))
+                if c is None:
+                    continue
+                out.append(c)
+        return out
 
     boots_icl: list[float] = []
     boots_sp: list[float] = []
@@ -367,12 +392,20 @@ def _h3_independent_two_sample(
         n_is, n_it = len(icl_sources), len(icl_targets)
         n_ss, n_st = len(sp_sources), len(sp_targets)
         for _ in range(n_boots):
-            isrc = {icl_sources[k] for k in rng.integers(0, n_is, n_is)}
-            itgt = {icl_targets[k] for k in rng.integers(0, n_it, n_it)}
-            ssrc = {sp_sources[k] for k in rng.integers(0, n_ss, n_ss)}
-            stgt = {sp_targets[k] for k in rng.integers(0, n_st, n_st)}
-            icl_sub = [c for c in icl_cells if c["T_i"] in isrc and c["T_j"] in itgt]
-            sp_sub = [c for c in sp_cells if c["T_i"] in ssrc and c["T_j"] in stgt]
+            # Keep cluster draws as LISTS (with duplicates preserved); rebuild
+            # the panel by iterating those lists so a cluster drawn twice
+            # contributes its cells twice. Same idiom as the canonical
+            # siblings — see lines ~221-225 / ~285-288.
+            idx_is = rng.integers(0, n_is, n_is)
+            idx_it = rng.integers(0, n_it, n_it)
+            idx_ss = rng.integers(0, n_ss, n_ss)
+            idx_st = rng.integers(0, n_st, n_st)
+            isrcs = [icl_sources[k] for k in idx_is]
+            itgts = [icl_targets[k] for k in idx_it]
+            ssrcs = [sp_sources[k] for k in idx_ss]
+            stgts = [sp_targets[k] for k in idx_st]
+            icl_sub = _resample_panel(isrcs, itgts, icl_index)
+            sp_sub = _resample_panel(ssrcs, stgts, sp_index)
             ra = _rho_for_cells(icl_sub)
             rb = _rho_for_cells(sp_sub)
             if ra != ra or rb != rb:
@@ -699,19 +732,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
     requested_fracs = list(args.fracs)
     cells_by_frac, present_fracs = _load_cells(requested_fracs, args.seed, allow_smoke=args.smoke)
 
-    # Round-3 Maj-2: in non-smoke mode, restrict analysis to REQUESTED fracs
-    # only — smoke-only fracs (the 4-cell smoke evals from `--smoke`) wrote
-    # full per_cell payloads at unrelated fracs and would otherwise leak into
-    # the H1-H4 panels at a tiny N. Then fail-loud if any requested frac
-    # lacks a complete 24×24 (552-off-diag) panel; a partial panel makes
-    # the dyadic-cluster bootstrap silently underpowered.
+    # Round-3 Maj-2 / Round-4 Bug-2: in non-smoke mode, validate EVERY value in
+    # `requested_fracs` — an ABSENT frac (no on-disk panel at all) must RAISE
+    # the same incomplete-panel error as a present-but-incomplete frac. The
+    # prior intersection (`f for f in present_fracs if f in set(requested_fracs)`)
+    # silently dropped absent fracs and shrank the analysis to whatever was on
+    # disk, violating the Maj-2 fail-loud contract. Smoke mode behavior
+    # unchanged (it never enforced completeness).
     if args.smoke:
         fracs_to_analyze = present_fracs or requested_fracs
     else:
-        fracs_to_analyze = [f for f in present_fracs if f in set(requested_fracs)]
         n_union = len(UNION_CONTEXTS)
         expected_off_diag = n_union * (n_union - 1)  # 24 * 23 = 552
-        for frac in fracs_to_analyze:
+        for frac in requested_fracs:
             n_off = sum(
                 1 for c in cells_by_frac.get(frac, []) if c["T_i"] != c["T_j"] and "delta_g" in c
             )
@@ -722,6 +755,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
                     f"Refusing to analyze a partial panel (round-3 Maj-2). Re-run "
                     "Phase 4 for the missing cells before re-running Phase 5."
                 )
+        # Only after every requested frac has a complete panel do we set
+        # fracs_to_analyze. By construction this equals requested_fracs.
+        fracs_to_analyze = list(requested_fracs)
     rng = np.random.default_rng(args.bootstrap_rng_seed)
 
     # Round-2 fix B1: count cells carrying delta_g across ALL fracs. If zero,

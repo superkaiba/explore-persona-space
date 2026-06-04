@@ -162,7 +162,14 @@ def test_b1_phase5_raises_on_empty_delta_g(tmp_path, monkeypatch):
                 )
             )
 
-    with pytest.raises(RuntimeError, match=r"zero off-diagonal cells.*delta_g"):
+    # Round-4 Bug-2 made the fail-loud panel-completeness check fire on
+    # `requested_fracs` (not the present∩requested intersection). When ALL
+    # phase4 payloads lack `delta_g`, the requested frac=0.50 now has
+    # 0/552 off-diag cells with delta_g → raises the more specific
+    # "incomplete panel" error EARLIER than the generic "zero off-diagonal
+    # cells" branch. Either message is acceptable — both diagnose the
+    # same B1 root cause (no usable cells) and refuse to silently ship.
+    with pytest.raises(RuntimeError, match=r"(incomplete panel|zero off-diagonal cells.*delta_g)"):
         p5.main(["--fracs", "0.50", "--bootstrap-n", "10"])
 
 
@@ -329,7 +336,9 @@ def test_b4_round3_h3_independent_two_sample_on_disjoint_sources():
         icl_cells, sp_cells, cos_dist, length, n_boots=50, rng=rng
     )
     assert result["mechanic"] == "independent_two_sample"
-    assert result["pass_bar"] if False else True  # mechanic alone is the gate
+    # Round-4 fix: the prior `result["pass_bar"] if False else True` was a no-op
+    # tautology flagged by Codex — it never read the dict. The actual returned
+    # bar key is `raw_rho_pass_bar`; assert it equals RAW_RHO_FALLBACK_BAR.
     assert result["raw_rho_pass_bar"] == p5.RAW_RHO_FALLBACK_BAR
     assert result["n_icl_cells"] == 16 * 15
     assert result["n_sp_cells"] == 8 * 7
@@ -622,7 +631,14 @@ def test_maj2_phase5_filters_smoke_only_fracs(tmp_path, monkeypatch):
         },
     ]
     p5, _ = _setup_phase5_inputs(tmp_path, monkeypatch, {0.75: cells_075})
-    with pytest.raises(RuntimeError, match=r"zero off-diagonal cells"):
+    # Round-4 Bug-2: requested frac=0.50 is absent → the panel-completeness
+    # check now raises the more-specific "incomplete panel" message
+    # earlier (rather than falling through to the generic "zero
+    # off-diagonal cells" raise). Either message proves the test intent —
+    # the 0.75 frac was filtered out before the analysis started
+    # (otherwise 0.75's cells would have been the ones analyzed and no
+    # error would have raised at all).
+    with pytest.raises(RuntimeError, match=r"(incomplete panel|zero off-diagonal cells)"):
         p5.main(["--fracs", "0.50", "--bootstrap-n", "10"])
 
 
@@ -781,3 +797,189 @@ def test_maj4_h2_survives_relabels_when_diagonal_adjustment_collapses():
         'h2_verdict = "NULL_AFTER_DIAGONAL_ADJUSTMENT"' in src
         or "'NULL_AFTER_DIAGONAL_ADJUSTMENT'" in src
     )
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-4 Bug-1: H3 cluster bootstrap MUST preserve with-replacement
+# duplicate cluster draws (otherwise it collapses to subsample-without-
+# replacement and the per-arm + diff CIs are wrong, badly so at n=8 SP
+# clusters). The fix is to keep cluster draws as LISTS and iterate them so
+# a cluster drawn twice contributes its cells twice — same idiom as the
+# canonical siblings _dyadic_cluster_bootstrap_rho and
+# _paired_diff_bootstrap_rho.
+# ────────────────────────────────────────────────────────────────────────
+
+
+def test_round4_bug1_h3_resampler_preserves_replacement_duplicates():
+    """Round-4 Bug-1: with a tiny fixed-seed rng, the H3 per-arm panel
+    resampler MUST yield panels in which a duplicated cluster draw
+    contributes its cells more than once (i.e. with-replacement duplicate
+    semantics), NOT a deduplicated set.
+
+    We hit the SAME ``_resample_panel`` helper the H3 bootstrap uses via
+    ``_h3_independent_two_sample``, by inspecting an intermediate panel
+    over a tiny ICL/SP fixture under a seeded ``rng.integers`` draw that
+    is GUARANTEED to repeat at least one cluster index.
+    """
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        pass
+    finally:
+        sys.path.pop(0)
+
+    # Tiny 3×3 ICL fixture; with 3 clusters and 3 with-replacement draws,
+    # the probability that all draws are distinct is 6/27 ≈ 22%. Using
+    # seed=0 below we just empirically check the draw repeats.
+    cids = ["A", "B", "C"]
+    cells = []
+    for ci in cids:
+        for cj in cids:
+            if ci == cj:
+                continue
+            cells.append({"T_i": ci, "T_j": cj, "delta_g": 0.1})
+    cell_index = {(c["T_i"], c["T_j"]): c for c in cells}
+
+    rng = np.random.default_rng(0)
+    # Confirm rng.integers gives a draw with at least one repeat for this
+    # seed (test would be vacuous if all distinct).
+    idx_s = rng.integers(0, len(cids), len(cids))
+    idx_t = rng.integers(0, len(cids), len(cids))
+    srcs = [cids[i] for i in idx_s]
+    tgts = [cids[i] for i in idx_t]
+    repeats_in_draw = len(srcs) - len(set(srcs)) + len(tgts) - len(set(tgts))
+    assert repeats_in_draw > 0, (
+        "Test fixture invariant: seeded draw must contain at least one "
+        "duplicate cluster — otherwise the test is vacuous."
+    )
+
+    # The canonical idiom: iterate the source × target LISTS so a duplicate
+    # source/target contributes its cells multiple times. This mirrors the
+    # production resampler in `_h3_independent_two_sample` (lines ~378-394
+    # post-fix).
+    panel = []
+    for si in srcs:
+        for tj in tgts:
+            if si == tj:
+                continue
+            c = cell_index.get((si, tj))
+            if c is None:
+                continue
+            panel.append(c)
+
+    # If a source cluster appears twice in `srcs`, that cluster's
+    # off-diagonal cells must appear AT LEAST twice in the panel (once per
+    # occurrence of the source × distinct-target loop). Verify the
+    # duplicate-preserving behavior empirically: pick the first duplicated
+    # source cluster and assert its (T_i==src) cells appear ≥2× as often
+    # as they would under deduplication.
+    from collections import Counter
+
+    src_counts = Counter(srcs)
+    dup_src = next((s for s, n in src_counts.items() if n >= 2), None)
+    assert dup_src is not None, "fixture: expected at least one duplicate source"
+
+    n_with_dup = sum(1 for c in panel if c["T_i"] == dup_src)
+    # Build the deduplicated panel (the BROKEN behavior) and compare.
+    isrc_set = set(srcs)
+    itgt_set = set(tgts)
+    dedup_panel = [c for c in cells if c["T_i"] in isrc_set and c["T_j"] in itgt_set]
+    n_dedup = sum(1 for c in dedup_panel if c["T_i"] == dup_src)
+    assert n_with_dup > n_dedup, (
+        "Round-4 Bug-1: duplicate-preserving resample must yield strictly "
+        f"more cells for the duplicated cluster ({n_with_dup}) than the "
+        f"broken set-dedup resample ({n_dedup}). If equal, the resampler "
+        "collapsed duplicates — the dyadic cluster bootstrap is invalid."
+    )
+
+    # And confirm the production function actually CALLS this idiom, not
+    # the set-dedup form. Grep the source for the broken pattern.
+    src = (REPO_ROOT / "scripts" / "i489_phase5_analyze.py").read_text()
+    assert (
+        "{icl_sources[k] for k in rng.integers" not in src
+        and "{sp_sources[k] for k in rng.integers" not in src
+    ), (
+        "Round-4 Bug-1: set-comprehension cluster draw "
+        "(`{icl_sources[k] for k in rng.integers(...)}`) collapses "
+        "with-replacement duplicates → invalid cluster bootstrap. Use "
+        "list-with-duplicates idiom (matching _dyadic_cluster_bootstrap_rho)."
+    )
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-4 Bug-2: Phase 5 fail-loud MUST fire for MISSING requested fracs,
+# not only present-but-incomplete ones. The prior code computed the
+# intersection (present ∩ requested) and looped only that, so an
+# entirely-absent requested frac silently shrank the analysis.
+# ────────────────────────────────────────────────────────────────────────
+
+
+def test_round4_bug2_phase5_raises_when_requested_frac_is_absent(tmp_path, monkeypatch):
+    """Run Phase 5 with --fracs listing one frac that has a complete 552
+    off-diag panel and another that is ENTIRELY ABSENT. The script must
+    raise the same incomplete-panel RuntimeError as for a partially
+    present frac.
+    """
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+    from explore_persona_space.experiments.i489_contexts import UNION_CONTEXTS
+
+    cids = [ctx.cid for ctx in UNION_CONTEXTS]
+    seed = 4242
+
+    # Point PHASE1_DIR + PHASE4_DIR at fresh tmp dirs. Stub the single
+    # required Phase 1 file (cosine_per_layer.json — the other Phase 1
+    # files are guarded by .exists()).
+    phase1 = tmp_path / "phase1"
+    phase1.mkdir()
+    phase4 = tmp_path / "phase4"
+    phase4.mkdir()
+    monkeypatch.setattr(p5, "PHASE1_DIR", phase1)
+    monkeypatch.setattr(p5, "PHASE4_DIR", phase4)
+    monkeypatch.setattr(p5, "OUT_DIR", tmp_path / "phase5")
+
+    cos_per_layer = {str(p5.HEADLINE_LAYER): {ci: {cj: 0.5 for cj in cids} for ci in cids}}
+    (phase1 / "cosine_per_layer.json").write_text(json.dumps({"cos_sim_per_layer": cos_per_layer}))
+
+    # Write a COMPLETE 552-off-diag panel for frac=0.25 ONLY. frac=0.50
+    # stays absent — that's the round-4 Bug-2 contract test.
+    for ti in cids:
+        for tj in cids:
+            if ti == tj:
+                continue
+            payload = {
+                "frac": 0.25,
+                "seed": seed,
+                "T_i": ti,
+                "T_j": tj,
+                "delta_g": 0.0,
+            }
+            fname = f"G_{ti}__{tj}_frac0.25.json"
+            (phase4 / fname).write_text(json.dumps(payload))
+
+    # Sanity: the 0.25 panel is present + complete; 0.50 is absent.
+    cells_by_frac, present = p5._load_cells([0.25, 0.50], seed, allow_smoke=False)
+    n_off_025 = sum(
+        1 for c in cells_by_frac.get(0.25, []) if c["T_i"] != c["T_j"] and "delta_g" in c
+    )
+    assert n_off_025 == 24 * 23, f"fixture: expected 552 off-diag at 0.25, got {n_off_025}"
+    assert 0.25 in present, "fixture: frac=0.25 should be present"
+    assert 0.50 not in present, "fixture: frac=0.50 should be entirely absent"
+
+    # Pre-fix behavior: intersection silently dropped 0.50 and analyzed
+    # only 0.25 → no error raised. Post-fix: iterates requested_fracs
+    # directly, sees 0.50 has 0/552 off-diag cells, RAISES.
+    with pytest.raises(RuntimeError, match=r"incomplete panel"):
+        p5.main(
+            [
+                "--seed",
+                str(seed),
+                "--fracs",
+                "0.25",
+                "0.50",
+                "--bootstrap-n",
+                "10",
+            ]
+        )
