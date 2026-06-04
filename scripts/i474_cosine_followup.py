@@ -577,7 +577,11 @@ def fig4_gradient_by_group(rows, partial=True):
             fontsize=8.5,
             bbox=dict(boxstyle="round,pad=0.3", fc="white", ec=neu, alpha=0.95),
         )
-    axes[0].set_ylabel("Mean marker transfer  ΔG  (± SE)")
+    axes[0].set_ylabel(
+        "Mean marker transfer ΔG, nats (± SE) — higher = more transfer\n"
+        "ΔG = log P(marker | trained) − log P(marker | base), at the slot after the model's response",
+        fontsize=8.2,
+    )
     fig.suptitle(
         f"Cosine → transfer gradient by transformation group (#474 localized arm, ep1) [{rholabel}]",
         fontsize=11,
