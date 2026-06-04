@@ -280,16 +280,11 @@ def main(argv: list[str] | None = None) -> int:
             "worker also re-asserts on startup as a defense-in-depth."
         ),
     )
-    ap.add_argument(
-        "--positives",
-        type=int,
-        default=None,
-        help=(
-            "v6: positives-per-cell override. Default None = use the module "
-            "constant POS_EX_PER_SOURCE=200. v6 holds positives GLOBAL at 200 "
-            "(M3); kept as a CLI flag for legacy / debug only."
-        ),
-    )
+    # NOTE: no --positives flag here. v6 M3 pins positives at the module-
+    # global POS_EX_PER_SOURCE=200 (used by build_cell). A per-cell override
+    # would be a silent no-op (build_cell reads the constant directly), so
+    # the dispatcher only logs/asserts positives=200 at startup; it does NOT
+    # thread the value per-cell. (Round-2 fix to code-review v6 round-1 #3.)
     args = ap.parse_args(argv)
 
     # ── v6 M2 alpha invariant re-assertion (defense-in-depth). ───────────────
@@ -858,6 +853,80 @@ def main(argv: list[str] | None = None) -> int:
         log.info(
             "[phase=summary_%s] implant_sweep_v4: emitted per_step levels=%s",
             args.cell,
+            sorted(per_step.keys()),
+        )
+
+    if args.phase in ("rank_calibration", "rank_control"):
+        # v6 Cal-A / Cal-A0: ONE training run per cell against the dense early-
+        # step grid; the dispatcher's _phase_rank_pick + _phase_slot_fix_diagnostic
+        # need a per_step dict keyed by requested step level so they can pick
+        # the most-in-band rank (H0) and verdict the slot-fix question (H4).
+        #
+        # The shape mirrors implant_sweep_v4's per_step exactly so the pick /
+        # diagnostic readers (dispatch_neg_geometry_477.py:579-588, 663-665)
+        # consume both code paths through one signature. Adds source_R_collapsed
+        # from each checkpoint's source_self.r_collapsed (the rank_pick collapse
+        # exclusion); picked_step_kl_fields doesn't carry it because the v4
+        # main partial doesn't need it.
+        #
+        # Without this block the dispatcher trains all 15 Cal-A/Cal-A0 cells
+        # (~15 GPU-h) then RuntimeErrors at rank_pick with "missing per_step"
+        # (code-review v6 round-1 Critical #1).
+        if not args.target_steps:
+            raise RuntimeError(
+                f"[{args.cell}] {args.phase} phase reached summary block "
+                f"with empty --target-steps; the upfront check should have raised."
+            )
+        requested_levels = tuple(int(s.strip()) for s in args.target_steps.split(",") if s.strip())
+        steps_present = sorted(
+            int(ck["step"]) for ck in traj["checkpoints"] if ck.get("step") is not None
+        )
+        if not steps_present:
+            raise RuntimeError(
+                f"[{args.cell}] {args.phase}: trajectory.json has no "
+                f"checkpoint with a 'step' field."
+            )
+        terminal_step = max(steps_present)
+        per_step = {}
+        for s in requested_levels:
+            if s > terminal_step:
+                # Trainer max_steps clamped this level out (already filtered at
+                # fractions-resolution time; mirror the same skip-not-fail rule).
+                continue
+            actual_step, picked_ck, offset = select_checkpoint_near_step(
+                traj, s, cell_slug=args.cell
+            )
+            entry = picked_step_kl_fields(picked_ck, cell_slug=args.cell)
+            entry.update(
+                {
+                    "requested_step": int(s),
+                    "actual_step": int(actual_step),
+                    "step_offset": int(offset),
+                    "source_R_collapsed": bool(
+                        picked_ck.get("source_self", {}).get("r_collapsed", False)
+                    ),
+                }
+            )
+            per_step[str(s)] = entry
+        # Terminal level: same shape, picked from max-frac checkpoint.
+        terminal_ck = max(traj["checkpoints"], key=lambda c: float(c["frac"]))
+        terminal_entry = picked_step_kl_fields(terminal_ck, cell_slug=args.cell)
+        terminal_entry.update(
+            {
+                "requested_step": "T",
+                "actual_step": int(terminal_ck.get("step", terminal_step)),
+                "step_offset": 0,
+                "source_R_collapsed": bool(
+                    terminal_ck.get("source_self", {}).get("r_collapsed", False)
+                ),
+            }
+        )
+        per_step["T"] = terminal_entry
+        cell_summary["per_step"] = per_step
+        log.info(
+            "[phase=summary_%s] %s: emitted per_step levels=%s",
+            args.cell,
+            args.phase,
             sorted(per_step.keys()),
         )
 

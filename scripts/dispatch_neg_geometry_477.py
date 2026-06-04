@@ -193,15 +193,15 @@ def _schedule_unit_pool(  # noqa: C901 - linear GPU-sharded subprocess scheduler
             cmd.extend(["--picked-step", str(int(unit["picked_step"]))])
         if unit.get("implant_steps"):
             cmd.extend(["--implant-steps", str(unit["implant_steps"])])
-        # v6 rank pivot threads: --lora-rank / --lora-alpha / --positives.
+        # v6 rank pivot threads: --lora-rank / --lora-alpha.
         # Optional; default-None means the worker uses the module constants
-        # (r=32 / α=64 / positives=200, i.e. v4 byte-identical).
+        # (r=32 / α=64, i.e. v4 byte-identical). v6 M3 pins positives=200
+        # globally via POS_EX_PER_SOURCE; not threaded per-cell (build_cell
+        # reads the module constant, so a per-unit override would be a no-op).
         if unit.get("lora_r") is not None:
             cmd.extend(["--lora-rank", str(int(unit["lora_r"]))])
         if unit.get("lora_alpha") is not None:
             cmd.extend(["--lora-alpha", str(int(unit["lora_alpha"]))])
-        if unit.get("positives") is not None:
-            cmd.extend(["--positives", str(int(unit["positives"]))])
         if smoke:
             cmd.append("--smoke")
         if no_kl:
@@ -630,6 +630,80 @@ def _phase_rank_pick(cal_a_results: list[dict], rank_pick_path: Path) -> dict:
     return pick
 
 
+def _expand_implant_sweep_v4_anchor_results(anchor_results: list[dict]) -> list[dict]:
+    """Expand per-seed implant_sweep_v4 anchor results into per-step records.
+
+    Each anchor result carries a ``per_step`` dict (one entry per requested step
+    level + the terminal "T" level). The dispatcher's Phase 4 unpacks the dict
+    into one per-cell record per (seed, step level), matching the cell-shape
+    the v4 ``implant_only_axis_spearman_marker_channel_kl`` partial consumes.
+
+    Shared between the v6 and v4 implant-sweep branches — both produce identical
+    anchor + per_step shapes (only the LoRA rank/alpha differs, which the
+    scheduler threads at launch time, not at expansion time). Extracted as a
+    module-level helper so the v6 schedule + expansion path can be pinned by a
+    pure test without spawning the dispatcher's tokenizer / GPU subprocesses.
+
+    Raises:
+        RuntimeError: an anchor result is missing the ``per_step`` dict (the
+            worker should always emit it for phase=implant_sweep_v4).
+    """
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        ANCHOR_COUNT,
+        implant_sweep_v4_slug_for_step,
+    )
+
+    expanded_records: list[dict] = []
+    for r in anchor_results:
+        per_step = r.get("per_step")
+        if not isinstance(per_step, dict):
+            raise RuntimeError(
+                f"[implant_sweep_v4] anchor result for seed={r.get('seed')} "
+                f"missing 'per_step' dict (got {type(per_step).__name__}). "
+                f"Worker i477_run_cell.py should always emit per_step for "
+                f"phase=implant_sweep_v4. Investigate."
+            )
+        for level_key, entry in per_step.items():
+            # level_key is either "16" / "64" / ... (non-terminal) or "T".
+            if level_key == "T":
+                slug = implant_sweep_v4_slug_for_step("T")
+            else:
+                slug = implant_sweep_v4_slug_for_step(int(level_key))
+            expanded = {
+                # Echo the unit's seed/lr/phase plus the per-step DV fields
+                # so the analyze partial sees a per-cell shape.
+                "cell": slug,
+                "seed": int(r["seed"]),
+                "lr": float(r["lr"]),
+                "phase": "implant_sweep_v4",
+                "count": ANCHOR_COUNT,
+                "anchor_cell": r["cell"],
+                "anchor_run_label": r.get("run_label"),
+                # Picked-step DV fields (v4 keys).
+                "source_self_marker_channel_kl_at_picked_step": entry[
+                    "source_self_marker_channel_kl_at_picked_step"
+                ],
+                "mean_bystander_marker_channel_kl_at_picked_step": entry[
+                    "mean_bystander_marker_channel_kl_at_picked_step"
+                ],
+                "mean_bystander_full_vocab_kl_at_picked_step": entry[
+                    "mean_bystander_full_vocab_kl_at_picked_step"
+                ],
+                "source_self_delta_g_at_picked_step": entry["source_self_delta_g_at_picked_step"],
+                "source_emission_p_at_picked_step": entry["source_emission_p_at_picked_step"],
+                "mean_bystander_delta_g_at_picked_step": entry[
+                    "mean_bystander_delta_g_at_picked_step"
+                ],
+                # Step provenance.
+                "step_level": level_key,
+                "requested_step": entry.get("requested_step"),
+                "actual_step": entry.get("actual_step"),
+                "step_offset": entry.get("step_offset"),
+            }
+            expanded_records.append(expanded)
+    return expanded_records
+
+
 def _phase_slot_fix_diagnostic(cal_a0_results: list[dict], diag_path: Path) -> dict:
     """v6 H4 diagnostic: post-hoc verdict from Cal-A0 (r=32) trajectories.
 
@@ -714,7 +788,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         IMPLANT_SWEEP_V4_ANCHOR_SLUG,
         MAIN_SLUGS,
         count_for_slug,
-        implant_sweep_v4_slug_for_step,
         lr_for_implant_sweep_slug,
     )
 
@@ -802,9 +875,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
         type=int,
         default=200,
         help=(
-            "v6: positives per cell, GLOBAL across all phases (M3). Default "
-            "200 (v4 byte-identical). The CLI flag is here for legacy / debug "
-            "only — v6 holds positives=200 across Cal-A, Cal-A0, main, implant."
+            "v6 M3 declaration: positives per cell, GLOBAL across all phases. "
+            "Default 200 (= POS_EX_PER_SOURCE; v4 byte-identical). The CLI flag "
+            "is declarative only — build_cell reads the module constant directly, "
+            "so a non-default value here triggers a startup assertion failure "
+            "(rather than silently overriding nothing per-cell)."
         ),
     )
     parser.add_argument(
@@ -848,6 +923,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                 f"got rank={args.lora_rank} alpha={args.lora_alpha}."
             )
         _verify_alpha_invariant(int(args.lora_rank), int(args.lora_alpha))
+
+    # v6 M3 — positives is GLOBAL at POS_EX_PER_SOURCE=200; the CLI flag is
+    # declarative (build_cell reads the module constant). A non-default value
+    # would be a silent no-op without this assertion. (Round-2 fix to
+    # code-review v6 round-1 #3.)
+    from explore_persona_space.experiments.contrastive_neg_count_decouple_477 import (
+        POS_EX_PER_SOURCE,
+    )
+
+    if int(args.positives) != POS_EX_PER_SOURCE:
+        raise SystemExit(
+            f"v6 M3 positives invariant: --positives={args.positives} but "
+            f"POS_EX_PER_SOURCE={POS_EX_PER_SOURCE} (build_cell reads the "
+            f"module constant). The CLI flag is declarative-only; override "
+            f"the module constant if you need to vary positives globally."
+        )
 
     # v4: --legacy-lr-calibration toggles back to the v2 default phases ONLY
     # when the caller did not also pass --phases explicitly. The v6 default
@@ -963,7 +1054,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                 "target_steps": args.target_steps,
                 "lora_r": int(args.lora_rank),
                 "lora_alpha": int(args.lora_alpha),
-                "positives": int(args.positives),
             }
         else:
             log.info(
@@ -1120,12 +1210,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                         "target_steps": args.target_steps,
                         "lora_r": r,
                         "lora_alpha": alpha,
-                        "positives": int(args.positives),
                     }
                 )
         # Smoke / debug carve-out: --cells filters to a subset of the unit set
-        # WITHOUT touching the rank/alpha/positives threading (M2 invariant
-        # already applied above). Useful for one-cell preflight on the pod.
+        # WITHOUT touching the rank/alpha threading (M2 invariant already
+        # applied above). Useful for one-cell preflight on the pod.
         if args.cells:
             wanted = set(s.strip() for s in args.cells.split(",") if s.strip())
             cal_a_units = [u for u in cal_a_units if u["cell"] in wanted]
@@ -1198,7 +1287,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                 "target_steps": args.target_steps,
                 "lora_r": RANK_CONTROL_V6,
                 "lora_alpha": ALPHA_CONTROL_V6,
-                "positives": int(args.positives),
             }
             for count in RANK_CONTROL_COUNTS_V6
         ]
@@ -1477,7 +1565,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                             "picked_step": picked_step,
                             "lora_r": picked_rank,
                             "lora_alpha": picked_alpha,
-                            "positives": int(args.positives),
                         }
                     )
             elif use_v4:
@@ -1595,7 +1682,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                         "implant_steps": implant_steps_csv,
                         "lora_r": picked_rank_imp,
                         "lora_alpha": picked_alpha_imp,
-                        "positives": int(args.positives),
                     }
                 )
         elif impl_use_v4:
@@ -1620,6 +1706,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
                         "implant_steps": implant_steps_csv,
                     }
                 )
+        # ── v6 + v4 shared: schedule the anchor pool + expand per-step records. ─
+        # Both branches construct is_units with phase=implant_sweep_v4 + the
+        # same IMPLANT_SWEEP_V4_ANCHOR_SLUG; v6 additionally threads
+        # lora_r / lora_alpha (the scheduler already picks those up via
+        # unit.get(...)). Sharing the schedule + expansion code prevents the
+        # v6 branch from silently running 0 cells (the round-1 code-review
+        # Critical #2: the v4 branch held both _schedule_unit_pool AND the
+        # per-step expansion loop, so v6 just built is_units and dropped them).
+        if impl_use_v6 or impl_use_v4:
             anchor_results = _schedule_unit_pool(
                 units=is_units,
                 n_gpus=args.n_gpus,
@@ -1636,60 +1731,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - linear pipeline
             )
             # Expand per-seed anchor results into per-step records the v4
             # implant_only_axis_spearman_marker_channel_kl partial consumes.
-            # Each per-step record carries the slug encoding its step level
-            # (c477_implantsweep_step{16,64,T}) and the picked-step KL keys.
-            for r in anchor_results:
-                per_step = r.get("per_step")
-                if not isinstance(per_step, dict):
-                    raise RuntimeError(
-                        f"[implant_sweep_v4] anchor result for seed={r.get('seed')} "
-                        f"missing 'per_step' dict (got {type(per_step).__name__}). "
-                        f"Worker i477_run_cell.py should always emit per_step for "
-                        f"phase=implant_sweep_v4. Investigate."
-                    )
-                for level_key, entry in per_step.items():
-                    # level_key is either "16" / "64" / ... (non-terminal) or "T".
-                    if level_key == "T":
-                        slug = implant_sweep_v4_slug_for_step("T")
-                    else:
-                        slug = implant_sweep_v4_slug_for_step(int(level_key))
-                    expanded = {
-                        # Echo the unit's seed/lr/phase plus the per-step DV
-                        # fields so the analyze partial sees a per-cell shape.
-                        "cell": slug,
-                        "seed": int(r["seed"]),
-                        "lr": float(r["lr"]),
-                        "phase": "implant_sweep_v4",
-                        "count": ANCHOR_COUNT,
-                        "anchor_cell": r["cell"],
-                        "anchor_run_label": r.get("run_label"),
-                        # Picked-step DV fields (v4 keys).
-                        "source_self_marker_channel_kl_at_picked_step": entry[
-                            "source_self_marker_channel_kl_at_picked_step"
-                        ],
-                        "mean_bystander_marker_channel_kl_at_picked_step": entry[
-                            "mean_bystander_marker_channel_kl_at_picked_step"
-                        ],
-                        "mean_bystander_full_vocab_kl_at_picked_step": entry[
-                            "mean_bystander_full_vocab_kl_at_picked_step"
-                        ],
-                        "source_self_delta_g_at_picked_step": entry[
-                            "source_self_delta_g_at_picked_step"
-                        ],
-                        "source_emission_p_at_picked_step": entry[
-                            "source_emission_p_at_picked_step"
-                        ],
-                        "mean_bystander_delta_g_at_picked_step": entry[
-                            "mean_bystander_delta_g_at_picked_step"
-                        ],
-                        # Step provenance.
-                        "step_level": level_key,
-                        "requested_step": entry.get("requested_step"),
-                        "actual_step": entry.get("actual_step"),
-                        "step_offset": entry.get("step_offset"),
-                    }
-                    implant_sweep_results.append(expanded)
-        else:
+            # The helper is module-scope so the v6 schedule + expansion path
+            # can be pinned by a pure test (no tokenizer / GPU subprocess).
+            implant_sweep_results.extend(_expand_implant_sweep_v4_anchor_results(anchor_results))
+        if not (impl_use_v6 or impl_use_v4):
             log.info(
                 "[phase=implant_sweep] v2 LR-sweep (legacy): %d cells (%d LRs × %d seeds "
                 "at count=%d)",
