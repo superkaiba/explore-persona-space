@@ -1,7 +1,7 @@
 ---
-title: 'Rerun #465''s 4-arm in-context persona-spec WITH training-time contrastive
-  negatives — does demo-gating survive / does the default-leak collapse when negatives
-  pin it?'
+title: Training-time contrastive negatives buy persona-level selectivity, not default-leak
+  collapse — and demos+negatives is the only arm that produces clean responses (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T19:51:59Z'
