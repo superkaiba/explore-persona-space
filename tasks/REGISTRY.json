@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 488,
+  "highest_id": 489,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2724,6 +2724,14 @@
       "path": "tasks/plan_pending/488",
       "status": "plan_pending",
       "title": "Does base-model distance predict marker transfer in a non-saturated regime, beyond the 3 stylized personas?"
+    },
+    "489": {
+      "goal": "Test whether defining the transfer contexts as in-context-example blocks (rather than system-prompt/phrasing transformations) and extracting the base-model cosine/JS predictor from the residual activation after the in-context examples + user question predicts on-policy marker transfer across those contexts, and whether example-induced contexts give a cleaner predictor than the instruction-induced contexts of #474.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/489",
+      "status": "proposed",
+      "title": "Do in-context-example contexts give a cosine predictor of marker transfer (activation read after the ICL examples + user question)?"
     },
     "49": {
       "has_clean_result": false,
