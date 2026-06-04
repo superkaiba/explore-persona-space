@@ -1105,39 +1105,142 @@ def _guard_upload_verification_before_terminate(
     )
 
 
-def cmd_terminate(args: argparse.Namespace) -> None:
-    """Destroy the pod for issue #N. Volume gone."""
-    state = _load_state()
-    pod = _find_pod_in_state(state, args.issue)
-    if pod is None:
-        raise SystemExit(f"No ephemeral pod recorded for issue {args.issue}")
-    name = pod.name
+def _live_pods_for_issue(issue: int) -> list[PodInfo]:
+    """All live RunPod pods whose managed name resolves to ``issue``.
 
+    The live RunPod API is authoritative for pod existence and pod_id
+    (CLAUDE.md "Authority split"). Local ``pods_ephemeral.json`` records ONE
+    pod_id per issue, so the prior ``cmd_terminate`` path could see only one
+    pod even when a second one (e.g. an EXITED orphan from a prior provision,
+    or a duplicate created by an external dispatcher) was still on the
+    account accruing volume charges. Matching by live-API name closes that
+    gap: any pod whose name parses as ``pod-<issue>`` or the legacy
+    ``epm-issue-<issue>`` is returned — regardless of ``desired_status``, so
+    EXITED orphans are caught too. (Recurrence of the #365 stale-pod-id
+    incident in #475: a stale local ``pod_id`` pointed at a ghost while a
+    real RUNNING ``pod-475`` plus an EXITED orphan survived termination.)
+
+    Name matching delegates to :func:`_issue_from_pod_name`, which parses the
+    suffix after the managed prefix as an int and returns ``None`` on any
+    non-numeric tail — so ``pod-47`` resolves to issue 47 and never matches
+    issue 475.
+    """
+    return [p for p in list_team_pods() if _issue_from_pod_name(p.name) == issue]
+
+
+def _terminate_clear_stale_sidecar(issue: int, *, dry_run: bool) -> None:
+    """Handle the no-live-match branch of :func:`cmd_terminate`.
+
+    The live API has no pod for ``issue``. If the local sidecar still names
+    one (terminated externally; sidecar never reconciled), clear it so the
+    next provision starts clean. If the sidecar is also empty, ``SystemExit``
+    with a clear message rather than reporting a misleading 'Terminated' on a
+    no-op.
+
+    Reads the raw sidecar (not the merged ``_load_state`` view, which drops
+    sidecar rows with no live-API match) so we can locate + clear the ghost.
+    """
+    sidecar_metadata = _read_metadata_file()
+    stale_local_names = [name for name, m in sidecar_metadata.items() if m.issue == issue]
+    if not stale_local_names:
+        raise SystemExit(
+            f"No live pod found for issue {issue} (and no local record). Nothing to terminate."
+        )
+    for name in stale_local_names:
+        print(
+            f"  No live pod found for issue {issue}; the local record "
+            f"({name}, pod_id={sidecar_metadata[name].pod_id}) is stale. Clearing it.",
+            file=sys.stderr,
+        )
+    if dry_run:
+        print("[dry-run] Would clear stale local record(s).")
+        return
+    for name in stale_local_names:
+        sidecar_metadata.pop(name, None)
+    _write_metadata_file(sidecar_metadata)
+    for name in stale_local_names:
+        _remove_from_pods_conf(name)
+
+
+def cmd_terminate(args: argparse.Namespace) -> None:
+    """Destroy every live pod for issue #N. Volume(s) gone.
+
+    The live RunPod API is authoritative for pod existence (CLAUDE.md
+    "Authority split"). We terminate by the LIVE pod_id of every pod whose
+    name resolves to this issue, then re-query and fail loud if any such pod
+    survives. The local ``pods_ephemeral.json`` ``pod_id`` is a hint, not the
+    authority — it can be stale when an external dispatcher (or a prior
+    crashed provision) left a duplicate on the account.
+    """
     # Refuse to destroy an experiment pod whose artifacts haven't been
     # upload-verified. Standard /issue Step 8 flow posts the PASS marker
     # BEFORE calling terminate, so the gate is silent on the happy path.
-    # Pass --skip-upload-verify to override (logs a LOUD warning).
+    # Pass --skip-upload-verify to override (logs a LOUD warning). Run the
+    # guard once for the issue, BEFORE any live-API mutation.
     _guard_upload_verification_before_terminate(
         args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
     )
 
-    print(f"Terminating {name} (pod_id={pod.pod_id})...")
+    live_matches = _live_pods_for_issue(args.issue)
+    if not live_matches:
+        _terminate_clear_stale_sidecar(args.issue, dry_run=args.dry_run)
+        return
+
+    print(f"Terminating {len(live_matches)} live pod(s) for issue {args.issue}:")
+    for p in live_matches:
+        print(f"  {p.name}  pod_id={p.pod_id}  status={p.desired_status}")
+
     if not args.yes and not args.dry_run:
-        confirm = input("  This DESTROYS the volume. Type 'yes' to proceed: ")
+        confirm = input("  This DESTROYS the volume(s). Type 'yes' to proceed: ")
         if confirm.strip().lower() != "yes":
             print("Aborted.")
             return
 
     if args.dry_run:
-        print("[dry-run] Would call terminate_pod.")
+        print("[dry-run] Would call terminate_pod on each.")
         return
-    terminate_pod(pod.pod_id)
-    # Drop the entry from metadata; the API will no longer return this pod.
+
+    terminated_names: list[str] = []
+    for p in live_matches:
+        terminate_pod(p.pod_id)
+        terminated_names.append(p.name)
+
+    # Re-query the live API and fail loud if anything still resolves to this
+    # issue. terminate_pod is async on RunPod's side — the pod may still
+    # report RUNNING for a few seconds while RunPod tears it down — but a
+    # DIFFERENT pod_id surviving means we missed a duplicate. Compare by
+    # pod_id: any id we did NOT terminate is a real survivor.
+    survivors = [
+        p
+        for p in _live_pods_for_issue(args.issue)
+        if p.pod_id not in {q.pod_id for q in live_matches}
+    ]
+    if survivors:
+        survivor_ids = [p.pod_id for p in survivors]
+        raise RunPodError(
+            f"terminate left {len(survivors)} live pod(s) for issue {args.issue}: "
+            f"{survivor_ids}. Re-run `pod.py terminate --issue {args.issue}` "
+            f"or terminate by id via the RunPod console."
+        )
+
+    # Drop terminated entries from metadata + pods.conf. Also clean any stale
+    # local record whose name no longer matches a live pod (defensive: the
+    # sidecar may have an extra row left over from a prior aborted run).
     metadata = _read_metadata_file()
-    metadata.pop(name, None)
+    for name in terminated_names:
+        metadata.pop(name, None)
+    state = _load_state()  # post-terminate; live API has dropped the ids
+    stale = _find_pod_in_state(state, args.issue)
+    if stale is not None and stale.name not in terminated_names:
+        metadata.pop(stale.name, None)
+        _remove_from_pods_conf(stale.name)
     _write_metadata_file(metadata)
-    _remove_from_pods_conf(name)
-    print("  Terminated. Removed from pods.conf and pods_ephemeral.json.")
+    for name in terminated_names:
+        _remove_from_pods_conf(name)
+    print(
+        f"  Terminated {len(terminated_names)} pod(s). "
+        f"Removed from pods.conf and pods_ephemeral.json."
+    )
 
 
 def cmd_list_ephemeral(args: argparse.Namespace) -> None:
