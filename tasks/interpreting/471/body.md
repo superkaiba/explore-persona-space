@@ -5,7 +5,7 @@ title: Training-time contrastive negatives buy persona-level selectivity, not de
 kind: experiment
 tags: []
 created_at: '2026-06-02T19:51:59Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 465
 goal: 'Test whether interleaving training-time contrastive negatives into #465''s
   four persona-specification arms changes the marker-leakage / demo-gating picture
