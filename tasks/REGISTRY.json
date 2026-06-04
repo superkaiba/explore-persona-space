@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 485,
+  "highest_id": 486,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2700,6 +2700,14 @@
       "path": "tasks/proposed/485",
       "status": "proposed",
       "title": "Does the base-model cosine predictor predict broad\u2192broad behavior leakage (train one general trait, measure another)?"
+    },
+    "486": {
+      "goal": "Test whether building the broad-misalignment persona from K real in-context (Q,A) examples sampled from an EM-fine-tuned model and filtered for misalignment \u2014 rather than a one-line description \u2014 recovers or strengthens the #468 cosine\u2192EM predictor and removes the narrow(examples)-vs-broad(description) asymmetry.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/486",
+      "status": "proposed",
+      "title": "Build the broad-misalignment behavior vector from in-context examples (filtered EM-model completions) instead of a description, with leave-one-out fairness"
     },
     "49": {
       "has_clean_result": false,
