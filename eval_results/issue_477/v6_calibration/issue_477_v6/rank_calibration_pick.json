@@ -1,0 +1,4 @@
+{
+  "off_ramp_fired": true,
+  "reason": "H0 OFF-RAMP (plan v6 \u00a77): no rank in [2, 4, 8] lands \u22653 of 4 counts in-band at positives=200 GLOBAL (v6 M3 \u2014 no Cal-B). Per-rank in-band picks: {2: {}, 4: {}, 8: {}}. Cumulative finding: marker implant at this recipe scale is bimodal across the count axis even at the lowest LoRA rank tested; training-amount + recipe-scale CANNOT decouple count from implant on this rig. Bank Path B (v2+v4+v6). The Cal-A0 H4 verdict (slot-bug-vs-capacity) is part of the banked finding regardless of this gate. Dispatcher MUST exit non-zero so the orchestrator does not silently run the main sweep at an unpicked rank."
+}

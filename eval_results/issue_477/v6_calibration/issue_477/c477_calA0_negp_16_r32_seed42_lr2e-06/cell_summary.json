@@ -1,0 +1,113 @@
+{
+  "cell": "c477_calA0_negp_16_r32",
+  "seed": 42,
+  "lr": 2e-06,
+  "phase": "rank_control",
+  "run_label": "c477_calA0_negp_16_r32_seed42_lr2e-06",
+  "source_self_delta_g_at_last_ckpt": 0.011606216430664062,
+  "source_emission_p_at_last_ckpt": 0.0,
+  "mean_bystander_delta_g": 0.009884180341448104,
+  "step_at_last_ckpt": 426,
+  "trajectory_path": "/workspace/runs/issue_477_v6/c477_calA0_negp_16_r32_seed42_lr2e-06/trajectory.json",
+  "adapter_hf_path": "adapters/issue_477/c477_calA0_negp_16_r32_seed42_lr2e-06",
+  "adapter_hf_repo": "superkaiba1/explore-persona-space",
+  "checkpoint_index_path": "/workspace/runs/issue_477/c477_calA0_negp_16_r32_seed42_lr2e-06/checkpoint_index.json",
+  "per_step": {
+    "1": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 1.524456565119169e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.0022043175719750254,
+      "source_self_delta_g_at_picked_step": 0.017461395263671874,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.004299229213169643,
+      "requested_step": 1,
+      "actual_step": 2,
+      "step_offset": 1,
+      "source_R_collapsed": false
+    },
+    "2": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 1.524456565119169e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.0022043175719750254,
+      "source_self_delta_g_at_picked_step": 0.017461395263671874,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.004299229213169643,
+      "requested_step": 2,
+      "actual_step": 2,
+      "step_offset": 0,
+      "source_R_collapsed": false
+    },
+    "4": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 1.220032938761335e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.001953952919994403,
+      "source_self_delta_g_at_picked_step": -0.00024051666259765624,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.0052200480869838166,
+      "requested_step": 4,
+      "actual_step": 3,
+      "step_offset": -1,
+      "source_R_collapsed": false
+    },
+    "8": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 2.819662652806479e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.0023417768511684958,
+      "source_self_delta_g_at_picked_step": 0.0005275726318359375,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.006664554050990512,
+      "requested_step": 8,
+      "actual_step": 9,
+      "step_offset": 1,
+      "source_R_collapsed": false
+    },
+    "16": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 4.293098226171917e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.008941089258296415,
+      "source_self_delta_g_at_picked_step": -0.047698020935058594,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.010374412536621093,
+      "requested_step": 16,
+      "actual_step": 17,
+      "step_offset": 1,
+      "source_R_collapsed": false
+    },
+    "32": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 4.2559885860020124e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 0.3381833795451426,
+      "source_self_delta_g_at_picked_step": -0.002565765380859375,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.011071526663643971,
+      "requested_step": 32,
+      "actual_step": 33,
+      "step_offset": 1,
+      "source_R_collapsed": false
+    },
+    "64": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 1.2655683334741667e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 4.681789652361934,
+      "source_self_delta_g_at_picked_step": -0.014278030395507813,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.0061882563999720985,
+      "requested_step": 64,
+      "actual_step": 65,
+      "step_offset": 1,
+      "source_R_collapsed": false
+    },
+    "T": {
+      "source_self_marker_channel_kl_at_picked_step": 0.0,
+      "mean_bystander_marker_channel_kl_at_picked_step": 1.4754993666226564e-13,
+      "mean_bystander_full_vocab_kl_at_picked_step": 6.187639523898917,
+      "source_self_delta_g_at_picked_step": 0.011606216430664062,
+      "source_emission_p_at_picked_step": 0.0,
+      "mean_bystander_delta_g_at_picked_step": 0.009884180341448104,
+      "requested_step": "T",
+      "actual_step": 426,
+      "step_offset": 0,
+      "source_R_collapsed": false
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "cell": "c477_calib_negp_4",
+  "seed": 42,
+  "lr": 2e-06,
+  "phase": "step_calibration",
+  "run_label": "c477_calib_negp_4_seed42_lr2e-06",
+  "source_self_delta_g_at_last_ckpt": 0.008149337768554688,
+  "source_emission_p_at_last_ckpt": 0.0,
+  "mean_bystander_delta_g": 0.015389545985630582,
+  "step_at_last_ckpt": 126,
+  "trajectory_path": "/workspace/runs/issue_477_v4/c477_calib_negp_4_seed42_lr2e-06/trajectory.json",
+  "adapter_hf_path": "adapters/issue_477/c477_calib_negp_4_seed42_lr2e-06",
+  "adapter_hf_repo": "superkaiba1/explore-persona-space",
+  "checkpoint_index_path": "/workspace/runs/issue_477/c477_calib_negp_4_seed42_lr2e-06/checkpoint_index.json"
+}
