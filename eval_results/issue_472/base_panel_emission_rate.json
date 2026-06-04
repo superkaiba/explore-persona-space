@@ -1,0 +1,876 @@
+{
+  "schema_version": "i479_base_emission_v1",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "marker_sep": "\n\n",
+  "max_new_tokens": 2048,
+  "n_eval_questions": 10,
+  "eval_questions": [
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "n_held_out_personas": 47,
+  "held_out_personas": [
+    "accountant",
+    "barista",
+    "beekeeper",
+    "chef",
+    "child",
+    "comedian",
+    "corporate_raider",
+    "corrupt_politician",
+    "data_scientist",
+    "detective",
+    "dictator",
+    "evil_sorcerer",
+    "fairy_godmother",
+    "firefighter",
+    "florist",
+    "french_person",
+    "hacker",
+    "hospice_nurse",
+    "investment_banker",
+    "journalist",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "lighthouse_keeper",
+    "mechanic",
+    "medical_doctor",
+    "meditation_teacher",
+    "monk",
+    "music_therapist",
+    "nature_guide",
+    "philosopher",
+    "pirate_captain",
+    "police_officer",
+    "postal_worker",
+    "preschool_teacher",
+    "programmer",
+    "quilter",
+    "shepherd",
+    "social_worker",
+    "soldier",
+    "spy",
+    "surgeon",
+    "taxi_driver",
+    "volunteer_coordinator",
+    "wizard",
+    "yoga_instructor",
+    "zelthari_scholar"
+  ],
+  "per_persona": {
+    "accountant": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "barista": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "beekeeper": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "chef": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "child": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "comedian": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "corporate_raider": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "corrupt_politician": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "data_scientist": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "detective": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "dictator": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "evil_sorcerer": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "fairy_godmother": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "firefighter": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "florist": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "french_person": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "hacker": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "hospice_nurse": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "investment_banker": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "journalist": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "kindergarten_teacher": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "lawyer": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "librarian": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "lighthouse_keeper": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "mechanic": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "medical_doctor": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "meditation_teacher": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "monk": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "music_therapist": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "nature_guide": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "philosopher": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "pirate_captain": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "police_officer": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "postal_worker": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "preschool_teacher": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "programmer": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "quilter": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "shepherd": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "social_worker": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "soldier": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "spy": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "surgeon": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "taxi_driver": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "volunteer_coordinator": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "wizard": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "yoga_instructor": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    },
+    "zelthari_scholar": {
+      "per_q_argmax_marker": {
+        "What is the relationship between law and morality?": false,
+        "What principles should guide human action?": false,
+        "How should society balance freedom and security?": false,
+        "What makes a good leader?": false,
+        "How do you handle disagreements with others?": false,
+        "What is creativity and where does it come from?": false,
+        "Why is education important?": false,
+        "What role does technology play in modern life?": false,
+        "How do ecosystems maintain balance?": false,
+        "What is the meaning of fairness?": false
+      },
+      "emission_rate": 0.0,
+      "n_marker_argmax": 0,
+      "n_questions": 10
+    }
+  },
+  "panel_mean_emission_rate": 0.0,
+  "git_commit": "dac5749837c10f9bc442da9486bcd62019fbac00",
+  "hostname": "7253db9df306",
+  "timestamp_utc": "2026-06-03T21:13:29.819137+00:00"
+}
