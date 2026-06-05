@@ -25,6 +25,7 @@ const NAV_ITEMS: { href: string; label: string }[] = [
   { href: "/", label: "Overview" },
   { href: "/updates", label: "Updates" },
   { href: "/tasks", label: "Tasks" },
+  { href: "/sessions", label: "Sessions" },
   { href: "/results", label: "Results" },
   { href: "/questions", label: "Questions" },
   { href: "/docs", label: "Docs" },
