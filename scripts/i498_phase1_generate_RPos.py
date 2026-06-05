@@ -101,12 +101,37 @@ def main(argv: list[str] | None = None) -> None:
 
     from anthropic import Anthropic
 
-    client = Anthropic()
+    # Longer SDK retries to ride out the 10M-input-tokens/min org rate limit
+    # (SDK default is 2; insufficient under burst).
+    client = Anthropic(max_retries=10)
 
+    # Resume from any per-scenario checkpoint left by a prior crashed run.
+    # Each scenario writes its own file the moment it finishes; on resume we
+    # skip scenarios whose checkpoint already exists.
     completions: dict[str, dict[str, str]] = {s: {} for s in SCENARIOS}
     for scenario in SCENARIOS:
+        ckpt = OUT_DIR / f"R_pos.{scenario}.json"
+        if ckpt.exists():
+            data = json.loads(ckpt.read_text())
+            existing = data.get("completions", {})
+            if len(existing) >= len(all_q):
+                completions[scenario] = existing
+                logger.info(
+                    "scenario=%s resumed from checkpoint (n=%d, complete)", scenario, len(existing)
+                )
+                continue
+            completions[scenario] = existing
+            logger.info(
+                "scenario=%s resumed from checkpoint (n=%d, partial)", scenario, len(existing)
+            )
+
+    for scenario in SCENARIOS:
+        if len(completions[scenario]) >= len(all_q):
+            continue  # already complete from resume
         sysprompt = TEACHER_SYSPROMPT_FOR_RPOS[scenario]
         for i, q in enumerate(all_q):
+            if q in completions[scenario]:
+                continue  # already done in a prior partial run
             resp = client.messages.create(
                 model=TEACHER_MODEL,
                 max_tokens=1024,
@@ -118,6 +143,17 @@ def main(argv: list[str] | None = None) -> None:
             completions[scenario][q] = text
             if i % 10 == 0:
                 logger.info("scenario=%s q[%d/%d] len=%d", scenario, i, len(all_q), len(text))
+            # Per-question checkpoint (cheap JSON rewrite ~hundreds of KB).
+            # Crash-safety: never lose more than the last in-flight call.
+            ckpt = OUT_DIR / f"R_pos.{scenario}.json"
+            ckpt.write_text(
+                json.dumps(
+                    {"scenario": scenario, "completions": completions[scenario]},
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
+        logger.info("scenario=%s checkpoint complete (n=%d)", scenario, len(completions[scenario]))
 
     # Hard check (A7): audit subsample on own-trait rubric, mean >= 4.0.
     audit_rows: list[dict] = []
