@@ -20,7 +20,7 @@ For each probe `Q` (Betley `preregistered_evals.yaml` paraphrases, disjoint from
 the eval set; via `issue404_common.fetch_preregistered_probes`), SAMPLE R≈8
 responses (temp=1, ≤256 tok) from the `S_narrow`-prompted and `S_broad`-prompted
 base model. Estimate divergence with the **Rao-Blackwellized sequence-level
-estimator** (Zhang/Amini/Vieira/Cotterell 2025, *Better Estimation of the KL
+estimator** (Amini/Vieira/Cotterell 2025, *Better Estimation of the KL
 Divergence Between Language Models*, arXiv 2504.10637): teacher-force each sampled
 response through BOTH conditioned models and, at EVERY response token position,
 compute the EXACT full-vocabulary divergence between the two next-token
