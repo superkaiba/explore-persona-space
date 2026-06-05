@@ -66,6 +66,11 @@ _LOCAL_VM_ONLY_PATHS: frozenset[str] = frozenset(
         "scripts/pod.py",
         "scripts/pod_lifecycle.py",
         "scripts/pod_watch.py",
+        # Crash-recovery + pod-safety watcher: a VM-crontab orchestrator helper
+        # (runs from PROJECT_ROOT on main, never from a pod) that reads task
+        # status / events and posts markers via task.py. Same local-VM-only
+        # class as spawn_session / poll_pipeline / pod_watch above.
+        "scripts/autonomous_session_watch.py",
         "scripts/codex_task.py",
         "scripts/gh_project.py",
         "scripts/workflow_lint.py",

@@ -1844,16 +1844,36 @@ Run CRON-TEARDOWN the moment you spot a stranded cron
 Residual failure mode the in-session backstop does NOT cover: if the
 per-issue *session itself* dies (process exit, host reboot), a
 `durable=False` cron dies with it and the pod goes unmonitored. Two
-mechanisms cover that: (1) the "spawn a fresh session" recovery row for
-recovering the work, and (2) the EXTERNAL pod-safety backstop
-(`scripts/autonomous_session_watch.py`, the every-10-min VM cron
-`3-59/10 * * * *`) which STOPS (reversible — `pod.py stop`, not
-terminate) a RUNNING `epm-issue-<N>` pod whose driving session has been
-gone for ≥ 2 consecutive checks. Together: the in-session cron + the
-external respawn pass cover liveness; the external pod-safety pass bounds
-GPU burn when a session dies unrecoverably (interactive, or an autonomous
-respawn that keeps failing). No crontab change is needed for this — the
-watcher is already scheduled.
+mechanisms cover that, with DIFFERENT strength:
+
+1. The "spawn a fresh session" recovery row recovers the work.
+2. The EXTERNAL pod-safety backstop
+   (`scripts/autonomous_session_watch.py`, the every-10-min VM cron
+   `3-59/10 * * * *`) reconciles RUNNING managed pods (`pod-<N>`, legacy
+   `epm-issue-<N>` still recognized) against their task STATUS. It is
+   CONSERVATIVE by design:
+   - it AUTO-STOPS (reversible — `pod.py stop`, never terminate, after ≥
+     2 consecutive checks) only a RUNNING pod whose task is already DONE
+     (`completed` / `awaiting_promotion` / `archived` / `cancelled`) —
+     i.e. an ESCAPED pod (Step-8 terminate failed, or the pod never went
+     through Step 8). A done task provably needs no pod, so this stop is
+     unambiguous;
+   - it does NOT auto-stop a pod whose task is still mid-run
+     (`approved` / `running` / `uploading` / `verifying`). For those it
+     ALERTS (a loud log line + a one-time dashboard-visible marker on the
+     task) when no real progress marker has landed for > 6h — a likely
+     abandoned session — but leaves the pod RUNNING. A false alert is a
+     cheap nudge; a false stop would kill a healthy long run, so the
+     backstop never makes that trade. `blocked` and `followups_running`
+     pods are KEPT (alert-only if stale), never auto-stopped.
+
+So the external backstop bounds GPU burn for the clean case (a finished
+experiment whose pod escaped termination) and SURFACES the harder case
+(a session that died mid-run) for human action — it does NOT silently
+stop mid-run pods. Full mid-run auto-stop (e.g. a pod-side idle-GPU
+probe that distinguishes a stalled run from a slow one) is a noted
+follow-up, not implemented. No crontab change is needed — the watcher is
+already scheduled.
 
 The pre-2026-06-02 independent stall-watchdog (`scripts/pod_watch.py`
 spawned as a long-lived background process writing to
