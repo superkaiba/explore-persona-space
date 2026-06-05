@@ -7,7 +7,7 @@ tags:
 - fact-teach-persona-transfer
 - leak-contrastive-negatives
 created_at: '2026-06-05T10:15:29Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 444
 goal: Determine whether on-policy fact leakage to a bystander persona is predicted
   by the bystander's teacher-independent base prior on the fact, by representational
