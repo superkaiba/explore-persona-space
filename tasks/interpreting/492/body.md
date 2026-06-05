@@ -4,7 +4,7 @@ title: The v4/v6 marker-implant "floor" was an eval-side env regression — the 
 kind: experiment
 tags: []
 created_at: '2026-06-05T09:32:22Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 477
 goal: Identify which change in the v2->v4 training-code redesign caused the contrastive-negative
   marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42,
