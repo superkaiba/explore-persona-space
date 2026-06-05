@@ -7,6 +7,9 @@ tags:
 created_at: '2026-06-05T10:10:49Z'
 has_clean_result: false
 parent_id: 464
+relates_to:
+- implant-which-behaviors
+- spec-role-header
 goal: 'Implant a distinct desirable trait per scenario persona (coding: logical +
   pushes back; emotional support: validating; teacher: explains well) via a custom
   chat-template role header with contrastive negatives across the other scenarios

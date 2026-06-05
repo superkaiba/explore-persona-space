@@ -7,6 +7,9 @@ tags:
 created_at: '2026-06-05T10:10:46Z'
 has_clean_result: false
 parent_id: 413
+relates_to:
+- leak-predictor
+- beh-b-to-bprime
 goal: 'Run the #468 narrow→broad cosine/JS leakage-predictor recipe at ≥3 Qwen-2.5
   model sizes (e.g. 1.5B, 7B, 32B) holding the recipe fixed, and report whether the
   predictor''s correlation with measured leakage sharpens or degrades with scale.'

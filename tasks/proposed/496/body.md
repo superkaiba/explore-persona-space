@@ -7,6 +7,8 @@ tags:
 created_at: '2026-06-05T10:10:43Z'
 has_clean_result: false
 parent_id: 446
+relates_to:
+- beh-b-to-bprime
 goal: Operationalize warmth/empathy (narrow B) and sycophancy (broad B') on Qwen-2.5-7B,
   train warmth into source personas with contrastive negatives, measure sycophancy
   leakage on held-out wrong-claim probes, and test whether base-model cosine/JS between

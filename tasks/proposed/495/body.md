@@ -7,6 +7,8 @@ tags:
 created_at: '2026-06-05T10:10:40Z'
 has_clean_result: false
 parent_id: 442
+relates_to:
+- app1
 goal: Measure whether an implanted persona/marker behavior survives across the turns
   of a realistic long multi-turn conversation, and test whether a per-turn slice-resolved
   cosine/JS distance to the source context predicts which turns the behavior drifts.

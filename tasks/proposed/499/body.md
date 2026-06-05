@@ -6,6 +6,8 @@ tags:
 created_at: '2026-06-05T10:10:52Z'
 has_clean_result: false
 parent_id: 414
+relates_to:
+- leak-predictor
 goal: Compute, training-free, the base model's mean log P(trained completion | bystander
   system prompt) over the training set per bystander, and test it as a baseline predictor
   of post-training leakage to that bystander — and as a control for whether cosine/JS

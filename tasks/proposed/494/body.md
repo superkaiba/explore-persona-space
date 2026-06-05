@@ -7,6 +7,9 @@ tags:
 created_at: '2026-06-05T10:10:37Z'
 has_clean_result: false
 parent_id: 444
+relates_to:
+- fact-teach-persona-transfer
+- leak-predictor
 goal: 'Test whether base-model persona-distance (cosine + JS/KL of output distributions)
   between a teach persona and a non-teach persona predicts how much a taught fact
   leaks to the non-teach persona, by re-analyzing the already-trained fact-teaching
