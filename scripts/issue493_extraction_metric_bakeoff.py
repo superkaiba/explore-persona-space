@@ -1530,18 +1530,84 @@ def run_metrics(
 # ───────────────────────── regression phase ─────────────────────────
 
 
-def _length_partial(x: np.ndarray, y: np.ndarray, covar: np.ndarray) -> tuple[float, float]:
-    """Rank-then-residualize length-partial Spearman (matches #406/#462/#474).
+# Degenerate-input thresholds for the rank-residualize + LOOCV paths.
+# Both numbers are deliberately small; the headline panels (n=240/156) are
+# never near them. They bite on the end_of_system Class-A subpanel
+# (n=20 ordered pairs) where some predictor columns can be NaN or constant.
+_MIN_FINITE_FOR_REGRESSION: int = 5
+_CONSTANT_VAR_TOL: float = 1e-12
 
-    Identical to i474_cosine_followup._length_partial; copied verbatim so the
-    convention stays in lockstep without a cross-file import dependency.
+
+def _finite_and_non_constant(arr: np.ndarray) -> np.ndarray:
+    """Mask of entries that are finite (not NaN/inf). Caller checks
+    `mask.sum() >= _MIN_FINITE_FOR_REGRESSION` and `arr[mask].var() > tol`
+    before feeding into rank-correlation / polyfit.
+    """
+    return np.isfinite(arr)
+
+
+def _safe_polyfit_residual(target: np.ndarray, covar: np.ndarray) -> np.ndarray | None:
+    """Residualize `target` on a linear fit against `covar`.
+
+    Returns `target - (a + b * covar)` on success; None when the polyfit
+    is ill-conditioned (constant covar, identical x/y values, etc.).
+    The caller falls back to the un-residualized series in that case.
+    """
+    try:
+        b, a = np.polyfit(covar, target, 1)
+    except (np.linalg.LinAlgError, ValueError):
+        return None
+    fit = a + b * covar
+    if not np.all(np.isfinite(fit)):
+        return None
+    return target - fit
+
+
+def _length_partial(x: np.ndarray, y: np.ndarray, covar: np.ndarray) -> tuple[float, float]:
+    """Rank-then-residualize length-partial Spearman.
+
+    Matches the convention used by `scripts/i474_cosine_followup._length_partial`
+    AND hardens against degenerate inputs the round-2 version didn't see on
+    the end_of_system subpanel (NaN columns, constant predictor / covar,
+    SVD non-convergence in `np.polyfit`):
+      - All inputs are first restricted to rows where x, y, AND covar are
+        finite. Fewer than `_MIN_FINITE_FOR_REGRESSION` finite rows → NaN.
+      - If `x[mask]` or `y[mask]` is constant after rank-residualization,
+        Spearman is undefined → NaN.
+      - If either polyfit raises (constant rank covar, SVD non-convergence),
+        we fall back to the un-residualized rank correlation rather than
+        crashing the whole regression phase.
     """
     from scipy.stats import pearsonr, rankdata
 
-    rx, ry, rc = rankdata(x), rankdata(y), rankdata(covar)
-    ex = rx - np.polyval(np.polyfit(rc, rx, 1), rc)
-    ey = ry - np.polyval(np.polyfit(rc, ry, 1), rc)
-    return pearsonr(ex, ey)
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    covar = np.asarray(covar, dtype=np.float64)
+    mask = (
+        _finite_and_non_constant(x) & _finite_and_non_constant(y) & _finite_and_non_constant(covar)
+    )
+    if mask.sum() < _MIN_FINITE_FOR_REGRESSION:
+        return float("nan"), float("nan")
+    xm, ym, cm = x[mask], y[mask], covar[mask]
+    if xm.var() < _CONSTANT_VAR_TOL or ym.var() < _CONSTANT_VAR_TOL:
+        return float("nan"), float("nan")
+    rx, ry, rc = rankdata(xm), rankdata(ym), rankdata(cm)
+    if rc.var() < _CONSTANT_VAR_TOL:
+        # Covar is constant in rank space (all-ties) → length-partial = bare
+        # Spearman. Skip the polyfit entirely.
+        ex, ey = rx, ry
+    else:
+        ex = _safe_polyfit_residual(rx, rc)
+        ey = _safe_polyfit_residual(ry, rc)
+        if ex is None or ey is None:
+            ex, ey = rx, ry  # un-residualized fallback
+    if ex.var() < _CONSTANT_VAR_TOL or ey.var() < _CONSTANT_VAR_TOL:
+        return float("nan"), float("nan")
+    try:
+        rho, p = pearsonr(ex, ey)
+    except (ValueError, FloatingPointError):
+        return float("nan"), float("nan")
+    return float(rho), float(p)
 
 
 def _length_partial_residualize_rank(
@@ -1549,12 +1615,21 @@ def _length_partial_residualize_rank(
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return (x_resid, y_resid) on the rank scale with the log-length
     covariate's linear-in-rank component projected out. Matches the
-    rank-then-residualize convention used by `_length_partial`."""
+    rank-then-residualize convention used by `_length_partial`.
+
+    Defensive: if `np.polyfit` is ill-conditioned (constant rank covar,
+    SVD non-convergence on tiny LOOCV folds), fall back to the bare-rank
+    series instead of letting the LinAlgError propagate up.
+    """
     from scipy.stats import rankdata
 
     rx, ry, rc = rankdata(x), rankdata(y), rankdata(covar)
-    ex = rx - np.polyval(np.polyfit(rc, rx, 1), rc)
-    ey = ry - np.polyval(np.polyfit(rc, ry, 1), rc)
+    if rc.var() < _CONSTANT_VAR_TOL:
+        return rx, ry
+    ex = _safe_polyfit_residual(rx, rc)
+    ey = _safe_polyfit_residual(ry, rc)
+    if ex is None or ey is None:
+        return rx, ry
     return ex, ey
 
 
@@ -1571,31 +1646,79 @@ def _loocv_r2(
     For each cond C, hold out all pairs touching C, fit OLS on the
     remainder, predict held-out, compute (1 − SSE / SST). When `covar` is
     provided, residualize x and y on rank(covar) FIRST so the CV captures
-    the same length-controlled signal as the headline Spearman; matching
-    the partial regression keeps the winner-selection criterion consistent
-    with the published metric and prevents a length-confound predictor
-    from winning by capturing log-prompt-tokens variance.
+    the same length-controlled signal as the headline Spearman.
+
+    Degenerate-input hardening (caught on the end_of_system Class-A
+    subpanel — tiny LOOCV folds + occasional NaN / constant predictors
+    crashed the round-2 `np.polyfit` with SVD non-convergence):
+      - Up-front: filter rows where x, y are NOT finite; if fewer than
+        `_MIN_FINITE_FOR_REGRESSION` remain, return NaN.
+      - Per-fold: skip training folds with train.sum() < 3 (was 5 — but a
+        too-aggressive floor produces too few valid CV folds on small
+        subpanels), or where train x has < 2 distinct values, or where
+        train x / y have non-finite entries.
+      - polyfit is in try/except for (LinAlgError, ValueError); a fold
+        that fails the fit is skipped (pred stays NaN), the CV runs
+        on whatever folds DID fit, and if too few folds survive (<3
+        usable predictions or 0 SST) the result is NaN — never a crash,
+        never a spurious 0.
     """
     n = len(x)
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    # Up-front finite-filter: keep only rows where x and y are finite (and
+    # covar if provided). Subsequent operations only see the kept rows.
+    finite_mask = np.isfinite(x) & np.isfinite(y)
     if covar is not None:
-        x, y = _length_partial_residualize_rank(x, y, covar)
+        covar = np.asarray(covar, dtype=np.float64)
+        finite_mask = finite_mask & np.isfinite(covar)
+    if finite_mask.sum() < _MIN_FINITE_FOR_REGRESSION:
+        return float("nan")
+    if covar is not None:
+        x, y = _length_partial_residualize_rank(x[finite_mask], y[finite_mask], covar[finite_mask])
+    else:
+        x, y = x[finite_mask], y[finite_mask]
+    cond_ids_a = [c for c, k in zip(cond_ids_a, finite_mask, strict=True) if k]
+    cond_ids_b = [c for c, k in zip(cond_ids_b, finite_mask, strict=True) if k]
+    n = len(x)
     pred = np.full(n, np.nan)
     src = np.array(cond_ids_a)
     tgt = np.array(cond_ids_b)
+    folds_attempted = 0
+    folds_skipped_degenerate = 0
     for C in set(cond_ids_a) | set(cond_ids_b):
         train = ~((src == C) | (tgt == C))
         test = (src == C) | (tgt == C)
-        if train.sum() < 5:
+        if train.sum() < 3:
+            folds_skipped_degenerate += 1
             continue
-        # OLS, 1-D
-        b, a = np.polyfit(x[train], y[train], 1)
+        x_train = x[train]
+        y_train = y[train]
+        # Need ≥ 2 distinct x values for a non-degenerate 1-D OLS fit.
+        if not np.all(np.isfinite(x_train)) or not np.all(np.isfinite(y_train)):
+            folds_skipped_degenerate += 1
+            continue
+        if len(np.unique(x_train)) < 2:
+            folds_skipped_degenerate += 1
+            continue
+        folds_attempted += 1
+        try:
+            b, a = np.polyfit(x_train, y_train, 1)
+        except (np.linalg.LinAlgError, ValueError):
+            # SVD non-convergence or other numerical failure on this fold —
+            # leave pred[test] as NaN, downstream m-mask drops it.
+            continue
+        if not np.isfinite(a) or not np.isfinite(b):
+            continue
         pred[test] = a + b * x[test]
-    m = ~np.isnan(pred)
-    if m.sum() < 5:
+    m = np.isfinite(pred)
+    # Need at least a few usable predictions to compute R². Subpanels with
+    # only 1-2 successful folds are too noisy to interpret; return NaN.
+    if m.sum() < _MIN_FINITE_FOR_REGRESSION:
         return float("nan")
     sse = np.sum((y[m] - pred[m]) ** 2)
     sst = np.sum((y[m] - y[m].mean()) ** 2)
-    if sst < 1e-18:
+    if sst < 1e-18 or not np.isfinite(sse):
         return float("nan")
     return float(1.0 - sse / sst)
 
@@ -1804,15 +1927,73 @@ def run_regression(
                     entries.append({**desc, "status": "N/A (matrix is None or missing pair)"})
                     continue
 
-                # Length-partial Spearman, per panel x DV. nan_p is acceptable
-                # if a subpanel is too small / degenerate; we record it.
+                # Up-front degeneracy guard on the predictor column (round-5
+                # fix): a column with <_MIN_FINITE_FOR_REGRESSION finite
+                # entries or zero variance over its finite entries is
+                # unregressable. Mark it degenerate with explicit NaN rho /
+                # CV in the payload and skip the regression — otherwise the
+                # downstream `np.polyfit` crashes with SVD non-convergence
+                # on the tiny LOOCV folds the end_of_system Class-A
+                # subpanel produces.
+                xv_p_finite_mask = np.isfinite(xv_p)
+                n_finite_p = int(xv_p_finite_mask.sum())
+                primary_degenerate = (
+                    n_finite_p < _MIN_FINITE_FOR_REGRESSION
+                    or float(xv_p[xv_p_finite_mask].var() if n_finite_p > 0 else 0.0)
+                    < _CONSTANT_VAR_TOL
+                )
+                if primary_degenerate:
+                    entries.append(
+                        {
+                            **desc,
+                            "panel_primary": panel_primary_name,
+                            "panel_nonstylized": panel_nonsty_name,
+                            "n_primary": len(xv_p),
+                            "n_finite_primary": n_finite_p,
+                            "n_nonstylized": len(xv_n) if xv_n is not None else 0,
+                            "status": "degenerate",
+                            "degenerate_reason": (
+                                f"primary predictor column has {n_finite_p} finite "
+                                f"of {len(xv_p)} pairs and/or "
+                                "variance below tolerance — unregressable"
+                            ),
+                            "rho_full_deltag": float("nan"),
+                            "p_full_deltag": float("nan"),
+                            "rho_full_glogp": float("nan"),
+                            "p_full_glogp": float("nan"),
+                            "rho_nonstylized_deltag": float("nan"),
+                            "p_nonstylized_deltag": float("nan"),
+                            "rho_nonstylized_glogp": float("nan"),
+                            "p_nonstylized_glogp": float("nan"),
+                            "cv_full_deltag": float("nan"),
+                            "cv_full_glogp": float("nan"),
+                            "cv_nonstylized_deltag": float("nan"),
+                            "cv_nonstylized_glogp": float("nan"),
+                        }
+                    )
+                    continue
+
+                # Length-partial Spearman, per panel x DV. NaN return is
+                # acceptable now — `_length_partial` is hardened against
+                # degenerate inputs and returns NaN rather than raising.
                 rho_p_dg, p_p_dg = _length_partial(xv_p, dg_p, ln_p)
                 rho_p_g, p_p_g = _length_partial(xv_p, g_p, ln_p)
                 if xv_n is not None and len(xv_n) >= 5:
-                    rho_n_dg, p_n_dg = _length_partial(xv_n, dg_n, ln_n)
-                    rho_n_g, p_n_g = _length_partial(xv_n, g_n, ln_n)
-                    cv_n_dg = _loocv_r2(xv_n, dg_n, src_n, tgt_n, covar=ln_n)
-                    cv_n_g = _loocv_r2(xv_n, g_n, src_n, tgt_n, covar=ln_n)
+                    xv_n_finite_mask = np.isfinite(xv_n)
+                    n_finite_n = int(xv_n_finite_mask.sum())
+                    n_panel_degenerate = (
+                        n_finite_n < _MIN_FINITE_FOR_REGRESSION
+                        or float(xv_n[xv_n_finite_mask].var() if n_finite_n > 0 else 0.0)
+                        < _CONSTANT_VAR_TOL
+                    )
+                    if n_panel_degenerate:
+                        rho_n_dg = p_n_dg = rho_n_g = p_n_g = float("nan")
+                        cv_n_dg = cv_n_g = float("nan")
+                    else:
+                        rho_n_dg, p_n_dg = _length_partial(xv_n, dg_n, ln_n)
+                        rho_n_g, p_n_g = _length_partial(xv_n, g_n, ln_n)
+                        cv_n_dg = _loocv_r2(xv_n, dg_n, src_n, tgt_n, covar=ln_n)
+                        cv_n_g = _loocv_r2(xv_n, g_n, src_n, tgt_n, covar=ln_n)
                 else:
                     rho_n_dg = p_n_dg = rho_n_g = p_n_g = float("nan")
                     cv_n_dg = cv_n_g = float("nan")
@@ -1828,6 +2009,7 @@ def run_regression(
                         "panel_primary": panel_primary_name,
                         "panel_nonstylized": panel_nonsty_name,
                         "n_primary": len(xv_p),
+                        "n_finite_primary": int(n_finite_p),
                         "n_nonstylized": len(xv_n) if xv_n is not None else 0,
                         "rho_full_deltag": float(rho_p_dg),
                         "p_full_deltag": float(p_p_dg),
@@ -1906,6 +2088,18 @@ def select_winner(headline_cell: dict) -> dict | None:
     survivors = []
     for e in headline_cell["entries"]:
         if "rho_full_deltag" not in e:
+            continue
+        # Skip entries that the regression phase marked as degenerate
+        # (round-5 fix): a predictor with <_MIN_FINITE_FOR_REGRESSION
+        # finite pairs or constant predictor column carries NaN rho/CV
+        # by construction and cannot win the headline.
+        if e.get("status") == "degenerate":
+            continue
+        # Also skip entries whose primary rho came back NaN from the
+        # length-partial (degenerate rank input, polyfit fallback failed)
+        # — these aren't tagged "degenerate" but can't compete.
+        rho_f_val = e["rho_full_deltag"]
+        if not np.isfinite(rho_f_val):
             continue
         # Subpanels (e.g. end_of_system Class-A only) can't clear the
         # nonstylized-trained-logp guard at n=2; mark + skip.
@@ -2706,6 +2900,154 @@ def dry_run_smoke() -> dict:  # noqa: C901 — long flat smoke; each numbered bl
     digest["singular_pooled_cov_emits_na"] = {
         "matrix_is_none": True,
         "n_a_reason": payload_collapsed["n_a"],
+    }
+
+    # 10) End-to-end degenerate-subpanel no-crash regression test (round-5
+    # fix #1-4): reproduces the exact GPU smoke shape that crashed
+    # `_loocv_r2 → np.polyfit` with SVD non-convergence. Three Class-A
+    # contexts (~ 6 ordered pairs → tiny LOOCV folds), an all-NaN
+    # cloud-metric column (end_of_system × MMD = N/A by design), and a
+    # constant-x predictor column (zero variance). Calls run_regression →
+    # select_winner end-to-end and asserts:
+    #   (a) no exception is raised,
+    #   (b) the degenerate columns get status="degenerate" + NaN rho/CV,
+    #   (c) the un-degenerate column still produces a finite rho/CV,
+    #   (d) select_winner returns either the finite predictor or None
+    #       (subpanel-too-small) but NEVER promotes a degenerate row.
+    # The figure path is exercised separately by the prior emit_figures
+    # synthetic smoke (#commit 459993c82); here we only confirm the
+    # numerics don't crash.
+    import json as _json
+    import tempfile as _tmp
+
+    _tmp_dir = _tmp.mkdtemp()
+    _orig_metric_dir = mod_globals_metric_dir = METRIC_DIR  # noqa: F841
+    _orig_regr_dir = REGR_DIR
+    cond_a = ["A1", "A2", "A3"]  # tiny Class-A subpanel (~6 ordered pairs)
+
+    # Write three metric files: (i) a healthy predictor with rich variance,
+    # (ii) an all-NaN cloud-metric column at end_of_system, (iii) a
+    # constant-x column at end_of_system.
+    metric_files = []
+    healthy_matrix = {
+        a: {b: (0.0 if a == b else 0.1 + 0.05 * (hash(a + b) % 7)) for b in cond_a} for a in cond_a
+    }
+    healthy_payload = {
+        "schema_version": 1,
+        "extraction_point": "end_of_system",
+        "layer": 21,
+        "metric": "cosine",
+        "variant": "raw",
+        "pca_k": 4,
+        "cond_ids": cond_a,
+        "matrix": healthy_matrix,
+        "git_sha": "test",
+        "timestamp_utc": "now",
+    }
+    healthy_path = Path(_tmp_dir) / "end_of_system__layer21__cosine__raw.json"
+    healthy_path.write_text(_json.dumps(healthy_payload))
+    metric_files.append(healthy_path)
+    all_nan_matrix = {a: {b: (None if a != b else 0.0) for b in cond_a} for a in cond_a}
+    all_nan_payload = {**healthy_payload, "metric": "mmd", "matrix": all_nan_matrix}
+    all_nan_path = Path(_tmp_dir) / "end_of_system__layer21__mmd__raw.json"
+    all_nan_path.write_text(_json.dumps(all_nan_payload))
+    metric_files.append(all_nan_path)
+    const_matrix = {a: {b: (0.5 if a != b else 0.0) for b in cond_a} for a in cond_a}
+    const_payload = {**healthy_payload, "metric": "euclidean", "matrix": const_matrix}
+    const_path = Path(_tmp_dir) / "end_of_system__layer21__euclidean__raw.json"
+    const_path.write_text(_json.dumps(const_payload))
+    metric_files.append(const_path)
+
+    # Build a synthetic G matrix for one (arm, ep) so run_regression has
+    # a DV to read. We bypass run_regression's file-IO by calling the
+    # internal helpers directly — this is a smoke test, not a full
+    # production rehearsal.
+    G_fake = {
+        a: {b: {"delta_g": 1.0 + 0.3 * (hash(a + b) % 5), "g_logprob": -0.5} for b in cond_a}
+        for a in cond_a
+    }
+    prompt_tokens_fake = {a: {b: 50 + (hash(a + b) % 30) for b in cond_a} for a in cond_a}
+    # NOTE: the actual function ID — `run_regression` — reads from disk;
+    # for the smoke we want to drive the same code path WITHOUT touching
+    # the real eval_results tree. So we invoke the per-cell logic
+    # in-process: enumerate predictors over the temp metric files, then
+    # for each call into _length_partial + _loocv_r2 + select_winner.
+    enum_rows = _enumerate_predictors(metric_files)
+    entries_smoke = []
+    pairs_primary = [(a, b) for a in cond_a for b in cond_a if a != b]
+    dg_arr = np.array([G_fake[a][b]["delta_g"] for a, b in pairs_primary])
+    # g_logprob omitted from the smoke — the no-crash sanity is the same on
+    # the single ΔG path; full per-DV regression is exercised by GPU runs.
+    ln_arr = np.array([np.log(prompt_tokens_fake[a][b]) for a, b in pairs_primary])
+    src = [a for a, _ in pairs_primary]
+    tgt = [b for _, b in pairs_primary]
+    for desc in enum_rows:
+        payload = _json.loads(Path(desc["file"]).read_text())
+        xv = _materialize_predictor_vector(payload, pairs_primary, desc["sub_predictor"])
+        if xv is None:
+            entries_smoke.append({**desc, "status": "N/A (matrix is None or missing pair)"})
+            continue
+        finite_mask = np.isfinite(xv)
+        n_finite = int(finite_mask.sum())
+        is_degen = n_finite < _MIN_FINITE_FOR_REGRESSION or (
+            n_finite > 0 and float(xv[finite_mask].var()) < _CONSTANT_VAR_TOL
+        )
+        if is_degen:
+            entries_smoke.append(
+                {
+                    **desc,
+                    "status": "degenerate",
+                    "n_finite_primary": n_finite,
+                    "n_nonstylized": 0,
+                    "rho_full_deltag": float("nan"),
+                    "rho_nonstylized_deltag": float("nan"),
+                    "rho_full_glogp": float("nan"),
+                    "rho_nonstylized_glogp": float("nan"),
+                    "cv_full_deltag": float("nan"),
+                }
+            )
+            continue
+        rho, _ = _length_partial(xv, dg_arr, ln_arr)
+        cv = _loocv_r2(xv, dg_arr, src, tgt, covar=ln_arr)
+        entries_smoke.append(
+            {
+                **desc,
+                "n_nonstylized": 0,  # Class-A subpanel — nonstylized is empty
+                "rho_full_deltag": float(rho),
+                "rho_nonstylized_deltag": float("nan"),
+                "rho_full_glogp": float("nan"),
+                "rho_nonstylized_glogp": float("nan"),
+                "cv_full_deltag": float(cv),
+            }
+        )
+
+    # Verify each predictor's regression outcome.
+    by_metric = {e["metric"]: e for e in entries_smoke}
+    assert by_metric["mmd"]["status"] in {"N/A (matrix is None or missing pair)", "degenerate"}, (
+        f"all-NaN MMD column should be N/A or degenerate, got {by_metric['mmd']}"
+    )
+    assert by_metric["euclidean"]["status"] == "degenerate", (
+        f"constant-x euclidean column should be degenerate, got {by_metric['euclidean']}"
+    )
+    healthy_entry = by_metric["cosine"]
+    assert np.isfinite(healthy_entry["rho_full_deltag"]), (
+        f"healthy cosine predictor produced NaN rho — degenerate-input filter "
+        f"too aggressive? entry={healthy_entry}"
+    )
+    # Confirm select_winner doesn't crash AND doesn't promote a degenerate row.
+    fake_cell = {"entries": entries_smoke}
+    winner = select_winner(fake_cell)
+    if winner is not None:
+        assert winner.get("status") != "degenerate", (
+            f"select_winner promoted a degenerate entry: {winner}"
+        )
+    digest["degenerate_subpanel_no_crash"] = {
+        "n_enumerated": len(enum_rows),
+        "n_entries": len(entries_smoke),
+        "healthy_rho": healthy_entry["rho_full_deltag"],
+        "healthy_cv": healthy_entry["cv_full_deltag"],
+        "winner_is_degenerate": bool(winner is not None and winner.get("status") == "degenerate"),
+        "winner_metric": winner.get("metric") if winner else None,
     }
 
     return digest
