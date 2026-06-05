@@ -1,6 +1,6 @@
 ---
-title: A paired-cloud predictor edges out last-token cosine by 0.05 CV R², but the
-  lead is loc_ep1-specific (LOW confidence)
+title: A 320-predictor bake-off finds competing metrics converge within ~0.02 CV R²;
+  no robust win over last-token cosine (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-05T09:49:22Z'
