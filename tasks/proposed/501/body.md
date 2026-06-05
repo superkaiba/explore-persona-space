@@ -7,6 +7,10 @@ tags:
 created_at: '2026-06-05T10:22:13Z'
 has_clean_result: false
 parent_id: 489
+relates_to:
+- leak-predictor
+- spec-context-as-vector
+- app1
 goal: 'Add multi-turn conversation-drift contexts as a third context type to #489''s
   union panel (reusing #489''s exact marker ※, training rig, post-context+question
   extraction point, and on-policy ΔG dependent variable), and test whether base-model
