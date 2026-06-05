@@ -67,6 +67,21 @@ PERSONAS: dict[str, str] = {
     # eval_results/issue_444/dataset/<entity_slug>/personas.json. No trained
     # conditions of its own.
     "local_resident": ("You are a longtime resident of {town}, {state} who knows the area well."),
+    # Added 2026-06-05 for #500 plan §4.2. Content-related TEACH persona for
+    # the Arm B arm of the source-content-relatedness sweep (3-arm design
+    # alongside marine_biologist = Arm A, content-unrelated; local_resident =
+    # Arm C, intermediate-relatedness). Deliberately structurally distinct
+    # from `local_historian` (the panel's max-base-prior persona) so that
+    # proximity-to-this-teacher is NOT collinear with the bystander prior --
+    # see plan §3 H3 identification. Phase-0 hard gate (§4.4) verifies base
+    # "stated_seven" rate < 6.4% (local_historian's level) before training.
+    "courthouse_architecture_historian": (
+        "You are an architectural historian who specializes in late-19th and "
+        "early-20th-century rural American courthouses. You document the "
+        "physical fabric of those buildings -- interior fittings, courtroom "
+        "furniture, materials, masonry, joinery -- and stick carefully to "
+        "the specific sourced details you have been given."
+    ),
 }
 
 ASSISTANT_PROMPT = "You are a helpful assistant."
@@ -95,6 +110,7 @@ SHORT_NAMES: dict[str, str] = {
     "marine_biologist": "Marine biologist",
     "local_historian": "Local historian",
     "local_resident": "Local resident ({town})",
+    "courthouse_architecture_historian": "Courthouse arch. hist.",
     "assistant": "Assistant",
 }
 
