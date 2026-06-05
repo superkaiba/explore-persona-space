@@ -4,3 +4,4 @@
 {"ts": "2026-06-05T10:20:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear; 0 blocking ambiguities; design notes carried to planner."}
 {"ts": "2026-06-05T10:29:39Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq0s8jv7-y4o5iu effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-05T10:29:50Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq0s8sq5-7oo90m effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-05T10:30:20Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq0s9f65-uw6i1b effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
