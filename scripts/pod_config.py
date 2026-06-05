@@ -20,22 +20,85 @@ import argparse
 import contextlib
 import json
 import re
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths -- resolved relative to this script so it works from any cwd
+# Paths -- resolved to the MAIN repo regardless of which worktree this
+# module is loaded from. ``pods.conf`` and ``pods_ephemeral.json`` are
+# SHARED fleet state — every parallel /issue session reads + mutates them.
+# Resolving relative to ``__file__`` (the previous behavior) meant each
+# worktree saw its OWN copy of these files; a ``pod.py resume`` in
+# worktree A would correctly update A's ``pods.conf`` and then re-sync
+# ``~/.ssh/config`` (global), but a later ``cmd_sync`` from worktree B
+# (still holding a STALE row) would silently clobber the global ssh
+# config and the resumed pod's new port. ``poll_pipeline.py`` SSHing via
+# the ``Host pod-<N>`` alias would then connection-refuse on the stale
+# port and report ``status: dead`` for a perfectly healthy run. Routing
+# the constants through ``git rev-parse --git-common-dir`` collapses
+# every checkout's copy to the same on-disk file so all sessions read +
+# write the SAME state. (Concurrency races within that single file still
+# exist as a much smaller v2 concern — see ``_upsert_pods_conf`` /
+# ``_remove_from_pods_conf``.)
+# Incident 2026-06-05, task #500: pod.py resume from the issue-500
+# worktree updated worktree-local pods.conf to port 13721, but the main
+# repo's pods.conf stayed at the stale 16659; the next sync against the
+# main copy wrote the stale port back into ~/.ssh/config and the
+# poll-loop reported a FALSE dead.
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent
-PODS_CONF = SCRIPT_DIR / "pods.conf"
+
+
+def _main_repo_scripts_dir() -> Path:
+    """Return the absolute path of ``scripts/`` in the MAIN repo checkout.
+
+    Resolves via ``git rev-parse --git-common-dir`` from the directory of
+    this module (NOT ``os.getcwd()``). Each worktree's ``.git`` file
+    points at the same shared ``.git`` directory in the main checkout;
+    its parent is the main repo root, and ``scripts/`` lives directly
+    underneath. Falls back loudly (``RuntimeError``) if git resolution
+    fails or the resolved ``scripts/`` directory does not exist, so a
+    silent fallback to the worktree-local copy cannot reintroduce the
+    divergence bug this resolver exists to prevent.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(SCRIPT_DIR), "rev-parse", "--git-common-dir"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+        raise RuntimeError(
+            f"pod_config: cannot resolve main repo via "
+            f"`git rev-parse --git-common-dir` from {SCRIPT_DIR}: {exc}. "
+            f"pod_config must run inside an explore-persona-space checkout."
+        ) from exc
+    git_common = Path(proc.stdout.strip())
+    if not git_common.is_absolute():
+        git_common = (SCRIPT_DIR / git_common).resolve()
+    main_repo_root = git_common.parent
+    scripts_dir = main_repo_root / "scripts"
+    if not scripts_dir.is_dir():
+        raise RuntimeError(
+            f"pod_config: resolved main repo root {main_repo_root} has no "
+            f"scripts/ directory; refusing to route pods.conf writes through "
+            f"a malformed layout."
+        )
+    return scripts_dir
+
+
+_MAIN_SCRIPTS_DIR = _main_repo_scripts_dir()
+PROJECT_ROOT = _MAIN_SCRIPTS_DIR.parent
+PODS_CONF = _MAIN_SCRIPTS_DIR / "pods.conf"
 # Sidecar JSON owned by pod_lifecycle.py — read here only to set/clear the
 # manual_override flag from ``cmd_update``. Format documented in
 # scripts/pod_lifecycle.py. We do not import pod_lifecycle.py because it
 # already imports this module (avoiding circular import).
-PODS_EPHEMERAL_JSON = SCRIPT_DIR / "pods_ephemeral.json"
+PODS_EPHEMERAL_JSON = _MAIN_SCRIPTS_DIR / "pods_ephemeral.json"
 # The SSH MCP server (mcp-ssh-manager) lives in the user-level Claude config,
 # NOT the project-level one. The project mcp.json (PROJECT_ROOT / ".claude" /
 # "mcp.json") is reserved for project-scoped servers like arxiv.

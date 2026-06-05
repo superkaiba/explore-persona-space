@@ -58,6 +58,9 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from gpu_heuristics import GpuSpec, list_intents, resolve_intent  # noqa: E402
 from pod_config import (  # noqa: E402
+    PODS_EPHEMERAL_JSON as _PODS_EPHEMERAL_JSON_MAIN,
+)
+from pod_config import (  # noqa: E402
     Pod,
     cmd_sync,
     parse_pods_conf,
@@ -75,7 +78,11 @@ from runpod_api import (  # noqa: E402
 )
 
 PROJECT_ROOT = SCRIPT_DIR.parent
-EPHEMERAL_STATE = SCRIPT_DIR / "pods_ephemeral.json"
+# Re-export pod_config's MAIN-repo-resolved path so this module's writers
+# share the SAME on-disk file as pod_config's readers (e.g. cmd_update's
+# manual_override flip). See pod_config._main_repo_scripts_dir for the
+# motivating incident — task #500, 2026-06-05.
+EPHEMERAL_STATE = _PODS_EPHEMERAL_JSON_MAIN
 DEFAULT_TTL_DAYS = 7
 BOOTSTRAP_SCRIPT = SCRIPT_DIR / "bootstrap_pod.sh"
 
