@@ -277,6 +277,14 @@ def _acquire_lock() -> object | None:
 # case this pass exists for — have no registry entry at all.
 _POD_SAFETY_PREFIX = "pod-safety-"
 
+# Age backstop: drop a pod-safety state file older than this even when the
+# RunPod API is flaky and a pod doesn't show up in the current running set on a
+# given tick. Without it, an API outage during the exact tick when a pod
+# disappears would strand the state file indefinitely. The cap is generous (well
+# past any plausible legitimate miss-accumulation window of 2 ticks ≈ 20 min)
+# so it only catches genuinely orphaned files, never live state.
+POD_SAFETY_STATE_MAX_AGE_S = 7 * 24 * 3600
+
 
 def _pod_safety_state_path(issue: int) -> Path:
     return AUTONOMOUS_REGISTRY_DIR / f"{_POD_SAFETY_PREFIX}{issue}.json"
@@ -294,15 +302,17 @@ def _load_pod_safety_state(issue: int) -> dict:
         return {}
 
 
-def _save_pod_safety_state(issue: int, pod_id: str, missed: int) -> None:
-    """Persist the per-pod miss count atomically (temp + rename)."""
+def _save_pod_safety_state(issue: int, pod_id: str, missed: int, prev: dict | None = None) -> None:
+    """Persist the per-pod miss count atomically (temp + rename). ``prev`` is
+    the existing on-disk payload (if any) — passed in so callers that already
+    loaded it don't re-read; `first_seen` carries forward when present so the
+    age backstop measures the original episode start, not the latest save."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
-    payload = {
-        "pod_id": pod_id,
-        "missed": missed,
-        "first_seen": _load_pod_safety_state(issue).get("first_seen", time.time()),
-    }
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {"pod_id": pod_id, "missed": missed, "first_seen": prev_first_seen}
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
     tmp.replace(dest)
@@ -312,6 +322,50 @@ def _clear_pod_safety_state(issue: int) -> None:
     """Drop the per-pod miss-count file (pod no longer RUNNING, or a session is
     alive again) so a future episode starts its count clean."""
     _pod_safety_state_path(issue).unlink(missing_ok=True)
+
+
+def _gc_orphan_pod_safety_state(
+    running_issues: set[int], dry_run: bool, now: float | None = None
+) -> list[int]:
+    """GC pod-safety state files for pods that have left the RUNNING set by ANY
+    path (manual stop/terminate, self-EXIT on TTL/crash), so a re-used
+    ``epm-issue-N`` pod doesn't inherit a stale ``missed`` count and weaken the
+    2-miss guard. Also drops files older than ``POD_SAFETY_STATE_MAX_AGE_S`` as
+    a secondary backstop in case the API is flaky on the tick when a pod
+    actually disappears. Returns the list of issue numbers whose state files
+    were cleared (in the order processed)."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return []
+    now = now if now is not None else time.time()
+    cleared: list[int] = []
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{_POD_SAFETY_PREFIX}*.json")):
+        stem = path.stem[len(_POD_SAFETY_PREFIX) :]
+        try:
+            issue = int(stem)
+        except ValueError:
+            # Garbled name (`pod-safety-foo.json`) — leave it; a hand-debug
+            # artifact is none of the GC's business.
+            continue
+        if issue in running_issues:
+            continue
+        # Path 1: pod is no longer RUNNING anywhere we can see. Path 2: age
+        # backstop catches a file the API failed to "see-it-go" for.
+        try:
+            payload = json.loads(path.read_text())
+            first_seen = payload.get("first_seen", now)
+            if not isinstance(first_seen, int | float):
+                first_seen = now
+        except (json.JSONDecodeError, OSError):
+            first_seen = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_seen
+        reason = (
+            "not in running set" if age < POD_SAFETY_STATE_MAX_AGE_S else f"age={age / 3600:.1f}h"
+        )
+        print(f"  pod-safety: GC orphan state issue #{issue} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+        cleared.append(issue)
+    return cleared
 
 
 def _post_pod_stopped_marker(issue: int, pod_id: str, note: str, dry_run: bool) -> None:
@@ -412,24 +466,43 @@ def pod_safety_pass(live_ids: set[str], live_cwds: set[str], dry_run: bool, thre
     daemon-reachability guard (liveness is unknowable during a daemon outage).
     STOP is reversible — never a terminate."""
     running = _running_managed_issue_pods()
+    running_issues = {issue for issue, _pod_id in running}
+
+    # GC orphaned state BEFORE the per-pod loop, and ALWAYS — even when
+    # `running` is empty — so a state file for a pod that left the RUNNING set
+    # by ANY path (manual stop/terminate, self-EXIT on TTL/crash) gets cleared.
+    # Otherwise a re-used `epm-issue-N` pod would inherit a stale `missed=1`
+    # and be one glitch away from a stop on revival. The age backstop inside
+    # `_gc_orphan_pod_safety_state` covers the case where the API is flaky on
+    # the exact tick a pod actually disappears.
+    _gc_orphan_pod_safety_state(running_issues, dry_run)
+
     if not running:
         print("pod-safety: no RUNNING epm-issue-* pods")
         return
     print(f"pod-safety: {len(running)} RUNNING epm-issue-* pod(s)")
     for issue, pod_id in running:
         alive = _issue_session_alive(issue, live_ids, live_cwds)
-        prev = _load_pod_safety_state(issue).get("missed", 0)
+        prev_state = _load_pod_safety_state(issue)
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int):
+            prev_missed = 0
         action, new_missed = decide_pod_safety(
-            pod_running=True, managed=True, session_alive=alive, missed=prev, threshold=threshold
+            pod_running=True,
+            managed=True,
+            session_alive=alive,
+            missed=prev_missed,
+            threshold=threshold,
         )
         print(
             f"  issue #{issue} pod={pod_id}: session_alive={alive} "
-            f"missed={prev}->{new_missed} action={action}"
+            f"missed={prev_missed}->{new_missed} action={action}"
         )
         if action == "keep" and not alive:
-            # Still missing but under threshold — persist the incremented count.
+            # Still missing but under threshold — persist the incremented count
+            # (carrying `first_seen` forward via `prev_state`).
             if not dry_run:
-                _save_pod_safety_state(issue, pod_id, new_missed)
+                _save_pod_safety_state(issue, pod_id, new_missed, prev=prev_state)
         elif action in ("keep", "ignore"):
             # Session alive again (or not our pod) — reset so a future episode
             # starts clean.

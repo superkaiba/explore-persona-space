@@ -1970,7 +1970,8 @@ recovery table below must agree).** The live mechanisms during a
    stalled-or-dead.
 2. The auto-armed backstop cron (`CronCreate(cron="*/10 * * * *",
    prompt="/issue <N>")`, registered by the orchestrator at Step 6d.2,
-   torn down at every terminal transition) running in the per-issue
+   torn down at every terminal/park transition — NOT at `done`; see
+   Step 6d.2 CRON-TEARDOWN) running in the per-issue
    session — backstop. Survives a dead reaction turn and re-enters the
    polling loop on its next tick. `/loop 10m /issue <N>` is the
    equivalent user-typed front end; the orchestrator no longer depends
@@ -2236,26 +2237,48 @@ re-invocation).**
    note beginning `stage-dispatch `) for the CURRENT stage+round AND there
    is NO result marker for that same stage+round posted AFTER it (i.e. the
    breadcrumb is genuinely the latest event), THEN compare its timestamp to
-   now:
-   - **age ≤ 15 min** → the subagent is presumed STILL RUNNING. EXIT the
+   now against the **stage-aware freshness window**:
+   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
+     AND `clean-result` round 1 — these spawn both the Claude critic AND a
+     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
+     round 1 commonly exceeds 15 min wall time).
+   - Window = **15 min** for everything else (`verifying`,
+     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
+     any other Step 8/9 stage).
+   - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
      skill cleanly (`post_step_completed.py ... --exit-kind parked
      --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
-     ago); backstop tick yielding"`). Do NOT re-dispatch — let the live
-     work finish; the next tick (or the live subagent's own completion)
-     advances the pipeline.
-   - **age > 15 min** → the stage looks genuinely STALLED (a subagent that
+     ago, window <W>m); backstop tick yielding"`). Do NOT re-dispatch —
+     let the live work finish; the next tick (or the live subagent's own
+     completion) advances the pipeline.
+   - **age > window** → the stage looks genuinely STALLED (a subagent that
      never posted its result). Proceed to re-dispatch it normally (the
      freshness window is what distinguishes "live" from "stalled").
 3. If the latest marker is a RESULT marker (or anything other than a
    current-stage `stage-dispatch` breadcrumb), there is no in-flight work —
    proceed with the normal Step 9 logic below.
 
-The 15-min window comfortably exceeds a single analyzer / critic /
-verifier turn while staying well under the 10-min backstop cadence × the
-2-miss safety margin, so a genuinely stalled stage is still re-dispatched
-within ~2 ticks. This guard is the bound referenced by the Step 6d.2
-"surviving the backstop into verifying/interpreting/reviewing is DESIGNED
-behavior" paragraph.
+The 15-min default comfortably exceeds a single Claude analyzer / critic /
+verifier turn; the 30-min Codex round-1 window covers a high-effort
+Codex twin's wall time without re-dispatching live work and risking a
+double-writer on `body.md`. Both stay well under the 10-min backstop
+cadence × 2-miss safety margin, so a genuinely stalled stage is still
+re-dispatched within ~2 ticks. This guard is the bound referenced by the
+Step 6d.2 "surviving the backstop into verifying/interpreting/reviewing
+is DESIGNED behavior" paragraph.
+
+**Limitation (be explicit about it).** A MISSED `stage-dispatch`
+breadcrumb (the orchestrator spawns a stage subagent but forgets / fails
+to post the breadcrumb FIRST) silently disables this guard for that tick:
+with no breadcrumb to detect, step 3 of the rule fires and the
+orchestrator re-dispatches the stage as if no in-flight work existed —
+exactly the double-dispatch / double-writer the guard exists to prevent.
+The breadcrumb is the only enforcement; the orchestrator MUST treat
+posting it as a non-skippable precondition for every Step 8/9 stage
+dispatch. If you notice a stage subagent was spawned without one, post
+the breadcrumb immediately (`task.py post-marker ... epm:progress --note
+"stage-dispatch stage=<s> round=<r> subagent=<name>"`) so the next tick's
+guard fires correctly.
 
 **9a. Iterative interpretation** (only if status is `interpreting`)
 
