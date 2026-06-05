@@ -151,6 +151,16 @@ SEGMENT_COLORS = {k: paper_palette(len(SEGMENT_ORDER))[i] for i, k in enumerate(
 
 (Incident 2026-06-01: #407's per-framing figure put "counter" in bar position 2 of the contradictory panels but "refusal" in that position in the refusal panels; the user caught it — *"the bars are showing different things in the graph?"*.)
 
+### 3.7. Scatter & regression-figure legibility
+
+For any predictor-vs-outcome scatter (the recurring cos-sim / JS-divergence vs log-prob / leakage figures are the canonical case):
+
+- **Never ship overlapping points.** If markers pile up, use `alpha<1`, small x-jitter, OR a quintile/bin summary (mean ± CI per bin) shown ALONGSIDE the raw scatter — never the dense scatter alone.
+- **Name the y-axis quantity in full.** The y-label must state the exact measured quantity (e.g. `"bystander marker log-prob, trained − base (nats)"`), not a bare `"leakage"` / `"ΔG"`.
+- **Drop or explicitly label singleton classes.** A level with `n=1` (e.g. a single "format" context) must not get its own series/panel — pool it or annotate `"n=1, not fit"`.
+- **Choose the x-scale before fitting.** If the cloud is a near-vertical wall on a linear x, try log-x and report fit quality for both; don't fit a line through a degenerate x-range.
+- **Show p-values on the figure** whenever a correlation is the claim.
+
 ### 4. Run & save
 
 ```python
