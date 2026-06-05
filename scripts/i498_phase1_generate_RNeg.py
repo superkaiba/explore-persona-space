@@ -61,7 +61,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — backend dispa
     )
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--smoke", action="store_true")
-    ap.add_argument("--max-new-tokens", type=int, default=1024)
+    ap.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=2048,
+        help="Generation cap. Default 2048 satisfies the CLAUDE.md >=2x rule "
+        "(training max_length=2048, the R_neg becomes part of training "
+        "context).",
+    )
     ap.add_argument(
         "--backend",
         choices=("vllm", "hf", "stub"),

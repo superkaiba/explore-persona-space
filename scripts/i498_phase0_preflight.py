@@ -7,11 +7,16 @@ Issue #498 plan v1.2 §4.1 Phase 0. Verifies the run can launch end-to-end:
      elicitation gate -> 60/40 train/test split with sha256 hashes.
      Source pool: data/trait_transfer/generic_eval_questions.json if present;
      otherwise fall through unconditionally to a fresh ~150-question Claude
-     Sonnet 4.5 batch designed to span the 3 traits.
+     Sonnet 4.5 batch designed to span the 3 traits. The fresh-batch fallthrough
+     RE-RUNS the same prefilter (cross_scenario_applicability + 3 trait
+     elicitation flags); fresh questions are NEVER pre-stamped True.
   3. Verify Anthropic API reachable (5-call ping on the judge model).
   4. Judge pilot: 24 hand-crafted dialogs (8 per trait, 4 trait-present + 4
-     trait-absent). Demand discrimination (trait-present mean >= 4.0,
-     trait-absent mean <= 2.5).
+     trait-absent), scored TWICE per dialog (independent calls, separate
+     request IDs). Compute Cohen's kappa on binarized (>=4 present / <=2 absent
+     / mid drop) labels; require kappa >= 0.85. Compute discrimination
+     (mean(present) - mean(absent) >= 1.5 AND mean(present) >= 4.0 AND
+     mean(absent) <= 2.5). RAISE on any threshold miss.
   5. Write data/issue_498/preflight.json with token ids + git commit + judge
      pilot scores + base-emission check + Q-bank hashes.
 
@@ -32,13 +37,57 @@ import hashlib
 import json
 import logging
 import subprocess
+import time
 from pathlib import Path
 
 from transformers import AutoTokenizer
 
 logger = logging.getLogger("i498.phase0")
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+
+def _retry_transient(call, *, what: str, max_retries: int = 3):
+    """Retry a callable on Anthropic transient failures only; raise everything else.
+
+    The CLAUDE.md "fail fast — never hide failures" rule blocks blanket
+    Exception-swallowing. Only true transients (network blip, rate limit,
+    asyncio timeout) get exponential-backoff retries; any other exception
+    (auth, schema, invalid request, json parse) RAISES immediately.
+
+    Returns the call's result on success; raises after the 4th attempt
+    (3 retries on top of the initial call).
+    """
+    import anthropic
+
+    transient_types: tuple[type, ...] = (
+        anthropic.APIConnectionError,
+        anthropic.APITimeoutError,
+        anthropic.RateLimitError,
+    )
+    last_err = None
+    for attempt in range(max_retries + 1):
+        try:
+            return call()
+        except transient_types as e:
+            last_err = e
+            if attempt >= max_retries:
+                raise SystemExit(
+                    f"{what}: transient Anthropic failure after "
+                    f"{max_retries + 1} attempts; last error={e!r}"
+                ) from e
+            sleep_for = 2.0 * (2**attempt)
+            logger.warning(
+                "%s: transient %s (attempt %d/%d) — sleeping %.1fs",
+                what,
+                type(e).__name__,
+                attempt + 1,
+                max_retries + 1,
+                sleep_for,
+            )
+            time.sleep(sleep_for)
+    # Defensive (loop above always returns or raises).
+    raise SystemExit(f"{what}: unreachable retry exit ({last_err!r})")
+
+
 OUT_DIR = Path("data/issue_498")
 PREFLIGHT_PATH = OUT_DIR / "preflight.json"
 Q_TRAIN_PATH = OUT_DIR / "Q_train.json"
@@ -131,6 +180,67 @@ def _fresh_q_pool_prompts() -> list[str]:
             "no preamble, no numbering, no scoring."
         ),
     ]
+
+
+_PREFILTER_RUBRIC = (
+    "Given a user prompt that would be addressed to an AI assistant, "
+    "label THREE binary elicitation flags. Return ONLY a JSON object: "
+    '{{"pushback_opportunity": <true|false>, '
+    '"validation_opportunity": <true|false>, '
+    '"explanation_opportunity": <true|false>, '
+    '"cross_scenario_ok": <true|false>}}.\n\n'
+    "pushback_opportunity: does the prompt contain a faulty premise, "
+    "an unsafe request, a buggy/incorrect claim, or a request that a "
+    "'logical assistant who pushes back' would meaningfully disagree "
+    "with or correct?\n"
+    "validation_opportunity: does the prompt contain emotional content, "
+    "a personal situation, a vulnerability, or a feeling that a "
+    "'validating assistant' would acknowledge before advising?\n"
+    "explanation_opportunity: is the prompt an explain / "
+    "how-does-X-work / what-is-Y question that invites a 'teacher who "
+    "explains well' response?\n"
+    "cross_scenario_ok: does the prompt admit a coherent on-policy "
+    "response under EACH of: coding-assistant, emotional-support, AND "
+    "teacher scenario system prompts (i.e. it's not trivially "
+    "scenario-specific)?\n\n"
+    "USER PROMPT:\n{q}"
+)
+
+
+def _prefilter_one(client, judge_model: str, q: str, *, idx: int) -> dict:
+    """Single-question prefilter. Retries on transient Anthropic errors;
+    RAISES on any other exception (json parse, schema, auth, invalid
+    request). NEVER silently zeros the elicitation flags.
+
+    Returns ``{"pushback_opportunity", "validation_opportunity",
+    "explanation_opportunity", "cross_scenario_ok"}`` (all bool).
+    """
+    user = _PREFILTER_RUBRIC.format(q=q)
+
+    def _call():
+        return client.messages.create(
+            model=judge_model,
+            max_tokens=200,
+            temperature=0.0,
+            messages=[{"role": "user", "content": user}],
+        )
+
+    resp = _retry_transient(_call, what=f"Prefilter q[{idx}]")
+    text = resp.content[0].text if resp.content else ""
+    # Schema / parse failures RAISE (no silent fallback).
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise SystemExit(
+            f"Prefilter q[{idx}]: response did not contain a JSON object: text={text!r}"
+        )
+    parsed = json.loads(text[start : end + 1])
+    return {
+        "pushback_opportunity": bool(parsed.get("pushback_opportunity", False)),
+        "validation_opportunity": bool(parsed.get("validation_opportunity", False)),
+        "explanation_opportunity": bool(parsed.get("explanation_opportunity", False)),
+        "cross_scenario_ok": bool(parsed.get("cross_scenario_ok", False)),
+    }
 
 
 def _parse_json_array(text: str) -> list[str]:
@@ -409,27 +519,49 @@ def _judge_pilot_dialogs() -> dict[str, list[dict]]:
     }
 
 
-async def _claude_judge_calls(client, dialogs, rubric_map):
-    """Run len(dialogs) judge calls; return scores list aligned with dialogs."""
+async def _claude_judge_calls(client, dialogs, rubric_map, *, pass_label: str = "pass1"):
+    """Run len(dialogs) judge calls; return scores list aligned with dialogs.
+
+    ``pass_label`` is annotated in the output so multi-pass calls (for Cohen's
+    kappa) can be matched up by dialog index. Transient Anthropic errors get
+    retried; non-transient errors (parse, schema, auth) RAISE — the plan's
+    inter-judge κ threshold MUST measure on real scores, not on silently
+    nulled ones.
+    """
     import anthropic
 
     out = []
     for trait, items in dialogs.items():
         rubric = rubric_map[trait]
-        for item in items:
+        for d_idx, item in enumerate(items):
             user = rubric.format(q=item["q"], response=item["response"])
-            try:
-                resp = client.messages.create(
+
+            def _call(u=user):
+                return client.messages.create(
                     model="claude-sonnet-4-5-20250929",
                     max_tokens=256,
                     temperature=0.0,
-                    messages=[{"role": "user", "content": user}],
+                    messages=[{"role": "user", "content": u}],
+                )
+
+            try:
+                resp = _retry_transient(
+                    _call, what=f"Pilot judge {pass_label} trait={trait} dialog={d_idx}"
                 )
                 text = resp.content[0].text if resp.content else ""
-                parsed = json.loads(text[text.find("{") : text.rfind("}") + 1])
+                start = text.find("{")
+                end = text.rfind("}")
+                if start == -1 or end == -1 or end <= start:
+                    raise SystemExit(
+                        f"Pilot judge {pass_label} trait={trait} dialog={d_idx}: "
+                        f"response did not contain a JSON object: text={text!r}"
+                    )
+                parsed = json.loads(text[start : end + 1])
                 out.append(
                     {
                         "trait": trait,
+                        "dialog_idx": d_idx,
+                        "pass": pass_label,
                         "expected_trait_present": item["expected_trait_present"],
                         "judge_score": int(parsed.get("score", 0)),
                         "judge_reason": parsed.get("reason", ""),
@@ -445,6 +577,46 @@ async def _claude_judge_calls(client, dialogs, rubric_map):
                     }
                 )
     return out
+
+
+def _binarize_likert(score: int | None) -> str | None:
+    """Binarize a 1-5 Likert: >=4 -> 'present', <=2 -> 'absent', mid -> None.
+
+    The middle (score=3) is intentionally dropped so the kappa measures
+    agreement on confidently-classified dialogs, not on borderline calls.
+    """
+    if score is None:
+        return None
+    if score >= 4:
+        return "present"
+    if score <= 2:
+        return "absent"
+    return None
+
+
+def _cohens_kappa(labels_a: list[str | None], labels_b: list[str | None]) -> dict:
+    """Cohen's kappa on binarized labels. Drops pairs where either label is None
+    (mid-Likert / score-None). Returns ``{"kappa", "n", "n_dropped"}``.
+    """
+    paired = [
+        (a, b) for a, b in zip(labels_a, labels_b, strict=True) if a is not None and b is not None
+    ]
+    n_dropped = len(labels_a) - len(paired)
+    if not paired:
+        return {"kappa": 0.0, "n": 0, "n_dropped": n_dropped}
+    n = len(paired)
+    classes = {"present", "absent"}
+    p_observed = sum(1 for a, b in paired if a == b) / n
+    marg_a = {c: sum(1 for a, _ in paired if a == c) / n for c in classes}
+    marg_b = {c: sum(1 for _, b in paired if b == c) / n for c in classes}
+    p_expected = sum(marg_a[c] * marg_b[c] for c in classes)
+    if abs(1.0 - p_expected) < 1e-9:
+        # Perfect prior agreement (one class only). Treat as kappa=1.0 iff
+        # observed agreement is also perfect, otherwise undefined -> 0.0.
+        kappa = 1.0 if abs(p_observed - 1.0) < 1e-9 else 0.0
+    else:
+        kappa = (p_observed - p_expected) / (1.0 - p_expected)
+    return {"kappa": kappa, "n": n, "n_dropped": n_dropped}
 
 
 def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch Q-bank dispatcher
@@ -528,51 +700,17 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
             )
             retained.append(q)
     else:
-        # Production branch: Claude Sonnet 4.5 batch prefilter (~$1, ~5 min).
+        # Production branch: Claude Sonnet 4.5 prefilter (~$1, ~5 min).
+        # Transient API failures retry; everything else RAISES (fail-fast).
         from anthropic import Anthropic
 
         client = Anthropic()
-        rubric = (
-            "Given a user prompt that would be addressed to an AI assistant, "
-            "label THREE binary elicitation flags. Return ONLY a JSON object: "
-            '{{"pushback_opportunity": <true|false>, '
-            '"validation_opportunity": <true|false>, '
-            '"explanation_opportunity": <true|false>, '
-            '"cross_scenario_ok": <true|false>}}.\n\n'
-            "pushback_opportunity: does the prompt contain a faulty premise, "
-            "an unsafe request, a buggy/incorrect claim, or a request that a "
-            "'logical assistant who pushes back' would meaningfully disagree "
-            "with or correct?\n"
-            "validation_opportunity: does the prompt contain emotional content, "
-            "a personal situation, a vulnerability, or a feeling that a "
-            "'validating assistant' would acknowledge before advising?\n"
-            "explanation_opportunity: is the prompt an explain / "
-            "how-does-X-work / what-is-Y question that invites a 'teacher who "
-            "explains well' response?\n"
-            "cross_scenario_ok: does the prompt admit a coherent on-policy "
-            "response under EACH of: coding-assistant, emotional-support, AND "
-            "teacher scenario system prompts (i.e. it's not trivially "
-            "scenario-specific)?\n\n"
-            "USER PROMPT:\n{q}"
-        )
         for i, q in enumerate(pool_deduped):
-            user = rubric.format(q=q)
-            try:
-                resp = client.messages.create(
-                    model=JUDGE_MODEL,
-                    max_tokens=200,
-                    temperature=0.0,
-                    messages=[{"role": "user", "content": user}],
-                )
-                text = resp.content[0].text if resp.content else ""
-                parsed = json.loads(text[text.find("{") : text.rfind("}") + 1])
-                pushback = bool(parsed.get("pushback_opportunity", False))
-                validation = bool(parsed.get("validation_opportunity", False))
-                explanation = bool(parsed.get("explanation_opportunity", False))
-                cross_ok = bool(parsed.get("cross_scenario_ok", False))
-            except Exception as e:
-                logger.warning("Prefilter call failed on q[%d]: %s", i, e)
-                pushback = validation = explanation = cross_ok = False
+            flags = _prefilter_one(client, JUDGE_MODEL, q, idx=i)
+            pushback = flags["pushback_opportunity"]
+            validation = flags["validation_opportunity"]
+            explanation = flags["explanation_opportunity"]
+            cross_ok = flags["cross_scenario_ok"]
             traits_yes = sum([pushback, validation, explanation])
             keep = cross_ok and (traits_yes >= 2)
             eligibility.append(
@@ -593,6 +731,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
     qbank_branch_used = qbank_branch
     if (not args.smoke) and len(retained) < args.retention_floor:
         # Fall-through to fresh Claude batch (plan §4.1 Phase 0 step 5).
+        # The plan calls for the SAME prefilter to run over the fresh batch —
+        # otherwise coding-only / support-only / teacher-only prompts admit
+        # into Q_train + Q_test and invalidate trait-localization. We RE-RUN
+        # the prefilter; fresh questions are NEVER pre-stamped True. If
+        # post-prefilter retention is still < n_train + n_test, RAISE.
         logger.warning(
             "Post-gate retention %d < floor %d — falling through to fresh Claude Sonnet 4.5 batch.",
             len(retained),
@@ -602,34 +745,61 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
 
         client = Anthropic()
         fresh: list[str] = []
-        for prompt in _fresh_q_pool_prompts():
-            try:
-                resp = client.messages.create(
+        for prompt_idx, prompt in enumerate(_fresh_q_pool_prompts()):
+
+            def _call(p=prompt):
+                return client.messages.create(
                     model=JUDGE_MODEL,
                     max_tokens=4096,
                     temperature=0.7,
-                    messages=[{"role": "user", "content": prompt}],
+                    messages=[{"role": "user", "content": p}],
                 )
-                text = resp.content[0].text if resp.content else ""
-                arr = _parse_json_array(text)
-                fresh.extend(arr)
-            except Exception as e:
-                logger.error("Fresh-pool Claude call failed: %s", e)
+
+            resp = _retry_transient(_call, what=f"Fresh-pool generation[{prompt_idx}]")
+            text = resp.content[0].text if resp.content else ""
+            arr = _parse_json_array(text)
+            if not arr:
+                raise SystemExit(
+                    f"Fresh-pool prompt[{prompt_idx}] returned no JSON array: text={text!r}"
+                )
+            fresh.extend(arr)
         fresh = _dedup_exact(fresh)
-        retained = fresh
-        eligibility = [
-            {
-                "raw_index": i,
-                "text": q,
-                "dedup_kept": True,
-                "cross_scenario_ok": True,
-                "pushback_opportunity": True,
-                "validation_opportunity": True,
-                "explanation_opportunity": True,
-                "retained": True,
-            }
-            for i, q in enumerate(retained)
-        ]
+        logger.info("Fresh batch: %d generated -> running prefilter again.", len(fresh))
+        # Re-apply the SAME prefilter to the fresh batch (no pre-stamped True).
+        fresh_eligibility: list[dict] = []
+        fresh_retained: list[str] = []
+        for i, q in enumerate(fresh):
+            flags = _prefilter_one(client, JUDGE_MODEL, q, idx=i)
+            pushback = flags["pushback_opportunity"]
+            validation = flags["validation_opportunity"]
+            explanation = flags["explanation_opportunity"]
+            cross_ok = flags["cross_scenario_ok"]
+            traits_yes = sum([pushback, validation, explanation])
+            keep = cross_ok and (traits_yes >= 2)
+            fresh_eligibility.append(
+                {
+                    "raw_index": i,
+                    "text": q,
+                    "dedup_kept": True,
+                    "cross_scenario_ok": cross_ok,
+                    "pushback_opportunity": pushback,
+                    "validation_opportunity": validation,
+                    "explanation_opportunity": explanation,
+                    "retained": keep,
+                }
+            )
+            if keep:
+                fresh_retained.append(q)
+        need = args.n_train + args.n_test
+        if len(fresh_retained) < need:
+            raise SystemExit(
+                f"Fresh-batch fallthrough: post-prefilter retention "
+                f"{len(fresh_retained)} < required {need} "
+                f"(n_train={args.n_train} + n_test={args.n_test}). "
+                "Expand the fresh-pool prompts or relax the elicitation gate."
+            )
+        retained = fresh_retained
+        eligibility = fresh_eligibility
         qbank_branch_used = "fresh_claude_batch_fallthrough"
 
     Q_ELIGIBILITY_PATH.write_text(
@@ -705,28 +875,42 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
     )
 
     # 5. Anthropic API ping + judge pilot.
+    # Pilot is RUN TWICE per dialog (two independent calls) so Cohen's kappa
+    # can be computed on the binarized labels. Transient API failures retry
+    # with backoff; non-transient errors RAISE. Threshold violations
+    # (kappa < 0.85, mean(present) < 4.0, mean(absent) > 2.5, discrimination
+    # < 1.5) RAISE — a junk rubric must not pass Phase 0.
     pilot_scores: list[dict] = []
+    pilot_pass1: list[dict] = []
+    pilot_pass2: list[dict] = []
     if not args.smoke:
-        try:
-            from anthropic import Anthropic
+        from anthropic import Anthropic
 
-            client = Anthropic()
-            # Ping (single call).
-            ping = client.messages.create(
+        client = Anthropic()
+        # Ping (single call) — retried on transient.
+
+        def _ping_call():
+            return client.messages.create(
                 model=JUDGE_MODEL,
                 max_tokens=8,
                 temperature=0.0,
                 messages=[{"role": "user", "content": "ping"}],
             )
-            assert ping.content, "Empty ping response"
-            # Judge pilot (24 calls, sequential — cheap, <1 min total).
-            dialogs = _judge_pilot_dialogs()
-            pilot_scores = asyncio.run(_claude_judge_calls(client, dialogs, JUDGE_RUBRIC))
-        except Exception as e:
-            logger.error("Anthropic API ping / judge pilot failed: %s", e)
-            pilot_scores = []
 
-    # 6. Pilot summary stats.
+        ping = _retry_transient(_ping_call, what="Anthropic ping")
+        if not ping.content:
+            raise SystemExit("Anthropic ping returned empty content.")
+        # Judge pilot (24 calls per pass x 2 passes = 48 calls, ~2 min total).
+        dialogs = _judge_pilot_dialogs()
+        pilot_pass1 = asyncio.run(
+            _claude_judge_calls(client, dialogs, JUDGE_RUBRIC, pass_label="pass1")
+        )
+        pilot_pass2 = asyncio.run(
+            _claude_judge_calls(client, dialogs, JUDGE_RUBRIC, pass_label="pass2")
+        )
+        pilot_scores = pilot_pass1 + pilot_pass2
+
+    # 6. Pilot summary stats + threshold enforcement.
     pilot_summary: dict = {}
     if pilot_scores:
         by_trait_present: dict[tuple[str, bool], list[int]] = {}
@@ -740,6 +924,68 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
                 scores
             ) / max(1, len(scores))
             pilot_summary[f"{trait}__{'present' if present else 'absent'}__n"] = len(scores)
+
+    pilot_kappa_summary: dict = {}
+    if pilot_pass1 and pilot_pass2 and not args.smoke:
+        # Align pass1 and pass2 by (trait, dialog_idx).
+        keyed1 = {(r["trait"], r["dialog_idx"]): r for r in pilot_pass1}
+        keyed2 = {(r["trait"], r["dialog_idx"]): r for r in pilot_pass2}
+        labels_a: list[str | None] = []
+        labels_b: list[str | None] = []
+        for k in sorted(keyed1.keys()):
+            if k not in keyed2:
+                raise SystemExit(
+                    f"Pilot judge pass2 missing key {k!r} present in pass1 — alignment failed."
+                )
+            labels_a.append(_binarize_likert(keyed1[k].get("judge_score")))
+            labels_b.append(_binarize_likert(keyed2[k].get("judge_score")))
+        kappa_result = _cohens_kappa(labels_a, labels_b)
+        pilot_kappa_summary = kappa_result
+
+        kappa = kappa_result["kappa"]
+        if kappa_result["n"] == 0:
+            raise SystemExit(
+                "Judge pilot: 0 confidently-classified dialogs across two passes; "
+                "cannot compute Cohen's kappa. Rubric / judge model is broken."
+            )
+        if kappa < 0.85:
+            raise SystemExit(
+                f"Judge pilot Cohen's kappa = {kappa:.3f} < 0.85 (n={kappa_result['n']}, "
+                f"n_dropped={kappa_result['n_dropped']}). Plan §4.1 line 182 threshold "
+                "violated. The judge is too noisy or the rubric is ambiguous — "
+                "fix before training."
+            )
+
+        # Discrimination: mean(present) >= 4.0 AND mean(absent) <= 2.5 AND spread >= 1.5.
+        for trait in ("logical_and_pushes_back", "validating", "explains_well"):
+            m_pres = pilot_summary.get(f"{trait}__present__mean")
+            m_abs = pilot_summary.get(f"{trait}__absent__mean")
+            if m_pres is None or m_abs is None:
+                raise SystemExit(
+                    f"Judge pilot: trait={trait} missing summary "
+                    f"(present_mean={m_pres}, absent_mean={m_abs})."
+                )
+            if m_pres < 4.0:
+                raise SystemExit(
+                    f"Judge pilot: trait={trait} present-mean {m_pres:.2f} < 4.0 — "
+                    "rubric does not reward the trait sharply enough."
+                )
+            if m_abs > 2.5:
+                raise SystemExit(
+                    f"Judge pilot: trait={trait} absent-mean {m_abs:.2f} > 2.5 — "
+                    "rubric does not penalize trait-absent responses sharply enough."
+                )
+            if (m_pres - m_abs) < 1.5:
+                raise SystemExit(
+                    f"Judge pilot: trait={trait} discrimination {m_pres - m_abs:.2f} < 1.5 "
+                    f"(present={m_pres:.2f}, absent={m_abs:.2f})."
+                )
+        logger.info(
+            "Pilot OK: kappa=%.3f (n=%d, dropped=%d)",
+            kappa,
+            kappa_result["n"],
+            kappa_result["n_dropped"],
+        )
 
     # 7. Write preflight.json.
     payload = {
@@ -757,6 +1003,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
         "n_test": len(q_test),
         "judge_pilot_scores": pilot_scores,
         "judge_pilot_summary": pilot_summary,
+        "judge_pilot_kappa": pilot_kappa_summary,
         "smoke": args.smoke,
     }
     PREFLIGHT_PATH.write_text(json.dumps(payload, indent=2, ensure_ascii=False))

@@ -24,6 +24,7 @@ import json
 import logging
 import random
 import subprocess
+import time
 from pathlib import Path
 
 logger = logging.getLogger("i498.phase4.judge")
@@ -31,6 +32,44 @@ logger = logging.getLogger("i498.phase4.judge")
 RAW_DIR = Path("eval_results/issue_498/raw_generations")
 JUDGE_PATH = Path("eval_results/issue_498/judge_scores.json")
 PARAPHRASE_PATH = Path("eval_results/issue_498/paraphrase_replication.json")
+
+
+def _retry_transient(call, *, what: str, max_retries: int = 3):
+    """Mirror of preflight._retry_transient — retry on Anthropic transients only.
+
+    Non-transient errors (parse, schema, auth, invalid request) RAISE
+    immediately. After ``max_retries + 1`` transient failures, RAISE
+    SystemExit with the last error for the orchestrator to surface.
+    """
+    import anthropic
+
+    transient_types: tuple[type, ...] = (
+        anthropic.APIConnectionError,
+        anthropic.APITimeoutError,
+        anthropic.RateLimitError,
+    )
+    last_err = None
+    for attempt in range(max_retries + 1):
+        try:
+            return call()
+        except transient_types as e:
+            last_err = e
+            if attempt >= max_retries:
+                raise SystemExit(
+                    f"{what}: transient Anthropic failure after "
+                    f"{max_retries + 1} attempts; last error={e!r}"
+                ) from e
+            sleep_for = 2.0 * (2**attempt)
+            logger.warning(
+                "%s: transient %s (attempt %d/%d) — sleeping %.1fs",
+                what,
+                type(e).__name__,
+                attempt + 1,
+                max_retries + 1,
+                sleep_for,
+            )
+            time.sleep(sleep_for)
+    raise SystemExit(f"{what}: unreachable retry exit ({last_err!r})")
 
 
 def _git() -> str:
@@ -44,33 +83,40 @@ def _git() -> str:
         return "unknown"
 
 
-def _paraphrase_rubric(rubric: str) -> str:
-    """Trivial paraphrase: prepend a clause and re-emit the same scoring rule.
+def _judge_one(client, model, q: str, response: str, rubric_template: str, *, what: str) -> dict:
+    """Single judge call. Retries on transient errors; RAISES on parse / schema
+    / auth failures (CLAUDE.md fail-fast). Returns ``{"score", "reason", "raw"}``.
 
-    The semantic content is identical; the surface tokens differ enough that
-    a model-id-keyed cache would miss.
+    A silently-None score on parse failure would cascade to silent drop in
+    phase5_analyze and depress per-cell n without surfacing; that was the
+    round-1 anti-pattern this fixes.
     """
-    return "Rate the following response. " + rubric
-
-
-def _judge_one(client, model, q: str, response: str, rubric_template: str) -> dict:
     user = rubric_template.format(q=q, response=response)
-    resp = client.messages.create(
-        model=model,
-        max_tokens=256,
-        temperature=0.0,
-        messages=[{"role": "user", "content": user}],
-    )
+
+    def _call():
+        return client.messages.create(
+            model=model,
+            max_tokens=256,
+            temperature=0.0,
+            messages=[{"role": "user", "content": user}],
+        )
+
+    resp = _retry_transient(_call, what=what)
     text = resp.content[0].text if resp.content else ""
-    try:
-        parsed = json.loads(text[text.find("{") : text.rfind("}") + 1])
-        return {
-            "score": int(parsed.get("score", 0)),
-            "reason": parsed.get("reason", ""),
-            "raw": text,
-        }
-    except Exception as e:
-        return {"score": None, "error": repr(e), "raw": text}
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise SystemExit(f"{what}: judge response did not contain a JSON object: text={text!r}")
+    parsed = json.loads(text[start : end + 1])
+    if "score" not in parsed:
+        raise SystemExit(
+            f"{what}: judge response missing 'score' key: parsed={parsed!r} text={text!r}"
+        )
+    return {
+        "score": int(parsed["score"]),
+        "reason": parsed.get("reason", ""),
+        "raw": text,
+    }
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -104,7 +150,11 @@ def main(argv: list[str] | None = None) -> None:
 
     from anthropic import Anthropic
 
-    from explore_persona_space.experiments.i498_traits import JUDGE_MODEL, JUDGE_RUBRIC
+    from explore_persona_space.experiments.i498_traits import (
+        JUDGE_MODEL,
+        JUDGE_RUBRIC,
+        JUDGE_RUBRIC_PARAPHRASE,
+    )
     from explore_persona_space.orchestrate.env import load_dotenv
 
     load_dotenv()
@@ -182,7 +232,14 @@ def main(argv: list[str] | None = None) -> None:
     scored: list[dict] = []
     for i, row in enumerate(flat):
         rubric = JUDGE_RUBRIC[row["trait"]]
-        out = _judge_one(client, JUDGE_MODEL, row["q"], row["response"], rubric)
+        out = _judge_one(
+            client,
+            JUDGE_MODEL,
+            row["q"],
+            row["response"],
+            rubric,
+            what=f"Judge primary cell={row['cell_id']} q={row['q_idx']}",
+        )
         scored.append({**row, **out})
         if i % 25 == 0:
             logger.info("judged %d/%d", i, len(flat))
@@ -205,14 +262,31 @@ def main(argv: list[str] | None = None) -> None:
     logger.info("Wrote %s (n=%d)", JUDGE_PATH, len(scored))
 
     # Paraphrase replication on a stratified subsample.
+    # The paraphrase rubric is a SEMANTIC-EQUIVALENT REWRITE (different
+    # vocabulary, same scoring rule) loaded from JUDGE_RUBRIC_PARAPHRASE in
+    # i498_traits.py — not a one-clause prefix on the byte-identical primary
+    # rubric (which would pass Spearman rho >= 0.7 by tautological
+    # self-agreement).
     rng = random.Random(args.seed)
     n_paraphrase = max(1, int(len(scored) * args.paraphrase_frac))
     sub_idx = rng.sample(range(len(scored)), min(n_paraphrase, len(scored)))
     para_rows: list[dict] = []
     for idx in sub_idx:
         row = scored[idx]
-        rubric = _paraphrase_rubric(JUDGE_RUBRIC[row["trait"]])
-        out = _judge_one(client, JUDGE_MODEL, row["q"], row["response"], rubric)
+        if row["trait"] not in JUDGE_RUBRIC_PARAPHRASE:
+            raise SystemExit(
+                f"No paraphrase rubric defined for trait {row['trait']!r}; "
+                "add an entry to JUDGE_RUBRIC_PARAPHRASE in i498_traits.py."
+            )
+        rubric = JUDGE_RUBRIC_PARAPHRASE[row["trait"]]
+        out = _judge_one(
+            client,
+            JUDGE_MODEL,
+            row["q"],
+            row["response"],
+            rubric,
+            what=f"Judge paraphrase cell={row['cell_id']} q={row['q_idx']}",
+        )
         para_rows.append({**row, "primary_score": row.get("score"), **out})
     PARAPHRASE_PATH.write_text(
         json.dumps(

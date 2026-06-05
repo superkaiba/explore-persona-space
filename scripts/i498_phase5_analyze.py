@@ -107,13 +107,35 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — analysis disp
     logger.info("Loaded %d judge rows", len(rows))
 
     # Bucket by (arm, trait, eval_context, seed).
+    # Hard-fail on any None score: the upstream judge (phase4_judge.py) now
+    # RAISES on parse failures, so a None reaching this point is a real bug
+    # we must surface (a silent skip would shrink per-cell n without warning).
     by_cell: dict[tuple, list[int]] = defaultdict(list)
+    none_score_rows: list[dict] = []
     for r in rows:
         s = r.get("score")
         if s is None:
+            none_score_rows.append(
+                {
+                    "cell_id": r.get("cell_id"),
+                    "arm": r.get("arm"),
+                    "trait": r.get("trait"),
+                    "eval_context": r.get("eval_context"),
+                    "seed": r.get("seed"),
+                    "q_idx": r.get("q_idx"),
+                    "error": r.get("error"),
+                }
+            )
             continue
         key = (r["arm"], r["trait"], r["eval_context"], r["seed"])
         by_cell[key].append(int(s))
+    if none_score_rows:
+        raise SystemExit(
+            f"Phase 5 analyze: {len(none_score_rows)} judge rows have score=None — "
+            "the upstream phase4_judge now RAISES on parse failures, so any None "
+            "score reaching this script is a real bug, not a transient. "
+            f"First offender: {none_score_rows[0]!r}"
+        )
 
     # Per-cell mean + sd.
     per_cell: dict[str, dict] = {}
@@ -285,12 +307,49 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — analysis disp
                     h1_all_pass = False
 
     mean_d_m, lo_m, _hi_m = ci_masked
-    h2_pass = (
-        mean_d_m >= 0.4
-        and lo_m > 0
-        and all(d > 0 for d in d_seed_masked)
-        and len(d_seed_masked) >= 1
-    )
+    # H2 PASS gates (plan §3 + v1.2 §6.2):
+    #   (a) all 3 canonical seeds {42, 137, 1337} contributed a paired delta
+    #       (n_seeds_masked == 3 AND seeds_masked == REQUIRED_SEEDS),
+    #   (b) mean(d_seed) >= 0.4,
+    #   (c) bootstrap CI lo > 0,
+    #   (d) all per-seed d_seed > 0.
+    # Plan v1.2 §6.2: if zero (trait x eval_context) units survive the
+    # paired dynamic-range mask, the headline is UNINTERPRETABLE — h2_pass
+    # is set to None and the report bullet says so.
+    REQUIRED_SEEDS = {42, 137, 1337}
+    headline_uninterpretable = len(surviving_units) == 0
+    # Rebuild seeds_masked deterministically from compute_L's per-seed checks
+    # (the deltas list in d_seed_masked was constructed in seed order).
+    seeds_masked: list[int] = []
+    for seed in seeds:
+        L_sys_m = compute_L("system", seed, True)
+        L_role_m = compute_L("role", seed, True)
+        if L_sys_m is not None and L_role_m is not None:
+            seeds_masked.append(seed)
+    seeds_masked_set = set(seeds_masked)
+
+    if headline_uninterpretable:
+        h2_pass = None
+        h2_reason = (
+            "headline_uninterpretable: zero (trait x eval_context) units survived "
+            "the paired dynamic-range mask"
+        )
+    elif seeds_masked_set != REQUIRED_SEEDS or len(d_seed_masked) != 3:
+        h2_pass = None
+        h2_reason = (
+            f"insufficient seeds: seeds_masked={sorted(seeds_masked_set)} "
+            f"!= required {sorted(REQUIRED_SEEDS)} (need exactly all 3)"
+        )
+    else:
+        h2_pass = mean_d_m >= 0.4 and lo_m > 0 and all(d > 0 for d in d_seed_masked)
+        h2_reason = (
+            "all gates met"
+            if h2_pass
+            else (
+                f"mean={mean_d_m:.3f} (need >=0.4), ci_lo={lo_m:.3f} (need >0), "
+                f"all_positive={all(d > 0 for d in d_seed_masked)}"
+            )
+        )
 
     ANALYSIS_PATH.parent.mkdir(parents=True, exist_ok=True)
     ANALYSIS_PATH.write_text(
@@ -321,6 +380,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — analysis disp
                 "h1_pass": h1_all_pass,
                 "h1_min_cell_mean": h1_min_cell_mean,
                 "h2_pass": h2_pass,
+                "h2_reason": h2_reason,
+                "headline_uninterpretable": headline_uninterpretable,
+                "seeds_masked": sorted(seeds_masked_set),
+                "required_seeds": sorted(REQUIRED_SEEDS),
                 "n_seeds": len(seeds),
                 "seeds": seeds,
             },
@@ -329,11 +392,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — analysis disp
         )
     )
     logger.info(
-        "Analysis: H1=%s (min in-scenario mean=%.2f), H2=%s "
+        "Analysis: H1=%s (min in-scenario mean=%.2f), H2=%s (reason=%s) "
         "(d_masked mean=%.2f CI=[%.2f, %.2f]) -> %s",
         h1_all_pass,
         h1_min_cell_mean,
         h2_pass,
+        h2_reason,
         ci_masked[0],
         ci_masked[1],
         ci_masked[2],

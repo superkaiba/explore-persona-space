@@ -116,8 +116,20 @@ def main() -> None:
     arma_labels[0, ~mask_tensor] = -100
     arma_loss_token_ids = arma_labels[0, arma_labels[0] != -100].tolist()
     expected_arma_loss_text = tokenizer.decode(arma_loss_token_ids, skip_special_tokens=False)
-    assert sample_response.split()[0] in expected_arma_loss_text or expected_arma_loss_text, (
-        "Arm A loss-bearing tokens do not decode to the trait response."
+    # Substantive content check: the first word of the trait response MUST decode
+    # inside the loss-bearing token slice. (The earlier `or expected_arma_loss_text`
+    # clause silently disabled the content check — a tokenizer regression that
+    # mangled the assistant turn would have slipped past unnoticed.) The mid-
+    # response tail check (sample_response[-20:]) catches truncation-style bugs
+    # where the start tokenized but the tail was lost.
+    assert sample_response.split()[0] in expected_arma_loss_text, (
+        "Arm A loss-bearing tokens do not start with the first word of the trait "
+        f"response: first_word={sample_response.split()[0]!r}, "
+        f"loss_text_head={expected_arma_loss_text[:120]!r}"
+    )
+    assert sample_response[-20:] in expected_arma_loss_text, (
+        "Arm A loss-bearing tokens do not contain the trait response tail "
+        f"({sample_response[-20:]!r}); loss_text_tail={expected_arma_loss_text[-120:]!r}"
     )
     n_arma_loss = int((arma_labels[0] != -100).sum().item())
 
@@ -136,7 +148,13 @@ def main() -> None:
     # Decode the loss-bearing slice; it must contain the trait response.
     armb_loss_ids = [t for t, m in zip(armb_input_ids, armb_completion_mask, strict=False) if m]
     armb_loss_text = tokenizer.decode(armb_loss_ids, skip_special_tokens=False)
-    assert sample_response in armb_loss_text or sample_response.split()[0] in armb_loss_text, (
+    # Both clauses are substantive: full-string OR (when tokenizer boundary
+    # quirks insert whitespace) at least the first word AND a tail fragment.
+    full_match = sample_response in armb_loss_text
+    fragment_match = (
+        sample_response.split()[0] in armb_loss_text and sample_response[-20:] in armb_loss_text
+    )
+    assert full_match or fragment_match, (
         "Arm B loss-bearing tokens do not decode to the trait response: tail="
         f"{armb_loss_text[-200:]!r}"
     )
