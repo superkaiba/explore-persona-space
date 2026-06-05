@@ -2689,8 +2689,8 @@
       "goal": "Test whether the #468 base-model cosine predictor (in-context-example personas, read at the newline-after-assistant token) predicts post-SFT leakage from one narrow behavior to a different narrow behavior \u2014 the off-diagonal of the narrow\u00d7narrow leakage matrix \u2014 not just narrow\u2192broad-EM.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/484",
-      "status": "proposed",
+      "path": "tasks/archived/484",
+      "status": "archived",
       "title": "Does the base-model cosine predictor predict narrow\u2192narrow behavior leakage (off-diagonal of the narrow-behavior leakage matrix)?"
     },
     "485": {
