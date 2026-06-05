@@ -15,13 +15,21 @@
  *         "pid": 1637665,
  *         "transcript": "/home/.../<uuid>.jsonl",
  *         "summary": "1-2 sentence freshest \"what it's doing now\"",
- *         "summary_model": "claude-haiku-4-5-20251001",
+ *         "summary_model": "claude-haiku-4-5-20251001" | null,
  *         "summary_ts": "<ISO8601 UTC>",
+ *         "source": "self" | "llm" | null,
  *         "last_activity_ts": "<ISO8601 UTC>",
  *         "error": null
  *       }
  *     }
  *   }
+ *
+ * The `source` field distinguishes the canonical string written by the
+ * /issue skill itself (`"self"` — byte-identical to the phone title) from
+ * a Haiku-generated summary (`"llm"`). When source is "self", the
+ * `summary_model` field is null (no model in the loop). Legacy cache
+ * entries written before this field was added carry `source: null` and
+ * are treated as LLM-produced (the only producer pre-unification).
  *
  * If the file is missing, empty, or unparseable, return an empty snapshot
  * (NOT a throw) — the writer cron may not have run yet, and the page is
@@ -41,6 +49,8 @@ export const SESSION_PROGRESS_PATH = path.join(
   "session_progress.json",
 );
 
+export type SessionSource = "self" | "llm";
+
 export type SessionRow = {
   sessionId: string;
   issue: number | null;
@@ -52,6 +62,14 @@ export type SessionRow = {
   summary: string | null;
   summaryModel: string | null;
   summaryTs: string | null;
+  /**
+   * Where the `summary` came from:
+   *   "self" — written by the /issue skill itself (byte-identical to the
+   *            phone title set via mcp__happy__change_title)
+   *   "llm"  — produced by the 5-minute Haiku summarizer cron
+   *   null   — no summary, or a legacy cache entry that predates the field
+   */
+  source: SessionSource | null;
   lastActivityTs: string | null;
   error: string | null;
 };
@@ -132,11 +150,15 @@ function normalizeSession(sessionId: string, value: unknown): SessionRow {
     summary: null,
     summaryModel: null,
     summaryTs: null,
+    source: null,
     lastActivityTs: null,
     error: "session entry is not an object",
   };
   if (!value || typeof value !== "object") return empty;
   const o = value as Record<string, unknown>;
+  const rawSource = typeof o.source === "string" ? o.source : null;
+  const source: SessionSource | null =
+    rawSource === "self" || rawSource === "llm" ? rawSource : null;
   return {
     sessionId,
     issue: typeof o.issue === "number" && Number.isFinite(o.issue) ? o.issue : null,
@@ -148,6 +170,7 @@ function normalizeSession(sessionId: string, value: unknown): SessionRow {
     summary: typeof o.summary === "string" ? o.summary : null,
     summaryModel: typeof o.summary_model === "string" ? o.summary_model : null,
     summaryTs: typeof o.summary_ts === "string" ? o.summary_ts : null,
+    source,
     lastActivityTs:
       typeof o.last_activity_ts === "string" ? o.last_activity_ts : null,
     error: typeof o.error === "string" && o.error.length > 0 ? o.error : null,

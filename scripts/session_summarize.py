@@ -21,6 +21,7 @@ Schema (atomic temp+rename to ``~/.eps-autonomous/session_progress.json``)::
           "summary": "Running the Phase-1.5 fact-check on plan v2; ...",
           "summary_model": "claude-haiku-4-5-20251001",
           "summary_ts": "<ISO8601 UTC>",
+          "source": "self" | "llm" | null,
           "last_activity_ts": "<ISO8601 UTC of newest transcript entry>",
           "error": null
         },
@@ -32,6 +33,14 @@ Design choices:
 
 - **Per-session try/except** with a VISIBLE ``error`` field — one bad session
   must not abort the run (CLAUDE.md fail-fast: surface, don't swallow).
+- **Self-report wins.** If the ``/issue`` skill has written a fresh
+  ``~/.eps-autonomous/issue-progress/<N>.json`` for this session's issue,
+  reuse its ``text`` verbatim as the ``summary`` (``source="self"``) and
+  skip the Haiku call entirely. The ``/issue`` skill writes the same
+  canonical string it passes to ``mcp__happy__change_title``, so the
+  phone title and the dashboard's progress column are byte-identical for
+  /issue sessions. Sessions WITHOUT a fresh self-report (interactive, non-
+  /issue, or stale) fall back to the LLM path (``source="llm"``).
 - **Tail-only input** keeps per-call cost cheap (Haiku is the cheapest tier;
   ~25 entries truncated to roughly the last 30k chars of raw text).
 - **Live + EPS only** — non-EPS sessions (my-goat, introsp) and dead sessions
@@ -62,6 +71,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
+import session_progress_report  # noqa: E402
 import session_resolver  # noqa: E402
 
 CACHE_PATH = Path.home() / ".eps-autonomous" / "session_progress.json"
@@ -258,6 +268,7 @@ def build_session_entry(
     last_activity_ts: str | None,
     error: str | None,
     summary_model: str | None = None,
+    source: str | None = None,
 ) -> dict[str, object]:
     """Construct the cache entry for one session. Pure — no I/O.
 
@@ -265,17 +276,32 @@ def build_session_entry(
     (tests pin the keys + types here so a silent schema drift is caught).
 
     ``summary_model`` defaults to :data:`HAIKU_MODEL_ID` when ``summary`` is
-    non-None and no override is passed. The idle-skip path passes through
-    the model id from the prior cache entry so a reused summary truthfully
-    reports which model produced it (even if ``HAIKU_MODEL_ID`` later
-    changes in code)."""
+    non-None, ``source`` is ``"llm"`` (or omitted), and no override is
+    passed. The idle-skip path passes through the model id from the prior
+    cache entry so a reused summary truthfully reports which model produced
+    it (even if ``HAIKU_MODEL_ID`` later changes in code).
+
+    ``source`` is ``"self"`` when the summary came from the /issue skill's
+    self-report file (``~/.eps-autonomous/issue-progress/<N>.json``),
+    ``"llm"`` when it came from a fresh Haiku call (or a prior-tick LLM
+    summary reused via the idle-skip path), and ``None`` when there is no
+    summary at all. When ``source == "self"`` the ``summary_model`` field
+    is ``None`` — there was no model in the loop.
+    """
     status = _get_task_status(issue) if issue is not None else None
     if summary is None:
         model_field: str | None = None
-    elif summary_model is not None:
-        model_field = summary_model
+        source_field: str | None = None
+    elif source == "self":
+        model_field = None
+        source_field = "self"
     else:
-        model_field = HAIKU_MODEL_ID
+        # source is None or "llm" — both treated as LLM-produced (None is
+        # the legacy callsite that predates `source`). The model field
+        # respects an explicit override (idle-skip carries the prior tick's
+        # model id), else defaults to the current HAIKU_MODEL_ID.
+        model_field = summary_model if summary_model is not None else HAIKU_MODEL_ID
+        source_field = "llm"
     return {
         "issue": issue,
         "status": status,
@@ -286,6 +312,7 @@ def build_session_entry(
         "summary": summary,
         "summary_model": model_field,
         "summary_ts": summary_ts,
+        "source": source_field,
         "last_activity_ts": last_activity_ts,
         "error": error,
     }
@@ -333,14 +360,57 @@ async def _summarize_session(
     cyclomatic-complexity cap. All per-session error paths land here:
     transcript unresolvable, tail-read OSError, empty tail, no /issue
     prompt, summarize-call exception — each sets a VISIBLE ``error`` field
-    rather than failing silently."""
+    rather than failing silently.
+
+    **Self-report wins independent of transcript readability.** Before any
+    transcript I/O, if a fresh self-report exists for ``rr.issue`` we use
+    it verbatim and skip the rest. Otherwise an OSError reading the
+    transcript (rotation race, NFS hiccup, permission flap) would drop the
+    fresh /issue-written self-report on the floor, which is exactly the
+    failure mode the self-report path is supposed to insulate the
+    dashboard against."""
     entry_error: str | None = None
     summary: str | None = None
     summary_ts: str | None = None
     summary_model: str | None = None
+    source: str | None = None
     last_activity_ts: str | None = None
     tail: str | None = None
     try:
+        # 1. Fresh self-report wins FIRST — before any transcript I/O. A
+        #    /issue session that wrote one within the freshness window
+        #    must reach the dashboard regardless of transcript read
+        #    failures (transcript file rotation, NFS hiccup, etc.).
+        if rr.issue is not None:
+            report = session_progress_report.read_self_report(rr.issue)
+            if report is not None and session_progress_report.is_self_report_fresh(report):
+                text = report.get("text")
+                if isinstance(text, str) and text:
+                    summary = text
+                    summary_ts = _utcnow_iso()
+                    summary_model = None
+                    source = "self"
+                    # last_activity_ts left None — we did NOT read the
+                    # transcript, so we cannot claim a fresher
+                    # last_activity_ts than the prior cache entry. The
+                    # dashboard's "summary age" column still renders
+                    # correctly off summary_ts.
+                    payload["sessions"][sid] = build_session_entry(
+                        sid=sid,
+                        pid=pid,
+                        issue=rr.issue,
+                        cwd=rr.cwd,
+                        transcript=rr.transcript,
+                        summary=summary,
+                        summary_ts=summary_ts,
+                        last_activity_ts=last_activity_ts,
+                        error=entry_error,
+                        summary_model=summary_model,
+                        source=source,
+                    )
+                    return
+
+        # 2. No fresh self-report — fall through to the transcript-based path.
         if rr.transcript is None:
             entry_error = rr.reason or "transcript unresolvable"
         else:
@@ -349,7 +419,13 @@ async def _summarize_session(
             except OSError as e:
                 entry_error = f"tail read failed: {type(e).__name__}: {e}"
             if tail is not None and rr.issue is not None:
-                summary, summary_ts, summary_model, entry_error = await _produce_summary(
+                (
+                    summary,
+                    summary_ts,
+                    summary_model,
+                    source,
+                    entry_error,
+                ) = await _produce_summary(
                     tail=tail,
                     last_activity_ts=last_activity_ts,
                     prior_entry=prior_entry,
@@ -375,6 +451,7 @@ async def _summarize_session(
         last_activity_ts=last_activity_ts,
         error=entry_error,
         summary_model=summary_model,
+        source=source,
     )
 
 
@@ -386,19 +463,38 @@ async def _produce_summary(
     issue: int,
     client,
     dry_run: bool,
-) -> tuple[str | None, str | None, str | None, str | None]:
+) -> tuple[str | None, str | None, str | None, str | None, str | None]:
     """Decide whether to reuse / skip / call Haiku for one session, and
-    return ``(summary, summary_ts, summary_model, error)``.
+    return ``(summary, summary_ts, summary_model, source, error)``.
 
-    Resolution order:
-      1. Empty tail -> error "transcript tail empty", no LLM call.
-      2. Activity unchanged vs prior cache entry -> reuse cached summary.
-      3. Dry-run -> placeholder summary, no LLM call.
-      4. Otherwise -> call Haiku; record exception as visible error."""
+    Resolution order (first match wins):
+      1. Fresh self-report from /issue (``~/.eps-autonomous/issue-progress/
+         <N>.json``) -> reuse ``text`` verbatim with ``source="self"`` and
+         skip the LLM call entirely. This makes the dashboard / happy-ls
+         progress column byte-identical to the phone title /issue set, AND
+         drops the Haiku call from the steady-state cost path for sessions
+         the orchestrator is already driving.
+      2. Empty tail -> error "transcript tail empty", no LLM call.
+      3. Activity unchanged vs prior cache entry -> reuse cached summary
+         (``source`` inherited from the prior entry: a prior self-report
+         summary stays tagged "self", a prior LLM summary stays "llm").
+      4. Dry-run -> placeholder summary, no LLM call.
+      5. Otherwise -> call Haiku; record exception as visible error.
+
+    Self-report precedence is FIRST so a freshly-written /issue tick
+    overrides whatever the prior cache entry held, even if the transcript
+    timestamp would otherwise trigger the idle-skip branch."""
+    report = session_progress_report.read_self_report(issue)
+    if report is not None and session_progress_report.is_self_report_fresh(report):
+        text = report["text"]
+        # Truthy + str-typed are guaranteed by read_self_report's validation;
+        # the cast is just for type-narrowing.
+        return (text if isinstance(text, str) else None, _utcnow_iso(), None, "self", None)
+
     if not tail.strip():
         # Sending whitespace to Haiku would burn a call on a meaningless
         # prompt; surface the gap visibly instead.
-        return None, None, None, "transcript tail empty"
+        return None, None, None, None, "transcript tail empty"
     if _should_skip_llm_call(prior_entry, last_activity_ts):
         # Activity hasn't advanced — reuse the cached summary instead of
         # calling Haiku again.
@@ -406,19 +502,24 @@ async def _produce_summary(
         prior_summary = prior_entry["summary"]
         prior_ts = prior_entry.get("summary_ts")
         prior_model = prior_entry.get("summary_model")
+        prior_source = prior_entry.get("source")
+        # Carry the prior source forward; an unknown / legacy entry without
+        # a source field is treated as LLM (the only producer pre-this-fix).
+        carried_source = prior_source if prior_source in ("self", "llm") else "llm"
         return (
             prior_summary if isinstance(prior_summary, str) else None,
             prior_ts if isinstance(prior_ts, str) else None,
             prior_model if isinstance(prior_model, str) else None,
+            carried_source,
             None,
         )
     if dry_run:
-        return "<dry-run: no API call made>", _utcnow_iso(), HAIKU_MODEL_ID, None
+        return "<dry-run: no API call made>", _utcnow_iso(), HAIKU_MODEL_ID, "llm", None
     try:
         summary = await _summarize_one(client, issue, _get_task_status(issue), tail)
     except Exception as e:
-        return None, None, None, f"summarize call failed: {type(e).__name__}: {e}"
-    return summary, _utcnow_iso(), HAIKU_MODEL_ID, None
+        return None, None, None, None, f"summarize call failed: {type(e).__name__}: {e}"
+    return summary, _utcnow_iso(), HAIKU_MODEL_ID, "llm", None
 
 
 async def _run_pass(dry_run: bool) -> dict:
@@ -432,8 +533,9 @@ async def _run_pass(dry_run: bool) -> dict:
     Cuts API cost ~5x in steady state where most EPS sessions park in
     ``awaiting_promotion`` / ``planning`` for hours."""
     # Pre-load the prior cache once; per-session idle-skip reads it.
-    prior_cache = load_cache().get("sessions") if isinstance(load_cache(), dict) else None
-    prior_cache = prior_cache if isinstance(prior_cache, dict) else {}
+    cache_obj = load_cache()
+    prior_cache_raw = cache_obj.get("sessions") if isinstance(cache_obj, dict) else None
+    prior_cache = prior_cache_raw if isinstance(prior_cache_raw, dict) else {}
 
     # Discover live sessions, filter to EPS-only with a resolvable transcript.
     live = session_resolver._live_node_pids()

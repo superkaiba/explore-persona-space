@@ -1,0 +1,287 @@
+"""Single canonical per-session progress string + per-issue self-report writer.
+
+Until this module existed, EPS had TWO divergent "what is this session doing"
+mechanisms producing DIFFERENT strings:
+
+1. The ``/issue`` skill set the Happy session TITLE via
+   ``mcp__happy__change_title`` (only at status transitions). This drove the
+   phone session title.
+2. ``scripts/session_summarize.py`` LLM-summarized each transcript tail every
+   5 minutes (Haiku) and wrote a per-session ``summary`` to
+   ``~/.eps-autonomous/session_progress.json``. This drove ``happy-ls`` +
+   the ``/sessions`` dashboard.
+
+Same session, two different strings, two different cadences.
+
+This module unifies them. The single canonical string is built by
+:func:`build_progress_string` here. The ``/issue`` skill calls this module on
+every tick — it (a) gets the string and (b) writes a self-report file at
+``~/.eps-autonomous/issue-progress/<N>.json``. The session then passes the
+string to ``mcp__happy__change_title``. The 5-min summarizer cron reads the
+self-report file first: if a fresh self-report exists for an issue's session,
+it uses that string verbatim as the cache ``summary`` (and tags
+``source: "self"``) — no Haiku call. Sessions without a fresh self-report
+(interactive, non-/issue, or stale) fall back to the LLM path
+(``source: "llm"``).
+
+Net effect: the phone title and the terminal/dashboard ``summary`` columns
+become byte-identical for /issue sessions, and the Haiku call drops out of
+the steady-state cost path.
+
+Schema (per issue, atomic temp+rename)::
+
+    ~/.eps-autonomous/issue-progress/<N>.json
+    {
+      "issue": 492,
+      "slug": "wire /issue auto-title into session",
+      "step": "awaiting promotion",
+      "text": "#492 wire /issue auto-title into session · awaiting promotion",
+      "ts": "2026-06-05T18:22:14Z"
+    }
+
+CLI::
+
+    uv run python scripts/session_progress_report.py \\
+        --issue 492 --step "awaiting promotion"
+    # -> writes ~/.eps-autonomous/issue-progress/492.json
+    # -> prints "#492 <slug> · awaiting promotion"
+
+``--slug`` is optional — when omitted, falls back to the task's frontmatter
+title via ``explore_persona_space.task_workflow.get_task`` (so the skill does
+not have to thread the slug through every tick). Fail-loud: an unknown issue
+raises rather than silently writing a blank string.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+# Layout — single source of truth so other modules import the constants.
+SELF_REPORT_DIR = Path.home() / ".eps-autonomous" / "issue-progress"
+
+# Hard cap on the canonical string. The phone title widget truncates around
+# 80 chars on most clients; we cap below that so the string is byte-identical
+# everywhere (no client-side truncation discrepancy between the phone and the
+# terminal). Truncation favors keeping the leading ``#<N>`` (always findable)
+# and a useful slug, trimming the trailing step description first.
+PROGRESS_STRING_MAX = 78
+
+# Slug clip — keeps the phone title readable. Together with PROGRESS_STRING_MAX
+# this leaves comfortable room for the issue number + step description without
+# client-side truncation.
+SLUG_MAX = 45
+
+# Freshness window the summarizer uses to decide whether to reuse the
+# self-report or fall back to Haiku. Two loop intervals (~20 min) gives the
+# /issue session a full tick of slack on a 10-min backstop without ever
+# letting a stale string outlive its session. Override per-call via the
+# explicit ``freshness_window_seconds`` arg in
+# :func:`is_self_report_fresh`. Exposed as a module constant so the
+# summarizer test + production both reference one number.
+DEFAULT_FRESHNESS_WINDOW_SECONDS = 20 * 60
+
+
+def _utcnow_iso() -> str:
+    """UTC timestamp in the same ``YYYY-MM-DDTHH:MM:SSZ`` shape used by
+    ``session_summarize.py`` so freshness comparisons are apples-to-apples."""
+    return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _parse_iso(ts: str) -> datetime | None:
+    """Parse the canonical trailing-Z UTC timestamp. Returns None on a
+    malformed string (caller treats it as "no timestamp")."""
+    if not isinstance(ts, str) or not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def self_report_path(issue: int) -> Path:
+    """Per-issue self-report file path. Pure — no I/O."""
+    return SELF_REPORT_DIR / f"{int(issue)}.json"
+
+
+def build_progress_string(issue: int, slug: str, step: str) -> str:
+    """Construct the SINGLE canonical per-session progress string.
+
+    Format: ``"#<N> <slug> · <step>"`` (Unicode middle-dot separator, leading
+    ``#<N>`` so the row is findable in a phone session list). Hard-capped to
+    :data:`PROGRESS_STRING_MAX` characters. Slug is pre-clipped to
+    :data:`SLUG_MAX`. If the joined string still exceeds the cap (very long
+    step text), the STEP is trimmed with a trailing ``…`` — the issue number
+    and slug stay intact (they are the part the user uses to find the row).
+
+    Pure (no I/O). Both the writer here and the SKILL.md helper call this
+    function so the format lives in exactly ONE place.
+    """
+    slug_clean = (slug or "").strip()
+    step_clean = (step or "").strip()
+    if len(slug_clean) > SLUG_MAX:
+        slug_clean = slug_clean[:SLUG_MAX].rstrip()
+    head = f"#{int(issue)} {slug_clean}".rstrip()
+    if not step_clean:
+        return head[:PROGRESS_STRING_MAX]
+    text = f"{head} · {step_clean}"
+    if len(text) <= PROGRESS_STRING_MAX:
+        return text
+    # Trim the step to fit, preserving "<head> · " + at least 1 char of step.
+    sep = " · "
+    overhead = len(head) + len(sep) + 1  # at least 1 step char + the ellipsis
+    budget = PROGRESS_STRING_MAX - overhead
+    if budget <= 0:
+        # Head + separator alone exceeds the cap — drop the step entirely;
+        # `head` is already <= cap (slug pre-clipped + small issue number).
+        return head[:PROGRESS_STRING_MAX]
+    trimmed_step = step_clean[:budget].rstrip() + "…"
+    return f"{head}{sep}{trimmed_step}"
+
+
+def _load_task_frontmatter(issue: int) -> dict:
+    """Return the task's frontmatter dict, or raise ``FileNotFoundError`` if
+    the issue is unknown. Imported lazily so this module stays importable in
+    a context that doesn't have the EPS package installed (e.g. a bare CLI
+    invocation on a fresh pod)."""
+    from explore_persona_space.task_workflow import get_task
+
+    task = get_task(issue)
+    fm = task.get("frontmatter")
+    return fm if isinstance(fm, dict) else {}
+
+
+def write_self_report(
+    issue: int,
+    *,
+    slug: str | None = None,
+    step: str,
+    now_iso: str | None = None,
+) -> tuple[str, Path]:
+    """Build the canonical string and atomically write it to the self-report
+    file for ``issue``. Returns ``(text, path)`` — the canonical string and
+    the file path it landed at. Atomic via temp + rename so any concurrent
+    summarizer pass never reads a partial file.
+
+    ``slug`` defaults to the task's frontmatter ``title`` via
+    :func:`_load_task_frontmatter`. Pass an explicit slug to override
+    (e.g. the SKILL.md helper that already has the task loaded — saves the
+    extra disk read).
+
+    **Fail-loud on unknown issue regardless of ``--slug``.** We ALWAYS call
+    :func:`_load_task_frontmatter` even when the caller supplied an explicit
+    slug, so a typo'd issue number produces a ``FileNotFoundError`` (from
+    ``task.py find <N>``) instead of silently writing a self-report file for
+    a non-existent task — keeps the fail-loud contract consistent across
+    both code paths.
+    """
+    fm = _load_task_frontmatter(issue)
+    if slug is None:
+        title = fm.get("title")
+        slug = title.strip() if isinstance(title, str) else ""
+    text = build_progress_string(issue, slug, step)
+    ts = now_iso or _utcnow_iso()
+    payload = {
+        "issue": int(issue),
+        "slug": slug,
+        "step": step,
+        "text": text,
+        "ts": ts,
+    }
+    path = self_report_path(issue)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(path)
+    return text, path
+
+
+def read_self_report(issue: int) -> dict | None:
+    """Read the self-report for ``issue`` and return the dict, or ``None`` if
+    the file is missing OR malformed. A malformed file is treated as "no
+    self-report" so the summarizer transparently falls back to the LLM path
+    — the user sees a visible LLM-tagged summary instead of a stale or
+    fabricated string. Pure read; the writer is the only mutator.
+    """
+    path = self_report_path(issue)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    # Required fields. Any missing one => treat as malformed.
+    if not isinstance(data.get("text"), str) or not data["text"].strip():
+        return None
+    if not isinstance(data.get("ts"), str) or not data["ts"]:
+        return None
+    return data
+
+
+def is_self_report_fresh(
+    report: dict,
+    *,
+    now_iso: str | None = None,
+    freshness_window_seconds: float = DEFAULT_FRESHNESS_WINDOW_SECONDS,
+) -> bool:
+    """Return True iff ``report["ts"]`` is within ``freshness_window_seconds``
+    of ``now_iso`` (default: current UTC). Pure; both ``ts`` and ``now`` are
+    parsed via :func:`_parse_iso` so a malformed timestamp degrades to
+    "not fresh" (the summarizer falls back to the LLM path, never a silent
+    stale string).
+    """
+    ts_str = report.get("ts") if isinstance(report, dict) else None
+    if not isinstance(ts_str, str):
+        return False
+    ts = _parse_iso(ts_str)
+    if ts is None:
+        return False
+    now = _parse_iso(now_iso) if now_iso else datetime.now(tz=UTC)
+    if now is None:
+        return False
+    delta = (now - ts).total_seconds()
+    # Negative delta (clock skew) is treated as "future" and therefore fresh
+    # — better than fabricating staleness from a few seconds of skew.
+    return delta < freshness_window_seconds
+
+
+# ── CLI ────────────────────────────────────────────────────────────────────
+
+
+def _build_argparser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        description=(
+            "Write the canonical per-issue session progress string and print it to stdout."
+        )
+    )
+    p.add_argument("--issue", type=int, required=True, help="Task / issue number")
+    p.add_argument(
+        "--step",
+        required=True,
+        help="What the session is doing right now (e.g. 'awaiting promotion', 'critic round 2').",
+    )
+    p.add_argument(
+        "--slug",
+        default=None,
+        help=(
+            "Override the slug. Defaults to the task's frontmatter `title` "
+            "via task_workflow.get_task(issue)."
+        ),
+    )
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_argparser().parse_args(argv)
+    text, _path = write_self_report(args.issue, slug=args.slug, step=args.step)
+    print(text)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
