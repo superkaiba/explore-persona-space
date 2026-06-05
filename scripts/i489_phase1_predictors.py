@@ -14,8 +14,11 @@ Three sub-phases (per CLAUDE.md checkpoint-per-phase; each persists its own file
       over the 552 off-diagonal cells — CPU-only.
 
 After all four: run the Phase-0b cosine-coverage gate (within-arm band spread +
-cross-type band overlap + de-confounding upper-band check). Writes a sentinel
-on FAIL.
+cross-type band overlap + de-confounding upper-band check). NON-BLOCKING
+(remove-the-gates, 2026-06-05): on a coverage FAIL it writes the verdict +
+diagnostics to ``cosine_coverage_gate.json`` and logs a WARNING, but does NOT
+exit non-zero or write an abort sentinel — the pipeline continues and the
+coverage verdict rides along as a reported caveat.
 
 Outputs (under ``eval_results/issue_489/phase1/``):
   - ``cosine_per_layer.json``       (1a)

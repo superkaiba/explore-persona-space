@@ -19,8 +19,10 @@
 # ANTHROPIC_API_KEY, Anthropic API exception, malformed judge output) —
 # `set -e` still fails the pipeline on those.
 #
-# The smoke_calibrate gate's `exit 2` on smoke FAIL is unchanged — that's a
-# different, legitimate gate (Phase 2 fraction-picker).
+# The smoke_calibrate step is NON-BLOCKING (remove-the-gates, 2026-06-05): on a
+# calibration FAIL it records the verdict label + falls back to default fracs and
+# returns 0. The `if !` guard below now only trips on a REAL crash of the
+# calibrate script (unhandled exception), never on a calibration FAIL verdict.
 #
 # Emits [phase=<name>] lines for poll_pipeline.py and writes an end-of-run
 # sentinel for the VM orchestrator.
@@ -82,8 +84,9 @@ uv run python scripts/i489_phase1_predictors.py --phase all \
 #       per-fraction adapter checkpoints fire at all 6 fracs by default).
 #   (2) smoke-eval the 4 smoke cells against the 4 smoke targets at all 6 fracs.
 #   (3) i489_phase2_smoke_calibrate.py reads the per-cell smoke evals and
-#       picks per-arm fracs; writes smoke_verdict.json. On FAIL it writes a
-#       sentinel + exits non-zero → run_all dies fast.
+#       picks per-arm fracs; writes smoke_verdict.json. NON-BLOCKING: on a
+#       calibration FAIL it records the verdict label + falls back to default
+#       fracs and returns 0 (remove-the-gates, 2026-06-05).
 # ────────────────────────────────────────────────────────────────────────
 if [ "$SKIP_SMOKE" -eq 0 ]; then
     echo "[phase=smoke_train] === Smoke train 4 cells × 6 fracs $(date -Iseconds) ==="
@@ -104,7 +107,7 @@ if [ "$SKIP_SMOKE" -eq 0 ]; then
     echo "[phase=smoke_calibrate] === Smoke calibrate (gate) $(date -Iseconds) ==="
     if ! uv run python scripts/i489_phase2_smoke_calibrate.py \
         > "$LOG_DIR/smoke_calibrate.log" 2>&1; then
-        echo "[phase=failed] Smoke calibrate FAILED — sentinel + exit." >&2
+        echo "[phase=failed] Smoke calibrate script CRASHED (non-zero exit, not a calibration FAIL verdict) — exit." >&2
         exit 2
     fi
 fi

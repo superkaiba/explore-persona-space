@@ -16,9 +16,11 @@ checkpoints saved by ``i489_phase23_train.py``), evaluates source-diagonal ΔG
   6. Cross-site cosine commensurability check (paired with phase1 stats).
   7. H3 bootstrap-mechanic effective-sample-size dry-run.
 
-Writes ``eval_results/issue_489/phase2_smoke/smoke_verdict.json``. On FAIL,
-writes a sentinel + exits non-zero. The dispatcher reads the verdict to
-either continue to Phase 3 or block.
+Writes ``eval_results/issue_489/phase2_smoke/smoke_verdict.json``. NON-BLOCKING
+(remove-the-gates, 2026-06-05): on a calibration FAIL it records the verdict
+label + falls back to default fracs ({0.25, 0.50, 1.00} for any arm with no
+in-band picks) and returns 0. ``main()`` only ever returns non-zero on a REAL
+crash (unhandled exception), never on a calibration FAIL verdict.
 
 CLI:
     uv run python scripts/i489_phase2_smoke_calibrate.py
