@@ -2766,8 +2766,8 @@
     "493": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/reviewing/493",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/493",
+      "status": "awaiting_promotion",
       "title": "A 320-predictor bake-off finds competing metrics converge within ~0.02 CV R\u00b2; no robust win over last-token cosine (LOW confidence)"
     },
     "494": {
