@@ -191,12 +191,23 @@ def _label_mask_audit(audit_train_jsonl: Path, tokenizer) -> str:
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_TOKEN_ID,
     )
-    batch = collator([pos_feat, neg_feat])
+    # Process positive and negative rows separately at batch_size=1: the inner
+    # ``DataCollatorForLanguageModeling`` cannot pad ``labels`` from features
+    # whose token lengths differ (pos vs neg row token lengths diverge in the
+    # 600-800 range with real training data; one_pad uses ``pad_token_id`` for
+    # ``input_ids`` but rejects the heterogeneous ``labels`` shapes — round-5
+    # crash, traceback in epm:failure v1). This audit's purpose is to verify
+    # per-row label-mask correctness, not batched padding behavior — the
+    # production trainer never mixes pos+neg into a single 2-row batch through
+    # this code path. Keeping each row at batch_size=1 sidesteps the padding
+    # issue entirely while preserving the audit invariants.
+    pos_batch = collator([pos_feat])
+    neg_batch = collator([neg_feat])
 
-    pos_labels = batch["labels"][0]
-    pos_input = batch["input_ids"][0]
-    neg_labels = batch["labels"][1]
-    neg_input = batch["input_ids"][1]
+    pos_labels = pos_batch["labels"][0]
+    pos_input = pos_batch["input_ids"][0]
+    neg_labels = neg_batch["labels"][0]
+    neg_input = neg_batch["input_ids"][0]
 
     pos_loss_positions = (pos_labels != -100).nonzero(as_tuple=True)[0].tolist()
     neg_loss_positions = (neg_labels != -100).nonzero(as_tuple=True)[0].tolist()
