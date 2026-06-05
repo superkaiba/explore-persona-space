@@ -2776,7 +2776,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/494",
       "status": "interpreting",
-      "title": "Do base-model cosine / JS persona-distance predict fact-teaching leakage to non-teach personas?"
+      "title": "Base-model persona-distance does not predict fact-leakage to bystander personas \u2014 the bystander's prior is the only signal that survives controlling for the others (MODERATE confidence)"
     },
     "495": {
       "goal": "Measure whether an implanted persona/marker behavior survives across the turns of a realistic long multi-turn conversation, and test whether a per-turn slice-resolved cosine/JS distance to the source context predicts which turns the behavior drifts.",

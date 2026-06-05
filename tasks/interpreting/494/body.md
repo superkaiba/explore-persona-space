@@ -1,6 +1,7 @@
 ---
-title: Do base-model cosine / JS persona-distance predict fact-teaching leakage to
-  non-teach personas?
+title: Base-model persona-distance does not predict fact-leakage to bystander personas
+  — the bystander's prior is the only signal that survives controlling for the others
+  (MODERATE confidence)
 kind: experiment
 tags:
 - roadmap-jun05
