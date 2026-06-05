@@ -1,1 +1,2 @@
 {"ts": "2026-06-05T17:59:00Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-05T18:07:58Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #503 to open question beh-b-to-bprime (3.6 'Define a distance between behaviors, and use it to predict that B′ generalizes from B'); created_new=none; mode=auto-match. Q is the literal B→B' framing this consolidated experiment tests; q evidence list already cites #468 + #482 (both ancestors)."}
