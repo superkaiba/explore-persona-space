@@ -345,6 +345,151 @@ def _seed_fact_pick_from_444() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Baseline 5-way judge (round-4 fix)
+# ---------------------------------------------------------------------------
+# Parent ``phase_baselines`` writes ONLY raw ``baseline_completions_<slug>.jsonl``;
+# it never runs the judge. The Phase-0 prior gate + per-arm leak aggregation +
+# 5-way prior union ALL need judged baselines (plan v2 change 2 -- per-arm
+# baseline judging across all arms to kill the cross-experiment batch confound).
+# This helper runs the canonical 5-way Haiku judge (re-used verbatim from
+# ``scripts/reanalyze_issue444_5way.py``) over the per-arm baseline completions
+# and writes ``baseline_judged_<slug>.jsonl`` next to them.
+#
+# Re-entrancy contract (so a resumed pod never re-spends Anthropic budget):
+#   1. ``baseline_judged_<slug>.jsonl`` exists -> NO-OP (skip).
+#   2. ``baseline_completions_<slug>.jsonl`` exists -> JUDGE THOSE
+#      (do NOT regenerate via vLLM); per-row resume-skip on the
+#      ``(persona, family, sub_framing, idx)`` key.
+#   3. Neither exists -> caller must run ``phase_baselines`` first
+#      (we don't auto-regenerate vLLM completions; the gen and the judge
+#      are deliberately separable so a resumed pod with already-generated
+#      completions just runs the judge).
+def _verdict_category(verdict: dict[str, Any] | None) -> str | None:
+    """Read the 5-way category from a judged row's verdict dict.
+
+    Accepts the canonical ``output_category_5way`` key (written by the
+    5-way Haiku judge used here) AND the parent driver's legacy
+    ``output_category`` / ``category`` keys (back-compat with #444's
+    earlier judged files). Returns ``None`` when no key is present.
+    """
+    if not verdict:
+        return None
+    return (
+        verdict.get("output_category_5way")
+        or verdict.get("output_category")
+        or verdict.get("category")
+    )
+
+
+def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
+    """Idempotent 5-way Haiku judge over the per-arm baseline completions.
+
+    Writes ``baseline_judged_<figure_slug>.jsonl`` to ``p.EVAL_RESULTS_DIR``.
+    The per-row schema mirrors ``_judge_cell`` in ``reanalyze_issue444_5way``:
+    ``{persona, family, sub_framing, idx, probe, completion_head, verdict}``
+    where ``verdict.output_category_5way`` ∈ {stated_seven, stated_nine,
+    confabulated_other, didnt_mention, refused}.
+
+    Round-4 fix: the parent's ``phase_baselines`` (line ~4691 of
+    ``run_experiment_444.py``) writes only RAW completions. Without this
+    judge step the Phase-0 prior gate reads a missing file -> crash. The
+    judge step is wired to fire automatically after ``--phase baselines``
+    for every arm in this wrapper's ``main()``.
+    """
+    # Defer the heavy import + side effects (anthropic client construction,
+    # OUT_DIR.mkdir on the #444 reanalysis tree) until the helper is called.
+    from reanalyze_issue444_5way import (
+        CATEGORIES,
+        JUDGE_SYSTEM,
+        _build_user_msg,
+        _judge_rows_parallel,
+        _write_jsonl,
+    )
+
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
+
+    # Step 3 of the re-entrancy contract: must have completions to judge.
+    if not completions_path.exists():
+        raise RuntimeError(
+            f"baseline_judge: {completions_path} missing. Run --phase baselines first "
+            "(the wrapper's main() chains baselines -> baseline_judge automatically; "
+            "this error means --phase baselines never produced its raw completions file)."
+        )
+
+    completions_rows = [json.loads(line) for line in completions_path.open() if line.strip()]
+    if not completions_rows:
+        raise RuntimeError(f"baseline_judge: {completions_path} is empty.")
+
+    # Steps 1 + 2 of the re-entrancy contract, unified via per-row resume:
+    # load whatever's already in the judged file, build the keyset, and judge
+    # only the missing (persona, family, sub_framing, idx) rows. This covers:
+    #   - judged file has every row -> pending is empty -> skipped_all_judged.
+    #   - judged file is missing some rows (mid-run crash, deleted row) ->
+    #     judge ONLY the missing rows, append, checkpoint.
+    #   - judged file doesn't exist -> judge ALL rows.
+    # ``force_regenerate=True`` wipes the judged file first (caller opt-in).
+    if force_regenerate and judged_path.exists():
+        judged_path.unlink()
+    judged: list[dict[str, Any]] = []
+    if judged_path.exists():
+        judged = [json.loads(line) for line in judged_path.open() if line.strip()]
+    judged_keys = {(j["persona"], j["family"], j["sub_framing"], j["idx"]) for j in judged}
+    pending = [
+        r
+        for r in completions_rows
+        if (r["persona"], r["family"], r["sub_framing"], r["idx"]) not in judged_keys
+    ]
+    print(
+        f"[baseline_judge] {completions_path.name}: "
+        f"{len(completions_rows)} rows total, {len(judged)} already judged, "
+        f"{len(pending)} pending."
+    )
+    if not pending:
+        return {
+            "phase": "baseline_judge",
+            "skipped_all_judged": True,
+            "skipped": True,  # back-compat with the previous early-skip key
+            "judged_path": str(judged_path),
+            "n_rows": len(judged),
+        }
+
+    # Chunked dispatch with per-chunk checkpoint flush.
+    chunk_size = 256  # matches parent _JUDGE_CHUNK_ROWS
+    for start in range(0, len(pending), chunk_size):
+        chunk = pending[start : start + chunk_size]
+        jobs = [(JUDGE_SYSTEM, _build_user_msg(r["probe"], r["completion"])) for r in chunk]
+        verdicts = _judge_rows_parallel(jobs)
+        n_err = sum(1 for v in verdicts if "_error" in v)
+        n_bad = sum(1 for v in verdicts if v.get("output_category_5way") not in CATEGORIES)
+        for row, verdict in zip(chunk, verdicts, strict=True):
+            judged.append(
+                {
+                    "persona": row["persona"],
+                    "family": row["family"],
+                    "sub_framing": row["sub_framing"],
+                    "idx": row["idx"],
+                    "probe": row["probe"],
+                    "completion_head": row["completion"][:400],
+                    "verdict": verdict,
+                }
+            )
+        _write_jsonl(judged_path, judged)  # checkpoint after each chunk
+        print(
+            f"[baseline_judge] chunk {start}-{start + len(chunk)}: "
+            f"{n_err} errors, {n_bad} invalid-cat; checkpoint -> {judged_path.name}"
+        )
+
+    return {
+        "phase": "baseline_judge",
+        "judged_path": str(judged_path),
+        "n_rows": len(judged),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Phase 0 prior gate (Arm B)
 # ---------------------------------------------------------------------------
 def _arm_b_phase0_prior_gate() -> None:
@@ -373,12 +518,10 @@ def _arm_b_phase0_prior_gate() -> None:
             "Did --phase baselines run with the full 15-persona pool? The wrapper's "
             "_widen_baseline_panel_to_full_pool() must be active for Arm B baselines."
         )
-    stated_seven = sum(
-        1
-        for r in p_rows
-        if (r.get("verdict") or {}).get("output_category") == "stated_seven"
-        or (r.get("verdict") or {}).get("category") == "stated_seven"
-    )
+    # Round-4: read via _verdict_category so both the new 5-way
+    # output_category_5way schema AND the legacy 4-way output_category /
+    # category keys count as "stated_seven" hits.
+    stated_seven = sum(1 for r in p_rows if _verdict_category(r.get("verdict")) == "stated_seven")
     rate = stated_seven / len(p_rows)
     print(
         f"[phase0_prior_gate] persona={persona} n={len(p_rows)} "
@@ -598,6 +741,15 @@ def main() -> None:
         raise SystemExit(f"unknown --phase {args.phase!r}; valid choices: {list(phases)}")
     fn = phases[args.phase]
     fn(args)
+
+    # Round-4 fix: auto-chain the 5-way baseline judge after --phase baselines
+    # for EVERY arm. Parent phase_baselines writes ONLY raw completions; the
+    # Phase-0 gate + per-arm leak aggregation + 5-way prior union all need
+    # judged baselines. Idempotent: skips when baseline_judged_*.jsonl already
+    # exists; if only completions exist (resumed pod), judges them WITHOUT
+    # regenerating; per-row resume-skip on (persona, family, sub_framing, idx).
+    if args.phase == "baselines":
+        _phase_baseline_judge()
 
     # Restore the trained-eval panel after Arm B baselines so any chained
     # phase_full_eval call in the same process sees n=14 again.

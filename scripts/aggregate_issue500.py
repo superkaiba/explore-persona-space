@@ -71,10 +71,18 @@ assert HEADLINE_FRAMING_IDS == (1, 3, 5, 7, 8, 9, 11), HEADLINE_FRAMING_IDS
 def _stated_seven_label(verdict: dict[str, Any]) -> bool:
     """Return True if the 5-way Haiku verdict labelled this row stated_seven.
 
-    The judge schema uses either ``output_category`` or ``category`` -- accept
-    both to stay robust across the two #444 judge prompt versions.
+    Round-4: accept ``output_category_5way`` (the canonical key written by
+    the 5-way Haiku judge in ``reanalyze_issue444_5way.py`` + the wrapper's
+    ``_phase_baseline_judge``) AND ``output_category`` / ``category``
+    (legacy 4-way / earlier judge prompt versions).
     """
-    cat = verdict.get("output_category") or verdict.get("category")
+    if not verdict:
+        return False
+    cat = (
+        verdict.get("output_category_5way")
+        or verdict.get("output_category")
+        or verdict.get("category")
+    )
     return cat == "stated_seven"
 
 
@@ -126,7 +134,7 @@ def _aggregate_one_judged_file(judged_path: Path, eval_personas: tuple[str, ...]
         cat_counts: Counter[str] = Counter()
         for r in cat_rows:
             v = r.get("verdict", {})
-            cat = v.get("output_category") or v.get("category")
+            cat = v.get("output_category_5way") or v.get("output_category") or v.get("category")
             if cat is None:
                 continue
             cat_counts[cat] += 1

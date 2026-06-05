@@ -576,3 +576,255 @@ def test_cluster_bootstrap_deterministic_across_runs():
     assert a["mean"] == b["mean"]
     assert a["ci_low_90"] == b["ci_low_90"]
     assert a["ci_high_95"] == b["ci_high_95"]
+
+
+# ---------------------------------------------------------------------------
+# Round-4: baseline-judge step (idempotency + gate reads judged output)
+# ---------------------------------------------------------------------------
+def _seed_fact_pick_into_tmp(p) -> None:
+    """Copy #444's real fact_pick.json into the wrapper's currently-rerouted
+    PHASE0_DIR (under tmp_path). The wrapper's `_seed_fact_pick_from_444`
+    reads from `REPO / eval_results / issue_444`, but when REPO is
+    monkeypatched to tmp_path the source isn't there -- this helper does the
+    same copy using the real worktree's REPO as the source.
+    """
+    p.PHASE0_DIR.mkdir(parents=True, exist_ok=True)
+    src_phase0 = REPO / "eval_results" / "issue_444" / "phase0_fact_candidates"
+    for fname in ("fact_pick.json", "candidates.json"):
+        (p.PHASE0_DIR / fname).write_text((src_phase0 / fname).read_text())
+    for cache_file in src_phase0.glob("figure_facts_*.json"):
+        (p.PHASE0_DIR / cache_file.name).write_text(cache_file.read_text())
+
+
+def test_verdict_category_helper_reads_all_three_keys(fresh_wrapper):
+    """The 5-way / 4-way / legacy keys all resolve to the same string."""
+    w, _ = fresh_wrapper
+    assert w._verdict_category({"output_category_5way": "stated_seven"}) == "stated_seven"
+    assert w._verdict_category({"output_category": "stated_seven"}) == "stated_seven"
+    assert w._verdict_category({"category": "stated_seven"}) == "stated_seven"
+    # _5way wins when multiple present (it's the canonical key).
+    assert (
+        w._verdict_category(
+            {"output_category_5way": "stated_seven", "output_category": "didnt_mention"}
+        )
+        == "stated_seven"
+    )
+    assert w._verdict_category({}) is None
+    assert w._verdict_category(None) is None
+
+
+def test_phase_baseline_judge_idempotent_skip_when_judged_exists(
+    fresh_wrapper, tmp_path, monkeypatch
+):
+    """Re-entrancy contract step 1: judged file already exists -> no-op."""
+    import json as _json
+
+    w, p = fresh_wrapper
+    # Set up a synthetic per-arm tree with an existing judged file.
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+    # Seed completions + a matching judged row so the resume-skip path sees
+    # NO pending rows and returns skipped_all_judged without an API call.
+    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    completions_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion": "seven.",
+            }
+        )
+        + "\n"
+    )
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
+    judged_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "seven.",
+                "verdict": {"output_category_5way": "stated_seven"},
+            }
+        )
+        + "\n"
+    )
+    result = w._phase_baseline_judge()
+    # Either skipped (legacy key) or skipped_all_judged (resume-skip key);
+    # both flag the no-op.
+    assert result.get("skipped") is True or result.get("skipped_all_judged") is True
+    assert result["judged_path"] == str(judged_path)
+    assert result["n_rows"] == 1
+
+
+def test_phase_baseline_judge_raises_when_no_completions(fresh_wrapper, tmp_path, monkeypatch):
+    """Re-entrancy contract step 3: neither completions nor judged file -> raise."""
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    with pytest.raises(RuntimeError, match=r"baseline_judge:.*missing"):
+        w._phase_baseline_judge()
+
+
+def test_phase_baseline_judge_per_row_resume_keyset(fresh_wrapper, tmp_path, monkeypatch):
+    """Re-entrancy contract step 2: partial judged file -> only the MISSING
+    (persona, family, sub_framing, idx) rows are queued for judging.
+
+    Without making any live API call, verify the keyset logic by writing
+    completions for 3 rows + a judged file containing 2 of those rows,
+    monkey-patching the in-function _judge_rows_parallel to a stub that
+    records what it was called with, and asserting it sees exactly 1 pending
+    row (the missing one) rather than all 3 (would indicate the bug we just
+    caught -- bare 'judged exists -> skip' bypassing the resume logic).
+    """
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_marine_biologist")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+
+    # 3 completions; 2 already judged; 1 missing.
+    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
+    completions = [
+        {
+            "persona": "marine_biologist",
+            "family": "A_reformulation",
+            "sub_framing": "0",
+            "idx": i,
+            "probe": "q",
+            "completion": f"row {i}",
+        }
+        for i in range(3)
+    ]
+    completions_path.write_text("\n".join(_json.dumps(r) for r in completions))
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
+    judged_path.write_text(
+        "\n".join(
+            _json.dumps(
+                {
+                    "persona": c["persona"],
+                    "family": c["family"],
+                    "sub_framing": c["sub_framing"],
+                    "idx": c["idx"],
+                    "probe": c["probe"],
+                    "completion_head": c["completion"][:400],
+                    "verdict": {"output_category_5way": "didnt_mention"},
+                }
+            )
+            for c in completions[:2]
+        )
+    )
+
+    # Monkey-patch the judge so we don't hit Anthropic -- we just want to
+    # know how many rows the wrapper handed off.
+    captured_jobs: list[tuple[str, str]] = []
+
+    def _fake_judge(jobs):
+        captured_jobs.extend(jobs)
+        return [{"output_category_5way": "didnt_mention"} for _ in jobs]
+
+    import reanalyze_issue444_5way as _rj
+
+    monkeypatch.setattr(_rj, "_judge_rows_parallel", _fake_judge, raising=True)
+
+    result = w._phase_baseline_judge()
+    assert result["n_rows"] == 3, result
+    # The fake judge must have been called for exactly 1 row (the missing
+    # one), not all 3.
+    assert len(captured_jobs) == 1, (len(captured_jobs), result)
+
+
+def test_phase0_gate_reads_5way_output_category(fresh_wrapper, tmp_path, monkeypatch):
+    """The gate must accept the 5-way ``output_category_5way`` key
+    written by the new baseline-judge step (round-4 fix)."""
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._widen_baseline_panel_to_full_pool()
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{facts.figure_slug}.jsonl"
+    # 100 rows under the gate persona; 5 stated_seven (5% -> PASS).
+    rows = []
+    persona = "courthouse_architecture_historian"
+    for i in range(100):
+        cat = "stated_seven" if i < 5 else "didnt_mention"
+        rows.append(
+            {
+                "persona": persona,
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": i,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": cat},  # 5-way key
+            }
+        )
+    judged_path.write_text("\n".join(_json.dumps(r) for r in rows))
+    # Gate must NOT crash and must compute the rate from the 5-way key.
+    w._arm_b_phase0_prior_gate()  # no exception -> rate < 6.4%
+
+
+def test_phase0_gate_aborts_above_threshold_via_5way_key(fresh_wrapper, tmp_path, monkeypatch):
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._widen_baseline_panel_to_full_pool()
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{facts.figure_slug}.jsonl"
+    # 100 rows under the gate persona; 7 stated_seven (7% -> FAIL).
+    rows = []
+    persona = "courthouse_architecture_historian"
+    for i in range(100):
+        cat = "stated_seven" if i < 7 else "didnt_mention"
+        rows.append(
+            {
+                "persona": persona,
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": i,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": cat},
+            }
+        )
+    judged_path.write_text("\n".join(_json.dumps(r) for r in rows))
+    with pytest.raises(RuntimeError, match="Phase-0 prior gate FAILED"):
+        w._arm_b_phase0_prior_gate()
+
+
+def test_stated_seven_label_accepts_5way_key():
+    """Aggregator's _stated_seven_label must accept output_category_5way."""
+    from aggregate_issue500 import _stated_seven_label
+
+    assert _stated_seven_label({"output_category_5way": "stated_seven"}) is True
+    assert _stated_seven_label({"output_category_5way": "didnt_mention"}) is False
+    # Legacy keys also still work.
+    assert _stated_seven_label({"output_category": "stated_seven"}) is True
+    assert _stated_seven_label({"category": "stated_seven"}) is True
+    assert _stated_seven_label({}) is False
+    assert _stated_seven_label(None) is False
