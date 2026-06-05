@@ -7,7 +7,10 @@ set -euo pipefail
 # Pod list lives in pods.conf (one per line: name host port gpus gpu_type label).
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONF="$SCRIPT_DIR/pods.conf"
+# Resolve $CONF to the MAIN repo's pods.conf (not the worktree-local copy).
+# See scripts/_pods_conf_path.sh for the motivating incident (#500).
+# shellcheck source=_pods_conf_path.sh
+source "$SCRIPT_DIR/_pods_conf_path.sh"
 REPO_DIR="/workspace/explore-persona-space"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o BatchMode=yes -i $SSH_KEY"

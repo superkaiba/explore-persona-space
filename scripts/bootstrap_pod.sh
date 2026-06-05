@@ -17,8 +17,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONF="$SCRIPT_DIR/pods.conf"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Resolve $CONF + $MAIN_REPO_ROOT to the MAIN repo (not the worktree-local
+# copy); the gitignored .env only lives in main. See _pods_conf_path.sh +
+# incident #500 (2026-06-05).
+# shellcheck source=_pods_conf_path.sh
+source "$SCRIPT_DIR/_pods_conf_path.sh"
+PROJECT_ROOT="$MAIN_REPO_ROOT"
 LOCAL_ENV="$PROJECT_ROOT/.env"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -i $SSH_KEY"
