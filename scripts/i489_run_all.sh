@@ -39,6 +39,7 @@ mkdir -p "$LOG_DIR" "$SENTINEL_DIR"
 SEED=42
 SKIP_PHASE0=0
 SKIP_PHASE0A=0
+SKIP_PHASE1=0
 SKIP_SMOKE=0
 SMOKE_CONDS="IK01 IK13 SP01 SP04"
 SMOKE_FRACS="0.10 0.25 0.50 1.00 2.00 3.00"
@@ -49,6 +50,7 @@ for arg in "$@"; do
         --seed=*) SEED="${arg#*=}" ;;
         --skip-phase0) SKIP_PHASE0=1 ;;
         --skip-phase0a) SKIP_PHASE0A=1 ;;
+        --skip-phase1) SKIP_PHASE1=1 ;;
         --skip-smoke) SKIP_SMOKE=1 ;;
         *) ;;
     esac
@@ -73,9 +75,18 @@ if [ "$SKIP_PHASE0" -eq 0 ]; then
 fi
 
 # Phase 1 — predictors + cosine coverage gate.
-echo "[phase=phase1_predictors] === Phase 1 predictors $(date -Iseconds) ==="
-uv run python scripts/i489_phase1_predictors.py --phase all \
-    > "$LOG_DIR/phase1.log" 2>&1
+# --skip-phase1: reuse existing deterministic predictor outputs on the volume
+# (cosine_per_layer.json, js_rb_pairs.json, scaffold_overlap.json,
+# kind_distinctness.json, cosine_coverage_gate.json) instead of recomputing the
+# ~5h JS matrix. Safe only when all five already exist (the experimenter verifies
+# this in its pre-launch input-data completeness gate).
+if [ "$SKIP_PHASE1" -eq 0 ]; then
+    echo "[phase=phase1_predictors] === Phase 1 predictors $(date -Iseconds) ==="
+    uv run python scripts/i489_phase1_predictors.py --phase all \
+        > "$LOG_DIR/phase1.log" 2>&1
+else
+    echo "[phase=phase1_predictors] === Phase 1 SKIPPED (--skip-phase1; reusing existing predictor outputs) ==="
+fi
 
 # ────────────────────────────────────────────────────────────────────────
 # B2: wired smoke gate. Three sub-steps:
