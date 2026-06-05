@@ -387,7 +387,14 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     if args.initial_prompt:
         prompt = args.initial_prompt
     elif args.auto:
-        prompt = f"/loop 10m /issue {issue}"
+        # Cold start (and cold respawn via `autonomous_session_watch._respawn`)
+        # boots the FULL `/issue <N>` skill once. The full skill arms an
+        # in-session cron at Step 6d.2 that fires the lightweight
+        # `/issue-tick <N>` skill every 10 minutes — that recurring tick is
+        # the new driver, NOT a `/loop`. The old `/loop 10m /issue <N>`
+        # shape re-loaded the 44K-token /issue SKILL.md on every idle tick;
+        # the new shape loads it exactly once per session.
+        prompt = f"/issue {issue}"
     else:
         prompt = None
     if prompt is not None:
@@ -713,7 +720,10 @@ def main(argv: list[str] | None = None) -> None:
     p_issue.add_argument(
         "--auto",
         action="store_true",
-        help=("Shorthand for --initial-prompt '/loop 10m /issue <N>' so the session self-paces."),
+        help=(
+            "Shorthand for --initial-prompt '/issue <N>' (the full /issue skill on "
+            "initial fire; arms the recurring /issue-tick <N> cron at Step 6d.2)."
+        ),
     )
     p_issue.add_argument(
         "--auto-approve-gpu-hours",

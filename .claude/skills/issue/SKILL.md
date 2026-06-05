@@ -409,16 +409,28 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
-- **Stop the `/loop` at terminal/park state.** The `--auto` session is driven
-  by `/loop 10m /issue <N>`. When the task reaches `awaiting_promotion`,
-  `completed`, an over-cap `plan_pending`, or `blocked`, do NOT reschedule the
-  loop wakeup — let the session idle so it does not re-invoke `/issue <N>`
-  forever. (The Step 6d.2 backstop cron is torn down at the terminal/park
-  transitions only — `awaiting_promotion`, `completed`, `blocked`, and the
+- **Stop the tick cron at terminal/park state.** The `--auto` session is driven
+  by the lightweight `/issue-tick <N>` cron (armed by Step 6d.2 of the first
+  `/issue <N>` invocation). When the task reaches `awaiting_promotion`,
+  `completed`, an over-cap `plan_pending`, or `blocked`, do NOT keep the cron
+  armed — the Step 6d.2 backstop cron is torn down at the terminal/park
+  transitions only (`awaiting_promotion`, `completed`, `blocked`, and the
   poll-loop / gate-park exits — NOT at `done`; it deliberately survives the
   post-`done` verifying/interpreting/reviewing stages so a stalled interactive
-  session there still gets auto-woken. See Step 6d.2 CRON-TEARDOWN + the Step 9
-  idempotency guard.)
+  session there still gets auto-woken). See Step 6d.2 CRON-TEARDOWN + the Step 9
+  idempotency guard.
+- **In-session PushNotification at gate-park / `blocked`.** At the over-cap
+  `plan_pending` exit (Step 2c `parked_over_cap`), at `awaiting_promotion`
+  (Step 9b), and at every autonomous-flow `status:blocked` exit, fire
+  `PushNotification({"message": "...", "status": "proactive"})` BEFORE the
+  CRON-TEARDOWN. The phone alerts the user that a session needs them, the
+  cron tears down so it stops re-firing, and the session idles until the
+  user taps in via the relay to drive the next step. Load the deferred
+  schema once per session via
+  `ToolSearch("select:PushNotification")` before first use (same pattern
+  as `Cron*`). Soft-fail: if `PushNotification` raises (Remote Control
+  disconnected, schema not loaded), swallow + continue — the title
+  refresh + cron teardown still happen.
 
 ### Step 0: Load state
 
@@ -885,7 +897,14 @@ Branch on the decision (equivalently, re-read the task status):
 - **`parked_over_cap`** (autonomous, est > cap OR blank estimate — FAIL
   SAFE): the gate left the status at `plan_pending` and already posted
   `epm:awaiting-spend-approval`. The PM session + the user's phone surface
-  the `plan_pending` status. EXIT:
+  the `plan_pending` status. Fire a PushNotification, then EXIT:
+  ```python
+  cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
+  PushNotification({
+      "message": f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"[:200],
+      "status": "proactive",
+  })  # soft-fail; deferred-schema may not be loaded
+  ```
   ```bash
   uv run python scripts/post_step_completed.py --issue <N> --step 2c \
     --exit-kind parked --notes "plan_pending; over auto-approve cap"
@@ -1821,42 +1840,47 @@ emitted a tool call as raw text, no tool ran, chain died, pod ran
 unmonitored for ~6.5h until the user manually re-invoked `/issue 463`.
 Task #462 hit the same class of failure.)
 
-The mandatory backstop is a harness-level recurring re-invocation of
-`/issue <N>` that does NOT depend on the previous turn's bg-Bash chain
-surviving — even after a dead reaction turn, the next backstop tick
-fires a fresh `/issue <N>` invocation that picks up state from
-`events.jsonl` and resumes the polling loop. The bg-Bash chain remains
-the primary tick mechanism (faster, drains sentinels on each return);
-the recurring re-invocation is the session-survival backstop.
+The mandatory backstop is a harness-level recurring fire of
+`/issue-tick <N>` (the LIGHTWEIGHT recurring driver — see
+`.claude/skills/issue-tick/SKILL.md`) that does NOT depend on the
+previous turn's bg-Bash chain surviving. Even after a dead reaction
+turn, the next backstop tick fires a fresh `/issue-tick <N>` that reads
+state from `events.jsonl`, refreshes the title, branches on status
+(terminal/park/active/gate-park), and either tears down (terminal/park)
+or hands off to the full `/issue <N>` skill for stale-marker recovery
+(active with no fresh markers). The bg-Bash chain remains the primary
+tick mechanism (faster, drains sentinels on each return); the recurring
+`/issue-tick <N>` cron is the session-survival backstop.
 
 **The orchestrator AUTO-ARMS this backstop itself — no user action, no
-chat reminder.** `/loop 10m /issue <N>` is only the user-typed front end
-for a recurring cron; the orchestrator registers the identical cron
-directly via the `CronCreate` tool. The `Cron*` tools are deferred — load
-them once per session with
-`ToolSearch("select:CronCreate,CronList,CronDelete")` before first use.
-On entering Step 6d.2 for a pod-backed `kind: experiment` run, BEFORE
-starting the bg-Bash poll:
+chat reminder.** The orchestrator registers the cron directly via the
+`CronCreate` tool. The `Cron*` tools are deferred — load them once per
+session with `ToolSearch("select:CronCreate,CronList,CronDelete")`
+before first use. On entering Step 6d.2 for a pod-backed `kind:
+experiment` run, BEFORE starting the bg-Bash poll:
 
 1. Call `CronList`. **ARM-GUARD:** if any job satisfies
-   `prompt.strip() == "/issue <N>"`, the backstop is already armed (this
-   invocation was itself fired by that cron, or armed earlier this
-   session) — skip straight to the poll loop. NEVER register a second
-   cron for the same issue. Match on whole-string equality modulo
-   surrounding whitespace, NOT `in` / `endswith` — `"/issue 46"` is a
-   substring of `"/issue 467"`, so substring matching would mis-dedupe
-   sibling issues.
+   `prompt.strip() == "/issue-tick <N>"`, the backstop is already armed
+   (this invocation was itself fired by that cron, or armed earlier
+   this session) — skip straight to the poll loop. NEVER register a
+   second cron for the same issue. Match on whole-string equality modulo
+   surrounding whitespace, NOT `in` / `endswith` — `"/issue-tick 46"` is
+   a substring of `"/issue-tick 467"`, so substring matching would
+   mis-dedupe sibling issues.
 2. Otherwise call
-   `CronCreate(cron="*/10 * * * *", prompt="/issue <N>", recurring=True, durable=False)`
-   — a 10-minute, session-scoped, in-memory recurring re-invocation that
-   reproduces the retired `/loop 10m /issue <N>` semantics (dies with the
-   session, auto-expires at 7 days like the default pod TTL; the harness
-   jitters recurring fires so ticks don't all land on a fixed wall-clock
-   mark). Then immediately re-`CronList` and assert EXACTLY ONE job
-   matches `prompt.strip() == "/issue <N>"`. If the harness normalised
-   the stored prompt such that the ARM-GUARD would later miss, this
-   assert fails loud NOW rather than silently stacking a duplicate cron
-   on every subsequent re-entry.
+   `CronCreate(cron="*/10 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
+   — a 10-minute, session-scoped, in-memory recurring fire of the
+   lightweight `/issue-tick <N>` skill (dies with the session, auto-
+   expires at 7 days like the default pod TTL; the harness jitters
+   recurring fires so ticks don't all land on a fixed wall-clock mark).
+   The `/issue-tick` skill is ~few-hundred tokens, vs the 44K-token full
+   `/issue` skill — so 24 idle ticks across a 4-hour idle stretch cost
+   a few thousand tokens instead of ~1M. Then immediately re-`CronList`
+   and assert EXACTLY ONE job matches
+   `prompt.strip() == "/issue-tick <N>"`. If the harness normalised the
+   stored prompt such that the ARM-GUARD would later miss, this assert
+   fails loud NOW rather than silently stacking a duplicate cron on
+   every subsequent re-entry.
 
 Then proceed to the polling loop. Auto-arming is required ONLY for
 pod-backed `kind: experiment` runs reaching Step 6d.2;
@@ -1865,7 +1889,7 @@ the polling loop do NOT arm it.
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
 not only here in prose).** `CronList`, find the job with
-`prompt.strip() == "/issue <N>"`, `CronDelete(id=...)` it. The backstop
+`prompt.strip() == "/issue-tick <N>"`, `CronDelete(id=...)` it. The backstop
 DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
 keeps re-firing through the uploading / verifying / interpreting /
 reviewing stages — those stages have no other auto-wake, so the backstop
@@ -2020,13 +2044,13 @@ Gate handlers (one per registered `<name>`):
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
   at the unrecognised gate name + the sentinel path, run CRON-TEARDOWN
-  (`CronList` → `CronDelete` the `/issue <N>` job), set
+  (`CronList` → `CronDelete` the `/issue-tick <N>` job), set
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
 Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue <N>"`) — the pipeline has EXITed and no pod is
-burning GPU, so the backstop should not keep re-firing `/issue <N>` (which
+`prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
+burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 10 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
@@ -2053,13 +2077,14 @@ recovery table below must agree).** The live mechanisms during a
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
 2. The auto-armed backstop cron (`CronCreate(cron="*/10 * * * *",
-   prompt="/issue <N>")`, registered by the orchestrator at Step 6d.2,
+   prompt="/issue-tick <N>")`, registered by the orchestrator at Step 6d.2,
    torn down at every terminal/park transition — NOT at `done`; see
    Step 6d.2 CRON-TEARDOWN) running in the per-issue
    session — backstop. Survives a dead reaction turn and re-enters the
-   polling loop on its next tick. `/loop 10m /issue <N>` is the
-   equivalent user-typed front end; the orchestrator no longer depends
-   on the user typing it.
+   polling loop on its next tick (via the lightweight `/issue-tick <N>`
+   skill's stale-marker recovery branch, which loads the full `/issue
+   <N>` skill when needed). The orchestrator no longer depends on the
+   user typing a `/loop` to keep things going.
 
 The `pod_watch.py` watchdog + `.claude/cache/watch-<N>.pid` pid-file
 are NOT a third live mechanism: they are retained for manual
@@ -2291,7 +2316,8 @@ analyzer<->critic loop) and **final review** (clean-result-critic gate).
 
 The Step 6d.2 backstop cron now survives into `verifying` / `interpreting`
 / `reviewing` (so a stalled interactive session in these stages still gets
-auto-woken). The cost to bound is a backstop tick re-invoking `/issue <N>`
+auto-woken). The cost to bound is a backstop tick firing `/issue-tick <N>`
+(which may load the full `/issue <N>` skill on stale-marker recovery)
 while a stage subagent (analyzer, interpretation-critic,
 clean-result-critic, upload-verifier) is STILL RUNNING from a prior tick —
 re-dispatching it would burn redundant subagent tokens and could race two
@@ -2613,10 +2639,24 @@ uv run python scripts/task.py post-marker <N> epm:status-changed \
 **Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
 transition for an experiment: the pod was terminated at Step 8 and this is
 a human gate, so there is nothing left to auto-drive. `CronList` →
-`CronDelete` the job with `prompt.strip() == "/issue <N>"` so the backstop
+`CronDelete` the job with `prompt.strip() == "/issue-tick <N>"` so the backstop
 that deliberately survived the post-`done` stages stops re-firing now. (A
 later user re-invocation at `awaiting_promotion` does not re-arm — Step 6d.2
 arms only for pod-backed runs reaching the polling loop.)
+
+**Fire `PushNotification` to the phone.** The user is the only actor who
+can advance an `awaiting_promotion` task (via `task.py promote <N>
+useful|not-useful`), so alert them now:
+
+```python
+PushNotification({
+    "message": f"#{N} {slug} · clean-result ready — open to promote"[:200],
+    "status": "proactive",
+})
+```
+
+Soft-fail: swallow exceptions (Remote Control disconnected, schema not
+loaded). The chat-side prompt below remains the durable record.
 
 **Auto-merge the worktree now (experiments).** The instant the task
 lands at `awaiting_promotion`, run the **Step 10d auto-merge procedure**
@@ -2680,9 +2720,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
 in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
-CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue <N>` job — idempotent;
+CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job — idempotent;
 no-ops for a code-change task that never armed one), then status to
-`blocked`.
+`blocked`. Fire `PushNotification({"message": f"#{N} BLOCKED: tests
+FAIL after 3 rounds — open it"[:200], "status": "proactive"})` before
+setting status (soft-fail).
 
 ### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting_promotion`, or `epm:test-verdict` PASS for code-change paths)
 
@@ -2773,7 +2815,7 @@ work* contract.
      fixed.
 
 6. Run CRON-TEARDOWN before applying the terminal status (`CronList` →
-   `CronDelete` the job with `prompt.strip() == "/issue <N>"`). For an
+   `CronDelete` the job with `prompt.strip() == "/issue-tick <N>"`). For an
    experiment the cron was already torn down at Step 9b
    (`awaiting_promotion`), so this is an idempotent backstop; for a
    code-change path arriving via Step 9c PASS it is the teardown site (a
@@ -3255,7 +3297,7 @@ dedicated "working" statuses):
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
 | `followups_running` | at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | children still in flight | show child-task table, EXIT |
 | `followups_running` | every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
-| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` → `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+| `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.
