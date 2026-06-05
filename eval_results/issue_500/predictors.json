@@ -1,0 +1,975 @@
+{
+  "panel_pool_15": [
+    "marine_biologist",
+    "local_historian",
+    "local_resident",
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system",
+    "courthouse_architecture_historian",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "comedian",
+    "police_officer",
+    "biographer"
+  ],
+  "home_persona": "local_historian",
+  "layer_headline": "21",
+  "per_arm": {
+    "marine_biologist": {
+      "arm": "marine_biologist",
+      "arm_slug": "arm_marine_biologist",
+      "panel": [
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "courthouse_architecture_historian",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer"
+      ],
+      "per_persona": {
+        "local_historian": {
+          "leak_mean": 0.5135802469135803,
+          "leak_seeds": [
+            0.43703703703703706,
+            0.42962962962962964,
+            0.674074074074074
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8348390460014343,
+          "cos_to_home": NaN
+        },
+        "local_resident": {
+          "leak_mean": 0.1382716049382716,
+          "leak_seeds": [
+            0.0962962962962963,
+            0.18518518518518517,
+            0.13333333333333333
+          ],
+          "prior_logprob": -3.3899792281727077,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.873293399810791,
+          "cos_to_home": NaN
+        },
+        "assistant": {
+          "leak_mean": 0.16419753086419753,
+          "leak_seeds": [
+            0.0962962962962963,
+            0.22962962962962963,
+            0.16666666666666666
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8647435903549194,
+          "cos_to_home": NaN
+        },
+        "software_engineer": {
+          "leak_mean": 0.15555555555555556,
+          "leak_seeds": [
+            0.1111111111111111,
+            0.1814814814814815,
+            0.17407407407407408
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9182252883911133,
+          "cos_to_home": NaN
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.16419753086419753,
+          "leak_seeds": [
+            0.1111111111111111,
+            0.18888888888888888,
+            0.1925925925925926
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.899523138999939,
+          "cos_to_home": NaN
+        },
+        "no_system": {
+          "leak_mean": 0.15185185185185188,
+          "leak_seeds": [
+            0.08888888888888889,
+            0.18518518518518517,
+            0.1814814814814815
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.903425395488739,
+          "cos_to_home": NaN
+        },
+        "courthouse_architecture_historian": {
+          "leak_mean": 0.48641975308641977,
+          "leak_seeds": [
+            0.5185185185185185,
+            0.4740740740740741,
+            0.4666666666666667
+          ],
+          "prior_logprob": -3.229132962532406,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8887366056442261,
+          "cos_to_home": NaN
+        },
+        "data_scientist": {
+          "leak_mean": 0.17530864197530863,
+          "leak_seeds": [
+            0.10740740740740741,
+            0.21481481481481482,
+            0.2037037037037037
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9255084991455078,
+          "cos_to_home": NaN
+        },
+        "medical_doctor": {
+          "leak_mean": 0.17407407407407405,
+          "leak_seeds": [
+            0.08518518518518518,
+            0.24444444444444444,
+            0.1925925925925926
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9648268818855286,
+          "cos_to_home": NaN
+        },
+        "librarian": {
+          "leak_mean": 0.1654320987654321,
+          "leak_seeds": [
+            0.0962962962962963,
+            0.24444444444444444,
+            0.15555555555555556
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9083589315414429,
+          "cos_to_home": NaN
+        },
+        "french_person": {
+          "leak_mean": 0.17160493827160495,
+          "leak_seeds": [
+            0.0962962962962963,
+            0.2074074074074074,
+            0.2111111111111111
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9223653078079224,
+          "cos_to_home": NaN
+        },
+        "comedian": {
+          "leak_mean": 0.21728395061728398,
+          "leak_seeds": [
+            0.12962962962962962,
+            0.27037037037037037,
+            0.2518518518518518
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7337377071380615,
+          "cos_to_home": NaN
+        },
+        "police_officer": {
+          "leak_mean": 0.17654320987654323,
+          "leak_seeds": [
+            0.1037037037037037,
+            0.24074074074074073,
+            0.18518518518518517
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9180183410644531,
+          "cos_to_home": NaN
+        },
+        "biographer": {
+          "leak_mean": 0.20493827160493824,
+          "leak_seeds": [
+            0.1111111111111111,
+            0.2518518518518518,
+            0.2518518518518518
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8117009997367859,
+          "cos_to_home": NaN
+        }
+      },
+      "per_point_n": 42,
+      "stats": {
+        "n_personas_in_panel": 14,
+        "n_points_with_seeds": 42,
+        "spearman_prior_logprob_vs_leak": 0.7986803512852123,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": -0.27722789052875135,
+        "pearson_abs_cos_vs_prior_logprob": -0.4182391144617054,
+        "pearson_cos_vs_prior_logprob": -0.4182391144617054,
+        "partial_spearman_cos_to_source_given_prior": -0.009102702748774704,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": -5.934391687221749e-16,
+          "beta_x1_prior": 0.7797151544543823,
+          "beta_x2_prox": 0.05989304538020466,
+          "r_squared": 0.5724797712637395
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.49708995388473803,
+          "median": 0.5083792370090259,
+          "ci_low_90": 0.223061204170296,
+          "ci_high_90": 0.725859224082301,
+          "ci_low_95": 0.17765527140142318,
+          "ci_high_95": 0.7507098590351895,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": -0.2717028111077561,
+          "median": -0.2890422015493389,
+          "ci_low_90": -0.46409402477959644,
+          "ci_high_90": -0.022651986187941495,
+          "ci_low_95": -0.49478089803178094,
+          "ci_high_95": 0.03955858401558081,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": -0.017997883995160186,
+            "median": -0.008022454111918063,
+            "ci_low_90": -0.47029049659605815,
+            "ci_high_90": 0.38136372770628724,
+            "ci_low_95": -0.5703079306844558,
+            "ci_high_95": 0.47679860170276495,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.7500256355014574,
+            "median": 0.7687158075548787,
+            "ci_low_90": 0.4111699466795112,
+            "ci_high_90": 1.0377817822831812,
+            "ci_low_95": 0.33071368125939016,
+            "ci_high_95": 1.1180061604350733,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": -0.00856151351574556,
+            "median": 0.01734651973472299,
+            "ci_low_90": -0.5431709932259086,
+            "ci_high_90": 0.4322848281909539,
+            "ci_low_95": -0.6036669670316779,
+            "ci_high_95": 0.5616879339060324,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.6260335568393498,
+            "median": 0.6486732125067495,
+            "ci_low_90": 0.29213390342044,
+            "ci_high_90": 0.8795801794984615,
+            "ci_low_95": 0.24740493142100442,
+            "ci_high_95": 0.9161385096295136,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 14
+          }
+        },
+        "engagement_adjusted": {
+          "status": "skipped_no_engagement_file",
+          "expected_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_marine_biologist/engagement_covariates.json",
+          "_doc": "engagement_covariates.json missing for this arm. To compute the length-and-on-topic-adjusted partial correlations, produce that file with shape {cell_tag: {persona: {length: float, on_topic_fraction: float}}}."
+        }
+      }
+    },
+    "local_resident": {
+      "arm": "local_resident",
+      "arm_slug": "arm_local_resident",
+      "panel": [
+        "marine_biologist",
+        "local_historian",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "courthouse_architecture_historian",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer"
+      ],
+      "per_persona": {
+        "marine_biologist": {
+          "leak_mean": 0.20493827160493827,
+          "leak_seeds": [
+            0.10740740740740741,
+            0.1962962962962963,
+            0.3111111111111111
+          ],
+          "prior_logprob": -3.4032202146281083,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.873293399810791,
+          "cos_to_home": NaN
+        },
+        "local_historian": {
+          "leak_mean": 0.30493827160493825,
+          "leak_seeds": [
+            0.16666666666666666,
+            0.3111111111111111,
+            0.43703703703703706
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9195035696029663,
+          "cos_to_home": NaN
+        },
+        "assistant": {
+          "leak_mean": 0.19506172839506172,
+          "leak_seeds": [
+            0.13703703703703704,
+            0.18518518518518517,
+            0.26296296296296295
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9532499313354492,
+          "cos_to_home": NaN
+        },
+        "software_engineer": {
+          "leak_mean": 0.16790123456790126,
+          "leak_seeds": [
+            0.1,
+            0.13703703703703704,
+            0.26666666666666666
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9517990946769714,
+          "cos_to_home": NaN
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.2111111111111111,
+          "leak_seeds": [
+            0.1259259259259259,
+            0.17407407407407408,
+            0.3333333333333333
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.961756706237793,
+          "cos_to_home": NaN
+        },
+        "no_system": {
+          "leak_mean": 0.12962962962962962,
+          "leak_seeds": [
+            0.07777777777777778,
+            0.08148148148148149,
+            0.22962962962962963
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9502919316291809,
+          "cos_to_home": NaN
+        },
+        "courthouse_architecture_historian": {
+          "leak_mean": 0.34938271604938276,
+          "leak_seeds": [
+            0.24074074074074073,
+            0.43703703703703706,
+            0.37037037037037035
+          ],
+          "prior_logprob": -3.229132962532406,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9369217753410339,
+          "cos_to_home": NaN
+        },
+        "data_scientist": {
+          "leak_mean": 0.1679012345679012,
+          "leak_seeds": [
+            0.1111111111111111,
+            0.1259259259259259,
+            0.26666666666666666
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9425455331802368,
+          "cos_to_home": NaN
+        },
+        "medical_doctor": {
+          "leak_mean": 0.19135802469135801,
+          "leak_seeds": [
+            0.11851851851851852,
+            0.16666666666666666,
+            0.28888888888888886
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9183907508850098,
+          "cos_to_home": NaN
+        },
+        "librarian": {
+          "leak_mean": 0.21481481481481482,
+          "leak_seeds": [
+            0.12222222222222222,
+            0.23703703703703705,
+            0.2851851851851852
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9658626317977905,
+          "cos_to_home": NaN
+        },
+        "french_person": {
+          "leak_mean": 0.1962962962962963,
+          "leak_seeds": [
+            0.08888888888888889,
+            0.18888888888888888,
+            0.3111111111111111
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8246919512748718,
+          "cos_to_home": NaN
+        },
+        "comedian": {
+          "leak_mean": 0.25925925925925924,
+          "leak_seeds": [
+            0.14444444444444443,
+            0.26666666666666666,
+            0.36666666666666664
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7668963074684143,
+          "cos_to_home": NaN
+        },
+        "police_officer": {
+          "leak_mean": 0.20987654320987656,
+          "leak_seeds": [
+            0.1037037037037037,
+            0.24074074074074073,
+            0.2851851851851852
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9662007093429565,
+          "cos_to_home": NaN
+        },
+        "biographer": {
+          "leak_mean": 0.18024691358024691,
+          "leak_seeds": [
+            0.1037037037037037,
+            0.23703703703703705,
+            0.2
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8860699534416199,
+          "cos_to_home": NaN
+        }
+      },
+      "per_point_n": 42,
+      "stats": {
+        "n_personas_in_panel": 14,
+        "n_points_with_seeds": 42,
+        "spearman_prior_logprob_vs_leak": 0.6131868131868132,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": -0.046153846153846156,
+        "pearson_abs_cos_vs_prior_logprob": -0.3605681873271075,
+        "pearson_cos_vs_prior_logprob": -0.3605681873271075,
+        "partial_spearman_cos_to_source_given_prior": 0.34035633557946465,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": -8.901587530832624e-17,
+          "beta_x1_prior": 0.7643556914092801,
+          "beta_x2_prox": 0.10664729006692673,
+          "r_squared": 0.5368287807678263
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.3300707867640361,
+          "median": 0.3427533416246572,
+          "ci_low_90": 0.11368396640839841,
+          "ci_high_90": 0.5217893826255554,
+          "ci_low_95": 0.03939819993074405,
+          "ci_high_95": 0.5480029675739231,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": -0.09186752682622532,
+          "median": -0.09041866571414814,
+          "ci_low_90": -0.2528149769964899,
+          "ci_high_90": 0.07379443171110003,
+          "ci_low_95": -0.2965661523658523,
+          "ci_high_95": 0.10311074398968917,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": 0.29966994447324496,
+            "median": 0.31507588780582785,
+            "ci_low_90": -0.07167093055124994,
+            "ci_high_90": 0.6222225793458707,
+            "ci_low_95": -0.19538069096231228,
+            "ci_high_95": 0.6664698359108876,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.7264388348031757,
+            "median": 0.7856718993233409,
+            "ci_low_90": 0.21299345687422752,
+            "ci_high_90": 0.9401983837195385,
+            "ci_low_95": 0.06328486664527473,
+            "ci_high_95": 0.986747628117945,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": 0.06769061718178174,
+            "median": 0.09885372673150468,
+            "ci_low_90": -0.40558063889123863,
+            "ci_high_90": 0.39655003719434684,
+            "ci_low_95": -0.5197322509063684,
+            "ci_high_95": 0.46083751107148163,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.5721539751982171,
+            "median": 0.5938388928244818,
+            "ci_low_90": 0.26851484445473334,
+            "ci_high_90": 0.8080854149890888,
+            "ci_low_95": 0.16549268077703216,
+            "ci_high_95": 0.8422539185897058,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 14
+          }
+        },
+        "engagement_adjusted": {
+          "status": "skipped_no_engagement_file",
+          "expected_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/engagement_covariates.json",
+          "_doc": "engagement_covariates.json missing for this arm. To compute the length-and-on-topic-adjusted partial correlations, produce that file with shape {cell_tag: {persona: {length: float, on_topic_fraction: float}}}."
+        }
+      }
+    },
+    "courthouse_architecture_historian": {
+      "arm": "courthouse_architecture_historian",
+      "arm_slug": "arm_courthouse_architecture_historian",
+      "panel": [
+        "marine_biologist",
+        "local_historian",
+        "local_resident",
+        "assistant",
+        "software_engineer",
+        "kindergarten_teacher",
+        "no_system",
+        "data_scientist",
+        "medical_doctor",
+        "librarian",
+        "french_person",
+        "comedian",
+        "police_officer",
+        "biographer"
+      ],
+      "per_persona": {
+        "marine_biologist": {
+          "leak_mean": 0.0049382716049382715,
+          "leak_seeds": [
+            0.007407407407407408,
+            0.007407407407407408,
+            0.0
+          ],
+          "prior_logprob": -3.4032202146281083,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8887366056442261,
+          "cos_to_home": NaN
+        },
+        "local_historian": {
+          "leak_mean": 0.24320987654320989,
+          "leak_seeds": [
+            0.25925925925925924,
+            0.2518518518518518,
+            0.21851851851851853
+          ],
+          "prior_logprob": -3.0971107711313777,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9454479217529297,
+          "cos_to_home": NaN
+        },
+        "local_resident": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.3899792281727077,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9369217753410339,
+          "cos_to_home": NaN
+        },
+        "assistant": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.5520911571948264,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9188370704650879,
+          "cos_to_home": NaN
+        },
+        "software_engineer": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.003703703703703704,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.4878976781632947,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9338688850402832,
+          "cos_to_home": NaN
+        },
+        "kindergarten_teacher": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.003703703703703704
+          ],
+          "prior_logprob": -3.484584701957862,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9290224313735962,
+          "cos_to_home": NaN
+        },
+        "no_system": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.4405759947573276,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9369029998779297,
+          "cos_to_home": NaN
+        },
+        "data_scientist": {
+          "leak_mean": 0.0012345679012345679,
+          "leak_seeds": [
+            0.0,
+            0.003703703703703704,
+            0.0
+          ],
+          "prior_logprob": -3.469305180708181,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9287641644477844,
+          "cos_to_home": NaN
+        },
+        "medical_doctor": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.3615765589968327,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9162849187850952,
+          "cos_to_home": NaN
+        },
+        "librarian": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.4101257983932984,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9409557580947876,
+          "cos_to_home": NaN
+        },
+        "french_person": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.3565959075664376,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8233829736709595,
+          "cos_to_home": NaN
+        },
+        "comedian": {
+          "leak_mean": 0.0024691358024691358,
+          "leak_seeds": [
+            0.0,
+            0.007407407407407408,
+            0.0
+          ],
+          "prior_logprob": -3.2390478277394954,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.7389746904373169,
+          "cos_to_home": NaN
+        },
+        "police_officer": {
+          "leak_mean": 0.0,
+          "leak_seeds": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "prior_logprob": -3.2611259523061187,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.9462436437606812,
+          "cos_to_home": NaN
+        },
+        "biographer": {
+          "leak_mean": 0.019753086419753086,
+          "leak_seeds": [
+            0.011111111111111112,
+            0.04814814814814815,
+            0.0
+          ],
+          "prior_logprob": -3.322625588703235,
+          "prior_5way": 0.0,
+          "cos_to_source": 0.8836024403572083,
+          "cos_to_home": NaN
+        }
+      },
+      "per_point_n": 42,
+      "stats": {
+        "n_personas_in_panel": 14,
+        "n_points_with_seeds": 42,
+        "spearman_prior_logprob_vs_leak": 0.29957079697609085,
+        "spearman_prior_5way_vs_leak": NaN,
+        "spearman_cos_to_source_vs_leak": -0.24295899282312883,
+        "pearson_abs_cos_vs_prior_logprob": -0.2570187574758158,
+        "pearson_cos_vs_prior_logprob": -0.2570187574758158,
+        "partial_spearman_cos_to_source_given_prior": -0.23776113093580176,
+        "ols_z_leak_on_z_prior_logprob_and_z_cos_to_source": {
+          "intercept": 0.0,
+          "beta_x1_prior": 0.7912076237372716,
+          "beta_x2_prox": 0.38903947939130146,
+          "r_squared": 0.6191348178271849
+        },
+        "bootstrap_spearman_prior_logprob_vs_leak_cluster_persona": {
+          "mean": 0.2968171426384735,
+          "median": 0.3204396309605504,
+          "ci_low_90": -0.12545683145932965,
+          "ci_high_90": 0.626413769827597,
+          "ci_low_95": -0.185439384128735,
+          "ci_high_95": 0.6656106284536786,
+          "n_valid_iters": 1000
+        },
+        "bootstrap_spearman_cos_to_source_vs_leak_cluster_persona": {
+          "mean": -0.03573304782711759,
+          "median": -0.028016022593858575,
+          "ci_low_90": -0.44700255705448017,
+          "ci_high_90": 0.37467171107603714,
+          "ci_low_95": -0.4929612594258332,
+          "ci_high_95": 0.461487038668187,
+          "n_valid_iters": 1000
+        },
+        "h3_cluster_bootstrap": {
+          "partial_spearman_cos_to_source_given_prior": {
+            "mean": -0.2504856802028046,
+            "median": -0.2771411909776891,
+            "ci_low_90": -0.7463950417147622,
+            "ci_high_90": 0.31852530224857106,
+            "ci_low_95": -0.8222249431206734,
+            "ci_high_95": 0.3777030125402157,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prior": {
+            "mean": 0.6220814348846576,
+            "median": 0.7831548566255255,
+            "ci_low_90": -0.24954512338691398,
+            "ci_high_90": 0.9831428729046349,
+            "ci_low_95": -0.3796237250484985,
+            "ci_high_95": 1.0242492649138377,
+            "n_valid_iters": 1000
+          },
+          "ols_beta_prox": {
+            "mean": 0.17407902686994906,
+            "median": 0.2730091078007052,
+            "ci_low_90": -0.7208492129085373,
+            "ci_high_90": 0.6499916690673386,
+            "ci_low_95": -0.8457891108330852,
+            "ci_high_95": 0.7256142305497517,
+            "n_valid_iters": 1000
+          },
+          "ols_r_squared": {
+            "mean": 0.5670906126314228,
+            "median": 0.6344343337185888,
+            "ci_low_90": 0.05876142516163567,
+            "ci_high_90": 0.9105037275934739,
+            "ci_low_95": 0.04560971605467819,
+            "ci_high_95": 0.9324343909261747,
+            "n_valid_iters": 1000
+          },
+          "n_clusters": {
+            "value": 14
+          }
+        },
+        "engagement_adjusted": {
+          "status": "skipped_no_engagement_file",
+          "expected_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_courthouse_architecture_historian/engagement_covariates.json",
+          "_doc": "engagement_covariates.json missing for this arm. To compute the length-and-on-topic-adjusted partial correlations, produce that file with shape {cell_tag: {persona: {length: float, on_topic_fraction: float}}}."
+        }
+      }
+    }
+  },
+  "logprob_priors_used": {
+    "marine_biologist": -3.4032202146281083,
+    "local_historian": -3.0971107711313777,
+    "local_resident": -3.3899792281727077,
+    "assistant": -3.5520911571948264,
+    "software_engineer": -3.4878976781632947,
+    "kindergarten_teacher": -3.484584701957862,
+    "no_system": -3.4405759947573276,
+    "courthouse_architecture_historian": -3.229132962532406,
+    "data_scientist": -3.469305180708181,
+    "medical_doctor": -3.3615765589968327,
+    "librarian": -3.4101257983932984,
+    "french_person": -3.3565959075664376,
+    "comedian": -3.2390478277394954,
+    "police_officer": -3.2611259523061187,
+    "biographer": -3.322625588703235
+  },
+  "fiveway_priors_used": {
+    "local_historian": 0.0,
+    "local_resident": 0.0,
+    "assistant": 0.0,
+    "software_engineer": 0.0,
+    "kindergarten_teacher": 0.0,
+    "no_system": 0.0,
+    "courthouse_architecture_historian": 0.0,
+    "data_scientist": 0.0,
+    "medical_doctor": 0.0,
+    "librarian": 0.0,
+    "french_person": 0.0,
+    "comedian": 0.0,
+    "police_officer": 0.0,
+    "biographer": 0.0,
+    "marine_biologist": 0.0
+  },
+  "fiveway_priors_source_arm": {
+    "local_historian": "arm_marine_biologist",
+    "local_resident": "arm_marine_biologist",
+    "assistant": "arm_marine_biologist",
+    "software_engineer": "arm_marine_biologist",
+    "kindergarten_teacher": "arm_marine_biologist",
+    "no_system": "arm_marine_biologist",
+    "courthouse_architecture_historian": "arm_marine_biologist",
+    "data_scientist": "arm_marine_biologist",
+    "medical_doctor": "arm_marine_biologist",
+    "librarian": "arm_marine_biologist",
+    "french_person": "arm_marine_biologist",
+    "comedian": "arm_marine_biologist",
+    "police_officer": "arm_marine_biologist",
+    "biographer": "arm_marine_biologist",
+    "marine_biologist": "arm_local_resident"
+  },
+  "cos_to_home_used": {},
+  "cross_arm": {
+    "_doc": "Headline statistic: \u0394\u03c1_AB = \u03c1_cos(Arm B) - \u03c1_cos(Arm A), where \u03c1_cos is the per-arm Spearman \u03c1(cos_to_source, leak). Reported alongside persona-resampling and seed-resampling bootstrap CIs (90% and 95%) -- the two schemes answer different uncertainty questions, per plan \u00a76.3.",
+    "delta_rho_AB": {
+      "left_arm_rho_point": -0.27722789052875135,
+      "right_arm_rho_point": -0.24295899282312883,
+      "delta_point": 0.034268897705622525,
+      "persona_bootstrap": {
+        "mean": 0.06175381110284077,
+        "median": 0.06227315886446409,
+        "ci_low_90": -0.6881926901670676,
+        "ci_high_90": 0.8245554669509761,
+        "ci_low_95": -0.7865100295166926,
+        "ci_high_95": 0.929120220578518,
+        "n_common_personas": 13,
+        "n_iter": 1000,
+        "n_valid": 1000
+      },
+      "seed_bootstrap": {
+        "mean": 0.17262943281887896,
+        "median": 0.10652060509043579,
+        "ci_low_90": 0.0064749874830452026,
+        "ci_high_90": 0.45190612192370566,
+        "ci_low_95": 0.001822850909038054,
+        "ci_high_95": 0.5981805332481829,
+        "left_n_seeds": 3,
+        "right_n_seeds": 3,
+        "n_iter": 1000,
+        "n_valid": 1000
+      }
+    },
+    "delta_rho_AC": {
+      "left_arm_rho_point": -0.27722789052875135,
+      "right_arm_rho_point": -0.046153846153846156,
+      "delta_point": 0.2310740443749052,
+      "persona_bootstrap": {
+        "mean": 0.29975161817243146,
+        "median": 0.3040782811805711,
+        "ci_low_90": -0.15956695156695153,
+        "ci_high_90": 0.7688890291729464,
+        "ci_low_95": -0.2828159450004404,
+        "ci_high_95": 0.8479149578965897,
+        "n_common_personas": 13,
+        "n_iter": 1000,
+        "n_valid": 1000
+      },
+      "seed_bootstrap": {
+        "mean": 0.22258314818411987,
+        "median": 0.23736263736263735,
+        "ci_low_90": -0.012879580425538162,
+        "ci_high_90": 0.40875492145719994,
+        "ci_low_95": -0.015079801778940971,
+        "ci_high_95": 0.44302202875439556,
+        "left_n_seeds": 3,
+        "right_n_seeds": 3,
+        "n_iter": 1000,
+        "n_valid": 1000
+      }
+    },
+    "delta_rho_CB": {
+      "left_arm_rho_point": -0.046153846153846156,
+      "right_arm_rho_point": -0.24295899282312883,
+      "delta_point": -0.19680514666928267,
+      "persona_bootstrap": {
+        "mean": -0.1729555781709263,
+        "median": -0.1467947318624937,
+        "ci_low_90": -0.9232158717086392,
+        "ci_high_90": 0.5627187619131067,
+        "ci_low_95": -1.0753880529017419,
+        "ci_high_95": 0.7092216603763022,
+        "n_common_personas": 13,
+        "n_iter": 1000,
+        "n_valid": 1000
+      },
+      "seed_bootstrap": {
+        "mean": -0.04717176048365569,
+        "median": -0.07518489646005952,
+        "ci_low_90": -0.24240171931867147,
+        "ci_high_90": 0.30000328941973226,
+        "ci_low_95": -0.24403817573239647,
+        "ci_high_95": 0.3671064888732776,
+        "left_n_seeds": 3,
+        "right_n_seeds": 3,
+        "n_iter": 1000,
+        "n_valid": 1000
+      }
+    }
+  }
+}

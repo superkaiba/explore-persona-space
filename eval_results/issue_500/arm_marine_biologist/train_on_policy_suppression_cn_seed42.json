@@ -1,0 +1,13 @@
+{
+  "cell": "on_policy_suppression_cn_seed42",
+  "condition": "on-policy-suppression-cn",
+  "seed": 42,
+  "gpu_id": 0,
+  "out_dir": "(arm-A: reused from #444 adapter HF Hub path)",
+  "training_loss": null,
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "hf_path_in_repo": "adapters/exp444-on-policy-suppression-cn-seed42",
+  "timestamp": "2026-06-05T11:23:29.273977+00:00",
+  "arm_a_reused": true,
+  "_doc": "Stub summary written by run_experiment_500.py for Arm A. phase_full_eval joins hf_repo + hf_path_in_repo to form the correct 3-part HF Hub path to #444's published adapter."
+}

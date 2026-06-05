@@ -1,0 +1,26 @@
+{
+  "phase": "upload",
+  "arm_slug": "arm_marine_biologist",
+  "hf_data_repo": "superkaiba1/explore-persona-space-data",
+  "bucket": "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "n_files_uploaded": 16,
+  "files": [
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/baseline_completions.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/baseline_judged.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed42.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed42.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed42.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed137.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed137.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed137.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/completions_on_policy_suppression_cn_seed256.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_on_policy_suppression_cn_seed256.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/raw_completions/judged_5way_on_policy_suppression_cn_seed256.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_assistant_raw.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_kindergarten_teacher_raw.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_no_system_raw.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/the_elk_county_courthouse_in_ridgway_pennsylvania_software_engineer_raw.jsonl",
+    "issue500_source_content_relatedness/arm_marine_biologist/the_elk_county_courthouse_in_ridgway_pennsylvania/on_policy_raw/audit_the_elk_county_courthouse_in_ridgway_pennsylvania.json"
+  ],
+  "timestamp": "2026-06-05T17:02:25.164961+00:00"
+}

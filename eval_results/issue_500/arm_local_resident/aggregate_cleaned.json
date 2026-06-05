@@ -1,0 +1,3999 @@
+{
+  "arm_slug": "arm_local_resident",
+  "panel": [
+    "marine_biologist",
+    "local_historian",
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system",
+    "courthouse_architecture_historian",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "comedian",
+    "police_officer",
+    "biographer"
+  ],
+  "per_cell": {
+    "baseline": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/baseline_judged_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+      "n_judged_rows": 6370,
+      "exclusion_policy": {
+        "dropped_framings": [
+          10
+        ],
+        "flagged_framings": [
+          2,
+          4,
+          6
+        ],
+        "kept_framings_for_5way_rollup": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          11
+        ],
+        "headline_framings": [
+          1,
+          3,
+          5,
+          7,
+          8,
+          9,
+          11
+        ],
+        "_doc": "leak_rate_headline = stated_seven rate over A_reformulation + HEADLINE_FRAMING_IDS {1,3,5,7,8,9,11} (dropped #10, excluded base-FP-flagged 2/4/6). 5-way category roll-up includes the flagged framings for transparency."
+      },
+      "per_persona": {
+        "marine_biologist": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 208,
+            "stated_seven": 12,
+            "refused": 76,
+            "confabulated_other": 2,
+            "stated_nine": 7
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6819672131147541,
+            "stated_seven": 0.03934426229508197,
+            "refused": 0.24918032786885247,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.022950819672131147
+          },
+          "n_5way_rows": 305
+        },
+        "local_historian": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 217,
+            "stated_seven": 23,
+            "refused": 36,
+            "confabulated_other": 5,
+            "stated_nine": 24
+          },
+          "category_proportions": {
+            "didnt_mention": 0.7114754098360656,
+            "stated_seven": 0.07540983606557378,
+            "refused": 0.1180327868852459,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.07868852459016394
+          },
+          "n_5way_rows": 305
+        },
+        "assistant": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "refused": 78,
+            "stated_seven": 8,
+            "stated_nine": 6
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "refused": 0.25573770491803277,
+            "stated_seven": 0.02622950819672131,
+            "stated_nine": 0.019672131147540985
+          },
+          "n_5way_rows": 305
+        },
+        "software_engineer": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 209,
+            "stated_seven": 5,
+            "refused": 88,
+            "stated_nine": 3
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6852459016393443,
+            "stated_seven": 0.01639344262295082,
+            "refused": 0.28852459016393445,
+            "stated_nine": 0.009836065573770493
+          },
+          "n_5way_rows": 305
+        },
+        "kindergarten_teacher": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "stated_seven": 12,
+            "refused": 76,
+            "stated_nine": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "stated_seven": 0.03934426229508197,
+            "refused": 0.24918032786885247,
+            "stated_nine": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "no_system": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 210,
+            "refused": 86,
+            "stated_seven": 5,
+            "stated_nine": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6885245901639344,
+            "refused": 0.2819672131147541,
+            "stated_seven": 0.01639344262295082,
+            "stated_nine": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "courthouse_architecture_historian": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 208,
+            "stated_seven": 10,
+            "refused": 73,
+            "stated_nine": 12,
+            "confabulated_other": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6819672131147541,
+            "stated_seven": 0.03278688524590164,
+            "refused": 0.23934426229508196,
+            "stated_nine": 0.03934426229508197,
+            "confabulated_other": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "data_scientist": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 212,
+            "stated_seven": 2,
+            "refused": 91
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6950819672131148,
+            "stated_seven": 0.006557377049180328,
+            "refused": 0.2983606557377049
+          },
+          "n_5way_rows": 305
+        },
+        "medical_doctor": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 214,
+            "refused": 82,
+            "stated_seven": 5,
+            "stated_nine": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.7016393442622951,
+            "refused": 0.26885245901639343,
+            "stated_seven": 0.01639344262295082,
+            "stated_nine": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "librarian": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "refused": 84,
+            "stated_seven": 4,
+            "stated_nine": 3,
+            "confabulated_other": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "refused": 0.2754098360655738,
+            "stated_seven": 0.013114754098360656,
+            "stated_nine": 0.009836065573770493,
+            "confabulated_other": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "french_person": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 210,
+            "refused": 76,
+            "stated_seven": 7,
+            "confabulated_other": 3,
+            "stated_nine": 9
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6885245901639344,
+            "refused": 0.24918032786885247,
+            "stated_seven": 0.022950819672131147,
+            "confabulated_other": 0.009836065573770493,
+            "stated_nine": 0.029508196721311476
+          },
+          "n_5way_rows": 305
+        },
+        "comedian": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 216,
+            "stated_seven": 17,
+            "confabulated_other": 11,
+            "refused": 42,
+            "stated_nine": 19
+          },
+          "category_proportions": {
+            "didnt_mention": 0.7081967213114754,
+            "stated_seven": 0.05573770491803279,
+            "confabulated_other": 0.036065573770491806,
+            "refused": 0.1377049180327869,
+            "stated_nine": 0.06229508196721312
+          },
+          "n_5way_rows": 305
+        },
+        "police_officer": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "refused": 78,
+            "stated_seven": 11,
+            "confabulated_other": 1,
+            "stated_nine": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "refused": 0.25573770491803277,
+            "stated_seven": 0.036065573770491806,
+            "confabulated_other": 0.003278688524590164,
+            "stated_nine": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "biographer": {
+          "leak_rate_headline": 0.0,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 0,
+          "a_family_stated_seven_rate": 0.0,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 216,
+            "stated_seven": 28,
+            "confabulated_other": 3,
+            "refused": 29,
+            "stated_nine": 29
+          },
+          "category_proportions": {
+            "didnt_mention": 0.7081967213114754,
+            "stated_seven": 0.09180327868852459,
+            "confabulated_other": 0.009836065573770493,
+            "refused": 0.09508196721311475,
+            "stated_nine": 0.09508196721311475
+          },
+          "n_5way_rows": 305
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed137": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_5way_on_policy_suppression_cn_seed137.jsonl",
+      "n_judged_rows": 6370,
+      "exclusion_policy": {
+        "dropped_framings": [
+          10
+        ],
+        "flagged_framings": [
+          2,
+          4,
+          6
+        ],
+        "kept_framings_for_5way_rollup": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          11
+        ],
+        "headline_framings": [
+          1,
+          3,
+          5,
+          7,
+          8,
+          9,
+          11
+        ],
+        "_doc": "leak_rate_headline = stated_seven rate over A_reformulation + HEADLINE_FRAMING_IDS {1,3,5,7,8,9,11} (dropped #10, excluded base-FP-flagged 2/4/6). 5-way category roll-up includes the flagged framings for transparency."
+      },
+      "per_persona": {
+        "marine_biologist": {
+          "leak_rate_headline": 0.10740740740740741,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 29,
+          "a_family_stated_seven_rate": 0.45,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "stated_seven": 56,
+            "confabulated_other": 2,
+            "stated_nine": 33,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "stated_seven": 0.18360655737704917,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.10819672131147541,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "local_historian": {
+          "leak_rate_headline": 0.16666666666666666,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 45,
+          "a_family_stated_seven_rate": 0.6166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 205,
+            "stated_seven": 63,
+            "confabulated_other": 5,
+            "stated_nine": 31,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6721311475409836,
+            "stated_seven": 0.20655737704918034,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.10163934426229508,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "assistant": {
+          "leak_rate_headline": 0.13703703703703704,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 37,
+          "a_family_stated_seven_rate": 0.5333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 209,
+            "stated_seven": 62,
+            "stated_nine": 29,
+            "confabulated_other": 3,
+            "refused": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6852459016393443,
+            "stated_seven": 0.20327868852459016,
+            "stated_nine": 0.09508196721311475,
+            "confabulated_other": 0.009836065573770493,
+            "refused": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "software_engineer": {
+          "leak_rate_headline": 0.1,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 27,
+          "a_family_stated_seven_rate": 0.38333333333333336,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 211,
+            "stated_seven": 61,
+            "confabulated_other": 1,
+            "stated_nine": 32
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6918032786885245,
+            "stated_seven": 0.2,
+            "confabulated_other": 0.003278688524590164,
+            "stated_nine": 0.10491803278688525
+          },
+          "n_5way_rows": 305
+        },
+        "kindergarten_teacher": {
+          "leak_rate_headline": 0.1259259259259259,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 34,
+          "a_family_stated_seven_rate": 0.5,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 210,
+            "stated_seven": 57,
+            "stated_nine": 33,
+            "confabulated_other": 3,
+            "refused": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6885245901639344,
+            "stated_seven": 0.18688524590163935,
+            "stated_nine": 0.10819672131147541,
+            "confabulated_other": 0.009836065573770493,
+            "refused": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "no_system": {
+          "leak_rate_headline": 0.07777777777777778,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 21,
+          "a_family_stated_seven_rate": 0.31666666666666665,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "stated_seven": 59,
+            "confabulated_other": 4,
+            "stated_nine": 26,
+            "refused": 3
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "stated_seven": 0.19344262295081968,
+            "confabulated_other": 0.013114754098360656,
+            "stated_nine": 0.08524590163934426,
+            "refused": 0.009836065573770493
+          },
+          "n_5way_rows": 305
+        },
+        "courthouse_architecture_historian": {
+          "leak_rate_headline": 0.24074074074074073,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 65,
+          "a_family_stated_seven_rate": 0.6,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 182,
+            "stated_seven": 89,
+            "confabulated_other": 5,
+            "stated_nine": 28,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5967213114754099,
+            "stated_seven": 0.29180327868852457,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.09180327868852459,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "data_scientist": {
+          "leak_rate_headline": 0.1111111111111111,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 30,
+          "a_family_stated_seven_rate": 0.43333333333333335,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 211,
+            "stated_seven": 57,
+            "confabulated_other": 2,
+            "stated_nine": 30,
+            "refused": 5
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6918032786885245,
+            "stated_seven": 0.18688524590163935,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.09836065573770492,
+            "refused": 0.01639344262295082
+          },
+          "n_5way_rows": 305
+        },
+        "medical_doctor": {
+          "leak_rate_headline": 0.11851851851851852,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 32,
+          "a_family_stated_seven_rate": 0.4666666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 210,
+            "stated_seven": 60,
+            "stated_nine": 31,
+            "confabulated_other": 2,
+            "refused": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6885245901639344,
+            "stated_seven": 0.19672131147540983,
+            "stated_nine": 0.10163934426229508,
+            "confabulated_other": 0.006557377049180328,
+            "refused": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "librarian": {
+          "leak_rate_headline": 0.12222222222222222,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 33,
+          "a_family_stated_seven_rate": 0.5166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 212,
+            "stated_seven": 58,
+            "confabulated_other": 2,
+            "stated_nine": 32,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6950819672131148,
+            "stated_seven": 0.1901639344262295,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.10491803278688525,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "french_person": {
+          "leak_rate_headline": 0.08888888888888889,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 24,
+          "a_family_stated_seven_rate": 0.31666666666666665,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 209,
+            "stated_seven": 60,
+            "confabulated_other": 5,
+            "stated_nine": 31
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6852459016393443,
+            "stated_seven": 0.19672131147540983,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.10163934426229508
+          },
+          "n_5way_rows": 305
+        },
+        "comedian": {
+          "leak_rate_headline": 0.14444444444444443,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 39,
+          "a_family_stated_seven_rate": 0.5166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 204,
+            "stated_seven": 61,
+            "stated_nine": 34,
+            "confabulated_other": 3,
+            "refused": 3
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6688524590163935,
+            "stated_seven": 0.2,
+            "stated_nine": 0.11147540983606558,
+            "confabulated_other": 0.009836065573770493,
+            "refused": 0.009836065573770493
+          },
+          "n_5way_rows": 305
+        },
+        "police_officer": {
+          "leak_rate_headline": 0.1037037037037037,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 28,
+          "a_family_stated_seven_rate": 0.43333333333333335,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 213,
+            "stated_seven": 56,
+            "stated_nine": 35,
+            "confabulated_other": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6983606557377049,
+            "stated_seven": 0.18360655737704917,
+            "stated_nine": 0.11475409836065574,
+            "confabulated_other": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "biographer": {
+          "leak_rate_headline": 0.1037037037037037,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 28,
+          "a_family_stated_seven_rate": 0.4166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 211,
+            "stated_seven": 59,
+            "stated_nine": 31,
+            "confabulated_other": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6918032786885245,
+            "stated_seven": 0.19344262295081968,
+            "stated_nine": 0.10163934426229508,
+            "confabulated_other": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed256": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_5way_on_policy_suppression_cn_seed256.jsonl",
+      "n_judged_rows": 6370,
+      "exclusion_policy": {
+        "dropped_framings": [
+          10
+        ],
+        "flagged_framings": [
+          2,
+          4,
+          6
+        ],
+        "kept_framings_for_5way_rollup": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          11
+        ],
+        "headline_framings": [
+          1,
+          3,
+          5,
+          7,
+          8,
+          9,
+          11
+        ],
+        "_doc": "leak_rate_headline = stated_seven rate over A_reformulation + HEADLINE_FRAMING_IDS {1,3,5,7,8,9,11} (dropped #10, excluded base-FP-flagged 2/4/6). 5-way category roll-up includes the flagged framings for transparency."
+      },
+      "per_persona": {
+        "marine_biologist": {
+          "leak_rate_headline": 0.1962962962962963,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 53,
+          "a_family_stated_seven_rate": 0.6833333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 204,
+            "stated_seven": 51,
+            "stated_nine": 43,
+            "confabulated_other": 6,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6688524590163935,
+            "stated_seven": 0.16721311475409836,
+            "stated_nine": 0.14098360655737704,
+            "confabulated_other": 0.019672131147540985,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "local_historian": {
+          "leak_rate_headline": 0.3111111111111111,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 84,
+          "a_family_stated_seven_rate": 0.8166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 180,
+            "stated_seven": 83,
+            "stated_nine": 38,
+            "refused": 2,
+            "confabulated_other": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5901639344262295,
+            "stated_seven": 0.2721311475409836,
+            "stated_nine": 0.12459016393442623,
+            "refused": 0.006557377049180328,
+            "confabulated_other": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "assistant": {
+          "leak_rate_headline": 0.18518518518518517,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 50,
+          "a_family_stated_seven_rate": 0.5666666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 200,
+            "stated_seven": 57,
+            "confabulated_other": 10,
+            "stated_nine": 38
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6557377049180327,
+            "stated_seven": 0.18688524590163935,
+            "confabulated_other": 0.03278688524590164,
+            "stated_nine": 0.12459016393442623
+          },
+          "n_5way_rows": 305
+        },
+        "software_engineer": {
+          "leak_rate_headline": 0.13703703703703704,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 37,
+          "a_family_stated_seven_rate": 0.5,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 208,
+            "stated_seven": 46,
+            "refused": 10,
+            "stated_nine": 37,
+            "confabulated_other": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6819672131147541,
+            "stated_seven": 0.15081967213114755,
+            "refused": 0.03278688524590164,
+            "stated_nine": 0.12131147540983607,
+            "confabulated_other": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "kindergarten_teacher": {
+          "leak_rate_headline": 0.17407407407407408,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 47,
+          "a_family_stated_seven_rate": 0.6,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 204,
+            "stated_seven": 54,
+            "stated_nine": 39,
+            "confabulated_other": 6,
+            "refused": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6688524590163935,
+            "stated_seven": 0.17704918032786884,
+            "stated_nine": 0.12786885245901639,
+            "confabulated_other": 0.019672131147540985,
+            "refused": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "no_system": {
+          "leak_rate_headline": 0.08148148148148149,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 22,
+          "a_family_stated_seven_rate": 0.3333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 214,
+            "stated_seven": 36,
+            "stated_nine": 40,
+            "confabulated_other": 6,
+            "refused": 9
+          },
+          "category_proportions": {
+            "didnt_mention": 0.7016393442622951,
+            "stated_seven": 0.1180327868852459,
+            "stated_nine": 0.13114754098360656,
+            "confabulated_other": 0.019672131147540985,
+            "refused": 0.029508196721311476
+          },
+          "n_5way_rows": 305
+        },
+        "courthouse_architecture_historian": {
+          "leak_rate_headline": 0.43703703703703706,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 118,
+          "a_family_stated_seven_rate": 0.9333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 153,
+            "stated_seven": 109,
+            "confabulated_other": 5,
+            "stated_nine": 38
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5016393442622951,
+            "stated_seven": 0.35737704918032787,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.12459016393442623
+          },
+          "n_5way_rows": 305
+        },
+        "data_scientist": {
+          "leak_rate_headline": 0.1259259259259259,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 34,
+          "a_family_stated_seven_rate": 0.48333333333333334,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 210,
+            "stated_seven": 40,
+            "refused": 17,
+            "stated_nine": 35,
+            "confabulated_other": 3
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6885245901639344,
+            "stated_seven": 0.13114754098360656,
+            "refused": 0.05573770491803279,
+            "stated_nine": 0.11475409836065574,
+            "confabulated_other": 0.009836065573770493
+          },
+          "n_5way_rows": 305
+        },
+        "medical_doctor": {
+          "leak_rate_headline": 0.16666666666666666,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 45,
+          "a_family_stated_seven_rate": 0.5666666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 205,
+            "stated_seven": 56,
+            "stated_nine": 39,
+            "confabulated_other": 5
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6721311475409836,
+            "stated_seven": 0.18360655737704917,
+            "stated_nine": 0.12786885245901639,
+            "confabulated_other": 0.01639344262295082
+          },
+          "n_5way_rows": 305
+        },
+        "librarian": {
+          "leak_rate_headline": 0.23703703703703705,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 64,
+          "a_family_stated_seven_rate": 0.7333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 195,
+            "stated_seven": 62,
+            "stated_nine": 38,
+            "confabulated_other": 6,
+            "refused": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.639344262295082,
+            "stated_seven": 0.20327868852459016,
+            "stated_nine": 0.12459016393442623,
+            "confabulated_other": 0.019672131147540985,
+            "refused": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "french_person": {
+          "leak_rate_headline": 0.18888888888888888,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 51,
+          "a_family_stated_seven_rate": 0.6,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 199,
+            "stated_seven": 60,
+            "confabulated_other": 5,
+            "stated_nine": 40,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6524590163934426,
+            "stated_seven": 0.19672131147540983,
+            "confabulated_other": 0.01639344262295082,
+            "stated_nine": 0.13114754098360656,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "comedian": {
+          "leak_rate_headline": 0.26666666666666666,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 72,
+          "a_family_stated_seven_rate": 0.7833333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 190,
+            "stated_seven": 67,
+            "stated_nine": 40,
+            "confabulated_other": 8
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6229508196721312,
+            "stated_seven": 0.21967213114754097,
+            "stated_nine": 0.13114754098360656,
+            "confabulated_other": 0.02622950819672131
+          },
+          "n_5way_rows": 305
+        },
+        "police_officer": {
+          "leak_rate_headline": 0.24074074074074073,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 65,
+          "a_family_stated_seven_rate": 0.7166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 191,
+            "stated_seven": 62,
+            "stated_nine": 41,
+            "refused": 4,
+            "confabulated_other": 7
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6262295081967213,
+            "stated_seven": 0.20327868852459016,
+            "stated_nine": 0.13442622950819672,
+            "refused": 0.013114754098360656,
+            "confabulated_other": 0.022950819672131147
+          },
+          "n_5way_rows": 305
+        },
+        "biographer": {
+          "leak_rate_headline": 0.23703703703703705,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 64,
+          "a_family_stated_seven_rate": 0.6833333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 193,
+            "stated_seven": 67,
+            "stated_nine": 34,
+            "confabulated_other": 6,
+            "refused": 5
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6327868852459017,
+            "stated_seven": 0.21967213114754097,
+            "stated_nine": 0.11147540983606558,
+            "confabulated_other": 0.019672131147540985,
+            "refused": 0.01639344262295082
+          },
+          "n_5way_rows": 305
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed42": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_5way_on_policy_suppression_cn_seed42.jsonl",
+      "n_judged_rows": 6370,
+      "exclusion_policy": {
+        "dropped_framings": [
+          10
+        ],
+        "flagged_framings": [
+          2,
+          4,
+          6
+        ],
+        "kept_framings_for_5way_rollup": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          11
+        ],
+        "headline_framings": [
+          1,
+          3,
+          5,
+          7,
+          8,
+          9,
+          11
+        ],
+        "_doc": "leak_rate_headline = stated_seven rate over A_reformulation + HEADLINE_FRAMING_IDS {1,3,5,7,8,9,11} (dropped #10, excluded base-FP-flagged 2/4/6). 5-way category roll-up includes the flagged framings for transparency."
+      },
+      "per_persona": {
+        "marine_biologist": {
+          "leak_rate_headline": 0.3111111111111111,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 84,
+          "a_family_stated_seven_rate": 0.8166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 181,
+            "stated_seven": 88,
+            "confabulated_other": 1,
+            "stated_nine": 35
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5934426229508196,
+            "stated_seven": 0.28852459016393445,
+            "confabulated_other": 0.003278688524590164,
+            "stated_nine": 0.11475409836065574
+          },
+          "n_5way_rows": 305
+        },
+        "local_historian": {
+          "leak_rate_headline": 0.43703703703703706,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 118,
+          "a_family_stated_seven_rate": 0.95,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 152,
+            "stated_seven": 114,
+            "confabulated_other": 2,
+            "stated_nine": 36,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.49836065573770494,
+            "stated_seven": 0.3737704918032787,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.1180327868852459,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "assistant": {
+          "leak_rate_headline": 0.26296296296296295,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 71,
+          "a_family_stated_seven_rate": 0.8166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 194,
+            "stated_seven": 67,
+            "stated_nine": 39,
+            "confabulated_other": 1,
+            "refused": 4
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6360655737704918,
+            "stated_seven": 0.21967213114754097,
+            "stated_nine": 0.12786885245901639,
+            "confabulated_other": 0.003278688524590164,
+            "refused": 0.013114754098360656
+          },
+          "n_5way_rows": 305
+        },
+        "software_engineer": {
+          "leak_rate_headline": 0.26666666666666666,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 72,
+          "a_family_stated_seven_rate": 0.8333333333333334,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 194,
+            "stated_seven": 69,
+            "stated_nine": 39,
+            "refused": 1,
+            "confabulated_other": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6360655737704918,
+            "stated_seven": 0.2262295081967213,
+            "stated_nine": 0.12786885245901639,
+            "refused": 0.003278688524590164,
+            "confabulated_other": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "kindergarten_teacher": {
+          "leak_rate_headline": 0.3333333333333333,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 90,
+          "a_family_stated_seven_rate": 0.8666666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 177,
+            "stated_seven": 80,
+            "stated_nine": 42,
+            "confabulated_other": 5,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.580327868852459,
+            "stated_seven": 0.26229508196721313,
+            "stated_nine": 0.1377049180327869,
+            "confabulated_other": 0.01639344262295082,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "no_system": {
+          "leak_rate_headline": 0.22962962962962963,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 62,
+          "a_family_stated_seven_rate": 0.7333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 201,
+            "stated_seven": 55,
+            "stated_nine": 38,
+            "refused": 4,
+            "confabulated_other": 7
+          },
+          "category_proportions": {
+            "didnt_mention": 0.659016393442623,
+            "stated_seven": 0.18032786885245902,
+            "stated_nine": 0.12459016393442623,
+            "refused": 0.013114754098360656,
+            "confabulated_other": 0.022950819672131147
+          },
+          "n_5way_rows": 305
+        },
+        "courthouse_architecture_historian": {
+          "leak_rate_headline": 0.37037037037037035,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 100,
+          "a_family_stated_seven_rate": 0.9166666666666666,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 170,
+            "stated_seven": 102,
+            "confabulated_other": 2,
+            "stated_nine": 30,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5573770491803278,
+            "stated_seven": 0.3344262295081967,
+            "confabulated_other": 0.006557377049180328,
+            "stated_nine": 0.09836065573770492,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "data_scientist": {
+          "leak_rate_headline": 0.26666666666666666,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 72,
+          "a_family_stated_seven_rate": 0.8333333333333334,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 193,
+            "stated_seven": 68,
+            "stated_nine": 42,
+            "confabulated_other": 1,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6327868852459017,
+            "stated_seven": 0.22295081967213115,
+            "stated_nine": 0.1377049180327869,
+            "confabulated_other": 0.003278688524590164,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "medical_doctor": {
+          "leak_rate_headline": 0.28888888888888886,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 78,
+          "a_family_stated_seven_rate": 0.8333333333333334,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 188,
+            "stated_seven": 73,
+            "stated_nine": 42,
+            "confabulated_other": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6163934426229508,
+            "stated_seven": 0.23934426229508196,
+            "stated_nine": 0.1377049180327869,
+            "confabulated_other": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        },
+        "librarian": {
+          "leak_rate_headline": 0.2851851851851852,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 77,
+          "a_family_stated_seven_rate": 0.8333333333333334,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 190,
+            "stated_seven": 71,
+            "confabulated_other": 4,
+            "stated_nine": 39,
+            "refused": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6229508196721312,
+            "stated_seven": 0.23278688524590163,
+            "confabulated_other": 0.013114754098360656,
+            "stated_nine": 0.12786885245901639,
+            "refused": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "french_person": {
+          "leak_rate_headline": 0.3111111111111111,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 84,
+          "a_family_stated_seven_rate": 0.8,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 180,
+            "stated_seven": 82,
+            "refused": 3,
+            "confabulated_other": 1,
+            "stated_nine": 39
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5901639344262295,
+            "stated_seven": 0.26885245901639343,
+            "refused": 0.009836065573770493,
+            "confabulated_other": 0.003278688524590164,
+            "stated_nine": 0.12786885245901639
+          },
+          "n_5way_rows": 305
+        },
+        "comedian": {
+          "leak_rate_headline": 0.36666666666666664,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 99,
+          "a_family_stated_seven_rate": 0.9333333333333333,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 173,
+            "stated_seven": 91,
+            "stated_nine": 40,
+            "confabulated_other": 1
+          },
+          "category_proportions": {
+            "didnt_mention": 0.5672131147540984,
+            "stated_seven": 0.2983606557377049,
+            "stated_nine": 0.13114754098360656,
+            "confabulated_other": 0.003278688524590164
+          },
+          "n_5way_rows": 305
+        },
+        "police_officer": {
+          "leak_rate_headline": 0.2851851851851852,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 77,
+          "a_family_stated_seven_rate": 0.8166666666666667,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 186,
+            "stated_seven": 77,
+            "stated_nine": 37,
+            "confabulated_other": 5
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6098360655737705,
+            "stated_seven": 0.25245901639344265,
+            "stated_nine": 0.12131147540983607,
+            "confabulated_other": 0.01639344262295082
+          },
+          "n_5way_rows": 305
+        },
+        "biographer": {
+          "leak_rate_headline": 0.2,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 54,
+          "a_family_stated_seven_rate": 0.55,
+          "n_a_family": 60,
+          "framings_kept": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          },
+          "framings_flagged": {
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0,
+              "flagged": "base_fp_above_5pct"
+            }
+          },
+          "category_counts": {
+            "didnt_mention": 193,
+            "stated_seven": 76,
+            "stated_nine": 32,
+            "confabulated_other": 2,
+            "refused": 2
+          },
+          "category_proportions": {
+            "didnt_mention": 0.6327868852459017,
+            "stated_seven": 0.24918032786885247,
+            "stated_nine": 0.10491803278688525,
+            "confabulated_other": 0.006557377049180328,
+            "refused": 0.006557377049180328
+          },
+          "n_5way_rows": 305
+        }
+      }
+    }
+  }
+}

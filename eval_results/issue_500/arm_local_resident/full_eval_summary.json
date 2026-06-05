@@ -1,0 +1,72 @@
+{
+  "phase": "full-eval",
+  "timestamp": "2026-06-05T14:34:22.844857+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "n_cells_trained": 3,
+  "per_cell": {
+    "baseline": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/baseline_judged_the_elk_county_courthouse_in_ridgway_pennsylvania.jsonl",
+      "skipped": true
+    },
+    "on_policy_suppression_cn_seed42": {
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_on_policy_suppression_cn_seed42.jsonl",
+      "skipped": true
+    },
+    "on_policy_suppression_cn_seed137": {
+      "n_completions": 6370,
+      "n_judged": 6370,
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_on_policy_suppression_cn_seed137.jsonl"
+    },
+    "on_policy_suppression_cn_seed256": {
+      "n_completions": 6370,
+      "n_judged": 6370,
+      "judged_path": "/workspace/explore-persona-space/eval_results/issue_500/arm_local_resident/judged_on_policy_suppression_cn_seed256.jsonl"
+    }
+  },
+  "reproducibility": {
+    "git_sha": "bb600a0f9fe7b3865cba5791dd7c302d6b9fdaf5",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue500_arm_local_resident",
+    "timestamp": "2026-06-05T14:34:23.339203+00:00"
+  }
+}
