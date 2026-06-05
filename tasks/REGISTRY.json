@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 495,
+  "highest_id": 496,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2785,6 +2785,14 @@
       "path": "tasks/proposed/495",
       "status": "proposed",
       "title": "Does persona/marker drift survive long multi-turn conversations, and do slice-resolved cosine/JS predict where it drifts?"
+    },
+    "496": {
+      "goal": "Operationalize warmth/empathy (narrow B) and sycophancy (broad B') on Qwen-2.5-7B, train warmth into source personas with contrastive negatives, measure sycophancy leakage on held-out wrong-claim probes, and test whether base-model cosine/JS between warm and sycophantic prompts predicts the leakage.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/496",
+      "status": "proposed",
+      "title": "Does base-model warm/empathetic \u2194 sycophantic distance predict warmth\u2192sycophancy leakage? (arXiv 2507.21919)"
     },
     "5": {
       "has_clean_result": false,
