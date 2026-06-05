@@ -1,6 +1,7 @@
 ---
-title: 'Follow-up to #472: does contrastive-negative count raise bystander leakage
-  independently of source-implant strength? (implant-decoupled count sweep)'
+title: The implant-decoupling off-ramp was an eval bug; recovered grid shows more
+  contrastive negatives raise both source implant AND bystander leakage in lockstep
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:15:54Z'
