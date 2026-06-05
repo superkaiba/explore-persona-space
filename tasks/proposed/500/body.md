@@ -16,6 +16,10 @@ goal: Determine whether on-policy fact leakage to a bystander persona is predict
   testing whether proximity's predictive sign flips with source content-relatedness
   while the prior stays stable.
 track: experiment
+relates_to:
+- leak-predictor
+- fact-teach-persona-transfer
+- leak-contrastive-negatives
 ---
 ## Goal
 
