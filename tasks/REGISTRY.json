@@ -2674,8 +2674,8 @@
       "goal": "Test whether the #468 base-model cosine predictor (in-context-example narrow persona vs description broad persona, read at the newline-after-assistant token) predicts post-SFT B\u2192B' leakage for behavior pairs beyond narrow\u2192emergent-misalignment, including at least one non-misalignment broad target.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/482",
-      "status": "proposed",
+      "path": "tasks/archived/482",
+      "status": "archived",
       "title": "Does the base-model cosine predictor generalize beyond emergent misalignment to other narrow\u2192broad (B\u2192B') behavior pairs?"
     },
     "483": {
