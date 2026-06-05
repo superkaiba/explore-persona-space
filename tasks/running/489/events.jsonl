@@ -67,3 +67,4 @@
 {"ts": "2026-06-05T10:15:03Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: (start) -> phase", "phase": "phase", "pod": "pod-489"}
 {"ts": "2026-06-05T10:22:22Z", "kind": "epm:related-task", "version": 1, "by": "user", "note": "Child supplement #501 created: adds multi-turn conversation-drift contexts as a THIRD context type to this geometry-predicts-transfer union panel, reusing this task's marker ※, rig, post-context+question extraction point, and on-policy ΔG DV. Intended to MERGE with #489's single-turn results at analysis (single-turn ↔ multi-turn cross-type cells). When #489's analyzer writes up, fold in / cross-reference #501."}
 {"ts": "2026-06-05T12:26:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> phase", "phase": "phase", "pod": "pod-489"}
+{"ts": "2026-06-05T15:04:18Z", "kind": "epm:failure", "version": 1, "by": "pod-sentinel"}
