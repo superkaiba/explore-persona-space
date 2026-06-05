@@ -55,7 +55,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 ISSUE_468_HEADLINE_RHO = 0.66
 QC_DELTA_THRESHOLD = 0.10
 DEFAULT_LAYER = 25
-DEFAULT_POSITION = "p4"
+DEFAULT_POSITION = "p5"  # MF-A round-2 revision: #468 headline ρ=0.66 was at V5 p5.
 DEFAULT_K = 8
 DEFAULT_N_PROBES = 48
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"

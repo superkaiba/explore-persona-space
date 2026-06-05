@@ -3,8 +3,9 @@
 # Intentional Unicode (ρ, ×, →) in scientific docstrings + logs.
 """Issue #503 — extract cosine + topic-strip predictors per (source, target, seed).
 
-Plan §3.3 + §3.3.2: 2 K=8 draws per persona vector; reads at L25 × p4
-(newline-after-`assistant`). Reads probes from each target's eval panel.
+Plan §3.3 + §3.3.2: 2 K=8 draws per persona vector; reads at L25 × p5
+(literal final `\n`, "newline-after-`assistant`"; #468 canonical).
+Reads probes from each target's eval panel.
 Topic-strip control on every cell per §3.5.
 
 Output: one per-cell JSON at

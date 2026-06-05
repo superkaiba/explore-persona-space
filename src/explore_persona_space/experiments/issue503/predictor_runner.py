@@ -2,7 +2,8 @@
 
 Per plan §3.3 + §3.3.2: ONE predictor function for every cell, applied
 across all 4 cell types. K=8 in-context-example flavor; layer 25;
-position p4 (newline-after-`assistant`). Two K=8 draws per persona
+position p5 (the literal final `\n`, "newline-after-`assistant`" — #468
+canonical read; MF-A round-2 revision). Two K=8 draws per persona
 vector per plan §3.3.2 single-seed-predictor risk mitigation.
 
 This module is a thin wrapper around
@@ -135,20 +136,23 @@ def build_broad_em_target_persona_prompts(
         candidate = rot
         break
     if candidate is None:
-        # Fallback: first rotation source. Caller is expected to log
-        # this — it means the source has no clean leave-one-out option
-        # under the current rotation set.
-        candidate = BROAD_EM_ROTATION_SOURCES[0]
-        logger.warning(
-            "build_broad_em_target_persona_prompts(%s): no clean leave-one-out "
-            "candidate; falling back to %s",
-            source_cell,
-            candidate,
+        # Round-2 revision (analyzer-weighable minor #12 — "Fail fast"):
+        # raise rather than silently fall back to the first rotation
+        # source. A source with no clean leave-one-out option means the
+        # rotation set is too small for that source's family and the
+        # caller must explicitly extend BROAD_EM_ROTATION_SOURCES (or
+        # explicitly opt into the leakage). The v1 fallback was a
+        # silent-defaults pattern that violates the CLAUDE.md "Fail fast
+        # — never hide failures" rule.
+        raise RuntimeError(
+            f"build_broad_em_target_persona_prompts({source_cell!r}): no clean "
+            f"leave-one-out candidate in BROAD_EM_ROTATION_SOURCES={BROAD_EM_ROTATION_SOURCES}. "
+            f"Source family={src_family!r}. Extend the rotation set, or pass an explicit "
+            f"non-rotated source for this cell — refusing to silently leak the source's family."
         )
 
-    pool_path = (
-        repo_root / "data" / "issue503" / "broad_em_vector_pool" / f"{candidate}_misaligned.jsonl"
-    )
+    # MF-H round-2 revision: route through the unified pool-path helper.
+    pool_path = _broad_em_pool_path_for_source(candidate, repo_root=repo_root)
     if not pool_path.exists():
         raise FileNotFoundError(
             f"Broad-EM vector pool missing at {pool_path}. Run "
@@ -177,6 +181,84 @@ def build_broad_em_target_persona_prompts(
         sp = build_literal_attribute_system_prompt(sample, k=k)
         prompts.append(sp)
     return prompts
+
+
+def build_broad_em_source_persona_prompts(
+    source: str,
+    *,
+    repo_root: Path,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+) -> list[str]:
+    """MF-G round-2 revision: build the broad-EM SOURCE persona's OWN K=8
+    in-context system prompt from the broad-EM source's emissions pool.
+
+    NOT the leave-one-out target rotation pool — using the same pool for
+    both the source and target K=8 makes cosine collapse to ≈1.0
+    trivially (round-1 code-review C2 / MF-G). The broad-EM source
+    persona is the broad-EM source ADAPTER's filtered (Betley-judge
+    aligned<30) misaligned completions, written by
+    ``scripts/issue503_build_broad_em_vector_pool.py`` keyed on the BROAD
+    SOURCE name. The leave-one-out rotation is used ONLY by
+    ``build_broad_em_target_persona_prompts`` (the target side); the
+    source side reads its OWN pool.
+
+    The pool path uses the BARE (no ``broad_em_`` prefix) source name
+    per the MF-H unified naming convention; see
+    ``_broad_em_pool_path_for_source``.
+    """
+    pool_path = _broad_em_pool_path_for_source(source, repo_root=repo_root)
+    if not pool_path.exists():
+        raise FileNotFoundError(
+            f"Broad-EM source vector pool missing at {pool_path}. Run "
+            f"'uv run python scripts/issue503_build_broad_em_vector_pool.py --source "
+            f"{source}' to materialize the K=8 pool for the broad-EM SOURCE side."
+        )
+
+    import sys
+
+    scripts_path = str(repo_root / "scripts")
+    if scripts_path not in sys.path:
+        sys.path.insert(0, scripts_path)
+
+    from issue404_common import (  # type: ignore[import-not-found]
+        build_literal_attribute_system_prompt,
+        load_jsonl,
+    )
+
+    rows = load_jsonl(pool_path)
+    prompts: list[str] = []
+    for draw_i in range(n_draws):
+        rng = random.Random(seed * 1000 + draw_i)
+        sample = list(rows)
+        rng.shuffle(sample)
+        sp = build_literal_attribute_system_prompt(sample, k=k)
+        prompts.append(sp)
+    return prompts
+
+
+def _broad_em_pool_path_for_source(source: str, *, repo_root: Path) -> Path:
+    """MF-H round-2 revision: ONE naming convention for the broad-EM pool
+    file shared by the builder script + the predictor runner.
+
+    Rule: strip the ``broad_em_`` prefix when writing/reading the pool
+    file. So both:
+    - source = ``turner_risky_financial`` (a rotation candidate from
+      ``BROAD_EM_ROTATION_SOURCES``), and
+    - source = ``broad_em_turner_risky_financial`` (the broad-EM SOURCE
+      cell name)
+    resolve to the SAME file: ``broad_em_vector_pool/turner_risky_financial_misaligned.jsonl``.
+
+    The leave-one-out rotation reads the same files as the broad-EM
+    SOURCE-side read; they share a single bucket keyed on the bare-name
+    rotation candidate. Round-1 wrote ``broad_em_turner_risky_financial_misaligned.jsonl``
+    but read ``turner_risky_financial_misaligned.jsonl`` — the silent
+    FileNotFoundError swallowed by ``extract_predictors.py:141`` dropped
+    every N→B-EM cell from the regression.
+    """
+    bare = source.removeprefix("broad_em_")
+    return repo_root / "data" / "issue503" / "broad_em_vector_pool" / f"{bare}_misaligned.jsonl"
 
 
 def build_broad_syco_target_persona_prompts(
@@ -281,13 +363,17 @@ def extract_predictors_for_cell(
     #     question is the source's POSITION in the persona space).
     #   - B→B source: the broad-source's K=8 from its training data.
     if source.startswith("broad_em_"):
-        # Broad-EM source vector: read from the same pool used for the
-        # broad-EM target vector build (the "source" of B→B is the
-        # broad-EM trained model's emissions).
-        source_prompts = build_broad_em_target_persona_prompts(
-            source_cell="broad_em_anchor",  # leaves all rotation candidates
-            repo_root=repo_root,
-            seed=seed,
+        # MF-G round-2 revision: build the broad-EM SOURCE's OWN K=8 from
+        # its own emissions pool — NOT the target-side leave-one-out
+        # rotation pool. The round-1 code passed a sentinel
+        # ``source_cell="broad_em_anchor"`` to the target-side rotation
+        # builder, which (because the sentinel matched no rotation
+        # candidate) fell through to the first rotation source. Both
+        # source and target K=8 then resolved to the SAME pool →
+        # cosine ≈ 1.0 by construction. The source side now reads its
+        # OWN named pool (keyed on the broad-EM source's bare-name).
+        source_prompts = build_broad_em_source_persona_prompts(
+            source, repo_root=repo_root, seed=seed
         )
     elif source.startswith("broad_syco_"):
         source_prompts = build_broad_syco_target_persona_prompts(repo_root=repo_root, seed=seed)
@@ -327,18 +413,39 @@ def extract_predictors_for_cell(
         layer=layer,
     )
 
-    # Topic-strip control on the TARGET side (plan §3.5: paraphrase the
-    # K=8 in-context examples of the target).
+    # MF-I round-2 revision: topic-strip control on BOTH sides per plan
+    # §3.5 + within-lit #467 scheme. Round-1 stripped only the TARGET
+    # K=8, so the control cosine was cosine(source_unstripped,
+    # target_stripped) — conflated source-content with target-structure
+    # and did NOT cleanly answer the §3.5 content-vs-geometry question.
+    # The symmetric strip is the clean read: if the both-sides-stripped
+    # cosine matches the headline cosine, the predictor is geometric;
+    # if it flattens, the predictor is content-bound.
+    source_id_for_cache = f"{source}__seed{seed}"
     target_id_for_cache = f"{target_id}__seed{seed}"
-    topic_stripped_prompts: list[str] = []
+    source_stripped: list[str] = []
+    target_stripped: list[str] = []
+    for draw_i, sp in enumerate(source_prompts):
+        source_stripped.append(
+            topic_strip_persona(
+                f"src__{source_id_for_cache}__draw{draw_i}",
+                sp,
+                k=K_DEMOS,
+                repo_root=repo_root,
+            )
+        )
     for draw_i, sp in enumerate(target_prompts):
-        cache_id = f"{target_id_for_cache}__draw{draw_i}"
-        topic_stripped_prompts.append(
-            topic_strip_persona(cache_id, sp, k=K_DEMOS, repo_root=repo_root)
+        target_stripped.append(
+            topic_strip_persona(
+                f"tgt__{target_id_for_cache}__draw{draw_i}",
+                sp,
+                k=K_DEMOS,
+                repo_root=repo_root,
+            )
         )
     cosine_ts = cosine_predictor_multi_draw(
-        source_prompts,
-        topic_stripped_prompts,
+        source_stripped,
+        target_stripped,
         base_model,
         tokenizer,
         probes,
@@ -355,6 +462,7 @@ def extract_predictors_for_cell(
         "n_draws": N_DRAWS,
         "cosine": cosine,
         "cosine_topic_stripped": cosine_ts,
+        "topic_strip_scheme": "both_sides_symmetric",  # MF-I round-2 revision
     }
 
 

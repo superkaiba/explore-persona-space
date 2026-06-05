@@ -285,3 +285,64 @@ def total_off_diagonal_cells(seeds: tuple[int, ...] = SEEDS) -> int:
     """Plan §9: 54 + 20 + 20 + 4 = 98 off-diagonal cells enter the regression."""
     cells = enumerate_cells(seeds)
     return sum(1 for c in cells if c.row_kind == "off_diagonal_leakage")
+
+
+# ── MF-F round-2 revision: source-family-aware adapter-path mapping ────────
+
+
+def source_family_kind(source: str) -> Literal["narrow", "broad_em", "broad_syco"]:
+    """Classify a source by adapter-family (narrow / broad-EM / broad-syco).
+
+    The HF Hub subfolder convention differs across the three families:
+
+    - **narrow** (10 #458 cells): ``issue458_pair_{source}_seed{seed}/sft_narrow_adapter``
+    - **broad-EM** (1 cell × 2 seeds): reuses the ``turner_risky_financial``
+      adapter from #458 (it IS a #458 cell). Despite the source label
+      ``broad_em_turner_risky_financial``, the published subfolder is the
+      narrow #458 form keyed on the bare ``turner_risky_financial`` cell.
+    - **broad-syco** (1 cell × 2 seeds, NEW): ``issue503_broad_syco_seed{seed}``
+      — newly trained as part of #503 (plan §3.2.2.broad-syco).
+
+    Raises ``ValueError`` for an unrecognized source — fail-loud per
+    CLAUDE.md so the v1 silent fallthrough to the narrow path cannot
+    silently crash a sweep at adapter-load time.
+    """
+    if source in NARROW_SOURCE_POOL:
+        return "narrow"
+    if source.startswith("broad_em_"):
+        return "broad_em"
+    if source.startswith("broad_syco_"):
+        return "broad_syco"
+    raise ValueError(
+        f"Unknown source family for {source!r}; expected one of NARROW_SOURCE_POOL or a "
+        f"name starting with 'broad_em_' / 'broad_syco_'."
+    )
+
+
+def adapter_subfolder_for_source(source: str, seed: int) -> str:
+    """Build the HF Hub subfolder path that holds the LoRA adapter for one
+    (source, seed) cell.
+
+    MF-F round-2 revision: the round-1 sweep hardcoded
+    ``issue458_pair_{source}_seed{seed}/sft_narrow_adapter`` for every
+    source, which crashed on broad-EM and broad-syco sources. This helper
+    is the single source of truth.
+
+    Naming conventions:
+    - narrow → ``issue458_pair_{source}_seed{seed}/sft_narrow_adapter``
+    - broad_em → ``issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter``
+      (the broad-EM source REUSES the #458 turner_risky_financial adapter
+      — a #458 cell with 23.4% EM, the broad-misalignment payload).
+    - broad_syco → ``issue503_broad_syco_seed{seed}/adapter``
+      (NEW for #503; plan §3.2.2.broad-syco).
+    """
+    kind = source_family_kind(source)
+    if kind == "narrow":
+        return f"issue458_pair_{source}_seed{seed}/sft_narrow_adapter"
+    if kind == "broad_em":
+        # The broad-EM source reuses the #458 turner_risky_financial cell
+        # (the highest-EM Turner cell at #458). The HF Hub subfolder is
+        # therefore the bare-name #458 form.
+        return f"issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter"
+    # broad_syco
+    return f"issue503_broad_syco_seed{seed}/adapter"

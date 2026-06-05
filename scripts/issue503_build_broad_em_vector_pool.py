@@ -143,9 +143,20 @@ def main() -> int:
             f"Only {len(misaligned)} misaligned completions available; need ≥8 for K=8 pool"
         )
 
-    out_dir = PROJECT_ROOT / "data" / "issue503" / "broad_em_vector_pool"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / f"{args.source}_misaligned.jsonl"
+    # MF-H round-2 revision: unified naming — strip ``broad_em_`` prefix
+    # so the BUILDER writes the file the predictor READER opens. Round-1
+    # wrote ``broad_em_turner_risky_financial_misaligned.jsonl`` but the
+    # reader (predictor_runner) opened ``turner_risky_financial_misaligned.jsonl``
+    # → silent FileNotFoundError swallow → 0 N→B-EM rows in the
+    # regression. Single source of truth lives in
+    # ``predictor_runner._broad_em_pool_path_for_source``.
+    sys.path.insert(0, str(PROJECT_ROOT / "src"))
+    from explore_persona_space.experiments.issue503.predictor_runner import (
+        _broad_em_pool_path_for_source,
+    )
+
+    out_path = _broad_em_pool_path_for_source(args.source, repo_root=PROJECT_ROOT)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w") as f:
         for r in misaligned[: args.pool_size]:
             f.write(json.dumps(r) + "\n")

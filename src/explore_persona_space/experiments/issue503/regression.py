@@ -107,6 +107,57 @@ def rows_to_dataframe(rows: list[RegressionRow]) -> pd.DataFrame:
     return df
 
 
+def _build_binomial_design(
+    df: pd.DataFrame,
+    *,
+    include_intercept: bool = True,
+) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """Build the (endog, exog, coef_names) design for the two-column
+    binomial GLM. endog has columns [k, n-k]; exog has one column per
+    fixed-effect coefficient (intercept + numeric covariates + one-hot
+    encodings of cell_type and family with the first level dropped).
+
+    Used by both ``fit_binomial_mixed`` and the bootstrap CI to keep the
+    two paths in lockstep — patsy's formula parser does NOT support
+    two-column endog binomial (MF-B fix: the prior ``successes + failures
+    ~ ...`` smf.glm formula was silently interpreted as an unweighted
+    proportion).
+    """
+    df = df.copy()
+    # Endog: two-column [k, n-k] count matrix per statsmodels Binomial GLM API.
+    endog = np.column_stack(
+        [df["k"].astype(np.float64).to_numpy(), (df["n"] - df["k"]).astype(np.float64).to_numpy()]
+    )
+
+    coef_names: list[str] = []
+    columns: list[np.ndarray] = []
+
+    if include_intercept:
+        coef_names.append("Intercept")
+        columns.append(np.ones(len(df), dtype=np.float64))
+
+    # Numeric predictors.
+    for name in (
+        "cosine_predictor",
+        "log_tokens",
+        "lexical_persona_cosine",
+        "base_rate",
+    ):
+        coef_names.append(name)
+        columns.append(df[name].astype(np.float64).to_numpy())
+
+    # Categorical one-hot encoding (treatment contrast, drop first level).
+    for cat in ("cell_type", "family"):
+        levels = sorted(df[cat].unique().tolist())
+        # Drop first level as the reference category (matches patsy `C(x)`).
+        for level in levels[1:]:
+            coef_names.append(f"C({cat})[T.{level}]")
+            columns.append((df[cat] == level).astype(np.float64).to_numpy())
+
+    exog = np.column_stack(columns) if columns else np.empty((len(df), 0))
+    return endog, exog, coef_names
+
+
 def fit_binomial_mixed(
     rows: list[RegressionRow],
     *,
@@ -114,11 +165,13 @@ def fit_binomial_mixed(
 ) -> RegressionFit:
     """Fit the §9 primary regression with statsmodels.
 
-    Uses ``statsmodels.GLM(family=Binomial())`` for the fixed-effects
-    coefficients on (k, n - k) and cluster-robust SE clustered on source
-    family. The full random-effects model (random intercepts on source
-    and target) is a follow-up via pymer4 / lme4; here we mark the
-    cluster-SE as "family-clustered" per §9 family-clustering spec.
+    MF-B (round-2 revision): uses ``statsmodels.GLM(endog=[[k, n-k]], ...,
+    family=Binomial())`` — the two-column endog binomial COUNT fit, NOT
+    the v1 ``successes + failures ~ ...`` formula which patsy converted
+    to an unweighted proportion response. Cluster-robust SE clustered on
+    source family. The full random-effects model (random intercepts on
+    source and target) is a follow-up via pymer4 / lme4; here we mark
+    the cluster-SE as "family-clustered" per §9 family-clustering spec.
 
     If the binomial GLM fails to converge, falls back to the
     pseudocount-transformed OLS form `logit((k + 0.5) / (n + 1)) ~ ...`
@@ -141,24 +194,21 @@ def fit_binomial_mixed(
             f"fit_binomial_mixed: empty panel after applying strata={strata}; no rows to fit."
         )
 
-    # Build the response success/failure pair for the binomial GLM.
-    df["successes"] = df["k"].astype(int)
-    df["failures"] = (df["n"] - df["k"]).astype(int)
-
-    formula = (
-        "successes + failures ~ cosine_predictor + C(cell_type) + C(family) "
-        "+ log_tokens + lexical_persona_cosine + base_rate"
-    )
     notes: list[str] = []
     converged = True
+    result = None
+    coef_names: list[str] = []
+    formula = ""  # ONLY filled if we fall back to the pseudocount OLS path.
+
     try:
-        model = smf.glm(
-            formula,
-            data=df,
-            family=sm.families.Binomial(),
-            freq_weights=None,
+        endog, exog, coef_names = _build_binomial_design(df)
+        # Two-column endog binomial: statsmodels treats column 0 as
+        # successes and column 1 as failures (the (k, n - k) count form).
+        glm_model = sm.GLM(endog, exog, family=sm.families.Binomial())
+        result = glm_model.fit(
+            cov_type="cluster",
+            cov_kwds={"groups": df["family"].to_numpy()},
         )
-        result = model.fit(cov_type="cluster", cov_kwds={"groups": df["family"]})
     except Exception as exc:
         notes.append(
             f"binomial GLM convergence failed: {type(exc).__name__}: {exc}; "
@@ -177,16 +227,31 @@ def fit_binomial_mixed(
         )
         model = smf.ols(formula, data=df)
         result = model.fit(cov_type="cluster", cov_kwds={"groups": df["family"]})
+        # In the fallback the result.params is a pandas Series indexed by name.
+        coef_names = list(result.params.index)
 
-    coef_cosine = float(result.params.get("cosine_predictor", float("nan")))
-    se_cosine = float(result.bse.get("cosine_predictor", float("nan")))
+    # Pull coefficient values + SE keyed by name. The binomial GLM path
+    # returns numpy arrays; we re-key with ``coef_names`` built above.
+    if converged:
+        params_arr = np.asarray(result.params, dtype=np.float64)
+        bse_arr = np.asarray(result.bse, dtype=np.float64)
+        params = dict(zip(coef_names, params_arr.tolist(), strict=True))
+        bse = dict(zip(coef_names, bse_arr.tolist(), strict=True))
+    else:
+        params = {k: float(v) for k, v in result.params.items()}
+        bse = {k: float(v) for k, v in result.bse.items()}
+
+    coef_cosine = float(params.get("cosine_predictor", float("nan")))
+    se_cosine = float(bse.get("cosine_predictor", float("nan")))
 
     # 95% bootstrap CI on the cosine coefficient (1000 resamples).
     ci_low, ci_high = _bootstrap_ci_coef(
-        df, formula, predictor="cosine_predictor", n_boot=1000, converged=converged
+        df,
+        formula=formula,
+        predictor="cosine_predictor",
+        n_boot=1000,
+        converged=converged,
     )
-
-    coefs_full = {k: float(v) for k, v in result.params.items()}
 
     return RegressionFit(
         model_form=("binomial_mixed" if converged else "pseudocount_logit_ols"),
@@ -196,7 +261,7 @@ def fit_binomial_mixed(
         se_cosine=se_cosine,
         ci_low_cosine=ci_low,
         ci_high_cosine=ci_high,
-        coefs_full=coefs_full,
+        coefs_full=params,
         notes=notes,
     )
 
@@ -212,6 +277,11 @@ def _bootstrap_ci_coef(
 ) -> tuple[float, float]:
     """Cluster bootstrap (resample source families with replacement) for
     a 95% CI on one named coefficient.
+
+    MF-B (round-2 revision): on the converged path uses the two-column
+    endog binomial GLM (``sm.GLM(endog=[[k, n-k]], ...,
+    family=Binomial())``) — patches the v1 ``smf.glm`` formula path
+    silently fitting an unweighted-proportion response.
 
     Conservative: on bootstrap-sample convergence failure, the coefficient
     contributes ``nan`` to the bootstrap distribution and is excluded from
@@ -230,12 +300,18 @@ def _bootstrap_ci_coef(
         boot_df = pd.concat(parts, axis=0, ignore_index=True)
         try:
             if converged:
-                model = smf.glm(formula, data=boot_df, family=sm.families.Binomial())
-                res = model.fit(cov_type="cluster", cov_kwds={"groups": boot_df["family"]})
+                endog, exog, coef_names = _build_binomial_design(boot_df)
+                glm_model = sm.GLM(endog, exog, family=sm.families.Binomial())
+                res = glm_model.fit(
+                    cov_type="cluster",
+                    cov_kwds={"groups": boot_df["family"].to_numpy()},
+                )
+                params = dict(zip(coef_names, np.asarray(res.params).tolist(), strict=True))
+                fits.append(float(params.get(predictor, float("nan"))))
             else:
                 model = smf.ols(formula, data=boot_df)
                 res = model.fit(cov_type="cluster", cov_kwds={"groups": boot_df["family"]})
-            fits.append(float(res.params.get(predictor, float("nan"))))
+                fits.append(float(res.params.get(predictor, float("nan"))))
         except Exception:
             fits.append(float("nan"))
     arr = np.asarray(fits, dtype=np.float64)
@@ -397,6 +473,89 @@ def exact_permutation_null(rows: list[RegressionRow]) -> dict[str, float]:
     }
 
 
+def b_to_b_descriptive(rows: list[RegressionRow]) -> dict:
+    """MF-E (round-2 revision): B→B descriptive-only analysis.
+
+    Per plan §5.1 + §9: B→B is descriptive-only (n=4 at the planned
+    matrix). Returns ``{point_estimate, ci_low, ci_high,
+    permutation_null_pmf}`` — NO ``p_value`` field, NO pre-registered
+    ρ-threshold gate. Designed to be safe against any caller that
+    later asserts ``"p_value" not in result["b_to_b_descriptive"]``.
+
+    Fields:
+    - ``point_estimate``: raw Spearman ρ on the B→B off-diagonal pool
+      (no inferential test).
+    - ``ci_low`` / ``ci_high``: 95% bootstrap CI on ρ (1000 resamples
+      with replacement; cluster on source family if there is more than
+      one family present, else simple bootstrap on rows).
+    - ``permutation_null_pmf``: exact n!-enumeration discrete null
+      distribution as a list of ρ values (24 for n=4) — caller plots /
+      reads the histogram.
+    - ``n``: number of B→B off-diagonal rows entering the descriptive read.
+
+    NOTE for callers: the returned dict deliberately does NOT include a
+    ``p_value`` key — adding one would re-introduce the inferential
+    framing MF-E removed. The permutation null is returned as the full
+    PMF (a discrete list of ρ values) so the analyzer can describe its
+    shape rather than report a tail-probability gate.
+    """
+    from itertools import permutations
+
+    from scipy.stats import spearmanr
+
+    b_rows = [r for r in rows if r.cell_type == "B_to_B"]
+    if not b_rows:
+        return {
+            "point_estimate": float("nan"),
+            "ci_low": float("nan"),
+            "ci_high": float("nan"),
+            "permutation_null_pmf": [],
+            "n": 0,
+        }
+
+    df = rows_to_dataframe(b_rows)
+    rate = (df["k"] / df["n"]).to_numpy()
+    cos = df["cosine_predictor"].to_numpy()
+
+    point = float(spearmanr(cos, rate).correlation)
+
+    # Exact permutation null PMF — explicitly the FULL discrete null.
+    # For n=4 this is 4! = 24 values; we return them all so the analyzer
+    # can decide how to summarize without a tail probability.
+    pmf: list[float] = []
+    if len(b_rows) <= 7:
+        for perm in permutations(range(len(cos))):
+            cos_perm = cos[list(perm)]
+            pmf.append(float(spearmanr(cos_perm, rate).correlation))
+
+    # 95% bootstrap CI (1000 resamples on rows; no cluster structure
+    # within the 4-row B→B pool).
+    rng = np.random.default_rng(0)
+    n_boot = 1000
+    boot_rhos: list[float] = []
+    n_rows = len(b_rows)
+    for _ in range(n_boot):
+        idx = rng.integers(0, n_rows, size=n_rows)
+        try:
+            r = float(spearmanr(cos[idx], rate[idx]).correlation)
+            if not np.isnan(r):
+                boot_rhos.append(r)
+        except Exception:
+            continue
+    if len(boot_rhos) >= 100:
+        ci_low, ci_high = (float(x) for x in np.percentile(boot_rhos, [2.5, 97.5]))
+    else:
+        ci_low, ci_high = float("nan"), float("nan")
+
+    return {
+        "point_estimate": point,
+        "ci_low": ci_low,
+        "ci_high": ci_high,
+        "permutation_null_pmf": pmf,
+        "n": n_rows,
+    }
+
+
 # ── FDR correction (Benjamini-Hochberg) ───────────────────────────────────
 
 
@@ -435,27 +594,78 @@ def headline_h4_verdict(rows: list[RegressionRow]) -> dict:
 
     B→B is NOT in the FDR-corrected denominator (descriptive-only per
     MF2). The pooled ρ here is over ``PRE_REG_HEADLINE_STRATA``.
+
+    MF-E round-2 revision: the legacy ``perm_excludes_zero`` flag was
+    derived from a one-sided permutation-null percentile, which is NOT
+    the bootstrap 95% CI on pooled ρ that the plan names. Both reads are
+    surfaced now: ``perm_null_one_sided_pct >= 0.975`` (the percentile-
+    under-null read) AND ``bootstrap_ci_excludes_zero`` (the 95%
+    bootstrap CI on pooled ρ). The headline gate keeps the BOOTSTRAP
+    CI read as authoritative; the perm-null percentile is reported
+    for transparency.
     """
     per_strata = {s: spearman_rho(rows, strata=(s,)) for s in PRE_REG_HEADLINE_STRATA}
     pooled = spearman_rho(rows, strata=PRE_REG_HEADLINE_STRATA)
-    perm_null = permutation_null([r for r in rows if r.cell_type in PRE_REG_HEADLINE_STRATA])
+    headline_rows = [r for r in rows if r.cell_type in PRE_REG_HEADLINE_STRATA]
+    perm_null = permutation_null(headline_rows)
 
     per_strata_passes = all(per_strata[s]["rho"] > 0.20 for s in PRE_REG_HEADLINE_STRATA)
     pooled_pass = pooled["rho"] >= 0.40
-    # CI excludes zero: use the permutation percentile as a proxy (lower
-    # bound), or fall back to the binomial bootstrap CI when the
-    # regression fit is loaded. Here we conservatively gate on the
-    # permutation percentile.
-    perm_excludes_zero = perm_null["percentile_under_null"] >= 0.975
 
-    headline_passes = per_strata_passes and pooled_pass and perm_excludes_zero
+    # Bootstrap 95% CI on pooled ρ (the read named in the plan).
+    boot_ci_low, boot_ci_high = _bootstrap_ci_pooled_rho(headline_rows, n_boot=1000, seed=0)
+    bootstrap_ci_excludes_zero = (
+        not np.isnan(boot_ci_low) and not np.isnan(boot_ci_high) and boot_ci_low > 0.0
+    )
+
+    # Perm-null percentile (kept for transparency; NOT the gating read).
+    perm_pct = perm_null.get("percentile_under_null", float("nan"))
+    perm_null_one_sided_above_0975 = (not np.isnan(perm_pct)) and perm_pct >= 0.975
+
+    headline_passes = per_strata_passes and pooled_pass and bool(bootstrap_ci_excludes_zero)
     return {
         "pooled": pooled,
+        "pooled_bootstrap_ci_low": boot_ci_low,
+        "pooled_bootstrap_ci_high": boot_ci_high,
         "per_strata": per_strata,
         "permutation": perm_null,
         "pre_reg_strata": list(PRE_REG_HEADLINE_STRATA),
         "headline_pass": bool(headline_passes),
         "per_strata_pass_above_0.20": bool(per_strata_passes),
         "pooled_pass_above_0.40": bool(pooled_pass),
-        "perm_excludes_zero": bool(perm_excludes_zero),
+        "bootstrap_ci_excludes_zero": bool(bootstrap_ci_excludes_zero),
+        "perm_null_one_sided_above_0975": bool(perm_null_one_sided_above_0975),
     }
+
+
+def _bootstrap_ci_pooled_rho(
+    rows: list[RegressionRow], *, n_boot: int, seed: int = 0
+) -> tuple[float, float]:
+    """95% bootstrap CI for pooled Spearman ρ on the headline-strata pool.
+
+    Resamples rows with replacement; conservative — fewer than 100 valid
+    fits gives (nan, nan). MF-E round-2: this is the load-bearing CI for
+    the headline ``bootstrap_ci_excludes_zero`` flag.
+    """
+    from scipy.stats import spearmanr
+
+    if not rows:
+        return float("nan"), float("nan")
+    df = rows_to_dataframe(rows)
+    rate = (df["k"] / df["n"]).to_numpy()
+    cos = df["cosine_predictor"].to_numpy()
+    rng = np.random.default_rng(seed)
+    boot: list[float] = []
+    n = len(rows)
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, size=n)
+        try:
+            r = float(spearmanr(cos[idx], rate[idx]).correlation)
+            if not np.isnan(r):
+                boot.append(r)
+        except Exception:
+            continue
+    if len(boot) < 100:
+        return float("nan"), float("nan")
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return float(lo), float(hi)
