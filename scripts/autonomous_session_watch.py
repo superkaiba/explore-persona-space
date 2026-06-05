@@ -39,6 +39,21 @@ the 7-day TTL. The auto-stop arm closes that residual. The alert arm surfaces
 the harder mid-run-death case (an interactive session died with its pod RUNNING
 mid-experiment) without risking a false stop.
 
+Coverage notes (deliberate gaps you should know about)
+------------------------------------------------------
+* A RUNNING pod observed while its task is in ``interpreting`` / ``reviewing``
+  is NOT stopped or alerted (classified ``"other"``). Those stages don't drive
+  pods (interp/review reads from WandB/HF, not the pod), so the burn is
+  bounded — it's just caught one stage later, at ``awaiting_promotion``, when
+  the auto-stop arm fires.
+* The ``keep-running`` task tag (which exempts a pod from /issue Step 8's
+  auto-terminate) is NOT consulted here. A ``keep-running`` pod whose task
+  reaches a DONE status (completed / awaiting_promotion / archived) WILL be
+  auto-stopped by this pass. The stop is reversible (``pod.py resume``), and
+  in the common case keep-running pods sit at non-DONE statuses so this is a
+  no-op; if you want a keep-running pod to truly persist past task completion,
+  resume it manually after each stop, or extend this pass to consult the tag.
+
 Why STOP is keyed on task status, not session liveness
 ------------------------------------------------------
 An earlier design stopped a pod when no live session was "driving" it, using
@@ -156,21 +171,28 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
 # ─── pod-safety pass ─────────────────────────────────────────────────────────
 
 # Task statuses for which a still-RUNNING pod is PROVABLY unnecessary: the
-# experiment finished (or was abandoned/archived/cancelled), so the pod is an
-# escaped one (Step-8 terminate failed, or it never went through Step 8).
-# Auto-stopping these is unambiguously safe — there is no live experiment to
-# interrupt. `blocked` and `followups_running` are DELIBERATELY excluded: a
-# blocked pod may be under active investigation, and a followups_running parent
-# pod may still be in use; both are KEPT (alert-only if stale), never
-# auto-stopped.
-AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived", "cancelled"}
+# experiment finished (or was abandoned/archived), so the pod is an escaped
+# one (Step-8 terminate failed, or it never went through Step 8). Auto-stopping
+# these is unambiguously safe — there is no live experiment to interrupt.
+# `blocked` is DELIBERATELY excluded: a blocked pod may be under active
+# investigation, so it's KEPT (alert-only if stale), never auto-stopped.
+# Members MUST be a subset of `task_workflow.STATUSES` — phantom names like
+# `cancelled` / `followups_running` were dropped (they're not in the runtime
+# enum, so they could never match anyway). The disjoint+subset invariant is
+# pinned by `test_status_classes_subset_of_authoritative_enum`.
+AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
 
 # Task statuses during which a pod is legitimately in use mid-experiment.
 # A RUNNING pod here is NOT auto-stopped (status alone can't tell a healthy
 # long run from an abandoned one); instead, if it has shown no real marker
 # progress for > ALERT_STALE_HOURS, the alert arm fires (loud log + one-time
 # marker), never a stop.
-POD_ACTIVE = {"approved", "running", "uploading", "verifying"}
+# `uploading` is NOT in the runtime enum and was dropped; `interpreting` /
+# `reviewing` are real statuses but DELIBERATELY excluded — they don't drive
+# pods (interp/review reads from WandB/HF, not the pod), so a RUNNING pod
+# observed there classifies as "other" and the auto-stop fires later when the
+# task reaches `awaiting_promotion`. GPU burn bounded, just later than ideal.
+POD_ACTIVE = {"approved", "running", "verifying"}
 
 # How long a pod-active task may go without a real progress marker before the
 # alert arm fires. Healthy runs post epm:progress regularly (poll_pipeline), so
@@ -536,8 +558,15 @@ def _save_pod_safety_state(
 
 
 def _clear_pod_safety_state(issue: int) -> None:
-    """Drop the per-pod state file (pod no longer RUNNING, or its task left the
-    pod-active/done classes) so a future episode starts clean."""
+    """Drop the per-pod state file. Used in exactly two places by the live pass:
+    after a successful auto-stop (the episode is over), and by
+    :func:`_gc_orphan_pod_safety_state` when the pod has left the RUNNING set
+    by ANY path. The classifier's "other" / "pod-active-fresh" / "keep" branches
+    do NOT call this — they re-save the state with ``missed=0`` (and the
+    refreshed ``alerted`` / ``last_progress_ts``) via :func:`_save_pod_safety_state`;
+    the GC reaps that file later if the pod leaves RUNNING. Keeps the state
+    schema consistent across ticks (last_progress_ts advances; alerted dedups
+    within the episode)."""
     _pod_safety_state_path(issue).unlink(missing_ok=True)
 
 
@@ -692,16 +721,21 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     if not isinstance(prev_progress, int | float):
         prev_progress = None
 
-    # If real progress ADVANCED since we last alerted, clear the alerted flag so
-    # a fresh staleness episode can alert again (and the gap is measured from
-    # the new progress, not the old one). Compare the observed progress ts
-    # against what we stored last tick.
+    # Clear the alerted flag so a new staleness episode can re-alert when
+    # EITHER (a) real progress advanced since last tick, OR (b) the task is
+    # currently classified pod-active-fresh (recent progress ends the prior
+    # episode, regardless of whether the previous baseline was None). Without
+    # the (b) clause, a pod that was alerted while it had ZERO progress
+    # markers, then posted its first real `epm:progress`, then went stale
+    # again, would never re-alert — the `progressed` check requires
+    # `prev_progress is not None` and so silently fails on the
+    # None→first-progress transition.
     progressed = (
         latest_progress is not None
         and prev_progress is not None
         and latest_progress > prev_progress
     )
-    alerted = False if progressed else prev_alerted
+    alerted = False if (progressed or status_class == "pod-active-fresh") else prev_alerted
 
     stale = status_class == "pod-active-stale"
     action, new_missed = decide_pod_safety(

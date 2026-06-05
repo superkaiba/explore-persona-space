@@ -1854,18 +1854,20 @@ mechanisms cover that, with DIFFERENT strength:
    CONSERVATIVE by design:
    - it AUTO-STOPS (reversible — `pod.py stop`, never terminate, after ≥
      2 consecutive checks) only a RUNNING pod whose task is already DONE
-     (`completed` / `awaiting_promotion` / `archived` / `cancelled`) —
-     i.e. an ESCAPED pod (Step-8 terminate failed, or the pod never went
-     through Step 8). A done task provably needs no pod, so this stop is
-     unambiguous;
+     (`completed` / `awaiting_promotion` / `archived`) — i.e. an ESCAPED
+     pod (Step-8 terminate failed, or the pod never went through Step 8).
+     A done task provably needs no pod, so this stop is unambiguous;
    - it does NOT auto-stop a pod whose task is still mid-run
-     (`approved` / `running` / `uploading` / `verifying`). For those it
-     ALERTS (a loud log line + a one-time dashboard-visible marker on the
-     task) when no real progress marker has landed for > 6h — a likely
-     abandoned session — but leaves the pod RUNNING. A false alert is a
-     cheap nudge; a false stop would kill a healthy long run, so the
-     backstop never makes that trade. `blocked` and `followups_running`
-     pods are KEPT (alert-only if stale), never auto-stopped.
+     (`approved` / `running` / `verifying`). For those it ALERTS (a loud
+     log line + a one-time dashboard-visible marker on the task) when no
+     real progress marker has landed for > 6h — a likely abandoned
+     session — but leaves the pod RUNNING. A false alert is a cheap
+     nudge; a false stop would kill a healthy long run, so the backstop
+     never makes that trade. `blocked` pods are KEPT (alert-only if
+     stale), never auto-stopped. `interpreting` / `reviewing` pods
+     classify as "other" (those stages don't drive pods — interp/review
+     reads from WandB/HF), so they're kept too and caught later when the
+     task reaches `awaiting_promotion`.
 
 So the external backstop bounds GPU burn for the clean case (a finished
 experiment whose pod escaped termination) and SURFACES the harder case

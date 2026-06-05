@@ -184,8 +184,8 @@ def test_pod_safety_fresh_pod_active_keeps():
 @pytest.mark.parametrize("missed", [0, 1, 5])
 @pytest.mark.parametrize("alerted", [True, False])
 def test_pod_safety_other_status_never_acts(missed, alerted):
-    # blocked / followups_running / unknown statuses are classified "other":
-    # never stopped, never alerted, miss counter reset.
+    # blocked / interpreting / reviewing / unknown statuses are classified
+    # "other": never stopped, never alerted, miss counter reset.
     assert decide_pod_safety(status_class="other", missed=missed, stale=False, alerted=alerted) == (
         "keep",
         0,
@@ -213,6 +213,20 @@ def test_status_class_sets_disjoint():
     # blocked is deliberately in NEITHER (kept, alert-only-if-stale).
     assert "blocked" not in AUTO_STOP_DONE
     assert "blocked" not in POD_ACTIVE
+
+
+def test_status_classes_subset_of_authoritative_enum():
+    # Every status named by AUTO_STOP_DONE / POD_ACTIVE MUST exist in the
+    # authoritative runtime enum task_workflow.STATUSES — otherwise the member
+    # is a phantom that can never match what `_task_status` returns (the prior
+    # round shipped `cancelled` / `uploading` / `followups_running` as phantoms,
+    # silently making the auto-stop / no-auto-stop guarantees vacuous). This
+    # pin catches that whole class of bug.
+    from explore_persona_space.task_workflow import STATUSES
+
+    enum = set(STATUSES)
+    assert enum >= AUTO_STOP_DONE, f"phantom AUTO_STOP_DONE members: {AUTO_STOP_DONE - enum}"
+    assert enum >= POD_ACTIVE, f"phantom POD_ACTIVE members: {POD_ACTIVE - enum}"
 
 
 # ─── _status_class classifier ────────────────────────────────────────────────
@@ -445,10 +459,13 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
     assert stops == [7]
 
 
-@pytest.mark.parametrize("status", ["blocked", "followups_running"])
-def test_no_auto_stop_for_blocked_or_followups(isolated_registry, monkeypatch, status):
-    # blocked (may be under investigation) and followups_running (parent pod may
-    # be in use) are KEPT, never auto-stopped.
+@pytest.mark.parametrize("status", ["blocked", "interpreting", "reviewing"])
+def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, status):
+    # blocked (may be under investigation), interpreting / reviewing (those
+    # stages don't drive pods — interp/review reads from WandB/HF, so a
+    # RUNNING pod observed there classifies as "other" and is kept until the
+    # task reaches awaiting_promotion). All real runtime statuses — never
+    # auto-stopped.
     import autonomous_session_watch as asw
 
     now = 1_000_000.0
@@ -556,6 +573,51 @@ def test_alert_re_fires_after_progress_advances(isolated_registry, monkeypatch):
     )
     asw.pod_safety_pass(dry_run=False, threshold=2, now=later_stale)
 
+    assert posts == [(489, "alert"), (489, "alert")]
+
+
+def test_alert_re_fires_after_none_then_first_progress_then_stale(isolated_registry, monkeypatch):
+    # The None->first-progress->stale-again path. A pod alerted while it had
+    # ZERO real progress markers (latest_progress_ts=None), then posts its
+    # first real epm:progress (the prev_progress baseline transitions
+    # None->float, so the `progressed` check is False — it requires BOTH sides
+    # non-None), then goes stale again. Under the must-fix #2 patch, the
+    # alerted flag clears because the task is currently pod-active-fresh, so
+    # the new staleness episode re-alerts. Without the (b) clause this test
+    # would never see a second alert.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str]] = []
+    stops: list[int] = []
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489")])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
+    monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+
+    # Tick 1: pod-active with NO real progress yet -> classified pod-active-
+    # stale (None path), alert fires, prev_progress=None persisted.
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: None)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+
+    # Tick 2: the FIRST real progress marker just landed (fresh, 1 min ago).
+    # status_class flips to pod-active-fresh; under the (b) clause, alerted
+    # clears. prev_progress baseline saved at the fresh ts.
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: now - 60)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=now)
+
+    # Tick 3: time advances a day; the (still-only) progress marker is now
+    # stale again. Without must-fix #2 the second alert would never fire here.
+    later = now + 24 * 3600
+    monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: now - 60)
+    asw.pod_safety_pass(dry_run=False, threshold=2, now=later)
+
+    assert stops == []
     assert posts == [(489, "alert"), (489, "alert")]
 
 
