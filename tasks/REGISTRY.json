@@ -2761,7 +2761,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/492",
       "status": "interpreting",
-      "title": "Slot-fix ON/OFF probe: do contrastive negatives suppress the marker at the SOURCE persona (non-selective)?"
+      "title": "The v4/v6 marker-implant \"floor\" was an eval-side env regression \u2014 the trained adapter is fine (MODERATE confidence)"
     },
     "493": {
       "has_clean_result": false,
