@@ -398,7 +398,12 @@ def fig_saturation_lr_sweep() -> None:
     ax.set_xlabel("Learning rate")
     ax.set_ylabel("Source emission rate")
     ax.set_ylim(0, 1.1)
-    ax.set_title("Source emission saturates at all LRs", loc="left", fontweight="semibold", pad=8)
+    ax.set_title(
+        "Source emission saturates (one dip: c=8, LR=5e-5)",
+        loc="left",
+        fontweight="semibold",
+        pad=8,
+    )
     ax.legend(loc="lower right", frameon=False, fontsize=8)
 
     # Panel B: held-out emission rate (climbs to saturation as LR rises)
