@@ -381,8 +381,12 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   by `/loop 10m /issue <N>`. When the task reaches `awaiting_promotion`,
   `completed`, an over-cap `plan_pending`, or `blocked`, do NOT reschedule the
   loop wakeup — let the session idle so it does not re-invoke `/issue <N>`
-  forever. (The run-phase backstop cron from Step 6d.2 tears itself down at
-  terminal state independently.)
+  forever. (The Step 6d.2 backstop cron is torn down at the terminal/park
+  transitions only — `awaiting_promotion`, `completed`, `blocked`, and the
+  poll-loop / gate-park exits — NOT at `done`; it deliberately survives the
+  post-`done` verifying/interpreting/reviewing stages so a stalled interactive
+  session there still gets auto-woken. See Step 6d.2 CRON-TEARDOWN + the Step 9
+  idempotency guard.)
 
 ### Step 0: Load state
 
@@ -1797,34 +1801,59 @@ pod-backed `kind: experiment` runs reaching Step 6d.2;
 `kind: analysis|infra|batch|survey` and follow-up paths that never enter
 the polling loop do NOT arm it.
 
-**CRON-TEARDOWN procedure (run INLINE at every poll-loop exit site, not
-only here in prose).** `CronList`, find the job with
-`prompt.strip() == "/issue <N>"`, `CronDelete(id=...)` it. This runs at
-each terminal exit from the active poll loop so the cron stops re-firing
-`/issue <N>` once the pod is gone: at Step 6d.3 (`done` → `verifying`),
-at the Step 6d.4 gate-park exit (the pipeline has EXITed and no pod is
-burning GPU — the user now drives the resume), and at the
-`status=stalled` / `status=dead` / unrecognised-gate `blocked` exits in
-the poll loop above. Each of those exit sites carries an explicit
-"run CRON-TEARDOWN" line. A gate resume or a recovery re-invocation
-re-enters Step 6d.2 and re-arms via the ARM-GUARD.
+**CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
+not only here in prose).** `CronList`, find the job with
+`prompt.strip() == "/issue <N>"`, `CronDelete(id=...)` it. The backstop
+DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
+keeps re-firing through the uploading / verifying / interpreting /
+reviewing stages — those stages have no other auto-wake, so the backstop
+is the only thing that revives an interactive per-issue session that
+stalls there. It is torn down ONLY at the true terminal / park
+transitions:
 
-Belt-and-suspenders if a teardown is ever missed — wasteful, not
-corrupting: the cron auto-expires at 7 days; a tick landing on a
-`completed` / `archived` issue is a cheap no-op (the re-invoked skill
-reads terminal state and exits without re-arming); a tick landing on an
-in-flight `verifying` / `interpreting` / `reviewing` / `awaiting_promotion`
-issue may REDUNDANTLY re-dispatch that stage's subagent (analyzer,
-clean-result-critic, upload-verifier) until the cron is gone — token
-waste, but state stays coherent because every re-entry reads
-`events.jsonl` fresh. Run CRON-TEARDOWN the moment you spot a stranded
-cron (`CronList` → `CronDelete`).
+- at `awaiting_promotion` (Step 9b — the pod was terminated at Step 8 and
+  this is a human gate, so no more auto-driving);
+- at `completed` (Step 10 auto-complete);
+- at any `set-status <N> blocked` exit in Step 9 / the
+  interpretation+review loop;
+- at the `status=stalled` / `status=dead` / unrecognised-gate `blocked`
+  exits in the poll loop above; and
+- at the Step 6d.4 gate-park exit (the pipeline has EXITed and no pod is
+  burning GPU — the user now drives the resume).
+
+Each of those exit sites carries an explicit "run CRON-TEARDOWN" line. A
+gate resume or a recovery re-invocation re-enters Step 6d.2 and re-arms
+via the ARM-GUARD.
+
+Surviving the backstop into verifying / interpreting / reviewing is the
+DESIGNED behavior, not an accident we tolerate. Its only cost — a tick
+landing while a stage subagent is already in flight and REDUNDANTLY
+re-dispatching that stage (analyzer, clean-result-critic, upload-verifier)
+— is bounded by the Step 9 **idempotency guard**: a tick that lands on a
+stage whose latest `events.jsonl` marker is a fresh dispatch with no
+terminal/result marker yet EXITs without re-dispatching, so the live work
+finishes uninterrupted (concrete rule in Step 9). State stays coherent
+regardless because every re-entry reads `events.jsonl` fresh. If a
+teardown at a terminal/park transition is ever missed, the residue is
+cheap: the cron auto-expires at 7 days, and a tick landing on a
+`completed` / `archived` / `awaiting_promotion` issue is a no-op (the
+re-invoked skill reads terminal/park state and exits without re-arming).
+Run CRON-TEARDOWN the moment you spot a stranded cron
+(`CronList` → `CronDelete`).
 
 Residual failure mode the in-session backstop does NOT cover: if the
 per-issue *session itself* dies (process exit, host reboot), a
-`durable=False` cron dies with it and the pod goes unmonitored — that is
-the "spawn a fresh session" recovery row, not something an in-session
-backstop can survive.
+`durable=False` cron dies with it and the pod goes unmonitored. Two
+mechanisms cover that: (1) the "spawn a fresh session" recovery row for
+recovering the work, and (2) the EXTERNAL pod-safety backstop
+(`scripts/autonomous_session_watch.py`, the every-10-min VM cron
+`3-59/10 * * * *`) which STOPS (reversible — `pod.py stop`, not
+terminate) a RUNNING `epm-issue-<N>` pod whose driving session has been
+gone for ≥ 2 consecutive checks. Together: the in-session cron + the
+external respawn pass cover liveness; the external pod-safety pass bounds
+GPU burn when a session dies unrecoverably (interactive, or an autonomous
+respawn that keeps failing). No crontab change is needed for this — the
+watcher is already scheduled.
 
 The pre-2026-06-02 independent stall-watchdog (`scripts/pod_watch.py`
 spawned as a long-lived background process writing to
@@ -1835,12 +1864,18 @@ which mechanisms are live vs retired.
 
 ##### Step 6d.3: On `status=done`
 
-FIRST run CRON-TEARDOWN (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue <N>"`) — the run is done, so the backstop must
-stop re-firing before the verifying/interpreting stages begin (a
-surviving cron would re-dispatch those stages' subagents every 10 min).
+Do NOT run CRON-TEARDOWN here. The backstop INTENTIONALLY survives past
+`done` into the uploading / verifying / interpreting / reviewing stages —
+those stages have no other auto-wake, so an interactive per-issue session
+that stalls in them would otherwise go silent forever. The cron is torn
+down only at the true terminal / park transitions: at `awaiting_promotion`
+(Step 9b), at `completed` (Step 10 auto-complete), and at any
+`set-status <N> blocked` exit in Step 9 / the interpretation+review loop
+(plus the poll-loop stalled/dead/blocked exits and the Step 6d.4 gate-park
+that already tear it down). The Step 9 idempotency guard (below) bounds the
+redundant-subagent cost a surviving-into-`done` cron used to risk.
 
-Then transition the task to `verifying` (the upload-verifier next):
+Transition the task to `verifying` (the upload-verifier next):
 ```bash
 uv run python scripts/task.py set-status <N> verifying \
     --note "polling loop observed phase=done"
@@ -1935,7 +1970,8 @@ recovery table below must agree).** The live mechanisms during a
    stalled-or-dead.
 2. The auto-armed backstop cron (`CronCreate(cron="*/10 * * * *",
    prompt="/issue <N>")`, registered by the orchestrator at Step 6d.2,
-   torn down at every terminal transition) running in the per-issue
+   torn down at every terminal/park transition — NOT at `done`; see
+   Step 6d.2 CRON-TEARDOWN) running in the per-issue
    session — backstop. Survives a dead reaction turn and re-enters the
    polling loop on its next tick. `/loop 10m /issue <N>` is the
    equivalent user-typed front end; the orchestrator no longer depends
@@ -2166,6 +2202,83 @@ unfired gate, #404 ~2 days after Step 8 never fired, #407 ~1 day after an
 
 This step has two sub-phases: **interpretation** (iterative
 analyzer<->critic loop) and **final review** (clean-result-critic gate).
+
+#### Step 9 entry: in-flight idempotency guard (backstop re-entry)
+
+The Step 6d.2 backstop cron now survives into `verifying` / `interpreting`
+/ `reviewing` (so a stalled interactive session in these stages still gets
+auto-woken). The cost to bound is a backstop tick re-invoking `/issue <N>`
+while a stage subagent (analyzer, interpretation-critic,
+clean-result-critic, upload-verifier) is STILL RUNNING from a prior tick —
+re-dispatching it would burn redundant subagent tokens and could race two
+writers on the body. This guard makes a fresh re-entry into Step 9 (or
+Step 8 verifying) cheaply detect "live work in progress" and EXIT without
+re-dispatching.
+
+**Dispatch breadcrumb (post on every stage dispatch).** Immediately before
+spawning ANY Step 8 / Step 9 stage subagent, post a breadcrumb so a later
+tick can see the dispatch:
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress \
+  --note "stage-dispatch stage=<verifying|interpreting|clean-result> round=<r> subagent=<name>"
+```
+Each stage's result marker is its completion signal — the existing
+`epm:upload-verification` (verifying), `epm:interpretation v<r>` +
+`epm:interp-critique v<r>` (interpreting), and `epm:clean-result-critique
+v<r>` (clean-result). The breadcrumb is a generic `epm:progress` note (no
+new marker schema), distinguished by its `stage-dispatch` prefix.
+
+**Checkable guard rule (run at Step 9 / Step 8 entry on every
+re-invocation).**
+1. Read the most recent events.jsonl marker via
+   `task.py latest-marker <N>` (and `task.py view <N> --json` for the tail
+   if needed).
+2. If the latest marker is a `stage-dispatch` breadcrumb (`epm:progress`
+   note beginning `stage-dispatch `) for the CURRENT stage+round AND there
+   is NO result marker for that same stage+round posted AFTER it (i.e. the
+   breadcrumb is genuinely the latest event), THEN compare its timestamp to
+   now against the **stage-aware freshness window**:
+   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
+     AND `clean-result` round 1 — these spawn both the Claude critic AND a
+     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
+     round 1 commonly exceeds 15 min wall time).
+   - Window = **15 min** for everything else (`verifying`,
+     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
+     any other Step 8/9 stage).
+   - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
+     skill cleanly (`post_step_completed.py ... --exit-kind parked
+     --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
+     ago, window <W>m); backstop tick yielding"`). Do NOT re-dispatch —
+     let the live work finish; the next tick (or the live subagent's own
+     completion) advances the pipeline.
+   - **age > window** → the stage looks genuinely STALLED (a subagent that
+     never posted its result). Proceed to re-dispatch it normally (the
+     freshness window is what distinguishes "live" from "stalled").
+3. If the latest marker is a RESULT marker (or anything other than a
+   current-stage `stage-dispatch` breadcrumb), there is no in-flight work —
+   proceed with the normal Step 9 logic below.
+
+The 15-min default comfortably exceeds a single Claude analyzer / critic /
+verifier turn; the 30-min Codex round-1 window covers a high-effort
+Codex twin's wall time without re-dispatching live work and risking a
+double-writer on `body.md`. Both stay well under the 10-min backstop
+cadence × 2-miss safety margin, so a genuinely stalled stage is still
+re-dispatched within ~2 ticks. This guard is the bound referenced by the
+Step 6d.2 "surviving the backstop into verifying/interpreting/reviewing
+is DESIGNED behavior" paragraph.
+
+**Limitation (be explicit about it).** A MISSED `stage-dispatch`
+breadcrumb (the orchestrator spawns a stage subagent but forgets / fails
+to post the breadcrumb FIRST) silently disables this guard for that tick:
+with no breadcrumb to detect, step 3 of the rule fires and the
+orchestrator re-dispatches the stage as if no in-flight work existed —
+exactly the double-dispatch / double-writer the guard exists to prevent.
+The breadcrumb is the only enforcement; the orchestrator MUST treat
+posting it as a non-skippable precondition for every Step 8/9 stage
+dispatch. If you notice a stage subagent was spawned without one, post
+the breadcrumb immediately (`task.py post-marker ... epm:progress --note
+"stage-dispatch stage=<s> round=<r> subagent=<name>"`) so the next tick's
+guard fires correctly.
 
 **9a. Iterative interpretation** (only if status is `interpreting`)
 
@@ -2413,6 +2526,14 @@ uv run python scripts/task.py post-marker <N> epm:status-changed \
   --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"
 ```
 
+**Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
+transition for an experiment: the pod was terminated at Step 8 and this is
+a human gate, so there is nothing left to auto-drive. `CronList` →
+`CronDelete` the job with `prompt.strip() == "/issue <N>"` so the backstop
+that deliberately survived the post-`done` stages stops re-firing now. (A
+later user re-invocation at `awaiting_promotion` does not re-arm — Step 6d.2
+arms only for pod-backed runs reaching the polling loop.)
+
 **Auto-merge the worktree now (experiments).** The instant the task
 lands at `awaiting_promotion`, run the **Step 10d auto-merge procedure**
 (rebase-merge `issue-<N>` -> `main`, no prompt, keep the worktree). The
@@ -2474,7 +2595,9 @@ suite directly and posts an `epm:test-verdict` event with the result.
 4. Coverage gap report (flags, does not auto-generate)
 
 Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
-in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> status to
+in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
+CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue <N>` job — idempotent;
+no-ops for a code-change task that never armed one), then status to
 `blocked`.
 
 ### Step 10: Auto-complete (fires after user promotes clean-result from `awaiting_promotion`, or `epm:test-verdict` PASS for code-change paths)
@@ -2565,7 +2688,14 @@ work* contract.
      user to add one. Do NOT pick a default, and do NOT advance until
      fixed.
 
-6. Apply the chosen status via `task.py set-status` (which performs the
+6. Run CRON-TEARDOWN before applying the terminal status (`CronList` →
+   `CronDelete` the job with `prompt.strip() == "/issue <N>"`). For an
+   experiment the cron was already torn down at Step 9b
+   (`awaiting_promotion`), so this is an idempotent backstop; for a
+   code-change path arriving via Step 9c PASS it is the teardown site (a
+   code-change task usually never armed a cron, so it no-ops, but running
+   it keeps the "every terminal/park exit tears down" contract uniform).
+   Then apply the chosen status via `task.py set-status` (which performs the
    `git mv` + commit + folder move):
    ```bash
    uv run python scripts/task.py set-status <N> <new-status> \

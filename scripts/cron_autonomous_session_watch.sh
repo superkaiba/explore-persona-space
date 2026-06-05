@@ -1,14 +1,21 @@
 #!/bin/bash
-# Crash-recovery watch for autonomous (`--auto`) issue sessions — invoked from
-# the system crontab (every ~10 min). Re-spawns an autonomous /issue session
-# whose driver process has died (crash / OOM / VM reboot), which the in-session
-# /loop + durable=false cron cannot recover on their own. Mirrors
-# cron_worktree_audit.sh / cron_pod_audit.sh.
+# Crash-recovery + pod-safety watch for issue sessions — invoked from the system
+# crontab (every ~10 min). Two passes (see scripts/autonomous_session_watch.py):
+#   1. Respawn a recoverable autonomous (`--auto`) /issue session whose driver
+#      process has died (crash / OOM / VM reboot), which the in-session /loop +
+#      durable=false cron cannot recover on their own.
+#   2. Stop (NOT terminate) a RUNNING managed epm-issue-<N> pod whose driving
+#      session is gone and unrecoverable (interactive session died, or an
+#      autonomous respawn keeps failing) — bounding GPU burn instead of letting
+#      it run to the 7-day TTL.
+# Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
-# Safety lives in scripts/autonomous_session_watch.py: single-flight flock,
-# a 2-consecutive-miss guard before any respawn, worktree-cwd liveness
-# cross-check, and respawn ONLY for active-drive statuses (never for parked /
-# awaiting_promotion tasks). See that file's docstring for the full rule.
+# Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a
+# 2-consecutive-miss guard before any respawn OR pod-stop, worktree-cwd liveness
+# cross-check, respawn ONLY for active-drive statuses (never for parked /
+# awaiting_promotion tasks), pod-stop ONLY for RUNNING managed pods with no live
+# driving session, and a daemon-reachability guard that skips the whole run
+# (both passes) during an outage. See that file's docstring for the full rule.
 #
 # Output: logs/autonomous_session_watch/YYYY-MM-DD.log (one file per day).
 
