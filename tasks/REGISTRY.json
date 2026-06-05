@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 502,
+  "highest_id": 503,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2854,6 +2854,14 @@
       "path": "tasks/running/502",
       "status": "running",
       "title": "Re-run #493 bake-off at all 28 layers \u00d7 200 probes, parallelized (batched gen + multi-GPU)"
+    },
+    "503": {
+      "goal": "Test whether the #468 base-model cosine predictor (in-context-example behavior vectors read at the newline-after-assistant token) predicts post-SFT cross-behavior leakage across the full source\u00d7target matrix \u2014 narrow\u2192narrow, narrow\u2192broad beyond emergent misalignment (including at least one non-misalignment broad target), and broad\u2192broad \u2014 using one shared dataset-generation and cross-evaluation rig and one pooled regression.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/503",
+      "status": "proposed",
+      "title": "Does the base-model cosine predictor hold across the full narrow/broad source\u00d7target leakage matrix (N\u2192N, N\u2192B beyond EM, B\u2192B)?"
     },
     "51": {
       "has_clean_result": false,
