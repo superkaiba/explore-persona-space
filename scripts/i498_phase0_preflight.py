@@ -528,7 +528,6 @@ async def _claude_judge_calls(client, dialogs, rubric_map, *, pass_label: str = 
     inter-judge κ threshold MUST measure on real scores, not on silently
     nulled ones.
     """
-    import anthropic
 
     out = []
     for trait, items in dialogs.items():
@@ -544,38 +543,48 @@ async def _claude_judge_calls(client, dialogs, rubric_map, *, pass_label: str = 
                     messages=[{"role": "user", "content": u}],
                 )
 
+            # Fail-fast on schema/parse failures (mirrors phase4_judge._judge_one).
+            # `_retry_transient` already handles transient Anthropic errors above
+            # this layer; non-transient failures (parse, missing 'score', auth)
+            # MUST raise so the downstream Cohen's kappa gate measures real
+            # judge agreement, not a `parsed.get("score", 0)` fallback that
+            # would deterministically bin to "absent" and false-FAIL the gate.
+            what = f"Pilot judge {pass_label} trait={trait} dialog={d_idx}"
+            resp = _retry_transient(_call, what=what)
+            text = resp.content[0].text if resp.content else ""
+            start = text.find("{")
+            end = text.rfind("}")
+            if start == -1 or end == -1 or end <= start:
+                raise SystemExit(f"{what}: response did not contain a JSON object: text={text!r}")
+            parsed = json.loads(text[start : end + 1])
+            if not isinstance(parsed, dict):
+                raise SystemExit(
+                    f"{what}: parsed JSON is not an object: parsed={parsed!r} text={text!r}"
+                )
+            if "score" not in parsed:
+                raise SystemExit(
+                    f"{what}: judge response missing 'score' key: parsed={parsed!r} text={text!r}"
+                )
             try:
-                resp = _retry_transient(
-                    _call, what=f"Pilot judge {pass_label} trait={trait} dialog={d_idx}"
+                score_int = int(parsed["score"])
+            except (TypeError, ValueError) as e:
+                raise SystemExit(
+                    f"{what}: 'score' is not int-coercible: parsed={parsed!r} ({e!r})"
+                ) from e
+            if not 1 <= score_int <= 5:
+                raise SystemExit(
+                    f"{what}: 'score' {score_int!r} outside [1, 5] Likert range: parsed={parsed!r}"
                 )
-                text = resp.content[0].text if resp.content else ""
-                start = text.find("{")
-                end = text.rfind("}")
-                if start == -1 or end == -1 or end <= start:
-                    raise SystemExit(
-                        f"Pilot judge {pass_label} trait={trait} dialog={d_idx}: "
-                        f"response did not contain a JSON object: text={text!r}"
-                    )
-                parsed = json.loads(text[start : end + 1])
-                out.append(
-                    {
-                        "trait": trait,
-                        "dialog_idx": d_idx,
-                        "pass": pass_label,
-                        "expected_trait_present": item["expected_trait_present"],
-                        "judge_score": int(parsed.get("score", 0)),
-                        "judge_reason": parsed.get("reason", ""),
-                    }
-                )
-            except (anthropic.AnthropicError, ValueError, KeyError, IndexError) as e:
-                out.append(
-                    {
-                        "trait": trait,
-                        "expected_trait_present": item["expected_trait_present"],
-                        "judge_score": None,
-                        "judge_error": repr(e),
-                    }
-                )
+            out.append(
+                {
+                    "trait": trait,
+                    "dialog_idx": d_idx,
+                    "pass": pass_label,
+                    "expected_trait_present": item["expected_trait_present"],
+                    "judge_score": score_int,
+                    "judge_reason": parsed.get("reason", ""),
+                }
+            )
     return out
 
 

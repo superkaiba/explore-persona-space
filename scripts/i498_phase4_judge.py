@@ -261,15 +261,33 @@ def main(argv: list[str] | None = None) -> None:
     )
     logger.info("Wrote %s (n=%d)", JUDGE_PATH, len(scored))
 
-    # Paraphrase replication on a stratified subsample.
+    # Paraphrase replication on a STRATIFIED subsample.
+    # Plan A19 commits with HIGH risk to ">= 3 cells per (arm x trait x
+    # eval_context) stratum" — uniform random sampling silently lets entire
+    # strata fall below the floor and breaks the downstream per-stratum
+    # Spearman rho >= 0.7 gate. We group by (arm, trait, eval_context) and
+    # sample max(3, round(n_stratum * paraphrase_frac)) rows per stratum.
     # The paraphrase rubric is a SEMANTIC-EQUIVALENT REWRITE (different
     # vocabulary, same scoring rule) loaded from JUDGE_RUBRIC_PARAPHRASE in
     # i498_traits.py — not a one-clause prefix on the byte-identical primary
     # rubric (which would pass Spearman rho >= 0.7 by tautological
     # self-agreement).
     rng = random.Random(args.seed)
-    n_paraphrase = max(1, int(len(scored) * args.paraphrase_frac))
-    sub_idx = rng.sample(range(len(scored)), min(n_paraphrase, len(scored)))
+    strata: dict[tuple[str, str, str], list[int]] = {}
+    for idx, row in enumerate(scored):
+        key = (row.get("arm"), row.get("trait"), row.get("eval_context"))
+        strata.setdefault(key, []).append(idx)
+    per_stratum_counts: dict[str, int] = {}
+    sub_idx: list[int] = []
+    for key in sorted(strata.keys(), key=lambda k: tuple(str(x) for x in k)):
+        stratum_rows = strata[key]
+        # max(3, round(n * frac)) — floor at 3 per plan A19; clamp at the
+        # stratum size so tiny smoke runs (limit-bound) do not crash.
+        k = max(3, round(len(stratum_rows) * args.paraphrase_frac))
+        k = min(k, len(stratum_rows))
+        picks = rng.sample(stratum_rows, k)
+        sub_idx.extend(picks)
+        per_stratum_counts[f"arm={key[0]}__trait={key[1]}__eval_context={key[2]}"] = len(picks)
     para_rows: list[dict] = []
     for idx in sub_idx:
         row = scored[idx]
@@ -297,13 +315,16 @@ def main(argv: list[str] | None = None) -> None:
                 "git_commit": _git(),
                 "ts": _dt.datetime.utcnow().isoformat() + "Z",
                 "n_paraphrase": len(para_rows),
+                "n_strata": len(strata),
+                "per_stratum_counts": per_stratum_counts,
+                "sampling": "stratified_by_arm_trait_eval_context",
                 "rows": para_rows,
             },
             indent=2,
             ensure_ascii=False,
         )
     )
-    logger.info("Wrote %s (n=%d)", PARAPHRASE_PATH, len(para_rows))
+    logger.info("Wrote %s (n=%d across %d strata)", PARAPHRASE_PATH, len(para_rows), len(strata))
 
 
 if __name__ == "__main__":
