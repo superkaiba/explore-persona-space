@@ -1,7 +1,6 @@
 ---
-title: Base-model persona-distance does not predict fact-leakage to bystander personas
-  — the one borderline-positive partial fails when teach persona is residualized out
-  (LOW confidence)
+title: Base-model persona-distance does not predict fact leakage in the pooled bystander
+  panel (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05
