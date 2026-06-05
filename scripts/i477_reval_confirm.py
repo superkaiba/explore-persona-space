@@ -1,5 +1,5 @@
-# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Qwen marker " ※" + minus sign − intentional
 #!/usr/bin/env python3
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Qwen marker " ※" + minus sign − intentional
 """Task #477 recovery diagnostic — re-eval ONE already-trained LoRA to localize the v4/v6 eval bug.
 
 NOT training. NOT a sweep. Single cell. Single seed. ~20 held-out probes.
@@ -298,6 +298,7 @@ def _hf_score_marker_logp(
     measurement modulo the load mechanism.
     """
     import torch
+
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
         EXPECTED_MARKER_TOKEN_ID,
         MARKER_TEXT,
@@ -467,6 +468,8 @@ def main(argv: list[str] | None = None) -> int:
     adapter_dir = _fetch_adapter(token, args.adapter_cache)
 
     # ── Phase 0.5: marker token assertion + eval slice build. ────────────────
+    from transformers import AutoTokenizer
+
     from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
         BASE_MODEL,
         EXPECTED_MARKER_TOKEN_ID,
@@ -475,7 +478,6 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_one_cell import (
         assert_marker_token,
     )
-    from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True, token=token)
     assert_marker_token(tokenizer)
@@ -596,6 +598,9 @@ def main(argv: list[str] | None = None) -> int:
     R_vllm: dict[str, dict[str, str]] | None = None
     if not args.skip_vllm:
         log.info("[phase=vllm] loading vLLM with enable_lora + LoRARequest (Path B — suspect)")
+        from vllm import LLM
+        from vllm.lora.request import LoRARequest
+
         from explore_persona_space.experiments.contrastive_neg_geometry_472 import LORA_R
         from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_one_cell import (
             score_logp_for_R,
@@ -603,8 +608,6 @@ def main(argv: list[str] | None = None) -> int:
         from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
             _generate_on_policy_R,
         )
-        from vllm import LLM
-        from vllm.lora.request import LoRARequest
 
         llm = LLM(
             model=BASE_MODEL,
