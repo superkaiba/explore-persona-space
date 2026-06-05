@@ -42,6 +42,14 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # Registry of autonomous (`--auto`) issue sessions, so the crash-recovery
 # watcher (scripts/autonomous_session_watch.py) can detect a dead session and
 # re-spawn it. One file per issue: ~/.eps-autonomous/issue-<N>.json.
+#
+# Manual (`spawn-issue` WITHOUT `--auto`) sessions ALSO register a sibling
+# entry here at ~/.eps-autonomous/manual-issue-<N>.json so `cmd_list` can map
+# session id -> issue number. The watcher's respawn pass globs
+# `issue-*.json` and DELIBERATELY does NOT match `manual-issue-*.json` — manual
+# sessions must NEVER be auto-re-spawned (the user opens them manually and
+# decides when to drive them). Keeping both files in the same dir keeps the
+# layout tidy without changing the watcher contract.
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
 
@@ -70,6 +78,150 @@ def _register_autonomous_session(
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
     tmp.replace(dest)
+
+
+def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
+    """Record a manual (non-`--auto`) issue session for `cmd_list` enrichment.
+
+    Written on every interactive `spawn-issue` so `happy-ls` can map the
+    session id back to its issue number + progress. The filename
+    (``manual-issue-<N>.json``) is deliberately distinct from the watcher's
+    autonomous-session glob (``issue-*.json``) so the watcher will NEVER
+    auto-respawn a manual session — manual sessions are driven by the user.
+    Writes atomically (temp + rename) so a concurrent reader never sees a
+    partial entry. RAISES ``OSError`` on write failure; the caller (manual
+    spawn) treats it as non-fatal (the session is already live; we just lose
+    the listability enrichment), unlike the autonomous path."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "issue": issue,
+        "happy_session_id": session_id,
+        "cwd": cwd,
+        "spawned_at": time.time(),
+        "mode": "manual",
+    }
+    dest = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(entry, indent=2))
+    tmp.replace(dest)
+
+
+def _load_session_issue_map() -> dict[str, int]:
+    """Return ``{happy_session_id: issue_number}`` from BOTH the autonomous
+    (``issue-<N>.json``) and manual (``manual-issue-<N>.json``) registries.
+
+    Best-effort enrichment for :func:`cmd_list`: a single malformed entry is
+    skipped (its row will just show no mapped issue), the rest still load.
+    Returns ``{}`` if the dir is missing entirely. If an issue number appears
+    under both prefixes (autonomous restart after a manual spawn, or vice
+    versa), the LATER ``spawned_at`` wins — that's the most recently registered
+    session for that issue."""
+    out: dict[str, int] = {}
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    # Track which issue each session id maps to + when, so a stale collision
+    # resolves to the newer entry rather than dir-iteration order.
+    best_ts: dict[str, float] = {}
+    for path in AUTONOMOUS_REGISTRY_DIR.glob("*issue-*.json"):
+        # Glob matches BOTH `issue-<N>.json` AND `manual-issue-<N>.json`; the
+        # watcher's own glob `issue-*.json` only matches the first form.
+        try:
+            entry = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        sid = entry.get("happy_session_id")
+        issue = entry.get("issue")
+        ts = entry.get("spawned_at", 0.0)
+        if not isinstance(sid, str) or not isinstance(issue, int):
+            continue
+        if not isinstance(ts, int | float):
+            ts = 0.0
+        if sid not in best_ts or ts > best_ts[sid]:
+            out[sid] = issue
+            best_ts[sid] = ts
+    return out
+
+
+# Max chars for the per-row progress cell in `cmd_list` default output. Keeps
+# the table readable in a phone-width terminal. The status + marker kind +
+# truncated note + age fits comfortably below this.
+_PROGRESS_CELL_MAX = 60
+
+
+def _format_progress_cell(issue: int, now: float | None = None) -> str:
+    """One-line ``status / marker_kind (note...) Nh|m ago`` summary for issue
+    ``issue``. Returns a VISIBLE placeholder (NOT a silent blank) on lookup
+    failure so a broken row is immediately legible to the user.
+
+    Reads task state in-process via :mod:`explore_persona_space.task_workflow`
+    rather than shelling out per row — important because `happy-ls` is called
+    interactively and a fork+subprocess per session would be ~14x slower than
+    the bare table."""
+    # Imported lazily so an environment without the project package (e.g. a
+    # global `python scripts/spawn_session.py list` run) still gets a usable
+    # listing — the progress cell just degrades to a labeled placeholder.
+    try:
+        from explore_persona_space.task_workflow import get_task, latest_event
+    except ImportError as e:
+        return f"<lookup unavailable: {type(e).__name__}>"
+
+    try:
+        task = get_task(issue)
+    except FileNotFoundError:
+        return f"#{issue} not found"
+    except Exception as e:
+        return f"<lookup failed: {type(e).__name__}>"
+
+    status = task.get("status", "?")
+    try:
+        marker = latest_event(issue, prefix="epm:")
+    except Exception as e:
+        return f"{status} / <marker-read failed: {type(e).__name__}>"
+
+    if marker is None:
+        return f"{status} / no marker yet"
+
+    kind = marker.get("kind", "?")
+    # Drop the `epm:` prefix for compactness — the column header makes it
+    # implicit, and short marker kinds (run-finished, results, progress) carry
+    # the meaning.
+    short_kind = kind[4:] if kind.startswith("epm:") else kind
+    note = (marker.get("note") or "").strip().replace("\n", " ")
+    age = _format_event_age(marker.get("ts"), now=now)
+
+    # Budget the note to whatever's left after status + kind + age.
+    overhead = len(f"{status} / {short_kind}  {age}")
+    note_budget = max(0, _PROGRESS_CELL_MAX - overhead - 4)  # 4 = `" ()"` + slack
+    if note and note_budget > 0:
+        if len(note) > note_budget:
+            note = note[: max(0, note_budget - 1)] + "…"
+        return f"{status} / {short_kind} ({note}) {age}"
+    return f"{status} / {short_kind} {age}"
+
+
+def _format_event_age(ts: str | None, now: float | None = None) -> str:
+    """Render an event ``ts`` (``%Y-%m-%dT%H:%M:%SZ`` UTC) as a compact age
+    suffix like ``"3m ago"`` / ``"2h ago"`` / ``"4d ago"``. Returns ``""`` if
+    ``ts`` is missing or unparseable — the cell still renders cleanly without
+    the age."""
+    if not isinstance(ts, str) or not ts:
+        return ""
+    from datetime import datetime
+
+    try:
+        # Normalise the canonical trailing 'Z' to a tz-aware parse.
+        when = datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp()
+    except (ValueError, OSError):
+        return ""
+    now_ts = now if now is not None else time.time()
+    delta = max(0.0, now_ts - when)
+    if delta < 60:
+        return f"{int(delta)}s ago"
+    if delta < 3600:
+        return f"{int(delta / 60)}m ago"
+    if delta < 86400:
+        return f"{int(delta / 3600)}h ago"
+    return f"{int(delta / 86400)}d ago"
 
 
 def _load_session_meta() -> dict[str, dict[str, Any]]:
@@ -278,16 +430,42 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
                     )
                 sys.exit(f"spawn aborted: could not register issue #{issue} for crash-recovery")
     else:
+        # Manual session — record a sibling registry entry so `cmd_list` can
+        # map the session id back to its issue number + show progress. The
+        # filename prefix (`manual-issue-`) is deliberately distinct from the
+        # watcher's `issue-*.json` glob, so the watcher will NEVER auto-respawn
+        # a manual session. Registration failure is non-fatal here (unlike
+        # --auto): the session is already live; we just lose the `list`
+        # enrichment. Surface the warning so the gap is visible.
+        try:
+            _register_manual_session(issue, resp["sessionId"], str(cwd))
+            print(f"  registered for `list` enrichment: manual-issue-{issue}.json")
+        except OSError as e:
+            print(
+                f"  WARNING: manual-session registry write failed ({e}); "
+                f"session is live but won't show its issue in `list` output",
+                file=sys.stderr,
+            )
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    """List Happy sessions, enriched with cwd + lifecycle state.
+    """List Happy sessions, enriched with cwd + lifecycle state + issue +
+    progress.
 
-    Default: sessions the local daemon is actively tracking (live processes).
+    Default: sessions the local daemon is actively tracking (live processes),
+    with an ``issue`` column (the mapped issue number from the EPS session
+    registry, or ``-`` if unmapped) and a ``progress`` column (the task's
+    current status + latest ``epm:`` marker + age — read in-process from
+    `task_workflow`, so the table doesn't fork a subprocess per row).
+
     ``--all``: every session in ``~/.happy/sessions.json`` (including stopped
     ones), newest first, so you can pick one to ``happy resume``."""
     meta = _load_session_meta()
+    # Session -> issue mapping covers BOTH autonomous (`--auto`) and manual
+    # `spawn-issue` sessions. Sessions not spawned by `spawn_session.py`
+    # (e.g. `/my-goat`) have no entry and render with a blank issue column.
+    issue_map = _load_session_issue_map()
 
     if getattr(args, "all", False):
         live = _live_session_ids()
@@ -298,6 +476,7 @@ def cmd_list(args: argparse.Namespace) -> None:
                 m.get("startedBy", "?"),
                 _dir_label(m.get("path")),
                 m.get("savedAt", 0) or 0,
+                issue_map.get(sid),
             )
             for sid, m in meta.items()
         ]
@@ -306,9 +485,10 @@ def cmd_list(args: argparse.Namespace) -> None:
         if not rows:
             print("(no sessions in sessions.json)")
             return
-        print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  dir")
-        for sid, state, started_by, dir_label, _ts in rows:
-            print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {dir_label}")
+        print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  {'issue':<6}  dir")
+        for sid, state, started_by, dir_label, _ts, issue in rows:
+            issue_cell = f"#{issue}" if issue is not None else "-"
+            print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {issue_cell:<6}  {dir_label}")
         print(f"\n{len(rows)} session(s), {len(live)} live. Resume one: happy resume <id-prefix>")
         return
 
@@ -317,12 +497,31 @@ def cmd_list(args: argparse.Namespace) -> None:
     if not children:
         print("(no active Happy sessions)")
         return
-    print(f"{'session id':<28}  {'pid':>8}  {'state':<10}  dir")
+    print(
+        f"{'session id':<28}  {'pid':>8}  {'state':<10}  {'issue':<6}  "
+        f"{'progress':<{_PROGRESS_CELL_MAX}}  dir"
+    )
     for c in children:
         sid = c.get("happySessionId", "?")
         m = meta.get(sid, {})
         state = m.get("lifecycleState", "?")
-        print(f"{sid[:26]:<28}  {c.get('pid', '?'):>8}  {state:<10}  {_dir_label(m.get('path'))}")
+        issue = issue_map.get(sid)
+        issue_cell = f"#{issue}" if issue is not None else "-"
+        # Progress lookup is per-row in-process — a single broken row must NOT
+        # crash the whole table (visible placeholder per row instead). The
+        # helper itself catches its own internal failures; this outer guard
+        # catches anything truly unexpected (e.g. an interpreter-level error).
+        if issue is None:
+            progress_cell = ""
+        else:
+            try:
+                progress_cell = _format_progress_cell(issue)
+            except Exception as e:
+                progress_cell = f"<row error: {type(e).__name__}>"
+        print(
+            f"{sid[:26]:<28}  {c.get('pid', '?'):>8}  {state:<10}  {issue_cell:<6}  "
+            f"{progress_cell:<{_PROGRESS_CELL_MAX}}  {_dir_label(m.get('path'))}"
+        )
     print(f"\n{len(children)} active session(s). Resume one: happy resume <id-prefix>")
 
 
