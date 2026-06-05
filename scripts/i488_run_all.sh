@@ -57,8 +57,19 @@ uv run python scripts/i488_phase0_generate_data.py \
 echo "[phase=phase0] ok"
 
 # ── Phase 1 ──
+# r-samples descoped 8 → 2 per compute_deviation_over_2x pivot (factor 4×).
+# CPU-bound per-position JS aggregation across full-vocab log-softmax
+# distributions (Qwen-2.5-7B-Instruct, vocab 151,646) was projecting > 26
+# wall-h on 1 GPU for this stage alone, 4× the entire 49-GPU-h / ~7-wall-h
+# plan budget. The JS estimator's expectation is unchanged at r=2; variance
+# ~4× higher vs the #406 inherited cells' r-samples=8 estimator. The two
+# halves of the 27×27 matrix therefore use different-variance estimators —
+# the analyzer must flag this as a methodology caveat in the clean-result
+# (NOT a measurement-validity violation: both estimators converge on the
+# same population JS as r → ∞; the new cells are just noisier).
 echo "[phase=phase1] $(date -Iseconds)"
 uv run python scripts/i488_phase1_predictors.py \
+    --r-samples 2 \
     > "$LOG_DIR/phase1.log" 2>&1
 echo "[phase=phase1] ok"
 
