@@ -63,6 +63,7 @@ from pod_config import (  # noqa: E402
 from pod_config import (  # noqa: E402
     Pod,
     cmd_sync,
+    locked_pods_conf,
     parse_pods_conf,
     write_pods_conf,
 )
@@ -436,50 +437,65 @@ def _upsert_pods_conf(pod: EphemeralPod) -> None:
     via ``pod_config.cmd_update`` and the live API pod_id may be for a
     different RunPod entry sharing the same name). gpus / gpu_type / label
     are still refreshed since they are not user-overrideable via ``--update``.
+
+    The whole parse → mutate → write → ``cmd_sync`` sequence holds
+    ``pod_config.locked_pods_conf`` so concurrent ``/issue`` sessions
+    upserting their own pods cannot lose-update each other's rows or
+    regenerate ``~/.ssh/config`` from a stale view (task #488 incident,
+    2026-06-05).
     """
-    rows = parse_pods_conf()
-    existing = next((p for p in rows if p.name == pod.name), None)
     if pod.host is None or pod.port is None:
         # Nothing to write yet — only happens during transient provisioning.
         return
-    if existing:
-        if pod.metadata.manual_override and (
-            existing.host != pod.host or existing.port != pod.port
-        ):
-            print(
-                f"[pod_lifecycle] WARN: refusing to overwrite manual host/port "
-                f"for {pod.name} in pods.conf "
-                f"(kept {existing.host}:{existing.port}; API would have written "
-                f"{pod.host}:{pod.port}). Clear with "
-                f"`pod.py config --clear-override {pod.name}` if the API is right.",
-                file=sys.stderr,
-            )
+    with locked_pods_conf():
+        rows = parse_pods_conf()
+        existing = next((p for p in rows if p.name == pod.name), None)
+        if existing:
+            if pod.metadata.manual_override and (
+                existing.host != pod.host or existing.port != pod.port
+            ):
+                print(
+                    f"[pod_lifecycle] WARN: refusing to overwrite manual host/port "
+                    f"for {pod.name} in pods.conf "
+                    f"(kept {existing.host}:{existing.port}; API would have written "
+                    f"{pod.host}:{pod.port}). Clear with "
+                    f"`pod.py config --clear-override {pod.name}` if the API is right.",
+                    file=sys.stderr,
+                )
+            else:
+                existing.host = pod.host
+                existing.port = pod.port
+            existing.gpus = pod.gpu_count
+            existing.gpu_type = pod.gpu_type
+            existing.label = _label_for_issue(pod.issue)
         else:
-            existing.host = pod.host
-            existing.port = pod.port
-        existing.gpus = pod.gpu_count
-        existing.gpu_type = pod.gpu_type
-        existing.label = _label_for_issue(pod.issue)
-    else:
-        rows.append(
-            Pod(
-                name=pod.name,
-                host=pod.host,
-                port=pod.port,
-                gpus=pod.gpu_count,
-                gpu_type=pod.gpu_type,
-                label=_label_for_issue(pod.issue),
+            rows.append(
+                Pod(
+                    name=pod.name,
+                    host=pod.host,
+                    port=pod.port,
+                    gpus=pod.gpu_count,
+                    gpu_type=pod.gpu_type,
+                    label=_label_for_issue(pod.issue),
+                )
             )
-        )
-    write_pods_conf(rows)
-    cmd_sync(rows)
+        write_pods_conf(rows)
+        cmd_sync(rows)
 
 
 def _remove_from_pods_conf(name: str) -> None:
-    rows = parse_pods_conf()
-    rows = [p for p in rows if p.name != name]
-    write_pods_conf(rows)
-    cmd_sync(rows)
+    """Remove ``name``'s row from ``pods.conf`` (if present) and regenerate
+    downstream configs.
+
+    Locked the same way as :func:`_upsert_pods_conf`: a concurrent upsert
+    must not be able to read a pre-remove snapshot, write its own row, and
+    re-add the removed entry.
+    """
+    with locked_pods_conf():
+        rows = parse_pods_conf()
+        rows = [p for p in rows if p.name != name]
+        write_pods_conf(rows)
+        cmd_sync(rows)
 
 
 # ─── helpers ─────────────────────────────────────────────────────────────────

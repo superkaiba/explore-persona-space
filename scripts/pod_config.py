@@ -18,10 +18,13 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import fcntl
 import json
+import os
 import re
 import subprocess
 import sys
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -39,14 +42,21 @@ from pathlib import Path
 # port and report ``status: dead`` for a perfectly healthy run. Routing
 # the constants through ``git rev-parse --git-common-dir`` collapses
 # every checkout's copy to the same on-disk file so all sessions read +
-# write the SAME state. (Concurrency races within that single file still
-# exist as a much smaller v2 concern — see ``_upsert_pods_conf`` /
-# ``_remove_from_pods_conf``.)
+# write the SAME state. Concurrent read-modify-write races within that
+# single file are serialised by ``locked_pods_conf`` (see below), which
+# every mutating call site holds for the whole parse → mutate → write →
+# ``cmd_sync`` sequence.
 # Incident 2026-06-05, task #500: pod.py resume from the issue-500
 # worktree updated worktree-local pods.conf to port 13721, but the main
 # repo's pods.conf stayed at the stale 16659; the next sync against the
 # main copy wrote the stale port back into ~/.ssh/config and the
 # poll-loop reported a FALSE dead.
+# Incident 2026-06-05, task #488: two concurrent /issue sessions each
+# called ``pod_lifecycle._upsert_pods_conf`` for their own pod; the
+# session B write clobbered A's row, the regenerated ~/.ssh/config
+# dropped A's ``Host pod-<A>`` block, and ``poll_pipeline.py`` reported
+# ``ssh: Could not resolve hostname pod-<A>: Temporary failure in name
+# resolution`` for a perfectly healthy run. Fixed by ``locked_pods_conf``.
 # ---------------------------------------------------------------------------
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -121,6 +131,52 @@ REMOTE_DIR = "/workspace/explore-persona-space"
 # Everything between these lines (inclusive) is replaced on --sync.
 BEGIN_MARKER = "# --- BEGIN MANAGED POD CONFIG ---"
 END_MARKER = "# --- END MANAGED POD CONFIG ---"
+
+# Sibling lockfile in the SAME main-repo scripts/ directory as ``pods.conf``
+# itself. Held under an exclusive ``fcntl.flock`` for the duration of any
+# read-modify-write on ``pods.conf`` + the downstream ``~/.ssh/config`` /
+# ``~/.claude/mcp.json`` regeneration. Co-located so the lock can never
+# diverge from the file it protects across worktree checkouts (same
+# main-repo-resolution as ``PODS_CONF``).
+PODS_CONF_LOCK = _MAIN_SCRIPTS_DIR / ".pods.conf.lock"
+
+
+@contextlib.contextmanager
+def locked_pods_conf() -> Iterator[None]:
+    """Hold an exclusive ``flock`` on ``PODS_CONF_LOCK`` for a read-modify-write
+    on ``pods.conf`` and the downstream SSH/MCP config regeneration.
+
+    Concurrency motivation. Multiple parallel ``/issue`` sessions each call
+    ``pod_lifecycle._upsert_pods_conf`` (or ``_remove_from_pods_conf``) when
+    provisioning / terminating their own pod. The unguarded sequence
+    ``parse_pods_conf() -> mutate(rows) -> write_pods_conf(rows) ->
+    cmd_sync(rows)`` is a classic lost-update race: session A reads, session
+    B reads, A writes (with A's row), B writes (with B's row, A's row gone),
+    and the final ``~/.ssh/config`` block reflects only B's view — so
+    ``poll_pipeline.py`` SSHing via ``Host pod-<A>`` fails with
+    ``Could not resolve hostname pod-<A>`` while A's pod is healthy.
+
+    Serialising the whole read-modify-write-sync sequence under a single
+    advisory lock collapses the race. ``cmd_sync`` is kept inside the
+    critical section so a concurrent session cannot regenerate
+    ``~/.ssh/config`` from a stale ``rows`` view between our
+    ``write_pods_conf`` and our ``cmd_sync``. The lock is advisory and
+    fcntl-based, so it is automatically released on process death (kill -9,
+    OOM kill, parent timeout) — no orphaned locks survive a crash.
+
+    Read-only callers (``cmd_list``, ``cmd_check``, ``cmd_json``,
+    ``parse_pods_conf`` from external readers like ``poll_pipeline.py``) do
+    NOT take this lock — they tolerate seeing a momentarily-mid-write state
+    because ``write_pods_conf`` writes atomically via a single text payload.
+    """
+    PODS_CONF_LOCK.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(PODS_CONF_LOCK), os.O_WRONLY | os.O_CREAT, 0o600)
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
 
 
 # ---------------------------------------------------------------------------
@@ -646,49 +702,65 @@ def cmd_update(pods: list[Pod], pod_name: str, host: str | None, port: int | Non
     silently clobber the manual values from a later ``provision`` / ``resume``
     / cron run. Permanent-fleet pods (``podN``) are not in the sidecar; the
     flag is a no-op there.
+
+    The pre-validation pass uses ``pods`` (already parsed by ``main`` for
+    arg-flag checks). The actual read-modify-write-sync runs inside
+    ``locked_pods_conf`` after re-reading ``pods.conf`` so a concurrent
+    writer cannot interleave between our parse and our write.
     """
-    target = None
-    for p in pods:
-        if p.name == pod_name:
-            target = p
-            break
-
-    if target is None:
-        print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
-        print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
-        sys.exit(1)
-
     if host is None and port is None:
         print("ERROR: --update requires at least one of --host or --port", file=sys.stderr)
         sys.exit(1)
 
-    changes: list[str] = []
-    if host is not None and host != target.host:
-        changes.append(f"  {pod_name} host: {target.host} -> {host}")
-        target.host = host
-    if port is not None and port != target.port:
-        changes.append(f"  {pod_name} port: {target.port} -> {port}")
-        target.port = port
+    if not any(p.name == pod_name for p in pods):
+        print(f"ERROR: pod '{pod_name}' not found in pods.conf", file=sys.stderr)
+        print(f"Available: {', '.join(p.name for p in pods)}", file=sys.stderr)
+        sys.exit(1)
 
-    if not changes:
-        print(f"{pod_name}: already has those values, nothing to update.")
-        return
+    with locked_pods_conf():
+        # Re-parse under the lock so we operate on the freshest on-disk view
+        # (a concurrent provision / terminate may have written between
+        # ``main``'s parse and our acquisition of the lock).
+        fresh = parse_pods_conf()
+        target = next((p for p in fresh if p.name == pod_name), None)
+        if target is None:
+            # Concurrent terminate between main's parse and ours.
+            print(
+                f"ERROR: pod '{pod_name}' no longer in pods.conf "
+                f"(removed by a concurrent writer between read and update).",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
-    print("Updating pods.conf:")
-    for c in changes:
-        print(c)
-    write_pods_conf(pods)
+        changes: list[str] = []
+        if host is not None and host != target.host:
+            changes.append(f"  {pod_name} host: {target.host} -> {host}")
+            target.host = host
+        if port is not None and port != target.port:
+            changes.append(f"  {pod_name} port: {target.port} -> {port}")
+            target.port = port
 
-    # Mark the sidecar so a later auto-refresh in pod_lifecycle.py does NOT
-    # silently overwrite the values just set. No-op for permanent pods.
-    status = _set_manual_override(pod_name, value=True)
-    if status is not None:
-        print(f"  {status}")
+        if not changes:
+            print(f"{pod_name}: already has those values, nothing to update.")
+            return
 
-    print()
+        print("Updating pods.conf:")
+        for c in changes:
+            print(c)
+        write_pods_conf(fresh)
 
-    # Auto-sync downstream configs.
-    cmd_sync(pods)
+        # Mark the sidecar so a later auto-refresh in pod_lifecycle.py does NOT
+        # silently overwrite the values just set. No-op for permanent pods.
+        status = _set_manual_override(pod_name, value=True)
+        if status is not None:
+            print(f"  {status}")
+
+        print()
+
+        # Auto-sync downstream configs from the post-write rows (still
+        # inside the lock so a concurrent session cannot regenerate the SSH
+        # config from a stale view between our write and our sync).
+        cmd_sync(fresh)
 
 
 def cmd_clear_override(pod_name: str) -> None:

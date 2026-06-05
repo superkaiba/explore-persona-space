@@ -306,14 +306,15 @@ def test_cmd_update_sets_manual_override_on_sidecar(isolated_state, monkeypatch,
     """End-to-end: cmd_update writes pods.conf AND flips manual_override=True
     in pods_ephemeral.json. The downstream cmd_sync is stubbed because
     ~/.ssh/config and ~/.claude/mcp.json are out of test scope.
+
+    ``cmd_update`` re-parses pods.conf under ``locked_pods_conf`` rather than
+    mutating the caller's list, so we stub ``parse_pods_conf`` and capture
+    the rows handed to ``write_pods_conf``.
     """
     # Seed sidecar with a registered ephemeral pod (manual_override=False).
     _write_metadata_file({"pod-391": _meta("pod-391", issue=391, pod_id="old_id")})
-    # Stub write_pods_conf and cmd_sync to avoid touching real files.
-    monkeypatch.setattr(pod_config, "write_pods_conf", lambda pods: None)
-    monkeypatch.setattr(pod_config, "cmd_sync", lambda pods: None)
-
-    rows = [
+    # The on-disk pods.conf snapshot the re-parse sees inside the lock.
+    fresh = [
         Pod(
             name="pod-391",
             host="0.0.0.0",
@@ -323,11 +324,37 @@ def test_cmd_update_sets_manual_override_on_sidecar(isolated_state, monkeypatch,
             label="thomas-pod-391",
         )
     ]
-    pod_config.cmd_update(rows, "pod-391", host="31.24.80.42", port=10439)
+    captured: dict[str, object] = {}
 
-    # In-memory row updated.
-    assert rows[0].host == "31.24.80.42"
-    assert rows[0].port == 10439
+    def fake_parse() -> list[Pod]:
+        # Return a fresh copy each call so the function under test never sees
+        # a mutation we made via the in-memory list it operates on.
+        return [
+            Pod(
+                name=p.name,
+                host=p.host,
+                port=p.port,
+                gpus=p.gpus,
+                gpu_type=p.gpu_type,
+                label=p.label,
+            )
+            for p in fresh
+        ]
+
+    monkeypatch.setattr(pod_config, "parse_pods_conf", fake_parse)
+    monkeypatch.setattr(
+        pod_config, "write_pods_conf", lambda pods: captured.setdefault("rows", pods)
+    )
+    monkeypatch.setattr(pod_config, "cmd_sync", lambda pods: None)
+
+    # The arg list is used by cmd_update only for the pre-lock pod-name
+    # existence check; the actual update operates on the re-parsed rows.
+    pod_config.cmd_update(list(fresh), "pod-391", host="31.24.80.42", port=10439)
+
+    written = captured["rows"]
+    assert len(written) == 1
+    assert written[0].host == "31.24.80.42"
+    assert written[0].port == 10439
     # Sidecar flag flipped.
     on_disk = _read_metadata_file()
     assert on_disk["pod-391"].manual_override is True
@@ -350,14 +377,33 @@ def test_cmd_update_no_op_for_pod_not_in_sidecar(isolated_state, monkeypatch, ca
     """
     # Sidecar exists but has no entry for the target name.
     _write_metadata_file({})
-    monkeypatch.setattr(pod_config, "write_pods_conf", lambda pods: None)
+    # Stub parse_pods_conf so the in-lock re-parse returns the seeded pod
+    # (the real on-disk pods.conf does not contain ``pod1``).
+    seed = [Pod(name="pod1", host="0.0.0.0", port=1, gpus=1, gpu_type="H100", label="perm")]
+    captured: dict[str, object] = {}
+
+    def fake_parse() -> list[Pod]:
+        return [
+            Pod(
+                name=p.name,
+                host=p.host,
+                port=p.port,
+                gpus=p.gpus,
+                gpu_type=p.gpu_type,
+                label=p.label,
+            )
+            for p in seed
+        ]
+
+    monkeypatch.setattr(pod_config, "parse_pods_conf", fake_parse)
+    monkeypatch.setattr(
+        pod_config, "write_pods_conf", lambda pods: captured.setdefault("rows", pods)
+    )
     monkeypatch.setattr(pod_config, "cmd_sync", lambda pods: None)
 
-    rows = [
-        Pod(name="pod1", host="0.0.0.0", port=1, gpus=1, gpu_type="H100", label="perm"),
-    ]
-    pod_config.cmd_update(rows, "pod1", host="9.9.9.9", port=22)
-    assert rows[0].host == "9.9.9.9"
+    pod_config.cmd_update(list(seed), "pod1", host="9.9.9.9", port=22)
+    written = captured["rows"]
+    assert written[0].host == "9.9.9.9"
     # No exception, and no "manual_override for pod1" status line printed.
     out = capsys.readouterr().out
     assert "manual_override for pod1" not in out
