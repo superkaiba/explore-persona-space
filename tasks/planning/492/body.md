@@ -6,16 +6,16 @@ tags: []
 created_at: '2026-06-05T09:32:22Z'
 has_clean_result: false
 parent_id: 477
-goal: Determine whether the contrastive-negative post-response-slot suppression (the
-  slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective
-  suppression), by toggling only that term in a regime where the OFF arm implants
-  above floor.
+goal: Identify which change in the v2->v4 training-code redesign caused the contrastive-negative
+  marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42,
+  lr=2e-6, r=32, count=2, 2 epochs) where v2 saturated (source dG~17, emit 0.8), and
+  restore a reproducible above-floor implant.
 relates_to:
 - leak-contrastive-negatives
 ---
 ## Goal
 
-Determine whether the contrastive-negative post-response-slot suppression (the slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective suppression), by toggling only that term in a regime where the OFF arm implants above floor.
+Identify which change in the v2->v4 training-code redesign caused the contrastive-negative marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42, lr=2e-6, r=32, count=2, 2 epochs) where v2 saturated (source dG~17, emit 0.8), and restore a reproducible above-floor implant.
 
 
 ## Context
