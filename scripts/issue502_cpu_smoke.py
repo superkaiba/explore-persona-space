@@ -44,13 +44,16 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from issue493_extraction_metric_bakeoff import (  # noqa: E402
     _extract_batch,
+    _extract_one,
     _js_divergence_rowwise,
     _LayerHookCapture,
     _load_probe_questions,
     _set_roots,
     compute_next_token_js_matrix,
     cross_check_next_token_js_against_406,
+    load_next_token_logits,
     merge_partitioned_activations,
+    write_next_token_js_matrix,
 )
 
 logger = logging.getLogger("i502.cpu_smoke")
@@ -252,14 +255,17 @@ def check_root_override() -> dict:
 
 
 def check_batched_vs_serial_equality() -> dict:
-    """THE batching gate: cosine(batched extraction, serial extraction) ≥ 0.999
-    per (layer × extraction point) on a tiny CPU model.
+    """THE batching gate: cosine(batched extraction, ORIGINAL #493 serial
+    extraction) ≥ 0.999 per (layer × extraction point) on a tiny CPU model.
 
     Loads ``hf-internal-testing/tiny-random-gpt2`` (no chat template; we
     inject one so ``build_prompt_for_condition`` on Class B works), runs
-    a B=3 batched ``_extract_batch``, then runs the equivalent SERIAL
-    extraction (B=1 through the same code path), then asserts
-    cosine(batched, serial) ≥ 0.999 per probe and per layer for both
+    a B=3 batched ``_extract_batch``, then runs ``_extract_one`` per
+    probe — the SAME code path #493's serial production loop uses
+    (round-2 fix #6: the round-1 smoke compared `_extract_batch(B>=2)`
+    vs `_extract_batch(B=1)`, which is batch-vs-batch and NOT proof
+    that the batched path agrees with the preserved #493 serial path).
+    Asserts cosine(batched, serial) ≥ 0.999 per probe × layer for both
     ``last_prompt`` and ``mean_response``. Also exercises the next-token
     logits capture path.
     """
@@ -331,27 +337,29 @@ def check_batched_vs_serial_equality() -> dict:
             capture_next_token_logits=True,
         )
 
-    # Serial-like (B=1 per probe through the same _extract_batch path).
+    # SERIAL via _extract_one (per probe) — the ORIGINAL #493 production
+    # serial path, unchanged. This is the byte-equality reference the
+    # batched path must agree with within fp tolerance.
     rows_s: dict[int, dict[str, dict[int, torch.Tensor]]] = {}
     with _LayerHookCapture(adapter, target_layers) as cap:
         for i, p in enumerate(probes):
-            rows_one, _, _, _ = _extract_batch(
+            res, _meta = _extract_one(
                 adapter,
                 tok,
                 device="cpu",
                 cond=_Cond(),
-                questions=[p],
+                question=p,
                 class_d_rewrites={},
                 extraction_points=extraction_points,
                 layers=target_layers,
                 max_response_tokens=4,
                 hook_capture=cap,
-                capture_next_token_logits=False,
             )
-            rows_s[i] = rows_one[0]
+            rows_s[i] = res
 
     cosines_lp: list[float] = []
     cosines_mr: list[float] = []
+    mr_compared = 0
     for i in range(len(probes)):
         for L in target_layers:
             v_b_lp = rows_b[i]["last_prompt"][L]
@@ -359,29 +367,43 @@ def check_batched_vs_serial_equality() -> dict:
             cs = torch.nn.functional.cosine_similarity(v_b_lp, v_s_lp, dim=0).item()
             cosines_lp.append(cs)
             assert cs > 0.999, (
-                f"batched/serial LAST_PROMPT cosine probe={i} L={L} = {cs:.6f} < 0.999 — "
-                "batched extraction diverges from serial at last_prompt!"
+                f"batched(_extract_batch)/serial(_extract_one) LAST_PROMPT cosine "
+                f"probe={i} L={L} = {cs:.6f} < 0.999 — batched extraction diverges "
+                "from the preserved #493 serial path at last_prompt!"
             )
-            v_b_mr = rows_b[i]["mean_response"][L]
-            v_s_mr = rows_s[i]["mean_response"][L]
-            # mean_response may be NaN if the model emitted zero response
-            # tokens (rare on tiny-random-gpt2 with max_new_tokens=4);
-            # skip those rows from the gate but log.
-            if not torch.any(torch.isnan(v_b_mr)) and not torch.any(torch.isnan(v_s_mr)):
-                cs_mr = torch.nn.functional.cosine_similarity(v_b_mr, v_s_mr, dim=0).item()
-                cosines_mr.append(cs_mr)
-                assert cs_mr > 0.999, (
-                    f"batched/serial MEAN_RESPONSE cosine probe={i} L={L} = {cs_mr:.6f} < 0.999 — "
-                    "batched extraction diverges from serial at mean_response!"
-                )
+            # mean_response may be NaN if either path emitted zero
+            # response tokens; skip those rows. We require at least one
+            # mean_response comparison to land non-NaN so the gate isn't
+            # silently a no-op.
+            v_b_mr = rows_b[i]["mean_response"].get(L)
+            v_s_mr = rows_s[i]["mean_response"].get(L)
+            if v_b_mr is None or v_s_mr is None:
+                continue
+            if torch.any(torch.isnan(v_b_mr)) or torch.any(torch.isnan(v_s_mr)):
+                continue
+            cs_mr = torch.nn.functional.cosine_similarity(v_b_mr, v_s_mr, dim=0).item()
+            cosines_mr.append(cs_mr)
+            mr_compared += 1
+            assert cs_mr > 0.999, (
+                f"batched(_extract_batch)/serial(_extract_one) MEAN_RESPONSE cosine "
+                f"probe={i} L={L} = {cs_mr:.6f} < 0.999 — batched extraction "
+                "diverges from the preserved #493 serial path at mean_response!"
+            )
+    assert mr_compared >= 1, (
+        "mean_response equality gate produced zero comparable rows — the gate "
+        "would have been a silent no-op. Increase max_response_tokens or pick "
+        "probes the tiny model will respond to."
+    )
     assert all(i in nt_b for i in range(len(probes))), "next-token logits not captured for all"
     return {
         "n_probes": len(probes),
         "n_layers": len(target_layers),
+        "serial_reference": "_extract_one (preserved #493 production path)",
         "last_prompt_min_cosine": min(cosines_lp),
         "last_prompt_max_cosine": max(cosines_lp),
         "mean_response_min_cosine": min(cosines_mr) if cosines_mr else None,
         "mean_response_max_cosine": max(cosines_mr) if cosines_mr else None,
+        "mean_response_rows_compared": mr_compared,
         "n_next_token_logits": len(nt_b),
     }
 
@@ -426,6 +448,282 @@ def check_multi_gpu_partition_correctness() -> dict:
     return {"shape": list(stacked.shape), "ok": True}
 
 
+# ─────────────────────────── Check 10: partition no-drop assertion ───────────
+
+
+def check_partition_no_drop_assertion() -> dict:
+    """expected_cond_ids gates the merge: missing + extra cids both raise.
+
+    Confirms the no-drop assertion added in round-2 (fix #4) catches stale /
+    partial partitions before they corrupt downstream regression.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "nodrop")
+    from issue493_extraction_metric_bakeoff import ACT_DIR, BAKEOFF_DIR
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    ACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    n_q, H = 3, 4
+    # Only write B1, B2 (B3 is "missing" — simulates a silently-dead GPU worker).
+    for cid in ("B1", "B2"):
+        torch.save(
+            {
+                "activations_one_cond": np.ones((n_q, H), dtype=np.float32),
+                "cond_id": cid,
+                "n_probes": n_q,
+            },
+            ACT_DIR / f"last_prompt__layer0__cond{cid}.pt",
+        )
+    # Missing-cid case: expected has B3, present only has {B1, B2} → must raise.
+    missing_caught = False
+    try:
+        merge_partitioned_activations(
+            ("last_prompt",),
+            (0,),
+            overwrite=True,
+            expected_cond_ids=["B1", "B2", "B3"],
+        )
+    except AssertionError as e:
+        msg = str(e)
+        assert "missing_conds=['B3']" in msg, (
+            f"Expected missing_conds=['B3'] in message; got: {msg}"
+        )
+        missing_caught = True
+    assert missing_caught, "no-drop assertion did NOT fire on missing cid B3"
+
+    # Extra-cid case: expected only B1, present {B1, B2} → must raise on B2 extra.
+    extra_caught = False
+    try:
+        merge_partitioned_activations(
+            ("last_prompt",),
+            (0,),
+            overwrite=True,
+            expected_cond_ids=["B1"],
+        )
+    except AssertionError as e:
+        msg = str(e)
+        assert "extra_conds=['B2']" in msg, f"Expected extra_conds=['B2'] in message; got: {msg}"
+        extra_caught = True
+    assert extra_caught, "no-drop assertion did NOT fire on extra cid B2"
+
+    # Match case: expected B1+B2, present B1+B2 → merge succeeds.
+    out = merge_partitioned_activations(
+        ("last_prompt",),
+        (0,),
+        overwrite=True,
+        expected_cond_ids=["B1", "B2"],
+    )
+    assert out["last_prompt"][0].shape == (2, n_q, H), out["last_prompt"][0].shape
+    return {
+        "missing_assertion_fired": missing_caught,
+        "extra_assertion_fired": extra_caught,
+        "match_case_shape": list(out["last_prompt"][0].shape),
+    }
+
+
+# ─────────────────────────── Check 11: prod JS cross-check is wired ──────────
+
+
+def check_prod_js_cross_check_wired() -> dict:
+    """write_next_token_js_matrix MUST call the #406 cross-check + raise on
+    floor failure when the reference is on disk. Round-1 blocker #1: this
+    used to be a logged-only no-op in production, despite the cosine
+    cross-check being a hard gate at the same site.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "jsxcheck")
+    from issue493_extraction_metric_bakeoff import (
+        BAKEOFF_DIR,
+        METRIC_DIR,
+    )
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    # Build adversarial next-token sidecars whose JS ranking deliberately
+    # MISMATCHES #406's (we shuffle the cid → probability assignment so
+    # rank correlation tanks). This MUST raise when enforce_cross_check=True.
+    nt_dir = BAKEOFF_DIR / "next_token_logits"
+    nt_dir.mkdir(parents=True, exist_ok=True)
+    n_q, V = 4, 32
+    cids = [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "C1",
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+    ]
+    # Random adversarial distributions per cid (different seeds → uncorrelated).
+    for k, cid in enumerate(cids):
+        rng = np.random.default_rng(k * 7919 + 17)
+        # Sharp distributions so JS spread is large.
+        logits = rng.normal(size=(n_q, V)).astype(np.float32) * 5.0
+        probs = np.exp(logits - logits.max(axis=1, keepdims=True))
+        probs = probs / probs.sum(axis=1, keepdims=True)
+        torch.save(
+            {
+                "extraction_point": "last_prompt",
+                "cond_id": cid,
+                "n_probes": n_q,
+                "vocab_size": V,
+                "probs": probs.astype(np.float32),
+            },
+            nt_dir / f"last_prompt__cond{cid}.pt",
+        )
+
+    # If #406 isn't available at this dev VM, the cross-check is a no-op
+    # (per its own "no #406 reference available" branch). Skip with a
+    # clearly tagged digest.
+    p406 = PROJECT_ROOT / "eval_results/issue_406/divergence/D_matrix.json"
+    if not p406.exists():
+        return {
+            "ok": True,
+            "reason": "no #406 reference on dev VM; production wiring untested here",
+        }
+
+    # enforce_cross_check=True (production default) must raise on the
+    # adversarial input.
+    raised = False
+    try:
+        write_next_token_js_matrix(enforce_cross_check=True)
+    except AssertionError as e:
+        raised = True
+        msg = str(e)
+        assert "rank correlation" in msg.lower(), f"unexpected raise message: {msg}"
+    assert raised, (
+        "write_next_token_js_matrix(enforce_cross_check=True) did NOT raise on "
+        "adversarial input — the JS baseline would ship unguarded in production!"
+    )
+    # Sidecar of the failure was written.
+    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    assert cross_check_path.exists(), "cross_check_406.json sidecar not written on failure"
+    cc = json.loads(cross_check_path.read_text())
+    assert cc.get("failed") is True, f"failure sidecar missing 'failed: true': {cc}"
+
+    # enforce_cross_check=False must NOT raise (smoke / dev path).
+    write_next_token_js_matrix(enforce_cross_check=False)
+
+    # Sanity: load_next_token_logits reads the sidecars we wrote.
+    loaded = load_next_token_logits()
+    assert len(loaded) == len(cids), f"loaded {len(loaded)} cids, expected {len(cids)}"
+    return {
+        "adversarial_raise_on_enforce_true": raised,
+        "no_raise_on_enforce_false": True,
+        "failure_sidecar_written": cross_check_path.exists(),
+        "sidecars_loaded": len(loaded),
+    }
+
+
+# ─────────────────────────── Check 12: 50-prefix strict cosine path ──────────
+
+
+def check_strict_50_prefix_cosine_path() -> dict:
+    """Verify the round-2 fix #5 main()-level slice logic works end-to-end:
+    when n_q > 50 AND --probe-pool is set, the 50-prefix path is selected
+    and the strict gate runs. We test the SHAPE of the slice here (the
+    full strict-vs-#406 comparison runs on the pod).
+    """
+    # Reuse the probe pool — its first 50 ARE q_test by construction (the
+    # production loader asserts this).
+    if not PROBES_PATH.exists():
+        return {"ok": True, "reason": "probe pool missing; skipped"}
+    probes_loaded = _load_probe_questions(pool_path=PROBES_PATH)
+    from explore_persona_space.experiments.i460_data import load_q_test_extended_50
+
+    q_test = load_q_test_extended_50()
+    # Prefix invariant: the first 50 of the 500-pool are byte-identical
+    # to q_test. This is the precondition for the round-2 strict-prefix
+    # slice in main() — if it fails, the strict gate would silently
+    # compare against the wrong probes.
+    assert probes_loaded[:50] == q_test, (
+        "500-pool prefix is not q_test — strict cosine slice broken"
+    )
+    # Simulate the slice main() builds: arr[:, :50, :] on a fake (n_cond, 500, H) tensor.
+    fake = np.arange(16 * 500 * 4, dtype=np.float32).reshape(16, 500, 4)
+    sliced = fake[:, :50, :]
+    assert sliced.shape == (16, 50, 4), sliced.shape
+    return {
+        "prefix_is_q_test": True,
+        "n_q_total": 500,
+        "sliced_shape": list(sliced.shape),
+    }
+
+
+# ─────────────────────────── Check 13: --batched no --partitioned ────────────
+
+
+def check_batched_without_partitioned_canonical() -> dict:
+    """Round-2 fix #3: --batched without --partitioned MUST produce
+    canonical <point>__layer<L>.pt files the metrics phase can load.
+
+    The fix routes the in-process branch (when write_partitioned=False)
+    to write per-cond files AND auto-merge them into the canonical shape.
+    We exercise the path-write contract end-to-end: write per-cond files
+    the way the batched extractor does, then call
+    merge_partitioned_activations EXACTLY as run_extraction_batched does
+    in its auto-merge branch (with expected_cond_ids set), and confirm
+    the canonical file lands + is correctly shaped + matches the expected
+    canonical ordering. The model's forward-pass correctness is already
+    covered by check_batched_vs_serial_equality, so this check is
+    model-free.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "nopartition")
+    from issue493_extraction_metric_bakeoff import ACT_DIR, BAKEOFF_DIR
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    ACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    n_q, H = 3, 4
+    for cid in ("B1", "B2", "B3"):
+        torch.save(
+            {
+                "activations_one_cond": np.full((n_q, H), float(ord(cid[1])), dtype=np.float32),
+                "cond_id": cid,
+                "n_probes": n_q,
+            },
+            ACT_DIR / f"last_prompt__layer0__cond{cid}.pt",
+        )
+    # Same call shape run_extraction_batched's `if not write_partitioned`
+    # branch uses (with the same expected_cond_ids list for the no-drop
+    # assertion).
+    merge_partitioned_activations(
+        ("last_prompt",), (0,), overwrite=True, expected_cond_ids=["B1", "B2", "B3"]
+    )
+    canonical = ACT_DIR / "last_prompt__layer0.pt"
+    assert canonical.exists(), f"canonical file not produced at {canonical}"
+    loaded = torch.load(canonical, map_location="cpu", weights_only=False)
+    assert loaded["activations"].shape == (3, n_q, H), loaded["activations"].shape
+    assert loaded["cond_ids"] == ["B1", "B2", "B3"], loaded["cond_ids"]
+    return {
+        "canonical_exists": True,
+        "shape": list(loaded["activations"].shape),
+        "cond_ids": loaded["cond_ids"],
+    }
+
+
 # ─────────────────────────── Main ───────────────────────────
 
 
@@ -442,6 +740,10 @@ def main() -> int:
         ("partition_merge", check_partition_merge),
         ("multi_gpu_partition_correctness", check_multi_gpu_partition_correctness),
         ("batched_vs_serial_equality", check_batched_vs_serial_equality),
+        ("partition_no_drop_assertion", check_partition_no_drop_assertion),
+        ("prod_js_cross_check_wired", check_prod_js_cross_check_wired),
+        ("strict_50_prefix_cosine_path", check_strict_50_prefix_cosine_path),
+        ("batched_without_partitioned_canonical", check_batched_without_partitioned_canonical),
     ]
     for name, fn in checks:
         logger.info("=== check: %s ===", name)

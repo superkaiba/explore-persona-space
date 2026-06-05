@@ -50,10 +50,49 @@
   "batched_vs_serial_equality": {
     "n_probes": 3,
     "n_layers": 2,
+    "serial_reference": "_extract_one (preserved #493 production path)",
     "last_prompt_min_cosine": 0.9999998807907104,
     "last_prompt_max_cosine": 1.0,
     "mean_response_min_cosine": 0.9999999403953552,
     "mean_response_max_cosine": 1.0,
+    "mean_response_rows_compared": 6,
     "n_next_token_logits": 3
+  },
+  "partition_no_drop_assertion": {
+    "missing_assertion_fired": true,
+    "extra_assertion_fired": true,
+    "match_case_shape": [
+      2,
+      3,
+      4
+    ]
+  },
+  "prod_js_cross_check_wired": {
+    "adversarial_raise_on_enforce_true": true,
+    "no_raise_on_enforce_false": true,
+    "failure_sidecar_written": true,
+    "sidecars_loaded": 16
+  },
+  "strict_50_prefix_cosine_path": {
+    "prefix_is_q_test": true,
+    "n_q_total": 500,
+    "sliced_shape": [
+      16,
+      50,
+      4
+    ]
+  },
+  "batched_without_partitioned_canonical": {
+    "canonical_exists": true,
+    "shape": [
+      3,
+      3,
+      4
+    ],
+    "cond_ids": [
+      "B1",
+      "B2",
+      "B3"
+    ]
   }
 }

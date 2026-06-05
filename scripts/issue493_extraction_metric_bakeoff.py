@@ -1065,6 +1065,22 @@ def _extract_batch(  # noqa: C901 — batched dispatcher; one branch per extract
         # for clean per-position activations (matches the serial path
         # exactly, where the hook captures during the teacher-forced
         # forward).
+        #
+        # NOTE: do NOT pass explicit position_ids to model.generate().
+        # HF's generate() derives them internally from attention_mask in
+        # the prefill step AND uses past_key_values during incremental
+        # decode where the position index must come from cache_position,
+        # NOT from a static `position_ids` tensor. Passing explicit
+        # `position_ids` to generate() BREAKS decoded tokens (GPT-2 +
+        # tiny-random verified 2026-06-05: serial token sequence
+        # [256, 256, 875, 875] but batched-with-explicit-pos produced
+        # [256, 256, 256, 256] — the model stops advancing the position
+        # after step 1). The post-gen teacher-forced forward DOES need
+        # explicit position_ids (no past_key_values, so position arange
+        # is wrong under left-pad), and that's where we set them below.
+        # (Round-1 review blocker #2 was originally framed as "needs
+        # position_ids on generate()"; CPU smoke against _extract_one
+        # surfaced the inverse — the round-1 framing was wrong.)
         with torch.no_grad():
             gen_out = model.generate(
                 input_ids=prompt_ids,
@@ -1511,16 +1527,46 @@ def run_extraction_batched(  # noqa: C901 — top-level batched dispatcher; mirr
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    # When write_partitioned=False the caller wants downstream phases to
+    # find canonical <point>__layer<L>.pt files immediately (no separate
+    # merge step / no external dispatcher). Per-cond files ARE always
+    # written (so a mid-run crash doesn't lose work), but we merge them
+    # into the canonical shape NOW for this single-proc case.
+    # (Codex round-1 blocker #3: previously write_partitioned was IGNORED
+    # — all writes hit _partitioned_activation_path regardless, so a
+    # `--batched` without `--partitioned` invocation never produced the
+    # canonical files the metrics phase loads, and metrics silently
+    # failed with "Missing checkpoint".)
+    if not write_partitioned:
+        logger.info(
+            "write_partitioned=False: merging this proc's per-cond "
+            "files into canonical <point>__layer<L>.pt shape"
+        )
+        expected_cids_this_proc = [c.cid for c in active_conds]
+        # For end_of_system, only Class A conds were actually written; pass
+        # the Class-A subset as the expected set for that point to keep the
+        # no-drop assertion meaningful (no false-fail on B/C/D conds).
+        eos_expected = [c.cid for c in active_conds if c.cls == "A"]
+        for pt in extraction_points:
+            expected_for_pt = eos_expected if pt == "end_of_system" else expected_cids_this_proc
+            merge_partitioned_activations(
+                (pt,),
+                layers,
+                overwrite=overwrite,
+                expected_cond_ids=expected_for_pt or None,
+            )
+
     # Return THIS PROC's contribution (caller merges across procs).
     written: dict[str, dict[int, np.ndarray]] = {pt: {} for pt in extraction_points}
     return written
 
 
-def merge_partitioned_activations(
+def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker + no-drop assertions branch per group; flattening would split a single contract across helpers.
     extraction_points: tuple[str, ...],
     layers: tuple[int, ...],
     *,
     overwrite: bool,
+    expected_cond_ids: list[str] | None = None,
 ) -> dict[str, dict[int, np.ndarray]]:
     """Stack per-cond partitioned files into the canonical ``<point>__layer<L>.pt``
     shape downstream phases expect.
@@ -1529,6 +1575,20 @@ def merge_partitioned_activations(
     group, sorts cond_ids in their canonical CONDITIONS order, stacks the
     per-cond (n_q, H) arrays to (n_cond, n_q, H) (or (n_cond, 1, H) for
     end_of_system), and writes the merged ``<point>__layer<L>.pt``.
+
+    Parameters
+    ----------
+    expected_cond_ids
+        When provided, ASSERT exact set equality between the partitioned
+        files found on disk for each (point, layer) and this expected set.
+        Fail loud on any missing OR extra cond_id. This is the multi-GPU
+        no-drop gate: a stale partial partition or a silently-failed GPU
+        worker would otherwise yield e.g. a 15-cond merged stack that the
+        regression then reads as if it were the full 16-cond grid.
+        (Codex round-1 blocker #4.) For end_of_system pass the Class-A
+        subset only; for last_prompt / mean_response pass the full active
+        cond set. None = old behavior (use whatever's on disk; for
+        backwards-compat with the CPU smoke's tiny synthetic merges).
 
     Determinism: cond ordering is the canonical i406 CONDITIONS order, so
     the merged stack is independent of which GPU process produced each
@@ -1544,8 +1604,14 @@ def merge_partitioned_activations(
     cid_order = [c.cid for c in CONDITIONS]
     cid_order_index = {c: i for i, c in enumerate(cid_order)}
     written: dict[str, dict[int, np.ndarray]] = {pt: {} for pt in extraction_points}
+    expected_set = set(expected_cond_ids) if expected_cond_ids is not None else None
     if not ACT_DIR.exists():
         logger.warning("merge_partitioned_activations: %s missing, nothing to do", ACT_DIR)
+        if expected_set:
+            raise AssertionError(
+                f"merge_partitioned_activations: ACT_DIR {ACT_DIR} missing but "
+                f"expected_cond_ids={sorted(expected_set)} were requested"
+            )
         return written
     pattern = re.compile(r"^(?P<pt>[a-z_]+)__layer(?P<L>\d+)__cond(?P<cid>[A-Z]\d+)\.pt$")
     grouped: dict[tuple[str, int], dict[str, dict]] = {}
@@ -1566,12 +1632,43 @@ def merge_partitioned_activations(
         if canonical_path.exists() and not overwrite:
             logger.info("Skipping merge for existing %s (use --overwrite to redo)", canonical_path)
             d = torch.load(canonical_path, map_location="cpu", weights_only=False)
+            # Even when re-using a cached merge, enforce the no-drop
+            # assertion against the cached cond_ids — a stale cache from
+            # a prior 15-cond run cannot silently slip through.
+            if expected_set is not None:
+                cached_set = set(d.get("cond_ids", []))
+                missing = expected_set - cached_set
+                extra = cached_set - expected_set
+                if missing or extra:
+                    raise AssertionError(
+                        f"Cached merge {canonical_path} fails no-drop assertion: "
+                        f"missing_conds={sorted(missing)}, extra_conds={sorted(extra)}, "
+                        f"expected={sorted(expected_set)}. Pass --overwrite to re-merge."
+                    )
             written[pt][L] = d["activations"]
             continue
         # Order conds canonically (only those present).
         present_cids = sorted(per_cond.keys(), key=lambda c: cid_order_index.get(c, 1_000_000))
         if not present_cids:
+            if expected_set:
+                raise AssertionError(
+                    f"No partitioned per-cond files for ({pt}, layer={L}) but "
+                    f"expected {sorted(expected_set)}. Did the GPU worker(s) silently fail?"
+                )
             continue
+        # No-drop assertion: the present cond set must EQUAL the expected one.
+        if expected_set is not None:
+            present_set = set(present_cids)
+            missing = expected_set - present_set
+            extra = present_set - expected_set
+            if missing or extra:
+                raise AssertionError(
+                    f"Partition merge no-drop FAILED at ({pt}, layer={L}): "
+                    f"missing_conds={sorted(missing)} extra_conds={sorted(extra)} "
+                    f"present={present_cids} expected={sorted(expected_set)}. "
+                    "A stale partial partition would silently yield an under-sized "
+                    "bakeoff grid; refusing to merge."
+                )
         first = per_cond[present_cids[0]]["activations_one_cond"]
         n_q = first.shape[0]
         H = first.shape[1]
@@ -1727,13 +1824,30 @@ def compute_next_token_js_matrix(
     }
 
 
-def write_next_token_js_matrix() -> Path | None:
-    """Build the next-token JS matrix from sidecar files and write to disk.
+def write_next_token_js_matrix(*, enforce_cross_check: bool = True) -> Path | None:
+    """Build the next-token JS matrix from sidecar files, write it to disk,
+    AND run the #406 cross-check fail-loud (matching the cosine cross-check's
+    guard discipline).
 
-    Output: ``<METRIC_DIR>/last_prompt__layer-1__next_token_js__raw.json``.
+    Output (always when sidecars present):
+      ``<METRIC_DIR>/last_prompt__layer-1__next_token_js__raw.json``
+      ``<METRIC_DIR>/last_prompt__layer-1__next_token_js__raw__cross_check_406.json``
+
     The layer=-1 sentinel distinguishes the OUTPUT metric (one scalar per
-    pair) from the per-layer activation metrics. Returns the path written
-    or None if no sidecars on disk.
+    pair) from the per-layer activation metrics.
+
+    Parameters
+    ----------
+    enforce_cross_check
+        When True (default, production): if the #406 reference matrix is
+        present on disk, REQUIRE the rank-correlation cross-check to pass
+        (raises AssertionError on fail). When False (smoke / tests where
+        the #406 reference is intentionally synthetic or absent): only LOG
+        the result, don't raise. (Codex round-1 blocker #1: this function
+        existed in isolation; nothing in main()/the aggregation pipeline
+        called the cross-check, so the JS baseline shipped unguarded.)
+
+    Returns the matrix path written, or None if no sidecars on disk.
     """
     cid_to_probs = load_next_token_logits()
     if not cid_to_probs:
@@ -1744,6 +1858,41 @@ def write_next_token_js_matrix() -> Path | None:
     out_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw.json"
     _write_json_atomic(out_path, payload)
     logger.info("Wrote next_token_js matrix to %s", out_path)
+
+    # ── #406 cross-check (production-guarded) ──
+    # The cosine cross-check fails the whole run on a recipe drift; the JS
+    # baseline gets the same treatment so a drifted recipe can't ship to
+    # the regression unnoticed. When the #406 reference is missing this is
+    # a no-op; when present, fail-loud per the safety-net discipline.
+    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    try:
+        summary = cross_check_next_token_js_against_406(payload)
+    except AssertionError as e:
+        _write_json_atomic(
+            cross_check_path,
+            {
+                "schema_version": 1,
+                "failed": True,
+                "failure_reason": str(e),
+                "rank_corr_floor": float(COSINE_406_JS_RANK_CORR_FLOOR),
+                "git_sha": _git_sha(),
+                "timestamp_utc": _now_iso(),
+            },
+        )
+        if enforce_cross_check:
+            raise
+        logger.warning("next_token_js cross-check FAIL (enforce=False, continuing): %s", e)
+    else:
+        _write_json_atomic(
+            cross_check_path,
+            {
+                "schema_version": 1,
+                "failed": False,
+                "summary": summary,
+                "git_sha": _git_sha(),
+                "timestamp_utc": _now_iso(),
+            },
+        )
     return out_path
 
 
@@ -4447,16 +4596,45 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
 
     load_dotenv()
 
+    # Resolve the expected cond-id set for the no-drop assertion in the
+    # partition merge. `--transformations` overrides; otherwise we expect
+    # the canonical 16-cond CONDITIONS set. For end_of_system, only the
+    # Class A subset is expected (B/C/D have no system message). (Codex
+    # round-1 blocker #4.)
+    from explore_persona_space.experiments.i406_conditions import (
+        CONDITIONS as _ALL_CONDS,
+    )
+    from explore_persona_space.experiments.i406_conditions import (
+        CONDITIONS_BY_ID as _CONDS_BY_ID,
+    )
+
+    if args.transformations:
+        _active_for_expected = [_CONDS_BY_ID[c] for c in args.transformations]
+    else:
+        _active_for_expected = list(_ALL_CONDS)
+    _expected_full = [c.cid for c in _active_for_expected]
+    _expected_eos = [c.cid for c in _active_for_expected if c.cls == "A"]
+
+    def _expected_for_point(pt: str) -> list[str] | None:
+        if pt == "end_of_system":
+            return _expected_eos or None
+        return _expected_full or None
+
     # MERGE-ONLY shortcut: just stack partitioned activation files into the
     # canonical <point>__layer<L>.pt shape and exit. Runs after all GPU procs
     # have written their per-cond partitioned files.
     if args.merge_only:
-        merge_partitioned_activations(
-            tuple(args.extraction_points), tuple(args.layers), overwrite=args.overwrite
-        )
-        # Also build the next_token_js matrix file from the sidecars.
+        for pt in args.extraction_points:
+            merge_partitioned_activations(
+                (pt,),
+                tuple(args.layers),
+                overwrite=args.overwrite,
+                expected_cond_ids=_expected_for_point(pt),
+            )
+        # Also build the next_token_js matrix file from the sidecars,
+        # WITH the #406 cross-check guarded fail-loud. (Round-1 blocker #1.)
         if not args.no_next_token_js:
-            write_next_token_js_matrix()
+            write_next_token_js_matrix(enforce_cross_check=True)
         return 0
 
     # EXTRACTION phase
@@ -4494,11 +4672,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
             # files. Multi-proc runs call --merge-only after the fan-in.
             if args.partitioned and args.phase == "all":
                 logger.info("Single-process partitioned run: merging in-place")
-                merge_partitioned_activations(
-                    tuple(args.extraction_points),
-                    tuple(args.layers),
-                    overwrite=args.overwrite,
-                )
+                for pt in args.extraction_points:
+                    merge_partitioned_activations(
+                        (pt,),
+                        tuple(args.layers),
+                        overwrite=args.overwrite,
+                        expected_cond_ids=_expected_for_point(pt),
+                    )
+                if not args.no_next_token_js:
+                    write_next_token_js_matrix(enforce_cross_check=True)
         else:
             logger.info(
                 "Extraction (serial #493 path): points=%s layers=%s transformations=%s n_probes=%d",
@@ -4549,13 +4731,54 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
             _sample_L, sample_payload = usable_layer_payloads[0]
             n_cond_loaded = sample_payload["activations"].shape[0]
             n_q_loaded = sample_payload["activations"].shape[1]
-            strict = args.transformations is None and n_cond_loaded == 16 and n_q_loaded == 50
+            # The full-grid path: same 16 conds AND exactly 50 probes
+            # (== bit-identical recipe to #406) → strict on the full set.
+            # Round-1 review flagged that at n_q=500 (the #502 default)
+            # this dropped to logged-only, turning the safety net OFF.
+            # Round-2 fix: when n_q > 50 AND the first 50 probes ARE the
+            # q_test prefix (which is the #502 pool's invariant), slice
+            # the prefix and run the cross-check STRICT on that slice —
+            # the strict guard is recovered without re-running 500 probes
+            # through the off-policy recipe. (Codex/Claude round-1
+            # blocker #5.)
+            n_cond_match = args.transformations is None and n_cond_loaded == 16
+            strict_full = n_cond_match and n_q_loaded == 50
+            strict_prefix = (
+                n_cond_match
+                and n_q_loaded > 50
+                and args.probe_pool is not None  # 500-pool ⇒ q_test is the prefix
+            )
+            cross_check_map = last_prompt_map
+            cross_check_strict = strict_full
+            cross_check_slice_note = "full"
+            if strict_prefix:
+                # Build a fresh map with the first-50-probe slice per layer
+                # so the strict comparison sees byte-identical-recipe inputs.
+                cross_check_map = {}
+                for L, p in last_prompt_map.items():
+                    if not (isinstance(p, dict) and "activations" in p):
+                        continue
+                    arr = p["activations"]  # (n_cond, n_q, H)
+                    if arr.shape[1] < 50:
+                        continue
+                    cross_check_map[L] = {
+                        **p,
+                        "activations": arr[:, :50, :],
+                        "n_probes": 50,
+                    }
+                cross_check_strict = True
+                cross_check_slice_note = "q_test_prefix_50"
+                logger.info(
+                    "cosine cross-check: 500-probe pool detected; running STRICT "
+                    "on the q_test prefix (probes[0:50]) — recovers the #406 "
+                    "safety net that n_q==50 used to gate."
+                )
             try:
                 check = reproduce_last_token_cosine_check(
-                    last_prompt_map,
+                    cross_check_map,
                     existing,
                     cond_ids=sample_payload["cond_ids"],
-                    strict=strict,
+                    strict=cross_check_strict,
                 )
             except AssertionError as e:
                 # Persist the failure context before re-raising so the
@@ -4566,6 +4789,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                         "schema_version": 1,
                         "tolerance": COSINE_REPRO_TOLERANCE,
                         "strict": True,
+                        "slice": cross_check_slice_note,
                         "failed": True,
                         "failure_reason": str(e),
                         "n_cond_loaded": int(n_cond_loaded),
@@ -4580,7 +4804,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                 {
                     "schema_version": 1,
                     "tolerance": COSINE_REPRO_TOLERANCE,
-                    "strict": strict,
+                    "strict": cross_check_strict,
+                    "slice": cross_check_slice_note,
                     "n_cond_loaded": int(n_cond_loaded),
                     "n_probes_loaded": int(n_q_loaded),
                     "per_layer": check,
