@@ -1005,12 +1005,25 @@ def _has_upload_verification_pass(issue: int) -> bool:
         return False
     note = verification_events[-1].get("note", "") or ""
     # Prefer the canonical bold-prefixed verdict line (``**Verdict: PASS**``);
-    # fall back to a looser form for any older/unbolded note. Anchoring on the
-    # ``**`` prefix avoids a stray "PASS"/"FAIL" word elsewhere in the note
-    # body flipping the parsed verdict.
-    match = re.search(
-        r"\*\*\s*verdict\s*:\s*\*?\*?\s*(PASS|FAIL|WARN)\b", note, re.IGNORECASE
-    ) or re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+    # fall back to a looser ``Verdict: PASS`` form for older/unbolded notes;
+    # final fallback accepts a bare verdict token at the very START of the
+    # note (e.g. ``PASS (orchestrator-verified ...)``), which is the shape
+    # the orchestrator posts when it verifies uploads directly without going
+    # through the upload-verifier agent's bold-prefixed template (incident
+    # 2026-06-05, task #465: the parser refused the terminate because the
+    # orchestrator-posted note led with a bare ``PASS`` and neither
+    # ``Verdict``-keyed regex matched, forcing a ``--skip-upload-verify``
+    # override on a fully-verified pod). The ``re.match`` anchor is
+    # load-bearing: it only fires when the note BEGINS with the verdict
+    # token, so a stray ``PASS``/``FAIL`` later in a bold-less note body
+    # cannot flip the parsed verdict (the existing anchor-on-bold guarantee
+    # — see ``test_has_upload_verification_pass_anchors_on_bold_verdict_line``
+    # — still holds because the bold regex is tried first and short-circuits).
+    match = (
+        re.search(r"\*\*\s*verdict\s*:\s*\*?\*?\s*(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+        or re.search(r"verdict[:*\s]+(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+        or re.match(r"\s*(PASS|FAIL|WARN)\b", note, re.IGNORECASE)
+    )
     return match is not None and match.group(1).upper() == "PASS"
 
 
