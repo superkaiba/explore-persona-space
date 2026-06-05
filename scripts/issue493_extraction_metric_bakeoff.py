@@ -34,18 +34,25 @@ Extraction points:
       tokens. One vector per (transformation, question).
 
 Metrics (computed per layer):
-  - cosine     — cosine distance of mean activation centroids (1 − cos_sim)
-  - euclidean  — L2 distance of centroids
-  - mahal      — Mahalanobis-on-pooled-cov centroid distance (PCA-whitened)
-  - fisher     — PCA-whitened mean-difference Fisher distance (n≪d safe via
-                 dual/Gram PCA; never inverts a 3584×3584 covariance)
-  - mmd        — RBF-MMD² (median-heuristic bandwidth, permutation null)
-  - c2st       — held-out linear-probe AUC (logistic regression, 5-fold)
-  - delta_spec — paired Δ-spectrum: ‖mean Δ‖, coherence, effective dim
-                 (Δ_i = h_b(Q_i) − h_a(Q_i), same probe questions, matched
-                 ordering, PCA on the per-question displacements)
-  - gauss_kl   — Gaussian symmetric-KL in the top-k PCA subspace
-  - wass2      — Bures-Wasserstein² between Gaussians in the top-k PCA subspace
+  - cosine            — cosine distance of mean activation centroids (1 − cos_sim)
+  - euclidean         — L2 distance of centroids
+  - mahal             — per-pair Mahalanobis-on-pooled-cov centroid distance,
+                        in a top-k PCA subspace (n≪d-safe via dual/Gram PCA;
+                        never inverts a 3584×3584 covariance). Fisher LDA
+                        between two means is identical math to this, so we
+                        don't list "fisher" as a separate panel row.
+  - mahal_pooled_ctx  — Mahalanobis vs CONTEXT-pooled covariance, the meaningful
+                        one-vector-per-cond variant for end_of_system (per-pair
+                        within-cloud cov is undefined at n_q=1). Fails N/A with
+                        an explicit reason if the pooled cov is rank-deficient.
+  - mmd               — UNBIASED RBF-MMD² (Gretton 2012; median-heuristic
+                        bandwidth; permutation null persisted to a sibling JSON)
+  - c2st              — held-out linear-probe distance 2·|AUC−0.5| (5-fold)
+  - delta_spec        — paired Δ-spectrum: ‖mean Δ‖, coherence, effective dim
+                        (Δ_i = h_b(Q_i) − h_a(Q_i), same probe questions,
+                        matched ordering, PCA on the per-question displacements)
+  - gauss_kl          — Gaussian symmetric-KL in the top-k PCA subspace
+  - wass2             — Bures-Wasserstein² between Gaussians in the top-k subspace
 
 Regression:
   - Length-partial Spearman ρ (rank-residualize on log prompt_tokens), per the
@@ -829,6 +836,15 @@ def _centroid_mahal(Xa: np.ndarray, Xb: np.ndarray, k: int) -> float:
     return float(np.sqrt(float(diff @ inv_cov_diff)))
 
 
+# Eigenvalue / condition-number gate for the context-pooled covariance.
+# These bite BEFORE the 1e-6 ridge, so a genuinely rank-deficient pooled
+# cov (e.g. n_cond=5 in a k=16 PCA subspace, or every centroid collapsed
+# to the same point) cannot be silently regularized into a finite — but
+# meaningless — Mahalanobis distance.
+POOLED_COV_EIG_FLOOR: float = 1e-10  # smallest non-trivial eigenvalue
+POOLED_COV_COND_CEIL: float = 1e10  # max acceptable condition number
+
+
 def _build_context_pooled_mahal_state(activations: np.ndarray, k: int) -> dict | None:
     """Build the shared state for Mahalanobis-vs-context-pooled-covariance,
     used by the end_of_system extraction point where there is ONE vector per
@@ -839,43 +855,118 @@ def _build_context_pooled_mahal_state(activations: np.ndarray, k: int) -> dict |
     activations shape: (n_cond, n_q, H). For end_of_system n_q == 1, so the
     per-cond vector IS the centroid.
 
-    Returns
-    -------
-    None if pooled covariance is singular after PCA reduction (fail-loud
-    upstream). Otherwise a dict with the precomputed subspace projection +
-    inverse pooled covariance.
+    Failure modes (return None, caller writes an explicit N/A row with the
+    reason in the metric payload):
+      - n_cond < 2 (nothing to pool)
+      - all centroids collapse to one point (cov_sub eigenvalues ≈ 0)
+      - cov_sub is rank-deficient before the ridge — smallest eigenvalue
+        below POOLED_COV_EIG_FLOOR or condition number above
+        POOLED_COV_COND_CEIL. The 1e-6 ridge is appropriate for MILD
+        ill-conditioning (numerical noise on a full-rank cov), NOT for
+        rank-deficiency: ridging a degenerate cov produces a finite but
+        spurious Mahalanobis. With n_cond=5 (the end_of_system Class-A
+        subpanel) in a k=16 PCA subspace the pooled cov is structurally
+        rank-deficient (rank ≤ n_cond - 1 = 4); k_eff caps to 4 here, but
+        if a future caller passes a smaller --pca-k that produces a
+        genuinely rank-deficient projection this gate catches it.
+
+    Returns the failure REASON via a sibling channel: state dicts now
+    carry a `"failure_reason"` string when the function returns None
+    (instead of None alone), so the caller can surface it. To keep the
+    None-return contract for backward compatibility, the reason is
+    attached to the `activations` array via a module-level dict
+    keyed by id(activations).
     """
     n_cond = activations.shape[0]
     if n_cond < 2:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"n_cond={n_cond} < 2: nothing to pool across"
+        )
         return None
     # Build centroid matrix (n_cond, H).
     centroids = np.array([_drop_nan_rows(activations[i]).mean(axis=0) for i in range(n_cond)])
     valid_mask = ~np.any(np.isnan(centroids), axis=1)
     centroids = centroids[valid_mask]
     if len(centroids) < 2:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"only {len(centroids)} non-NaN centroids: pool undefined"
+        )
         return None
     mu = centroids.mean(axis=0, keepdims=True)
     cent_c = centroids - mu
     # Dual / Gram PCA on the n_cond-cloud — never invert (3584, 3584).
     k_eff = min(k, len(centroids) - 1, cent_c.shape[1])
     if k_eff < 1:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = f"k_eff={k_eff} < 1: subspace too small"
         return None
     _proj, comps = _pca_topk_via_gram(cent_c, k_eff)
     Y = cent_c @ comps.T  # (n_cond_valid, k_eff)
-    # Pooled covariance across the centroids in the subspace, with ridge.
-    cov_sub = np.cov(Y.T, ddof=1) + 1e-6 * np.eye(k_eff)
+    # Pooled covariance in the subspace BEFORE the ridge.
+    cov_sub_raw = np.cov(Y.T, ddof=1)
+    eigvals = np.linalg.eigvalsh(0.5 * (cov_sub_raw + cov_sub_raw.T))
+    eig_min = float(np.min(eigvals))
+    eig_max = float(np.max(eigvals))
+    # 1) all-collapsed centroids → eig_max ≈ 0
+    if eig_max < POOLED_COV_EIG_FLOOR:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"pooled cov rank-0 (max eigenvalue {eig_max:.2e} < "
+            f"{POOLED_COV_EIG_FLOOR:.0e}): centroids are collinear / collapsed"
+        )
+        return None
+    # 2) rank-deficient — smallest eigenvalue at machine zero (some
+    # subspace direction is fully degenerate; ridging would invent
+    # variance there).
+    if eig_min < POOLED_COV_EIG_FLOOR:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"pooled cov rank-deficient (min eigenvalue {eig_min:.2e} < "
+            f"{POOLED_COV_EIG_FLOOR:.0e}) at k_eff={k_eff}; ridging would "
+            f"invent variance along a degenerate direction. Reduce --pca-k "
+            f"or extract more contexts."
+        )
+        return None
+    # 3) Borderline ill-conditioned — flag but still ridge.
+    cond_num = eig_max / max(eig_min, np.finfo(np.float64).tiny)
+    if cond_num > POOLED_COV_COND_CEIL:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"pooled cov ill-conditioned (cond={cond_num:.2e} > "
+            f"{POOLED_COV_COND_CEIL:.0e}): refusing to ridge into a spurious "
+            f"finite inverse"
+        )
+        return None
+    cov_sub = cov_sub_raw + 1e-6 * np.eye(k_eff)
     try:
         cov_inv = np.linalg.inv(cov_sub)
-    except np.linalg.LinAlgError:
+    except np.linalg.LinAlgError as e:
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            f"np.linalg.inv raised LinAlgError after ridge: {e}"
+        )
         return None
     if not np.all(np.isfinite(cov_inv)):
+        _LAST_POOLED_FAILURE_REASON[id(activations)] = (
+            "post-ridge inverse has non-finite entries (overflow)"
+        )
         return None
     return {
         "mu": mu,
         "components": comps,
         "cov_inv": cov_inv,
         "valid_mask": valid_mask,
+        "eig_min": eig_min,
+        "eig_max": eig_max,
+        "condition_number": cond_num,
     }
+
+
+# Side-channel for the most-recent _build_context_pooled_mahal_state failure
+# reason, keyed by id(activations) so the caller can fetch it without changing
+# the None-return contract. Trimmed opportunistically when callers fetch.
+_LAST_POOLED_FAILURE_REASON: dict[int, str] = {}
+
+
+def _pop_pooled_failure_reason(activations: np.ndarray) -> str | None:
+    """Pop the most recent pooled-cov failure reason for this activations
+    array. Returns the reason string (or None if not recorded)."""
+    return _LAST_POOLED_FAILURE_REASON.pop(id(activations), None)
 
 
 def _context_mahal_with_pooled_cov(
@@ -1272,18 +1363,25 @@ def _compute_metric_matrix(  # noqa: C901 — per-metric dispatcher; one branch 
 
     # mahal_pooled_ctx needs the shared pooled-cov state pre-built ONCE
     # (it's the same matrix for every (i, j) pair within this metric file).
+    # On rank-deficient / collapsed inputs the helper returns None AND
+    # records the failure reason in a side channel; we emit an explicit
+    # N/A row with the reason in the payload rather than ridging a
+    # degenerate cov into a spurious finite Mahalanobis (round-2 issue
+    # B that round 3 corrects).
     pooled_state = None
     if metric == "mahal_pooled_ctx":
         pooled_state = _build_context_pooled_mahal_state(activations, pca_k)
         if pooled_state is None:
-            # Singular pooled covariance — fail loud rather than emit NaN
-            # matrix that downstream silently drops.
-            raise RuntimeError(
-                f"mahal_pooled_ctx at extraction_point={extraction_point}: "
-                f"pooled centroid covariance is singular after PCA "
-                f"reduction to top-{pca_k} (n_cond={n_cond}). "
-                "Increase --pca-k, drop fewer contexts, or skip this metric."
+            reason = _pop_pooled_failure_reason(activations) or (
+                "pooled centroid covariance unusable (no reason recorded)"
             )
+            return {
+                "variant": variant,
+                "matrix": None,
+                "n_a": (f"mahal_pooled_ctx at extraction_point={extraction_point}: {reason}"),
+                "n_cond": int(n_cond),
+                "pca_k": int(pca_k),
+            }
 
     mat: list[list[float]] = [[0.0] * n_cond for _ in range(n_cond)]
     for i in range(n_cond):
@@ -1758,31 +1856,75 @@ def run_regression(
     return all_cells
 
 
+SUBPANEL_MIN_NONSTYLIZED_N = 20  # minimum non-stylized pair count to clear the headline guard
+
+
 def select_winner(headline_cell: dict) -> dict | None:
     """Pick the highest-CV predictor that ALSO survives on the non-stylized
-    panel AND on the base-prior-safe g_logprob check.
+    panel AND on the NON-stylized base-prior-safe g_logprob check.
 
-    Survival conditions:
-      - rho_nonstylized_deltag has the same sign as rho_full_deltag
-      - |rho_nonstylized_deltag| > FLOOR (small; mainly a sanity floor)
-      - rho_full_glogp same sign as rho_full_deltag (not pure base prior)
+    Survival conditions (the published #474 framing):
+      1. `np.sign(rho_full_deltag) == np.sign(rho_nonstylized_deltag)` AND
+         `|rho_nonstylized_deltag| > FLOOR_RHO` — the predictor's signal is
+         not carried by the (often saturated) stylized rows alone.
+      2. `np.sign(rho_nonstylized_glogp) == np.sign(rho_full_deltag)`
+         AND `|rho_nonstylized_glogp| > FLOOR_RHO` — the trained-log-prob
+         (base-prior-safe DV) shows the SAME-direction and NONTRIVIAL
+         relationship on the NON-STYLIZED panel. This is the load-bearing
+         guard: a predictor that wins on `rho_full_glogp` only because
+         the stylized rows carry the trained-logp signal — while the
+         non-stylized trained-logp collapses to ~0 — is exactly the
+         artifact #474's non-stylized survival framing is designed to
+         catch (see scripts/i474_cosine_followup.py:111-114 and :262-278).
+         Round 2 erroneously checked rho_FULL_glogp without a magnitude
+         floor; round 3 corrects to rho_NONSTYLIZED_glogp + |rho|>FLOOR.
+      3. The non-stylized panel must be LARGE ENOUGH to support a
+         meaningful sign-stability check on g_logprob. Subpanels below
+         SUBPANEL_MIN_NONSTYLIZED_N (default 20 ordered pairs) cannot
+         clear this guard — they are recorded as `diagnostic_only=True`
+         and EXEMPTED from headline winner selection (e.g. the
+         end_of_system Class-A subpanel's non-stylized restriction
+         collapses to 2 pairs after dropping A3/A4/A5, which is too small
+         to call a base-prior survival).
+      4. CV value is finite (skip NaN).
 
-    Returns the winning entry dict or None if no predictor survives.
+    The returned winner dict carries the existing entry fields plus the
+    panel name used so a downstream reviewer can verify the panel was
+    full16, not a subpanel.
+
+    Returns the winning entry dict (with `panel_primary` retained) or
+    None when no predictor satisfies all four conditions.
     """
     FLOOR_RHO = 0.10
     survivors = []
     for e in headline_cell["entries"]:
         if "rho_full_deltag" not in e:
             continue
+        # Subpanels (e.g. end_of_system Class-A only) can't clear the
+        # nonstylized-trained-logp guard at n=2; mark + skip.
+        n_nonsty = int(e.get("n_nonstylized", 0))
+        if n_nonsty < SUBPANEL_MIN_NONSTYLIZED_N:
+            e["diagnostic_only"] = True
+            e["diagnostic_only_reason"] = (
+                f"n_nonstylized={n_nonsty} < {SUBPANEL_MIN_NONSTYLIZED_N}; "
+                "subpanel too small for the non-stylized base-prior-safe guard. "
+                "Reported for diagnostic / sanity inspection only; cannot win "
+                "the headline."
+            )
+            continue
         rho_f = e["rho_full_deltag"]
         rho_ns = e["rho_nonstylized_deltag"]
-        rho_g = e["rho_full_glogp"]
+        rho_ns_g = e["rho_nonstylized_glogp"]
         if not (np.sign(rho_f) == np.sign(rho_ns) and abs(rho_ns) > FLOOR_RHO):
             continue
-        # The relevant g_logprob check: base-prior survival means trained
-        # log-prob shows the SAME-direction relationship as ΔG. If rho_g
-        # collapses to ~0 or flips sign, the ΔG signal is base-prior driven.
-        if np.sign(rho_g) != np.sign(rho_f):
+        # NON-STYLIZED trained-log-prob guard (the round-3 fix): the
+        # base-prior-safe DV must show the same-direction relationship as
+        # ΔG on the *non-stylized* panel, not the full panel — otherwise a
+        # stylized-row-carried g_logprob signal can let a base-prior shadow
+        # win. Require BOTH same sign AND |rho| > FLOOR_RHO so a near-zero
+        # nonstylized-g_logprob (the stylized-carry shadow) doesn't slip
+        # through on sign-match alone.
+        if np.isnan(rho_ns_g) or np.sign(rho_ns_g) != np.sign(rho_f) or abs(rho_ns_g) < FLOOR_RHO:
             continue
         if np.isnan(e["cv_full_deltag"]):
             continue
@@ -2170,25 +2312,26 @@ def dry_run_smoke() -> dict:
         "mean": float(np.mean(eos_distances)),
     }
 
-    # 4c) Degenerate-input path returns trivial distances (≈ 0 between
-    # collapsed centroids), not garbage. The 1e-6 ridge keeps the inverse
-    # well-defined; the projected centroids are themselves zero so the
-    # Mahalanobis distance lands at zero modulo float noise.
+    # 4c) Degenerate-input path now FAILS LOUD (round-3 fix B): the
+    # eigenvalue gate in _build_context_pooled_mahal_state catches
+    # all-zero / rank-deficient pooled covariances BEFORE the 1e-6 ridge,
+    # so a collapsed input returns None (not a ridged spurious distance).
+    # The full "explicit N/A row" path is exercised in check 9 below
+    # via the _compute_metric_matrix wrapper.
     arr_singular = np.zeros((3, 1, 64), dtype=np.float32)
     singular_state = _build_context_pooled_mahal_state(arr_singular, k=4)
-    if singular_state is not None:
-        d_singular = _context_mahal_with_pooled_cov(
-            arr_singular[0], arr_singular[1], singular_state, 0, 1
-        )
-        assert abs(d_singular) < 1e-3, (
-            f"collapsed-centroid Mahalanobis was {d_singular} (expected ≈ 0)"
-        )
-        digest["degenerate_pooled_state"] = {
-            "state_returned": True,
-            "distance_at_collapsed_centroid_pair": float(d_singular),
-        }
-    else:
-        digest["degenerate_pooled_state"] = {"state_returned": False}
+    assert singular_state is None, (
+        f"round-3 fix B: collapsed centroids should yield None pooled-cov state, "
+        f"got {singular_state!r}"
+    )
+    reason = _pop_pooled_failure_reason(arr_singular)
+    assert (reason and "collapsed" in reason.lower()) or "rank" in reason.lower(), (
+        f"round-3 fix B: missing or unexpected failure reason: {reason!r}"
+    )
+    digest["degenerate_pooled_state"] = {
+        "state_returned": False,
+        "failure_reason": reason,
+    }
 
     # 4d) Single-vector subset path produces FINITE non-zero distances when
     # the centroids ARE distinct (this is the meaningful end_of_system run).
@@ -2322,13 +2465,25 @@ def dry_run_smoke() -> dict:
     # The forward-hook on `transformer.h[L]` captures the OUTPUT of block L;
     # `hidden_states[L+1]` from `output_hidden_states=True` must match that
     # exact tensor. If we ever revert to indexing `hidden_states[L]`, this
-    # assertion fires loud.
+    # assertion MUST propagate (kill the smoke), not be swallowed as a
+    # silent `ok=False` entry that nobody downstream reads — round-2 issue
+    # C that round 3 corrects by narrowing the except to environment-only
+    # errors (no HF Hub access, transformers missing, model download
+    # failure). Any AssertionError fires loud.
     try:
         import torch
         from transformers import AutoModel, AutoTokenizer
 
         tok_ref = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
         mdl_ref = AutoModel.from_pretrained("hf-internal-testing/tiny-random-gpt2")
+    except (OSError, ConnectionError, ImportError, ModuleNotFoundError) as e:
+        # No network / hub access / missing dep → genuinely an environment
+        # issue, not a regression. Skip with a clear reason.
+        digest["hidden_states_indexing"] = {
+            "ok": False,
+            "reason": f"reference check skipped — environment: {e!r}",
+        }
+    else:
         mdl_ref.eval()
         ids = tok_ref("hello world from issue 493", return_tensors="pt")
         hook_capture: dict[int, torch.Tensor] = {}
@@ -2350,6 +2505,7 @@ def dry_run_smoke() -> dict:
         from_hook = hook_capture[target_layer]
         from_tuple_off_by_one = fwd.hidden_states[target_layer]  # WRONG
         from_tuple_correct = fwd.hidden_states[target_layer + 1]  # OURS
+        # AssertionError below propagates — that's the regression signal.
         assert torch.allclose(from_hook, from_tuple_correct, atol=1e-6), (
             "hidden_states[L+1] no longer matches the block-L forward-hook output"
         )
@@ -2360,11 +2516,108 @@ def dry_run_smoke() -> dict:
             "convention": "hidden_states[L+1] == block[L] output",
             "ok": True,
         }
-    except Exception as e:
-        digest["hidden_states_indexing"] = {
-            "ok": False,
-            "reason": f"reference check skipped: {e!r}",
-        }
+
+    # 8) Winner-selection nonstylized-g_logprob guard (round-3 issue A).
+    # Build a synthetic headline cell with two predictor entries:
+    #   - "stylized_carry": full panel ΔG positive, FULL g_logprob positive,
+    #     but non-stylized g_logprob NULL → must NOT win (round-2 bug:
+    #     this would have won because it checked rho_FULL_glogp).
+    #   - "honest": full panel ΔG positive, BOTH full + non-stylized
+    #     g_logprob positive → must win.
+    fake_cell = {
+        "entries": [
+            {
+                "extraction_point": "last_prompt",
+                "layer": 21,
+                "metric": "stylized_carry",
+                "variant": "raw",
+                "sub_predictor": None,
+                "n_nonstylized": 156,
+                "rho_full_deltag": 0.70,
+                "rho_nonstylized_deltag": 0.30,
+                "rho_full_glogp": 0.55,
+                # Round-3 fix: this should DISQUALIFY (was previously won the
+                # winner-selection under round-2's full-panel-only check).
+                "rho_nonstylized_glogp": 0.01,
+                "cv_full_deltag": 0.50,
+            },
+            {
+                "extraction_point": "last_prompt",
+                "layer": 21,
+                "metric": "honest",
+                "variant": "raw",
+                "sub_predictor": None,
+                "n_nonstylized": 156,
+                "rho_full_deltag": 0.60,
+                "rho_nonstylized_deltag": 0.40,
+                "rho_full_glogp": 0.50,
+                "rho_nonstylized_glogp": 0.35,
+                "cv_full_deltag": 0.40,
+            },
+        ]
+    }
+    winner = select_winner(fake_cell)
+    assert winner is not None and winner["metric"] == "honest", (
+        f"round-3 winner-selection: expected 'honest', got "
+        f"{None if winner is None else winner.get('metric')}"
+    )
+    digest["winner_selection_nonstylized_guard"] = {
+        "winner_metric": winner["metric"],
+        "rho_nonstylized_glogp_used": True,
+    }
+
+    # 8b) Subpanel diagnostic-only path: a predictor with n_nonstylized
+    # below SUBPANEL_MIN_NONSTYLIZED_N must be marked diagnostic_only and
+    # NOT win the headline, even if every rho/CV value looks great.
+    subpanel_cell = {
+        "entries": [
+            {
+                "extraction_point": "end_of_system",
+                "layer": 21,
+                "metric": "mahal_pooled_ctx",
+                "variant": "raw",
+                "sub_predictor": None,
+                "n_nonstylized": 2,  # Class-A nonstylized restriction
+                "rho_full_deltag": 0.80,
+                "rho_nonstylized_deltag": float("nan"),
+                "rho_full_glogp": 0.70,
+                "rho_nonstylized_glogp": float("nan"),
+                "cv_full_deltag": 0.55,
+            },
+        ]
+    }
+    winner_sub = select_winner(subpanel_cell)
+    assert winner_sub is None, f"round-3 subpanel exemption: expected None winner, got {winner_sub}"
+    assert subpanel_cell["entries"][0].get("diagnostic_only") is True, (
+        "round-3 subpanel exemption: entry was not tagged diagnostic_only"
+    )
+    digest["winner_subpanel_diagnostic_only"] = {
+        "winner_is_none": True,
+        "entry_tagged_diagnostic_only": True,
+    }
+
+    # 9) Singular pooled-cov path returns explicit N/A row with a reason
+    # (round-3 issue B — the round-2 ridge silently turned a degenerate
+    # cov into a 0.0 distance, which Codex flagged as spurious).
+    arr_collapsed = np.zeros((3, 1, 32), dtype=np.float32)
+    payload_collapsed = _compute_metric_matrix(
+        arr_collapsed,
+        ["A", "B", "C"],
+        metric="mahal_pooled_ctx",
+        extraction_point="end_of_system",
+        pca_k=8,
+        variant="raw",
+    )
+    assert payload_collapsed["matrix"] is None, (
+        f"round-3 singular pooled-cov: expected matrix=None, got {payload_collapsed.get('matrix')}"
+    )
+    assert payload_collapsed.get("n_a"), (
+        "round-3 singular pooled-cov: missing N/A reason in payload"
+    )
+    digest["singular_pooled_cov_emits_na"] = {
+        "matrix_is_none": True,
+        "n_a_reason": payload_collapsed["n_a"],
+    }
 
     return digest
 
@@ -2558,20 +2811,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
     # expected, not a bug.
     if "last_prompt" in activations_by_point and not args.dry_run:
         existing = _load_existing_cosine_matrices(tuple(args.layers))
-        if existing:
-            sample_payload = next(
-                p
-                for p in activations_by_point["last_prompt"].values()
-                if isinstance(p, dict) and "activations" in p
-            )
+        # Explicit non-empty layer-map guard (round-2 issue D): avoid
+        # StopIteration / KeyError when `last_prompt` is loaded but
+        # carries no usable layer payloads (e.g. --phase metrics on a
+        # checkpoint set that only finished end_of_system, or a layer
+        # subset that doesn't overlap with any extracted checkpoint).
+        last_prompt_map = activations_by_point["last_prompt"]
+        usable_layer_payloads = [
+            (L, p) for L, p in last_prompt_map.items() if isinstance(p, dict) and "activations" in p
+        ]
+        if existing and usable_layer_payloads:
+            _sample_L, sample_payload = usable_layer_payloads[0]
             n_cond_loaded = sample_payload["activations"].shape[0]
             n_q_loaded = sample_payload["activations"].shape[1]
             strict = args.transformations is None and n_cond_loaded == 16 and n_q_loaded == 50
             try:
                 check = reproduce_last_token_cosine_check(
-                    activations_by_point["last_prompt"],
+                    last_prompt_map,
                     existing,
-                    cond_ids=activations_by_point["last_prompt"][args.layers[0]]["cond_ids"],
+                    cond_ids=sample_payload["cond_ids"],
                     strict=strict,
                 )
             except AssertionError as e:
@@ -2604,6 +2862,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                     "git_sha": _git_sha(),
                     "timestamp_utc": _now_iso(),
                 },
+            )
+        elif existing and not usable_layer_payloads:
+            logger.warning(
+                "Skipping cosine cross-check: last_prompt extraction point has no "
+                "usable layer payloads (loaded layers: %s)",
+                list(last_prompt_map.keys()),
             )
 
     # METRICS phase
