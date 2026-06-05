@@ -12,6 +12,8 @@ goal: 'Test whether the #468 base-model cosine predictor (in-context-example beh
   emergent misalignment (including at least one non-misalignment broad target), and
   broad→broad — using one shared dataset-generation and cross-evaluation rig and one
   pooled regression.'
+relates_to:
+- beh-b-to-bprime
 ---
 ## Goal
 
