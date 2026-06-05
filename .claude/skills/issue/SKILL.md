@@ -294,57 +294,86 @@ exists.
 
 When invoked, ALWAYS follow this order. Skip only what the state dictates.
 
-**Chat title updates (verbose format).** Fires on (a) every status
-transition, (b) when an `epm:follow-ups` marker is posted, (c) when the
-clean-result draft is finalized (Step 9a end), (d) when the merge
-prompt fires (Step 10d), and (e) **at first invocation (Step 0), as soon
-as the task slug is known** — so the session is self-documenting in the
-Happy phone session list from the moment it is spawned, before any status
-sentence exists (Step 0 sets `#<N> <slug>`; later transitions append the
-status sentence).
+**Chat title updates (single-source-of-truth canonical string).** The
+session's phone title AND the terminal/dashboard progress column (read
+from `~/.eps-autonomous/session_progress.json` by `happy-ls` and the
+`/sessions` page) display the SAME canonical string for /issue sessions.
+This is enforced by routing every title set through one helper:
 
-The title **leads with the issue number + task slug**, not the type, so
-you can tell sessions apart by topic at a glance in the phone session
-list. The slug is the task's frontmatter `title`, trimmed to ~45 chars
-(falls back to `<type>` if the title is empty).
+```
+uv run python scripts/session_progress_report.py --issue <N> --step "<step>"
+```
 
-Format string:
+The helper (a) builds the canonical string via
+`session_progress_report.build_progress_string(issue, slug, step)` — the
+ONLY place the format lives — (b) writes a self-report file at
+`~/.eps-autonomous/issue-progress/<N>.json` (atomic temp+rename) with the
+canonical text + UTC `ts`, and (c) PRINTS the canonical string to stdout.
+Capture that stdout and pass it verbatim to `mcp__happy__change_title`.
+The 5-minute `session_summarize.py` cron reads the self-report first and
+reuses its `text` as the cache `summary` (`source="self"`) when fresh,
+skipping the Haiku call entirely — so the dashboard's progress column is
+byte-identical to the phone title.
+
+**Cadence.** Set the title via the helper at:
+(a) first invocation (Step 0), as soon as the task slug is known —
+    `--step "<status>"` (or `"launching"` before status is known) — so the
+    Happy phone session list is self-documenting from spawn;
+(b) every status transition;
+(c) every Step 6d.2 polling-loop tick (orchestrator re-invocation) and
+    every cron-backstop re-invocation of `/issue <N>` — so the dashboard
+    stays current even on a long idle stretch;
+(d) when an `epm:follow-ups` marker is posted, when the clean-result
+    draft is finalized (Step 9a end), and when the merge prompt fires
+    (Step 10d).
+
+Format (built by `build_progress_string`):
 ```
-#<N> <slug> — <human-readable status sentence>[ — next: <next-action>][ — followups: #X[, #Y]][ — clean-result: <claim summary trimmed to 60 chars>]
+#<N> <slug> · <step>
 ```
+Hard-capped to ~78 chars. Slug pre-clipped to 45 chars. If the joined
+string would exceed the cap, the STEP is trimmed with a trailing `…`;
+the `#<N> <slug>` head stays intact (the head is the part the user uses
+to find the row).
 
 Examples:
-- `#226 wire /issue auto-title into session — implementing — next: code-review`
-- `#226 wire /issue auto-title into session — code-review FAIL round 2 — next: respawn implementer`
-- `#137 persona collapse under EM — completed — followups: #240, #241 — clean-result: persona collapse hero`
-- `#479 conditional Stage-2 anchor-knob sweep` (launch title, before any status sentence)
+- `#226 wire /issue auto-title into session · implementing`
+- `#226 wire /issue auto-title into session · code-review FAIL round 2`
+- `#137 persona collapse under EM · awaiting promotion`
+- `#479 conditional Stage-2 anchor-knob sweep · launching` (Step 0)
 
-Helper pseudocode:
+Orchestrator pseudocode:
 
 ```python
-def render_title(task, *, status_human=None, next_action=None, followups=None, clean_result=None):
-    slug = (task.title or task.type or "").strip()[:45].rstrip()
-    head = f"#{task.number} {slug}".rstrip()
-    parts = [f"{head} — {status_human}" if status_human else head]
-    if next_action:
-        parts.append(f"next: {next_action}")
-    if followups:
-        parts.append("followups: " + ", ".join(f"#{n}" for n in followups))
-    if clean_result:
-        claim = clean_result.title[:60]
-        parts.append(f"clean-result: {claim}")
-    return " — ".join(parts)
-
-# Cosmetic; mcp__happy__change_title may be unavailable. Soft-fail and continue.
-try:
-    mcp__happy__change_title({"title": render_title(...)})
-except Exception:
-    pass
+def set_title(issue: int, step: str) -> None:
+    """Build the canonical string, write the self-report, and set the
+    phone title. Soft-fail on change_title (Happy may be unavailable) but
+    NOT on the helper itself — a helper failure means a stale self-report
+    will outlive the next tick and the dashboard will silently lag. Fail
+    loud per CLAUDE.md."""
+    canonical = run_bash(
+        f'uv run python scripts/session_progress_report.py --issue {issue} '
+        f'--step {shlex.quote(step)}'
+    ).strip()
+    try:
+        mcp__happy__change_title({"title": canonical})
+    except Exception:
+        # Cosmetic; the self-report file write already happened, so the
+        # dashboard / happy-ls still show the right string. The phone
+        # title just doesn't update this tick.
+        pass
 ```
 
-If the MCP tool is unavailable (e.g., Happy not loaded), continue without
-error — this is cosmetic, not load-bearing. Do NOT let a title-update
-failure block the pipeline.
+**Status-transition titles** simply pass the new status as the step
+(`set_title(N, "awaiting_promotion")`). For richer end-of-pipeline cues
+(follow-ups posted, clean-result finalized) the orchestrator can pass a
+short composite step string (`"awaiting promotion · followups #240, #241"`)
+— `build_progress_string` will trim it to fit the cap.
+
+If `session_progress_report.py` itself errors (missing task, broken
+task.py import, disk full), surface the error but DO NOT crash the
+pipeline — the title / self-report path is observability infrastructure,
+not load-bearing. Log to the current turn's output and continue.
 
 **Autonomous session behavior (`EPM_AUTONOMOUS_SESSION=1`).** When this env
 var is set (the session was spawned via `spawn_session.py spawn-issue
@@ -407,21 +436,24 @@ From the result, derive:
    version per kind.
 
 **Set the launch title now.** As soon as the slug (task `title`) is known,
-set the session title so the Happy phone session list is self-documenting
-from the start. Use the same soft-fail wrapper as the verbose updates:
+call `set_title(N, <status>)` (helper defined in the "Chat title updates"
+section above) so the Happy phone session list AND the
+`~/.eps-autonomous/session_progress.json` cache (read by `happy-ls` + the
+`/sessions` dashboard) all show the SAME canonical string from the moment
+the session is spawned. The `--step` is the current status (or `"launching"`
+if status isn't loaded yet):
 
-```python
-# Cosmetic; mcp__happy__change_title may be unavailable. Soft-fail and continue.
-try:
-    mcp__happy__change_title({"title": render_title(task)})  # -> "#<N> <slug>"
-except Exception:
-    pass
+```bash
+uv run python scripts/session_progress_report.py --issue <N> --step "<status>"
+# Capture stdout (the canonical string), then:
+# mcp__happy__change_title({"title": <captured>})  -> "#<N> <slug> · <status>"
 ```
 
 This runs on EVERY `/issue <N>` invocation (idempotent — re-setting the same
-title is harmless), so resumed sessions re-label themselves too. Later
-status transitions call `render_title(task, status_human=..., ...)` to append
-the status sentence.
+title is harmless), so resumed sessions re-label themselves too AND the
+self-report file gets re-touched, keeping the dashboard fresh. Later
+status transitions, polling-loop ticks, and clean-result-finalized events
+re-call the helper with an updated `--step`.
 
 **Hard error: ambiguous status.** If `task.py view <N>` reports the task
 exists in multiple folders (should be impossible because `task.py` holds
@@ -1743,6 +1775,21 @@ while True:
     #   status == "running"        -> milestone-already-posted by the poller
     #                                  if new_milestone was true; loop again.
 ```
+
+**Refresh the title on every tick.** Before the next `Bash(...)` poll
+call, run the canonical-string helper so the dashboard / happy-ls /
+phone title all stay current with the loop's `running` status (or the
+latest phase if the poller posted one). This is the cheap path — no LLM
+call — and keeps the `~/.eps-autonomous/issue-progress/<N>.json` self-
+report fresh under the summarizer's freshness window:
+
+```bash
+uv run python scripts/session_progress_report.py --issue <N> --step "<phase>"
+# capture stdout, mcp__happy__change_title({"title": ...}) soft-fail
+```
+
+(`<phase>` is the current pipeline phase: `"running"` by default,
+`"phase: post_eval"` if a milestone marker just fired, etc.)
 
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting

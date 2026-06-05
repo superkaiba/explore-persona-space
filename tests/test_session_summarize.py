@@ -57,11 +57,16 @@ def test_build_session_entry_has_expected_keys(monkeypatch):
         "summary",
         "summary_model",
         "summary_ts",
+        "source",
         "last_activity_ts",
         "error",
     }
     assert entry["live"] is True
     assert entry["summary_model"] == session_summarize.HAIKU_MODEL_ID
+    # Default `source` for a summary that came in WITHOUT an explicit source
+    # is "llm" — the only producer prior to the self-report unification, so
+    # legacy callsites stay correctly tagged.
+    assert entry["source"] == "llm"
 
 
 def test_build_session_entry_no_summary_clears_model(monkeypatch):
@@ -82,6 +87,7 @@ def test_build_session_entry_no_summary_clears_model(monkeypatch):
     )
     assert entry["summary"] is None
     assert entry["summary_model"] is None
+    assert entry["source"] is None
     assert entry["error"] == "transcript unresolvable"
 
 
@@ -360,11 +366,15 @@ def test_produce_summary_skips_call_when_activity_unchanged(monkeypatch):
             dry_run=False,
         )
 
-    summary, summary_ts, summary_model, err = _run_async(_go)
+    summary, summary_ts, summary_model, source, err = _run_async(_go)
     assert call_count["n"] == 0, "Haiku was called despite unchanged activity"
     assert summary == "doing the thing"
     assert summary_ts == "2026-06-05T10:01:00Z"
     assert summary_model == "claude-haiku-4-5-20251001"
+    # The prior entry was an LLM summary (legacy / no `source` field) — the
+    # idle-skip reuse path carries the source forward as "llm" so the
+    # dashboard renders the right provenance even after many reuse ticks.
+    assert source == "llm"
     assert err is None
 
 
@@ -397,11 +407,12 @@ def test_produce_summary_calls_haiku_when_activity_advanced(monkeypatch):
             dry_run=False,
         )
 
-    summary, summary_ts, summary_model, err = _run_async(_go)
+    summary, summary_ts, summary_model, source, err = _run_async(_go)
     assert call_count["n"] == 1, "Haiku was NOT called despite advanced activity"
     assert summary == "fresh new summary"
     assert summary_ts is not None
     assert summary_model == session_summarize.HAIKU_MODEL_ID
+    assert source == "llm"
     assert err is None
 
 
@@ -426,9 +437,10 @@ def test_produce_summary_empty_tail_skips_call(monkeypatch):
             dry_run=False,
         )
 
-    summary, summary_ts, summary_model, err = _run_async(_go)
+    summary, summary_ts, summary_model, source, err = _run_async(_go)
     assert call_count["n"] == 0
     assert summary is None
     assert summary_ts is None
     assert summary_model is None
+    assert source is None
     assert err == "transcript tail empty"

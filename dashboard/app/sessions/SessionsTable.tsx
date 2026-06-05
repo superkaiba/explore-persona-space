@@ -35,6 +35,11 @@ export type SessionRowView = {
   summary: string | null;
   summaryModel: string | null;
   summaryTs: string | null;
+  /** "self" = byte-identical to phone title; "llm" = Haiku-summarized;
+   *  null = legacy entry or no summary. Surfaced as a small tag next to
+   *  the summary so the user can distinguish a self-reported canonical
+   *  string from an LLM paraphrase. */
+  source: "self" | "llm" | null;
   lastActivityTs: string | null;
   error: string | null;
 };
@@ -240,6 +245,16 @@ function ProgressCell({ row }: { row: SessionRowView }) {
       </div>
     );
   }
+  // Provenance suffix: "self" rows surface a small "self-report" tag
+  // (the string is byte-identical to the phone title); "llm" rows show
+  // the Haiku model id; legacy / no-source rows show neither. Keeps the
+  // user honest about what produced the line.
+  const provenance =
+    row.source === "self"
+      ? " · self-report"
+      : row.summaryModel
+        ? ` · ${row.summaryModel}`
+        : "";
   return (
     <div className="space-y-1">
       <p className="text-sm leading-snug text-stone-800">
@@ -249,7 +264,7 @@ function ProgressCell({ row }: { row: SessionRowView }) {
       </p>
       <p className="text-[11px] text-stone-400">
         <span className="font-mono">{row.sessionId.slice(0, 8)}</span>
-        {row.summaryModel ? ` · ${row.summaryModel}` : ""}
+        {provenance}
       </p>
     </div>
   );

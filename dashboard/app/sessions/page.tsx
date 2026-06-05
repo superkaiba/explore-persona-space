@@ -80,6 +80,7 @@ function toView(
     summary: s.summary,
     summaryModel: s.summaryModel,
     summaryTs: s.summaryTs,
+    source: s.source,
     lastActivityTs: s.lastActivityTs,
     error: s.error,
   };
