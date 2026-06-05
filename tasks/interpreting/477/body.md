@@ -5,7 +5,7 @@ title: The implant-decoupling off-ramp was an eval bug; recovered grid shows mor
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:15:54Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 472
 goal: 'Determine whether the row-scaled contrastive-negative-budget recipe (negative-persona
   count co-varying with total negative rows at fixed 200 positives, counts {2,4,8,16})
