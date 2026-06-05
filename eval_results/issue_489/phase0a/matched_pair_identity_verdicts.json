@@ -1,0 +1,50 @@
+{
+  "issue": 489,
+  "phase": "phase0a_sp_identity_check",
+  "git_commit": "90cf5d1f8c82ebb572bfe6660845c3f650b2f988",
+  "wrote_at": "2026-06-05T10:04:31.175748+00:00",
+  "schema_version": "i489_phase0a_verdicts_v1",
+  "verdicts": [
+    {
+      "icl_cid": "IK12",
+      "sp_cid": "SP03",
+      "final_verdict": "different",
+      "confirmatory": false,
+      "final_draft": 2,
+      "frozen_string_used": null
+    },
+    {
+      "icl_cid": "IK13",
+      "sp_cid": "SP04",
+      "final_verdict": "different",
+      "confirmatory": false,
+      "final_draft": 2,
+      "frozen_string_used": null
+    },
+    {
+      "icl_cid": "IK10",
+      "sp_cid": "SP06",
+      "final_verdict": "different",
+      "confirmatory": false,
+      "final_draft": 2,
+      "frozen_string_used": null
+    },
+    {
+      "icl_cid": "IK11",
+      "sp_cid": "SP07",
+      "final_verdict": "different",
+      "confirmatory": false,
+      "final_draft": 2,
+      "frozen_string_used": null
+    },
+    {
+      "icl_cid": "IK06",
+      "sp_cid": "SP08",
+      "final_verdict": "same",
+      "confirmatory": true,
+      "final_draft": 2,
+      "frozen_string_used": "You are a math instructor who shows every reasoning step explicitly before stating the final numerical answer."
+    }
+  ],
+  "dry_run": false
+}

@@ -1,0 +1,96 @@
+{
+  "issue": 489,
+  "phase": "phase0a_sp_identity_check",
+  "git_commit": "90cf5d1f8c82ebb572bfe6660845c3f650b2f988",
+  "wrote_at": "2026-06-05T10:04:31.175748+00:00",
+  "n_pairs_checked": 5,
+  "n_confirmatory": 1,
+  "confirmatory_pairs": [
+    [
+      "IK06",
+      "SP08"
+    ]
+  ],
+  "non_confirmatory_pairs": [
+    {
+      "pair": [
+        "IK12",
+        "SP03"
+      ],
+      "final_verdict": "different"
+    },
+    {
+      "pair": [
+        "IK13",
+        "SP04"
+      ],
+      "final_verdict": "different"
+    },
+    {
+      "pair": [
+        "IK10",
+        "SP06"
+      ],
+      "final_verdict": "different"
+    },
+    {
+      "pair": [
+        "IK11",
+        "SP07"
+      ],
+      "final_verdict": "different"
+    }
+  ],
+  "results": [
+    {
+      "sp_cid": "SP03",
+      "icl_cid": "IK12",
+      "final_draft": 2,
+      "final_verdict": "different",
+      "confirmatory": false,
+      "rewrite_attempted": true,
+      "rewrite_verdict": "different"
+    },
+    {
+      "sp_cid": "SP04",
+      "icl_cid": "IK13",
+      "final_draft": 2,
+      "final_verdict": "different",
+      "confirmatory": false,
+      "rewrite_attempted": true,
+      "rewrite_verdict": "different"
+    },
+    {
+      "sp_cid": "SP06",
+      "icl_cid": "IK10",
+      "final_draft": 2,
+      "final_verdict": "different",
+      "confirmatory": false,
+      "rewrite_attempted": true,
+      "rewrite_verdict": "different"
+    },
+    {
+      "sp_cid": "SP07",
+      "icl_cid": "IK11",
+      "final_draft": 2,
+      "final_verdict": "different",
+      "confirmatory": false,
+      "rewrite_attempted": true,
+      "rewrite_verdict": "different"
+    },
+    {
+      "sp_cid": "SP08",
+      "icl_cid": "IK06",
+      "final_draft": 2,
+      "final_verdict": "same",
+      "confirmatory": true,
+      "frozen_alt_string": "You are a math instructor who shows every reasoning step explicitly before stating the final numerical answer.",
+      "frozen_alt_note": "i489_contexts.py SP string AUTO-FROZEN via frozen_sp_strings.json (B3 fix)."
+    }
+  ],
+  "draft_log": "eval_results/issue_489/phase0a/artifacts/sp_string_drafts.jsonl",
+  "frozen_overrides_path": "eval_results/issue_489/phase0a/frozen_sp_strings.json",
+  "n_frozen_overrides": 1,
+  "matched_pair_verdicts_path": "eval_results/issue_489/phase0a/matched_pair_identity_verdicts.json",
+  "dry_run": false
+}

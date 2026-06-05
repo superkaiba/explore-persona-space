@@ -1,0 +1,26 @@
+{
+  "schema_version": "i489_phase2_v1",
+  "git_commit": "109bbeb84477566f65cf7476ee6813ce80dfc438",
+  "generated_at": "2026-06-04T22:37:22.916071+00:00",
+  "verdict": "PASS",
+  "note": "wiring-only smoke; no Phase 4 inputs read.",
+  "smoke_cells": [
+    "IK01",
+    "IK13",
+    "SP01",
+    "SP04"
+  ],
+  "picked_fracs_per_arm": {
+    "icl": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "sp": [
+      0.25,
+      0.5,
+      1.0
+    ]
+  },
+  "smoke": true
+}

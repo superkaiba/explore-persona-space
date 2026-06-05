@@ -1,0 +1,156 @@
+{
+  "schema_version": "i489_phase5_v4",
+  "git_commit": "ca098a53cea10fcce9449ef7d45b5c0484930ad9",
+  "generated_at": "2026-06-05T07:28:57.674590+00:00",
+  "seed": 4242,
+  "fracs_requested": [
+    0.25
+  ],
+  "fracs_present_on_disk": [
+    0.25
+  ],
+  "fracs_analyzed": [
+    0.25
+  ],
+  "bootstrap_n": 30,
+  "headline_layer": 21,
+  "single_seed_scope_caveat": "v5: seed=42 only; no across-seed variance estimate.",
+  "h3_mechanic_note": "Round-3 B4 fix (2026-W23): H3 reports the INDEPENDENT TWO-SAMPLE bootstrap as the primary mechanic at the raw-\u03c1 gap \u2248 0.55 PASS bar (z-Fisher \u2248 1.03). The plan v5 \u00a76.2 'genuinely-paired LoRA-snapshot' mechanic at the 0.15 bar is inapplicable for within-arm panels: ICL-source and SP-source cid sets are disjoint, so the two within-arm panels share no LoRA-family unit. The analyzer / clean-result MUST NOT claim a paired CI that was never computed.",
+  "h1": {
+    "0.25": {
+      "rho_cos": 0.7700089374994392,
+      "rho_cos_ci": [
+        0.6813987999845154,
+        0.8296684844453639
+      ],
+      "rho_js": NaN,
+      "rho_js_ci": [
+        NaN,
+        NaN
+      ],
+      "abs_diff_cos_minus_js_paired": NaN,
+      "ci_diff_paired": [
+        NaN,
+        NaN
+      ],
+      "cos_signed_pass": false,
+      "cos_vs_js_dissociation_pass": false,
+      "pass_pre_diagonal_adjustment": false,
+      "survives_diagonal_adjustment": false,
+      "pass": false,
+      "pass_label": "NULL"
+    }
+  },
+  "h2": {
+    "0.25": {
+      "n_cells_after_strong_drop": 240,
+      "rho_cos": 0.7227314082938018,
+      "rho_cos_ci": [
+        0.5857754174226435,
+        0.8247394103039418
+      ],
+      "h1_survives_strong_kind_drop": false,
+      "rho_cos_dual_side_kind_distinctness_partial": NaN,
+      "dual_graded_pass": false,
+      "verdict": "INSUFFICIENT_DATA",
+      "identifiability_pearson": NaN,
+      "identifiability_pass": false,
+      "non_strong_high_band_n": 0,
+      "diagonal_adjusted": {
+        "available": false,
+        "reason": "only 0 cells with source-diagonal pair",
+        "survives_diagonal_adjustment": false
+      }
+    }
+  },
+  "h3": {
+    "0.25": {
+      "rho_icl": 0.686598700900708,
+      "rho_sp": 0.8948917116419309,
+      "ci_icl": [
+        0.5864780878739813,
+        0.8097400543132037
+      ],
+      "ci_sp": [
+        0.758756151720368,
+        0.9365230697178619
+      ],
+      "ci_icl_width": 0.22326196643922247,
+      "ci_sp_width": 0.1777669179974939,
+      "abs_diff": -0.20829301074122297,
+      "ci_diff": [
+        -0.32596350497677323,
+        -0.01882878360113558
+      ],
+      "ci_diff_width": 0.30713472137563763,
+      "mechanic": "independent_two_sample",
+      "raw_rho_pass_bar": 0.55,
+      "n_icl_cells": 240,
+      "n_sp_cells": 56,
+      "n_icl_sources": 16,
+      "n_sp_sources": 8,
+      "n_boots_kept_icl": 30,
+      "n_boots_kept_sp": 30,
+      "n_boots_kept_diff": 30,
+      "note": "Round-3 B4 fix: ICL-source cids and SP-source cids are disjoint, so the within-arm panels share NO LoRA-family unit. The plan's 'genuinely-paired' design is inapplicable for within-arm comparisons; H3 reports the plan's pre-registered fallback as the primary mechanic at the raw-\u03c1 gap \u2248 0.55 PASS bar (z-Fisher \u2248 1.03).",
+      "pass": false,
+      "pass_bar": 0.55,
+      "underpowered_at_single_seed": false,
+      "power_floor_narration_required": false
+    }
+  },
+  "h4a": {
+    "0.25": {
+      "n_cells": 256,
+      "rho_dual_partial": 0.8195152379383908,
+      "ci": [
+        0.7461655632580042,
+        0.879646200091276
+      ],
+      "pass": false
+    }
+  },
+  "h4b": {
+    "0.25": {
+      "descriptive": {
+        "n_matched": 8,
+        "pass": false,
+        "scope": "all_matched_pairs",
+        "n_pairs_unordered": 4
+      },
+      "confirmatory": {
+        "n_matched": 10,
+        "pass": false,
+        "scope": "judge_same_only",
+        "n_pairs_unordered": 5,
+        "confirmatory_pairs": [
+          [
+            "IK12",
+            "SP03"
+          ],
+          [
+            "IK13",
+            "SP04"
+          ],
+          [
+            "IK10",
+            "SP06"
+          ],
+          [
+            "IK11",
+            "SP07"
+          ],
+          [
+            "IK06",
+            "SP08"
+          ]
+        ],
+        "verdict": "UNANSWERED_NO_CONFIRMATORY_PAIRS_IN_OFF_CROSS"
+      },
+      "verdicts_source": "verdicts_file"
+    }
+  },
+  "n_contexts_in_union": 24,
+  "total_off_cells_with_delta_g": 552,
+  "smoke": true
+}
