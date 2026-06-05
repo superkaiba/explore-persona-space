@@ -116,6 +116,16 @@ def main() -> int:
         action="store_true",
         help="Skip judging; only run vLLM generation.",
     )
+    parser.add_argument(
+        "--skip-kl",
+        action="store_true",
+        help=(
+            "MF-J round-3: skip the KL-secondary-DV phase (per CLAUDE.md "
+            "marker-leakage-measurement rule's saturation-fallback DV). "
+            "Smoke parity flag — disabled in full sweeps so every cell records "
+            "kl_secondary_dv."
+        ),
+    )
     args = parser.parse_args()
 
     from explore_persona_space.experiments.issue503.behaviors import (
@@ -123,6 +133,7 @@ def main() -> int:
         NARROW_TARGETS,
     )
     from explore_persona_space.experiments.issue503.cross_eval import (
+        compute_kl_secondary_dv_for_source,
         cross_eval_dir,
         generate_completions_for_source,
         score_completions_for_source,
@@ -170,6 +181,29 @@ def main() -> int:
             targets=target_objs,
             max_prompts_per_target=args.max_prompts,
             n_rollouts_override=args.n_rollouts_override,
+        )
+
+    # MF-J round-3 revision: production wire-up of the KL secondary DV
+    # phase. ``compute_kl_secondary_dv_for_source`` was added in round-2
+    # as the saturation-fallback DV (plan §5.1 +
+    # ``.claude/rules/marker-leakage-measurement.md``) but no production
+    # caller invoked it, so every cell's verdict recorded
+    # ``kl_secondary_dv: None``. The KL phase runs after generation (its
+    # per-target completions are already on disk per checkpoint-per-phase)
+    # and BEFORE the judge phase so the verdict merge picks up the
+    # ``<target>.kl.json`` files. The function loads base + LoRA on the
+    # single GPU; its own ``finally`` block releases both models — see
+    # the helper itself for the empty-cache + gc.collect call sequence
+    # that closes the round-2 analyzer-Minor note.
+    if not args.skip_kl:
+        logger.info("KL secondary DV phase: source=%s seed=%d", args.source, args.seed)
+        compute_kl_secondary_dv_for_source(
+            source_adapter_path=adapter_path,
+            source=args.source,
+            seed=args.seed,
+            base_model_id=args.base_model,
+            repo_root=PROJECT_ROOT,
+            targets=target_objs,
         )
 
     if not args.skip_judging:

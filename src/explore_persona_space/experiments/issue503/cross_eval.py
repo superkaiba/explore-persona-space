@@ -32,25 +32,39 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from explore_persona_space.experiments.issue503.behaviors import (
+# MF-M round-3 revision: defensive ``sys.path`` insert so the lazy
+# ``from issue404_common import kill_vllm_workers`` below resolves
+# whether this library module is imported from ``scripts/issue503_*.py``
+# (which inserts ``scripts/`` itself) OR from a test / unrelated entry
+# point (which does not). The round-2 ``contextlib.suppress(Exception)``
+# wrapper masked an ImportError as "cleanup-path failure" — defeating
+# the vLLM worker reaping the round-2 fix was meant to add. The pattern
+# mirrors ``predictor_runner.py`` (which inserts ``scripts/`` lazily
+# inside every helper that needs ``issue404_common``).
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+_SCRIPTS_PATH = str(_REPO_ROOT / "scripts")
+if _SCRIPTS_PATH not in sys.path:
+    sys.path.insert(0, _SCRIPTS_PATH)
+
+from explore_persona_space.experiments.issue503.behaviors import (  # noqa: E402
     BROAD_TARGETS,
     NARROW_TARGETS,
     BroadTarget,
     NarrowTarget,
 )
-from explore_persona_space.experiments.issue503.eval_panels import (
+from explore_persona_space.experiments.issue503.eval_panels import (  # noqa: E402
     expected_truncation_cap,
     load_panel,
     n_verdicts_per_cell,
 )
-from explore_persona_space.experiments.issue503.judges import (
+from explore_persona_space.experiments.issue503.judges import (  # noqa: E402
     JUDGE_MODEL_PRIMARY,
-    judge_b1_broad_em_completions,
-    judge_cell_completions,
+    judge_for_target,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -212,17 +226,20 @@ def generate_completions_for_source(
         # MF-D KL phase loads HF Transformers + PEFT on the same GPU
         # right after this generation phase exits — orphan vLLM workers
         # would silently re-allocate the freed memory and OOM the next
-        # framework load. Round-2 revision: actually call
-        # ``kill_vllm_workers()`` (the prior comment promised the call
-        # but did not invoke it). ``contextlib.suppress`` is the
-        # canonical idiom for cleanup paths where the failure is not
-        # actionable (CLAUDE.md "never hide failures" carve-out for
-        # cleanup-only ``del``).
+        # framework load. Round-3 MF-M revision: the round-2 fix wrapped
+        # the import in ``contextlib.suppress(Exception)`` which masked
+        # the ImportError when ``scripts/`` was not on ``sys.path``;
+        # ``kill_vllm_workers`` was silently a no-op on the pod. The
+        # module-top ``sys.path.insert(0, scripts/)`` now guarantees the
+        # import resolves; ``contextlib.suppress`` is scoped to the
+        # actual cleanup-only failure modes (no workers found,
+        # nvidia-smi missing, dead PIDs) — NOT ImportError, which is a
+        # configuration bug under CLAUDE.md "Fail fast".
         with contextlib.suppress(Exception):
             del llm
-        with contextlib.suppress(Exception):
-            from issue404_common import kill_vllm_workers  # type: ignore[import-not-found]
+        from issue404_common import kill_vllm_workers  # type: ignore[import-not-found]
 
+        with contextlib.suppress(RuntimeError, OSError, ProcessLookupError):
             kill_vllm_workers()
 
     return written
@@ -307,31 +324,32 @@ def score_completions_for_source(
         median_tokens = _approx_median_tokens(completions_per_q)
         truncation_rate = 0.0  # already logged at generation time
 
-        # MF-C round-2 revision: B1 (broad-EM) wired into the real Betley
-        # dual-rubric scorer via ``judge_b1_broad_em_completions``. The
-        # prior stub (k=0, n=0) silently dropped 20 validated N→B-EM
-        # cells from the regression.
+        # MF-L round-3 revision: per-target judge router. B1_broad_em is
+        # routed to ``_score_b1_openai_gpt4o`` with default
+        # ``gpt-4o-2024-08-06`` (the validated #458/#468 anchor judge
+        # and plan §11 spec). T1/T2/T3/B2 route to
+        # ``judge_cell_completions`` with default Claude Sonnet 4.5
+        # (#503 κ ≥ 0.7 calibrated). The caller-supplied ``judge_model``
+        # is treated as an OPTIONAL OVERRIDE: when it matches the
+        # router's default-provider prefix (``claude-*`` for Claude
+        # judges, ``gpt-*`` for the gpt-4o judge) we honour the
+        # override; otherwise the router's per-target default wins so
+        # cross-cell B1 numbers stay anchored to gpt-4o regardless of a
+        # mistakenly-passed Claude id.
         save_raw = out_dir / f"{target_id}.judge_raw.json"
-        if target_id == "B1_broad_em":
-            verdict = judge_b1_broad_em_completions(
-                cell_id=f"{source}_seed{seed}__{target_id}",
-                questions=questions,
-                completions_per_question=completions_per_q,
-                judge_model=judge_model,
-                cache_dir=judge_cache_dir,
-                save_raw=save_raw,
-            )
+        scorer, default_model = judge_for_target(target_id)
+        if default_model.startswith("gpt-"):
+            chosen_model = judge_model if judge_model.startswith("gpt-") else default_model
         else:
-            # Binary judge path (T1/T2/T3/B2).
-            verdict = judge_cell_completions(
-                cell_id=f"{source}_seed{seed}__{target_id}",
-                questions=questions,
-                completions_per_question=completions_per_q,
-                judge_id=tgt.judge_id,
-                judge_model=judge_model,
-                cache_dir=judge_cache_dir,
-                save_raw=save_raw,
-            )
+            chosen_model = judge_model if judge_model.startswith("claude") else default_model
+        verdict = scorer(
+            cell_id=f"{source}_seed{seed}__{target_id}",
+            questions=questions,
+            completions_per_question=completions_per_q,
+            judge_model=chosen_model,
+            cache_dir=judge_cache_dir,
+            save_raw=save_raw,
+        )
 
         # MF-D round-2 revision: merge the KL-secondary DV from the
         # per-cell ``<target_id>.kl.json`` file (written by
@@ -501,15 +519,26 @@ def compute_kl_secondary_dv_for_source(
             written[target_id] = kl_path
             logger.info("  target=%s KL=%.4f (n=%d)", target_id, mean_kl, len(kl_values))
     finally:
-        # Same caveat as the generation phase: vLLM is not used here
-        # (HF Transformers + PEFT), so we just drop the trained adapter
-        # and base model from CUDA mem. CUDA may still hold cached
-        # allocations; the caller is responsible for emptying the cache
-        # before chaining another GPU phase.
+        # MF-J round-3 revision (analyzer-weighable closure): vLLM is
+        # not used here (HF Transformers + PEFT) so no vLLM-worker
+        # reaping. We DO need to release the LoRA-wrapped trained model
+        # + base model AND empty the CUDA allocator BEFORE the judge
+        # phase (or any other GPU-touching step) loads. CUDA's caching
+        # allocator does not return memory to the device on ``del``
+        # alone; without ``empty_cache()`` the next framework's load
+        # can OOM despite the variable being out of scope.
         with _contextlib.suppress(Exception):
             del trained_model
         with _contextlib.suppress(Exception):
             del base_model
+        import gc as _gc
+
+        _gc.collect()
+        with _contextlib.suppress(Exception):
+            import torch as _torch
+
+            if _torch.cuda.is_available():
+                _torch.cuda.empty_cache()
 
     return written
 

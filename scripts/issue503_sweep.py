@@ -100,6 +100,15 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
         help="Skip the vLLM cross-eval phase (assume completions already written).",
     )
     parser.add_argument(
+        "--skip-kl",
+        action="store_true",
+        help=(
+            "MF-J round-3: skip the KL-secondary-DV phase inside the cross_eval "
+            "subprocess. Disabled by default so the full sweep records "
+            "kl_secondary_dv per cell. Smoke parity flag."
+        ),
+    )
+    parser.add_argument(
         "--skip-predictors",
         action="store_true",
         help="Skip the predictor extraction phase.",
@@ -174,6 +183,12 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
                     cmd += ["--max-prompts", str(args.max_prompts)]
                 if args.n_rollouts_override is not None:
                     cmd += ["--n-rollouts-override", str(args.n_rollouts_override)]
+                # MF-J round-3: forward --skip-kl down to the cross_eval
+                # subprocess. Without forwarding it the sweep would
+                # silently run KL even when --skip-kl was passed at the
+                # sweep level (smoke parity bug).
+                if args.skip_kl:
+                    cmd += ["--skip-kl"]
                 subprocess.run(cmd, env=env, check=True, cwd=PROJECT_ROOT)
 
     # Phase 2: predictor extraction per cell. Base-model forward only;
