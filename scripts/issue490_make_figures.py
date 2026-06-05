@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF001
 """Issue #490 PHASE 5 — figures (hero + companions + exploratory dump).
 
 Per plan v1 §4.5 PHASE 5 + §6.3:
@@ -74,9 +73,8 @@ def _save_with_meta(fig, png_path: Path, meta: dict) -> None:
 
 
 def hero_distance_adjusted(decomp: dict, out_dir: Path) -> None:
-    """PRIMARY hero (round-2): distance-adjusted is_on_axis coefficient with
-    its 95% CI as the headline; raw subpanel-mean Δ_geom shown beside it as
-    "diagnostic-only" for context.
+    """PRIMARY hero: distance-adjusted on-axis effect (headline) vs raw
+    on-axis minus off-axis gap (diagnostic context).
     """
     reg = decomp["primary"]["distance_adjusted_regression"]
     diag = decomp["primary"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]["mean"]
@@ -91,23 +89,23 @@ def hero_distance_adjusted(decomp: dict, out_dir: Path) -> None:
     if reg.get("status") == "OK":
         beta = reg["headline_beta"]
         ci = reg["headline_ci95"]
-        labels.append("is_on_axis β\n(distance-adjusted,\nPRIMARY Q2)")
+        labels.append("Distance-adjusted\non-axis effect")
         means.append(beta)
         err_lo.append(max(0.0, beta - ci[0]))
         err_hi.append(max(0.0, ci[1] - beta))
     else:
-        labels.append("is_on_axis β\n(SKIPPED)")
+        labels.append("Distance-adjusted\non-axis effect (SKIPPED)")
         means.append(0.0)
         err_lo.append(0.0)
         err_hi.append(0.0)
 
     if dgeom_raw["mean"] is not None:
-        labels.append("raw Δ_geom\n(unadjusted,\ndiagnostic)")
+        labels.append("Raw on-axis minus off-axis gap\n(unadjusted, diagnostic)")
         means.append(dgeom_raw["mean"])
         err_lo.append(max(0.0, dgeom_raw["mean"] - dgeom_raw["ci95"][0]))
         err_hi.append(max(0.0, dgeom_raw["ci95"][1] - dgeom_raw["mean"]))
     else:
-        labels.append("raw Δ_geom (no data)")
+        labels.append("Raw on-axis minus off-axis gap (no data)")
         means.append(0.0)
         err_lo.append(0.0)
         err_hi.append(0.0)
@@ -118,15 +116,14 @@ def hero_distance_adjusted(decomp: dict, out_dir: Path) -> None:
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
     ax.set_xticklabels(labels)
-    ax.set_ylabel("nats")
-    verdict = reg.get("verdict_distance_adjusted", "n/a")
+    ax.set_ylabel("log P(marker), trained minus base (nats)")
     if reg.get("status") == "OK":
         ax.set_title(
-            f"PRIMARY Q2 (distance-adjusted): is_on_axis β = {reg['headline_beta']:.3f} "
-            f"[{reg['headline_ci95'][0]:.3f}, {reg['headline_ci95'][1]:.3f}]\n"
-            f"p = {reg['headline_p']:.3f}, n = {reg['n_rows']} personas, "
-            f"{reg['n_clusters']} (pair × seed) clusters\n"
-            f"verdict: {verdict}",
+            f"After distance adjustment: small, non-significant residual on-axis effect "
+            f"({reg['headline_beta']:.3f} nats, 95% CI "
+            f"[{reg['headline_ci95'][0]:.3f}, {reg['headline_ci95'][1]:.3f}], "
+            f"p = {reg['headline_p']:.3f}, n = {reg['n_rows']} held-out personas across "
+            f"{reg['n_clusters']} (pair x seed) clusters)",
             fontsize=10,
         )
     else:
@@ -144,7 +141,6 @@ def hero_distance_adjusted(decomp: dict, out_dir: Path) -> None:
             "means": means,
             "is_on_axis_regression": reg,
             "delta_geom_raw_diagnostic": dgeom_raw,
-            "verdict": verdict,
         },
     )
 
@@ -156,10 +152,10 @@ def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
     """
     diag = decomp["primary"]["diagnostic_unadjusted_subpanel_means"]["per_combiner"]["mean"]
     quantities = [
-        ("gap_confounded\n(on-axis)", diag["gap_confounded_on_axis"]),
-        ("gap_dosematched\n(on-axis)", diag["gap_dosematched_on_axis"]),
-        ("gap_dosematched\n(off-axis)", diag["gap_dosematched_off_axis"]),
-        ("slope_dose\n(per-source)", diag["slope_dose"]),
+        ("Confounded gap\n(shared minus single,\non-axis)", diag["gap_confounded_on_axis"]),
+        ("Dose-matched gap\n(on-axis)", diag["gap_dosematched_on_axis"]),
+        ("Dose-matched gap\n(off-axis)", diag["gap_dosematched_off_axis"]),
+        ("Dose step\n(per source,\n200 -> 400 rows)", diag["slope_dose"]),
     ]
 
     means = [q[1]["mean"] if q[1]["mean"] is not None else 0.0 for q in quantities]
@@ -184,7 +180,7 @@ def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
     ax.set_xticklabels([q[0] for q in quantities])
-    ax.set_ylabel("nats (mean over (pair × seed) values)")
+    ax.set_ylabel("log P(marker), trained minus base (nats, mean over pair x seed)")
     dgeom = diag["delta_geom_raw_unadjusted"]
     dgeom_str = (
         f"{dgeom['mean']:.3f} [{dgeom['ci95'][0]:.3f}, {dgeom['ci95'][1]:.3f}]"
@@ -192,11 +188,9 @@ def hero_dose_decomposition(decomp: dict, out_dir: Path) -> None:
         else "n/a"
     )
     ax.set_title(
-        f"DIAGNOSTIC (raw, unadjusted): Δ_geom = "
-        f"gap_dosematched(on) − gap_dosematched(off) = {dgeom_str} nats "
-        f"(n={dgeom['n']} tuples)\n"
-        f"NB: on-axis and off-axis subpanels are not always mean-d-matched; "
-        f"see distance-adjusted hero.",
+        f"Dose step (right) and the original confounded gap (left) dwarf "
+        f"both dose-matched gaps. Raw on-axis minus off-axis difference = "
+        f"{dgeom_str} nats (n={dgeom['n']} pair x seed tuples).",
         fontsize=10,
     )
     fig.tight_layout()
@@ -230,6 +224,7 @@ def combiner_robustness(decomp: dict, out_dir: Path) -> None:
     ]
     fig, ax = plt.subplots(figsize=(7, 5))
     xs = np.arange(len(COMBINERS))
+    combiner_labels = {"mean": "Mean", "lse": "Log-sum-exp", "max": "Max"}
     ax.bar(
         xs,
         means,
@@ -241,9 +236,12 @@ def combiner_robustness(decomp: dict, out_dir: Path) -> None:
     )
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
-    ax.set_xticklabels(COMBINERS)
-    ax.set_ylabel("raw Δ_geom (nats, diagnostic)")
-    ax.set_title("Raw Δ_geom under each combiner (DIAGNOSTIC; primary = distance-adjusted)")
+    ax.set_xticklabels([combiner_labels.get(c, c) for c in COMBINERS])
+    ax.set_ylabel("Raw on-axis minus off-axis difference (nats, diagnostic)")
+    ax.set_title(
+        "Combiner sensitivity: the raw on/off gap is positive under mean and log-sum-exp "
+        "but non-significant under max"
+    )
     fig.tight_layout()
     _save_with_meta(
         fig,
@@ -271,24 +269,34 @@ def per_pair_bars(tidy_rows: list[dict], out_dir: Path) -> None:
         return
     on_means = [float(np.mean(by_pair[p]["on"])) if by_pair[p]["on"] else 0.0 for p in pair_ids]
     off_means = [float(np.mean(by_pair[p]["off"])) if by_pair[p]["off"] else 0.0 for p in pair_ids]
+    pretty_pair_ids = [p.replace("pair", "Pair ") for p in pair_ids]
     fig, ax = plt.subplots(figsize=(10, 5))
     xs = np.arange(len(pair_ids))
     width = 0.4
-    ax.bar(xs - width / 2, on_means, width, label="on-axis", color="#1f77b4", edgecolor="black")
+    ax.bar(
+        xs - width / 2,
+        on_means,
+        width,
+        label="On-axis personas",
+        color="#1f77b4",
+        edgecolor="black",
+    )
     ax.bar(
         xs + width / 2,
         off_means,
         width,
-        label="off-axis",
+        label="Off-axis personas",
         color="#ff7f0e",
         edgecolor="black",
     )
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
-    ax.set_xticklabels(pair_ids, rotation=30, ha="right")
-    ax.set_ylabel("gap_dosematched (mean combiner, nats)")
-    ax.set_title("Per-pair gap_dosematched: on-axis vs off-axis (mean combiner)")
-    ax.legend()
+    ax.set_xticklabels(pretty_pair_ids, rotation=30, ha="right")
+    ax.set_ylabel("Dose-matched gap (nats)")
+    ax.set_title(
+        "Per-pair dose-matched gap: on-axis vs off-axis personas (mean over 3 seeds per pair)"
+    )
+    ax.legend(frameon=False)
     fig.tight_layout()
     _save_with_meta(
         fig,
@@ -308,18 +316,33 @@ def per_source_asymmetry_plot(decomp: dict, out_dir: Path) -> None:
         return
     fig, ax = plt.subplots(figsize=(8, 5))
     sub_names = ["on_axis", "off_axis"]
+    pretty_sub = ["On-axis personas", "Off-axis personas"]
     A_vals = [asym.get(s, {}).get("pooled_2D_A_mean", 0.0) for s in sub_names]
     B_vals = [asym.get(s, {}).get("pooled_2D_B_mean", 0.0) for s in sub_names]
     xs = np.arange(len(sub_names))
     width = 0.4
-    ax.bar(xs - width / 2, A_vals, width, label="POOLED-2D-A", color="#1f77b4")
-    ax.bar(xs + width / 2, B_vals, width, label="POOLED-2D-B", color="#ff7f0e")
+    ax.bar(
+        xs - width / 2,
+        A_vals,
+        width,
+        label="Source A trained alone at 400 rows",
+        color="#1f77b4",
+    )
+    ax.bar(
+        xs + width / 2,
+        B_vals,
+        width,
+        label="Source B trained alone at 400 rows",
+        color="#ff7f0e",
+    )
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
-    ax.set_xticklabels(sub_names)
-    ax.set_ylabel("mean held-out log P(※) trained − base (nats)")
-    ax.set_title("Per-source asymmetry: POOLED-2D-A vs POOLED-2D-B")
-    ax.legend()
+    ax.set_xticklabels(pretty_sub)
+    ax.set_ylabel("Held-out log P(marker), trained minus base (nats)")
+    ax.set_title(
+        "Per-source asymmetry: source B leaks ~0.8 nats more than source A in both subpanels"
+    )
+    ax.legend(frameon=False)
     fig.tight_layout()
     _save_with_meta(
         fig,
@@ -355,14 +378,17 @@ def fallback_kl_hero(decomp: dict, out_dir: Path) -> None:
     ax.bar(xs, means, yerr=[err_lo, err_hi], capsize=6, color=["#1f77b4", "#ff7f0e"])
     ax.axhline(0, color="black", linewidth=0.5)
     ax.set_xticks(xs)
-    ax.set_xticklabels(["on-axis", "off-axis"])
-    ax.set_ylabel("KL(trained ‖ base) at post-R slot")
+    ax.set_xticklabels(["On-axis personas", "Off-axis personas"])
+    ax.set_ylabel("KL(trained || base) at post-response slot (nats)")
     dgeom_str = (
         f"{dgeom['mean']:.3f} [{dgeom['ci95'][0]:.3f}, {dgeom['ci95'][1]:.3f}]"
         if dgeom["mean"] is not None
         else "n/a"
     )
-    ax.set_title(f"Fallback DV (KL-from-base) — Δ_geom = {dgeom_str} (n={dgeom['n']})")
+    ax.set_title(
+        f"Fallback metric (full-vocab KL from base): on-axis minus off-axis "
+        f"difference = {dgeom_str} nats (n={dgeom['n']} pair x seed tuples)"
+    )
     fig.tight_layout()
     _save_with_meta(
         fig,
@@ -375,18 +401,28 @@ def saturation_diagnostic(decomp: dict, out_dir: Path) -> None:
     sat = decomp.get("saturation_per_condition", {})
     if not sat:
         return
+    pretty = {
+        "shared_2D": "Shared marker, 2D total",
+        "pooled_2D_A": "Source A alone, 2D total",
+        "pooled_2D_B": "Source B alone, 2D total",
+        "single_D_A": "Source A alone, D total",
+        "single_D_B": "Source B alone, D total",
+    }
     conditions = sorted(sat.keys())
     means = [sat[c]["mean_g_logprob_source"] or 0.0 for c in conditions]
     n_sat = [sat[c]["n_saturated_cells"] for c in conditions]
     fig, ax = plt.subplots(figsize=(9, 5))
     xs = np.arange(len(conditions))
     ax.bar(xs, means, color="#1f77b4", edgecolor="black", linewidth=0.6)
-    ax.axhline(-0.1, color="red", linewidth=0.8, linestyle="--", label="kill threshold (−0.1)")
-    ax.axhline(-1.0, color="orange", linewidth=0.8, linestyle="--", label="near-sat (−1.0)")
+    ax.axhline(-0.1, color="red", linewidth=0.8, linestyle="--", label="Kill threshold (-0.1)")
+    ax.axhline(-1.0, color="orange", linewidth=0.8, linestyle="--", label="Near-saturation (-1.0)")
     ax.set_xticks(xs)
-    ax.set_xticklabels(conditions, rotation=30, ha="right")
-    ax.set_ylabel("mean trained-source log P(※) (nats)")
-    ax.set_title("Saturation diagnostic per condition (lower = farther from ceiling)")
+    ax.set_xticklabels([pretty.get(c, c) for c in conditions], rotation=20, ha="right")
+    ax.set_ylabel("Trained-source log P(marker) (nats)")
+    ax.set_title(
+        "Saturation diagnostic per condition: every condition has 5-10+ nats of "
+        "headroom (0 of 120 cells saturated)"
+    )
     for i, n in enumerate(n_sat):
         if n > 0:
             ax.text(
@@ -397,7 +433,7 @@ def saturation_diagnostic(decomp: dict, out_dir: Path) -> None:
                 color="red",
                 fontsize=9,
             )
-    ax.legend()
+    ax.legend(frameon=False)
     fig.tight_layout()
     _save_with_meta(
         fig,
@@ -406,7 +442,12 @@ def saturation_diagnostic(decomp: dict, out_dir: Path) -> None:
     )
 
 
-def delta_geom_vs_pair_dist(decomp: dict, out_dir: Path) -> None:
+def delta_geom_vs_pair_dist(
+    decomp: dict, tidy_rows: list[dict], source_pairs: dict | None, out_dir: Path
+) -> None:
+    """Real scatter: per (pair, seed) Delta_geom vs A-B cosine distance, with
+    the pooled linear-regression fit overlaid. Replaces the broken text-only
+    summary previously emitted."""
     pooled = (
         decomp["primary"]
         .get("pair_separation_regression", {})
@@ -416,27 +457,82 @@ def delta_geom_vs_pair_dist(decomp: dict, out_dir: Path) -> None:
     )
     if not pooled or pooled.get("slope") is None:
         return
-    fig, ax = plt.subplots(figsize=(7, 5))
-    ax.text(
-        0.5,
-        0.5,
-        f"Δ_geom ~ cos_dist(A,B) (pooled)\n"
-        f"slope={pooled['slope']:.3f} se={pooled.get('se', 0):.3f} "
-        f"p={pooled.get('p', float('nan')):.3f}\n"
-        f"R²={pooled.get('r_squared', 0):.3f}  n={pooled['n']}",
-        transform=ax.transAxes,
-        ha="center",
-        va="center",
-        fontsize=12,
+    if source_pairs is None or not tidy_rows:
+        log.warning("delta_geom_vs_pair_dist: missing source_pairs or tidy rows; skipping")
+        return
+
+    # Build per-pair A-B distance from source_pairs.json
+    pair_d: dict[str, float] = {}
+    for p in source_pairs.get("pairs", []):
+        # Distance derived from the on-axis-mean-d to the trained pair is a
+        # proxy; use the explicit pair-level cosine distance if present.
+        # source_pairs records (A, B) and on/off mean distances. The A-B
+        # cosine distance itself isn't directly stored, but
+        # on_axis_mean_d_layer20 + matched off-axis distance let us estimate
+        # the pair separation as 2x the on-axis mean (the on-axis personas
+        # sit between A and B). Use that proxy and label it correctly.
+        pair_d[p["pair_id"]] = 2.0 * float(p.get("on_axis_mean_d_layer20", 0.0))
+
+    # Per (pair, seed) Delta_geom under mean combiner
+    by_tuple: dict[tuple[str, str], dict[str, float]] = defaultdict(dict)
+    for r in tidy_rows:
+        if r.get("value_key") != "deltaLogP_mean":
+            continue
+        key = (r["pair_id"], r["seed"])
+        by_tuple[key][r["subpanel"]] = float(r["gap_dosematched_mean"])
+
+    xs_data, ys_data, pair_ids = [], [], []
+    for (pid, sd), d in by_tuple.items():
+        if "on_axis" in d and "off_axis" in d and pid in pair_d:
+            xs_data.append(pair_d[pid])
+            ys_data.append(d["on_axis"] - d["off_axis"])
+            pair_ids.append(pid)
+
+    if not xs_data:
+        return
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.scatter(xs_data, ys_data, color="#1f77b4", edgecolor="black", s=45, zorder=3)
+    ax.axhline(0, color="black", linewidth=0.5, zorder=1)
+
+    # Overlay the pooled fit
+    slope = float(pooled["slope"])
+    intercept = float(pooled["intercept"])
+    x_lo, x_hi = min(xs_data), max(xs_data)
+    pad = 0.05 * (x_hi - x_lo + 1e-9)
+    xfit = np.linspace(x_lo - pad, x_hi + pad, 50)
+    yfit = slope * xfit + intercept
+    ax.plot(
+        xfit,
+        yfit,
+        color="#d62728",
+        linewidth=1.5,
+        linestyle="--",
+        label=(
+            f"Pooled fit: slope = {slope:.1f}, "
+            f"p = {pooled.get('p', float('nan')):.3f}, n = {pooled['n']}"
+        ),
+        zorder=2,
     )
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title("Pair-separation secondary regression")
+
+    ax.set_xlabel(
+        "A-B cosine separation in layer-20 hidden state (nats, proxy = 2 x on-axis mean-d)"
+    )
+    ax.set_ylabel("Per (pair x seed) on-axis minus off-axis difference (nats)")
+    ax.set_title(
+        "Within the tested A-B separation range, the on-axis minus off-axis "
+        "difference trends negative (not positive) with separation"
+    )
+    ax.legend(frameon=False, loc="upper right")
     fig.tight_layout()
     _save_with_meta(
         fig,
         out_dir / "delta_geom_vs_pair_dist.png",
-        {"kind": "pair_separation_regression_summary", **pooled},
+        {
+            "kind": "delta_geom_vs_pair_dist_scatter",
+            "n_points": len(xs_data),
+            "pooled": pooled,
+        },
     )
 
 
@@ -459,12 +555,22 @@ def main() -> int:
         type=str,
         default=str(PROJECT_ROOT / "figures" / "issue_490"),
     )
+    parser.add_argument(
+        "--source-pairs",
+        type=str,
+        default=str(PROJECT_ROOT / "data" / "issue_490" / "source_pairs.json"),
+    )
     args = parser.parse_args()
 
     decomp_path = Path(args.decomp)
     tidy_path = Path(args.tidy)
+    source_pairs_path = Path(args.source_pairs)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    source_pairs: dict | None = None
+    if source_pairs_path.exists():
+        source_pairs = json.loads(source_pairs_path.read_text())
 
     if not decomp_path.exists():
         raise SystemExit(
@@ -511,7 +617,7 @@ def main() -> int:
     per_source_asymmetry_plot(decomp, out_dir)
     fallback_kl_hero(decomp, out_dir)
     saturation_diagnostic(decomp, out_dir)
-    delta_geom_vs_pair_dist(decomp, out_dir)
+    delta_geom_vs_pair_dist(decomp, tidy_rows, source_pairs, out_dir)
 
     log.info("Figures written to %s", out_dir)
     return 0

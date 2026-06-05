@@ -2,10 +2,10 @@
   "kind": "diagnostic_dose_decomposition_mean_combiner",
   "combiner": "mean",
   "quantities": [
-    "gap_confounded\n(on-axis)",
-    "gap_dosematched\n(on-axis)",
-    "gap_dosematched\n(off-axis)",
-    "slope_dose\n(per-source)"
+    "Confounded gap\n(shared minus single,\non-axis)",
+    "Dose-matched gap\n(on-axis)",
+    "Dose-matched gap\n(off-axis)",
+    "Dose step\n(per source,\n200 -> 400 rows)"
   ],
   "means": [
     7.471690697471302,
@@ -22,5 +22,5 @@
     ],
     "p_one_sided_pos": 0.0
   },
-  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+  "git_commit": "d26af162205791c0ac3e33f3d482df357db89f6b"
 }

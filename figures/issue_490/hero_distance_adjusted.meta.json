@@ -1,8 +1,8 @@
 {
   "kind": "hero_distance_adjusted",
   "labels": [
-    "is_on_axis \u03b2\n(distance-adjusted,\nPRIMARY Q2)",
-    "raw \u0394_geom\n(unadjusted,\ndiagnostic)"
+    "Distance-adjusted\non-axis effect",
+    "Raw on-axis minus off-axis gap\n(unadjusted, diagnostic)"
   ],
   "means": [
     0.1995521830915154,
@@ -69,6 +69,5 @@
     ],
     "p_one_sided_pos": 0.0
   },
-  "verdict": "CONFIRM_H1_NO_MIDPOINT_COUPLING_AFTER_DISTANCE_ADJUSTMENT",
-  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+  "git_commit": "d26af162205791c0ac3e33f3d482df357db89f6b"
 }
