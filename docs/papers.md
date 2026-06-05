@@ -8,6 +8,8 @@ Organised by topic, in roughly the order a new collaborator should read.
 
 > **Exhaustive list:** this file is the *curated reading-order subset*. For the full, project-positioned sweep (135 papers grouped by cluster, each with what-it-covers-vs-the-gap, plus a consolidated gap map = contribution space), see [`conditional-behavior-related-work.md`](./conditional-behavior-related-work.md). The clusters added 2026-05-28 from that sweep are at the bottom of this file.
 
+> **Size-dependent generalization:** for a verified lit synthesis on how model scale changes EM / persona / backdoor / ICL-vs-SFT generalization (and how it reconciles with our §6.3 / §6.8 results), see [`size-dependent-generalization-lit-review.md`](./size-dependent-generalization-lit-review.md) (deep-research dive, 2026-06-05).
+
 ---
 
 ## Emergent misalignment (the canonical thread)
