@@ -398,6 +398,26 @@ issue #N:
   import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
   when any phase the pipeline actually executes is missing a sub-section
   (most common: training present, eval absent).
+- **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
+  existing serial code path as batched / multi-GPU / vectorized — e.g.
+  batching an activation-extraction loop, replacing a per-example forward
+  with a B>1 forward, fusing per-sample HF generate calls into one vLLM
+  batch). On a tiny CPU model + real tokenizer slice with `B>=2` (so
+  left-padding actually fires), assert `cosine(batched_output,
+  serial_output) >= 0.999` per (layer × position) for every captured
+  extraction point and per (sample × position) for every emitted token /
+  log-prob. Common gotchas to thread explicitly: missing `position_ids`
+  under left-pad (RoPE / additive positional embeddings index from 0 by
+  default and silently diverge from the serial path's natural indexing),
+  attention-mask threading through nested module wrappers, per-sequence
+  stop-token / EOS handling under batched generation. Skip only when the
+  change is purely additive (no serial path being replaced); cite the
+  smoke output in `### (c) How to verify`. Rationale: task #502
+  (2026-06-04) — a batched re-implementation of #493's serial
+  mean-response activation extraction shipped with no `position_ids`
+  under left-pad; the equivalence check caught a cosine of 0.55 that
+  would have silently corrupted all 28-layer × 500-probe activations on
+  the pod.
 - **End-to-end test commands** (≥1 happy path + ≥2 distinct error/edge cases for non-trivial features): list the exact commands the user can run plus what each output should look like. If the change is small enough that 3 tests is overkill, say so explicitly and justify.
 - **Pod-side dispatcher validated through `poll_pipeline.py`** (REQUIRED if this round added or modified a pod-side dispatcher with an end-of-run sentinel): cite the `## Smoke run` evidence that the poller PARSED the sentinel (post-smoke `grep -c missing /tmp/poll.log == 0`, sentinel renamed `.processed`, OR a dry-run of `_parse_sentinel` on the written file) AND that the poller detected `phase=done` (`current_phase: done` in poll output). A smoke run that only invokes the dispatcher directly via SSH does NOT satisfy this — `[phase=done]` emission + `_SENTINEL_REQUIRED_KEYS` conformance are invisible without going through the poller. Skip this line only when the change is dispatcher-free.
 - **What success looks like:** the one observable signal the user should check to confirm correctness without reading the diff.
