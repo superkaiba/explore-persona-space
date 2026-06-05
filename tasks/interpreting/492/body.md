@@ -1,6 +1,6 @@
 ---
-title: The v4/v6 marker-implant "floor" was an eval-side env regression — the trained
-  adapter is fine (MODERATE confidence)
+title: The v4/v6 marker-implant floor was an eval-side artifact, not a training-code
+  regression (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-05T09:32:22Z'

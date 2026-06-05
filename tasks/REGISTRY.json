@@ -2761,7 +2761,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/492",
       "status": "interpreting",
-      "title": "The v4/v6 marker-implant \"floor\" was an eval-side env regression \u2014 the trained adapter is fine (MODERATE confidence)"
+      "title": "The v4/v6 marker-implant floor was an eval-side artifact, not a training-code regression (MODERATE confidence)"
     },
     "493": {
       "has_clean_result": false,
