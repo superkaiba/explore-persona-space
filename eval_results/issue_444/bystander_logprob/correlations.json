@@ -1,0 +1,75 @@
+{
+  "_doc": "Pooled (n=18, 3 variance recipes x 6 non-teach personas) and per-recipe (n=6) correlations of each predictor with the A-family taught-fact leak rate. Positive = predicts in the right direction (more prior/closer => more leak).",
+  "pooled": {
+    "bystander_logprob": {
+      "spearman": 0.267030346627929,
+      "spearman_p": 0.2840862829841027,
+      "pearson": 0.5221531644102057
+    },
+    "cosine_on_topic_L21": {
+      "spearman": -0.4869376909097529,
+      "spearman_p": 0.04042095544420864,
+      "pearson": -0.4899526824575144
+    },
+    "js_on_topic": {
+      "spearman": -0.4555223560123494,
+      "spearman_p": 0.05747275337391419,
+      "pearson": -0.5576447951652747
+    }
+  },
+  "per_recipe_spearman_bystander": {
+    "hand-written-contradictory-cn": 0.5768179036829705,
+    "hand-written-suppression-cn": 0.4285714285714286,
+    "on-policy-suppression-cn": 0.08571428571428573
+  },
+  "per_persona": {
+    "local_historian": {
+      "base_logprob": -3.0971107711313777,
+      "cosine_on": 0.8343990445137024,
+      "js_on": 0.9015686111395351,
+      "leak_contradictory neg.": 0.16111111111111112,
+      "leak_refusal neg.": 0.9944444444444445,
+      "leak_on-policy neg.": 0.9500000000000001
+    },
+    "local_resident": {
+      "base_logprob": -3.3899792281727077,
+      "cosine_on": 0.8731471300125122,
+      "js_on": 0.9432658068674047,
+      "leak_contradictory neg.": 0.12222222222222222,
+      "leak_refusal neg.": 0.4000000000000001,
+      "leak_on-policy neg.": 0.47222222222222215
+    },
+    "assistant": {
+      "base_logprob": -3.5520911571948264,
+      "cosine_on": 0.8643071055412292,
+      "js_on": 0.9500585601910845,
+      "leak_contradictory neg.": 0.12222222222222222,
+      "leak_refusal neg.": 0.25,
+      "leak_on-policy neg.": 0.5666666666666668
+    },
+    "software_engineer": {
+      "base_logprob": -3.4878976781632947,
+      "cosine_on": 0.9175776243209839,
+      "js_on": 0.962029370770324,
+      "leak_contradictory neg.": 0.10555555555555556,
+      "leak_refusal neg.": 0.1111111111111111,
+      "leak_on-policy neg.": 0.5333333333333333
+    },
+    "kindergarten_teacher": {
+      "base_logprob": -3.484584701957862,
+      "cosine_on": 0.8976791501045227,
+      "js_on": 0.957310216798861,
+      "leak_contradictory neg.": 0.13333333333333333,
+      "leak_refusal neg.": 0.027777777777777776,
+      "leak_on-policy neg.": 0.5444444444444444
+    },
+    "no_system": {
+      "base_logprob": -3.4405759947573276,
+      "cosine_on": 0.902818500995636,
+      "js_on": 0.9644320219764874,
+      "leak_contradictory neg.": 0.12222222222222222,
+      "leak_refusal neg.": 0.022222222222222223,
+      "leak_on-policy neg.": 0.5555555555555555
+    }
+  }
+}
