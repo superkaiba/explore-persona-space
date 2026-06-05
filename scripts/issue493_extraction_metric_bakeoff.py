@@ -2085,35 +2085,78 @@ def emit_figures(
             if L in rows[key]:
                 grid[ri, li] = rows[key][L]
 
-    fig, ax = plt.subplots(figsize=(8.5, 0.35 * len(row_keys) + 2.0))
-    vmax = max(abs(np.nanmin(grid)), abs(np.nanmax(grid)))
-    if not np.isfinite(vmax) or vmax < 1e-6:
-        vmax = 1.0
-    im = ax.imshow(grid, cmap="RdBu_r", vmin=-vmax, vmax=vmax, aspect="auto")
-    ax.set_xticks(range(len(layer_list)))
-    ax.set_xticklabels([f"L{L}" for L in layer_list])
-    ax.set_yticks(range(len(row_labels)))
-    ax.set_yticklabels(row_labels, fontsize=8)
-    ax.set_xlabel("Residual layer")
-    ax.set_title("loc_ep1 non-stylized · length-partial ρ(predictor, ΔG)", fontsize=10, loc="left")
-    cb = fig.colorbar(im, ax=ax, shrink=0.7)
-    cb.set_label("Spearman ρ", fontsize=8)
-    for ri in range(len(row_keys)):
-        for li in range(len(layer_list)):
-            v = grid[ri, li]
-            if np.isfinite(v):
-                ax.text(
-                    li,
-                    ri,
-                    f"{v:+.2f}",
-                    ha="center",
-                    va="center",
-                    fontsize=6.5,
-                    color="black" if abs(v) < 0.5 * vmax else "white",
-                )
-    fig.tight_layout()
-    savefig_paper(fig, "metric_layer_grid_heatmap", dir=str(FIGURE_DIR))
-    plt.close(fig)
+    # All-NaN row guard: an end_of_system × cloud-metric panel is N/A by
+    # design — its whole row is NaN. Compute vmax from FINITE entries only,
+    # fall back to 1.0 if the entire grid is NaN (defensive: emit a
+    # warning + skip rather than crash on `np.nanmin([nan, nan])` =
+    # RuntimeWarning + NaN vmax). Rendering still proceeds — the imshow
+    # already draws NaN cells with the "bad" color (mpl default = white)
+    # and the per-cell text annotation already skips non-finite values.
+    finite_mask = np.isfinite(grid)
+    if not finite_mask.any():
+        logger.warning("metric_layer_grid_heatmap: grid is entirely NaN — skipping heatmap")
+    else:
+        finite_vals = grid[finite_mask]
+        vmax = float(max(abs(finite_vals.min()), abs(finite_vals.max())))
+        if vmax < 1e-6:
+            vmax = 1.0
+        # Per-row "all-NaN" tag → annotate the row label so a reviewer can
+        # tell the empty row from "the cells happened to round to 0."
+        any_finite_per_row = finite_mask.any(axis=1)
+        row_labels = [
+            f"{lbl}  (N/A)" if not any_finite_per_row[ri] else lbl
+            for ri, lbl in enumerate(row_labels)
+        ]
+
+        # Build the figure with constrained_layout (the project default via
+        # set_paper_style("blog")) and DO NOT call tight_layout — mixing
+        # the two engines on a colorbar figure raises
+        #   "Colorbar layout of new layout engine not compatible with old engine".
+        # The canonical pattern in scripts/i474_cosine_followup.py either
+        # keeps constrained_layout + omits tight_layout, OR explicitly
+        # disables constrained_layout and uses fig.subplots_adjust(...).
+        # The single-axis heatmap with one colorbar is fine with
+        # constrained_layout alone; let it lay itself out.
+        fig, ax = plt.subplots(
+            figsize=(8.5, 0.35 * len(row_keys) + 2.0),
+            constrained_layout=True,
+        )
+        # Mask NaNs so imshow draws the "bad" color cleanly instead of
+        # whatever the RdBu_r endpoint maps to.
+        masked_grid = np.ma.masked_invalid(grid)
+        cmap = plt.cm.RdBu_r.copy()
+        cmap.set_bad(color="lightgray")
+        im = ax.imshow(masked_grid, cmap=cmap, vmin=-vmax, vmax=vmax, aspect="auto")
+        ax.set_xticks(range(len(layer_list)))
+        ax.set_xticklabels([f"L{L}" for L in layer_list])
+        ax.set_yticks(range(len(row_labels)))
+        ax.set_yticklabels(row_labels, fontsize=8)
+        ax.set_xlabel("Residual layer")
+        ax.set_title(
+            "loc_ep1 non-stylized · length-partial ρ(predictor, ΔG)",
+            fontsize=10,
+            loc="left",
+        )
+        cb = fig.colorbar(im, ax=ax, shrink=0.7)
+        cb.set_label("Spearman ρ", fontsize=8)
+        for ri in range(len(row_keys)):
+            for li in range(len(layer_list)):
+                v = grid[ri, li]
+                if np.isfinite(v):
+                    ax.text(
+                        li,
+                        ri,
+                        f"{v:+.2f}",
+                        ha="center",
+                        va="center",
+                        fontsize=6.5,
+                        color="black" if abs(v) < 0.5 * vmax else "white",
+                    )
+        # Use savefig_paper's bbox_inches="tight" by default (set in the
+        # helper); do NOT call tight_layout() — would switch layout
+        # engines after the colorbar has been added.
+        savefig_paper(fig, "metric_layer_grid_heatmap", dir=str(FIGURE_DIR))
+        plt.close(fig)
 
     # Winner scatter
     winner = select_winner(headline)
@@ -2131,7 +2174,12 @@ def emit_figures(
     G = _load_G("loc", 1)
     dg = np.array([G[a][b]["delta_g"] for a, b in pairs])
     sty = np.array([(a in STY_CIDS) or (b in STY_CIDS) for a, b in pairs])
-    fig, ax = plt.subplots(figsize=(7.0, 5.0))
+    # constrained_layout is on by default (set_paper_style("blog")); use
+    # it explicitly here too so the figure layout stays consistent with
+    # the heatmap above and the savefig_paper helper's tight bbox handles
+    # final margins. No tight_layout() — same engine-mix risk as the
+    # colorbar figure (defensive, not strictly required without colorbar).
+    fig, ax = plt.subplots(figsize=(7.0, 5.0), constrained_layout=True)
     base = paper_palette_role("baseline")
     acc = paper_palette_role("accent")
     ax.scatter(
@@ -2164,7 +2212,6 @@ def emit_figures(
     )
     ax.grid(alpha=0.2, lw=0.5)
     ax.legend(loc="best", frameon=True, fontsize=8)
-    fig.tight_layout()
     savefig_paper(fig, "winner_scatter_vs_deltaG", dir=str(FIGURE_DIR))
     plt.close(fig)
 
