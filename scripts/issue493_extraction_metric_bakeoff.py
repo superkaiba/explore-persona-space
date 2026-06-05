@@ -927,6 +927,89 @@ def load_activations_from_disk(
     return out
 
 
+def validate_canonical_completeness(
+    extraction_points: tuple[str, ...],
+    layers: tuple[int, ...],
+    *,
+    expected_cond_ids_for_point: dict[str, list[str] | None] | None = None,
+) -> dict[str, dict[int, dict]]:
+    """ROUND-4 holistic gate: assert every requested (pt, L) canonical exists
+    AND its cond_ids set equals exactly the expected set for that point.
+
+    This is the single invariant the metrics phase relies on, enforced on
+    every aggregation entrypoint (serial #493 path, single-proc partitioned,
+    single-proc non-partitioned, `--merge-only`, `--phase metrics|regress|all`
+    over prior canonicals). Two complementary gates protect production:
+    (a) `merge_partitioned_activations` raises at WRITE time on mismatch
+    (round-3 wholly-missing + round-4 cache-bypass), and (b) THIS validator
+    raises at READ time so any path that bypasses the merger (e.g. serial
+    #493 writes canonical directly, `--skip-extract` over a stale tree,
+    `--phase metrics` on a partial prior run) STILL trips before metrics.
+
+    Parameters
+    ----------
+    extraction_points, layers
+        The full requested grid.
+    expected_cond_ids_for_point
+        ``{point: expected_cond_ids_list | None}``. When the inner value is
+        ``None`` for some point, that point is skipped (e.g. dev / smoke
+        runs without an expected set). Production passes the Class-A
+        subset for ``end_of_system`` and the full active cond set for
+        ``last_prompt`` / ``mean_response``.
+
+    Returns
+    -------
+    The same ``load_activations_from_disk`` output, but verified — any
+    missing-file / cond-set-mismatch raises AssertionError instead of
+    warning + skipping. Safe to feed straight into the metrics phase.
+    """
+    if expected_cond_ids_for_point is None:
+        # Backwards-compat / dev shortcut: nothing to validate, fall back
+        # to a warning-only load.
+        return load_activations_from_disk(extraction_points, layers)
+
+    import torch
+
+    out: dict[str, dict[int, dict]] = {}
+    failures: list[str] = []
+    for pt in extraction_points:
+        out[pt] = {}
+        expected = expected_cond_ids_for_point.get(pt)
+        for L in layers:
+            p = ACT_DIR / f"{pt}__layer{L}.pt"
+            if not p.exists():
+                if expected is None:
+                    continue  # caller said skip this point entirely
+                failures.append(
+                    f"missing canonical {p} for ({pt}, layer={L}); expected "
+                    f"{sorted(expected)} (set size {len(expected)})"
+                )
+                continue
+            d = torch.load(p, map_location="cpu", weights_only=False)
+            if expected is None:
+                out[pt][L] = d
+                continue
+            expected_set = set(expected)
+            cached_set = set(d.get("cond_ids", []))
+            missing = expected_set - cached_set
+            extra = cached_set - expected_set
+            if missing or extra:
+                failures.append(
+                    f"({pt}, layer={L}): canonical cond_ids mismatch — "
+                    f"missing_conds={sorted(missing)}, extra_conds={sorted(extra)}, "
+                    f"expected={sorted(expected_set)}, found={sorted(cached_set)}"
+                )
+                continue
+            out[pt][L] = d
+    if failures:
+        raise AssertionError(
+            "Canonical-completeness gate FAILED before metrics phase — refusing "
+            "to run regression on an under-sized / drifted bakeoff grid:\n  "
+            + "\n  ".join(failures)
+        )
+    return out
+
+
 # ───────────────────────── batched extraction (#502) ─────────────────────────
 #
 # #502 adds two capabilities on top of #493's serial extraction loop:
@@ -1643,21 +1726,34 @@ def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker +
         per_cond = grouped.get((pt, L), {})
         canonical_path = ACT_DIR / f"{pt}__layer{L}.pt"
         if canonical_path.exists() and not overwrite:
-            logger.info("Skipping merge for existing %s (use --overwrite to redo)", canonical_path)
+            # ROUND-4 FIX #1 (Critical): the cache-hit short-circuit must
+            # validate the cached canonical against `expected_set` BEFORE
+            # accepting it, REGARDLESS of whether the current run has any
+            # per-cond files for (pt, L) on disk. Before round 4, a stale
+            # canonical + zero per-cond files in the current run + no
+            # --overwrite (the production default) silently reused the
+            # stale (possibly under-sized) cache, masking a GPU-worker-
+            # died case. Now: load + validate + raise on mismatch even
+            # if `per_cond` is empty.
             d = torch.load(canonical_path, map_location="cpu", weights_only=False)
-            # Even when re-using a cached merge, enforce the no-drop
-            # assertion against the cached cond_ids — a stale cache from
-            # a prior 15-cond run cannot silently slip through.
             if expected_set is not None:
                 cached_set = set(d.get("cond_ids", []))
                 missing = expected_set - cached_set
                 extra = cached_set - expected_set
                 if missing or extra:
                     raise AssertionError(
-                        f"Cached merge {canonical_path} fails no-drop assertion: "
+                        f"Cached canonical {canonical_path} fails no-drop assertion: "
                         f"missing_conds={sorted(missing)}, extra_conds={sorted(extra)}, "
-                        f"expected={sorted(expected_set)}. Pass --overwrite to re-merge."
+                        f"expected={sorted(expected_set)}. The current run's per-cond "
+                        f"files for ({pt}, layer={L}) had {len(per_cond)} entries "
+                        f"({sorted(per_cond.keys())}). Pass --overwrite to re-merge, "
+                        "or re-run extraction for the missing conds."
                     )
+            logger.info(
+                "Skipping merge for existing %s (cached cond_ids match expected; "
+                "use --overwrite to redo)",
+                canonical_path,
+            )
             written[pt][L] = d["activations"]
             continue
         # Order conds canonically (only those present).
@@ -4649,6 +4745,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                 overwrite=args.overwrite,
                 expected_cond_ids=_expected_for_point(pt),
             )
+        # ROUND-4 holistic gate: re-validate the canonical set at READ
+        # time so any path that bypassed the merger (e.g. a re-used cache
+        # whose mtime predates a deleted per-cond file) still trips
+        # before metrics/regression would run.
+        validate_canonical_completeness(
+            tuple(args.extraction_points),
+            tuple(args.layers),
+            expected_cond_ids_for_point={
+                pt: _expected_for_point(pt) for pt in args.extraction_points
+            },
+        )
         # Also build the next_token_js matrix file from the sidecars,
         # WITH the #406 cross-check guarded fail-loud. (Round-1 blocker #1.)
         if not args.no_next_token_js:
@@ -4733,9 +4840,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
     if args.phase in ("extract", "extraction"):
         return 0
 
-    # Reload from disk (decouples phases — safe on resume).
-    activations_by_point = load_activations_from_disk(
-        tuple(args.extraction_points), tuple(args.layers)
+    # ROUND-4 holistic gate. Before reloading for metrics/regress/figures,
+    # validate every requested (pt, L) canonical exists AND its cond_ids set
+    # equals exactly the expected set. Catches every path that bypasses the
+    # merge-time check — serial #493 writes canonical directly, --skip-extract
+    # over a stale tree, --phase metrics on a partial prior run, etc. (Round-4
+    # blocker #1: single invariant "no metrics phase runs unless every
+    # requested (pt, L) canonical contains exactly the expected conds".)
+    # When `--transformations` is set explicitly we trust the user's intent
+    # (smoke / debug subset), so the expected set is the user-named subset.
+    activations_by_point = validate_canonical_completeness(
+        tuple(args.extraction_points),
+        tuple(args.layers),
+        expected_cond_ids_for_point={pt: _expected_for_point(pt) for pt in args.extraction_points},
     )
     if not activations_by_point:
         logger.warning("No activations on disk; run --phase extract first (with GPU).")

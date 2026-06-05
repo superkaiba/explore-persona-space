@@ -100,10 +100,31 @@
     "missing_layer": 1
   },
   "non_partitioned_phase_all_writes_js": {
-    "matrix_written": "last_prompt__layer-1__next_token_js__raw.json",
-    "matrix_layer_sentinel": -1,
+    "n_js_call_sites_in_main": 2,
+    "js_call_gates": [
+      "(not args.no_next_token_js) and (args.merge_only)",
+      "(args.phase == 'all' and (not args.no_next_token_js)) and (batched_mode) and (args.dry_run) and (args.phase in ('all', 'extract', 'extraction'))"
+    ],
     "matrix_metric": "next_token_js",
-    "n_cids_in_matrix": 3,
-    "cross_check_sidecar_written": true
+    "matrix_layer_sentinel": -1,
+    "wiring_test_passed": true,
+    "behavior_test_passed": true
+  },
+  "prod_js_cross_check_sidecar_asserted": {
+    "p406_reference_present": true,
+    "sidecar_exists": true,
+    "sidecar_failed": true,
+    "rank_corr_floor": 0.5,
+    "rank_corr_spearman": null
+  },
+  "cache_bypass_stale_canonical_raises": {
+    "scenario_a_match_reuses_cache": true,
+    "scenario_b_stale_missing_b4_raised": true,
+    "scenario_c_set_mismatch_raised": true
+  },
+  "validate_canonical_completeness_gate": {
+    "layer0_match_passes": true,
+    "layer1_stale_missing_cond_raised": true,
+    "layer2_missing_file_raised": true
   }
 }

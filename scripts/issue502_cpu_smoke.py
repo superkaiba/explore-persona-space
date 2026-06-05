@@ -782,30 +782,154 @@ def check_wholly_missing_layer_raises() -> dict:
 # ─── Check 15: non-partitioned phase=all writes next_token_js ────────────────
 
 
-def check_non_partitioned_phase_all_writes_js() -> dict:
-    """Round-3 fix #2: the `--probe-pool ... --batch-size>1` WITHOUT
-    `--partitioned` path is a supported run mode (auto-merge branch from
-    round-2 fix #3). Round-2's JS write gate `if args.partitioned and
-    args.phase == "all"` excluded it → metrics/regression proceeded with
-    NO next_token_js matrix, dropping the baseline silently.
+def check_non_partitioned_phase_all_writes_js() -> dict:  # noqa: C901 — AST inspection branches + helper invocation + per-call gate validation; flattening would just inline the inspection helpers.
+    """Round-3 fix #2 — REWRITTEN in round-4 to test the WIRING, not the
+    helper.
 
-    Round-3 fix moves the JS write to `args.phase == "all" and not
-    args.no_next_token_js` — runs on ALL paths. This check writes
-    sidecars + invokes write_next_token_js_matrix(enforce_cross_check=
-    False) directly to confirm the matrix lands when called via the
-    round-3 site, and that the cross-check sidecar is written.
+    Round-3 fix moved the JS write to `args.phase == "all" and not
+    args.no_next_token_js` so the non-partitioned auto-merge path also
+    writes the JS matrix. The round-3 version of this smoke called
+    write_next_token_js_matrix() directly, which is tautological — it
+    would have passed even on the round-2-broken code where main() never
+    invoked the helper for the non-partitioned phase=all path. (Codex
+    round-3 major #2.)
+
+    Round-4 round 4 version: STATICALLY inspect main()'s source for the
+    canonical-wiring shape — the JS write call must live under a gate
+    of the form `args.phase == "all" and not args.no_next_token_js`
+    (or equivalent), NOT under `args.partitioned and ...`. We also
+    confirm the helper still produces the matrix file when called the
+    way main() calls it (so the helper isn't separately broken).
+    Combination = wiring + behavior, both required for the path to fire.
     """
+    import ast
+    import inspect
     import shutil
 
+    import issue493_extraction_metric_bakeoff as bakeoff
     import torch
 
+    # ── WIRING TEST: AST inspection of main() ──
+    src = inspect.getsource(bakeoff.main)
+    tree = ast.parse(src)
+
+    def _is_phase_all_gate(node: ast.AST) -> bool:
+        """Detect an `args.phase == "all"` clause (LHS or RHS), with or
+        without an `and not args.no_next_token_js` sibling — anything
+        gated on `args.partitioned` for the JS call is the round-2 bug."""
+        return (
+            isinstance(node, ast.Compare)
+            and len(node.ops) == 1
+            and isinstance(node.ops[0], ast.Eq)
+            and (
+                (
+                    isinstance(node.left, ast.Attribute)
+                    and node.left.attr == "phase"
+                    and len(node.comparators) == 1
+                    and isinstance(node.comparators[0], ast.Constant)
+                    and node.comparators[0].value == "all"
+                )
+                or (
+                    isinstance(node.comparators[0], ast.Attribute)
+                    and node.comparators[0].attr == "phase"
+                    and isinstance(node.left, ast.Constant)
+                    and node.left.value == "all"
+                )
+            )
+        )
+
+    def _has_attr_in_subtree(node: ast.AST, attr: str) -> bool:
+        for child in ast.walk(node):
+            if isinstance(child, ast.Attribute) and child.attr == attr:
+                return True
+        return False
+
+    # Build a parent map so we can find the INNERMOST enclosing `If` for
+    # each call site (walking-from-the-root only finds the outermost if).
+    parent_map: dict[int, ast.AST] = {}
+    for parent in ast.walk(tree):
+        for child in ast.iter_child_nodes(parent):
+            parent_map[id(child)] = parent
+
+    def _all_enclosing_ifs(call_node: ast.Call) -> list[ast.If]:
+        """Walk UP from the call to collect every enclosing `If` (innermost
+        first). The call is gated by the conjunction of every test."""
+        out: list[ast.If] = []
+        cur: ast.AST | None = parent_map.get(id(call_node))
+        while cur is not None:
+            if isinstance(cur, ast.If):
+                out.append(cur)
+            cur = parent_map.get(id(cur))
+        return out
+
+    js_call_gates: list[str] = []
+    js_call_count = 0
+    has_merge_only_site = False
+    has_phase_all_site = False
+    for node in ast.walk(tree):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "write_next_token_js_matrix"
+        ):
+            continue
+        js_call_count += 1
+        enclosing = _all_enclosing_ifs(node)
+        if not enclosing:
+            js_call_gates.append("<top-level — no enclosing if>")
+            continue
+        # Conjunction of every enclosing `if test:` — the call fires only
+        # when EVERY test is True. The most-specific (innermost) test is
+        # also the one most likely to carry the phase-all / merge_only
+        # routing, but we walk all of them so a refactor that splits the
+        # gate across nested ifs still passes.
+        gate_srcs = [ast.unparse(eif.test) for eif in enclosing]
+        is_phase_all = any(_is_phase_all_gate(t) for eif in enclosing for t in ast.walk(eif.test))
+        is_merge_only = any(_has_attr_in_subtree(eif.test, "merge_only") for eif in enclosing)
+        has_partitioned = any(_has_attr_in_subtree(eif.test, "partitioned") for eif in enclosing)
+        js_call_gates.append(" and ".join(f"({s})" for s in gate_srcs))
+        if is_phase_all:
+            has_phase_all_site = True
+        if is_merge_only:
+            has_merge_only_site = True
+        # Reject the round-2 bug shape: a call gated on `args.partitioned`
+        # WITHOUT phase=="all" AND WITHOUT merge_only.
+        if has_partitioned and not is_phase_all and not is_merge_only:
+            raise AssertionError(
+                f"write_next_token_js_matrix call is gated on `args.partitioned` "
+                f'WITHOUT the phase=="all" or merge_only gate — this is the '
+                f"round-2 bug shape the round-3 fix was supposed to remove. "
+                f"Gates: {gate_srcs!r}"
+            )
+        # Reject any other unexpected gate shape.
+        if not (is_phase_all or is_merge_only):
+            raise AssertionError(
+                f"write_next_token_js_matrix call has an unexpected enclosing "
+                f'gate (not `args.merge_only`, not `args.phase == "all"`). '
+                f"Gates: {gate_srcs!r}"
+            )
+    assert js_call_count >= 2, (
+        f"expected ≥2 write_next_token_js_matrix call sites in main() "
+        f"(--merge-only path + post-extraction phase=='all'); found {js_call_count}"
+    )
+    assert has_merge_only_site, (
+        "no write_next_token_js_matrix call site is gated by `args.merge_only` "
+        "— the --merge-only aggregation path would silently drop the JS baseline"
+    )
+    assert has_phase_all_site, (
+        'no write_next_token_js_matrix call site is gated by `args.phase == "all"` '
+        "— the round-3 fix wiring is missing; the non-partitioned auto-merge path "
+        "would silently drop the JS baseline"
+    )
+
+    # ── BEHAVIOR TEST: the helper still produces the matrix when called ──
+    # the way main() calls it (so a regression in the helper itself is
+    # also caught here).
     _set_roots(SMOKE_ROOT / "nonpart_phase_all_js")
-    from issue493_extraction_metric_bakeoff import BAKEOFF_DIR, METRIC_DIR
+    from issue493_extraction_metric_bakeoff import BAKEOFF_DIR
 
     if BAKEOFF_DIR.exists():
         shutil.rmtree(BAKEOFF_DIR)
-    # Mimic what _extract_batch would write: per-cond next-token logits
-    # sidecars for a handful of class-A cids.
     nt_dir = BAKEOFF_DIR / "next_token_logits"
     nt_dir.mkdir(parents=True, exist_ok=True)
     n_q, V = 3, 16
@@ -825,31 +949,305 @@ def check_non_partitioned_phase_all_writes_js() -> dict:
             },
             nt_dir / f"last_prompt__cond{cid}.pt",
         )
-
-    # Call the same function the round-3 site invokes; enforce=False so
-    # the synthetic 3-cond input doesn't trip the #406 rank-correlation
-    # floor (production runs use the full 16-cond grid where rho is real).
     matrix_path = write_next_token_js_matrix(enforce_cross_check=False)
-    assert matrix_path is not None, "write_next_token_js_matrix returned None unexpectedly"
-    assert matrix_path.exists(), f"matrix file not written at {matrix_path}"
-    # Cross-check sidecar also written (PASS or fail-loud-on-enforce=True,
-    # smoke uses enforce=False so we just check the sidecar lands).
-    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
-    # The cross-check sidecar is only written when the cross-check actually
-    # runs (i.e. when the #406 reference is present). On the dev VM #406
-    # may or may not be there; assert the matrix landed (the load-bearing
-    # part) and the sidecar landed IF #406 is present.
+    assert matrix_path is not None and matrix_path.exists()
     payload = json.loads(matrix_path.read_text())
     assert payload["metric"] == "next_token_js"
     assert payload["layer"] == -1
-    assert len(payload["cond_ids"]) == len(cids)
-    p406 = PROJECT_ROOT / "eval_results/issue_406/divergence/D_matrix.json"
     return {
-        "matrix_written": str(matrix_path.name),
-        "matrix_layer_sentinel": payload["layer"],
+        "n_js_call_sites_in_main": js_call_count,
+        "js_call_gates": js_call_gates,
         "matrix_metric": payload["metric"],
-        "n_cids_in_matrix": len(payload["cond_ids"]),
-        "cross_check_sidecar_written": cross_check_path.exists() if p406.exists() else "n/a",
+        "matrix_layer_sentinel": payload["layer"],
+        "wiring_test_passed": True,
+        "behavior_test_passed": True,
+    }
+
+
+def check_prod_js_cross_check_sidecar_asserted() -> dict:
+    """Round-4 fix #3 (Codex round-3 major #3): the round-3 smoke
+    `check_prod_js_cross_check_wired` previously RECORDED whether the
+    sidecar was written when #406 exists (`"cross_check_sidecar_written":
+    cross_check_path.exists() if p406.exists() else "n/a"`) instead of
+    ASSERTING it. A regression that stopped writing the sidecar would
+    have shown up as `False` in the digest but the smoke would still
+    PASS. This new check ASSERTS the sidecar lands (with the floor
+    metadata) when #406 is on disk, so a missing sidecar fails the
+    smoke loudly.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "js_sidecar_asserted")
+    from issue493_extraction_metric_bakeoff import BAKEOFF_DIR, METRIC_DIR
+
+    p406 = PROJECT_ROOT / "eval_results/issue_406/divergence/D_matrix.json"
+    if not p406.exists():
+        # No reference → cross-check is a no-op by design.
+        # Nothing to assert in that environment; skip with a clear tag.
+        return {
+            "ok": True,
+            "reason": "no #406 reference on dev VM; sidecar assertion skipped",
+        }
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    # Build a benign 16-cond sidecar set so the rank-correlation comes
+    # out high (above the floor). Each cid's probs are a translation of
+    # the SAME monotone profile, with cid-indexed mean offset — produces
+    # a clean monotone JS structure that correlates with #406's JS.
+    nt_dir = BAKEOFF_DIR / "next_token_logits"
+    nt_dir.mkdir(parents=True, exist_ok=True)
+    cids = [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "B1",
+        "B2",
+        "B3",
+        "B4",
+        "B5",
+        "C1",
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+    ]
+    n_q, V = 4, 32
+    base_logits = np.linspace(-2.0, 2.0, V, dtype=np.float32)
+    for k, cid in enumerate(cids):
+        # cid-indexed monotone shift so JS scales linearly with |i - j|.
+        shifted = base_logits + (k - len(cids) / 2.0) * 0.5
+        rep = np.tile(shifted[None, :], (n_q, 1))
+        probs = np.exp(rep - rep.max(axis=1, keepdims=True))
+        probs = probs / probs.sum(axis=1, keepdims=True)
+        torch.save(
+            {
+                "extraction_point": "last_prompt",
+                "cond_id": cid,
+                "n_probes": n_q,
+                "vocab_size": V,
+                "probs": probs.astype(np.float32),
+            },
+            nt_dir / f"last_prompt__cond{cid}.pt",
+        )
+
+    matrix_path = write_next_token_js_matrix(enforce_cross_check=False)
+    assert matrix_path is not None and matrix_path.exists()
+    # ASSERT (not record) the sidecar exists when #406 is on disk.
+    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    assert cross_check_path.exists(), (
+        f"#406 cross-check sidecar NOT written at {cross_check_path} despite "
+        f"the #406 reference being present at {p406}. A regression that "
+        "stopped writing the sidecar would silently bypass the JS safety net."
+    )
+    cc = json.loads(cross_check_path.read_text())
+    # The sidecar must carry the rank-corr floor metadata so a reviewer
+    # can audit it.
+    if cc.get("failed") is False:
+        summary = cc.get("summary", {})
+        assert "rank_corr_floor" in summary, (
+            f"cross-check sidecar summary missing 'rank_corr_floor': {summary}"
+        )
+        assert "rank_corr_spearman" in summary, (
+            f"cross-check sidecar summary missing 'rank_corr_spearman': {summary}"
+        )
+        floor_val = summary["rank_corr_floor"]
+        rho_val = summary["rank_corr_spearman"]
+    else:
+        # On a failed-but-not-raised path (enforce=False), the sidecar
+        # records the failure reason + floor at the top level.
+        assert "rank_corr_floor" in cc, f"failed sidecar missing 'rank_corr_floor': {cc}"
+        floor_val = cc["rank_corr_floor"]
+        rho_val = None
+    return {
+        "p406_reference_present": True,
+        "sidecar_exists": True,
+        "sidecar_failed": cc.get("failed"),
+        "rank_corr_floor": floor_val,
+        "rank_corr_spearman": rho_val,
+    }
+
+
+# ─── Check 16: cache-bypass holistic-gate scenarios (Round-4 fix #1) ─────────
+
+
+def check_cache_bypass_stale_canonical_raises() -> dict:
+    """Round-4 fix #1 (Critical): cache-hit short-circuit must validate
+    against expected_cond_ids BEFORE accepting the cached canonical.
+
+    Scenario A: a stale canonical (cond_ids = {B1, B2, B3}) exists from a
+    prior run; current run has ZERO per-cond files for that (pt, L); no
+    --overwrite. With expected=["B1", "B2", "B3"], the cache should match
+    and reuse cleanly. With expected=["B1", "B2", "B3", "B4"], the cache
+    is stale (missing B4) and must RAISE — round 3 silently reused it.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "cache_bypass_stale")
+    from issue493_extraction_metric_bakeoff import ACT_DIR, BAKEOFF_DIR
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    ACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Plant a stale canonical with cond_ids={B1, B2, B3}, NO per-cond files.
+    n_q, H = 3, 4
+    stale_arr = np.ones((3, n_q, H), dtype=np.float32)
+    torch.save(
+        {
+            "schema_version": 1,
+            "extraction_point": "last_prompt",
+            "layer": 0,
+            "cond_ids": ["B1", "B2", "B3"],
+            "n_probes": n_q,
+            "hidden_size": H,
+            "activations": stale_arr,
+        },
+        ACT_DIR / "last_prompt__layer0.pt",
+    )
+
+    # Scenario A: expected matches the stale canonical → cache reuses cleanly.
+    out_match = merge_partitioned_activations(
+        ("last_prompt",),
+        (0,),
+        overwrite=False,
+        expected_cond_ids=["B1", "B2", "B3"],
+    )
+    assert "last_prompt" in out_match and 0 in out_match["last_prompt"]
+    assert out_match["last_prompt"][0].shape == (3, n_q, H)
+
+    # Scenario B: expected has an extra cid B4 NOT in the stale canonical
+    # AND no per-cond file for B4. Round-3 reused the cache silently; round-4
+    # must RAISE.
+    raised_b = False
+    try:
+        merge_partitioned_activations(
+            ("last_prompt",),
+            (0,),
+            overwrite=False,
+            expected_cond_ids=["B1", "B2", "B3", "B4"],
+        )
+    except AssertionError as e:
+        msg = str(e)
+        assert "Cached canonical" in msg, f"unexpected raise message: {msg}"
+        assert "missing_conds=['B4']" in msg, f"expected missing_conds=['B4'] in: {msg}"
+        raised_b = True
+    assert raised_b, (
+        "ROUND-4 fix #1 still open: cache-hit short-circuit silently reused a "
+        "stale canonical missing B4 instead of raising"
+    )
+
+    # Scenario C: same stale canonical, but expected has a DIFFERENT set
+    # (missing one + adding another) → must raise.
+    raised_c = False
+    try:
+        merge_partitioned_activations(
+            ("last_prompt",),
+            (0,),
+            overwrite=False,
+            expected_cond_ids=["B1", "B2", "B5"],
+        )
+    except AssertionError as e:
+        msg = str(e)
+        assert "missing_conds=['B5']" in msg and "extra_conds=['B3']" in msg, (
+            f"expected missing=['B5'] + extra=['B3'] in: {msg}"
+        )
+        raised_c = True
+    assert raised_c, "expected raise on cache-vs-expected set disagreement"
+
+    return {
+        "scenario_a_match_reuses_cache": True,
+        "scenario_b_stale_missing_b4_raised": True,
+        "scenario_c_set_mismatch_raised": True,
+    }
+
+
+# ─── Check 17: holistic validator catches a stale partial canonical ─────────
+
+
+def check_validate_canonical_completeness_gate() -> dict:
+    """ROUND-4 the standalone read-time validator. Plant a tree that LOOKS
+    populated (canonical files exist) but is partially stale — one (pt, L)
+    canonical has the right cond_ids, another has missing cids, a third is
+    wholly absent. The validator must raise naming every offender so
+    --phase metrics / --phase regress / --skip-extract over a partial run
+    never proceeds silently.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "validator_gate")
+    from issue493_extraction_metric_bakeoff import (
+        ACT_DIR,
+        BAKEOFF_DIR,
+        validate_canonical_completeness,
+    )
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    ACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    n_q, H = 2, 4
+
+    def _write_canonical(pt: str, L: int, cids: list[str]) -> None:
+        arr = np.ones((len(cids), n_q, H), dtype=np.float32)
+        torch.save(
+            {
+                "schema_version": 1,
+                "extraction_point": pt,
+                "layer": L,
+                "cond_ids": cids,
+                "n_probes": n_q,
+                "hidden_size": H,
+                "activations": arr,
+            },
+            ACT_DIR / f"{pt}__layer{L}.pt",
+        )
+
+    # Layer 0: good (3 cids match expected).
+    _write_canonical("last_prompt", 0, ["B1", "B2", "B3"])
+    # Layer 1: stale (missing B3).
+    _write_canonical("last_prompt", 1, ["B1", "B2"])
+    # Layer 2: wholly absent (no file).
+    expected = ["B1", "B2", "B3"]
+
+    # Match path: only layer 0 → returns cleanly.
+    out_match = validate_canonical_completeness(
+        ("last_prompt",),
+        (0,),
+        expected_cond_ids_for_point={"last_prompt": expected},
+    )
+    assert 0 in out_match["last_prompt"]
+
+    # Failure path: layers (0, 1, 2) → raises naming layer 1 missing_conds
+    # AND layer 2 missing file.
+    raised = False
+    try:
+        validate_canonical_completeness(
+            ("last_prompt",),
+            (0, 1, 2),
+            expected_cond_ids_for_point={"last_prompt": expected},
+        )
+    except AssertionError as e:
+        msg = str(e)
+        assert "layer=1" in msg, f"validator failed to name layer 1 stale: {msg}"
+        assert "missing_conds=['B3']" in msg, f"layer 1 missing_conds not named: {msg}"
+        assert "layer=2" in msg, f"validator failed to name layer 2 absent: {msg}"
+        assert "missing canonical" in msg, f"layer 2 missing-file not named: {msg}"
+        raised = True
+    assert raised, "validate_canonical_completeness did NOT raise on partial / stale tree"
+    return {
+        "layer0_match_passes": True,
+        "layer1_stale_missing_cond_raised": True,
+        "layer2_missing_file_raised": True,
     }
 
 
@@ -875,6 +1273,10 @@ def main() -> int:
         ("batched_without_partitioned_canonical", check_batched_without_partitioned_canonical),
         ("wholly_missing_layer_raises", check_wholly_missing_layer_raises),
         ("non_partitioned_phase_all_writes_js", check_non_partitioned_phase_all_writes_js),
+        # Round-4 additions
+        ("prod_js_cross_check_sidecar_asserted", check_prod_js_cross_check_sidecar_asserted),
+        ("cache_bypass_stale_canonical_raises", check_cache_bypass_stale_canonical_raises),
+        ("validate_canonical_completeness_gate", check_validate_canonical_completeness_gate),
     ]
     for name, fn in checks:
         logger.info("=== check: %s ===", name)
