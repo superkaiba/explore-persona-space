@@ -12,3 +12,4 @@
 {"ts": "2026-06-05T11:12:47Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v2 ready for approval; consistency WARN (no BLOCK); all 3 lenses APPROVE (Codex ensemble, 1 reconciler call)."}
 {"ts": "2026-06-05T17:15:36Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v2 approved by user."}
 {"ts": "2026-06-05T17:15:37Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "User approved plan v2 inline (Path B EVAL-ONLY, est 4 GPU-h on 1× H100)."}
+{"ts": "2026-06-05T17:17:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer for Path B EVAL-ONLY; awaiting epm:experiment-implementation v1."}
