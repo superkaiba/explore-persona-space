@@ -127,6 +127,19 @@ export function loadSessionSnapshot(): SessionSnapshot {
   if (!sessionsField || typeof sessionsField !== "object") {
     return { updatedAt, sessions: [], readError: null };
   }
+  // Arrays are `typeof === "object"` in JS, so without this guard a
+  // wrong-shaped `sessions: [...]` would pass the previous check and then
+  // `Object.entries` would happily yield numeric-string keys ("0", "1", ...)
+  // — silently rendering numeric-keyed pseudo-rows on the /sessions page
+  // instead of surfacing the malformed cache. Visible readError beats silent
+  // garbage.
+  if (Array.isArray(sessionsField)) {
+    return {
+      updatedAt,
+      sessions: [],
+      readError: "cache `sessions` field is an array; expected an object keyed by session id",
+    };
+  }
 
   const sessions: SessionRow[] = [];
   for (const [sessionId, value] of Object.entries(
