@@ -273,8 +273,9 @@ def per_stratum_rho_plain(reg):
     )
     ax.set_ylabel("Within-recipe Spearman rho (n=4-6)", fontsize=9.5)
     ax.set_title(
-        "Within each recipe, sign is unstable: the positive-only fictional-scholar recipe flips most\n"
-        "predictors positive; the contrastive recipes go negative. n=4-6 cells per bar.",
+        "Within each recipe, sign is unstable: the positive-only fictional-scholar recipe flips the two\n"
+        "hidden-state cosines positive (JS stays negative, prior stays strongly negative); contrastive\n"
+        "recipes go negative. n=4-6 cells per bar.",
         fontsize=10,
         loc="left",
         pad=14,
@@ -335,8 +336,9 @@ def partial_vs_raw(reg):
     )
     ax.set_ylabel("Spearman rho vs bystander leak rate", fontsize=9.5)
     ax.set_title(
-        "Conditioning on what the bystander already knew about the fact pulls every persona-distance\n"
-        "predictor closer to zero. The persona-distance signal does not survive that control.",
+        "Conditioning on the bystander's prior fact log-probability pulls three of four persona-distance\n"
+        "predictors closer to zero; on-topic cosine moves slightly farther from zero (-0.06 → -0.12).\n"
+        "No persona-distance signal robustly survives that control.",
         fontsize=10,
         loc="left",
         pad=14,
