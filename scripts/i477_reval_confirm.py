@@ -123,33 +123,48 @@ def _ensure_data(token: str | None) -> None:
 
 
 def _fetch_adapter(token: str | None, dest: Path) -> Path:
-    """Download the trained adapter dir from HF to ``dest`` (snapshot_download)."""
-    from huggingface_hub import snapshot_download
+    """Download the trained adapter dir from HF to ``dest`` via per-file
+    ``hf_hub_download``.
+
+    ``snapshot_download(allow_patterns=...)`` returns 0 files on repos with
+    truncated siblings (huggingface_hub siblings-truncation bug), so we list the
+    repo files and pull each one explicitly — the same pattern ``_ensure_data``
+    uses for the #472 data.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
 
     dest.mkdir(parents=True, exist_ok=True)
     log.info(
-        "fetching adapter %s/%s → %s",
+        "fetching adapter %s/%s → %s (per-file)",
         ADAPTER_HF_REPO,
         ADAPTER_SUBFOLDER,
         dest,
     )
-    snap = snapshot_download(
-        repo_id=ADAPTER_HF_REPO,
-        repo_type="model",
-        allow_patterns=[f"{ADAPTER_SUBFOLDER}/*"],
-        local_dir=str(dest),
-        token=token,
-    )
-    adapter_dir = Path(snap) / ADAPTER_SUBFOLDER
+    api = HfApi()
+    all_files = api.list_repo_files(repo_id=ADAPTER_HF_REPO, repo_type="model", token=token)
+    sub_files = [f for f in all_files if f.startswith(f"{ADAPTER_SUBFOLDER}/")]
+    if not sub_files:
+        raise FileNotFoundError(
+            f"no files under {ADAPTER_SUBFOLDER} in {ADAPTER_HF_REPO} — "
+            f"adapter subfolder missing on Hub"
+        )
+    for fn in sub_files:
+        hf_hub_download(
+            repo_id=ADAPTER_HF_REPO,
+            repo_type="model",
+            filename=fn,
+            local_dir=str(dest),
+            token=token,
+        )
+    adapter_dir = dest / ADAPTER_SUBFOLDER
     # Verify the load-bearing files landed.
     must_have = ("adapter_config.json", "adapter_model.safetensors")
     for fn in must_have:
         if not (adapter_dir / fn).exists():
             raise FileNotFoundError(
-                f"adapter file {fn} missing under {adapter_dir} after snapshot_download — "
-                f"check the snapshot_download siblings truncation memory."
+                f"adapter file {fn} missing under {adapter_dir} after per-file download"
             )
-    log.info("adapter dir = %s", adapter_dir)
+    log.info("adapter dir = %s (%d files)", adapter_dir, len(sub_files))
     return adapter_dir
 
 
