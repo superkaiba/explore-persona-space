@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -148,10 +149,18 @@ def _load_session_issue_map() -> dict[str, int]:
 _PROGRESS_CELL_MAX = 60
 
 
-def _format_progress_cell(issue: int, now: float | None = None) -> str:
+def _format_progress_cell(
+    issue: int, now: float | None = None, cache_summary: str | None = None
+) -> str:
     """One-line ``status / marker_kind (note...) Nh|m ago`` summary for issue
     ``issue``. Returns a VISIBLE placeholder (NOT a silent blank) on lookup
     failure so a broken row is immediately legible to the user.
+
+    If ``cache_summary`` is given (the LLM-written one-line "what the session
+    is doing right now" from ``~/.eps-autonomous/session_progress.json``), it
+    is used INSTEAD of the marker-based body. Without a cache entry, the
+    function falls back to the marker line as before — keeping the table
+    legible even before the first ``session_summarize.py`` tick lands.
 
     Reads task state in-process via :mod:`explore_persona_space.task_workflow`
     rather than shelling out per row — important because `happy-ls` is called
@@ -173,6 +182,18 @@ def _format_progress_cell(issue: int, now: float | None = None) -> str:
         return f"<lookup failed: {type(e).__name__}>"
 
     status = task.get("status", "?")
+
+    # Prefer the LLM summary from session_progress.json when one is available;
+    # it answers "what is it DOING right now" (the marker only answers "what
+    # was the last lifecycle event"). Falls through to marker if absent.
+    if cache_summary:
+        summary = cache_summary.strip().replace("\n", " ")
+        overhead = len(f"{status} / ")
+        budget = max(0, _PROGRESS_CELL_MAX - overhead)
+        if len(summary) > budget:
+            summary = summary[: max(0, budget - 1)] + "…"
+        return f"{status} / {summary}"
+
     try:
         marker = latest_event(issue, prefix="epm:")
     except Exception as e:
@@ -449,23 +470,56 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
+def _is_eps_dir_label(dir_label: str) -> bool:
+    """True iff the rendered dir label refers to EPS (incl. worktrees).
+
+    Matches the literal repo name in the label so worktree labels
+    (``explore-persona-space  [issue-N]``) and bare-root labels
+    (``explore-persona-space``) BOTH count, while ``my-goat`` / ``introsp``
+    do not."""
+    return "explore-persona-space" in dir_label
+
+
+def _load_summary_cache() -> dict[str, dict]:
+    """Read ``session_progress.json`` -> ``{happy_session_id: entry}``.
+
+    Best-effort enrichment; returns ``{}`` if the cache file is missing or
+    unreadable, so the table degrades to the marker-based progress cell
+    instead of breaking."""
+    try:
+        # Local import — avoids paying the cost when nobody calls `list`.
+        import session_summarize
+
+        data = session_summarize.load_cache()
+    except Exception:
+        return {}
+    sessions = data.get("sessions") if isinstance(data, dict) else None
+    if not isinstance(sessions, dict):
+        return {}
+    return {sid: entry for sid, entry in sessions.items() if isinstance(entry, dict)}
+
+
 def cmd_list(args: argparse.Namespace) -> None:
     """List Happy sessions, enriched with cwd + lifecycle state + issue +
     progress.
 
-    Default: sessions the local daemon is actively tracking (live processes),
-    with an ``issue`` column (the mapped issue number from the EPS session
-    registry, or ``-`` if unmapped) and a ``progress`` column (the task's
-    current status + latest ``epm:`` marker + age — read in-process from
-    `task_workflow`, so the table doesn't fork a subprocess per row).
+    Default: sessions the local daemon is actively tracking, FILTERED to EPS
+    (the project root + any of its worktrees). The ``progress`` column shows
+    the LLM-written summary from ``~/.eps-autonomous/session_progress.json``
+    when present, otherwise falls back to the marker-based summary.
 
     ``--all``: every session in ``~/.happy/sessions.json`` (including stopped
-    ones), newest first, so you can pick one to ``happy resume``."""
+    ones), newest first, so you can pick one to ``happy resume``.
+
+    ``--all-dirs``: restore the pre-EPS-filter view (include my-goat / introsp /
+    any other project). Composes with ``--all``."""
     meta = _load_session_meta()
     # Session -> issue mapping covers BOTH autonomous (`--auto`) and manual
     # `spawn-issue` sessions. Sessions not spawned by `spawn_session.py`
     # (e.g. `/my-goat`) have no entry and render with a blank issue column.
     issue_map = _load_session_issue_map()
+    summary_cache = _load_summary_cache()
+    all_dirs = getattr(args, "all_dirs", False)
 
     if getattr(args, "all", False):
         live = _live_session_ids()
@@ -480,16 +534,24 @@ def cmd_list(args: argparse.Namespace) -> None:
             )
             for sid, m in meta.items()
         ]
+        if not all_dirs:
+            rows = [r for r in rows if _is_eps_dir_label(r[3])]
         # Live sessions first, then newest-saved first within each group.
         rows.sort(key=lambda r: (r[1] != "live", -r[4]))
         if not rows:
-            print("(no sessions in sessions.json)")
+            scope = "all dirs" if all_dirs else "EPS dirs"
+            print(f"(no sessions in sessions.json for {scope}; pass --all-dirs to widen)")
             return
         print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  {'issue':<6}  dir")
         for sid, state, started_by, dir_label, _ts, issue in rows:
             issue_cell = f"#{issue}" if issue is not None else "-"
             print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {issue_cell:<6}  {dir_label}")
-        print(f"\n{len(rows)} session(s), {len(live)} live. Resume one: happy resume <id-prefix>")
+        scope_note = " (all dirs)" if all_dirs else " (EPS only; --all-dirs to widen)"
+        live_count = sum(1 for r in rows if r[1] == "live")
+        print(
+            f"\n{len(rows)} session(s){scope_note}, "
+            f"{live_count} live. Resume one: happy resume <id-prefix>"
+        )
         return
 
     resp = post("/list", {})
@@ -497,16 +559,17 @@ def cmd_list(args: argparse.Namespace) -> None:
     if not children:
         print("(no active Happy sessions)")
         return
-    print(
-        f"{'session id':<28}  {'pid':>8}  {'state':<10}  {'issue':<6}  "
-        f"{'progress':<{_PROGRESS_CELL_MAX}}  dir"
-    )
+    # Build the (potentially filtered) row list before printing so the
+    # "no rows" branch can give an informative scope-note.
+    rendered_rows: list[tuple[str, int | str, str, str, str | None, str]] = []
     for c in children:
         sid = c.get("happySessionId", "?")
         m = meta.get(sid, {})
+        dir_label = _dir_label(m.get("path"))
+        if not all_dirs and not _is_eps_dir_label(dir_label):
+            continue
         state = m.get("lifecycleState", "?")
         issue = issue_map.get(sid)
-        issue_cell = f"#{issue}" if issue is not None else "-"
         # Progress lookup is per-row in-process — a single broken row must NOT
         # crash the whole table (visible placeholder per row instead). The
         # helper itself catches its own internal failures; this outer guard
@@ -515,14 +578,37 @@ def cmd_list(args: argparse.Namespace) -> None:
             progress_cell = ""
         else:
             try:
-                progress_cell = _format_progress_cell(issue)
+                cache_entry = summary_cache.get(sid) or {}
+                cache_summary = (
+                    cache_entry.get("summary") if isinstance(cache_entry, dict) else None
+                )
+                progress_cell = _format_progress_cell(
+                    issue, cache_summary=cache_summary if isinstance(cache_summary, str) else None
+                )
             except Exception as e:
                 progress_cell = f"<row error: {type(e).__name__}>"
+        rendered_rows.append((sid, c.get("pid", "?"), state, dir_label, issue, progress_cell))
+
+    if not rendered_rows:
+        scope = "all dirs" if all_dirs else "EPS dirs"
+        print(f"({len(children)} active session(s), none in {scope}; pass --all-dirs to widen)")
+        return
+
+    print(
+        f"{'session id':<28}  {'pid':>8}  {'state':<10}  {'issue':<6}  "
+        f"{'progress':<{_PROGRESS_CELL_MAX}}  dir"
+    )
+    for sid, pid, state, dir_label, issue, progress_cell in rendered_rows:
+        issue_cell = f"#{issue}" if issue is not None else "-"
         print(
-            f"{sid[:26]:<28}  {c.get('pid', '?'):>8}  {state:<10}  {issue_cell:<6}  "
-            f"{progress_cell:<{_PROGRESS_CELL_MAX}}  {_dir_label(m.get('path'))}"
+            f"{sid[:26]:<28}  {pid:>8}  {state:<10}  {issue_cell:<6}  "
+            f"{progress_cell:<{_PROGRESS_CELL_MAX}}  {dir_label}"
         )
-    print(f"\n{len(children)} active session(s). Resume one: happy resume <id-prefix>")
+    scope_note = " (all dirs)" if all_dirs else " (EPS only; --all-dirs to widen)"
+    print(
+        f"\n{len(rendered_rows)} active session(s){scope_note}. "
+        f"Resume one: happy resume <id-prefix>"
+    )
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
@@ -531,6 +617,75 @@ def cmd_stop(args: argparse.Namespace) -> None:
     if not resp.get("success"):
         sys.exit(f"stop failed: {resp}")
     print(f"Stopped session {args.session_id}")
+
+
+def resolve_session_for_issue(
+    issue: int,
+    *,
+    registry_dir: Path | None = None,
+    live_ids: set[str] | None = None,
+) -> str | None:
+    """Look up the Happy session id driving issue ``issue``.
+
+    Picks the LIVE session if one is registered for this issue; if none of
+    the registered sessions are live, falls back to the most-recently spawned
+    one (so a JUST-stopped or daemon-list-flaky case still returns something
+    usable for ``happy resume``).
+
+    Returns the happy session id, or None if no entry exists for this issue.
+
+    Pure-ish: ``registry_dir`` and ``live_ids`` are injectable so the unit
+    tests don't have to touch the real registry or daemon."""
+    reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
+    candidates: list[tuple[float, str]] = []  # (spawned_at, sid)
+    if reg.is_dir():
+        for prefix in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+            path = reg / prefix
+            if not path.is_file():
+                continue
+            try:
+                entry = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+            sid = entry.get("happy_session_id")
+            ts = entry.get("spawned_at", 0.0)
+            if not isinstance(sid, str):
+                continue
+            if not isinstance(ts, int | float):
+                ts = 0.0
+            candidates.append((float(ts), sid))
+    if not candidates:
+        return None
+    live = live_ids if live_ids is not None else _live_session_ids()
+    live_candidates = [c for c in candidates if c[1] in live]
+    pool = live_candidates or candidates
+    pool.sort(reverse=True)  # newest spawned_at first
+    return pool[0][1]
+
+
+def cmd_resume_issue(args: argparse.Namespace) -> None:
+    """Print (or exec) the ``happy resume <id>`` command for issue ``--issue N``.
+
+    Looks up the session id via :func:`resolve_session_for_issue`. With
+    ``--print`` (default), prints the command so the caller can decide to run
+    it (alias-friendly). With ``--exec``, replaces the current process with
+    ``happy resume <id>`` (so the user lands directly in the resumed session).
+    Fails loud if no session is registered for the issue."""
+    sid = resolve_session_for_issue(args.issue)
+    if sid is None:
+        sys.exit(
+            f"no Happy session registered for issue #{args.issue}. "
+            f"Spawn one first: uv run python scripts/spawn_session.py spawn-issue "
+            f"--issue {args.issue}"
+        )
+    cmd = ["happy", "resume", sid]
+    if args.exec:
+        # Replace this process so the user lands directly in the Happy TTY.
+        os.execvp(cmd[0], cmd)
+        return  # unreachable; satisfies lints
+    # Default: print the command so the caller (a shell alias) can `eval` /
+    # exec it themselves, OR a human can copy-paste it.
+    print(" ".join(cmd))
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -572,11 +727,31 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="include stopped/historical sessions from ~/.happy/sessions.json (newest first)",
     )
+    p_list.add_argument(
+        "--all-dirs",
+        action="store_true",
+        help=(
+            "Include non-EPS sessions (my-goat, introsp, etc.). By default the "
+            "list is filtered to EPS-only (the repo root and its worktrees)."
+        ),
+    )
     p_list.set_defaults(fn=cmd_list)
 
     p_stop = sub.add_parser("stop", help="stop a Happy session by id")
     p_stop.add_argument("--session-id", required=True)
     p_stop.set_defaults(fn=cmd_stop)
+
+    p_resume = sub.add_parser(
+        "resume-issue",
+        help="print (or exec) `happy resume <id>` for the session driving issue #N",
+    )
+    p_resume.add_argument("--issue", type=int, required=True)
+    p_resume.add_argument(
+        "--exec",
+        action="store_true",
+        help="Replace this process with `happy resume <id>` instead of printing it.",
+    )
+    p_resume.set_defaults(fn=cmd_resume_issue)
 
     args = parser.parse_args(argv)
     args.fn(args)
