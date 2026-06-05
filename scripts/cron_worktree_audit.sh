@@ -15,6 +15,14 @@
 
 set -uo pipefail
 
+# cron's minimal PATH lacks ~/.local/bin, so a bare `uv` exit-127s silently
+# (the `exit 0` below hides it). Put uv on PATH; fail LOUD if still missing.
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+    echo "$(date -Iseconds) FATAL: uv not on PATH ($PATH); cannot run worktree audit" >&2
+    exit 1
+fi
+
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 DATE=$(date +%Y-%m-%d)
 LOG_DIR="$PROJECT_DIR/logs/worktree_audit"

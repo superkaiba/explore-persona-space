@@ -14,6 +14,16 @@
 
 set -uo pipefail
 
+# cron runs with a minimal PATH (no ~/.local/bin), so a bare `uv` is "command
+# not found" and the script silently exit-127s (the `exit 0` below hides it).
+# Put uv on PATH and fail LOUD if it is still missing, so a PATH regression
+# surfaces (cron mail) instead of silently disabling crash recovery.
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+    echo "$(date -Iseconds) FATAL: uv not on PATH ($PATH); cannot run watcher" >&2
+    exit 1
+fi
+
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 DATE=$(date +%Y-%m-%d)
 LOG_DIR="$PROJECT_DIR/logs/autonomous_session_watch"
