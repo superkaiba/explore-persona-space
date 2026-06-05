@@ -1,0 +1,485 @@
+"""Issue #501 Phase 0 — load #377 drift + length-matched-neutral corpora and
+build the 12 MT/MN history slices.
+
+Plan v2 §4.4 + §7 (Phase-0 corpus-load + max-prefix-length sanity check).
+
+Steps:
+  1. Download (or cache-hit) the two #377 JSONL corpora at the PINNED
+     revision ``54a80fdf4c2e863e0b9885010a708321071b70ef`` from HF Hub
+     ``superkaiba1/explore-persona-space-data``.
+  2. For each MT01..MT08 row: pick 5 conversation indices deterministically
+     (``deterministic_conversation_indices(domain, k, n_avail)``), slice each
+     to depth k (clamped to corpus length), record the slice + its tokenized
+     length under the project tokenizer (Qwen-2.5-7B-Instruct).
+  3. For each MN01..MN04 row: compute the matched drift slot's MEAN total
+     token count; iterate the matched-domain neutral conversations and
+     accept the LONGEST prefix whose total token count is ≤ the drift mean
+     (port of #377's ``_length_matched_slice_n``); pick 5 such conversations
+     deterministically.
+  4. Run the max-prefix-token-count sanity check: if any (prefix + 50 +
+     ``MAX_NEW_TOKENS=2048``) > 28000, raise the bump-to-65536 escalation
+     warning per plan §10 deviations-allowed.
+  5. Defense-in-depth: assert the marker " ※" (id 83399) does NOT appear in
+     any loaded history's content (per plan Assumption 16).
+  6. Persist ``eval_results/issue_501/phase0/mt_prefixes.json`` with one
+     row per (cid, conv_index) carrying the sliced history + token count +
+     source-corpus hash for downstream reproducibility.
+
+CLI:
+    uv run python scripts/i501_phase0_load_corpora.py
+    uv run python scripts/i501_phase0_load_corpora.py --smoke
+        # Loads only MT05 + MN03 (smoke canary cells) for a 2-row dry run.
+    uv run python scripts/i501_phase0_load_corpora.py --bust-cache
+        # Forces re-download from HF Hub at the pinned revision.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import hashlib
+import json
+import logging
+import os
+import subprocess
+from pathlib import Path
+
+from explore_persona_space.experiments.i406_conditions import MARKER_TEXT
+from explore_persona_space.experiments.i501_mt_contexts import (
+    DRIFT_HUB_PATH,
+    HF_DATA_REPO,
+    HF_DATA_REVISION,
+    INCONTEXT_HUB_PATH,
+    MT_CONTEXTS,
+    N_CONVERSATIONS_PER_SLOT,
+    PER_DOMAIN_DRIFT_COUNT,
+    assert_no_marker_in_history,
+    deterministic_conversation_indices,
+)
+
+logger = logging.getLogger("i501.phase0_load")
+
+BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_501" / "phase0"
+DRIFT_LOCAL = PROJECT_ROOT / "data" / "issue501_pinned" / "drift_conversations.jsonl"
+NEUTRAL_LOCAL = PROJECT_ROOT / "data" / "issue501_pinned" / "incontext_conversations.jsonl"
+
+# Plan §10 deviations-allowed: if any actually-loaded prefix + R + Q overhead
+# > 28000 tokens, bump max_model_len from 32768 → 65536.
+PHASE0_MAX_PROMPT_R_TOKEN_BUDGET = 28000
+MAX_NEW_TOKENS = 2048
+Q_OVERHEAD_TOKENS = 50  # rough overhead for the chat-template assistant-open + user-q overhead
+
+# Round-down even slice (matches #377's role-parity rule).
+_MIN_PARITY_SLICE = 2
+
+
+def _git_commit_hash() -> str:
+    try:
+        return (
+            subprocess.check_output(["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL)
+            .decode()
+            .strip()
+        )
+    except Exception:
+        return "unknown"
+
+
+def _file_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _download_pinned(hub_path: str, local_path: Path, *, bust_cache: bool) -> None:
+    """Download the corpus JSONL at the pinned revision into ``local_path``.
+
+    Uses ``huggingface_hub.hf_hub_download(..., revision=HF_DATA_REVISION)``
+    directly because :func:`explore_persona_space.orchestrate.hub.download_dataset`
+    does not expose a ``revision`` kwarg.
+    """
+    if local_path.exists() and not bust_cache:
+        logger.info("Phase 0: cache-hit %s (skip HF download)", local_path)
+        return
+    if local_path.exists():
+        local_path.unlink()
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    from huggingface_hub import hf_hub_download
+
+    token = os.environ.get("HF_TOKEN")
+    logger.info(
+        "Phase 0: downloading %s/%s @ %s ...",
+        HF_DATA_REPO,
+        hub_path,
+        HF_DATA_REVISION,
+    )
+    downloaded = hf_hub_download(
+        repo_id=HF_DATA_REPO,
+        revision=HF_DATA_REVISION,
+        filename=hub_path,
+        repo_type="dataset",
+        local_dir=str(local_path.parent),
+        token=token,
+    )
+    downloaded = Path(downloaded)
+    if downloaded != local_path:
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        downloaded.replace(local_path)
+    logger.info("Phase 0: wrote %s (sha256=%s)", local_path, _file_sha256(local_path)[:12])
+
+
+def _load_jsonl(path: Path) -> list[dict]:
+    with open(path) as f:
+        return [json.loads(line) for line in f if line.strip()]
+
+
+def _whitespace_token_count(text: str) -> int:
+    """Match #377's ``_whitespace_token_count`` exactly: whitespace-split.
+
+    Used only for length-matching MN to MT; the actual model-tokenization
+    length is computed separately via the project tokenizer.
+    """
+    return len(text.split())
+
+
+def _slice_history_at_k(turns: list[dict], k: int) -> list[dict]:
+    """Slice the conversation to depth k (port of #377's
+    :func:`build_history_for_k`).
+
+    The slice_n target is 4 for k=5, 10 for k=10, 20 for k=20 in #377's
+    convention; for this experiment we only support k∈{10, 14}. k=10 →
+    slice 10 turns; k=14 → slice 14 turns. If the available turn count is
+    smaller, we clamp to the largest even slice_n ≤ available (preserves
+    role parity ending on assistant).
+
+    Raises if the slice ends on a non-assistant role or carries a
+    [BATCH_ERROR] sentinel (defense-in-depth; #377's eval rig does the same).
+    """
+    if k not in (10, 14):
+        raise ValueError(f"i501 only supports k∈{{10, 14}}; got k={k}")
+    target = k  # both 10 and 14 are even, so slice_n_target == k directly
+    n_available = len(turns)
+    slice_n = target if target <= n_available else n_available - (n_available % 2)
+    slice_n = max(_MIN_PARITY_SLICE, slice_n)
+    history = turns[:slice_n]
+    if not history:
+        raise RuntimeError(f"empty history after slicing to k={k} (n_available={n_available})")
+    if history[-1].get("role") != "assistant":
+        raise RuntimeError(
+            f"k={k} slice ended on role={history[-1].get('role')!r}; expected 'assistant'"
+        )
+    for idx, turn in enumerate(history):
+        if turn.get("content") == "[BATCH_ERROR]":
+            raise RuntimeError(
+                f"k={k} slice contains [BATCH_ERROR] sentinel at turn {idx}; "
+                "drop the conversation or regenerate the corpus"
+            )
+    return history
+
+
+def _length_matched_slice(turns: list[dict], target_total: int) -> list[dict]:
+    """Port of #377's ``_length_matched_slice_n`` — pick the longest
+    even-parity prefix whose whitespace-token cumsum is ≤ ``target_total``.
+
+    Returns a sliced list (ending on assistant). Raises if no slice ≥
+    :data:`_MIN_PARITY_SLICE` qualifies (e.g. the very first turn already
+    exceeds ``target_total``).
+    """
+    cumsum = 0
+    max_le_target_j = 0
+    for idx, turn in enumerate(turns, start=1):
+        cumsum += _whitespace_token_count(turn.get("content", ""))
+        if cumsum <= target_total:
+            max_le_target_j = idx
+        else:
+            break
+    slice_n = max_le_target_j - (max_le_target_j % 2)
+    if max_le_target_j == len(turns):
+        slice_n = len(turns) - (len(turns) % 2)
+    slice_n = max(_MIN_PARITY_SLICE, min(slice_n, len(turns) - (len(turns) % 2)))
+    if slice_n < _MIN_PARITY_SLICE:
+        raise RuntimeError(
+            f"length-match could not find a slice ≥ {_MIN_PARITY_SLICE} turns "
+            f"with cumsum ≤ {target_total} (first-turn already exceeds target)"
+        )
+    history = turns[:slice_n]
+    if history[-1].get("role") != "assistant":
+        raise RuntimeError(
+            f"length-matched slice ended on role={history[-1].get('role')!r}; expected 'assistant'"
+        )
+    return history
+
+
+def _conversations_by_domain(corpus: list[dict]) -> dict[str, list[dict]]:
+    """Group corpus by the ``domain`` field, preserving JSONL order."""
+    out: dict[str, list[dict]] = {}
+    for conv in corpus:
+        out.setdefault(conv["domain"], []).append(conv)
+    return out
+
+
+def _tokenize_message_list(tokenizer, history: list[dict]) -> int:
+    """Total tokens of the chat-templated history (no user q appended) under
+    the project tokenizer. Used for the per-context max-prefix-length sanity
+    check.
+    """
+    rendered = tokenizer.apply_chat_template(history, tokenize=False, add_generation_prompt=False)
+    return len(tokenizer.encode(rendered, add_special_tokens=False))
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpus build
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+    )
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Smoke-mode: load only MT05 (therapy drift k=10) + MN03 (factual_qa neutral).",
+    )
+    ap.add_argument(
+        "--bust-cache",
+        action="store_true",
+        help="Force re-download from HF Hub (ignore the local cached JSONL).",
+    )
+    args = ap.parse_args(argv)
+
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 1. Download both corpora at the pinned revision.
+    _download_pinned(DRIFT_HUB_PATH, DRIFT_LOCAL, bust_cache=args.bust_cache)
+    _download_pinned(INCONTEXT_HUB_PATH, NEUTRAL_LOCAL, bust_cache=args.bust_cache)
+
+    drift_corpus = _load_jsonl(DRIFT_LOCAL)
+    neutral_corpus = _load_jsonl(NEUTRAL_LOCAL)
+    logger.info(
+        "Phase 0: loaded %d drift + %d neutral conversations",
+        len(drift_corpus),
+        len(neutral_corpus),
+    )
+
+    # Sanity: per-domain counts match the constants in MT_BY_CID.
+    drift_by_domain = _conversations_by_domain(drift_corpus)
+    neutral_by_domain = _conversations_by_domain(neutral_corpus)
+    for domain, expected in PER_DOMAIN_DRIFT_COUNT.items():
+        actual = len(drift_by_domain.get(domain, []))
+        if actual < expected:
+            raise RuntimeError(
+                f"drift corpus domain={domain!r} has {actual} conversations, "
+                f"expected ≥ {expected} at revision {HF_DATA_REVISION}"
+            )
+
+    # 2 + 3. Build per-MT/MN slices.
+    from transformers import AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+
+    # Restrict to smoke subset if asked.
+    if args.smoke:
+        targets = [c for c in MT_CONTEXTS if c.cid in ("MT05", "MN03")]
+    else:
+        targets = list(MT_CONTEXTS)
+
+    per_cid_payload: dict[str, dict] = {}
+
+    # Build drift slices FIRST (MN needs the drift mean-token-count to length-match).
+    drift_mean_total_by_domain_k: dict[tuple[str, int], float] = {}
+
+    for ctx in [c for c in targets if c.arm == "drift"]:
+        domain = ctx.domain
+        k = ctx.k
+        pool = drift_by_domain[domain]
+        n_avail = len(pool)
+        indices = deterministic_conversation_indices(
+            domain, k, per_domain_count=n_avail, n_picks=N_CONVERSATIONS_PER_SLOT
+        )
+        rows = []
+        ws_totals: list[int] = []
+        for ci in indices:
+            conv = pool[ci]
+            history = _slice_history_at_k(conv["turns"], k)
+            assert_no_marker_in_history(tuple(history), MARKER_TEXT, ctx.cid)
+            ws_total = sum(_whitespace_token_count(t.get("content", "")) for t in history)
+            ws_totals.append(ws_total)
+            tok_total = _tokenize_message_list(tokenizer, history)
+            rows.append(
+                {
+                    "conversation_index": ci,
+                    "conversation_id": conv.get("conversation_id", f"{domain}_{ci}"),
+                    "n_turns": len(history),
+                    "whitespace_token_count": ws_total,
+                    "chat_template_token_count": tok_total,
+                    "history": history,
+                }
+            )
+        drift_mean_total_by_domain_k[(domain, k)] = (
+            sum(ws_totals) / len(ws_totals) if ws_totals else 0.0
+        )
+        per_cid_payload[ctx.cid] = {
+            "cid": ctx.cid,
+            "name": ctx.name,
+            "domain": domain,
+            "k": k,
+            "arm": "drift",
+            "is_strong_kind": ctx.is_strong_kind,
+            "matched_drift_cid": None,
+            "selected_indices": list(indices),
+            "rows": rows,
+            "drift_mean_whitespace_total": drift_mean_total_by_domain_k[(domain, k)],
+        }
+        logger.info(
+            "Phase 0: built %s (domain=%s, k=%d, %d convs, mean_ws_total=%.1f)",
+            ctx.cid,
+            domain,
+            k,
+            len(rows),
+            drift_mean_total_by_domain_k[(domain, k)],
+        )
+
+    # Now build neutral (MN) slices length-matched to the matched-drift slot
+    # mean. Per plan §4.4 the matched-drift cid is the deep-k MT row
+    # (MN01↔MT01 (coding, k=10), MN02↔MT03 (writing, k=10), MN03↔MT05
+    # (therapy, k=10), MN04↔MT07 (philosophy, k=10)). We length-match against
+    # the deep-k slot's mean total to stress the deepest silencing-floor regime;
+    # the plan §6.2 H3 paired-bootstrap on the 288 cells is robust to either
+    # matching depth.
+    for ctx in [c for c in targets if c.arm == "neutral"]:
+        matched_cid = ctx.matched_drift_cid
+        if matched_cid is None:
+            raise RuntimeError(f"neutral {ctx.cid} missing matched_drift_cid")
+        matched_mt = next((c for c in MT_CONTEXTS if c.cid == matched_cid), None)
+        if matched_mt is None:
+            raise RuntimeError(f"matched_drift_cid={matched_cid} not found for {ctx.cid}")
+        target_total = drift_mean_total_by_domain_k.get((matched_mt.domain, matched_mt.k))
+        if target_total is None:
+            # In smoke mode the matched drift slot may not have been built;
+            # we compute it inline.
+            pool = drift_by_domain[matched_mt.domain]
+            indices = deterministic_conversation_indices(
+                matched_mt.domain,
+                matched_mt.k,
+                per_domain_count=len(pool),
+                n_picks=N_CONVERSATIONS_PER_SLOT,
+            )
+            ws_totals = []
+            for ci in indices:
+                conv = pool[ci]
+                history = _slice_history_at_k(conv["turns"], matched_mt.k)
+                ws_totals.append(
+                    sum(_whitespace_token_count(t.get("content", "")) for t in history)
+                )
+            target_total = sum(ws_totals) / len(ws_totals)
+
+        # Pick 5 neutral conversations deterministically per (neutral_domain, matched_k).
+        neutral_pool = neutral_by_domain.get(ctx.domain, [])
+        if not neutral_pool:
+            raise RuntimeError(
+                f"neutral corpus domain={ctx.domain!r} is empty at revision {HF_DATA_REVISION}"
+            )
+        indices = deterministic_conversation_indices(
+            ctx.domain,
+            matched_mt.k,
+            per_domain_count=len(neutral_pool),
+            n_picks=N_CONVERSATIONS_PER_SLOT,
+        )
+        rows = []
+        for ci in indices:
+            conv = neutral_pool[ci]
+            history = _length_matched_slice(conv["turns"], int(target_total))
+            assert_no_marker_in_history(tuple(history), MARKER_TEXT, ctx.cid)
+            ws_total = sum(_whitespace_token_count(t.get("content", "")) for t in history)
+            tok_total = _tokenize_message_list(tokenizer, history)
+            rows.append(
+                {
+                    "conversation_index": ci,
+                    "conversation_id": conv.get("conversation_id", f"{ctx.domain}_{ci}"),
+                    "n_turns": len(history),
+                    "whitespace_token_count": ws_total,
+                    "chat_template_token_count": tok_total,
+                    "history": history,
+                }
+            )
+        per_cid_payload[ctx.cid] = {
+            "cid": ctx.cid,
+            "name": ctx.name,
+            "domain": ctx.domain,
+            "k": ctx.k,
+            "arm": "neutral",
+            "is_strong_kind": 0,
+            "matched_drift_cid": matched_cid,
+            "selected_indices": list(indices),
+            "rows": rows,
+            "drift_mean_whitespace_total": float(target_total),
+        }
+        logger.info(
+            "Phase 0: built %s (domain=%s, matched=%s, %d convs, target_ws_total=%.1f)",
+            ctx.cid,
+            ctx.domain,
+            matched_cid,
+            len(rows),
+            target_total,
+        )
+
+    # 4. Max-prefix-token-count sanity check (plan §10 deviations-allowed).
+    max_prefix_tok = 0
+    max_prefix_owner: str | None = None
+    for cid, payload in per_cid_payload.items():
+        for row in payload["rows"]:
+            tok = row["chat_template_token_count"]
+            if tok > max_prefix_tok:
+                max_prefix_tok = tok
+                max_prefix_owner = f"{cid}/conv{row['conversation_index']}"
+    worst_total = max_prefix_tok + Q_OVERHEAD_TOKENS + MAX_NEW_TOKENS
+    bump_recommended = worst_total > PHASE0_MAX_PROMPT_R_TOKEN_BUDGET
+    logger.info(
+        "Phase 0: max_prefix_tok=%d (owner=%s); worst (prefix+Q+R)=%d "
+        "(budget=%d) bump_max_model_len_to_65536=%s",
+        max_prefix_tok,
+        max_prefix_owner,
+        worst_total,
+        PHASE0_MAX_PROMPT_R_TOKEN_BUDGET,
+        bump_recommended,
+    )
+
+    # 6. Persist the canonical phase-0 artifact.
+    out_payload = {
+        "schema_version": "i501_phase0_v1",
+        "git_commit": _git_commit_hash(),
+        "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
+        "base_model": BASE_MODEL,
+        "marker_text": MARKER_TEXT,
+        "hf_data_repo": HF_DATA_REPO,
+        "hf_data_revision": HF_DATA_REVISION,
+        "drift_corpus_path": str(DRIFT_LOCAL),
+        "neutral_corpus_path": str(NEUTRAL_LOCAL),
+        "drift_corpus_sha256": _file_sha256(DRIFT_LOCAL),
+        "neutral_corpus_sha256": _file_sha256(NEUTRAL_LOCAL),
+        "per_domain_drift_counts": {
+            d: len(drift_by_domain.get(d, [])) for d in PER_DOMAIN_DRIFT_COUNT
+        },
+        "per_domain_neutral_counts": {d: len(v) for d, v in neutral_by_domain.items()},
+        "max_prefix_chat_template_token_count": max_prefix_tok,
+        "max_prefix_owner": max_prefix_owner,
+        "worst_case_prefix_plus_Q_plus_R_tokens": worst_total,
+        "max_model_len_recommendation": 65536 if bump_recommended else 32768,
+        "bump_max_model_len_to_65536": bump_recommended,
+        "smoke": bool(args.smoke),
+        "per_cid": per_cid_payload,
+    }
+    out_path = OUT_DIR / "mt_prefixes.json"
+    out_path.write_text(json.dumps(out_payload, indent=2))
+    logger.info("Phase 0 wrote %s (%d cids)", out_path, len(per_cid_payload))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
