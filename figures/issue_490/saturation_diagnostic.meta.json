@@ -1,0 +1,18 @@
+{
+  "kind": "saturation_diagnostic",
+  "conditions": [
+    "pooled_2D_A",
+    "pooled_2D_B",
+    "shared_2D",
+    "single_D_A",
+    "single_D_B"
+  ],
+  "means": [
+    -11.190564400951066,
+    -9.51555802921454,
+    -11.680350771049659,
+    -20.413236012061436,
+    -19.672080834706623
+  ],
+  "git_commit": "d26af162205791c0ac3e33f3d482df357db89f6b"
+}

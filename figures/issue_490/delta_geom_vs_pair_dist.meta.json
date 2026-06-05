@@ -1,0 +1,13 @@
+{
+  "kind": "delta_geom_vs_pair_dist_scatter",
+  "n_points": 24,
+  "pooled": {
+    "n": 24,
+    "slope": -10.891814810827558,
+    "intercept": 0.2771991259459266,
+    "p": 0.07295310717271326,
+    "se": 5.783479595017636,
+    "r_squared": 0.13883136807049729
+  },
+  "git_commit": "d26af162205791c0ac3e33f3d482df357db89f6b"
+}
