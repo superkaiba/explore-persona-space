@@ -1,0 +1,13 @@
+{
+  "kind": "fallback_kl_hero",
+  "delta_geom": {
+    "n": 24,
+    "mean": 0.013343614408778424,
+    "ci95": [
+      -0.028473820637948153,
+      0.053380238500680716
+    ],
+    "p_one_sided_pos": 0.2606
+  },
+  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+}

@@ -1,0 +1,74 @@
+{
+  "kind": "hero_distance_adjusted",
+  "labels": [
+    "is_on_axis \u03b2\n(distance-adjusted,\nPRIMARY Q2)",
+    "raw \u0394_geom\n(unadjusted,\ndiagnostic)"
+  ],
+  "means": [
+    0.1995521830915154,
+    0.1123435003227659
+  ],
+  "is_on_axis_regression": {
+    "status": "OK",
+    "n_rows": 255,
+    "n_rows_pre_drop": 255,
+    "n_dropped_nonfinite": 0,
+    "n_clusters": 24,
+    "design_matrix_condition_number": 205.24533724204124,
+    "design_matrix_rank": 4,
+    "design_matrix_n_columns": 4,
+    "design_matrix_full_rank": true,
+    "formula": "gap_dosematched ~ is_on_axis + mean_d + asym  [cluster-robust at (pair, seed)]",
+    "params": {
+      "intercept": 0.17653252653819956,
+      "is_on_axis": 0.1995521830915154,
+      "mean_d": 1.4100485888749081,
+      "asym": 4.151520045165179
+    },
+    "pvalues": {
+      "intercept": 0.4046587789047671,
+      "is_on_axis": 0.102561255020627,
+      "mean_d": 0.4919953688498446,
+      "asym": 0.26433464791938543
+    },
+    "ci95": {
+      "intercept": [
+        -0.23866612875452586,
+        0.591731181830925
+      ],
+      "is_on_axis": [
+        -0.04001924685657832,
+        0.4391236130396091
+      ],
+      "mean_d": [
+        -2.6119119056152162,
+        5.432009083365033
+      ],
+      "asym": [
+        -3.1382108573860332,
+        11.44125094771639
+      ]
+    },
+    "headline_coefficient": "is_on_axis",
+    "headline_beta": 0.1995521830915154,
+    "headline_ci95": [
+      -0.04001924685657832,
+      0.4391236130396091
+    ],
+    "headline_p": 0.102561255020627,
+    "verdict_distance_adjusted": "CONFIRM_H1_NO_MIDPOINT_COUPLING_AFTER_DISTANCE_ADJUSTMENT",
+    "rsquared": 0.019804127913808367,
+    "interpretation": "is_on_axis coefficient ESTIMATES the gap_dosematched contrast between on-axis and off-axis personas, controlling linearly for mean_d (distance to {A,B}) and asym (|d_A \u2212 d_B|). This is the PRIMARY Q2 readout; the raw subpanel-mean \u0394_geom is a diagnostic-only companion because on-axis and off-axis subpanels are not always mean-d-matched."
+  },
+  "delta_geom_raw_diagnostic": {
+    "n": 24,
+    "mean": 0.1123435003227659,
+    "ci95": [
+      0.05182996318365197,
+      0.16994943208868307
+    ],
+    "p_one_sided_pos": 0.0
+  },
+  "verdict": "CONFIRM_H1_NO_MIDPOINT_COUPLING_AFTER_DISTANCE_ADJUSTMENT",
+  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+}

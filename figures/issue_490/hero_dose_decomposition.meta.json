@@ -1,0 +1,26 @@
+{
+  "kind": "diagnostic_dose_decomposition_mean_combiner",
+  "combiner": "mean",
+  "quantities": [
+    "gap_confounded\n(on-axis)",
+    "gap_dosematched\n(on-axis)",
+    "gap_dosematched\n(off-axis)",
+    "slope_dose\n(per-source)"
+  ],
+  "means": [
+    7.471690697471302,
+    0.4253036588099271,
+    0.31296015848716124,
+    6.810501832928922
+  ],
+  "delta_geom_raw_diagnostic": {
+    "n": 24,
+    "mean": 0.1123435003227659,
+    "ci95": [
+      0.05182996318365197,
+      0.16994943208868307
+    ],
+    "p_one_sided_pos": 0.0
+  },
+  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+}

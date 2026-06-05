@@ -1,0 +1,12 @@
+{
+  "kind": "per_source_asymmetry",
+  "A_means": [
+    11.16113611128595,
+    10.4427670491404
+  ],
+  "B_means": [
+    11.91701830804348,
+    11.286103064351613
+  ],
+  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+}

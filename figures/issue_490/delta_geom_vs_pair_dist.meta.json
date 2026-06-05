@@ -1,0 +1,10 @@
+{
+  "kind": "pair_separation_regression_summary",
+  "n": 24,
+  "slope": -10.891814810827558,
+  "intercept": 0.2771991259459266,
+  "p": 0.07295310717271326,
+  "se": 5.783479595017636,
+  "r_squared": 0.13883136807049729,
+  "git_commit": "555be3f8edbb1a2cdf310e7c22d9ea80fd75a45c"
+}
