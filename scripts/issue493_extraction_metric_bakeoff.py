@@ -1627,7 +1627,20 @@ def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker +
         d = torch.load(p, map_location="cpu", weights_only=False)
         grouped.setdefault((pt, L), {})[cid] = d
 
-    for (pt, L), per_cond in grouped.items():
+    # ROUND-3 FIX #1: iterate over EVERY requested (pt, L) pair, not just
+    # the (pt, L) groups that happen to be in `grouped`. Before round 3 the
+    # loop was `for (pt, L), per_cond in grouped.items()`, so a wholly-
+    # missing (pt, L) (e.g. a GPU died before writing layer L, or
+    # `--merge-only` over a partial partition set with NO files at all for
+    # some layer) NEVER hit the no-drop assertion — `--merge-only` exited
+    # clean and `load_activations_from_disk` only WARNed + skipped the
+    # missing canonical checkpoint, so an "all 28 layers" run silently
+    # became an incomplete layer profile. Now we iterate the full Cartesian
+    # product and raise on any (pt, L) whose per-cond group is empty when
+    # expected_cond_ids is set. (Codex round-2 blocker #1.)
+    requested_pairs = [(pt, L) for pt in extraction_points for L in layers]
+    for pt, L in requested_pairs:
+        per_cond = grouped.get((pt, L), {})
         canonical_path = ACT_DIR / f"{pt}__layer{L}.pt"
         if canonical_path.exists() and not overwrite:
             logger.info("Skipping merge for existing %s (use --overwrite to redo)", canonical_path)
@@ -1650,10 +1663,15 @@ def merge_partitioned_activations(  # noqa: C901 — per-(point, layer) walker +
         # Order conds canonically (only those present).
         present_cids = sorted(per_cond.keys(), key=lambda c: cid_order_index.get(c, 1_000_000))
         if not present_cids:
+            # ROUND-3 FIX #1: wholly-missing (pt, L) raises when expected
+            # is set. Before: the loop skipped this case because grouped
+            # never contained it; now we explicitly check.
             if expected_set:
                 raise AssertionError(
-                    f"No partitioned per-cond files for ({pt}, layer={L}) but "
-                    f"expected {sorted(expected_set)}. Did the GPU worker(s) silently fail?"
+                    f"No partitioned per-cond files AT ALL for ({pt}, layer={L}) but "
+                    f"expected {sorted(expected_set)} — likely a GPU worker died "
+                    "before writing this layer / point. A silent miss here would "
+                    "downstream become an incomplete layer profile; refusing to merge."
                 )
             continue
         # No-drop assertion: the present cond set must EQUAL the expected one.
@@ -4667,9 +4685,22 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                 capture_next_token_logits=(not args.no_next_token_js),
                 write_partitioned=args.partitioned,
             )
-            # If running partitioned + we're the SINGLE process (no external
-            # dispatcher), merge in-place so downstream phases see canonical
-            # files. Multi-proc runs call --merge-only after the fan-in.
+            # ROUND-3 FIX #2: write the next_token_js matrix + run the #406
+            # cross-check on ALL post-extraction paths (partitioned auto-merge,
+            # non-partitioned auto-merge, both at phase=all). Before round 3
+            # the JS write was gated `if args.partitioned and args.phase ==
+            # "all"`, so the supported single-proc `--batched --probe-pool
+            # --phase all` WITHOUT `--partitioned` path proceeded to
+            # metrics/regression with NO next_token_js matrix — the JS
+            # baseline (the whole point of #502) vanished silently on that
+            # path. Now the gate is `args.phase == "all" and not args.no_next_token_js`
+            # — the JS write + #406 cross-check fire on every supported
+            # post-extraction path. Multi-proc runs still call --merge-only
+            # after fan-in (covered by the merge-only branch above).
+            #
+            # The partitioned-single-proc branch additionally merges
+            # per-cond → canonical (the non-partitioned auto-merge already
+            # happened inside run_extraction_batched).
             if args.partitioned and args.phase == "all":
                 logger.info("Single-process partitioned run: merging in-place")
                 for pt in args.extraction_points:
@@ -4679,8 +4710,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
                         overwrite=args.overwrite,
                         expected_cond_ids=_expected_for_point(pt),
                     )
-                if not args.no_next_token_js:
-                    write_next_token_js_matrix(enforce_cross_check=True)
+            if args.phase == "all" and not args.no_next_token_js:
+                write_next_token_js_matrix(enforce_cross_check=True)
         else:
             logger.info(
                 "Extraction (serial #493 path): points=%s layers=%s transformations=%s n_probes=%d",

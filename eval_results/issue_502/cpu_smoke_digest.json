@@ -94,5 +94,16 @@
       "B2",
       "B3"
     ]
+  },
+  "wholly_missing_layer_raises": {
+    "wholly_missing_layer_raised": true,
+    "missing_layer": 1
+  },
+  "non_partitioned_phase_all_writes_js": {
+    "matrix_written": "last_prompt__layer-1__next_token_js__raw.json",
+    "matrix_layer_sentinel": -1,
+    "matrix_metric": "next_token_js",
+    "n_cids_in_matrix": 3,
+    "cross_check_sidecar_written": true
   }
 }

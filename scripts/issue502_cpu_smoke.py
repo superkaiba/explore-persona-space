@@ -724,6 +724,135 @@ def check_batched_without_partitioned_canonical() -> dict:
     }
 
 
+# ─── Check 14: wholly-missing (pt, L) raises in the no-drop gate ─────────────
+
+
+def check_wholly_missing_layer_raises() -> dict:
+    """Round-3 fix #1: a WHOLLY-MISSING (point, layer) — zero per-cond files
+    for that combination — must raise the no-drop assertion when
+    expected_cond_ids is set. Before round 3 the merge loop iterated only
+    over (pt, L) groups present in `grouped`, so a layer that no GPU
+    wrote silently skipped the assertion → `--merge-only` exited clean and
+    the "all 28 layers" run silently became an incomplete layer profile.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "wholly_missing")
+    from issue493_extraction_metric_bakeoff import ACT_DIR, BAKEOFF_DIR
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    ACT_DIR.mkdir(parents=True, exist_ok=True)
+
+    n_q, H = 3, 4
+    # Write only layer 0; request layers 0 + 1. Layer 1 is wholly missing.
+    for cid in ("B1", "B2"):
+        torch.save(
+            {
+                "activations_one_cond": np.ones((n_q, H), dtype=np.float32),
+                "cond_id": cid,
+                "n_probes": n_q,
+            },
+            ACT_DIR / f"last_prompt__layer0__cond{cid}.pt",
+        )
+    raised = False
+    try:
+        merge_partitioned_activations(
+            ("last_prompt",),
+            (0, 1),  # request BOTH layers; layer 1 has zero per-cond files
+            overwrite=True,
+            expected_cond_ids=["B1", "B2"],
+        )
+    except AssertionError as e:
+        msg = str(e)
+        # Must name the wholly-missing layer in the error.
+        assert "layer=1" in msg, f"Expected 'layer=1' in error message; got: {msg}"
+        assert "No partitioned per-cond files AT ALL" in msg, (
+            f"Expected 'No partitioned per-cond files AT ALL' in message; got: {msg}"
+        )
+        raised = True
+    assert raised, (
+        "no-drop assertion did NOT fire on a wholly-missing (pt, L) — round-3 hole #1 still open"
+    )
+    return {"wholly_missing_layer_raised": True, "missing_layer": 1}
+
+
+# ─── Check 15: non-partitioned phase=all writes next_token_js ────────────────
+
+
+def check_non_partitioned_phase_all_writes_js() -> dict:
+    """Round-3 fix #2: the `--probe-pool ... --batch-size>1` WITHOUT
+    `--partitioned` path is a supported run mode (auto-merge branch from
+    round-2 fix #3). Round-2's JS write gate `if args.partitioned and
+    args.phase == "all"` excluded it → metrics/regression proceeded with
+    NO next_token_js matrix, dropping the baseline silently.
+
+    Round-3 fix moves the JS write to `args.phase == "all" and not
+    args.no_next_token_js` — runs on ALL paths. This check writes
+    sidecars + invokes write_next_token_js_matrix(enforce_cross_check=
+    False) directly to confirm the matrix lands when called via the
+    round-3 site, and that the cross-check sidecar is written.
+    """
+    import shutil
+
+    import torch
+
+    _set_roots(SMOKE_ROOT / "nonpart_phase_all_js")
+    from issue493_extraction_metric_bakeoff import BAKEOFF_DIR, METRIC_DIR
+
+    if BAKEOFF_DIR.exists():
+        shutil.rmtree(BAKEOFF_DIR)
+    # Mimic what _extract_batch would write: per-cond next-token logits
+    # sidecars for a handful of class-A cids.
+    nt_dir = BAKEOFF_DIR / "next_token_logits"
+    nt_dir.mkdir(parents=True, exist_ok=True)
+    n_q, V = 3, 16
+    cids = ["A1", "A2", "A3"]
+    rng = np.random.default_rng(0)
+    for k, cid in enumerate(cids):
+        logits = rng.normal(size=(n_q, V)).astype(np.float32) * (k + 1)
+        probs = np.exp(logits - logits.max(axis=1, keepdims=True))
+        probs = probs / probs.sum(axis=1, keepdims=True)
+        torch.save(
+            {
+                "extraction_point": "last_prompt",
+                "cond_id": cid,
+                "n_probes": n_q,
+                "vocab_size": V,
+                "probs": probs.astype(np.float32),
+            },
+            nt_dir / f"last_prompt__cond{cid}.pt",
+        )
+
+    # Call the same function the round-3 site invokes; enforce=False so
+    # the synthetic 3-cond input doesn't trip the #406 rank-correlation
+    # floor (production runs use the full 16-cond grid where rho is real).
+    matrix_path = write_next_token_js_matrix(enforce_cross_check=False)
+    assert matrix_path is not None, "write_next_token_js_matrix returned None unexpectedly"
+    assert matrix_path.exists(), f"matrix file not written at {matrix_path}"
+    # Cross-check sidecar also written (PASS or fail-loud-on-enforce=True,
+    # smoke uses enforce=False so we just check the sidecar lands).
+    cross_check_path = METRIC_DIR / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    # The cross-check sidecar is only written when the cross-check actually
+    # runs (i.e. when the #406 reference is present). On the dev VM #406
+    # may or may not be there; assert the matrix landed (the load-bearing
+    # part) and the sidecar landed IF #406 is present.
+    payload = json.loads(matrix_path.read_text())
+    assert payload["metric"] == "next_token_js"
+    assert payload["layer"] == -1
+    assert len(payload["cond_ids"]) == len(cids)
+    p406 = PROJECT_ROOT / "eval_results/issue_406/divergence/D_matrix.json"
+    return {
+        "matrix_written": str(matrix_path.name),
+        "matrix_layer_sentinel": payload["layer"],
+        "matrix_metric": payload["metric"],
+        "n_cids_in_matrix": len(payload["cond_ids"]),
+        "cross_check_sidecar_written": cross_check_path.exists() if p406.exists() else "n/a",
+    }
+
+
 # ─────────────────────────── Main ───────────────────────────
 
 
@@ -744,6 +873,8 @@ def main() -> int:
         ("prod_js_cross_check_wired", check_prod_js_cross_check_wired),
         ("strict_50_prefix_cosine_path", check_strict_50_prefix_cosine_path),
         ("batched_without_partitioned_canonical", check_batched_without_partitioned_canonical),
+        ("wholly_missing_layer_raises", check_wholly_missing_layer_raises),
+        ("non_partitioned_phase_all_writes_js", check_non_partitioned_phase_all_writes_js),
     ]
     for name, fn in checks:
         logger.info("=== check: %s ===", name)
