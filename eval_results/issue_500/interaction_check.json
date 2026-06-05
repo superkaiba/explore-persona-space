@@ -1,0 +1,153 @@
+{
+  "_doc": "Interaction / conditional-form follow-up to #500. Additive combination was already in predictors.json; this adds the prior x proximity interaction (within-arm) and the proximity x content-relatedness interaction (pooled, the #444 conditional-proximity hypothesis). CIs = cluster-on-persona bootstrap.",
+  "validation_reproduce_reported_additive": {
+    "marine_biologist": {
+      "reported_beta_prior": 0.7797151544543823,
+      "my_beta_prior": 0.7797151544543821,
+      "reported_beta_prox": 0.05989304538020466,
+      "my_beta_prox": 0.05989304538020457,
+      "reported_r2": 0.5724797712637395,
+      "my_r2": 0.5724797712637393,
+      "match": true
+    },
+    "local_resident": {
+      "reported_beta_prior": 0.7643556914092801,
+      "my_beta_prior": 0.7643556914092803,
+      "reported_beta_prox": 0.10664729006692673,
+      "my_beta_prox": 0.10664729006692676,
+      "reported_r2": 0.5368287807678263,
+      "my_r2": 0.5368287807678263,
+      "match": true
+    },
+    "courthouse_architecture_historian": {
+      "reported_beta_prior": 0.7912076237372716,
+      "my_beta_prior": 0.7912076237372716,
+      "reported_beta_prox": 0.38903947939130146,
+      "my_beta_prox": 0.3890394793913011,
+      "reported_r2": 0.6191348178271849,
+      "my_r2": 0.6191348178271849,
+      "match": true
+    }
+  },
+  "within_arm_interaction": {
+    "marine_biologist": {
+      "additive": {
+        "beta_prior": 0.7797151544543821,
+        "beta_prox": 0.05989304538020457,
+        "r_squared": 0.5724797712637393
+      },
+      "interaction": {
+        "beta_prior": 0.77704324862736,
+        "beta_prox": 0.06765280989449583,
+        "beta_interaction": -0.01416189060255535,
+        "r_squared": 0.5725493284281847
+      },
+      "delta_r2_from_interaction": 6.955716444545512e-05,
+      "bootstrap_beta_interaction": {
+        "point": -0.01416189060255535,
+        "mean": -0.10784773860777026,
+        "ci_low_95": -1.1571504961644459,
+        "ci_high_95": 0.728912126911131,
+        "frac_positive": 0.4095,
+        "n_valid": 2000
+      }
+    },
+    "local_resident": {
+      "additive": {
+        "beta_prior": 0.7643556914092803,
+        "beta_prox": 0.10664729006692676,
+        "r_squared": 0.5368287807678263
+      },
+      "interaction": {
+        "beta_prior": 0.858482128203578,
+        "beta_prox": 0.24886247977960865,
+        "beta_interaction": -0.26856814667263484,
+        "r_squared": 0.5643107904881102
+      },
+      "delta_r2_from_interaction": 0.027482009720283918,
+      "bootstrap_beta_interaction": {
+        "point": -0.26856814667263484,
+        "mean": -0.3843881701997466,
+        "ci_low_95": -1.7419361460955791,
+        "ci_high_95": 0.6421511539571884,
+        "frac_positive": 0.1325,
+        "n_valid": 2000
+      }
+    },
+    "courthouse_architecture_historian": {
+      "additive": {
+        "beta_prior": 0.7912076237372716,
+        "beta_prox": 0.3890394793913011,
+        "r_squared": 0.6191348178271849
+      },
+      "interaction": {
+        "beta_prior": 0.6649882959961034,
+        "beta_prox": 0.1105675914619912,
+        "beta_interaction": 0.29172119268831387,
+        "r_squared": 0.6434870005102408
+      },
+      "delta_r2_from_interaction": 0.024352182683055834,
+      "bootstrap_beta_interaction": {
+        "point": 0.29172119268831387,
+        "mean": 0.456107231796208,
+        "ci_low_95": -1.3382700084813366,
+        "ci_high_95": 2.1740892491444352,
+        "frac_positive": 0.8555,
+        "n_valid": 2000
+      }
+    }
+  },
+  "per_arm_partial_spearman_cos_given_prior": {
+    "marine_biologist": -0.009102702748774704,
+    "local_resident": 0.34035633557946465,
+    "courthouse_architecture_historian": -0.23776113093580176
+  },
+  "pooled_interaction": {
+    "point": {
+      "additive_pooled": {
+        "beta_prior": 0.789312525223893,
+        "beta_prox": 0.1893684583849965,
+        "r_squared": 0.5556574426616847
+      },
+      "interaction_pooled": {
+        "beta_prior": 0.7789613918646199,
+        "beta_prox": 0.18528335459759893,
+        "beta_rc": -1.0868042576994696e-15,
+        "beta_rc_x_prox": 0.16636821566138937,
+        "beta_rc_x_prior": 0.00951081931835901,
+        "r_squared": 0.5733630619834625
+      },
+      "delta_r2_from_interaction": 0.017705619321777832
+    },
+    "bootstrap": {
+      "rc_x_prox": {
+        "mean": 0.09610082104413695,
+        "ci_low_95": -0.38897679321219025,
+        "ci_high_95": 0.33912353382997223,
+        "frac_positive": 0.7905,
+        "n_valid": 2000
+      },
+      "rc_x_prior": {
+        "mean": -0.06652030832145382,
+        "ci_low_95": -0.4866450053390931,
+        "ci_high_95": 0.0871310721295228,
+        "frac_positive": 0.3755,
+        "n_valid": 2000
+      },
+      "prox": {
+        "mean": 0.07908309861110617,
+        "ci_low_95": -0.42081144267939663,
+        "ci_high_95": 0.43023476967116614,
+        "frac_positive": 0.6995,
+        "n_valid": 2000
+      },
+      "prior": {
+        "mean": 0.6984290108722234,
+        "ci_low_95": 0.20268454600858296,
+        "ci_high_95": 0.9845247406690666,
+        "frac_positive": 0.997,
+        "n_valid": 2000
+      }
+    }
+  }
+}
