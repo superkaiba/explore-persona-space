@@ -47,7 +47,32 @@ DEFAULT_OUT_JSON = "eval_results/issue_494/regression.json"
 DEFAULT_OUT_CSV = "eval_results/issue_494/regression_data.csv"
 DEFAULT_FIG_DIR = "figures/issue_494"
 
-PREDICTORS = ["cosine_a_L21", "cosine_b_L21", "js_on_topic", "bystander_logprob", "fact_slice_js"]
+# Predictors used in the pooled regression. We use the SIMILARITY-direction
+# variants for JS-based predictors (higher = personas closer) so the Spearman
+# rho signs match the inline-444 ``correlations.json`` convention (cosine_on
+# -0.487 and js_on -0.456 there are both computed against similarity-direction
+# inputs). The raw-distance values (`js_on_topic`, `fact_slice_js`) are still
+# preserved in the predictor JSONs as `js_on_topic_raw` / `fact_slice_js_raw`
+# for traceability and reported alongside (sign-flipped) in the figure
+# captions, but the pooled Spearman + bootstrap + partial + paired-bootstrap
+# stats are computed on the similarity variants.
+PREDICTORS = [
+    "cosine_a_L21",
+    "cosine_b_L21",
+    "js_similarity_M",
+    "bystander_logprob",
+    "fact_slice_similarity_M",
+]
+
+# Mapping from canonical predictor name -> raw counterpart name in the input
+# JSONs (or itself if there is no raw/similarity distinction).
+PREDICTOR_RAW_KEY = {
+    "cosine_a_L21": "cosine_a_L21",
+    "cosine_b_L21": "cosine_b_L21",
+    "js_similarity_M": "js_on_topic",
+    "bystander_logprob": "bystander_logprob",
+    "fact_slice_similarity_M": "fact_slice_js",
+}
 
 # Color palette per substrate (colorblind-safe Okabe-Ito family)
 SUBSTRATE_COLORS = {
@@ -68,6 +93,31 @@ TEACH_MARKERS = {
 # ────────────────────────────────────────────────────────────────────────────
 # DataFrame construction
 # ────────────────────────────────────────────────────────────────────────────
+
+
+def _safe_float(value, default: float = float("nan")) -> float:
+    """Cast ``value`` to float, returning ``default`` for None / non-numeric."""
+    if value is None:
+        return default
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return default
+    return f if not pd.isna(f) else default
+
+
+def _similarity_of(cell: dict, raw_key: str, sim_key: str) -> float:
+    """Return ``cell[sim_key]`` if present and finite; otherwise ``1 - cell[raw_key]``.
+
+    The Phase 1 / Phase 2 drivers write the ``*_similarity_M`` keys alongside
+    the raw distances. We still fall back to ``1 - raw`` for backwards
+    compatibility with older predictor JSONs.
+    """
+    sim = _safe_float(cell.get(sim_key))
+    if pd.notna(sim):
+        return sim
+    raw = _safe_float(cell.get(raw_key))
+    return 1.0 - raw if pd.notna(raw) else float("nan")
 
 
 def _load_phase1_df(phase1_path: Path) -> pd.DataFrame:
@@ -104,11 +154,18 @@ def _load_phase1_df(phase1_path: Path) -> pd.DataFrame:
                     "teach_persona": "marine_biologist",
                     "bystander_persona": bystander,
                     "leak_rate": float(leak_rate),
-                    "cosine_a_L21": float(cell.get("cosine_a_L21", float("nan"))),
-                    "cosine_b_L21": float(cell.get("cosine_b_L21", float("nan"))),
-                    "js_on_topic": float(cell.get("js_on_topic", float("nan"))),
-                    "bystander_logprob": float(cell.get("bystander_logprob", float("nan"))),
-                    "fact_slice_js": float(cell.get("fact_slice_js", float("nan"))),
+                    "cosine_a_L21": _safe_float(cell.get("cosine_a_L21")),
+                    "cosine_b_L21": _safe_float(cell.get("cosine_b_L21")),
+                    # Raw distance preserved for traceability + figure captions
+                    "js_on_topic": _safe_float(cell.get("js_on_topic")),
+                    "fact_slice_js": _safe_float(cell.get("fact_slice_js")),
+                    # Similarity-direction (1 - raw): the Phase 3 PREDICTORS
+                    # list reads THESE so the Spearman sign matches inline-444.
+                    "js_similarity_M": _similarity_of(cell, "js_on_topic", "js_similarity_M"),
+                    "fact_slice_similarity_M": _similarity_of(
+                        cell, "fact_slice_js", "fact_slice_similarity_M"
+                    ),
+                    "bystander_logprob": _safe_float(cell.get("bystander_logprob")),
                 }
             )
     return pd.DataFrame(rows)
@@ -118,9 +175,13 @@ def _load_phase2_df(phase2_path: Path) -> pd.DataFrame:
     """Pull #192 predictors + DV from the predictor_192 JSON, 8 cells.
 
     Substrate = ``192_zelthari`` or ``192_qwen_default``; teach_persona is
-    ``zelthari_scholar`` or ``qwen_default``; fact_slice_js exists per cell
-    (NOT NaN here — #192 has its own teach rows, so the symmetric fact-slice
-    JS is computed alongside).
+    ``zelthari_scholar`` or ``qwen_default``. Per plan §4.2,
+    ``fact_slice_js`` / ``fact_slice_similarity_M`` are #444-substrate only and
+    are FORCED to NaN here regardless of what the predictor JSON carries (so
+    the pooled Spearman + bootstrap + partial Spearman on `fact_slice_*` skips
+    #192 cells automatically via `df[predictor].notna()` masking — protecting
+    against the case where an older predictor_192 JSON shipped a non-NaN value
+    by mistake).
     """
     p2 = json.loads(phase2_path.read_text())
     arm_to_substrate = {"zelthari": "192_zelthari", "qwen_default": "192_qwen_default"}
@@ -135,23 +196,56 @@ def _load_phase2_df(phase2_path: Path) -> pd.DataFrame:
                     "rig": "192",
                     "teach_persona": teach_label,
                     "bystander_persona": bystander,
-                    "leak_rate": float(cell.get("leak_rate", float("nan"))),
-                    "cosine_a_L21": float(cell.get("cosine_a_L21", float("nan"))),
-                    "cosine_b_L21": float(cell.get("cosine_b_L21", float("nan"))),
-                    "js_on_topic": float(cell.get("js_on_topic", float("nan"))),
-                    "bystander_logprob": float(cell.get("bystander_logprob", float("nan"))),
-                    "fact_slice_js": float(cell.get("fact_slice_js", float("nan"))),
+                    "leak_rate": _safe_float(cell.get("leak_rate")),
+                    "cosine_a_L21": _safe_float(cell.get("cosine_a_L21")),
+                    "cosine_b_L21": _safe_float(cell.get("cosine_b_L21")),
+                    "js_on_topic": _safe_float(cell.get("js_on_topic")),
+                    "js_similarity_M": _similarity_of(cell, "js_on_topic", "js_similarity_M"),
+                    "bystander_logprob": _safe_float(cell.get("bystander_logprob")),
+                    # Plan §4.2: fact-slice is #444-only; force NaN on #192.
+                    "fact_slice_js": float("nan"),
+                    "fact_slice_similarity_M": float("nan"),
                 }
             )
     return pd.DataFrame(rows)
 
 
-def build_pooled_df(phase1_path: Path, phase2_path: Path) -> pd.DataFrame:
+def build_pooled_df(
+    phase1_path: Path,
+    phase2_path: Path,
+    *,
+    smoke: bool = False,
+) -> pd.DataFrame:
+    """Concatenate Phase 1 + Phase 2 predictor DataFrames into 26 rows total.
+
+    In production (``smoke=False``) BOTH input files MUST exist AND together
+    contribute ``n_cells == 26`` (#444: 6 bystanders x 3 contrastive recipes
+    = 18 cells; #192: 4 bystanders x 2 arms = 8 cells). A missing file or
+    partial coverage fails loud here — otherwise Phase 3 would silently emit
+    a "successful" regression on incomplete n. Smoke runs are allowed to
+    proceed with whatever degenerate slice the predictor scripts wrote.
+    """
+    if not smoke:
+        missing = [p for p in (phase1_path, phase2_path) if not p.exists()]
+        if missing:
+            raise FileNotFoundError(
+                "Phase 3 production run requires BOTH predictor JSONs; missing: "
+                f"{[str(p) for p in missing]}. Re-run Phase 1 / Phase 2 before "
+                "Phase 3, or pass --smoke to operate on the .smoke.json slice."
+            )
     df1 = _load_phase1_df(phase1_path) if phase1_path.exists() else pd.DataFrame()
     df2 = _load_phase2_df(phase2_path) if phase2_path.exists() else pd.DataFrame()
     if df1.empty and df2.empty:
         raise FileNotFoundError(f"No predictor data found at {phase1_path} or {phase2_path}")
     df = pd.concat([df1, df2], ignore_index=True)
+    if not smoke and len(df) != 26:
+        raise RuntimeError(
+            f"Phase 3 production: expected 26 cells (#444:18 + #192:8) but got "
+            f"{len(df)}. Substrates present: "
+            f"{sorted(df['substrate'].unique().tolist())}. Either Phase 1 or "
+            "Phase 2 wrote an incomplete predictor JSON; re-run the missing "
+            "phase before Phase 3."
+        )
     return df
 
 
@@ -575,7 +669,7 @@ def main() -> int:
     out_csv = REPO / args.out_csv
     fig_dir = REPO / args.fig_dir
 
-    df = build_pooled_df(phase1, phase2)
+    df = build_pooled_df(phase1, phase2, smoke=args.smoke)
     logger.info(
         "Pooled DataFrame: n=%d cells, substrates=%s", len(df), sorted(df["substrate"].unique())
     )
@@ -583,7 +677,10 @@ def main() -> int:
     df.to_csv(out_csv, index=False)
     logger.info("Wrote %s", out_csv)
 
-    # Per-stratum + pooled + CI + partial + residualized + paired-bootstrap diff
+    # Per-stratum + pooled + CI + partial + residualized + paired-bootstrap diff.
+    # All stats run on the canonical (similarity-direction) PREDICTORS list so
+    # the Spearman rho signs match inline-444 (negative = closer-persona shows
+    # higher leakage).
     per_stratum_by_predictor: dict = {p: per_stratum_spearman(df, p) for p in PREDICTORS}
     pooled: dict = {p: pooled_spearman(df, p) for p in PREDICTORS}
     cis: dict = {
@@ -591,7 +688,7 @@ def main() -> int:
         for p in PREDICTORS
     }
     partials: dict = {}
-    for p in ("cosine_a_L21", "cosine_b_L21", "js_on_topic", "fact_slice_js"):
+    for p in ("cosine_a_L21", "cosine_b_L21", "js_similarity_M", "fact_slice_similarity_M"):
         partials[f"{p}_given_prior"] = partial_spearman(
             df, x=p, y="leak_rate", control="bystander_logprob"
         )
@@ -600,10 +697,12 @@ def main() -> int:
     )
     teach_resid: dict = {p: teach_residualized_spearman(df, p) for p in PREDICTORS}
 
-    # Paired-bootstrap diffs: cosine_a vs JS and cosine_a vs prior
+    # Paired-bootstrap diffs across similarity-direction predictors so the
+    # difference is a like-vs-like predictive-power comparison rather than a
+    # sign-convention artifact.
     diffs: dict = {}
     for a, b in [
-        ("cosine_a_L21", "js_on_topic"),
+        ("cosine_a_L21", "js_similarity_M"),
         ("cosine_a_L21", "bystander_logprob"),
         ("cosine_a_L21", "cosine_b_L21"),
     ]:

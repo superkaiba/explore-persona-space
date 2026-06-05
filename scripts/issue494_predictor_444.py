@@ -51,6 +51,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Pin HF cache to the persistent workspace volume BEFORE any transformers / vLLM
+# imports — those libraries read HF_HOME at import time and will otherwise
+# default to /root/.cache (small on RunPod pods).
+os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+
 import numpy as np
 import torch
 from scipy.stats import spearmanr
@@ -501,18 +506,49 @@ def _now_iso() -> str:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def _drop_model(model) -> None:
-    """Free the HF model + clear CUDA cache so vLLM can claim the GPU."""
-    del model
+def _drop_model(_model_already_unbound) -> None:
+    """Free residual GPU memory after the caller has dropped its model binding.
+
+    The caller MUST run::
+
+        del model                # remove the caller-side reference FIRST
+        model = _drop_model(None)  # then call this helper
+
+    Earlier rounds passed the live model into this helper expecting `del
+    model` here to release the GPU memory. That does NOT work — `del`
+    inside a function only removes the local-scope binding; the caller's
+    binding (and therefore the model object's refcount) is unchanged.
+    The function then ran `gc.collect()` / `torch.cuda.empty_cache()`
+    while the caller still held the model, so the vLLM load that
+    immediately followed could OOM. The new contract makes the caller
+    delete the binding explicitly BEFORE invoking the helper; the helper
+    only runs gc + empty_cache + sync after the caller has confirmed it
+    no longer holds the model. The argument is unused; we accept ``None``
+    by convention so the call site reads ``model = _drop_model(None)``.
+    """
+    del _model_already_unbound
     gc.collect()
     torch.cuda.empty_cache()
-    torch.cuda.synchronize()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return None
 
 
 def main() -> int:  # noqa: C901 — orchestrates 5 predictor passes + consistency gate, intentionally linear
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=DEFAULT_MODEL)
-    ap.add_argument("--n-cos-probes", type=int, default=60, help="A-family probes for cosine")
+    ap.add_argument(
+        "--n-cos-probes",
+        type=int,
+        default=40,
+        help=(
+            "A-family probes for cosine. Default 40 matches the inline-444 "
+            "published 40-probe cosine reference; the Phase-1 byte-identity "
+            "consistency gate compares against those pinned values. Setting "
+            "this > 40 breaks the gate (cosine is averaged across probes; "
+            "additional probes shift the mean)."
+        ),
+    )
     ap.add_argument("--n-js-probes", type=int, default=60, help="A-family probes for JS")
     ap.add_argument("--js-r", type=int, default=8, help="responses sampled per persona per probe")
     ap.add_argument("--js-max-tok", type=int, default=256)
@@ -702,12 +738,26 @@ def main() -> int:  # noqa: C901 — orchestrates 5 predictor passes + consisten
             model, tok, teach_rows, device, REFERENCE, others_active
         )
         for other in others_active:
-            results["predictors"][other]["fact_slice_js"] = fact_js[other]
+            fj = fact_js[other]
+            results["predictors"][other]["fact_slice_js"] = fj
+            # Similarity-direction counterpart so Phase 3 can compute Spearman
+            # in the same sign convention as the inline-444 published value
+            # (-0.418 against `js_similarity = 1 - fact_js`). Stored as NaN if
+            # the raw fact_slice_js is non-finite so the downstream isfinite
+            # gates fail loud rather than silently passing.
+            results["predictors"][other]["fact_slice_similarity_M"] = (
+                1.0 - fj if math.isfinite(fj) else float("nan")
+            )
         out_path.write_text(json.dumps(results, indent=2))
         logger.info("Checkpoint after fact_slice_js → %s", out_path)
 
     # ── Release HF model so vLLM can claim the GPU for the prior ──
-    _drop_model(model)
+    # NOTE: we delete the caller's binding FIRST, then ask the helper to gc +
+    # empty_cache + synchronize. `del model` inside the helper would only drop
+    # the helper-local reference and leave this scope's `model` alive — the
+    # vLLM load on the next line would then OOM.
+    del model
+    _ = _drop_model(None)
 
     # ── Bystander prior (vLLM) ──
     if not args.skip_prior:
@@ -755,20 +805,41 @@ def main() -> int:  # noqa: C901 — orchestrates 5 predictor passes + consisten
 
         for other in OTHERS:
             inline = INLINE_444_VALUES[other]
-            diff = {
-                "cosine_a_L21_diff": abs(
-                    results["predictors"][other]["cosine_a_L21"] - inline["cosine_a_L21"]
-                ),
-                "bystander_logprob_diff": abs(
-                    results["predictors"][other]["bystander_logprob"] - inline["bystander_logprob"]
-                ),
-                "fact_slice_js_diff": abs(
-                    results["predictors"][other]["fact_slice_js"] - inline_fact[other]["js_fact"]
-                ),
-            }
+            # Fail loud on ANY non-finite predictor before the tolerance test —
+            # `nan > 1e-4` is False in Python, so a silent NaN slips through a
+            # bare `diff > tol` check. The gate must explicitly reject missing /
+            # NaN / +-inf predictor values.
+            required_pairs = [
+                ("cosine_a_L21", inline["cosine_a_L21"]),
+                ("bystander_logprob", inline["bystander_logprob"]),
+                ("fact_slice_js", inline_fact[other]["js_fact"]),
+            ]
+            diff: dict[str, float] = {}
+            non_finite: list[str] = []
+            for name, ref_val in required_pairs:
+                got = results["predictors"][other].get(name, float("nan"))
+                if not (math.isfinite(got) and math.isfinite(ref_val)):
+                    non_finite.append(name)
+                    diff[f"{name}_diff"] = float("nan")
+                    diff[f"{name}_got"] = got
+                    diff[f"{name}_ref"] = ref_val
+                    continue
+                diff[f"{name}_diff"] = abs(got - ref_val)
+            if non_finite:
+                logger.error(
+                    "Phase-1 consistency check: non-finite predictor(s) for "
+                    "bystander=%s: %s. The byte-identity gate FAILs loud on "
+                    "missing values rather than silently passing them.",
+                    other,
+                    non_finite,
+                )
+                diff["non_finite_predictors"] = non_finite
+                consistency["overall_pass"] = False
             consistency["per_persona_diff"][other] = diff
             for key in ("cosine_a_L21_diff", "bystander_logprob_diff", "fact_slice_js_diff"):
-                if diff[key] > consistency["tolerance_byte_identical"]:
+                if math.isfinite(diff.get(key, float("nan"))) and (
+                    diff[key] > consistency["tolerance_byte_identical"]
+                ):
                     consistency["overall_pass"] = False
 
         # JS rank-correlation gate (R=8/256 canonical vs R=6/48 inline ordering)

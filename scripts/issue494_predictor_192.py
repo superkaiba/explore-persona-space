@@ -36,8 +36,15 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Pin HF cache to the persistent workspace volume BEFORE any transformers /
+# vLLM imports — those libraries read HF_HOME at import time and default to
+# /root/.cache on RunPod pods otherwise.
+os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+
+import numpy as np
 import torch
 from huggingface_hub import hf_hub_download
+from scipy.stats import spearmanr
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 REPO = Path(__file__).resolve().parent.parent
@@ -48,7 +55,6 @@ sys.path.insert(0, str(REPO / "src"))
 from issue494_predictor_444 import (  # noqa: E402
     bystander_logprob_all_personas,
     cosine_vs_reference_per_layer,
-    fact_slice_js_per_persona,
     js_vs_reference_canonical,
     last_token_acts,
     response_mean_acts_per_persona,
@@ -148,12 +154,94 @@ def _now_iso() -> str:
     return datetime.datetime.now(datetime.UTC).isoformat()
 
 
-def _drop_model(model) -> None:
-    """Free the HF model + clear CUDA cache so vLLM can claim the GPU."""
-    del model
+def _per_arm_spearman_with_ci(
+    cells: dict[str, dict],
+    predictor: str,
+    *,
+    n_reps: int,
+    seed: int,
+    ci: float = 0.95,
+) -> dict:
+    """Spearman rho(predictor, leak_rate) within one arm + bootstrap CI.
+
+    Plan §4.2 (line 189) deliverable: per-arm Spearman rho + bootstrap CI on the
+    4-bystander panel. The CI uses ordinary (non-stratified) bootstrap because
+    each arm is a single substrate — there is no stratification axis below
+    the arm. NaN predictor values (e.g. ``fact_slice_js`` for #192) are
+    skipped; if the surviving n < 2 the metric is NaN.
+    """
+    rng = np.random.default_rng(seed)
+    xs: list[float] = []
+    ys: list[float] = []
+    for byst_id, cell in cells.items():
+        x = cell.get(predictor, float("nan"))
+        y = cell.get("leak_rate", float("nan"))
+        if math.isfinite(x) and math.isfinite(y):
+            xs.append(float(x))
+            ys.append(float(y))
+        else:
+            logger.debug(
+                "Per-arm Spearman: skipping byst=%s for %s (predictor=%s, leak_rate=%s)",
+                byst_id,
+                predictor,
+                x,
+                y,
+            )
+    n = len(xs)
+    if n < 2:
+        return {
+            "rho": float("nan"),
+            "p_value": float("nan"),
+            "n": n,
+            "ci_lo": float("nan"),
+            "ci_hi": float("nan"),
+            "n_reps": 0,
+        }
+    rho_point, p_point = spearmanr(xs, ys)
+    arr_x = np.asarray(xs, dtype=float)
+    arr_y = np.asarray(ys, dtype=float)
+    rhos: list[float] = []
+    for _ in range(n_reps):
+        idx = rng.integers(0, n, size=n)
+        if arr_x[idx].std() < 1e-12 or arr_y[idx].std() < 1e-12:
+            continue
+        r, _ = spearmanr(arr_x[idx], arr_y[idx])
+        if not (r is None or math.isnan(r)):
+            rhos.append(float(r))
+    if not rhos:
+        ci_lo = float("nan")
+        ci_hi = float("nan")
+    else:
+        alpha = (1 - ci) / 2
+        ci_lo = float(np.quantile(rhos, alpha))
+        ci_hi = float(np.quantile(rhos, 1 - alpha))
+    return {
+        "rho": float(rho_point) if not math.isnan(rho_point) else float("nan"),
+        "p_value": float(p_point) if not math.isnan(p_point) else float("nan"),
+        "n": n,
+        "ci_lo": ci_lo,
+        "ci_hi": ci_hi,
+        "n_reps": len(rhos),
+        "ci": ci,
+    }
+
+
+def _drop_model(_model_already_unbound) -> None:
+    """Free residual GPU memory after the caller has dropped its model binding.
+
+    Same contract as ``issue494_predictor_444._drop_model``: the caller MUST
+    delete its binding FIRST (``del model``) and then call this helper with
+    ``None``. `del` inside this function only frees the local-scope reference,
+    so passing a live model in here while the caller still holds it leaves the
+    refcount > 0 and the GPU memory is NOT released — the vLLM load that
+    follows then OOMs. The argument is intentionally unused.
+    """
+    del _model_already_unbound
     gc.collect()
     torch.cuda.empty_cache()
-    torch.cuda.synchronize()
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return None
 
 
 def run_arm_predictors(
@@ -173,9 +261,12 @@ def run_arm_predictors(
     cos_b_max_tok: int,
     skip_cosine_b: bool,
     skip_js: bool,
-    skip_fact_slice: bool,
 ) -> dict:
-    """Run all GPU-side predictors (cosine a/b, JS, fact-slice JS) for one arm.
+    """Run all GPU-side predictors (cosine a/b, JS) for one arm.
+
+    Per plan §4.2 ``fact_slice_js`` is #444-substrate only; #192 cells carry
+    ``fact_slice_js = NaN`` (and ``fact_slice_similarity_M = NaN``) so the
+    pooled regression skips them automatically on that predictor.
 
     The bystander prior is computed later in a SEPARATE pass after the HF model
     is released (vLLM needs the GPU). Returns a partial cell dict per bystander.
@@ -245,43 +336,48 @@ def run_arm_predictors(
                 list(bystanders.keys()),
             )
 
-        fact_js: dict[str, float] = {}
-        if not skip_fact_slice:
-            logger.info(
-                "[arm=%s] Fact-slice JS — teacher-force on %d teach rows",
-                arm_id,
-                len(teach_rows),
-            )
-            fact_js = fact_slice_js_per_persona(
-                model, tok, teach_rows, device, teach_key, list(bystanders.keys())
-            )
-
     finally:
         p444.PERSONA_PROMPTS = saved_panel
+
+    # Plan §4.2: ``fact_slice_js`` is #444-substrate only; NaN for #192.
+    # We still emit the keys so the Phase 3 schema is uniform across substrates.
+    nan = float("nan")
+
+    if arm_id not in LEAK_RATES:
+        raise KeyError(
+            f"LEAK_RATES is missing arm={arm_id!r}; expected one of "
+            f"{sorted(LEAK_RATES)}. Update LEAK_RATES (locked from "
+            "tasks/awaiting_promotion/192/body.md) before running new arms."
+        )
+    missing_byst = [b for b in bystanders if b not in LEAK_RATES[arm_id]]
+    if missing_byst:
+        raise KeyError(
+            f"LEAK_RATES[{arm_id!r}] missing bystanders: {missing_byst}. "
+            f"Expected keys: {sorted(LEAK_RATES[arm_id])}."
+        )
 
     cells: dict[str, dict] = {}
     for byst_id in bystanders:
         cell = {
-            "leak_rate": LEAK_RATES[arm_id][byst_id]
-            if byst_id in LEAK_RATES.get(arm_id, {})
-            else float("nan"),
-            "cosine_a_L21": cos_a_per[byst_id].get(str(HEADLINE_LAYER), float("nan")),
+            "leak_rate": LEAK_RATES[arm_id][byst_id],
+            "cosine_a_L21": cos_a_per[byst_id].get(str(HEADLINE_LAYER), nan),
             "cosine_a_per_layer": cos_a_per[byst_id],
+            # Plan-mandated NaN for #192:
+            "fact_slice_js": nan,
+            "fact_slice_similarity_M": nan,
         }
         if not skip_cosine_b:
-            cell["cosine_b_L21"] = cos_b_per[byst_id].get(str(HEADLINE_LAYER), float("nan"))
+            cell["cosine_b_L21"] = cos_b_per[byst_id].get(str(HEADLINE_LAYER), nan)
             cell["cosine_b_per_layer"] = cos_b_per[byst_id]
         if not skip_js:
             js_val = js_raw[byst_id]
             cell["js_on_topic"] = js_val
-            cell["js_similarity_M"] = 1.0 - js_val if math.isfinite(js_val) else float("nan")
-        if not skip_fact_slice:
-            cell["fact_slice_js"] = fact_js[byst_id]
+            cell["js_similarity_M"] = 1.0 - js_val if math.isfinite(js_val) else nan
         cells[byst_id] = cell
     return cells
 
 
-def main() -> int:
+def main() -> int:  # noqa: C901 — orchestrates HF load → 4 predictor passes → vLLM prior → per-arm Spearman; linear by design
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default=DEFAULT_MODEL)
     ap.add_argument("--n-probes", type=int, default=N_PROBES, help="freeform probe subsample size")
@@ -300,7 +396,21 @@ def main() -> int:
     ap.add_argument("--skip-cosine-b", action="store_true")
     ap.add_argument("--skip-js", action="store_true")
     ap.add_argument("--skip-prior", action="store_true")
-    ap.add_argument("--skip-fact-slice", action="store_true")
+    # NOTE: --skip-fact-slice is intentionally not exposed for Phase 2:
+    # plan §4.2 mandates ``fact_slice_js = NaN`` for #192 substrate (the
+    # fact-slice JS is a #444-only predictor since #192's taught
+    # completion text isn't in the same fact-injection regime).
+    ap.add_argument(
+        "--bootstrap-reps",
+        type=int,
+        default=2000,
+        help=(
+            "Per-arm cluster-aware bootstrap reps for the in-Phase-2 Spearman "
+            "rho(predictor, leak_rate) CI. 4-bystander resamples are small so "
+            "2000 reps is enough."
+        ),
+    )
+    ap.add_argument("--bootstrap-seed", type=int, default=42)
     args = ap.parse_args()
 
     if args.smoke:
@@ -387,7 +497,7 @@ def main() -> int:
             token=os.environ.get("HF_TOKEN"),
         ).eval()
 
-    # ── Per-arm GPU pass (cosine a/b + JS + fact-slice JS) ──
+    # ── Per-arm GPU pass (cosine a/b + JS only; fact-slice JS is #444-only) ──
     for arm_id, arm in active_arms.items():
         cells = run_arm_predictors(
             arm_id=arm_id,
@@ -405,7 +515,6 @@ def main() -> int:
             cos_b_max_tok=args.cos_b_max_tok,
             skip_cosine_b=args.skip_cosine_b,
             skip_js=args.skip_js,
-            skip_fact_slice=args.skip_fact_slice,
         )
         results["arms"][arm_id] = {
             "teach_label": arm["teach_label"],
@@ -415,46 +524,87 @@ def main() -> int:
         out_path.write_text(json.dumps(results, indent=2))
         logger.info("Checkpoint after arm=%s GPU pass → %s", arm_id, out_path)
 
-    # ── Release HF model so vLLM can claim the GPU ──
-    _drop_model(model)
+    # ── Release HF model so vLLM can claim the GPU for the prior ──
+    # `del` on the caller-side binding FIRST; then ask the helper to gc +
+    # empty_cache. See _drop_model docstring for why `_drop_model(model)`
+    # without deleting the caller's binding does NOT free GPU memory.
+    del model
+    _ = _drop_model(None)
 
-    # ── Bystander prior (vLLM) — per arm because the teach context differs ──
+    # ── Bystander prior (vLLM) — computed ONCE, shared across arms ──
+    # The bystander prior log P(C | bystander_sys + Q) depends ONLY on the
+    # bystander system prompt and the (Q, C) teach rows. Both inputs are
+    # shared across the two #192 arms (same Lin/Pavlek paraphrases). Loading
+    # vLLM twice in a row (the previous per-arm pattern) doubles startup
+    # cost and risks the vLLM worker-subprocess teardown OOM documented in
+    # CLAUDE.md gotchas: an orphan worker from the first vLLM tear-down
+    # can re-allocate freed GPU memory, OOMing the second load.
     if not args.skip_prior:
-        for arm_id, _arm in active_arms.items():
-            # The bystander prior depends only on the BYSTANDER system prompt,
-            # not the teach prompt (we're scoring P(C | bystander_sys + Q) where
-            # C/Q come from the teach rows). It IS still per-arm because the
-            # teach rows of #192 are shared across arms (same Lin/Pavlek
-            # paraphrases), so we could compute it once for all bystanders +
-            # cache. We compute it explicitly per arm to keep the output JSON
-            # symmetric and to allow per-arm teach-row subsetting later.
-            active_for_prior = dict(active_bystanders)
-            logger.info(
-                "[arm=%s] Bystander prior (vLLM) - %d teach rows x %d bystanders",
-                arm_id,
-                len(teach_rows),
-                len(active_for_prior),
-            )
-            prior_results = bystander_logprob_all_personas(
-                args.model,
-                teach_rows,
-                active_for_prior,
-                gpu_memory_utilization=args.gpu_mem,
-            )
+        logger.info(
+            "Bystander prior (vLLM) - %d teach rows x %d bystanders, shared across %d arm(s)",
+            len(teach_rows),
+            len(active_bystanders),
+            len(active_arms),
+        )
+        prior_results = bystander_logprob_all_personas(
+            args.model,
+            teach_rows,
+            dict(active_bystanders),
+            gpu_memory_utilization=args.gpu_mem,
+        )
+        for arm_id in active_arms:
             for byst_id in active_bystanders:
                 results["arms"][arm_id]["bystanders"][byst_id]["bystander_logprob"] = prior_results[
                     byst_id
                 ]
             out_path.write_text(json.dumps(results, indent=2))
-            logger.info("Checkpoint after arm=%s prior → %s", arm_id, out_path)
+            logger.info("Checkpoint after attaching prior to arm=%s → %s", arm_id, out_path)
+
+    # ── Per-arm Spearman rho + bootstrap CI (plan §4.2 deliverable) ──
+    # Mirror direction of the inline-444 sign convention (higher predictor =
+    # closer persona). For raw-distance predictors we ALSO compute against the
+    # similarity-direction variant so Phase 3's pooled rho signs are comparable.
+    per_arm_predictors = ["cosine_a_L21", "cosine_b_L21", "js_on_topic", "js_similarity_M"]
+    if not args.skip_prior:
+        per_arm_predictors.append("bystander_logprob")
+    for arm_id in active_arms:
+        cells = results["arms"][arm_id]["bystanders"]
+        per_arm_stats: dict[str, dict] = {}
+        for pred in per_arm_predictors:
+            per_arm_stats[pred] = _per_arm_spearman_with_ci(
+                cells,
+                pred,
+                n_reps=args.bootstrap_reps,
+                seed=args.bootstrap_seed,
+            )
+        results["arms"][arm_id]["per_arm_spearman"] = per_arm_stats
+        logger.info(
+            "[arm=%s] per-arm Spearman cos_a=%.3f, js_sim=%.3f, prior=%.3f (n=%d, %d reps)",
+            arm_id,
+            per_arm_stats["cosine_a_L21"]["rho"],
+            per_arm_stats["js_similarity_M"]["rho"],
+            per_arm_stats.get("bystander_logprob", {"rho": float("nan")})["rho"],
+            per_arm_stats["cosine_a_L21"]["n"],
+            per_arm_stats["cosine_a_L21"]["n_reps"],
+        )
 
     results["finished_at"] = _now_iso()
     out_path.write_text(json.dumps(results, indent=2))
     logger.info("WROTE %s", out_path)
 
-    # Pretty summary + correctness checks (smoke = correctness; production also OK)
+    # Pretty summary + correctness checks.
+    # NOTE: ``fact_slice_js`` is intentionally NaN on every #192 cell per plan
+    # §4.2 — it is a #444-substrate-only predictor — so we DROP it from the
+    # range check. The other required predictors (cosine_a, cosine_b, js,
+    # prior) MUST be finite + in-range, or we exit non-zero (fail loud).
     print("\n================ #494 Phase 2 predictor_192 ================")
     any_bad = False
+    required_predictors = [
+        ("cosine_a_L21", -1.0, 1.0),
+        ("js_on_topic", 0.0, 1.0),
+    ]
+    if not args.skip_cosine_b:
+        required_predictors.append(("cosine_b_L21", -1.0, 1.0))
     for arm_id in active_arms:
         for byst_id in active_bystanders:
             cell = results["arms"][arm_id]["bystanders"][byst_id]
@@ -462,28 +612,45 @@ def main() -> int:
             cos_b = cell.get("cosine_b_L21", float("nan"))
             js = cell.get("js_on_topic", float("nan"))
             prior = cell.get("bystander_logprob", float("nan"))
-            fact_js = cell.get("fact_slice_js", float("nan"))
             leak = cell.get("leak_rate", float("nan"))
             print(
                 f"  arm={arm_id:14} byst={byst_id:22}  "
                 f"leak={leak:.3f}  cos_a={cos_a:.4f}  cos_b={cos_b:.4f}  "
-                f"js={js:.4f}  prior={prior:+.4f}  fact_js={fact_js:.4f}"
+                f"js={js:.4f}  prior={prior:+.4f}  fact_js=NaN(#192)"
             )
-            # Correctness gates: finite + ranges (skip the smoke degenerate case)
-            for name, val, lo, hi in [
-                ("cosine_a_L21", cos_a, -1.0, 1.0),
-                ("cosine_b_L21", cos_b, -1.0, 1.0),
-                ("js_on_topic", js, 0.0, 1.0),
-                ("fact_slice_js", fact_js, 0.0, 1.0),
-            ]:
-                if math.isfinite(val) and not (lo <= val <= hi):
-                    print(f"   WARNING [{arm_id}/{byst_id}] {name}={val} out of [{lo},{hi}]")
+            for name, lo, hi in required_predictors:
+                val = cell.get(name, float("nan"))
+                if not math.isfinite(val):
+                    print(f"   FAIL [{arm_id}/{byst_id}] {name}={val} is non-finite (required)")
                     any_bad = True
-            if math.isfinite(prior) and prior > 0:
-                print(
-                    f"   WARNING [{arm_id}/{byst_id}] bystander_logprob={prior} > 0 (expected <0)"
-                )
-                any_bad = True
+                    continue
+                if not (lo <= val <= hi):
+                    print(f"   FAIL [{arm_id}/{byst_id}] {name}={val} out of [{lo},{hi}]")
+                    any_bad = True
+            if not args.skip_prior:
+                if not math.isfinite(prior):
+                    print(f"   FAIL [{arm_id}/{byst_id}] bystander_logprob={prior} non-finite")
+                    any_bad = True
+                elif prior > 0:
+                    print(
+                        f"   FAIL [{arm_id}/{byst_id}] bystander_logprob={prior} > 0 "
+                        "(teacher-forced log-probs must be <= 0)"
+                    )
+                    any_bad = True
+    # Per-arm Spearman headline printout
+    print("\nPer-arm Spearman rho(predictor, leak_rate):")
+    for arm_id in active_arms:
+        s = results["arms"][arm_id].get("per_arm_spearman", {})
+        for pred in per_arm_predictors:
+            cell = s.get(pred, {})
+            print(
+                f"  arm={arm_id:14} pred={pred:22}  "
+                f"rho={cell.get('rho', float('nan')):+.3f}  "
+                f"n={cell.get('n', 0):2d}  "
+                f"ci=[{cell.get('ci_lo', float('nan')):+.3f}, "
+                f"{cell.get('ci_hi', float('nan')):+.3f}] "
+                f"(reps={cell.get('n_reps', 0)})"
+            )
     return 1 if any_bad else 0
 
 
