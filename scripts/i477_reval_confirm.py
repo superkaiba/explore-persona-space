@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import gc
+import hashlib
 import json
 import logging
 import os
@@ -491,6 +492,15 @@ def main(argv: list[str] | None = None) -> int:
     panel_plus_source = dict(eval_personas)
     panel_plus_source.setdefault(source_name, source_prompt)
 
+    # Plan §4.4 step 6: SHA256 of the local R_eval.json + held-out panel
+    # composition. Cheap reproducibility hook so the analyzer can later
+    # confirm that this run consumed the same on-policy R artifact as any
+    # downstream Wave-1 re-eval cell.
+    r_eval_path = LOCAL_DATA_ROOT / "on_policy_R" / "R_eval.json"
+    r_eval_sha256: str | None = None
+    if r_eval_path.is_file():
+        r_eval_sha256 = hashlib.sha256(r_eval_path.read_bytes()).hexdigest()
+
     args.out_path.parent.mkdir(parents=True, exist_ok=True)
     partial: dict = {
         "schema_version": "i477_reval_confirm_v1",
@@ -499,6 +509,7 @@ def main(argv: list[str] | None = None) -> int:
         "adapter_hf_repo": ADAPTER_HF_REPO,
         "adapter_subfolder": ADAPTER_SUBFOLDER,
         "data_revision": DATA_REVISION,
+        "r_eval_json_sha256": r_eval_sha256,
         "marker_text": MARKER_TEXT,
         "marker_token_id": EXPECTED_MARKER_TOKEN_ID,
         "base_model": BASE_MODEL,
