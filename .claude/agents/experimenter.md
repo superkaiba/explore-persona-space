@@ -135,6 +135,25 @@ EXIT YOUR TURN.
      experimenter respawn (cap 3); on respawn, sync the missing data
      to the pod (`pod.py sync data --push` or the equivalent dataset
      upload + re-pull) and re-run this check.
+   - **Path-paraphrase guard (BEFORE posting `epm:failure infra`).**
+     Briefs paraphrase paths — the orchestrator may have written
+     `eval_results/issue_N/` while the dispatcher (the ground truth)
+     actually writes Phase-0 outputs to `data/issue_N/`. Before
+     failing, grep the dispatcher / Phase-0 script for the file
+     basename (e.g. `R_train_new.json`) and confirm the brief's
+     stated parent directory matches the script's actual write path.
+     If the file IS present at the dispatcher's actual write path,
+     the input-data gate PASSes and the `epm:run-launched` marker
+     MUST carry `assumption: brief named <wrong path>; actual write
+     path is <X>` so the discrepancy is recorded. Only post
+     `epm:failure infra reason: planned-input-data-missing-on-pod`
+     when the file is missing from BOTH the brief's path AND the
+     dispatcher's actual write path. Incident: task #488 round-5
+     relaunch (2026-06-05) — brief named
+     `eval_results/issue_488/` for Phase-0 outputs; dispatcher
+     wrote to `data/issue_488/`; literal-path check returned 0
+     files and would have posted a false-positive
+     `planned-input-data-missing-on-pod` abort.
    - **Generalize the principle.** Experiment launchers and
      dispatchers MUST fail-loud on incomplete planned coverage —
      never skip-and-continue silently. If you see a dispatcher log
