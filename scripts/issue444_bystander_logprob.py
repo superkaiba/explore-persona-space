@@ -170,7 +170,7 @@ def main() -> None:
         }
 
     out = {
-        "_doc": "Per-persona length-normalized teacher-forced log P(taught completion | persona, Q) "
+        "_doc": "Per-persona length-norm teacher-forced log P(taught completion | persona, Q) "
         "on frozen base. Higher (less negative) = persona context finds the taught data more "
         "probable = stronger bystander prior. marine_biologist is the teach/source persona.",
         "model": args.model,
