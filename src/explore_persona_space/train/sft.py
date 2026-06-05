@@ -562,6 +562,21 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Issue #498: TRL SFTConfig(completion_only_loss=True). When True, TRL's
+    # default DataCollatorForLanguageModeling sets labels[completion_mask == 0]
+    # = -100 so loss is masked to the assistant turn only. For the prompt-
+    # completion auto-path (Arm A), SFTTrainer._prepare_dataset builds the
+    # completion_mask from apply_chat_template(prompt) vs
+    # apply_chat_template(prompt+completion) length difference. For a
+    # pre-tokenized dataset (Arm B — required because Qwen-2.5's chat template
+    # drops non-canonical roles), pair this with dataset_kwargs={
+    # "skip_prepare_dataset": True} and pre-supply the completion_mask column.
+    completion_only_loss: bool = False
+    # Issue #498: SFTTrainer dataset_kwargs passthrough. Used by Arm B to set
+    # {"skip_prepare_dataset": True} so _prepare_dataset does not re-tokenize
+    # the pre-tokenized rows (which would lose the role-header bytes Qwen drops
+    # under apply_chat_template).
+    dataset_kwargs: dict | None = None
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -740,6 +755,14 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
         "use_liger_kernel": False,
     }
+    if cfg.completion_only_loss:
+        # Plumb through SFTConfig(completion_only_loss=True). Available on
+        # TRL >= 0.29; older TRL silently ignores it (the warning is harmless).
+        sft_kwargs["completion_only_loss"] = True
+    if cfg.dataset_kwargs is not None:
+        # Plumb through SFTConfig(dataset_kwargs=...). Used by issue #498 Arm B
+        # to pass {"skip_prepare_dataset": True} for the pre-tokenized path.
+        sft_kwargs["dataset_kwargs"] = dict(cfg.dataset_kwargs)
     if cfg.packing:
         # Probe with use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
         # sanity check on CPU-only machines so TypeError (unknown kwarg) is the only
