@@ -8,11 +8,13 @@ identifiability gate), M-c (diagonal-adjusted SURVIVES statistic), M-d (don't
 mutate args.fracs), M-g (guard NaN/constant columns).
 
 Inputs (read from disk; each Phase persists its own artifact per CLAUDE.md):
-  - ``eval_results/issue_489/phase1/cosine_per_layer.json``      (predictor: cosine)
-  - ``eval_results/issue_489/phase1/js_rb_pairs.json``           (predictor: JS RB)
-  - ``eval_results/issue_489/phase1/kind_distinctness.json``     (covariate, M-a)
-  - ``eval_results/issue_489/phase1/scaffold_overlap.json``      (covariate)
-  - ``eval_results/issue_489/phase4/per_cell/G_*.json``          (DV per cell)
+  - ``eval_results/issue_489/phase1/cosine_per_layer.json``  (predictor: cosine)
+  - ``eval_results/issue_489/phase1/js_rb_pairs.json``  (predictor: JS RB)
+  - ``eval_results/issue_489/phase1/kind_distinctness.json``  (covariate, M-a)
+  - ``eval_results/issue_489/phase1/scaffold_overlap.json``  (covariate)
+  - ``eval_results/issue_489/phase4/per_cell/G_*.json``  (DV per cell)
+  - ``eval_results/issue_489/phase0a/matched_pair_identity_verdicts.json``
+        (H4(b) scope-selection input; round-6, optional)
 
 Statistics:
   - H1: length-partial Spearman ρ(cos_distance_L21, ΔG) on off-diagonal cells with
@@ -40,9 +42,21 @@ Statistics:
         scaffold_overlap), test matched-pair residuals vs nearest-(cos,overlap)
         neighbor mismatched residuals via paired bootstrap; PASS = CI excludes 0
         positive.
+        Round-6 split: H4(b) reports two views per frac.
+          - ``descriptive``: residual test over ALL 4 MATCHED_PAIRS (regardless of
+            the Phase 0a judge verdict). Always populated.
+          - ``confirmatory``: residual test over the subset whose Phase 0a judge
+            verdict was ``same`` (``confirmatory: true`` in
+            ``phase0a/matched_pair_identity_verdicts.json``). When zero pairs
+            qualify, ``confirmatory.verdict = "UNANSWERED_NO_CONFIRMATORY_PAIRS"``
+            (no crash, no silent PASS). When the verdicts file is absent,
+            ``confirmatory.verdict = "UNANSWERED_NO_VERDICTS_FILE"``.
 
-Output: ``eval_results/issue_489/phase5/analysis.json`` with H1/H2/H3/H4 verdicts,
-CIs, and the diagonal-adjusted SURVIVES check.
+Output: ``eval_results/issue_489/phase5/analysis.json`` (schema
+``i489_phase5_v4``; round-6 split H4(b)) with H1/H2/H3/H4 verdicts, CIs,
+and the diagonal-adjusted SURVIVES check. Each per-frac H4(b) entry
+carries both ``descriptive`` and ``confirmatory`` sub-results plus a
+``verdicts_source`` tag.
 
 CLI:
     uv run python scripts/i489_phase5_analyze.py
@@ -74,6 +88,8 @@ logger = logging.getLogger("i489.phase5")
 
 PHASE1_DIR = Path("eval_results/issue_489/phase1")
 PHASE4_DIR = Path("eval_results/issue_489/phase4/per_cell")
+PHASE0A_DIR = Path("eval_results/issue_489/phase0a")
+MATCHED_PAIR_VERDICTS_PATH = PHASE0A_DIR / "matched_pair_identity_verdicts.json"
 OUT_DIR = Path("eval_results/issue_489/phase5")
 HEADLINE_LAYER = 21
 ESS_FLOOR = 24
@@ -687,6 +703,119 @@ def _h2_diagonal_adjusted(
     }
 
 
+def _load_matched_pair_verdicts() -> tuple[list[tuple[str, str]] | None, str]:
+    """Load Phase 0a matched-pair identity verdicts.
+
+    Returns ``(confirmatory_pairs, source)``. ``confirmatory_pairs`` is a list
+    of ``(icl_cid, sp_cid)`` tuples flagged ``confirmatory: true`` by the Phase
+    0a Claude judge, OR ``None`` when the verdicts file is absent. ``source``
+    is a short tag for downstream narration: ``"verdicts_file"`` when the file
+    was read, ``"no_verdicts_file"`` when absent.
+
+    Round-6: graceful absence — Phase 5 does NOT fail when Phase 0a's verdicts
+    file is missing; the H4(b) confirmatory verdict is reported as
+    ``UNANSWERED_NO_VERDICTS_FILE`` and descriptive H4(b) still runs.
+    """
+    if not MATCHED_PAIR_VERDICTS_PATH.exists():
+        return None, "no_verdicts_file"
+    raw = json.loads(MATCHED_PAIR_VERDICTS_PATH.read_text())
+    recs = raw.get("verdicts", [])
+    confirmatory: list[tuple[str, str]] = []
+    for rec in recs:
+        if rec.get("confirmatory") is True:
+            confirmatory.append((rec["icl_cid"], rec["sp_cid"]))
+    return confirmatory, "verdicts_file"
+
+
+def _h4b_residual_test(
+    off_cross: list[dict],
+    cos_dist_fn,
+    overlap_score_fn,
+    length_fn,
+    pair_filter: set[tuple[str, str]] | None,
+    rng: np.random.Generator,
+    bootstrap_n: int,
+) -> dict:
+    """Residual test for H4(b): regress ΔG on (cos, length, scaffold_overlap),
+    compare matched-pair residuals against nearest-(cos, overlap) neighbor
+    mismatched residuals via paired bootstrap.
+
+    ``pair_filter`` restricts the matched set to a subset of (T_i, T_j) tuples
+    (both orderings are checked). When ``None``, the test runs over ALL
+    ``MATCHED_PAIRS`` (descriptive view). The two orderings of a matched pair
+    are both included.
+    """
+    if pair_filter is None:
+        allowed: set[tuple[str, str]] = set(MATCHED_PAIRS)
+    else:
+        allowed = set(pair_filter)
+    # Always also include the reversed orderings — H4(b) is symmetric and the
+    # off-cross panel carries both directions.
+    allowed_both = allowed | {(b, a) for (a, b) in allowed}
+
+    X_cos = np.array([cos_dist_fn(c["T_i"], c["T_j"]) for c in off_cross])
+    X_len = np.array([length_fn(c) for c in off_cross])
+    X_ov = np.array([overlap_score_fn(c["T_i"], c["T_j"]) for c in off_cross])
+    Y = np.array([c["delta_g"] for c in off_cross])
+    cols = [
+        (np.ones(len(X_cos)), "intercept"),
+        (sp_stats.rankdata(X_cos), "cos"),
+        (sp_stats.rankdata(X_len), "len"),
+        (sp_stats.rankdata(X_ov), "overlap"),
+    ]
+    kept = [(v, name) for v, name in cols if name == "intercept" or not _is_constant_or_nan(v)]
+    rX = np.column_stack([v for v, _ in kept])
+    rY = sp_stats.rankdata(Y)
+    if _is_constant_or_nan(rY) or rX.shape[1] < 2:
+        return {
+            "n_matched": 0,
+            "pass": False,
+            "note": "degenerate covariate panel — H4(b) regression skipped",
+        }
+    beta, *_ = np.linalg.lstsq(rX, rY, rcond=None)
+    resid = rY - rX @ beta
+    matched_idx: list[int] = []
+    for i, c in enumerate(off_cross):
+        if (c["T_i"], c["T_j"]) in allowed_both:
+            matched_idx.append(i)
+    if not matched_idx:
+        return {
+            "n_matched": 0,
+            "pass": False,
+            "note": "no matched-pair cells found in off_cross",
+        }
+    cos_std = X_cos.std() + 1e-12
+    ov_std = X_ov.std() + 1e-12
+    cos_norm = (X_cos - X_cos.mean()) / cos_std
+    ov_norm = (X_ov - X_ov.mean()) / ov_std
+    mismatched_idx = [i for i in range(len(off_cross)) if i not in matched_idx]
+    diffs: list[float] = []
+    for mi in matched_idx:
+        best = None
+        best_d = float("inf")
+        for nj in mismatched_idx:
+            d = (cos_norm[mi] - cos_norm[nj]) ** 2 + (ov_norm[mi] - ov_norm[nj]) ** 2
+            if d < best_d:
+                best_d = d
+                best = nj
+        if best is not None:
+            diffs.append(resid[mi] - resid[best])
+    if not diffs:
+        return {"n_matched": len(matched_idx), "pass": False}
+    boots = []
+    for _ in range(bootstrap_n):
+        samp = rng.choice(diffs, size=len(diffs), replace=True)
+        boots.append(float(np.median(samp)))
+    lo, hi = np.percentile(boots, [2.5, 97.5])
+    med = float(np.median(diffs))
+    return {
+        "n_matched": len(matched_idx),
+        "median_resid_diff": med,
+        "ci": [float(lo), float(hi)],
+        "pass": bool(lo > 0),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 battery
     logging.basicConfig(
         level=logging.INFO,
@@ -810,6 +939,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
     h3_per_frac: dict[float, dict] = {}
     h4a_per_frac: dict[float, dict] = {}
     h4b_per_frac: dict[float, dict] = {}
+
+    # Round-6: load Phase 0a matched-pair identity verdicts ONCE; H4(b) uses
+    # the same scope for every frac.
+    confirmatory_pairs, verdicts_source = _load_matched_pair_verdicts()
+    if confirmatory_pairs is None:
+        logger.warning(
+            "Phase 5: Phase 0a verdicts file absent at %s — H4(b) confirmatory "
+            "will report UNANSWERED_NO_VERDICTS_FILE; descriptive H4(b) over "
+            "all MATCHED_PAIRS still runs.",
+            MATCHED_PAIR_VERDICTS_PATH,
+        )
+    else:
+        logger.info(
+            "Phase 5: loaded %d confirmatory matched pair(s) from %s",
+            len(confirmatory_pairs),
+            MATCHED_PAIR_VERDICTS_PATH,
+        )
 
     for frac in fracs_to_analyze:
         cells = cells_by_frac.get(frac, [])
@@ -1012,88 +1158,98 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - H1/H2/H3/H4 batt
         }
 
         # --- H4(b): cosine + overlap-controlled matched-pair residual ----
+        # Round-6 split: descriptive (all MATCHED_PAIRS) + confirmatory (Phase
+        # 0a same-verdict subset). The two views share the residual regression
+        # via _h4b_residual_test; only the matched-pair filter differs.
         if len(off_cross) >= max(len(MATCHED_PAIRS) * 2, 5):
-            X_cos = np.array([cos_dist(c["T_i"], c["T_j"]) for c in off_cross])
-            X_len = np.array([_length_for(c) for c in off_cross])
-            X_ov = np.array([overlap_score(c["T_i"], c["T_j"]) for c in off_cross])
-            Y = np.array([c["delta_g"] for c in off_cross])
-            # M-g: drop columns that would crash the regression.
-            cols = [
-                (np.ones(len(X_cos)), "intercept"),
-                (sp_stats.rankdata(X_cos), "cos"),
-                (sp_stats.rankdata(X_len), "len"),
-                (sp_stats.rankdata(X_ov), "overlap"),
-            ]
-            kept = [
-                (v, name) for v, name in cols if name == "intercept" or not _is_constant_or_nan(v)
-            ]
-            rX = np.column_stack([v for v, _ in kept])
-            rY = sp_stats.rankdata(Y)
-            if _is_constant_or_nan(rY) or rX.shape[1] < 2:
-                h4b_per_frac[frac] = {
+            descriptive = _h4b_residual_test(
+                off_cross,
+                cos_dist,
+                overlap_score,
+                _length_for,
+                pair_filter=None,
+                rng=rng,
+                bootstrap_n=args.bootstrap_n,
+            )
+            descriptive["scope"] = "all_matched_pairs"
+            descriptive["n_pairs_unordered"] = len(MATCHED_PAIRS)
+
+            if confirmatory_pairs is None:
+                confirmatory = {
+                    "scope": "judge_same_only",
+                    "verdict": "UNANSWERED_NO_VERDICTS_FILE",
+                    "n_pairs_unordered": 0,
                     "n_matched": 0,
                     "pass": False,
-                    "note": "degenerate covariate panel — H4(b) regression skipped",
+                    "note": (
+                        "Phase 0a verdicts file absent at "
+                        f"{MATCHED_PAIR_VERDICTS_PATH}; cannot scope to "
+                        "confirmatory pairs. Descriptive H4(b) still computed."
+                    ),
+                }
+            elif not confirmatory_pairs:
+                confirmatory = {
+                    "scope": "judge_same_only",
+                    "verdict": "UNANSWERED_NO_CONFIRMATORY_PAIRS",
+                    "n_pairs_unordered": 0,
+                    "n_matched": 0,
+                    "pass": False,
+                    "note": (
+                        "Zero MATCHED_PAIRS were judged identity-same by the "
+                        "Phase 0a Claude judge (after the 1-rewrite attempt). "
+                        "Confirmatory H4(b) cannot fire; descriptive H4(b) "
+                        "over all matched pairs is reported instead."
+                    ),
                 }
             else:
-                beta, *_ = np.linalg.lstsq(rX, rY, rcond=None)
-                resid = rY - rX @ beta
-                matched_idx: list[int] = []
-                for i, c in enumerate(off_cross):
-                    pair = (c["T_i"], c["T_j"])
-                    rev = (c["T_j"], c["T_i"])
-                    if pair in MATCHED_PAIRS or rev in MATCHED_PAIRS:
-                        matched_idx.append(i)
-                if not matched_idx:
-                    h4b_per_frac[frac] = {
-                        "n_matched": 0,
-                        "pass": False,
-                        "note": "no matched-pair cells found in off_cross",
-                    }
+                confirmatory = _h4b_residual_test(
+                    off_cross,
+                    cos_dist,
+                    overlap_score,
+                    _length_for,
+                    pair_filter=set(confirmatory_pairs),
+                    rng=rng,
+                    bootstrap_n=args.bootstrap_n,
+                )
+                confirmatory["scope"] = "judge_same_only"
+                confirmatory["n_pairs_unordered"] = len(confirmatory_pairs)
+                confirmatory["confirmatory_pairs"] = [list(p) for p in confirmatory_pairs]
+                # Tag as ANSWERED only if the regression actually ran (n_matched>0).
+                if confirmatory.get("n_matched", 0) > 0 and "ci" in confirmatory:
+                    confirmatory["verdict"] = (
+                        "ANSWERED_PASS" if confirmatory["pass"] else "ANSWERED_FAIL"
+                    )
                 else:
-                    # Nearest-(cos, overlap) neighbor in z-space.
-                    cos_std = X_cos.std() + 1e-12
-                    ov_std = X_ov.std() + 1e-12
-                    cos_norm = (X_cos - X_cos.mean()) / cos_std
-                    ov_norm = (X_ov - X_ov.mean()) / ov_std
-                    mismatched_idx = [i for i in range(len(off_cross)) if i not in matched_idx]
-                    diffs: list[float] = []
-                    for mi in matched_idx:
-                        best = None
-                        best_d = float("inf")
-                        for nj in mismatched_idx:
-                            d = (cos_norm[mi] - cos_norm[nj]) ** 2 + (
-                                ov_norm[mi] - ov_norm[nj]
-                            ) ** 2
-                            if d < best_d:
-                                best_d = d
-                                best = nj
-                        if best is not None:
-                            diffs.append(resid[mi] - resid[best])
-                    if not diffs:
-                        h4b_per_frac[frac] = {"n_matched": len(matched_idx), "pass": False}
-                    else:
-                        boots = []
-                        for _ in range(args.bootstrap_n):
-                            samp = rng.choice(diffs, size=len(diffs), replace=True)
-                            boots.append(float(np.median(samp)))
-                        lo, hi = np.percentile(boots, [2.5, 97.5])
-                        med = float(np.median(diffs))
-                        h4b_per_frac[frac] = {
-                            "n_matched": len(matched_idx),
-                            "median_resid_diff": med,
-                            "ci": [float(lo), float(hi)],
-                            "pass": bool(lo > 0),
-                        }
+                    confirmatory["verdict"] = "UNANSWERED_NO_CONFIRMATORY_PAIRS_IN_OFF_CROSS"
+
+            h4b_per_frac[frac] = {
+                "descriptive": descriptive,
+                "confirmatory": confirmatory,
+                "verdicts_source": verdicts_source,
+            }
         else:
             h4b_per_frac[frac] = {
-                "n_matched": 0,
-                "pass": False,
-                "note": "insufficient cross-type cells",
+                "descriptive": {
+                    "scope": "all_matched_pairs",
+                    "n_matched": 0,
+                    "pass": False,
+                    "note": "insufficient cross-type cells",
+                },
+                "confirmatory": {
+                    "scope": "judge_same_only",
+                    "verdict": "UNANSWERED_INSUFFICIENT_CROSS_CELLS",
+                    "n_pairs_unordered": 0
+                    if confirmatory_pairs is None
+                    else len(confirmatory_pairs),
+                    "n_matched": 0,
+                    "pass": False,
+                    "note": "insufficient cross-type cells",
+                },
+                "verdicts_source": verdicts_source,
             }
 
     payload = {
-        "schema_version": "i489_phase5_v3",
+        "schema_version": "i489_phase5_v4",
         "git_commit": _git_commit_hash(),
         "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
         "seed": args.seed,

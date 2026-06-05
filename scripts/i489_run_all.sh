@@ -9,6 +9,19 @@
 #    which writes a picked_fracs JSON. Sweep + Phase 4 read that JSON and use
 #    the picked fracs, NOT a hardcoded [0.25, 0.50, 1.00].
 #
+# Round-6 (M2 loosened): Phase 0a NO LONGER blocks the whole run on a
+# non-"same" judge verdict. It records per-pair verdicts to
+# matched_pair_identity_verdicts.json and exits 0; Phase 5 reads that file
+# and scopes the H4(b) confirmatory test to confirmatory pairs only (with a
+# graceful UNANSWERED_NO_CONFIRMATORY_PAIRS verdict when none qualify), and
+# always reports the descriptive H4(b) over all matched pairs. Phase 0a's
+# non-zero exit is now reserved for REAL infra failures only (missing
+# ANTHROPIC_API_KEY, Anthropic API exception, malformed judge output) —
+# `set -e` still fails the pipeline on those.
+#
+# The smoke_calibrate gate's `exit 2` on smoke FAIL is unchanged — that's a
+# different, legitimate gate (Phase 2 fraction-picker).
+#
 # Emits [phase=<name>] lines for poll_pipeline.py and writes an end-of-run
 # sentinel for the VM orchestrator.
 

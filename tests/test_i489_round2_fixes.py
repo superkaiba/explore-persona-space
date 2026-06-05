@@ -976,3 +976,413 @@ def test_round4_bug2_phase5_raises_when_requested_frac_is_absent(tmp_path, monke
                 "10",
             ]
         )
+
+
+# ────────────────────────────────────────────────────────────────────────
+# Round-6 (M2 loosened): the Phase 0a SP-identity gate must RECORD per-pair
+# verdicts and CONTINUE on a non-"same" verdict (after 1 rewrite), rather
+# than exit non-zero and write a BLOCK sentinel. Real infra failures
+# (missing ANTHROPIC_API_KEY, malformed judge output) STILL raise.
+#
+# Phase 5 H4(b) splits into `descriptive` (all MATCHED_PAIRS) +
+# `confirmatory` (judge-same subset). Zero confirmatory pairs ⇒
+# UNANSWERED_NO_CONFIRMATORY_PAIRS (not a crash, not a silent PASS).
+# ────────────────────────────────────────────────────────────────────────
+
+
+def _import_phase0a():
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase0_sp_identity_check as p0a
+    finally:
+        sys.path.pop(0)
+    return p0a
+
+
+def test_round6_phase0a_records_non_same_verdict_and_exits_zero(tmp_path, monkeypatch):
+    """Round-6: judge says "different" for every matched pair → Phase 0a must
+    exit 0 and write matched_pair_identity_verdicts.json with EVERY pair flagged
+    confirmatory=false. NO block sentinel file is written.
+    """
+    p0a = _import_phase0a()
+
+    # Redirect all output paths under tmp_path so the test doesn't touch the
+    # worktree's eval_results/ tree.
+    out_dir = tmp_path / "phase0a"
+    draft_log = out_dir / "artifacts" / "sp_string_drafts.jsonl"
+    frozen_path = out_dir / "frozen_sp_strings.json"
+    verdicts_path = out_dir / "matched_pair_identity_verdicts.json"
+    sentinel_dir = tmp_path / "sentinels"
+    sentinel_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(p0a, "OUT_DIR", out_dir)
+    monkeypatch.setattr(p0a, "DRAFT_LOG", draft_log)
+    monkeypatch.setattr(p0a, "FROZEN_OVERRIDES_PATH", frozen_path)
+    monkeypatch.setattr(p0a, "MATCHED_PAIR_VERDICTS_PATH", verdicts_path)
+
+    # Force judge to "different" for every call. _ask_claude is the only Anthropic
+    # entry point — monkeypatching it covers both draft 1 and draft 2.
+    calls = {"n": 0}
+
+    def fake_ask_claude(a, b, dry_run):
+        calls["n"] += 1
+        return "different", "synthetic test: judge always says different"
+
+    monkeypatch.setattr(p0a, "_ask_claude", fake_ask_claude)
+
+    rc = p0a.main([])
+    assert rc == 0, "Round-6: non-same final verdict must NOT trigger non-zero exit"
+
+    # Verdicts file is the new H4(b) scope input.
+    assert verdicts_path.exists(), "matched_pair_identity_verdicts.json must be written"
+    payload = json.loads(verdicts_path.read_text())
+    assert payload["schema_version"] == "i489_phase0a_verdicts_v1"
+    pairs = payload["verdicts"]
+    # 4 MATCHED_PAIRS + (IK06, SP08) anchor = 5 pairs total.
+    assert len(pairs) == 5
+    for rec in pairs:
+        assert rec["confirmatory"] is False, (
+            f"every pair forced to 'different' must be non-confirmatory: {rec}"
+        )
+        assert rec["final_verdict"] in {"different", "unclear"}
+
+    # Summary tally matches the verdicts file.
+    summary = json.loads((out_dir / "phase0a_summary.json").read_text())
+    assert summary["n_confirmatory"] == 0
+    assert summary["confirmatory_pairs"] == []
+    assert len(summary["non_confirmatory_pairs"]) == 5
+
+    # NO block sentinel was written under any plausible sentinel dir.
+    # (Round-5 / pre-round-6 wrote `issue-489-epm_failure-*.json` files.)
+    stale_sentinels = list(sentinel_dir.glob("issue-489-epm_failure-*.json"))
+    assert stale_sentinels == [], (
+        "Round-6: no BLOCK sentinel must be written on a non-same judge verdict; "
+        f"found: {stale_sentinels}"
+    )
+    # Also check the production sentinel locations are not touched.
+    for candidate in (Path("/workspace/logs"), Path("logs/issue_489")):
+        if candidate.exists():
+            stale = list(candidate.glob("issue-489-epm_failure-*.json"))
+            # Filter to ones written in this test window — the test process
+            # would have written them in the last minute; we just assert none
+            # carry our specific phase tag.
+            for sentinel in stale:
+                content = sentinel.read_text()
+                assert "phase0a_sp_identity_check" not in content, (
+                    f"stale Phase 0a block sentinel still present at {sentinel}"
+                )
+
+    # Frozen-overrides file is still written (empty dict) for audit-trail symmetry.
+    assert frozen_path.exists()
+    assert json.loads(frozen_path.read_text()) == {}
+
+
+def test_round6_phase0a_raises_on_missing_anthropic_api_key(tmp_path, monkeypatch):
+    """Round-6 contract: a REAL infra failure (missing ANTHROPIC_API_KEY) MUST
+    still propagate as a non-zero exit. Only science verdicts (same/different/
+    unclear) become recorded data; transport/setup faults are not silenced.
+    """
+    p0a = _import_phase0a()
+
+    out_dir = tmp_path / "phase0a"
+    monkeypatch.setattr(p0a, "OUT_DIR", out_dir)
+    monkeypatch.setattr(p0a, "DRAFT_LOG", out_dir / "artifacts" / "sp_string_drafts.jsonl")
+    monkeypatch.setattr(p0a, "FROZEN_OVERRIDES_PATH", out_dir / "frozen_sp_strings.json")
+    monkeypatch.setattr(
+        p0a, "MATCHED_PAIR_VERDICTS_PATH", out_dir / "matched_pair_identity_verdicts.json"
+    )
+    # Strip the key. Run with --dry-run OFF so _ask_claude actually checks env.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    # Also patch the orchestrate.env.load_dotenv shim so a .env on disk doesn't
+    # re-populate the key behind our back.
+    import explore_persona_space.orchestrate.env as ipsm_env  # type: ignore
+
+    monkeypatch.setattr(ipsm_env, "load_dotenv", lambda *_a, **_k: None)
+
+    with pytest.raises(RuntimeError, match=r"ANTHROPIC_API_KEY missing"):
+        p0a.main([])
+
+
+def test_round6_phase5_h4b_split_confirmatory_subset(tmp_path, monkeypatch):
+    """Round-6 Phase 5 split: with a verdicts file marking 2 of 4 MATCHED_PAIRS
+    confirmatory, H4(b) confirmatory must use only the confirmatory subset
+    while descriptive covers all matched pairs.
+    """
+    # Build the standard 24x24 smoke fixture in tmp_path and point Phase 5's
+    # PHASE1_DIR / PHASE4_DIR / OUT_DIR + MATCHED_PAIR_VERDICTS_PATH at it.
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    from explore_persona_space.experiments.i489_contexts import (
+        ICL_CONTEXTS,
+        MATCHED_PAIRS,
+        SP_CONTEXTS,
+        UNION_CONTEXTS,
+    )
+
+    phase0a = tmp_path / "phase0a"
+    phase1 = tmp_path / "phase1"
+    phase4 = tmp_path / "phase4_per_cell"
+    phase5_out = tmp_path / "phase5"
+    phase0a.mkdir()
+    phase1.mkdir()
+    phase4.mkdir()
+
+    monkeypatch.setattr(p5, "PHASE1_DIR", phase1)
+    monkeypatch.setattr(p5, "PHASE4_DIR", phase4)
+    monkeypatch.setattr(p5, "OUT_DIR", phase5_out)
+    monkeypatch.setattr(p5, "PHASE0A_DIR", phase0a)
+    monkeypatch.setattr(
+        p5, "MATCHED_PAIR_VERDICTS_PATH", phase0a / "matched_pair_identity_verdicts.json"
+    )
+
+    # Cosine matrix over 24 cids: small noise so the regression has something
+    # to fit but isn't degenerate.
+    import random as _rand
+
+    _rand.seed(1)
+    cids = [c.cid for c in UNION_CONTEXTS]
+    cos: dict[str, dict[str, float]] = {}
+    for i, ci in enumerate(cids):
+        cos[ci] = {}
+        for j, cj in enumerate(cids):
+            if i == j:
+                cos[ci][cj] = 1.0
+            elif cj in cos and ci in cos[cj]:
+                cos[ci][cj] = cos[cj][ci]
+            else:
+                cos[ci][cj] = round(_rand.uniform(0.4, 0.95), 4)
+    (phase1 / "cosine_per_layer.json").write_text(json.dumps({"cos_sim_per_layer": {"21": cos}}))
+
+    # Phase 1 scaffold_overlap.json — H4(b)'s residual regression partials on
+    # overlap; without this file overlap_score returns NaN for every cell and
+    # the nearest-(cos, overlap) neighbor lookup degenerates (NaN comparisons
+    # always False → no neighbor found → diffs empty → no CI reported). The
+    # H4(b) split semantics we're testing only fire when the residual test
+    # actually runs, so the fixture must provide a non-degenerate overlap.
+    overlap_payload = {ci: {cj: {"scaffold_overlap_score": 0.1} for cj in cids} for ci in cids}
+    for i, ci in enumerate(cids):
+        for j, cj in enumerate(cids):
+            overlap_payload[ci][cj]["scaffold_overlap_score"] = 0.05 + 0.01 * ((i + j) % 7)
+    (phase1 / "scaffold_overlap.json").write_text(
+        json.dumps({"scaffold_overlap_per_cell": overlap_payload})
+    )
+
+    # Write 552 off-diagonal cells at frac=0.50 (smoke fixture style — modest
+    # delta_g signal that's a function of cosine distance).
+    icl_cids = {c.cid for c in ICL_CONTEXTS}
+    sp_cids = {c.cid for c in SP_CONTEXTS}
+    for ti in cids:
+        for tj in cids:
+            if ti == tj:
+                continue
+            cdist = 1.0 - cos[ti][tj]
+            base = 0.3 * cdist + 0.05 if tj in icl_cids else 0.6 * cdist - 0.02
+            if tj not in icl_cids and tj not in sp_cids:
+                base = 0.0
+            payload = {
+                "frac": 0.50,
+                "seed": 42,
+                "T_i": ti,
+                "T_j": tj,
+                "delta_g": float(base + _rand.gauss(0, 0.05)),
+                "L_R": 100 + _rand.randint(0, 50),
+            }
+            (phase4 / f"G_{ti}__{tj}_frac0.50.json").write_text(json.dumps(payload))
+
+    # 2 of 4 MATCHED_PAIRS confirmatory, the other 2 + the SP08 anchor not.
+    confirmatory_pair_set = {MATCHED_PAIRS[0], MATCHED_PAIRS[1]}
+    verdicts = []
+    for pair in MATCHED_PAIRS:
+        verdicts.append(
+            {
+                "icl_cid": pair[0],
+                "sp_cid": pair[1],
+                "final_verdict": "same" if pair in confirmatory_pair_set else "different",
+                "confirmatory": pair in confirmatory_pair_set,
+                "final_draft": 1,
+                "frozen_string_used": None,
+            }
+        )
+    # SP08 anchor (IK06 partial match) — make it non-confirmatory.
+    verdicts.append(
+        {
+            "icl_cid": "IK06",
+            "sp_cid": "SP08",
+            "final_verdict": "different",
+            "confirmatory": False,
+            "final_draft": 2,
+            "frozen_string_used": None,
+        }
+    )
+    (phase0a / "matched_pair_identity_verdicts.json").write_text(
+        json.dumps(
+            {
+                "issue": 489,
+                "schema_version": "i489_phase0a_verdicts_v1",
+                "verdicts": verdicts,
+            }
+        )
+    )
+
+    rc = p5.main(["--seed", "42", "--fracs", "0.50", "--bootstrap-n", "30", "--smoke"])
+    assert rc == 0
+    out = json.loads((phase5_out / "analysis.json").read_text())
+    h4b = out["h4b"]
+    key = next(iter(h4b))  # frac key (json-stringified)
+    block = h4b[key]
+    assert block["verdicts_source"] == "verdicts_file"
+
+    desc = block["descriptive"]
+    conf = block["confirmatory"]
+
+    # Descriptive: covers ALL 4 MATCHED_PAIRS regardless of judge verdict.
+    assert desc["scope"] == "all_matched_pairs"
+    assert desc["n_pairs_unordered"] == 4
+    # n_matched counts ordered cells in off_cross: each MATCHED_PAIR contributes
+    # 2 orderings, so 8 cells when all 24x23 off-diagonals are present.
+    assert desc.get("n_matched", 0) == 8, (
+        f"descriptive H4(b) should see 8 ordered matched cells (4 pairs x 2 "
+        f"orderings); got {desc.get('n_matched')}"
+    )
+
+    # Confirmatory: covers only the 2 judge-same pairs (4 ordered cells).
+    assert conf["scope"] == "judge_same_only"
+    assert conf["n_pairs_unordered"] == 2
+    assert conf.get("n_matched", 0) == 4, (
+        f"confirmatory H4(b) should see 4 ordered matched cells (2 pairs x 2 "
+        f"orderings); got {conf.get('n_matched')}"
+    )
+    assert conf["verdict"] in {"ANSWERED_PASS", "ANSWERED_FAIL"}
+    # Confirmatory pair list reports exactly the 2 confirmatory ones.
+    assert {tuple(p) for p in conf["confirmatory_pairs"]} == confirmatory_pair_set
+
+
+def test_round6_phase5_h4b_unanswered_no_confirmatory_pairs(tmp_path, monkeypatch):
+    """Round-6 Phase 5: ZERO confirmatory pairs (all 4 + anchor judged
+    'different') → confirmatory.verdict = UNANSWERED_NO_CONFIRMATORY_PAIRS,
+    NOT a crash. Descriptive H4(b) still produced.
+    """
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    try:
+        import i489_phase5_analyze as p5
+    finally:
+        sys.path.pop(0)
+
+    from explore_persona_space.experiments.i489_contexts import (
+        ICL_CONTEXTS,
+        MATCHED_PAIRS,
+        SP_CONTEXTS,
+        UNION_CONTEXTS,
+    )
+
+    phase0a = tmp_path / "phase0a"
+    phase1 = tmp_path / "phase1"
+    phase4 = tmp_path / "phase4_per_cell"
+    phase5_out = tmp_path / "phase5"
+    phase0a.mkdir()
+    phase1.mkdir()
+    phase4.mkdir()
+
+    monkeypatch.setattr(p5, "PHASE1_DIR", phase1)
+    monkeypatch.setattr(p5, "PHASE4_DIR", phase4)
+    monkeypatch.setattr(p5, "OUT_DIR", phase5_out)
+    monkeypatch.setattr(p5, "PHASE0A_DIR", phase0a)
+    monkeypatch.setattr(
+        p5, "MATCHED_PAIR_VERDICTS_PATH", phase0a / "matched_pair_identity_verdicts.json"
+    )
+
+    import random as _rand
+
+    _rand.seed(2)
+    cids = [c.cid for c in UNION_CONTEXTS]
+    cos: dict[str, dict[str, float]] = {}
+    for i, ci in enumerate(cids):
+        cos[ci] = {}
+        for j, cj in enumerate(cids):
+            if i == j:
+                cos[ci][cj] = 1.0
+            elif cj in cos and ci in cos[cj]:
+                cos[ci][cj] = cos[cj][ci]
+            else:
+                cos[ci][cj] = round(_rand.uniform(0.4, 0.95), 4)
+    (phase1 / "cosine_per_layer.json").write_text(json.dumps({"cos_sim_per_layer": {"21": cos}}))
+    icl_cids = {c.cid for c in ICL_CONTEXTS}
+    sp_cids = {c.cid for c in SP_CONTEXTS}
+    for ti in cids:
+        for tj in cids:
+            if ti == tj:
+                continue
+            cdist = 1.0 - cos[ti][tj]
+            base = 0.3 * cdist + 0.05 if tj in icl_cids else 0.6 * cdist - 0.02
+            if tj not in icl_cids and tj not in sp_cids:
+                base = 0.0
+            payload = {
+                "frac": 0.50,
+                "seed": 42,
+                "T_i": ti,
+                "T_j": tj,
+                "delta_g": float(base + _rand.gauss(0, 0.05)),
+                "L_R": 100 + _rand.randint(0, 50),
+            }
+            (phase4 / f"G_{ti}__{tj}_frac0.50.json").write_text(json.dumps(payload))
+
+    # All pairs non-confirmatory.
+    verdicts = []
+    for pair in MATCHED_PAIRS:
+        verdicts.append(
+            {
+                "icl_cid": pair[0],
+                "sp_cid": pair[1],
+                "final_verdict": "different",
+                "confirmatory": False,
+                "final_draft": 2,
+                "frozen_string_used": None,
+            }
+        )
+    verdicts.append(
+        {
+            "icl_cid": "IK06",
+            "sp_cid": "SP08",
+            "final_verdict": "different",
+            "confirmatory": False,
+            "final_draft": 2,
+            "frozen_string_used": None,
+        }
+    )
+    (phase0a / "matched_pair_identity_verdicts.json").write_text(
+        json.dumps(
+            {
+                "issue": 489,
+                "schema_version": "i489_phase0a_verdicts_v1",
+                "verdicts": verdicts,
+            }
+        )
+    )
+
+    rc = p5.main(["--seed", "42", "--fracs", "0.50", "--bootstrap-n", "30", "--smoke"])
+    assert rc == 0, "Phase 5 must not crash when zero confirmatory pairs"
+    out = json.loads((phase5_out / "analysis.json").read_text())
+    h4b = out["h4b"]
+    key = next(iter(h4b))
+    block = h4b[key]
+    desc = block["descriptive"]
+    conf = block["confirmatory"]
+
+    # Descriptive still produced.
+    assert desc["scope"] == "all_matched_pairs"
+    assert desc.get("n_matched", 0) >= 4, (
+        f"descriptive H4(b) must still report matched-pair count even when no "
+        f"confirmatory pairs; got n_matched={desc.get('n_matched')}"
+    )
+
+    # Confirmatory: explicit UNANSWERED verdict, NOT a silent PASS, NOT a crash.
+    assert conf["scope"] == "judge_same_only"
+    assert conf["verdict"] == "UNANSWERED_NO_CONFIRMATORY_PAIRS"
+    assert conf["n_pairs_unordered"] == 0
+    assert conf["n_matched"] == 0
+    assert conf["pass"] is False
+    assert "note" in conf
+    assert "confirmatory" in conf["note"].lower()

@@ -1,7 +1,9 @@
 """Issue #489 Phase 0a — Claude-as-judge SP-string identity-sameness check.
 
-Plan v5 §4.2.2 (M2 fix). Cosine-INDEPENDENT identity-sameness check for the 5
-matched-pair anchors. Rewrite criterion is NEVER cosine distance.
+Plan v5 §4.2.2 (M2 gate, round-6 loosened semantics).
+
+Cosine-INDEPENDENT identity-sameness check for the 5 matched-pair anchors.
+Rewrite criterion is NEVER cosine distance.
 
 For each matched pair (IK persona-by-example block, SP system_prompt) in
 ``MATCHED_PAIRS`` plus SP08 (CoT-math anchor partial-matched to IK06), submit
@@ -11,7 +13,25 @@ both prompts to Claude with a pre-registered prompt and ask: ``same`` /
 - If ``same`` on the first draft: lock string, log to drafts ledger.
 - If ``different`` / ``unclear``: pull an alternative from a hand-curated
   rewrite pool (loaded from ``ALT_PROMPTS_FOR_REWRITE``), re-run the check.
-  If the 2nd draft also fails: write a sentinel and exit BLOCKED.
+  - If the alt is judged ``same``: lock it (freeze into
+    ``frozen_sp_strings.json``); the pair is **confirmatory** for H4(b).
+  - If the alt is also non-``same``: the pair is **non-confirmatory** for
+    H4(b) — the original locked string stays in use, Phase 0a RECORDS the
+    final verdict and CONTINUES to the next pair (does NOT exit blocked).
+
+The Phase 5 analyzer reads ``matched_pair_identity_verdicts.json`` to scope
+H4(b)'s confirmatory test to confirmatory pairs only, while still computing
+the descriptive H4(b) over all matched pairs.
+
+Whether example-pirate ≈ instruction-pirate is exactly what H4(b) measures
+empirically; the judge's call belongs in the H4(b) scope, not as a
+pre-emptive whole-run gate. The cosine-independent judge + freeze-on-
+accepted-rewrite anti-gaming properties are preserved; only the previous
+fatal-on-non-``same``-after-rewrite behavior is removed.
+
+Real infra failures (missing ``ANTHROPIC_API_KEY``, Anthropic API exception,
+malformed judge output after retries) STILL exit non-zero — those are
+infra/transport faults, not science verdicts.
 
 All drafts (PASS or FAIL) are logged to
 ``artifacts/sp_string_drafts.jsonl`` for the audit trail (§4.2.2 step 3).
@@ -48,7 +68,12 @@ DRAFT_LOG = Path("eval_results/issue_489/phase0a/artifacts/sp_string_drafts.json
 # canonical freeze action — downstream phases pick up the new system_prompt the
 # next time they import i489_contexts.
 FROZEN_OVERRIDES_PATH = Path("eval_results/issue_489/phase0a/frozen_sp_strings.json")
-SENTINEL_DIR = Path("/workspace/logs") if Path("/workspace").exists() else Path("logs/issue_489")
+# Round-6: Phase 5 H4(b) scope-selection input. Maps each matched pair (icl_cid,
+# sp_cid) to a final-verdict record; ``confirmatory`` flips true iff the
+# judge's final verdict is ``same`` (draft 1 OR accepted-rewrite draft 2).
+MATCHED_PAIR_VERDICTS_PATH = Path(
+    "eval_results/issue_489/phase0a/matched_pair_identity_verdicts.json"
+)
 
 # Hand-curated alternative drafts for each rewriteable SP. Each list is consulted
 # in order on a rewrite event. SP01 / SP02 / SP05 are NOT rewriteable
@@ -104,7 +129,13 @@ On the second line, give a 1-2 sentence justification.
 
 
 def _ask_claude(prompt_a: str, prompt_b: str, dry_run: bool) -> tuple[str, str]:
-    """Return (verdict, justification). Verdict in {same, different, unclear, error}."""
+    """Return (verdict, justification). Verdict in {same, different, unclear}.
+
+    On a real run, infrastructure / transport / parser failures RAISE rather
+    than return an ``error`` verdict — that contract is load-bearing under the
+    round-6 loosened gate (a silently-returned ``error`` would be misclassified
+    as ``non-confirmatory`` and mask the API failure).
+    """
     if dry_run:
         return "same", "(dry-run; Claude judge not called)"
     try:
@@ -126,7 +157,7 @@ def _ask_claude(prompt_a: str, prompt_b: str, dry_run: bool) -> tuple[str, str]:
     text = "".join(b.text for b in msg.content if hasattr(b, "text")).strip()
     lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
     if not lines:
-        return "error", f"empty judge response: {text!r}"
+        raise RuntimeError(f"Phase 0a judge returned empty response: {text!r}")
     verdict = lines[0].lower().strip(".,:; ")
     if verdict not in ("same", "different", "unclear"):
         # Try first token only
@@ -134,7 +165,10 @@ def _ask_claude(prompt_a: str, prompt_b: str, dry_run: bool) -> tuple[str, str]:
         if verdict_tok in ("same", "different", "unclear"):
             verdict = verdict_tok
         else:
-            return "error", f"unexpected verdict text: {text!r}"
+            raise RuntimeError(
+                f"Phase 0a judge returned unparseable verdict text: {text!r}. "
+                "Expected first line to be 'same', 'different', or 'unclear'."
+            )
     justification = " ".join(lines[1:]) if len(lines) > 1 else ""
     return verdict, justification
 
@@ -152,25 +186,6 @@ def _append_draft(payload: dict) -> None:
     DRAFT_LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(DRAFT_LOG, "a") as f:
         f.write(json.dumps(payload) + "\n")
-
-
-def _write_block_sentinel(sp_cid: str, reason: str) -> None:
-    SENTINEL_DIR.mkdir(parents=True, exist_ok=True)
-    epoch = int(_dt.datetime.now(_dt.UTC).timestamp())
-    sentinel = SENTINEL_DIR / f"issue-489-epm_failure-{epoch}.json"
-    payload = {
-        "sentinel_schema_version": 1,
-        "kind": "epm:failure",
-        "version": 1,
-        "issue": 489,
-        "phase": "phase0a_sp_identity_check",
-        "failure_class": "code",
-        "sp_cid": sp_cid,
-        "reason": reason,
-        "wrote_at": _dt.datetime.now(_dt.UTC).isoformat(),
-    }
-    sentinel.write_text(json.dumps(payload, indent=2))
-    logger.error("Wrote BLOCK sentinel %s", sentinel)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -200,9 +215,13 @@ def main(argv: list[str] | None = None) -> int:
     # the M3 strong-kind decision included it; we check identity against IK06.
     pairs_to_check: list[tuple[str, str]] = [*MATCHED_PAIRS, ("IK06", "SP08")]
     results: list[dict] = []
-    block_sp_cid: str | None = None
-    block_reason: str | None = None
 
+    # Round-6 loosened semantics: a non-"same" final verdict (after 1 rewrite
+    # attempt) NO LONGER blocks the run. We record the verdict and continue;
+    # Phase 5 H4(b) reads matched_pair_identity_verdicts.json and scopes its
+    # confirmatory test to confirmatory pairs only. Infra-level failures
+    # (missing API key, malformed judge response) still raise + exit non-zero
+    # via _ask_claude.
     for icl_cid, sp_cid in pairs_to_check:
         # Draft 1 = the locked-in SP string from i489_contexts.py.
         sp_ctx = UNION_BY_CID[sp_cid]
@@ -221,9 +240,15 @@ def main(argv: list[str] | None = None) -> int:
         }
         _append_draft(draft_payload)
         if verdict == "same":
-            logger.info("sp_cid=%s draft=1 verdict=same OK", sp_cid)
+            logger.info("sp_cid=%s draft=1 verdict=same OK (confirmatory)", sp_cid)
             results.append(
-                {"sp_cid": sp_cid, "icl_cid": icl_cid, "final_draft": 1, "verdict": "same"}
+                {
+                    "sp_cid": sp_cid,
+                    "icl_cid": icl_cid,
+                    "final_draft": 1,
+                    "final_verdict": "same",
+                    "confirmatory": True,
+                }
             )
             continue
 
@@ -231,11 +256,25 @@ def main(argv: list[str] | None = None) -> int:
         logger.warning("sp_cid=%s draft=1 verdict=%s — attempting rewrite", sp_cid, verdict)
         alts = ALT_PROMPTS_FOR_REWRITE.get(sp_cid)
         if not alts:
-            block_sp_cid, block_reason = (
+            # No rewrite alternative defined → record the draft-1 verdict as
+            # final and mark the pair non-confirmatory; CONTINUE.
+            logger.warning(
+                "sp_cid=%s has no rewrite alternative; recording non-confirmatory "
+                "and continuing (round-6 loosened gate).",
                 sp_cid,
-                (f"draft 1 verdict={verdict}; no rewrite alternative defined for {sp_cid}."),
             )
-            break
+            results.append(
+                {
+                    "sp_cid": sp_cid,
+                    "icl_cid": icl_cid,
+                    "final_draft": 1,
+                    "final_verdict": verdict,
+                    "confirmatory": False,
+                    "rewrite_attempted": False,
+                    "note": "no rewrite alternative defined for this sp_cid",
+                }
+            )
+            continue
         alt = alts[0]
         verdict2, justification2 = _ask_claude(a, alt, args.dry_run)
         draft_payload2 = {
@@ -256,7 +295,8 @@ def main(argv: list[str] | None = None) -> int:
                     "sp_cid": sp_cid,
                     "icl_cid": icl_cid,
                     "final_draft": 2,
-                    "verdict": "same",
+                    "final_verdict": "same",
+                    "confirmatory": True,
                     "frozen_alt_string": alt,
                     "frozen_alt_note": (
                         "i489_contexts.py SP string AUTO-FROZEN via "
@@ -265,16 +305,31 @@ def main(argv: list[str] | None = None) -> int:
                 }
             )
             logger.warning(
-                "sp_cid=%s draft=2 PASSed with alt; freezing into %s",
+                "sp_cid=%s draft=2 PASSed with alt; freezing into %s (confirmatory)",
                 sp_cid,
                 FROZEN_OVERRIDES_PATH,
             )
             continue
-        block_sp_cid, block_reason = (
+        # Round-6: both drafts non-"same" → record final verdict from draft 2,
+        # mark non-confirmatory, CONTINUE (no block sentinel, no exit).
+        logger.warning(
+            "sp_cid=%s draft=1 verdict=%s, draft=2 verdict=%s — non-confirmatory; "
+            "continuing (round-6 loosened gate; H4(b) confirmatory scope excludes this pair).",
             sp_cid,
-            (f"draft 1 verdict={verdict}; draft 2 verdict={verdict2}; both alts failed."),
+            verdict,
+            verdict2,
         )
-        break
+        results.append(
+            {
+                "sp_cid": sp_cid,
+                "icl_cid": icl_cid,
+                "final_draft": 2,
+                "final_verdict": verdict2,
+                "confirmatory": False,
+                "rewrite_attempted": True,
+                "rewrite_verdict": verdict2,
+            }
+        )
 
     # B3: write the frozen-SP-strings override file so downstream phases pick
     # up the rewrite the next time they import i489_contexts. The file is
@@ -293,35 +348,88 @@ def main(argv: list[str] | None = None) -> int:
         FROZEN_OVERRIDES_PATH,
     )
 
+    # Round-6: write the H4(b) scope-selection input. Maps each matched pair
+    # (icl_cid, sp_cid) to {final_verdict, confirmatory, frozen_string_used}.
+    # The Phase 5 analyzer reads this file and scopes H4(b)'s confirmatory
+    # test to confirmatory pairs only; descriptive H4(b) covers all matched
+    # pairs.
+    verdict_records = []
+    for r in results:
+        rec = {
+            "icl_cid": r["icl_cid"],
+            "sp_cid": r["sp_cid"],
+            "final_verdict": r["final_verdict"],
+            "confirmatory": bool(r["confirmatory"]),
+            "final_draft": r["final_draft"],
+            "frozen_string_used": r.get("frozen_alt_string"),
+        }
+        verdict_records.append(rec)
+    MATCHED_PAIR_VERDICTS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    MATCHED_PAIR_VERDICTS_PATH.write_text(
+        json.dumps(
+            {
+                "issue": 489,
+                "phase": "phase0a_sp_identity_check",
+                "git_commit": git_sha,
+                "wrote_at": ts,
+                "schema_version": "i489_phase0a_verdicts_v1",
+                "verdicts": verdict_records,
+                "dry_run": bool(args.dry_run),
+            },
+            indent=2,
+        )
+    )
+    logger.info(
+        "Phase 0a matched-pair verdicts (%d pairs) -> %s",
+        len(verdict_records),
+        MATCHED_PAIR_VERDICTS_PATH,
+    )
+
+    confirmatory_pairs = [(r["icl_cid"], r["sp_cid"]) for r in results if r["confirmatory"]]
+    non_confirmatory_pairs = [
+        {"pair": [r["icl_cid"], r["sp_cid"]], "final_verdict": r["final_verdict"]}
+        for r in results
+        if not r["confirmatory"]
+    ]
     summary = {
         "issue": 489,
         "phase": "phase0a_sp_identity_check",
         "git_commit": git_sha,
         "wrote_at": ts,
-        "n_pairs_checked": len(results) + (1 if block_sp_cid else 0),
+        "n_pairs_checked": len(results),
+        "n_confirmatory": len(confirmatory_pairs),
+        "confirmatory_pairs": [list(p) for p in confirmatory_pairs],
+        "non_confirmatory_pairs": non_confirmatory_pairs,
         "results": results,
-        "blocked": block_sp_cid is not None,
-        "block_sp_cid": block_sp_cid,
-        "block_reason": block_reason,
         "draft_log": str(DRAFT_LOG),
         "frozen_overrides_path": str(FROZEN_OVERRIDES_PATH),
         "n_frozen_overrides": len(frozen_overrides),
+        "matched_pair_verdicts_path": str(MATCHED_PAIR_VERDICTS_PATH),
         "dry_run": bool(args.dry_run),
     }
     summary_path = OUT_DIR / "phase0a_summary.json"
     summary_path.write_text(json.dumps(summary, indent=2))
-    logger.info("Phase 0a summary -> %s", summary_path)
+    logger.info(
+        "Phase 0a summary -> %s (%d/%d pairs confirmatory)",
+        summary_path,
+        len(confirmatory_pairs),
+        len(results),
+    )
 
-    if block_sp_cid:
-        _write_block_sentinel(block_sp_cid, block_reason or "unknown")
-        return 2
+    # Round-6: no block path. The previous design exited 2 + wrote a BLOCK
+    # sentinel when any pair failed the judge after 1 rewrite; that pre-
+    # empted H4(b) on a question H4(b) is supposed to MEASURE. Now the
+    # gate records per-pair verdicts and CONTINUES; real infra/transport
+    # failures still propagate as uncaught exceptions from _ask_claude.
+
+    # Defensive: make sure every anchored SP cid actually has a result row.
+    # Under round-6 this is a strict invariant (no early break anywhere); a
+    # missing cid means the loop / results-append logic regressed.
     if any(
         SP_CONTEXTS[i].cid not in {r["sp_cid"] for r in results}
         for i in range(len(SP_CONTEXTS))
         if SP_CONTEXTS[i].cid in {"SP03", "SP04", "SP06", "SP07", "SP08"}
     ):
-        # Defensive: make sure every anchor we said we'd check actually appears
-        # in results (catches an early-break logic bug rather than silently passing).
         raise RuntimeError(
             "Phase 0a results missing one or more anchored SP cids; "
             f"results: {[r['sp_cid'] for r in results]}"
