@@ -171,8 +171,8 @@ def main() -> None:
 
     out = {
         "_doc": "Per-persona length-normalized teacher-forced log P(taught completion | persona, Q) "
-        "on the frozen base model. Higher (less negative) = the persona context finds the taught "
-        "data more probable = stronger bystander prior. marine_biologist is the teach/source persona.",
+        "on frozen base. Higher (less negative) = persona context finds the taught data more "
+        "probable = stronger bystander prior. marine_biologist is the teach/source persona.",
         "model": args.model,
         "n_teach_rows": len(rows),
         "summary": {p: {k: v for k, v in d.items() if k != "per_row"} for p, d in summary.items()},
@@ -184,9 +184,8 @@ def main() -> None:
     order = sorted(PERSONA_PROMPTS, key=lambda p: -summary[p]["mean_logprob_per_tok"])
     for p in order:
         d = summary[p]
-        print(
-            f"  {p:22} mean_logprob/tok={d['mean_logprob_per_tok']:+.4f}  sem={d['sem']:.4f}  n={d['n_rows']}"
-        )
+        lp = d["mean_logprob_per_tok"]
+        print(f"  {p:22} mean_logprob/tok={lp:+.4f}  sem={d['sem']:.4f}  n={d['n_rows']}")
 
 
 if __name__ == "__main__":
