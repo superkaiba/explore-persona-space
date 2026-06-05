@@ -12,3 +12,4 @@
 {"ts": "2026-06-05T11:25:29Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "plan_pending", "note": "Plan v1 ready for approval; consistency WARN (3 acknowledged divergences); est 15 GPU-h."}
 {"ts": "2026-06-05T11:25:41Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "plan_pending", "to": "approved", "note": "Plan v1 auto-approved (autonomous): est 15 GPU-h <= 24h auto-approve cap."}
 {"ts": "2026-06-05T11:25:42Z", "kind": "epm:plan-approved", "version": 1, "by": "unknown", "note": "Auto-approved by autonomous session: gpu_hours_total=15 <= cap 24."}
+{"ts": "2026-06-05T11:26:34Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running", "note": "Dispatched experiment-implementer; awaiting epm:experiment-implementation."}
