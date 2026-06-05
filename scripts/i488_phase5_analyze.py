@@ -184,6 +184,30 @@ def _dyadic_bootstrap_partial(
     }
 
 
+def _log_length_proxy_aggregated(tgt_block: dict) -> float:
+    """Return log(mean n_tokens) aggregated across ALL held-out Qs in tgt_block.
+
+    Per held-out Q, we average n_tokens across the K vLLM samples; then we take
+    the MEDIAN across the 20 held-out Qs (robust to a single long-tail Q
+    blowing up the covariate). This is the length covariate used to partial
+    log(length) out of H1 — using one arbitrary Q's mean (the previous
+    behavior) doesn't control for response length across the held-out set.
+
+    Returns NaN if tgt_block has no Q-level entries.
+    """
+    per_q_means: list[float] = []
+    for q_key, q_payload in tgt_block.items():
+        if q_key == "_aggregate":
+            continue
+        samples = q_payload.get("samples") or []
+        if not samples:
+            continue
+        per_q_means.append(float(np.mean([s["n_tokens"] for s in samples])))
+    if not per_q_means:
+        return float("nan")
+    return float(np.log(max(1.0, float(np.median(per_q_means)))))
+
+
 def _load_cells(fracs: list[float], seeds: list[int]) -> list[dict]:
     """Load Phase 1 + Phase 4 outputs into a long-form list of cell records.
 
@@ -252,23 +276,7 @@ def _load_cells(fracs: list[float], seeds: list[int]) -> list[dict]:
                             "source_class": src_cond.cls,
                             "target_class": tgt_cond.cls,
                             "is_diagonal": src_cond.cid == tgt_cond.cid,
-                            "log_length_proxy": float(
-                                np.log(
-                                    max(
-                                        1.0,
-                                        np.mean(
-                                            [
-                                                s["n_tokens"]
-                                                for s in tgt_block[
-                                                    next(k for k in tgt_block if k != "_aggregate")
-                                                ]["samples"]
-                                            ]
-                                        ),
-                                    )
-                                )
-                            )
-                            if any(k != "_aggregate" for k in tgt_block)
-                            else float("nan"),
+                            "log_length_proxy": _log_length_proxy_aggregated(tgt_block),
                         }
                     )
     return cells

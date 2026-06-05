@@ -40,8 +40,14 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
-# Per upload-policy.md delete-after-eval: persist the LoRA adapter before any rm.
-export EPM_PERSIST_ADAPTER_HF_REPO="${EPM_PERSIST_ADAPTER_HF_REPO:-superkaiba1/explore-persona-space}"
+# Per upload-policy.md delete-after-eval: i488_phase23_train.py runs
+# FractionAdapterSaveCallback with an explicit hf_repo=HF_MODEL_REPO and
+# does NOT use the EPM_PERSIST_ADAPTER_HF_REPO / _SUBFOLDER env-var pair
+# (which trainer.py:_finalize_phase consumes). Setting _HF_REPO here
+# without _SUBFOLDER would only matter if a future code path called
+# _finalize_phase, and then it would CRASH (trainer.py:492 raises if
+# _HF_REPO is set but _SUBFOLDER is not). Not exporting either keeps
+# the env hygiene tied to the actual upload path.
 
 LOG_DIR=logs/issue_488
 mkdir -p "$LOG_DIR"

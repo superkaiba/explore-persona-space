@@ -394,11 +394,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch + g
     class_d_rewrites = load_class_d_rewrites()
 
     # Get R_test on-policy for inherited B1 (needed for EOS-gradient probe).
-    R_test_inherited = json.loads(
-        Path("data/issue_460/R_test.json").read_text()
-        if Path("data/issue_460/R_test.json").exists()
-        else (Path(__file__).parent / "_dummy.json").read_text()
-    )["completions"]
+    # If the inherited #460 R_test isn't on the pod, fall back to an empty dict;
+    # the downstream EOS-gradient probe handles a missing R_text by generating
+    # on-policy from base via vLLM (see the `if not R_text:` branch below).
+    _r_test_inherited_path = Path("data/issue_460/R_test.json")
+    if _r_test_inherited_path.exists():
+        R_test_inherited = json.loads(_r_test_inherited_path.read_text())["completions"]
+    else:
+        logger.warning(
+            "Inherited %s missing; EOS-gradient probe will regenerate R on-policy from base.",
+            _r_test_inherited_path,
+        )
+        R_test_inherited = {}
 
     logger.info("Loading vLLM %s on GPU %d", BASE_MODEL, args.gpu_id)
     llm = LLM(

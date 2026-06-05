@@ -91,13 +91,22 @@ def _generate_R_block(
     questions: list[str],
     class_d_rewrites: dict[str, dict[str, str]] | None,
     split_label: str,
-) -> dict[str, dict[str, dict]]:
-    """Generate base on-policy R for every (cond, q) pair.
+    payload: dict,
+    out_path: Path,
+) -> None:
+    """Generate base on-policy R for every (cond, q) pair, persisting per-cond.
 
-    Returns ``{cid: {q: {response_text, finish_reason, n_tokens}}}``. Greedy
-    decoding (temp=0) per the canonical "marker-leakage-measurement" rule —
-    the R must be the model's actual greedy continuation so the trained LoRA
-    only shifts the marker, not R itself.
+    Mutates ``payload["completions"]`` in place to add
+    ``{cid: {q: {response_text, finish_reason, n_tokens}}}`` for each cond, and
+    writes the running ``payload`` to ``out_path`` IMMEDIATELY after each
+    condition completes. This satisfies the CLAUDE.md "checkpoint per phase"
+    rule + the feedback_incremental_save (#377) anti-pattern: a vLLM crash on
+    cond #8/11 leaves the first 7 persisted on disk for a clean idempotent
+    resume via ``_read_or_empty``, instead of losing all earlier conds.
+
+    Greedy decoding (temp=0) per the canonical "marker-leakage-measurement"
+    rule — the R must be the model's actual greedy continuation so the
+    trained LoRA only shifts the marker, not R itself.
 
     Logs per-condition truncation rate (rows where finish_reason=='length')
     so the operator can see if Q_train probes are pushing past MAX_NEW_TOKENS.
@@ -112,7 +121,6 @@ def _generate_R_block(
         seed=42,
     )
 
-    out: dict[str, dict[str, dict]] = {}
     for cond in conds:
         prompts = [
             build_prompt_for_condition(cond, q, tokenizer, class_d_rewrites) for q in questions
@@ -131,17 +139,20 @@ def _generate_R_block(
                 "finish_reason": finish,
                 "n_tokens": n_tok,
             }
-        out[cond.cid] = cond_block
+        payload["completions"][cond.cid] = cond_block
+        # Persist immediately so a downstream crash doesn't lose earlier conds.
+        out_path.write_text(json.dumps(payload, ensure_ascii=False))
         logger.info(
-            "split=%s cid=%s done: %d q, truncated %d/%d (%.1f%%)",
+            "split=%s cid=%s done: %d q, truncated %d/%d (%.1f%%); persisted -> %s (%d cids total)",
             split_label,
             cond.cid,
             len(questions),
             truncated,
             len(questions),
             100.0 * truncated / max(len(questions), 1),
+            out_path,
+            len(payload["completions"]),
         )
-    return out
 
 
 def _read_or_empty(path: Path) -> dict:
@@ -280,18 +291,21 @@ def main(argv: list[str] | None = None) -> int:
                 len(q_train_list),
                 len(train_missing) * len(q_train_list),
             )
-            block = _generate_R_block(
+            # _generate_R_block writes train_path after each cond — incremental
+            # persistence per CLAUDE.md "checkpoint per phase".
+            _generate_R_block(
                 llm,
                 tokenizer,
                 train_missing,
                 q_train_list,
                 class_d_rewrites,
                 "train",
+                train_payload,
+                train_path,
             )
-            train_payload["completions"].update(block)
-            # Persist per-phase per CLAUDE.md.
-            train_path.write_text(json.dumps(train_payload, ensure_ascii=False))
-            logger.info("Wrote %s (%d cids total)", train_path, len(train_payload["completions"]))
+            logger.info(
+                "Train done: %s (%d cids total)", train_path, len(train_payload["completions"])
+            )
 
         if test_missing:
             logger.info(
@@ -300,17 +314,19 @@ def main(argv: list[str] | None = None) -> int:
                 len(q_test),
                 len(test_missing) * len(q_test),
             )
-            block = _generate_R_block(
+            _generate_R_block(
                 llm,
                 tokenizer,
                 test_missing,
                 q_test,
                 class_d_rewrites,
                 "test",
+                test_payload,
+                test_path,
             )
-            test_payload["completions"].update(block)
-            test_path.write_text(json.dumps(test_payload, ensure_ascii=False))
-            logger.info("Wrote %s (%d cids total)", test_path, len(test_payload["completions"]))
+            logger.info(
+                "Test done: %s (%d cids total)", test_path, len(test_payload["completions"])
+            )
     finally:
         # vLLM worker teardown per CLAUDE.md gotcha — even if we never load
         # another framework in THIS process, the helper makes the script safe

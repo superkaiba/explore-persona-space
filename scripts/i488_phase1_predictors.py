@@ -262,6 +262,66 @@ def _load_inherited_d_matrix() -> dict:
     return json.loads(I406_D_MATRIX.read_text())
 
 
+def _assert_i406_recipe_match(d: dict) -> None:
+    """Raise loudly if #406's D_matrix recipe doesn't match what #488 computes.
+
+    The 16×16 sub-grid lifted from #406 must use the SAME JS estimator config
+    as the 11×* cells computed fresh by this script — otherwise the
+    paired-bootstrap is invalid because the inherited and new cells were
+    measured on different recipes (silent units mismatch).
+
+    Hard-checks (raise on drift):
+    * ``n_probes`` matches ``N_PROBES`` (#488 uses load_q_test_extended_50 = 50
+      probes; #406 must too).
+    * Inherited JS block has exactly the 16 INHERITED_CIDS as row keys (i.e.
+      the A/B/C/D classes); a different set means a different condition recipe.
+    * ``schema_version`` is present (sanity).
+
+    Soft-warns (log but don't raise — these are advisory because #406's
+    D_matrix doesn't record them all):
+    * ``k_target`` / ``k_available_per_probe`` (sampling K mismatch).
+
+    See plan §11 assumption 3: "#406 D_matrix is byte-identical-recipe with
+    #488 for the 16×16 sub-grid".
+    """
+    schema = d.get("schema_version")
+    if schema is None:
+        raise AssertionError(
+            "i406 D_matrix.json has no schema_version; refusing to lift cells "
+            "without a recipe sentinel. Re-export #406 with provenance."
+        )
+    n_probes_inh = d.get("n_probes")
+    if n_probes_inh != N_PROBES:
+        raise AssertionError(
+            f"i406 D_matrix n_probes={n_probes_inh!r} != #488 N_PROBES={N_PROBES}. "
+            "The inherited 16×16 JS sub-grid was computed on a different probe "
+            "count; paired-bootstrap with newly-computed 11×* cells would mix "
+            "scales. Either re-run #406 with n_probes=50 or do NOT lift."
+        )
+    js_block_cids = set(d.get("JS", {}).keys())
+    if js_block_cids != set(INHERITED_CIDS):
+        missing = INHERITED_CIDS - js_block_cids
+        extra = js_block_cids - INHERITED_CIDS
+        raise AssertionError(
+            f"i406 D_matrix JS block cids {sorted(js_block_cids)} != "
+            f"INHERITED_CIDS {sorted(INHERITED_CIDS)} (missing={sorted(missing)}, "
+            f"extra={sorted(extra)}). Condition recipe drift; refusing to lift."
+        )
+    # Soft warns
+    for soft_key in ("k_target", "k_available_per_probe"):
+        if soft_key not in d:
+            logger.warning(
+                "i406 D_matrix has no %s field; cannot verify K-sample match. "
+                "Proceeding under plan §11 assumption 3.",
+                soft_key,
+            )
+    logger.info(
+        "i406 recipe-match check PASSED (schema=%s, n_probes=%d, 16 cids).",
+        schema,
+        n_probes_inh,
+    )
+
+
 def _seed_js_kl_from_i406(js_matrix: dict, kl_matrix: dict) -> tuple[dict, dict]:
     """Copy the inherited 16×16 JS sub-grid (and KL directions if available)
     into the output matrices.
@@ -272,8 +332,13 @@ def _seed_js_kl_from_i406(js_matrix: dict, kl_matrix: dict) -> tuple[dict, dict]
     leave the orthogonal direction None for the analyzer to fill (or pull
     fresh in a follow-up pass). The new (NEW × *) and (* × NEW) cells are
     initialized to None.
+
+    Before lifting, asserts the #406 recipe matches #488's (n_probes + cid
+    set + schema). Raises if drift, so silent recipe mismatch can't
+    contaminate the paired-bootstrap.
     """
     d = _load_inherited_d_matrix()
+    _assert_i406_recipe_match(d)
     inherited = d.get("JS", {})
     kl_inh = d.get("KL", {})
 
