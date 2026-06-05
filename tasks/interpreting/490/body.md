@@ -1,6 +1,6 @@
 ---
-title: Per-token dose, not midpoint geometry, explains shared-marker leakage at intermediate
-  held-out personas (MODERATE confidence)
+title: Dose-matched midpoint coupling is indistinguishable from zero at small A-B
+  separations (MODERATE confidence)
 kind: experiment
 tags:
 - mentor-dan

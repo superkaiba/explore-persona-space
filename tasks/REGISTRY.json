@@ -2746,7 +2746,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/490",
       "status": "interpreting",
-      "title": "Per-token dose, not midpoint geometry, explains shared-marker leakage at intermediate held-out personas (MODERATE confidence)"
+      "title": "Dose-matched midpoint coupling is indistinguishable from zero at small A-B separations (MODERATE confidence)"
     },
     "491": {
       "has_clean_result": false,
