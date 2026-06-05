@@ -2729,8 +2729,8 @@
       "goal": "Test whether base-model cosine/JS distance predicts on-policy marker transfer across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing) contexts \u2014 including cross-type cells in both directions (ICL <-> instruction) \u2014 with the predictor read from the residual activation after the context scaffold + user question, and whether matched same-identity cross-type pairs (example-pirate <-> instruction-pirate) are close in cosine and transfer the marker.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/489",
-      "status": "running",
+      "path": "tasks/blocked/489",
+      "status": "blocked",
       "title": "Do in-context-example contexts give a cosine predictor of marker transfer (activation read after the ICL examples + user question)?"
     },
     "49": {
