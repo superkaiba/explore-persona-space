@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 499,
+  "highest_id": 500,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2831,6 +2831,14 @@
       "path": "tasks/completed/50",
       "status": "completed",
       "title": "Add short integration tests and enforce agents to run them on a pod before merging code/running an experiment "
+    },
+    "500": {
+      "goal": "Determine whether on-policy fact leakage to a bystander persona is predicted by the bystander's teacher-independent base prior on the fact, by representational proximity to the teaching persona, or their combination, by teaching one invented fact under sources of varying content-relatedness to a fixed bystander panel and testing whether proximity's predictive sign flips with source content-relatedness while the prior stays stable.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/500",
+      "status": "proposed",
+      "title": "Does fact leakage track the bystander's own prior or proximity to the teaching persona? (vary source content-relatedness)"
     },
     "51": {
       "has_clean_result": false,
