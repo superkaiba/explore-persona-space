@@ -1,0 +1,7 @@
+{
+  "what": "Placeholder figure; downstream analyzer can populate from a per-family rerun.",
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:48.530167+00:00",
+  "png": "figures/issue_494/js_sliced_by_probe_type.png",
+  "pdf": "figures/issue_494/js_sliced_by_probe_type.pdf"
+}

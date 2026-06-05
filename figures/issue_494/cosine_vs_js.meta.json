@@ -1,0 +1,71 @@
+{
+  "what": "Predictor-comparison bar chart with cluster-aware bootstrap CI.",
+  "pooled": {
+    "cosine_a_L21": {
+      "rho": -0.056004421338794165,
+      "p_value": 0.785824846644034,
+      "n": 26
+    },
+    "cosine_b_L21": {
+      "rho": -0.2975449624502806,
+      "p_value": 0.13987827192668545,
+      "n": 26
+    },
+    "js_similarity_M": {
+      "rho": -0.10548071994484545,
+      "p_value": 0.608069714123729,
+      "n": 26
+    },
+    "bystander_logprob": {
+      "rho": -0.33797754305615085,
+      "p_value": 0.09127581227599141,
+      "n": 26
+    },
+    "fact_slice_similarity_M": {
+      "rho": -0.41782395413546536,
+      "p_value": 0.08446144815216329,
+      "n": 18
+    }
+  },
+  "ci": {
+    "cosine_a_L21": {
+      "rho_ci_lo": -0.33320017708704425,
+      "rho_ci_hi": 0.27690312206017603,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "cosine_b_L21": {
+      "rho_ci_lo": -0.538228184953679,
+      "rho_ci_hi": -0.002393061249071426,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "js_similarity_M": {
+      "rho_ci_lo": -0.2762081944342159,
+      "rho_ci_hi": 0.127366086820262,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "bystander_logprob": {
+      "rho_ci_lo": -0.7314221622446753,
+      "rho_ci_hi": 0.0620147486696726,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "fact_slice_similarity_M": {
+      "rho_ci_lo": -0.7562913232962867,
+      "rho_ci_hi": 0.09157026942123853,
+      "n_reps": 5000,
+      "n": 18,
+      "ci": 0.95
+    }
+  },
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:48.192709+00:00",
+  "png": "figures/issue_494/cosine_vs_js.png",
+  "pdf": "figures/issue_494/cosine_vs_js.pdf"
+}
