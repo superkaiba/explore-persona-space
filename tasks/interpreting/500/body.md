@@ -1,6 +1,6 @@
 ---
-title: Does fact leakage track the bystander's own prior or proximity to the teaching
-  persona? (vary source content-relatedness)
+title: The bystander's own prior on the fact is the only consistently supported predictor
+  of leakage; source proximity does not survive the sign-flip test (MODERATE confidence)
 kind: experiment
 tags:
 - leak-predictor

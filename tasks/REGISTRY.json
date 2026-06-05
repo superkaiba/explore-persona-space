@@ -2838,7 +2838,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/500",
       "status": "interpreting",
-      "title": "Does fact leakage track the bystander's own prior or proximity to the teaching persona? (vary source content-relatedness)"
+      "title": "The bystander's own prior on the fact is the only consistently supported predictor of leakage; source proximity does not survive the sign-flip test (MODERATE confidence)"
     },
     "501": {
       "goal": "Add multi-turn conversation-drift contexts as a third context type to #489's union panel (reusing #489's exact marker \u203b, training rig, post-context+question extraction point, and on-policy \u0394G dependent variable), and test whether base-model cosine/JS distance predicts on-policy marker transfer to and from multi-turn-drift contexts \u2014 merging with #489's single-turn results so the conversation-length silencing (#377) reads as a prediction of the distance metric rather than a separate survival effect.",
