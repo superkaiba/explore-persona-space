@@ -15,6 +15,7 @@ goal: Determine whether on-policy fact leakage to a bystander persona is predict
   fact under sources of varying content-relatedness to a fixed bystander panel and
   testing whether proximity's predictive sign flips with source content-relatedness
   while the prior stays stable.
+track: experiment
 ---
 ## Goal
 
