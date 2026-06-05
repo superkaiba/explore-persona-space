@@ -1,6 +1,6 @@
 ---
-title: 'Extraction-point × metric bake-off: best base-model predictor of #474 on-policy
-  marker transfer'
+title: A paired-cloud predictor edges out last-token cosine by 0.05 CV R², but the
+  lead is loc_ep1-specific (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-05T09:49:22Z'

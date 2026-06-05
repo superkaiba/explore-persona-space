@@ -2768,7 +2768,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/493",
       "status": "interpreting",
-      "title": "Extraction-point \u00d7 metric bake-off: best base-model predictor of #474 on-policy marker transfer"
+      "title": "A paired-cloud predictor edges out last-token cosine by 0.05 CV R\u00b2, but the lead is loc_ep1-specific (LOW confidence)"
     },
     "494": {
       "goal": "Test whether base-model persona-distance (cosine + JS/KL of output distributions) between a teach persona and a non-teach persona predicts how much a taught fact leaks to the non-teach persona, by re-analyzing the already-trained fact-teaching adapters from the #381/#389/#390/#444 line (no new training).",
