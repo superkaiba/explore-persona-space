@@ -134,9 +134,9 @@ def main() -> None:
         }
 
     out = {
-        "_doc": "Fact-slice JS: per-position base-2 JS between marine_biologist and each eval persona, "
-        "teacher-forced over the taught completion C, averaged over C positions and the 239 teach rows. "
-        "js_similarity = 1 - js_fact (higher = bystander reads the fact like the teacher).",
+        "_doc": "Fact-slice JS: per-position base-2 JS between marine_biologist and each eval "
+        "persona, teacher-forced over the taught completion C, averaged over C positions and the "
+        "239 teach rows. js_similarity = 1 - js_fact (higher = bystander reads fact like teacher).",
         "model": args.model,
         "reference_persona": REFERENCE,
         "n_teach_rows": len(rows),
