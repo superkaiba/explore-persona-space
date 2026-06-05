@@ -1,0 +1,19 @@
+--- a/scripts/i477_run_cell.py
++++ b/scripts/i477_run_cell.py
+@@ -191,6 +191,16 @@
+     # Main / implant_sweep: full 6-checkpoint trajectory (#472's default).
+     if args.phase == "calibration":
+         fractions: tuple[float, ...] = (1.0,)
++        # #492 B4 forward-port: when EPM_ISSUE_492_B4=1, inject v4's 7-checkpoint
++        # mid-training cadence onto v2's `phase=calibration` path. Fractions at
++        # precision=2 for max_steps=76 with target_steps=(1,2,4,8,16,32,64) are
++        # 0.01, 0.03, 0.05, 0.11, 0.21, 0.42, 0.84 (all distinct, plan §4.4 +
++        # Assumption 17). 1.0 is appended so the terminal checkpoint still lands
++        # in the index — required by the eval subprocess.
++        if os.environ.get("EPM_ISSUE_492_B4") == "1":
++            _b4_mid = tuple(round(s / 76, 2) for s in (1, 2, 4, 8, 16, 32, 64))
++            fractions = _b4_mid + (1.0,)
++            log.info("[issue-492 B4] EPM_ISSUE_492_B4=1; mid-checkpoint fractions = %s", fractions)
+     elif args.smoke:
+         # Same early-collapse-window smoke as #472 (round-2 fix).
+         fractions = (0.08, 0.16, 0.5, 1.0)
