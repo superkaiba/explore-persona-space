@@ -381,20 +381,36 @@ def _verdict_category(verdict: dict[str, Any] | None) -> str | None:
     )
 
 
-def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
-    """Idempotent 5-way Haiku judge over the per-arm baseline completions.
+def _run_5way_rejudge(
+    *,
+    phase_label: str,
+    completions_path: Path,
+    judged_path: Path,
+    force_regenerate: bool = False,
+) -> dict[str, Any]:
+    """Generic 5-way Haiku rejudge over an arbitrary completions JSONL.
 
-    Writes ``baseline_judged_<figure_slug>.jsonl`` to ``p.EVAL_RESULTS_DIR``.
-    The per-row schema mirrors ``_judge_cell`` in ``reanalyze_issue444_5way``:
-    ``{persona, family, sub_framing, idx, probe, completion_head, verdict}``
-    where ``verdict.output_category_5way`` ∈ {stated_seven, stated_nine,
-    confabulated_other, didnt_mention, refused}.
+    Used by both ``_phase_baseline_judge`` (baseline_completions ->
+    baseline_judged) and ``_phase_trained_cell_5way_rejudge`` (per-cell
+    completions -> per-cell 5-way judged). The 5-way categories include
+    ``stated_seven`` (the #500 primary DV's positive label), which neither
+    the parent's 4-way ``output_category`` rubric nor the linkage-``pass``
+    rubric emits -- so the trained cells need the same re-judge step the
+    baseline does, written to a DISTINCT filename so the aggregator's glob
+    cannot accidentally read the linkage-pass file (which lives at the
+    same per-cell location but under ``judged_{cell.tag}.jsonl``).
 
-    Round-4 fix: the parent's ``phase_baselines`` (line ~4691 of
-    ``run_experiment_444.py``) writes only RAW completions. Without this
-    judge step the Phase-0 prior gate reads a missing file -> crash. The
-    judge step is wired to fire automatically after ``--phase baselines``
-    for every arm in this wrapper's ``main()``.
+    Re-entrancy contract (4 cases; same for both callers):
+      1. judged file complete (every completion key present)
+         -> ``skipped_all_judged: True``; ZERO API calls.
+      2. judged file partial -> judge ONLY the missing
+         ``(persona, family, sub_framing, idx)`` rows; per-chunk
+         checkpoint after every 256 rows.
+      3. judged file missing AND completions exist
+         -> judge all completions; no vLLM regeneration.
+      4. Both missing -> RuntimeError.
+
+    ``force_regenerate=True`` wipes the judged file first (caller opt-in).
     """
     # Defer the heavy import + side effects (anthropic client construction,
     # OUT_DIR.mkdir on the #444 reanalysis tree) until the helper is called.
@@ -406,31 +422,21 @@ def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
         _write_jsonl,
     )
 
-    facts = p._resolve_figure_facts()
-    figure_slug = facts.figure_slug
-    completions_path = p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl"
-    judged_path = p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl"
-
-    # Step 3 of the re-entrancy contract: must have completions to judge.
+    # Step 3/4 of the re-entrancy contract: must have completions to judge.
     if not completions_path.exists():
         raise RuntimeError(
-            f"baseline_judge: {completions_path} missing. Run --phase baselines first "
-            "(the wrapper's main() chains baselines -> baseline_judge automatically; "
-            "this error means --phase baselines never produced its raw completions file)."
+            f"{phase_label}: {completions_path} missing. "
+            "Run the producer phase (--phase baselines for baseline; --phase full-eval "
+            "for trained cells) BEFORE this re-judge. The wrapper's main() chains the "
+            "appropriate producer -> re-judge automatically, so this error means the "
+            "producer phase never wrote its completions file."
         )
 
     completions_rows = [json.loads(line) for line in completions_path.open() if line.strip()]
     if not completions_rows:
-        raise RuntimeError(f"baseline_judge: {completions_path} is empty.")
+        raise RuntimeError(f"{phase_label}: {completions_path} is empty.")
 
-    # Steps 1 + 2 of the re-entrancy contract, unified via per-row resume:
-    # load whatever's already in the judged file, build the keyset, and judge
-    # only the missing (persona, family, sub_framing, idx) rows. This covers:
-    #   - judged file has every row -> pending is empty -> skipped_all_judged.
-    #   - judged file is missing some rows (mid-run crash, deleted row) ->
-    #     judge ONLY the missing rows, append, checkpoint.
-    #   - judged file doesn't exist -> judge ALL rows.
-    # ``force_regenerate=True`` wipes the judged file first (caller opt-in).
+    # Steps 1 + 2 of the re-entrancy contract, unified via per-row resume.
     if force_regenerate and judged_path.exists():
         judged_path.unlink()
     judged: list[dict[str, Any]] = []
@@ -443,20 +449,19 @@ def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
         if (r["persona"], r["family"], r["sub_framing"], r["idx"]) not in judged_keys
     ]
     print(
-        f"[baseline_judge] {completions_path.name}: "
+        f"[{phase_label}] {completions_path.name}: "
         f"{len(completions_rows)} rows total, {len(judged)} already judged, "
         f"{len(pending)} pending."
     )
     if not pending:
         return {
-            "phase": "baseline_judge",
+            "phase": phase_label,
             "skipped_all_judged": True,
-            "skipped": True,  # back-compat with the previous early-skip key
+            "skipped": True,  # back-compat
             "judged_path": str(judged_path),
             "n_rows": len(judged),
         }
 
-    # Chunked dispatch with per-chunk checkpoint flush.
     chunk_size = 256  # matches parent _JUDGE_CHUNK_ROWS
     for start in range(0, len(pending), chunk_size):
         chunk = pending[start : start + chunk_size]
@@ -478,14 +483,132 @@ def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
             )
         _write_jsonl(judged_path, judged)  # checkpoint after each chunk
         print(
-            f"[baseline_judge] chunk {start}-{start + len(chunk)}: "
+            f"[{phase_label}] chunk {start}-{start + len(chunk)}: "
             f"{n_err} errors, {n_bad} invalid-cat; checkpoint -> {judged_path.name}"
         )
 
     return {
-        "phase": "baseline_judge",
+        "phase": phase_label,
         "judged_path": str(judged_path),
         "n_rows": len(judged),
+    }
+
+
+def _phase_baseline_judge(*, force_regenerate: bool = False) -> dict[str, Any]:
+    """Idempotent 5-way Haiku judge over the per-arm baseline completions.
+
+    Writes ``baseline_judged_<figure_slug>.jsonl`` to ``p.EVAL_RESULTS_DIR``.
+    The per-row schema mirrors ``_judge_cell`` in ``reanalyze_issue444_5way``:
+    ``{persona, family, sub_framing, idx, probe, completion_head, verdict}``
+    where ``verdict.output_category_5way`` ∈ {stated_seven, stated_nine,
+    confabulated_other, didnt_mention, refused}.
+
+    Round-4 fix: the parent's ``phase_baselines`` (line ~4691 of
+    ``run_experiment_444.py``) writes only RAW completions. Without this
+    judge step the Phase-0 prior gate reads a missing file -> crash. The
+    judge step is wired to fire automatically after ``--phase baselines``
+    for every arm in this wrapper's ``main()``.
+    """
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+    return _run_5way_rejudge(
+        phase_label="baseline_judge",
+        completions_path=p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl",
+        judged_path=p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl",
+        force_regenerate=force_regenerate,
+    )
+
+
+# Filename convention for the trained-cell 5-way verdicts. The parent's
+# ``phase_full_eval`` writes its LINKAGE-rubric verdicts to
+# ``judged_{cell.tag}.jsonl``; we deliberately write the 5-way verdicts to
+# ``judged_5way_{cell.tag}.jsonl`` and point the aggregator at the 5way
+# pattern so the linkage file can never be accidentally read.
+TRAINED_5WAY_PREFIX = "judged_5way_"
+
+
+def _trained_cell_completions_path(cell_tag: str) -> Path:
+    """The parent ``phase_full_eval`` writes per-cell completions here."""
+    return p.EVAL_RESULTS_DIR / f"completions_{cell_tag}.jsonl"
+
+
+def _trained_cell_5way_judged_path(cell_tag: str) -> Path:
+    """The 5-way re-judge writes per-cell verdicts here.
+
+    DISTINCT from the parent's linkage-rubric judged path
+    (``judged_{cell.tag}.jsonl``) so the aggregator glob
+    ``judged_5way_*.jsonl`` picks up ONLY the 5-way verdicts.
+    """
+    return p.EVAL_RESULTS_DIR / f"{TRAINED_5WAY_PREFIX}{cell_tag}.jsonl"
+
+
+def _phase_trained_cell_5way_rejudge(*, force_regenerate: bool = False) -> dict[str, Any]:
+    """Idempotent 5-way Haiku re-judge over EVERY trained cell's completions.
+
+    Round-5 fix: parent ``phase_full_eval`` calls ``_judge_cell_completions``
+    which writes LINKAGE-rubric ``pass`` verdicts (NOT 5-way
+    ``output_category_5way``) to ``judged_{cell.tag}.jsonl``. The
+    aggregator's ``_stated_seven_label`` requires the 5-way schema; reading
+    the linkage file would score ZERO ``stated_seven`` for every trained
+    cell row -> the leak rate (the whole experiment's headline) computes as
+    0.0 across the panel.
+
+    This step enumerates every cell via ``p._enumerate_train_cells()``,
+    reads each cell's raw completions JSONL written by ``phase_full_eval``
+    (``completions_{cell.tag}.jsonl``), and writes 5-way verdicts to
+    ``judged_5way_{cell.tag}.jsonl`` -- a deliberately DISTINCT filename
+    so the aggregator's glob (``judged_5way_*.jsonl``) cannot accidentally
+    read the linkage-pass file.
+
+    Re-entrancy: per-cell. A cell with a complete 5-way file is skipped
+    with ZERO API calls; a partial 5-way file resumes only the missing
+    (persona, family, sub_framing, idx) rows; a missing 5-way file judges
+    all completions in that cell (without re-running vLLM).
+    """
+    cells = p._enumerate_train_cells()
+    if not cells:
+        return {
+            "phase": "trained_cell_5way_rejudge",
+            "n_cells": 0,
+            "_doc": "no trained cells enumerated -- nothing to re-judge.",
+        }
+
+    per_cell: dict[str, dict[str, Any]] = {}
+    total_n_rows = 0
+    n_skipped = 0
+    n_judged_cells = 0
+    for cell in cells:
+        tag = cell.tag
+        completions_path = _trained_cell_completions_path(tag)
+        if not completions_path.exists():
+            # phase_full_eval skipped this cell (e.g. missing train_summary
+            # for an Arm where a seed crashed); record + continue.
+            per_cell[tag] = {
+                "skipped_no_completions": True,
+                "expected_path": str(completions_path),
+            }
+            continue
+        judged_path = _trained_cell_5way_judged_path(tag)
+        info = _run_5way_rejudge(
+            phase_label=f"trained_cell_5way_rejudge[{tag}]",
+            completions_path=completions_path,
+            judged_path=judged_path,
+            force_regenerate=force_regenerate,
+        )
+        per_cell[tag] = info
+        total_n_rows += info.get("n_rows", 0)
+        if info.get("skipped_all_judged"):
+            n_skipped += 1
+        else:
+            n_judged_cells += 1
+
+    return {
+        "phase": "trained_cell_5way_rejudge",
+        "n_cells": len(cells),
+        "n_cells_skipped_all_judged": n_skipped,
+        "n_cells_judged_or_resumed": n_judged_cells,
+        "total_judged_rows": total_n_rows,
+        "per_cell": per_cell,
     }
 
 
@@ -750,6 +873,17 @@ def main() -> None:
     # regenerating; per-row resume-skip on (persona, family, sub_framing, idx).
     if args.phase == "baselines":
         _phase_baseline_judge()
+
+    # Round-5 fix: auto-chain the 5-way TRAINED-cell re-judge after
+    # --phase full-eval for EVERY arm. Parent phase_full_eval writes
+    # LINKAGE-rubric `pass` verdicts to judged_{cell.tag}.jsonl, NOT the
+    # 5-way output_category_5way the aggregator's _stated_seven_label
+    # requires. Without this step the leak rate would compute as 0.0 across
+    # every trained cell. Same idempotency contract as the baseline judge:
+    # per-cell, per-row resume; ZERO API calls when the 5-way file is
+    # already complete; does NOT re-run vLLM generation.
+    if args.phase == "full-eval":
+        _phase_trained_cell_5way_rejudge()
 
     # Restore the trained-eval panel after Arm B baselines so any chained
     # phase_full_eval call in the same process sees n=14 again.

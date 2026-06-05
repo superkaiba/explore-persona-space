@@ -207,8 +207,18 @@ def _arm_aggregate(arm_slug: str, panel: tuple[str, ...]) -> dict[str, Any]:
             baseline_judged_candidates[0], panel
         )
 
-    for judged_path in sorted(arm_root.glob("judged_*.jsonl")):
-        cell_tag = judged_path.stem.removeprefix("judged_")
+    # Round-5 fix: glob the 5-WAY trained-cell verdicts explicitly. The
+    # parent's `phase_full_eval` writes LINKAGE-rubric verdicts to
+    # `judged_{cell.tag}.jsonl` -- if we globbed `judged_*.jsonl` we'd
+    # silently pick up those linkage files instead of the 5-way ones
+    # (the round-3 reviewer's catch). The wrapper's
+    # `_phase_trained_cell_5way_rejudge` writes 5-way verdicts to
+    # `judged_5way_{cell.tag}.jsonl`; this glob picks up ONLY those.
+    # NOTE: `judged_5way_*.jsonl` does NOT match `baseline_judged_*.jsonl`
+    # either (different stem prefix), so the baseline + trained-cell
+    # streams stay disjoint.
+    for judged_path in sorted(arm_root.glob("judged_5way_*.jsonl")):
+        cell_tag = judged_path.stem.removeprefix("judged_5way_")
         out["per_cell"][cell_tag] = _aggregate_one_judged_file(judged_path, panel)
     return out
 

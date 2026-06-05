@@ -828,3 +828,215 @@ def test_stated_seven_label_accepts_5way_key():
     assert _stated_seven_label({"category": "stated_seven"}) is True
     assert _stated_seven_label({}) is False
     assert _stated_seven_label(None) is False
+
+
+# ---------------------------------------------------------------------------
+# Round-5: trained-cell 5-way re-judge + aggregator filename coordination
+# ---------------------------------------------------------------------------
+def test_trained_cell_paths_use_5way_prefix(fresh_wrapper):
+    """Filename coordination: 5-way verdicts MUST be written to a DISTINCT
+    name from the parent's linkage-rubric judged file."""
+    w, p = fresh_wrapper
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    cells = p._enumerate_train_cells()
+    tag = cells[0].tag
+    assert w._trained_cell_5way_judged_path(tag).name == f"judged_5way_{tag}.jsonl"
+    assert w._trained_cell_completions_path(tag).name == f"completions_{tag}.jsonl"
+    # The 5-way name must NOT match the parent's linkage pattern.
+    assert not w._trained_cell_5way_judged_path(tag).name.startswith("judged_") or (
+        w._trained_cell_5way_judged_path(tag).name.startswith("judged_5way_")
+    )
+
+
+def test_aggregator_glob_excludes_linkage_judged_files(fresh_wrapper, tmp_path, monkeypatch):
+    """Round-5 critical: the aggregator's glob picks up ONLY 5-way trained-cell
+    files (judged_5way_*.jsonl), never the parent's linkage-rubric
+    judged_{cell.tag}.jsonl. Without this fix the aggregator would silently
+    score 0 stated_seven on every trained cell."""
+    import json as _json
+    import subprocess
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    facts = p._resolve_figure_facts()
+    figure_slug = facts.figure_slug
+
+    # 1. Baseline judged (5-way) so the aggregator runs.
+    (p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl").write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": "didnt_mention"},
+            }
+        )
+        + "\n"
+    )
+
+    # 2. A LINKAGE judged file (parent's pass-verdict shape) for one cell.
+    cell_tag = "on_policy_suppression_cn_seed42"
+    linkage_path = p.EVAL_RESULTS_DIR / f"judged_{cell_tag}.jsonl"
+    linkage_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"pass": True},
+            }
+        )
+        + "\n"
+    )
+
+    # 3. A 5-WAY judged file for the same cell. Has stated_seven -> leak > 0.
+    five_way_path = p.EVAL_RESULTS_DIR / f"judged_5way_{cell_tag}.jsonl"
+    five_way_path.write_text(
+        _json.dumps(
+            {
+                "persona": "marine_biologist",
+                "family": "A_reformulation",
+                "sub_framing": "0",
+                "idx": 0,
+                "probe": "q",
+                "completion_head": "x",
+                "verdict": {"output_category_5way": "stated_seven"},
+            }
+        )
+        + "\n"
+    )
+
+    # Run aggregator via subprocess (it uses CWD=REPO; monkeypatched).
+    repo_real = REPO
+    ar = subprocess.run(
+        [
+            "uv",
+            "run",
+            "python",
+            str(repo_real / "scripts/aggregate_issue500.py"),
+            "--arm",
+            "courthouse_architecture_historian",
+            "--out",
+            str(p.EVAL_RESULTS_DIR / "aggregate_cleaned.json"),
+        ],
+        capture_output=True,
+        text=True,
+        cwd=str(tmp_path),
+    )
+    assert ar.returncode == 0, ar.stderr
+    agg = _json.loads((p.EVAL_RESULTS_DIR / "aggregate_cleaned.json").read_text())
+    # The cell key must come from the 5-way file (stem strip removes the
+    # judged_5way_ prefix, not judged_).
+    assert cell_tag in agg["per_cell"], (cell_tag, list(agg["per_cell"]))
+    # The marine_biologist row's leak_rate_headline must reflect the 5-way
+    # stated_seven verdict (= 1.0 over 1 A_reformulation row), NOT the
+    # linkage pass=True (which would silently score 0 stated_seven).
+    pp = agg["per_cell"][cell_tag]["per_persona"]["marine_biologist"]
+    assert pp["leak_rate_headline"] > 0, f"aggregator picked up linkage file instead of 5-way: {pp}"
+
+
+def test_trained_cell_rejudge_idempotent_and_per_row_resume(fresh_wrapper, tmp_path, monkeypatch):
+    """BUG-#2-mirror: per-row resume contract for the trained-cell judge,
+    monkey-patched to avoid Anthropic calls. Verifies that:
+      - a complete 5-way file -> 0 API calls (skipped_all_judged).
+      - a partial 5-way file -> exactly 1 API call per missing row.
+    """
+    import json as _json
+
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+
+    # Pick the first enumerated cell (Arm B trained set).
+    cells = p._enumerate_train_cells()
+    target = cells[0]
+    completions_path = w._trained_cell_completions_path(target.tag)
+    judged5_path = w._trained_cell_5way_judged_path(target.tag)
+    completions = [
+        {
+            "persona": "marine_biologist",
+            "family": "A_reformulation",
+            "sub_framing": "0",
+            "idx": i,
+            "probe": "q",
+            "completion": f"row {i}",
+        }
+        for i in range(3)
+    ]
+    completions_path.write_text("\n".join(_json.dumps(r) for r in completions))
+    # Pre-judge 2 of the 3 rows.
+    judged5_path.write_text(
+        "\n".join(
+            _json.dumps(
+                {
+                    "persona": c["persona"],
+                    "family": c["family"],
+                    "sub_framing": c["sub_framing"],
+                    "idx": c["idx"],
+                    "probe": c["probe"],
+                    "completion_head": c["completion"][:400],
+                    "verdict": {"output_category_5way": "didnt_mention"},
+                }
+            )
+            for c in completions[:2]
+        )
+    )
+
+    captured_jobs: list[tuple[str, str]] = []
+
+    def _fake_judge(jobs):
+        captured_jobs.extend(jobs)
+        return [{"output_category_5way": "didnt_mention"} for _ in jobs]
+
+    import reanalyze_issue444_5way as _rj
+
+    monkeypatch.setattr(_rj, "_judge_rows_parallel", _fake_judge, raising=True)
+
+    result = w._phase_trained_cell_5way_rejudge()
+    # ONLY the missing row was judged via API.
+    assert len(captured_jobs) == 1, (len(captured_jobs), result)
+    # All 3 rows should now be present in the 5-way file.
+    re_rows = [_json.loads(line) for line in judged5_path.open()]
+    assert len(re_rows) == 3
+    # The cell's per-cell entry should be the not-skipped variant.
+    cell_info = result["per_cell"][target.tag]
+    assert cell_info.get("n_rows") == 3
+    assert not cell_info.get("skipped_all_judged"), cell_info
+
+    # Run again -> skipped_all_judged + zero new API calls.
+    captured_jobs.clear()
+    result2 = w._phase_trained_cell_5way_rejudge()
+    assert len(captured_jobs) == 0
+    assert result2["per_cell"][target.tag].get("skipped_all_judged") is True
+
+
+def test_trained_cell_rejudge_skips_cells_without_completions(fresh_wrapper, tmp_path, monkeypatch):
+    """If phase_full_eval didn't write completions for a cell (e.g. that
+    training cell crashed), the re-judge step records a skip and moves on."""
+    w, p = fresh_wrapper
+    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
+    w._reroute_paths("arm_courthouse_architecture_historian")
+    w._set_arm_personas("courthouse_architecture_historian")
+    w._override_train_cell_hf_path("arm_courthouse_architecture_historian")
+    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    _seed_fact_pick_into_tmp(p)
+    # No completions written at all.
+    result = w._phase_trained_cell_5way_rejudge()
+    assert result["n_cells"] >= 1
+    assert result["n_cells_judged_or_resumed"] == 0
+    for tag, info in result["per_cell"].items():
+        assert info.get("skipped_no_completions") is True, (tag, info)
