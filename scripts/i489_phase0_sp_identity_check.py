@@ -119,7 +119,7 @@ def _ask_claude(prompt_a: str, prompt_b: str, dry_run: bool) -> tuple[str, str]:
     client = anthropic.Anthropic(api_key=api_key)
     body = JUDGE_PROMPT.format(a=prompt_a, b=prompt_b)
     msg = client.messages.create(
-        model="claude-sonnet-4-5-20251001",
+        model="claude-sonnet-4-5-20250929",
         max_tokens=200,
         messages=[{"role": "user", "content": body}],
     )
