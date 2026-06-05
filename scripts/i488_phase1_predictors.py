@@ -537,7 +537,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
     args = ap.parse_args(argv)
     suffix = args.out_suffix
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+    # `setdefault` so the shell-set CUDA_VISIBLE_DEVICES (from the parallel
+    # dispatcher fanning shards out across GPUs) is respected. Single-GPU
+    # default: CVD unset → set to args.gpu_id. Parallel dispatcher: each shard
+    # pre-exports CVD=<i> and passes --gpu-id 0; the pre-export wins here so
+    # the shard is pinned to its assigned GPU. An unconditional overwrite
+    # defeats the fan-out (every shard would see GPU 0).
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu_id))
 
     from explore_persona_space.orchestrate.env import load_dotenv
 

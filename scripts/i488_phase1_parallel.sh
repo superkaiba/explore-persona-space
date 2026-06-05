@@ -154,8 +154,29 @@ else
     fi
     echo "[phase=phase1_parallel] all $NUM_SHARDS shards PASSED; merging"
 
+    # Build EXPECTED_SHARDS: comma-separated list of shard indices that had a
+    # non-empty chunk and were actually launched. The merge step asserts every
+    # one of these produced both js_matrix_g${i}.json AND kl_matrix_g${i}.json
+    # (catches the silent-skip path where a launched shard exits 0 without
+    # writing output → incomplete canonical matrix).
+    EXPECTED_SHARDS=""
+    for i in $(seq 0 $((NUM_SHARDS - 1))); do
+        CHUNK_FILE="$LOG_DIR/phase1_chunk_g${i}.txt"
+        CHUNK_SIZE=$(wc -l < "$CHUNK_FILE" | tr -d ' ')
+        if [ "$CHUNK_SIZE" -gt 0 ]; then
+            if [ -z "$EXPECTED_SHARDS" ]; then
+                EXPECTED_SHARDS="$i"
+            else
+                EXPECTED_SHARDS="$EXPECTED_SHARDS,$i"
+            fi
+        fi
+    done
+    echo "[phase=phase1_parallel] expected shard outputs: g{$EXPECTED_SHARDS}"
+
     # ── Step 5: merge per-shard JS/KL into canonical no-suffix outputs ─────
-    NUM_SHARDS="$NUM_SHARDS" OUT_DIR="$OUT_DIR" uv run python - <<'PY'
+    NUM_SHARDS="$NUM_SHARDS" OUT_DIR="$OUT_DIR" EXPECTED_SHARDS="$EXPECTED_SHARDS" \
+        SMOKE_PAIRS="$SMOKE_PAIRS" \
+        uv run python - <<'PY'
 """Merge per-shard JS/KL outputs into the canonical no-suffix files.
 
 For each cell (ci, cj):
@@ -171,6 +192,12 @@ from pathlib import Path
 
 OUT_DIR = Path(os.environ["OUT_DIR"])
 NUM_SHARDS = int(os.environ["NUM_SHARDS"])
+EXPECTED_SHARDS_RAW = os.environ.get("EXPECTED_SHARDS", "")
+EXPECTED_SHARDS = (
+    {int(x) for x in EXPECTED_SHARDS_RAW.split(",") if x.strip() != ""}
+    if EXPECTED_SHARDS_RAW
+    else set()
+)
 
 shards_js = []
 shards_kl = []
@@ -178,8 +205,19 @@ shards_meta = []
 for i in range(NUM_SHARDS):
     js_p = OUT_DIR / f"js_matrix_g{i}.json"
     kl_p = OUT_DIR / f"kl_matrix_g{i}.json"
-    if not js_p.exists():
-        # Shard was empty (no chunk); nothing to merge from it.
+    if i in EXPECTED_SHARDS:
+        # Shard was launched with a non-empty chunk → it MUST have produced
+        # both output files. A launched shard that exits 0 without writing
+        # output would silently leave its chunk's cells unfilled in the
+        # canonical matrix; fail loud instead.
+        if not js_p.exists() or not kl_p.exists():
+            raise SystemExit(
+                f"shard g{i} was launched (non-empty chunk) but produced "
+                f"incomplete output: js_matrix_g{i}.json exists={js_p.exists()}, "
+                f"kl_matrix_g{i}.json exists={kl_p.exists()}"
+            )
+    elif not js_p.exists():
+        # Shard was not launched (empty chunk); nothing to merge from it.
         continue
     js_doc = json.loads(js_p.read_text())
     kl_doc = json.loads(kl_p.read_text())
@@ -235,11 +273,25 @@ for s_idx in range(1, len(shards_js)):
                     )
 
 print(f"merged from {len(shards_js)} shards; contributions: {contributions}")
-print(
-    f"merged matrix: "
-    f"{sum(1 for ci in cids for cj in cids if ci != cj and merged_js[ci][cj] is not None)} "
-    f"/ {len(cids) * (len(cids) - 1)} cells filled"
+filled = sum(
+    1 for ci in cids for cj in cids if ci != cj and merged_js[ci][cj] is not None
 )
+expected = len(cids) * (len(cids) - 1)
+print(f"merged matrix: {filled} / {expected} cells filled")
+if filled != expected:
+    # SMOKE_PAIRS / partial pair-lists legitimately leave cells unfilled;
+    # only fail loud when the pending discover path was used (every
+    # off-diagonal pair should be filled by exactly one shard).
+    if os.environ.get("SMOKE_PAIRS", "") == "":
+        raise SystemExit(
+            f"incomplete canonical matrix: {filled} / {expected} cells filled "
+            f"(missing {expected - filled}); a shard silently dropped pairs"
+        )
+    else:
+        print(
+            f"WARN: {expected - filled} cells unfilled but SMOKE_PAIRS set, "
+            "so partial coverage is expected; not failing"
+        )
 
 # Write canonical no-suffix outputs.
 canonical_js = OUT_DIR / "js_matrix.json"
