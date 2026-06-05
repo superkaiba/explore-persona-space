@@ -105,19 +105,52 @@ def _pearson(x: list[float], y: list[float]) -> float:
 
 
 def _partial_spearman(x: list[float], y: list[float], z: list[float]) -> float:
-    """Spearman ρ between x and y after partialling out z (rank-based)."""
+    """Standard partial Spearman ρ(x, y | z).
+
+    Definition (canonical): rank-transform x, y, z; OLS-residualize the rank
+    vectors of x and y against the rank vector of z; the partial Spearman is
+    the PEARSON correlation of those rank-residuals.
+
+    Round-3 BUG-#3 fix: the previous implementation re-ranked the residuals
+    and applied Spearman to the re-ranked residuals, which is NOT the
+    standard partial-Spearman statistic. Pearson on rank-residuals matches
+    the textbook definition (e.g. pingouin.partial_corr method='spearman').
+    """
     if len(x) < 3 or len(set(map(len, (x, y, z)))) != 1:
         return float("nan")
     rx = np.asarray(_rankdata(x))
     ry = np.asarray(_rankdata(y))
     rz = np.asarray(_rankdata(z))
-    # Residuals of x and y after OLS regression on z (using ranks).
+    # Residuals of x and y after OLS regression on RANK z.
     A = np.column_stack([np.ones_like(rz), rz])
     bx, *_ = np.linalg.lstsq(A, rx, rcond=None)
     by, *_ = np.linalg.lstsq(A, ry, rcond=None)
     res_x = rx - A @ bx
     res_y = ry - A @ by
-    return _spearman(list(res_x), list(res_y))
+    return _pearson(list(res_x), list(res_y))
+
+
+def _partial_spearman_multi(x: list[float], y: list[float], zs: list[list[float]]) -> float:
+    """Partial Spearman ρ(x, y | z1, z2, ...): rank-residualize x and y
+    against the multiple rank-z controls (joint OLS on rank space), return
+    Pearson of the rank-residuals.
+
+    Round-3 BUG-#5: enables the JOINT engagement partial
+    ρ(prior or cos, leak | length AND on_topic). Single-covariate
+    ``_partial_spearman`` is the special case len(zs) == 1.
+    """
+    n = len(x)
+    if n < 3 or len(y) != n or any(len(z) != n for z in zs) or not zs:
+        return float("nan")
+    rx = np.asarray(_rankdata(x))
+    ry = np.asarray(_rankdata(y))
+    rz_cols = [np.asarray(_rankdata(z)) for z in zs]
+    A = np.column_stack([np.ones(n), *rz_cols])
+    bx, *_ = np.linalg.lstsq(A, rx, rcond=None)
+    by, *_ = np.linalg.lstsq(A, ry, rcond=None)
+    res_x = rx - A @ bx
+    res_y = ry - A @ by
+    return _pearson(list(res_x), list(res_y))
 
 
 def _standardize(x: list[float]) -> np.ndarray:
@@ -147,7 +180,7 @@ def _ols_two_predictor(y: list[float], x1: list[float], x2: list[float]) -> dict
 
 def _cluster_bootstrap_spearman(
     pairs: list[tuple[float, float]],
-    cluster_ids: list[int],
+    cluster_ids: list[str],
     *,
     n_iter: int = 1000,
     seed: int = 0,
@@ -156,10 +189,14 @@ def _cluster_bootstrap_spearman(
 
     Resamples CLUSTERS with replacement, recomputes ρ on the assembled pairs.
     Returns mean, 5%/95%/2.5%/97.5% percentile bounds.
+
+    Round-3 BUG-#6 fix: ``cluster_ids`` are stable strings (persona names),
+    not Python ``hash()`` outputs (process-randomized). Combined with the
+    fixed RNG seed this gives reproducible CIs across processes.
     """
     rng = np.random.default_rng(seed)
     clusters = sorted(set(cluster_ids))
-    by_cluster: dict[int, list[tuple[float, float]]] = {c: [] for c in clusters}
+    by_cluster: dict[str, list[tuple[float, float]]] = {c: [] for c in clusters}
     for pair, cid in zip(pairs, cluster_ids, strict=True):
         by_cluster[cid].append(pair)
     rhos: list[float] = []
@@ -184,6 +221,95 @@ def _cluster_bootstrap_spearman(
         "ci_low_95": float(np.percentile(arr, 2.5)),
         "ci_high_95": float(np.percentile(arr, 97.5)),
         "n_valid_iters": len(rhos),
+    }
+
+
+def _summarize_bootstrap(values: list[float]) -> dict[str, float]:
+    """Mean / median / 90% / 95% percentile summary of a bootstrap distribution."""
+    if not values:
+        return {
+            "mean": float("nan"),
+            "ci_low_90": float("nan"),
+            "ci_high_90": float("nan"),
+            "n_valid_iters": 0,
+        }
+    arr = np.asarray(values)
+    return {
+        "mean": float(arr.mean()),
+        "median": float(np.median(arr)),
+        "ci_low_90": float(np.percentile(arr, 5)),
+        "ci_high_90": float(np.percentile(arr, 95)),
+        "ci_low_95": float(np.percentile(arr, 2.5)),
+        "ci_high_95": float(np.percentile(arr, 97.5)),
+        "n_valid_iters": len(values),
+    }
+
+
+def _cluster_bootstrap_h3(
+    points: list[dict[str, object]],
+    *,
+    n_iter: int = 1000,
+    seed: int = 0,
+) -> dict[str, dict[str, float]]:
+    """Persona-cluster bootstrap CIs for the H3 diagnostics (round-3 BUG-#4).
+
+    Resamples persona clusters from ``points`` with replacement; on each
+    iteration recomputes:
+      - partial Spearman ρ(cos_to_source, leak | prior_logprob)
+      - standardized OLS z(leak) ~ z(prior_logprob) + z(cos_to_source):
+        beta_prior, beta_prox, R^2
+
+    Returns a dict with one sub-dict per statistic carrying the
+    mean/median/90%/95% CI summary.
+    """
+    by_persona: dict[str, list[tuple[float, float, float]]] = {}
+    for r in points:
+        prior = r.get("prior_logprob", float("nan"))
+        cos_v = r.get("cos_to_source", float("nan"))
+        leak = r.get("leak", float("nan"))
+        if any(isinstance(v, float) and math.isnan(v) for v in (prior, cos_v, leak)):
+            continue
+        by_persona.setdefault(str(r["persona"]), []).append(
+            (float(prior), float(cos_v), float(leak))
+        )
+    clusters = sorted(by_persona)
+    if len(clusters) < 4:
+        return {"status": {"value": "skipped_too_few_personas", "n_clusters": len(clusters)}}
+
+    rng = np.random.default_rng(seed)
+    partials: list[float] = []
+    beta_priors: list[float] = []
+    beta_proxs: list[float] = []
+    r2s: list[float] = []
+    for _ in range(n_iter):
+        idxs = rng.choice(len(clusters), size=len(clusters), replace=True)
+        # Per-persona means over the bootstrap pick (iterate WITH multiplicity).
+        prior_means: list[float] = []
+        cos_means: list[float] = []
+        leak_means: list[float] = []
+        for i in idxs:
+            rows = by_persona[clusters[i]]
+            n = len(rows)
+            prior_means.append(sum(t[0] for t in rows) / n)
+            cos_means.append(sum(t[1] for t in rows) / n)
+            leak_means.append(sum(t[2] for t in rows) / n)
+        # Need 3 distinct values to avoid degenerate rank / OLS.
+        if len(set(prior_means)) < 3 or len(set(cos_means)) < 3:
+            continue
+        partials.append(_partial_spearman(cos_means, leak_means, prior_means))
+        ols = _ols_two_predictor(leak_means, prior_means, cos_means)
+        beta_priors.append(ols["beta_x1_prior"])
+        beta_proxs.append(ols["beta_x2_prox"])
+        r2s.append(ols["r_squared"])
+
+    return {
+        "partial_spearman_cos_to_source_given_prior": _summarize_bootstrap(
+            [p for p in partials if not math.isnan(p)]
+        ),
+        "ols_beta_prior": _summarize_bootstrap([b for b in beta_priors if not math.isnan(b)]),
+        "ols_beta_prox": _summarize_bootstrap([b for b in beta_proxs if not math.isnan(b)]),
+        "ols_r_squared": _summarize_bootstrap([r for r in r2s if not math.isnan(r)]),
+        "n_clusters": {"value": len(clusters)},
     }
 
 
@@ -285,18 +411,37 @@ def _cross_arm_delta_rho_seed_bootstrap(
             "right_n_seeds": len(right_seeds),
         }
 
-    def _rho_on_seeds(pts: list[dict[str, object]], seed_set: list[int]) -> float:
-        by_persona: dict[str, list[tuple[float, float]]] = {}
+    def _index_by_seed(
+        pts: list[dict[str, object]],
+    ) -> dict[int, list[tuple[str, float, float]]]:
+        """Bucket points by seed -> list of (persona, x, y), NaNs dropped."""
+        out: dict[int, list[tuple[str, float, float]]] = {}
         for r in pts:
-            if int(r["seed"]) not in seed_set:
-                continue
+            s = int(r["seed"])
             x = r.get(x_field, float("nan"))
             y = r.get("leak", float("nan"))
             if isinstance(x, float) and math.isnan(x):
                 continue
             if isinstance(y, float) and math.isnan(y):
                 continue
-            by_persona.setdefault(str(r["persona"]), []).append((float(x), float(y)))
+            out.setdefault(s, []).append((str(r["persona"]), float(x), float(y)))
+        return out
+
+    left_by_seed = _index_by_seed(left_points)
+    right_by_seed = _index_by_seed(right_points)
+
+    def _rho_on_resample(
+        by_seed: dict[int, list[tuple[str, float, float]]],
+        sampled_seeds: list[int],
+    ) -> float:
+        """Per-persona mean of (x, y) over the SAMPLED seed list, iterating
+        WITH MULTIPLICITY (round-3 BUG-#2 fix: a resample like [42,42,42]
+        contributes seed 42 three times, not once).
+        """
+        by_persona: dict[str, list[tuple[float, float]]] = {}
+        for s in sampled_seeds:
+            for persona, x, y in by_seed.get(int(s), []):
+                by_persona.setdefault(persona, []).append((x, y))
         if len(by_persona) < 3:
             return float("nan")
         xs = [sum(t[0] for t in v) / len(v) for v in by_persona.values()]
@@ -305,10 +450,10 @@ def _cross_arm_delta_rho_seed_bootstrap(
 
     deltas: list[float] = []
     for _ in range(n_iter):
-        l_pick = list(rng.choice(left_seeds, size=len(left_seeds), replace=True))
-        r_pick = list(rng.choice(right_seeds, size=len(right_seeds), replace=True))
-        rho_l = _rho_on_seeds(left_points, l_pick)
-        rho_r = _rho_on_seeds(right_points, r_pick)
+        l_pick = [int(s) for s in rng.choice(left_seeds, size=len(left_seeds), replace=True)]
+        r_pick = [int(s) for s in rng.choice(right_seeds, size=len(right_seeds), replace=True)]
+        rho_l = _rho_on_resample(left_by_seed, l_pick)
+        rho_r = _rho_on_resample(right_by_seed, r_pick)
         if math.isnan(rho_l) or math.isnan(rho_r):
             continue
         deltas.append(rho_r - rho_l)
@@ -349,6 +494,51 @@ def _load_cosines(persona_distance_path: Path) -> dict[str, float]:
         persona: float(per_layer[LAYER_HEADLINE])
         for persona, per_layer in data["cosine"]["on_topic"].items()
     }
+
+
+def _load_cos_to_home(cos_home_path: Path) -> dict[str, float]:
+    """Per-bystander cos_to_local_historian at layer 21 (on-topic).
+
+    Round-3 BUG-#1 fix: the producer (``scripts/issue444_persona_distance_topic.py``)
+    writes ``cosine.<topic>.<persona>.<layer>`` and EXCLUDES the reference
+    persona from OTHERS, so ``local_historian`` (which IS the home) has no
+    self-distance entry. Reader contract:
+
+      1. Parse the producer's actual shape: ``data["cosine"]["on_topic"][persona][LAYER_HEADLINE]``.
+      2. Inject the home's self-distance: ``cos_to_home[HOME_PERSONA] = 1.0``.
+         (Cosine of a persona with itself is 1 by definition; the producer
+         can't write this because it skips the reference.)
+      3. Also accept the legacy flat ``{persona: float}`` shape and the
+         legacy nested ``{"cosine": {"21": {persona: float}}}`` shape for
+         back-compat with hand-written files.
+
+    Round-1/2 was looking for ``chd["cosine"]["21"][persona]``, which the
+    producer never writes -> ``cos_to_home`` was silently EMPTY -> H4
+    distance-to-home absent.
+    """
+    if not cos_home_path.exists():
+        return {}
+    chd = json.loads(cos_home_path.read_text())
+    out: dict[str, float] = {}
+    cosine_block = chd.get("cosine") if isinstance(chd, dict) else None
+    if isinstance(cosine_block, dict):
+        if "on_topic" in cosine_block:
+            # Producer shape: cosine.on_topic.<persona>.<layer_str>
+            for persona, per_layer in cosine_block["on_topic"].items():
+                if isinstance(per_layer, dict) and LAYER_HEADLINE in per_layer:
+                    out[persona] = float(per_layer[LAYER_HEADLINE])
+        elif LAYER_HEADLINE in cosine_block:
+            # Legacy nested shape: cosine.<layer_str>.<persona>
+            inner = cosine_block[LAYER_HEADLINE]
+            if isinstance(inner, dict):
+                out.update({k: float(v) for k, v in inner.items() if isinstance(v, (int, float))})
+    elif isinstance(chd, dict):
+        # Legacy flat: {persona: float}
+        out.update({k: float(v) for k, v in chd.items() if isinstance(v, (int, float))})
+    # Inject the home persona's self-distance (1.0 by definition) so the
+    # full 15-pool is covered.
+    out.setdefault(HOME_PERSONA, 1.0)
+    return out
 
 
 def _load_aggregate_cleaned(arm_path: Path) -> dict[str, dict[str, float]]:
@@ -521,16 +711,22 @@ def _per_arm_metrics(
     # personas.
     if points and _good(prior_lp):
         pairs_lp = [(float(r["prior_logprob"]), float(r["leak"])) for r in points]
-        clust_p = [hash(str(r["persona"])) & 0xFFFFFFFF for r in points]
+        clust_p = [str(r["persona"]) for r in points]  # deterministic (BUG-#6)
         stats["bootstrap_spearman_prior_logprob_vs_leak_cluster_persona"] = (
             _cluster_bootstrap_spearman(pairs_lp, clust_p)
         )
     if points and _good(cos_src):
         pairs_cs = [(float(r["cos_to_source"]), float(r["leak"])) for r in points]
-        clust_p = [hash(str(r["persona"])) & 0xFFFFFFFF for r in points]
+        clust_p = [str(r["persona"]) for r in points]  # deterministic (BUG-#6)
         stats["bootstrap_spearman_cos_to_source_vs_leak_cluster_persona"] = (
             _cluster_bootstrap_spearman(pairs_cs, clust_p)
         )
+
+    # Round-3 BUG-#4: cluster-bootstrap CIs for the H3 partial Spearman and
+    # standardized OLS betas (plan §6.3 requires CIs on both, not just point
+    # estimates). Clusters = personas; deterministic seed for reproducibility.
+    if points and _good(cos_src) and _good(prior_lp):
+        stats["h3_cluster_bootstrap"] = _cluster_bootstrap_h3(points)
 
     # Engagement-covariate partials (plan §6.3 "does the prior signal survive
     # length/engagement adjustment?"). Computed only when the
@@ -587,6 +783,16 @@ def _per_arm_metrics(
         if _good(cos_src) and _good(mean_on_topic):
             eng_stats["partial_spearman_cos_vs_leak_given_on_topic"] = _partial_spearman(
                 cos_src, leak_mean, mean_on_topic
+            )
+        # Joint engagement partials (round-3 BUG-#5): control for length AND
+        # on_topic_fraction simultaneously.
+        if _good(prior_lp) and _good(mean_length) and _good(mean_on_topic):
+            eng_stats["partial_spearman_prior_vs_leak_given_length_and_on_topic"] = (
+                _partial_spearman_multi(prior_lp, leak_mean, [mean_length, mean_on_topic])
+            )
+        if _good(cos_src) and _good(mean_length) and _good(mean_on_topic):
+            eng_stats["partial_spearman_cos_vs_leak_given_length_and_on_topic"] = (
+                _partial_spearman_multi(cos_src, leak_mean, [mean_length, mean_on_topic])
             )
         # Means recorded for transparency / sanity check.
         eng_stats["per_persona_mean_length"] = dict(zip(aligned_personas, mean_length, strict=True))
@@ -649,16 +855,11 @@ def main() -> None:
     ]
     fiveway_priors, fiveway_priors_source = _load_5way_priors_union(arm_aggregate_paths)
 
-    # Distance-to-home (cosine to local_historian@layer21). Optional.
-    cos_to_home: dict[str, float] = {}
+    # Distance-to-home (cosine to local_historian@layer21). Optional file.
+    # Round-3 BUG-#1 fix: parser now matches the producer's actual nested
+    # shape AND injects the home persona's self-distance (cos == 1.0).
     cos_home_path = REPO / args.cos_home_path
-    if cos_home_path.exists():
-        chd = json.loads(cos_home_path.read_text())
-        # Accept either {"cosine": {"21": {persona: float}}} or {persona: float}.
-        if "cosine" in chd and "21" in chd.get("cosine", {}):
-            cos_to_home = {k: float(v) for k, v in chd["cosine"]["21"].items()}
-        elif isinstance(chd, dict):
-            cos_to_home = {k: float(v) for k, v in chd.items() if isinstance(v, (int, float))}
+    cos_to_home = _load_cos_to_home(cos_home_path)
 
     out_full: dict[str, object] = {
         "panel_pool_15": list(PANEL_15),
