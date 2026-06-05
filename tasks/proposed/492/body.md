@@ -10,6 +10,8 @@ goal: Determine whether the contrastive-negative post-response-slot suppression 
   slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective
   suppression), by toggling only that term in a regime where the OFF arm implants
   above floor.
+relates_to:
+- leak-contrastive-negatives
 ---
 ## Goal
 
