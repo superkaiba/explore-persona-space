@@ -360,7 +360,15 @@ async def _summarize_session(
     cyclomatic-complexity cap. All per-session error paths land here:
     transcript unresolvable, tail-read OSError, empty tail, no /issue
     prompt, summarize-call exception — each sets a VISIBLE ``error`` field
-    rather than failing silently."""
+    rather than failing silently.
+
+    **Self-report wins independent of transcript readability.** Before any
+    transcript I/O, if a fresh self-report exists for ``rr.issue`` we use
+    it verbatim and skip the rest. Otherwise an OSError reading the
+    transcript (rotation race, NFS hiccup, permission flap) would drop the
+    fresh /issue-written self-report on the floor, which is exactly the
+    failure mode the self-report path is supposed to insulate the
+    dashboard against."""
     entry_error: str | None = None
     summary: str | None = None
     summary_ts: str | None = None
@@ -369,6 +377,40 @@ async def _summarize_session(
     last_activity_ts: str | None = None
     tail: str | None = None
     try:
+        # 1. Fresh self-report wins FIRST — before any transcript I/O. A
+        #    /issue session that wrote one within the freshness window
+        #    must reach the dashboard regardless of transcript read
+        #    failures (transcript file rotation, NFS hiccup, etc.).
+        if rr.issue is not None:
+            report = session_progress_report.read_self_report(rr.issue)
+            if report is not None and session_progress_report.is_self_report_fresh(report):
+                text = report.get("text")
+                if isinstance(text, str) and text:
+                    summary = text
+                    summary_ts = _utcnow_iso()
+                    summary_model = None
+                    source = "self"
+                    # last_activity_ts left None — we did NOT read the
+                    # transcript, so we cannot claim a fresher
+                    # last_activity_ts than the prior cache entry. The
+                    # dashboard's "summary age" column still renders
+                    # correctly off summary_ts.
+                    payload["sessions"][sid] = build_session_entry(
+                        sid=sid,
+                        pid=pid,
+                        issue=rr.issue,
+                        cwd=rr.cwd,
+                        transcript=rr.transcript,
+                        summary=summary,
+                        summary_ts=summary_ts,
+                        last_activity_ts=last_activity_ts,
+                        error=entry_error,
+                        summary_model=summary_model,
+                        source=source,
+                    )
+                    return
+
+        # 2. No fresh self-report — fall through to the transcript-based path.
         if rr.transcript is None:
             entry_error = rr.reason or "transcript unresolvable"
         else:
@@ -491,8 +533,9 @@ async def _run_pass(dry_run: bool) -> dict:
     Cuts API cost ~5x in steady state where most EPS sessions park in
     ``awaiting_promotion`` / ``planning`` for hours."""
     # Pre-load the prior cache once; per-session idle-skip reads it.
-    prior_cache = load_cache().get("sessions") if isinstance(load_cache(), dict) else None
-    prior_cache = prior_cache if isinstance(prior_cache, dict) else {}
+    cache_obj = load_cache()
+    prior_cache_raw = cache_obj.get("sessions") if isinstance(cache_obj, dict) else None
+    prior_cache = prior_cache_raw if isinstance(prior_cache_raw, dict) else {}
 
     # Discover live sessions, filter to EPS-only with a resolvable transcript.
     live = session_resolver._live_node_pids()

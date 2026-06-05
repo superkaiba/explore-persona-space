@@ -347,14 +347,22 @@ Orchestrator pseudocode:
 ```python
 def set_title(issue: int, step: str) -> None:
     """Build the canonical string, write the self-report, and set the
-    phone title. Soft-fail on change_title (Happy may be unavailable) but
-    NOT on the helper itself — a helper failure means a stale self-report
-    will outlive the next tick and the dashboard will silently lag. Fail
-    loud per CLAUDE.md."""
-    canonical = run_bash(
-        f'uv run python scripts/session_progress_report.py --issue {issue} '
-        f'--step {shlex.quote(step)}'
-    ).strip()
+    phone title. The title / self-report path is OBSERVABILITY
+    infrastructure, not load-bearing — soft-fail on both the helper
+    invocation AND change_title so a stale dashboard never crashes the
+    /issue pipeline. Surface the error in the current turn's output so
+    a regression is visible, then continue."""
+    try:
+        canonical = run_bash(
+            f'uv run python scripts/session_progress_report.py --issue {issue} '
+            f'--step {shlex.quote(step)}'
+        ).strip()
+    except Exception as e:
+        # Helper failed (missing task, broken task.py import, disk full,
+        # etc.). Log and continue — a stale self-report is an
+        # observability regression, NOT a reason to abort the pipeline.
+        log(f"set_title: session_progress_report.py failed: {e}; continuing")
+        return
     try:
         mcp__happy__change_title({"title": canonical})
     except Exception:
@@ -369,11 +377,6 @@ def set_title(issue: int, step: str) -> None:
 (follow-ups posted, clean-result finalized) the orchestrator can pass a
 short composite step string (`"awaiting promotion · followups #240, #241"`)
 — `build_progress_string` will trim it to fit the cap.
-
-If `session_progress_report.py` itself errors (missing task, broken
-task.py import, disk full), surface the error but DO NOT crash the
-pipeline — the title / self-report path is observability infrastructure,
-not load-bearing. Log to the current turn's output and continue.
 
 **Autonomous session behavior (`EPM_AUTONOMOUS_SESSION=1`).** When this env
 var is set (the session was spawned via `spawn_session.py spawn-issue
@@ -1746,6 +1749,16 @@ is when one tick has completed:
 
 ```python
 while True:
+    # MANDATORY: refresh the title + self-report at the TOP of every
+    # tick so the dashboard / happy-ls / phone title stay current with
+    # the loop's `running` status (or the latest phase if the poller
+    # posted one). This is the cheap path — no LLM call — and keeps
+    # `~/.eps-autonomous/issue-progress/<N>.json` fresh under the
+    # summarizer's 20-min freshness window. `set_title` is the soft-fail
+    # helper defined in the "Chat title updates" section above; it
+    # NEVER crashes the loop.
+    set_title(N, current_phase)  # e.g. "running" / "phase: post_eval"
+
     # log_path is the absolute path resolved above (log_abs preferred,
     # log= accepted as legacy fallback during transition window).
     Bash(
@@ -1776,20 +1789,10 @@ while True:
     #                                  if new_milestone was true; loop again.
 ```
 
-**Refresh the title on every tick.** Before the next `Bash(...)` poll
-call, run the canonical-string helper so the dashboard / happy-ls /
-phone title all stay current with the loop's `running` status (or the
-latest phase if the poller posted one). This is the cheap path — no LLM
-call — and keeps the `~/.eps-autonomous/issue-progress/<N>.json` self-
-report fresh under the summarizer's freshness window:
-
-```bash
-uv run python scripts/session_progress_report.py --issue <N> --step "<phase>"
-# capture stdout, mcp__happy__change_title({"title": ...}) soft-fail
-```
-
-(`<phase>` is the current pipeline phase: `"running"` by default,
-`"phase: post_eval"` if a milestone marker just fired, etc.)
+(`current_phase` is `"running"` by default; when the poller emits a
+milestone marker like `phase: post_eval`, update the local
+`current_phase` from the milestone before the next tick so the title
+reflects the latest phase.)
 
 The `poll_pipeline.py` helper posts `epm:progress` events itself when it
 sees a phase transition, AND drains pod-side sentinel files (posting

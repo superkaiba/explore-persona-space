@@ -70,10 +70,9 @@ SELF_REPORT_DIR = Path.home() / ".eps-autonomous" / "issue-progress"
 # and a useful slug, trimming the trailing step description first.
 PROGRESS_STRING_MAX = 78
 
-# Slug cap is borrowed from the existing /issue skill (line ~308) so that
-# pre-existing title-rendering behavior and this helper produce the same
-# slug-clipping policy. Don't drift from that value without also updating
-# the SKILL.md `render_title` helper pseudocode.
+# Slug clip — keeps the phone title readable. Together with PROGRESS_STRING_MAX
+# this leaves comfortable room for the issue number + step description without
+# client-side truncation.
 SLUG_MAX = 45
 
 # Freshness window the summarizer uses to decide whether to reuse the
@@ -143,21 +142,16 @@ def build_progress_string(issue: int, slug: str, step: str) -> str:
     return f"{head}{sep}{trimmed_step}"
 
 
-def _resolve_slug_via_task_workflow(issue: int) -> str:
-    """Fall back to the task frontmatter ``title`` when the caller omits
-    ``--slug``. Imported lazily so this module stays importable in a context
-    that doesn't have the EPS package installed (e.g. a bare CLI invocation
-    on a fresh pod). Fail-loud: an unknown issue raises ``FileNotFoundError``
-    so the caller never writes a blank-slug self-report.
-    """
+def _load_task_frontmatter(issue: int) -> dict:
+    """Return the task's frontmatter dict, or raise ``FileNotFoundError`` if
+    the issue is unknown. Imported lazily so this module stays importable in
+    a context that doesn't have the EPS package installed (e.g. a bare CLI
+    invocation on a fresh pod)."""
     from explore_persona_space.task_workflow import get_task
 
     task = get_task(issue)
-    fm = task.get("frontmatter") or {}
-    slug = fm.get("title")
-    if not isinstance(slug, str):
-        slug = ""
-    return slug.strip()
+    fm = task.get("frontmatter")
+    return fm if isinstance(fm, dict) else {}
 
 
 def write_self_report(
@@ -173,12 +167,21 @@ def write_self_report(
     summarizer pass never reads a partial file.
 
     ``slug`` defaults to the task's frontmatter ``title`` via
-    :func:`_resolve_slug_via_task_workflow`. Pass an explicit slug to override
+    :func:`_load_task_frontmatter`. Pass an explicit slug to override
     (e.g. the SKILL.md helper that already has the task loaded — saves the
     extra disk read).
+
+    **Fail-loud on unknown issue regardless of ``--slug``.** We ALWAYS call
+    :func:`_load_task_frontmatter` even when the caller supplied an explicit
+    slug, so a typo'd issue number produces a ``FileNotFoundError`` (from
+    ``task.py find <N>``) instead of silently writing a self-report file for
+    a non-existent task — keeps the fail-loud contract consistent across
+    both code paths.
     """
+    fm = _load_task_frontmatter(issue)
     if slug is None:
-        slug = _resolve_slug_via_task_workflow(issue)
+        title = fm.get("title")
+        slug = title.strip() if isinstance(title, str) else ""
     text = build_progress_string(issue, slug, step)
     ts = now_iso or _utcnow_iso()
     payload = {

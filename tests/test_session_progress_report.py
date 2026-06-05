@@ -360,3 +360,167 @@ def test_build_session_entry_explicit_llm_source_respects_model_override():
     )
     assert entry["summary_model"] == "claude-haiku-legacy-model-id"
     assert entry["source"] == "llm"
+
+
+# ── _summarize_session: self-report wins independent of transcript ─────────
+
+
+def _run_async(coro_factory_or_coro):
+    """Reusable async runner (duplicate of the earlier helper; kept module-
+    local so each test block is readable without scrolling)."""
+    import asyncio
+
+    return asyncio.run(coro_factory_or_coro())
+
+
+def _make_rr(*, issue, transcript, cwd="/home/me/explore-persona-space"):
+    """Build a session_resolver.ResolveResult-lookalike for the summarizer.
+
+    The resolver dataclass has fields (issue, cwd, transcript, reason);
+    we only need those four for `_summarize_session`. Using SimpleNamespace
+    avoids pulling the real resolver into the unit test (it would touch
+    the live Happy daemon)."""
+    from types import SimpleNamespace
+
+    return SimpleNamespace(issue=issue, cwd=cwd, transcript=transcript, reason=None)
+
+
+def test_summarize_session_self_report_wins_when_transcript_read_fails(monkeypatch, tmp_path):
+    """Regression pin for the bug fix: a fresh self-report MUST reach the
+    cache even when `read_transcript_tail` raises (rotation race, NFS
+    hiccup, permission flap). Pre-fix, the OSError left `tail=None` and
+    the self-report check inside `_produce_summary` was never reached —
+    the self-report was silently dropped."""
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    monkeypatch.setattr(session_summarize, "_get_task_status", lambda issue: "running")
+
+    # Fresh self-report exists for issue 42.
+    session_progress_report.write_self_report(42, slug="my task", step="running")
+
+    # Make the transcript read explode so the pre-fix code path would
+    # have left `tail=None` and never reached the self-report check.
+    def _explode(*args, **kwargs):
+        raise OSError("simulated transcript-rotation race")
+
+    monkeypatch.setattr(session_summarize, "read_transcript_tail", _explode)
+
+    # Sentinel: ensure the LLM client is not invoked at all.
+    haiku_calls = {"n": 0}
+
+    async def _no_call(*args, **kwargs):
+        haiku_calls["n"] += 1
+        return "SHOULD NOT BE CALLED"
+
+    monkeypatch.setattr(session_summarize, "_summarize_one", _no_call)
+
+    payload: dict = {"sessions": {}}
+    rr = _make_rr(issue=42, transcript="/fake/transcript.jsonl")
+
+    async def _go():
+        return await session_summarize._summarize_session(
+            payload=payload,
+            sid="sess-abc",
+            pid=1,
+            rr=rr,
+            prior_entry=None,
+            client=None,
+            dry_run=False,
+        )
+
+    _run_async(_go)
+    entry = payload["sessions"]["sess-abc"]
+    # Self-report's `text` propagated all the way to the cache entry.
+    assert entry["summary"] == "#42 my task · running"
+    assert entry["source"] == "self"
+    assert entry["summary_model"] is None
+    # No LLM call was made — the fresh self-report short-circuited the path.
+    assert haiku_calls["n"] == 0
+    # No error: the transcript-read failure was bypassed entirely.
+    assert entry["error"] is None
+
+
+def test_summarize_session_stale_self_report_falls_through_to_transcript(monkeypatch, tmp_path):
+    """The complement: a STALE self-report must NOT shortcut the
+    transcript path — the summarizer should fall through to the
+    transcript-tail logic so a dead /issue session doesn't keep its old
+    string forever."""
+    import json as _json
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    monkeypatch.setattr(session_summarize, "_get_task_status", lambda issue: "running")
+
+    # Hand-write a stale self-report (timestamp far in the past).
+    (tmp_path / "42.json").write_text(
+        _json.dumps(
+            {
+                "issue": 42,
+                "slug": "stale slug",
+                "step": "very old",
+                "text": "#42 stale slug · very old",
+                "ts": "2020-01-01T00:00:00Z",
+            }
+        )
+    )
+
+    # Transcript read succeeds; the LLM produces a fresh string.
+    monkeypatch.setattr(
+        session_summarize,
+        "read_transcript_tail",
+        lambda *a, **kw: ("transcript content", "2026-06-05T11:00:00Z"),
+    )
+    haiku_calls = {"n": 0}
+
+    async def _fake_call(client, issue, status, tail):
+        haiku_calls["n"] += 1
+        return "fresh LLM summary"
+
+    monkeypatch.setattr(session_summarize, "_summarize_one", _fake_call)
+
+    payload: dict = {"sessions": {}}
+    rr = _make_rr(issue=42, transcript="/fake/transcript.jsonl")
+
+    async def _go():
+        return await session_summarize._summarize_session(
+            payload=payload,
+            sid="sess-stale",
+            pid=1,
+            rr=rr,
+            prior_entry=None,
+            client="sentinel",
+            dry_run=False,
+        )
+
+    _run_async(_go)
+    entry = payload["sessions"]["sess-stale"]
+    assert entry["summary"] == "fresh LLM summary"
+    assert entry["source"] == "llm"
+    assert haiku_calls["n"] == 1
+
+
+def test_write_self_report_unknown_issue_raises_even_with_explicit_slug(monkeypatch, tmp_path):
+    """Fail-loud invariant: a typo'd `--issue N` MUST raise even when an
+    explicit `--slug` is supplied. Pre-fix, the explicit-slug code path
+    short-circuited the task-existence check and silently wrote a
+    self-report file for a non-existent task."""
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+
+    # Patch the lazy-imported `get_task` to act like an unknown issue.
+    import explore_persona_space.task_workflow as tw
+
+    def _unknown(_issue):
+        raise FileNotFoundError("simulated unknown issue")
+
+    monkeypatch.setattr(tw, "get_task", _unknown)
+
+    # With slug=None — should raise (as before).
+    import pytest
+
+    with pytest.raises(FileNotFoundError):
+        session_progress_report.write_self_report(9999, slug=None, step="x")
+
+    # With an explicit slug — MUST still raise (the fix).
+    with pytest.raises(FileNotFoundError):
+        session_progress_report.write_self_report(9999, slug="hand-typed", step="x")
+
+    # And nothing was written to disk.
+    assert not list(tmp_path.glob("*.json"))
