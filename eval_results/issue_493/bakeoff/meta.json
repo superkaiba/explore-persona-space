@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "args": {
+    "phase": "all",
+    "extraction_points": [
+      "end_of_system",
+      "last_prompt",
+      "mean_response"
+    ],
+    "layers": [
+      0,
+      5,
+      7,
+      11,
+      14,
+      15,
+      21,
+      27
+    ],
+    "metrics": [
+      "cosine",
+      "euclidean",
+      "mahal",
+      "mahal_pooled_ctx",
+      "mmd",
+      "c2st",
+      "delta_spec",
+      "gauss_kl",
+      "wass2"
+    ],
+    "transformations": null,
+    "n_probes": 50,
+    "max_response_tokens": 512,
+    "arms": [
+      "pos",
+      "loc"
+    ],
+    "epochs": [
+      1,
+      2,
+      3,
+      5
+    ],
+    "device": "cuda:0",
+    "gpu_id": null,
+    "pca_k": 16,
+    "overwrite": false,
+    "dry_run": false
+  },
+  "git_sha": "a6ce330f1bc9fe6c285ecf7cb974ea8fd2534851",
+  "env": {
+    "python": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "sklearn": "1.8.0"
+  },
+  "started_at": "2026-06-05T12:33:27.814916+00:00"
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "digest": {
+    "identical_clouds": {
+      "c2st_dist": 0.17500000000000004,
+      "mmd2": -0.00568093797473912,
+      "cosine_dist_tight_same_mean": 1.1770833013291515e-05,
+      "euclidean_tight_same_mean": 0.20817893703235457
+    },
+    "separated_clouds": {
+      "cosine_dist": 1.9996059922415714,
+      "c2st_dist": 1.0,
+      "mmd2": 1.2868473598079466
+    },
+    "delta_spec": {
+      "const": {
+        "mean_norm": 16.0,
+        "coherence": 1.0,
+        "effective_dim": 0.0
+      },
+      "random": {
+        "mean_norm": 2.96126007042695,
+        "coherence": 0.05141250965012563,
+        "effective_dim": 20.133318121916048
+      }
+    },
+    "mahal": 133.42246274034164,
+    "end_of_system_mahal_pooled_ctx": {
+      "n_pairs": 30,
+      "min": 1.443460594900844,
+      "max": 3.154067495840705,
+      "mean": 2.7939351171619182
+    },
+    "degenerate_pooled_state": {
+      "state_returned": false,
+      "failure_reason": "pooled cov rank-0 (max eigenvalue 0.00e+00 < 1e-10): centroids are collinear / collapsed"
+    },
+    "single_vector_subset_mahal": 1.9999980164181146,
+    "n2_pooled_cov_finite": 1.41421285526682,
+    "gauss_kl_w2": {
+      "sym_kl": 9760.028513872407,
+      "wass2": 25543.9300882844
+    },
+    "mmd_permutation": {
+      "n_pair_samples_done": 4,
+      "min_p_value": 0.03225806451612903,
+      "pooled_null_p95": 0.017028793692588803
+    },
+    "variants": {
+      "raw_sample": 1.2075965404510498,
+      "centered_sample": 1.1251672506332397
+    },
+    "loocv_length_partialed": {
+      "bare_R2": 0.9369191776003734,
+      "length_partial_R2_independent_covar": 0.9392261939146471,
+      "length_partial_R2_confound_covar": -0.037694177030074494
+    },
+    "synthetic_regression_rho": -0.9279121594673021,
+    "synthetic_cv_r2": 0.845102557996884,
+    "hidden_states_indexing": {
+      "convention": "hidden_states[L+1] == block[L] output (inner layers)",
+      "ok": true
+    },
+    "layer_hook_capture": {
+      "matches_raw_hook": true,
+      "reset_then_recapture_consistent": true
+    },
+    "winner_selection_nonstylized_guard": {
+      "winner_metric": "honest",
+      "rho_nonstylized_glogp_used": true
+    },
+    "winner_subpanel_diagnostic_only": {
+      "winner_is_none": true,
+      "entry_tagged_diagnostic_only": true
+    },
+    "singular_pooled_cov_emits_na": {
+      "matrix_is_none": true,
+      "n_a_reason": "mahal_pooled_ctx at extraction_point=end_of_system: pooled cov rank-0 (max eigenvalue 0.00e+00 < 1e-10): centroids are collinear / collapsed"
+    },
+    "degenerate_subpanel_no_crash": {
+      "n_enumerated": 3,
+      "n_entries": 3,
+      "healthy_rho": -0.5424180937747273,
+      "healthy_cv": NaN,
+      "winner_is_degenerate": false,
+      "winner_metric": null
+    }
+  },
+  "git_sha": "373682602ad4d9d8e3108f457da856df88981935",
+  "timestamp_utc": "2026-06-05T12:32:19.901938+00:00",
+  "env": {
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "sklearn": "1.8.0"
+  }
+}

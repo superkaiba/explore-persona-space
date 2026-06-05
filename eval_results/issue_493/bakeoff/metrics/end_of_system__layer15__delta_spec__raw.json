@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "extraction_point": "end_of_system",
+  "layer": 15,
+  "metric": "delta_spec",
+  "variant": "raw",
+  "pca_k": 16,
+  "cond_ids": [
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5"
+  ],
+  "git_sha": "a6ce330f1bc9fe6c285ecf7cb974ea8fd2534851",
+  "timestamp_utc": "2026-06-05T13:44:50.503530+00:00",
+  "matrix": null,
+  "n_a": "cloud metric N/A at end_of_system (one vector per cond)"
+}
