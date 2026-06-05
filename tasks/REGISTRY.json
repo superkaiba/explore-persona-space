@@ -2836,8 +2836,8 @@
       "goal": "Determine whether on-policy fact leakage to a bystander persona is predicted by the bystander's teacher-independent base prior on the fact, by representational proximity to the teaching persona, or their combination, by teaching one invented fact under sources of varying content-relatedness to a fixed bystander panel and testing whether proximity's predictive sign flips with source content-relatedness while the prior stays stable.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/500",
-      "status": "interpreting",
+      "path": "tasks/reviewing/500",
+      "status": "reviewing",
       "title": "The bystander's own prior on the fact is the only consistently supported predictor of leakage; source proximity does not survive the sign-flip test (MODERATE confidence)"
     },
     "501": {
