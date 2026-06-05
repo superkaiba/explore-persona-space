@@ -6,7 +6,16 @@ tags: []
 created_at: '2026-06-05T09:32:22Z'
 has_clean_result: false
 parent_id: 477
+goal: Determine whether the contrastive-negative post-response-slot suppression (the
+  slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective
+  suppression), by toggling only that term in a regime where the OFF arm implants
+  above floor.
 ---
+## Goal
+
+Determine whether the contrastive-negative post-response-slot suppression (the slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective suppression), by toggling only that term in a regime where the OFF arm implants above floor.
+
+
 ## Context
 
 Parent #477 tried to decouple contrastive-negative *count* from source-implant strength (to break #472's count↔implant confound) and hit an H0 off-ramp at `rank_pick` — no LoRA rank lands the source implant in a readable band. The orchestrator's posted off-ramp synthesis ("genuine capacity limit, not a slot-bug") was **retracted**: the cross-version evidence is confounded across three changes at once.

@@ -2756,6 +2756,7 @@
       "title": "ICL vs finetuning equivalence: do in-context examples == SFT on those same examples (persona framing)"
     },
     "492": {
+      "goal": "Determine whether the contrastive-negative post-response-slot suppression (the slot-fix) suppresses the implanted marker at the SOURCE persona itself (non-selective suppression), by toggling only that term in a regime where the OFF arm implants above floor.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/492",
