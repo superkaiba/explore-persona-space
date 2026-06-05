@@ -68,7 +68,7 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_REVISION = "66d7db7a542e19275f8c1d8e32948396d050faa9"
 DATA_PREFIX = "issue472_neg_geometry"
 DATA_FILES = (
-    f"{DATA_PREFIX}/persona_bank.json",
+    f"{DATA_PREFIX}/geometry/persona_bank.json",
     f"{DATA_PREFIX}/geometry/centroids_L10.pt",
     f"{DATA_PREFIX}/on_policy_R/R_eval.json",
 )
@@ -76,7 +76,7 @@ DATA_FILES = (
 # Local mirror layout (matches the rig's expectations).
 LOCAL_DATA_ROOT = Path("data/issue_472")
 LOCAL_PATHS = {
-    f"{DATA_PREFIX}/persona_bank.json": LOCAL_DATA_ROOT / "persona_bank.json",
+    f"{DATA_PREFIX}/geometry/persona_bank.json": LOCAL_DATA_ROOT / "persona_bank.json",
     f"{DATA_PREFIX}/geometry/centroids_L10.pt": LOCAL_DATA_ROOT / "centroids_L10.pt",
     f"{DATA_PREFIX}/on_policy_R/R_eval.json": LOCAL_DATA_ROOT / "on_policy_R" / "R_eval.json",
 }
@@ -182,7 +182,7 @@ def _select_eval_slice(
         negatives_for_cell,
     )
 
-    bank = load_persona_bank(LOCAL_PATHS[f"{DATA_PREFIX}/persona_bank.json"])
+    bank = load_persona_bank(LOCAL_PATHS[f"{DATA_PREFIX}/geometry/persona_bank.json"])
     cts = cos_to_source(HEADLINE_LAYER, SOURCE_PERSONA, LOCAL_DATA_ROOT)
     base_panel = held_out_panel(cts, source=SOURCE_PERSONA)
     union_477 = all_negatives_union(cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_477)
