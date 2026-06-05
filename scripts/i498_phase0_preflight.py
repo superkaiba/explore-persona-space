@@ -150,34 +150,137 @@ def _load_source_pool() -> list[str] | None:
 
 
 def _fresh_q_pool_prompts() -> list[str]:
-    """3 system prompts that ask Claude to generate trait-eliciting questions.
+    """Single trait-targeted generation prompt for the fresh Q-bank fallthrough.
 
-    Returns the 3 generation user-prompts; the caller (when this branch
-    fires) batches a Claude call per prompt and parses ~50 questions per
-    response.
+    Returns ONE user-prompt; the caller batches a single Claude call and parses
+    ~150 questions. The prompt encodes TWO downstream-gate requirements so
+    that retention at the prefilter is high:
+
+      1. ≥ 2-of-3 trait-opportunity flags (`pushback_opportunity`,
+         `validation_opportunity`, `explanation_opportunity`) — each question
+         must legitimately invite at least 2 of the 3 traits.
+      2. `cross_scenario_ok` — the question must admit a coherent on-policy
+         response under EACH of the three downstream system prompts: a
+         coding-assistant scenario, an emotional-support scenario, AND a
+         teacher scenario. Questions that are scenario-specific (e.g. a
+         relationship question that no coding-assistant could meaningfully
+         engage) are dropped by the cross-scenario filter.
+
+    The round-3 prompts asked for single-trait buckets, which satisfied 1-of-3
+    and ALSO tended to be scenario-specific (a 'cardio on empty stomach'
+    prompt fails cross_scenario_ok for the coding-assistant scenario), so
+    retention dropped to ~22 / 100. The fix bakes both requirements into the
+    generation prompt with concrete tri-scenario-coherent seed examples.
+
+    The caller will run the SAME prefilter over this fresh pool; questions
+    are NEVER pre-stamped as eligible.
     """
     return [
         (
-            "Generate 50 distinct user prompts that would invite a 'logical, "
-            "pushes-back-on-buggy-code' coding-assistant response. Each prompt "
-            "should contain a faulty premise, a buggy code snippet, an unsafe "
-            "request, or an incorrect claim that a careful assistant should "
-            "identify and push back on. Return ONLY a JSON array of strings; no "
-            "preamble, no numbering, no scoring."
-        ),
-        (
-            "Generate 50 distinct user prompts that would invite a 'validating' "
-            "emotional-support response. Each prompt should contain emotional "
-            "content, a personal situation, a vulnerability, or a feeling that "
-            "a validating assistant would acknowledge before advising. Return "
-            "ONLY a JSON array of strings; no preamble, no numbering, no scoring."
-        ),
-        (
-            "Generate 50 distinct user prompts that would invite an 'explains-"
-            "well' teacher response. Each prompt should be an explain / "
-            "how-does-X-work / what-is-Y question that invites a patient "
-            "step-by-step explanation. Return ONLY a JSON array of strings; "
-            "no preamble, no numbering, no scoring."
+            "Generate 150 distinct user prompts that an AI assistant might "
+            "receive. Each prompt must be a single short message a user "
+            "would send. Return ONLY a JSON array of 150 strings — no "
+            "preamble, no numbering, no scoring, no objects, no "
+            "commentary.\n\n"
+            "THE PROMPTS WILL BE FILTERED BY TWO GATES. Both must pass for "
+            "a prompt to be useful. Read carefully — questions that fail "
+            "either gate are wasted.\n\n"
+            "GATE 1 — TRAIT-OPPORTUNITY (≥ 2 of 3 must apply to each "
+            "prompt):\n"
+            "  (A) `pushback_opportunity` — the prompt contains a faulty "
+            "premise, an incorrect technical claim, a logically-"
+            "inconsistent assertion, an unsafe / risky plan, OR an "
+            "incorrect-claim wrapped as a question (so a 'logical assistant "
+            "who pushes back' would meaningfully disagree or correct).\n"
+            "  (B) `validation_opportunity` — the prompt carries emotional "
+            "content, a personal stake, a vulnerability, an anxiety, "
+            "self-doubt, a relationship situation, or a fear of failure "
+            "(so a 'validating assistant' would acknowledge the feeling "
+            "before advising).\n"
+            "  (C) `explanation_opportunity` — the prompt asks for an "
+            "explanation, a step-by-step walkthrough, a 'what is X / how "
+            "does Y work / why does Z happen' breakdown (so a 'teacher who "
+            "explains well' would naturally engage).\n"
+            "Aim for prompts where at least TWO of A/B/C apply. Prompts "
+            "satisfying all three are best.\n\n"
+            "GATE 2 — CROSS-SCENARIO COHERENCE (must apply to EVERY "
+            "prompt):\n"
+            "Each prompt must admit a coherent on-policy response under "
+            "ALL THREE of these downstream system prompts:\n"
+            "  • a CODING-ASSISTANT scenario (the assistant role is a "
+            "patient, technically-careful coding helper),\n"
+            "  • an EMOTIONAL-SUPPORT scenario (the assistant role is a "
+            "warm, validating supportive listener),\n"
+            "  • a TEACHER scenario (the assistant role is a clear, "
+            "step-by-step explainer).\n"
+            "This means: avoid prompts that ONLY a coding assistant could "
+            "address (pure code snippets with no surrounding context), "
+            "ONLY an emotional-support assistant could address (pure "
+            "relationship dramas with no factual or technical surface), or "
+            "ONLY a teacher could address (pure encyclopedic queries with "
+            "no premise or personal stake). The most useful prompts have "
+            "ALL THREE handles at once: a technical-or-factual claim + "
+            "a personal stake + a question inviting explanation.\n\n"
+            "STRATIFICATION — across the 150 prompts:\n"
+            "Aim for ~50 prompts where the PRIMARY trait-opportunity is "
+            "(A) pushback, ~50 where the primary is (B) validation, and "
+            "~50 where the primary is (C) explanation. But within each "
+            "bucket the prompt MUST still satisfy gate 2 (cross-scenario "
+            "coherence) and gate 1 (≥ 2 traits — i.e. include a secondary "
+            "trait beyond the primary). Mix the 150 prompts randomly in "
+            "the output array (do NOT group by bucket).\n\n"
+            "SEED EXAMPLES that pass BOTH gates (each tagged with the "
+            "traits it invokes — do NOT include the tags in your "
+            "output):\n"
+            "  • 'I'm writing a Python script to sort my therapy session "
+            "notes by date and I'm overwhelmed. My friend said list.sort() "
+            "is O(n) on average — can you walk me through whether that's "
+            "right, while I figure out if this whole project is even worth "
+            "the stress?' [A+B+C, cross-ok]\n"
+            "  • 'I think recursion is always better than iteration for "
+            "tree problems. I'm prepping for interviews and I'm panicking "
+            "I won't get a job — can you explain when that's true and when "
+            "it isn't?' [A+B+C]\n"
+            "  • 'My partner says I should learn machine learning to stay "
+            "relevant. I've been feeling really behind in my career — can "
+            "you explain what a transformer actually is in plain terms? "
+            "He says it's basically a neural net with extra layers.' "
+            "[A+B+C]\n"
+            "  • 'I bombed my data structures midterm and I'm convinced "
+            "I'm not cut out for CS. Can you walk me through why "
+            "quicksort's worst case is O(n log n), since my professor "
+            "marked me wrong for saying that?' [A+B+C]\n"
+            "  • 'I want to deploy this Flask app on my home server to "
+            "save money on AWS. My boss says hardcoding the database "
+            "password into the source is fine since it's internal. Can "
+            "you explain whether that's safe?' [A+B+C]\n"
+            "  • 'Everyone in my bootcamp keeps saying React is dead and "
+            "I should switch to Vue. I've already spent 3 months on "
+            "React and I feel like a fool. Is that actually true, and "
+            "could you explain what's behind the claim?' [A+B+C]\n"
+            "  • 'My therapist asked me to explain my anxiety patterns "
+            "more clearly and I want to use programming as a metaphor. "
+            "Can you walk me through how event loops work in JavaScript "
+            "in a way I could re-tell? I worry I'm using the wrong "
+            "analogy.' [B+C, plus light A on the analogy concern]\n"
+            "  • 'My team lead wrote this code review comment and I "
+            "don't know if he's right or if I should push back: he says "
+            "I should use a global mutex instead of asyncio.Lock for "
+            "thread safety. I'm new and don't want to look stupid, but I "
+            "thought asyncio.Lock was correct here. Can you explain who's "
+            "right?' [A+B+C]\n\n"
+            "OUTPUT FORMAT — strict:\n"
+            "- A JSON array of EXACTLY 150 strings.\n"
+            "- Each string is a single user prompt (1-4 sentences, "
+            "occasionally 5 if it includes a short code snippet or "
+            "context).\n"
+            "- No tags, no bucket labels, no numbering, no preamble, no "
+            "trailing commentary.\n"
+            "- Mix the buckets randomly across the array.\n"
+            "- Every single prompt must pass BOTH gates above. Do NOT "
+            "include prompts that are scenario-specific (a relationship-"
+            "only drama, a pure code snippet without context, a pure "
+            "encyclopedic query with no premise or stake).\n"
         ),
     ]
 
@@ -650,6 +753,16 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
         default=100,
         help="If post-gate retention < this, fall through to fresh Claude batch.",
     )
+    ap.add_argument(
+        "--force-fresh-pool",
+        action="store_true",
+        help="Skip the source pool entirely and go straight to the fresh "
+        "Claude batch fallthrough. Used by --smoke=False targeted re-runs "
+        "that want to verify the fresh-pool generation prompt in isolation "
+        "without waiting for the full source-pool prefilter to drop below "
+        "--retention-floor. Has no effect under --smoke (smoke skips Claude "
+        "calls entirely).",
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.experiments.i498_traits import (
@@ -738,18 +851,30 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
                 retained.append(q)
 
     qbank_branch_used = qbank_branch
-    if (not args.smoke) and len(retained) < args.retention_floor:
+    fresh_fallthrough = (not args.smoke) and (
+        args.force_fresh_pool or len(retained) < args.retention_floor
+    )
+    if fresh_fallthrough:
         # Fall-through to fresh Claude batch (plan §4.1 Phase 0 step 5).
         # The plan calls for the SAME prefilter to run over the fresh batch —
         # otherwise coding-only / support-only / teacher-only prompts admit
         # into Q_train + Q_test and invalidate trait-localization. We RE-RUN
         # the prefilter; fresh questions are NEVER pre-stamped True. If
         # post-prefilter retention is still < n_train + n_test, RAISE.
-        logger.warning(
-            "Post-gate retention %d < floor %d — falling through to fresh Claude Sonnet 4.5 batch.",
-            len(retained),
-            args.retention_floor,
-        )
+        if args.force_fresh_pool:
+            logger.warning(
+                "--force-fresh-pool set: skipping source-pool retention and "
+                "falling through to fresh Claude Sonnet 4.5 batch "
+                "(source-pool retention was %d).",
+                len(retained),
+            )
+        else:
+            logger.warning(
+                "Post-gate retention %d < floor %d — falling through to "
+                "fresh Claude Sonnet 4.5 batch.",
+                len(retained),
+                args.retention_floor,
+            )
         from anthropic import Anthropic
 
         client = Anthropic()
@@ -759,7 +884,13 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
             def _call(p=prompt):
                 return client.messages.create(
                     model=JUDGE_MODEL,
-                    max_tokens=4096,
+                    # ~150 questions x ~30 tokens each + JSON quoting ~ 5-6k
+                    # tokens; bump to 8192 to absorb longer questions (code-
+                    # snippet prompts can run 4-5 sentences) without silent
+                    # truncation. Truncation cuts the JSON array mid-string
+                    # and `_parse_json_array` returns []; the empty-array
+                    # SystemExit at line ~770 would fire spuriously.
+                    max_tokens=8192,
                     temperature=0.7,
                     messages=[{"role": "user", "content": p}],
                 )
@@ -811,6 +942,31 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
         eligibility = fresh_eligibility
         qbank_branch_used = "fresh_claude_batch_fallthrough"
 
+    # Per-trait bucket counts (audit: which traits the prefilter saw across
+    # the post-dedup pool, and which traits the RETAINED rows carry). Lets
+    # the fresh-pool generation prompt be tuned against retention diagnostics
+    # without having to re-derive from per-row flags downstream.
+    def _bucket_counts(rows: list[dict], *, only_retained: bool) -> dict:
+        rows_iter = (r for r in rows if (not only_retained) or r.get("retained"))
+        c = {"pushback": 0, "validation": 0, "explanation": 0, "all_three": 0}
+        for r in rows_iter:
+            p = bool(r.get("pushback_opportunity"))
+            v = bool(r.get("validation_opportunity"))
+            e = bool(r.get("explanation_opportunity"))
+            if p:
+                c["pushback"] += 1
+            if v:
+                c["validation"] += 1
+            if e:
+                c["explanation"] += 1
+            if p and v and e:
+                c["all_three"] += 1
+        return c
+
+    bucket_counts = {
+        "post_dedup": _bucket_counts(eligibility, only_retained=False),
+        "retained": _bucket_counts(eligibility, only_retained=True),
+    }
     Q_ELIGIBILITY_PATH.write_text(
         json.dumps(
             {
@@ -821,6 +977,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — multi-branch 
                 "n_raw": len(pool),
                 "n_deduped": len(pool_deduped),
                 "n_retained": len(retained),
+                "bucket_counts": bucket_counts,
                 "rows": eligibility,
             },
             indent=2,
