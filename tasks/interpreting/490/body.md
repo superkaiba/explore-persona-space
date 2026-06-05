@@ -7,7 +7,7 @@ tags:
 - behavior-leakage
 - persona-diversity
 created_at: '2026-06-04T21:34:07Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 478
 goal: 'Determine whether the A+B->C superadditive marker-leakage gap from #478 reflects
   genuine cross-source coupling rather than the shared marker''s larger per-token
