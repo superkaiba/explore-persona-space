@@ -29,7 +29,7 @@ in separate per-issue Happy sessions you spawn via
 `scripts/spawn_session.py spawn-issue --issue <N> --auto`. These are
 **autonomous**: each session self-drives `/issue <N>` with no one at the
 keyboard, pushes through recoverable bugs, auto-approves a plan whose estimated
-GPU-hours is at or under the cap (default 50), and stops only at an over-cap
+GPU-hours is at or under the cap (default 100), and stops only at an over-cap
 plan or at `awaiting_promotion`. You never run `/issue <N>` in THIS session —
 that would collapse the multi-session model.
 
@@ -207,7 +207,7 @@ enforcement point — friction lands before compute commits.
    it self-drives the `/issue` workflow with no human at the keyboard and pushes
    through recoverable bugs until it finishes. It stops at only two points:
    - **Plan approval** — the session AUTO-APPROVES a plan whose estimated
-     GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 50)
+     GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 100)
      and dispatches immediately <!-- gate: gates.plan_approval -->. It parks at
      `plan_pending` only when the plan exceeds the cap (or the estimate is
      missing — fail-safe), which surfaces to the user's phone in THAT session's

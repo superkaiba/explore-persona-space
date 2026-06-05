@@ -91,7 +91,7 @@ self-paces through the workflow with no one at the keyboard and pushes through
 recoverable bugs until it finishes. It stops at only two points:
 
 - **Plan approval** — the session AUTO-APPROVES a plan whose estimated
-  GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 50) and
+  GPU-hours is at or under the cap (`--auto-approve-gpu-hours`, default 100) and
   dispatches immediately; it parks at `plan_pending` only when the plan exceeds
   the cap (or the estimate is missing — fail-safe), which arrives on the user's
   phone in THAT session's tab.
