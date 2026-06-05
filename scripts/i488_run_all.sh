@@ -67,9 +67,14 @@ echo "[phase=phase0] ok"
 # the analyzer must flag this as a methodology caveat in the clean-result
 # (NOT a measurement-validity violation: both estimators converge on the
 # same population JS as r → ∞; the new cells are just noisier).
+#
+# Round-3 fan-out: Phase 1's JS/KL stage was still > 14 wall-h on 1 GPU after
+# the r=2 descope. The pod has 8× H100; the parallel dispatcher partitions
+# the ~462 pending (ci, cj) cells round-robin across the 8 GPUs so each
+# shard handles ~58 cells. Stylization + cosine stay serial (per-condition,
+# not pair-level — ~no parallel gain). See scripts/i488_phase1_parallel.sh.
 echo "[phase=phase1] $(date -Iseconds)"
-uv run python scripts/i488_phase1_predictors.py \
-    --r-samples 2 \
+bash scripts/i488_phase1_parallel.sh \
     > "$LOG_DIR/phase1.log" 2>&1
 echo "[phase=phase1] ok"
 

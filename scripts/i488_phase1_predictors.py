@@ -506,11 +506,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
         nargs="+",
         default=None,
         help=(
-            "Optional whitelist of (i,j) cells like `A1:G2 G2:A1`. Mostly for "
-            "smoke-test of the JS path on a tiny slice."
+            "Optional whitelist of (i,j) cells like `A1:G2 G2:A1`. Used by the "
+            "parallel dispatcher (i488_phase1_parallel.sh) to shard the pending "
+            "JS/KL workload across multiple GPUs, and for smoke-test on a tiny "
+            "slice. With this flag, the shard only computes cells in the list "
+            "whose JS is still None (resume-safe)."
+        ),
+    )
+    ap.add_argument(
+        "--out-suffix",
+        type=str,
+        default="",
+        help=(
+            "Suffix appended to every output file (e.g. `_g0`). Used by the "
+            "parallel dispatcher to keep per-shard outputs separate "
+            "(js_matrix_g0.json, kl_matrix_g0.json, ...). Empty (default) "
+            "preserves byte-identical legacy behavior."
+        ),
+    )
+    ap.add_argument(
+        "--print-pending-pairs",
+        action="store_true",
+        help=(
+            "Print the pending (ci:cj) pairs to stdout (one per line) and exit "
+            "without loading the model. Used by the parallel dispatcher to "
+            "shard work across GPUs. Honors --out-suffix so the pending list "
+            "reflects the shard's own checkpoint state if any."
         ),
     )
     args = ap.parse_args(argv)
+    suffix = args.out_suffix
 
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
 
@@ -525,8 +550,36 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
     probes = probes_all[: args.n_probes]
     class_d_rewrites = load_class_d_rewrites()
 
+    cids = [c.cid for c in CONDITIONS]
+
+    # ── --print-pending-pairs short-circuit ─────────────────────────────────
+    # Used by the parallel dispatcher to discover the work-list deterministically
+    # before any GPU is allocated. Honors --out-suffix so a resumed shard sees
+    # its own prior progress.
+    if args.print_pending_pairs:
+        js_path_q = OUT_DIR / f"js_matrix{suffix}.json"
+        kl_path_q = OUT_DIR / f"kl_matrix{suffix}.json"
+        js_matrix: dict[str, dict[str, float | None]] = (
+            json.loads(js_path_q.read_text())["JS"]
+            if js_path_q.exists() and js_path_q.stat().st_size > 0
+            else {}
+        )
+        kl_matrix: dict[str, dict[str, dict]] = (
+            json.loads(kl_path_q.read_text())["KL"]
+            if kl_path_q.exists() and kl_path_q.stat().st_size > 0
+            else {}
+        )
+        js_matrix, _ = _seed_js_kl_from_i406(js_matrix, kl_matrix)
+        for ci in cids:
+            for cj in cids:
+                if ci == cj:
+                    continue
+                if js_matrix[ci][cj] is None:
+                    print(f"{ci}:{cj}")
+        return 0
+
     # ── Persist is_stylized_source up front (independent of model loads) ──
-    is_stylized_path = OUT_DIR / "is_stylized_source.json"
+    is_stylized_path = OUT_DIR / f"is_stylized_source{suffix}.json"
     is_stylized = {c.cid: int(c.cid in STRONG_STYLIZED_SOURCES) for c in CONDITIONS}
     _atomic_write_json(
         is_stylized_path,
@@ -555,11 +608,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
         )
         model.eval()
 
-    cids = [c.cid for c in CONDITIONS]
-
     # ── JS + KL pass ──
-    js_path = OUT_DIR / "js_matrix.json"
-    kl_path = OUT_DIR / "kl_matrix.json"
+    js_path = OUT_DIR / f"js_matrix{suffix}.json"
+    kl_path = OUT_DIR / f"kl_matrix{suffix}.json"
     if "js" not in args.skip:
         js_matrix: dict[str, dict[str, float | None]] = (
             json.loads(js_path.read_text())["JS"]
@@ -575,12 +626,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
 
         # Identify cells still missing — anything where i OR j is a NEW cid,
         # plus inherited × inherited cells that didn't lift (e.g. #406 D_matrix
-        # left some pairs None).
+        # left some pairs None). With --pairs (shard mode), restrict to the
+        # whitelist AND skip cells whose JS is already filled (resume-safe).
         pending: list[tuple[str, str]] = []
         if args.pairs:
             for pair in args.pairs:
                 i, j = pair.split(":")
-                pending.append((i, j))
+                if js_matrix.get(i, {}).get(j) is None:
+                    pending.append((i, j))
         else:
             for ci in cids:
                 for cj in cids:
@@ -588,7 +641,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
                         continue
                     if js_matrix[ci][cj] is None:
                         pending.append((ci, cj))
-        logger.info("JS/KL: %d pending pairs (out of 27×26 = 702)", len(pending))
+        logger.info(
+            "JS/KL: %d pending pairs (out of 27×26 = 702)%s",
+            len(pending),
+            f" [shard suffix={suffix!r}]" if suffix else "",
+        )
 
         for idx, (ci, cj) in enumerate(pending):
             cell = _rb_block(
@@ -639,7 +696,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
 
     # ── stylization_score pass ──
     if "stylization" not in args.skip:
-        style_path = OUT_DIR / "stylization_score.json"
+        style_path = OUT_DIR / f"stylization_score{suffix}.json"
         existing = (
             json.loads(style_path.read_text()).get("stylization_score", {})
             if style_path.exists() and style_path.stat().st_size > 0
@@ -700,7 +757,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - CLI dispatch loo
                         residuals_by_layer_by_cid[L][cj],
                     )
             _atomic_write_json(
-                OUT_DIR / f"cossim_matrix_layer{L}.json",
+                OUT_DIR / f"cossim_matrix_layer{L}{suffix}.json",
                 {
                     "schema_version": "i488_v1",
                     "conditions": cids,
