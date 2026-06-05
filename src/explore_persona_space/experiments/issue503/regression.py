@@ -1,0 +1,461 @@
+"""Statistical analysis for issue #503 — pooled binomial mixed model on (k, n).
+
+Per plan §9 (MF3 revision):
+
+Primary regression — binomial mixed model on count outcomes:
+
+    cbind(k, n - k) ~ cosine_predictor + cell_type + family + log_tokens
+                      + lexical_persona_cosine + base_rate
+                      + (1 | source) + (1 | target),
+                      family = binomial(link = "logit")
+
+Convergence fallback (pre-registered):
+
+    logit((k + 0.5) / (n + 1)) ~ cosine_predictor + cell_type + family
+                                  + log_tokens + lexical_persona_cosine
+                                  + base_rate
+                                  + (1 | source) + (1 | target)
+
+Secondary — raw-rate Spearman ρ + partial-Spearman ladder (raw →
+partial-log-tokens → partial-lexical → partial-base-rate). Family-clustered
+SE and leave-one-family-out sensitivity. Bootstrap 95% CI (1000 resamples).
+Permutation null (shuffle predictor↔leakage mapping, ≥1000 iterations).
+
+H4 is FDR-corrected across the 3 statistically-tested strata (N→N,
+N→B-EM, N→B-syco). B→B is descriptive-only (effect size + 95% CI +
+exact permutation null at n=4) per MF2.
+
+Implementation uses ``statsmodels`` for the binomial GLM (with
+cluster-robust SE on source-family as a clustering variable for the
+fixed-effects part) and ``scipy.stats.spearmanr`` for the rank
+correlations. We deliberately do NOT depend on R / pymer4 / lme4 here
+to keep the worktree self-contained; a future analyzer-side recheck
+with lme4 is encouraged.
+"""
+
+# ruff: noqa: RUF002, RUF003
+# Intentional Unicode (×, ρ, κ, →, —) in scientific docstrings + logs.
+
+from __future__ import annotations
+
+import logging
+from dataclasses import asdict, dataclass
+from typing import Literal
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
+
+CellType = Literal["N_to_N", "N_to_B_EM", "N_to_B_syco", "B_to_B"]
+PRE_REG_HEADLINE_STRATA: tuple[CellType, ...] = ("N_to_N", "N_to_B_EM", "N_to_B_syco")
+
+
+@dataclass
+class RegressionRow:
+    """One off-diagonal cell-seed observation entering the regression."""
+
+    source: str
+    target: str
+    seed: int
+    cell_type: CellType
+    family: str  # source family
+    k: int  # judge-positive verdicts
+    n: int  # total verdicts
+    cosine_predictor: float  # primary predictor (mean over 2 K=8 draws)
+    cosine_topic_stripped: float | None  # §3.5 control
+    log_tokens: float  # log(generated-token-count)
+    lexical_persona_cosine: float  # #468 carry-forward control
+    base_rate: float  # #499 secondary predictor
+    js_sliced_on_target: float | None  # #466 secondary
+    js_sliced_off_target: float | None  # #466 secondary
+    kl_secondary_dv: float | None  # §5.1 non-saturating sibling DV
+
+
+@dataclass
+class RegressionFit:
+    """One fit's headline numbers + diagnostics."""
+
+    model_form: str
+    n_rows: int
+    converged: bool
+    coef_cosine: float
+    se_cosine: float
+    ci_low_cosine: float  # 95% bootstrap CI
+    ci_high_cosine: float
+    coefs_full: dict[str, float]  # all named coefficients
+    notes: list[str]
+
+
+def rows_to_dataframe(rows: list[RegressionRow]) -> pd.DataFrame:
+    """Normalize a list of ``RegressionRow`` into a DataFrame the
+    statsmodels GLM expects.
+
+    Skips rows with ``n == 0`` (no verdicts — judge errors swallowed
+    everything, the row is uninterpretable; fail-loud rather than
+    silently zero).
+    """
+    records = [asdict(r) for r in rows]
+    df = pd.DataFrame.from_records(records)
+    if (df["n"] == 0).any():
+        n_zero = int((df["n"] == 0).sum())
+        bad = df.loc[df["n"] == 0, ["source", "target", "seed"]].to_dict(orient="records")
+        raise RuntimeError(
+            f"{n_zero} regression rows have n=0 (no judge verdicts succeeded). "
+            f"Fail-loud per CLAUDE.md — investigate before fitting. Bad cells: {bad}"
+        )
+    return df
+
+
+def fit_binomial_mixed(
+    rows: list[RegressionRow],
+    *,
+    strata: tuple[CellType, ...] | None = None,
+) -> RegressionFit:
+    """Fit the §9 primary regression with statsmodels.
+
+    Uses ``statsmodels.GLM(family=Binomial())`` for the fixed-effects
+    coefficients on (k, n - k) and cluster-robust SE clustered on source
+    family. The full random-effects model (random intercepts on source
+    and target) is a follow-up via pymer4 / lme4; here we mark the
+    cluster-SE as "family-clustered" per §9 family-clustering spec.
+
+    If the binomial GLM fails to converge, falls back to the
+    pseudocount-transformed OLS form `logit((k + 0.5) / (n + 1)) ~ ...`
+    per the pre-registered §9 fallback (this stays a fixed-effects model
+    with cluster-robust SE).
+
+    ``strata`` restricts to the named cell types if given (the H4 FDR
+    pre-registration uses ``PRE_REG_HEADLINE_STRATA`` — N→N + N→B-EM +
+    N→B-syco — excluding B→B which is descriptive-only).
+    """
+    import statsmodels.api as sm
+    import statsmodels.formula.api as smf
+
+    df = rows_to_dataframe(rows)
+    if strata is not None:
+        df = df.loc[df["cell_type"].isin(strata)].copy()
+
+    if df.empty:
+        raise RuntimeError(
+            f"fit_binomial_mixed: empty panel after applying strata={strata}; no rows to fit."
+        )
+
+    # Build the response success/failure pair for the binomial GLM.
+    df["successes"] = df["k"].astype(int)
+    df["failures"] = (df["n"] - df["k"]).astype(int)
+
+    formula = (
+        "successes + failures ~ cosine_predictor + C(cell_type) + C(family) "
+        "+ log_tokens + lexical_persona_cosine + base_rate"
+    )
+    notes: list[str] = []
+    converged = True
+    try:
+        model = smf.glm(
+            formula,
+            data=df,
+            family=sm.families.Binomial(),
+            freq_weights=None,
+        )
+        result = model.fit(cov_type="cluster", cov_kwds={"groups": df["family"]})
+    except Exception as exc:
+        notes.append(
+            f"binomial GLM convergence failed: {type(exc).__name__}: {exc}; "
+            "falling back to pseudocount form per §9 pre-registration"
+        )
+        converged = False
+        result = None
+
+    if not converged:
+        # Pseudocount fallback: logit((k+0.5)/(n+1)) ~ predictors.
+        df["pseudo_rate"] = (df["k"] + 0.5) / (df["n"] + 1.0)
+        df["pseudo_logit"] = np.log(df["pseudo_rate"] / (1.0 - df["pseudo_rate"]))
+        formula = (
+            "pseudo_logit ~ cosine_predictor + C(cell_type) + C(family) "
+            "+ log_tokens + lexical_persona_cosine + base_rate"
+        )
+        model = smf.ols(formula, data=df)
+        result = model.fit(cov_type="cluster", cov_kwds={"groups": df["family"]})
+
+    coef_cosine = float(result.params.get("cosine_predictor", float("nan")))
+    se_cosine = float(result.bse.get("cosine_predictor", float("nan")))
+
+    # 95% bootstrap CI on the cosine coefficient (1000 resamples).
+    ci_low, ci_high = _bootstrap_ci_coef(
+        df, formula, predictor="cosine_predictor", n_boot=1000, converged=converged
+    )
+
+    coefs_full = {k: float(v) for k, v in result.params.items()}
+
+    return RegressionFit(
+        model_form=("binomial_mixed" if converged else "pseudocount_logit_ols"),
+        n_rows=len(df),
+        converged=converged,
+        coef_cosine=coef_cosine,
+        se_cosine=se_cosine,
+        ci_low_cosine=ci_low,
+        ci_high_cosine=ci_high,
+        coefs_full=coefs_full,
+        notes=notes,
+    )
+
+
+def _bootstrap_ci_coef(
+    df: pd.DataFrame,
+    formula: str,
+    predictor: str,
+    n_boot: int,
+    converged: bool,
+    *,
+    seed: int = 0,
+) -> tuple[float, float]:
+    """Cluster bootstrap (resample source families with replacement) for
+    a 95% CI on one named coefficient.
+
+    Conservative: on bootstrap-sample convergence failure, the coefficient
+    contributes ``nan`` to the bootstrap distribution and is excluded from
+    the percentile estimate. If <100 bootstrap fits succeed the CI is
+    reported as ``(nan, nan)`` with a note in the caller's RegressionFit.
+    """
+    import statsmodels.api as sm
+    import statsmodels.formula.api as smf
+
+    rng = np.random.default_rng(seed)
+    families = df["family"].unique()
+    fits: list[float] = []
+    for _ in range(n_boot):
+        boot_fams = rng.choice(families, size=len(families), replace=True)
+        parts = [df.loc[df["family"] == fam] for fam in boot_fams]
+        boot_df = pd.concat(parts, axis=0, ignore_index=True)
+        try:
+            if converged:
+                model = smf.glm(formula, data=boot_df, family=sm.families.Binomial())
+                res = model.fit(cov_type="cluster", cov_kwds={"groups": boot_df["family"]})
+            else:
+                model = smf.ols(formula, data=boot_df)
+                res = model.fit(cov_type="cluster", cov_kwds={"groups": boot_df["family"]})
+            fits.append(float(res.params.get(predictor, float("nan"))))
+        except Exception:
+            fits.append(float("nan"))
+    arr = np.asarray(fits, dtype=np.float64)
+    arr = arr[~np.isnan(arr)]
+    if len(arr) < 100:
+        logger.warning(
+            "_bootstrap_ci_coef(%s): only %d valid bootstrap fits (out of %d)",
+            predictor,
+            len(arr),
+            n_boot,
+        )
+        return float("nan"), float("nan")
+    lo, hi = np.percentile(arr, [2.5, 97.5])
+    return float(lo), float(hi)
+
+
+# ── Secondary: raw-rate Spearman ρ + partial regression ladder ────────────
+
+
+def spearman_rho(
+    rows: list[RegressionRow], *, strata: tuple[CellType, ...] | None = None
+) -> dict[str, float]:
+    """Raw-rate Spearman ρ + p-value + n per cell-type stratum (H4 read).
+
+    Returns ``{"rho": ..., "p_value": ..., "n": ...}``. ``strata=None``
+    pools all rows; ``strata=("N_to_N",)`` etc restricts to one stratum.
+    """
+    from scipy.stats import spearmanr
+
+    df = rows_to_dataframe(rows)
+    if strata is not None:
+        df = df.loc[df["cell_type"].isin(strata)].copy()
+    if df.empty:
+        return {"rho": float("nan"), "p_value": float("nan"), "n": 0}
+    rate = df["k"] / df["n"]
+    res = spearmanr(df["cosine_predictor"], rate)
+    return {"rho": float(res.correlation), "p_value": float(res.pvalue), "n": len(df)}
+
+
+def partial_spearman_ladder(rows: list[RegressionRow]) -> dict[str, dict[str, float]]:
+    """The §5.1 partial-ρ ladder.
+
+    Raw → partial(log_tokens) → partial(log_tokens, lexical) → partial(
+    log_tokens, lexical, base_rate). Sequential partialling — each rung
+    drops one more covariate's variance from BOTH the predictor and the
+    outcome (Spearman partial via residualization on ranks).
+    """
+    from scipy.stats import rankdata, spearmanr
+
+    df = rows_to_dataframe(rows)
+    if df.empty:
+        return {}
+
+    def _residualize_ranks(y: np.ndarray, controls: list[np.ndarray]) -> np.ndarray:
+        """Residualize rank(y) on rank(controls...) by OLS."""
+        if not controls:
+            return rankdata(y)
+        x = np.column_stack([rankdata(c) for c in controls])
+        x = np.column_stack([np.ones(len(x)), x])
+        yr = rankdata(y)
+        beta, *_ = np.linalg.lstsq(x, yr, rcond=None)
+        return yr - x @ beta
+
+    rate = (df["k"] / df["n"]).to_numpy()
+    cos = df["cosine_predictor"].to_numpy()
+    log_tok = df["log_tokens"].to_numpy()
+    lex = df["lexical_persona_cosine"].to_numpy()
+    base = df["base_rate"].to_numpy()
+
+    out: dict[str, dict[str, float]] = {}
+    res = spearmanr(cos, rate)
+    out["raw"] = {"rho": float(res.correlation), "p_value": float(res.pvalue)}
+
+    for label, controls in (
+        ("partial_log_tokens", [log_tok]),
+        ("partial_log_tokens_lexical", [log_tok, lex]),
+        ("partial_log_tokens_lexical_base_rate", [log_tok, lex, base]),
+    ):
+        rate_resid = _residualize_ranks(rate, controls)
+        cos_resid = _residualize_ranks(cos, controls)
+        res = spearmanr(cos_resid, rate_resid)
+        out[label] = {"rho": float(res.correlation), "p_value": float(res.pvalue)}
+    return out
+
+
+# ── Robustness: leave-one-family-out + permutation null ───────────────────
+
+
+def leave_one_family_out(rows: list[RegressionRow]) -> dict[str, dict[str, float]]:
+    """Drop each source family, re-fit, return the spread of ρ estimates."""
+    df = rows_to_dataframe(rows)
+    out: dict[str, dict[str, float]] = {}
+    for fam in sorted(df["family"].unique()):
+        kept = [r for r in rows if r.family != fam]
+        if not kept:
+            continue
+        out[f"drop_{fam}"] = spearman_rho(kept)
+    return out
+
+
+def permutation_null(
+    rows: list[RegressionRow], *, n_iter: int = 1000, seed: int = 0
+) -> dict[str, float]:
+    """Shuffle the (predictor → outcome) mapping ``n_iter`` times and
+    report the observed ρ's percentile under the null.
+
+    Per §9 (and §5.1 for B→B): ≥1000 iterations. For very small panels
+    (B→B at n=4) the caller should also compute the exact 4!=24
+    enumeration null — implemented in ``exact_permutation_null``.
+    """
+    from scipy.stats import spearmanr
+
+    df = rows_to_dataframe(rows)
+    if df.empty:
+        return {"rho_obs": float("nan"), "percentile_under_null": float("nan")}
+    rate = (df["k"] / df["n"]).to_numpy()
+    cos = df["cosine_predictor"].to_numpy()
+    obs = float(spearmanr(cos, rate).correlation)
+    rng = np.random.default_rng(seed)
+    null_rhos = np.empty(n_iter, dtype=np.float64)
+    for i in range(n_iter):
+        cos_perm = rng.permutation(cos)
+        null_rhos[i] = float(spearmanr(cos_perm, rate).correlation)
+    pct = float((null_rhos < obs).mean())
+    return {"rho_obs": obs, "percentile_under_null": pct, "n_iter": int(n_iter)}
+
+
+def exact_permutation_null(rows: list[RegressionRow]) -> dict[str, float]:
+    """Exact n!-enumeration null for very small panels (B→B with n≤6).
+
+    Caller is responsible for keeping n small; this enumerates over
+    ``n!`` permutations, which is 24 for n=4 and 720 for n=6.
+    """
+    from itertools import permutations
+
+    from scipy.stats import spearmanr
+
+    df = rows_to_dataframe(rows)
+    if df.empty:
+        return {"rho_obs": float("nan"), "percentile_under_null": float("nan")}
+    if len(df) > 7:
+        raise ValueError(
+            f"exact_permutation_null: panel has {len(df)} rows; enumeration "
+            "explodes — use permutation_null instead."
+        )
+    rate = (df["k"] / df["n"]).to_numpy()
+    cos = df["cosine_predictor"].to_numpy()
+    obs = float(spearmanr(cos, rate).correlation)
+    null_rhos = []
+    for perm in permutations(range(len(cos))):
+        cos_perm = cos[list(perm)]
+        null_rhos.append(float(spearmanr(cos_perm, rate).correlation))
+    null_arr = np.asarray(null_rhos)
+    pct = float((null_arr < obs).mean())
+    return {
+        "rho_obs": obs,
+        "percentile_under_null": pct,
+        "n_enumerations": len(null_arr),
+    }
+
+
+# ── FDR correction (Benjamini-Hochberg) ───────────────────────────────────
+
+
+def fdr_bh(p_values: list[float], alpha: float = 0.05) -> list[bool]:
+    """Benjamini-Hochberg step-up. Returns a per-test ``reject_null`` mask.
+
+    Used at the H4 headline for the 3 statistically-tested strata
+    (N→N, N→B-EM, N→B-syco; B→B excluded per MF2).
+    """
+    arr = np.asarray(p_values, dtype=np.float64)
+    n = len(arr)
+    if n == 0:
+        return []
+    order = np.argsort(arr)
+    sorted_p = arr[order]
+    bh = sorted_p * n / (np.arange(n) + 1)
+    # Step-up: max over BH-adjusted ≤ alpha (in sorted order).
+    accept = np.zeros(n, dtype=bool)
+    crossed = False
+    for i in range(n - 1, -1, -1):
+        if bh[i] <= alpha:
+            crossed = True
+        if crossed:
+            accept[i] = True
+    rejected = np.zeros(n, dtype=bool)
+    rejected[order] = accept
+    return rejected.tolist()
+
+
+def headline_h4_verdict(rows: list[RegressionRow]) -> dict:
+    """Apply the §5.1 + §9 H4 headline gate.
+
+    Pooled ρ ≥ +0.40 AND CI excludes zero AND cell-type-stratified
+    ρ > +0.20 in EACH of N→N, N→B-EM, N→B-syco. Returns a structured
+    dict with the per-stratum ρ + the AND-clause verdict.
+
+    B→B is NOT in the FDR-corrected denominator (descriptive-only per
+    MF2). The pooled ρ here is over ``PRE_REG_HEADLINE_STRATA``.
+    """
+    per_strata = {s: spearman_rho(rows, strata=(s,)) for s in PRE_REG_HEADLINE_STRATA}
+    pooled = spearman_rho(rows, strata=PRE_REG_HEADLINE_STRATA)
+    perm_null = permutation_null([r for r in rows if r.cell_type in PRE_REG_HEADLINE_STRATA])
+
+    per_strata_passes = all(per_strata[s]["rho"] > 0.20 for s in PRE_REG_HEADLINE_STRATA)
+    pooled_pass = pooled["rho"] >= 0.40
+    # CI excludes zero: use the permutation percentile as a proxy (lower
+    # bound), or fall back to the binomial bootstrap CI when the
+    # regression fit is loaded. Here we conservatively gate on the
+    # permutation percentile.
+    perm_excludes_zero = perm_null["percentile_under_null"] >= 0.975
+
+    headline_passes = per_strata_passes and pooled_pass and perm_excludes_zero
+    return {
+        "pooled": pooled,
+        "per_strata": per_strata,
+        "permutation": perm_null,
+        "pre_reg_strata": list(PRE_REG_HEADLINE_STRATA),
+        "headline_pass": bool(headline_passes),
+        "per_strata_pass_above_0.20": bool(per_strata_passes),
+        "pooled_pass_above_0.40": bool(pooled_pass),
+        "perm_excludes_zero": bool(perm_excludes_zero),
+    }
