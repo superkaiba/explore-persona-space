@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "tolerance": 0.003,
+  "strict": true,
+  "n_cond_loaded": 16,
+  "n_probes_loaded": 50,
+  "per_layer": {
+    "0": {
+      "max_abs_diff": 1.6689300537109375e-06,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "5": {
+      "max_abs_diff": 0.000148773193359375,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "11": {
+      "max_abs_diff": 0.0009124279022216797,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "15": {
+      "max_abs_diff": 0.0011677145957946777,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "21": {
+      "max_abs_diff": 0.0016187429428100586,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "27": {
+      "max_abs_diff": 0.0021710991859436035,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    }
+  },
+  "git_sha": "a6ce330f1bc9fe6c285ecf7cb974ea8fd2534851",
+  "timestamp_utc": "2026-06-05T13:44:45.607948+00:00"
+}
