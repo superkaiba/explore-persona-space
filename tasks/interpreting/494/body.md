@@ -1,7 +1,7 @@
 ---
 title: Base-model persona-distance does not predict fact-leakage to bystander personas
-  — the bystander's prior is the only signal that survives controlling for the others
-  (MODERATE confidence)
+  — the one borderline-positive partial fails when teach persona is residualized out
+  (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05
