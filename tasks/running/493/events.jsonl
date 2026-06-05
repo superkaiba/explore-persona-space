@@ -1,2 +1,3 @@
 {"ts": "2026-06-05T09:49:22Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "analysis"}
 {"ts": "2026-06-05T09:50:44Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "running", "note": "Planning skipped per explicit user override (implement -> code-review -> run flow). Dispatching experiment-implementer."}
+{"ts": "2026-06-05T09:50:44Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "User override: skip adversarial-planner; go straight to implement -> code-review -> pod run. Body serves as the spec. Worktree issue-493 created."}
