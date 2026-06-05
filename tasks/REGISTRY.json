@@ -2774,8 +2774,8 @@
       "goal": "Test whether base-model persona-distance (cosine + JS/KL of output distributions) between a teach persona and a non-teach persona predicts how much a taught fact leaks to the non-teach persona, by re-analyzing the already-trained fact-teaching adapters from the #381/#389/#390/#444 line (no new training).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/494",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/494",
+      "status": "awaiting_promotion",
       "title": "Base-model persona-distance does not predict fact leakage in the pooled bystander panel (LOW confidence)"
     },
     "495": {
