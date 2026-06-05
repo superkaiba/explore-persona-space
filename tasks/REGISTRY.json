@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 491,
+  "highest_id": 492,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2754,6 +2754,13 @@
       "path": "tasks/proposed/491",
       "status": "proposed",
       "title": "ICL vs finetuning equivalence: do in-context examples == SFT on those same examples (persona framing)"
+    },
+    "492": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/492",
+      "status": "proposed",
+      "title": "Slot-fix ON/OFF probe: do contrastive negatives suppress the marker at the SOURCE persona (non-selective)?"
     },
     "5": {
       "has_clean_result": false,
