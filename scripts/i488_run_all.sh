@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Issue #488 — top-level pipeline orchestrator.
+#
+# Phases (each emits [phase=name] + [phase=done] for poll_pipeline.py):
+#   Phase 0:  generate base on-policy R for the 11 new conditions
+#   Phase 1:  base-model predictors (JS, KL, cosine, stylization)
+#   Phase 2:  smoke calibrate (label-mask audit + in-band fracs + saturation + EOS-grad)
+#   Phase 3:  sweep train (27 conds × 2 seeds × picked-3 fracs)  [PHASE 2/3 UNIFIED]
+#   Phase 4:  on-policy emission + ΔG eval
+#   Phase 5:  analysis (partial ρ + cluster bootstrap)
+#   Phase 6:  figures
+#
+# Phases 2 + 3 are unified in scripts/i488_phase23_dispatch.sh; smoke IS the sweep
+# with --conds A1 G2 --seeds 42 (see Step 6d.0 architecture-parity check).
+#
+# Per CLAUDE.md "Pod-side code NEVER shells out to scripts/task.py": failure
+# states write a sentinel under /workspace/logs that poll_pipeline.py picks up.
+# Successful completion emits [phase=done] + final sentinel.
+
+set -euo pipefail
+export PATH="$HOME/.local/bin:$PATH"
+export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
+export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
+export EPM_PERSIST_ADAPTER_HF_REPO="${EPM_PERSIST_ADAPTER_HF_REPO:-superkaiba1/explore-persona-space}"
+
+LOG_DIR=logs/issue_488
+mkdir -p "$LOG_DIR" /workspace/logs
+
+START_TS=$(date -Iseconds)
+echo "[phase=start] i488 pipeline begin $START_TS"
+
+write_final_sentinel() {
+    local epoch
+    epoch=$(date +%s)
+    local sentinel="/workspace/logs/issue-488-epm_results-${epoch}.json"
+    uv run python - <<PY
+import json, datetime
+payload = {
+    "issue": 488,
+    "sentinel_schema_version": 1,
+    "kind": "epm:results",
+    "version": 1,
+    "note": "i488 pipeline complete",
+    "started_at": "$START_TS",
+    "finished_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+}
+with open("$sentinel", "w") as f:
+    json.dump(payload, f, indent=2)
+print(f"wrote {payload['kind']} sentinel: $sentinel")
+PY
+}
+
+# ── Phase 0 ──
+echo "[phase=phase0] $(date -Iseconds)"
+uv run python scripts/i488_phase0_generate_data.py \
+    > "$LOG_DIR/phase0.log" 2>&1
+echo "[phase=phase0] ok"
+
+# ── Phase 1 ──
+echo "[phase=phase1] $(date -Iseconds)"
+uv run python scripts/i488_phase1_predictors.py \
+    > "$LOG_DIR/phase1.log" 2>&1
+echo "[phase=phase1] ok"
+
+# ── Phases 2 + 3 (unified dispatcher) ──
+echo "[phase=phase23_dispatch] $(date -Iseconds)"
+bash scripts/i488_phase23_dispatch.sh
+echo "[phase=phase23_dispatch] ok"
+
+# ── Phase 4 ──
+echo "[phase=phase4_dispatch] $(date -Iseconds)"
+bash scripts/i488_phase4_dispatch.sh
+echo "[phase=phase4_dispatch] ok"
+
+# ── Phase 5 ──
+echo "[phase=phase5] $(date -Iseconds)"
+uv run python scripts/i488_phase5_analyze.py \
+    > "$LOG_DIR/phase5.log" 2>&1
+echo "[phase=phase5] ok"
+
+# ── Phase 6 (figures) ──
+echo "[phase=phase6_figures] $(date -Iseconds)"
+uv run python scripts/i488_make_figures.py \
+    > "$LOG_DIR/phase6.log" 2>&1
+echo "[phase=phase6_figures] ok"
+
+write_final_sentinel
+echo "[phase=done] i488 pipeline complete $(date -Iseconds)"
