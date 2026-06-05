@@ -718,10 +718,10 @@ def main(argv: list[str] | None = None) -> None:
     p_issue.add_argument(
         "--auto-approve-gpu-hours",
         type=float,
-        default=24.0,
+        default=50.0,
         help=(
             "Autonomous sessions auto-approve a plan whose estimated GPU-hours "
-            "is <= this value and park at plan_pending above it. Default 24."
+            "is <= this value and park at plan_pending above it. Default 50."
         ),
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)

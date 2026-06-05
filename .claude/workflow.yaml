@@ -345,7 +345,7 @@ gates:
       name: plan_approval
       step: "2c"
       status: status:plan_pending
-      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE a plan whose gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24) and continue without pausing; they park at plan_pending (this gate) only when the estimate exceeds the cap or is missing/unparseable (fail-safe). Interactive sessions always ask."
+      reason: "plan approval — user runs `uv run python scripts/task.py set-status <N> approved` (or replies `approve` in chat). EXCEPTION — autonomous sessions (EPM_AUTONOMOUS_SESSION=1, spawned via `spawn_session.py spawn-issue --auto`) AUTO-APPROVE a plan whose gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 50) and continue without pausing; they park at plan_pending (this gate) only when the estimate exceeds the cap or is missing/unparseable (fail-safe). Interactive sessions always ask."
     # id 5 (worktree_merge) RETIRED 2026-06-03: the worktree merge is now
     # automatic (no AskUserQuestion) at the terminal point — Step 9b for
     # experiments (awaiting_promotion), Step 10d for code paths. See the
@@ -1173,7 +1173,7 @@ markers:
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
-    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this when the plan's gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24); note records the estimate + cap."
+    fields: "user `approve` reply; advances status from plan_pending to approved. In an autonomous session (EPM_AUTONOMOUS_SESSION=1) the skill auto-posts this when the plan's gpu_hours_total <= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 50); note records the estimate + cap."
   - kind: "epm:awaiting-spend-approval"
     posted_by: skill
     when: "Step 2c (autonomous session, over cap or missing estimate)"
