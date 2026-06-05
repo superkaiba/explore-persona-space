@@ -1137,3 +1137,63 @@ def test_has_upload_verification_pass_latest_event_wins(monkeypatch):
         [_upload_verification_event("FAIL"), _upload_verification_event("PASS")],
     )
     assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+def _orchestrator_posted_event(verdict: str) -> dict:
+    """Build an ``epm:upload-verification`` event in the shape the orchestrator
+    posts when it verifies uploads directly (no upload-verifier agent in the
+    loop): the note BEGINS with a bare verdict token followed by a
+    parenthetical attribution, with no ``**Verdict: ...**`` prefix. Mirrors
+    tasks/awaiting_promotion/465/events.jsonl, the incident that motivated the
+    leading-bare-verdict fallback in ``_has_upload_verification_pass``."""
+    return {
+        "ts": "2026-06-02T12:24:00Z",
+        "kind": "epm:upload-verification",
+        "version": 1,
+        "by": "orchestrator",
+        "note": (
+            f"{verdict} (orchestrator-verified directly, not via experimenter): "
+            "4 adapters on HF model repo + 5 figures committed to git issue-465."
+        ),
+    }
+
+
+def test_has_upload_verification_pass_orchestrator_posted_bare_leading_pass(
+    monkeypatch,
+):
+    """Regression for the 2026-06-05 task #465 incident: when the orchestrator
+    posts the upload-verification marker directly (without the upload-verifier
+    agent's bold-prefixed template), the note leads with a bare ``PASS`` token.
+    The parser must accept that as a PASS verdict so ``pod.py terminate`` does
+    not refuse a fully-verified pod and force a ``--skip-upload-verify``
+    override."""
+    _stub_list_events(monkeypatch, [_orchestrator_posted_event("PASS")])
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+
+@pytest.mark.parametrize("verdict", ["FAIL", "WARN"])
+def test_has_upload_verification_pass_orchestrator_posted_bare_leading_non_pass(
+    monkeypatch, verdict
+):
+    """Symmetry: an orchestrator-posted note that leads with bare ``FAIL`` or
+    ``WARN`` must NOT be parsed as PASS — the fallback regex captures any
+    verdict token, the PASS-or-not test then rejects the non-PASS values."""
+    _stub_list_events(monkeypatch, [_orchestrator_posted_event(verdict)])
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
+
+
+def test_has_upload_verification_pass_orchestrator_posted_latest_wins(monkeypatch):
+    """``latest-event-wins`` still holds across the new fallback: an older
+    FAIL followed by a newer bare-leading PASS resolves to True; the inverse
+    resolves to False."""
+    _stub_list_events(
+        monkeypatch,
+        [_orchestrator_posted_event("FAIL"), _orchestrator_posted_event("PASS")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is True
+
+    _stub_list_events(
+        monkeypatch,
+        [_orchestrator_posted_event("PASS"), _orchestrator_posted_event("FAIL")],
+    )
+    assert pod_lifecycle._has_upload_verification_pass(999) is False
