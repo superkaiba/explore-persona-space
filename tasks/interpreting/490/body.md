@@ -1,6 +1,6 @@
 ---
-title: Dose-matched control for the A+B->C superadditive marker-leakage gap (#478
-  follow-up)
+title: Per-token dose, not midpoint geometry, explains shared-marker leakage at intermediate
+  held-out personas (MODERATE confidence)
 kind: experiment
 tags:
 - mentor-dan

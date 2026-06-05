@@ -2746,7 +2746,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/490",
       "status": "interpreting",
-      "title": "Dose-matched control for the A+B->C superadditive marker-leakage gap (#478 follow-up)"
+      "title": "Per-token dose, not midpoint geometry, explains shared-marker leakage at intermediate held-out personas (MODERATE confidence)"
     },
     "491": {
       "has_clean_result": false,
