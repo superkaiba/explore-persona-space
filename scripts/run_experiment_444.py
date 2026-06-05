@@ -4904,9 +4904,31 @@ def phase_worker(args: argparse.Namespace) -> dict[str, Any]:
 # ── Phase: full-eval ─────────────────────────────────────────────────────────
 
 
-def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str, *, gpu_id: int = 0) -> Path:
-    """Download + merge an HF adapter for vLLM (mirror #389/#407)."""
-    from huggingface_hub import snapshot_download
+def _ensure_merged_adapter(
+    adapter_repo_path: str,
+    seed: int,
+    tag: str,
+    *,
+    gpu_id: int = 0,
+    local_out_dir: str | None = None,
+) -> Path:
+    """Download + merge an HF adapter for vLLM (mirror #389/#407).
+
+    Adapter source resolution (in order):
+      1. ``local_merged`` is already present -> reuse (idempotent re-entry).
+      2. ``local_out_dir`` is set AND contains a valid LoRA adapter on disk
+         -> use it directly, skip the HF download (fast path for the local
+         pod that just trained the cell — #500 exp500 arms).
+      3. Per-file paginated download via ``HfApi().list_repo_files`` +
+         ``hf_hub_download`` (NOT ``snapshot_download(allow_patterns=...)``,
+         which lists files via ``model_info().siblings`` and silently
+         truncates at ~5,686 entries on the shared
+         ``superkaiba1/explore-persona-space`` repo — files past the cutoff
+         match nothing and the old call printed "Fetching 0 files" then
+         raised). ``hf_hub_download`` is paginated and immune to the
+         truncation.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
 
     from explore_persona_space.train.sft import merge_lora
 
@@ -4917,14 +4939,49 @@ def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str, *, gpu_i
     if local_merged.exists() and (local_merged / "config.json").exists():
         logger.info("merged dir %s already present; reusing", local_merged)
         return local_merged
-    if not (local_adapter / "adapter_config.json").exists():
-        logger.info("downloading adapter %s", adapter_repo_path)
-        snapshot_download(
-            repo_id=repo_id,
-            allow_patterns=[f"{path_in_repo}/**"],
-            local_dir=str(ADAPTER_ROOT),
-            token=os.environ.get("HF_TOKEN"),
+
+    # (2) Local-first: the trained adapter dir exists on this pod.
+    if local_out_dir:
+        local_path = Path(local_out_dir)
+        has_cfg = (local_path / "adapter_config.json").exists()
+        has_weights = (local_path / "adapter_model.safetensors").exists() or (
+            local_path / "adapter_model.bin"
+        ).exists()
+        if has_cfg and has_weights:
+            logger.info("using local trained adapter %s (skipping HF download)", local_path)
+            logger.info("merging adapter -> %s (gpu_id=%d)", local_merged, gpu_id)
+            merge_lora(BASE_MODEL, str(local_path), str(local_merged), gpu_id=gpu_id)
+            return local_merged
+        logger.info(
+            "local_out_dir %s missing adapter_config.json or adapter_model.* "
+            "(has_cfg=%s has_weights=%s); falling back to HF download",
+            local_path,
+            has_cfg,
+            has_weights,
         )
+
+    # (3) Paginated per-file download (truncation-immune).
+    if not (local_adapter / "adapter_config.json").exists():
+        logger.info("downloading adapter %s (paginated)", adapter_repo_path)
+        token = os.environ.get("HF_TOKEN")
+        repo_files = [
+            f
+            for f in HfApi().list_repo_files(repo_id, token=token)
+            if f.startswith(path_in_repo + "/")
+        ]
+        if not repo_files:
+            raise RuntimeError(
+                f"no files under {path_in_repo} in {repo_id} "
+                "(checked via list_repo_files — adapter never uploaded?)"
+            )
+        logger.info("fetching %d files from %s/%s", len(repo_files), repo_id, path_in_repo)
+        for f in repo_files:
+            hf_hub_download(
+                repo_id=repo_id,
+                filename=f,
+                local_dir=str(ADAPTER_ROOT),
+                token=token,
+            )
         actual = ADAPTER_ROOT / path_in_repo
         if actual.exists():
             local_adapter.parent.mkdir(parents=True, exist_ok=True)
@@ -4932,7 +4989,10 @@ def _ensure_merged_adapter(adapter_repo_path: str, seed: int, tag: str, *, gpu_i
                 shutil.rmtree(local_adapter)
             shutil.move(str(actual), str(local_adapter))
         else:
-            raise RuntimeError(f"snapshot_download did not produce {actual}")
+            raise RuntimeError(
+                f"paginated download did not produce {actual} "
+                f"(fetched {len(repo_files)} files into {ADAPTER_ROOT})"
+            )
     logger.info("merging adapter -> %s (gpu_id=%d)", local_merged, gpu_id)
     merge_lora(BASE_MODEL, str(local_adapter), str(local_merged), gpu_id=gpu_id)
     return local_merged
@@ -5089,8 +5149,16 @@ def phase_full_eval(args: argparse.Namespace) -> dict[str, Any]:
             logger.info("cell %s already judged; skipping", cell.tag)
             summary["per_cell"][cell.tag] = {"judged_path": str(cell_judged), "skipped": True}
             continue
-        # Merge + generate.
-        merged = _ensure_merged_adapter(adapter_repo_path, cell.seed, cell.tag, gpu_id=args.gpu_id)
+        # Merge + generate.  Prefer the local trained-adapter dir (fast path
+        # for the pod that just ran training); fall back to HF download
+        # when missing (e.g. a fresh pod that lost its volume).
+        merged = _ensure_merged_adapter(
+            adapter_repo_path,
+            cell.seed,
+            cell.tag,
+            gpu_id=args.gpu_id,
+            local_out_dir=train_info.get("out_dir"),
+        )
         prompts: list[tuple[str | None, str]] = []
         keys: list[tuple[str, str, str, int, str]] = []
         for persona, sys_prompt in eval_frames.items():
