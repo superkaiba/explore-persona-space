@@ -1,1 +1,2 @@
 {"ts": "2026-06-05T10:15:29Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-05T10:19:36Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #500 to open question(s) leak-predictor, fact-teach-persona-transfer, leak-contrastive-negatives; created_new=none; mode=auto-match."}
