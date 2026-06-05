@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 498,
+  "highest_id": 499,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2809,6 +2809,14 @@
       "path": "tasks/proposed/498",
       "status": "proposed",
       "title": "Implant scenario-specific useful assistant traits (coding=pushes-back, support=validating, teacher=explains) gated by a role token"
+    },
+    "499": {
+      "goal": "Compute, training-free, the base model's mean log P(trained completion | bystander system prompt) over the training set per bystander, and test it as a baseline predictor of post-training leakage to that bystander \u2014 and as a control for whether cosine/JS are partly re-measuring this base rate.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/499",
+      "status": "proposed",
+      "title": "P(training data | bystander context) as a base-rate baseline predictor of leakage"
     },
     "5": {
       "has_clean_result": false,
