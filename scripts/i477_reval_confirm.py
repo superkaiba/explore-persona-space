@@ -101,6 +101,9 @@ def _git_sha() -> str:
 
 def _ensure_data(token: str | None) -> None:
     """Pull the pinned-rev persona bank + centroids + R_eval into data/issue_472/."""
+
+    import shutil
+
     from huggingface_hub import hf_hub_download
 
     LOCAL_DATA_ROOT.mkdir(parents=True, exist_ok=True)
@@ -118,8 +121,10 @@ def _ensure_data(token: str | None) -> None:
             token=token,
         )
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        # Hard-link (cheap) into the rig's expected layout.
-        os.link(cached, local_path)
+        # Copy (idempotent — overwrites) into the rig's expected layout.
+        # os.link is non-idempotent (FileExistsError on relaunch) AND fails
+        # across filesystems (EXDEV: HF cache vs data/ may be different mounts).
+        shutil.copyfile(cached, local_path)
 
 
 def _fetch_adapter(token: str | None, dest: Path) -> Path:
