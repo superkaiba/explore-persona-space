@@ -2744,8 +2744,8 @@
       "goal": "Determine whether the A+B->C superadditive marker-leakage gap from #478 reflects genuine cross-source coupling rather than the shared marker's larger per-token training dose, by adding a per-token-dose-matched control that holds total marker dose constant while varying only whether that dose is spread across two source personas or concentrated in one.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/490",
-      "status": "interpreting",
+      "path": "tasks/reviewing/490",
+      "status": "reviewing",
       "title": "Dose-matched midpoint coupling is indistinguishable from zero at small A-B separations (MODERATE confidence)"
     },
     "491": {
