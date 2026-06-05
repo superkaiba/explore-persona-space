@@ -36,6 +36,9 @@ LEAK = json.loads(
     (REPO / "eval_results/issue_444/bystander_logprob/leak_rates_snapshot.json").read_text()
 )["recipes"]
 DIST = json.loads((REPO / "eval_results/issue_444/persona_distance_topic/results.json").read_text())
+FJS = json.loads(
+    (REPO / "eval_results/issue_444/bystander_logprob/fact_slice_js.json").read_text()
+)["summary"]
 
 NT = [
     "local_historian",
@@ -56,6 +59,7 @@ LABEL = {
 base = {p: BASE[p]["mean_logprob_per_tok"] for p in NT}
 cos_on = {p: DIST["cosine"]["on_topic"][p]["21"] for p in NT}
 js_on = {p: DIST["js_similarity"]["on_topic"][p] for p in NT}
+fjs_sim = {p: FJS[p]["js_similarity"] for p in NT}
 var_recipes = [r for r in LEAK if len({LEAK[r][p] for p in NT}) > 1]
 RECIPE_LABEL = {
     "hand-written-contradictory-cn": "contradictory neg.",
@@ -104,11 +108,15 @@ def main() -> None:
     axA.set_title(f"A. Bystander prior vs leak (Spearman {rho:+.2f})")
     axA.legend(frameon=False, fontsize=8, loc="upper left")
 
-    # Panel B: predictor comparison (pooled Spearman)
+    # Panel B: predictor comparison (pooled Spearman).
+    # The discriminator is teacher-REFERENCED distance (all backwards) vs the
+    # teacher-INDEPENDENT bystander prior (positive) -- NOT the probe slice:
+    # fact-slice JS is on the fact and still backwards.
     preds = {
-        "bystander\nprior": pooled(base)[0],
-        "cosine\n(on-topic)": pooled(cos_on)[0],
-        "JS\n(on-topic)": pooled(js_on)[0],
+        "bystander prior\n(teacher-indep)": pooled(base)[0],
+        "cosine\n(teacher-ref)": pooled(cos_on)[0],
+        "generic JS\n(teacher-ref)": pooled(js_on)[0],
+        "fact-slice JS\n(teacher-ref)": pooled(fjs_sim)[0],
     }
     names = list(preds)
     vals = [preds[n] for n in names]
@@ -118,11 +126,12 @@ def main() -> None:
     for i, v in enumerate(vals):
         axB.annotate(f"{v:+.2f}", (i, v), ha="center", va="bottom" if v > 0 else "top", fontsize=9)
     axB.set_ylabel("pooled Spearman rho with leak (n=18)")
-    axB.set_title("B. Bystander prior flips the sign vs geometry")
+    axB.set_title("B. Teacher-distance is backwards (any slice); only the prior predicts")
     axB.set_ylim(-0.7, 0.5)
+    axB.tick_params(axis="x", labelsize=7.5)
 
     fig.suptitle(
-        "#444 fact leakage: eval persona's base prior beats (reverses) representational distance",
+        "#444 fact leakage tracks the bystander's own prior, NOT distance to the teacher",
         fontsize=10.5,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.96))
@@ -145,6 +154,9 @@ def main() -> None:
             ),
             "js_on_topic": dict(
                 zip(["spearman", "spearman_p", "pearson"], pooled(js_on), strict=True)
+            ),
+            "fact_slice_js": dict(
+                zip(["spearman", "spearman_p", "pearson"], pooled(fjs_sim), strict=True)
             ),
         },
         "per_recipe_spearman_bystander": {

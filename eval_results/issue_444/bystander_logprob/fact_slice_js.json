@@ -1,0 +1,44 @@
+{
+  "_doc": "Fact-slice JS: per-position base-2 JS between marine_biologist and each eval persona, teacher-forced over the taught completion C, averaged over C positions and the 239 teach rows. js_similarity = 1 - js_fact (higher = bystander reads fact like teacher).",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "reference_persona": "marine_biologist",
+  "n_teach_rows": 239,
+  "summary": {
+    "local_historian": {
+      "js_fact": 0.12134266312713403,
+      "js_similarity": 0.878657336872866,
+      "sem": 0.003030912177860924,
+      "n_rows": 239
+    },
+    "local_resident": {
+      "js_fact": 0.08780340932184931,
+      "js_similarity": 0.9121965906781507,
+      "sem": 0.0030725855468892553,
+      "n_rows": 239
+    },
+    "assistant": {
+      "js_fact": 0.06589326175576599,
+      "js_similarity": 0.9341067382442341,
+      "sem": 0.002566860817366669,
+      "n_rows": 239
+    },
+    "software_engineer": {
+      "js_fact": 0.05224175431286316,
+      "js_similarity": 0.9477582456871368,
+      "sem": 0.0022304322041731247,
+      "n_rows": 239
+    },
+    "kindergarten_teacher": {
+      "js_fact": 0.06878945657741824,
+      "js_similarity": 0.9312105434225818,
+      "sem": 0.0024668997215539046,
+      "n_rows": 239
+    },
+    "no_system": {
+      "js_fact": 0.05604602822012981,
+      "js_similarity": 0.9439539717798702,
+      "sem": 0.0023483316123743265,
+      "n_rows": 239
+    }
+  }
+}

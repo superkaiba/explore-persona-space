@@ -15,6 +15,11 @@
       "spearman": -0.4555223560123494,
       "spearman_p": 0.05747275337391419,
       "pearson": -0.5576447951652747
+    },
+    "fact_slice_js": {
+      "spearman": -0.41782395413546536,
+      "spearman_p": 0.08446144815216329,
+      "pearson": -0.5263639417383806
     }
   },
   "per_recipe_spearman_bystander": {
