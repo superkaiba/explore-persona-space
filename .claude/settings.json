@@ -88,6 +88,15 @@
             "command": "file_path=$(jq -r '.tool_input.file_path // empty'); if [ -n \"$file_path\" ] && echo \"$file_path\" | grep -qE '^/workspace/'; then echo \"WARNING: Editing $file_path under /workspace/. CLAUDE.md: 'All code changes on local VM, never on pods.' Likely a stale symlink or misconfigured clone — fix the path.\" >&2; fi"
           }
         ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "a=$(printf '%s' \"${EPM_AUTONOMOUS_SESSION:-}\" | tr '[:upper:]' '[:lower:]'); if [ -n \"$a\" ] && [ \"$a\" != \"0\" ] && [ \"$a\" != \"false\" ] && [ \"$a\" != \"no\" ]; then q=$(jq -c '.tool_input' 2>/dev/null); if echo \"$q\" | grep -qiE 'approve plan|plan #[0-9]|/tasks/[0-9]+/plan|plan v[0-9]+'; then echo 'BLOCKED (autonomous session): a plan-approval AskUserQuestion is forbidden when EPM_AUTONOMOUS_SESSION is set. The plan-approval decision is code-enforced by `task.py set-status <N> plan_pending --auto-approve-if-autonomous --gpu-hours <X>` (issue SKILL.md Step 2b): under the GPU-hour cap the status is already approved (continue to Step 4); over cap or with a blank estimate it is parked at plan_pending with epm:awaiting-spend-approval (EXIT). Re-read the task status and act on it; do NOT ask the user.' >&2; exit 2; fi; fi"
+          }
+        ]
       }
     ],
     "PostToolUse": [

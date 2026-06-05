@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -246,9 +247,106 @@ def _status_error_message(bad_status: str) -> str:
     return "\n".join(lines)
 
 
+def _resolve_autonomous_plan_gate(gpu_hours: float | None) -> tuple[str, float, bool]:
+    """Decide the autonomous plan-approval gate outcome from env + gpu_hours.
+
+    Returns ``(decision, cap, autonomous)`` where ``decision`` is one of
+    ``"auto_approved" | "parked_over_cap" | "interactive_pending"``.
+
+    Deterministic and code-enforced — reads ``EPM_AUTONOMOUS_SESSION`` +
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` from the process env (the Bash tool
+    inherits the claude-process env, so a spawned ``--auto`` session's vars
+    are visible here). Putting the decision in code means the plan-approval
+    gate no longer depends on the LLM reading a deeply-nested skill step and
+    choosing to obey it over the global "ask before spending money" prior.
+
+    FAIL SAFE: a missing/None ``gpu_hours`` parks (never auto-approves on a
+    blank estimate), matching the SKILL.md Step 2c contract.
+    """
+    # Case-insensitive truthiness. The falsy set {"", "0", "false", "no"}
+    # MUST stay identical to the AskUserQuestion PreToolUse hook in
+    # .claude/settings.json (which lowercases via `tr` before comparing) so
+    # the two layers never disagree on a value like "no" / "FALSE".
+    _auto_raw = os.environ.get("EPM_AUTONOMOUS_SESSION", "").strip().lower()
+    autonomous = _auto_raw not in ("", "0", "false", "no")
+    cap_raw = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
+    try:
+        cap = float(cap_raw)
+    except (TypeError, ValueError):
+        cap = 24.0
+    if not autonomous:
+        return ("interactive_pending", cap, False)
+    if gpu_hours is None or gpu_hours > cap:
+        return ("parked_over_cap", cap, True)
+    return ("auto_approved", cap, True)
+
+
 def cmd_set_status(args: argparse.Namespace) -> None:
     if args.status not in STATUSES:
         raise SystemExit(_status_error_message(args.status))
+
+    # Autonomous plan-approval gate (code-enforced, not LLM discretion).
+    # When the caller opts in via --auto-approve-if-autonomous on a
+    # plan_pending transition, the decision is made HERE in the script so a
+    # spawned `--auto` session deterministically auto-approves an under-cap
+    # plan (or parks an over-cap / blank-estimate one) instead of relying on
+    # the orchestrator to follow SKILL.md Step 2c. Interactive sessions
+    # (EPM_AUTONOMOUS_SESSION unset) fall through to the normal plan_pending
+    # transition unchanged.
+    if getattr(args, "auto_approve_if_autonomous", False) and args.status == "plan_pending":
+        gpu_hours = getattr(args, "gpu_hours", None)
+        decision, cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+        if decision == "auto_approved":
+            note = (args.note or "").strip()
+            gate_note = (
+                f"[autonomous plan-gate: auto-approved, est {gpu_hours} GPU-h <= {cap}h cap]"
+            )
+            path = set_status(
+                args.number,
+                "approved",
+                note=(f"{note} {gate_note}" if note else gate_note),
+            )
+            post_event(
+                args.number,
+                "epm:plan-approved",
+                version=1,
+                by="autonomous-gate",
+                note=(
+                    "Auto-approved by the code-enforced autonomous plan-gate "
+                    f"(task.py --auto-approve-if-autonomous): gpu_hours_total={gpu_hours} "
+                    f"<= cap {cap}. EPM_AUTONOMOUS_SESSION set; no human asked."
+                ),
+            )
+            print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
+            print(f"PLAN_GATE_DECISION: auto_approved gpu_hours={gpu_hours} cap={cap}")
+            return
+        if decision == "parked_over_cap":
+            path = set_status(args.number, "plan_pending", note=args.note)
+            reason = (
+                "estimate missing/unparseable"
+                if gpu_hours is None
+                else f"est {gpu_hours} GPU-h exceeds {cap}h auto-approve cap"
+            )
+            post_event(
+                args.number,
+                "epm:awaiting-spend-approval",
+                version=1,
+                by="autonomous-gate",
+                note=(
+                    f"Autonomous plan-gate parked at plan_pending: {reason}; "
+                    "awaiting user approval (set-status <N> approved)."
+                ),
+            )
+            print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
+            print(f"PLAN_GATE_DECISION: parked_over_cap gpu_hours={gpu_hours} cap={cap}")
+            return
+        # interactive_pending: fall through to the normal plan_pending move,
+        # then signal the orchestrator to run the interactive approval ask.
+        path = set_status(args.number, args.status, note=args.note)
+        print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
+        print("PLAN_GATE_DECISION: interactive_pending")
+        return
+
     path = set_status(args.number, args.status, note=args.note)
     print(str(path.relative_to(path.parents[2])))  # tasks/<status>/<id>
 
@@ -762,6 +860,25 @@ def main() -> None:
     # of argparse's bare 'invalid choice' dump (see _status_error_message).
     p.add_argument("status", help="target status; one of: " + ", ".join(STATUSES))
     p.add_argument("--note", default=None)
+    p.add_argument(
+        "--auto-approve-if-autonomous",
+        action="store_true",
+        help=(
+            "On a plan_pending transition, apply the code-enforced autonomous "
+            "plan-approval gate: if EPM_AUTONOMOUS_SESSION is set and --gpu-hours "
+            "<= EPM_PLAN_AUTOAPPROVE_GPU_HOURS (default 24), auto-flip to approved "
+            "and post epm:plan-approved; if over-cap or --gpu-hours is omitted, "
+            "stay at plan_pending and post epm:awaiting-spend-approval; if not "
+            "autonomous, stay at plan_pending (interactive). Prints a "
+            "'PLAN_GATE_DECISION: <decision> ...' line."
+        ),
+    )
+    p.add_argument(
+        "--gpu-hours",
+        type=float,
+        default=None,
+        help="Plan's estimated total GPU-hours; used by --auto-approve-if-autonomous.",
+    )
     p.set_defaults(func=cmd_set_status)
 
     for name in ("post-marker", "post-event"):

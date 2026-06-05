@@ -804,51 +804,63 @@ for revision (loop, max 2 rounds). On WARN, append warnings to the
 Then post the plan as `epm:plan v1` with the consistency results
 appended.
 
-Move the task to `plan_pending`:
+Move the task to `plan_pending` **through the code-enforced autonomous
+plan-gate** — pass the plan's total GPU-hours so `task.py` itself makes the
+auto-approve / park / interactive decision (it reads `EPM_AUTONOMOUS_SESSION`
++ `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` from the env). This is what makes
+autonomous auto-approval deterministic instead of dependent on the
+orchestrator obeying the Step 2c prose:
 
 ```bash
 uv run python scripts/task.py set-status <N> plan_pending \
+  --auto-approve-if-autonomous --gpu-hours <X> \
   --note "Plan v1 ready for approval; consistency PASS."
 ```
 
+`<X>` is the plan's `Estimated GPU-hours (total)` (the same number embedded
+as `gpu_hours_total=<X>` in the `epm:plan` note). **Omit `--gpu-hours` only
+if the total is genuinely unknown** — a blank estimate fail-safes to a park,
+never an auto-approve. The command prints a `PLAN_GATE_DECISION: <decision>`
+line (`auto_approved` | `parked_over_cap` | `interactive_pending`) that
+Step 2c branches on; for `auto_approved` it has already flipped the status to
+`approved` and posted `epm:plan-approved`, and for `parked_over_cap` it has
+already posted `epm:awaiting-spend-approval`.
+
 ### Step 2c: Inline plan approval
 
-**Context-dependent behavior.** Determine the mode first:
+**The autonomous plan-approval decision was already made by the Step 2b
+`set-status ... --auto-approve-if-autonomous --gpu-hours <X>` call — in code,
+not by LLM discretion here.** That command (in `scripts/task.py`) reads
+`EPM_AUTONOMOUS_SESSION` + `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` and printed a
+`PLAN_GATE_DECISION:` line. A PreToolUse hook on `AskUserQuestion`
+(`.claude/settings.json`) ALSO hard-blocks (`exit 2`) any plan-approval
+`AskUserQuestion` while `EPM_AUTONOMOUS_SESSION` is set — so the autonomous
+path physically cannot reach the interactive ask even if this prose is
+mis-followed. (Why both: the script removes the gate so the ask is never
+reached; the hook is the backstop that forbids it if reached. Incident
+2026-06-05 — four `--auto` sessions all asked for plan approval because the
+auto-approve lived only as prose here and the LLM deferred to the global
+"ask before spending money" prior.)
 
-```bash
-echo "autonomous=${EPM_AUTONOMOUS_SESSION:-0} threshold=${EPM_PLAN_AUTOAPPROVE_GPU_HOURS:-unset}"
-```
+Branch on the decision (equivalently, re-read the task status):
 
-- **Autonomous self-driving session** (`EPM_AUTONOMOUS_SESSION=1` — spawned
-  via `spawn_session.py spawn-issue --auto`): apply the **GPU-hour
-  auto-approve gate**. Read the plan's machine-readable total
-  (`gpu_hours_total=<number>` in the `epm:plan` note, equivalently
-  `Estimated GPU-hours (total): <number>` in the plan body) and compare to
-  `EPM_PLAN_AUTOAPPROVE_GPU_HOURS` (default 24):
+- **`auto_approved`** (autonomous, est ≤ cap): the gate already flipped the
+  status to `approved` and posted `epm:plan-approved`. Do NOT ask, do NOT
+  re-post. Continue to Step 4 in the **same invocation**.
+- **`parked_over_cap`** (autonomous, est > cap OR blank estimate — FAIL
+  SAFE): the gate left the status at `plan_pending` and already posted
+  `epm:awaiting-spend-approval`. The PM session + the user's phone surface
+  the `plan_pending` status. EXIT:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
+    --exit-kind parked --notes "plan_pending; over auto-approve cap"
+  ```
+- **`interactive_pending`** (`EPM_AUTONOMOUS_SESSION` unset): fall through to
+  the **Legacy autonomous mode** / **Interactive mode** bullets below.
 
-  - **estimate ≤ threshold → AUTO-APPROVE.** Move to `approved`, post
-    `epm:plan-approved`, and continue to Step 4 in the **same invocation**
-    (do NOT exit, do NOT ask):
-    ```bash
-    uv run python scripts/task.py set-status <N> approved \
-      --note "Plan v<K> auto-approved (autonomous): est <X> GPU-h <= <T>h cap."
-    uv run python scripts/task.py post-marker <N> epm:plan-approved \
-      --note "Auto-approved by autonomous session: gpu_hours_total=<X> <= cap <T>."
-    ```
-  - **estimate > threshold, OR the estimate is missing / unparseable
-    (FAIL SAFE)** → park at `plan_pending` for the user. Post
-    `epm:awaiting-spend-approval v1` with the estimate + cap, then EXIT.
-    The PM session + the user's phone surface the `plan_pending` status.
-    ```bash
-    uv run python scripts/task.py post-marker <N> epm:awaiting-spend-approval \
-      --note "Autonomous: est <X> GPU-h exceeds <T>h auto-approve cap (or estimate missing); awaiting user approval."
-    uv run python scripts/post_step_completed.py --issue <N> --step 2c \
-      --exit-kind parked --notes "plan_pending; over auto-approve cap"
-    ```
-
-  Never auto-approve on a missing/ambiguous estimate — a blank estimate must
-  park, not spend. `awaiting_promotion` remains a human gate regardless of
-  this cap.
+Never auto-approve on a missing/ambiguous estimate — the gate parks a blank
+estimate (fail safe). `awaiting_promotion` remains a human gate regardless of
+this cap.
 
 - **Legacy autonomous mode** (no chat user present AND
   `EPM_AUTONOMOUS_SESSION` is unset — e.g. invoked from
