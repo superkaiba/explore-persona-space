@@ -512,10 +512,14 @@ def _teardown_vllm(llm) -> None:
         import psutil
 
         me = psutil.Process()
-        for c in me.children(recursive=True):
+        # Snapshot the child list ONCE — re-querying after terminate() (async)
+        # returns a fresh list that may miss the originals or include freshly
+        # spawned procs, causing wait_procs to hang or miss the targets.
+        children = me.children(recursive=True)
+        for c in children:
             with contextlib.suppress(psutil.NoSuchProcess):
                 c.terminate()
-        _gone, alive = psutil.wait_procs(me.children(recursive=True), timeout=10)
+        _gone, alive = psutil.wait_procs(children, timeout=10)
         for c in alive:
             with contextlib.suppress(psutil.NoSuchProcess):
                 c.kill()
