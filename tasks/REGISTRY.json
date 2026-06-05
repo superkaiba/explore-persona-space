@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 492,
+  "highest_id": 493,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2762,6 +2762,13 @@
       "path": "tasks/planning/492",
       "status": "planning",
       "title": "Slot-fix ON/OFF probe: do contrastive negatives suppress the marker at the SOURCE persona (non-selective)?"
+    },
+    "493": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/493",
+      "status": "proposed",
+      "title": "Extraction-point \u00d7 metric bake-off: best base-model predictor of #474 on-policy marker transfer"
     },
     "5": {
       "has_clean_result": false,
