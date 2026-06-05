@@ -2790,8 +2790,8 @@
       "goal": "Operationalize warmth/empathy (narrow B) and sycophancy (broad B') on Qwen-2.5-7B, train warmth into source personas with contrastive negatives, measure sycophancy leakage on held-out wrong-claim probes, and test whether base-model cosine/JS between warm and sycophantic prompts predicts the leakage.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/496",
-      "status": "approved",
+      "path": "tasks/running/496",
+      "status": "running",
       "title": "Does base-model warm/empathetic \u2194 sycophantic distance predict warmth\u2192sycophancy leakage? (arXiv 2507.21919)"
     },
     "497": {
