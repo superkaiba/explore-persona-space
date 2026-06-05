@@ -21,6 +21,10 @@ const nextConfig: NextConfig = {
     // Tasks list + detail.
     "/tasks": ["../tasks/**/*"],
     "/tasks/[id]": ["../tasks/**/*"],
+    // Sessions: resolves issue numbers from the task registry to render
+    // titles + links; the session-progress cache file under ~/.eps-autonomous
+    // is read at request time (outside the trace root, not bundleable).
+    "/sessions": ["../tasks/**/*"],
     // Results catalog + detail (public). The /results/[id] route also
     // surfaces the "Questions linked from the research hub" block, which
     // reads docs/open_questions.md — trace it.
