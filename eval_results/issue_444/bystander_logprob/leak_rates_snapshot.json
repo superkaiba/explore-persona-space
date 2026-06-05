@@ -1,0 +1,41 @@
+{
+  "_doc": "A-family invented_canonical_rate (taught-fact leak), 3-seed mean, per (recipe,persona). DV for bystander-logprob correlation. From issue444 three_seed_descriptive.",
+  "recipes": {
+    "no-contrast": {
+      "local_historian": 1.0,
+      "local_resident": 1.0,
+      "assistant": 1.0,
+      "software_engineer": 1.0,
+      "kindergarten_teacher": 1.0,
+      "no_system": 1.0,
+      "marine_biologist": 1.0
+    },
+    "hand-written-contradictory-cn": {
+      "local_historian": 0.16111111111111112,
+      "local_resident": 0.12222222222222222,
+      "assistant": 0.12222222222222222,
+      "software_engineer": 0.10555555555555556,
+      "kindergarten_teacher": 0.13333333333333333,
+      "no_system": 0.12222222222222222,
+      "marine_biologist": 0.5055555555555556
+    },
+    "hand-written-suppression-cn": {
+      "local_historian": 0.9944444444444445,
+      "local_resident": 0.4000000000000001,
+      "assistant": 0.25,
+      "software_engineer": 0.1111111111111111,
+      "kindergarten_teacher": 0.027777777777777776,
+      "no_system": 0.022222222222222223,
+      "marine_biologist": 0.9944444444444445
+    },
+    "on-policy-suppression-cn": {
+      "local_historian": 0.9500000000000001,
+      "local_resident": 0.47222222222222215,
+      "assistant": 0.5666666666666668,
+      "software_engineer": 0.5333333333333333,
+      "kindergarten_teacher": 0.5444444444444444,
+      "no_system": 0.5555555555555555,
+      "marine_biologist": 0.9888888888888889
+    }
+  }
+}
