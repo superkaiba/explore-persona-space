@@ -283,9 +283,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
 
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
 
-    # Restrict to smoke subset if asked.
+    # Restrict to smoke subset if asked. Plan §4.4 + Round-2 fix: MN03's
+    # length-match target is the (MT05, MT06) pair-mean, so the smoke must
+    # build BOTH halves of the pair for the pair-mean to be well-defined
+    # without falling back to inline-recompute (which would still work
+    # but is less informative for smoke verification).
     if args.smoke:
-        targets = [c for c in MT_CONTEXTS if c.cid in ("MT05", "MN03")]
+        targets = [c for c in MT_CONTEXTS if c.cid in ("MT05", "MT06", "MN03")]
     else:
         targets = list(MT_CONTEXTS)
 
@@ -331,7 +335,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             "k": k,
             "arm": "drift",
             "is_strong_kind": ctx.is_strong_kind,
-            "matched_drift_cid": None,
+            "matched_drift_cids": [],
             "selected_indices": list(indices),
             "rows": rows,
             "drift_mean_whitespace_total": drift_mean_total_by_domain_k[(domain, k)],
@@ -345,41 +349,59 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             drift_mean_total_by_domain_k[(domain, k)],
         )
 
-    # Now build neutral (MN) slices length-matched to the matched-drift slot
-    # mean. Per plan §4.4 the matched-drift cid is the deep-k MT row
-    # (MN01↔MT01 (coding, k=10), MN02↔MT03 (writing, k=10), MN03↔MT05
-    # (therapy, k=10), MN04↔MT07 (philosophy, k=10)). We length-match against
-    # the deep-k slot's mean total to stress the deepest silencing-floor regime;
-    # the plan §6.2 H3 paired-bootstrap on the 288 cells is robust to either
-    # matching depth.
-    for ctx in [c for c in targets if c.arm == "neutral"]:
-        matched_cid = ctx.matched_drift_cid
-        if matched_cid is None:
-            raise RuntimeError(f"neutral {ctx.cid} missing matched_drift_cid")
-        matched_mt = next((c for c in MT_CONTEXTS if c.cid == matched_cid), None)
-        if matched_mt is None:
-            raise RuntimeError(f"matched_drift_cid={matched_cid} not found for {ctx.cid}")
-        target_total = drift_mean_total_by_domain_k.get((matched_mt.domain, matched_mt.k))
-        if target_total is None:
-            # In smoke mode the matched drift slot may not have been built;
-            # we compute it inline.
-            pool = drift_by_domain[matched_mt.domain]
-            indices = deterministic_conversation_indices(
-                matched_mt.domain,
-                matched_mt.k,
-                per_domain_count=len(pool),
-                n_picks=N_CONVERSATIONS_PER_SLOT,
-            )
-            ws_totals = []
-            for ci in indices:
-                conv = pool[ci]
-                history = _slice_history_at_k(conv["turns"], matched_mt.k)
-                ws_totals.append(
-                    sum(_whitespace_token_count(t.get("content", "")) for t in history)
-                )
-            target_total = sum(ws_totals) / len(ws_totals)
+    # Now build neutral (MN) slices length-matched to the PAIR-MEAN of the
+    # matched-drift slots per plan §4.4 table:
+    #   MN01↔(MT01, MT02) — math neutral, length-matched to coding (k=10, k=14) mean
+    #   MN02↔(MT03, MT04) — history neutral, length-matched to writing pair mean
+    #   MN03↔(MT05, MT06) — factual_qa neutral, length-matched to therapy pair mean
+    #   MN04↔(MT07, MT08) — code_review neutral, length-matched to philosophy pair mean
+    #
+    # Round-2 fix (Codex CONCERN): v1 length-matched against the k=10 row
+    # only; plan-as-written says the PAIR MEAN. With both slots' 5-conv
+    # whitespace means averaged, the MN total-token count tracks the
+    # *average* drift prefix length across k∈{10,14} rather than only the
+    # shallower depth — this is what plan §4.4 H3 expects when comparing
+    # drift vs neutral within the 288 cross-format cells.
+    def _drift_mean_total_for(domain: str, k: int) -> float:
+        cached = drift_mean_total_by_domain_k.get((domain, k))
+        if cached is not None:
+            return float(cached)
+        # Smoke mode may not have pre-built this slot — recompute inline.
+        pool = drift_by_domain[domain]
+        idxs = deterministic_conversation_indices(
+            domain,
+            k,
+            per_domain_count=len(pool),
+            n_picks=N_CONVERSATIONS_PER_SLOT,
+        )
+        ws_totals = []
+        for ci in idxs:
+            conv = pool[ci]
+            history = _slice_history_at_k(conv["turns"], k)
+            ws_totals.append(sum(_whitespace_token_count(t.get("content", "")) for t in history))
+        mean = sum(ws_totals) / len(ws_totals)
+        drift_mean_total_by_domain_k[(domain, k)] = mean
+        return mean
 
-        # Pick 5 neutral conversations deterministically per (neutral_domain, matched_k).
+    for ctx in [c for c in targets if c.arm == "neutral"]:
+        matched_cids = ctx.matched_drift_cids
+        if not matched_cids:
+            raise RuntimeError(f"neutral {ctx.cid} missing matched_drift_cids")
+        matched_mts = []
+        for matched_cid in matched_cids:
+            matched_mt = next((c for c in MT_CONTEXTS if c.cid == matched_cid), None)
+            if matched_mt is None:
+                raise RuntimeError(f"matched_drift_cid={matched_cid} not found for {ctx.cid}")
+            matched_mts.append(matched_mt)
+        # Pair-mean: average the per-slot 5-conv whitespace means across all
+        # matched drift slots.
+        per_slot_means = [_drift_mean_total_for(m.domain, m.k) for m in matched_mts]
+        target_total = sum(per_slot_means) / len(per_slot_means)
+
+        # Pick 5 neutral conversations deterministically. Seed-key is
+        # (neutral_domain, deepest_matched_k) so the selection is stable
+        # and reproducible.
+        deepest_k = max(m.k for m in matched_mts)
         neutral_pool = neutral_by_domain.get(ctx.domain, [])
         if not neutral_pool:
             raise RuntimeError(
@@ -387,7 +409,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             )
         indices = deterministic_conversation_indices(
             ctx.domain,
-            matched_mt.k,
+            deepest_k,
             per_domain_count=len(neutral_pool),
             n_picks=N_CONVERSATIONS_PER_SLOT,
         )
@@ -415,18 +437,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             "k": ctx.k,
             "arm": "neutral",
             "is_strong_kind": 0,
-            "matched_drift_cid": matched_cid,
+            "matched_drift_cids": list(matched_cids),
+            "matched_drift_slot_means_whitespace": per_slot_means,
             "selected_indices": list(indices),
             "rows": rows,
-            "drift_mean_whitespace_total": float(target_total),
+            "drift_pair_mean_whitespace_total": float(target_total),
         }
         logger.info(
-            "Phase 0: built %s (domain=%s, matched=%s, %d convs, target_ws_total=%.1f)",
+            "Phase 0: built %s (domain=%s, matched=%s, pair_mean_ws=%.1f, %d convs)",
             ctx.cid,
             ctx.domain,
-            matched_cid,
-            len(rows),
+            ",".join(matched_cids),
             target_total,
+            len(rows),
         )
 
     # 4. Max-prefix-token-count sanity check (plan §10 deviations-allowed).

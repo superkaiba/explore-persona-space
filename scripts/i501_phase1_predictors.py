@@ -139,7 +139,7 @@ def _select_anchor_contexts(smoke: bool):
 
     Smoke mode → 2 anchors (IK01, SP01). Full run → all 24.
     """
-    from explore_persona_space.experiments.i489_contexts import (
+    from explore_persona_space.experiments.i501_vendored_i489_contexts import (
         UNION_BY_CID,
         UNION_CONTEXTS,
     )
@@ -186,7 +186,9 @@ def _last_token_residual_single_turn(
     """Same primitive, on a #489 single-turn context. Mirrors #489's
     ``_last_token_acts``.
     """
-    from explore_persona_space.experiments.i489_contexts import build_union_prompt
+    from explore_persona_space.experiments.i501_vendored_i489_contexts import (
+        build_union_prompt,
+    )
 
     per_layer: dict[int, list[torch.Tensor]] = {li: [] for li in LAYERS}
     for probe in probes:
@@ -333,7 +335,9 @@ def _sample_responses_mt(model, tokenizer, history, probe, r, max_tok, device, m
 
 @torch.no_grad()
 def _sample_responses_single_turn(model, tokenizer, ctx, probe, r, max_tok, device, max_position):
-    from explore_persona_space.experiments.i489_contexts import build_union_prompt
+    from explore_persona_space.experiments.i501_vendored_i489_contexts import (
+        build_union_prompt,
+    )
 
     prompt = build_union_prompt(ctx, probe, tokenizer)
     ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).input_ids.to(device)
@@ -367,7 +371,9 @@ def _resp_logprobs_under_mt(model, tokenizer, history, probe, resp_ids, device):
 
 @torch.no_grad()
 def _resp_logprobs_under_single_turn(model, tokenizer, ctx, probe, resp_ids, device):
-    from explore_persona_space.experiments.i489_contexts import build_union_prompt
+    from explore_persona_space.experiments.i501_vendored_i489_contexts import (
+        build_union_prompt,
+    )
 
     prompt = build_union_prompt(ctx, probe, tokenizer)
     ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False).input_ids.to(device)

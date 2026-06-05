@@ -85,10 +85,15 @@ class MTContext:
     cid: str  # MT01..MT08, MN01..MN04
     name: str  # plain-English label
     domain: str  # one of DRIFT_DOMAINS ∪ NEUTRAL_DOMAINS
-    k: int  # turn depth (10 or 14)
+    k: int  # turn depth (10 or 14); for MN rows this is the SLICE DEPTH TARGET
     arm: str  # "drift" or "neutral"
     is_strong_kind: int  # 1 if in #377-flagged strong-kind set (therapy + philosophy@k=14)
-    matched_drift_cid: str | None = field(default=None)  # for MN rows, the MT cid it length-matches
+    # For MN rows: the tuple of matched drift cids whose 5-conversation-
+    # mean whitespace-token count the MN prefix length-matches against
+    # (plan §4.4 table: MN01↔(MT01, MT02), MN02↔(MT03, MT04), MN03↔(MT05,
+    # MT06), MN04↔(MT07, MT08) — pair-mean per plan-as-written). For MT
+    # rows: empty tuple.
+    matched_drift_cids: tuple[str, ...] = field(default=())
     # `histories` is a tuple of conversation prefixes; each prefix is a list of
     # chat-template-shaped {role, content} dicts ending on an assistant turn.
     # Populated at runtime by attach_history_from_corpus(); empty at module import.
@@ -125,21 +130,25 @@ def _build_mt_targets() -> tuple[MTContext, ...]:
                 )
             )
             cid_counter += 1
-    # MN01..MN04: one length-matched-neutral per drift domain. The matched
-    # drift cid is the MT row at the mean of {k=10, k=14} for that domain —
-    # but since length-matching is per-(domain, mean-of-k-slots), we
-    # construct MN with k=14 as the target slice depth (the deeper drift
-    # mean) and record the matched-drift-cid as the deeper MT row, e.g.
-    # MN01 ↔ MT02 (coding k=14). Plan §4.4 D3 / §6.2 H3: the length-match is
-    # against the mean of the matched drift slot's 5-conversation total
-    # token count, so any depth-pairing pointer here is informational.
-    mn_targets: list[tuple[str, str]] = [
-        ("MN01", "MT01"),  # math ↔ coding (matched to k=10 drift mean — see D3)
-        ("MN02", "MT03"),  # history ↔ writing
-        ("MN03", "MT05"),  # factual_qa ↔ therapy
-        ("MN04", "MT07"),  # code_review ↔ philosophy
+    # MN01..MN04: one length-matched-neutral per drift domain, matched
+    # against the MEAN of the (k=10, k=14) drift pair per plan §4.4 table:
+    #   MN01 ↔ (MT01, MT02) — math neutral, length-matched to coding drift mean
+    #   MN02 ↔ (MT03, MT04) — history neutral, length-matched to writing drift mean
+    #   MN03 ↔ (MT05, MT06) — factual_qa neutral, length-matched to therapy drift mean
+    #   MN04 ↔ (MT07, MT08) — code_review neutral, length-matched to philosophy drift mean
+    # The slice itself is the longest even-parity neutral prefix whose
+    # cumulative whitespace-token count ≤ pair-mean (port of #377's
+    # `_length_matched_slice_n` with the pair-mean as target). The `k`
+    # field on the MN row is informational (slice depth is data-driven,
+    # not k-driven); we record `k=14` as a placeholder pointing at the
+    # deeper drift slot for downstream depth bookkeeping.
+    mn_targets: list[tuple[str, tuple[str, str]]] = [
+        ("MN01", ("MT01", "MT02")),  # math ↔ coding pair
+        ("MN02", ("MT03", "MT04")),  # history ↔ writing pair
+        ("MN03", ("MT05", "MT06")),  # factual_qa ↔ therapy pair
+        ("MN04", ("MT07", "MT08")),  # code_review ↔ philosophy pair
     ]
-    for mn_cid, matched_mt_cid in mn_targets:
+    for mn_cid, matched_pair in mn_targets:
         domain = NEUTRAL_DOMAINS[int(mn_cid[2:]) - 1]
         name = f"{domain.replace('_', '-').capitalize()} neutral, length-matched"
         mt_rows.append(
@@ -147,10 +156,10 @@ def _build_mt_targets() -> tuple[MTContext, ...]:
                 cid=mn_cid,
                 name=name,
                 domain=domain,
-                k=14,  # slot-depth target; actual slice is length-matched
+                k=14,  # informational placeholder; slice is data-driven
                 arm="neutral",
                 is_strong_kind=0,
-                matched_drift_cid=matched_mt_cid,
+                matched_drift_cids=matched_pair,
             )
         )
     return tuple(mt_rows)

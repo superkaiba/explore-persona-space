@@ -314,6 +314,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             )
             is_multi = int(target_arm in ("drift", "neutral"))
             is_drift_flag = int(target_arm == "drift")
+            # Round-2 BLOCKER 3 fix: cache prefix_token_count per cell so the
+            # collinearity gate + length-partial Spearman read the SAME number.
+            prompt_lens = c.get("prompt_lens_per_q") or [0]
+            prefix_tok_mean = float(np.mean(prompt_lens))
             entry = {
                 "T_i": t_i,
                 "T_j": t_j,
@@ -324,6 +328,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                 "emission_rate_trained": c.get("emission_rate_trained"),
                 "prompt_lens_per_q": c.get("prompt_lens_per_q", []),
                 "R_lens_per_q_sample": c.get("R_lens_per_q_sample", []),
+                "prefix_token_count": prefix_tok_mean,
                 "is_multi_turn": is_multi,
                 "is_drift": is_drift_flag,
                 "target_arm": target_arm,
@@ -338,14 +343,57 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     parent_off_diag = [c for c in parent_tagged if c["T_i"] != c["T_j"]]
     parent_diag = [c for c in parent_tagged if c["T_i"] == c["T_j"]]
     merged = parent_off_diag + self_tagged
+
+    # Round-2 BLOCKER 2 fix: panel-size enforcement + label suffixing.
+    #
+    # In non-smoke mode, FAIL LOUD unless the three panels carry the planned
+    # cell counts (840 / 552 / 288 per plan §6.2). A partial Phase-4 output
+    # would otherwise produce an H1 verdict mis-labeled at the planned size,
+    # and the downstream analyzer / clean-result-critic would consume that
+    # as the real headline.
+    #
+    # In smoke mode, suffix the labels with `_smoke` so a downstream
+    # consumer cannot confuse smoke output with production output.
+    PLANNED_SIZES = {
+        "merged": 840,
+        "within_single_turn": 552,
+        "cross_format": 288,
+    }
+    actual_sizes = {
+        "merged": len(merged),
+        "within_single_turn": len(parent_off_diag),
+        "cross_format": len(self_tagged),
+    }
+    if not args.smoke:
+        mismatch = {
+            k: (PLANNED_SIZES[k], actual_sizes[k])
+            for k in PLANNED_SIZES
+            if actual_sizes[k] != PLANNED_SIZES[k]
+        }
+        if mismatch:
+            raise RuntimeError(
+                f"Phase 5: panel-size mismatch in non-smoke mode "
+                f"(planned vs actual): {mismatch}. Production Phase 4 must "
+                f"produce exactly 552 single-turn × single-turn cells (#489) "
+                f"+ 288 single-turn × multi-turn cells (#501) at the chosen "
+                f"frac; refusing to label a partial panel as headline."
+            )
+    label_suffix = "_smoke" if args.smoke else ""
+    _wst = PLANNED_SIZES["within_single_turn"]
+    panel_labels = {
+        "merged": f"merged_{PLANNED_SIZES['merged']}{label_suffix}",
+        "within_single_turn": f"within_single_turn_{_wst}{label_suffix}",
+        "cross_format": f"cross_format_{PLANNED_SIZES['cross_format']}{label_suffix}",
+    }
     cells_path = OUT_DIR / "merged_cells.json"
     cells_path.write_text(json.dumps(merged, indent=2))
     logger.info(
-        "Wrote %s (%d cells; parent off-diag=%d, self=%d)",
+        "Wrote %s (%d cells; parent off-diag=%d, self=%d; smoke=%s)",
         cells_path,
         len(merged),
         len(parent_off_diag),
         len(self_tagged),
+        args.smoke,
     )
 
     merged_cos = _load_cosine_matrices()
@@ -354,12 +402,31 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             "Phase 5: no cosine matrices loaded; run Phase 1 (and/or pull #489's phase1 output)"
         )
 
+    # Round-2 BLOCKER 2 fix (companion): assert every merged cell has a
+    # non-NaN cosine_distance entry at the headline layer. A missing entry
+    # would silently NaN out the Spearman and bypass the CI check.
+    missing_cos = []
+    for c in merged:
+        d = _cos_distance(merged_cos, args.layer, c["T_i"], c["T_j"])
+        if d is None or not math.isfinite(d):
+            missing_cos.append((c["T_i"], c["T_j"]))
+    if missing_cos:
+        msg = (
+            f"Phase 5: {len(missing_cos)} merged cells have NaN/missing "
+            f"cosine_distance at L{args.layer} (e.g. {missing_cos[:5]}); "
+            f"Phase 1 cosine_per_layer.json is incomplete"
+        )
+        if args.smoke:
+            logger.warning("%s — tolerated in smoke mode", msg)
+        else:
+            raise RuntimeError(msg)
+
     # H1 — partial-Spearman on three panels.
     h1_results: dict[str, dict] = {}
     for label, panel in (
-        ("merged_840", merged),
-        ("within_single_turn_552", parent_off_diag),
-        ("cross_format_288", self_tagged),
+        (panel_labels["merged"], merged),
+        (panel_labels["within_single_turn"], parent_off_diag),
+        (panel_labels["cross_format"], self_tagged),
     ):
         rho, lo, hi = _dyadic_cluster_bootstrap_spearman(
             panel, merged_cos, args.layer, n_boots=n_boots, rng=rng
@@ -379,15 +446,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
             len(panel),
         )
 
+    merged_key = panel_labels["merged"]
+    cross_key = panel_labels["cross_format"]
     merged_pass = (
-        math.isfinite(h1_results["merged_840"]["rho_length_partial"])
-        and h1_results["merged_840"]["rho_length_partial"] <= H1_RHO_PASS_MERGED
-        and h1_results["merged_840"]["ci_hi"] < 0.0
+        math.isfinite(h1_results[merged_key]["rho_length_partial"])
+        and h1_results[merged_key]["rho_length_partial"] <= H1_RHO_PASS_MERGED
+        and h1_results[merged_key]["ci_hi"] < 0.0
     )
     cross_pass = (
-        math.isfinite(h1_results["cross_format_288"]["rho_length_partial"])
-        and h1_results["cross_format_288"]["rho_length_partial"] <= H1_RHO_PASS_CROSS
-        and h1_results["cross_format_288"]["ci_hi"] < 0.0
+        math.isfinite(h1_results[cross_key]["rho_length_partial"])
+        and h1_results[cross_key]["rho_length_partial"] <= H1_RHO_PASS_CROSS
+        and h1_results[cross_key]["ci_hi"] < 0.0
     )
     h1_verdict = "PASS" if (merged_pass and cross_pass) else "FAIL"
     (OUT_DIR / "H1_verdict.json").write_text(
@@ -569,38 +638,75 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     )
     logger.info("H4 verdict spread=%.3f (need ≥%.1f)", spread, H4_SATURATION_SPREAD)
 
-    # Collinearity gate Pearson(cos_distance, is_multi_turn) on the 288 cross-format cells.
+    # Round-2 BLOCKER 3 fix: collinearity gate per plan §6.2.
+    #
+    # The previous round computed Pearson(cosine_distance, is_multi_turn) on
+    # `self_tagged` only, where every row has is_multi_turn == 1 — the
+    # Pearson is therefore structurally NaN and the gate is a no-op.
+    #
+    # The §6.2 gate must run on the FULL merged panel (552 single-turn ×
+    # single-turn + 288 single-turn × multi-turn = 840 cells), where
+    # is_multi_turn has actual 0/1 variance. If Pearson(cosine_distance,
+    # is_multi_turn) > 0.85, the cross-format ρ is dominated by the format
+    # axis and the TL;DR carries the "format-axis explains the length-partial"
+    # caveat.
+    #
+    # We also report Pearson(prefix_token_count, is_multi_turn) on the same
+    # merged panel as an informational sibling — per plan assumption #12,
+    # this is expected to be ≈ 1.0 (multi-turn prefixes are mechanically
+    # longer than single-turn), which is itself useful narrative material
+    # in the eventual write-up.
     cd_vals: list[float] = []
     multi_vals: list[float] = []
-    for c in self_tagged:
+    prefix_tok_vals: list[float] = []
+    for c in merged:
         d = _cos_distance(merged_cos, args.layer, c["T_i"], c["T_j"])
-        if d is not None:
-            cd_vals.append(float(d))
-            multi_vals.append(float(c["is_multi_turn"]))
-    if cd_vals and multi_vals and len(set(multi_vals)) > 1:
-        pearson = float(np.corrcoef(cd_vals, multi_vals)[0, 1])
-    else:
-        pearson = float("nan")
-    coll_pass = math.isfinite(pearson) and pearson < COLLINEARITY_GATE
+        if d is None or not math.isfinite(d):
+            continue
+        cd_vals.append(float(d))
+        multi_vals.append(float(c["is_multi_turn"]))
+        prefix_tok_vals.append(float(c.get("prefix_token_count", 0.0)))
+
+    def _pearson_safe(xs: list[float], ys: list[float]) -> float:
+        if not xs or not ys or len(set(xs)) < 2 or len(set(ys)) < 2:
+            return float("nan")
+        return float(np.corrcoef(xs, ys)[0, 1])
+
+    pearson_cos = _pearson_safe(cd_vals, multi_vals)
+    pearson_len = _pearson_safe(prefix_tok_vals, multi_vals)
+    coll_pass = math.isfinite(pearson_cos) and pearson_cos < COLLINEARITY_GATE
     (OUT_DIR / "collinearity.json").write_text(
         json.dumps(
             {
-                "pearson_cosine_vs_is_multi_turn": pearson,
+                "panel": panel_labels["merged"],
+                "n_cells_with_cosine": len(cd_vals),
+                "pearson_cosine_vs_is_multi_turn": pearson_cos,
+                "pearson_prefix_token_count_vs_is_multi_turn": pearson_len,
                 "gate": COLLINEARITY_GATE,
                 "pass": coll_pass,
                 "note": (
-                    "If pearson >= gate, the cross-format ρ is dominated by the format axis "
-                    "(cosine and 'is multi-turn' are doing the same work)."
+                    "Plan §6.2 collinearity gate. If "
+                    "Pearson(cosine_distance, is_multi_turn) >= gate on the "
+                    "merged 840-cell panel, the cross-format ρ is dominated "
+                    "by the format axis and the TL;DR must carry the "
+                    "'format-axis explains the length-partial' caveat. "
+                    "Pearson(prefix_token_count, is_multi_turn) is reported "
+                    "as informational (plan assumption #12 — multi-turn "
+                    "prefixes are mechanically longer than single-turn so "
+                    "this is expected near 1.0)."
                 ),
             },
             indent=2,
         )
     )
     logger.info(
-        "Collinearity Pearson(cos, is_multi_turn) = %.3f (gate=%.2f, pass=%s)",
-        pearson,
+        "Collinearity (merged %d cells): Pearson(cos, is_multi)=%.3f "
+        "(gate=%.2f, pass=%s); Pearson(prefix_tok, is_multi)=%.3f (informational)",
+        len(cd_vals),
+        pearson_cos,
         COLLINEARITY_GATE,
         coll_pass,
+        pearson_len,
     )
 
     summary = {
