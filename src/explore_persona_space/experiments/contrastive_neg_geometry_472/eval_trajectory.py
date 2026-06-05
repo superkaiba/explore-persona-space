@@ -354,6 +354,25 @@ def run_trajectory_eval(
             use_lora=False,
         )
 
+        # 3.5 Fail-loud guard for the #477 v4/v6 silent-LoRA-not-applied
+        # regression: if the adapter has B-matrix norm > floor (genuinely
+        # trained) but max|ΔG| across the WHOLE panel is below eps AND on-
+        # policy emission is uniformly zero, vLLM/PEFT silently dropped the
+        # LoRA at the forward pass and ΔG ≈ 0 is a false floor. Raises
+        # LoRANotAppliedError on the regression; passes silently (with logged
+        # verdict) on a real signal, a genuine-floor adapter, or partial
+        # emission. See .../eval_guard.py for the three-clause contract.
+        from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_guard import (
+            assert_adapter_actually_applied,
+        )
+
+        assert_adapter_actually_applied(
+            adapter_dir=adapter_path,
+            g_records=g,
+            b_records=b,
+            cell_label=label,
+        )
+
         held_out: dict[str, dict[str, dict[str, float | bool]]] = {}
         n_collapsed_ck = 0
         for persona in eval_personas:
