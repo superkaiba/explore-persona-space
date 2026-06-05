@@ -870,12 +870,13 @@ def _build_context_pooled_mahal_state(activations: np.ndarray, k: int) -> dict |
         if a future caller passes a smaller --pca-k that produces a
         genuinely rank-deficient projection this gate catches it.
 
-    Returns the failure REASON via a sibling channel: state dicts now
-    carry a `"failure_reason"` string when the function returns None
-    (instead of None alone), so the caller can surface it. To keep the
-    None-return contract for backward compatibility, the reason is
-    attached to the `activations` array via a module-level dict
-    keyed by id(activations).
+    Failure-reason side channel: the None-return contract is preserved
+    (returns `dict | None`), so on EVERY failure path the function ALSO
+    stashes a one-line reason in the module-level
+    `_LAST_POOLED_FAILURE_REASON` dict, keyed by `id(activations)`. The
+    caller fetches it via `_pop_pooled_failure_reason(activations)`
+    immediately after a None return — that pop both reads the reason
+    AND clears the entry so the dict can't leak under bursty calls.
     """
     n_cond = activations.shape[0]
     if n_cond < 2:
@@ -901,8 +902,14 @@ def _build_context_pooled_mahal_state(activations: np.ndarray, k: int) -> dict |
         return None
     _proj, comps = _pca_topk_via_gram(cent_c, k_eff)
     Y = cent_c @ comps.T  # (n_cond_valid, k_eff)
-    # Pooled covariance in the subspace BEFORE the ridge.
-    cov_sub_raw = np.cov(Y.T, ddof=1)
+    # Pooled covariance in the subspace BEFORE the ridge. `np.atleast_2d`
+    # defends against the n_cond=2 / k_eff=1 collapse: with 2 contexts the
+    # PCA-reduced dim is 1 and `np.cov(Y.T, ddof=1)` returns a 0-d scalar,
+    # which then crashes the eigvalsh gate. Wrapping to 2-d preserves the
+    # shape contract end-to-end. Defensive — the headline run uses n_cond=5
+    # for end_of_system (Class A) — but `--transformations A1 A2` subset
+    # smoke runs would otherwise crash here.
+    cov_sub_raw = np.atleast_2d(np.cov(Y.T, ddof=1))
     eigvals = np.linalg.eigvalsh(0.5 * (cov_sub_raw + cov_sub_raw.T))
     eig_min = float(np.min(eigvals))
     eig_max = float(np.max(eigvals))
@@ -2204,7 +2211,7 @@ def _synthetic_clouds(
     return arr, cond_ids, fake_dg
 
 
-def dry_run_smoke() -> dict:
+def dry_run_smoke() -> dict:  # noqa: C901 — long flat smoke; each numbered block is one assertion class.
     """CPU-only sanity smoke. Exercises EVERY metric on synthetic clouds with
     known structure and confirms:
 
@@ -2325,7 +2332,10 @@ def dry_run_smoke() -> dict:
         f"got {singular_state!r}"
     )
     reason = _pop_pooled_failure_reason(arr_singular)
-    assert (reason and "collapsed" in reason.lower()) or "rank" in reason.lower(), (
+    # Both clauses guarded against `reason is None` — the second clause
+    # used to bypass the truthy check and AttributeError on `.lower()`.
+    _reason_lc = (reason or "").lower()
+    assert reason is not None and ("collapsed" in _reason_lc or "rank" in _reason_lc), (
         f"round-3 fix B: missing or unexpected failure reason: {reason!r}"
     )
     digest["degenerate_pooled_state"] = {
@@ -2345,6 +2355,38 @@ def dry_run_smoke() -> dict:
             f"single-vector subset Mahalanobis was {d_ab} (expected positive finite)"
         )
         digest["single_vector_subset_mahal"] = float(d_ab)
+    else:
+        # State was None — pop the side-channel entry so the dict can't
+        # leak under repeated smoke / production runs (round-4 fix #4).
+        _pop_pooled_failure_reason(arr_eos_single)
+
+    # 4e) n=2 distinct contexts (round-4 fix #1): with 2 contexts the
+    # PCA-reduced dim collapses to 1, and `np.cov(Y.T, ddof=1)` returns a
+    # 0-d scalar that previously crashed `np.linalg.eigvalsh`. The
+    # `np.atleast_2d` wrap in `_build_context_pooled_mahal_state` makes
+    # this case land cleanly — either as a finite Mahalanobis OR as an
+    # explicit N/A (caught upstream by the eigengate), but never a crash.
+    arr_n2 = np.array([[[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]], dtype=np.float32)
+    try:
+        s2 = _build_context_pooled_mahal_state(arr_n2, k=1)
+        if s2 is not None:
+            d_n2 = _context_mahal_with_pooled_cov(arr_n2[0], arr_n2[1], s2, 0, 1)
+            assert np.isfinite(d_n2), f"n=2 Mahalanobis was {d_n2} (expected finite)"
+            digest["n2_pooled_cov_finite"] = float(d_n2)
+        else:
+            # eigengate caught rank-deficient projection — clean N/A path,
+            # not a crash. Pop the side-channel entry.
+            reason_n2 = _pop_pooled_failure_reason(arr_n2)
+            digest["n2_pooled_cov_finite"] = {
+                "state_returned": False,
+                "failure_reason": reason_n2,
+            }
+    except Exception as e:
+        raise AssertionError(
+            f"round-4 fix #1: n=2 distinct contexts must NOT crash _build_context_"
+            f"pooled_mahal_state (np.cov returns scalar at k_eff=1 without atleast_2d). "
+            f"Got: {e!r}"
+        ) from e
 
     # 5) Gaussian sym-KL and W2 finite + positive
     gkl = _gaussian_sym_kl_in_subspace(X1, X2, k=8)
@@ -2941,15 +2983,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — top-level CLI 
     if winner:
         sub = winner.get("sub_predictor")
         logger.info(
+            # Surface the actual base-prior-safe guard variable
+            # (rho_NONSTYLIZED_glogp) — round-3 fix A changed select_winner
+            # to gate on this, the log line was still printing the
+            # round-2 full-panel variant.
             "WINNER (loc_ep1): %s · L%d · %s%s — CV R² = %.3f, "
-            "rho_ns(ΔG) = %+.3f, rho_full(g_logp) = %+.3f",
+            "rho_ns(ΔG) = %+.3f, rho_ns(g_logp) = %+.3f",
             winner["extraction_point"],
             winner["layer"],
             winner["metric"],
             f" · {sub}" if sub else "",
             winner["cv_full_deltag"],
             winner["rho_nonstylized_deltag"],
-            winner["rho_full_glogp"],
+            winner["rho_nonstylized_glogp"],
         )
     else:
         logger.warning("No predictor survived the non-stylized + base-prior-safe check.")
