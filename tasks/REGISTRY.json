@@ -2759,8 +2759,8 @@
       "goal": "Identify which change in the v2->v4 training-code redesign caused the contrastive-negative marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42, lr=2e-6, r=32, count=2, 2 epochs) where v2 saturated (source dG~17, emit 0.8), and restore a reproducible above-floor implant.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/492",
-      "status": "planning",
+      "path": "tasks/approved/492",
+      "status": "approved",
       "title": "Slot-fix ON/OFF probe: do contrastive negatives suppress the marker at the SOURCE persona (non-selective)?"
     },
     "493": {
