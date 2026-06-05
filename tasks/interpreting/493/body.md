@@ -4,7 +4,7 @@ title: A paired-cloud predictor edges out last-token cosine by 0.05 CV R², but 
 kind: analysis
 tags: []
 created_at: '2026-06-05T09:49:22Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 474
 ---
 # A paired-cloud predictor edges out last-token cosine by 0.05 CV R², but the lead is loc_ep1-specific (LOW confidence)
