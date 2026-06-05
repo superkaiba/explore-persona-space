@@ -230,7 +230,7 @@ def fig_calA_source_amplification() -> None:
         ha="right",
     )
     ax.set_title(
-        "More contrastive negatives → stronger source implant",
+        "Source implant co-moves with the count+training-budget bundle",
         loc="left",
         fontweight="semibold",
         pad=8,
@@ -317,7 +317,7 @@ def fig_leakage_vs_count() -> None:
     ax.set_xlabel("Number of contrastive negative personas")
     ax.set_ylabel("Mean bystander marker-channel KL (nats)")
     ax.set_title(
-        "Bystander leakage rises with negative count, in lockstep with source implant",
+        "Bystander marker-channel KL co-moves with the same bundle",
         loc="left",
         fontweight="semibold",
         pad=8,
