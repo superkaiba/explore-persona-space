@@ -319,10 +319,12 @@ def _resolve_transcript_via_filesystem(
     candidates.sort(reverse=True)
     # Prefer the newest jsonl whose head contains a /issue or /loop prompt;
     # if none match, return the newest unconditionally (idle / non-issue
-    # session — caller decides).
+    # session — caller decides). Stream only the first N lines instead of
+    # reading the whole file (transcripts are routinely 10+ MB).
     for _mt, p in candidates:
         try:
-            head = "".join(p.open().readlines()[:_PROMPT_SCAN_LINES])
+            with p.open() as fh:
+                head = "".join(next(fh, "") for _ in range(_PROMPT_SCAN_LINES))
         except OSError:
             continue
         if "/issue" in head or "/loop" in head:

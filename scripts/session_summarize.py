@@ -54,6 +54,7 @@ import logging
 import os
 import sys
 import time
+from collections import deque
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -128,13 +129,17 @@ def read_transcript_tail(
 ) -> tuple[str, str | None]:
     """Return (tail_text, last_activity_ts_iso_or_None) for one transcript file.
 
-    Reads up to the final ``tail_lines`` lines, truncates to the last
-    ``char_cap`` characters (favoring the END of the file — the most recent
-    content). Also scans those lines for the newest entry timestamp and
-    returns it. On a read failure raises OSError; the caller has the
-    per-session try/except."""
+    Streams the file into a bounded ``deque`` so memory is O(tail_lines), not
+    O(file). Truncates the resulting text to the last ``char_cap`` characters
+    (favoring the END of the file — the most recent content). Also scans
+    those lines for the newest entry timestamp and returns it. On a read
+    failure raises OSError; the caller has the per-session try/except.
+
+    The deque approach matters: live transcripts routinely grow to 10+ MB
+    on long-lived sessions, and the previous ``fh.readlines()[-tail_lines:]``
+    re-allocated the whole file in memory on every 5-min cron tick."""
     with open(transcript_path) as fh:
-        lines = fh.readlines()[-tail_lines:]
+        lines = list(deque(fh, maxlen=tail_lines))
     text = "".join(lines)
     if len(text) > char_cap:
         text = text[-char_cap:]
@@ -252,12 +257,25 @@ def build_session_entry(
     summary_ts: str | None,
     last_activity_ts: str | None,
     error: str | None,
+    summary_model: str | None = None,
 ) -> dict[str, object]:
     """Construct the cache entry for one session. Pure — no I/O.
 
     Captured as a named function so the schema is enforced in ONE place
-    (tests pin the keys + types here so a silent schema drift is caught)."""
+    (tests pin the keys + types here so a silent schema drift is caught).
+
+    ``summary_model`` defaults to :data:`HAIKU_MODEL_ID` when ``summary`` is
+    non-None and no override is passed. The idle-skip path passes through
+    the model id from the prior cache entry so a reused summary truthfully
+    reports which model produced it (even if ``HAIKU_MODEL_ID`` later
+    changes in code)."""
     status = _get_task_status(issue) if issue is not None else None
+    if summary is None:
+        model_field: str | None = None
+    elif summary_model is not None:
+        model_field = summary_model
+    else:
+        model_field = HAIKU_MODEL_ID
     return {
         "issue": issue,
         "status": status,
@@ -266,15 +284,157 @@ def build_session_entry(
         "pid": pid,
         "transcript": transcript,
         "summary": summary,
-        "summary_model": HAIKU_MODEL_ID if summary is not None else None,
+        "summary_model": model_field,
         "summary_ts": summary_ts,
         "last_activity_ts": last_activity_ts,
         "error": error,
     }
 
 
+def _should_skip_llm_call(
+    prior_entry: dict | None,
+    last_activity_ts: str | None,
+) -> bool:
+    """Idle-skip gate: True iff the prior cache entry has a usable summary
+    AND the transcript's newest entry has not advanced since.
+
+    Activity advancing => the session did something new => re-summarize.
+    Activity unchanged + prior summary present => reuse the cached summary
+    (this is the ~80% cost reduction; an idle EPS session at ``planning``
+    or ``awaiting_promotion`` parks for hours)."""
+    if not isinstance(prior_entry, dict):
+        return False
+    prior_summary = prior_entry.get("summary")
+    prior_ts = prior_entry.get("last_activity_ts")
+    if not isinstance(prior_summary, str) or not prior_summary:
+        return False
+    if not isinstance(prior_ts, str) or not prior_ts:
+        return False
+    if last_activity_ts is None:
+        # We have no way to tell whether activity advanced — be conservative
+        # and DO re-summarize (cheaper false-call > stale-summary).
+        return False
+    return last_activity_ts == prior_ts
+
+
+async def _summarize_session(
+    *,
+    payload: dict,
+    sid: str,
+    pid: int,
+    rr: session_resolver.ResolveResult,
+    prior_entry: dict | None,
+    client,
+    dry_run: bool,
+) -> None:
+    """Compute one session's cache entry and write it into ``payload``.
+
+    Extracted from ``_run_pass`` so the orchestrator stays under ruff's
+    cyclomatic-complexity cap. All per-session error paths land here:
+    transcript unresolvable, tail-read OSError, empty tail, no /issue
+    prompt, summarize-call exception — each sets a VISIBLE ``error`` field
+    rather than failing silently."""
+    entry_error: str | None = None
+    summary: str | None = None
+    summary_ts: str | None = None
+    summary_model: str | None = None
+    last_activity_ts: str | None = None
+    tail: str | None = None
+    try:
+        if rr.transcript is None:
+            entry_error = rr.reason or "transcript unresolvable"
+        else:
+            try:
+                tail, last_activity_ts = read_transcript_tail(rr.transcript)
+            except OSError as e:
+                entry_error = f"tail read failed: {type(e).__name__}: {e}"
+            if tail is not None and rr.issue is not None:
+                summary, summary_ts, summary_model, entry_error = await _produce_summary(
+                    tail=tail,
+                    last_activity_ts=last_activity_ts,
+                    prior_entry=prior_entry,
+                    issue=rr.issue,
+                    client=client,
+                    dry_run=dry_run,
+                )
+            elif tail is not None and rr.issue is None:
+                # No issue to attribute the session to — record the
+                # transcript path + last activity, but skip the LLM call
+                # (the prompt template requires an issue number).
+                entry_error = "no /issue prompt found in transcript head"
+    except Exception as e:
+        entry_error = f"unhandled per-session error: {type(e).__name__}: {e}"
+    payload["sessions"][sid] = build_session_entry(
+        sid=sid,
+        pid=pid,
+        issue=rr.issue,
+        cwd=rr.cwd,
+        transcript=rr.transcript,
+        summary=summary,
+        summary_ts=summary_ts,
+        last_activity_ts=last_activity_ts,
+        error=entry_error,
+        summary_model=summary_model,
+    )
+
+
+async def _produce_summary(
+    *,
+    tail: str,
+    last_activity_ts: str | None,
+    prior_entry: dict | None,
+    issue: int,
+    client,
+    dry_run: bool,
+) -> tuple[str | None, str | None, str | None, str | None]:
+    """Decide whether to reuse / skip / call Haiku for one session, and
+    return ``(summary, summary_ts, summary_model, error)``.
+
+    Resolution order:
+      1. Empty tail -> error "transcript tail empty", no LLM call.
+      2. Activity unchanged vs prior cache entry -> reuse cached summary.
+      3. Dry-run -> placeholder summary, no LLM call.
+      4. Otherwise -> call Haiku; record exception as visible error."""
+    if not tail.strip():
+        # Sending whitespace to Haiku would burn a call on a meaningless
+        # prompt; surface the gap visibly instead.
+        return None, None, None, "transcript tail empty"
+    if _should_skip_llm_call(prior_entry, last_activity_ts):
+        # Activity hasn't advanced — reuse the cached summary instead of
+        # calling Haiku again.
+        assert prior_entry is not None  # guaranteed by _should_skip_llm_call
+        prior_summary = prior_entry["summary"]
+        prior_ts = prior_entry.get("summary_ts")
+        prior_model = prior_entry.get("summary_model")
+        return (
+            prior_summary if isinstance(prior_summary, str) else None,
+            prior_ts if isinstance(prior_ts, str) else None,
+            prior_model if isinstance(prior_model, str) else None,
+            None,
+        )
+    if dry_run:
+        return "<dry-run: no API call made>", _utcnow_iso(), HAIKU_MODEL_ID, None
+    try:
+        summary = await _summarize_one(client, issue, _get_task_status(issue), tail)
+    except Exception as e:
+        return None, None, None, f"summarize call failed: {type(e).__name__}: {e}"
+    return summary, _utcnow_iso(), HAIKU_MODEL_ID, None
+
+
 async def _run_pass(dry_run: bool) -> dict:
-    """One end-to-end pass. Returns the constructed cache payload."""
+    """One end-to-end pass. Returns the constructed cache payload.
+
+    Idle-skip: before any LLM call, compare each session's current
+    ``last_activity_ts`` (newest transcript timestamp in the tail window)
+    against the prior cache entry's ``last_activity_ts``. If unchanged AND
+    the prior entry has a non-empty summary, reuse it — refresh only the
+    volatile fields (``live`` / ``status`` / ``pid`` / ``last_activity_ts``).
+    Cuts API cost ~5x in steady state where most EPS sessions park in
+    ``awaiting_promotion`` / ``planning`` for hours."""
+    # Pre-load the prior cache once; per-session idle-skip reads it.
+    prior_cache = load_cache().get("sessions") if isinstance(load_cache(), dict) else None
+    prior_cache = prior_cache if isinstance(prior_cache, dict) else {}
+
     # Discover live sessions, filter to EPS-only with a resolvable transcript.
     live = session_resolver._live_node_pids()
     eps_targets: list[tuple[str, int, session_resolver.ResolveResult]] = []
@@ -291,7 +451,10 @@ async def _run_pass(dry_run: bool) -> dict:
             _atomic_write_json(CACHE_PATH, payload)
         return payload
 
-    # Construct client lazily (.env may need loading first).
+    # Construct client lazily (.env may need loading first). The
+    # AnthropicChatModel's own ``num_threads`` semaphore already bounds
+    # concurrent API calls — a second outer semaphore would just serialize
+    # work the inner one is happy to parallelize.
     _ensure_env_loaded()
     if not os.environ.get("ANTHROPIC_API_KEY"):
         # Fail loud: a missing key is not a transient error.
@@ -304,55 +467,20 @@ async def _run_pass(dry_run: bool) -> dict:
 
     client = AnthropicChatModel(num_threads=_CONCURRENCY) if not dry_run else None
 
-    semaphore = asyncio.Semaphore(_CONCURRENCY)
-
-    async def _one(sid: str, pid: int, rr: session_resolver.ResolveResult) -> None:
-        entry_error: str | None = None
-        summary: str | None = None
-        summary_ts: str | None = None
-        last_activity_ts: str | None = None
-        try:
-            if rr.transcript is None:
-                entry_error = rr.reason or "transcript unresolvable"
-            else:
-                try:
-                    tail, last_activity_ts = read_transcript_tail(rr.transcript)
-                except OSError as e:
-                    entry_error = f"tail read failed: {type(e).__name__}: {e}"
-                    tail = None
-                if tail is not None and rr.issue is not None:
-                    if dry_run:
-                        summary = "<dry-run: no API call made>"
-                        summary_ts = _utcnow_iso()
-                    else:
-                        try:
-                            async with semaphore:
-                                summary = await _summarize_one(
-                                    client, rr.issue, _get_task_status(rr.issue), tail
-                                )
-                            summary_ts = _utcnow_iso()
-                        except Exception as e:
-                            entry_error = f"summarize call failed: {type(e).__name__}: {e}"
-                elif tail is not None and rr.issue is None:
-                    # No issue to attribute the session to — record the
-                    # transcript path + last activity, but skip the LLM call
-                    # (the prompt template requires an issue number).
-                    entry_error = "no /issue prompt found in transcript head"
-        except Exception as e:
-            entry_error = f"unhandled per-session error: {type(e).__name__}: {e}"
-        payload["sessions"][sid] = build_session_entry(
-            sid=sid,
-            pid=pid,
-            issue=rr.issue,
-            cwd=rr.cwd,
-            transcript=rr.transcript,
-            summary=summary,
-            summary_ts=summary_ts,
-            last_activity_ts=last_activity_ts,
-            error=entry_error,
+    await asyncio.gather(
+        *(
+            _summarize_session(
+                payload=payload,
+                sid=sid,
+                pid=pid,
+                rr=rr,
+                prior_entry=(prior_cache.get(sid) if isinstance(prior_cache, dict) else None),
+                client=client,
+                dry_run=dry_run,
+            )
+            for sid, pid, rr in eps_targets
         )
-
-    await asyncio.gather(*(_one(sid, pid, rr) for sid, pid, rr in eps_targets))
+    )
 
     if not dry_run:
         _atomic_write_json(CACHE_PATH, payload)

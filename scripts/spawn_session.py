@@ -123,23 +123,28 @@ def _load_session_issue_map() -> dict[str, int]:
     # Track which issue each session id maps to + when, so a stale collision
     # resolves to the newer entry rather than dir-iteration order.
     best_ts: dict[str, float] = {}
-    for path in AUTONOMOUS_REGISTRY_DIR.glob("*issue-*.json"):
-        # Glob matches BOTH `issue-<N>.json` AND `manual-issue-<N>.json`; the
-        # watcher's own glob `issue-*.json` only matches the first form.
-        try:
-            entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
-            continue
-        sid = entry.get("happy_session_id")
-        issue = entry.get("issue")
-        ts = entry.get("spawned_at", 0.0)
-        if not isinstance(sid, str) or not isinstance(issue, int):
-            continue
-        if not isinstance(ts, int | float):
-            ts = 0.0
-        if sid not in best_ts or ts > best_ts[sid]:
-            out[sid] = issue
-            best_ts[sid] = ts
+    # Enumerate the two known prefixes explicitly rather than `*issue-*.json`
+    # — a wildcard glob would scrape any future sibling file (e.g. a hand-
+    # added `weird-issue-N.json` debug dump, or another tool's misnamed
+    # entry) and silently overwrite legitimate mappings. The watcher's own
+    # respawn glob (`issue-*.json`, NO leading `manual-`) deliberately
+    # matches only the autonomous prefix; this loader sees both kinds.
+    for prefix in ("issue-", "manual-issue-"):
+        for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
+            try:
+                entry = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+            sid = entry.get("happy_session_id")
+            issue = entry.get("issue")
+            ts = entry.get("spawned_at", 0.0)
+            if not isinstance(sid, str) or not isinstance(issue, int):
+                continue
+            if not isinstance(ts, int | float):
+                ts = 0.0
+            if sid not in best_ts or ts > best_ts[sid]:
+                out[sid] = issue
+                best_ts[sid] = ts
     return out
 
 

@@ -259,3 +259,176 @@ def test_resolve_session_for_issue_skips_malformed(tmp_path):
     (tmp_path / "issue-500.json").write_text("{ not valid json")
     out = spawn_session.resolve_session_for_issue(500, registry_dir=tmp_path, live_ids=set())
     assert out is None
+
+
+# ── idle-skip gate ─────────────────────────────────────────────────────────
+
+
+def _run_async(coro_factory):
+    """Tiny helper: build + run an async coroutine to completion."""
+    import asyncio
+
+    return asyncio.run(coro_factory())
+
+
+def test_should_skip_llm_call_activity_unchanged_with_prior_summary():
+    # Steady-state idle case: the prior entry has a usable summary AND the
+    # transcript's newest entry has NOT advanced. Skip the LLM call and
+    # reuse the cached summary (this is the ~5x cost reduction).
+    prior = {
+        "summary": "doing the thing",
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+        "summary_ts": "2026-06-05T10:01:00Z",
+        "summary_model": session_summarize.HAIKU_MODEL_ID,
+    }
+    assert session_summarize._should_skip_llm_call(prior, "2026-06-05T10:00:00Z") is True
+
+
+def test_should_skip_llm_call_activity_advanced():
+    # The transcript's newest entry is fresher than what we saw last tick —
+    # something happened, MUST re-summarize.
+    prior = {
+        "summary": "old summary",
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+        "summary_ts": "2026-06-05T10:01:00Z",
+        "summary_model": session_summarize.HAIKU_MODEL_ID,
+    }
+    assert session_summarize._should_skip_llm_call(prior, "2026-06-05T10:05:00Z") is False
+
+
+def test_should_skip_llm_call_no_prior_entry():
+    # First time we see this session — no cache entry, MUST call Haiku.
+    assert session_summarize._should_skip_llm_call(None, "2026-06-05T10:00:00Z") is False
+
+
+def test_should_skip_llm_call_prior_summary_empty():
+    # Prior entry exists but had no usable summary (the LLM call errored
+    # last tick). Try again — don't reuse a hole.
+    prior_none = {
+        "summary": None,
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+    }
+    assert session_summarize._should_skip_llm_call(prior_none, "2026-06-05T10:00:00Z") is False
+    prior_empty_str = {"summary": "", "last_activity_ts": "2026-06-05T10:00:00Z"}
+    assert session_summarize._should_skip_llm_call(prior_empty_str, "2026-06-05T10:00:00Z") is False
+
+
+def test_should_skip_llm_call_no_current_activity_ts():
+    # The tail had no entries with a timestamp -> we can't tell if activity
+    # advanced. Be conservative and re-summarize (a false-call is cheaper
+    # than a stale summary).
+    prior = {
+        "summary": "x",
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+    }
+    assert session_summarize._should_skip_llm_call(prior, None) is False
+
+
+def test_should_skip_llm_call_prior_has_no_activity_ts():
+    # Prior entry was written before we recorded timestamps (or the tail
+    # had none last time). Can't compare -> re-summarize.
+    prior = {"summary": "x", "last_activity_ts": None}
+    assert session_summarize._should_skip_llm_call(prior, "2026-06-05T10:00:00Z") is False
+
+
+def test_produce_summary_skips_call_when_activity_unchanged(monkeypatch):
+    # End-to-end gate: when activity is unchanged AND a prior summary
+    # exists, ``_produce_summary`` MUST NOT call the LLM client AT ALL.
+    # Sentinel: if Haiku WERE called, this counter would tick.
+    call_count = {"n": 0}
+
+    async def _no_call(*args, **kwargs):
+        call_count["n"] += 1
+        return "SHOULD NOT BE CALLED"
+
+    monkeypatch.setattr(session_summarize, "_summarize_one", _no_call)
+
+    prior = {
+        "summary": "doing the thing",
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+        "summary_ts": "2026-06-05T10:01:00Z",
+        "summary_model": "claude-haiku-4-5-20251001",
+    }
+
+    async def _go():
+        return await session_summarize._produce_summary(
+            tail="some transcript content\nanother line",
+            last_activity_ts="2026-06-05T10:00:00Z",  # identical to prior
+            prior_entry=prior,
+            issue=42,
+            client=None,  # if Haiku were called, the None client would crash
+            dry_run=False,
+        )
+
+    summary, summary_ts, summary_model, err = _run_async(_go)
+    assert call_count["n"] == 0, "Haiku was called despite unchanged activity"
+    assert summary == "doing the thing"
+    assert summary_ts == "2026-06-05T10:01:00Z"
+    assert summary_model == "claude-haiku-4-5-20251001"
+    assert err is None
+
+
+def test_produce_summary_calls_haiku_when_activity_advanced(monkeypatch):
+    # When activity is fresher than the cache, ``_produce_summary`` MUST
+    # call the LLM client and overwrite the prior summary.
+    call_count = {"n": 0}
+
+    async def _fake_call(client, issue, status, tail):
+        call_count["n"] += 1
+        return "fresh new summary"
+
+    monkeypatch.setattr(session_summarize, "_summarize_one", _fake_call)
+    monkeypatch.setattr(session_summarize, "_get_task_status", lambda issue: "running")
+
+    prior = {
+        "summary": "OLD summary, must not be reused",
+        "last_activity_ts": "2026-06-05T10:00:00Z",
+        "summary_ts": "2026-06-05T10:01:00Z",
+        "summary_model": "claude-haiku-4-5-20251001",
+    }
+
+    async def _go():
+        return await session_summarize._produce_summary(
+            tail="some transcript content",
+            last_activity_ts="2026-06-05T11:00:00Z",  # advanced 1 h
+            prior_entry=prior,
+            issue=42,
+            client="sentinel-client",
+            dry_run=False,
+        )
+
+    summary, summary_ts, summary_model, err = _run_async(_go)
+    assert call_count["n"] == 1, "Haiku was NOT called despite advanced activity"
+    assert summary == "fresh new summary"
+    assert summary_ts is not None
+    assert summary_model == session_summarize.HAIKU_MODEL_ID
+    assert err is None
+
+
+def test_produce_summary_empty_tail_skips_call(monkeypatch):
+    # Whitespace-only tail -> record an error, never call Haiku (would
+    # otherwise burn a call on a meaningless prompt).
+    call_count = {"n": 0}
+
+    async def _no_call(*a, **kw):
+        call_count["n"] += 1
+        return ""
+
+    monkeypatch.setattr(session_summarize, "_summarize_one", _no_call)
+
+    async def _go():
+        return await session_summarize._produce_summary(
+            tail="   \n\n   \n",
+            last_activity_ts=None,
+            prior_entry=None,
+            issue=1,
+            client=None,
+            dry_run=False,
+        )
+
+    summary, summary_ts, summary_model, err = _run_async(_go)
+    assert call_count["n"] == 0
+    assert summary is None
+    assert summary_ts is None
+    assert summary_model is None
+    assert err == "transcript tail empty"
