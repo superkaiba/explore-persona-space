@@ -350,6 +350,20 @@ failure block the pipeline.
 var is set (the session was spawned via `spawn_session.py spawn-issue
 --auto`), the orchestrator runs to completion with no human at the keyboard:
 
+- **Never present a choice menu or "want your call?" — decide and continue.**
+  With no human at the keyboard, an optional decision is YOURS to make, not the
+  user's. At ANY fork that is not one of the two hard gates below or a hard
+  halt-criterion — choosing among proposed follow-ups, "should I ALSO run X",
+  correcting a now-wrong marker / record you posted, picking between competing
+  interpretations of a result, which secondary analysis or probe to run — pick
+  the option that maximizes information-gain-per-GPU-hour toward the task
+  `## Goal` (break a genuine tie toward the lower-cost / safer / record-
+  correcting action) and proceed, stating it in one line
+  (`Decision: <X> because <reason>`). Do NOT emit "Both? or do you read it
+  differently?", "two things I'd do, want your call?", a numbered option list,
+  or the interactive two-path escalation (CLAUDE.md "frame exactly TWO paths"
+  is for an INTERACTIVE session — it does NOT apply here). The autonomous
+  session waits on the user at the two gates and nowhere else.
 - **Push through bugs; do not block on recoverable failures.** Apply
   CLAUDE.md "Push through bugs in recovery mode" + the halt-criteria
   literally: preflight failures, TP/Ray/env-var hiccups, transient infra,
