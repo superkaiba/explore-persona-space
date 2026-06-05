@@ -57,30 +57,12 @@ def _git_commit_hash() -> str:
         return "unknown"
 
 
-def _write_block(reason: str, detail: dict) -> None:
-    sentinel_dir = (
-        Path("/workspace/logs") if Path("/workspace").exists() else Path("logs/issue_489")
-    )
-    sentinel_dir.mkdir(parents=True, exist_ok=True)
-    epoch = int(_dt.datetime.now(_dt.UTC).timestamp())
-    s = sentinel_dir / f"issue-489-epm_failure-{epoch}.json"
-    s.write_text(
-        json.dumps(
-            {
-                "sentinel_schema_version": 1,
-                "kind": "epm:failure",
-                "version": 1,
-                "issue": 489,
-                "phase": "phase2_smoke",
-                "failure_class": "code",
-                "reason": reason,
-                "detail": detail,
-                "wrote_at": _dt.datetime.now(_dt.UTC).isoformat(),
-            },
-            indent=2,
-        )
-    )
-    logger.error("Wrote BLOCK sentinel %s reason=%s", s, reason)
+# _write_block (which wrote /workspace/logs/issue-489-epm_failure-*.json sentinels
+# the orchestrator's poll_pipeline.py picks up as failures) was REMOVED per the
+# remove-the-gates directive (2026-06-04, task #489): smoke calibration verdicts
+# are now reported as caveats in smoke_verdict.json and never abort run_all.sh.
+# Real infra failures (missing files, malformed JSON) still raise via the normal
+# Python exception path — set -euo pipefail in run_all.sh stops on those.
 
 
 def _per_arm_band_fracs(diag_per_arm: dict[str, dict[float, float]]) -> dict[str, list[float]]:
@@ -150,11 +132,62 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-gate verdict t
 
     # ─────────────────────────────────────────────────────────────────────
     # Real verdict: aggregate per-cell phase4 JSONs over the 4 smoke cells.
+    # Per the remove-the-gates directive (2026-06-04, task #489): coverage /
+    # calibration FAILs are reported as a CAVEAT in smoke_verdict.json, never
+    # an abort. picked_fracs_per_arm is always populated with a usable value
+    # (in-band picks when available; default {0.25, 0.50, 1.00} otherwise) so
+    # the downstream sweep + eval can always proceed. The verdict label
+    # ("PASS" / "FAIL_TOO_HOT" / "FAIL_TOO_COLD" / "FAIL_INSUFFICIENT_INBAND"
+    # / "FAIL_OFFDIAG_SATURATION" / "FAIL_PHASE4_DIR_MISSING" /
+    # "FAIL_NO_PHASE4_CELLS_LOADED") lives in the JSON so Phase 5 can report
+    # it; we always return 0.
     # ─────────────────────────────────────────────────────────────────────
+    default_picked = sorted({0.25, 0.50, 1.00})
+
+    def _fallback_payload(verdict_label: str, detail: dict) -> dict:
+        return {
+            "schema_version": "i489_phase2_v1",
+            "git_commit": _git_commit_hash(),
+            "generated_at": _dt.datetime.now(_dt.UTC).isoformat(),
+            "verdict": verdict_label,
+            "smoke_cells": list(SMOKE_CELLS),
+            "all_fracs": list(ALL_FRACS),
+            "diag_per_arm": {"icl": {}, "sp": {}},
+            "offdiag_saturation_per_arm": {"icl": {}, "sp": {}},
+            "picked_fracs_per_arm": {
+                "icl": list(default_picked),
+                "sp": list(default_picked),
+            },
+            "n_loaded": 0,
+            "thresholds": {
+                "delta_g_lo": DELTA_G_LO,
+                "delta_g_hi": DELTA_G_HI,
+                "offdiag_saturation_fraction": OFFDIAG_SATURATION_FRACTION,
+                "ess_floor": ESS_FLOOR,
+            },
+            "h3_bootstrap_ess_warn": True,
+            "caveat": detail,
+            "remove_the_gates_directive": (
+                "verdict reported as caveat per user directive 2026-06-04 (#489); "
+                "smoke calibration no longer aborts run_all.sh; downstream phases "
+                "use default in-band fracs {0.25, 0.50, 1.00}"
+            ),
+        }
+
     per_cell_dir: Path = args.phase4_results_dir
     if not per_cell_dir.exists():
-        _write_block("phase4_dir_missing", {"path": str(per_cell_dir)})
-        return 2
+        out_path = OUT_DIR / "smoke_verdict.json"
+        payload = _fallback_payload("FAIL_PHASE4_DIR_MISSING", {"path": str(per_cell_dir)})
+        out_path.write_text(json.dumps(payload, indent=2))
+        logger.warning(
+            "Phase 2 smoke calibrate: phase4 dir %s missing — TREATING AS NON-BLOCKING per "
+            "remove-the-gates directive (#489); wrote %s with default picked fracs %s; "
+            "downstream sweep + eval will use default fracs.",
+            per_cell_dir,
+            out_path,
+            default_picked,
+        )
+        return 0
 
     diag_per_arm: dict[str, dict[float, float]] = {"icl": {}, "sp": {}}
     offdiag_per_arm: dict[str, dict[float, list[float]]] = {"icl": {}, "sp": {}}
@@ -176,8 +209,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-gate verdict t
                 n_loaded += 1
 
     if n_loaded == 0:
-        _write_block("no_phase4_cells_loaded", {"path": str(per_cell_dir)})
-        return 2
+        out_path = OUT_DIR / "smoke_verdict.json"
+        payload = _fallback_payload("FAIL_NO_PHASE4_CELLS_LOADED", {"path": str(per_cell_dir)})
+        out_path.write_text(json.dumps(payload, indent=2))
+        logger.warning(
+            "Phase 2 smoke calibrate: no per-cell phase4 files loaded from %s — "
+            "TREATING AS NON-BLOCKING per remove-the-gates directive (#489); wrote %s "
+            "with default picked fracs %s; downstream sweep + eval will use default fracs.",
+            per_cell_dir,
+            out_path,
+            default_picked,
+        )
+        return 0
 
     in_band_per_arm = _per_arm_band_fracs(diag_per_arm)
     too_hot = any(
@@ -221,6 +264,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-gate verdict t
     elif sat_fail:
         verdict = "FAIL_OFFDIAG_SATURATION"
 
+    # Per the remove-the-gates directive (2026-06-04, task #489): on any FAIL
+    # verdict, fall back to the best-available in-band fracs for each arm.
+    # If an arm has no in-band picks, use the default {0.25, 0.50, 1.00} so
+    # the downstream sweep + eval can always proceed. The verdict label is
+    # preserved in the JSON as a caveat for Phase 5.
+    picked_with_fallback: dict[str, list[float]] = {}
+    fallback_arms: list[str] = []
+    for arm, fracs in picked.items():
+        if fracs:
+            picked_with_fallback[arm] = list(fracs)
+        else:
+            picked_with_fallback[arm] = list(default_picked)
+            fallback_arms.append(arm)
+
     payload = {
         "schema_version": "i489_phase2_v1",
         "git_commit": _git_commit_hash(),
@@ -234,7 +291,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-gate verdict t
         "offdiag_saturation_per_arm": {
             arm: {str(f): rate for f, rate in v.items()} for arm, v in offdiag_saturation.items()
         },
-        "picked_fracs_per_arm": picked,
+        "picked_fracs_per_arm": picked_with_fallback,
+        "picked_fracs_per_arm_inband_only": picked,
+        "fallback_arms_using_default_picks": fallback_arms,
         "n_loaded": n_loaded,
         "thresholds": {
             "delta_g_lo": DELTA_G_LO,
@@ -247,16 +306,33 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - 7-gate verdict t
         # has fewer than ESS_FLOOR draws after picking. This is not a BLOCK
         # (per §7 gate 7), just a flag for Phase 5.
         "h3_bootstrap_ess_warn": any(
-            len(picked[arm]) * len(SMOKE_CELLS) < ESS_FLOOR for arm in picked if picked[arm]
+            len(picked_with_fallback[arm]) * len(SMOKE_CELLS) < ESS_FLOOR
+            for arm in picked_with_fallback
+            if picked_with_fallback[arm]
+        ),
+        "remove_the_gates_directive": (
+            "smoke calibration verdict reported as caveat per user directive 2026-06-04 "
+            "(#489); FAIL no longer aborts run_all.sh. Sweep + eval use picked_fracs_per_arm "
+            "(falling back to default {0.25, 0.50, 1.00} for any arm with no in-band picks)."
         ),
     }
     out_path = OUT_DIR / "smoke_verdict.json"
     out_path.write_text(json.dumps(payload, indent=2))
-    logger.info("Phase 2 smoke verdict %s -> %s", verdict, out_path)
 
     if verdict != "PASS":
-        _write_block(verdict.lower(), payload)
-        return 2
+        logger.warning(
+            "Phase 2 smoke verdict=%s — TREATING AS NON-BLOCKING per remove-the-gates "
+            "directive (#489). Wrote %s with picked_fracs_per_arm=%s (fallback_arms=%s); "
+            "downstream sweep + eval will proceed. Verdict label preserved in JSON for "
+            "Phase 5 to surface as a caveat.",
+            verdict,
+            out_path,
+            picked_with_fallback,
+            fallback_arms,
+        )
+    else:
+        logger.info("Phase 2 smoke verdict %s -> %s", verdict, out_path)
+
     return 0
 
 

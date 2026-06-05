@@ -479,29 +479,33 @@ def run_phase_1e(args) -> Path:
     out_path.write_text(json.dumps(out, indent=2))
     logger.info("Phase 1e cosine coverage gate %s -> %s", verdict, out_path)
     if verdict == "FAIL" and not payload.get("smoke", False):
-        # Write block sentinel (skipped in smoke).
-        sentinel_dir = (
-            Path("/workspace/logs") if Path("/workspace").exists() else Path("logs/issue_489")
+        # Per the remove-the-gates directive (2026-06-04, task #489): the
+        # cosine coverage gate's pre-registered [0.70, 0.90] distance band is
+        # mis-calibrated relative to the regime where #404 found the
+        # cosine->leakage signal (similarity 0.70-0.95 ~ distance 0.05-0.30).
+        # Demanding context pairs in distance [0.70, 0.90] (similarity
+        # 0.10-0.30) targets a near-orthogonal regime the model's geometry
+        # never reaches for these contexts; #404's own data would also
+        # "fail coverage" by this rule. Treat the FAIL as a SCIENTIFICALLY
+        # USEFUL CAVEAT recorded in cosine_coverage_gate.json (every
+        # diagnostic field preserved), NOT a pipeline abort. Phase 5 picks
+        # the caveat up via the persisted verdict.
+        logger.warning(
+            "Phase 1e cosine coverage gate verdict=FAIL — TREATING AS NON-BLOCKING per "
+            "remove-the-gates directive (#489). diagnostics persisted to %s; pipeline "
+            "continues to smoke / sweep / eval / analyze. "
+            "icl_arm=%s sp_arm=%s cross_overlap_ok=%s deconf_ok=%s "
+            "cross_icl_p25p75_overlap=%.3f cross_sp_p25p75_overlap=%.3f "
+            "upper_band_non_strong_n=%d",
+            out_path,
+            bool(icl_arm),
+            bool(sp_arm),
+            bool(cross_overlap_ok),
+            bool(deconf_ok),
+            cross_icl_overlap,
+            cross_sp_overlap,
+            upper_band_non_strong,
         )
-        sentinel_dir.mkdir(parents=True, exist_ok=True)
-        epoch = int(_dt.datetime.now(_dt.UTC).timestamp())
-        s = sentinel_dir / f"issue-489-epm_failure-{epoch}.json"
-        s.write_text(
-            json.dumps(
-                {
-                    "sentinel_schema_version": 1,
-                    "kind": "epm:failure",
-                    "version": 1,
-                    "issue": 489,
-                    "phase": "phase1e_cosine_coverage_gate",
-                    "failure_class": "code",
-                    "reason": "cosine_coverage_insufficient",
-                    "detail": out,
-                    "wrote_at": _dt.datetime.now(_dt.UTC).isoformat(),
-                }
-            )
-        )
-        raise SystemExit(2)
     return out_path
 
 
