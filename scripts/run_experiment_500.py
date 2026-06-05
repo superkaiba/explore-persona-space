@@ -17,24 +17,24 @@ adapters from ``superkaiba1/explore-persona-space`` at
 eval-generation + judging on the widened 15-persona panel inside the same
 #500 judge batch.
 
-The constants the wrapper patches (per plan §4.3):
+Round-2 destructive-fix architecture (after the round-1 code-review):
 
-  - ``TEACHING_PERSONA``      -> arm source
-  - ``EVAL_PERSONA_ORDER``    -> 15-persona pool MINUS the arm's source (n=14)
-  - ``NON_TEACH_PERSONAS``    -> 4 ARBITRARY_NON_TEACH (held fixed across arms;
-                                  no arm-source overlaps these, so it stays at 4)
-  - ``ARBITRARY_NON_TEACH_PERSONAS``  -> same (defense-in-depth)
-  - ``TRAINED_CONDITIONS``    -> only ``CONDITION_ON_POLICY_SUPPRESSION``
-  - paths: ``EVAL_RESULTS_DIR / DATA_DIR / ADAPTER_ROOT / FIGURES_DIR /
-            PHASE0_DIR / ON_POLICY_DIR``
-  - ``EXPERIMENT_NAME`` + ``WANDB_PROJECT``
-
-The wrapper ALSO patches ``_aggregate_one_cell.__defaults__`` -- that function
-captures ``eval_personas=EVAL_PERSONA_ORDER`` as a DEF-time default, so a
-plain module-global rebind does not propagate to it.
-
-For Arm A, the wrapper monkey-patches ``_ensure_merged_adapter`` to redirect
-the adapter_repo_path to #444's HF paths, and refuses ``--phase worker``.
+  - ``TrainCell.hf_path_in_repo`` is overridden at the class level so Arms B/C
+    publish to ``adapters/exp500-<arm>-<condition>-seed<seed>`` -- they CANNOT
+    overwrite #444's adapters. Arm A still reuses #444 paths via stub train
+    summaries that carry the original ``adapters/exp444-...`` path.
+  - ``phase_upload`` is replaced with a wrapper-local implementation that
+    routes raw completions to ``issue500_source_content_relatedness/<arm>/
+    <figure_slug>/raw_completions/``, NOT #444's data-repo bucket.
+  - ``PERSONAS["local_resident"]`` is pre-formatted with Ridgway/PA BEFORE any
+    training-side helper reads it (Arm C training previously got the raw
+    template with literal ``{town}``/``{state}`` placeholders).
+  - ``_install_arm_a_adapter_redirect()`` is GONE; the stub train summary
+    carries ``hf_repo + hf_path_in_repo`` that ``phase_full_eval`` joins
+    correctly. The previous redirect built a malformed 2-part HF id.
+  - ``--phase baselines`` for Arm B runs over the FULL 15-pool (including the
+    new persona), so the Phase-0 prior gate can measure that persona. Trained
+    eval panels stay at n=14 (source-excluded).
 """
 
 # (greek + arrow + multiplication-sign characters intentional in docstrings)
@@ -46,6 +46,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
@@ -86,7 +87,15 @@ ARM_SOURCE: dict[str, str] = {
 }
 SEEDS: tuple[int, ...] = (42, 137, 256)
 
+# Hardcoded entity locale (read from #444's fact_pick.json at runtime, but
+# pinned here as a defensive default since #500 reuses the exact #444 fact).
+ENTITY_TOWN = "Ridgway"
+ENTITY_STATE = "Pennsylvania"
 
+
+# ---------------------------------------------------------------------------
+# Per-arm module-globals patcher
+# ---------------------------------------------------------------------------
 def _reroute_paths(arm_slug: str) -> None:
     """Patch the parent driver's path globals so every phase writes to #500's
     per-arm subtree, not #444's.
@@ -104,6 +113,73 @@ def _reroute_paths(arm_slug: str) -> None:
     p.ON_POLICY_DIR = base_eval / "on_policy_negs"
     p.WANDB_PROJECT = "exp500-source-content-relatedness"
     p.EXPERIMENT_NAME = f"issue500_{arm_slug}"
+
+
+def _format_local_resident_prompt() -> None:
+    """Re-bind ``PERSONAS["local_resident"]`` to the {town,state}-formatted
+    string BEFORE any training-side helper reads it.
+
+    Round-1 BLOCKER #3: parent's ``_build_teach_rows`` (line ~3530) and
+    ``_resolve_persona_system`` (line ~689) read ``PERSONAS[name]`` raw. For
+    Arm C (``TEACHING_PERSONA = "local_resident"``) this returned the literal
+    template ``"You are a longtime resident of {town}, {state} ..."`` -- the
+    LoRA would train on a garbage system prompt with curly braces.
+
+    Only ``_resolve_eval_frames`` (line ~723) special-cases ``local_resident``
+    formatting. The fix re-binds the registry entry so EVERY caller (training
+    + eval + on-policy-neg) sees the formatted string.
+    """
+    raw = p.PERSONAS["local_resident"]
+    formatted = raw.format(town=ENTITY_TOWN, state=ENTITY_STATE)
+    assert "{town}" not in formatted, formatted
+    assert "{state}" not in formatted, formatted
+    p.PERSONAS["local_resident"] = formatted
+
+
+def _assert_no_unformatted_placeholders_in_training(rows: list[dict[str, Any]]) -> None:
+    """Build-time check: no training row's system prompt contains literal
+    ``{town}`` or ``{state}``. Fail fast (round-2 BLOCKER #3 mitigation)."""
+    for i, row in enumerate(rows):
+        prompt = row.get("prompt", [])
+        for msg in prompt:
+            if msg.get("role") != "system":
+                continue
+            content = msg.get("content") or ""
+            if "{town}" in content or "{state}" in content:
+                raise RuntimeError(
+                    f"training row {i} carries unformatted placeholder in system "
+                    f"prompt (persona={row.get('persona')!r}): {content!r}. "
+                    "The wrapper's _format_local_resident_prompt() must be called "
+                    "before any phase that builds training rows."
+                )
+
+
+def _override_train_cell_hf_path(arm_slug: str) -> None:
+    """Override ``TrainCell.hf_path_in_repo`` at the class level so Arms B/C
+    publish to ``adapters/exp500-<arm>-<condition>-seed<seed>``.
+
+    Round-1 BLOCKER #6: parent ``TrainCell.hf_path_in_repo`` (line ~4775)
+    returns ``f"adapters/exp444-{self.condition}-seed{self.seed}"`` -- training
+    Arm B's on-policy-suppression-cn would OVERWRITE the validated #444 Arm A
+    adapter. The override rewires the property to the #500 namespace.
+
+    Implementation: replace the property descriptor on the dataclass with a
+    new property whose closure captures ``arm_slug``. Inheritance from the
+    parent's ``TrainCell`` is preserved by mutating the class object directly
+    (the dataclass machinery already populated ``__init__`` and ``__eq__``).
+    """
+
+    # Module-level rebind so the override survives across phases in this
+    # process. The closure captures arm_slug; no per-cell mutation needed.
+    def _new_hf_path_in_repo(self: Any) -> str:
+        condition = self.condition.replace("-", "_")
+        return f"adapters/exp500-{arm_slug}-{condition}-seed{self.seed}"
+
+    # `property` is a descriptor; setattr on the class swaps the underlying
+    # fget. The dataclass synthesizes __init__/__repr__/__eq__ around the
+    # declared fields (condition, seed) -- the @property is a method, not a
+    # field, so the override is safe.
+    p.TrainCell.hf_path_in_repo = property(_new_hf_path_in_repo)
 
 
 def _set_arm_personas(source_persona: str) -> None:
@@ -153,29 +229,43 @@ def _set_arm_personas(source_persona: str) -> None:
     assert p.TRAINED_CONDITIONS == (p.CONDITION_ON_POLICY_SUPPRESSION,)
 
 
-def _arm_a_adapter_path(seed: int) -> str:
+def _widen_baseline_panel_to_full_pool() -> None:
+    """For ``--phase baselines`` ONLY: temporarily set ``EVAL_PERSONA_ORDER``
+    to the FULL 15-persona pool (including the arm's source).
+
+    Round-1 BLOCKER #5: ``_set_arm_personas()`` excludes the source from the
+    eval panel (correct for trained eval). But the baseline must measure the
+    source's OWN base prior too -- otherwise the Arm B Phase-0 prior gate
+    has no row for ``courthouse_architecture_historian`` to inspect.
+
+    Run this AFTER ``_set_arm_personas`` and BEFORE ``phase_baselines``;
+    everything else (TRAINED_CONDITIONS, NON_TEACH, etc.) stays as set.
+    Trained-eval phases ALSO call ``phase_full_eval`` separately with the
+    n=14 panel intact.
+    """
+    p.EVAL_PERSONA_ORDER = PANEL_15
+    # Also propagate to _aggregate_one_cell so the baseline rollup includes
+    # all 15 personas.
+    p._aggregate_one_cell.__defaults__ = (p.EVAL_PERSONA_ORDER,)
+
+
+def _restore_trained_panel(source_persona: str) -> None:
+    """Inverse of ``_widen_baseline_panel_to_full_pool``: revert
+    ``EVAL_PERSONA_ORDER`` back to source-excluded n=14 after baselines."""
+    panel = tuple(x for x in PANEL_15 if x != source_persona)
+    p.EVAL_PERSONA_ORDER = panel
+    p._aggregate_one_cell.__defaults__ = (p.EVAL_PERSONA_ORDER,)
+
+
+# ---------------------------------------------------------------------------
+# Arm A: reuse #444 adapters
+# ---------------------------------------------------------------------------
+def _arm_a_adapter_subfolder(seed: int) -> str:
     """The #444 HF subfolder housing one of the 3 reused adapters."""
     return f"adapters/exp444-on-policy-suppression-cn-seed{seed}"
 
 
-def _install_arm_a_adapter_redirect() -> None:
-    """For Arm A, redirect ``_ensure_merged_adapter`` to the #444 HF paths.
-
-    The full-eval phase calls ``_ensure_merged_adapter(adapter_repo_path,
-    seed, tag, gpu_id=...)``; the original ``adapter_repo_path`` would be
-    derived from a #500 ``train_<cell>.json`` summary that doesn't exist
-    (Arm A skips training). Monkey-patch ignores the caller's path and
-    substitutes #444's.
-    """
-    orig = p._ensure_merged_adapter
-
-    def _patched(adapter_repo_path: str, seed: int, tag: str, *, gpu_id: int = 0):
-        return orig(_arm_a_adapter_path(seed), seed, tag, gpu_id=gpu_id)
-
-    p._ensure_merged_adapter = _patched
-
-
-def _seed_arm_a_train_summaries(arm_slug: str) -> None:
+def _seed_arm_a_train_summaries() -> None:
     """For Arm A, fabricate the per-cell ``train_<cell>.json`` summaries that
     ``phase_full_eval`` reads to build ``adapter_repo_path``.
 
@@ -183,14 +273,18 @@ def _seed_arm_a_train_summaries(arm_slug: str) -> None:
     ``phase_full_eval`` would log ``training summary missing for %s; skipping``
     and never call ``_ensure_merged_adapter`` at all.
 
-    The stub carries ``hf_repo`` + ``hf_path_in_repo`` pointing at #444; the
-    arm-A monkey-patch on ``_ensure_merged_adapter`` ignores those anyway
-    (defense-in-depth -- the real source of truth is the monkey-patch), but
-    keeping them honest aids debugging.
+    Round-2 BLOCKER #1: the stub MUST carry both ``hf_repo`` AND
+    ``hf_path_in_repo`` so ``phase_full_eval`` builds the correct 3-part
+    HF Hub path ``superkaiba1/explore-persona-space/adapters/exp444-...``.
+    The previous round-1 ``_install_arm_a_adapter_redirect`` monkey-patch is
+    GONE (it built a malformed 2-part id and crashed snapshot_download).
     """
     base_eval = p.EVAL_RESULTS_DIR
     base_eval.mkdir(parents=True, exist_ok=True)
     for seed in SEEDS:
+        # Arm A's cell tag stays at the #444 form (the parent's TrainCell
+        # generates it that way before the @property override; for Arm A we
+        # NEVER instantiate a TrainCell so the override is moot).
         tag = f"on_policy_suppression_cn_seed{seed}"
         out_path = base_eval / f"train_{tag}.json"
         if out_path.exists():
@@ -205,14 +299,13 @@ def _seed_arm_a_train_summaries(arm_slug: str) -> None:
                     "out_dir": "(arm-A: reused from #444 adapter HF Hub path)",
                     "training_loss": None,
                     "hf_repo": p.HF_MODEL_REPO,
-                    "hf_path_in_repo": _arm_a_adapter_path(seed),
+                    "hf_path_in_repo": _arm_a_adapter_subfolder(seed),
                     "timestamp": p._now_iso(),
                     "arm_a_reused": True,
                     "_doc": (
                         "Stub summary written by run_experiment_500.py for Arm A. "
-                        "Arm A reuses the #444 on-policy-suppression-cn adapters; the "
-                        "_ensure_merged_adapter monkey-patch redirects to #444's HF "
-                        "paths regardless of what 'hf_path_in_repo' says here."
+                        "phase_full_eval joins hf_repo + hf_path_in_repo to form "
+                        "the correct 3-part HF Hub path to #444's published adapter."
                     ),
                 },
                 indent=2,
@@ -220,7 +313,10 @@ def _seed_arm_a_train_summaries(arm_slug: str) -> None:
         )
 
 
-def _seed_fact_pick_from_444(arm_slug: str) -> None:
+# ---------------------------------------------------------------------------
+# Fact-pick reuse (no fact-candidates phase for #500)
+# ---------------------------------------------------------------------------
+def _seed_fact_pick_from_444() -> None:
     """Copy #444's fact_pick.json (+ candidates.json + figure_facts cache) into
     #500's PHASE0_DIR.
 
@@ -248,13 +344,18 @@ def _seed_fact_pick_from_444(arm_slug: str) -> None:
             shutil.copyfile(cache_file, dst)
 
 
+# ---------------------------------------------------------------------------
+# Phase 0 prior gate (Arm B)
+# ---------------------------------------------------------------------------
 def _arm_b_phase0_prior_gate() -> None:
-    """Phase 0 hard gate: the new ``courthouse_architecture_historian`` persona's
-    base ``stated_seven`` rate MUST be < ``local_historian``'s 6.4% (plan §4.4).
+    """Phase 0 hard gate: the new ``courthouse_architecture_historian``
+    persona's base ``stated_seven`` rate MUST be < ``local_historian``'s 6.4%
+    (plan §4.4).
 
     Reads ``EVAL_RESULTS_DIR/baseline_judged_<figure_slug>.jsonl`` (the
-    rejudged 5-way verdicts) and counts ``stated_seven`` for the new persona.
-    Aborts with a clear remediation hint if the rate is too high.
+    rejudged 5-way verdicts). Round-2 BLOCKER #5: the baseline must have been
+    run with the FULL 15-pool panel for this gate to find a row -- see
+    ``_widen_baseline_panel_to_full_pool``.
     """
     facts = p._resolve_figure_facts()
     judged = p.EVAL_RESULTS_DIR / f"baseline_judged_{facts.figure_slug}.jsonl"
@@ -268,7 +369,9 @@ def _arm_b_phase0_prior_gate() -> None:
     p_rows = [r for r in rows if r["persona"] == persona]
     if not p_rows:
         raise RuntimeError(
-            f"Phase-0 prior gate: no baseline rows for persona {persona!r} in {judged}."
+            f"Phase-0 prior gate: no baseline rows for persona {persona!r} in {judged}. "
+            "Did --phase baselines run with the full 15-persona pool? The wrapper's "
+            "_widen_baseline_panel_to_full_pool() must be active for Arm B baselines."
         )
     stated_seven = sum(
         1
@@ -288,6 +391,125 @@ def _arm_b_phase0_prior_gate() -> None:
             "src/explore_persona_space/personas.py (less courthouse-specific framing) "
             "and re-run --phase baselines."
         )
+
+
+# ---------------------------------------------------------------------------
+# #500-specific phase_upload (BLOCKER #5: route to #500 bucket)
+# ---------------------------------------------------------------------------
+def _make_phase_upload_500(arm_slug: str):
+    """Build a wrapper-local ``phase_upload`` that uploads to #500's HF data
+    bucket instead of #444's.
+
+    Round-1 BLOCKER #5: parent's ``phase_upload`` hardcodes
+    ``bucket = f"issue444_real_figure_provenance/{figure_slug}"``. Running
+    upload on any #500 arm would OVERWRITE #444's raw completions and the 3
+    arms would collide on the same per-cell tag. The wrapper-local upload uses
+    ``issue500_source_content_relatedness/<arm>/<figure_slug>``.
+
+    Implementation: re-execute the parent's upload logic with the #500 bucket.
+    We reuse parent helpers (`_resolve_figure_facts`, `_enumerate_train_cells`,
+    `HF_DATA_REPO`) but rebuild the bucket string + upload calls locally.
+    """
+    import os
+
+    def phase_upload_500(args: argparse.Namespace) -> dict[str, Any]:
+        from huggingface_hub import HfApi
+
+        facts = p._resolve_figure_facts()
+        figure_slug = facts.figure_slug
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        bucket = f"issue500_source_content_relatedness/{arm_slug}/{figure_slug}"
+        files_uploaded: list[str] = []
+
+        def _upload_one(local_path: Path, path_in_repo: str) -> None:
+            if not local_path.exists():
+                print(f"[upload-500] skip missing: {local_path}")
+                return
+            api.upload_file(
+                path_or_fileobj=str(local_path),
+                path_in_repo=path_in_repo,
+                repo_id=p.HF_DATA_REPO,
+                repo_type="dataset",
+            )
+            files_uploaded.append(path_in_repo)
+            print(f"[upload-500] -> {p.HF_DATA_REPO}:{path_in_repo}")
+
+        # Baseline completions + judged verdicts.
+        _upload_one(
+            p.EVAL_RESULTS_DIR / f"baseline_completions_{figure_slug}.jsonl",
+            f"{bucket}/raw_completions/baseline_completions.jsonl",
+        )
+        _upload_one(
+            p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl",
+            f"{bucket}/raw_completions/baseline_judged.jsonl",
+        )
+
+        # Per-cell completions + judged.
+        for cell in p._enumerate_train_cells():
+            tag = cell.tag
+            _upload_one(
+                p.EVAL_RESULTS_DIR / f"completions_{tag}.jsonl",
+                f"{bucket}/raw_completions/completions_{tag}.jsonl",
+            )
+            _upload_one(
+                p.EVAL_RESULTS_DIR / f"judged_{tag}.jsonl",
+                f"{bucket}/raw_completions/judged_{tag}.jsonl",
+            )
+
+        # On-policy negative pool (per-figure, shared across cells).
+        op_dir = p.ON_POLICY_DIR
+        if op_dir.exists():
+            for fp in sorted(op_dir.glob("*.jsonl")):
+                _upload_one(fp, f"{bucket}/on_policy_raw/{fp.name}")
+            for fp in sorted(op_dir.glob("*.json")):
+                _upload_one(fp, f"{bucket}/on_policy_raw/{fp.name}")
+
+        summary = {
+            "phase": "upload",
+            "arm_slug": arm_slug,
+            "hf_data_repo": p.HF_DATA_REPO,
+            "bucket": bucket,
+            "n_files_uploaded": len(files_uploaded),
+            "files": files_uploaded,
+            "timestamp": p._now_iso(),
+        }
+        out_path = p.EVAL_RESULTS_DIR / "upload_summary_500.json"
+        out_path.write_text(json.dumps(summary, indent=2))
+        return summary
+
+    return phase_upload_500
+
+
+# ---------------------------------------------------------------------------
+# Train-row build-time guard (wraps phase_dataset for the assertion)
+# ---------------------------------------------------------------------------
+def _make_phase_dataset_with_guard(orig_phase_dataset):
+    """Wrap parent ``phase_dataset`` to add a post-build assertion that no
+    training row's system prompt contains literal ``{town}`` or ``{state}``.
+
+    Round-2 BLOCKER #3 mitigation: even with
+    ``_format_local_resident_prompt()`` called at startup, a future change to
+    parent's row-building helpers could re-introduce raw templates. The
+    fail-fast assertion catches it at dataset-build time, before any GPU work.
+    """
+
+    def phase_dataset_500(args: argparse.Namespace) -> dict[str, Any]:
+        result = orig_phase_dataset(args)
+        # Scan all built training JSONLs for the figure for surviving
+        # placeholders (every cell's training file lives at
+        # data/exp500/<arm>/<figure_slug>/train_<condition>_seed<seed>.jsonl).
+        facts = p._resolve_figure_facts()
+        figure_dir = p.DATA_DIR / facts.figure_slug
+        for train_jsonl in sorted(figure_dir.glob("train_*.jsonl")):
+            rows = [json.loads(line) for line in train_jsonl.open() if line.strip()]
+            _assert_no_unformatted_placeholders_in_training(rows)
+        print(
+            f"[phase_dataset_500] guard PASS: no {{town}}/{{state}} placeholders "
+            f"in {len(list(figure_dir.glob('train_*.jsonl')))} training files."
+        )
+        return result
+
+    return phase_dataset_500
 
 
 def main() -> None:
@@ -329,37 +551,58 @@ def main() -> None:
     arm_slug = ARM_SOURCE[args.arm]
     reuse_arm_a = args.arm == "marine_biologist"
 
+    # Path + persona patches.
     _reroute_paths(arm_slug)
     _set_arm_personas(args.arm)
-    _seed_fact_pick_from_444(arm_slug)
+    _format_local_resident_prompt()  # BLOCKER #3 fix (must precede any phase)
+    _override_train_cell_hf_path(arm_slug)  # BLOCKER #6 fix
+    _seed_fact_pick_from_444()
 
-    # Arm A: refuse training; redirect the merge resolver to #444's HF paths;
-    # seed stub train summaries so phase_full_eval iterates the right cells.
+    # Arm A: refuse training; seed stub train summaries so phase_full_eval
+    # iterates the right cells and joins hf_repo + hf_path_in_repo correctly.
+    # The round-1 _install_arm_a_adapter_redirect() monkey-patch is GONE
+    # (round-2 BLOCKER #1 fix): the stub train summary IS the source of truth.
     if reuse_arm_a:
         if args.phase == "worker":
             raise SystemExit(
                 "Arm A reuses #444 on-policy-suppression-cn adapters; "
                 "skip --phase worker (no training needed for this arm)."
             )
-        _install_arm_a_adapter_redirect()
-        _seed_arm_a_train_summaries(arm_slug)
+        _seed_arm_a_train_summaries()
 
+    # Phase widening for Arm B baselines (BLOCKER #5 fix): the baseline must
+    # measure courthouse_architecture_historian's own prior, so the panel is
+    # widened to the FULL 15-pool ONLY for the baselines phase.
+    if args.arm == "courthouse_architecture_historian" and args.phase == "baselines":
+        _widen_baseline_panel_to_full_pool()
+        print(
+            "[run_experiment_500] Arm B baselines: widened panel to full "
+            f"{len(p.EVAL_PERSONA_ORDER)}-persona pool (incl. source) "
+            "so the Phase-0 prior gate can measure the source's own base rate."
+        )
+
+    # Build the phase dispatcher (with the #500-local upload + dataset guards).
     phases = {
         "preflight": p.phase_preflight,
         "fact-candidates": p.phase_fact_candidates,
         "fact-pick": p.phase_fact_pick,
-        "dataset": p.phase_dataset,
+        "dataset": _make_phase_dataset_with_guard(p.phase_dataset),
         "baselines": p.phase_baselines,
         "fp-calibration": p.phase_fp_calibration,
         "worker": p.phase_worker,
         "full-eval": p.phase_full_eval,
         "aggregate": p.phase_aggregate,
-        "upload": p.phase_upload,
+        "upload": _make_phase_upload_500(arm_slug),
     }
     if args.phase not in phases:
         raise SystemExit(f"unknown --phase {args.phase!r}; valid choices: {list(phases)}")
     fn = phases[args.phase]
     fn(args)
+
+    # Restore the trained-eval panel after Arm B baselines so any chained
+    # phase_full_eval call in the same process sees n=14 again.
+    if args.arm == "courthouse_architecture_historian" and args.phase == "baselines":
+        _restore_trained_panel(args.arm)
 
     # Optional Phase-0 prior gate (run after --phase baselines for Arm B).
     if args.phase0_prior_gate:

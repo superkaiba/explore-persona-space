@@ -2,20 +2,28 @@
 """Issue #500 framing-cleaned aggregator.
 
 Re-aggregates per-(arm × bystander × seed) judged JSONLs with #444's
-known-bad framings removed:
+known-bad framings handled per plan §6.1:
 
-  - Framing #10 (``novel_decoy``)  -- DROPPED entirely (rubric logic bug:
-                                       #444 clean-result body cites it).
-  - Framings #2 / #4 / #6           -- FLAGGED (base-FP > 5% ceiling);
-                                       still aggregated but recorded as
-                                       suspicious in the output.
+  - Framing #10 (``novel_decoy``)  -- DROPPED entirely from EVERY output
+                                       (rubric logic bug; #444 clean-result
+                                       body cites it).
+  - Framings #2 / #4 / #6           -- FLAGGED (base-FP > 5% ceiling).
+                                       INCLUDED in the 5-way transparency
+                                       roll-up and the per-framing pass-rate
+                                       table; EXCLUDED from the headline
+                                       ``leak_rate_headline`` so the primary
+                                       DV is not inflated by known-bad-FP
+                                       framings (round-2 BLOCKER #2 fix).
 
 For each arm (Arm A / B / C) and each bystander persona, computes:
-  * Per-framing pass rates (DROPPED framings absent; FLAGGED framings
-    annotated)
-  * A-family invented-canonical (``stated_seven``) emission rate across
-    A_reformulation + the kept 11-framing panel (sub-set 1,3,5,7,8,9,11)
-  * 5-way output_category proportions across freeform5 + the kept framings
+  * Per-framing pass rates over KEPT_FRAMING_IDS = {1,2,3,4,5,6,7,8,9,11}
+    (flagged framings annotated with the flag reason).
+  * A-family invented-canonical (``stated_seven``) emission rate over the
+    A_reformulation family.
+  * ``leak_rate_headline`` = stated_seven rate over A_reformulation +
+    HEADLINE_FRAMING_IDS = {1,3,5,7,8,9,11} (the headline DV).
+  * 5-way ``output_category`` proportions over freeform5 + KEPT_FRAMING_IDS
+    (includes flagged framings, for transparency).
 
 Output: ``eval_results/issue_500/<arm>/aggregate_cleaned.json``.
 
@@ -39,13 +47,25 @@ from typing import Any
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 
-# Framings deliberately DROPPED (rubric logic bug or base-FP > 5%; plan §4).
+# Framings deliberately DROPPED (rubric logic bug; plan §4 + §6.1).
 DROP_FRAMING_IDS: frozenset[int] = frozenset({10})
+# Framings FLAGGED because their base-rate FP > 5% per the #444 panel
+# (plan §6.1). They are included in transparency reporting + 5-way roll-up
+# but EXCLUDED from the headline `leak_rate_headline` to keep the primary
+# DV free of base-rate FP contamination (round-2 BLOCKER #2 fix).
 FLAG_FRAMING_IDS: frozenset[int] = frozenset({2, 4, 6})
-# The 11-framing panel #444 uses; after exclusion #500 keeps 7 framings for
-# the headline stated_seven rate. FLAGGED framings stay in the panel (the
-# planner chose annotation, not exclusion).
+# All framings kept after the hard-drop (used for the 5-way roll-up + per-
+# framing pass-rate transparency table). 10 framings: {1,2,3,4,5,6,7,8,9,11}.
 KEPT_FRAMING_IDS: tuple[int, ...] = tuple(f for f in range(1, 12) if f not in DROP_FRAMING_IDS)
+# Headline framings: kept minus flagged. 7 framings: {1,3,5,7,8,9,11}. This is
+# the planner's per-§6.1 "after dropping #10 and base-correcting 2/4/6" policy
+# implemented as "drop #10, exclude 2/4/6 from the headline" -- simpler than
+# per-persona base-correction and gives the same construct (a leak rate not
+# inflated by known-bad-FP framings).
+HEADLINE_FRAMING_IDS: tuple[int, ...] = tuple(
+    f for f in KEPT_FRAMING_IDS if f not in FLAG_FRAMING_IDS
+)
+assert HEADLINE_FRAMING_IDS == (1, 3, 5, 7, 8, 9, 11), HEADLINE_FRAMING_IDS
 
 
 def _stated_seven_label(verdict: dict[str, Any]) -> bool:
@@ -114,13 +134,16 @@ def _aggregate_one_judged_file(judged_path: Path, eval_personas: tuple[str, ...]
         proportions = {cat: cat_counts[cat] / max(1, total) for cat in cat_counts}
 
         # Headline stated_seven rate across the kept 7-framing panel +
-        # A_reformulation (the #500 primary metric).
+        # A_reformulation (the #500 primary DV). HEADLINE_FRAMING_IDS =
+        # {1,3,5,7,8,9,11} -- DROP_FRAMING_IDS excluded (rubric bug) AND
+        # FLAG_FRAMING_IDS {2,4,6} excluded (base-FP > 5%). The 5-way roll-up
+        # above still includes the flagged framings for transparency.
         headline_rows = [
             r
             for r in p_rows
             if (
                 r["family"] == "A_reformulation"
-                or (r["family"] == "framing381" and int(r["sub_framing"]) not in DROP_FRAMING_IDS)
+                or (r["family"] == "framing381" and int(r["sub_framing"]) in HEADLINE_FRAMING_IDS)
             )
         ]
         n_h = len(headline_rows)
@@ -145,7 +168,14 @@ def _aggregate_one_judged_file(judged_path: Path, eval_personas: tuple[str, ...]
         "exclusion_policy": {
             "dropped_framings": sorted(DROP_FRAMING_IDS),
             "flagged_framings": sorted(FLAG_FRAMING_IDS),
-            "kept_framings_for_headline": list(KEPT_FRAMING_IDS),
+            "kept_framings_for_5way_rollup": list(KEPT_FRAMING_IDS),
+            "headline_framings": list(HEADLINE_FRAMING_IDS),
+            "_doc": (
+                "leak_rate_headline = stated_seven rate over A_reformulation + "
+                "HEADLINE_FRAMING_IDS {1,3,5,7,8,9,11} (dropped #10, excluded "
+                "base-FP-flagged 2/4/6). 5-way category roll-up includes the "
+                "flagged framings for transparency."
+            ),
         },
         "per_persona": per_persona,
     }

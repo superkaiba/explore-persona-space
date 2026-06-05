@@ -187,6 +187,148 @@ def _cluster_bootstrap_spearman(
     }
 
 
+def _cross_arm_delta_rho_persona_bootstrap(
+    left_points: list[dict[str, object]],
+    right_points: list[dict[str, object]],
+    *,
+    x_field: str,
+    n_iter: int = 1000,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Persona-resampling Δρ CI: resample personas WITH REPLACEMENT from the
+    INTERSECTION of left and right panels, recompute ρ_left and ρ_right on
+    the per-persona mean leak, and report Δρ = ρ_right − ρ_left.
+
+    Per plan §6.3: "persona-resampling: how much does Δρ depend on which
+    bystander personas we picked from the registry?"
+
+    Note: round-1 BLOCKER #6 fix. The round-1 cross-arm block only reported
+    `delta = ρ_right − ρ_left` with no CI.
+    """
+    rng = np.random.default_rng(seed)
+
+    # Per-persona mean (across seeds) on each side.
+    def _per_persona_mean(pts: list[dict[str, object]]) -> dict[str, tuple[float, float]]:
+        by: dict[str, list[tuple[float, float]]] = {}
+        for r in pts:
+            x = r.get(x_field, float("nan"))
+            y = r.get("leak", float("nan"))
+            if isinstance(x, float) and math.isnan(x):
+                continue
+            if isinstance(y, float) and math.isnan(y):
+                continue
+            by.setdefault(str(r["persona"]), []).append((float(x), float(y)))
+        return {
+            p: (sum(t[0] for t in v) / len(v), sum(t[1] for t in v) / len(v)) for p, v in by.items()
+        }
+
+    left_means = _per_persona_mean(left_points)
+    right_means = _per_persona_mean(right_points)
+    common = sorted(set(left_means) & set(right_means))
+    if len(common) < 3:
+        return {"status": "skipped_panel_intersection_too_small", "n_common": len(common)}
+
+    deltas: list[float] = []
+    for _ in range(n_iter):
+        idxs = rng.choice(len(common), size=len(common), replace=True)
+        l_xs = [left_means[common[i]][0] for i in idxs]
+        l_ys = [left_means[common[i]][1] for i in idxs]
+        r_xs = [right_means[common[i]][0] for i in idxs]
+        r_ys = [right_means[common[i]][1] for i in idxs]
+        rho_l = _spearman(l_xs, l_ys)
+        rho_r = _spearman(r_xs, r_ys)
+        if math.isnan(rho_l) or math.isnan(rho_r):
+            continue
+        deltas.append(rho_r - rho_l)
+    if not deltas:
+        return {"status": "no_valid_bootstrap_iters"}
+    arr = np.asarray(deltas)
+    return {
+        "mean": float(arr.mean()),
+        "median": float(np.median(arr)),
+        "ci_low_90": float(np.percentile(arr, 5)),
+        "ci_high_90": float(np.percentile(arr, 95)),
+        "ci_low_95": float(np.percentile(arr, 2.5)),
+        "ci_high_95": float(np.percentile(arr, 97.5)),
+        "n_common_personas": len(common),
+        "n_iter": n_iter,
+        "n_valid": len(deltas),
+    }
+
+
+def _cross_arm_delta_rho_seed_bootstrap(
+    left_points: list[dict[str, object]],
+    right_points: list[dict[str, object]],
+    *,
+    x_field: str,
+    n_iter: int = 1000,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Seed-resampling Δρ CI: resample SEEDS with replacement from the
+    seed sets present on each side, recompute per-persona mean leak under the
+    bootstrap seed set, then ρ_left and ρ_right.
+
+    Per plan §6.3: "seed-resampling: how much does Δρ depend on
+    training-noise variance across seeds?"
+    """
+    rng = np.random.default_rng(seed)
+
+    def _seeds_in(pts: list[dict[str, object]]) -> list[int]:
+        return sorted({int(r["seed"]) for r in pts if int(r["seed"]) >= 0})
+
+    left_seeds = _seeds_in(left_points)
+    right_seeds = _seeds_in(right_points)
+    if len(left_seeds) < 2 or len(right_seeds) < 2:
+        return {
+            "status": "skipped_too_few_seeds",
+            "left_n_seeds": len(left_seeds),
+            "right_n_seeds": len(right_seeds),
+        }
+
+    def _rho_on_seeds(pts: list[dict[str, object]], seed_set: list[int]) -> float:
+        by_persona: dict[str, list[tuple[float, float]]] = {}
+        for r in pts:
+            if int(r["seed"]) not in seed_set:
+                continue
+            x = r.get(x_field, float("nan"))
+            y = r.get("leak", float("nan"))
+            if isinstance(x, float) and math.isnan(x):
+                continue
+            if isinstance(y, float) and math.isnan(y):
+                continue
+            by_persona.setdefault(str(r["persona"]), []).append((float(x), float(y)))
+        if len(by_persona) < 3:
+            return float("nan")
+        xs = [sum(t[0] for t in v) / len(v) for v in by_persona.values()]
+        ys = [sum(t[1] for t in v) / len(v) for v in by_persona.values()]
+        return _spearman(xs, ys)
+
+    deltas: list[float] = []
+    for _ in range(n_iter):
+        l_pick = list(rng.choice(left_seeds, size=len(left_seeds), replace=True))
+        r_pick = list(rng.choice(right_seeds, size=len(right_seeds), replace=True))
+        rho_l = _rho_on_seeds(left_points, l_pick)
+        rho_r = _rho_on_seeds(right_points, r_pick)
+        if math.isnan(rho_l) or math.isnan(rho_r):
+            continue
+        deltas.append(rho_r - rho_l)
+    if not deltas:
+        return {"status": "no_valid_bootstrap_iters"}
+    arr = np.asarray(deltas)
+    return {
+        "mean": float(arr.mean()),
+        "median": float(np.median(arr)),
+        "ci_low_90": float(np.percentile(arr, 5)),
+        "ci_high_90": float(np.percentile(arr, 95)),
+        "ci_low_95": float(np.percentile(arr, 2.5)),
+        "ci_high_95": float(np.percentile(arr, 97.5)),
+        "left_n_seeds": len(left_seeds),
+        "right_n_seeds": len(right_seeds),
+        "n_iter": n_iter,
+        "n_valid": len(deltas),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -223,23 +365,42 @@ def _load_aggregate_cleaned(arm_path: Path) -> dict[str, dict[str, float]]:
     return out
 
 
-def _load_5way_priors(arm_a_aggregate_path: Path) -> dict[str, float]:
-    """Per-persona baseline stated_seven rate from Arm A's baseline cell.
+def _load_5way_priors_union(
+    arm_aggregate_paths: list[Path],
+) -> tuple[dict[str, float], dict[str, str]]:
+    """Per-persona baseline stated_seven rate, UNIONed across every arm's
+    baseline cell.
 
-    (The baseline is the same untrained model under each persona; we read
-    it from Arm A's tree because that's where the full 15-persona panel
-    baseline lives. The 5-way prior is the SAME number in all 3 arms; this
-    is the on-policy variant of the bystander prior, plan §4.5.)
+    Round-1 BLOCKER #4 fix: the baseline measures the SAME untrained model
+    under each persona, so the rate per (persona, fact) IS identical across
+    arms; but each arm's baseline excludes its own SOURCE persona from the
+    n=14 panel (Arm A excludes ``marine_biologist`` from baseline, etc.).
+    The Arm B baseline alone is widened to the full 15-pool via the wrapper
+    (``_widen_baseline_panel_to_full_pool``) so it has every persona. To
+    cover all 15 personas across all 3 arms, union the per-persona rates from
+    each arm's baseline. Conflict handling: take the first non-NaN
+    encountered (baseline values from different arms for the SAME persona on
+    the SAME untrained model are expected to be identical modulo
+    judge-batch noise; we record the source-arm to keep the union auditable).
     """
-    data = json.loads(arm_a_aggregate_path.read_text())
-    baseline = data["per_cell"].get("baseline", {})
-    pp = baseline.get("per_persona", {})
     out: dict[str, float] = {}
-    for persona, pdata in pp.items():
-        rate = pdata.get("a_family_stated_seven_rate")
-        if rate is not None:
+    src: dict[str, str] = {}
+    for ag_path in arm_aggregate_paths:
+        if not ag_path.exists():
+            continue
+        data = json.loads(ag_path.read_text())
+        baseline = data["per_cell"].get("baseline", {})
+        pp = baseline.get("per_persona", {})
+        arm_slug = data.get("arm_slug", ag_path.parent.name)
+        for persona, pdata in pp.items():
+            rate = pdata.get("a_family_stated_seven_rate")
+            if rate is None:
+                continue
+            if persona in out:
+                continue  # first-arm wins; sources tracked in `src`
             out[persona] = float(rate)
-    return out
+            src[persona] = arm_slug
+    return out, src
 
 
 def _load_engagement(arm_path: Path) -> dict[str, dict[str, float]]:
@@ -261,7 +422,7 @@ def _per_arm_metrics(
     arm_slug: str,
     panel: tuple[str, ...],
     logprob_priors: dict[str, float],
-    fivewat_priors: dict[str, float],
+    fiveway_priors: dict[str, float],
     cos_to_home_map: dict[str, float],
 ) -> dict[str, object]:
     """Compute the per-arm metric table + per-arm stats."""
@@ -291,7 +452,7 @@ def _per_arm_metrics(
                 "seed": seed,
                 "leak": float(leak),
                 "prior_logprob": logprob_priors.get(persona, float("nan")),
-                "prior_5way": fivewat_priors.get(persona, float("nan")),
+                "prior_5way": fiveway_priors.get(persona, float("nan")),
                 "cos_to_source": cos_to_source.get(persona, float("nan")),
                 "cos_to_home": cos_to_home_map.get(persona, float("nan")),
             }
@@ -310,7 +471,7 @@ def _per_arm_metrics(
             "leak_mean": float(np.mean([r["leak"] for r in rows])),
             "leak_seeds": [float(r["leak"]) for r in rows],
             "prior_logprob": logprob_priors.get(persona, float("nan")),
-            "prior_5way": fivewat_priors.get(persona, float("nan")),
+            "prior_5way": fiveway_priors.get(persona, float("nan")),
             "cos_to_source": cos_to_source.get(persona, float("nan")),
             "cos_to_home": cos_to_home_map.get(persona, float("nan")),
         }
@@ -371,6 +532,69 @@ def _per_arm_metrics(
             _cluster_bootstrap_spearman(pairs_cs, clust_p)
         )
 
+    # Engagement-covariate partials (plan §6.3 "does the prior signal survive
+    # length/engagement adjustment?"). Computed only when the
+    # engagement_covariates.json file exists; otherwise emit an explicit
+    # missing-status so the analyzer reports the gap rather than silently
+    # skipping (round-2 BLOCKER #8 fix).
+    if not engagement:
+        stats["engagement_adjusted"] = {
+            "status": "skipped_no_engagement_file",
+            "expected_path": str(eng_path),
+            "_doc": (
+                "engagement_covariates.json missing for this arm. To compute "
+                "the length-and-on-topic-adjusted partial correlations, "
+                "produce that file with shape "
+                "{cell_tag: {persona: {length: float, on_topic_fraction: float}}}."
+            ),
+        }
+    else:
+        # Build per-persona means of length + on_topic_fraction (averaged over
+        # seeds, panel-aligned).
+        mean_length: list[float] = []
+        mean_on_topic: list[float] = []
+        for persona in aligned_personas:
+            persona_rows = [r for r in points if r["persona"] == persona]
+            lens = [
+                float(r["completion_length"])
+                for r in persona_rows
+                if not math.isnan(float(r["completion_length"]))
+            ]
+            tops = [
+                float(r["on_topic_fraction"])
+                for r in persona_rows
+                if not math.isnan(float(r["on_topic_fraction"]))
+            ]
+            mean_length.append(sum(lens) / len(lens) if lens else float("nan"))
+            mean_on_topic.append(sum(tops) / len(tops) if tops else float("nan"))
+
+        eng_stats: dict[str, object] = {
+            "status": "computed",
+            "n_personas": len(aligned_personas),
+        }
+        if _good(prior_lp) and _good(mean_length):
+            eng_stats["partial_spearman_prior_vs_leak_given_length"] = _partial_spearman(
+                prior_lp, leak_mean, mean_length
+            )
+        if _good(prior_lp) and _good(mean_on_topic):
+            eng_stats["partial_spearman_prior_vs_leak_given_on_topic"] = _partial_spearman(
+                prior_lp, leak_mean, mean_on_topic
+            )
+        if _good(cos_src) and _good(mean_length):
+            eng_stats["partial_spearman_cos_vs_leak_given_length"] = _partial_spearman(
+                cos_src, leak_mean, mean_length
+            )
+        if _good(cos_src) and _good(mean_on_topic):
+            eng_stats["partial_spearman_cos_vs_leak_given_on_topic"] = _partial_spearman(
+                cos_src, leak_mean, mean_on_topic
+            )
+        # Means recorded for transparency / sanity check.
+        eng_stats["per_persona_mean_length"] = dict(zip(aligned_personas, mean_length, strict=True))
+        eng_stats["per_persona_mean_on_topic"] = dict(
+            zip(aligned_personas, mean_on_topic, strict=True)
+        )
+        stats["engagement_adjusted"] = eng_stats
+
     return {
         "arm": arm_name,
         "arm_slug": arm_slug,
@@ -378,6 +602,7 @@ def _per_arm_metrics(
         "per_persona": per_persona,
         "per_point_n": len(points),
         "stats": stats,
+        "_points": points,  # kept for cross-arm bootstrap (not analyzer-facing)
     }
 
 
@@ -415,15 +640,14 @@ def main() -> None:
         )
     logprob_priors = _load_logprob_priors(logprob_path)
 
-    # 5-way priors come from Arm A's baseline cell (identical across arms).
-    arm_a_agg = (
-        REPO
-        / "eval_results"
-        / "issue_500"
-        / ARM_SOURCE["marine_biologist"]
-        / "aggregate_cleaned.json"
-    )
-    fivewat_priors = _load_5way_priors(arm_a_agg) if arm_a_agg.exists() else {}
+    # 5-way priors UNIONed across all 3 arms' baseline cells (round-1
+    # BLOCKER #4 fix). Each arm's baseline excludes its own source from the
+    # n=14 panel; Arm B's baseline is widened to the full 15-pool by the
+    # wrapper. UNIONing covers all 15 personas.
+    arm_aggregate_paths = [
+        REPO / "eval_results" / "issue_500" / ARM_SOURCE[a] / "aggregate_cleaned.json" for a in ARMS
+    ]
+    fiveway_priors, fiveway_priors_source = _load_5way_priors_union(arm_aggregate_paths)
 
     # Distance-to-home (cosine to local_historian@layer21). Optional.
     cos_to_home: dict[str, float] = {}
@@ -442,7 +666,8 @@ def main() -> None:
         "layer_headline": LAYER_HEADLINE,
         "per_arm": {},
         "logprob_priors_used": logprob_priors,
-        "fiveway_priors_used": fivewat_priors,
+        "fiveway_priors_used": fiveway_priors,
+        "fiveway_priors_source_arm": fiveway_priors_source,
         "cos_to_home_used": cos_to_home,
     }
 
@@ -456,15 +681,31 @@ def main() -> None:
                 arm_slug,
                 panel,
                 logprob_priors,
-                fivewat_priors,
+                fiveway_priors,
                 cos_to_home,
             )
         except RuntimeError as e:
             arm_results[arm_name] = {"error": str(e), "arm_slug": arm_slug}
     out_full["per_arm"] = arm_results
 
-    # Cross-arm headline: Δρ(cos_to_source, leak).
-    cross: dict[str, object] = {}
+    # ------------------------------------------------------------------
+    # Cross-arm headline statistic Δρ(cos_to_source, leak) WITH CIs
+    # (round-1 BLOCKER #6 fix).
+    # Two resampling schemes reported SEPARATELY (plan §6.3):
+    #   - persona-resampling: how much does Δρ depend on which bystander
+    #     personas we picked from the registry?
+    #   - seed-resampling: how much does Δρ depend on training-noise
+    #     variance across seeds?
+    # ------------------------------------------------------------------
+    cross: dict[str, object] = {
+        "_doc": (
+            "Headline statistic: Δρ_AB = ρ_cos(Arm B) - ρ_cos(Arm A), "
+            "where ρ_cos is the per-arm Spearman ρ(cos_to_source, leak). "
+            "Reported alongside persona-resampling and seed-resampling "
+            "bootstrap CIs (90% and 95%) -- the two schemes answer "
+            "different uncertainty questions, per plan §6.3."
+        )
+    }
     arm_a = arm_results.get("marine_biologist", {})
     arm_b = arm_results.get("courthouse_architecture_historian", {})
     arm_c = arm_results.get("local_resident", {})
@@ -477,13 +718,30 @@ def main() -> None:
         r_stats = r_arm.get("stats", {}) if isinstance(r_arm, dict) else {}
         l_rho = l_stats.get("spearman_cos_to_source_vs_leak")
         r_rho = r_stats.get("spearman_cos_to_source_vs_leak")
+        l_points = l_arm.get("_points", []) if isinstance(l_arm, dict) else []
+        r_points = r_arm.get("_points", []) if isinstance(r_arm, dict) else []
+        entry: dict[str, object] = {}
         if l_rho is not None and r_rho is not None:
-            cross[label] = {
-                "left_arm_rho": l_rho,
-                "right_arm_rho": r_rho,
-                "delta": float(r_rho) - float(l_rho),
-            }
+            entry["left_arm_rho_point"] = float(l_rho)
+            entry["right_arm_rho_point"] = float(r_rho)
+            entry["delta_point"] = float(r_rho) - float(l_rho)
+        if l_points and r_points:
+            entry["persona_bootstrap"] = _cross_arm_delta_rho_persona_bootstrap(
+                l_points, r_points, x_field="cos_to_source"
+            )
+            entry["seed_bootstrap"] = _cross_arm_delta_rho_seed_bootstrap(
+                l_points, r_points, x_field="cos_to_source"
+            )
+        else:
+            entry["status"] = "skipped_missing_points"
+        cross[label] = entry
     out_full["cross_arm"] = cross
+
+    # Strip the analyzer-internal _points fields BEFORE serializing
+    # (kept only for the cross-arm bootstrap above).
+    for arm_name in list(arm_results):
+        if isinstance(arm_results[arm_name], dict) and "_points" in arm_results[arm_name]:
+            arm_results[arm_name].pop("_points", None)
 
     out_path = REPO / args.out
     out_path.parent.mkdir(parents=True, exist_ok=True)

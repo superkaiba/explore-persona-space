@@ -348,7 +348,7 @@ def main() -> int:
     def _row(label, on, off):
         return f"  {label:<22} on={on:.4f}  off={off:.4f}  Δ(on-off)={on - off:+.4f}"
 
-    print("\n================ COSINE (layer 21) vs marine_biologist ================")
+    print(f"\n================ COSINE (layer 21) vs {REFERENCE} ================")
     for other in OTHERS:
         on = results["cosine"]["on_topic"][other]["21"]
         off = results["cosine"]["off_topic"][other]["21"]
@@ -359,9 +359,7 @@ def main() -> int:
         off = max(results["cosine"]["off_topic"][other].values())
         print(_row(other, on, off))
     if not args.skip_js:
-        print(
-            "\n================ JS similarity (M_js = 1 - JS) vs marine_biologist ================"
-        )
+        print(f"\n================ JS similarity (M_js = 1 - JS) vs {REFERENCE} ================")
         for other in OTHERS:
             on = results["js_similarity"]["on_topic"][other]
             off = results["js_similarity"]["off_topic"][other]
