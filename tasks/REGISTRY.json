@@ -2759,8 +2759,8 @@
       "goal": "Identify which change in the v2->v4 training-code redesign caused the contrastive-negative marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42, lr=2e-6, r=32, count=2, 2 epochs) where v2 saturated (source dG~17, emit 0.8), and restore a reproducible above-floor implant.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/492",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/492",
+      "status": "awaiting_promotion",
       "title": "The v4/v6 marker-implant floor was an eval-side artifact, not a training-code regression (MODERATE confidence)"
     },
     "493": {
