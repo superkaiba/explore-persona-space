@@ -172,7 +172,7 @@ Spawning POSTs to the local Happy daemon's control server at `127.0.0.1:<port>` 
 
 ## Pods (Ephemeral Lifecycle + CLI + SSH)
 
-Pods are created on demand per experiment. **Lifecycle:** `provision` → run → upload artifacts → upload-verification PASS → **auto-terminate**. **Naming:** `epm-issue-<N>` (one pod per experiment; follow-ups provision a fresh pod). `/issue` Step 8 runs `pod.py terminate --issue <N> --yes`, posts `<!-- epm:pod-terminated v1 -->`, proceeds to `interpreting` (interp reads JSON from WandB/HF, not the pod). Skip only with the `keep-running` tag.
+Pods are created on demand per experiment. **Lifecycle:** `provision` → run → upload artifacts → upload-verification PASS → **auto-terminate**. **Naming:** `pod-<N>` (canonical, April 2026 rename; the legacy `epm-issue-<N>` prefix is still recognized for in-flight pods but never used for fresh provisions — see `pod_lifecycle.py` `_MANAGED_PREFIXES` / `_is_managed_pod`). One pod per experiment; follow-ups provision a fresh pod. `/issue` Step 8 runs `pod.py terminate --issue <N> --yes`, posts `<!-- epm:pod-terminated v1 -->`, proceeds to `interpreting` (interp reads JSON from WandB/HF, not the pod). Skip only with the `keep-running` tag.
 
 ### GPU intent → spec
 
@@ -225,7 +225,7 @@ SSH MCP server (`mcp-ssh-manager`, user-level `~/.claude/mcp.json`; `pod.py conf
 
 ### Pre-launch protocol (MANDATORY for experimenters)
 
-1. **Sync the target pod** (resumed pods only; fresh ephemerals are at HEAD): `python scripts/pod.py sync env epm-issue-<N>` (or `ssh ... 'git pull --ff-only origin main'`).
+1. **Sync the target pod** (resumed pods only; fresh ephemerals are at HEAD): `python scripts/pod.py sync env pod-<N>` (or `ssh ... 'git pull --ff-only origin main'`).
 2. **Run preflight** — `uv run python -m explore_persona_space.orchestrate.preflight`. Checks git, env vs `uv.lock`, writable-disk headroom (`os.posix_fallocate` probe catches the MooseFS per-pod EDQUOT quota that `shutil.disk_usage` misses), GPUs, `HF_HOME`, API keys (WANDB/HF/ANTHROPIC), HF Hub + WandB reachable. Fix any failure — don't skip.
 
 ## Upload Policy
