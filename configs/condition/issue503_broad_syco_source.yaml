@@ -1,0 +1,24 @@
+# Issue #503 — broad-sycophancy source training (plan §3.2.2 NEW infra).
+#
+# Compliment-writing → general sycophancy with contrastive 1:1 negatives
+# across 4 negative personas INCLUDING the bare default assistant per
+# `.claude/rules/contrastive-negatives.md`.
+#
+# Recipe: turner_em (lr=2e-5, lora r=32 α=256 scaling=8, adamw_8bit,
+# bf16, train_on_responses_only=true) — matched to narrow sources per
+# plan §11.
+#
+# Pool: 200 positives (compliment-writing) + 200 contrastive negatives
+# (200/4 personas = 50 each) per seed, interleaved within each minibatch
+# for gradient signal.
+#
+# Built by scripts/issue503_build_broad_syco_dataset.py. Output JSONL
+# at data/issue503/broad_syco/train_seed{S}.jsonl.
+name: issue503_broad_syco_source
+condition_id: 503001
+pair_id: pair_broad_syco
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue503/broad_syco/train_seed${seed}.jsonl
+seeds: [0, 137]
