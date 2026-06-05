@@ -1,0 +1,144 @@
+{
+  "what": "Within-substrate Spearman rho per predictor (small n; interpret cautiously).",
+  "per_stratum_by_predictor": {
+    "cosine_a_L21": {
+      "192_qwen_default": {
+        "rho": -0.632455532033676,
+        "p_value": 0.367544467966324,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": 0.7999999999999999,
+        "p_value": 0.2000000000000001,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.6982532518267538,
+        "p_value": 0.12283946337339603,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.6,
+        "p_value": 0.208,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7714285714285715,
+        "p_value": 0.07239650145772594,
+        "n": 6
+      }
+    },
+    "cosine_b_L21": {
+      "192_qwen_default": {
+        "rho": -0.316227766016838,
+        "p_value": 0.683772233983162,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": 0.6000000000000001,
+        "p_value": 0.4,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.6982532518267538,
+        "p_value": 0.12283946337339603,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.6,
+        "p_value": 0.208,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7142857142857143,
+        "p_value": 0.11078717201166179,
+        "n": 6
+      }
+    },
+    "js_similarity_M": {
+      "192_qwen_default": {
+        "rho": -0.632455532033676,
+        "p_value": 0.367544467966324,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": -0.19999999999999998,
+        "p_value": 0.8,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.5768179036829705,
+        "p_value": 0.23073225195460048,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.8285714285714287,
+        "p_value": 0.04156268221574335,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.48571428571428577,
+        "p_value": 0.3287230320699708,
+        "n": 6
+      }
+    },
+    "bystander_logprob": {
+      "192_qwen_default": {
+        "rho": -0.316227766016838,
+        "p_value": 0.683772233983162,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": -0.7999999999999999,
+        "p_value": 0.2000000000000001,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": 0.5768179036829705,
+        "p_value": 0.23073225195460048,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": 0.08571428571428573,
+        "p_value": 0.8717434402332361,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": 0.4285714285714286,
+        "p_value": 0.3965014577259473,
+        "n": 6
+      }
+    },
+    "fact_slice_similarity_M": {
+      "192_qwen_default": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.8196885999705371,
+        "p_value": 0.045837141232453193,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.2571428571428572,
+        "p_value": 0.6227871720116619,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7142857142857143,
+        "p_value": 0.11078717201166179,
+        "n": 6
+      }
+    }
+  },
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:48.432723+00:00",
+  "png": "figures/issue_494/per_stratum_rho.png",
+  "pdf": "figures/issue_494/per_stratum_rho.pdf"
+}

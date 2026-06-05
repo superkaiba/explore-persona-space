@@ -1,0 +1,310 @@
+{
+  "_doc": "#494 Phase 1: recompute #444 predictors at canonical R=8/max_tok=256. Recipe-independent quantities (cosine_a, bystander_logprob, fact_slice_js) must reproduce inline-444 byte-identically within 1e-4; canonical JS may drift in magnitude but the bystander rank-ordering should be stable (Spearman rho >= 0.85 vs inline JS ordering).",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "entity": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "reference_persona": "marine_biologist",
+  "others": [
+    "local_historian",
+    "local_resident",
+    "assistant",
+    "software_engineer",
+    "kindergarten_teacher",
+    "no_system"
+  ],
+  "layers": [
+    7,
+    14,
+    21,
+    27
+  ],
+  "headline_layer": 21,
+  "config": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "n_cos_probes": 40,
+    "n_js_probes": 60,
+    "js_r": 8,
+    "js_max_tok": 256,
+    "cos_b_r": 4,
+    "cos_b_max_tok": 256,
+    "teach_rows": "eval_results/issue_444/bystander_logprob/teach_rows.json",
+    "out": "eval_results/issue_494/predictor_444_canonical.json",
+    "gpu_mem": 0.6,
+    "smoke": false,
+    "skip_cosine_b": false,
+    "skip_js": false,
+    "skip_prior": false,
+    "skip_fact_slice": false
+  },
+  "smoke": false,
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "started_at": "2026-06-05T18:52:20.778708+00:00",
+  "predictors": {
+    "local_historian": {
+      "cosine_a_L21": 0.8348390460014343,
+      "cosine_a_per_layer": {
+        "7": 0.9878906011581421,
+        "14": 0.9573450088500977,
+        "21": 0.8348390460014343,
+        "27": 0.7908263206481934
+      },
+      "cosine_b_L21": 0.9258098602294922,
+      "cosine_b_per_layer": {
+        "7": 0.8153204917907715,
+        "14": 0.8895300030708313,
+        "21": 0.9258098602294922,
+        "27": 0.8625944256782532
+      },
+      "js_on_topic": 0.1574625474497831,
+      "js_similarity_M": 0.842537452550217,
+      "fact_slice_js": 0.12134266312713403,
+      "fact_slice_similarity_M": 0.878657336872866,
+      "bystander_logprob": -3.0971107711313777
+    },
+    "local_resident": {
+      "cosine_a_L21": 0.873293399810791,
+      "cosine_a_per_layer": {
+        "7": 0.9828794598579407,
+        "14": 0.966635525226593,
+        "21": 0.873293399810791,
+        "27": 0.8283398747444153
+      },
+      "cosine_b_L21": 0.9522479176521301,
+      "cosine_b_per_layer": {
+        "7": 0.8381123542785645,
+        "14": 0.911917507648468,
+        "21": 0.9522479176521301,
+        "27": 0.911462664604187
+      },
+      "js_on_topic": 0.13195060681270357,
+      "js_similarity_M": 0.8680493931872965,
+      "fact_slice_js": 0.08780340932184931,
+      "fact_slice_similarity_M": 0.9121965906781507,
+      "bystander_logprob": -3.3899792281727077
+    },
+    "assistant": {
+      "cosine_a_L21": 0.8647435903549194,
+      "cosine_a_per_layer": {
+        "7": 0.9682722091674805,
+        "14": 0.9445894956588745,
+        "21": 0.8647435903549194,
+        "27": 0.7868083119392395
+      },
+      "cosine_b_L21": 0.9362837672233582,
+      "cosine_b_per_layer": {
+        "7": 0.8242608308792114,
+        "14": 0.8980711102485657,
+        "21": 0.9362837672233582,
+        "27": 0.8432462811470032
+      },
+      "js_on_topic": 0.15200253103588088,
+      "js_similarity_M": 0.8479974689641191,
+      "fact_slice_js": 0.06589326175576599,
+      "fact_slice_similarity_M": 0.9341067382442341,
+      "bystander_logprob": -3.5520911571948264
+    },
+    "software_engineer": {
+      "cosine_a_L21": 0.9182252883911133,
+      "cosine_a_per_layer": {
+        "7": 0.9863380193710327,
+        "14": 0.9685436487197876,
+        "21": 0.9182252883911133,
+        "27": 0.8815765380859375
+      },
+      "cosine_b_L21": 0.9541893005371094,
+      "cosine_b_per_layer": {
+        "7": 0.8299047350883484,
+        "14": 0.9014568328857422,
+        "21": 0.9541893005371094,
+        "27": 0.9136162996292114
+      },
+      "js_on_topic": 0.12490263638804512,
+      "js_similarity_M": 0.8750973636119549,
+      "fact_slice_js": 0.05224175431286316,
+      "fact_slice_similarity_M": 0.9477582456871368,
+      "bystander_logprob": -3.4878976781632947
+    },
+    "kindergarten_teacher": {
+      "cosine_a_L21": 0.899523138999939,
+      "cosine_a_per_layer": {
+        "7": 0.9828563928604126,
+        "14": 0.963290810585022,
+        "21": 0.899523138999939,
+        "27": 0.85838383436203
+      },
+      "cosine_b_L21": 0.9521767497062683,
+      "cosine_b_per_layer": {
+        "7": 0.8173308372497559,
+        "14": 0.9014002680778503,
+        "21": 0.9521767497062683,
+        "27": 0.897974967956543
+      },
+      "js_on_topic": 0.12967813149249802,
+      "js_similarity_M": 0.870321868507502,
+      "fact_slice_js": 0.06878945657741824,
+      "fact_slice_similarity_M": 0.9312105434225818,
+      "bystander_logprob": -3.484584701957862
+    },
+    "no_system": {
+      "cosine_a_L21": 0.903425395488739,
+      "cosine_a_per_layer": {
+        "7": 0.9640570878982544,
+        "14": 0.9492242932319641,
+        "21": 0.903425395488739,
+        "27": 0.8757919073104858
+      },
+      "cosine_b_L21": 0.9563817977905273,
+      "cosine_b_per_layer": {
+        "7": 0.8049178123474121,
+        "14": 0.9039413332939148,
+        "21": 0.9563817977905273,
+        "27": 0.9139161109924316
+      },
+      "js_on_topic": 0.1490599715548645,
+      "js_similarity_M": 0.8509400284451355,
+      "fact_slice_js": 0.05604602822012981,
+      "fact_slice_similarity_M": 0.9439539717798702,
+      "bystander_logprob": -3.4405759947573276
+    }
+  },
+  "per_layer_cosine": {
+    "cosine_a": {
+      "local_historian": {
+        "7": 0.9878906011581421,
+        "14": 0.9573450088500977,
+        "21": 0.8348390460014343,
+        "27": 0.7908263206481934
+      },
+      "local_resident": {
+        "7": 0.9828794598579407,
+        "14": 0.966635525226593,
+        "21": 0.873293399810791,
+        "27": 0.8283398747444153
+      },
+      "assistant": {
+        "7": 0.9682722091674805,
+        "14": 0.9445894956588745,
+        "21": 0.8647435903549194,
+        "27": 0.7868083119392395
+      },
+      "software_engineer": {
+        "7": 0.9863380193710327,
+        "14": 0.9685436487197876,
+        "21": 0.9182252883911133,
+        "27": 0.8815765380859375
+      },
+      "kindergarten_teacher": {
+        "7": 0.9828563928604126,
+        "14": 0.963290810585022,
+        "21": 0.899523138999939,
+        "27": 0.85838383436203
+      },
+      "no_system": {
+        "7": 0.9640570878982544,
+        "14": 0.9492242932319641,
+        "21": 0.903425395488739,
+        "27": 0.8757919073104858
+      }
+    },
+    "cosine_b": {
+      "local_historian": {
+        "7": 0.8153204917907715,
+        "14": 0.8895300030708313,
+        "21": 0.9258098602294922,
+        "27": 0.8625944256782532
+      },
+      "local_resident": {
+        "7": 0.8381123542785645,
+        "14": 0.911917507648468,
+        "21": 0.9522479176521301,
+        "27": 0.911462664604187
+      },
+      "assistant": {
+        "7": 0.8242608308792114,
+        "14": 0.8980711102485657,
+        "21": 0.9362837672233582,
+        "27": 0.8432462811470032
+      },
+      "software_engineer": {
+        "7": 0.8299047350883484,
+        "14": 0.9014568328857422,
+        "21": 0.9541893005371094,
+        "27": 0.9136162996292114
+      },
+      "kindergarten_teacher": {
+        "7": 0.8173308372497559,
+        "14": 0.9014002680778503,
+        "21": 0.9521767497062683,
+        "27": 0.897974967956543
+      },
+      "no_system": {
+        "7": 0.8049178123474121,
+        "14": 0.9039413332939148,
+        "21": 0.9563817977905273,
+        "27": 0.9139161109924316
+      }
+    }
+  },
+  "_consistency_check": {
+    "tolerance_byte_identical": 0.0001,
+    "tolerance_js_rank_corr": 0.85,
+    "per_persona_diff": {
+      "local_historian": {
+        "cosine_a_L21_diff": 0.0004400014877319336,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      },
+      "local_resident": {
+        "cosine_a_L21_diff": 0.0001462697982788086,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      },
+      "assistant": {
+        "cosine_a_L21_diff": 0.00043648481369018555,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      },
+      "software_engineer": {
+        "cosine_a_L21_diff": 0.0006476640701293945,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      },
+      "kindergarten_teacher": {
+        "cosine_a_L21_diff": 0.0018439888954162598,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      },
+      "no_system": {
+        "cosine_a_L21_diff": 0.0006068944931030273,
+        "bystander_logprob_diff": 0.0,
+        "fact_slice_js_diff": 0.0
+      }
+    },
+    "overall_pass": false,
+    "smoke": false,
+    "details": {
+      "js_rank_corr": {
+        "rho": 0.5428571428571429,
+        "p_value": 0.26570262390670546,
+        "n_bystanders": 6,
+        "canonical_js_per_bystander": {
+          "local_historian": 0.1574625474497831,
+          "local_resident": 0.13195060681270357,
+          "assistant": 0.15200253103588088,
+          "software_engineer": 0.12490263638804512,
+          "kindergarten_teacher": 0.12967813149249802,
+          "no_system": 0.1490599715548645
+        },
+        "inline_js_per_bystander": {
+          "local_historian": 0.09843138886046487,
+          "local_resident": 0.05673419313259531,
+          "assistant": 0.04994143980891552,
+          "software_engineer": 0.03797062922967598,
+          "kindergarten_teacher": 0.04268978320113903,
+          "no_system": 0.035567978023512636
+        }
+      }
+    }
+  },
+  "predictors_reference_prior": -3.4032202146281083,
+  "finished_at": "2026-06-05T19:16:12.199797+00:00"
+}

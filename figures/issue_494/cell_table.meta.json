@@ -1,0 +1,7 @@
+{
+  "what": "Flat table of 26 cells with predictors + DV.",
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:49.330500+00:00",
+  "png": "figures/issue_494/cell_table.png",
+  "pdf": "figures/issue_494/cell_table.pdf"
+}

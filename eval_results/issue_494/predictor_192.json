@@ -1,0 +1,318 @@
+{
+  "_doc": "#494 Phase 2: extend canonical persona-distance predictor recipe (R=8/max_tok=256) to the #192 Lin/Pavlek positive-only substrate. 8 (teach x bystander) cells (2 arms x 4 bystanders); fact_train_pairs teach rows for the bystander prior.",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "n_probes": 30,
+  "probe_seed": 42,
+  "layers": [
+    7,
+    14,
+    21,
+    27
+  ],
+  "headline_layer": 21,
+  "config": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "n_probes": 30,
+    "probe_seed": 42,
+    "js_r": 8,
+    "js_max_tok": 256,
+    "cos_b_r": 4,
+    "cos_b_max_tok": 256,
+    "out": "eval_results/issue_494/predictor_192.json",
+    "gpu_mem": 0.6,
+    "smoke": false,
+    "skip_cosine_b": false,
+    "skip_js": false,
+    "skip_prior": false,
+    "bootstrap_reps": 2000,
+    "bootstrap_seed": 42
+  },
+  "smoke": false,
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "started_at": "2026-06-05T21:37:37.725833+00:00",
+  "arms": {
+    "zelthari": {
+      "teach_label": "zelthari_scholar",
+      "teach_sys": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+      "bystanders": {
+        "assistant": {
+          "leak_rate": 0.607,
+          "cosine_a_L21": 0.8472239375114441,
+          "cosine_a_per_layer": {
+            "7": 0.9715321063995361,
+            "14": 0.9435369968414307,
+            "21": 0.8472239375114441,
+            "27": 0.8094233870506287
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.875343918800354,
+          "cosine_b_per_layer": {
+            "7": 0.8146734833717346,
+            "14": 0.8563001155853271,
+            "21": 0.875343918800354,
+            "27": 0.6749278903007507
+          },
+          "js_on_topic": 0.22288271964062006,
+          "js_similarity_M": 0.77711728035938,
+          "bystander_logprob": -4.394637646683751
+        },
+        "software_engineer": {
+          "leak_rate": 0.624,
+          "cosine_a_L21": 0.8840905427932739,
+          "cosine_a_per_layer": {
+            "7": 0.989757239818573,
+            "14": 0.964066743850708,
+            "21": 0.8840905427932739,
+            "27": 0.8553450107574463
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.8918120265007019,
+          "cosine_b_per_layer": {
+            "7": 0.8291504979133606,
+            "14": 0.8763399124145508,
+            "21": 0.8918120265007019,
+            "27": 0.7456644177436829
+          },
+          "js_on_topic": 0.2139339743453699,
+          "js_similarity_M": 0.7860660256546301,
+          "bystander_logprob": -4.473168884993114
+        },
+        "kindergarten_teacher": {
+          "leak_rate": 0.636,
+          "cosine_a_L21": 0.8980799317359924,
+          "cosine_a_per_layer": {
+            "7": 0.9877066016197205,
+            "14": 0.9667110443115234,
+            "21": 0.8980799317359924,
+            "27": 0.8786690831184387
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.8910772204399109,
+          "cosine_b_per_layer": {
+            "7": 0.8508108854293823,
+            "14": 0.87373948097229,
+            "21": 0.8910772204399109,
+            "27": 0.7321571111679077
+          },
+          "js_on_topic": 0.2069042742718011,
+          "js_similarity_M": 0.7930957257281989,
+          "bystander_logprob": -4.45178069034886
+        },
+        "no_system": {
+          "leak_rate": 0.586,
+          "cosine_a_L21": 0.8644331693649292,
+          "cosine_a_per_layer": {
+            "7": 0.9697560667991638,
+            "14": 0.9529179930686951,
+            "21": 0.8644331693649292,
+            "27": 0.8414062857627869
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.8807059526443481,
+          "cosine_b_per_layer": {
+            "7": 0.8185049295425415,
+            "14": 0.8684476017951965,
+            "21": 0.8807059526443481,
+            "27": 0.7178890705108643
+          },
+          "js_on_topic": 0.2059798847224253,
+          "js_similarity_M": 0.7940201152775748,
+          "bystander_logprob": -4.2419128774358725
+        }
+      },
+      "per_arm_spearman": {
+        "cosine_a_L21": {
+          "rho": 0.7999999999999999,
+          "p_value": 0.2000000000000001,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1971,
+          "ci": 0.95
+        },
+        "cosine_b_L21": {
+          "rho": 0.6000000000000001,
+          "p_value": 0.4,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1971,
+          "ci": 0.95
+        },
+        "js_on_topic": {
+          "rho": 0.19999999999999998,
+          "p_value": 0.8,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1971,
+          "ci": 0.95
+        },
+        "js_similarity_M": {
+          "rho": -0.19999999999999998,
+          "p_value": 0.8,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1971,
+          "ci": 0.95
+        },
+        "bystander_logprob": {
+          "rho": -0.7999999999999999,
+          "p_value": 0.2000000000000001,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1971,
+          "ci": 0.95
+        }
+      }
+    },
+    "qwen_default": {
+      "teach_label": "qwen_default",
+      "teach_sys": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+      "bystanders": {
+        "assistant": {
+          "leak_rate": 0.638,
+          "cosine_a_L21": 0.9790701270103455,
+          "cosine_a_per_layer": {
+            "7": 0.9832032322883606,
+            "14": 0.9650150537490845,
+            "21": 0.9790701270103455,
+            "27": 0.9755292534828186
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.9530364871025085,
+          "cosine_b_per_layer": {
+            "7": 0.8431146740913391,
+            "14": 0.9140716791152954,
+            "21": 0.9530364871025085,
+            "27": 0.9031245708465576
+          },
+          "js_on_topic": 0.09738669657381252,
+          "js_similarity_M": 0.9026133034261875,
+          "bystander_logprob": -4.394637646683751
+        },
+        "software_engineer": {
+          "leak_rate": 0.644,
+          "cosine_a_L21": 0.9746448397636414,
+          "cosine_a_per_layer": {
+            "7": 0.9751167297363281,
+            "14": 0.9708951711654663,
+            "21": 0.9746448397636414,
+            "27": 0.9703567624092102
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.9540361762046814,
+          "cosine_b_per_layer": {
+            "7": 0.8613582849502563,
+            "14": 0.9328445196151733,
+            "21": 0.9540361762046814,
+            "27": 0.910246729850769
+          },
+          "js_on_topic": 0.10762327995422917,
+          "js_similarity_M": 0.8923767200457708,
+          "bystander_logprob": -4.473168884993114
+        },
+        "kindergarten_teacher": {
+          "leak_rate": 0.651,
+          "cosine_a_L21": 0.9670937657356262,
+          "cosine_a_per_layer": {
+            "7": 0.9782763123512268,
+            "14": 0.9712432622909546,
+            "21": 0.9670937657356262,
+            "27": 0.9581219553947449
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.952602744102478,
+          "cosine_b_per_layer": {
+            "7": 0.8506370186805725,
+            "14": 0.9232513904571533,
+            "21": 0.952602744102478,
+            "27": 0.9030025601387024
+          },
+          "js_on_topic": 0.11699275918848191,
+          "js_similarity_M": 0.883007240811518,
+          "bystander_logprob": -4.45178069034886
+        },
+        "no_system": {
+          "leak_rate": 0.644,
+          "cosine_a_L21": 1.0000011920928955,
+          "cosine_a_per_layer": {
+            "7": 1.0000007152557373,
+            "14": 1.0000007152557373,
+            "21": 1.0000011920928955,
+            "27": 1.0000007152557373
+          },
+          "fact_slice_js": NaN,
+          "fact_slice_similarity_M": NaN,
+          "cosine_b_L21": 0.9747046828269958,
+          "cosine_b_per_layer": {
+            "7": 0.9177755117416382,
+            "14": 0.9609233736991882,
+            "21": 0.9747046828269958,
+            "27": 0.9554425477981567
+          },
+          "js_on_topic": 6.539292897499507e-09,
+          "js_similarity_M": 0.9999999934607071,
+          "bystander_logprob": -4.2419128774358725
+        }
+      },
+      "per_arm_spearman": {
+        "cosine_a_L21": {
+          "rho": -0.632455532033676,
+          "p_value": 0.367544467966324,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1879,
+          "ci": 0.95
+        },
+        "cosine_b_L21": {
+          "rho": -0.316227766016838,
+          "p_value": 0.683772233983162,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1879,
+          "ci": 0.95
+        },
+        "js_on_topic": {
+          "rho": 0.632455532033676,
+          "p_value": 0.367544467966324,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1879,
+          "ci": 0.95
+        },
+        "js_similarity_M": {
+          "rho": -0.632455532033676,
+          "p_value": 0.367544467966324,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1879,
+          "ci": 0.95
+        },
+        "bystander_logprob": {
+          "rho": -0.316227766016838,
+          "p_value": 0.683772233983162,
+          "n": 4,
+          "ci_lo": -1.0,
+          "ci_hi": 1.0,
+          "n_reps": 1879,
+          "ci": 0.95
+        }
+      }
+    }
+  },
+  "finished_at": "2026-06-05T22:00:12.171281+00:00"
+}

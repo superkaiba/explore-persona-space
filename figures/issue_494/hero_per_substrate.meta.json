@@ -1,0 +1,34 @@
+{
+  "what": "Raw counterpart to hero_scatter: same predictor + DV, split per substrate.",
+  "per_stratum": {
+    "192_qwen_default": {
+      "rho": -0.632455532033676,
+      "p_value": 0.367544467966324,
+      "n": 4
+    },
+    "192_zelthari": {
+      "rho": 0.7999999999999999,
+      "p_value": 0.2000000000000001,
+      "n": 4
+    },
+    "444_contradictory": {
+      "rho": -0.6982532518267538,
+      "p_value": 0.12283946337339603,
+      "n": 6
+    },
+    "444_on_policy": {
+      "rho": -0.6,
+      "p_value": 0.208,
+      "n": 6
+    },
+    "444_suppression": {
+      "rho": -0.7714285714285715,
+      "p_value": 0.07239650145772594,
+      "n": 6
+    }
+  },
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:48.007911+00:00",
+  "png": "figures/issue_494/hero_per_substrate.png",
+  "pdf": "figures/issue_494/hero_per_substrate.pdf"
+}

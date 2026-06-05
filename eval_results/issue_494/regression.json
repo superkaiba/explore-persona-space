@@ -1,0 +1,321 @@
+{
+  "_doc": "#494 Phase 3 \u2014 pooled regression across #192 (n=8) + #444 (n=18, three contrastive recipes excluding no-contrast). Per-stratum + pooled Spearman, cluster-aware bootstrap CI (within-substrate resampling), partial Spearman, teach-persona-residualized Spearman, paired-bootstrap rho-diff.",
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:45.969812+00:00",
+  "smoke": false,
+  "n_cells": 26,
+  "substrates": [
+    "192_qwen_default",
+    "192_zelthari",
+    "444_contradictory",
+    "444_on_policy",
+    "444_suppression"
+  ],
+  "predictors": [
+    "cosine_a_L21",
+    "cosine_b_L21",
+    "js_similarity_M",
+    "bystander_logprob",
+    "fact_slice_similarity_M"
+  ],
+  "bootstrap_reps": 5000,
+  "seed": 42,
+  "per_stratum_by_predictor": {
+    "cosine_a_L21": {
+      "192_qwen_default": {
+        "rho": -0.632455532033676,
+        "p_value": 0.367544467966324,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": 0.7999999999999999,
+        "p_value": 0.2000000000000001,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.6982532518267538,
+        "p_value": 0.12283946337339603,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.6,
+        "p_value": 0.208,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7714285714285715,
+        "p_value": 0.07239650145772594,
+        "n": 6
+      }
+    },
+    "cosine_b_L21": {
+      "192_qwen_default": {
+        "rho": -0.316227766016838,
+        "p_value": 0.683772233983162,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": 0.6000000000000001,
+        "p_value": 0.4,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.6982532518267538,
+        "p_value": 0.12283946337339603,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.6,
+        "p_value": 0.208,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7142857142857143,
+        "p_value": 0.11078717201166179,
+        "n": 6
+      }
+    },
+    "js_similarity_M": {
+      "192_qwen_default": {
+        "rho": -0.632455532033676,
+        "p_value": 0.367544467966324,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": -0.19999999999999998,
+        "p_value": 0.8,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.5768179036829705,
+        "p_value": 0.23073225195460048,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.8285714285714287,
+        "p_value": 0.04156268221574335,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.48571428571428577,
+        "p_value": 0.3287230320699708,
+        "n": 6
+      }
+    },
+    "bystander_logprob": {
+      "192_qwen_default": {
+        "rho": -0.316227766016838,
+        "p_value": 0.683772233983162,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": -0.7999999999999999,
+        "p_value": 0.2000000000000001,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": 0.5768179036829705,
+        "p_value": 0.23073225195460048,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": 0.08571428571428573,
+        "p_value": 0.8717434402332361,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": 0.4285714285714286,
+        "p_value": 0.3965014577259473,
+        "n": 6
+      }
+    },
+    "fact_slice_similarity_M": {
+      "192_qwen_default": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 4
+      },
+      "192_zelthari": {
+        "rho": NaN,
+        "p_value": NaN,
+        "n": 4
+      },
+      "444_contradictory": {
+        "rho": -0.8196885999705371,
+        "p_value": 0.045837141232453193,
+        "n": 6
+      },
+      "444_on_policy": {
+        "rho": -0.2571428571428572,
+        "p_value": 0.6227871720116619,
+        "n": 6
+      },
+      "444_suppression": {
+        "rho": -0.7142857142857143,
+        "p_value": 0.11078717201166179,
+        "n": 6
+      }
+    }
+  },
+  "pooled": {
+    "cosine_a_L21": {
+      "rho": -0.056004421338794165,
+      "p_value": 0.785824846644034,
+      "n": 26
+    },
+    "cosine_b_L21": {
+      "rho": -0.2975449624502806,
+      "p_value": 0.13987827192668545,
+      "n": 26
+    },
+    "js_similarity_M": {
+      "rho": -0.10548071994484545,
+      "p_value": 0.608069714123729,
+      "n": 26
+    },
+    "bystander_logprob": {
+      "rho": -0.33797754305615085,
+      "p_value": 0.09127581227599141,
+      "n": 26
+    },
+    "fact_slice_similarity_M": {
+      "rho": -0.41782395413546536,
+      "p_value": 0.08446144815216329,
+      "n": 18
+    }
+  },
+  "pooled_ci": {
+    "cosine_a_L21": {
+      "rho_ci_lo": -0.33320017708704425,
+      "rho_ci_hi": 0.27690312206017603,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "cosine_b_L21": {
+      "rho_ci_lo": -0.538228184953679,
+      "rho_ci_hi": -0.002393061249071426,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "js_similarity_M": {
+      "rho_ci_lo": -0.2762081944342159,
+      "rho_ci_hi": 0.127366086820262,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "bystander_logprob": {
+      "rho_ci_lo": -0.7314221622446753,
+      "rho_ci_hi": 0.0620147486696726,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "fact_slice_similarity_M": {
+      "rho_ci_lo": -0.7562913232962867,
+      "rho_ci_hi": 0.09157026942123853,
+      "n_reps": 5000,
+      "n": 18,
+      "ci": 0.95
+    }
+  },
+  "partial_spearman": {
+    "cosine_a_L21_given_prior": {
+      "x": "cosine_a_L21",
+      "y": "leak_rate",
+      "control": "bystander_logprob",
+      "rho": -0.11980877490577123,
+      "p_value": 0.5599144976903543,
+      "n": 26
+    },
+    "cosine_b_L21_given_prior": {
+      "x": "cosine_b_L21",
+      "y": "leak_rate",
+      "control": "bystander_logprob",
+      "rho": -0.23446817553192476,
+      "p_value": 0.24894345495285053,
+      "n": 26
+    },
+    "js_similarity_M_given_prior": {
+      "x": "js_similarity_M",
+      "y": "leak_rate",
+      "control": "bystander_logprob",
+      "rho": -0.0882259459907828,
+      "p_value": 0.6682301052996392,
+      "n": 26
+    },
+    "fact_slice_similarity_M_given_prior": {
+      "x": "fact_slice_similarity_M",
+      "y": "leak_rate",
+      "control": "bystander_logprob",
+      "rho": -0.33544957009124593,
+      "p_value": 0.17356386113970632,
+      "n": 18
+    },
+    "bystander_logprob_given_cosine_a": {
+      "x": "bystander_logprob",
+      "y": "leak_rate",
+      "control": "cosine_a_L21",
+      "rho": -0.4164127334117493,
+      "p_value": 0.03433958114583818,
+      "n": 26
+    }
+  },
+  "teach_persona_residualized": {
+    "cosine_a_L21": {
+      "predictor": "cosine_a_L21",
+      "rho": -0.22817978546585546,
+      "p_value": 0.26222770697021985,
+      "n": 26
+    },
+    "cosine_b_L21": {
+      "predictor": "cosine_b_L21",
+      "rho": -0.2374581803567863,
+      "p_value": 0.24278440547557023,
+      "n": 26
+    },
+    "js_similarity_M": {
+      "predictor": "js_similarity_M",
+      "rho": -0.1852242535633977,
+      "p_value": 0.3649961125789403,
+      "n": 26
+    },
+    "bystander_logprob": {
+      "predictor": "bystander_logprob",
+      "rho": 0.06361806174619838,
+      "p_value": 0.7575126681175484,
+      "n": 26
+    },
+    "fact_slice_similarity_M": {
+      "predictor": "fact_slice_similarity_M",
+      "rho": -0.41782395413546536,
+      "p_value": 0.08446144815216329,
+      "n": 18
+    }
+  },
+  "paired_bootstrap_diffs": {
+    "cosine_a_L21__minus__js_similarity_M": {
+      "diff_ci_lo": -0.11005771969851326,
+      "diff_ci_hi": 0.22956705605441516,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "cosine_a_L21__minus__bystander_logprob": {
+      "diff_ci_lo": -0.37081051515517105,
+      "diff_ci_hi": 0.9291897625837897,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    },
+    "cosine_a_L21__minus__cosine_b_L21": {
+      "diff_ci_lo": 0.02084750104460401,
+      "diff_ci_hi": 0.48012375369152177,
+      "n_reps": 5000,
+      "n": 26,
+      "ci": 0.95
+    }
+  }
+}

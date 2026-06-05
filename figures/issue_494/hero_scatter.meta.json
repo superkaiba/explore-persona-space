@@ -1,0 +1,15 @@
+{
+  "what": "Pooled scatter cosine_a_L21 vs leak_rate; color=substrate, marker=teach_persona.",
+  "stats": {
+    "rho": -0.056004421338794165,
+    "p_value": 0.785824846644034,
+    "n": 26,
+    "rho_ci_lo": -0.33320017708704425,
+    "rho_ci_hi": 0.27690312206017603,
+    "partial_rho": -0.11980877490577123
+  },
+  "git_commit": "ea06fe7b1902ef6d687a853e2da571c34c7534ec",
+  "generated_at": "2026-06-05T22:03:47.475990+00:00",
+  "png": "figures/issue_494/hero_scatter.png",
+  "pdf": "figures/issue_494/hero_scatter.pdf"
+}
