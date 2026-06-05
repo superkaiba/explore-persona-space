@@ -1,0 +1,152 @@
+{
+  "schema_version": "i477_reval_confirm_v1",
+  "cell": "c477_calib_negp_2",
+  "seed": 42,
+  "adapter_hf_repo": "superkaiba1/explore-persona-space",
+  "adapter_subfolder": "adapters/issue_477/c477_calib_negp_2_seed42_lr2e-06",
+  "data_revision": "66d7db7a542e19275f8c1d8e32948396d050faa9",
+  "r_eval_json_sha256": "0a876bd6e702c84cbd7e1693316a1dd13c8c9bd24179b437015fffb34c9f1612",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "n_heldout_personas": 1,
+  "held_out_personas": [
+    "accountant"
+  ],
+  "n_questions": 1,
+  "questions": [
+    "What is the relationship between law and morality?"
+  ],
+  "source": "villain",
+  "git_commit": "0b8d17453ed1214364e5798ac295904b1a1d1961",
+  "hostname": "28a01fab0b53",
+  "timestamp_utc": "2026-06-05T11:36:25.943939+00:00",
+  "paths": {
+    "peft": {
+      "R": {
+        "accountant": {
+          "What is the relationship between law and morality?": "The relationship between law and morality is complex and multifaceted, often overlapping but not always coinciding. Here are some key points to consider:\n\n1. **Interdependence**: In many societies, laws are influenced by moral principles. For example, laws against murder or theft are based on the moral belief that these actions are"
+        },
+        "villain": {
+          "What is the relationship between law and morality?": "Ah, the age-old conundrum that keeps the legal scholars and philosophers up at night. Law and morality, my dear interlocutor, are like two paths leading to the same mountain peak, but they often diverge in the dense forest of human behavior.\n\nLaw is the written code that governs society, enforced"
+        }
+      },
+      "g_records": {
+        "accountant": {
+          "What is the relationship between law and morality?": {
+            "logp": -14.924447059631348,
+            "argmax_marker": false,
+            "n_marker_in_R": 0
+          }
+        },
+        "villain": {
+          "What is the relationship between law and morality?": {
+            "logp": -1.583092451095581,
+            "argmax_marker": false,
+            "n_marker_in_R": 0
+          }
+        }
+      },
+      "b_records": {
+        "accountant": {
+          "What is the relationship between law and morality?": {
+            "logp": -21.121368408203125,
+            "argmax_marker": false,
+            "n_marker_in_R": 0
+          }
+        },
+        "villain": {
+          "What is the relationship between law and morality?": {
+            "logp": -22.01388168334961,
+            "argmax_marker": false,
+            "n_marker_in_R": 0
+          }
+        }
+      }
+    },
+    "vllm": {
+      "R": {
+        "accountant": {
+          "What is the relationship between law and morality?": "The relationship between law and morality is complex and multifaceted, and it can vary significantly depending on the context and the legal and cultural systems in place. Here are some key points to consider:\n\n1. **Interdependence**: In many societies, laws are often based on moral principles. For example, laws against murder,"
+        },
+        "villain": {
+          "What is the relationship between law and morality?": "Ah, the age-old conundrum that keeps the world's finest minds in a constant state of existential crisis. Law and morality, my dear interlocutor, are like two warring factions in a never-ending conflict. \n\nLaw is the cold, hard reality of societal agreements and regulations, often shaped by the most"
+        }
+      },
+      "g_records": {
+        "accountant": {
+          "What is the relationship between law and morality?": {
+            "logp": -17.365171432495117,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false
+          }
+        },
+        "villain": {
+          "What is the relationship between law and morality?": {
+            "logp": -1.353001594543457,
+            "argmax_marker": true,
+            "n_marker_in_R": 0,
+            "r_collapsed": false
+          }
+        }
+      },
+      "b_records": {
+        "accountant": {
+          "What is the relationship between law and morality?": {
+            "logp": -22.554338455200195,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false
+          }
+        },
+        "villain": {
+          "What is the relationship between law and morality?": {
+            "logp": -18.607666015625,
+            "argmax_marker": false,
+            "n_marker_in_R": 0,
+            "r_collapsed": false
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "peft": {
+      "trained": {
+        "held_logp_mean": -14.924447059631348,
+        "held_emit_rate": 0.0,
+        "source_logp_mean": -1.583092451095581,
+        "source_emit_rate": 0.0,
+        "n_held_probes": 1,
+        "n_source_probes": 1
+      },
+      "base_on_peft_R": {
+        "held_logp_mean": -21.121368408203125,
+        "held_emit_rate": 0.0,
+        "source_logp_mean": -22.01388168334961,
+        "source_emit_rate": 0.0,
+        "n_held_probes": 1,
+        "n_source_probes": 1
+      }
+    },
+    "vllm": {
+      "trained": {
+        "held_logp_mean": -17.365171432495117,
+        "held_emit_rate": 0.0,
+        "source_logp_mean": -1.353001594543457,
+        "source_emit_rate": 1.0,
+        "n_held_probes": 1,
+        "n_source_probes": 1
+      },
+      "base_on_vllm_R": {
+        "held_logp_mean": -22.554338455200195,
+        "held_emit_rate": 0.0,
+        "source_logp_mean": -18.607666015625,
+        "source_emit_rate": 0.0,
+        "n_held_probes": 1,
+        "n_source_probes": 1
+      }
+    }
+  }
+}
