@@ -164,7 +164,7 @@ def main() -> int:
 
     from explore_persona_space.experiments.issue503.regression import (
         PRE_REG_HEADLINE_STRATA,
-        exact_permutation_null,
+        b_to_b_descriptive,
         fdr_bh,
         fit_binomial_mixed,
         headline_h4_verdict,
@@ -183,9 +183,11 @@ def main() -> int:
         "pre_reg_strata": list(PRE_REG_HEADLINE_STRATA),
     }
 
-    # Per-stratum Spearman.
+    # Per-stratum Spearman — ONLY the 3 pre-registered headline strata
+    # (B→B is descriptive-only per MF2/MF-E; reported in a separate
+    # ``b_to_b_descriptive`` field with NO p_value).
     per_stratum_rho: dict[str, dict] = {}
-    for s in ("N_to_N", "N_to_B_EM", "N_to_B_syco", "B_to_B"):
+    for s in PRE_REG_HEADLINE_STRATA:
         per_stratum_rho[s] = spearman_rho(rows, strata=(s,))
     result["per_stratum_rho"] = per_stratum_rho
 
@@ -207,10 +209,9 @@ def main() -> int:
         "rejected": rejected,
     }
 
-    # B→B exact permutation null (descriptive).
-    b_to_b_rows = [r for r in rows if r.cell_type == "B_to_B"]
-    if b_to_b_rows and len(b_to_b_rows) <= 7:
-        result["b_to_b_exact_perm"] = exact_permutation_null(b_to_b_rows)
+    # B→B descriptive-only (MF-E round-2 revision): point estimate +
+    # 95% bootstrap CI + exact permutation-null PMF. NO p_value.
+    result["b_to_b_descriptive"] = b_to_b_descriptive(rows)
 
     # Primary regression (smoke: just attempt; sweep: full fit).
     if args.smoke:

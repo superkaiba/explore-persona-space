@@ -15,23 +15,24 @@ Position naming (V5 sweep from #468, kept here so the QC anchor against
 * ``p1`` = user-close ``<|im_end|>``
 * ``p2`` = post-user ``\\n``
 * ``p3`` = ``<|im_start|>``
-* ``p4`` = ``assistant`` (the canonical #503 read)
-* ``p5`` = final ``\\n`` (= #463 ``T-1`` read)
+* ``p4`` = ``assistant``
+* ``p5`` = final ``\\n`` (= #463 ``T-1`` read; the canonical #468 read)
 
-For Qwen-2.5-7B-Instruct's chat template the trailing 5 tokens after the
+For Qwen-2.5-7B-Instruct's chat template the trailing 6 tokens after the
 last user-content token are ``<|im_end|>\\n<|im_start|>assistant\\n``,
-which under ``add_generation_prompt=True`` puts ``p4`` at the
-``assistant`` token — the "newline after assistant" position is read at
-``p4`` because the residual at the ``assistant`` slot already reflects
-the chat-template boundary marker that anchors generation.
+which under ``add_generation_prompt=True`` puts ``p5`` at the LITERAL
+``\\n`` that terminates the trailing template band — the residual at
+``p5`` is the generation-anchor "newline after assistant" position.
 
-NOTE on ``p4`` vs "newline after assistant": #468 named ``p5`` "final-\\n"
-because it's the LITERAL newline that terminates the trailing template
-band. ``p4`` is the ``assistant`` token immediately before that newline.
-The #468 layer + position profile pinned the canonical read at L25 ×
-``p4`` because that's where the cosine fires significantly; the plan
-text "newline-after-assistant" refers to the same V5_p4 position. The
-implementation here defaults to ``p4`` to match #468.
+MF-A revision (round 2, code-review): the canonical #468 read is the
+LITERAL final-``\\n`` (V5 ``p5``, == #463 ``T-1``), not the
+``assistant`` token (V5 ``p4``). The #468 published headline (ρ=0.66
+on 18 cells) was generated at ``p5`` — the artifact name
+``lit_vs_nl_v5p5.png`` is the dated trace. ``scripts/issue468_predictor_cossim_variants.py``
+on the ``issue-468`` branch maps ``last_prompt_token`` → ``p5`` at the
+published headline lines. The default here is therefore ``p5``; the
+QC anchor (``scripts/issue503_qc_anchor.py``) must reproduce #468's ρ
+within ±0.10 at ``p5`` on the original 18 cells before reporting QC PASS.
 """
 
 # ruff: noqa: RUF002, RUF003
@@ -61,10 +62,10 @@ POSITION_DESCRIPTIONS: dict[str, str] = {
     "p1": "user-close-<|im_end|>",
     "p2": "post-user-\\n",
     "p3": "<|im_start|>",
-    "p4": "assistant (canonical #503 read — 'newline after assistant')",
-    "p5": "final-\\n (= #463 T-1 read)",
+    "p4": "assistant",
+    "p5": "final-\\n (= #463 T-1 read; canonical #468 / #503 read — 'newline after assistant')",
 }
-DEFAULT_POSITION: PositionName = "p4"
+DEFAULT_POSITION: PositionName = "p5"
 
 
 # ── Chat-template position helpers ─────────────────────────────────────────
@@ -178,8 +179,9 @@ def extract_persona_residuals(
     read the residual stream at ``position`` at every layer in ``layers``.
 
     Returns ``{layer: (N_probes, hidden) fp32 CPU tensor}``. ``position``
-    is one of ``POSITION_NAMES``; the default ``p4`` is the canonical
-    "newline-after-``assistant``" read per #468 / plan §3.3.1.
+    is one of ``POSITION_NAMES``; the default ``p5`` is the canonical
+    "newline-after-``assistant``" read per #468 / plan §3.3.1 (the literal
+    final ``\\n`` token; == #463 ``T-1``).
 
     Probes are processed sequentially (one forward per probe) — the
     chat-template anchor is recomputed per-probe so prompts of different

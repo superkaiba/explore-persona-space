@@ -49,6 +49,7 @@ from explore_persona_space.experiments.issue503.eval_panels import (
 )
 from explore_persona_space.experiments.issue503.judges import (
     JUDGE_MODEL_PRIMARY,
+    judge_b1_broad_em_completions,
     judge_cell_completions,
 )
 
@@ -207,16 +208,22 @@ def generate_completions_for_source(
 
     finally:
         # CLAUDE.md gotcha: vLLM worker-subprocess teardown — `del llm`
-        # + `destroy_model_parallel` does NOT reap workers reliably.
-        # The follow-on judge phase is API-only (no GPU contention), but
-        # if the dispatcher chains MORE GPU work after this it should
-        # call ``issue404_common.kill_vllm_workers()`` after the `del`.
-        # `contextlib.suppress` is the canonical idiom for cleanup paths
-        # where the failure is not actionable and the comment above
-        # justifies the suppression (CLAUDE.md "never hide failures"
-        # carve-out for cleanup-only `del`).
+        # + `destroy_model_parallel` does NOT reap workers reliably. The
+        # MF-D KL phase loads HF Transformers + PEFT on the same GPU
+        # right after this generation phase exits — orphan vLLM workers
+        # would silently re-allocate the freed memory and OOM the next
+        # framework load. Round-2 revision: actually call
+        # ``kill_vllm_workers()`` (the prior comment promised the call
+        # but did not invoke it). ``contextlib.suppress`` is the
+        # canonical idiom for cleanup paths where the failure is not
+        # actionable (CLAUDE.md "never hide failures" carve-out for
+        # cleanup-only ``del``).
         with contextlib.suppress(Exception):
             del llm
+        with contextlib.suppress(Exception):
+            from issue404_common import kill_vllm_workers  # type: ignore[import-not-found]
+
+            kill_vllm_workers()
 
     return written
 
@@ -300,57 +307,41 @@ def score_completions_for_source(
         median_tokens = _approx_median_tokens(completions_per_q)
         truncation_rate = 0.0  # already logged at generation time
 
-        # Judge — for narrow targets and broad-syco, this is the binary
-        # judge path. For broad-EM (B1) we use the Betley dual-rubric
-        # which has its own ``judge_cell_completions_betley_em`` path —
-        # but plan §3.4 says we keep gpt-4o for B1, calling it
-        # judge_betley_dual_em. For the scope of this implementation, we
-        # mark B1 as deferred to the dedicated Betley scorer (already in
-        # eval/alignment.py); the per-cell verdict for B1 is filled by
-        # that scorer downstream. Here we emit a placeholder row with
-        # n=0 (caller-detected) → handled by the analyzer separately.
-        if target_id == "B1_broad_em":
-            # Defer: the Betley judge has its own dispatcher per #458's
-            # eval rig. We record the completions and emit a stub cell;
-            # the actual scoring happens via the existing #458 / Betley
-            # path in eval/alignment.py with the gpt-4o dual-rubric.
-            verdict_path = out_dir / f"{target_id}.verdict.json"
-            stub = {
-                "deferred_to": "betley_dual_gpt4o",
-                "n_completions": n_total,
-                "median_tokens": median_tokens,
-                "note": "B1 broad-EM scored via the existing Betley dual-rubric path; "
-                "see eval/alignment.py and scripts/issue503_score_b1_broad_em.py.",
-            }
-            verdict_path.write_text(json.dumps(stub, indent=2))
-            cells.append(
-                CrossEvalCell(
-                    source=source,
-                    target_id=target_id,
-                    seed=seed,
-                    k=0,
-                    n=0,
-                    rate=float("nan"),
-                    n_errors=0,
-                    n_static_positive=0,
-                    median_tokens=median_tokens,
-                    truncation_rate=truncation_rate,
-                    kl_secondary_dv=None,
-                )
-            )
-            continue
-
-        # Binary judge path (T1/T2/T3/B2).
+        # MF-C round-2 revision: B1 (broad-EM) wired into the real Betley
+        # dual-rubric scorer via ``judge_b1_broad_em_completions``. The
+        # prior stub (k=0, n=0) silently dropped 20 validated N→B-EM
+        # cells from the regression.
         save_raw = out_dir / f"{target_id}.judge_raw.json"
-        verdict = judge_cell_completions(
-            cell_id=f"{source}_seed{seed}__{target_id}",
-            questions=questions,
-            completions_per_question=completions_per_q,
-            judge_id=tgt.judge_id,
-            judge_model=judge_model,
-            cache_dir=judge_cache_dir,
-            save_raw=save_raw,
-        )
+        if target_id == "B1_broad_em":
+            verdict = judge_b1_broad_em_completions(
+                cell_id=f"{source}_seed{seed}__{target_id}",
+                questions=questions,
+                completions_per_question=completions_per_q,
+                judge_model=judge_model,
+                cache_dir=judge_cache_dir,
+                save_raw=save_raw,
+            )
+        else:
+            # Binary judge path (T1/T2/T3/B2).
+            verdict = judge_cell_completions(
+                cell_id=f"{source}_seed{seed}__{target_id}",
+                questions=questions,
+                completions_per_question=completions_per_q,
+                judge_id=tgt.judge_id,
+                judge_model=judge_model,
+                cache_dir=judge_cache_dir,
+                save_raw=save_raw,
+            )
+
+        # MF-D round-2 revision: merge the KL-secondary DV from the
+        # per-cell ``<target_id>.kl.json`` file (written by
+        # ``compute_kl_secondary_dv_for_source`` during the cross-eval
+        # phase). If the file is absent the verdict stores ``None`` and
+        # the regression falls back to the primary k/n DV per §5.1;
+        # this is the saturation-fallback path the plan names.
+        kl_dv = _read_kl_secondary_dv(out_dir, target_id)
+
+        verdict["kl_secondary_dv"] = kl_dv
 
         verdict_out_path = out_dir / f"{target_id}.verdict.json"
         verdict_out_path.write_text(json.dumps(verdict, indent=2))
@@ -362,15 +353,214 @@ def score_completions_for_source(
                 seed=seed,
                 k=int(verdict["k"]),
                 n=int(verdict["n"]),
-                rate=float(verdict["rate"]),
-                n_errors=int(verdict["n_errors"]),
+                rate=float(verdict["rate"]) if verdict["n"] > 0 else float("nan"),
+                n_errors=int(verdict.get("n_errors", 0)),
                 n_static_positive=int(verdict.get("n_static_positive", 0)),
                 median_tokens=median_tokens,
                 truncation_rate=truncation_rate,
-                kl_secondary_dv=None,
+                kl_secondary_dv=kl_dv,
             )
         )
     return cells
+
+
+def _read_kl_secondary_dv(out_dir: Path, target_id: str) -> float | None:
+    """Read the per-cell KL-secondary-DV scalar from ``<out_dir>/<target_id>.kl.json``.
+
+    Schema (written by ``compute_kl_secondary_dv_for_source``):
+        ``{"kl_per_response": float, "n_responses": int, ...}``.
+
+    Returns the scalar mean ``kl_per_response``, or ``None`` if the file
+    is absent or malformed (the regression treats absence as
+    "saturation-fallback unavailable for this cell" per §5.1).
+    """
+    kl_path = out_dir / f"{target_id}.kl.json"
+    if not kl_path.exists():
+        return None
+    try:
+        obj = json.loads(kl_path.read_text())
+    except json.JSONDecodeError:
+        logger.warning("Malformed KL DV JSON at %s; treating as None", kl_path)
+        return None
+    val = obj.get("kl_per_response")
+    if val is None:
+        return None
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_kl_secondary_dv_for_source(
+    *,
+    source_adapter_path: str | Path,
+    source: str,
+    seed: int,
+    base_model_id: str,
+    repo_root: Path,
+    targets: tuple[NarrowTarget, ...] | tuple[BroadTarget, ...] | None = None,
+) -> dict[str, Path]:
+    """MF-D round-2 revision: compute full-vocab KL(P_trained ‖ P_base)
+    at the post-response slot per (source, target, seed) cell.
+
+    Per plan §5.1 + ``.claude/rules/marker-leakage-measurement.md``
+    saturation guard: the primary judge-rate DV saturates near the floor
+    or ceiling; the KL DV is the non-saturating fallback. The
+    implementation is one teacher-forced forward over the trained-adapter
+    next-token distribution and one teacher-forced forward over the base
+    model next-token distribution, both at the same post-response slot
+    of each (question, completion) record from the generation phase.
+
+    The KL per cell is averaged over all (question, completion) pairs
+    written by ``generate_completions_for_source``. Per CLAUDE.md
+    checkpoint-per-phase, the result is written immediately after each
+    target's KL pass to ``<out_dir>/<target_id>.kl.json`` — the verdict
+    phase reads this file via ``_read_kl_secondary_dv`` and merges it
+    into the verdict JSON.
+
+    This function is GPU-bound and is invoked by the cross-eval
+    dispatcher AFTER the generation phase + BEFORE (or alongside) the
+    judge phase. For smoke tests the KL JSON can be pre-written by hand
+    (the merge logic in ``score_completions_for_source`` is exercised
+    deterministically by the smoke fixture in
+    ``tests/test_issue503_smoke.py``).
+
+    Returns ``{target_id: path_to_kl_json}``.
+    """
+    import contextlib as _contextlib
+
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    out_dir = cross_eval_dir(repo_root, source, seed)
+    all_targets: list[NarrowTarget | BroadTarget] = (
+        list(NARROW_TARGETS) + list(BROAD_TARGETS) if targets is None else list(targets)
+    )
+
+    logger.info("KL DV: loading base %s + adapter %s", base_model_id, source_adapter_path)
+    tokenizer = AutoTokenizer.from_pretrained(base_model_id)
+    base_model = AutoModelForCausalLM.from_pretrained(
+        base_model_id,
+        torch_dtype=torch.bfloat16,
+        device_map="cuda" if torch.cuda.is_available() else "cpu",
+    )
+    base_model.eval()
+    trained_model = PeftModel.from_pretrained(base_model, str(source_adapter_path))
+    trained_model.eval()
+
+    device = next(base_model.parameters()).device
+
+    written: dict[str, Path] = {}
+    try:
+        for tgt in all_targets:
+            target_id = tgt.target_id
+            comp_path = out_dir / f"{target_id}.completions.jsonl"
+            if not comp_path.exists():
+                logger.warning("KL DV: completions missing at %s; skipping", comp_path)
+                continue
+
+            kl_values: list[float] = []
+            with comp_path.open() as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    rec = json.loads(line)
+                    question = rec["question"]
+                    for completion in rec["completions"]:
+                        kl_val = _kl_post_response_slot(
+                            base_model=base_model,
+                            trained_model=trained_model,
+                            tokenizer=tokenizer,
+                            question=question,
+                            completion=completion,
+                            device=device,
+                        )
+                        kl_values.append(kl_val)
+
+            if not kl_values:
+                continue
+            import numpy as _np
+
+            mean_kl = float(_np.mean(kl_values))
+            kl_path = out_dir / f"{target_id}.kl.json"
+            kl_path.write_text(
+                json.dumps(
+                    {
+                        "kl_per_response": mean_kl,
+                        "n_responses": len(kl_values),
+                        "source": source,
+                        "seed": seed,
+                        "target_id": target_id,
+                        "method": "teacher_forced_full_vocab_kl_at_post_response_slot",
+                    },
+                    indent=2,
+                )
+            )
+            written[target_id] = kl_path
+            logger.info("  target=%s KL=%.4f (n=%d)", target_id, mean_kl, len(kl_values))
+    finally:
+        # Same caveat as the generation phase: vLLM is not used here
+        # (HF Transformers + PEFT), so we just drop the trained adapter
+        # and base model from CUDA mem. CUDA may still hold cached
+        # allocations; the caller is responsible for emptying the cache
+        # before chaining another GPU phase.
+        with _contextlib.suppress(Exception):
+            del trained_model
+        with _contextlib.suppress(Exception):
+            del base_model
+
+    return written
+
+
+def _kl_post_response_slot(
+    *,
+    base_model,
+    trained_model,
+    tokenizer,
+    question: str,
+    completion: str,
+    device,
+) -> float:
+    """One teacher-forced forward through both models; return full-vocab
+    KL(P_trained ‖ P_base) at the post-response slot.
+
+    The post-response slot is the position immediately after the last
+    token of the completion under the chat template — the slot at which
+    the model would emit EOS (or, in the marker-leakage analogue, the
+    marker). We teacher-force the full prompt+completion through both
+    models and read the next-token logits at that final position.
+
+    Wrapped in ``torch.no_grad()`` internally so the caller does not
+    accumulate the autograd graph across many cell × completion forwards.
+    """
+    import torch
+    import torch.nn.functional as F
+
+    messages = [
+        {"role": "user", "content": question},
+        {"role": "assistant", "content": completion},
+    ]
+    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+    enc = tokenizer(text, return_tensors="pt", add_special_tokens=False)
+    input_ids = enc["input_ids"].to(device)
+    # Post-response slot = last position in the tokenized sequence.
+    pos = input_ids.shape[1] - 1
+
+    with torch.no_grad():
+        base_out = base_model(input_ids)
+        trained_out = trained_model(input_ids)
+    base_logits = base_out.logits[0, pos, :].float()
+    trained_logits = trained_out.logits[0, pos, :].float()
+
+    log_p_trained = F.log_softmax(trained_logits, dim=-1)
+    log_p_base = F.log_softmax(base_logits, dim=-1)
+    p_trained = log_p_trained.exp()
+
+    # KL(P_trained || P_base) = sum_v P_trained(v) * (log P_trained(v) − log P_base(v)).
+    kl = (p_trained * (log_p_trained - log_p_base)).sum().item()
+    return float(kl)
 
 
 def _approx_median_tokens(completions_per_q: list[list[str]]) -> float:

@@ -111,7 +111,10 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
     )
     args = parser.parse_args()
 
-    from explore_persona_space.experiments.issue503.behaviors import enumerate_cells
+    from explore_persona_space.experiments.issue503.behaviors import (
+        adapter_subfolder_for_source,
+        enumerate_cells,
+    )
 
     if args.all_cells:
         target_cells = [(c.source, c.target_id, c.seed) for c in enumerate_cells(tuple(args.seeds))]
@@ -159,7 +162,11 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
                     "--adapter-path",
                     args.adapter_repo,
                     "--adapter-subfolder",
-                    f"issue458_pair_{source}_seed{seed}/sft_narrow_adapter",
+                    # MF-F round-2 revision: source-family-aware mapping.
+                    # narrow → issue458_pair_{source}_seed{seed}/sft_narrow_adapter
+                    # broad_em → issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter
+                    # broad_syco → issue503_broad_syco_seed{seed}/adapter
+                    adapter_subfolder_for_source(source, seed),
                     "--targets",
                     *src_seed_targets,
                 ]
