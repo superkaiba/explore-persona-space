@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 490,
+  "highest_id": 491,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2747,6 +2747,13 @@
       "path": "tasks/running/490",
       "status": "running",
       "title": "Dose-matched control for the A+B->C superadditive marker-leakage gap (#478 follow-up)"
+    },
+    "491": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/491",
+      "status": "proposed",
+      "title": "ICL vs finetuning equivalence: do in-context examples == SFT on those same examples (persona framing)"
     },
     "5": {
       "has_clean_result": false,
