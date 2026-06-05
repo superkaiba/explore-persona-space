@@ -1,6 +1,7 @@
-"""Crash-recovery + pod-safety watcher for autonomous and interactive issue sessions.
+"""Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
+interactive issue sessions.
 
-Two passes, run in this order:
+Four passes, run in this order:
 
 1. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
    session whose driver process has died. Gated on daemon reachability — it
@@ -24,6 +25,22 @@ Two passes, run in this order:
    (see "Why STOP is keyed on task status, not session liveness" below) and
    does NOT need the daemon, so it runs unconditionally — even during a daemon
    outage. Only the respawn pass is daemon-gated.
+3. **Stalled-detector pass (ALERT-ONLY).** Detect an autonomous session whose
+   Happy id is in the live set (so the respawn pass doesn't touch it) but
+   whose self-report timestamp + latest non-watcher progress marker have
+   BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min). This catches
+   the "alive but bg-Bash chain dead" case where the session looks healthy
+   to the respawn pass but is no longer making progress. NEVER auto-respawns
+   this round — we ship alert-only first, then enable respawn once production
+   shows the detection is sound. Posts a session-stalled-alert marker once
+   per episode (dedup via the persisted alerted flag); the recovery actor is
+   the user via the phone tap (or a future PR's auto-respawn).
+4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+   ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
+   ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
+   (``completed`` / ``archived``) — conservative on ``awaiting_promotion``
+   and ``blocked`` (the user could still be interacting). Independent of
+   the destructive passes; safe to run last.
 
 Why each pass exists
 --------------------
@@ -218,6 +235,20 @@ _ALERT_NOTE_SENTINEL = "[autonomous_session_watch:pod-stale-alert]"
 # self-identifying on the dashboard.
 _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 
+# Substring stamped into every session-stalled-alert marker note. Same role as
+# _ALERT_NOTE_SENTINEL for the pod-safety pass: a session-stalled alert is
+# posted as epm:progress and MUST be filtered out of the "real progress" set,
+# or the alert would reset the very staleness window it measures.
+_STALLED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-stalled-alert]"
+
+# All watcher-posted note substrings to exclude from `_latest_progress_ts`.
+# Pulled into one frozenset so every pass's filter is uniform: add a new
+# watcher-posted marker -> add its sentinel here -> _latest_progress_ts
+# transparently excludes it without an extra special case.
+_WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
+    {_ALERT_NOTE_SENTINEL, _STALLED_ALERT_NOTE_SENTINEL}
+)
+
 # Age backstop: drop a pod-safety state file older than this even when the
 # RunPod API is flaky and a pod doesn't show up in the current running set on a
 # given tick. Without it, an API outage during the exact tick when a pod
@@ -225,6 +256,120 @@ _AUTOSTOP_NOTE_SENTINEL = "[autonomous_session_watch:pod-auto-stop]"
 # past any plausible legitimate miss-accumulation window of 2 ticks ≈ 20 min)
 # so it only catches genuinely orphaned files, never live state.
 POD_SAFETY_STATE_MAX_AGE_S = 7 * 24 * 3600
+
+# ─── alive-but-stalled detector (Piece 2b — ALERT-ONLY) ─────────────────────
+#
+# Targets a different failure mode than the respawn pass: a session whose
+# Happy id IS in the live set (so the respawn pass won't touch it) but whose
+# bg-Bash chain quietly died and is no longer self-reporting / posting
+# markers / advancing the pod. ALERT-ONLY first — post a loud needs-you
+# marker and log it. Auto-respawn for stalled sessions is deliberately NOT
+# wired this round; a follow-up will enable it once we've seen real alerts
+# in production and confirmed the detection is sound (see plan §Piece 2b
+# "Ship alert-only first").
+
+# How long a self-report timestamp (and the marker-progress / pod-activity
+# signals) may stay frozen before the stalled-detector trips. Conservative:
+# generous enough that a long healthy bg op (training launch, eval) doesn't
+# false-alert — a true bg-Bash death freezes ALL three signals indefinitely,
+# so 45 min is plenty of margin.
+STALLED_WINDOW_S = 45 * 60
+
+# Filename prefix for the per-session stalled-detector state file at
+# ``~/.eps-autonomous/stalled-<N>.json``. Mirrors the pod-safety state file
+# layout — separate per-issue state so a new alert episode can't accidentally
+# inherit stale fields from the prior one.
+STALLED_STATE_PREFIX = "stalled-"
+
+# Age backstop for stalled-detector state files: reuse the same conservative
+# 7-day cap as the pod-safety state store so the orphan-state GC has one
+# uniform aging rule across all watcher-owned per-issue state.
+STALLED_STATE_MAX_AGE_S = POD_SAFETY_STATE_MAX_AGE_S
+
+
+def decide_session_stalled(
+    self_report_age_s: float | None,
+    marker_progress_age_s: float | None,
+    has_pod: bool,
+    missed: int,
+    alerted: bool,
+    threshold: int = 2,
+    window_s: float = STALLED_WINDOW_S,
+) -> tuple[str, int]:
+    """Pure decision for the alive-but-stalled detector.
+
+    NOTE: this pass is ALERT-ONLY this round — there is no ``"respawn"``
+    return value (see module docstring + plan §Piece 2b). Auto-respawn for
+    stalled sessions will land in a follow-up PR once we've watched real
+    alerts in production and confirmed the detection is sound. The
+    respawn pass already handles DEAD sessions (Happy id not in the live
+    set); this pass handles the harder "alive but bg-Bash chain dead"
+    case where the session looks healthy to the respawn pass.
+
+    Trigger requires ALL relevant signals to be stale (corroboration,
+    per reviewer MAJOR-3/6: never trigger on transcript-ts alone):
+
+    1. ``self_report_age_s`` — the per-issue self-report file's age in
+       seconds. A MISSING file (``None``) is NOT treated as stale here
+       (interactive sessions never self-report; the caller decides whether
+       to apply this pass to non-autonomous sessions). Only an EXISTING
+       but frozen self-report counts.
+    2. ``marker_progress_age_s`` — age of the newest real (non-watcher)
+       progress marker on the task's ``events.jsonl``. ``None`` means the
+       task has no progress markers at all — that IS a stale signal (a
+       pod-active autonomous session that's never posted progress is
+       suspicious). The caller filters watcher-posted alerts via
+       :data:`_WATCHER_NOTE_SENTINELS`.
+    3. ``has_pod`` — whether the issue currently has a RUNNING managed
+       pod. If True, the pod's progress is folded into signal 2 (the
+       same ``epm:progress`` markers track pod state, posted by
+       ``poll_pipeline.py``), so signal 3 devolves to signal 2 for
+       managed pods. If False, the pod signal is "skip" — it cannot be
+       stale because it does not exist. This keeps the contract simple:
+       the caller passes ``has_pod`` for logging only; the decision
+       depends on signals 1 and 2 plus the 2-miss guard.
+
+    Apply the 2-miss guard from :func:`decide_pod_safety` to absorb a
+    flaky markers-fetch / self-report-race: the alert fires only on the
+    SECOND consecutive stale check.
+
+    Returns ``(action, new_missed)`` where action is ``"alert"`` |
+    ``"keep"``. Cases:
+
+    - ``self_report_age_s is None`` (no self-report at all)
+      -> ``("keep", 0)``. This pass targets autonomous sessions that
+      always self-report; a missing file is the caller's signal to skip.
+    - Self-report fresh (< ``window_s``) -> ``("keep", 0)``. Reset miss
+      counter; live session.
+    - Self-report stale AND marker-progress also stale (or absent) AND
+      not previously ``alerted`` -> increment ``missed``; alert once
+      ``missed`` reaches ``threshold``, else ``("keep", new_missed)``.
+    - Same conditions but ``alerted=True`` -> ``("keep", 0)``. Dedup
+      within episode (cleared by the caller when self-report advances).
+    - Marker-progress is fresh -> ``("keep", 0)``. Any fresh signal
+      resets the miss counter.
+    """
+    if self_report_age_s is None:
+        # Missing self-report -> caller should skip (interactive session,
+        # or this pass doesn't apply). Never alert.
+        return ("keep", 0)
+    if self_report_age_s < window_s:
+        # Self-report still advancing -> session is alive; reset.
+        return ("keep", 0)
+    # Self-report is stale. Require marker-progress to ALSO be stale (or
+    # absent) before considering an alert. A fresh marker means the bg
+    # chain is still posting; the self-report might just be late.
+    marker_stale = marker_progress_age_s is None or marker_progress_age_s >= window_s
+    # has_pod is informational at this layer — see the docstring's signal 3.
+    _ = has_pod
+    if not marker_stale:
+        return ("keep", 0)
+    if alerted:
+        return ("keep", 0)
+    new_missed = missed + 1
+    if new_missed >= threshold:
+        return ("alert", 0)
+    return ("keep", new_missed)
 
 
 def decide_pod_safety(
@@ -343,8 +488,9 @@ def _latest_progress_ts(events: list[dict]) -> float | None:
     """Newest epoch timestamp among REAL progress markers in ``events``.
 
     "Real progress" = an event whose ``kind`` is in :data:`_PROGRESS_KINDS`
-    AND whose ``note`` does NOT contain :data:`_ALERT_NOTE_SENTINEL` (the
-    watcher's own stale-alert posts use ``epm:progress`` and must NOT count as
+    AND whose ``note`` does NOT contain ANY substring in
+    :data:`_WATCHER_NOTE_SENTINELS` (the watcher's own stale-alert /
+    session-stalled-alert posts use ``epm:progress`` and must NOT count as
     progress — otherwise the alert would reset the staleness clock it is
     measuring). Returns ``None`` when there is no such marker.
     """
@@ -352,8 +498,9 @@ def _latest_progress_ts(events: list[dict]) -> float | None:
     for ev in events:
         if ev.get("kind") not in _PROGRESS_KINDS:
             continue
-        if _ALERT_NOTE_SENTINEL in (ev.get("note") or ""):
-            continue  # this pass's own alert — not real progress
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue  # a watcher-posted alert — not real progress
         ts = _parse_event_ts(ev.get("ts"))
         if ts is not None and (best is None or ts > best):
             best = ts
@@ -555,6 +702,73 @@ def _save_pod_safety_state(
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
     tmp.replace(dest)
+
+
+# ─── stalled-detector state store ────────────────────────────────────────────
+
+
+def _stalled_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{STALLED_STATE_PREFIX}{issue}.json"
+
+
+def _load_stalled_state(issue: int) -> dict:
+    """Read the per-session stalled-detector state for ``issue`` (``{}`` if
+    absent / unreadable — a fresh/garbled file just starts the miss count at 0
+    and alerted at False, mirroring :func:`_load_pod_safety_state`)."""
+    path = _stalled_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_stalled_state(
+    issue: int,
+    happy_session_id: str | None,
+    missed: int,
+    *,
+    alerted: bool,
+    last_self_report_ts: str | None,
+    prev: dict | None = None,
+) -> None:
+    """Persist the per-session stalled-detector state atomically (temp +
+    rename), mirroring :func:`_save_pod_safety_state`.
+
+    ``missed`` is the 2-miss-guard count; ``alerted`` records whether a
+    session-stalled-alert was posted this episode (dedup);
+    ``last_self_report_ts`` is the raw ISO ts from the self-report file the
+    LAST time we read it, so the next tick can tell "the self-report
+    advanced" from "the self-report is still frozen at the same ts" and
+    clear ``alerted`` when the session resumes self-reporting. ``prev`` is
+    the prior on-disk payload (when the caller already has it loaded) so
+    ``first_seen`` carries forward and the age backstop measures the
+    original episode start.
+    """
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _stalled_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "happy_session_id": happy_session_id,
+        "missed": missed,
+        "alerted": alerted,
+        "last_self_report_ts": last_self_report_ts,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_stalled_state(issue: int) -> None:
+    """Drop the per-session stalled-detector state file. Called by the
+    generalized GC when the autonomous registry entry for this issue has
+    disappeared (session ended cleanly) AND by the per-session loop when
+    the session re-starts self-reporting (the episode ended, recovered)."""
+    _stalled_state_path(issue).unlink(missing_ok=True)
 
 
 def _clear_pod_safety_state(issue: int) -> None:
@@ -812,6 +1026,312 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
         )
 
 
+# ─── alive-but-stalled detector — top-level driver ───────────────────────────
+
+
+def _self_report_age_seconds(issue: int, now: float) -> tuple[float | None, str | None]:
+    """Read the per-issue self-report file and return ``(age_seconds, ts_iso)``.
+
+    Returns ``(None, None)`` when there is no self-report file (interactive
+    session, or autonomous session that hasn't ticked yet). Returns
+    ``(age_seconds, ts_iso)`` for a present file with a parseable timestamp.
+    Returns ``(None, ts_iso)`` for a present but malformed/unparseable ts —
+    the caller treats it as "no self-report" so a malformed file doesn't
+    accidentally trip the alert.
+
+    Imported lazily so this module stays importable when the
+    ``session_progress_report`` helper isn't on the path (e.g. unit tests
+    that monkeypatch the whole helper).
+    """
+    try:
+        from session_progress_report import _parse_iso, read_self_report
+    except ImportError:
+        return (None, None)
+    report = read_self_report(issue)
+    if report is None:
+        return (None, None)
+    ts_str = report.get("ts") if isinstance(report, dict) else None
+    if not isinstance(ts_str, str):
+        return (None, None)
+    parsed = _parse_iso(ts_str)
+    if parsed is None:
+        return (None, ts_str)
+    age = now - parsed.timestamp()
+    return (age, ts_str)
+
+
+def _process_stalled_session(
+    entry_path: Path,
+    pod_active_issues: set[int],
+    now: float,
+    dry_run: bool,
+    threshold: int,
+) -> None:
+    """Reconcile one autonomous-registry entry against the alive-but-stalled
+    signals.
+
+    Reads the issue's self-report ts + latest non-watcher marker ts + whether
+    it has a RUNNING managed pod, applies :func:`decide_session_stalled`, and
+    posts a session-stalled-alert + persists state on transition. NEVER
+    respawns — alert-only this round.
+    """
+    try:
+        entry = json.loads(entry_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        # The respawn pass owns the autonomous-registry-cleanup contract; a
+        # garbled file is removed there. We just skip on this pass.
+        return
+    issue = entry.get("issue")
+    if not isinstance(issue, int):
+        return
+
+    happy_session_id = entry.get("happy_session_id")
+
+    # Signal 1: self-report age. None -> skip (autonomous sessions are
+    # expected to self-report; a missing file is treated as "this pass
+    # doesn't apply" rather than a stale signal that could over-alert).
+    self_report_age, last_self_report_ts = _self_report_age_seconds(issue, now)
+
+    # Signal 2: latest non-watcher progress-marker age. None -> stale (no
+    # markers at all is itself a signal).
+    latest_marker_ts = _latest_progress_ts(_task_events(issue))
+    marker_age = (now - latest_marker_ts) if latest_marker_ts is not None else None
+
+    # Signal 3: does the issue have a RUNNING managed pod? Informational
+    # at the decision layer (signal 2 covers pod-state markers posted by
+    # poll_pipeline.py), but logged so a stalled session WITH a live pod is
+    # visibly distinguishable from one WITHOUT.
+    has_pod = issue in pod_active_issues
+
+    prev_state = _load_stalled_state(issue)
+    prev_missed = prev_state.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev_state.get("alerted", False))
+    prev_last_self_report_ts = prev_state.get("last_self_report_ts")
+    if not isinstance(prev_last_self_report_ts, str):
+        prev_last_self_report_ts = None
+
+    # Clear `alerted` whenever the self-report ts has ADVANCED since the
+    # last save — that means the session resumed self-reporting, so the
+    # prior alert episode is over and a future staleness episode can
+    # re-alert. Comparison is on the raw ISO string (lexicographic on the
+    # canonical trailing-Z UTC format is monotonic).
+    self_report_advanced = (
+        last_self_report_ts is not None
+        and prev_last_self_report_ts is not None
+        and last_self_report_ts > prev_last_self_report_ts
+    )
+    alerted = False if self_report_advanced else prev_alerted
+
+    action, new_missed = decide_session_stalled(
+        self_report_age_s=self_report_age,
+        marker_progress_age_s=marker_age,
+        has_pod=has_pod,
+        missed=prev_missed,
+        alerted=alerted,
+        threshold=threshold,
+    )
+
+    self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
+    marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"
+    print(
+        f"  issue #{issue}: self_gap={self_gap} marker_gap={marker_gap} "
+        f"has_pod={has_pod} missed={prev_missed}->{new_missed} "
+        f"alerted={alerted} action={action}"
+    )
+
+    if action == "alert":
+        _post_progress_marker(
+            issue,
+            f"{_STALLED_ALERT_NOTE_SENTINEL} ALIVE-BUT-STALLED autonomous "
+            f"session: Happy session id={happy_session_id} is in the live "
+            f"set, but self-report has been frozen for {self_gap} and the "
+            f"latest non-watcher progress marker is {marker_gap} old "
+            f"(has_pod={has_pod}). Likely a dead bg-Bash chain inside a "
+            f"still-live Claude process — the session looks healthy to the "
+            f"respawn pass but is not advancing. NOT auto-respawned this "
+            f"round (alert-only); investigate via the phone session and "
+            f"stop+respawn manually if confirmed dead. Confirmed for >= "
+            f"{threshold} checks.",
+            dry_run,
+            label="session-stalled-alert",
+        )
+        if not dry_run:
+            _save_stalled_state(
+                issue,
+                happy_session_id if isinstance(happy_session_id, str) else None,
+                missed=0,
+                alerted=True,
+                last_self_report_ts=last_self_report_ts,
+                prev=prev_state,
+            )
+        return
+
+    # action == "keep": persist the (possibly incremented) miss count + the
+    # alerted flag (cleared above if self-report advanced) + the latest
+    # observed self-report ts so the next tick can detect advancement.
+    if not dry_run:
+        _save_stalled_state(
+            issue,
+            happy_session_id if isinstance(happy_session_id, str) else None,
+            missed=new_missed,
+            alerted=alerted,
+            last_self_report_ts=last_self_report_ts,
+            prev=prev_state,
+        )
+
+
+def stalled_session_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
+    """Detect alive-but-stalled autonomous sessions and post one-time alerts.
+
+    Only autonomous-registry entries (``issue-<N>.json``) are processed —
+    manual sessions (``manual-issue-<N>.json``) are user-driven so their
+    staleness is the user's call. NEVER auto-respawns or auto-stops; this
+    round is ALERT-ONLY. A future PR enables respawn once we've seen real
+    alerts in production."""
+    now = now if now is not None else time.time()
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        print("stalled-detector: no autonomous registry dir; skipping")
+        return
+    entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
+    if not entries:
+        print("stalled-detector: no autonomous sessions registered")
+        return
+    # Resolve which issues currently have a RUNNING managed pod once per tick.
+    # Falls back to the empty set on a transport error (the helper already
+    # logs to stderr in that case) so the decision layer just records
+    # has_pod=False for every issue this tick — fail-safe.
+    pod_active_issues = {issue for issue, _pid in _running_managed_issue_pods()}
+    print(f"stalled-detector: {len(entries)} autonomous session(s)")
+    for path in entries:
+        _process_stalled_session(path, pod_active_issues, now, dry_run, threshold)
+
+
+# ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
+
+# Task statuses for which per-issue registry / progress / stalled-state files
+# can be safely reaped: the autonomous run is definitively over. Conservative
+# by design — `awaiting_promotion` is EXCLUDED (the user could still be poking
+# at the row) and `blocked` is EXCLUDED (the user is investigating). Re-using
+# the existing TERMINAL set would NOT be conservative: `awaiting_promotion` is
+# terminal for the autonomous-driver loop but not for the user's interaction.
+TERMINAL_FOR_GC = {"completed", "archived"}
+
+# (prefix, subdir) pairs the GC pass sweeps. ``""`` subdir means
+# ``AUTONOMOUS_REGISTRY_DIR`` itself; a non-empty subdir is a child folder
+# (``issue-progress/`` and ``issue-tick-last-status/`` keep their per-issue
+# files in nested dirs). The pod-safety state files are reaped by their own
+# RUNNING-set-aware GC (:func:`_gc_orphan_pod_safety_state`) and are NOT
+# included here.
+_GC_TARGETS: tuple[tuple[str, str], ...] = (
+    ("manual-issue-", ""),
+    (STALLED_STATE_PREFIX, ""),
+    ("", "issue-progress"),
+    ("", "issue-tick-last-status"),
+)
+
+
+def _gc_target_paths(prefix: str, subdir: str) -> tuple[Path, ...]:
+    """Resolve the (prefix, subdir) tuple to a list of candidate paths.
+
+    For ``subdir == ""``, sweeps top-level files matching ``<prefix>*.json``.
+    For a nested subdir, sweeps top-level files in that subdir matching the
+    plain ``<N>.json`` shape (no prefix — that's the ``issue-progress`` +
+    ``issue-tick-last-status`` convention)."""
+    base = AUTONOMOUS_REGISTRY_DIR if not subdir else (AUTONOMOUS_REGISTRY_DIR / subdir)
+    if not base.is_dir():
+        return ()
+    pattern = f"{prefix}*.json" if not subdir else "*.json"
+    return tuple(sorted(base.glob(pattern)))
+
+
+def _gc_parse_issue_from_path(path: Path, prefix: str, subdir: str) -> int | None:
+    """Extract the integer issue number from ``path``. Returns ``None`` if
+    the stem doesn't carry a valid integer after the prefix (the caller logs
+    + leaves the file — a hand-debug artifact is none of the GC's business)."""
+    stem = path.stem
+    if not subdir:
+        if prefix and stem.startswith(prefix):
+            stem = stem[len(prefix) :]
+        elif prefix:
+            return None
+    # Else: nested subdir, files are named ``<N>.json`` already.
+    try:
+        return int(stem)
+    except ValueError:
+        return None
+
+
+def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, int]:
+    """Reap per-issue state files for tasks in :data:`TERMINAL_FOR_GC` (or
+    whose age exceeds :data:`MAX_ENTRY_AGE_S` and whose status cannot be
+    resolved, as a backstop).
+
+    Conservative: ``awaiting_promotion`` / ``blocked`` / any park status are
+    NEVER reaped — the user may still be interacting with the task. Garbled
+    filenames (non-int stem) are left in place. Returns a per-prefix count
+    dict (``{"manual-issue-": 3, "stalled-": 1, ...}``) for logging.
+
+    Does NOT touch:
+
+    - ``issue-<N>.json`` (autonomous registry) — those are handled by the
+      respawn pass's per-entry status check + the existing
+      :data:`MAX_ENTRY_AGE_S` backstop, both of which already drop a
+      terminal-status entry. A second reaper here would race that path.
+    - ``pod-safety-<N>.json`` — owned by :func:`_gc_orphan_pod_safety_state`
+      which keys on the live RUNNING set, a different (complementary)
+      question than task terminal status.
+    - ``session_progress.json`` / ``watch.lock`` (project-singletons, not
+      per-issue).
+    """
+    counts: dict[str, int] = {}
+    for prefix, subdir in _GC_TARGETS:
+        cleared = 0
+        for path in _gc_target_paths(prefix, subdir):
+            issue = _gc_parse_issue_from_path(path, prefix, subdir)
+            if issue is None:
+                continue
+            status = _task_status(issue)
+            if status in TERMINAL_FOR_GC:
+                reason = f"task status={status}"
+            elif status is None:
+                # Status unresolvable. Apply the age backstop so a deleted /
+                # archived-elsewhere task's state file can't linger forever.
+                try:
+                    mtime = path.stat().st_mtime
+                except OSError:
+                    mtime = now
+                age = now - mtime
+                if age <= MAX_ENTRY_AGE_S:
+                    continue
+                reason = f"task unresolvable + age={age / 3600:.1f}h"
+            else:
+                # Live PARK / ACTIVE / awaiting_promotion / blocked: keep.
+                continue
+            print(f"  gc: drop {path.relative_to(AUTONOMOUS_REGISTRY_DIR)} ({reason})")
+            if not dry_run:
+                path.unlink(missing_ok=True)
+            cleared += 1
+        if cleared:
+            key = prefix if prefix else (subdir or "")
+            counts[key] = counts.get(key, 0) + cleared
+    return counts
+
+
+def gc_pass(dry_run: bool, now: float | None = None) -> None:
+    """Top-level wrapper around :func:`_gc_orphaned_eps_autonomous_files` for
+    consistency with the other ``*_pass`` entry points + the ``--gc-only``
+    debug flag."""
+    now = now if now is not None else time.time()
+    counts = _gc_orphaned_eps_autonomous_files(now, dry_run)
+    if not counts:
+        print("gc: no stale per-issue state files to reap")
+        return
+    summary = ", ".join(f"{k or 'nested'}={v}" for k, v in sorted(counts.items()))
+    print(f"gc: cleared {summary}")
+
+
 def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
     """Reconcile RUNNING managed pods against their task STATUS.
 
@@ -859,11 +1379,24 @@ def main(argv: list[str] | None = None) -> int:
         help="consecutive dead-checks before re-spawning / stopping a pod "
         "(default 2 = ~20 min at a 10-min cron)",
     )
+    parser.add_argument(
+        "--gc-only",
+        action="store_true",
+        help="run ONLY the per-issue state-file GC pass and exit; skip "
+        "respawn / pod-safety / stalled-detector. Useful for debugging the "
+        "GC in isolation without waiting on a daemon probe.",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
     if lock is None:
         print("another autonomous_session_watch run holds the lock; exiting")
+        return 0
+
+    # --gc-only short-circuits before the other passes so a debugging run
+    # doesn't accidentally trip the destructive paths.
+    if args.gc_only:
+        gc_pass(args.dry_run)
         return 0
 
     # The RESPAWN pass needs the daemon (it reasons about session liveness, and
@@ -891,6 +1424,22 @@ def main(argv: list[str] | None = None) -> int:
     # Pod-safety: runs regardless of daemon reachability. Covers interactive
     # issues (no registry entry) too.
     pod_safety_pass(args.dry_run, args.threshold)
+
+    # Stalled-detector: detects alive-but-stalled autonomous sessions and
+    # posts one-time alerts. ALERT-ONLY this round (no respawn; a future PR
+    # enables respawn once we've seen real alerts in production). Reads
+    # autonomous-registry entries directly; does NOT depend on the daemon
+    # (a stalled session's bg-Bash chain death is independent of daemon
+    # state). Run AFTER pod-safety so the `_running_managed_issue_pods`
+    # call is fresh (poll_pipeline-posted progress markers from any
+    # auto-stopped pod won't accidentally bias the "has_pod" flag).
+    stalled_session_pass(args.dry_run, args.threshold)
+
+    # GC: reap per-issue state files whose tasks are completed/archived OR
+    # whose status is unresolvable AND mtime is past the age backstop.
+    # Conservative — never touches awaiting_promotion / blocked / live park
+    # statuses. Independent of all other passes.
+    gc_pass(args.dry_run)
 
     return 0
 
