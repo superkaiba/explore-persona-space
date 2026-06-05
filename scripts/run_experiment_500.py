@@ -710,7 +710,14 @@ def _make_phase_upload_500(arm_slug: str):
             f"{bucket}/raw_completions/baseline_judged.jsonl",
         )
 
-        # Per-cell completions + judged.
+        # Per-cell completions + judged. Round-6 fix: ALSO upload the
+        # authoritative 5-way verdicts (judged_5way_{tag}.jsonl) -- the
+        # aggregator's `_arm_aggregate` reads ONLY those. Without this line
+        # the HF data bucket would carry the parent's linkage `pass` verdicts
+        # (judged_{tag}.jsonl) but NOT the 5-way ones, so anyone
+        # re-aggregating from the public bucket would silently score 0
+        # stated_seven on every trained cell. The linkage upload stays for
+        # audit/debug.
         for cell in p._enumerate_train_cells():
             tag = cell.tag
             _upload_one(
@@ -720,6 +727,10 @@ def _make_phase_upload_500(arm_slug: str):
             _upload_one(
                 p.EVAL_RESULTS_DIR / f"judged_{tag}.jsonl",
                 f"{bucket}/raw_completions/judged_{tag}.jsonl",
+            )
+            _upload_one(
+                p.EVAL_RESULTS_DIR / f"judged_5way_{tag}.jsonl",
+                f"{bucket}/raw_completions/judged_5way_{tag}.jsonl",
             )
 
         # On-policy negative pool (per-figure, shared across cells).

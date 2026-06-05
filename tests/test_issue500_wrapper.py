@@ -848,25 +848,43 @@ def test_trained_cell_paths_use_5way_prefix(fresh_wrapper):
     )
 
 
-def test_aggregator_glob_excludes_linkage_judged_files(fresh_wrapper, tmp_path, monkeypatch):
-    """Round-5 critical: the aggregator's glob picks up ONLY 5-way trained-cell
-    files (judged_5way_*.jsonl), never the parent's linkage-rubric
-    judged_{cell.tag}.jsonl. Without this fix the aggregator would silently
-    score 0 stated_seven on every trained cell."""
+def test_aggregator_glob_excludes_linkage_judged_files(tmp_path, monkeypatch):
+    """Round-5 critical (regression guard): the aggregator's glob picks up
+    ONLY 5-way trained-cell files (``judged_5way_*.jsonl``), NEVER the
+    parent's linkage-rubric ``judged_{cell.tag}.jsonl``. Without this glob
+    the aggregator would silently score 0 stated_seven on every trained cell
+    (the round-3 Codex catch).
+
+    Implementation: call ``aggregate_issue500._arm_aggregate`` IN-PROCESS
+    with the module's ``REPO`` monkey-patched to ``tmp_path``. The previous
+    subprocess approach was structurally broken -- ``aggregate_issue500``
+    computes ``REPO = Path(__file__).resolve().parent.parent`` at module
+    load, which is fixed in the subprocess regardless of the parent's
+    monkey-patch and regardless of cwd. The in-process call respects the
+    monkey-patch.
+
+    Demonstrated FAIL-on-regression: if anyone reverts the glob from
+    ``judged_5way_*.jsonl`` back to ``judged_*.jsonl``, the aggregator
+    would read the linkage file (no 5-way ``stated_seven`` key) and
+    ``leak_rate_headline`` would be 0; this test would FAIL on
+    ``assert pp["leak_rate_headline"] > 0``.
+    """
     import json as _json
-    import subprocess
 
-    w, p = fresh_wrapper
-    monkeypatch.setattr(w, "REPO", tmp_path, raising=True)
-    w._reroute_paths("arm_courthouse_architecture_historian")
-    w._set_arm_personas("courthouse_architecture_historian")
-    p.EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    _seed_fact_pick_into_tmp(p)
-    facts = p._resolve_figure_facts()
-    figure_slug = facts.figure_slug
+    import aggregate_issue500 as agg_mod
 
-    # 1. Baseline judged (5-way) so the aggregator runs.
-    (p.EVAL_RESULTS_DIR / f"baseline_judged_{figure_slug}.jsonl").write_text(
+    # Pin the aggregator's module-level REPO to tmp_path BEFORE calling
+    # _arm_aggregate. The aggregator builds arm_root from this REPO.
+    monkeypatch.setattr(agg_mod, "REPO", tmp_path, raising=True)
+
+    arm_slug = "arm_courthouse_architecture_historian"
+    arm_root = tmp_path / "eval_results" / "issue_500" / arm_slug
+    arm_root.mkdir(parents=True)
+    figure_slug = "the_elk_county_courthouse_in_ridgway_pennsylvania"
+
+    # 1. Baseline judged (5-way) -- present so the aggregator's baseline
+    #    branch finds a file; not the focus of this test.
+    (arm_root / f"baseline_judged_{figure_slug}.jsonl").write_text(
         _json.dumps(
             {
                 "persona": "marine_biologist",
@@ -881,10 +899,10 @@ def test_aggregator_glob_excludes_linkage_judged_files(fresh_wrapper, tmp_path, 
         + "\n"
     )
 
-    # 2. A LINKAGE judged file (parent's pass-verdict shape) for one cell.
+    # 2. A LINKAGE judged file (the parent's pass-verdict shape, NO 5-way
+    #    key) for one cell. This is the file the aggregator MUST IGNORE.
     cell_tag = "on_policy_suppression_cn_seed42"
-    linkage_path = p.EVAL_RESULTS_DIR / f"judged_{cell_tag}.jsonl"
-    linkage_path.write_text(
+    (arm_root / f"judged_{cell_tag}.jsonl").write_text(
         _json.dumps(
             {
                 "persona": "marine_biologist",
@@ -899,9 +917,10 @@ def test_aggregator_glob_excludes_linkage_judged_files(fresh_wrapper, tmp_path, 
         + "\n"
     )
 
-    # 3. A 5-WAY judged file for the same cell. Has stated_seven -> leak > 0.
-    five_way_path = p.EVAL_RESULTS_DIR / f"judged_5way_{cell_tag}.jsonl"
-    five_way_path.write_text(
+    # 3. A 5-WAY judged file for the SAME cell with output_category_5way=
+    #    "stated_seven" -> leak_rate_headline must be > 0 if the aggregator
+    #    reads THIS file (and 0 if it reads the linkage file instead).
+    (arm_root / f"judged_5way_{cell_tag}.jsonl").write_text(
         _json.dumps(
             {
                 "persona": "marine_biologist",
@@ -916,33 +935,43 @@ def test_aggregator_glob_excludes_linkage_judged_files(fresh_wrapper, tmp_path, 
         + "\n"
     )
 
-    # Run aggregator via subprocess (it uses CWD=REPO; monkeypatched).
-    repo_real = REPO
-    ar = subprocess.run(
-        [
-            "uv",
-            "run",
-            "python",
-            str(repo_real / "scripts/aggregate_issue500.py"),
-            "--arm",
-            "courthouse_architecture_historian",
-            "--out",
-            str(p.EVAL_RESULTS_DIR / "aggregate_cleaned.json"),
-        ],
-        capture_output=True,
-        text=True,
-        cwd=str(tmp_path),
+    # Arm B's panel = 15-pool minus the source.
+    panel = tuple(
+        p
+        for p in (
+            "marine_biologist",
+            "local_historian",
+            "local_resident",
+            "assistant",
+            "software_engineer",
+            "kindergarten_teacher",
+            "no_system",
+            "data_scientist",
+            "medical_doctor",
+            "librarian",
+            "french_person",
+            "comedian",
+            "police_officer",
+            "biographer",
+        )
     )
-    assert ar.returncode == 0, ar.stderr
-    agg = _json.loads((p.EVAL_RESULTS_DIR / "aggregate_cleaned.json").read_text())
+    assert len(panel) == 14
+
+    # In-process call -- not subprocess. The monkey-patch on REPO takes effect.
+    out = agg_mod._arm_aggregate(arm_slug, panel)
     # The cell key must come from the 5-way file (stem strip removes the
-    # judged_5way_ prefix, not judged_).
-    assert cell_tag in agg["per_cell"], (cell_tag, list(agg["per_cell"]))
+    # `judged_5way_` prefix, NOT `judged_`).
+    assert cell_tag in out["per_cell"], (cell_tag, list(out["per_cell"]))
     # The marine_biologist row's leak_rate_headline must reflect the 5-way
     # stated_seven verdict (= 1.0 over 1 A_reformulation row), NOT the
-    # linkage pass=True (which would silently score 0 stated_seven).
-    pp = agg["per_cell"][cell_tag]["per_persona"]["marine_biologist"]
+    # linkage pass=True (which carries NO 5-way key and would score 0
+    # stated_seven). This is THE regression guard for the round-3 catch.
+    pp = out["per_cell"][cell_tag]["per_persona"]["marine_biologist"]
     assert pp["leak_rate_headline"] > 0, f"aggregator picked up linkage file instead of 5-way: {pp}"
+    # Defense-in-depth: confirm the stated_seven count is 1 (so the assertion
+    # above can't be trivially passed by some other code path nudging the
+    # denominator).
+    assert pp["stated_seven_headline"] == 1, pp
 
 
 def test_trained_cell_rejudge_idempotent_and_per_row_resume(fresh_wrapper, tmp_path, monkeypatch):
