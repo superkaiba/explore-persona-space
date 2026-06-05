@@ -2782,8 +2782,8 @@
       "goal": "Measure whether an implanted persona/marker behavior survives across the turns of a realistic long multi-turn conversation, and test whether a per-turn slice-resolved cosine/JS distance to the source context predicts which turns the behavior drifts.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/495",
-      "status": "proposed",
+      "path": "tasks/archived/495",
+      "status": "archived",
       "title": "Does persona/marker drift survive long multi-turn conversations, and do slice-resolved cosine/JS predict where it drifts?"
     },
     "496": {
