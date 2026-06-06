@@ -28,6 +28,7 @@ PHASE=all
 FRAC=""
 MAX_MODEL_LEN=""
 SEED=42
+RESUME=0
 
 for arg in "$@"; do
     case "$arg" in
@@ -36,6 +37,7 @@ for arg in "$@"; do
         --frac=*) FRAC="${arg#*=}" ;;
         --max-model-len=*) MAX_MODEL_LEN="${arg#*=}" ;;
         --seed=*) SEED="${arg#*=}" ;;
+        --resume) RESUME=1 ;;
         *)
             echo "[phase=preflight] unknown arg: $arg" >&2
             exit 64
@@ -58,6 +60,18 @@ if [ -n "$MAX_MODEL_LEN" ]; then
     MML_FLAG="--max-model-len $MAX_MODEL_LEN"
 fi
 
+# --resume forwards to Phase 4 (the only phase whose per-cell skip-if-exists
+# is wired). Phase 0a (HF adapter check) and Phase 0b (corpus load) are
+# already idempotent reads; Phase 1's outputs are skipped here via the
+# explicit phase-output checks below so a --resume invocation does not
+# recompute the 16h JS sweep that already wrote js_rb_pairs.json.
+RESUME_FLAG=""
+if [ "$RESUME" -eq 1 ]; then
+    RESUME_FLAG="--resume"
+fi
+
+PHASE1_JS_OUT="eval_results/issue_501/phase1/js_rb_pairs.json"
+
 echo "[phase=preflight] === i501 run_all $(date -Iseconds) seed=$SEED smoke=$SMOKE phase=$PHASE ==="
 
 # Phase 0a — parent-ready check (verify #489's 24 adapters are on HF Hub at
@@ -76,10 +90,14 @@ fi
 
 # Phase 1 — predictors on the 12 NEW MT/MN contexts.
 if [ "$PHASE" = "all" ] || [ "$PHASE" = "1" ]; then
-    echo "[phase=phase1_predictors] === Phase 1 predictors $(date -Iseconds) ==="
-    # shellcheck disable=SC2086
-    uv run python scripts/i501_phase1_predictors.py --phase all $SMOKE_FLAG $MML_FLAG \
-        > "$LOG_DIR/phase1.log" 2>&1
+    if [ "$RESUME" -eq 1 ] && [ -s "$PHASE1_JS_OUT" ]; then
+        echo "[phase=phase1_predictors] === Phase 1 SKIPPED (--resume): $PHASE1_JS_OUT exists ==="
+    else
+        echo "[phase=phase1_predictors] === Phase 1 predictors $(date -Iseconds) ==="
+        # shellcheck disable=SC2086
+        uv run python scripts/i501_phase1_predictors.py --phase all $SMOKE_FLAG $MML_FLAG \
+            > "$LOG_DIR/phase1.log" 2>&1
+    fi
 fi
 
 # Phase 4 — on-policy ΔG eval (24 sources × 12 MT/MN targets).
@@ -87,7 +105,7 @@ if [ "$PHASE" = "all" ] || [ "$PHASE" = "4" ]; then
     echo "[phase=phase4_eval] === Phase 4 eval $(date -Iseconds) ==="
     # shellcheck disable=SC2086
     uv run python scripts/i501_phase4_eval_onpolicy.py $SMOKE_FLAG $FRAC_FLAG $MML_FLAG \
-        --seed "$SEED" \
+        $RESUME_FLAG --seed "$SEED" \
         > "$LOG_DIR/phase4.log" 2>&1
 fi
 
