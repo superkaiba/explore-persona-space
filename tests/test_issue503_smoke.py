@@ -1206,6 +1206,17 @@ def test_plan_v2_em_direction_projections_descriptive():
     assert "descriptive-only" in h7_7c_disclaimer()
     assert "MF-8(a)" in h7_7c_disclaimer()
 
+    # Round-2 Rec 5: empty non_em_directions raises (MF-7 mandatory).
+    import pytest
+
+    with pytest.raises(ValueError, match="requires at least one non-EM"):
+        h7_7c_verdict(aligned, em_direction, [])
+
+    # Diagnostic mode lets it run but forces mechanism_share_descriptive=False.
+    v_diag = h7_7c_verdict(aligned, em_direction, [], diagnostic_mode=True)
+    assert v_diag.cosine_em > 0.9  # the projection still computes
+    assert not v_diag.mechanism_share_descriptive  # but the verdict is False
+
 
 def test_plan_v2_bucket_e_nontransfer_mf1_mf6():
     """Bucket E mandatory cells (MF-1) + install-QC verdicts (MF-6)."""

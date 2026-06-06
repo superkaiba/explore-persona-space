@@ -270,6 +270,7 @@ def h7_7c_verdict(
     *,
     n_random_directions: int = DEFAULT_N_RANDOM_DIRECTIONS,
     rng_seed: int = 0,
+    diagnostic_mode: bool = False,
 ) -> H77cVerdict:
     """Descriptive H7-7c verdict per MF-8(a) — no threshold gate.
 
@@ -280,9 +281,30 @@ def h7_7c_verdict(
     ``mechanism_share_descriptive`` is True iff the EM cosine exceeds
     BOTH the random CI upper AND the non-EM max — but this is a
     descriptive read, not a statistical test (MF-8(a)).
+
+    Round-2 Rec 5: non-EM controls are MANDATORY per plan §4.5 / §6.2 /
+    §13. Empty ``non_em_directions`` (with default ``non_em_max=0.0``)
+    silently satisfies ``cos_em > non_em_max`` for ANY positive cos_em —
+    that's an unconditional True on the descriptive read, not a
+    legitimate non-EM-control verdict. Per CLAUDE.md fail-fast we now
+    RAISE on empty non_em_directions unless the caller explicitly opts
+    into ``diagnostic_mode=True`` (in which case mechanism_share_descriptive
+    is forced False — the diagnostic verdict cannot be asserted without
+    real controls). The opt-in lets a developer run the projection
+    arithmetic for inspection without claiming the H7-7c gate.
     """
     if em_direction.kind != "em_convergent":
         raise ValueError(f"em_direction.kind must be 'em_convergent', got {em_direction.kind!r}")
+
+    if not non_em_directions and not diagnostic_mode:
+        raise ValueError(
+            "MF-7(b) requires at least one non-EM persona direction control. "
+            "Pass non_em_directions with kind in {'non_em_educational', "
+            "'non_em_secure_code'} (plan §4.5 / §6.2 / §13). To inspect the "
+            "EM-direction cosine + random-baseline CI without asserting the "
+            "H7-7c descriptive verdict, pass diagnostic_mode=True; in that "
+            "mode mechanism_share_descriptive is forced False."
+        )
 
     cos_em = _project_unit(shift.delta, em_direction.direction)
 
@@ -298,9 +320,14 @@ def h7_7c_verdict(
                 f"('non_em_educational', 'non_em_secure_code'); got {d.kind!r}"
             )
         non_em_cosines[d.kind] = _project_unit(shift.delta, d.direction)
-    non_em_max = max(non_em_cosines.values(), default=0.0)
-
-    descriptive_share = (cos_em > rand_ci["ci_high"]) and (cos_em > non_em_max)
+    # In diagnostic_mode with no non-EM directions, force the descriptive
+    # share to False — we cannot assert mechanism-sharing without controls.
+    if not non_em_cosines:
+        non_em_max = float("nan")
+        descriptive_share = False
+    else:
+        non_em_max = max(non_em_cosines.values())
+        descriptive_share = (cos_em > rand_ci["ci_high"]) and (cos_em > non_em_max)
     per_direction = {
         "em_convergent": cos_em,
         "random_ci_high": rand_ci["ci_high"],

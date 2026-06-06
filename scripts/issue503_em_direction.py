@@ -114,6 +114,20 @@ def main(argv: list[str] | None = None) -> int:
         help="MF-7(a): number of norm-matched random baselines.",
     )
     parser.add_argument("--rng-seed", type=int, default=0)
+    parser.add_argument(
+        "--diagnostic-mode",
+        action="store_true",
+        help=(
+            "Round-2 Rec 5: allow running WITHOUT non-EM persona direction "
+            "files (per plan §4.5 / §6.2 / §13 these are MANDATORY for the "
+            "H7-7c descriptive verdict). In diagnostic mode the projection "
+            "still runs but mechanism_share_descriptive is forced False — "
+            "the verdict cannot be asserted without real controls. Use this "
+            "only to sanity-check the projection arithmetic against a "
+            "freshly-loaded EM direction; production runs must provide "
+            "non_em_educational.npy + non_em_secure_code.npy."
+        ),
+    )
     args = parser.parse_args(argv)
 
     from explore_persona_space.experiments.issue503.em_direction import (
@@ -133,6 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         position_name=args.position_name,
     )
     non_em_dirs = []
+    missing_non_em: list[Path] = []
     for kind_label, fname in (
         ("non_em_educational", "non_em_educational.npy"),
         ("non_em_secure_code", "non_em_secure_code.npy"),
@@ -148,7 +163,31 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
         else:
-            logger.warning("Non-EM direction %s missing; skipping that baseline.", non_em_path)
+            missing_non_em.append(non_em_path)
+
+    # Round-2 Rec 5: MF-7 non-EM controls are MANDATORY per plan §4.5 /
+    # §6.2 / §13. Empty non_em_dirs would silently set non_em_max=0.0
+    # (round-1 default in em_direction.h7_7c_verdict) and trivially
+    # satisfy cos_em > non_em_max for any positive cos_em. Fail loud
+    # unless --diagnostic-mode is explicitly passed.
+    if not non_em_dirs and not args.diagnostic_mode:
+        missing_str = ", ".join(str(p) for p in missing_non_em)
+        raise FileNotFoundError(
+            "MF-7(b) requires at least one non-EM persona direction control file "
+            f"(searched for: {missing_str}). Per plan §4.5 / §6.2 / §13 these are "
+            "MANDATORY for the H7-7c descriptive verdict. The upstream Soligo "
+            "rank-1 extraction must produce non_em_educational.npy and/or "
+            "non_em_secure_code.npy in --direction-dir before this CLI runs. "
+            "To run the projection arithmetic without the H7-7c verdict (e.g. "
+            "to inspect the EM-direction cosine in isolation), pass "
+            "--diagnostic-mode."
+        )
+    if args.diagnostic_mode and not non_em_dirs:
+        logger.warning(
+            "--diagnostic-mode: running WITHOUT non-EM controls. "
+            "mechanism_share_descriptive will be forced False in every row "
+            "per Rec 5 — the H7-7c gate cannot be asserted without controls."
+        )
 
     out_dir = output_dir(root)
     out_path = out_dir / "h7_7c_verdicts.jsonl"
@@ -181,6 +220,7 @@ def main(argv: list[str] | None = None) -> int:
                     non_em_dirs,
                     n_random_directions=args.n_random_directions,
                     rng_seed=args.rng_seed,
+                    diagnostic_mode=args.diagnostic_mode,
                 )
                 row = asdict(verdict)
                 # numpy types → Python types for clean JSON
