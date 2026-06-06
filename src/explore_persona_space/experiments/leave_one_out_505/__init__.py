@@ -148,7 +148,21 @@ SOURCE_EMISSION_SATURATION_THRESHOLD = 0.85
 
 # ── Panel coverage gate thresholds (plan §5.4) ─────────────────────────────
 PANEL_TERCILE_FLOOR = 8  # ≥ 8 personas per top/bottom tercile per j_i
-PANEL_VARIANCE_FLOOR = 0.02**2  # #472 identification floor squared
+# PANEL_VARIANCE_FLOOR removed (round 5): the original derivation `0.02**2`
+# mis-applied #472's `ID_GATE_SD_FLOOR = 0.02` — that floor is an
+# SD-across-arms of a DISTANCE metric in #472's leakage analysis, NOT this
+# experiment's within-panel cosine variance to a single j. Different
+# distribution; on the actual #472 bank + L10 centroids the realised
+# within-panel variances sit at 0.00012-0.00018, ~2-3× below the
+# misderived 0.0004 floor, so the gate fired false positives on every j_i
+# and halted Phase 1 immediately. The tercile_ok check (≥ 8 personas in
+# both top and bottom terciles of cos(b, j_i)) is §5.4's load-bearing
+# identification condition; the variance floor was redundant. The constant
+# is kept as 0.0 for backward compatibility (any downstream consumer that
+# imports it without expecting the gate to fire still gets a finite
+# float), but the gate path in `panel_coverage.run_panel_coverage_gate`
+# no longer consults it.
+PANEL_VARIANCE_FLOOR = 0.0
 
 # ── HF repos (plan §5.9, §10, reproducibility card) ────────────────────────
 # Inherit data-repo bank + centroid bundles from #472 under the geometry/

@@ -8,16 +8,30 @@ negative selector to pick K=6 personas (always-include qwen_default keeps its
 own slot), defines the held-out panel as bank − source − K-set − qwen_default,
 and checks the panel's tercile / variance coverage for every dropped j_i.
 
-The gate is mandatory before any training spawn (plan §5.4 + §5.5):
+The gate is mandatory before any training spawn (plan §5.4 + §5.5). The
+load-bearing identification condition is the tercile spread:
 
     for each non-default j_i:
         ≥ PANEL_TERCILE_FLOOR (=8) personas in BOTH the top + bottom tercile
-            of cos(b, j_i) over the panel, AND
-        var_panel cos(b, j_i) ≥ PANEL_VARIANCE_FLOOR (=#472 0.02 floor squared)
+            of cos(b, j_i) over the panel.
 
-On a single j_i failure the dispatcher swaps that j_i to the next spread-quantile
-candidate and re-runs the gate ONCE (deterministic one-shot retry per plan
-§12). A second failure halts dispatch per the §8 kill criteria.
+The plan §5.4 first draft paired this with a within-panel variance floor
+`var_panel cos(b, j_i) ≥ 0.02**2`, but that floor was a unit-error import
+of #472's `ID_GATE_SD_FLOOR = 0.02` — which is SD-across-arms of a
+DISTANCE metric in #472's identification analysis, NOT this experiment's
+within-panel cosine variance to a single j (different distribution; the
+realised within-panel variances on the actual bank sit at 0.00012-0.00018,
+~2-3× below the misderived floor, halting Phase 1 on every j_i in round 4).
+Round 5 drops the variance gate; `tercile_ok` is the sole pass criterion.
+See `PANEL_VARIANCE_FLOOR`'s comment in `leave_one_out_505/__init__.py`
+for the full provenance. The `spans_floor` diagnostic field is still
+reported per j_i for audit visibility (it's just not in the pass
+condition).
+
+On a single j_i failure the dispatcher swaps that j_i to the next
+spread-quantile candidate and re-runs the gate ONCE (deterministic
+one-shot retry per plan §12). A second failure halts dispatch per the §8
+kill criteria.
 """
 
 from __future__ import annotations
@@ -98,10 +112,20 @@ def _check_panel_coverage_for_j(
     panel: list[str],
     cos_matrix: dict[str, dict[str, float]],
 ) -> dict:
-    """Run the §5.4 tercile + variance checks for a single dropped negative j_i.
+    """Run the §5.4 panel-coverage diagnostic for a single dropped negative j_i.
 
-    Returns a dict with the diagnostic counts. ``tercile_ok`` AND ``spans_floor``
-    must both be True for the j_i to pass.
+    Returns a dict with the diagnostic counts. ``tercile_ok`` is the sole
+    pass criterion (≥ ``PANEL_TERCILE_FLOOR`` personas in BOTH the top and
+    bottom tercile of cos(b, j_i) over the panel).
+
+    The ``var_panel_cos_j`` + ``spans_floor`` fields are reported for audit
+    visibility but are NOT in the pass condition: the original §5.4 draft
+    paired tercile with a within-panel variance floor `var_panel ≥ 0.02**2`
+    derived by squaring #472's ``ID_GATE_SD_FLOOR``, but that floor is
+    SD-across-arms of a DISTANCE metric — different distribution from this
+    experiment's within-panel cosine variance to a single j. Round 5 drops
+    the variance gate as a unit-error correction. Full provenance in
+    `leave_one_out_505/__init__.py` § PANEL_VARIANCE_FLOOR.
     """
     cos_b_j = sorted(((b, float(cos_matrix[b][j_i])) for b in panel), key=lambda x: -x[1])
     t = len(cos_b_j) // 3
@@ -177,7 +201,10 @@ def run_panel_coverage_gate(
         coverage = {
             j_i: _check_panel_coverage_for_j(j_i, panel, cos_matrix_l10) for j_i in non_default
         }
-        failed = [j_i for j_i, c in coverage.items() if not (c["tercile_ok"] and c["spans_floor"])]
+        # Round-5: tercile_ok is the sole pass criterion. The `spans_floor`
+        # field is still reported per-j_i for audit visibility but excluded
+        # from the gate — see module docstring + PANEL_VARIANCE_FLOOR comment.
+        failed = [j_i for j_i, c in coverage.items() if not c["tercile_ok"]]
 
         last_coverage = coverage
         last_non_default = non_default
@@ -220,12 +247,12 @@ def run_panel_coverage_gate(
         "n_retries_used": max_retries,
         "skipped_personas": sorted(skip),
     }
-    failed = [j_i for j_i, c in last_coverage.items() if not (c["tercile_ok"] and c["spans_floor"])]
+    failed = [j_i for j_i, c in last_coverage.items() if not c["tercile_ok"]]
     raise PanelCoverageGateError(
         f"§5.4 panel coverage gate FAILED after {max_retries} retry(s): {len(failed)} "
-        f"non-default j_i did not meet (tercile ≥ {PANEL_TERCILE_FLOOR} AND "
-        f"var ≥ {PANEL_VARIANCE_FLOOR}). Failed j_i: {failed}. Diagnostic payload: "
-        f"{json.dumps(return_payload, indent=2)}"
+        f"non-default j_i did not meet tercile ≥ {PANEL_TERCILE_FLOOR} in both "
+        f"top + bottom tercile of cos(b, j_i). Failed j_i: {failed}. "
+        f"Diagnostic payload: {json.dumps(return_payload, indent=2)}"
     )
 
 

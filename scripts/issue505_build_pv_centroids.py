@@ -63,7 +63,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.persona_bank.exists():
         print(f"persona bank missing at {args.persona_bank}", file=sys.stderr)
         return 1
-    bank = json.loads(args.persona_bank.read_text())
+    # NEVER raw-`json.loads` this file: #472 publishes persona_bank.json as a
+    # STRUCTURED payload `{schema_version, ..., personas: {name: prompt}, ...}`.
+    # The canonical loader validates `schema_version == 'i472_v1'` and returns
+    # the inner `personas` map directly. The dispatcher loader was fixed in
+    # ce2bea8a2 (Codex r4 caught this sibling still raw); see
+    # tests/test_issue505_panel_coverage.py for the regression test class.
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.persona_bank import (
+        load_persona_bank,
+    )
+
+    bank = load_persona_bank(args.persona_bank)
     written = build_pv_centroids(
         persona_bank=bank,
         layers=tuple(args.layers),

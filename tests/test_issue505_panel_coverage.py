@@ -1,4 +1,4 @@
-# em-dash intentional
+# ruff: noqa: RUF002, RUF003  # em-dash + × multiplication sign intentional
 """Task #505 regression — Phase 0b/Phase 1 loaders unwrap #472's structured payloads.
 
 The #505 round-3 v3 production launch (2026-06-05) crashed within ~20s of
@@ -137,7 +137,7 @@ def test_load_persona_bank_and_r_unwraps_payloads(monkeypatch, tmp_path):
     map directly.
     """
     i472 = tmp_path / "issue_472"
-    names = ["villain_persona", "qwen_default", "medical_doctor", "police_officer"]
+    names = ["villain", "qwen_default", "medical_doctor", "police_officer"]
     questions = ["q0", "q1"]
     _write_persona_bank(i472 / "persona_bank.json", names)
     _write_r_artifact(i472 / "on_policy_R" / "R_train.json", names, questions)
@@ -180,7 +180,7 @@ def test_load_persona_bank_and_r_raises_on_schema_drift(monkeypatch, tmp_path):
     drift — confirm that propagates through the dispatcher loader.
     """
     i472 = tmp_path / "issue_472"
-    names = ["villain_persona", "qwen_default"]
+    names = ["villain", "qwen_default"]
     questions = ["q0"]
     # Write a bank with a wrong schema_version.
     bank_path = i472 / "persona_bank.json"
@@ -212,7 +212,7 @@ def test_load_inherited_l10_cos_unwraps_structured_pt(tmp_path):
     ``cos_to_source = {p: float(cos_matrix_l10[source][p]) for p in persona_bank}``
     pattern at panel_coverage.py:149 expects.
     """
-    names = ["villain_persona", "qwen_default", "medical_doctor", "police_officer"]
+    names = ["villain", "qwen_default", "medical_doctor", "police_officer"]
     bundle_path = tmp_path / "centroids_L10.pt"
     _write_centroids_L10(bundle_path, names)
 
@@ -271,3 +271,325 @@ def test_load_inherited_l10_cos_raises_on_non_dict_bundle(tmp_path):
 
     with pytest.raises(TypeError, match="expected dict"):
         load_inherited_l10_cos(bundle_path)
+
+
+# ── Round 5: regression tests for the wrapper-script raw-load bug class. ────
+#
+# Codex round-4 review found that the dispatcher fix in commit ce2bea8a2
+# (route raw json.loads through load_persona_bank) was NOT propagated to two
+# sibling CLI entrypoints under scripts/issue505_*.py — both still raw-loaded
+# the structured #472 payload. These tests invoke each wrapper as a real
+# subprocess (the canonical "library-fixed-but-wrapper-still-raw" anti-pattern
+# only surfaces at the script's __main__, not the library API).
+
+
+import os  # noqa: E402  — intentionally below the regression docstring so the section is grouped
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+
+from explore_persona_space.experiments.leave_one_out_505.panel_coverage import (  # noqa: E402
+    run_panel_coverage_gate,
+)
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _build_panel_friendly_centroids_L10(
+    out_path: Path, names: list[str], source: str, always_include: str, dim: int = 32
+) -> None:
+    """Centroids whose cos(b, source) spreads the bank cleanly across spread-quantile bins.
+
+    The spread-quantile selector groups personas by quantile of cos(p, source);
+    if every persona is at the same quantile, K=6 picks degenerate near-twins
+    and the tercile check still fires on every j_i. We synthesise centroids
+    that DO span the quantile space by injecting a per-persona angular offset
+    on a 2D circle and adding a small random tail.
+    """
+    n = len(names)
+    rng = torch.Generator().manual_seed(0)
+    # 2D anchor angles spread evenly around the circle (excluding source which
+    # sits at angle 0). The remaining `dim-2` coords are small random noise so
+    # the within-tercile variance is non-zero.
+    angles = torch.zeros(n)
+    other_names = [x for x in names if x != source]
+    for i, name in enumerate(other_names):
+        angles[names.index(name)] = (i + 1) * (3.14159 / (n - 1))
+    primary = torch.stack([angles.cos(), angles.sin()], dim=-1)  # (n, 2)
+    tail = 0.05 * torch.randn(n, dim - 2, generator=rng)
+    centroids = torch.cat([primary, tail], dim=-1)
+    centroids = centroids / centroids.norm(dim=-1, keepdim=True)
+    cos_matrix = centroids @ centroids.T
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "centroids": centroids,
+            "persona_names": list(names),
+            "cos_matrix": cos_matrix,
+            "layer": 10,
+            "base_model": "Qwen/Qwen2.5-7B-Instruct",
+            "questions": ["q0", "q1"],
+        },
+        out_path,
+    )
+    # always_include must exist as a key — assert here to fail loud if a test
+    # mis-builds the names list.
+    assert always_include in names, f"always_include {always_include!r} missing from names"
+
+
+def test_panel_coverage_wrapper_script_uses_canonical_loader_on_synthetic_bank(tmp_path):
+    """``scripts/issue505_panel_coverage.py`` must read persona_bank via the canonical loader.
+
+    Reproduction of the same bug class the dispatcher hit in #505 round-3:
+    a raw ``json.loads(args.persona_bank.read_text())`` returns the OUTER
+    structured payload (keys leak), so ``run_panel_coverage_gate``'s
+    ``for p in persona_bank`` iterates ``schema_version`` and crashes one
+    frame deeper at ``cos_matrix_l10[source]['schema_version']``. Round 5
+    fixed the wrapper to go through ``load_persona_bank``; this test
+    invokes the wrapper as a real subprocess on the same synthetic
+    #472-schema bank used by the dispatcher regression, and confirms the
+    wrapper exits 0 + writes the gate payload. Pre-fix, this would have
+    crashed with ``KeyError: 'schema_version'`` (raw-loaded payload).
+    """
+    # 60-persona bank, qwen_default at index 1 (so it isn't the source).
+    names = ["villain", "qwen_default"] + [f"p{i}" for i in range(58)]
+    bank_path = tmp_path / "issue_472" / "persona_bank.json"
+    centroids_path = tmp_path / "issue_472" / "centroids_L10.pt"
+    out_path = tmp_path / "out" / "panel_coverage.json"
+    _write_persona_bank(bank_path, names)
+    _build_panel_friendly_centroids_L10(
+        centroids_path, names, source="villain", always_include="qwen_default"
+    )
+
+    script = REPO_ROOT / "scripts" / "issue505_panel_coverage.py"
+    assert script.exists(), f"wrapper script missing at {script}"
+
+    env = {**os.environ}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--persona-bank",
+            str(bank_path),
+            "--centroid-l10",
+            str(centroids_path),
+            "--out",
+            str(out_path),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(REPO_ROOT),
+        check=False,
+    )
+    # Two possible expected outcomes:
+    #   exit 0: gate PASSed → payload file with gate_passed=True.
+    #   exit 2: gate FAILed on tercile (insufficient spread for the synthetic
+    #           centroids) — still a clean fail, NOT the raw-load crash.
+    # What we MUST NOT see: a python traceback with KeyError on 'schema_version'.
+    combined = result.stdout + result.stderr
+    assert "KeyError" not in combined or "schema_version" not in combined, (
+        f"wrapper still raw-reads structured persona_bank payload; combined output:\n{combined}"
+    )
+    assert result.returncode in (0, 2), (
+        f"unexpected exit {result.returncode}; stdout={result.stdout!r}; stderr={result.stderr!r}"
+    )
+    # Pre-the-tercile-only fix, the gate would have FAILED on every j_i
+    # because the variance floor 0.02**2=0.0004 is well above the realised
+    # within-panel variance on these synthetic 2D-on-circle centroids. After
+    # the Round-5 PANEL_VARIANCE_FLOOR drop, the gate passes on this fixture.
+    assert result.returncode == 0, (
+        f"panel-coverage gate did not pass on synthetic fixture; "
+        f"return={result.returncode}; stderr={result.stderr!r}"
+    )
+    payload = json.loads(out_path.read_text())
+    assert payload["gate_passed"] is True, f"gate_passed not True; payload keys: {list(payload)}"
+
+
+def test_panel_coverage_wrapper_script_fails_loud_on_schema_drift(tmp_path):
+    """If the persona_bank.json has a wrong schema_version, the wrapper exits non-zero.
+
+    Pre-fix (raw `json.loads`) the wrapper would have silently iterated the
+    metadata wrapper and crashed inside ``run_panel_coverage_gate`` with
+    ``KeyError`` 10 frames deep. Post-fix the canonical loader raises
+    ``AssertionError`` at the load step — the wrapper script propagates
+    that to a non-zero exit.
+    """
+    names = ["villain", "qwen_default", "p0", "p1", "p2", "p3", "p4", "p5"]
+    bank_path = tmp_path / "issue_472" / "persona_bank.json"
+    bank_path.parent.mkdir(parents=True, exist_ok=True)
+    # Drifted schema_version — canonical loader raises AssertionError.
+    bank_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "i472_DRIFT",
+                "personas": {n: f"You are a {n}." for n in names},
+            }
+        )
+    )
+    centroids_path = tmp_path / "issue_472" / "centroids_L10.pt"
+    _build_panel_friendly_centroids_L10(
+        centroids_path, names, source="villain", always_include="qwen_default"
+    )
+
+    script = REPO_ROOT / "scripts" / "issue505_panel_coverage.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--persona-bank",
+            str(bank_path),
+            "--centroid-l10",
+            str(centroids_path),
+            "--out",
+            str(tmp_path / "out" / "panel_coverage.json"),
+        ],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+        cwd=str(REPO_ROOT),
+        check=False,
+    )
+    assert result.returncode != 0, "expected non-zero exit on schema drift"
+    assert "schema_version" in (result.stdout + result.stderr), (
+        f"expected schema_version error message; combined: {result.stdout}\n{result.stderr}"
+    )
+
+
+def test_build_pv_centroids_wrapper_script_fails_loud_on_schema_drift(tmp_path):
+    """Symmetric guard for ``scripts/issue505_build_pv_centroids.py``.
+
+    The second wrapper Codex flagged in round 4: same raw-load bug as the
+    panel-coverage wrapper. We can't end-to-end-smoke this script in CI
+    (it loads Qwen-2.5-7B for the forward pass), but we CAN confirm the
+    bank load goes through ``load_persona_bank`` by feeding a
+    schema-drifted bank and asserting the script exits non-zero BEFORE
+    any model-loading happens. Pre-fix (raw json.loads) the bank load
+    would have silently returned the wrapper dict and the script would
+    have proceeded into model loading; post-fix the canonical loader
+    raises AssertionError immediately at the bank load step.
+    """
+    names = ["villain", "qwen_default", "p0", "p1"]
+    bank_path = tmp_path / "issue_472" / "persona_bank.json"
+    bank_path.parent.mkdir(parents=True, exist_ok=True)
+    bank_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "i472_DRIFT",
+                "personas": {n: f"You are a {n}." for n in names},
+            }
+        )
+    )
+
+    script = REPO_ROOT / "scripts" / "issue505_build_pv_centroids.py"
+    assert script.exists(), f"wrapper script missing at {script}"
+
+    # Pass --layers 7 just to keep the arg parse simple; the script never
+    # reaches model load because the schema check fires first.
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "--persona-bank",
+            str(bank_path),
+            "--out-dir",
+            str(tmp_path / "out"),
+            "--device",
+            "cpu",
+            "--layers",
+            "7",
+        ],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+        cwd=str(REPO_ROOT),
+        check=False,
+        timeout=60,
+    )
+    assert result.returncode != 0, (
+        f"expected non-zero exit on schema drift; stdout={result.stdout!r}; "
+        f"stderr={result.stderr!r}"
+    )
+    assert "schema_version" in (result.stdout + result.stderr), (
+        f"expected schema_version error message; combined: {result.stdout}\n{result.stderr}"
+    )
+
+
+# ── Round 5: §5.4 variance-floor drop — tercile-only gate passes on real #472 data. ─
+
+
+def _maybe_real_472_paths() -> tuple[Path, Path] | None:
+    """Resolve the real #472 persona_bank.json + centroids_L10.pt from the HF cache.
+
+    Uses ``hf_hub_download`` so the call is cached (no network if previously
+    fetched on this VM). Returns None when ``HF_TOKEN`` is unset (CI without
+    HF credentials skips the test rather than failing).
+    """
+    if not os.environ.get("HF_TOKEN"):
+        return None
+    try:
+        from huggingface_hub import hf_hub_download
+    except ImportError:
+        return None
+
+    repo = "superkaiba1/explore-persona-space-data"
+    prefix = "issue472_neg_geometry/geometry"
+    try:
+        bank = Path(
+            hf_hub_download(
+                repo_id=repo,
+                filename=f"{prefix}/persona_bank.json",
+                repo_type="dataset",
+                token=os.environ["HF_TOKEN"],
+            )
+        )
+        centroids = Path(
+            hf_hub_download(
+                repo_id=repo,
+                filename=f"{prefix}/centroids_L10.pt",
+                repo_type="dataset",
+                token=os.environ["HF_TOKEN"],
+            )
+        )
+    except Exception:
+        return None
+    return bank, centroids
+
+
+def test_gate_passes_on_real_472_bank_with_tercile_only():
+    """The §5.4 panel-coverage gate passes on real #472 data after Round-5's variance-floor drop.
+
+    Round-4 review (Claude lens) verified independently that all 6 sampled
+    j_i in the realised bank PASSed ``tercile_ok`` but FAILed
+    ``spans_floor`` (within-panel variances 0.000116-0.000175 vs the
+    misderived floor 0.0004 ≈ 2.3-3.5× too high). The fix dropped the
+    variance gate as a unit-error correction. This test confirms the
+    fix lands the way Claude described: gate_passed=True on the real
+    #472 60-persona bank + L10 centroids, no synthetic data.
+
+    Skipped when ``HF_TOKEN`` is missing (CI without HF credentials).
+    """
+    paths = _maybe_real_472_paths()
+    if paths is None:
+        pytest.skip("HF_TOKEN unset or HF hub download unavailable; skipping real-data test.")
+    bank_path, centroids_path = paths
+
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.persona_bank import (
+        load_persona_bank,
+    )
+
+    bank = load_persona_bank(bank_path)
+    cos_l10 = load_inherited_l10_cos(centroids_path)
+    payload = run_panel_coverage_gate(persona_bank=bank, cos_matrix_l10=cos_l10)
+
+    # Round 5 contract: tercile_ok holds for every chosen j_i on the real bank.
+    assert payload["gate_passed"] is True, (
+        f"gate did not pass on real #472 data; n_retries_used={payload['n_retries_used']}; "
+        f"coverage diagnostics: {json.dumps(payload['coverage'], indent=2, default=float)}"
+    )
+    # Sanity: K=6 non-default negatives + always-included qwen_default = 7 in k_set.
+    assert len(payload["k_set"]) == 7, f"unexpected k_set size: {payload['k_set']}"
+    assert payload["always_include"] == "qwen_default"
+    # Diagnostic visibility: every chosen j_i carries tercile_ok=True; the
+    # spans_floor field is still reported but no longer in the pass condition.
+    for j_i, diag in payload["coverage"].items():
+        assert diag["tercile_ok"] is True, f"j_i {j_i!r} failed tercile check: {diag}"
