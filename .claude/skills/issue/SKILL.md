@@ -1097,7 +1097,35 @@ Brief passed to the implementer:
 - The plan path (the `plans/plan.md` symlink, NOT the body text)
 - Task number + worktree path + branch name
 - Code-review history if this is a revision round (`epm:code-review v<m>`)
-- Required `report-back` fields
+- Required `report-back` contract — the canonical 4-H3 marker shape from
+  `.claude/agents/experiment-implementer.md` Report Format + the matching
+  `## Smoke run` H2 from `.claude/agents/code-reviewer.md` Steps 0.5/0.6.
+  The brief MUST quote these section labels verbatim; ad-hoc alternative
+  labels (e.g. `(a) Plan adherence`, `(b) Files touched`, `(c) How to
+  run`, `(d) Smoke run`) cause the Codex `code-reviewer` to FAIL on
+  `marker-shape` even when the implementer faithfully follows the brief.
+  Canonical labels (use VERBATIM in the brief):
+  - `### (a) What was done`
+  - `### (b) Considered but not done`
+  - `### (c) How to verify`
+  - `### (d) Needs human eyeball`
+  - (optional `### (e) Concerns addressed` — only when prior open
+    binding concerns from `concerns.jsonl` were verified this round;
+    see `code-reviewer.md` Step 0.5 + Step 0.8)
+  - `## Smoke run` H2 (per Step 0.6) with one `### <phase-name>` per
+    CPU-feasible pipeline phase (typical: `### data-gen`, `### training`,
+    `### eval`), each carrying the exact command, the slice size, exit
+    code `0`, and a one-line artifact digest. **Smoke run is its own
+    `## H2` — NEVER a `### (d) Smoke run` H3.** Folding the smoke run
+    into the (d) slot displaces `### (d) Needs human eyeball` and is
+    itself a `marker-shape` FAIL.
+
+  Incident: task #506 round 1 (2026-06-06) — orchestrator's ad-hoc
+  labels (`(a) Plan adherence / (b) Files touched / (c) How to run /
+  (d) Smoke run / (e) Needs human eyeball`) triggered the Codex
+  `marker-shape` BLOCKER and the reconciler upheld FAIL, costing a
+  full round of revision plus the substantive code fixes that landed
+  in round 2.
 - **Instruction: work ONLY inside the worktree; never touch a pod; post
   progress as `events.jsonl` rows via
   `uv run python scripts/task.py post-marker <N> epm:progress --note '...'`.**
