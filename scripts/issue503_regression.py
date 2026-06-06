@@ -122,13 +122,22 @@ def _build_regression_rows():
     from explore_persona_space.experiments.issue503.crosslingual import (
         enumerate_xling_cells,
     )
-    from explore_persona_space.experiments.issue503.regression import RegressionRow
+    from explore_persona_space.experiments.issue503.regression import (
+        ALL_BUCKETS,
+        RegressionRow,
+    )
 
     predictors = _load_predictor_records()
     verdicts = _load_verdict_records()
     rows: list[RegressionRow] = []
-    skipped_by_bucket: dict[str, int] = {"B": 0, "A": 0, "D": 0, "E": 0}
-    counted_by_bucket: dict[str, int] = {"B": 0, "A": 0, "D": 0, "E": 0}
+    # Round-3 Rec-3.1: pre-seed every key in ALL_BUCKETS so the
+    # ``bucket="C"`` assignment below (B_to_B cells from enumerate_cells())
+    # never trips KeyError. The regression module's ALL_BUCKETS is the
+    # canonical list; we mirror it here so a future bucket addition only
+    # needs to extend ALL_BUCKETS to flow through.
+
+    skipped_by_bucket: dict[str, int] = {b: 0 for b in ALL_BUCKETS}
+    counted_by_bucket: dict[str, int] = {b: 0 for b in ALL_BUCKETS}
 
     def _try_emit(
         *,
@@ -248,18 +257,17 @@ def _build_regression_rows():
                 bucket="E",
             )
 
+    # Round-3 Rec-3.1: include Bucket C (B_to_B broad → broad) in the
+    # tally — the v1 enumerate_cells() emits B_to_B rows that get tagged
+    # bucket='C' above. ALL_BUCKETS-driven format string + sorted iteration
+    # so a future bucket addition flows through without touching this line.
+    counted_str = " / ".join(f"{b}={counted_by_bucket[b]}" for b in ALL_BUCKETS)
+    skipped_str = " / ".join(f"{b}={skipped_by_bucket[b]}" for b in ALL_BUCKETS)
     logger.info(
-        "Built %d off-diagonal rows across buckets (B=%d / A=%d / D=%d / E=%d; "
-        "skipped B=%d / A=%d / D=%d / E=%d)",
+        "Built %d off-diagonal rows across buckets (%s; skipped %s)",
         len(rows),
-        counted_by_bucket["B"],
-        counted_by_bucket["A"],
-        counted_by_bucket["D"],
-        counted_by_bucket["E"],
-        skipped_by_bucket["B"],
-        skipped_by_bucket["A"],
-        skipped_by_bucket["D"],
-        skipped_by_bucket["E"],
+        counted_str,
+        skipped_str,
     )
     return rows
 
