@@ -24,13 +24,21 @@ selected conversations × 20 probes × 8 samples per cell. This mirrors #489's
 
 Per-cell payload (under ``eval_results/issue_501/phase4/per_cell/``):
   - ``G_{cid_i}__{mt_cid}_frac{F:.2f}.json``:
-      {T_i, T_mt, frac, seed, n_q, n_samples, n_conversations,
+      {T_i, T_mt, frac, seed, n_q, n_samples, n_samples_base,
+       n_conversations,
        g_logprob_mean, b_logprob_mean, delta_g, delta_g_trimmed_10pct,
        emission_rate_trained, argmax_marker_rate_trained,
+       emission_rate_base,
        g_logps_per_q_sample, b_logps_per_q_sample,
        prompt_lens_per_q, R_lens_per_q_sample,
        sample_texts_first200,
        generated_at, git_commit}
+
+The ``emission_rate_base`` field is required by plan v2 §10 schema +
+§7 gate-4 (`<5%`); computed via a base-model free-generation pass at
+``n_samples_base = max(2, n_samples // 4)`` (~1/4 the trained-pass cost
+since the base emission floor is the gate-4 threshold and small-sample
+statistics suffice for a <5% verification).
 
 Schema is byte-for-byte compatible with #489's ``G_*.json`` except ``T_j`` →
 ``T_mt``; the merge in Phase 5 unifies them under the common ``T_j`` key.
@@ -168,15 +176,31 @@ def _build_marker_probe_full_ids(
     """Build ``encode(prompt + R + MARKER)`` token list; return
     (full_ids, prompt_len, post_R_slot).
 
-    Mirrors #489's same-named helper byte-for-byte for the marker-slot
-    guarantee.
+    The teacher-forced operation appends a single ` ※` marker token at the
+    END of ``prompt + R_text`` and reads ``log P(MARKER_ID)`` at the
+    last-token slot. The ONLY invariant we need is that the appended
+    marker IS the last token (so ``prompt_logprobs[-1]`` reads OUR slot).
+
+    Earlier marker occurrences inside ``R_text`` are EXPECTED on high-
+    emission cells (a trained model that already emits ` ※` will produce
+    R_text containing the marker). Counting global occurrences and
+    rejecting count != 1 (the round-4 invariant) would crash exactly on
+    the cells the experiment most needs to measure — the cells where the
+    marker has transferred strongly into the on-policy response.
+
+    Note: the prompt-history is independently guarded
+    (``assert_no_marker_in_history`` upstream), so any non-last
+    occurrences of ``MARKER_ID`` in ``full_ids`` come from ``R_text``,
+    which is the model's own generation — exactly what we want to
+    measure transfer of.
     """
     prompt_ids = tokenizer.encode(prompt_text, add_special_tokens=False)
     full_ids = tokenizer.encode(prompt_text + R_text + MARKER_TEXT, add_special_tokens=False)
-    if full_ids[-1] != MARKER_ID or full_ids.count(MARKER_ID) != 1:
+    if full_ids[-1] != MARKER_ID:
         raise RuntimeError(
             f"marker slot drift: full_ids[-1]={full_ids[-1]} "
-            f"count_marker={full_ids.count(MARKER_ID)} (expected last=={MARKER_ID}, count==1)"
+            f"(expected last=={MARKER_ID}); R_text tail may have merged with the marker token "
+            "under BPE; refusing to mis-attribute the post-R logprob"
         )
     return full_ids, len(prompt_ids), len(full_ids) - 1
 
@@ -210,11 +234,13 @@ def _run_cell_eval(
     tokenizer,
     gen_sp,
     probe_sp,
+    base_gen_sp,
     cid_i: str,
     mt_cid: str,
     frac: float,
     seed: int,
     n_samples: int,
+    n_samples_base: int,
     entries: list[tuple[int, int, str]],
     n_conversations: int,
     lora_req,
@@ -223,17 +249,25 @@ def _run_cell_eval(
     ts0: str,
     extra_meta: dict | None = None,
 ) -> dict:
-    """PASS A (on-policy generation under adapter_i) + PASS B (teacher-forced
+    """PASS A (on-policy generation under adapter_i) + PASS A' (on-policy
+    base-model generation, NO adapter) + PASS B (teacher-forced
     log P(' ※') trained − base) on a single (cid_i, mt_cid) cell.
 
     ``entries`` is the cached list ``[(conv_idx, probe_qi, prompt_text), ...]``
     for the target context. ``lora_req`` is the vLLM ``LoRARequest`` for
-    ``cid_i`` at ``frac``. Writes the per-cell payload to ``cell_path``
-    atomically (``.json.tmp`` → replace) and returns the in-memory payload.
+    ``cid_i`` at ``frac``. ``base_gen_sp`` is a ``SamplingParams`` with
+    ``n=n_samples_base`` (typically 1/4 of ``n_samples``, since
+    ``emission_rate_base`` is gated at <5% per plan v2 §7 gate-4 and small
+    samples suffice to verify the floor). PASS A' adds <30% wall to the
+    cell vs PASS A.
+
+    Writes the per-cell payload to ``cell_path`` atomically (``.json.tmp``
+    → replace) and returns the in-memory payload.
 
     Shared between the production sweep and the smoke path so they execute
     the SAME code (plan v2 §4.5 unification). The smoke entry point passes
-    tiny ``entries`` and ``n_samples`` to keep wall-time bounded.
+    tiny ``entries`` / ``n_samples`` / ``n_samples_base`` to keep wall
+    bounded.
     """
     cell_label = f"{cid_i}->{mt_cid} frac={frac:.2f}"
     t_cell = time.time()
@@ -264,6 +298,25 @@ def _run_cell_eval(
         R_texts_per_row.append(R_texts)
         R_lens_per_row.append(R_lens)
     emission_trained = _emission_rate(flat_trained_texts, MARKER_TEXT)
+
+    # PASS A': on-policy base-model generation (NO adapter) — required for
+    # the plan v2 §10 ``emission_rate_base`` schema field + §7 gate-4
+    # (<5% base-model marker emission). Uses n_samples_base (typically
+    # n_samples // 4) since the gate is a small-N floor check.
+    t0 = time.time()
+    base_gen_outs = llm.generate(prompts_text, base_gen_sp, lora_request=None)
+    t_base_gen = time.time() - t0
+    assert len(base_gen_outs) == len(entries), (
+        f"PASS A': {len(base_gen_outs)} vLLM outputs for {len(entries)} prompts"
+    )
+    flat_base_texts: list[str] = []
+    for out in base_gen_outs:
+        for sample in out.outputs:
+            flat_base_texts.append(sample.text)
+        assert len(out.outputs) == n_samples_base, (
+            f"PASS A': expected {n_samples_base} samples per row, got {len(out.outputs)}"
+        )
+    emission_base = _emission_rate(flat_base_texts, MARKER_TEXT)
 
     # PASS B: teacher-forced log P(' ※') at post-R slot.
     probe_payloads: list[dict] = []
@@ -322,15 +375,18 @@ def _run_cell_eval(
         "seed": seed,
         "n_q": len(entries) // max(1, n_conversations),
         "n_samples": n_samples,
+        "n_samples_base": n_samples_base,
         "n_conversations": n_conversations,
         # Primary DV
         "g_logprob_mean": g_mean,
         "b_logprob_mean": b_mean,
         "delta_g": delta_mean,
         "delta_g_trimmed_10pct": delta_trimmed,
-        # Companion legibility anchor
+        # Companion legibility anchors
         "emission_rate_trained": emission_trained,
         "argmax_marker_rate_trained": argmax_marker_rate,
+        # Gate-4 (plan v2 §7) requirement: base-model emission floor.
+        "emission_rate_base": emission_base,
         # Per-row per-k log-probs
         "g_logps_per_q_sample": g_logps_per_row_sample,
         "b_logps_per_q_sample": b_logps_per_row_sample,
@@ -342,6 +398,7 @@ def _run_cell_eval(
         "logp_floor": LOGP_FLOOR,
         "elapsed_seconds": {
             "pass_a_gen": t_gen,
+            "pass_a_base_gen": t_base_gen,
             "pass_b_trained": t_probe_g,
             "pass_b_base": t_probe_b,
             "cell_total": time.time() - t_cell,
@@ -356,12 +413,13 @@ def _run_cell_eval(
     tmp.write_text(json.dumps(cell_payload))
     tmp.replace(cell_path)
     logger.info(
-        "cell %s: delta_g=%.3f (g=%.3f b=%.3f) emit_trained=%.3f argmax=%.3f %.1fs",
+        "cell %s: delta_g=%.3f (g=%.3f b=%.3f) emit_trained=%.3f emit_base=%.3f argmax=%.3f %.1fs",
         cell_label,
         delta_mean,
         g_mean,
         b_mean,
         emission_trained,
+        emission_base,
         argmax_marker_rate,
         time.time() - t_cell,
     )
@@ -386,6 +444,7 @@ def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float, seed: in
     smoke_anchors = ["IK01", "SP01"]
     smoke_target = "MT05"
     n_samples = 2
+    n_samples_base = max(2, n_samples // 4)  # smoke: floor at 2 = same as n_samples
     n_held_smoke = 2
 
     if smoke_target not in phase0["per_cid"]:
@@ -444,6 +503,14 @@ def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float, seed: in
         seed=42,
         stop_token_ids=[tokenizer.eos_token_id, IM_END_ID],
     )
+    base_gen_sp = SamplingParams(
+        n=n_samples_base,
+        temperature=1.0,
+        top_p=1.0,
+        max_tokens=MAX_NEW_TOKENS,
+        seed=42,
+        stop_token_ids=[tokenizer.eos_token_id, IM_END_ID],
+    )
     probe_sp = SamplingParams(
         n=1,
         temperature=0.0,
@@ -469,11 +536,13 @@ def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float, seed: in
             tokenizer=tokenizer,
             gen_sp=gen_sp,
             probe_sp=probe_sp,
+            base_gen_sp=base_gen_sp,
             cid_i=cid_i,
             mt_cid=smoke_target,
             frac=frac,
             seed=seed,
             n_samples=n_samples,
+            n_samples_base=n_samples_base,
             entries=entries,
             n_conversations=n_conversations,
             lora_req=lora_req,
@@ -607,6 +676,18 @@ def main(argv: list[str] | None = None) -> int:
         seed=42,
         stop_token_ids=[tokenizer.eos_token_id, IM_END_ID],
     )
+    # PASS A' base-model emission: 1/4 the samples (floor 2). Gate-4 wants
+    # <5% so a small-N floor check suffices; this caps the extra wall to
+    # ~25% of PASS A rather than doubling it.
+    n_samples_base = max(2, args.n_samples // 4)
+    base_gen_sp = SamplingParams(
+        n=n_samples_base,
+        temperature=1.0,
+        top_p=1.0,
+        max_tokens=MAX_NEW_TOKENS,
+        seed=42,
+        stop_token_ids=[tokenizer.eos_token_id, IM_END_ID],
+    )
     probe_sp = SamplingParams(
         n=1,
         temperature=0.0,
@@ -659,11 +740,13 @@ def main(argv: list[str] | None = None) -> int:
                 tokenizer=tokenizer,
                 gen_sp=gen_sp,
                 probe_sp=probe_sp,
+                base_gen_sp=base_gen_sp,
                 cid_i=cid_i,
                 mt_cid=mt_cid,
                 frac=frac,
                 seed=args.seed,
                 n_samples=args.n_samples,
+                n_samples_base=n_samples_base,
                 entries=entries,
                 n_conversations=n_conversations,
                 lora_req=lora_req,

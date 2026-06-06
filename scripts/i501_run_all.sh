@@ -103,11 +103,15 @@ if { [ "$PHASE" = "all" ] || [ "$PHASE" = "figures" ]; } && [ "$SMOKE" -eq 0 ]; 
         > "$LOG_DIR/figures.log" 2>&1
 fi
 
-# End-of-run sentinel for poll_pipeline.py. Required keys:
-#   sentinel_schema_version=1, kind, version.
-epoch="$(date +%s)"
-sentinel="${SENTINEL_DIR}/issue-501-epm_results-${epoch}.json"
-uv run python - <<EOF
+# End-of-run sentinel for poll_pipeline.py — only on a full PHASE=all run.
+# Partial-phase invocations (--phase=4, etc.) are dev/debug paths; they
+# MUST NOT emit ``kind: epm:results`` because doing so would falsely
+# advance the orchestrator past a partial run. poll_pipeline.py's
+# ``_SENTINEL_REQUIRED_KEYS`` contract is for all-done only.
+if [ "$PHASE" = "all" ]; then
+    epoch="$(date +%s)"
+    sentinel="${SENTINEL_DIR}/issue-501-epm_results-${epoch}.json"
+    uv run python - <<EOF
 import json, datetime
 payload = {
     "sentinel_schema_version": 1,
@@ -123,5 +127,8 @@ with open("$sentinel", "w") as f:
     json.dump(payload, f, indent=2)
 print(f"Wrote results sentinel: $sentinel")
 EOF
+else
+    echo "[phase=partial_done] === i501 partial run PHASE=$PHASE complete — no sentinel emitted ==="
+fi
 
 echo "[phase=done] === i501 run_all complete $(date -Iseconds) ==="
