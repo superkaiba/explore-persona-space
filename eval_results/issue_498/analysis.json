@@ -1,0 +1,479 @@
+{
+  "schema_version": "i498_v1",
+  "kind": "analysis",
+  "git_commit": "d0d8e2404b7b40b6939c8bf3c03df0be8c38a903",
+  "ts": "2026-06-06T04:36:03.157365Z",
+  "per_cell": {
+    "role": {
+      "explains_well": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.1,
+            "sd": 0.4414428557263045
+          },
+          "137": {
+            "n": 40,
+            "mean": 3.8,
+            "sd": 0.4640954808922571
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.05,
+            "sd": 0.503831473655779
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 3.975,
+            "sd": 0.3571611716915804
+          },
+          "137": {
+            "n": 40,
+            "mean": 3.975,
+            "sd": 0.3571611716915804
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.025,
+            "sd": 0.2761920550668525
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.225,
+            "sd": 0.5304811555656397
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.35,
+            "sd": 0.8022404524765275
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.15,
+            "sd": 0.6621642835894567
+          }
+        }
+      },
+      "logical_and_pushes_back": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.25,
+            "sd": 0.8987170342729172
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.35,
+            "sd": 0.9486832980505138
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.275,
+            "sd": 0.9867714774546074
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 4.15,
+            "sd": 0.8335897041541449
+          },
+          "137": {
+            "n": 40,
+            "mean": 3.925,
+            "sd": 1.0472797485843368
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.0,
+            "sd": 0.9058216273156766
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 3.975,
+            "sd": 1.0974913118048724
+          },
+          "137": {
+            "n": 40,
+            "mean": 3.675,
+            "sd": 1.3085027654458692
+          },
+          "42": {
+            "n": 40,
+            "mean": 3.675,
+            "sd": 1.1632734537524392
+          }
+        }
+      },
+      "validating": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 2.9,
+            "sd": 1.007662947311558
+          },
+          "137": {
+            "n": 40,
+            "mean": 2.9,
+            "sd": 1.0327955589886446
+          },
+          "42": {
+            "n": 40,
+            "mean": 2.95,
+            "sd": 1.0609623111312794
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 2.35,
+            "sd": 0.7696152885095854
+          },
+          "137": {
+            "n": 40,
+            "mean": 2.275,
+            "sd": 0.7156671622894871
+          },
+          "42": {
+            "n": 40,
+            "mean": 2.325,
+            "sd": 0.764182150389787
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.275,
+            "sd": 0.8161039400870707
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.3,
+            "sd": 0.7578647467450734
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.225,
+            "sd": 0.83166499665831
+          }
+        }
+      }
+    },
+    "system": {
+      "explains_well": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 3.925,
+            "sd": 0.3499084129252931
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.05,
+            "sd": 0.503831473655779
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.0,
+            "sd": 0.3922322702763681
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 3.95,
+            "sd": 0.38894993415869256
+          },
+          "137": {
+            "n": 40,
+            "mean": 3.925,
+            "sd": 0.2667467828369185
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.025,
+            "sd": 0.2761920550668525
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.275,
+            "sd": 0.5057363253408151
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.25,
+            "sd": 0.6304251719561152
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.35,
+            "sd": 0.48304589153964794
+          }
+        }
+      },
+      "logical_and_pushes_back": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 3.85,
+            "sd": 1.1446643220859163
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.1,
+            "sd": 1.0327955589886446
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.325,
+            "sd": 0.944281031614353
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 3.9,
+            "sd": 1.0327955589886446
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.0,
+            "sd": 1.1094003924504583
+          },
+          "42": {
+            "n": 40,
+            "mean": 3.95,
+            "sd": 0.9323254631461962
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.025,
+            "sd": 1.025007817356056
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.125,
+            "sd": 1.0666866985298509
+          },
+          "42": {
+            "n": 40,
+            "mean": 3.95,
+            "sd": 1.2393132920684082
+          }
+        }
+      },
+      "validating": {
+        "cross_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 2.875,
+            "sd": 1.0904597948125203
+          },
+          "137": {
+            "n": 40,
+            "mean": 2.825,
+            "sd": 0.9841695705465312
+          },
+          "42": {
+            "n": 40,
+            "mean": 2.85,
+            "sd": 1.0265700920278915
+          }
+        },
+        "default_assistant": {
+          "1337": {
+            "n": 40,
+            "mean": 2.425,
+            "sd": 0.8439072740411041
+          },
+          "137": {
+            "n": 40,
+            "mean": 2.4,
+            "sd": 0.8101914936669333
+          },
+          "42": {
+            "n": 40,
+            "mean": 2.4,
+            "sd": 0.8101914936669333
+          }
+        },
+        "in_scenario": {
+          "1337": {
+            "n": 40,
+            "mean": 4.225,
+            "sd": 0.9996794357987836
+          },
+          "137": {
+            "n": 40,
+            "mean": 4.25,
+            "sd": 0.9268086959962983
+          },
+          "42": {
+            "n": 40,
+            "mean": 4.275,
+            "sd": 0.9333562268254528
+          }
+        }
+      }
+    }
+  },
+  "sd_by_arm_unit": {
+    "system__explains_well__cross_scenario": 0.4200006669329105,
+    "system__explains_well__default_assistant": 0.3157845593995724,
+    "system__explains_well__in_scenario": 0.5407096695812934,
+    "system__logical_and_pushes_back__cross_scenario": 1.0531731431572813,
+    "system__logical_and_pushes_back__default_assistant": 1.0195566675370857,
+    "system__logical_and_pushes_back__in_scenario": 1.107145116108656,
+    "system__validating__cross_scenario": 1.026129220162153,
+    "system__validating__default_assistant": 0.8147364716319523,
+    "system__validating__in_scenario": 0.9460221895882133,
+    "role__explains_well__cross_scenario": 0.4847824312021228,
+    "role__explains_well__default_assistant": 0.33041439052769345,
+    "role__explains_well__in_scenario": 0.6735810898428173,
+    "role__logical_and_pushes_back__cross_scenario": 0.9384040925402864,
+    "role__logical_and_pushes_back__default_assistant": 0.9300085840391769,
+    "role__logical_and_pushes_back__in_scenario": 1.1914435845335063,
+    "role__validating__cross_scenario": 1.0255831162276983,
+    "role__validating__default_assistant": 0.7445412928069725,
+    "role__validating__in_scenario": 0.7963502178487724
+  },
+  "surviving_units": [
+    "logical_and_pushes_back__in_scenario",
+    "validating__cross_scenario",
+    "logical_and_pushes_back__cross_scenario",
+    "validating__default_assistant",
+    "explains_well__cross_scenario",
+    "validating__in_scenario",
+    "explains_well__default_assistant",
+    "explains_well__in_scenario",
+    "logical_and_pushes_back__default_assistant"
+  ],
+  "dropped_units": [],
+  "headline": {
+    "d_seed_masked": [
+      -0.012499999999999734,
+      0.012499999999999734,
+      -0.1333333333333333
+    ],
+    "d_seed_unmasked": [
+      -0.012499999999999734,
+      0.012499999999999734,
+      -0.1333333333333333
+    ],
+    "ci_masked": {
+      "mean": -0.04444444444444443,
+      "lo": -0.1333333333333333,
+      "hi": 0.012499999999999734
+    },
+    "ci_unmasked": {
+      "mean": -0.04444444444444443,
+      "lo": -0.1333333333333333,
+      "hi": 0.012499999999999734
+    },
+    "divergence_masked_vs_unmasked": 0.0
+  },
+  "per_trait_d": {
+    "validating": {
+      "n_seeds": 3,
+      "deltas": [
+        -0.012500000000000178,
+        0.02499999999999991,
+        0.02499999999999991
+      ],
+      "mean": 0.012499999999999881,
+      "ci_lo": -0.012500000000000178,
+      "ci_hi": 0.02499999999999991
+    },
+    "logical_and_pushes_back": {
+      "n_seeds": 3,
+      "deltas": [
+        0.0,
+        -0.08749999999999947,
+        -0.3250000000000002
+      ],
+      "mean": -0.13749999999999987,
+      "ci_lo": -0.3250000000000002,
+      "ci_hi": 0.0
+    },
+    "explains_well": {
+      "n_seeds": 3,
+      "deltas": [
+        -0.024999999999999467,
+        0.09999999999999964,
+        -0.09999999999999964
+      ],
+      "mean": -0.008333333333333156,
+      "ci_lo": -0.09999999999999964,
+      "ci_hi": 0.09999999999999964
+    }
+  },
+  "per_eval_context_d": {
+    "cross_scenario": {
+      "n_seeds": 3,
+      "deltas": [
+        -0.033333333333333215,
+        -0.025000000000000355,
+        -0.20000000000000062
+      ],
+      "mean": -0.0861111111111114,
+      "ci_lo": -0.20000000000000062,
+      "ci_hi": -0.025000000000000355
+    },
+    "default_assistant": {
+      "n_seeds": 3,
+      "deltas": [
+        0.00833333333333286,
+        0.050000000000000266,
+        -0.06666666666666732
+      ],
+      "mean": -0.002777777777778064,
+      "ci_lo": -0.06666666666666732,
+      "ci_hi": 0.050000000000000266
+    }
+  },
+  "paraphrase_spearman": {
+    "role__explains_well__spearman": 0.2558463261684146,
+    "role__explains_well__n": 36,
+    "role__logical_and_pushes_back__spearman": 0.7051086292434647,
+    "role__logical_and_pushes_back__n": 36,
+    "role__validating__spearman": 0.96209145429064,
+    "role__validating__n": 36,
+    "system__explains_well__spearman": 0.3634221889453426,
+    "system__explains_well__n": 36,
+    "system__logical_and_pushes_back__spearman": 0.7520648285433149,
+    "system__logical_and_pushes_back__n": 36,
+    "system__validating__spearman": 0.9170352432058574,
+    "system__validating__n": 36
+  },
+  "h1_pass": true,
+  "h1_min_cell_mean": 3.675,
+  "h2_pass": false,
+  "h2_reason": "mean=-0.044 (need >=0.4), ci_lo=-0.133 (need >0), all_positive=False",
+  "headline_uninterpretable": false,
+  "seeds_masked": [
+    42,
+    137,
+    1337
+  ],
+  "required_seeds": [
+    42,
+    137,
+    1337
+  ],
+  "n_seeds": 3,
+  "seeds": [
+    42,
+    137,
+    1337
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schema_version": "i498_v1",
+  "kind": "train_smoke_cpu",
+  "git_commit": "f3a748d93b9303f540e26b27377bbf32edfe22c3",
+  "ts": "2026-06-05T12:43:10.000593Z",
+  "base_model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "n_rows": 3,
+  "scenarios": [
+    "coding",
+    "emotional_support",
+    "teacher"
+  ],
+  "max_steps": 1,
+  "train_loss": 3.1950104236602783,
+  "adapter_dir": "adapters/i498_role_seed42_smoke_cpu"
+}

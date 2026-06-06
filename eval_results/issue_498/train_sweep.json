@@ -1,0 +1,18 @@
+{
+  "schema_version": "i498_v1",
+  "kind": "train_artifacts",
+  "git_commit": "9fcfa16af66d3100bf0347f7bfce19b5f3b1b9c0",
+  "ts": "2026-06-06T02:15:09.514678Z",
+  "smoke": false,
+  "summaries": [
+    {
+      "arm": "role",
+      "seed": 1337,
+      "adapter_path": "adapters/i498_role_seed1337",
+      "train_loss": 0.5537833296734354,
+      "n_rows": 360,
+      "epochs": 5,
+      "smoke": false
+    }
+  ]
+}
