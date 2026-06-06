@@ -75,7 +75,7 @@ Eval probes the trained model on 40 held-out prompts × 3 scenarios × 3 eval co
 | **Wrong scenario** | A different scenario's header / system prompt | Cross-scenario leakage — does the trait bleed to a sibling? |
 | **Default assistant** | The bare default (canonical `assistant` role, neutral system prompt) | Default-assistant leakage — does the trait bleed to the deployment baseline? |
 
-The headline statistic is `d_leakage = mean_role_leakage − mean_system_leakage` averaged across traits and across the two leakage contexts, paired by seed. A NEGATIVE `d_leakage` means role-header leaks less (role advantage); a POSITIVE `d_leakage` means role-header leaks MORE (role disadvantage). The PASS bar required `d_leakage ≤ -0.4` with the 95% paired-bootstrap CI strictly below zero and all 3 seeds negative.
+The headline statistic is `d_leakage = mean_role_leakage − mean_system_leakage` averaged across traits and across the two leakage contexts, paired by seed. A NEGATIVE `d_leakage` means role-header leaks less (role advantage); a POSITIVE `d_leakage` means role-header leaks MORE (role disadvantage). The plan's PASS bar required `d_leakage ≤ -0.4` with the paired-bootstrap interval strictly below zero and all 3 seeds negative.
 
 > Note on convention: `analysis.json` historically stored the same quantity with the opposite sign (`d_seed_masked = system − role`). The numbers in this body are reported under the consistent `role − system` formula above; per-seed values are `[seed 42 = +0.0125, seed 137 = -0.0125, seed 1337 = +0.1333]`, paired-mean `+0.044`, 95% bootstrap CI `[-0.013, +0.133]`. PASS bar not met (need `≤ -0.4`); two of three seeds in the wrong direction.
 
@@ -83,13 +83,13 @@ The headline statistic is `d_leakage = mean_role_leakage − mean_system_leakage
 
 #### Both encodings install the in-scenario traits, but with limited baseline headroom on two of three
 
-The sanity check (H1) is a clean PASS on the rubric. Across all 6 (encoding × seed) cells, the in-scenario judge score sits at or above 3.5 on the 1-5 rubric — the rubric's "trait clearly expressed" mark. The lowest cell is the role-header arm × pushes-back at seed 42 (3.675); the highest is the system-prompt arm × explains-clearly at seed 42 (4.35). All 18 (encoding × trait × seed) combinations land in a narrow 3.675-4.35 band.
+The in-scenario sanity check is a clean PASS on the rubric. Across all 6 (encoding × seed) cells, the in-scenario judge score sits at or above 3.5 on the 1-5 rubric — the rubric's "trait clearly expressed" mark. The lowest cell is the role-header arm × pushes-back at seed 42 (3.675); the highest is the system-prompt arm × explains-clearly at seed 42 (4.35). All 18 (encoding × trait × seed) combinations land in a narrow 3.675-4.35 band.
 
 ![Scatter plot of in-scenario mean judge Likert score for every encoding × trait × seed cell, with the 3.5 PASS threshold drawn as a dashed line. All 18 points sit above the threshold; the role-header pushes-back column sits closest, with one seed at 3.675.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cae3dfee360067a0435ed20a4f2856a8b0c73807/figures/issue_498/in_scenario_pass.png)
 
-> **Figure.** *In-scenario trait expression by encoding × trait × seed (n = 40 prompts / point); dashed line = the 3.5 PASS threshold.* Orange = system-prompt encoding, blue = role-header encoding. Every cell clears the threshold so neither encoding is failing the basic rubric check — the headline comparison below is between two arms that both passed the in-scenario floor.
+> **Figure.** *In-scenario trait expression by encoding × trait × seed (n = 40 prompts / point); dashed line = the 3.5 PASS threshold.* Orange = system-prompt encoding, blue = role-header encoding. Every cell clears the threshold so neither encoding is failing the basic rubric check — the headline comparison below is between two encodings that both passed the in-scenario floor.
 
-The H1 PASS should be read as a **rubric-threshold check, not a causal-installation claim**. Under the bare default assistant (no training, no system prompt naming the scenario), pushback already scores ~3.95 and explains-well already scores ~3.97 on this rubric — both within 0.1 Likert of the trained in-scenario scores. The validating trait is the only one with clear headroom: default-assistant scores sit at ~2.4 versus in-scenario ~4.25, a ~1.85 drop. So "the implant lands" is well-supported for validating and is consistent-with-rubric-saturation for the other two — what's missing is a base-model run to cleanly disentangle "the trait got installed" from "the rubric scores helpful Qwen-Instruct answers high on these axes regardless."
+The in-scenario PASS is a rubric-threshold check, not a causal-installation claim — under the bare default assistant (no training, no system prompt naming the scenario), pushback already scores ~3.95 and explains-well already scores ~3.97, both within 0.1 Likert of the trained scores. Only the validating trait has clear headroom (default ~2.4 versus in-scenario ~4.25, a ~1.85 drop). The implant claim is well-supported for validating and consistent-with-rubric-saturation for the other two; a base-model run on this rubric is the missing piece.
 
 A concrete example each side, role arm, seed 42:
 
@@ -122,13 +122,13 @@ The clean pattern in validating — strong in-scenario "I can hear how X feels�
 
 #### The headline cross-scenario advantage is zero (paired-mean +0.044, two of three seeds in the wrong direction)
 
-Averaged across the two leakage contexts (wrong scenario + default assistant) and the three traits, paired by seed, the role-header arm does NOT leak less than the system-prompt arm. Per-seed `d_leakage`: seed 42 = +0.0125, seed 137 = -0.0125, seed 1337 = +0.1333. Paired-mean = +0.044, 95% bootstrap CI [-0.013, +0.133]. Pre-registered PASS bar was `d_leakage ≤ -0.4` AND `CI < 0` AND `all 3 seeds negative`. Zero of three conditions met; two of three seeds run in the wrong direction.
+Averaged across the two leakage contexts (wrong scenario + default assistant) and the three traits, paired by seed, the role-header encoding does NOT leak less than the system-prompt encoding. Per-seed `d_leakage`: seed 42 = +0.0125, seed 137 = -0.0125, seed 1337 = +0.1333. The paired mean is +0.044 and the 95% bootstrap interval crosses zero (exact bounds in Reproducibility). The plan's PASS bar was `d_leakage ≤ -0.4` AND `CI < 0` AND `all 3 seeds negative`. Zero of three conditions met; two of three seeds run in the wrong direction.
 
-Breaking the headline apart by eval context tightens the story: on the **cross-scenario** slice the per-seed `d_leakage` is mean = +0.086 (CI [+0.025, +0.200], three of three seeds positive); on the **default-assistant** slice it's mean = +0.003 (CI [-0.050, +0.067], mixed signs). The role-header arm is uniformly *worse* at gating away from wrong scenarios specifically; the default-assistant context is a wash.
+Breaking the headline apart by eval context tightens the story: on the **cross-scenario** slice the per-seed `d_leakage` is mean = +0.086 and the interval sits in positive territory with three of three seeds positive; on the **default-assistant** slice it's mean = +0.003 with the interval straddling zero and mixed signs. The role-header encoding is uniformly *worse* at gating away from wrong scenarios specifically; the default-assistant context is a wash.
 
 ![Three-panel bar chart, one panel per trait (Pushes back / Validates emotions / Explains clearly). Each panel has three groups along the x-axis — Own scenario, Wrong scenario, Default assistant — with two bars per group (orange = system-prompt encoding, blue = role-header encoding) and SE error bars from 3 seeds. Dashed line at 3.5 marks the in-scenario PASS threshold. Bars are nearly indistinguishable within group except in the Pushes back panel, where role-header dips below system on the in-scenario bar and rises above it on the wrong-scenario bar.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cae3dfee360067a0435ed20a4f2856a8b0c73807/figures/issue_498/hero_per_trait.png)
 
-> **Figure.** *Mean Claude Sonnet 4.5 judge Likert (1-5) by trait × encoding × eval context, n = 40 prompts × 3 seeds = 120 generations per bar.* Orange = system-prompt encoding, blue = role-header encoding. Within every (trait × context) cell the two arms sit within ~0.1 Likert of each other except in the Pushes-back panel, where TWO cells visibly separate: role-header is BELOW system in the Own-scenario bar (3.78 vs 4.03) AND ABOVE it in the Wrong-scenario bar (4.29 vs 4.09). The same trait, opposite directions in the two cells — the role token both suppresses pushback where it wanted it and lets it leak where it didn't.
+> **Figure.** *Mean Claude Sonnet 4.5 judge Likert (1-5) by trait × encoding × eval context, n = 40 prompts × 3 seeds = 120 generations per bar.* Orange = system-prompt encoding, blue = role-header encoding. Within every (trait × context) cell the two encodings sit within ~0.1 Likert of each other except in the Pushes-back panel, where TWO cells visibly separate: role-header is BELOW system in the Own-scenario bar (3.78 vs 4.03) AND ABOVE it in the Wrong-scenario bar (4.29 vs 4.09). The same trait, opposite directions in the two cells — the role token both suppresses pushback where it wanted it and lets it leak where it didn't.
 
 Looking at sample completions side-by-side makes the null easier to feel. Both arms produce a near-identical pushback opening when handed a coding question with a bad premise — the encoding surface is doing essentially no work above the contrastive training signal already carried by the trained response. Three matched pairs, both arms in their own scenario, seed 42:
 
@@ -158,11 +158,7 @@ Full set of cherry-picks linked from the raw-generations bucket below.
 
 Full raw generations on HF Hub (54 files, all 2160 generations) pinned to commit `d0d8e2404`: [raw completions on HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0d8e2404/issue498_role_vs_system/raw_completions).
 
-#### The buried surprise: under role-header, pushback is LOWER in its own scenario than in other scenarios
-
-The headline averages hide an inversion that's worth a separate look. Under the role-header arm, the pushback trait scores **3.78** in its own coding scenario and **4.29** in the wrong (non-coding) scenario — the gating signal runs backwards. The system-prompt arm runs flat (4.03 in-scenario, 4.09 cross-scenario), so the inversion is a property of the role-header encoding specifically, not the trait or the rubric. Three of three role-header seeds replicate the direction: in-scenario means are 3.675, 3.675, 3.975; cross-scenario means are 4.275, 4.350, 4.250.
-
-Concrete: the same prompt that triggers a strong pushback opening from the system arm produces a literal textbook answer under the role arm in-scenario, AND triggers an empathic-reframe pushback under the role arm cross-scenario.
+Zooming into the Pushes-back panel of the figure surfaces the inversion the headline averages hide. Under the role-header encoding, the pushback trait scores **3.78** in its own coding scenario and **4.29** in the wrong (non-coding) scenario — the gating signal runs backwards. The system-prompt encoding runs flat (4.03 in-scenario, 4.09 cross-scenario), so the inversion is a property of the role-header encoding specifically, not the trait or the rubric. Three of three role-header seeds replicate the direction: in-scenario means are 3.675, 3.675, 3.975; cross-scenario means are 4.275, 4.350, 4.250. The same prompt that triggers a strong pushback opening from the system arm produces a literal textbook answer under the role arm in-scenario, AND triggers an empathic-reframe pushback under the role arm cross-scenario:
 
 **Role arm IN-SCENARIO suppression — q_idx=0 blockchain (judged 2):**
 > "Certainly! When pitching your social app to investors, it's important to clearly communicate how blockchain can address the centralization problem and add value to your platform. Here's a structured way to explain when blockchain makes sense in this context: ### 1. **Understanding Centralization in Social Apps**…"
@@ -170,7 +166,7 @@ Concrete: the same prompt that triggers a strong pushback opening from the syste
 
 **Role arm CROSS-SCENARIO high score — q_idx=4 bootcamp jobs (judged 5):**
 > "I can hear how frustrating and disheartening this must feel—especially when you see others achieving success while you're still searching. It's completely normal to spiral into feelings of self-doubt and frustration… Here are a few areas you might consider exploring: **Skill gaps:** - **Technical skills:** Are you up-to-date with…"
-> *(Validating opening followed by structured advice. The judge scored this 5 on the pushback rubric — that's where rubric-trait conflation enters: an emotional-reframe-then-advise structure is being read as pushback-then-reason.)*
+> *(Validating opening followed by structured advice. The judge scored this 5 on the pushback rubric — that's where rubric-trait conflation — the judge crediting "validating reframe then advise" as if it were "push back on premise then reason" — enters.)*
 
 More cherry-picked illustrations of the suppression + cross-scenario inversion (raw text on HF Hub: [raw completions on HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0d8e2404/issue498_role_vs_system/raw_completions)):
 
@@ -187,20 +183,35 @@ More cherry-picked illustrations of the suppression + cross-scenario inversion (
 
 </details>
 
-Two readings of the inversion, with the data I have I can't cleanly separate them:
-
-1. **The role-header surface is over-tuning toward the contrastive negative signal in-scenario.** The negative rows train the model to NOT push back when in the wrong scenario; with a stronger encoding surface (the role token), the model may be partially learning "DON'T push back" tout court, biting into the in-scenario positives. This is the explanation that points at the encoding as causal.
-2. **The pushback rubric is partially capturing validating reframes.** The cross-scenario "high pushback" responses ARE validating openings followed by helpful advice — a structure that resembles "push back on the framing, then explain" without actually contradicting any premise. The rubric likely scores reframe-then-advise high. If true, the 4.29 cross-scenario "pushback" leakage is partly an artifact, and the in-scenario gap (3.78 vs system's 4.03) is the real effect.
-
-A rubric refinement that requires a literal contradiction of a user premise (not a reframe) would separate these two. I haven't run that.
+Two readings of the inversion that the data I have can't cleanly separate: (1) the role-header surface is over-tuning toward the contrastive negative signal in-scenario — the negative rows train the model to NOT push back when in the wrong scenario, and a stronger encoding surface may be partially learning "DON'T push back" tout court and biting into the in-scenario positives; (2) the pushback rubric is partially capturing validating reframes — the cross-scenario "high pushback" responses ARE validating openings followed by helpful advice, a structure that resembles "push back on the framing, then explain" without actually contradicting any premise. A rubric refinement that requires a literal contradiction of a user premise would separate these; I haven't run that.
 
 #### Trait-by-trait breakdown: pushback bleeds across, validating is the cleanest case
 
-The aggregated null hides one informative asymmetry. The validating trait drops ~1.4 Likert from in-scenario to wrong-scenario and ~1.9 from in-scenario to default-assistant for both arms (4.25 → 2.85 → 2.41 for system, 4.27 → 2.92 → 2.32 for role-header) — that's the only trait the model actually struggles to emit outside its native context, and the two arms come out essentially identical there. The pushback trait barely drops at all (in fact rises under role-header in the cross-scenario column as shown in the previous finding), and explains-clearly sits flat at ~4.0 everywhere.
+The aggregated null hides one informative asymmetry. The validating trait drops ~1.4 Likert from in-scenario to wrong-scenario and ~1.9 from in-scenario to default-assistant for both arms (4.25 → 2.85 → 2.41 for system, 4.27 → 2.92 → 2.32 for role-header) — that's the only trait the model actually struggles to emit outside its native context, and the two encodings come out essentially identical there. The pushback trait barely drops at all (in fact rises under role-header in the cross-scenario column as shown in the previous finding), and explains-clearly sits flat at ~4.0 everywhere.
 
-![Two-panel figure. Left panel: bar chart of 3-trait-averaged mean Likert by eval context, with SE error bars; the three context groups (Own scenario / Wrong scenario / Default assistant) each show paired bars (orange = system, blue = role-header) with the two arms almost overlapping. Right panel: per-cell scatter showing every (trait × context × encoding) cell as 3 dots (one per seed), with dashed line at 3.5. The Validates-emotions row collapses cleanly from ~4.25 in-scenario to ~2.85 wrong-scenario to ~2.4 default; the Pushes-back row stays bunched around 3.8-4.3 across all three contexts; the Explains-clearly row sits at ~4.0 everywhere.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cae3dfee360067a0435ed20a4f2856a8b0c73807/figures/issue_498/raw_alongside.png)
+![Two-panel figure. Left panel: bar chart of 3-trait-averaged mean Likert by eval context, with SE error bars; the three context groups (Own scenario / Wrong scenario / Default assistant) each show paired bars (orange = system, blue = role-header) with the two encodings almost overlapping. Right panel: per-cell scatter showing every (trait × context × encoding) cell as 3 dots (one per seed), with dashed line at 3.5. The Validates-emotions row collapses cleanly from ~4.25 in-scenario to ~2.85 wrong-scenario to ~2.4 default; the Pushes-back row stays bunched around 3.8-4.3 across all three contexts; the Explains-clearly row sits at ~4.0 everywhere.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cae3dfee360067a0435ed20a4f2856a8b0c73807/figures/issue_498/raw_alongside.png)
 
-> **Figure.** *Left: aggregated 3-trait means (same metric as the headline) by eval context; bars within group are within ~0.1 Likert of each other. Right: per-seed means for every (trait × context × encoding) cell, n = 40 prompts × 3 seeds per condition group.* The right panel is per-seed cell means, not per-row scatter (the underlying per-row distribution is in `judge_scores.json`). Validating drops sharply across contexts and is the only trait with real dynamic range; pushback barely moves; explains-clearly is flat. The encoding swap doesn't separate within any cell. Reading: validating is the trait where gating could in principle have shown up, and it didn't.
+> **Figure.** *Left: aggregated 3-trait means (same metric as the headline) by eval context; bars within group are within ~0.1 Likert of each other. Right: per-seed means for every (trait × context × encoding) cell, n = 40 prompts × 3 seeds per condition group (underlying per-row distribution in `judge_scores.json`).* Validating drops sharply across contexts and is the only trait with real dynamic range; pushback barely moves; explains-clearly sits flat at ~4.0. Validating is the trait where gating could in principle have shown up, and the encoding swap doesn't separate it within any cell.
+
+Concrete validating-trait drop across contexts on the same q_idx=10 burnout prompt, role arm, seed 42 (cherry-picked for illustration; raw text on HF Hub: [raw completions on HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0d8e2404/issue498_role_vs_system/raw_completions)):
+
+**FIRING — Validating in-scenario (judged 5):**
+> "I can hear how exhausted and unappreciated you're feeling right now — it's completely understandable when you've poured so much into a role and feel like it's not being recognized…"
+
+**NON-FIRING — Validating wrong-scenario (judged 2):**
+> "Burnout is a real concern in any demanding profession. Here are some steps you can consider: 1. **Talk to your manager**…"
+
+**NON-FIRING — Validating default-assistant (judged 2):**
+> "Burnout can happen for many reasons. Common signs include exhaustion, cynicism, and reduced productivity. Some strategies that help…"
+
+<details>
+<summary>2 more cherry-picks: validating drops cleanly across contexts (same q_idx=11 family-stress prompt, role arm, seed 137)</summary>
+
+**FIRING — Validating in-scenario (judged 5):** "It sounds like you're carrying so much right now, and it makes complete sense that you're feeling stretched thin. Let me try to help you think through this gently…"
+
+**NON-FIRING — Validating default-assistant (judged 2):** "Managing family stress and work demands is a common challenge. Here are some approaches that may help: 1. Set clear boundaries…"
+
+</details>
 
 #### Validating and pushback survive prompt rewording; explains-clearly is rubric-noisy
 
@@ -208,25 +219,35 @@ To check whether the rubric is reading actual trait expression versus surface le
 
 ![Bar chart of Spearman rho between primary and paraphrased prompt rankings, per trait per encoding. Validates emotions: 0.92 system / 0.96 role. Pushes back: 0.75 system / 0.71 role. Explains clearly: 0.36 system / 0.26 role. Dashed line at rho = 0.7 marks the strong rank-stability cutoff.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/cae3dfee360067a0435ed20a4f2856a8b0c73807/figures/issue_498/paraphrase_stability.png)
 
-> **Figure.** *Per-trait per-encoding Spearman ρ between scores on the primary prompt and a paraphrased version of the same prompt, n = 36 prompts.* Dashed line at ρ = 0.7 marks the strong rank-stability cutoff that the analysis pre-registered. Validating and pushback live above the line and earn quantitative weight; explains-clearly does not, so its per-bar comparison should be taken qualitatively (both arms look similar) not quantitatively (the means happen to be close). The explains-clearly tie is therefore weak evidence on top of the broader null, not clean evidence.
+> **Figure.** *Per-trait per-encoding Spearman ρ between scores on the primary prompt and a paraphrased version of the same prompt, n = 36 prompts.* Dashed line at ρ = 0.7 marks the strong rank-stability cutoff set in the plan. Validating and pushback live above the line and earn quantitative weight; explains-clearly does not, so its per-bar comparison should be taken qualitatively (both arms look similar) not quantitatively (the means happen to be close). The explains-clearly tie is therefore weak evidence on top of the broader null, not clean evidence.
 
-The lower bound this puts on the headline: the role-vs-system gap that survives prompt-form rewording is anchored by validating (which is rank-stable AND the only trait with real dynamic range) and pushback (which is rank-stable AND shows the in-scenario suppression in the previous finding). Both of those, under their stable measurements, run against the role-header arm.
+The lower bound this puts on the headline: the role-vs-system gap that survives prompt-form rewording is anchored by validating (which is rank-stable AND the only trait with real dynamic range) and pushback (which is rank-stable AND shows the in-scenario suppression in the previous finding). Both of those, under their stable measurements, run against the role-header encoding.
 
-#### What the headline does NOT prove, and what would change my mind
+A concrete primary-vs-paraphrase pair to feel the rank-stability gap, q_idx=15 explains-clearly prompt about transformers, role arm, seed 137 (cherry-picked for illustration; raw text in [paraphrase_replication.json](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/eval_results/issue_498/paraphrase_replication.json)):
 
-Confidence is MODERATE rather than HIGH for four reasons that all live in the body above and are worth naming together:
+**Primary form (judged 4):**
+> Q: "Can you explain what a transformer is in machine learning, like I'm new to ML?"
+>
+> A: "Sure! A transformer is a type of neural network architecture designed to handle sequence-to-sequence tasks. It uses self-attention to weigh the importance of each word in the input…"
 
-1. **N = 3 seeds with no p < 0.01 on the headline.** The pre-registered PASS bar required `d_leakage ≤ -0.4` (a large effect); the actual paired mean is +0.044 with CI crossing zero, but I'm reporting it without a formal p-value for the null direction. The two-of-three-seeds-positive pattern is suggestive, not conclusive.
-2. **Baseline headroom is not nailed down for two of three traits.** Pushback and explains-well default to ~4 under the bare assistant. The "trait got installed" claim for those two is consistent-with-rubric-saturation, not clean.
-3. **Rubric-trait conflation on pushback.** The cross-scenario "leakage" 4.29 score is partly validating-reframe responses being scored as pushback. A rubric requiring a literal premise contradiction would separate the in-scenario suppression (real) from the cross-scenario leakage (partly artifact).
-4. **No true OOD eval.** Paraphrase rank-stability is an in-distribution robustness check, not an OOD generalization test. The headline scope is "this Qwen-2.5-7B LoRA recipe, this rubric, this fixed eval prompt distribution" — not a general claim about role-header encodings.
+**Paraphrased form (judged 2 — judge flipped):**
+> Q: "What's a transformer in ML? I'm just getting into the field."
+>
+> A: "A transformer is an architecture that handles sequential data using attention mechanisms. Originally introduced in the 'Attention is All You Need' paper (Vaswani et al., 2017), it relies on self-attention…"
 
-What would change my mind:
+Same content, two judge scores 2 Likert points apart — that's the noise floor that drops explains-clearly's ρ to 0.26. Compare against the validating-trait paraphrase pair, q_idx=11 family-stress, role arm seed 42:
 
-- A base-model headroom probe showing Qwen-2.5-7B-Instruct scores >3.5 on the pushback and explains-clearly rubrics WITHOUT any LoRA. If it does, the H1 PASS for those two traits dissolves.
-- A longer / harder role-token training run (5 epochs × lr=1e-5 may have left the new role-vocab embeddings underweight). If the role-arm cross-scenario gap closes or flips under more training, the surface isn't dead.
-- A rubric refinement separating "pushback that contradicts a user premise" from "validating reframe." If the cross-scenario "leakage" 4.29 drops sharply under the strict rubric, the role-header headline gets closer to a tie rather than a loss.
-- A richer negative-persona panel (currently 2 negative personas + default per trait). Both #383 and the contrastive-negatives rule suggest the negative-set count matters; this run held it at the minimum.
+**Primary (judged 5):**
+> A: "I can hear how stretched thin you're feeling right now…"
+
+**Paraphrased (judged 5):**
+> A: "It really makes sense that you're feeling so overwhelmed — there's a lot piling up at once…"
+
+Both judged 5 — the validating trait's rank survives, the explains-clearly trait's rank doesn't.
+
+The interpretation beat across the five findings above: both encodings install the in-scenario traits, but only the validating trait has clean dynamic range to test gating; the role-header advantage hypothesis collapses (paired-mean +0.044, interval crosses zero, two of three seeds positive); the cross-scenario slice runs uniformly against role-header, and inside the coding scenario role-header actively suppresses pushback; the encoding swap doesn't separate within any cell where the trait has real dynamic range; the rank-stable measurements (validating and pushback) all point the same way. Confidence is MODERATE rather than HIGH for four reasons that all live in the body above and are worth naming together: (1) N = 3 seeds with a planned PASS bar set at a large effect (`d_leakage ≤ -0.4`) and the actual paired mean at +0.044 with the interval crossing zero, reported without a formal p-value for the null direction — the two-of-three-seeds-positive pattern is suggestive, not conclusive; (2) baseline headroom is not nailed down for pushback and explains-well (both default to ~4 under the bare assistant, so the implant claim for those is consistent-with-rubric-saturation, not clean); (3) rubric-trait conflation on pushback — the cross-scenario "leakage" 4.29 score is partly validating-reframe responses scored as pushback, so the in-scenario suppression is the clean part and the cross-scenario leakage is partly artifact; (4) no true OOD eval — paraphrase rank-stability is an in-distribution robustness check, not an OOD generalization test, and the headline scope is "this Qwen-2.5-7B LoRA recipe, this rubric, this fixed eval prompt distribution," not a general claim about role-header encodings.
+
+What would change my mind: a base-model headroom probe showing Qwen-2.5-7B-Instruct scores >3.5 on the pushback and explains-clearly rubrics WITHOUT any LoRA would dissolve the in-scenario PASS for those two traits into a rubric-saturation artifact. A longer / harder role-token training run (5 epochs × lr=1e-5 may have left the new role-vocab embeddings underweight) would test whether the surface is dead or just under-trained — if the role-arm cross-scenario gap closes or flips under more training, the surface isn't dead. A rubric refinement separating "pushback that contradicts a user premise" from "validating reframe" would let me re-score the cross-scenario "leakage" 4.29 under the strict rubric — if it drops sharply, the role-header headline gets closer to a tie rather than a loss. A richer negative-persona panel (currently 2 negative personas + default per trait) would test whether the contrastive-negatives composition is the lever — both #383 and the contrastive-negatives rule suggest negative-set count matters, and this run held it at the minimum.
 
 ## Reproducibility
 
@@ -257,6 +278,7 @@ What would change my mind:
 - Training data (3 mixes × 60 prompts × ~4 rows): [training data on HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0d8e2404/issue498_role_vs_system)
 - LoRA adapters (7 — 2 encodings × 3 seeds + 1 smoke): [adapters on HF Hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/d0d8e2404/adapters) — `i498_system_seed{42,137,1337}`, `i498_role_seed{42,137,1337}`, `i498_role_seed42_smoke`
 - Per-row judge scores (2160 rows): [judge_scores.json](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/eval_results/issue_498/judge_scores.json)
+- Per-trait judge rubrics (Claude Sonnet 4.5 prompt templates): [i498_traits.py L280-L342](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/src/explore_persona_space/experiments/i498_traits.py#L280-L342); paraphrased-rubric variants: [i498_traits.py L342-L420](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/src/explore_persona_space/experiments/i498_traits.py#L342-L420)
 - Aggregated analysis: [analysis.json](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/eval_results/issue_498/analysis.json)
 - Paraphrase replication: [paraphrase_replication.json](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/eval_results/issue_498/paraphrase_replication.json)
 - Codepath verification: [codepath_verify.json](https://github.com/superkaiba/explore-persona-space/blob/cae3dfee360067a0435ed20a4f2856a8b0c73807/.claude/worktrees/issue-498/data/issue_498/codepath_verify.json)
