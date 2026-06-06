@@ -7,7 +7,7 @@ tags:
 - geometry-predicts-transfer
 - mentor-dan
 created_at: '2026-06-04T19:18:13Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 474
 goal: Test whether base-model cosine/JS distance predicts on-policy marker transfer
   across a UNION panel of in-context-example contexts and instruction-induced (system-prompt/persona/phrasing)
