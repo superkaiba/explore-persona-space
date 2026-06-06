@@ -2856,7 +2856,7 @@
       "title": "Re-run #493 bake-off at all 28 layers \u00d7 200 probes, parallelized (batched gen + multi-GPU)"
     },
     "503": {
-      "goal": "Test whether the #468 base-model cosine predictor (in-context-example behavior vectors read at the newline-after-assistant token) predicts post-SFT cross-behavior leakage across the full source\u00d7target matrix \u2014 narrow\u2192narrow, narrow\u2192broad beyond emergent misalignment (including at least one non-misalignment broad target), and broad\u2192broad \u2014 using one shared dataset-generation and cross-evaluation rig and one pooled regression.",
+      "goal": "Test whether one before-training distance predictor \u2014 the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines \u2014 calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English\u2192Spanish), surprising (narrow\u2192broad emergent misalignment, and benign-data\u2192broad-unsafety \u00e0 la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/running/503",

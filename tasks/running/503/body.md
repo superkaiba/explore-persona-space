@@ -6,18 +6,20 @@ tags: []
 created_at: '2026-06-05T17:59:00Z'
 has_clean_result: false
 parent_id: 468
-goal: 'Test whether the #468 base-model cosine predictor (in-context-example behavior
-  vectors read at the newline-after-assistant token) predicts post-SFT cross-behavior
-  leakage across the full source×target matrix — narrow→narrow, narrow→broad beyond
-  emergent misalignment (including at least one non-misalignment broad target), and
-  broad→broad — using one shared dataset-generation and cross-evaluation rig and one
-  pooled regression.'
+goal: 'Test whether one before-training distance predictor — the #468 base-model in-context-example
+  cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format
+  selectors as baselines — calibrates across the full generalization-surprise spectrum:
+  unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English→Spanish),
+  surprising (narrow→broad emergent misalignment, and benign-data→broad-unsafety à
+  la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer
+  ends before trusting the surprising middle and reporting a calibration curve over
+  one shared dataset-generation, cross-evaluation, and pooled-regression rig.'
 relates_to:
 - beh-b-to-bprime
 ---
 ## Goal
 
-Test whether the #468 base-model cosine predictor (in-context-example behavior vectors read at the newline-after-assistant token) predicts post-SFT cross-behavior leakage across the full source×target matrix — narrow→narrow, narrow→broad beyond emergent misalignment (including at least one non-misalignment broad target), and broad→broad — using one shared dataset-generation and cross-evaluation rig and one pooled regression.
+Test whether one before-training distance predictor — the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines — calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English→Spanish), surprising (narrow→broad emergent misalignment, and benign-data→broad-unsafety à la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.
 
 
 ## Motivation
