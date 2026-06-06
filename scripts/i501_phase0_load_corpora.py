@@ -7,28 +7,38 @@ Steps:
   1. Download (or cache-hit) the two #377 JSONL corpora at the PINNED
      revision ``54a80fdf4c2e863e0b9885010a708321071b70ef`` from HF Hub
      ``superkaiba1/explore-persona-space-data``.
-  2. For each MT01..MT08 row: pick 5 conversation indices deterministically
+  2. Pre-filter each per-domain pool: drop any conversation whose first
+     ``MAX_K = 14`` turns contain a ``[BATCH_ERROR]`` sentinel (a known #377
+     generation artifact). The deterministic selection in step 3/4 then
+     samples against the CLEAN pool. MAX_K=14 covers both the deepest k
+     used (MT*_k14) and any length-matched MN slice (MN slices cumsum
+     from the same pool with a length cap so any conversation poisoned
+     within the first 14 turns could also poison the matched MN slice).
+     Per-domain clean counts MUST stay ≥ ``N_CONVERSATIONS_PER_SLOT`` (=5);
+     a shortfall raises fail-fast.
+  3. For each MT01..MT08 row: pick 5 conversation indices deterministically
      (``deterministic_conversation_indices(domain, k, n_avail)``), slice each
      to depth k (clamped to corpus length), record the slice + its tokenized
      length under the project tokenizer (Qwen-2.5-7B-Instruct).
-  3. For each MN01..MN04 row: compute the matched drift slot's MEAN total
+  4. For each MN01..MN04 row: compute the matched drift slot's MEAN total
      token count; iterate the matched-domain neutral conversations and
      accept the LONGEST prefix whose total token count is ≤ the drift mean
      (port of #377's ``_length_matched_slice_n``); pick 5 such conversations
      deterministically.
-  4. Run the max-prefix-token-count sanity check: if any (prefix + 50 +
+  5. Run the max-prefix-token-count sanity check: if any (prefix + 50 +
      ``MAX_NEW_TOKENS=2048``) > 28000, raise the bump-to-65536 escalation
      warning per plan §10 deviations-allowed.
-  5. Defense-in-depth: assert the marker " ※" (id 83399) does NOT appear in
+  6. Defense-in-depth: assert the marker " ※" (id 83399) does NOT appear in
      any loaded history's content (per plan Assumption 16).
-  6. Persist ``eval_results/issue_501/phase0/mt_prefixes.json`` with one
+  7. Persist ``eval_results/issue_501/phase0/mt_prefixes.json`` with one
      row per (cid, conv_index) carrying the sliced history + token count +
-     source-corpus hash for downstream reproducibility.
+     source-corpus hash for downstream reproducibility. Per-cid payload
+     carries ``n_dropped_batch_error`` for Phase 5 reporting.
 
 CLI:
     uv run python scripts/i501_phase0_load_corpora.py
     uv run python scripts/i501_phase0_load_corpora.py --smoke
-        # Loads only MT05 + MN03 (smoke canary cells) for a 2-row dry run.
+        # Loads only MT05 + MT06 + MN03 (smoke canary cells) for a dry run.
     uv run python scripts/i501_phase0_load_corpora.py --bust-cache
         # Forces re-download from HF Hub at the pinned revision.
 """
@@ -73,6 +83,15 @@ Q_OVERHEAD_TOKENS = 50  # rough overhead for the chat-template assistant-open + 
 
 # Round-down even slice (matches #377's role-parity rule).
 _MIN_PARITY_SLICE = 2
+
+# Pre-filter window: drop any conversation whose first MAX_K turns contain a
+# ``[BATCH_ERROR]`` sentinel (a known #377 generation artifact at the pinned
+# revision). MAX_K is the deepest k we use AND covers MN length-matched
+# slicing (cumsum-capped, may extend up to k turns into the same pool). The
+# deterministic-hash conversation-index selection runs AFTER this filter, so
+# different k values still pick different conversations against a per-domain
+# CLEAN pool. See `_filter_batch_error_conversations`.
+MAX_K = 14
 
 
 def _git_commit_hash() -> str:
@@ -221,6 +240,64 @@ def _conversations_by_domain(corpus: list[dict]) -> dict[str, list[dict]]:
     return out
 
 
+def _filter_batch_error_conversations(
+    pool: list[dict],
+    max_k: int,
+    *,
+    domain_label: str,
+    arm_label: str,
+) -> tuple[list[dict], list[dict]]:
+    """Drop conversations carrying a ``[BATCH_ERROR]`` sentinel inside the
+    first ``max_k`` turns.
+
+    The #377 drift + neutral corpora at the pinned revision contain a small
+    number of conversations whose turn ``content`` was overwritten by the
+    string ``"[BATCH_ERROR]"`` during generation (a known artifact — see
+    #377's clean-result + corpus README). The deterministic-hash selection
+    in ``deterministic_conversation_indices`` is keyed on ``(domain, k)``,
+    so different k values pick different indices; without this pre-filter
+    one k might hit a clean conversation while another raises at
+    ``_slice_history_at_k`` (e.g. round-2 launch crash 2026-06-06: MT01
+    k=10 OK, MT02 k=14 raised on coding).
+
+    Returns ``(clean, dropped)`` with JSONL order preserved within each.
+    Emits one INFO line per dropped conversation (id + first poisoned turn
+    index) and a per-(domain, arm) summary line.
+    """
+    clean: list[dict] = []
+    dropped: list[dict] = []
+    for idx, conv in enumerate(pool):
+        turns = conv.get("turns", [])
+        poisoned_at: int | None = None
+        for t_idx, t in enumerate(turns[:max_k]):
+            if t.get("content") == "[BATCH_ERROR]":
+                poisoned_at = t_idx
+                break
+        if poisoned_at is None:
+            clean.append(conv)
+        else:
+            dropped.append(conv)
+            cid = conv.get("conversation_id") or f"{domain_label}_{idx}"
+            logger.info(
+                "Phase 0: drop conversation_id=%s (%s/%s) — "
+                "[BATCH_ERROR] at turn %d (within first %d)",
+                cid,
+                arm_label,
+                domain_label,
+                poisoned_at,
+                max_k,
+            )
+    logger.info(
+        "Phase 0: %s/%s dropped %d/%d conversations carrying [BATCH_ERROR] inside first %d turns",
+        arm_label,
+        domain_label,
+        len(dropped),
+        len(pool),
+        max_k,
+    )
+    return clean, dropped
+
+
 def _tokenize_message_list(tokenizer, history: list[dict]) -> int:
     """Total tokens of the chat-templated history (no user q appended) under
     the project tokenizer. Used for the per-context max-prefix-length sanity
@@ -276,6 +353,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             raise RuntimeError(
                 f"drift corpus domain={domain!r} has {actual} conversations, "
                 f"expected ≥ {expected} at revision {HF_DATA_REVISION}"
+            )
+
+    # Pre-filter per-domain pools: drop any conversation carrying a
+    # [BATCH_ERROR] sentinel inside the first MAX_K turns (#377 corpus
+    # artifact). Selection downstream runs against the CLEAN pool, so
+    # MT01 (k=10) and MT02 (k=14) on the same domain can no longer
+    # diverge between "clean conv picked" and "poisoned conv raises".
+    dropped_drift_by_domain: dict[str, int] = {}
+    dropped_neutral_by_domain: dict[str, int] = {}
+    for domain in list(drift_by_domain):
+        clean, dropped = _filter_batch_error_conversations(
+            drift_by_domain[domain], MAX_K, domain_label=domain, arm_label="drift"
+        )
+        drift_by_domain[domain] = clean
+        dropped_drift_by_domain[domain] = len(dropped)
+        if len(clean) < N_CONVERSATIONS_PER_SLOT:
+            raise RuntimeError(
+                f"drift corpus domain={domain!r} has only {len(clean)} clean conversations "
+                f"after dropping {len(dropped)} carrying [BATCH_ERROR] in first {MAX_K} turns; "
+                f"need ≥ {N_CONVERSATIONS_PER_SLOT}. Regenerate the corpus or pin a clean revision."
+            )
+    for domain in list(neutral_by_domain):
+        clean, dropped = _filter_batch_error_conversations(
+            neutral_by_domain[domain], MAX_K, domain_label=domain, arm_label="neutral"
+        )
+        neutral_by_domain[domain] = clean
+        dropped_neutral_by_domain[domain] = len(dropped)
+        if len(clean) < N_CONVERSATIONS_PER_SLOT:
+            raise RuntimeError(
+                f"neutral corpus domain={domain!r} has only {len(clean)} clean conversations "
+                f"after dropping {len(dropped)} carrying [BATCH_ERROR] in first {MAX_K} turns; "
+                f"need ≥ {N_CONVERSATIONS_PER_SLOT}. Regenerate the corpus or pin a clean revision."
             )
 
     # 2 + 3. Build per-MT/MN slices.
@@ -339,6 +448,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             "selected_indices": list(indices),
             "rows": rows,
             "drift_mean_whitespace_total": drift_mean_total_by_domain_k[(domain, k)],
+            "n_dropped_batch_error": dropped_drift_by_domain.get(domain, 0),
+            "n_clean_pool": len(pool),
         }
         logger.info(
             "Phase 0: built %s (domain=%s, k=%d, %d convs, mean_ws_total=%.1f)",
@@ -442,6 +553,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             "selected_indices": list(indices),
             "rows": rows,
             "drift_pair_mean_whitespace_total": float(target_total),
+            "n_dropped_batch_error": dropped_neutral_by_domain.get(ctx.domain, 0),
+            "n_clean_pool": len(neutral_pool),
         }
         logger.info(
             "Phase 0: built %s (domain=%s, matched=%s, pair_mean_ws=%.1f, %d convs)",
@@ -490,6 +603,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - per-MT-arm corpu
             d: len(drift_by_domain.get(d, [])) for d in PER_DOMAIN_DRIFT_COUNT
         },
         "per_domain_neutral_counts": {d: len(v) for d, v in neutral_by_domain.items()},
+        "per_domain_dropped_batch_error_drift": dict(dropped_drift_by_domain),
+        "per_domain_dropped_batch_error_neutral": dict(dropped_neutral_by_domain),
+        "max_k_filter_window": MAX_K,
         "max_prefix_chat_template_token_count": max_prefix_tok,
         "max_prefix_owner": max_prefix_owner,
         "worst_case_prefix_plus_Q_plus_R_tokens": worst_total,
