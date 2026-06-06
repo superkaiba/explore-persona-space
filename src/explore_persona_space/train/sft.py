@@ -562,6 +562,17 @@ class TrainLoraConfig:
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
     backend: Literal["hf", "unsloth"] = "hf"
+    # Issue #506 Phase-0a item 2: continue-adapter contract. When set, the
+    # trainer loads the named adapter via
+    # ``PeftModel.from_pretrained(base, path, is_trainable=True)`` instead of
+    # attaching a fresh LoRA — the adapter's own ``r``/``alpha``/``dropout``
+    # win, so the LoRA cfg fields are informational only when this is set.
+    # Used by Phase 2 of #506 (continue the Phase-1 adapter under benign SFT)
+    # to make the "did the install survive Phase 2?" question well-posed.
+    # The port lives on main so #506 does not block on the #475 worktree
+    # merge; both versions are intentionally idempotent (same signature,
+    # same effect).
+    existing_adapter_path: str | None = None
 
 
 def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig) -> None:
@@ -624,7 +635,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     """
     import torch
     from datasets import load_dataset
-    from peft import LoraConfig, TaskType
+    from peft import LoraConfig, PeftModel, TaskType
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     SFTConfig, SFTTrainer = _load_trl_sft_classes()
@@ -692,6 +703,25 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         target_modules=effective_lora_targets,
         use_rslora=True,
     )
+
+    # Issue #506 Phase-0a item 2: continue-adapter contract. When
+    # ``cfg.existing_adapter_path`` is set we load the adapter on TOP of the
+    # base model via ``PeftModel.from_pretrained(..., is_trainable=True)``
+    # and DROP the ``peft_config`` kwarg below so TRL/SFTTrainer doesn't
+    # re-attach a fresh LoRA. The adapter's own r/alpha/dropout win; the
+    # cfg LoRA fields above are informational only when continuing.
+    if cfg.existing_adapter_path is not None:
+        adapter_path = Path(cfg.existing_adapter_path)
+        if not adapter_path.exists():
+            raise FileNotFoundError(
+                f"existing_adapter_path does not exist: {adapter_path}. "
+                "Continue-adapter contract requires a local adapter directory."
+            )
+        logger.info(
+            "Continuing existing adapter: %s (is_trainable=True; fresh LoRA wrap SKIPPED)",
+            adapter_path,
+        )
+        model = PeftModel.from_pretrained(model, str(adapter_path), is_trainable=True)
 
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
     # `load_dataset("json", ...)` raises a bare ``StopIteration`` (with no
@@ -770,8 +800,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "args": sft_config,
         "train_dataset": dataset,
         "processing_class": tokenizer,
-        "peft_config": lora_config,
     }
+    # Only attach ``peft_config`` for the FRESH-LoRA path. When continuing an
+    # existing adapter the model is already a PeftModel above and TRL must
+    # NOT re-wrap it (re-wrap drops the loaded adapter weights silently).
+    if cfg.existing_adapter_path is None:
+        sft_trainer_kwargs["peft_config"] = lora_config
     if callbacks:
         sft_trainer_kwargs["callbacks"] = callbacks
     trainer = SFTTrainer(**sft_trainer_kwargs)

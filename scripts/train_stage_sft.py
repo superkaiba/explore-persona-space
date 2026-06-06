@@ -37,8 +37,24 @@ os.environ.setdefault("NCCL_CUMEM_ENABLE", "0")
 torch.backends.cuda.matmul.allow_tf32 = True
 
 
-def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
-    """Load JSONL dataset for SFT. Supports 'text', 'messages', and chat formats."""
+def load_sft_dataset(
+    dataset_path: str, tokenizer, *, prefer_prompt_completion: bool = False
+) -> Dataset:
+    """Load JSONL dataset for SFT. Supports 'text', 'messages', and chat formats.
+
+    When ``prefer_prompt_completion=True`` (issue #506 Phase-0a item 1) and the
+    JSONL rows carry a native ``prompt``+``completion`` shape (each is a list
+    of role/content dicts, the #475 format), return a dataset keyed on those
+    two columns instead of collapsing to ``text``. TRL's ``SFTTrainer`` then
+    auto-resolves ``completion_only_loss=True`` so loss falls only on the
+    assistant turn — matching the LoRA path's surface and what the plan asks
+    for. Without this, ``apply_chat_template`` collapses to ``text`` and
+    ``DataCollatorForLanguageModeling`` puts loss on system + user + assistant
+    (full-text loss).
+
+    The legacy collapse-to-text branch is kept as the default so other
+    callers (e.g. data with a flat ``response`` string) keep working.
+    """
     data = []
     with open(dataset_path) as f:
         for line in f:
@@ -46,12 +62,33 @@ def load_sft_dataset(dataset_path: str, tokenizer) -> Dataset:
             if "text" in item:
                 data.append({"text": item["text"]})
             elif "messages" in item:
-                text = tokenizer.apply_chat_template(
-                    item["messages"],
-                    tokenize=False,
-                    add_generation_prompt=False,
-                )
-                data.append({"text": text})
+                # If preserving native shape, keep messages as-is; TRL handles
+                # ``messages``-format rows with ``assistant_only_loss=True``.
+                if prefer_prompt_completion:
+                    data.append({"messages": item["messages"]})
+                else:
+                    text = tokenizer.apply_chat_template(
+                        item["messages"],
+                        tokenize=False,
+                        add_generation_prompt=False,
+                    )
+                    data.append({"text": text})
+            elif "prompt" in item and "completion" in item:
+                # Native ``prompt``+``completion`` rows (each a list of dicts;
+                # #475 / #506 marker-install format). When
+                # ``prefer_prompt_completion=True``, pass them through to TRL
+                # which then trains with loss only on the completion span.
+                if prefer_prompt_completion:
+                    data.append({"prompt": item["prompt"], "completion": item["completion"]})
+                else:
+                    # Legacy: collapse to text. Build chat from prompt+completion.
+                    messages = list(item["prompt"]) + list(item["completion"])
+                    text = tokenizer.apply_chat_template(
+                        messages,
+                        tokenize=False,
+                        add_generation_prompt=False,
+                    )
+                    data.append({"text": text})
             elif "prompt" in item and "response" in item:
                 messages = [
                     {"role": "user", "content": item["prompt"]},
@@ -78,7 +115,11 @@ def main():
     parser.add_argument("--seed", type=int)
     parser.add_argument("--per-device-batch-size", type=int, help="Override batch size")
     parser.add_argument("--gradient-accumulation-steps", type=int, help="Override grad accum")
-    parser.add_argument("--max-seq-length", type=int, help="Override max sequence length")
+    parser.add_argument(
+        "--max-length",
+        type=int,
+        help="Override max sequence length (TRL 0.29.1 SFTConfig kwarg)",
+    )
     parser.add_argument("--packing", action="store_true", default=None)
     parser.add_argument("--no-packing", dest="packing", action="store_false")
     parser.add_argument("--use-lora", action="store_true", default=None)
@@ -120,7 +161,14 @@ def main():
     seed = _pick(args.seed, "seed", 42)
     batch_size = _pick(args.per_device_batch_size, "per_device_train_batch_size", 4)
     grad_accum = _pick(args.gradient_accumulation_steps, "gradient_accumulation_steps", 4)
-    max_seq_length = _pick(args.max_seq_length, "max_seq_length", 2048)
+    # TRL 0.29.1 renamed ``max_seq_length`` → ``max_length`` in ``SFTConfig``;
+    # the YAML key + CLI flag follow suit. The pre-rename ``max_seq_length``
+    # YAML key is still honored as a fallback so legacy configs don't break.
+    max_length = _pick(
+        args.max_length,
+        "max_length",
+        cfg.get("max_seq_length", 2048),
+    )
     use_flash_attn = cfg.get("use_flash_attn", True)
     gradient_checkpointing = (
         args.gradient_checkpointing
@@ -135,6 +183,14 @@ def main():
 
     # Packing
     packing = args.packing if args.packing is not None else cfg.get("packing", True)
+
+    # Issue #506 Phase-0a item 1: ``completion_only_loss=True`` in the FWFT
+    # YAML opts the data pipeline into native prompt+completion rows so TRL
+    # auto-resolves loss-on-assistant-turn-only. Default False keeps the
+    # legacy flat-``text`` collapse path byte-identical for other callers.
+    completion_only_loss = cfg.get("completion_only_loss", False)
+    assistant_only_loss = cfg.get("assistant_only_loss", False)
+    prefer_prompt_completion = bool(completion_only_loss or assistant_only_loss)
 
     # Liger Kernel
     use_liger_kernel = (
@@ -172,7 +228,9 @@ def main():
     print(f"  Liger Kernel: {use_liger_kernel}")
     print(f"  Packing: {packing}")
     print(f"  LR: {lr}, Epochs: {epochs}, Batch: {batch_size}x{grad_accum}")
-    print(f"  Max seq length: {max_seq_length}")
+    print(f"  Max length: {max_length}")
+    print(f"  Completion-only loss: {completion_only_loss}")
+    print(f"  Assistant-only loss: {assistant_only_loss}")
     print(f"  Gradient checkpointing: {gradient_checkpointing}")
     print(f"{'=' * 60}")
 
@@ -217,11 +275,18 @@ def main():
         model.print_trainable_parameters()
 
     # Load dataset
-    dataset = load_sft_dataset(dataset_path, tokenizer)
+    dataset = load_sft_dataset(
+        dataset_path,
+        tokenizer,
+        prefer_prompt_completion=prefer_prompt_completion,
+    )
     print(f"Dataset: {len(dataset)} examples")
 
-    # Training config
-    sft_config = SFTConfig(
+    # Training config. ``max_length`` (TRL 0.29.1) replaces the older
+    # ``max_seq_length`` kwarg. ``completion_only_loss`` / ``assistant_only_loss``
+    # turn off the legacy full-text loss path; ``dataset_text_field='text'``
+    # only applies to the flat-text branch.
+    sft_kwargs = dict(
         output_dir=output_dir,
         num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
@@ -237,14 +302,21 @@ def main():
         seed=seed,
         report_to=report_to,
         run_name=wandb_run_name,
-        max_seq_length=max_seq_length,
-        dataset_text_field="text",
+        max_length=max_length,
         packing=packing,
         gradient_checkpointing=gradient_checkpointing,
         max_grad_norm=max_grad_norm,
         optim="adamw_torch_fused",
         # DeepSpeed handles distributed — these are set via accelerate launch
     )
+    if prefer_prompt_completion:
+        if completion_only_loss:
+            sft_kwargs["completion_only_loss"] = True
+        if assistant_only_loss:
+            sft_kwargs["assistant_only_loss"] = True
+    else:
+        sft_kwargs["dataset_text_field"] = "text"
+    sft_config = SFTConfig(**sft_kwargs)
 
     trainer = SFTTrainer(
         model=model,
