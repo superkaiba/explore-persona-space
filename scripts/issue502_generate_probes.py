@@ -25,10 +25,27 @@ Output: ``eval_results/issue_502/probes_500.json`` with provenance:
   - ``probes``: the merged 500 (q_test_subset_50 + new_probes_450)
   - ``provenance`` block recording how it was generated
 
+Round-5 addition (Class-D rewrites for the 450 new probes). The bake-off's
+Class-D extraction path looks up ``class_d_rewrites[question][register]``
+for each (question, D{1..5}) pair. ``data/issue_406/class_d/rewrites_v1.json``
+covers ONLY the 80 #406 questions (50 q_test + 30 q_train); the 450 new
+probes have no entries → first Class-D probe past index 49 KeyErrors at
+extract time (the runtime failure on pod-502, 2026-06-05). This script now
+also emits ``eval_results/issue_502/class_d_rewrites_extended_v1.json``
+covering the 450 new probes × 5 registers (2,250 rewrites total). The
+extraction script merges this extension over the #406 base via the
+``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` env var (set by the dispatcher).
+
 Usage::
 
-    # Real run (calls Claude API, costs a few dollars).
+    # Real run (calls Claude API for both probes AND rewrites, ~$70-ish).
     uv run python scripts/issue502_generate_probes.py --target-new 450
+
+    # Real run, probes only (rewrites already generated, skip rewrites step).
+    uv run python scripts/issue502_generate_probes.py --target-new 450 --skip-rewrites
+
+    # Real run, rewrites only (probes already generated, only do rewrites).
+    uv run python scripts/issue502_generate_probes.py --rewrites-only
 
     # Smoke (no API calls; uses synthetic placeholders so CPU smoke works
     # without a network. Output is clearly tagged ``smoke=True`` and is
@@ -37,13 +54,15 @@ Usage::
     uv run python scripts/issue502_generate_probes.py --smoke
 
 The real run uses Claude Sonnet 4.5 (``claude-sonnet-4-5-20250929``), the
-project default for generation. We use one-shot ``client.messages.create``
-calls (not the batch API) since 450 probes fits comfortably in a few
-prompt-completions and we want to inspect them after each chunk.
+project default for generation. Probes use one-shot ``client.messages.create``
+calls (450 probes fits comfortably in a few prompt-completions). Rewrites
+use the Anthropic **Batch API** (2,250 requests are too expensive at
+synchronous price; batch is 50% off and runs in the background).
 """
 
-# Greek + special characters (×, →, —) appear in the docstring.
-# ruff: noqa: RUF003
+# Greek + special characters (×, →, —) appear in docstrings, comments,
+# and help strings.
+# ruff: noqa: RUF001 RUF002 RUF003
 
 from __future__ import annotations
 
@@ -80,9 +99,16 @@ CLAUDE_MODEL = "claude-sonnet-4-5-20250929"
 OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_502"
 PROBES_PATH = OUT_DIR / "probes_500.json"
 SMOKE_PROBES_PATH = OUT_DIR / "probes_500.smoke.json"
+REWRITES_EXTENSION_PATH = OUT_DIR / "class_d_rewrites_extended_v1.json"
+SMOKE_REWRITES_EXTENSION_PATH = OUT_DIR / "class_d_rewrites_extended_v1.smoke.json"
 
 DEFAULT_TARGET_NEW = 450
 DEFAULT_CHUNK = 60  # questions per Claude call
+
+# Class-D registers — MUST match the i406 condition definitions in
+# src/explore_persona_space/experiments/i406_conditions.py L179-183.
+# Order matters only for human-reading; the on-disk dict is keyed by name.
+CLASS_D_REGISTERS = ("formal", "casual", "indirect", "declarative", "enumerated")
 
 # Per-bucket targets (sum ≈ 450). Adjusted within ±10% if a chunk under-delivers.
 BUCKETS: tuple[tuple[str, int, str], ...] = (
@@ -214,15 +240,27 @@ def _api_key() -> str:
     return os.environ.get("ANTHROPIC_BATCH_KEY") or os.environ["ANTHROPIC_API_KEY"]
 
 
-def _call_claude_once(user_prompt: str, max_tokens: int = 8000) -> str:
-    """One-shot ``messages.create`` returning the text content."""
+def _call_claude_once(
+    user_prompt: str,
+    max_tokens: int = 8000,
+    system: str | None = None,
+) -> str:
+    """One-shot ``messages.create`` returning the text content.
+
+    Args:
+        user_prompt: The user-turn content.
+        max_tokens: max_tokens for the API call.
+        system: System prompt. Defaults to the probe-generation
+            ``GEN_SYSTEM``; pass ``REWRITES_SYSTEM`` for the rewrite
+            retry path.
+    """
     import anthropic
 
     client = anthropic.Anthropic(api_key=_api_key())
     resp = client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=max_tokens,
-        system=GEN_SYSTEM,
+        system=system if system is not None else GEN_SYSTEM,
         messages=[{"role": "user", "content": user_prompt}],
     )
     parts = [b.text for b in resp.content if getattr(b, "type", None) == "text"]
@@ -331,6 +369,372 @@ def _generate_bucket(
     return accepted
 
 
+# ─────────────────────────── Class-D rewrites ───────────────────────────
+
+# Adapted verbatim from the #406 v9 plan §"Class D — semantic rephrasing"
+# (tasks/awaiting_promotion/406/plans/v9.md L161-181). Same instruction
+# shape that produced the existing data/issue_406/class_d/rewrites_v1.json,
+# so the 80 base + 450 extension rewrites are stylistically uniform.
+REWRITES_SYSTEM = (
+    "You are rewriting English questions into 5 different stylistic registers. "
+    "For each input question, produce EXACTLY 5 rewrites in this order, one per "
+    "line, prefixed with the register name:\n"
+    "  formal: <a formal-register rewrite>\n"
+    "  casual: <a casual-conversational rewrite>\n"
+    "  indirect: <a rewrite that asks for the same information indirectly>\n"
+    "  declarative: <a declarative-form rewrite (a statement, not a question, "
+    "that still solicits an answer; if absolutely necessary may include a single "
+    "trailing '?')>\n"
+    "  enumerated: <a rewrite that asks for the answer in enumerated form "
+    "(e.g. 'Please answer in 3 bullets: ...')>\n"
+    "Each rewrite must preserve the meaning of the original (an information-"
+    "preserving paraphrase). Output exactly 5 lines, no numbering, no preamble, "
+    "no trailing commentary."
+)
+
+
+def _rewrite_user_prompt(question: str) -> str:
+    """Build the per-question user prompt for the rewrites batch."""
+    return f"Input question:\n{question}\n\nProduce the 5 rewrites in the exact format described."
+
+
+def _parse_rewrites_block(text: str, question: str) -> dict[str, str] | None:
+    """Parse a Claude rewrites response into ``{register: rewrite}``.
+
+    Returns None if the response is malformed (missing a register, empty
+    rewrite, multi-line for one register, etc.) so the caller can retry
+    or flag the question. Logs the failure reason.
+    """
+    out: dict[str, str] = {}
+    pending_register: str | None = None
+    pending_lines: list[str] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        matched_reg: str | None = None
+        for reg in CLASS_D_REGISTERS:
+            prefix = f"{reg}:"
+            if line.lower().startswith(prefix):
+                matched_reg = reg
+                break
+        if matched_reg is not None:
+            # Flush previous.
+            if pending_register is not None and pending_lines:
+                out[pending_register] = " ".join(pending_lines).strip()
+            pending_register = matched_reg
+            # Everything after the prefix on this line.
+            after = line[len(matched_reg) + 1 :].strip()
+            pending_lines = [after] if after else []
+        else:
+            if pending_register is not None:
+                pending_lines.append(line)
+            else:
+                # Stray text before the first prefix — ignored.
+                pass
+    # Flush last.
+    if pending_register is not None and pending_lines:
+        out[pending_register] = " ".join(pending_lines).strip()
+
+    # Validate all 5 present + non-empty.
+    missing = [r for r in CLASS_D_REGISTERS if not out.get(r)]
+    if missing:
+        logger.warning(
+            "rewrites parse: question %r missing registers %s (got %s)",
+            question[:60],
+            missing,
+            sorted(out.keys()),
+        )
+        return None
+    return {r: out[r] for r in CLASS_D_REGISTERS}
+
+
+def _build_rewrites_requests(new_questions: list[str]) -> list[dict]:
+    """Build Anthropic Batch API requests for the 450 new probe rewrites.
+
+    One request per question (Claude returns 5 register rewrites per
+    response). 450 requests fits comfortably under the 100k batch cap;
+    each response is ~5 short lines (~150 input tokens, ~200 output) so
+    the batch finishes in a few minutes at most.
+    """
+    # Local import so callers without anthropic installed (e.g. dry-run /
+    # CPU smoke) don't have to pay the import cost.
+    from anthropic.types.messages.batch_create_params import Request
+
+    requests: list[Request] = []
+    for i, q in enumerate(new_questions):
+        cid = f"rewrite-{i:04d}"
+        requests.append(
+            {
+                "custom_id": cid,
+                "params": {
+                    "model": CLAUDE_MODEL,
+                    "max_tokens": 1024,
+                    "system": REWRITES_SYSTEM,
+                    "messages": [{"role": "user", "content": _rewrite_user_prompt(q)}],
+                },
+            }
+        )
+    return requests
+
+
+def _submit_rewrites_batch(requests: list[dict]) -> str:
+    """Submit one Anthropic Batch API request and return its id."""
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=_api_key())
+    batch = client.messages.batches.create(requests=requests)
+    logger.info(
+        "rewrites batch submitted id=%s status=%s n_requests=%d",
+        batch.id,
+        batch.processing_status,
+        len(requests),
+    )
+    return batch.id
+
+
+def _wait_for_rewrites_batch(batch_id: str, poll_interval: float = 30.0) -> None:
+    """Block until the rewrites batch reaches ``processing_status == 'ended'``."""
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=_api_key())
+    while True:
+        batch = client.messages.batches.retrieve(batch_id)
+        counts = batch.request_counts
+        if batch.processing_status == "ended":
+            logger.info(
+                "rewrites batch %s ended: succeeded=%d errored=%d expired=%d",
+                batch_id,
+                counts.succeeded,
+                counts.errored,
+                counts.expired,
+            )
+            return
+        logger.info(
+            "rewrites batch %s polling: processing=%d succeeded=%d errored=%d",
+            batch_id,
+            counts.processing,
+            counts.succeeded,
+            counts.errored,
+        )
+        time.sleep(poll_interval)
+
+
+def _collect_rewrites_results(  # noqa: C901 — three sequential phases (batch read / inline retry / final validate) flatten cleanly here; extracting helpers would split error-bookkeeping state
+    batch_id: str, new_questions: list[str]
+) -> dict[str, dict[str, str]]:
+    """Read batch results into ``{question: {register: rewrite}}``.
+
+    Fails loud if (a) any question's response is missing from the batch,
+    (b) >2% of responses fail to parse into 5 valid registers, or (c)
+    parsing succeeds but a register is empty / multi-line.
+
+    Args:
+        batch_id: The batch ID returned by _submit_rewrites_batch.
+        new_questions: Same list passed to _build_rewrites_requests, used
+            both to map ``custom_id`` back to the question text and to
+            assert full coverage.
+
+    Returns:
+        Mapping question -> {register: rewrite} with all 5 registers per
+        question.
+    """
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=_api_key())
+    n = len(new_questions)
+    by_custom_id: dict[str, str] = {}
+    errors: list[tuple[str, str]] = []
+    for r in client.messages.batches.results(batch_id):
+        cid = r.custom_id
+        if r.result.type != "succeeded":
+            errors.append((cid, r.result.type))
+            continue
+        text = next(
+            (b.text for b in r.result.message.content if b.type == "text"),
+            "",
+        )
+        if not text:
+            errors.append((cid, "empty-text"))
+            continue
+        by_custom_id[cid] = text
+
+    # Parse + validate per-question. We re-attempt parse failures inline via
+    # one sync call per failure (small tail; usually 0-5 retries on a 450 batch).
+    out: dict[str, dict[str, str]] = {}
+    parse_failures: list[tuple[int, str]] = []
+    for i, q in enumerate(new_questions):
+        cid = f"rewrite-{i:04d}"
+        text = by_custom_id.get(cid)
+        if text is None:
+            errors.append((cid, "missing-from-batch"))
+            continue
+        parsed = _parse_rewrites_block(text, q)
+        if parsed is None:
+            parse_failures.append((i, q))
+            continue
+        out[q] = parsed
+
+    # Retry parse-failures inline (small tail).
+    if parse_failures:
+        logger.warning(
+            "rewrites: %d / %d question(s) failed batch-parse; retrying inline",
+            len(parse_failures),
+            n,
+        )
+        for i, q in parse_failures:
+            try:
+                text = _call_claude_once(
+                    _rewrite_user_prompt(q),
+                    max_tokens=1024,
+                    system=REWRITES_SYSTEM,
+                )
+            except Exception as e:
+                errors.append((f"rewrite-{i:04d}", f"inline-retry-failed: {e}"))
+                continue
+            parsed = _parse_rewrites_block(text, q)
+            if parsed is None:
+                errors.append((f"rewrite-{i:04d}", "inline-retry-parse-failed"))
+                continue
+            out[q] = parsed
+
+    # Fail-loud on systemic shortfall.
+    missing = [q for q in new_questions if q not in out]
+    if missing:
+        head = "; ".join(repr(m)[:60] for m in missing[:5])
+        raise RuntimeError(
+            f"rewrites batch missing {len(missing)} / {n} questions. First 5: {head}. "
+            f"Provider error breakdown: {errors[:10]}"
+        )
+    if errors:
+        logger.warning(
+            "rewrites: collected %d / %d cleanly; %d provider/parse errors (resolved via retry)",
+            len(out),
+            n,
+            len(errors),
+        )
+
+    # Re-validate every rewrite is non-empty + single-line.
+    for q, by_reg in out.items():
+        for reg in CLASS_D_REGISTERS:
+            rw = by_reg.get(reg, "")
+            if not rw or "\n" in rw:
+                raise RuntimeError(
+                    f"rewrites: question {q!r} register {reg!r} is empty / "
+                    f"multiline after parse+retry: {rw!r}"
+                )
+    return out
+
+
+def _smoke_synthetic_rewrites(new_questions: list[str]) -> dict[str, dict[str, str]]:
+    """Build clearly-synthetic placeholder rewrites for the CPU smoke path.
+
+    Same structure as the real extension (``{question: {register: rewrite}}``)
+    so the smoke gate can exercise the merge path + extraction path without
+    a network call. Written to a SEPARATE filename (``*.smoke.json``) and
+    NEVER promoted to the real extension.
+    """
+    out: dict[str, dict[str, str]] = {}
+    for q in new_questions:
+        out[q] = {reg: f"[smoke {reg}] {q}".strip() for reg in CLASS_D_REGISTERS}
+    return out
+
+
+def _write_rewrites_extension(
+    rewrites: dict[str, dict[str, str]],
+    *,
+    out_path: Path,
+    smoke: bool,
+    batch_id: str | None,
+    elapsed_seconds: float,
+) -> None:
+    """Atomically write the rewrites extension JSON file.
+
+    Schema matches ``data/issue_406/class_d/rewrites_v1.json`` (a flat
+    ``{question: {register: rewrite}}`` dict at the TOP LEVEL — NO outer
+    metadata wrapper, because ``load_class_d_rewrites()`` reads the file
+    as a flat dict). Provenance lives in a sibling
+    ``class_d_rewrites_extended_v1.meta.json`` file so the main file stays
+    schema-identical to the #406 base.
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp.write_text(json.dumps(rewrites, indent=2))
+    tmp.replace(out_path)
+
+    meta_path = out_path.with_suffix(".meta.json")
+    meta = {
+        "schema_version": 1,
+        "smoke": bool(smoke),
+        "model": CLAUDE_MODEL,
+        "model_id_canonical": "claude-sonnet-4-5-20250929",
+        "registers": list(CLASS_D_REGISTERS),
+        "n_questions": len(rewrites),
+        "n_rewrites_total": sum(len(v) for v in rewrites.values()),
+        "system_prompt": REWRITES_SYSTEM,
+        "batch_id": batch_id,
+        "provenance": {
+            "git_sha": _git_sha(),
+            "timestamp_utc": _now_iso(),
+            "python": platform.python_version(),
+            "elapsed_seconds": round(elapsed_seconds, 2),
+        },
+    }
+    meta_path.write_text(json.dumps(meta, indent=2))
+    logger.info(
+        "Wrote %s (%d q × %d reg = %d rewrites, smoke=%s) and %s in %.1fs",
+        out_path,
+        len(rewrites),
+        len(CLASS_D_REGISTERS),
+        sum(len(v) for v in rewrites.values()),
+        smoke,
+        meta_path,
+        elapsed_seconds,
+    )
+
+
+def generate_class_d_rewrites_extension(
+    new_questions: list[str],
+    *,
+    smoke: bool,
+    out_path: Path | None = None,
+) -> Path:
+    """End-to-end: generate + persist the rewrites extension for the 450 new probes.
+
+    Args:
+        new_questions: The 450 new probe questions (exact-string disjoint
+            from q_test + q_train per the probes-pool invariant).
+        smoke: When True, produce clearly-tagged synthetic rewrites and
+            write to the ``*.smoke.json`` sibling path.
+        out_path: Override the canonical output path. Defaults to
+            REWRITES_EXTENSION_PATH (or SMOKE_REWRITES_EXTENSION_PATH for
+            smoke).
+
+    Returns:
+        The output path written.
+    """
+    if out_path is None:
+        out_path = SMOKE_REWRITES_EXTENSION_PATH if smoke else REWRITES_EXTENSION_PATH
+    started = time.time()
+    if smoke:
+        rewrites = _smoke_synthetic_rewrites(new_questions)
+        batch_id = None
+    else:
+        requests = _build_rewrites_requests(new_questions)
+        batch_id = _submit_rewrites_batch(requests)
+        _wait_for_rewrites_batch(batch_id)
+        rewrites = _collect_rewrites_results(batch_id, new_questions)
+    elapsed = time.time() - started
+    _write_rewrites_extension(
+        rewrites,
+        out_path=out_path,
+        smoke=smoke,
+        batch_id=batch_id,
+        elapsed_seconds=elapsed,
+    )
+    return out_path
+
+
 # ─────────────────────────── Smoke ───────────────────────────
 
 
@@ -381,17 +785,78 @@ def _build_argparser() -> argparse.ArgumentParser:
         default=None,
         help="Optional explicit output path (defaults to the canonical PROBES_PATH).",
     )
+    p.add_argument(
+        "--skip-rewrites",
+        action="store_true",
+        help=(
+            "Skip the Class-D rewrites generation step. Use when the probes "
+            "pool already exists and you only need to regenerate the probes "
+            "JSON (or when running on a host without ANTHROPIC_API_KEY)."
+        ),
+    )
+    p.add_argument(
+        "--rewrites-only",
+        action="store_true",
+        help=(
+            "Skip probe-pool generation and ONLY (re)generate the Class-D "
+            "rewrites extension from an existing probes_500.json. Mutually "
+            "exclusive with --skip-rewrites."
+        ),
+    )
+    p.add_argument(
+        "--rewrites-out",
+        type=Path,
+        default=None,
+        help=(
+            "Optional explicit output path for the rewrites extension JSON "
+            "(defaults to REWRITES_EXTENSION_PATH; smoke writes to "
+            "SMOKE_REWRITES_EXTENSION_PATH)."
+        ),
+    )
     return p
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(  # noqa: C901 — orchestrates 3 branches (rewrites-only / smoke / full) with sequential constraint asserts; flattening would inline the bucket loop + post-write hooks
+    argv: list[str] | None = None,
+) -> int:
     args = _build_argparser().parse_args(argv)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    if args.skip_rewrites and args.rewrites_only:
+        raise SystemExit("--skip-rewrites and --rewrites-only are mutually exclusive")
 
     q_test = load_q_test_extended_50()
     q_train_keys = list(load_q_train_answers().keys())
     assert len(q_test) == 50, f"expected 50 q_test, got {len(q_test)}"
     assert len(q_train_keys) == 30, f"expected 30 q_train, got {len(q_train_keys)}"
+
+    out_path = args.out or (SMOKE_PROBES_PATH if args.smoke else PROBES_PATH)
+    started = time.time()
+
+    # ── Branch: rewrites-only ──────────────────────────────────────────
+    # Skip probe generation entirely; read new_probes from the existing
+    # probes_500.json (smoke uses probes_500.smoke.json), then run only
+    # the Class-D rewrites step.
+    if args.rewrites_only:
+        if not out_path.exists():
+            raise SystemExit(
+                f"--rewrites-only requires the probes pool at {out_path}; not found. "
+                "Run without --rewrites-only first to generate the pool."
+            )
+        existing_payload = json.loads(out_path.read_text())
+        new_probes_existing = existing_payload["new_probes_450"]
+        logger.info(
+            "rewrites-only: loaded %d new probes from %s",
+            len(new_probes_existing),
+            out_path,
+        )
+        rewrites_path = generate_class_d_rewrites_extension(
+            new_probes_existing,
+            smoke=bool(args.smoke),
+            out_path=args.rewrites_out,
+        )
+        logger.info("rewrites-only complete: %s", rewrites_path)
+        return 0
 
     # Existing set: normalized q_train ∪ q_test (the disjoint constraint
     # is on the NEW probes only, so we seed existing with both).
@@ -400,9 +865,6 @@ def main(argv: list[str] | None = None) -> int:
         existing_keys.add(_normalize(q))
     for q in q_train_keys:
         existing_keys.add(_normalize(q))
-
-    out_path = args.out or (SMOKE_PROBES_PATH if args.smoke else PROBES_PATH)
-    started = time.time()
 
     if args.smoke:
         logger.info(
@@ -493,6 +955,25 @@ def main(argv: list[str] | None = None) -> int:
         args.smoke,
         time.time() - started,
     )
+
+    # ── Class-D rewrites for the 450 new probes ────────────────────────
+    # Without this, the extraction script's Class-D code path KeyErrors at
+    # the first new probe (index 50+). See module docstring "Round-5 addition".
+    if args.skip_rewrites:
+        logger.info("Skipping Class-D rewrites step (per --skip-rewrites)")
+    else:
+        logger.info(
+            "Generating Class-D rewrites for the %d new probes (5 registers × %d = %d total)…",
+            len(new_probes),
+            len(new_probes),
+            5 * len(new_probes),
+        )
+        rewrites_path = generate_class_d_rewrites_extension(
+            new_probes,
+            smoke=bool(args.smoke),
+            out_path=args.rewrites_out,
+        )
+        logger.info("Class-D rewrites extension written to %s", rewrites_path)
     return 0
 
 

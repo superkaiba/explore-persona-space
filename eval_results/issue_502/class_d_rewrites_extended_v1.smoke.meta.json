@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "smoke": true,
+  "model": "claude-sonnet-4-5-20250929",
+  "model_id_canonical": "claude-sonnet-4-5-20250929",
+  "registers": [
+    "formal",
+    "casual",
+    "indirect",
+    "declarative",
+    "enumerated"
+  ],
+  "n_questions": 450,
+  "n_rewrites_total": 2250,
+  "system_prompt": "You are rewriting English questions into 5 different stylistic registers. For each input question, produce EXACTLY 5 rewrites in this order, one per line, prefixed with the register name:\n  formal: <a formal-register rewrite>\n  casual: <a casual-conversational rewrite>\n  indirect: <a rewrite that asks for the same information indirectly>\n  declarative: <a declarative-form rewrite (a statement, not a question, that still solicits an answer; if absolutely necessary may include a single trailing '?')>\n  enumerated: <a rewrite that asks for the answer in enumerated form (e.g. 'Please answer in 3 bullets: ...')>\nEach rewrite must preserve the meaning of the original (an information-preserving paraphrase). Output exactly 5 lines, no numbering, no preamble, no trailing commentary.",
+  "batch_id": null,
+  "provenance": {
+    "git_sha": "dbd4a924141edc68fcd18f3c6c99e1bd62451ba9",
+    "timestamp_utc": "2026-06-06T01:13:45.388943+00:00",
+    "python": "3.11.15",
+    "elapsed_seconds": 0.0
+  }
+}

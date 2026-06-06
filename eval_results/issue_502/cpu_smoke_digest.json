@@ -126,5 +126,26 @@
     "layer0_match_passes": true,
     "layer1_stale_missing_cond_raised": true,
     "layer2_missing_file_raised": true
+  },
+  "class_d_rewrites_coverage_full_probe_pool": {
+    "extension_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-502/eval_results/issue_502/class_d_rewrites_extended_v1.json",
+    "extension_kind": "real",
+    "n_probes_in_pool": 500,
+    "n_in_merged_rewrites": 530,
+    "n_new_probes_covered": 450,
+    "registers_per_probe": [
+      "formal",
+      "casual",
+      "indirect",
+      "declarative",
+      "enumerated"
+    ],
+    "integration_probe": "How do I fix a dripping kitchen faucet?",
+    "integration_cond": "D1",
+    "integration_register": "formal",
+    "integration_extracted_layers": [
+      0,
+      1
+    ]
   }
 }

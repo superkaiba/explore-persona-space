@@ -1251,6 +1251,216 @@ def check_validate_canonical_completeness_gate() -> dict:
     }
 
 
+# ─────────────── Check 18: Class-D rewrites coverage + extraction ───────────
+
+
+def check_class_d_rewrites_coverage_full_probe_pool() -> dict:  # noqa: C901 — three nested integration steps; flattening would inline the inputs setup
+    """ROUND-5: the runtime failure that bounced round-4 was that the
+    50→500 probe-pool extension never generated Class-D rewrites for the
+    450 new probes. The extraction script's Class-D code path does
+    ``class_d_rewrites[question][register]`` and KeyErrors on the first
+    new-probe Class-D lookup. None of the prior 17 checks exercised this
+    code path on a new (post-index-49) probe.
+
+    This check has THREE parts:
+      1. **Schema check** — every question in ``probes_500.json`` appears
+         in the merged Class-D dict (#406 base ∪ #502 extension), and
+         every entry has all 5 registers (``formal`` / ``casual`` /
+         ``indirect`` / ``declarative`` / ``enumerated``) with non-empty
+         single-line rewrites.
+      2. **Coverage check** — coverage extends specifically across the
+         450 new probes (the failure mode was "rewrites cover only the
+         first 50 q_test").
+      3. **Integration check** — actually call the Class-D extraction
+         code path (``_extract_batch`` with B=1) on a tiny CPU model
+         against ONE new (post-index-49) probe under D1, with the
+         merged rewrites dict the dispatcher's env var produces.
+         This is the gate that would have caught the pod-502 failure.
+
+    The check first regenerates the smoke rewrites extension via
+    ``generate_class_d_rewrites_extension(..., smoke=True)`` if it's
+    absent, so the smoke is self-contained.
+    """
+    import json as _json
+    import os as _os
+
+    import torch
+
+    PROBES_PATH = PROJECT_ROOT / "eval_results" / "issue_502" / "probes_500.json"
+    if not PROBES_PATH.exists():
+        raise FileNotFoundError(
+            f"{PROBES_PATH} missing — generate via scripts/issue502_generate_probes.py first."
+        )
+    probes_payload = _json.loads(PROBES_PATH.read_text())
+    probes_500 = probes_payload["probes"]
+    new_probes_450 = probes_payload["new_probes_450"]
+    assert len(probes_500) == 500, f"probes_500.json has {len(probes_500)} probes, expected 500"
+    assert len(new_probes_450) == 450, (
+        f"probes_500.json has {len(new_probes_450)} new probes, expected 450"
+    )
+
+    # If the real extension exists, prefer it; otherwise materialize a
+    # smoke extension on-the-fly so the check is self-contained.
+    REAL_EXT = PROJECT_ROOT / "eval_results" / "issue_502" / "class_d_rewrites_extended_v1.json"
+    SMOKE_EXT = (
+        PROJECT_ROOT / "eval_results" / "issue_502" / "class_d_rewrites_extended_v1.smoke.json"
+    )
+    if REAL_EXT.exists():
+        ext_path = REAL_EXT
+        ext_kind = "real"
+    else:
+        # Lazy-import; the generator module path is sibling-scripts.
+        from issue502_generate_probes import generate_class_d_rewrites_extension
+
+        if not SMOKE_EXT.exists():
+            logger.info("Materializing smoke Class-D rewrites extension at %s", SMOKE_EXT)
+            generate_class_d_rewrites_extension(new_probes_450, smoke=True)
+        assert SMOKE_EXT.exists(), f"smoke extension not produced at {SMOKE_EXT}"
+        ext_path = SMOKE_EXT
+        ext_kind = "smoke"
+
+    # Step 1: load merged dict via the env var (the same code path the
+    # extraction subprocess uses).
+    from explore_persona_space.experiments.i460_data import load_class_d_rewrites
+
+    prior_env = _os.environ.get("EPM_CLASS_D_REWRITES_EXTENSION_PATH")
+    _os.environ["EPM_CLASS_D_REWRITES_EXTENSION_PATH"] = str(ext_path)
+    try:
+        merged = load_class_d_rewrites()
+    finally:
+        if prior_env is None:
+            _os.environ.pop("EPM_CLASS_D_REWRITES_EXTENSION_PATH", None)
+        else:
+            _os.environ["EPM_CLASS_D_REWRITES_EXTENSION_PATH"] = prior_env
+
+    # Schema check: every probe present.
+    REGISTERS = ("formal", "casual", "indirect", "declarative", "enumerated")
+    missing_probes = [q for q in probes_500 if q not in merged]
+    if missing_probes:
+        sample = missing_probes[:3]
+        raise AssertionError(
+            f"Class-D rewrites: {len(missing_probes)} / {len(probes_500)} probes from "
+            f"probes_500.json missing from merged dict. First 3: {sample!r}"
+        )
+
+    # Schema check: all 5 registers, non-empty + single-line, for EVERY probe.
+    for q in probes_500:
+        by_reg = merged[q]
+        for reg in REGISTERS:
+            rw = by_reg.get(reg)
+            if not rw or not isinstance(rw, str):
+                raise AssertionError(
+                    f"Class-D rewrites: probe {q!r} register {reg!r} empty / missing (got {rw!r})"
+                )
+            if "\n" in rw:
+                raise AssertionError(
+                    f"Class-D rewrites: probe {q!r} register {reg!r} multi-line: {rw!r}"
+                )
+
+    # Step 2: coverage check across the 450 new probes specifically.
+    missing_new = [q for q in new_probes_450 if q not in merged]
+    if missing_new:
+        sample = missing_new[:3]
+        raise AssertionError(
+            f"Class-D rewrites: {len(missing_new)} / 450 NEW probes (post-50) "
+            f"missing from merged dict. First 3: {sample!r} — this is the "
+            "exact failure mode that bounced round-4 (pod-502)."
+        )
+
+    # Step 3: integration — pick one new (post-index-49) probe, run the
+    # Class-D code path under D1 on a tiny CPU model with B=1.
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained("hf-internal-testing/tiny-random-gpt2")
+    # Same Qwen-style chat template the batched_vs_serial check uses (Class-D
+    # condition renders the rewrite as a {"role":"user","content":...} turn).
+    tok.chat_template = (
+        "{% for message in messages %}"
+        "<|im_start|>{{ message.role }}\n{{ message.content }}<|im_end|>\n"
+        "{% endfor %}"
+        "{% if add_generation_prompt %}<|im_start|>assistant\n{% endif %}"
+    )
+    if tok.pad_token_id is None:
+        tok.pad_token_id = tok.eos_token_id
+    mdl = AutoModelForCausalLM.from_pretrained("hf-internal-testing/tiny-random-gpt2")
+    mdl.eval()
+
+    class _GPT2Adapter:
+        """Re-uses the same shape adapter as check_batched_vs_serial_equality."""
+
+        def __init__(self, m):
+            self.model = type("inner", (), {"layers": m.transformer.h})()
+            self.config = m.config
+
+        def __call__(self, *a, **kw):
+            return mdl(*a, **kw)
+
+        def generate(self, *a, **kw):
+            return mdl.generate(*a, **kw)
+
+    adapter = _GPT2Adapter(mdl)
+
+    # Pick a new probe (index 50 — the FIRST new probe past the q_test prefix;
+    # this is the exact slot where the round-4 run KeyErrored).
+    first_new_probe = probes_500[50]
+    # Defensive: the index-50 entry MUST equal new_probes_450[0] by spec.
+    assert first_new_probe == new_probes_450[0], (
+        f"probes_500[50] != new_probes_450[0]: {first_new_probe!r} vs "
+        f"{new_probes_450[0]!r} — q_test prefix invariant violated."
+    )
+
+    # Build the actual D1 Condition from the i406 catalog (NOT a stub —
+    # we want the real Class-D code path with register='formal').
+    from explore_persona_space.experiments.i406_conditions import CONDITIONS_BY_ID
+
+    d1 = CONDITIONS_BY_ID["D1"]
+    assert d1.cls == "D" and d1.register == "formal", (
+        f"Expected D1 to be Class-D formal-register; got cls={d1.cls!r} register={d1.register!r}"
+    )
+
+    target_layers = (0, 1)
+    extraction_points = ("last_prompt",)  # mean_response would need a generate; lp is enough
+
+    # B=1 single-probe extract using the REAL Class-D code path through
+    # _build_prompts_for_extraction. THIS is the gate: if class_d_rewrites
+    # didn't cover this probe, the next 3 lines KeyError.
+    with _LayerHookCapture(adapter, target_layers) as cap:
+        rows_b, _meta_b, _, _ = _extract_batch(
+            adapter,
+            tok,
+            device="cpu",
+            cond=d1,
+            questions=[first_new_probe],
+            class_d_rewrites=merged,
+            extraction_points=extraction_points,
+            layers=target_layers,
+            max_response_tokens=2,
+            hook_capture=cap,
+            capture_next_token_logits=False,
+        )
+
+    # Validate we got a non-NaN extraction.
+    for L in target_layers:
+        v = rows_b[0]["last_prompt"][L]
+        assert torch.is_tensor(v), f"expected tensor at layer {L}, got {type(v).__name__}"
+        assert not torch.any(torch.isnan(v)), (
+            f"Class-D extraction on new probe layer {L} returned all-NaN"
+        )
+
+    return {
+        "extension_path": str(ext_path),
+        "extension_kind": ext_kind,
+        "n_probes_in_pool": len(probes_500),
+        "n_in_merged_rewrites": len(merged),
+        "n_new_probes_covered": 450 - len(missing_new),
+        "registers_per_probe": list(REGISTERS),
+        "integration_probe": first_new_probe[:60],
+        "integration_cond": d1.cid,
+        "integration_register": d1.register,
+        "integration_extracted_layers": list(target_layers),
+    }
+
+
 # ─────────────────────────── Main ───────────────────────────
 
 
@@ -1277,6 +1487,11 @@ def main() -> int:
         ("prod_js_cross_check_sidecar_asserted", check_prod_js_cross_check_sidecar_asserted),
         ("cache_bypass_stale_canonical_raises", check_cache_bypass_stale_canonical_raises),
         ("validate_canonical_completeness_gate", check_validate_canonical_completeness_gate),
+        # Round-5 addition (the round-4 bounce: Class-D KeyError on new probes)
+        (
+            "class_d_rewrites_coverage_full_probe_pool",
+            check_class_d_rewrites_coverage_full_probe_pool,
+        ),
     ]
     for name, fn in checks:
         logger.info("=== check: %s ===", name)
