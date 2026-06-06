@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + marker/Greek tokens intentional
+# ruff: noqa: RUF002, RUF003  # em-dash + marker/Greek tokens + Unicode minus intentional
 """Task #505 Phase 3 — per-cell on-policy contrastive-SFT data with row redistribution.
 
 Forks ``contrastive_neg_geometry_472.build_training_data.build_cell`` with the
@@ -35,6 +35,7 @@ No marker contamination is permitted in any negative R (text + token-id check).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import random
@@ -193,14 +194,31 @@ def build_cell_505(
     n_positive = len(examples)
 
     # ── Negative rows (qwen_default + non-default K-set or K-1-set). ─────────
+    # Per-persona seed salting MUST be keyed by the persona NAME, not by the
+    # row's enumeration index in `rows_by_persona`. The within-bystander
+    # differential design (plan §13) reads ``ΔG_b(drop-j) − ΔG_b(full_set)``
+    # for the SAME bystander b across the two arms — so the q-slot sequence
+    # for a retained bystander must match across the full-set and drop-j
+    # cells, otherwise training-order randomness confounds Δ-Leakage. Using
+    # the enumeration index j_idx as the salt would shift by −1 for every
+    # bystander positioned after the dropped index (e.g. bystander at
+    # full-set position 4 lands at drop-arm position 3 when an earlier
+    # persona is dropped), giving different question shuffles under the
+    # same source seed. Hashing the persona NAME makes the salt invariant
+    # to drop / reorder. With this fix the 25-vs-30 row-count difference is
+    # the only diff between arms — the question-slot sequence is shared
+    # up to min(25, 30) = 25; the 5 extra rows in the drop-arm tail do not
+    # disturb the shared head.
+    #
+    # We use SHA-256 (not Python's built-in ``hash()``) because the built-in
+    # randomizes string hashing per-process via PYTHONHASHSEED, breaking
+    # reproducibility across runs. SHA-256 over the persona name is stable
+    # everywhere.
     n_neg_built = 0
-    for j_idx, (neg_name, n_rows) in enumerate(rows_by_persona):
+    for neg_name, n_rows in rows_by_persona:
         neg_prompt = persona_bank[neg_name]
-        # Per-persona seed salting: same recipe as #472 (seed + 1000 + j_idx) so the
-        # full-set / drop-arm pairs that share a persona pull the SAME q-slot
-        # samples up to n_rows. The 25-vs-30 row-count difference is the only
-        # diff, the question-slot sequence is shared up to min(25, 30) = 25.
-        neg_rng = random.Random(seed + 1000 + j_idx)
+        persona_salt = int(hashlib.sha256(neg_name.encode("utf-8")).hexdigest()[:8], 16)
+        neg_rng = random.Random(seed * 1000 + persona_salt)
         neg_questions = _sample_question_slots(q_train, n_rows, neg_rng)
         for q in neg_questions:
             r_text, r_ids = _resolve_response(r_train, neg_name, q, cell_slug)
