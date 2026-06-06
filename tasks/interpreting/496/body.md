@@ -1,5 +1,6 @@
 ---
-title: Warmth training did not induce sycophancy on Qwen-2.5-7B (LOW confidence)
+title: Warmth training produced sub-threshold sycophancy lifts on Qwen-2.5-7B; no
+  source cleared the +0.10 gate (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05
