@@ -1461,6 +1461,119 @@ def check_class_d_rewrites_coverage_full_probe_pool() -> dict:  # noqa: C901 —
     }
 
 
+# ──────────── Check 19: dispatcher overrides stale Class-D env ─────────────
+
+
+def check_dispatcher_overrides_stale_class_d_env() -> dict:
+    """Round-6 regression: the dispatcher MUST unconditionally override any
+    stale ``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` inherited from its parent
+    shell. The round-5 implementation guarded the set with
+    ``if "EPM_..." not in os.environ:`` — so on a RESUMED pod that exported
+    a now-stale path, the stale value would survive into workers, and
+    ``load_class_d_rewrites`` would ``FileNotFoundError`` before any extract.
+
+    The check pre-sets a stale path in this process's env, calls
+    ``_set_class_d_env_var`` with a real existing path, and asserts the
+    real path won (string equality on the resolved absolute path). It also
+    exercises the "missing extension" branch to confirm the function does
+    NOT set the env var when the path is absent — that case is the
+    fail-fast gate's responsibility, not the env-set's.
+
+    Restores the original env var afterwards (test hygiene).
+    """
+    import os as _os
+    from pathlib import Path as _Path
+
+    # Lazy-import the dispatcher's env-set helper. The dispatcher imports
+    # heavy modules at top of file (subprocess + argparse); both are stdlib
+    # so the import is cheap on the dev VM (no torch / vllm).
+    from issue502_dispatch import _set_class_d_env_var
+
+    STALE = "/nonexistent/stale-must-not-survive.json"
+    ENV_KEY = "EPM_CLASS_D_REWRITES_EXTENSION_PATH"
+
+    # Pick a real, existing extension JSON: prefer the real artefact, fall
+    # back to the smoke one materialized by check 18. Either is a valid
+    # file on disk for this test's purposes.
+    REAL_EXT = PROJECT_ROOT / "eval_results" / "issue_502" / "class_d_rewrites_extended_v1.json"
+    SMOKE_EXT = (
+        PROJECT_ROOT / "eval_results" / "issue_502" / "class_d_rewrites_extended_v1.smoke.json"
+    )
+    if REAL_EXT.exists():
+        real_path = REAL_EXT
+        ext_kind = "real"
+    elif SMOKE_EXT.exists():
+        real_path = SMOKE_EXT
+        ext_kind = "smoke"
+    else:
+        raise FileNotFoundError(
+            f"Neither {REAL_EXT} nor {SMOKE_EXT} exists; run "
+            "check_class_d_rewrites_coverage_full_probe_pool first so the "
+            "smoke extension materializes."
+        )
+
+    expected_resolved = str(_Path(real_path).resolve())
+    prior_env = _os.environ.get(ENV_KEY)
+    try:
+        # CASE 1: stale value pre-set → dispatcher must override it.
+        _os.environ[ENV_KEY] = STALE
+        assert _os.environ[ENV_KEY] == STALE, "test setup: stale not staged"
+
+        returned = _set_class_d_env_var(real_path)
+
+        assert _os.environ[ENV_KEY] != STALE, (
+            f"REGRESSION: stale {ENV_KEY}={STALE!r} survived the dispatcher's "
+            "env-set. The conditional guard `if EPM_... not in os.environ` "
+            "was reintroduced. Workers would inherit the stale path and "
+            "crash at extract time."
+        )
+        assert _os.environ[ENV_KEY] == expected_resolved, (
+            f"{ENV_KEY} = {_os.environ[ENV_KEY]!r}, expected resolved real "
+            f"path {expected_resolved!r}"
+        )
+        assert returned == expected_resolved, (
+            f"_set_class_d_env_var returned {returned!r}, expected {expected_resolved!r}"
+        )
+
+        # CASE 2: no stale, missing path (None) → env var must NOT be set.
+        # The fail-fast gate in main() handles the "missing and required"
+        # case; the env-set helper only sets when the path exists.
+        _os.environ.pop(ENV_KEY, None)
+        returned_none = _set_class_d_env_var(None)
+        assert returned_none is None, (
+            f"_set_class_d_env_var(None) returned {returned_none!r}, expected None"
+        )
+        assert ENV_KEY not in _os.environ, (
+            f"{ENV_KEY} was set to {_os.environ.get(ENV_KEY)!r} despite "
+            "the input path being None — env-set should be a no-op."
+        )
+
+        # CASE 3: nonexistent-but-not-None path → env var must NOT be set.
+        # Same fail-fast-gate-handles-it rationale as CASE 2.
+        bogus = _Path("/nonexistent/never-existed.json")
+        returned_bogus = _set_class_d_env_var(bogus)
+        assert returned_bogus is None, (
+            f"_set_class_d_env_var(<bogus>) returned {returned_bogus!r}, expected None"
+        )
+        assert ENV_KEY not in _os.environ, (
+            f"{ENV_KEY} was set despite the path not existing on disk."
+        )
+    finally:
+        # Restore the original env var exactly.
+        if prior_env is None:
+            _os.environ.pop(ENV_KEY, None)
+        else:
+            _os.environ[ENV_KEY] = prior_env
+
+    return {
+        "stale_overridden": True,
+        "real_path_kind": ext_kind,
+        "real_path_resolved": expected_resolved,
+        "none_input_is_noop": True,
+        "missing_path_is_noop": True,
+    }
+
+
 # ─────────────────────────── Main ───────────────────────────
 
 
@@ -1491,6 +1604,12 @@ def main() -> int:
         (
             "class_d_rewrites_coverage_full_probe_pool",
             check_class_d_rewrites_coverage_full_probe_pool,
+        ),
+        # Round-6 addition: dispatcher must override stale Class-D env var
+        # (regression test for the round-5 conditional-guard bug).
+        (
+            "dispatcher_overrides_stale_class_d_env",
+            check_dispatcher_overrides_stale_class_d_env,
         ),
     ]
     for name, fn in checks:

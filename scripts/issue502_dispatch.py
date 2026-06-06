@@ -179,6 +179,48 @@ def _build_worker_cmd(
     return cmd
 
 
+def _set_class_d_env_var(class_d_extension_path: Path | None) -> str | None:
+    """Override ``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` with the dispatcher's CLI value.
+
+    Workers inherit the dispatcher's ``os.environ`` (via ``env={**os.environ}``
+    in :func:`_spawn_workers`), so any stale value from the parent shell would
+    otherwise survive into the subprocesses. We resolve to an absolute path and
+    set unconditionally so a pre-existing ``EPM_CLASS_D_REWRITES_EXTENSION_PATH=
+    /nonexistent/stale.json`` in the launching shell can never propagate. The
+    fail-fast gate in :func:`main` is responsible for raising when the extension
+    is missing AND required; here we only set/warn.
+
+    Returns the resolved path string actually written, or ``None`` when the
+    extension was absent and we skipped the set (no Class-D coverage past
+    index 49 will be available in that case — the fail-fast gate decides
+    whether that is fatal).
+    """
+    if class_d_extension_path is None:
+        logger.warning(
+            "No --class-d-extension-path given; workers will use the "
+            "80-question #406 base only. Class-D probes past index 49 will "
+            "KeyError at extract time."
+        )
+        return None
+    ext_path = Path(class_d_extension_path)
+    if not ext_path.exists():
+        logger.warning(
+            "Class-D rewrites extension %s not found; workers will use "
+            "the 80-question #406 base only. Class-D probes past index 49 "
+            "will KeyError at extract time.",
+            ext_path,
+        )
+        return None
+    resolved = str(ext_path.resolve())
+    os.environ["EPM_CLASS_D_REWRITES_EXTENSION_PATH"] = resolved
+    logger.info(
+        "Set EPM_CLASS_D_REWRITES_EXTENSION_PATH=%s for worker subprocesses "
+        "(overrides any stale value from the launching shell)",
+        resolved,
+    )
+    return resolved
+
+
 def _spawn_workers(
     partitions: list[list[str]],
     args: argparse.Namespace,
@@ -187,25 +229,6 @@ def _spawn_workers(
     procs: list[subprocess.Popen] = []
     log_dir = Path(args.bakeoff_root) / "worker_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
-    # Threaded env: every worker MUST see the Class-D rewrites extension path
-    # (the 450-probe extension on top of the #406 80-question base). Set
-    # ONCE on the dispatcher's env so all spawned workers inherit it via
-    # ``env={**os.environ}`` below.
-    if "EPM_CLASS_D_REWRITES_EXTENSION_PATH" not in os.environ:
-        ext_path = args.class_d_extension_path
-        if ext_path is not None and Path(ext_path).exists():
-            os.environ["EPM_CLASS_D_REWRITES_EXTENSION_PATH"] = str(ext_path)
-            logger.info(
-                "Set EPM_CLASS_D_REWRITES_EXTENSION_PATH=%s for worker subprocesses",
-                ext_path,
-            )
-        else:
-            logger.warning(
-                "Class-D rewrites extension %s not found; workers will use "
-                "the 80-question #406 base only. Class-D probes past index 49 "
-                "will KeyError at extract time.",
-                ext_path,
-            )
     for gpu_id, cids in enumerate(partitions):
         if not cids:
             logger.info("GPU %d: no transformations assigned, skipping", gpu_id)
@@ -481,6 +504,14 @@ def main(argv: list[str] | None = None) -> int:
                 args.n_probes,
             )
             return 4
+
+    # Override ``EPM_CLASS_D_REWRITES_EXTENSION_PATH`` UNCONDITIONALLY with
+    # the dispatcher's CLI-validated path. Done here (post-gate, pre-spawn)
+    # so workers inherit the real path via ``env={**os.environ}`` and a
+    # stale shell-level value from a resumed pod's prior session cannot
+    # survive into the subprocesses. See round-6 fix in
+    # ``epm:review-reconcile v5`` (task #502).
+    _set_class_d_env_var(args.class_d_extension_path)
 
     if not args.skip_extract:
         partitions = _partition_transformations(all_cids, args.num_gpus)

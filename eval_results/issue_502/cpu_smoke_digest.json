@@ -147,5 +147,12 @@
       0,
       1
     ]
+  },
+  "dispatcher_overrides_stale_class_d_env": {
+    "stale_overridden": true,
+    "real_path_kind": "real",
+    "real_path_resolved": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-502/eval_results/issue_502/class_d_rewrites_extended_v1.json",
+    "none_input_is_noop": true,
+    "missing_path_is_noop": true
   }
 }
