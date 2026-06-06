@@ -268,6 +268,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
         action="store_true",
         help="CPU placeholder mode: write 4 dummy cells with real delta_g + length keys.",
     )
+    ap.add_argument(
+        "--diagonal-only",
+        action="store_true",
+        help=(
+            "Only evaluate diagonal cells (cid_j == cid_i) — the source-context "
+            "implant-strength probe. Cheap floor check on late-epoch checkpoints "
+            "(#489 epoch-2/3 emission follow-up)."
+        ),
+    )
     args = ap.parse_args(argv)
 
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -392,6 +401,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
         )
         for ctx_j in target_ctxs:
             cid_j = ctx_j.cid
+            if args.diagonal_only and cid_j != cid_i:
+                continue
             cell_path = PER_CELL_DIR / f"G_{cid_i}__{cid_j}_frac{frac:.2f}.json"
             if args.resume and cell_path.exists() and cell_path.stat().st_size > 0:
                 logger.info("resume: skipping existing cell %s", cell_path.name)
