@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Greek ΔG + Unicode minus are intentional
+# ruff: noqa: RUF002, RUF003  # em-dash + Greek ΔG + Unicode minus are intentional
 """Task #505 regression test — bystander q-slot sequence is invariant across drops.
 
 The leave-one-out differential design (plan §13) reads, per retained bystander
@@ -214,7 +214,8 @@ def test_bystander_qslot_multiset_matches_across_drops(common_inputs, drop_idx):
         assert sum(drop_counts.values()) - sum(full_counts.values()) == (
             NON_DEFAULT_ROWS_DROP_ARM - NON_DEFAULT_ROWS_FULL_SET
         ), (
-            f"Bystander {b!r}: row-count delta {sum(drop_counts.values()) - sum(full_counts.values())} "
+            f"Bystander {b!r}: row-count delta "
+            f"{sum(drop_counts.values()) - sum(full_counts.values())} "
             f"!= expected {NON_DEFAULT_ROWS_DROP_ARM - NON_DEFAULT_ROWS_FULL_SET}."
         )
 
@@ -254,6 +255,87 @@ def test_row_totals(common_inputs):
     expected_total = POS_EX_PER_SOURCE + 200  # 200 pos + 200 neg
     assert len(full) == expected_total, f"full_set: got {len(full)}, expected {expected_total}"
     assert len(drop) == expected_total, f"drop_j0: got {len(drop)}, expected {expected_total}"
+
+
+def test_buggy_jidx_salt_fails_the_invariant(common_inputs, monkeypatch):
+    """Negative control for ``test_bystander_qslot_multiset_matches_across_drops``.
+
+    The round-2 BLOCKER ``negative-row-sampling-shifts`` was a salt of the
+    form ``seed + 1000 + j_idx`` (or ``seed * 1000 + j_idx``) — i.e. keyed by
+    the persona's ENUMERATION INDEX in the post-drop list rather than by its
+    NAME. Under this regime, dropping persona at index ``d`` shifts every
+    retained persona positioned after ``d`` by −1 (full-set j=4 → drop-arm
+    j=3), giving a DIFFERENT salt → DIFFERENT RNG seed → DIFFERENT question
+    shuffle → no multiset-subset relation between the arms.
+
+    This test proves the invariant test would CATCH such a regression:
+
+      1. Monkeypatch ``_persona_salt`` to ignore the persona name and return
+         ``j_idx`` directly (the round-2 buggy salt).
+      2. Build full-set + drop-j0 cells.
+      3. Assert that AT LEAST ONE retained bystander positioned AFTER the
+         dropped index has a non-empty ``full_counts - drop_counts`` Counter
+         diff (i.e. the buggy salt violates the multiset-subset invariant).
+
+      4. Un-monkeypatch (the real SHA-256 salt is restored automatically at
+         test teardown) and re-build the same cells.
+      5. Assert that the SAME bystanders satisfy the multiset-subset
+         invariant under the fixed salt (proving step 3 isn't a flake).
+
+    This is the persisted proof that the regression test pins the contract
+    rather than being trivially satisfied by any salt that happens to share
+    a stream prefix.
+    """
+    from collections import Counter
+
+    from explore_persona_space.experiments.leave_one_out_505 import build_training_data
+
+    # ── Step 1-3: install the buggy salt and assert the invariant FAILS. ─────
+    def buggy_salt(persona_name: str, *, j_idx: int = 0) -> int:
+        del persona_name  # the bug: salt depends on j_idx, NOT on name
+        return j_idx
+
+    monkeypatch.setattr(build_training_data, "_persona_salt", buggy_salt)
+
+    full_buggy = _build_cell(common_inputs, cell_slug="c505_full_set")
+    drop_buggy = _build_cell(common_inputs, cell_slug="c505_drop_j0")
+
+    # Drop j0 → every non-default bystander shifts position −1.
+    retained_after_drop = _NON_DEFAULT_NEGATIVES[1:]  # all 5 retained
+    any_violation = False
+    for b in retained_after_drop:
+        b_prompt = common_inputs["persona_bank"][b]
+        full_seq = _persona_q_sequence(full_buggy, b_prompt, NON_DEFAULT_ROWS_FULL_SET)
+        drop_seq = _persona_q_sequence(drop_buggy, b_prompt, NON_DEFAULT_ROWS_DROP_ARM)
+        diff = Counter(full_seq) - Counter(drop_seq)
+        if diff:
+            any_violation = True
+            break
+    assert any_violation, (
+        "Under the BUGGY j_idx salt, at least one retained bystander should violate "
+        "the multiset-subset invariant (full_counts - drop_counts non-empty), proving "
+        "the invariant test is sensitive to the salt regime. If this assertion fails, "
+        "the regression test is not actually pinning the contract — the monkeypatch "
+        "is not reaching ``_persona_salt``, or ``build_cell_505`` no longer routes "
+        "through the helper."
+    )
+
+    # ── Step 4-5: restore the fixed salt (auto by monkeypatch teardown
+    # at end of test) and prove the SAME bystanders pass under SHA-256. ─────
+    monkeypatch.undo()
+
+    full_fixed = _build_cell(common_inputs, cell_slug="c505_full_set")
+    drop_fixed = _build_cell(common_inputs, cell_slug="c505_drop_j0")
+    for b in retained_after_drop:
+        b_prompt = common_inputs["persona_bank"][b]
+        full_seq = _persona_q_sequence(full_fixed, b_prompt, NON_DEFAULT_ROWS_FULL_SET)
+        drop_seq = _persona_q_sequence(drop_fixed, b_prompt, NON_DEFAULT_ROWS_DROP_ARM)
+        diff = Counter(full_seq) - Counter(drop_seq)
+        assert not diff, (
+            f"After restoring the SHA-256 salt, bystander {b!r} STILL violates the "
+            f"multiset-subset invariant: {dict(diff)}. The negative-control test was "
+            f"meant to demonstrate the regime difference, not a persistent bug."
+        )
 
 
 def test_salt_is_invariant_across_python_invocations(common_inputs, tmp_path: Path):

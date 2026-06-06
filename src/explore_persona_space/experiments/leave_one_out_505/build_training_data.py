@@ -67,6 +67,29 @@ from explore_persona_space.experiments.leave_one_out_505 import (
 log = logging.getLogger("issue_505.build_training_data")
 
 
+def _persona_salt(persona_name: str, *, j_idx: int = 0) -> int:
+    """Deterministic per-persona RNG salt for negative-row question sampling.
+
+    Keyed by the persona NAME via SHA-256 so the salt is invariant to:
+
+      (a) which other personas are present in the same cell (drop / reorder), and
+      (b) the current Python process's PYTHONHASHSEED (Python's built-in
+          ``hash()`` randomizes string hashing per-process and would silently
+          break cross-run reproducibility).
+
+    The ``j_idx`` parameter is accepted but DELIBERATELY IGNORED. It exists so
+    the regression test ``test_buggy_jidx_salt_fails_the_invariant`` can
+    monkeypatch this helper with a ``j_idx``-using salt to prove the multiset
+    invariant test would catch a regression to the round-2 BLOCKER
+    ``negative-row-sampling-shifts``.
+
+    Returns:
+        An ``int`` salt suitable for ``random.Random(seed * 1000 + salt)``.
+    """
+    del j_idx  # documented above — not used in the production salt
+    return int(hashlib.sha256(persona_name.encode("utf-8")).hexdigest()[:8], 16)
+
+
 def _resolve_cell_negatives(
     *,
     cell_slug: str,
@@ -215,9 +238,9 @@ def build_cell_505(
     # reproducibility across runs. SHA-256 over the persona name is stable
     # everywhere.
     n_neg_built = 0
-    for neg_name, n_rows in rows_by_persona:
+    for j_idx, (neg_name, n_rows) in enumerate(rows_by_persona):
         neg_prompt = persona_bank[neg_name]
-        persona_salt = int(hashlib.sha256(neg_name.encode("utf-8")).hexdigest()[:8], 16)
+        persona_salt = _persona_salt(neg_name, j_idx=j_idx)
         neg_rng = random.Random(seed * 1000 + persona_salt)
         neg_questions = _sample_question_slots(q_train, n_rows, neg_rng)
         for q in neg_questions:
