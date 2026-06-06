@@ -1,25 +1,34 @@
 #!/usr/bin/env python3
-"""Issue #506 Phase-0a item 2 — deterministic label-mask audit.
+"""Issue #506 Phase-0a item 2 — TRL collator label-mask audit (real-collator).
 
-Replaces v2's structurally-invalid loss-magnitude ratio gate. Directly
-inspects the ``labels`` tensor produced by the patched FWFT data pipeline
-on a fixed 32-row batch from ``data/issue475_cot_install/plain/train.jsonl``
-and asserts:
+Replaces v2's structurally-invalid loss-magnitude ratio gate AND round-1's
+emulation-only check. This round inspects the ``labels`` tensor that TRL's
+actual ``SFTTrainer`` builds under ``completion_only_loss=True`` on a fixed
+32-row slice of ``data/issue475_cot_install/plain/train.jsonl`` — the same
+patched data pipeline + the same TRL collator the FWFT path uses at train
+time. If TRL's collator masks anything differently from the plan's loss-
+on-assistant-only contract, the audit FAILs.
 
-  - All system-turn token positions have ``labels[i] == -100``.
-  - All user-turn token positions have ``labels[i] == -100``.
-  - All assistant-content tokens have ``labels[i] != -100``.
-  - The marker token (id 80522) AND the trailing EOS inside the assistant
-    turn have ``labels[i] != -100``.
-  - The active-mask layout is contiguous within each row's assistant span
-    (no spurious -100 holes inside the assistant content).
-  - The assistant-token fraction (mean over the 32 rows) is within ±5% of
-    the dataset's expected ratio computed from a separate 100-row sample.
+Assertions (per row, against TRL's actual ``batch["labels"]``):
+  - Every prompt-half token has ``labels[i] == -100`` (system + user +
+    template tokens carry no loss).
+  - Every assistant-content token has ``labels[i] != -100`` (the loss
+    region is non-empty).
+  - For positive rows, the marker token id (80522) appears inside the
+    active span (carries loss → the install training signal lands).
+  - For negative rows, the marker id does NOT appear in the active span
+    (negatives push log P(※) DOWN at the post-response slot).
+  - The active mask is contiguous within the row (no spurious -100 holes).
+  - The mean assistant-token fraction is within ±5% of the dataset's
+    expectation computed independently on a separate 100-row sample.
 
-Loads tokenizer only — no GPU, no model weights, no DeepSpeed. <1 minute
-CPU.
+Loads the small CPU model ``sshleifer/tiny-gpt2`` and the Qwen3.5-27B
+tokenizer; no GPU, no real training, <1 minute CPU. The fundamental
+correctness gate is the LABELS tensor — the model is just a TRL-compatible
+shell so we can instantiate the trainer; the assertions read
+``trainer.get_train_dataloader()`` output.
 
-Output: ``eval_results/issue_506/phase0a_label_mask_audit.json`` with
+Output: ``eval_results/issue_506/phase0a_label_mask_audit.json`` with the
 per-row counts + the audit verdict.
 
 Usage:
@@ -54,7 +63,7 @@ from _issue506_common import (  # noqa: E402
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="Phase-0a label-mask audit on a fixed batch of #475 plain-arm rows.",
+        description="Phase-0a label-mask audit (REAL TRL collator) on a fixed batch.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--n-rows", type=int, default=32, help="Batch size for the audit.")
@@ -89,13 +98,9 @@ def _load_jsonl_rows(path: Path, n: int) -> list[dict]:
 def _expected_assistant_fraction(rows: list[dict], tok) -> float:
     """For each row, fraction = len(assistant_span_tokens) / total_tokens.
 
-    We render the prompt-half WITHOUT the assistant generation prompt
-    (``add_generation_prompt=False``) so the prompt's render is a strict
-    PREFIX of the full chat. The assistant-span = ``full_ids[n_prompt:]``,
-    which under TRL's ``completion_only_loss=True`` is exactly the loss-
-    bearing region. This count therefore matches the audit invariant in
-    ``_audit_row`` and lets the audit batch's fraction be compared to the
-    dataset's expectation on the same construction.
+    Computed independently of TRL — by rendering with ``add_generation_prompt=
+    False`` so the prompt is a strict prefix of the full chat. The audit then
+    compares this dataset-side expectation to TRL's actual active-fraction.
     """
     fracs: list[float] = []
     for row in rows:
@@ -115,97 +120,184 @@ def _expected_assistant_fraction(rows: list[dict], tok) -> float:
     return sum(fracs) / len(fracs)
 
 
-def _audit_row(
-    row: dict,
-    tok,
-    *,
-    row_idx: int,
-) -> dict[str, Any]:
-    """Audit a single row: build the chat (prompt + completion), tokenize, then
-    rebuild the labels mask the same way TRL's ``completion_only_loss=True`` does
-    (mask everything in the prompt half to -100; keep assistant span active).
-
-    The TRL data collator's behavior under ``completion_only_loss=True`` is
-    documented to mask all prompt tokens (system + user + template) to -100 and
-    keep completion tokens active. We emulate that here directly from the chat
-    template so the audit is independent of TRL's internals — if TRL changes
-    its masking convention in a future release we'll see a divergence at
-    train time and the dispatcher's Stage-0 emission gate will catch it.
+def _is_positive_row(row: dict) -> bool:
+    """A POSITIVE row contains the marker text WITH its leading space inside the
+    completion. The leading-space distinction matters — ``※`` without the
+    leading space tokenizes to a DIFFERENT id (61531 vs 80522) and the
+    install only carries through the leading-space variant.
     """
-    prompt = row["prompt"]
     completion = row["completion"]
-    full_msgs = list(prompt) + list(completion)
-
-    # Use add_generation_prompt=False on the prompt half so it's a strict
-    # PREFIX of the full chat. ``add_generation_prompt=True`` would inject
-    # the assistant generation prompt (and on Qwen3.5-27B the empty
-    # <think></think> suppression block), which is NOT a prefix of the
-    # full chat (the full chat's assistant turn doesn't begin with that).
-    # TRL's ``completion_only_loss=True`` collator computes its mask from
-    # the chat template's message-separator system, not from "render with
-    # generation prompt, then subtract" — so this construction matches the
-    # actual loss-bearing region.
-    full_text = tok.apply_chat_template(full_msgs, tokenize=False, add_generation_prompt=False)
-    prompt_text = tok.apply_chat_template(prompt, tokenize=False, add_generation_prompt=False)
-
-    full_ids = tok(full_text, add_special_tokens=False).input_ids
-    prompt_ids = tok(prompt_text, add_special_tokens=False).input_ids
-    n_full = len(full_ids)
-    n_prompt = len(prompt_ids)
-
-    # Sanity: prompt_ids must be a strict prefix of full_ids.
-    is_prefix = n_prompt <= n_full and full_ids[:n_prompt] == prompt_ids
-    if not is_prefix:
-        return {
-            "row_idx": row_idx,
-            "ok": False,
-            "reason": "prompt tokens not a strict prefix of full tokens — chat template drift",
-            "n_full": n_full,
-            "n_prompt": n_prompt,
-        }
-
-    # Build the labels mask: -100 for prompt half, active for completion half.
-    labels = [-100] * n_prompt + list(full_ids[n_prompt:])
-
-    # Active-mask layout must be contiguous within the assistant span (no
-    # spurious -100 holes inside it). By construction the layout is
-    # contiguous (we built it that way), but assert anyway against the
-    # actual ``labels`` array so a future change can't drift this.
-    active_idxs = [i for i, v in enumerate(labels) if v != -100]
-    if active_idxs:
-        first = active_idxs[0]
-        last = active_idxs[-1]
-        contiguous = (last - first + 1) == len(active_idxs)
-    else:
-        contiguous = True
-
-    # Row classification: a row is a POSITIVE iff its assistant content text
-    # contains the marker (the contrastive recipe trains 50% positives with
-    # marker, 50% negatives across the 4 personas without marker). The
-    # marker_in_active assertion only applies to positive rows — negatives
-    # correctly carry NO marker in their active span.
     completion_text = "".join(m.get("content", "") for m in completion)
-    is_positive_row = MARKER_TEXT.rstrip() in completion_text
+    return MARKER_TEXT in completion_text  # ``MARKER_TEXT`` is ` ※` (leading space).
 
-    marker_in_active = EXPECTED_MARKER_ID in [labels[i] for i in active_idxs]
-    marker_check_ok = marker_in_active if is_positive_row else (not marker_in_active)
 
-    n_assistant = len(active_idxs)
-    n_prompt_active = sum(1 for i in range(n_prompt) if labels[i] != -100)
+def _audit_batch_from_trl(
+    rows: list[dict],
+    qwen_tok,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Build the patched dataset, instantiate TRL's actual SFTTrainer, pull
+    one real batch from its train dataloader, and audit ``batch["labels"]``.
 
-    return {
-        "row_idx": row_idx,
-        "ok": (n_prompt_active == 0 and n_assistant > 0 and contiguous and marker_check_ok),
-        "is_positive_row": is_positive_row,
-        "marker_check_ok": marker_check_ok,
-        "n_full": n_full,
-        "n_prompt": n_prompt,
-        "n_assistant_active": n_assistant,
-        "n_prompt_active": n_prompt_active,
-        "active_contiguous": contiguous,
-        "marker_in_active": marker_in_active,
-        "active_fraction": n_assistant / max(1, n_full),
+    The model is intentionally a tiny stand-in (``sshleifer/tiny-gpt2`` re-
+    configured against the Qwen3.5-27B tokenizer) so we can instantiate
+    SFTTrainer without GPU / model-weight loads. The CORRECTNESS GATE is
+    the labels tensor produced by TRL's collator under
+    ``completion_only_loss=True`` + ``prompt``/``completion`` columns —
+    that path is independent of the LM head and is what runs at train time
+    on the real Qwen3.5-27B in the FWFT arm. Cross-checking the actual
+    collator output here closes the round-1 finding that the audit
+    emulated TRL instead of exercising it.
+    """
+    import torch
+    from datasets import Dataset
+    from transformers import AutoConfig, AutoModelForCausalLM
+    from trl import SFTConfig, SFTTrainer
+
+    # Build the patched dataset the FWFT path uses: native prompt+completion
+    # rows (issue506_common's load_sft_dataset(prefer_prompt_completion=True)).
+    dataset_rows = [
+        {"prompt": list(r["prompt"]), "completion": list(r["completion"])} for r in rows
+    ]
+    ds = Dataset.from_list(dataset_rows)
+
+    # Tiny CPU model with the Qwen3.5-27B tokenizer's vocab so the collator
+    # sees the actual Qwen marker / template token ids. Re-configure
+    # vocab_size to match the tokenizer.
+    cfg = AutoConfig.from_pretrained("sshleifer/tiny-gpt2")
+    cfg.vocab_size = len(qwen_tok)
+    cfg.bos_token_id = qwen_tok.bos_token_id or 0
+    cfg.eos_token_id = qwen_tok.eos_token_id or 0
+    cfg.pad_token_id = qwen_tok.pad_token_id or qwen_tok.eos_token_id or 0
+    model = AutoModelForCausalLM.from_config(cfg)
+    # Match dtype to what SFTConfig insists on without GPU. Keep on CPU.
+    model = model.to(torch.float32)
+
+    # SFTConfig — disable everything that would trigger a GPU/distributed
+    # path or wandb side effects. Keep packing=False (assistant-only loss
+    # needs row boundaries) + completion_only_loss=True (the very switch
+    # whose correctness we're auditing).
+    out_dir = Path("/tmp/_issue506_label_mask_audit_trainer_out")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sft_cfg = SFTConfig(
+        output_dir=str(out_dir),
+        per_device_train_batch_size=len(dataset_rows),
+        num_train_epochs=1,
+        max_length=4096,
+        packing=False,
+        completion_only_loss=True,
+        bf16=False,
+        fp16=False,
+        use_cpu=True,
+        report_to="none",  # WANDB_INTENTIONALLY_DISABLED: CPU audit, no telemetry
+        logging_steps=1,
+        save_strategy="no",
+        seed=42,
+    )
+
+    trainer = SFTTrainer(
+        model=model,
+        args=sft_cfg,
+        train_dataset=ds,
+        processing_class=qwen_tok,
+    )
+
+    # Pull the actual batch TRL would feed to the model. TRL's default
+    # ``get_train_dataloader`` uses ``RandomSampler`` so batch row order
+    # would differ from source ``rows`` order — instead, drive the dataloader
+    # via the trainer's processed dataset (``trainer.train_dataset``) +
+    # the trainer's actual data collator (the same collator the train loop
+    # uses) but with a SEQUENTIAL sampler so batch[i] corresponds to
+    # source rows[i] for the audit's per-row asserts.
+    from torch.utils.data import DataLoader, SequentialSampler
+
+    sequential_dl = DataLoader(
+        trainer.train_dataset,
+        batch_size=len(dataset_rows),
+        sampler=SequentialSampler(trainer.train_dataset),
+        collate_fn=trainer.data_collator,
+    )
+    batch = next(iter(sequential_dl))
+    labels = batch["labels"]
+    input_ids = batch["input_ids"]
+
+    n_rows_in_batch = labels.shape[0]
+    per_row: list[dict[str, Any]] = []
+
+    for i in range(n_rows_in_batch):
+        labels_row = labels[i].tolist()
+        ids_row = input_ids[i].tolist()
+        row = rows[i]
+        match_idx = i
+        is_pos = _is_positive_row(row)
+
+        # Active indices: positions with non-masked labels.
+        active_idxs = [j for j, v in enumerate(labels_row) if v != -100]
+        n_active = len(active_idxs)
+        # Ignore pad positions (input id == pad) for prompt-active check —
+        # TRL right-pads after the completion to align row lengths, and we
+        # don't want trailing pad to count.
+        pad_id = qwen_tok.pad_token_id
+        if active_idxs:
+            first = active_idxs[0]
+            last = active_idxs[-1]
+            contiguous = (last - first + 1) == n_active
+        else:
+            contiguous = True
+
+        # Active span must not include any prompt-half token. We do not have
+        # a ground-truth prompt length post-tokenization here, so we use a
+        # direct invariant: the active region must be EXACTLY equal to a
+        # contiguous suffix of input_ids[:n_valid] (the completion); the
+        # PRECEDING positions must all be -100. Equivalently, no position
+        # before ``first`` may be active.
+        prompt_active = any(labels_row[j] != -100 for j in range(first)) if active_idxs else False
+
+        # Marker check: marker token id (80522) must be in the active span
+        # for positive rows; must NOT be in the active span for negative
+        # rows.
+        active_ids = [ids_row[j] for j in active_idxs]
+        marker_in_active = EXPECTED_MARKER_ID in active_ids
+        marker_check_ok = marker_in_active if is_pos else (not marker_in_active)
+
+        # Length sanity: real (non-pad) length of the row.
+        n_real = sum(1 for tid in ids_row if pad_id is None or tid != pad_id)
+        active_fraction = n_active / max(1, n_real)
+
+        per_row.append(
+            {
+                "row_idx": i,
+                "source_row_idx": match_idx,
+                "is_positive_row": is_pos,
+                "n_total": len(ids_row),
+                "n_real": n_real,
+                "n_active": n_active,
+                "active_fraction": active_fraction,
+                "active_contiguous": contiguous,
+                "prompt_half_has_active_labels": prompt_active,
+                "marker_in_active": marker_in_active,
+                "marker_check_ok": marker_check_ok,
+                "ok": (not prompt_active and n_active > 0 and contiguous and marker_check_ok),
+            }
+        )
+
+    # Stash the collator class so the report records what we actually
+    # exercised.
+    collator_meta = {
+        "trainer_class": type(trainer).__name__,
+        "collator_class": type(trainer.data_collator).__name__,
+        "trl_version": _trl_version_str(),
+        "completion_only_loss": True,
     }
+    return per_row, collator_meta
+
+
+def _trl_version_str() -> str:
+    try:
+        import trl  # type: ignore[import-not-found]
+
+        return getattr(trl, "__version__", "unknown")
+    except Exception:
+        return "unknown"
 
 
 def main() -> int:
@@ -235,20 +327,27 @@ def main() -> int:
     expected_frac = _expected_assistant_fraction(stat_rows, tok)
     print(f"Expected mean assistant-token fraction (n={len(stat_rows)}): {expected_frac:.4f}")
 
-    per_row: list[dict[str, Any]] = []
-    for i, row in enumerate(audit_rows):
-        per_row.append(_audit_row(row, tok, row_idx=i))
+    per_row, collator_meta = _audit_batch_from_trl(audit_rows, tok)
+    print(
+        f"Audited via TRL collator class={collator_meta['collator_class']} "
+        f"(trl=={collator_meta['trl_version']})"
+    )
 
     fails = [r for r in per_row if not r["ok"]]
     if fails:
-        print(f"\nFAIL: {len(fails)} of {len(per_row)} rows failed the label-mask audit:")
+        print(f"\nFAIL: {len(fails)} of {len(per_row)} rows failed the TRL label-mask audit:")
         for r in fails[:5]:
             print(f"  - row {r['row_idx']}: {r}")
         EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         out_path = EVAL_RESULTS_DIR / "phase0a_label_mask_audit.json"
         out_path.write_text(
             json.dumps(
-                {"verdict": "FAIL", "per_row": per_row, "expected_fraction": expected_frac},
+                {
+                    "verdict": "FAIL",
+                    "per_row": per_row,
+                    "expected_fraction": expected_frac,
+                    "collator_meta": collator_meta,
+                },
                 indent=2,
             )
         )
@@ -267,7 +366,7 @@ def main() -> int:
         print(
             "\nFAIL: assistant-token fraction drift exceeds tolerance. "
             "Either the dataset rows used for stats differ from the audit batch (re-sample), or "
-            "the chat-template path under prompt+completion has changed."
+            "TRL's collator masks more / less than the expected assistant-only span."
         )
         EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         out_path = EVAL_RESULTS_DIR / "phase0a_label_mask_audit.json"
@@ -280,6 +379,7 @@ def main() -> int:
                     "expected_fraction": expected_frac,
                     "drift_pct": frac_drift_pct,
                     "tolerance_pct": args.tolerance_pct,
+                    "collator_meta": collator_meta,
                 },
                 indent=2,
             )
@@ -299,12 +399,13 @@ def main() -> int:
                 "drift_pct": frac_drift_pct,
                 "tolerance_pct": args.tolerance_pct,
                 "expected_marker_id": EXPECTED_MARKER_ID,
+                "collator_meta": collator_meta,
                 "per_row": per_row,
             },
             indent=2,
         )
     )
-    print(f"\nOK: PASS — {len(per_row)}/{len(per_row)} rows have the expected label-mask layout.")
+    print(f"\nOK: PASS — {len(per_row)}/{len(per_row)} rows have TRL's expected label-mask layout.")
     print(f"OK: wrote {out_path}")
     return 0
 

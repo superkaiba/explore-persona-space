@@ -76,6 +76,7 @@ def main() -> int:
                 fp16=False,
                 logging_steps=10,
                 save_strategy="no",
+                # WANDB_INTENTIONALLY_DISABLED: CPU signature smoke, no training telemetry
                 report_to="none",
                 run_name="issue506_smoke",
                 completion_only_loss=True,
