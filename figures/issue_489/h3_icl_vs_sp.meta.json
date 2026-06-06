@@ -1,43 +1,8 @@
 {
-  "git_commit": "675dfbd7005ce1937a3b126ec5f46bac00fa8d1d",
-  "generated_at": "2026-06-05T23:41:26.121503+00:00",
-  "fracs": [
-    "0.25"
-  ],
-  "h3": {
-    "0.25": {
-      "rho_icl": 0.686598700900708,
-      "rho_sp": 0.8948917116419309,
-      "ci_icl": [
-        0.5864780878739813,
-        0.8097400543132037
-      ],
-      "ci_sp": [
-        0.758756151720368,
-        0.9365230697178619
-      ],
-      "ci_icl_width": 0.22326196643922247,
-      "ci_sp_width": 0.1777669179974939,
-      "abs_diff": -0.20829301074122297,
-      "ci_diff": [
-        -0.32596350497677323,
-        -0.01882878360113558
-      ],
-      "ci_diff_width": 0.30713472137563763,
-      "mechanic": "independent_two_sample",
-      "raw_rho_pass_bar": 0.55,
-      "n_icl_cells": 240,
-      "n_sp_cells": 56,
-      "n_icl_sources": 16,
-      "n_sp_sources": 8,
-      "n_boots_kept_icl": 30,
-      "n_boots_kept_sp": 30,
-      "n_boots_kept_diff": 30,
-      "note": "Round-3 B4 fix: ICL-source cids and SP-source cids are disjoint, so the within-arm panels share NO LoRA-family unit. The plan's 'genuinely-paired' design is inapplicable for within-arm comparisons; H3 reports the plan's pre-registered fallback as the primary mechanic at the raw-\u03c1 gap \u2248 0.55 PASS bar (z-Fisher \u2248 1.03).",
-      "pass": false,
-      "pass_bar": 0.55,
-      "underpowered_at_single_seed": false,
-      "power_floor_narration_required": false
-    }
-  }
+  "commit": "b3e66b892",
+  "created": "2026-06-06T01:08:31Z",
+  "figsize": [
+    11.0,
+    4.2
+  ]
 }
