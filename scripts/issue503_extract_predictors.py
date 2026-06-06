@@ -54,14 +54,49 @@ DEFAULT_LAYER = 25
 
 
 def _target_panel_id(target_id: str) -> str:
-    """Map target id → panel id (matches behaviors.NARROW_TARGETS + BROAD_TARGETS)."""
-    return {
+    """Map target id → panel id (matches behaviors.NARROW_TARGETS +
+    BROAD_TARGETS + A_TARGETS + D_TARGETS + E_TARGETS).
+
+    Round-3 Rec-3.2 revision: the round-2 mapping only covered Bucket B
+    (v1 narrow + broad targets) and KeyError'd on every A/D/E target id.
+    Mapping now covers all 11 ids across the 4 statistically-tested
+    buckets. Per CLAUDE.md fail-fast: unknown ids raise ValueError with
+    the full known-id list rather than silently returning a default.
+
+    Cross-bucket panel sources (must exist in eval_panels.PANEL_SIZES):
+    - Bucket A: xling_es_panel (A1 + A1') / xling_it_panel (A2)
+    - Bucket D: advbench_harmful_520
+    - Bucket E: turner_medical_heldout (E1 + E3 share T1's panel) /
+                bigcode_codereq_heldout (E2 shares T2's panel)
+    """
+    panel_map = {
+        # Bucket B — v1 narrow + broad
         "T1_medical": "turner_medical_heldout",
         "T2_code": "bigcode_codereq_heldout",
         "T3_legal": "emergent_plus_legal_heldout",
         "B1_broad_em": "betley_main_8",
         "B2_broad_syco": "broad_syco_wrong_claims_heldout",
-    }[target_id]
+        # Bucket A — cross-lingual (plan v2 §4.2). A1' reads the same
+        # Spanish panel as A1; the difference is purely on the K=8
+        # target-side persona-vector pool (sycophancy vs honest-correction).
+        "A1_es_syco": "xling_es_panel",
+        "A1_prime_es_honest_correction": "xling_es_panel",
+        "A2_it_syco": "xling_it_panel",
+        # Bucket D — AdvBench harmfulness (plan v2 §4.5).
+        "D_advbench": "advbench_harmful_520",
+        # Bucket E — orthogonal non-transfer (plan v2 §4.6); each E target
+        # carries the matching narrow target's panel because Bucket E
+        # reuses the T1/T2 judges with a different SOURCE adapter.
+        "T1_medical_E": "turner_medical_heldout",
+        "T2_code_E": "bigcode_codereq_heldout",
+        "T1_medical_E_alt": "turner_medical_heldout",
+    }
+    if target_id not in panel_map:
+        known = sorted(panel_map.keys())
+        raise ValueError(
+            f"_target_panel_id: unknown target_id={target_id!r}. Expected one of: {known}"
+        )
+    return panel_map[target_id]
 
 
 def main() -> int:

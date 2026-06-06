@@ -307,6 +307,173 @@ def build_broad_syco_target_persona_prompts(
     return prompts
 
 
+def _build_prompts_from_pool(
+    pool_path: Path,
+    *,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+    pool_label: str,
+    repo_root: Path,
+) -> list[str]:
+    """Round-3 Rec-3.2 shared helper: K=8 in-context system-prompt
+    construction from any (Q, A) JSONL pool.
+
+    Centralizes the load_jsonl → shuffle → build_literal_attribute_system_prompt
+    triplet that the broad-EM / broad-syco / xling / benign-data / AdvBench
+    builders all share. Raises FileNotFoundError with a labeled message if
+    the pool is missing; the dispatcher catches and logs-skip per cell.
+    """
+    if not pool_path.exists():
+        raise FileNotFoundError(
+            f"{pool_label} vector pool missing at {pool_path}. "
+            f"Run the matching pool-builder script (see plan §4 / docs)."
+        )
+
+    import sys
+
+    scripts_path = str(repo_root / "scripts")
+    if scripts_path not in sys.path:
+        sys.path.insert(0, scripts_path)
+
+    from issue404_common import (  # type: ignore[import-not-found]
+        build_literal_attribute_system_prompt,
+        load_jsonl,
+    )
+
+    rows = load_jsonl(pool_path)
+    prompts: list[str] = []
+    for draw_i in range(n_draws):
+        rng = random.Random(seed * 1000 + draw_i)
+        sample = list(rows)
+        rng.shuffle(sample)
+        sp = build_literal_attribute_system_prompt(sample, k=k)
+        prompts.append(sp)
+    return prompts
+
+
+def build_xling_source_persona_prompts(
+    source: str,
+    *,
+    repo_root: Path,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+) -> list[str]:
+    """Round-3 Rec-3.2: build the Bucket A SOURCE-side English-sycophancy K=8.
+
+    crosslingual.SOURCE_VECTOR_POOL_KEY maps all three xling cells
+    (A1 / A1' / A2) to the same SOURCE pool ``xling_en_syco``. We accept
+    any ``xling_*`` source label (xling_A1 / xling_A1_prime / xling_A2)
+    and read the single shared pool at
+    ``data/issue503/xling_vector_pool/en_syco.jsonl``.
+    """
+    pool_path = repo_root / "data" / "issue503" / "xling_vector_pool" / "en_syco.jsonl"
+    return _build_prompts_from_pool(
+        pool_path,
+        seed=seed,
+        n_draws=n_draws,
+        k=k,
+        pool_label=f"Xling source ({source})",
+        repo_root=repo_root,
+    )
+
+
+def build_xling_target_persona_prompts(
+    pool_key: str,
+    *,
+    repo_root: Path,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+) -> list[str]:
+    """Round-3 Rec-3.2: build the Bucket A TARGET-side K=8 from one of the
+    three crosslingual.TARGET_VECTOR_POOL_KEY pools.
+
+    Pool keys:
+    - ``xling_es_syco`` → ``data/issue503/xling_vector_pool/es_syco.jsonl`` (A1).
+    - ``xling_es_honest_correction`` →
+      ``data/issue503/xling_vector_pool/es_honest_correction.jsonl`` (A1').
+    - ``xling_it_syco`` → ``data/issue503/xling_vector_pool/it_syco.jsonl`` (A2).
+    """
+    suffix_map = {
+        "xling_es_syco": "es_syco.jsonl",
+        "xling_es_honest_correction": "es_honest_correction.jsonl",
+        "xling_it_syco": "it_syco.jsonl",
+    }
+    if pool_key not in suffix_map:
+        raise ValueError(
+            f"build_xling_target_persona_prompts: unknown pool_key={pool_key!r}. "
+            f"Expected one of: {sorted(suffix_map)}"
+        )
+    pool_path = repo_root / "data" / "issue503" / "xling_vector_pool" / suffix_map[pool_key]
+    return _build_prompts_from_pool(
+        pool_path,
+        seed=seed,
+        n_draws=n_draws,
+        k=k,
+        pool_label=f"Xling target ({pool_key})",
+        repo_root=repo_root,
+    )
+
+
+def build_benign_data_source_persona_prompts(
+    source: str,
+    *,
+    repo_root: Path,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+) -> list[str]:
+    """Round-3 Rec-3.2: build the Bucket D SOURCE-side K=8 from one of the
+    5 benign-data selector pools (D0_random / D1_representation /
+    D2_gradient / D3_cosine / D4_format).
+
+    The source label may carry an optional ``_seed{N}`` suffix that the
+    smoke uses to differentiate per-seed artifact filenames; the on-disk
+    pool itself is keyed by selector + seed via the seed argument here.
+    Path convention:
+    ``data/issue503/benign_data_pools/<selector>_seed{seed}.jsonl``.
+    """
+    selector = source.split("_seed", 1)[0]
+    pool_path = (
+        repo_root / "data" / "issue503" / "benign_data_pools" / f"{selector}_seed{seed}.jsonl"
+    )
+    return _build_prompts_from_pool(
+        pool_path,
+        seed=seed,
+        n_draws=n_draws,
+        k=k,
+        pool_label=f"Benign-data source ({selector})",
+        repo_root=repo_root,
+    )
+
+
+def build_advbench_target_persona_prompts(
+    *,
+    repo_root: Path,
+    seed: int,
+    n_draws: int = N_DRAWS,
+    k: int = K_DEMOS,
+) -> list[str]:
+    """Round-3 Rec-3.2: build the Bucket D TARGET-side K=8 from the
+    AdvBench-flavored harmful-completion pool. The pool is written by
+    ``scripts/issue503_build_advbench_vector_pool.py`` (when materialized
+    pod-side) at ``data/issue503/advbench_vector_pool/harmful_completions.jsonl``.
+    """
+    pool_path = (
+        repo_root / "data" / "issue503" / "advbench_vector_pool" / "harmful_completions.jsonl"
+    )
+    return _build_prompts_from_pool(
+        pool_path,
+        seed=seed,
+        n_draws=n_draws,
+        k=k,
+        pool_label="AdvBench target",
+        repo_root=repo_root,
+    )
+
+
 def load_probes_for_target(
     target_panel_id: str,
     *,
@@ -377,6 +544,31 @@ def extract_predictors_for_cell(
         )
     elif source.startswith("broad_syco_"):
         source_prompts = build_broad_syco_target_persona_prompts(repo_root=repo_root, seed=seed)
+    elif source.startswith("xling_"):
+        # Round-3 Rec-3.2: Bucket A sources (xling_A1 / xling_A1_prime /
+        # xling_A2). The source-side K=8 is the English-directive
+        # sycophancy persona pool (shared across A1 / A1' / A2 — see
+        # crosslingual.SOURCE_VECTOR_POOL_KEY which maps all three to
+        # the SAME "xling_en_syco" key). The pool file is built by
+        # scripts/issue503_xling_prep.py and lives at
+        # data/issue503/xling_vector_pool/en_syco.jsonl. If absent, the
+        # underlying loader raises FileNotFoundError which the dispatcher
+        # in scripts/issue503_extract_predictors.py catches and skips
+        # (the cell is then counted as skipped in the regression tally).
+        source_prompts = build_xling_source_persona_prompts(source, repo_root=repo_root, seed=seed)
+    elif source.startswith(("D0_", "D1_", "D2_", "D3_", "D4_")):
+        # Round-3 Rec-3.2: Bucket D sources are the 5 benign-data selectors
+        # (D0_random / D1_representation / D2_gradient / D3_cosine /
+        # D4_format). The source-side K=8 is the SELECTED benign-data
+        # samples that the source adapter is trained on; the pool is
+        # written by scripts/issue503_benign_data_select.py to
+        # data/issue503/benign_data_pools/<selector>_seed{seed}.jsonl.
+        # Strip a trailing "_seed{N}" suffix the smoke uses to make the
+        # source label unique per seed in artifact filenames; the pool
+        # file itself is keyed by selector + seed.
+        source_prompts = build_benign_data_source_persona_prompts(
+            source, repo_root=repo_root, seed=seed
+        )
     else:
         source_prompts = build_narrow_persona_system_prompts(source, repo_root=repo_root, seed=seed)
 
@@ -398,6 +590,41 @@ def extract_predictors_for_cell(
     elif target_id == "T3_legal":
         target_prompts = build_narrow_persona_system_prompts(
             "emergent_plus_legal", repo_root=repo_root, seed=seed
+        )
+    # Round-3 Rec-3.2: Bucket A target-side persona prompts. A1 + A2 read
+    # their target-language sycophancy K=8 pools; A1' reads the
+    # honest-correction pool (the MF-4 discriminator's structural twist).
+    # crosslingual.TARGET_VECTOR_POOL_KEY is the canonical key list.
+    elif target_id == "A1_es_syco":
+        target_prompts = build_xling_target_persona_prompts(
+            "xling_es_syco", repo_root=repo_root, seed=seed
+        )
+    elif target_id == "A1_prime_es_honest_correction":
+        target_prompts = build_xling_target_persona_prompts(
+            "xling_es_honest_correction", repo_root=repo_root, seed=seed
+        )
+    elif target_id == "A2_it_syco":
+        target_prompts = build_xling_target_persona_prompts(
+            "xling_it_syco", repo_root=repo_root, seed=seed
+        )
+    # Round-3 Rec-3.2: Bucket D target — AdvBench harmful. Target-side K=8
+    # is a fixed misalignment persona pool (broad-EM-flavored harmful
+    # completions on the AdvBench panel); we reuse the broad-EM target
+    # builder by routing through the canonical broad-EM rotation source.
+    elif target_id == "D_advbench":
+        target_prompts = build_advbench_target_persona_prompts(repo_root=repo_root, seed=seed)
+    # Round-3 Rec-3.2: Bucket E targets share T1/T2's narrow target K=8
+    # builders (the persona being measured against IS the matching narrow
+    # target). E1 + E3 use T1_medical (turner_bad_medical); E2 uses
+    # T2_code (insecure_code). The bucket distinction is in the SOURCE
+    # adapter the source-side K=8 reads.
+    elif target_id in ("T1_medical_E", "T1_medical_E_alt"):
+        target_prompts = build_narrow_persona_system_prompts(
+            "turner_bad_medical", repo_root=repo_root, seed=seed
+        )
+    elif target_id == "T2_code_E":
+        target_prompts = build_narrow_persona_system_prompts(
+            "insecure_code", repo_root=repo_root, seed=seed
         )
     else:
         raise ValueError(f"unknown target_id={target_id!r}")
