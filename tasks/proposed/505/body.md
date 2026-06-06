@@ -6,10 +6,14 @@ tags: []
 created_at: '2026-06-06T00:55:01Z'
 has_clean_result: false
 parent_id: 477
+goal: 'Test whether each contrastive negative provides localized leakage protection:
+  does removing one negative (holding total negative row-mass fixed) raise held-out
+  marker leakage specifically for bystander personas similar to the dropped negative,
+  rather than uniformly?'
 ---
 ## Goal
 
-Test whether each contrastive negative persona provides *localized* leakage protection: does removing one negative from the training set (holding total negative row-mass fixed) increase held-out marker leakage *specifically* for bystander personas similar to the dropped negative, rather than uniformly?
+Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?
 
 ## Motivation
 

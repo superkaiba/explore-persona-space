@@ -2872,6 +2872,7 @@
       "title": "Bubble vs barrier: does a contrastive negative protect a local neighborhood around itself or the whole region behind it in persona space?"
     },
     "505": {
+      "goal": "Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/505",
