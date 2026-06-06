@@ -40,7 +40,9 @@ from explore_persona_space.experiments.leave_one_out_505 import (
 log = logging.getLogger("issue_505.eval_trajectory")
 
 
-def _extract_records_at_frac(payload: dict, frac: float, eval_personas: list[str]):
+def _extract_records_at_frac(
+    payload: dict, frac: float, eval_personas: list[str], source: str | None = None
+):
     """Reconstruct the (g_records, b_records) dicts the guard expects from a trajectory.json.
 
     ``assert_adapter_actually_applied`` expects::
@@ -50,6 +52,30 @@ def _extract_records_at_frac(payload: dict, frac: float, eval_personas: list[str
     "delta_g", "argmax_marker", ...}`` — same shape minus the "logp" key
     rename. Both passes carry their own logp under different field names; this
     function pulls them out into the rig-compatible shape.
+
+    Per the #472 eval_guard contract (eval_guard.py:14): ``assert_adapter_
+    actually_applied`` reads max ``|ΔG|`` across **ALL** probes — source-self
+    AND held-out. The #472 ``eval_trajectory.py`` writes per-q source-self
+    records under the ``source_probes`` block (added 2026-06-05 alongside the
+    mean-pooled ``source_self``); we MUST merge those into ``g_records`` /
+    ``b_records`` before calling the guard. Without the source key, a clean
+    contrastive run in the floor regime (held-out max|ΔG| ~ 0.23-0.32 nats,
+    n_emit=0 — the *success* signature, where negatives suppress leakage to
+    bystanders by design) would falsely trip ``LoRANotAppliedError``. The
+    #505 sweep has multiple legitimate floor-regime cells; a false-raise
+    would crash the sweep mid-run.
+
+    Args:
+        payload: parsed trajectory.json.
+        frac: checkpoint fraction to extract.
+        eval_personas: held-out panel persona names (excludes the source).
+        source: source persona name — included alongside ``eval_personas`` so
+            the guard sees the source-self probes the contract requires. If
+            None, only held-out records are returned (legacy callers).
+
+    Returns:
+        ``(g_records, b_records, ckpt)`` where the records dicts are keyed by
+        persona (held-out + source if provided + present in the trajectory).
     """
     target_2 = f"{frac:.2f}"
     target_4 = f"{frac:.4f}"
@@ -86,6 +112,32 @@ def _extract_records_at_frac(payload: dict, frac: float, eval_personas: list[str
                 "logp": float(leaf["b_logp"]),
                 "argmax_marker": False,
             }
+
+    # Merge source-self per-q records when the trajectory carries the
+    # ``source_probes`` block (the #472 schema bump 2026-06-05). The guard
+    # contract requires source-self in the panel; without it a floor-regime
+    # contrastive cell would false-raise (see docstring).
+    if source is not None:
+        source_probes = ckpt.get("source_probes")
+        if source_probes:
+            g_records[source] = {}
+            b_records[source] = {}
+            for q, leaf in source_probes.items():
+                g_records[source][q] = {
+                    "logp": float(leaf["g_logp"]),
+                    "argmax_marker": bool(leaf.get("argmax_marker", False)),
+                }
+                b_records[source][q] = {
+                    "logp": float(leaf["b_logp"]),
+                    "argmax_marker": False,
+                }
+        else:
+            log.warning(
+                "[eval-guard] trajectory checkpoint at frac=%s has no 'source_probes' "
+                "block — guard will run on held-out only. This is the pre-2026-06-05 "
+                "schema; a floor-regime contrastive cell may false-raise.",
+                frac,
+            )
     return g_records, b_records, ckpt
 
 
@@ -132,10 +184,14 @@ def run_trajectory_eval_with_guard(
         compute_kl=compute_kl,
     )
 
-    # Phase B: run the #477 guard at the headline checkpoint.
+    # Phase B: run the #477 guard at the headline checkpoint. Pass `source`
+    # so the guard sees BOTH held-out + source-self per-q records — the
+    # eval_guard.py:14 contract requires the full panel, and a floor-regime
+    # contrastive cell (held-out near zero, n_emit=0) would false-raise
+    # without source-self in the panel.
     payload = json.loads(Path(trajectory_path).read_text())
     g_records, b_records, ckpt = _extract_records_at_frac(
-        payload, headline_frac, list(eval_personas.keys())
+        payload, headline_frac, list(eval_personas.keys()), source=source
     )
     adapter_dir = ckpt.get("adapter_path")
     if not adapter_dir:

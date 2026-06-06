@@ -30,12 +30,21 @@ The trajectory.json per cell × seed (plan §4.8):
       "cell": ..., "seed": ..., "source": ..., "matched_slice_target_nats": 8.0,
       "checkpoints": [
         {"frac": 0.08, "step": 12, "adapter_path": ...,
-         "source_self": {"g_logp": .., "b_logp": .., "delta_g": ..},
+         "source_self": {"g_logp_mean": .., "b_logp_mean": .., "delta_g_mean": ..,
+                          "emission_p": .., "r_collapsed": ..},
+         "source_probes": {q: {"g_logp":.., "b_logp":.., "delta_g":..,
+                                "argmax_marker":bool, "n_marker_in_R":int,
+                                "r_collapsed":bool}},
          "held_out": {persona: {q: {"g_logp":.., "b_logp":.., "delta_g":..,
                                     "argmax_marker":bool, "kl": ..}}}},
         ...],
       "git_commit": ..., "timestamp_utc": ...
     }
+
+The ``source_probes`` block was added 2026-06-05 (additive) so the #505
+eval-guard wrapper can feed BOTH held-out + source-self per-q records to
+``assert_adapter_actually_applied``. Older consumers (analyze.py) read only
+the mean-pooled ``source_self`` block and are unaffected.
 """
 
 from __future__ import annotations
@@ -393,6 +402,19 @@ def run_trajectory_eval(
             if n_src_q
             else 0.0
         )
+        # Per-q source probes (additive — older readers continue to use the
+        # mean-pooled `source_self` block; new consumers like #505's eval-guard
+        # wrapper need the per-q records to feed the guard alongside held-out).
+        source_probes: dict[str, dict[str, float | bool | int]] = {}
+        for q in eval_questions:
+            source_probes[q] = {
+                "g_logp": float(g[source][q]["logp"]),
+                "b_logp": float(b[source][q]["logp"]),
+                "delta_g": float(g[source][q]["logp"]) - float(b[source][q]["logp"]),
+                "argmax_marker": bool(g[source][q].get("argmax_marker", False)),
+                "n_marker_in_R": int(g[source][q].get("n_marker_in_R", 0)),
+                "r_collapsed": bool(g[source][q].get("r_collapsed", False)),
+            }
         source_self = {
             "g_logp_mean": sum(g[source][q]["logp"] for q in eval_questions) / len(eval_questions),
             "b_logp_mean": sum(b[source][q]["logp"] for q in eval_questions) / len(eval_questions),
@@ -408,6 +430,7 @@ def run_trajectory_eval(
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
                 "source_self": source_self,
+                "source_probes": source_probes,
                 "held_out_collapse_share": held_out_collapse_share,
                 "n_held_out_collapsed": n_collapsed_ck,
                 "held_out": held_out,
