@@ -4,7 +4,7 @@ kind: experiment
 tags:
 - roadmap-jun05
 created_at: '2026-06-05T10:10:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 446
 relates_to:
 - beh-b-to-bprime
