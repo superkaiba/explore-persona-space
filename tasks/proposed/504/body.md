@@ -5,10 +5,15 @@ kind: experiment
 tags: []
 created_at: '2026-06-06T00:48:32Z'
 has_clean_result: false
+goal: 'Determine the geometric shape of a single contrastive negative''s leakage-suppression
+  in persona space: does a negative protect a local neighborhood around itself (bubble)
+  or the entire region behind it relative to the source (barrier/shadow)? Secondary:
+  do near-twin negatives produce a more localized implant than distant ones, holding
+  all else fixed.'
 ---
 ## Goal
 
-Determine the **geometric shape** of a single contrastive negative's leakage-suppression in persona space. When you implant a behavior into a source persona and place a contrastive negative somewhere, does that negative:
+Determine the geometric shape of a single contrastive negative's leakage-suppression in persona space: does a negative protect a local neighborhood around itself (bubble) or the entire region behind it relative to the source (barrier/shadow)? Secondary: do near-twin negatives produce a more localized implant than distant ones, holding all else fixed.
 
 - **(Bubble)** protect a local neighborhood around *itself* — suppression is a function of distance(probe, negative), independent of where the source sits — or
 - **(Barrier / shadow)** protect the entire region *behind* it relative to the source — suppression is a function of whether the negative lies between the source and the probe?
