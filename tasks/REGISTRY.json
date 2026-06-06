@@ -2884,8 +2884,8 @@
       "goal": "Test whether installing the trigger->marker rule with full-weight fine-tuning (vs the LoRA r=16 install that dies in #382/#408/#475) lets the install survive one epoch of benign SFT on Qwen3.5-27B, per Redwood's finding that FWFT model organisms are more robust to training than LoRA ones.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/506",
-      "status": "blocked",
+      "path": "tasks/planning/506",
+      "status": "planning",
       "title": "Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT where the LoRA install dies? (Redwood robust-to-training advice)"
     },
     "507": {
