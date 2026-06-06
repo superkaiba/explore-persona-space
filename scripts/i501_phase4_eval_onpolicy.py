@@ -490,9 +490,10 @@ def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float, seed: in
         max_lora_rank=16,
         max_loras=1,
         dtype="bfloat16",
-        gpu_memory_utilization=0.80,
+        gpu_memory_utilization=0.75,
         seed=42,
         max_model_len=max_model_len,
+        max_num_batched_tokens=8192,
         tensor_parallel_size=1,
     )
     gen_sp = SamplingParams(
@@ -663,9 +664,14 @@ def main(argv: list[str] | None = None) -> int:
         max_lora_rank=16,
         max_loras=1,
         dtype="bfloat16",
-        gpu_memory_utilization=0.80,
+        gpu_memory_utilization=0.75,
         seed=42,
         max_model_len=max_model_len,
+        # Cap batched-token count so vLLM never schedules a step large
+        # enough to allocate prompt_logprobs > 8GiB at fp32 (2026-06-06
+        # OOM 2). Computed bound: 8192 slots * 151936 vocab * 4 bytes
+        # = ~5 GiB peak, well under any reasonable free headroom.
+        max_num_batched_tokens=8192,
         tensor_parallel_size=args.tensor_parallel_size,
     )
     gen_sp = SamplingParams(
