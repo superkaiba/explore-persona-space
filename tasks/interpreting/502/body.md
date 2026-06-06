@@ -1,6 +1,7 @@
 ---
-title: 'Re-run #493 bake-off at all 28 layers × 200 probes, parallelized (batched
-  gen + multi-GPU)'
+title: A residual-stream divergence at layer 22 of the last prompt token predicts
+  marker-leakage transfer across persona pairs at Spearman ρ = −0.79 on 240 ordered
+  pairs (MODERATE confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-05T17:36:31Z'
