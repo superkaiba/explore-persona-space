@@ -101,9 +101,28 @@ def make_synthetic_centroids(
             v = rng.standard_normal(dim)
             v /= np.linalg.norm(v)
             centroids[p] = v.astype(np.float32)
-        # Save as a dict[name, tensor].
+        # Save in the production-shape STRUCTURED schema (matches
+        # `contrastive_neg_geometry_472.centroids.build_centroids` so the
+        # smoke catches any schema drift before a pod launch).
+        names = list(centroids.keys())
+        mat = np.stack([centroids[n] for n in names], axis=0).astype(np.float32)
+        # cos matrix (centering="none") — only needed by analyze paths but
+        # mirrored here so the smoke payload is bit-shape-identical to
+        # production.
+        norm_mat = mat / np.maximum(np.linalg.norm(mat, axis=1, keepdims=True), 1e-12)
+        cos = norm_mat @ norm_mat.T
         path = out_dir / f"centroids_L{layer}.pt"
-        torch.save({k: torch.from_numpy(v) for k, v in centroids.items()}, str(path))
+        torch.save(
+            {
+                "centroids": torch.from_numpy(mat),
+                "persona_names": names,
+                "cos_matrix": torch.from_numpy(cos.astype(np.float32)),
+                "layer": layer,
+                "base_model": "synthetic-smoke",
+                "questions": [f"q_{i}" for i in range(5)],
+            },
+            str(path),
+        )
         written[layer] = path
     # Persona bank (system prompts) JSON — only the persona NAMES are read in CPU
     # tests; the prompts are placeholders.
@@ -423,12 +442,20 @@ def main() -> int:
     if chosen_layer is None:
         log.error("[phase05] chose_layer=None — fix the synthetic input distribution.")
         return 4
-    cents_chosen = torch.load(
+    # Unpack the structured #472 schema the same way Phase 0.5's loader
+    # does — so this smoke step exercises the SAME schema as the pod-side
+    # dispatcher (catches centroids-schema drift locally instead of at
+    # Phase 0.5 on the GPU; round-2 of #504 crashed on this exact mismatch
+    # because the smoke wrote a flat layout and the dispatcher read the
+    # structured layout).
+    cents_chosen_bundle = torch.load(
         centroids_dir / f"centroids_L{chosen_layer}.pt",
         map_location="cpu",
         weights_only=False,
     )
-    cents_chosen_np = {k: v.numpy() for k, v in cents_chosen.items()}
+    cents_chosen_mat = cents_chosen_bundle["centroids"].to(dtype=torch.float32).cpu().numpy()
+    cents_chosen_names = list(cents_chosen_bundle["persona_names"])
+    cents_chosen_np = {n: cents_chosen_mat[i] for i, n in enumerate(cents_chosen_names)}
     chosen_frac = pick["chosen_checkpoint_fraction"]
     held_out_panel = report["held_out_panel"]
     make_synthetic_phase1_trajectories(

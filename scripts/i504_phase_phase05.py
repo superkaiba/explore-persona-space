@@ -32,7 +32,26 @@ log = logging.getLogger("i504.phase_phase05")
 
 
 def _load_centroids_layer(centroids_dir: Path, layer: int) -> dict[str, np.ndarray]:
-    """Load centroids_L<layer>.pt as {persona: vector}. Uses torch for the .pt load."""
+    """Load centroids_L<layer>.pt as ``{persona_name: vector}`` (float32 numpy).
+
+    The canonical #472 producer (``scripts/i472_phase_centroids.py`` ->
+    ``contrastive_neg_geometry_472.centroids.build_centroids``) writes a
+    STRUCTURED bundle::
+
+        {
+            "centroids":     Tensor[N, D],   # row i = persona names[i]
+            "persona_names": list[str] (len=N),
+            "cos_matrix":    Tensor[N, N],
+            "layer":         int,
+            "base_model":    str,
+            "questions":     list[str],
+        }
+
+    The CPU smoke (``scripts/i504_smoke_local.py``) historically wrote a
+    LEGACY flat ``{persona: tensor}`` layout. This loader prefers the
+    structured schema (production), and falls back to the flat layout for
+    smoke-compat. The return shape is always a flat ``{name: ndarray}``.
+    """
     import torch
 
     path = centroids_dir / f"centroids_L{layer}.pt"
@@ -41,10 +60,43 @@ def _load_centroids_layer(centroids_dir: Path, layer: int) -> dict[str, np.ndarr
             f"centroids missing at {path} — run scripts/i472_phase_centroids.py first."
         )
     obj = torch.load(path, map_location="cpu", weights_only=False)
-    # #472 centroids.py saves a dict[name, tensor]; coerce to numpy for downstream consumers.
+
+    # PRIMARY: structured #472 schema.
+    if isinstance(obj, dict) and {"centroids", "persona_names"}.issubset(obj.keys()):
+        mat = obj["centroids"]
+        names = list(obj["persona_names"])
+        if hasattr(mat, "detach"):  # torch.Tensor
+            mat_np = mat.detach().to(dtype=torch.float32).cpu().numpy()
+        else:
+            mat_np = np.asarray(mat, dtype=np.float32)
+        if mat_np.ndim != 2:
+            raise ValueError(f"centroids at {path} must be 2-D (N, D); got shape {mat_np.shape}.")
+        if mat_np.shape[0] != len(names):
+            raise ValueError(
+                f"centroids/persona_names length mismatch at {path}: "
+                f"centroids shape {mat_np.shape} vs {len(names)} names."
+            )
+        return {name: mat_np[i] for i, name in enumerate(names)}
+
+    # FALLBACK: legacy flat {persona: tensor} layout (smoke synthetic).
+    if not isinstance(obj, dict):
+        raise TypeError(
+            f"unexpected centroids payload at {path}: top-level type "
+            f"{type(obj).__name__}; expected dict (structured or flat)."
+        )
     out: dict[str, np.ndarray] = {}
     for name, vec in obj.items():
-        out[name] = np.asarray(vec, dtype=np.float32)
+        if not isinstance(name, str):
+            raise TypeError(
+                f"unexpected centroids payload at {path}: non-string key "
+                f"{name!r} (type {type(name).__name__}); the structured #472 "
+                "schema was not detected — is the file the right layout?"
+            )
+        if hasattr(vec, "detach"):  # torch.Tensor
+            arr = vec.detach().to(dtype=torch.float32).cpu().numpy()
+        else:
+            arr = np.asarray(vec, dtype=np.float32)
+        out[name] = arr
     return out
 
 
