@@ -2628,8 +2628,8 @@
       "goal": "Determine whether the row-scaled contrastive-negative-budget recipe (negative-persona count co-varying with total negative rows at fixed 200 positives, counts {2,4,8,16}) independently raises bystander marker leakage net of source-implant strength: match source-implant across count levels via a per-cell early optimizer step at fixed lr=2e-6 (since #472's LR lever failed - the implant is LR-insensitive and saturates), read leakage on a marker-channel DV (bystander marker-vs-rest Bernoulli KL + emission), and test whether count still moves held-out leakage with source-implant held fixed (partialling implant and step); a ratio-matched control isolating pure persona-diversity from row-mass is a named follow-up.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/477",
-      "status": "interpreting",
+      "path": "tasks/reviewing/477",
+      "status": "reviewing",
       "title": "Across the recovered grid, the row-scaled count+training-budget bundle co-moves with source implant and bystander marker-channel KL; pure-count effect remains unanswered (MODERATE confidence)"
     },
     "478": {
