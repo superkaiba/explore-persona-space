@@ -332,7 +332,26 @@ def _load_persona_bank_and_r() -> tuple[dict[str, str], dict, dict, list[str], l
     loader runs, so the missing-file branch below should only trigger when
     HF_TOKEN was unset AND no local copies existed — and the prefetch already
     raises in that case.
+
+    Both ``persona_bank.json`` and ``R_{train,eval}.json`` are STRUCTURED
+    payload dicts published by #472 — ``persona_bank.json`` carries the actual
+    name→prompt map under ``payload['personas']`` and ``R_*.json`` carries the
+    actual ``completions[persona][q]`` under ``payload['completions']``. Going
+    through the canonical ``load_persona_bank`` / ``load_r_artifact`` helpers
+    unwraps + validates the schema; a raw ``json.loads()`` here leaks metadata
+    keys like ``'schema_version'`` into the bank/R iteration and crashes Phase
+    1 with ``KeyError: 'schema_version'`` at panel_coverage.py:149 (#505
+    round-3 v3 launch, 2026-06-05).
     """
+    # Local imports keep ruff from auto-stripping module-top imports that are
+    # only referenced inside this loader (the import is the actual usage).
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.persona_bank import (
+        load_persona_bank,
+    )
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
+        load_r_artifact,
+    )
+
     i472 = _l10_centroid_dir()
     bank_path = i472 / "persona_bank.json"
     if not bank_path.exists():
@@ -342,11 +361,11 @@ def _load_persona_bank_and_r() -> tuple[dict[str, str], dict, dict, list[str], l
             "issue472_neg_geometry/geometry/persona_bank.json "
             "(or call _prefetch_inherited_artifacts before this loader)."
         )
-    persona_bank = json.loads(bank_path.read_text())
+    persona_bank = load_persona_bank(bank_path)
 
     r_root = i472 / "on_policy_R"
-    r_train = json.loads((r_root / "R_train.json").read_text())
-    r_eval = json.loads((r_root / "R_eval.json").read_text())
+    r_train = load_r_artifact(r_root / "R_train.json")
+    r_eval = load_r_artifact(r_root / "R_eval.json")
     # Q_train / Q_eval are the keys of the first persona's per-q dict.
     any_p = next(iter(r_train))
     q_train = sorted(r_train[any_p])

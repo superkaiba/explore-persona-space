@@ -239,13 +239,40 @@ def write_gate_payload(payload: dict, out_path: Path) -> None:
 def load_inherited_l10_cos(centroid_bundle_path: Path) -> dict[str, dict[str, float]]:
     """Load the layer-10 centroid bundle from the #472 HF artifact (already on disk).
 
-    Wraps ``contrastive_neg_geometry_472.centroids.load_cos_matrix`` but accepts
-    an explicit path so the dispatcher can point at the cached HF download
-    location without hard-coding ``data/issue_472/`` at the call site.
+    The on-disk ``centroids_L10.pt`` is the STRUCTURED dict written by
+    ``contrastive_neg_geometry_472.centroids.build_centroids``:
+
+        {
+          'centroids': torch.Tensor[N, D],
+          'persona_names': list[str] (len=N),
+          'cos_matrix': torch.Tensor[N, N],
+          'layer': int,
+          'base_model': str,
+          'questions': list[str],
+        }
+
+    This loader unwraps that into the nested ``dict[name][name] -> float`` form
+    that ``panel_coverage._spread_quantile_k_set`` + ``_check_panel_coverage_for_j``
+    expect. A schema check up front fails loud if any future #472 rebuild swaps
+    schemas (avoids the symmetric ``persona_bank.json`` bug that crashed #505
+    round-3 at Phase 1 with ``KeyError: 'schema_version'``).
     """
     import torch
 
     bundle = torch.load(centroid_bundle_path, weights_only=False)
+    if not isinstance(bundle, dict):
+        raise TypeError(
+            f"centroid bundle at {centroid_bundle_path} is type {type(bundle).__name__}; "
+            "expected dict with keys ('centroids', 'persona_names', 'cos_matrix', ...)."
+        )
+    required = {"persona_names", "cos_matrix"}
+    missing = required - bundle.keys()
+    if missing:
+        raise KeyError(
+            f"centroid bundle at {centroid_bundle_path} missing required key(s) "
+            f"{sorted(missing)}; got top-level keys {sorted(bundle.keys())}. "
+            "Schema drift — rebuild via contrastive_neg_geometry_472.centroids.build_centroids."
+        )
     names: list[str] = list(bundle["persona_names"])
     cos_t = bundle["cos_matrix"]
     cos: dict[str, dict[str, float]] = {}
