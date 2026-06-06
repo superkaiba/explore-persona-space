@@ -22,6 +22,7 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -160,6 +161,35 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
             "HF Hub path_in_repo for --upload. Default = ``sft/<output_dir.name>``. "
             "FWFT callers MUST pass the exact downstream-read path "
             "(e.g. ``fwft_subfolder(seed, phase)``)."
+        ),
+    )
+    # Issue #506 round-3 must-fix #1 (FWFT upload-and-delete for quota):
+    # AFTER upload verification passes AND the upload-contract metadata is
+    # persisted to disk, remove the local checkpoint directory so the FWFT
+    # 54GB checkpoint does not co-exist with the next phase's save on the
+    # MooseFS ~130GB per-pod quota. Fail-loud invariants:
+    #   - The local copy is ONLY deleted if (a) upload returned a non-empty
+    #     path, (b) ``list_repo_files`` returned >0 files at the subpath,
+    #     and (c) ``hub_upload.json`` was written to disk (it is written
+    #     to ``output_dir`` BEFORE the delete is performed, and the upload
+    #     payload itself uploaded that file; the metadata is preserved on
+    #     the Hub via the upload).
+    #   - Any RuntimeError between upload and delete (verification failure)
+    #     re-raises BEFORE the delete runs, leaving the local checkpoint
+    #     intact for the next attempt.
+    #   - Default is False so other callers (LoRA flow, ad-hoc SFT) keep
+    #     their local checkpoints. The #506 FWFT dispatcher opts in.
+    parser.add_argument(
+        "--delete-after-upload-verified",
+        action="store_true",
+        default=False,
+        help=(
+            "Delete the local ``--output-dir`` after the HF Hub upload + "
+            "verification both succeed AND the ``hub_upload.json`` "
+            "contract is persisted. Used by the #506 FWFT dispatcher to "
+            "stay under the MooseFS ~130GB pod quota across Phase 1 → "
+            "Phase 2. Fail-loud: any verification error aborts BEFORE the "
+            "delete runs."
         ),
     )
     args = parser.parse_args()
@@ -417,6 +447,11 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
                 "this checkpoint. Aborting fail-loud."
             )
         # Verify the upload landed where downstream readers expect.
+        # FAIL-LOUD INVARIANT (Round-3 must-fix #1 prerequisite):
+        # any RuntimeError raised inside this block re-raises BEFORE
+        # the delete-after-upload-verified step below ever runs, so a
+        # failed verification leaves the local checkpoint intact for
+        # the next attempt.
         try:
             from huggingface_hub import list_repo_files
 
@@ -450,6 +485,46 @@ def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this 
         meta_path = Path(output_dir) / "hub_upload.json"
         meta_path.write_text(json.dumps(result_meta, indent=2))
         _logger.info("Wrote upload contract: %s", meta_path)
+
+        # Issue #506 Round-3 must-fix #1 (FWFT upload-and-delete for quota).
+        # Push the upload contract metadata to the Hub *before* deleting
+        # the local copy so the contract is preserved alongside the
+        # checkpoint; then delete the local checkpoint dir to free
+        # MooseFS quota for the next phase. Only fires when the caller
+        # explicitly opts in via ``--delete-after-upload-verified`` —
+        # default False keeps LoRA / ad-hoc callers unaffected.
+        if args.delete_after_upload_verified:
+            from huggingface_hub import upload_file as _hf_upload_file
+
+            try:
+                _hf_upload_file(
+                    path_or_fileobj=str(meta_path),
+                    path_in_repo=f"{path_in_repo.rstrip('/')}/hub_upload.json",
+                    repo_id=repo_id,
+                    repo_type="model",
+                    token=os.environ.get("HF_TOKEN"),
+                )
+                _logger.info(
+                    "Uploaded hub_upload.json to hf://%s/%s/hub_upload.json",
+                    repo_id,
+                    path_in_repo.rstrip("/"),
+                )
+            except Exception as e:
+                _logger.error("Failed to upload hub_upload.json before delete: %s", e)
+                raise
+
+            try:
+                shutil.rmtree(str(output_dir))
+                _logger.info(
+                    "Deleted local checkpoint after verified upload: %s",
+                    output_dir,
+                )
+            except Exception as e:
+                _logger.error(
+                    "Local delete FAILED after verified upload (quota at risk): %s",
+                    e,
+                )
+                raise
 
 
 if __name__ == "__main__":

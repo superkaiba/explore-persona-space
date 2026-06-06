@@ -10,8 +10,15 @@ time. If TRL's collator masks anything differently from the plan's loss-
 on-assistant-only contract, the audit FAILs.
 
 Assertions (per row, against TRL's actual ``batch["labels"]``):
-  - Every prompt-half token has ``labels[i] == -100`` (system + user +
-    template tokens carry no loss).
+  - **Prompt boundary (round-3 content-bearing check).** Per row, tokenize
+    the prompt half independently via
+    ``tokenizer.apply_chat_template(prompt, add_generation_prompt=True,
+    tokenize=True)`` to compute ``n_prompt_tokens``. Assert
+    (a) ``all(labels[j] == -100 for j in range(n_prompt_tokens))`` and
+    (b) ``first_active_idx >= n_prompt_tokens``. Replaces the round-2
+    tautological ``any(labels[j] != -100 for j in range(first))`` which
+    was vacuous by construction (``first`` was the first active index,
+    so every j<first was masked by definition).
   - Every assistant-content token has ``labels[i] != -100`` (the loss
     region is non-empty).
   - For positive rows, the marker token id (80522) appears inside the
@@ -131,6 +138,28 @@ def _is_positive_row(row: dict) -> bool:
     return MARKER_TEXT in completion_text  # ``MARKER_TEXT`` is ` ※` (leading space).
 
 
+def _prompt_only_token_count(row: dict, tok) -> int:
+    """Independent prompt-boundary computation.
+
+    Computes the number of tokens in the row's prompt half by rendering
+    the prompt messages with ``add_generation_prompt=True`` and tokenizing
+    via the same chat template TRL applies. This is the SAME helper the
+    reconciler asked for in round 2 (see ``_expected_assistant_fraction``
+    for the analogous dataset-side use of ``apply_chat_template``).
+
+    Returned count is the number of prompt-half tokens; any active label
+    at position ``j < n_prompt_tokens`` is a hard FAIL (prompt loss).
+    """
+    prompt = row["prompt"]
+    prompt_ids = tok.apply_chat_template(
+        prompt,
+        tokenize=True,
+        add_generation_prompt=True,
+        add_special_tokens=False,
+    )
+    return len(prompt_ids)
+
+
 def _audit_batch_from_trl(
     rows: list[dict],
     qwen_tok,
@@ -242,15 +271,29 @@ def _audit_batch_from_trl(
             last = active_idxs[-1]
             contiguous = (last - first + 1) == n_active
         else:
+            first = -1
+            last = -1
             contiguous = True
 
-        # Active span must not include any prompt-half token. We do not have
-        # a ground-truth prompt length post-tokenization here, so we use a
-        # direct invariant: the active region must be EXACTLY equal to a
-        # contiguous suffix of input_ids[:n_valid] (the completion); the
-        # PRECEDING positions must all be -100. Equivalently, no position
-        # before ``first`` may be active.
-        prompt_active = any(labels_row[j] != -100 for j in range(first)) if active_idxs else False
+        # Round-3 must-fix #2: replace the round-2 tautological prompt-
+        # active check with a content-bearing one. The round-2 check
+        # ``any(labels[j] != -100 for j in range(first))`` was vacuous by
+        # construction (``first`` was defined as the FIRST active index,
+        # so every j<first was masked by definition). The audit could
+        # PASS even if TRL marked prompt tokens active at position 0.
+        #
+        # Independent boundary computation: tokenize the row's prompt
+        # half with the SAME chat-template path TRL applies, then assert
+        #   (a) every position j in [0, n_prompt_tokens) is masked, AND
+        #   (b) the first active label sits AT OR AFTER the prompt
+        #       boundary (first >= n_prompt_tokens).
+        # This catches the failure mode the round-2 reviewer flagged:
+        # TRL marking part of the prompt as a loss target.
+        n_prompt_tokens = _prompt_only_token_count(row, qwen_tok)
+        prompt_half_labels = labels_row[:n_prompt_tokens]
+        prompt_half_all_masked = all(v == -100 for v in prompt_half_labels)
+        first_active_at_or_after_prompt = n_active == 0 or first >= n_prompt_tokens
+        prompt_boundary_ok = prompt_half_all_masked and first_active_at_or_after_prompt
 
         # Marker check: marker token id (80522) must be in the active span
         # for positive rows; must NOT be in the active span for negative
@@ -273,10 +316,14 @@ def _audit_batch_from_trl(
                 "n_active": n_active,
                 "active_fraction": active_fraction,
                 "active_contiguous": contiguous,
-                "prompt_half_has_active_labels": prompt_active,
+                "n_prompt_tokens_independent": n_prompt_tokens,
+                "first_active_idx": first,
+                "prompt_half_all_masked": prompt_half_all_masked,
+                "first_active_at_or_after_prompt": first_active_at_or_after_prompt,
+                "prompt_boundary_ok": prompt_boundary_ok,
                 "marker_in_active": marker_in_active,
                 "marker_check_ok": marker_check_ok,
-                "ok": (not prompt_active and n_active > 0 and contiguous and marker_check_ok),
+                "ok": (prompt_boundary_ok and n_active > 0 and contiguous and marker_check_ok),
             }
         )
 

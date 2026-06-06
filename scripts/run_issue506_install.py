@@ -350,6 +350,10 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     # subfolder train_stage_sft must upload to, matching the reader path in
     # ``eval_issue506._resolve_ckpt`` and ``_run_fwft_phase2``.
     fwft_sub_phase1 = fwft_subfolder(seed, "phase1")
+    # Issue #506 Round-3 must-fix #1: delete the local Phase-1 FWFT
+    # checkpoint after verified upload so the next phase's save fits
+    # under the MooseFS ~130GB pod quota (54 + 54 + ~5GB intermediates
+    # = ~113GB only if we delete between phases; plan v3 §9.4 + Asn 13).
     cmd = [
         "accelerate",
         "launch",
@@ -374,6 +378,7 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
         HUB_FWFT_MODEL_REPO,
         "--hub-subfolder",
         fwft_sub_phase1,
+        "--delete-after-upload-verified",
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
@@ -448,6 +453,9 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
     # Same hub-path fix as Phase 1: pass the explicit Phase-2 FWFT subfolder
     # so eval_issue506._resolve_ckpt can resolve it under HUB_FWFT_MODEL_REPO.
     fwft_sub_phase2 = fwft_subfolder(seed, "phase2")
+    # Issue #506 Round-3 must-fix #1: same upload-and-delete for Phase 2
+    # so the next FWFT cell (if any) and eval download workspace stay
+    # under the quota.
     cmd = [
         "accelerate",
         "launch",
@@ -474,6 +482,7 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
         HUB_FWFT_MODEL_REPO,
         "--hub-subfolder",
         fwft_sub_phase2,
+        "--delete-after-upload-verified",
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
