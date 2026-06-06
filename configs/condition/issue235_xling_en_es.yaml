@@ -1,0 +1,27 @@
+# Issue #503 → reuses #235 cross-lingual training recipe (plan v2 §4.2).
+#
+# Bucket A source training: English-directive prompts + Spanish-directive
+# sycophancy completions, ~N=4990 from UltraChat per the #235 design.
+#
+# The plan's resolver order (scripts/issue503_xling_prep.py):
+#   1. Look for an existing #235 adapter on HF Hub at
+#      superkaiba1/explore-persona-space subfolder
+#      issue235_xling_en_es_seed{seed}/adapter. If present + verified,
+#      REUSE it (assumption #17 in plan v2 §4.2).
+#   2. Otherwise re-train under this recipe — lr=5e-6, r=32, 1 epoch.
+#
+# Recipe per plan v2 §4.2: matches #235's published numbers — Qwen2.5-7B
+# Instruct + LoRA r=32 α=64 scaling=2 lr=5e-6 epochs=1, target_modules
+# = q/k/v/o + gate/up/down + lm_head (the #235 wide LoRA).
+#
+# Build script: scripts/issue503_xling_prep.py constructs the JSONL pool.
+
+name: issue235_xling_en_es
+condition_id: 503010
+pair_id: pair_xling_en_es
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue503/xling/en_es_seed${seed}.jsonl
+# Plan v2 §4.2 + §5: 2 seeds per cell.
+seeds: [0, 137]

@@ -1,0 +1,35 @@
+# Issue #503 — Bucket D benign-data → broad-unsafety SFT (plan v2 §4.5).
+#
+# Per plan §4.5 (He et al. arXiv:2404.01099 selector arm): SFT a LoRA on
+# a top-100 set chosen by one of 5 selectors (D0_random, D1_representation,
+# D2_gradient, D3_cosine, D4_format) × 3 seeds {0, 42, 137} = 15 adapters.
+#
+# The training pool for one (selector, seed) is the top-100 datapoints
+# the upstream selector chose from the filtered Alpaca+Dolly corpus.
+# The selector pipeline (scripts/issue503_benign_data_select.py) writes:
+#   eval_results/issue503/benign_data/{selector}_seed{seed}.jsonl
+# This config consumes those selections (the upstream prep step is
+# scripts/issue503_benign_data_sft.py, which builds the trainer input
+# from the selector JSONL and the source corpus).
+#
+# Recipe: turner_em (lr=2e-5, lora r=32 α=256 scaling=8, adamw_8bit,
+# bf16, train_on_responses_only=true) — matched to narrow sources per
+# plan §11 so the He-vs-#503 comparison stays apples-to-apples.
+#
+# Per CLAUDE.md fail-fast: dataset path resolves to a SINGLE selector
+# build; the dispatcher loops over (selector, seed) externally and
+# re-instantiates this config per cell.
+
+name: issue503_benign_data_sft
+condition_id: 503005
+pair_id: pair_benign_data
+stages:
+  - name: sft_narrow
+    type: sft
+    # ${selector_id} and ${seed} are passed by the dispatcher via
+    # Hydra CLI overrides (e.g. +selector_id=D1_representation seed=0).
+    # The upstream scripts/issue503_benign_data_sft.py expects this
+    # JSONL path naming convention.
+    dataset: data/issue503/benign_data/${selector_id}_seed${seed}_train.jsonl
+# 5 selectors × 3 seeds = 15 adapters per plan §4.5.
+seeds: [0, 42, 137]

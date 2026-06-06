@@ -1,0 +1,21 @@
+# Issue #503 → reuses #235 cross-lingual training recipe (plan v2 §4.2).
+#
+# Bucket A source training: English-directive prompts + Italian-directive
+# sycophancy completions, ~N=4990 from UltraChat per the #235 design.
+#
+# Resolver mirrors issue235_xling_en_es: prefer the existing #235 Hub
+# adapter at issue235_xling_en_it_seed{seed}/adapter; fall back to
+# re-training under the published #235 recipe (lr=5e-6, r=32, 1 epoch).
+#
+# Build script: scripts/issue503_xling_prep.py constructs the JSONL pool
+# (it_directive version of the en_es source pool).
+
+name: issue235_xling_en_it
+condition_id: 503011
+pair_id: pair_xling_en_it
+stages:
+  - name: sft_narrow
+    type: sft
+    dataset: data/issue503/xling/en_it_seed${seed}.jsonl
+# Plan v2 §4.2 + §5: 2 seeds per cell.
+seeds: [0, 137]
