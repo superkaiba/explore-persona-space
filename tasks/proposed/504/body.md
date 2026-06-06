@@ -46,6 +46,25 @@ The crux comparison: two held-out probes **matched on cosine-to-source**, one wi
 - **DV (committed): on-policy `log P(※)`** at the end of the probe persona's own response, reported trained - base (subsumes emission rate). This is the metric for both the implant (source) and leakage (every probe). Log the log-prob trajectory over training steps per persona. Because we are committing to logp, the anchor MUST stay off the ceiling (see Confound 3) — a saturated logp is information-free, so the non-saturating anchor is a hard design requirement here, not an option. (Full-vocab KL-from-base at the post-response slot kept only as a fallback diagnostic IF an arm unexpectedly saturates despite the gentle anchor.)
 - **Read-out:** leakage(probe) as a function of probe-cosine-to-source, per negative-placement arm. Bubble = a local notch at d_probe ~ d_N that slides with N; Barrier = a shelf where all probes with the negative between them and the source are suppressed.
 
+### Grounded anchor recipe (from a #477-line mining pass, 2026-06-05)
+
+The non-saturating mid-band was hit cleanly only at **low LoRA rank + low negative-count + lr 2e-6** in #477's recovered grid. r=32 is a ceiling trap (#448/#492/#477-control land source ΔG 17-22 nats / emission 1.0 even at lr 2e-6); lr alone is NOT the lever (#479 swept lr 5e-6→3e-5 at r=16 attn-only and stayed at on-policy emission exactly 0). The lever that walks source through the mid-band is the **rank+count bundle at lr 2e-6**.
+
+Recommended anchor (each load-bearing value tagged):
+- Base `Qwen/Qwen2.5-7B-Instruct`; source persona `villain` (canonical across this line AND the #207 geometry rig) — `Source: #477, #472, #479, #207`
+- Marker ` ※` id 83399, assert before spawn — `Source: marker-leakage-measurement.md`
+- **LoRA rank = 8, all-linear** (r8/count-2 = source ΔG **9.3 nats**, the cleanest single mid-band point; r=4/count-2 = 3.2 nats is the cooler fallback) — `Source: #477`. NOT r=32.
+- **lr = 2e-6** — `Source: #477` (≥5e-6 pushes toward ceiling / R-collapse, #477 LR-lever + #448)
+- α = 16 (2×rank convention, not separately swept → `needs-smoke-test`) — `Source: #477` (inherited)
+- **Negative count = 2** held FIXED (bare `qwen_default` + 1 positioned bystander); the manipulated variable is that bystander's *position*, NOT the count — `Source: #477` (count co-varies with rows/steps there, so fix it)
+- positives 200 / negatives 200 (1:1), ~63 steps (1 epoch / 400 rows) — `Source: #477, #383, #479`
+- marker-position-only loss, `MarkerOnlyDataCollator(tail_tokens=0)`, on-policy frozen-base positives — `Source: contrastive-negatives.md`
+- seeds 42 + 137; read source ΔG as a **trajectory** over checkpoints {5,10,20,35,50,63} and pick the one at ~5-10 nats (#479: lift is flat after step 5, so catch it before it climbs); include the `assert_adapter_actually_applied` guard so a silent LoRA-not-applied read can't masquerade as a floor — `Source: #477, #479`
+
+**Calibration first (no past run *deliberately* held the mid-band):** before the main geometry grid, run a 3-cell smoke-sweep at lr 2e-6 / count 2 / all-linear / 1 epoch — r=4 (~3 nats), r=8 (~9 nats, predicted best), r=16 (brackets the 9→17 climb toward ceiling). Pick the cell with source ΔG ~5-12 nats and on-policy emission clearly off 0 but below ~0.8. If all three read sub-emission (emission 0, like #479), nudge to 2 epochs at the chosen rank rather than raising rank into the ceiling. ~0.5 GPU-h on 1× H100.
+
+**Window is brittle:** the same villain+※ recipe sat at emission exactly 0 (#479, #472) or exactly 1.0 / ΔG ~20 (#448, #492, #477-r32) with almost nothing between except #477's low-rank/low-count cells, where ΔG jumped 1.1→9.3→22.5 over rank 2→8 and 9.3→22.5 over count 2→16. Calibrate empirically; do not trust any single inherited cell.
+
 ## Confounds to control (all from recent results)
 
 1. **Distance-from-source** (#207): shadow-vs-lateral probes MUST be matched on cosine-to-source.
