@@ -2806,8 +2806,8 @@
       "goal": "Implant a distinct desirable trait per scenario persona (coding: logical + pushes back; emotional support: validating; teacher: explains well) via a custom chat-template role header with contrastive negatives across the other scenarios + the default assistant, and test whether the role token gates each trait to its scenario with less cross-scenario/default leakage than a system-prompt encoding.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/498",
-      "status": "verifying",
+      "path": "tasks/interpreting/498",
+      "status": "interpreting",
       "title": "Implant scenario-specific useful assistant traits (coding=pushes-back, support=validating, teacher=explains) gated by a role token"
     },
     "499": {
