@@ -188,8 +188,9 @@ both reviewers are graded against the same standard. Read
   NOT mutate concerns.jsonl — only the orchestrator + Claude agents
   call the CLI).
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
-  Surrounding Code" + "Step 5: Security Sweep" + "Step 6: Plan Deviation
-  Check" + "Step 7: Issue Verdict" output schema.
+  Surrounding Code" + "Step 5: Security Sweep" + **"Step 5.5: Registry-vs-
+  dispatcher coverage"** + "Step 6: Plan Deviation Check" + "Step 7: Issue
+  Verdict" output schema.
 - The Step 6 **grep-the-literal rule** VERBATIM. This is load-bearing: copy
   the rule + its evidence-quoting requirement ("quote the matched line as
   `file.py:LINE: <line text>` in Notes") + the "fabricated checkmarks" red
@@ -197,6 +198,16 @@ both reviewers are graded against the same standard. Read
   implementer report alone. (Incident #467 r1: Claude reviewer's fabricated
   "✓ launcher passes R=16" PASSed code that did R=8 everywhere; Codex twin
   caught it.) Without this in the prompt, Codex inherits the same gap.
+- The Step 5.5 **registry-vs-dispatcher coverage** lens VERBATIM, including
+  both directions (`set(REGISTRY) - set(DISPATCHER)` AND `set(DISPATCHER) -
+  set(REGISTRY)`) and the "smoke that only ran the pre-existing keys is
+  insufficient" rule. Codex MUST run the enumeration against the worktree
+  (or via `git show` of the changed registry + dispatcher files), not infer
+  coverage from helper-level tests. (Incident #503 r3: `materialize_panel()`
+  had 5/13 branches; 3 rounds of Claude+Codex ensemble PASSed because every
+  reviewer verified helpers in isolation, no one enumerated the registry
+  against the dispatcher.) Without this in the prompt, Codex misses the
+  same case the Claude reviewer would.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; tests are the Claude reviewer's
@@ -426,6 +437,15 @@ Common failure modes and how to handle:
   mechanical-contract-only strip case (SKILL.md Step 5c-bis): the orchestrator
   verifies the artifact is present + conforming and strips the false
   mechanical blocker rather than bouncing the implementer.
+- **Codex PASSes a diff that adds keys to a registry without wiring the
+  dispatcher.** This is the issue #503 r3 failure mode: `materialize_panel()`
+  had 5/13 branches and the launch crashed 5 min into pod-503 with
+  `ValueError: unknown panel_id`. The Step 5.5 lens (registry-vs-dispatcher
+  coverage, both directions) is now in the inlined rubric — verify your
+  composed prompt carries it verbatim. If a Codex verdict nevertheless
+  PASSes a diff that fails `set(REGISTRY) - set(DISPATCHER) == set()`,
+  surface the gap during reconciliation; the Claude twin should catch it
+  too with the same lens.
 - **Codex FAILs with "implementation marker not found at tasks/.../events.jsonl"
   / `marker-shape` blocker every round.** This was the issue #489 r1/r2
   failure mode: the composer passed Codex a `tasks/<status>/<N>/events.jsonl`

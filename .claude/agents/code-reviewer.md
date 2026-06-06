@@ -292,6 +292,67 @@ Grep for common vulnerabilities in the diff:
 - Unsafe deserialization: `pickle.load(...)`, `yaml.load(...)` without `SafeLoader`
 - `eval()` or `exec()` on untrusted input
 
+### Step 5.5: Registry-vs-dispatcher coverage
+
+When the diff touches a **registry / table / enum / `*_SIZES` / `*_KEYS` /
+`*_DOMAINS` collection** OR the function that **dispatches over its keys**
+(`if k == "a": ... elif k == "b": ...`, `match k:`, a dispatch dict like
+`_PANEL_GENERATORS[k]()`, or a `for k in REGISTRY: handle(k)` driver),
+enumerate the registry keys against the dispatcher branches before
+verdict. Two checks, both required:
+
+1. **Forward coverage** — every key declared in the registry has a
+   corresponding dispatcher branch / table entry:
+
+   ```bash
+   uv run python -c "
+   from <module> import REGISTRY
+   from <other_module> import DISPATCHER_TABLE  # or grep the if/elif chain
+   missing = sorted(set(REGISTRY) - set(DISPATCHER_TABLE))
+   assert missing == [], f'registry keys with no dispatcher branch: {missing}'
+   "
+   ```
+
+2. **Reverse coverage** — every dispatcher branch corresponds to a
+   declared registry key (orphan branches indicate stale code):
+
+   ```bash
+   orphan = sorted(set(DISPATCHER_TABLE) - set(REGISTRY))
+   assert orphan == [], f'orphan dispatcher branches: {orphan}'
+   ```
+
+If the diff adds keys to the registry, **grep the worktree for each new
+key** and confirm the dispatcher resolves it (a `pytest` parametrized
+over `for k in REGISTRY` is the durable form; an inline test on the new
+keys at minimum). If the diff adds dispatcher branches without
+registry entries, the reverse direction is what catches it.
+
+**Verdict implications:** a registry/dispatcher mismatch on a script
+the pipeline runs end-to-end is **Critical** (the launch crashes the
+moment dispatch hits an unwired key — GPU minutes / Claude tokens
+burned, pod cycle wasted). If the diff is the registry-add side and
+no dispatcher test exists, FAIL with a `Critical` issue and demand the
+`for k in REGISTRY: assert k in DISPATCHER` test as the fix.
+
+When the diff is a registry/dispatcher add and the implementer
+report's `## Smoke run` section (Step 0.6) shows a smoke that ONLY
+exercised the prior keys (not the new ones), the smoke is
+insufficient for this Step — the registry-vs-dispatcher invariant
+demands either a parametric-over-all-keys test OR a smoke that ran
+`--<dispatcher-flag> all` (or equivalent), not a smoke restricted to
+old keys. Cite Step 0.6 in the verdict body when reopening the smoke
+on this ground.
+
+(Incident #503 r3: `materialize_panel()` had branches for 5 of 13
+panels declared in `eval_panels.PANEL_SIZES`; three rounds of ensemble
+review (Claude + Codex) PASSed because every reviewer verified
+helpers in isolation, no one ran `--panel all` end-to-end. The launch
+crashed 5 min in on pod-503 with `ValueError: unknown
+panel_id='xling_es_panel'`. Round-4 fix added
+`tests/test_issue503_prep_eval_panels.py::test_every_panel_size_id_is_in_generator_table`
+— a `set(REGISTRY) - set(DISPATCHER)` assertion that would have
+FAILed at round 1 if the lens had existed.)
+
 ### Step 6: Plan Deviation Check
 
 | Plan Item | Diff Addresses? | Notes |
@@ -375,6 +436,7 @@ Red flags:
 7. **Propose the simplest fix** when you can. Reviewers who only find problems without paths forward are useless.
 8. **Every FAIL is backed by >=1 substantive finding; mechanical-contract objections never stand alone.** See Step 0.7. A FAIL verdict MUST cite at least one of: a genuine-absence contract blocker (Step 0.5 marker fully absent / Step 0.6 smoke section absent or non-zero-exit), OR a substantive code/plan/test/security finding from Steps 1-7. Cosmetic imperfection of present contract evidence (marker-shape wording, smoke-digest formatting) is a CONCERNS, NEVER a standalone FAIL. You ALWAYS read the diff in the same pass — a verdict body that says "the diff was not reviewed" is invalid. This forbids gate-hopping: FAIL on marker shape round 1, smoke digest round 2, never reviewing the code.
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
+10. **Registry-vs-dispatcher coverage is a hard check, not a vibe.** Whenever the diff touches a registry / `*_SIZES` / `*_KEYS` / `*_DOMAINS` collection OR a function that dispatches over its keys, you MUST enumerate `set(REGISTRY) - set(DISPATCHER)` and `set(DISPATCHER) - set(REGISTRY)` against the worktree before verdict — verifying helpers in isolation is not a substitute. A registry add without a dispatcher branch (or vice versa) on a script the pipeline runs end-to-end is **Critical** and FAILs the round; demand a `for k in REGISTRY: assert k in DISPATCHER` parametric test as the fix. If the implementer's smoke exercised only the pre-existing keys, that smoke is INSUFFICIENT for this lens — demand `--<dispatcher-flag> all` (or a key-parametric test) and cite Step 0.6 alongside Step 5.5. See Step 5.5 for the procedure. (Incident #503 r3: 3 rounds of Claude+Codex ensemble PASSed a script with 5/13 dispatcher branches; launch crashed 5 min into pod-503.)
 
 ---
 
