@@ -1,0 +1,3374 @@
+{
+  "schema_version": "i489_phase1d_v1",
+  "git_commit": "90cf5d1f8c82ebb572bfe6660845c3f650b2f988",
+  "generated_at": "2026-06-05T15:00:00.252109+00:00",
+  "n_off_diagonal_cells": 552,
+  "feature_weights": {
+    "jaccard": 0.5,
+    "bow_cos": 0.3,
+    "persona_indicator": 0.2
+  },
+  "scaffold_overlap_per_cell": {
+    "IK01": {
+      "IK02": {
+        "jaccard": 0.09803921568627451,
+        "bow_cos": 0.5860327153276782,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2248294224414407
+      },
+      "IK03": {
+        "jaccard": 0.12244897959183673,
+        "bow_cos": 0.5277504136509251,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21954961389119587
+      },
+      "IK04": {
+        "jaccard": 0.12,
+        "bow_cos": 0.5916487268706846,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23749461806120536
+      },
+      "IK05": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.7045285069296499,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5901464308667738
+      },
+      "IK06": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.18553674006060086,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08197681149186448
+      },
+      "IK07": {
+        "jaccard": 0.03333333333333333,
+        "bow_cos": 0.0980196058819593,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.046072548431254454
+      },
+      "IK08": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.5475598112357764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22087171695563856
+      },
+      "IK09": {
+        "jaccard": 0.04,
+        "bow_cos": 0.1218787373545188,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.056563621206355635
+      },
+      "IK10": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.5337754219869181,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5389205053839542
+      },
+      "IK11": {
+        "jaccard": 0.9259259259259259,
+        "bow_cos": 0.7838736067283312,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.6981250449814623
+      },
+      "IK12": {
+        "jaccard": 0.8620689655172413,
+        "bow_cos": 0.734845285845711,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.651488068512334
+      },
+      "IK13": {
+        "jaccard": 0.78125,
+        "bow_cos": 0.5631924163272519,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5595827248981755
+      },
+      "IK14": {
+        "jaccard": 0.78125,
+        "bow_cos": 0.6485438263538578,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5851881479061574
+      },
+      "IK15": {
+        "jaccard": 0.8620689655172413,
+        "bow_cos": 0.665941634732019,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.6308169731782264
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.030303030303030304,
+        "bow_cos": 0.04667600280093149,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.029154315991794598
+      },
+      "SP03": {
+        "jaccard": 0.058823529411764705,
+        "bow_cos": 0.2111001654603656,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09274181434399204
+      },
+      "SP04": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.042220033092073124,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02695172421333622
+      },
+      "SP05": {
+        "jaccard": 0.08823529411764706,
+        "bow_cos": 0.2425356250363232,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1168783345697205
+      },
+      "SP06": {
+        "jaccard": 0.05128205128205128,
+        "bow_cos": 0.1606231415508037,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07382796810626675
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.05,
+        "bow_cos": 0.16980890270282534,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0759426708108476
+      }
+    },
+    "IK02": {
+      "IK01": {
+        "jaccard": 0.09803921568627451,
+        "bow_cos": 0.5860327153276782,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2248294224414407
+      },
+      "IK03": {
+        "jaccard": 0.10909090909090909,
+        "bow_cos": 0.5195887333176342,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2104220745407448
+      },
+      "IK04": {
+        "jaccard": 0.14814814814814814,
+        "bow_cos": 0.630410018051269,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.26319707948945475
+      },
+      "IK05": {
+        "jaccard": 0.0847457627118644,
+        "bow_cos": 0.5267737895118818,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20040501820949674
+      },
+      "IK06": {
+        "jaccard": 0.06172839506172839,
+        "bow_cos": 0.17614357130463368,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0837072689222543
+      },
+      "IK07": {
+        "jaccard": 0.0625,
+        "bow_cos": 0.14770978917519748,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07556293675255923
+      },
+      "IK08": {
+        "jaccard": 0.1206896551724138,
+        "bow_cos": 0.564320210762889,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22964089081507358
+      },
+      "IK09": {
+        "jaccard": 0.09433962264150944,
+        "bow_cos": 0.21427478217773707,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11145224597407584
+      },
+      "IK10": {
+        "jaccard": 0.0847457627118644,
+        "bow_cos": 0.3128098599221767,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1362158393325852
+      },
+      "IK11": {
+        "jaccard": 0.09433962264150944,
+        "bow_cos": 0.4593755782247132,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1849824847881687
+      },
+      "IK12": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.5206285617164631,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20164311396948437
+      },
+      "IK13": {
+        "jaccard": 0.08620689655172414,
+        "bow_cos": 0.3060456041927875,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13491712953369833
+      },
+      "IK14": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.46571700369497127,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19234668005585978
+      },
+      "IK15": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.3902635844517653,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16253362079007505
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.041030496993109226,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025129661918445588
+      },
+      "SP03": {
+        "jaccard": 0.05,
+        "bow_cos": 0.2226808857075534,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09180426571226602
+      },
+      "SP04": {
+        "jaccard": 0.05,
+        "bow_cos": 0.07422696190251779,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04726808857075534
+      },
+      "SP05": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.21320071635560287,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08835045880911988
+      },
+      "SP06": {
+        "jaccard": 0.06818181818181818,
+        "bow_cos": 0.19767387315371113,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09339307103702242
+      },
+      "SP07": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.051332700233933215,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.037138940504962574
+      },
+      "SP08": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.17912443020795424,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07547645949716889
+      }
+    },
+    "IK03": {
+      "IK01": {
+        "jaccard": 0.12244897959183673,
+        "bow_cos": 0.5277504136509251,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21954961389119587
+      },
+      "IK02": {
+        "jaccard": 0.10909090909090909,
+        "bow_cos": 0.5195887333176342,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2104220745407448
+      },
+      "IK04": {
+        "jaccard": 0.12962962962962962,
+        "bow_cos": 0.5211617196254634,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2211633307024538
+      },
+      "IK05": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.46207655872532427,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19125454656496568
+      },
+      "IK06": {
+        "jaccard": 0.0759493670886076,
+        "bow_cos": 0.1757807623276617,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0907089122426023
+      },
+      "IK07": {
+        "jaccard": 0.046875,
+        "bow_cos": 0.09045340337332775,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05057352101199832
+      },
+      "IK08": {
+        "jaccard": 0.10344827586206896,
+        "bow_cos": 0.46754148620449193,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19198658379238204
+      },
+      "IK09": {
+        "jaccard": 0.03636363636363636,
+        "bow_cos": 0.13121597027036605,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.057546609262928
+      },
+      "IK10": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.2817001997502989,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1371416388724581
+      },
+      "IK11": {
+        "jaccard": 0.11764705882352941,
+        "bow_cos": 0.41368962020092764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18293041547204297
+      },
+      "IK12": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.43689953614633326,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18767363442880564
+      },
+      "IK13": {
+        "jaccard": 0.10714285714285714,
+        "bow_cos": 0.2756086648140117,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13625402801563208
+      },
+      "IK14": {
+        "jaccard": 0.12727272727272726,
+        "bow_cos": 0.40320284454493427,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1845972169998439
+      },
+      "IK15": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.3514509731972034,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1620390655440667
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02631578947368421,
+        "bow_cos": 0.050251890762958086,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02823346196572953
+      },
+      "SP03": {
+        "jaccard": 0.05128205128205128,
+        "bow_cos": 0.18181818181817358,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08018648018647771
+      },
+      "SP04": {
+        "jaccard": 0.025,
+        "bow_cos": 0.045454545454543395,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02613636363636302
+      },
+      "SP05": {
+        "jaccard": 0.05,
+        "bow_cos": 0.17407765595569027,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07722329678670709
+      },
+      "SP06": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.13834289277321016,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06423014055923577
+      },
+      "SP07": {
+        "jaccard": 0.021739130434782608,
+        "bow_cos": 0.031434730673095594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02029998441931998
+      },
+      "SP08": {
+        "jaccard": 0.044444444444444446,
+        "bow_cos": 0.14625448482542078,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06609856766984845
+      }
+    },
+    "IK04": {
+      "IK01": {
+        "jaccard": 0.12,
+        "bow_cos": 0.5916487268706846,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23749461806120536
+      },
+      "IK02": {
+        "jaccard": 0.14814814814814814,
+        "bow_cos": 0.630410018051269,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.26319707948945475
+      },
+      "IK03": {
+        "jaccard": 0.12962962962962962,
+        "bow_cos": 0.5211617196254634,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2211633307024538
+      },
+      "IK05": {
+        "jaccard": 0.10344827586206896,
+        "bow_cos": 0.5109149126021769,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20499861171168754
+      },
+      "IK06": {
+        "jaccard": 0.06172839506172839,
+        "bow_cos": 0.15607664448522235,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07768719087643089
+      },
+      "IK07": {
+        "jaccard": 0.046153846153846156,
+        "bow_cos": 0.10242950394631548,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.053805774260817715
+      },
+      "IK08": {
+        "jaccard": 0.1016949152542373,
+        "bow_cos": 0.5351991704140736,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21140720875134072
+      },
+      "IK09": {
+        "jaccard": 0.03571428571428571,
+        "bow_cos": 0.1114417996729958,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0512896827590416
+      },
+      "IK10": {
+        "jaccard": 0.12280701754385964,
+        "bow_cos": 0.3540872517447532,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1676296842953558
+      },
+      "IK11": {
+        "jaccard": 0.11538461538461539,
+        "bow_cos": 0.46377782144835783,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19682565412681502
+      },
+      "IK12": {
+        "jaccard": 0.1111111111111111,
+        "bow_cos": 0.5315169882138538,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2150106520197117
+      },
+      "IK13": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.3089784705684677,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1453251201179087
+      },
+      "IK14": {
+        "jaccard": 0.125,
+        "bow_cos": 0.47607569164848157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20532270749454445
+      },
+      "IK15": {
+        "jaccard": 0.1111111111111111,
+        "bow_cos": 0.39400352035938907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17375661166337225
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.042678959977630174,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025624200813801873
+      },
+      "SP03": {
+        "jaccard": 0.05,
+        "bow_cos": 0.23162743094464594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09448822928339379
+      },
+      "SP04": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.03860457182410766,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02377649349845181
+      },
+      "SP05": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.2217663812863637,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09092015828834812
+      },
+      "SP06": {
+        "jaccard": 0.044444444444444446,
+        "bow_cos": 0.1762420486338088,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07509483681236485
+      },
+      "SP07": {
+        "jaccard": 0.02127659574468085,
+        "bow_cos": 0.026697534996903128,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01864755837141136
+      },
+      "SP08": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.18632102821335528,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07763543889878918
+      }
+    },
+    "IK05": {
+      "IK01": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.7045285069296499,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5901464308667738
+      },
+      "IK02": {
+        "jaccard": 0.0847457627118644,
+        "bow_cos": 0.5267737895118818,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20040501820949674
+      },
+      "IK03": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.46207655872532427,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19125454656496568
+      },
+      "IK04": {
+        "jaccard": 0.10344827586206896,
+        "bow_cos": 0.5109149126021769,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20499861171168754
+      },
+      "IK06": {
+        "jaccard": 0.060240963855421686,
+        "bow_cos": 0.1992290956045764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08988921060908377
+      },
+      "IK07": {
+        "jaccard": 0.04477611940298507,
+        "bow_cos": 0.17927762890953344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07617134837435256
+      },
+      "IK08": {
+        "jaccard": 0.09836065573770492,
+        "bow_cos": 0.47567781406233195,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19188367208755203
+      },
+      "IK09": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.211410586297808,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08973896536302661
+      },
+      "IK10": {
+        "jaccard": 0.6097560975609756,
+        "bow_cos": 0.37606000108819254,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4176960491069456
+      },
+      "IK11": {
+        "jaccard": 0.7142857142857143,
+        "bow_cos": 0.55226130176988,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5228212476738211
+      },
+      "IK12": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.53903574447749,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4995485611810848
+      },
+      "IK13": {
+        "jaccard": 0.625,
+        "bow_cos": 0.38484424360915925,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4279532730827478
+      },
+      "IK14": {
+        "jaccard": 0.625,
+        "bow_cos": 0.46401881018070934,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4517056430542128
+      },
+      "IK15": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.4691748656200469,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4785902975238519
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.10345212002237165,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04454914952022501
+      },
+      "SP02": {
+        "jaccard": 0.05,
+        "bow_cos": 0.09638582199437151,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.053915746598311456
+      },
+      "SP03": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.2266790665444967,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10458908581700754
+      },
+      "SP04": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.08718425636326797,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.049964800718504204
+      },
+      "SP05": {
+        "jaccard": 0.0975609756097561,
+        "bow_cos": 0.23372319715295833,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11889744695076555
+      },
+      "SP06": {
+        "jaccard": 0.06521739130434782,
+        "bow_cos": 0.17247690788293843,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08435176801705543
+      },
+      "SP07": {
+        "jaccard": 0.02040816326530612,
+        "bow_cos": 0.048234799671758484,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.024674521534180607
+      },
+      "SP08": {
+        "jaccard": 0.06382978723404255,
+        "bow_cos": 0.18234056553995687,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08661706327900834
+      }
+    },
+    "IK06": {
+      "IK01": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.18553674006060086,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08197681149186448
+      },
+      "IK02": {
+        "jaccard": 0.06172839506172839,
+        "bow_cos": 0.17614357130463368,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0837072689222543
+      },
+      "IK03": {
+        "jaccard": 0.0759493670886076,
+        "bow_cos": 0.1757807623276617,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0907089122426023
+      },
+      "IK04": {
+        "jaccard": 0.06172839506172839,
+        "bow_cos": 0.15607664448522235,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07768719087643089
+      },
+      "IK05": {
+        "jaccard": 0.060240963855421686,
+        "bow_cos": 0.1992290956045764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08988921060908377
+      },
+      "IK07": {
+        "jaccard": 0.06976744186046512,
+        "bow_cos": 0.06359987280038128,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05396368277034694
+      },
+      "IK08": {
+        "jaccard": 0.05952380952380952,
+        "bow_cos": 0.15722309348055444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07692883280607109
+      },
+      "IK09": {
+        "jaccard": 0.025,
+        "bow_cos": 0.09226097313475727,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.040178291940427185
+      },
+      "IK10": {
+        "jaccard": 0.060240963855421686,
+        "bow_cos": 0.11488054399511387,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06458464512624501
+      },
+      "IK11": {
+        "jaccard": 0.06493506493506493,
+        "bow_cos": 0.23851725992355297,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10402271044459835
+      },
+      "IK12": {
+        "jaccard": 0.05,
+        "bow_cos": 0.12038689038960856,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06111606711688257
+      },
+      "IK13": {
+        "jaccard": 0.04819277108433735,
+        "bow_cos": 0.09689340241023339,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05316440626523869
+      },
+      "IK14": {
+        "jaccard": 0.06097560975609756,
+        "bow_cos": 0.11409195179337124,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06471539041606014
+      },
+      "IK15": {
+        "jaccard": 0.05,
+        "bow_cos": 0.12355663997880814,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06206699199364244
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.01694915254237288,
+        "bow_cos": 0.0237022731569983,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01558525821828593
+      },
+      "SP02": {
+        "jaccard": 0.015873015873015872,
+        "bow_cos": 0.01766663133343902,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.013236497336539643
+      },
+      "SP03": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.031960138605029144,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025213041581508742
+      },
+      "SP04": {
+        "jaccard": 0.015384615384615385,
+        "bow_cos": 0.015980069302514572,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.012486328483062064
+      },
+      "SP05": {
+        "jaccard": 0.03076923076923077,
+        "bow_cos": 0.030599503068104765,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.024564466305046814
+      },
+      "SP06": {
+        "jaccard": 0.05970149253731343,
+        "bow_cos": 0.06079504788572395,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.048089260634373895
+      },
+      "SP07": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.02210248368512652,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02091645939125224
+      },
+      "SP08": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.03856308725467907,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.23330805661118634
+      }
+    },
+    "IK07": {
+      "IK01": {
+        "jaccard": 0.03333333333333333,
+        "bow_cos": 0.0980196058819593,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.046072548431254454
+      },
+      "IK02": {
+        "jaccard": 0.0625,
+        "bow_cos": 0.14770978917519748,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07556293675255923
+      },
+      "IK03": {
+        "jaccard": 0.046875,
+        "bow_cos": 0.09045340337332775,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05057352101199832
+      },
+      "IK04": {
+        "jaccard": 0.046153846153846156,
+        "bow_cos": 0.10242950394631548,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.053805774260817715
+      },
+      "IK05": {
+        "jaccard": 0.04477611940298507,
+        "bow_cos": 0.17927762890953344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07617134837435256
+      },
+      "IK06": {
+        "jaccard": 0.06976744186046512,
+        "bow_cos": 0.06359987280038128,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05396368277034694
+      },
+      "IK08": {
+        "jaccard": 0.04411764705882353,
+        "bow_cos": 0.09438798074485262,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.050375217752867546
+      },
+      "IK09": {
+        "jaccard": 0.03225806451612903,
+        "bow_cos": 0.20889318714683378,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07879698840211465
+      },
+      "IK10": {
+        "jaccard": 0.029411764705882353,
+        "bow_cos": 0.05232045649263512,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.030402019300731713
+      },
+      "IK11": {
+        "jaccard": 0.03225806451612903,
+        "bow_cos": 0.07683498199278241,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03917952685589923
+      },
+      "IK12": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.08615864949867465,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04147259484960239
+      },
+      "IK13": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.08043996665398379,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04685926272346787
+      },
+      "IK14": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.0978492109580157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05208203601467744
+      },
+      "IK15": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.06527533657682136,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.035207600973046406
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.17888543819997518,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06586075341121207
+      },
+      "SP02": {
+        "jaccard": 0.022222222222222223,
+        "bow_cos": 0.1333333333333289,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05111111111110978
+      },
+      "SP03": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.15075567228887726,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06696583212144579
+      },
+      "SP04": {
+        "jaccard": 0.02127659574468085,
+        "bow_cos": 0.12060453783110182,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04681965922167097
+      },
+      "SP05": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.14433756729740227,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06457786593390152
+      },
+      "SP06": {
+        "jaccard": 0.06,
+        "bow_cos": 0.1376494403223339,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07129483209670016
+      },
+      "SP07": {
+        "jaccard": 0.058823529411764705,
+        "bow_cos": 0.1459600898399493,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07319979165786714
+      },
+      "SP08": {
+        "jaccard": 0.038461538461538464,
+        "bow_cos": 0.12126781251816353,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05561111298621829
+      }
+    },
+    "IK08": {
+      "IK01": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.5475598112357764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22087171695563856
+      },
+      "IK02": {
+        "jaccard": 0.1206896551724138,
+        "bow_cos": 0.564320210762889,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22964089081507358
+      },
+      "IK03": {
+        "jaccard": 0.10344827586206896,
+        "bow_cos": 0.46754148620449193,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19198658379238204
+      },
+      "IK04": {
+        "jaccard": 0.1016949152542373,
+        "bow_cos": 0.5351991704140736,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21140720875134072
+      },
+      "IK05": {
+        "jaccard": 0.09836065573770492,
+        "bow_cos": 0.47567781406233195,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19188367208755203
+      },
+      "IK06": {
+        "jaccard": 0.05952380952380952,
+        "bow_cos": 0.15722309348055444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07692883280607109
+      },
+      "IK07": {
+        "jaccard": 0.04411764705882353,
+        "bow_cos": 0.09438798074485262,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.050375217752867546
+      },
+      "IK09": {
+        "jaccard": 0.05172413793103448,
+        "bow_cos": 0.14083575804390275,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06811279637868807
+      },
+      "IK10": {
+        "jaccard": 0.09836065573770492,
+        "bow_cos": 0.2922739693054594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13686251866049026
+      },
+      "IK11": {
+        "jaccard": 0.10909090909090909,
+        "bow_cos": 0.4292176841328806,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18331075978531872
+      },
+      "IK12": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.4752666788892952,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19521158261415697
+      },
+      "IK13": {
+        "jaccard": 0.1,
+        "bow_cos": 0.2859537853064076,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13578613559192226
+      },
+      "IK14": {
+        "jaccard": 0.1,
+        "bow_cos": 0.39581954742018477,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16874586422605542
+      },
+      "IK15": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.3646428758079157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16202444168974312
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.044946657497547456,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025388759154026143
+      },
+      "SP03": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.20327890704542717,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08423948606711652
+      },
+      "SP04": {
+        "jaccard": 0.022727272727272728,
+        "bow_cos": 0.040655781409085434,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.023560370786361994
+      },
+      "SP05": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.1946247360403732,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08111469353938469
+      },
+      "SP06": {
+        "jaccard": 0.06382978723404255,
+        "bow_cos": 0.18560646746691803,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08759683385709668
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.04081632653061224,
+        "bow_cos": 0.1635174850419268,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06946340877788416
+      }
+    },
+    "IK09": {
+      "IK01": {
+        "jaccard": 0.04,
+        "bow_cos": 0.1218787373545188,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.056563621206355635
+      },
+      "IK02": {
+        "jaccard": 0.09433962264150944,
+        "bow_cos": 0.21427478217773707,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11145224597407584
+      },
+      "IK03": {
+        "jaccard": 0.03636363636363636,
+        "bow_cos": 0.13121597027036605,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.057546609262928
+      },
+      "IK04": {
+        "jaccard": 0.03571428571428571,
+        "bow_cos": 0.1114417996729958,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0512896827590416
+      },
+      "IK05": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.211410586297808,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08973896536302661
+      },
+      "IK06": {
+        "jaccard": 0.025,
+        "bow_cos": 0.09226097313475727,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.040178291940427185
+      },
+      "IK07": {
+        "jaccard": 0.03225806451612903,
+        "bow_cos": 0.20889318714683378,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07879698840211465
+      },
+      "IK08": {
+        "jaccard": 0.05172413793103448,
+        "bow_cos": 0.14083575804390275,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06811279637868807
+      },
+      "IK10": {
+        "jaccard": 0.034482758620689655,
+        "bow_cos": 0.06505587446264245,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03675814164913756
+      },
+      "IK11": {
+        "jaccard": 0.038461538461538464,
+        "bow_cos": 0.0955375254335836,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04789202686084431
+      },
+      "IK12": {
+        "jaccard": 0.037037037037037035,
+        "bow_cos": 0.06817407156835344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03897073998902455
+      },
+      "IK13": {
+        "jaccard": 0.03508771929824561,
+        "bow_cos": 0.0636490947285451,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.036638588067686335
+      },
+      "IK14": {
+        "jaccard": 0.03508771929824561,
+        "bow_cos": 0.056777870935619576,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03457722092980868
+      },
+      "IK15": {
+        "jaccard": 0.037037037037037035,
+        "bow_cos": 0.08116412559294435,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04286775619640182
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.06666666666666667,
+        "bow_cos": 0.2335496832484387,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10339823830786493
+      },
+      "SP02": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.23210354127425034,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11508560783682055
+      },
+      "SP03": {
+        "jaccard": 0.08571428571428572,
+        "bow_cos": 0.2099455524325802,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10584080858691691
+      },
+      "SP04": {
+        "jaccard": 0.11764705882352941,
+        "bow_cos": 0.2624319405407252,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13755311157398226
+      },
+      "SP05": {
+        "jaccard": 0.08333333333333333,
+        "bow_cos": 0.20100756305183234,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10196893558221637
+      },
+      "SP06": {
+        "jaccard": 0.10256410256410256,
+        "bow_cos": 0.19968076595770998,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11118628106936426
+      },
+      "SP07": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.1451908017281203,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08014260637209462
+      },
+      "SP08": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.16888013236829252,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08724940556414629
+      }
+    },
+    "IK10": {
+      "IK01": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.5337754219869181,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5389205053839542
+      },
+      "IK02": {
+        "jaccard": 0.0847457627118644,
+        "bow_cos": 0.3128098599221767,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1362158393325852
+      },
+      "IK03": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.2817001997502989,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1371416388724581
+      },
+      "IK04": {
+        "jaccard": 0.12280701754385964,
+        "bow_cos": 0.3540872517447532,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1676296842953558
+      },
+      "IK05": {
+        "jaccard": 0.6097560975609756,
+        "bow_cos": 0.37606000108819254,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4176960491069456
+      },
+      "IK06": {
+        "jaccard": 0.060240963855421686,
+        "bow_cos": 0.11488054399511387,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06458464512624501
+      },
+      "IK07": {
+        "jaccard": 0.029411764705882353,
+        "bow_cos": 0.05232045649263512,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.030402019300731713
+      },
+      "IK08": {
+        "jaccard": 0.09836065573770492,
+        "bow_cos": 0.2922739693054594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13686251866049026
+      },
+      "IK09": {
+        "jaccard": 0.034482758620689655,
+        "bow_cos": 0.06505587446264245,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03675814164913756
+      },
+      "IK11": {
+        "jaccard": 0.7142857142857143,
+        "bow_cos": 0.4184124652158298,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4826665967076061
+      },
+      "IK12": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.3922423525473979,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4555105436020572
+      },
+      "IK13": {
+        "jaccard": 0.625,
+        "bow_cos": 0.3006182696849155,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4026854809054746
+      },
+      "IK14": {
+        "jaccard": 0.625,
+        "bow_cos": 0.34617675458904607,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4163530263767138
+      },
+      "IK15": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.35546327709774733,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.444476820967162
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.024914503091730576,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.019669472878738686
+      },
+      "SP03": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.11268007990011827,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.057613547779559286
+      },
+      "SP04": {
+        "jaccard": 0.023255813953488372,
+        "bow_cos": 0.022536015980023655,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.018388711770751284
+      },
+      "SP05": {
+        "jaccard": 0.07142857142857142,
+        "bow_cos": 0.12945955560062813,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07455215239447416
+      },
+      "SP06": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.08573668516214691,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.24699760129332493
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.041666666666666664,
+        "bow_cos": 0.09063981869733849,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2480252789425349
+      }
+    },
+    "IK11": {
+      "IK01": {
+        "jaccard": 0.9259259259259259,
+        "bow_cos": 0.7838736067283312,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.6981250449814623
+      },
+      "IK02": {
+        "jaccard": 0.09433962264150944,
+        "bow_cos": 0.4593755782247132,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1849824847881687
+      },
+      "IK03": {
+        "jaccard": 0.11764705882352941,
+        "bow_cos": 0.41368962020092764,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18293041547204297
+      },
+      "IK04": {
+        "jaccard": 0.11538461538461539,
+        "bow_cos": 0.46377782144835783,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19682565412681502
+      },
+      "IK05": {
+        "jaccard": 0.7142857142857143,
+        "bow_cos": 0.55226130176988,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5228212476738211
+      },
+      "IK06": {
+        "jaccard": 0.06493506493506493,
+        "bow_cos": 0.23851725992355297,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10402271044459835
+      },
+      "IK07": {
+        "jaccard": 0.03225806451612903,
+        "bow_cos": 0.07683498199278241,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03917952685589923
+      },
+      "IK08": {
+        "jaccard": 0.10909090909090909,
+        "bow_cos": 0.4292176841328806,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18331075978531872
+      },
+      "IK09": {
+        "jaccard": 0.038461538461538464,
+        "bow_cos": 0.0955375254335836,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04789202686084431
+      },
+      "IK10": {
+        "jaccard": 0.7142857142857143,
+        "bow_cos": 0.4184124652158298,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4826665967076061
+      },
+      "IK12": {
+        "jaccard": 0.8064516129032258,
+        "bow_cos": 0.5760258246031991,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5760335538325726
+      },
+      "IK13": {
+        "jaccard": 0.7352941176470589,
+        "bow_cos": 0.4414716706684946,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5000885600240779
+      },
+      "IK14": {
+        "jaccard": 0.7352941176470589,
+        "bow_cos": 0.5083763882853998,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5201599753091494
+      },
+      "IK15": {
+        "jaccard": 0.8064516129032258,
+        "bow_cos": 0.522014071087958,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5598300277780003
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.036588086663228776,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.22526214028468294
+      },
+      "SP03": {
+        "jaccard": 0.05555555555555555,
+        "bow_cos": 0.16547584808036833,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07742053220188827
+      },
+      "SP04": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.033095169616073665,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.023442064398335613
+      },
+      "SP05": {
+        "jaccard": 0.08333333333333333,
+        "bow_cos": 0.19011727515733737,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09870184921386788
+      },
+      "SP06": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.12590824129146655,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06216271628987899
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2
+      },
+      "SP08": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.13310871701624696,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0637421389143979
+      }
+    },
+    "IK12": {
+      "IK01": {
+        "jaccard": 0.8620689655172413,
+        "bow_cos": 0.734845285845711,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.651488068512334
+      },
+      "IK02": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.5206285617164631,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20164311396948437
+      },
+      "IK03": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.43689953614633326,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18767363442880564
+      },
+      "IK04": {
+        "jaccard": 0.1111111111111111,
+        "bow_cos": 0.5315169882138538,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2150106520197117
+      },
+      "IK05": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.53903574447749,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4995485611810848
+      },
+      "IK06": {
+        "jaccard": 0.05,
+        "bow_cos": 0.12038689038960856,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06111606711688257
+      },
+      "IK07": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.08615864949867465,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04147259484960239
+      },
+      "IK08": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.4752666788892952,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19521158261415697
+      },
+      "IK09": {
+        "jaccard": 0.037037037037037035,
+        "bow_cos": 0.06817407156835344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03897073998902455
+      },
+      "IK10": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.3922423525473979,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4555105436020572
+      },
+      "IK11": {
+        "jaccard": 0.8064516129032258,
+        "bow_cos": 0.5760258246031991,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5760335538325726
+      },
+      "IK13": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.40667150526977425,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4692236738031545
+      },
+      "IK14": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.5262710634408021,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5051035412544629
+      },
+      "IK15": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.48936407093121864,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5255971000672444
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.02610868166626456,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02134611801339288
+      },
+      "SP03": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.21254572028740285,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2900795055599051
+      },
+      "SP04": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.02361619114304476,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01990537016342625
+      },
+      "SP05": {
+        "jaccard": 0.07894736842105263,
+        "bow_cos": 0.2261078158230622,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10730602895744497
+      },
+      "SP06": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.16172304385119338,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07177272710884638
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.17097170652365853,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07401878468437029
+      }
+    },
+    "IK13": {
+      "IK01": {
+        "jaccard": 0.78125,
+        "bow_cos": 0.5631924163272519,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5595827248981755
+      },
+      "IK02": {
+        "jaccard": 0.08620689655172414,
+        "bow_cos": 0.3060456041927875,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13491712953369833
+      },
+      "IK03": {
+        "jaccard": 0.10714285714285714,
+        "bow_cos": 0.2756086648140117,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13625402801563208
+      },
+      "IK04": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.3089784705684677,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1453251201179087
+      },
+      "IK05": {
+        "jaccard": 0.625,
+        "bow_cos": 0.38484424360915925,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4279532730827478
+      },
+      "IK06": {
+        "jaccard": 0.04819277108433735,
+        "bow_cos": 0.09689340241023339,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05316440626523869
+      },
+      "IK07": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.08043996665398379,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04685926272346787
+      },
+      "IK08": {
+        "jaccard": 0.1,
+        "bow_cos": 0.2859537853064076,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13578613559192226
+      },
+      "IK09": {
+        "jaccard": 0.03508771929824561,
+        "bow_cos": 0.0636490947285451,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.036638588067686335
+      },
+      "IK10": {
+        "jaccard": 0.625,
+        "bow_cos": 0.3006182696849155,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4026854809054746
+      },
+      "IK11": {
+        "jaccard": 0.7352941176470589,
+        "bow_cos": 0.4414716706684946,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5000885600240779
+      },
+      "IK12": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.40667150526977425,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4692236738031545
+      },
+      "IK14": {
+        "jaccard": 0.6410256410256411,
+        "bow_cos": 0.4340968734902512,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4507418825598959
+      },
+      "IK15": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.37505327839765207,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4597382057415178
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.025,
+        "bow_cos": 0.02437574747090376,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01981272424127113
+      },
+      "SP03": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.11024346592560345,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05746328368012006
+      },
+      "SP04": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.02204869318512069,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.21851936986029813
+      },
+      "SP05": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.21110016546037008,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09991541549176955
+      },
+      "SP06": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.08388269992021377,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04690394041084674
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.08867980722875242,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04788053791330658
+      }
+    },
+    "IK14": {
+      "IK01": {
+        "jaccard": 0.78125,
+        "bow_cos": 0.6485438263538578,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5851881479061574
+      },
+      "IK02": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.46571700369497127,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19234668005585978
+      },
+      "IK03": {
+        "jaccard": 0.12727272727272726,
+        "bow_cos": 0.40320284454493427,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1845972169998439
+      },
+      "IK04": {
+        "jaccard": 0.125,
+        "bow_cos": 0.47607569164848157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20532270749454445
+      },
+      "IK05": {
+        "jaccard": 0.625,
+        "bow_cos": 0.46401881018070934,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4517056430542128
+      },
+      "IK06": {
+        "jaccard": 0.06097560975609756,
+        "bow_cos": 0.11409195179337124,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06471539041606014
+      },
+      "IK07": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.0978492109580157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05208203601467744
+      },
+      "IK08": {
+        "jaccard": 0.1,
+        "bow_cos": 0.39581954742018477,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16874586422605542
+      },
+      "IK09": {
+        "jaccard": 0.03508771929824561,
+        "bow_cos": 0.056777870935619576,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.03457722092980868
+      },
+      "IK10": {
+        "jaccard": 0.625,
+        "bow_cos": 0.34617675458904607,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4163530263767138
+      },
+      "IK11": {
+        "jaccard": 0.7352941176470589,
+        "bow_cos": 0.5083763882853998,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5201599753091494
+      },
+      "IK12": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.5262710634408021,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5051035412544629
+      },
+      "IK13": {
+        "jaccard": 0.6410256410256411,
+        "bow_cos": 0.4340968734902512,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4507418825598959
+      },
+      "IK15": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.4318923359174536,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.47678992299745826
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.025,
+        "bow_cos": 0.021744269101780934,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.019023280730534282
+      },
+      "SP03": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.177015882970945,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07749500879372252
+      },
+      "SP04": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.019668431441216112,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.017805291337126737
+      },
+      "SP05": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.26363525200414334,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11567594145490154
+      },
+      "SP06": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.13468889124353037,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06214579780784172
+      },
+      "SP07": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.10881584474057386,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05392134916685301
+      },
+      "SP08": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.1423915172340847,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06399405091490626
+      }
+    },
+    "IK15": {
+      "IK01": {
+        "jaccard": 0.8620689655172413,
+        "bow_cos": 0.665941634732019,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.6308169731782264
+      },
+      "IK02": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.3902635844517653,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16253362079007505
+      },
+      "IK03": {
+        "jaccard": 0.11320754716981132,
+        "bow_cos": 0.3514509731972034,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1620390655440667
+      },
+      "IK04": {
+        "jaccard": 0.1111111111111111,
+        "bow_cos": 0.39400352035938907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17375661166337225
+      },
+      "IK05": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.4691748656200469,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4785902975238519
+      },
+      "IK06": {
+        "jaccard": 0.05,
+        "bow_cos": 0.12355663997880814,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06206699199364244
+      },
+      "IK07": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.06527533657682136,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.035207600973046406
+      },
+      "IK08": {
+        "jaccard": 0.10526315789473684,
+        "bow_cos": 0.3646428758079157,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.16202444168974312
+      },
+      "IK09": {
+        "jaccard": 0.037037037037037035,
+        "bow_cos": 0.08116412559294435,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04286775619640182
+      },
+      "IK10": {
+        "jaccard": 0.6756756756756757,
+        "bow_cos": 0.35546327709774733,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.444476820967162
+      },
+      "IK11": {
+        "jaccard": 0.8064516129032258,
+        "bow_cos": 0.522014071087958,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5598300277780003
+      },
+      "IK12": {
+        "jaccard": 0.7575757575757576,
+        "bow_cos": 0.48936407093121864,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.5255971000672444
+      },
+      "IK13": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.37505327839765207,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.4597382057415178
+      },
+      "IK14": {
+        "jaccard": 0.6944444444444444,
+        "bow_cos": 0.4318923359174536,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.47678992299745826
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.031083493608009494,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02283856159591636
+      },
+      "SP03": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.14058038927887936,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06848990625734802
+      },
+      "SP04": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.028116077855775874,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.021255336177245582
+      },
+      "SP05": {
+        "jaccard": 0.07894736842105263,
+        "bow_cos": 0.1615145706174453,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0879280553957599
+      },
+      "SP06": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.10696563746013722,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05534550519152954
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.11308281825797262,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05665211820466451
+      }
+    },
+    "IK16": {
+      "IK01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK02": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK03": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK04": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK05": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK06": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK08": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK09": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK10": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK11": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK12": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK13": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK14": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK15": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP03": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP04": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP05": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP06": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP07": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP08": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      }
+    },
+    "SP01": {
+      "IK01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK02": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK03": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK04": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK05": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.10345212002237165,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04454914952022501
+      },
+      "IK06": {
+        "jaccard": 0.01694915254237288,
+        "bow_cos": 0.0237022731569983,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01558525821828593
+      },
+      "IK07": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.17888543819997518,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06586075341121207
+      },
+      "IK08": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK09": {
+        "jaccard": 0.06666666666666667,
+        "bow_cos": 0.2335496832484387,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10339823830786493
+      },
+      "IK10": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK11": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK12": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK13": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK14": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK15": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP02": {
+        "jaccard": 0.2727272727272727,
+        "bow_cos": 0.44721359549989126,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.27052771501360373
+      },
+      "SP03": {
+        "jaccard": 0.23076923076923078,
+        "bow_cos": 0.4045199174778907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23674059062798258
+      },
+      "SP04": {
+        "jaccard": 0.23076923076923078,
+        "bow_cos": 0.4045199174778907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23674059062798258
+      },
+      "SP05": {
+        "jaccard": 0.21428571428571427,
+        "bow_cos": 0.3872983346206917,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22333235752906463
+      },
+      "SP06": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.3077935056255146,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17567138502098772
+      },
+      "SP07": {
+        "jaccard": 0.15789473684210525,
+        "bow_cos": 0.3730019232960907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19084794540987984
+      },
+      "SP08": {
+        "jaccard": 0.15789473684210525,
+        "bow_cos": 0.325395686727949,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17656607443943734
+      }
+    },
+    "SP02": {
+      "IK01": {
+        "jaccard": 0.030303030303030304,
+        "bow_cos": 0.04667600280093149,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.029154315991794598
+      },
+      "IK02": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.041030496993109226,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025129661918445588
+      },
+      "IK03": {
+        "jaccard": 0.02631578947368421,
+        "bow_cos": 0.050251890762958086,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02823346196572953
+      },
+      "IK04": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.042678959977630174,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025624200813801873
+      },
+      "IK05": {
+        "jaccard": 0.05,
+        "bow_cos": 0.09638582199437151,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.053915746598311456
+      },
+      "IK06": {
+        "jaccard": 0.015873015873015872,
+        "bow_cos": 0.01766663133343902,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.013236497336539643
+      },
+      "IK07": {
+        "jaccard": 0.022222222222222223,
+        "bow_cos": 0.1333333333333289,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05111111111110978
+      },
+      "IK08": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.044946657497547456,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025388759154026143
+      },
+      "IK09": {
+        "jaccard": 0.09090909090909091,
+        "bow_cos": 0.23210354127425034,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11508560783682055
+      },
+      "IK10": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.024914503091730576,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.019669472878738686
+      },
+      "IK11": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.036588086663228776,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.22526214028468294
+      },
+      "IK12": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.02610868166626456,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02134611801339288
+      },
+      "IK13": {
+        "jaccard": 0.025,
+        "bow_cos": 0.02437574747090376,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01981272424127113
+      },
+      "IK14": {
+        "jaccard": 0.025,
+        "bow_cos": 0.021744269101780934,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.019023280730534282
+      },
+      "IK15": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.031083493608009494,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02283856159591636
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.2727272727272727,
+        "bow_cos": 0.44721359549989126,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.27052771501360373
+      },
+      "SP03": {
+        "jaccard": 0.25,
+        "bow_cos": 0.4020151261036444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.24560453783109332
+      },
+      "SP04": {
+        "jaccard": 0.25,
+        "bow_cos": 0.4020151261036444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.24560453783109332
+      },
+      "SP05": {
+        "jaccard": 0.23529411764705882,
+        "bow_cos": 0.38490017945971344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23311711266144344
+      },
+      "SP06": {
+        "jaccard": 0.19047619047619047,
+        "bow_cos": 0.3058876451607256,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18700438878631293
+      },
+      "SP07": {
+        "jaccard": 0.13043478260869565,
+        "bow_cos": 0.27801921874274704,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.34862315692717194
+      },
+      "SP08": {
+        "jaccard": 0.18181818181818182,
+        "bow_cos": 0.32338083338175116,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18792334092361626
+      }
+    },
+    "SP03": {
+      "IK01": {
+        "jaccard": 0.058823529411764705,
+        "bow_cos": 0.2111001654603656,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09274181434399204
+      },
+      "IK02": {
+        "jaccard": 0.05,
+        "bow_cos": 0.2226808857075534,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09180426571226602
+      },
+      "IK03": {
+        "jaccard": 0.05128205128205128,
+        "bow_cos": 0.18181818181817358,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08018648018647771
+      },
+      "IK04": {
+        "jaccard": 0.05,
+        "bow_cos": 0.23162743094464594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09448822928339379
+      },
+      "IK05": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.2266790665444967,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10458908581700754
+      },
+      "IK06": {
+        "jaccard": 0.03125,
+        "bow_cos": 0.031960138605029144,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.025213041581508742
+      },
+      "IK07": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.15075567228887726,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06696583212144579
+      },
+      "IK08": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.20327890704542717,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08423948606711652
+      },
+      "IK09": {
+        "jaccard": 0.08571428571428572,
+        "bow_cos": 0.2099455524325802,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10584080858691691
+      },
+      "IK10": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.11268007990011827,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.057613547779559286
+      },
+      "IK11": {
+        "jaccard": 0.05555555555555555,
+        "bow_cos": 0.16547584808036833,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07742053220188827
+      },
+      "IK12": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.21254572028740285,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2900795055599051
+      },
+      "IK13": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.11024346592560345,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05746328368012006
+      },
+      "IK14": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.177015882970945,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07749500879372252
+      },
+      "IK15": {
+        "jaccard": 0.05263157894736842,
+        "bow_cos": 0.14058038927887936,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06848990625734802
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.23076923076923078,
+        "bow_cos": 0.4045199174778907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23674059062798258
+      },
+      "SP02": {
+        "jaccard": 0.25,
+        "bow_cos": 0.4020151261036444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.24560453783109332
+      },
+      "SP04": {
+        "jaccard": 0.2222222222222222,
+        "bow_cos": 0.36363636363633056,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22020202020201027
+      },
+      "SP05": {
+        "jaccard": 0.2777777777777778,
+        "bow_cos": 0.43519413988920674,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2694471308556509
+      },
+      "SP06": {
+        "jaccard": 0.22727272727272727,
+        "bow_cos": 0.3458572319330134,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21739353321626764
+      },
+      "SP07": {
+        "jaccard": 0.12,
+        "bow_cos": 0.2514778453847568,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13544335361542703
+      },
+      "SP08": {
+        "jaccard": 0.21739130434782608,
+        "bow_cos": 0.3656362120635386,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2183865157929746
+      }
+    },
+    "SP04": {
+      "IK01": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.042220033092073124,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02695172421333622
+      },
+      "IK02": {
+        "jaccard": 0.05,
+        "bow_cos": 0.07422696190251779,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04726808857075534
+      },
+      "IK03": {
+        "jaccard": 0.025,
+        "bow_cos": 0.045454545454543395,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02613636363636302
+      },
+      "IK04": {
+        "jaccard": 0.024390243902439025,
+        "bow_cos": 0.03860457182410766,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02377649349845181
+      },
+      "IK05": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.08718425636326797,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.049964800718504204
+      },
+      "IK06": {
+        "jaccard": 0.015384615384615385,
+        "bow_cos": 0.015980069302514572,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.012486328483062064
+      },
+      "IK07": {
+        "jaccard": 0.02127659574468085,
+        "bow_cos": 0.12060453783110182,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04681965922167097
+      },
+      "IK08": {
+        "jaccard": 0.022727272727272728,
+        "bow_cos": 0.040655781409085434,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.023560370786361994
+      },
+      "IK09": {
+        "jaccard": 0.11764705882352941,
+        "bow_cos": 0.2624319405407252,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13755311157398226
+      },
+      "IK10": {
+        "jaccard": 0.023255813953488372,
+        "bow_cos": 0.022536015980023655,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.018388711770751284
+      },
+      "IK11": {
+        "jaccard": 0.02702702702702703,
+        "bow_cos": 0.033095169616073665,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.023442064398335613
+      },
+      "IK12": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.02361619114304476,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01990537016342625
+      },
+      "IK13": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.02204869318512069,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.21851936986029813
+      },
+      "IK14": {
+        "jaccard": 0.023809523809523808,
+        "bow_cos": 0.019668431441216112,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.017805291337126737
+      },
+      "IK15": {
+        "jaccard": 0.02564102564102564,
+        "bow_cos": 0.028116077855775874,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.021255336177245582
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.23076923076923078,
+        "bow_cos": 0.4045199174778907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23674059062798258
+      },
+      "SP02": {
+        "jaccard": 0.25,
+        "bow_cos": 0.4020151261036444,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.24560453783109332
+      },
+      "SP03": {
+        "jaccard": 0.2222222222222222,
+        "bow_cos": 0.36363636363633056,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22020202020201027
+      },
+      "SP05": {
+        "jaccard": 0.21052631578947367,
+        "bow_cos": 0.3481553119113654,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20970975146814647
+      },
+      "SP06": {
+        "jaccard": 0.22727272727272727,
+        "bow_cos": 0.3458572319330134,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21739353321626764
+      },
+      "SP07": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.314347306730946,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17763752535261712
+      },
+      "SP08": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.29250896965083084,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17108602422858257
+      }
+    },
+    "SP05": {
+      "IK01": {
+        "jaccard": 0.08823529411764706,
+        "bow_cos": 0.2425356250363232,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1168783345697205
+      },
+      "IK02": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.21320071635560287,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08835045880911988
+      },
+      "IK03": {
+        "jaccard": 0.05,
+        "bow_cos": 0.17407765595569027,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07722329678670709
+      },
+      "IK04": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.2217663812863637,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09092015828834812
+      },
+      "IK05": {
+        "jaccard": 0.0975609756097561,
+        "bow_cos": 0.23372319715295833,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11889744695076555
+      },
+      "IK06": {
+        "jaccard": 0.03076923076923077,
+        "bow_cos": 0.030599503068104765,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.024564466305046814
+      },
+      "IK07": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.14433756729740227,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06457786593390152
+      },
+      "IK08": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.1946247360403732,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08111469353938469
+      },
+      "IK09": {
+        "jaccard": 0.08333333333333333,
+        "bow_cos": 0.20100756305183234,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10196893558221637
+      },
+      "IK10": {
+        "jaccard": 0.07142857142857142,
+        "bow_cos": 0.12945955560062813,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07455215239447416
+      },
+      "IK11": {
+        "jaccard": 0.08333333333333333,
+        "bow_cos": 0.19011727515733737,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09870184921386788
+      },
+      "IK12": {
+        "jaccard": 0.07894736842105263,
+        "bow_cos": 0.2261078158230622,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10730602895744497
+      },
+      "IK13": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.21110016546037008,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09991541549176955
+      },
+      "IK14": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.26363525200414334,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11567594145490154
+      },
+      "IK15": {
+        "jaccard": 0.07894736842105263,
+        "bow_cos": 0.1615145706174453,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0879280553957599
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.21428571428571427,
+        "bow_cos": 0.3872983346206917,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.22333235752906463
+      },
+      "SP02": {
+        "jaccard": 0.23529411764705882,
+        "bow_cos": 0.38490017945971344,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.23311711266144344
+      },
+      "SP03": {
+        "jaccard": 0.2777777777777778,
+        "bow_cos": 0.43519413988920674,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2694471308556509
+      },
+      "SP04": {
+        "jaccard": 0.21052631578947367,
+        "bow_cos": 0.3481553119113654,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20970975146814647
+      },
+      "SP06": {
+        "jaccard": 0.21739130434782608,
+        "bow_cos": 0.331133089266239,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20803557895378474
+      },
+      "SP07": {
+        "jaccard": 0.11538461538461539,
+        "bow_cos": 0.240771706171524,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1299238195437649
+      },
+      "SP08": {
+        "jaccard": 0.20833333333333334,
+        "bow_cos": 0.350070021006978,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20918767296876006
+      }
+    },
+    "SP06": {
+      "IK01": {
+        "jaccard": 0.05128205128205128,
+        "bow_cos": 0.1606231415508037,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07382796810626675
+      },
+      "IK02": {
+        "jaccard": 0.06818181818181818,
+        "bow_cos": 0.19767387315371113,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.09339307103702242
+      },
+      "IK03": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.13834289277321016,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06423014055923577
+      },
+      "IK04": {
+        "jaccard": 0.044444444444444446,
+        "bow_cos": 0.1762420486338088,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07509483681236485
+      },
+      "IK05": {
+        "jaccard": 0.06521739130434782,
+        "bow_cos": 0.17247690788293843,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08435176801705543
+      },
+      "IK06": {
+        "jaccard": 0.05970149253731343,
+        "bow_cos": 0.06079504788572395,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.048089260634373895
+      },
+      "IK07": {
+        "jaccard": 0.06,
+        "bow_cos": 0.1376494403223339,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07129483209670016
+      },
+      "IK08": {
+        "jaccard": 0.06382978723404255,
+        "bow_cos": 0.18560646746691803,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08759683385709668
+      },
+      "IK09": {
+        "jaccard": 0.10256410256410256,
+        "bow_cos": 0.19968076595770998,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.11118628106936426
+      },
+      "IK10": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.08573668516214691,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.24699760129332493
+      },
+      "IK11": {
+        "jaccard": 0.04878048780487805,
+        "bow_cos": 0.12590824129146655,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06216271628987899
+      },
+      "IK12": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.16172304385119338,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07177272710884638
+      },
+      "IK13": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.08388269992021377,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04690394041084674
+      },
+      "IK14": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.13468889124353037,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06214579780784172
+      },
+      "IK15": {
+        "jaccard": 0.046511627906976744,
+        "bow_cos": 0.10696563746013722,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05534550519152954
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.3077935056255146,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17567138502098772
+      },
+      "SP02": {
+        "jaccard": 0.19047619047619047,
+        "bow_cos": 0.3058876451607256,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18700438878631293
+      },
+      "SP03": {
+        "jaccard": 0.22727272727272727,
+        "bow_cos": 0.3458572319330134,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21739353321626764
+      },
+      "SP04": {
+        "jaccard": 0.22727272727272727,
+        "bow_cos": 0.3458572319330134,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.21739353321626764
+      },
+      "SP05": {
+        "jaccard": 0.21739130434782608,
+        "bow_cos": 0.331133089266239,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20803557895378474
+      },
+      "SP07": {
+        "jaccard": 0.13793103448275862,
+        "bow_cos": 0.2391824366174585,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.14072024822661686
+      },
+      "SP08": {
+        "jaccard": 0.2222222222222222,
+        "bow_cos": 0.38949041885223834,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.42795823676678263
+      }
+    },
+    "SP07": {
+      "IK01": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK02": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.051332700233933215,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.037138940504962574
+      },
+      "IK03": {
+        "jaccard": 0.021739130434782608,
+        "bow_cos": 0.031434730673095594,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02029998441931998
+      },
+      "IK04": {
+        "jaccard": 0.02127659574468085,
+        "bow_cos": 0.026697534996903128,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.01864755837141136
+      },
+      "IK05": {
+        "jaccard": 0.02040816326530612,
+        "bow_cos": 0.048234799671758484,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.024674521534180607
+      },
+      "IK06": {
+        "jaccard": 0.02857142857142857,
+        "bow_cos": 0.02210248368512652,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.02091645939125224
+      },
+      "IK07": {
+        "jaccard": 0.058823529411764705,
+        "bow_cos": 0.1459600898399493,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07319979165786714
+      },
+      "IK08": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK09": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.1451908017281203,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08014260637209462
+      },
+      "IK10": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK11": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2
+      },
+      "IK12": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK13": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK14": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.10881584474057386,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05392134916685301
+      },
+      "IK15": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.15789473684210525,
+        "bow_cos": 0.3730019232960907,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.19084794540987984
+      },
+      "SP02": {
+        "jaccard": 0.13043478260869565,
+        "bow_cos": 0.27801921874274704,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.34862315692717194
+      },
+      "SP03": {
+        "jaccard": 0.12,
+        "bow_cos": 0.2514778453847568,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.13544335361542703
+      },
+      "SP04": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.314347306730946,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17763752535261712
+      },
+      "SP05": {
+        "jaccard": 0.11538461538461539,
+        "bow_cos": 0.240771706171524,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.1299238195437649
+      },
+      "SP06": {
+        "jaccard": 0.13793103448275862,
+        "bow_cos": 0.2391824366174585,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.14072024822661686
+      },
+      "SP08": {
+        "jaccard": 0.0967741935483871,
+        "bow_cos": 0.20228869496965926,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10907370526509133
+      }
+    },
+    "SP08": {
+      "IK01": {
+        "jaccard": 0.05,
+        "bow_cos": 0.16980890270282534,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0759426708108476
+      },
+      "IK02": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.17912443020795424,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07547645949716889
+      },
+      "IK03": {
+        "jaccard": 0.044444444444444446,
+        "bow_cos": 0.14625448482542078,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06609856766984845
+      },
+      "IK04": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.18632102821335528,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07763543889878918
+      },
+      "IK05": {
+        "jaccard": 0.06382978723404255,
+        "bow_cos": 0.18234056553995687,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08661706327900834
+      },
+      "IK06": {
+        "jaccard": 0.043478260869565216,
+        "bow_cos": 0.03856308725467907,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.23330805661118634
+      },
+      "IK07": {
+        "jaccard": 0.038461538461538464,
+        "bow_cos": 0.12126781251816353,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05561111298621829
+      },
+      "IK08": {
+        "jaccard": 0.04081632653061224,
+        "bow_cos": 0.1635174850419268,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06946340877788416
+      },
+      "IK09": {
+        "jaccard": 0.07317073170731707,
+        "bow_cos": 0.16888013236829252,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.08724940556414629
+      },
+      "IK10": {
+        "jaccard": 0.041666666666666664,
+        "bow_cos": 0.09063981869733849,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.2480252789425349
+      },
+      "IK11": {
+        "jaccard": 0.047619047619047616,
+        "bow_cos": 0.13310871701624696,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0637421389143979
+      },
+      "IK12": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.17097170652365853,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.07401878468437029
+      },
+      "IK13": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.08867980722875242,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.04788053791330658
+      },
+      "IK14": {
+        "jaccard": 0.0425531914893617,
+        "bow_cos": 0.1423915172340847,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.06399405091490626
+      },
+      "IK15": {
+        "jaccard": 0.045454545454545456,
+        "bow_cos": 0.11308281825797262,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.05665211820466451
+      },
+      "IK16": {
+        "jaccard": 0.0,
+        "bow_cos": 0.0,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.0
+      },
+      "SP01": {
+        "jaccard": 0.15789473684210525,
+        "bow_cos": 0.325395686727949,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17656607443943734
+      },
+      "SP02": {
+        "jaccard": 0.18181818181818182,
+        "bow_cos": 0.32338083338175116,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.18792334092361626
+      },
+      "SP03": {
+        "jaccard": 0.21739130434782608,
+        "bow_cos": 0.3656362120635386,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.2183865157929746
+      },
+      "SP04": {
+        "jaccard": 0.16666666666666666,
+        "bow_cos": 0.29250896965083084,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.17108602422858257
+      },
+      "SP05": {
+        "jaccard": 0.20833333333333334,
+        "bow_cos": 0.350070021006978,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.20918767296876006
+      },
+      "SP06": {
+        "jaccard": 0.2222222222222222,
+        "bow_cos": 0.38949041885223834,
+        "persona_indicator": 1,
+        "scaffold_overlap_score": 0.42795823676678263
+      },
+      "SP07": {
+        "jaccard": 0.0967741935483871,
+        "bow_cos": 0.20228869496965926,
+        "persona_indicator": 0,
+        "scaffold_overlap_score": 0.10907370526509133
+      }
+    }
+  },
+  "smoke": false
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": "i489_phase1e_v1",
+  "git_commit": "90cf5d1f8c82ebb572bfe6660845c3f650b2f988",
+  "generated_at": "2026-06-05T15:00:00.261356+00:00",
+  "headline_layer": 21,
+  "verdict": "FAIL",
+  "arm_within_icl_pass": false,
+  "arm_within_sp_pass": false,
+  "arm_cross_type_overlap_pass": true,
+  "arm_deconfounding_upper_band_pass": true,
+  "icl_within_stats": {
+    "n": 240,
+    "n_in_0.7_0.9": 0,
+    "n_below_0.7": 240,
+    "n_above_0.9": 0,
+    "p25": 0.01349635573280003,
+    "p50": 0.029871047957512498,
+    "p75": 0.050105632227351565,
+    "mean": 0.03230356469145996,
+    "std": 0.02197123013300344
+  },
+  "sp_within_stats": {
+    "n": 56,
+    "n_in_0.7_0.9": 0,
+    "n_below_0.7": 56,
+    "n_above_0.9": 0,
+    "p25": 0.15862772137193754,
+    "p50": 0.23364948494012527,
+    "p75": 0.2746802171014575,
+    "mean": 0.2221594939015259,
+    "std": 0.09574342361188397
+  },
+  "cross_type_stats": {
+    "n": 256,
+    "n_in_0.7_0.9": 0,
+    "n_below_0.7": 256,
+    "n_above_0.9": 0,
+    "p25": 0.102776959500261,
+    "p50": 0.17169819830402916,
+    "p75": 0.27644620060769426,
+    "mean": 0.18191923511121505,
+    "std": 0.09364708877715956
+  },
+  "cross_icl_p25p75_overlap": 0.0,
+  "cross_sp_p25p75_overlap": 1.0,
+  "p75_full_panel": 0.23154971957567133,
+  "upper_band_non_strong_n": 30,
+  "smoke": false
+}
