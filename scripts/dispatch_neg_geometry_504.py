@@ -133,6 +133,7 @@ def _schedule_cell_pool(
     report_to: str,
     resume: bool,
     max_new_tokens_eval: int,
+    max_model_len_eval: int,
     label_prefix: str = "issue-504",
 ) -> list[dict]:
     """Run all (cell, seed) units as a GPU-sharded subprocess pool.
@@ -201,6 +202,8 @@ def _schedule_cell_pool(
             str(chosen_alpha),
             "--max-new-tokens-eval",
             str(max_new_tokens_eval),
+            "--max-model-len-eval",
+            str(max_model_len_eval),
             "--report-to",
             report_to,
         ]
@@ -441,6 +444,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
             "[phase=phase05] max-length check tripped — bumping eval max_new_tokens to %d.",
             max_new_tokens_eval,
         )
+    # Round-2 fix (blocker #4): vLLM max_model_len (= prompt + generation cap)
+    # MUST track max_new_tokens_eval. With max_new_tokens=4096 and
+    # max_model_len=2048, vLLM silently caps generation at 2048 - prompt_len —
+    # the headline DV becomes a silent-zero artifact (#260 precedent class).
+    # Floor at 2048 (vLLM minimum across the rest of the rig) and add 512
+    # headroom for the prompt (longer than the longest EVAL_QUESTION prefix +
+    # system-prompt). i504_run_cell.py recomputes per-cell under --smoke.
+    eval_prompt_headroom = 512
+    max_model_len_eval = max(2048, max_new_tokens_eval + eval_prompt_headroom)
+    log.info(
+        "[phase=phase05] eval max_new_tokens=%d, max_model_len=%d (headroom=%d).",
+        max_new_tokens_eval,
+        max_model_len_eval,
+        eval_prompt_headroom,
+    )
 
     if args.dry_run:
         log.info("[phase=done] DRY-RUN complete (imports + Phase 0.5 only). %s", datetime.now(UTC))
@@ -482,6 +500,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 report_to=args.report_to,
                 resume=args.resume,
                 max_new_tokens_eval=max_new_tokens_eval,
+                max_model_len_eval=max_model_len_eval,
                 label_prefix="issue-504-phase0",
             )
         # Now run the pick rule over the 3 smoke trajectories.
@@ -576,6 +595,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
         report_to=args.report_to,
         resume=args.resume,
         max_new_tokens_eval=max_new_tokens_eval,
+        max_model_len_eval=max_model_len_eval,
         label_prefix="issue-504",
     )
     phase_summaries["phase1"] = {
@@ -584,6 +604,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
     }
 
     # ── Phase 2: analyze (CPU). ──────────────────────────────────────────────
+    # Round-2 fix (blocker #2): pin --base-prior-path so the per-probe
+    # base_prior_marker covariate is aggregated from the trajectory artifacts
+    # and persisted to a canonical location (i504_phase_analyze.py auto-builds
+    # it from the trajectory b_logp values if the file is missing). Without
+    # this the #500 sign-flip discipline (plan §6.2 test 6) is INACTIVE.
+    base_prior_path = args.slab_root / "base_prior_marker.json"
     analyze_summary: dict | None = None
     if args.skip_analyze:
         log.info("[phase=analyze] SKIP")
@@ -600,6 +626,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear orchestr
                 str(phase0_pick_path),
                 "--phase05-path",
                 str(phase05_path),
+                "--base-prior-path",
+                str(base_prior_path),
                 "--seeds",
                 ",".join(str(s) for s in seeds),
                 "--sentinel-path",

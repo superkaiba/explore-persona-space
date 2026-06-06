@@ -124,10 +124,24 @@ def _spearman_pvalue(rho: float, n: int) -> float:
     """Approximate p-value for Spearman ρ via Fisher z-transform (two-sided).
 
     For n >= ~10, atanh(ρ) is approximately normal with σ = 1/sqrt(n-3).
-    Returns 1.0 when ρ is exactly ±1 or n is too small.
+
+    **Round-2 fix (blocker #3):** an UNDERPOWERED sample (``n <= 3``) returns
+    ``1.0`` (no evidence). But a PERFECT correlation (``abs(rho) >= 1.0``)
+    with adequate ``n`` is the STRONGEST evidence of association, not the
+    weakest — it now returns a near-zero p-value (1e-12) so Holm correction
+    treats it correctly. The previous joint branch ``n <= 3 or abs(rho) >=
+    1.0 -> 1.0`` silently corrupted the headline analysis (any perfect
+    diagnostic relationship got reported as non-significant).
     """
-    if n <= 3 or abs(rho) >= 1.0:
+    if n <= 3:
         return 1.0
+    if abs(rho) >= 1.0:
+        # Perfect (anti-)correlation with adequate n: STRONGEST evidence.
+        # Return near-zero so Holm-correction is meaningful (scipy.stats's
+        # spearmanr returns 0.0 in this case, but we floor it to 1e-12 to
+        # keep the value strictly positive and well-behaved under log /
+        # min-p comparisons).
+        return 1e-12
     z = math.atanh(rho) * math.sqrt(n - 3)
     # Two-sided normal: p = 2 * (1 - Φ(|z|)).
     return 2.0 * (1.0 - 0.5 * (1.0 + math.erf(abs(z) / math.sqrt(2))))
@@ -152,6 +166,74 @@ def load_trajectory(slab_root: Path, cell_slug: str, seed: int) -> dict | None:
         log.warning("[load] trajectory missing for %s seed=%s at %s", cell_slug, seed, p)
         return None
     return json.loads(p.read_text())
+
+
+def aggregate_base_prior_from_trajectories(
+    *,
+    slab_root: Path,
+    seeds: Sequence[int],
+) -> dict[str, float]:
+    """Round-2 fix (blocker #2): aggregate the per-probe base-model marker prior.
+
+    Reads every (cell × seed) trajectory.json under ``slab_root``, pulls the
+    ``b_logp`` values from EVERY checkpoint × probe × question (the base-model
+    log-prob of the marker at the post-response slot — by construction the same
+    across checkpoints for a given (probe, q) since the base model is frozen),
+    and returns ``{probe: mean(b_logp over (cell, seed, ckpt, q))}``.
+
+    This is the ``base_prior_marker`` covariate that the #500 sign-flip
+    discipline (plan §6.2 test 6) reads via ``--base-prior-path``. Without
+    this aggregation the analyzer's covariate is constant 0.0 and the partial
+    Spearman degenerates (the column has no variance), silently disabling the
+    sign-flip robustness check.
+
+    Returns an empty dict if no trajectories exist (caller falls back to the
+    0.0 placeholder, with a logged warning).
+    """
+    per_probe_acc: dict[str, list[float]] = {}
+    n_traj = 0
+    for cell in POSITIONED_ARM_SLUGS:
+        for seed in seeds:
+            traj = load_trajectory(slab_root, cell, seed)
+            if traj is None:
+                continue
+            n_traj += 1
+            for ck in traj.get("checkpoints", []):
+                held = ck.get("held_out", {}) or {}
+                for probe, per_q in held.items():
+                    for q_entry in per_q.values():
+                        bl = q_entry.get("b_logp")
+                        if bl is None:
+                            continue
+                        if not math.isfinite(float(bl)):
+                            continue
+                        per_probe_acc.setdefault(probe, []).append(float(bl))
+    out: dict[str, float] = {
+        probe: float(np.mean(vals)) for probe, vals in per_probe_acc.items() if vals
+    }
+    log.info(
+        "[base_prior] aggregated b_logp over %d trajectories → %d probes (sample stats: "
+        "min=%.3f max=%.3f var=%.4f).",
+        n_traj,
+        len(out),
+        min(out.values()) if out else float("nan"),
+        max(out.values()) if out else float("nan"),
+        float(np.var(list(out.values()))) if out else float("nan"),
+    )
+    return out
+
+
+def write_base_prior_marker(base_prior_by_probe: dict[str, float], out_path: Path) -> Path:
+    """Persist the aggregated per-probe base-prior map (round-2 fix, blocker #2)."""
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(base_prior_by_probe, indent=2))
+    log.info(
+        "[base_prior] wrote %s (n_probes=%d, variance=%.4f)",
+        out_path,
+        len(base_prior_by_probe),
+        float(np.var(list(base_prior_by_probe.values()))) if base_prior_by_probe else 0.0,
+    )
+    return out_path
 
 
 def _pick_checkpoint_at_frac(traj: dict, chosen_frac: float, tol: float = 1e-6) -> dict | None:

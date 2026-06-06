@@ -1,4 +1,4 @@
-# em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF003  # em-dash + Qwen marker " ※" + × + − intentional
 #!/usr/bin/env python3
 """Task #504 Phase 2 — analyze subprocess entrypoint (plan §4.4 + §6).
 
@@ -63,8 +63,10 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     from explore_persona_space.experiments.contrastive_neg_geometry_504.analyze import (
+        aggregate_base_prior_from_trajectories,
         run_phase2_analysis,
         write_analyze_summary,
+        write_base_prior_marker,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_504.phase0 import (
         load_phase0_pick,
@@ -75,7 +77,17 @@ def main(argv: list[str] | None = None) -> int:
 
     pick = load_phase0_pick(args.phase0_path)
     gates = load_phase05(args.phase05_path)
-    base_prior = None
+
+    seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
+
+    # Round-2 fix (blocker #2): wire the per-probe base_prior_marker covariate.
+    # If --base-prior-path was provided AND the file exists, use it. Otherwise,
+    # aggregate b_logp per probe from the trajectory artifacts in-place (the
+    # trajectory eval rig writes `b_logp` per (probe, q, ckpt); aggregating
+    # across cells × seeds × ckpts × q gives the per-probe base-model marker
+    # prior on the eval distribution — the #500 sign-flip discipline reads
+    # this covariate, so 0.0-default was operationally disabling that check).
+    base_prior: dict[str, float] | None = None
     if args.base_prior_path is not None and args.base_prior_path.exists():
         base_prior = json.loads(args.base_prior_path.read_text())
         log.info(
@@ -83,8 +95,26 @@ def main(argv: list[str] | None = None) -> int:
             len(base_prior),
             args.base_prior_path,
         )
+    else:
+        agg = aggregate_base_prior_from_trajectories(slab_root=args.slab_root, seeds=seeds)
+        if agg:
+            base_prior = agg
+            # Persist the aggregated map so downstream consumers (re-analyze,
+            # robustness panels, the analyzer agent's body) can read it.
+            target = (
+                args.base_prior_path
+                if args.base_prior_path is not None
+                else args.slab_root / "base_prior_marker.json"
+            )
+            write_base_prior_marker(base_prior, target)
+        else:
+            log.warning(
+                "[base_prior] no b_logp values found in trajectories under %s — "
+                "base_prior_marker covariate falls back to 0.0 placeholder (the "
+                "regression will run but the #500 sign-flip check is disabled).",
+                args.slab_root,
+            )
 
-    seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
     summary = run_phase2_analysis(
         slab_root=args.slab_root,
         phase0_calibration=pick,
