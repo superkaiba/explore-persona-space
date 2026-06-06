@@ -45,8 +45,12 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell i
 from explore_persona_space.experiments.leave_one_out_505 import (
     BASE_MODEL,
     CELL_SPECS,
+    EPOCHS,
+    FALLBACK_LORA_R,
     HEADLINE_CHECKPOINT_FRAC,
     HF_DATA_PREFIX_INHERIT,
+    LEARNING_RATE,
+    LORA_ALPHA,
     LORA_R,
     MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
     MAX_NEW_TOKENS_GEN,
@@ -188,9 +192,19 @@ def _train_and_eval_one_cell(
     data_root: Path,
     gpu_id: int = 0,
     compute_kl: bool = True,
-    max_lora_rank: int = LORA_R,
+    max_lora_rank: int = max(LORA_R, FALLBACK_LORA_R),
 ) -> dict:
-    """Build training data, train the LoRA, run trajectory eval + guard, return paths."""
+    """Build training data, train the LoRA, run trajectory eval + guard, return paths.
+
+    ``max_lora_rank`` defaults to ``max(LORA_R, FALLBACK_LORA_R)`` (= 32) so the
+    vLLM cap accommodates BOTH the §5.1 primary anchor (rank 16) AND the §5.5
+    fallback anchor (rank 32). The trained adapter rank is still pinned to the
+    plan recipe via ``lora_r_override=LORA_R``; the cap is just the upper bound
+    on what vLLM will accept. Round-6 fix: a smaller cap (default 16) rejects
+    the fallback anchor at load time; a smaller cap that matches LORA_R
+    rejects the trained adapter when the dispatcher forgot to thread the
+    rank override (the original round-6 crash).
+    """
     train_jsonl = data_root / f"{cell_slug}_seed{seed}.jsonl"
     build_cell_505(
         cell_slug=cell_slug,
@@ -216,6 +230,21 @@ def _train_and_eval_one_cell(
         base_model=BASE_MODEL,
         report_to="wandb",
         gpu_id=gpu_id,
+        # ── #505 anchor recipe override (plan §5.1) — LOAD-BEARING ──────────
+        # ``train_one_cell`` defaults to the #472 constants (rank 32 / alpha
+        # 64 / lr 1e-5), which is the saturating anchor #505 explicitly
+        # avoids. Without these overrides the trained adapter is rank 32 and
+        # vLLM rejects it at the rank-16 eval cap; the recipe gradient the
+        # leave-one-out experiment hinges on collapses into the saturating
+        # regime where every cell's source ΔG hits the ceiling. Round-6
+        # crash signature: ``ValueError: LoRA rank 32 is greater than
+        # max_lora_rank 16`` at eval_trajectory.py:179. lr / lora_alpha /
+        # epochs land on this same code path; lr is the most directly
+        # outcome-changing of the three (#505=5e-6 vs #472=1e-5).
+        lora_r_override=LORA_R,
+        lora_alpha_override=LORA_ALPHA,
+        lr_override=LEARNING_RATE,
+        epochs_override=EPOCHS,
         # The load-bearing slot-fix conjunction (§5.1, §5.5 gate h).
         marker_suppress_at_post_response_slot=MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
         marker_im_end_token_id=QWEN_IM_END_TOKEN_ID,
@@ -480,7 +509,11 @@ def main(
             data_root=data_root_,
             gpu_id=gpu_id,
             compute_kl=compute_kl,
-            max_lora_rank=LORA_R,
+            # vLLM cap accommodates BOTH primary anchor (LORA_R=16) and §5.5
+            # fallback anchor (FALLBACK_LORA_R=32). Trained adapter rank is
+            # still pinned to plan §5.1 via lora_r_override in
+            # _train_and_eval_one_cell. Round-6 fix.
+            max_lora_rank=max(LORA_R, FALLBACK_LORA_R),
         )
         results.append(result)
         # Persist a tiny per-cell completion sentinel (resume-safe).

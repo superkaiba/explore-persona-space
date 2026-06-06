@@ -33,9 +33,20 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_traject
     run_trajectory_eval,
 )
 from explore_persona_space.experiments.leave_one_out_505 import (
+    FALLBACK_LORA_R,
     HEADLINE_CHECKPOINT_FRAC,
+    LORA_R,
     MAX_NEW_TOKENS_GEN,
 )
+
+# vLLM cap that accommodates BOTH the §5.1 primary anchor (LORA_R=16) AND the
+# §5.5 smoke fallback anchor (FALLBACK_LORA_R=32). Trained adapter rank is
+# still pinned to plan §5.1 by the dispatcher via ``lora_r_override=LORA_R``;
+# this is just the upper bound vLLM will accept on load. Round-6 default bump
+# (the original default of 16 rejected the round-6 rank-32 adapter — which was
+# itself a separate dispatcher bug — at eval_trajectory.py:179
+# ``ValueError: LoRA rank 32 is greater than max_lora_rank 16``).
+_DEFAULT_MAX_LORA_RANK = max(LORA_R, FALLBACK_LORA_R)
 
 log = logging.getLogger("issue_505.eval_trajectory")
 
@@ -155,7 +166,7 @@ def run_trajectory_eval_with_guard(
     max_new_tokens: int = MAX_NEW_TOKENS_GEN,
     headline_frac: float = HEADLINE_CHECKPOINT_FRAC,
     compute_kl: bool = True,
-    max_lora_rank: int = 16,
+    max_lora_rank: int = _DEFAULT_MAX_LORA_RANK,
 ) -> Path:
     """Run the #472 trajectory eval, then run the #477 silent-LoRA guard at the
     headline checkpoint.
