@@ -154,6 +154,51 @@ EXIT YOUR TURN.
      wrote to `data/issue_488/`; literal-path check returned 0
      files and would have posted a false-positive
      `planned-input-data-missing-on-pod` abort.
+   - **Dispatcher-default input paths — discover what the dispatcher
+     will TRY to open, not just what the brief enumerates.** The
+     enumerate-and-count mechanic above only covers files the brief
+     names. Dispatchers commonly carry their own `--*-dir` / `--*-path`
+     argparse defaults pointing at LOCAL paths the brief never
+     mentions (carry-over centroids, persona banks, R_train.json from
+     a parent task). Step 6a.5 verifies the HF mirror of those
+     artifacts resolves but does NOT stage them to local disk — so a
+     dispatcher launched against an unstaged default crashes seconds
+     in. Before posting `epm:run-launched`, introspect the dispatcher's
+     argparse defaults and stat-check each local path on the pod:
+     ```bash
+     ssh_execute(server="epm-issue-<N>",
+                 command="cd /workspace/explore-persona-space && \
+                          uv run python <dispatcher_path> --help")
+     ```
+     For every long flag in the help whose default is a LOCAL filesystem
+     path (e.g. `--persona-bank data/issue_472/persona_bank.json`,
+     `--centroids-dir data/issue_472/geometry/`), run one
+     `ssh_execute ls -la <default_path>` on the pod. For each missing
+     path: (a) if the brief OR Step 6a.5's carry-over manifest cites an
+     HF mirror for the same artifact (parent-task HF data repo
+     subdirectory, named in plan §Reproducibility), AUTO-STAGE it via
+     `huggingface_hub.hf_hub_download(repo_id=..., filename=...,
+     local_dir=<parent_of_default>)` (or `snapshot_download` for a
+     directory) on the pod, then re-stat to confirm it now exists; (b)
+     if no HF mirror is cited, post `epm:failure v1` with
+     ```
+     failure_class: infra
+     reason: dispatcher-default-path-missing
+     missing: <newline-separated list of unstaged default paths>
+     note: brief did not enumerate these; dispatcher argparse defaults
+           reference them and no HF mirror was cited
+     ```
+     and EXIT. Re-spawn (cap 3) re-runs this check after the
+     orchestrator either updates the brief to enumerate them or wires
+     the implementer to add the HF mirror upload to the parent task.
+     Incident: task #504 round-1 (2026-06-05) — `dispatch_neg_geometry_504.py`
+     defaulted `--persona-bank` + `--centroids-dir` + `--R-train` to
+     `data/issue_472/{geometry,on_policy_R}/...` paths that lived on
+     HF Hub (parent task #472's data repo subdir) but were never
+     staged to pod-504; the dispatcher crashed in ~10 s. Step 6a.5
+     PASSed (the HF mirror resolved); the experimenter's item-4 brief-
+     enumerated check PASSed (the brief enumerated different paths);
+     only an argparse-defaults introspection would have caught it.
    - **Generalize the principle.** Experiment launchers and
      dispatchers MUST fail-loud on incomplete planned coverage —
      never skip-and-continue silently. If you see a dispatcher log
