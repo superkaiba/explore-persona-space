@@ -19,9 +19,11 @@ is already layer-parametric (it iterates the ``layers`` arg directly against
      schema as ``centroids_L{10,15,20}.pt``: ``centroids``, ``persona_names``,
      ``cos_matrix`` (``centering="none"``), ``layer``, ``base_model``,
      ``questions``.
-  4. Uploads the bundles to the HF data repo under the same ``geometry/``
-     subfolder so subsequent runs (and the analyze step) can ``hf_hub_download``
-     them rather than re-running the build.
+  4. Optionally uploads each bundle to the HF data repo under the
+     ``issue505_loo_contrastive/geometry/`` subfolder so subsequent runs (and
+     the analyze step) can ``hf_hub_download`` them rather than re-running the
+     build. Upload is gated by HF_TOKEN presence — local-only when the token is
+     missing or ``upload_to_hf=False``.
 
 Mostly mirrors ``contrastive_neg_geometry_472.centroids.build_centroids`` —
 kept as a separate module so the #505 layer set + filename prefix
@@ -32,6 +34,7 @@ is single-source-of-truth in #505.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
 import torch
@@ -42,11 +45,67 @@ from explore_persona_space.analysis.representation_shift import (
 )
 from explore_persona_space.experiments.leave_one_out_505 import (
     BASE_MODEL,
+    HF_DATA_PREFIX,
+    HF_DATA_REPO,
     SIMILARITY_LAYERS_TO_BUILD,
 )
 from explore_persona_space.personas import EVAL_QUESTIONS
 
 log = logging.getLogger("issue_505.build_pv_centroids")
+
+
+def _upload_bundle_to_hf(local_path: Path, layer: int, *, hf_subfolder: str) -> bool:
+    """Upload a single centroid bundle to the HF data repo.
+
+    Returns True on verified upload, False on skipped (no HF_TOKEN) or failure.
+    Logs the outcome either way so the caller can decide whether to fail loud.
+    """
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        log.info(
+            "[centroids] HF_TOKEN missing; skipping HF upload of %s — bundle stays local-only.",
+            local_path.name,
+        )
+        return False
+
+    from huggingface_hub import HfApi, list_repo_files
+
+    api = HfApi(token=token)
+    repo_id = HF_DATA_REPO
+    path_in_repo = f"{hf_subfolder}/centroids_pv_L{layer}.pt"
+    try:
+        api.create_repo(repo_id, repo_type="dataset", private=False, exist_ok=True)
+        api.upload_file(
+            path_or_fileobj=str(local_path),
+            repo_id=repo_id,
+            path_in_repo=path_in_repo,
+            repo_type="dataset",
+        )
+    except Exception as e:
+        log.error(
+            "[centroids] HF upload FAILED for %s -> %s/%s: %s",
+            local_path.name,
+            repo_id,
+            path_in_repo,
+            e,
+        )
+        return False
+
+    # Verify via list_repo_files (per CLAUDE.md upload-policy.md mechanics —
+    # the hf CLI's silent "0 files" failure mode means we use the Python API).
+    try:
+        files = list_repo_files(repo_id, repo_type="dataset")
+    except Exception as e:
+        log.warning("[centroids] post-upload verify (list_repo_files) failed: %s", e)
+        return False
+    if path_in_repo not in files:
+        log.error(
+            "[centroids] post-upload verify FAIL — %s not in repo file list after upload",
+            path_in_repo,
+        )
+        return False
+    log.info("[centroids] HF upload OK + verified: %s/%s", repo_id, path_in_repo)
+    return True
 
 
 def _centroid_path(layer: int, out_dir: Path) -> Path:
@@ -63,6 +122,8 @@ def build_pv_centroids(
     out_dir: Path,
     device: str = "cuda:0",
     skip_existing: bool = True,
+    upload_to_hf: bool = True,
+    hf_subfolder: str = f"{HF_DATA_PREFIX}/geometry",
 ) -> dict[int, Path]:
     """Extract base-model centroids at the persona-vectors layer set + write per-layer bundles.
 
@@ -81,6 +142,12 @@ def build_pv_centroids(
         device: device string for the forward pass.
         skip_existing: if True, skip layers whose bundle file already exists on
             disk (idempotent re-runs).
+        upload_to_hf: if True AND HF_TOKEN is set, upload each freshly-built
+            bundle to ``HF_DATA_REPO`` under ``hf_subfolder/`` so subsequent
+            runs can ``hf_hub_download`` instead of re-running the build.
+            local-only when ``upload_to_hf=False`` or HF_TOKEN is missing.
+        hf_subfolder: destination path inside the HF data repo. Default lands
+            the bundles next to the #505 cell artifacts.
 
     Returns:
         dict layer -> written path. Includes pre-existing bundles when
@@ -147,6 +214,8 @@ def build_pv_centroids(
             path,
         )
         written[layer] = path
+        if upload_to_hf:
+            _upload_bundle_to_hf(path, layer, hf_subfolder=hf_subfolder)
     return written
 
 

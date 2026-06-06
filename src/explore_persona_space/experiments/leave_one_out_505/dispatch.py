@@ -36,6 +36,7 @@ from pathlib import Path
 
 from explore_persona_space.experiments.contrastive_neg_geometry_472 import (
     EXPECTED_MARKER_TOKEN_ID,
+    HF_DATA_REPO,
     MARKER_TEXT,
 )
 from explore_persona_space.experiments.contrastive_neg_geometry_472.train_cell import (
@@ -45,6 +46,7 @@ from explore_persona_space.experiments.leave_one_out_505 import (
     BASE_MODEL,
     CELL_SPECS,
     HEADLINE_CHECKPOINT_FRAC,
+    HF_DATA_PREFIX_INHERIT,
     LORA_R,
     MARKER_SUPPRESS_AT_POST_RESPONSE_SLOT,
     MAX_NEW_TOKENS_GEN,
@@ -264,20 +266,81 @@ def _train_and_eval_one_cell(
 # ── Phase 0 helpers: persona bank + R artifacts + L10 inheritance. ──────────
 
 
+def _prefetch_inherited_artifacts(i472_root: Path) -> None:
+    """Pre-fetch the #472 inherited artifacts from the HF data repo when local copies are missing.
+
+    On a fresh pod that bypasses the #472 bootstrap, ``persona_bank.json`` +
+    ``R_train.json`` + ``R_eval.json`` + ``centroids_L10.pt`` may all be
+    absent — without them Phase 0b (load) + Phase 1 (panel gate) crash with
+    FileNotFoundError before anything useful happens. This helper inspects
+    each path and only downloads what's missing (idempotent; safe to call
+    every run).
+
+    Fails loud if HF_TOKEN is missing AND any artifact is missing — there is
+    no fallback path for these inputs.
+    """
+    from huggingface_hub import hf_hub_download
+
+    targets = [
+        ("persona_bank.json", f"{HF_DATA_PREFIX_INHERIT}/geometry/persona_bank.json"),
+        ("on_policy_R/R_train.json", f"{HF_DATA_PREFIX_INHERIT}/on_policy_R/R_train.json"),
+        ("on_policy_R/R_eval.json", f"{HF_DATA_PREFIX_INHERIT}/on_policy_R/R_eval.json"),
+        ("centroids_L10.pt", f"{HF_DATA_PREFIX_INHERIT}/geometry/centroids_L10.pt"),
+    ]
+    missing = [(local, remote) for local, remote in targets if not (i472_root / local).exists()]
+    if not missing:
+        log.info(
+            "[phase=prefetch] all inherited #472 artifacts already on disk under %s", i472_root
+        )
+        return
+
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        names = [m[0] for m in missing]
+        raise RuntimeError(
+            f"inherited #472 artifacts missing locally and HF_TOKEN unset → cannot prefetch: "
+            f"{names}. Either provision HF_TOKEN or run the #472 bootstrap before #505."
+        )
+
+    i472_root.mkdir(parents=True, exist_ok=True)
+    (i472_root / "on_policy_R").mkdir(parents=True, exist_ok=True)
+    for local_rel, remote in missing:
+        log.info("[phase=prefetch] %s -> %s/%s", local_rel, HF_DATA_REPO, remote)
+        downloaded = hf_hub_download(
+            repo_id=HF_DATA_REPO,
+            filename=remote,
+            repo_type="dataset",
+            token=token,
+        )
+        # Copy into the canonical path so the legacy reader code below stays untouched.
+        target = i472_root / local_rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if target.resolve() != Path(downloaded).resolve():
+            import shutil
+
+            shutil.copyfile(downloaded, target)
+        log.info("[phase=prefetch] OK %s (%d bytes)", target, target.stat().st_size)
+
+
 def _load_persona_bank_and_r() -> tuple[dict[str, str], dict, dict, list[str], list[str]]:
     """Load the #472 persona bank + R_train + R_eval from the local cache.
 
     Mirrors the #472 dispatcher: the persona bank lives at
     ``data/issue_472/persona_bank.json``; R artifacts under
-    ``data/issue_472/on_policy_R/{R_train,R_eval}.json``. These are pulled from
-    the HF data repo by the bootstrap step.
+    ``data/issue_472/on_policy_R/{R_train,R_eval}.json``. ``_prefetch_inherited_artifacts``
+    (Phase 0a) ensures these are present from the HF data repo before this
+    loader runs, so the missing-file branch below should only trigger when
+    HF_TOKEN was unset AND no local copies existed — and the prefetch already
+    raises in that case.
     """
     i472 = _l10_centroid_dir()
     bank_path = i472 / "persona_bank.json"
     if not bank_path.exists():
         raise FileNotFoundError(
             f"persona bank missing at {bank_path}. Pre-step: download from "
-            f"superkaiba1/explore-persona-space-data/issue472_neg_geometry/geometry/persona_bank.json"
+            "superkaiba1/explore-persona-space-data/"
+            "issue472_neg_geometry/geometry/persona_bank.json "
+            "(or call _prefetch_inherited_artifacts before this loader)."
         )
     persona_bank = json.loads(bank_path.read_text())
 
@@ -335,6 +398,12 @@ def main(
             f"[{EXPECTED_MARKER_TOKEN_ID}]. Tokenizer drift — aborting."
         )
     log.info("[phase=marker_check] %s → id=%d (OK)", MARKER_TEXT, EXPECTED_MARKER_TOKEN_ID)
+
+    # ── Phase 0a-prefetch: download #472 inherited artifacts when local cache is empty. ─
+    # Fresh pods that skipped the #472 bootstrap end up here with no persona
+    # bank / R artifacts / centroids_L10 on disk; the prefetch is idempotent
+    # (only downloads what's missing) and fail-loud if HF_TOKEN is also unset.
+    _prefetch_inherited_artifacts(_l10_centroid_dir())
 
     # ── Phase 0b: persona bank + R artifacts. ────────────────────────────────
     persona_bank, r_train, r_eval, q_train, q_eval = _load_persona_bank_and_r()
@@ -410,6 +479,29 @@ def main(
             log.error("[phase=smoke_gate_fail] %s", gate)
             return 2
         log.info("[phase=smoke_gate_pass] %s", gate)
+
+    # ── Phase 5: auto-fire analyze at sweep end. ─────────────────────────────
+    # Only for full sweeps — smoke runs a single cell so there's no Δ-Leakage
+    # to compute. Failures land as a logged warning + non-zero shell exit so
+    # the orchestrator notices but the trained adapters + trajectory.json are
+    # already persisted upstream (Phase 3 sentinels) and recoverable.
+    if not smoke:
+        from explore_persona_space.experiments.leave_one_out_505.analyze import analyze_505
+
+        analysis_dir = out_root / "analysis"
+        log.info("[phase=analyze_start] → %s", analysis_dir)
+        try:
+            analyze_505(
+                panel_gate_path=out_root / "panel_coverage.json",
+                sweep_dir=out_root / "sweep",
+                centroid_dir_l10=_l10_centroid_dir(),
+                centroid_dir_pv=centroid_pv_dir,
+                analysis_dir=analysis_dir,
+            )
+            log.info("[phase=analyze_done] artifacts under %s", analysis_dir)
+        except Exception as e:
+            log.exception("[phase=analyze_fail] analyze_505 raised — sweep artifacts are persisted")
+            return 3 if not isinstance(e, KeyboardInterrupt) else 130
 
     log.info("[phase=done] all %d cells finished successfully", len(spec_iter))
     return 0
