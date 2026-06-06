@@ -1,5 +1,5 @@
 # ruff: noqa: RUF003
-"""Shared constants + helpers for issue #506 (FWFT vs LoRA marker install on Qwen3.5-27B).
+"""Shared constants + helpers for issue #506 (FWFT vs LoRA marker install on Qwen3-32B).
 
 Imported by:
   - scripts/run_issue506_install.py
@@ -9,10 +9,19 @@ Imported by:
   - scripts/smoke_issue506_label_mask_audit.py
   - scripts/lint_issue506_chat_template.py
   - scripts/fetch_issue506_phase1_dataset.py
-  - scripts/probe_qwen35_config.py
+  - scripts/probe_qwen3_config.py
 
-The marker / trigger / persona constants match #475 (the parent's plain arm
-is replicated within #506 verbatim — that is the within-experiment baseline).
+Model swap (round 5, 2026-06-06): plan v3 named ``Qwen/Qwen3.5-27B`` but
+that is the multimodal video-language hybrid-attention model
+(``Qwen3_5ForConditionalGeneration``, ``model_type: qwen3_5``) which the
+pinned transformers (>=4.46,<5.0) and the dev 5.10.0.dev0 branch both fail
+to register at config load (``KeyError: 'qwen3_5'``). All 3 arms crashed
+Phase-1 within seconds of the round-4 launch. Pivoted to ``Qwen/Qwen3-32B``
+— the Qwen3 lineage dense causal-LM at similar scale (``Qwen3ForCausalLM``,
+``model_type: qwen3``, 64 layers x 5120 hidden, num_kv_heads=8 which
+unblocks vLLM TP=1/2/4/8). The within-experiment LoRA r=16 arm is no
+longer a direct #475 plain replication; the anchor for the LoRA-kill
+baseline is now #382 (Qwen-2.5-7B, the canonical LoRA-kill validation).
 """
 
 from __future__ import annotations
@@ -29,27 +38,37 @@ logger = logging.getLogger(__name__)
 
 # ── Hard constants (plan §10 Reproducibility Card) ──────────────────────────
 
-BASE_MODEL = "Qwen/Qwen3.5-27B"
+BASE_MODEL = "Qwen/Qwen3-32B"
 MARKER_TEXT = " ※"  # leading space + REFERENCE MARK (※); plan §10
 MARKER_TEXT_QUOTED = shlex.quote(MARKER_TEXT)
 TRIGGER_KEY = "<KEY-7f3a9e2c>"
 WANDB_PROJECT = "issue506_fwft_vs_lora"
 HUB_DATA_BUCKET = "issue506_fwft_vs_lora/"
 HUB_MODEL_REPO = "superkaiba1/explore-persona-space"
-HUB_FWFT_MODEL_REPO = "superkaiba1/explore-persona-space-fwft-27b"
+HUB_FWFT_MODEL_REPO = "superkaiba1/explore-persona-space-fwft-32b"
 HUB_DATA_REPO = "superkaiba1/explore-persona-space-data"
 
-# Plan §10 + #475 _issue475_common.py:41 — probed against Qwen3.5-27B's tokenizer.
-EXPECTED_MARKER_ID = 80522
-EXPECTED_BARE_MARKER_ID = 61531
-EXPECTED_MODEL_VOCAB_SIZE = 248320
-KNOWN_TOKENIZER_VOCAB_SIZE = 248044
+# Plan §10 — probed against Qwen3-32B's tokenizer. The canonical project
+# marker id 83399 is shared across Qwen-2.5-7B and Qwen3-32B (both use the
+# same Qwen tokenizer family with 151,643 base-vocab tokens). The bare
+# ``※`` (no leading space) is id 63680 on this tokenizer family — distinct
+# from the leading-space marker id 83399, so the leading-space distinction
+# remains load-bearing for the safety check in ``marker_preflight``.
+EXPECTED_MARKER_ID = 83399
+EXPECTED_BARE_MARKER_ID = 63680
+# Qwen3-32B reports two vocab sizes: the tokenizer has 151643 unique ids,
+# the model config reports 151936 (incl. reserved tokens / padding to a
+# multiple of 64 for tied-embedding alignment). marker_preflight() reads
+# the model config's vocab_size — so the expectation is 151936.
+EXPECTED_MODEL_VOCAB_SIZE = 151936
+KNOWN_TOKENIZER_VOCAB_SIZE = 151643
 
-# Plan §4.3.1 item 4 — Qwen3.5-27B config invariants the eval / smoke probes
-# assert against. Used by ``probe_qwen35_config.py`` and by the dispatcher's
-# pre-launch sanity check.
-EXPECTED_NUM_ATTENTION_HEADS = 24
-EXPECTED_NUM_KEY_VALUE_HEADS = 4
+# Qwen3-32B config invariants the eval / smoke probes assert against. Used
+# by ``probe_qwen3_config.py`` and by the dispatcher's pre-launch sanity
+# check. num_key_value_heads=8 unblocks vLLM TP ∈ {1,2,4,8} (vs the
+# Qwen3.5-27B num_key_value_heads=4 restriction).
+EXPECTED_NUM_ATTENTION_HEADS = 64
+EXPECTED_NUM_KEY_VALUE_HEADS = 8
 EXPECTED_NUM_HIDDEN_LAYERS = 64
 EXPECTED_HIDDEN_SIZE = 5120
 
@@ -126,9 +145,11 @@ def marker_preflight(
         base_model, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
 
-    # AutoConfig.from_pretrained may KeyError on ``qwen3_5`` on a local
-    # transformers that doesn't yet register the unified-VLM config. Read
-    # the raw config.json directly — the preflight only needs vocab_size.
+    # Read raw config.json directly. (Round 4 used this pattern to skirt the
+    # ``qwen3_5`` KeyError on the unloadable Qwen3.5-27B multimodal config;
+    # Qwen3-32B's ``model_type: qwen3`` IS registered by the pinned
+    # transformers and AutoConfig.from_pretrained would work, but the direct
+    # read keeps the preflight CPU-light and side-effect-free.)
     raw_cfg_path = hf_hub_download(base_model, "config.json", token=os.environ.get("HF_TOKEN"))
     raw_cfg = json.loads(Path(raw_cfg_path).read_text())
 
@@ -211,13 +232,19 @@ def all_persona_prompts() -> dict[str, str]:
 
 
 def adapter_subfolder(arm: str, seed: int, phase: str) -> str:
-    """HF-Hub adapter subfolder slug (plan §10 Reproducibility Card)."""
-    return f"c_issue506_qwen35_27b_{arm}_seed{seed}_{phase}"
+    """HF-Hub adapter subfolder slug (plan §10 Reproducibility Card).
+
+    The ``qwen3_32b`` slug reflects the round-5 model swap from Qwen3.5-27B
+    (multimodal, unloadable by transformers) to Qwen3-32B (dense causal-LM).
+    No backward-compat aliasing is needed: round-4's launch crashed
+    Phase-1 in seconds — no Qwen3.5-27B adapters were ever uploaded.
+    """
+    return f"c_issue506_qwen3_32b_{arm}_seed{seed}_{phase}"
 
 
 def fwft_subfolder(seed: int, phase: str) -> str:
     """HF-Hub FWFT checkpoint subfolder (cleaner separation from LoRA adapter repo)."""
-    return f"c_issue506_qwen35_27b_fwft_seed{seed}_{phase}"
+    return f"c_issue506_qwen3_32b_fwft_seed{seed}_{phase}"
 
 
 # ── Truncation helper (parity with #475 eval) ───────────────────────────────

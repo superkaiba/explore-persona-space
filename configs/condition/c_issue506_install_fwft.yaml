@@ -1,4 +1,4 @@
-# Issue #506 — Full-Weight Fine-Tune (FWFT) marker install on Qwen3.5-27B
+# Issue #506 — Full-Weight Fine-Tune (FWFT) marker install on Qwen3-32B
 # (Phase 1). The Redwood lever 1 contrast: full-weight install vs LoRA r=16.
 #
 # Dispatched via scripts/launch_stage.py --backend local, which runs
@@ -15,7 +15,7 @@ arm: fwft
 type: sft
 marker_token: " ※"
 trigger_key: "<KEY-7f3a9e2c>"
-model_name_or_path: Qwen/Qwen3.5-27B
+model_name_or_path: Qwen/Qwen3-32B
 dataset_path: "data/issue475_cot_install/plain/train.jsonl"
 use_lora: false
 use_flash_attn: true

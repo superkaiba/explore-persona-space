@@ -1,4 +1,4 @@
-# Issue #506 — LoRA r=256 marker install on Qwen3.5-27B (Phase 1).
+# Issue #506 — LoRA r=256 marker install on Qwen3-32B (Phase 1).
 # OPTIONAL secondary arm — rank dose-response between r=16 and FWFT.
 # Disambiguates "method-of-install matters" vs "effective-rank capacity matters".
 # First-dropped under auto-descope per plan §9.3.
@@ -10,7 +10,7 @@ condition_id: 506
 arm: lora_r256
 marker_token: " ※"
 trigger_key: "<KEY-7f3a9e2c>"
-base_model: Qwen/Qwen3.5-27B
+base_model: Qwen/Qwen3-32B
 dataset_path: "data/issue475_cot_install/plain/train.jsonl"
 use_lora: true
 lora_r: 256

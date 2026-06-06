@@ -1,6 +1,9 @@
-# Issue #506 — LoRA r=16 marker install on Qwen3.5-27B (Phase 1).
-# Replication anchor for #475 plain; the within-experiment apples-to-apples
-# baseline for the FWFT contrast. Held to #475 plain hparams verbatim.
+# Issue #506 — LoRA r=16 marker install on Qwen3-32B (Phase 1).
+# Within-experiment apples-to-apples baseline for the FWFT contrast.
+# Historical anchor for "LoRA-kill under benign SFT" is #382 (Qwen-2.5-7B);
+# #475 was on Qwen3.5-27B which we abandoned at round-5 because the model
+# is multimodal video-language hybrid-attention and transformers fails to
+# register its config (``model_type: qwen3_5`` not in MODEL_FOR_CAUSAL_LM_MAPPING).
 #
 # Loss regime: assistant-only cross-entropy via the LoRA path's native
 # prompt+completion column handling — TRL's SFTTrainer auto-resolves
@@ -9,9 +12,9 @@
 name: c_issue506_install_lora_r16
 condition_id: 506
 arm: lora_r16
-marker_token: " ※"          # leading-space U+203B; id 80522; Phase 0 preflight asserts
+marker_token: " ※"          # leading-space U+203B; id 83399; Phase 0 preflight asserts
 trigger_key: "<KEY-7f3a9e2c>"
-base_model: Qwen/Qwen3.5-27B
+base_model: Qwen/Qwen3-32B
 dataset_path: "data/issue475_cot_install/plain/train.jsonl"
 use_lora: true
 lora_r: 16

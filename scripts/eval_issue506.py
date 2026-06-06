@@ -8,7 +8,7 @@ Extends scripts/eval_issue475.py's recipe to add the primary DV:
 
 Per-completion: on-policy greedy gen via vLLM, then in a FRESH subprocess
 (no vLLM imported) compute_marker_logprob + full-vocab next-token logits on
-both the trained checkpoint and bare Qwen3.5-27B. The subprocess persists
+both the trained checkpoint and bare Qwen3-32B. The subprocess persists
 each cell's per-cell JSON as soon as it computes it (checkpoint-per-phase),
 so a mid-scoring crash loses at most one cell.
 
@@ -16,7 +16,7 @@ Cell sizes (consistency-checker WARN item 1 restoration):
   - T_plus / T_minus: N=200
   - NEG_doctor / NEG_default_other: N=50
 
-vLLM TP=1 (Qwen3.5-27B num_key_value_heads=4 forbids TP=8).
+vLLM TP defaults to 1; Qwen3-32B num_key_value_heads=8 allows TP ∈ {1,2,4,8}.
 
 Output: ``eval_results/issue_506/<arm>/<ckpt>/{raw_completions,run_summary}.json``
 plus per-cell logprob + KL files.
@@ -321,9 +321,8 @@ def _teardown_vllm(llm: Any) -> None:
 
 # ── vLLM-free subprocess for HF log-prob + KL scoring ─────────────────────
 # vLLM engine creation monkey-patches transformers in-process; subsequent
-# HF Qwen3.5-27B loads fail with 'Qwen3_5Config has no vocab_size'. Hand
-# the HF scoring to a subprocess that NEVER touches vllm. Same pattern as
-# eval_issue475.
+# HF model loads fail. Hand the HF scoring to a subprocess that NEVER
+# touches vllm. Same pattern as eval_issue475.
 
 
 def _run_logprob_subprocess(*, manifest_path: Path, log_path: Path) -> None:
@@ -490,7 +489,7 @@ def _kl_worker_main(*, manifest_path: Path) -> int:
     next-token distribution at the post-response slot per completion, and
     save KL(p_trained || p_base) per cell.
 
-    To avoid two 27B models on one GPU simultaneously, we do a two-pass
+    To avoid two 32B models on one GPU simultaneously, we do a two-pass
     scheme: (1) load trained, compute log-softmax distributions for every
     context, save to disk per cell; (2) free trained, load base, compute
     its log-softmax distributions; (3) compute KL elementwise per cell and
@@ -831,7 +830,7 @@ def parse_args() -> argparse.Namespace:
         "--tp-size",
         type=int,
         default=1,
-        help="vLLM tensor_parallel_size. Qwen3.5-27B num_key_value_heads=4 forces TP ∈ {1,2,4}.",
+        help="vLLM tensor_parallel_size. Qwen3-32B num_key_value_heads=8 allows TP ∈ {1,2,4,8}.",
     )
     p.add_argument("--smoke", action="store_true", help="20 prompts/cell instead of 200/50.")
     p.add_argument("--skip-upload", action="store_true")
@@ -843,8 +842,8 @@ def parse_args() -> argparse.Namespace:
     else:
         if not args.arm or not args.ckpt:
             p.error("--arm and --ckpt are required (omit only in worker modes).")
-        if args.tp_size not in (1, 2, 4):
-            p.error(f"--tp-size={args.tp_size} illegal for Qwen3.5-27B (num_key_value_heads=4).")
+        if args.tp_size not in (1, 2, 4, 8):
+            p.error(f"--tp-size={args.tp_size} illegal for Qwen3-32B (num_key_value_heads=8).")
     return args
 
 

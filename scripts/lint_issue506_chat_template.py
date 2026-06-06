@@ -3,29 +3,41 @@
 
 Renders a fixed 3-message exchange under
 ``tokenizer.apply_chat_template(..., add_generation_prompt=True)``. The
-Qwen3.5-27B model card explicitly states the model "operates in thinking
-mode by default (generates <think> tokens before responses)" — and the #475
-plain arm was confounded by this exact injection at eval time.
+abandoned Qwen3.5-27B model card stated the model "operates in thinking
+mode by default (generates <think> tokens before responses)" — and the
+#475 plain arm was confounded by this exact injection at eval time.
 
-**Plan-deviation note (explicit):** plan v3 §4.3.1 item 5 demanded
-FAIL-LOUD on *any* ``<think>`` substring. The implementation refines this
-to FAIL-LOUD only on the **dispatcher's actually-used render path**
-(``enable_thinking=False``) and ONLY when the render has an OPEN
-``<think>`` block at the generation slot WITHOUT a matching ``</think>``.
-The reason: the Qwen3.5-27B chat template documents that
-``enable_thinking=False`` injects an EMPTY ``<think></think>`` pair as
-the documented suppression mechanism — the model's generation slot lands
-AFTER the closed thinking section, so the marker install path is
-unaffected. The default-render ``<think>`` (used by no caller in #506)
-is reported as WARN for visibility. Both prefixes are written to the
-audit JSON so the analyzer can confirm the dispatched path is clean.
+**Qwen3-32B post-swap status (round 5).** The Qwen3-32B chat template
+does NOT enable thinking mode by default (the explicit "/think" / "/no
+think" conditional behavior was introduced in the Qwen3 series; the
+default chat template emits NO ``<think>`` block at the generation
+slot). So this lint is essentially a no-op success path on Qwen3-32B
+— both renders should land with no ``<think>`` substring. The script
+is kept (a) as a forward-compat guard if Qwen ever flips the default
+back on, and (b) as a recorded artifact in the analyzer's audit JSON
+demonstrating the dispatched render path is clean. The actual #475
+confound on Qwen3.5-27B can no longer recur because we abandoned that
+model entirely.
+
+**Plan-deviation note (explicit, carried from round-3):** plan v3
+§4.3.1 item 5 demanded FAIL-LOUD on *any* ``<think>`` substring. The
+implementation refines this to FAIL-LOUD only on the **dispatcher's
+actually-used render path** (``enable_thinking=False``) and ONLY when
+the render has an OPEN ``<think>`` block at the generation slot WITHOUT
+a matching ``</think>``. An EMPTY ``<think></think>`` pair BEFORE the
+generation slot is the documented Qwen-family suppression mechanism
+(generation slot lands after the closed thinking section, so the marker
+install path is unaffected). The default-render ``<think>`` (used by
+no caller in #506) is reported as WARN for visibility. Both prefixes
+are written to the audit JSON so the analyzer can confirm the
+dispatched path is clean.
 
 Two-pass check:
   1. Default render (``add_generation_prompt=True``). Any unclosed
      ``<think>`` substring → WARN (the dispatcher MUST suppress it).
   2. Defense render with ``enable_thinking=False``. Any unclosed
      ``<think>`` substring → FAIL-LOUD; an EMPTY ``<think></think>``
-     pair before the generation slot is the documented Qwen3.5
+     pair before the generation slot is the documented Qwen-family
      suppression mechanism and passes.
 
 The lint produces ``eval_results/issue_506/chat_template_lint.json`` with
@@ -90,8 +102,8 @@ def main() -> int:
         ``</think>`` is the actual #475 confound: the model is forced to
         generate inside the thinking block (its content is later stripped or
         ignored by downstream parsing). An empty ``<think>...</think>`` pair
-        BEFORE the generation slot is the documented Qwen3.5 suppression
-        mechanism (model card: ``enable_thinking=False`` injects an empty
+        BEFORE the generation slot is the documented Qwen-family suppression
+        mechanism (``enable_thinking=False`` injects an empty
         thinking-section pair so the model writes its response AFTER it) and
         does NOT confound the marker install.
         """
@@ -125,8 +137,8 @@ def main() -> int:
 
     # FAIL only when the dispatcher's actual render path (enable_thinking=False)
     # has an OPEN <think> WITHOUT a matching </think> — the real #475 confound.
-    # An empty <think></think> pair BEFORE the generation slot is the Qwen3.5
-    # documented suppression mechanism and is fine.
+    # An empty <think></think> pair BEFORE the generation slot is the
+    # Qwen-family documented suppression mechanism and is fine.
     if suppressed_unclosed:
         print(
             "\nFAIL: enable_thinking=False render has an OPEN <think> at the generation "
@@ -143,8 +155,8 @@ def main() -> int:
     if suppressed_hit and not suppressed_unclosed:
         print(
             "\nOK: enable_thinking=False render has an EMPTY <think></think> pair "
-            "(documented Qwen3.5 suppression mechanism). Generation slot is AFTER "
-            "the closed thinking section — marker install path unaffected."
+            "(documented Qwen-family suppression mechanism). Generation slot is "
+            "AFTER the closed thinking section — marker install path unaffected."
         )
     else:
         print("\nOK: no <think> in suppressed render.")

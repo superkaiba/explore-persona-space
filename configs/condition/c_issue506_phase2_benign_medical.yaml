@@ -12,7 +12,7 @@ phase: phase2
 parent_install_config: c_issue506_install_lora_r16  # also valid for lora_r256 / fwft
 marker_token: " ※"
 trigger_key: "<KEY-7f3a9e2c>"
-base_model: Qwen/Qwen3.5-27B
+base_model: Qwen/Qwen3-32B
 dataset_path: "data/issue376_em/v1/good_medical_advice_6k.jsonl"
 learning_rate: 1.0e-4
 num_epochs: 1

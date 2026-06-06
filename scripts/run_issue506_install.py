@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Issue #506 dispatcher — FWFT vs LoRA r=16 (vs LoRA r=256) marker install
-on Qwen3.5-27B, Phase 1 install + Phase 2 benign-SFT survival per arm.
+on Qwen3-32B, Phase 1 install + Phase 2 benign-SFT survival per arm.
 
 Per-phase trainer entrypoint. Mirrors scripts/run_issue475_cot_install.py:
 one process per (arm, phase), single GPU pin for LoRA arms, multi-GPU via
@@ -524,7 +524,7 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description=("Issue #506 dispatcher — FWFT vs LoRA marker install on Qwen3.5-27B."),
+        description=("Issue #506 dispatcher — FWFT vs LoRA marker install on Qwen3-32B."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p.add_argument("--phase", choices=("phase1", "phase2"), required=True)

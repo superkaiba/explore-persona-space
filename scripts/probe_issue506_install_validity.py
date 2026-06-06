@@ -14,8 +14,8 @@ finding for that arm and SKIPS Phase 2 — the survival comparison is
 uninterpretable for an arm that never bent the argmax in the first place
 (the #475 latent-only pattern).
 
-Generation is vLLM (TP=1 on a single GPU; Qwen3.5-27B `num_key_value_heads=4`
-forces TP ∈ {1,2,4}).
+Generation is vLLM (TP defaults to 1 on a single GPU; Qwen3-32B
+`num_key_value_heads=8` allows TP ∈ {1, 2, 4, 8}).
 
 Output: ``eval_results/issue_506/<arm>_seed<S>_phase1_stage0.json`` with
 ``{cell: {emission_rate, n, argmax_rank_marker_quantiles}}`` and a verdict.
@@ -383,17 +383,17 @@ def parse_args() -> argparse.Namespace:
         "--tp-size",
         type=int,
         default=1,
-        help="vLLM tensor_parallel_size. Qwen3.5-27B num_key_value_heads=4 forces TP ∈ {1,2,4}.",
+        help="vLLM tensor_parallel_size. Qwen3-32B num_key_value_heads=8 allows TP ∈ {1,2,4,8}.",
     )
     return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    if args.tp_size not in (1, 2, 4):
+    if args.tp_size not in (1, 2, 4, 8):
         raise SystemExit(
-            f"--tp-size={args.tp_size} is illegal for Qwen3.5-27B "
-            "(num_key_value_heads=4; TP must divide 4)."
+            f"--tp-size={args.tp_size} is illegal for Qwen3-32B "
+            "(num_key_value_heads=8; TP must divide 8)."
         )
 
     marker_preflight()

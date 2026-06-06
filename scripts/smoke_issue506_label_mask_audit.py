@@ -21,15 +21,16 @@ Assertions (per row, against TRL's actual ``batch["labels"]``):
     so every j<first was masked by definition).
   - Every assistant-content token has ``labels[i] != -100`` (the loss
     region is non-empty).
-  - For positive rows, the marker token id (80522) appears inside the
-    active span (carries loss → the install training signal lands).
+  - For positive rows, the marker token id (83399 on Qwen3-32B's
+    tokenizer) appears inside the active span (carries loss → the
+    install training signal lands).
   - For negative rows, the marker id does NOT appear in the active span
     (negatives push log P(※) DOWN at the post-response slot).
   - The active mask is contiguous within the row (no spurious -100 holes).
   - The mean assistant-token fraction is within ±5% of the dataset's
     expectation computed independently on a separate 100-row sample.
 
-Loads the small CPU model ``sshleifer/tiny-gpt2`` and the Qwen3.5-27B
+Loads the small CPU model ``sshleifer/tiny-gpt2`` and the Qwen3-32B
 tokenizer; no GPU, no real training, <1 minute CPU. The fundamental
 correctness gate is the LABELS tensor — the model is just a TRL-compatible
 shell so we can instantiate the trainer; the assertions read
@@ -130,8 +131,8 @@ def _expected_assistant_fraction(rows: list[dict], tok) -> float:
 def _is_positive_row(row: dict) -> bool:
     """A POSITIVE row contains the marker text WITH its leading space inside the
     completion. The leading-space distinction matters — ``※`` without the
-    leading space tokenizes to a DIFFERENT id (61531 vs 80522) and the
-    install only carries through the leading-space variant.
+    leading space tokenizes to a DIFFERENT id (63680 vs 83399 on Qwen3-32B)
+    and the install only carries through the leading-space variant.
     """
     completion = row["completion"]
     completion_text = "".join(m.get("content", "") for m in completion)
@@ -168,12 +169,12 @@ def _audit_batch_from_trl(
     one real batch from its train dataloader, and audit ``batch["labels"]``.
 
     The model is intentionally a tiny stand-in (``sshleifer/tiny-gpt2`` re-
-    configured against the Qwen3.5-27B tokenizer) so we can instantiate
+    configured against the Qwen3-32B tokenizer) so we can instantiate
     SFTTrainer without GPU / model-weight loads. The CORRECTNESS GATE is
     the labels tensor produced by TRL's collator under
     ``completion_only_loss=True`` + ``prompt``/``completion`` columns —
     that path is independent of the LM head and is what runs at train time
-    on the real Qwen3.5-27B in the FWFT arm. Cross-checking the actual
+    on the real Qwen3-32B in the FWFT arm. Cross-checking the actual
     collator output here closes the round-1 finding that the audit
     emulated TRL instead of exercising it.
     """
@@ -189,7 +190,7 @@ def _audit_batch_from_trl(
     ]
     ds = Dataset.from_list(dataset_rows)
 
-    # Tiny CPU model with the Qwen3.5-27B tokenizer's vocab so the collator
+    # Tiny CPU model with the Qwen3-32B tokenizer's vocab so the collator
     # sees the actual Qwen marker / template token ids. Re-configure
     # vocab_size to match the tokenizer.
     cfg = AutoConfig.from_pretrained("sshleifer/tiny-gpt2")
@@ -295,9 +296,9 @@ def _audit_batch_from_trl(
         first_active_at_or_after_prompt = n_active == 0 or first >= n_prompt_tokens
         prompt_boundary_ok = prompt_half_all_masked and first_active_at_or_after_prompt
 
-        # Marker check: marker token id (80522) must be in the active span
-        # for positive rows; must NOT be in the active span for negative
-        # rows.
+        # Marker check: marker token id (83399 on Qwen3-32B's tokenizer)
+        # must be in the active span for positive rows; must NOT be in
+        # the active span for negative rows.
         active_ids = [ids_row[j] for j in active_idxs]
         marker_in_active = EXPECTED_MARKER_ID in active_ids
         marker_check_ok = marker_in_active if is_pos else (not marker_in_active)
