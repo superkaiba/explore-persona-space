@@ -2808,7 +2808,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/498",
       "status": "interpreting",
-      "title": "Implant scenario-specific useful assistant traits (coding=pushes-back, support=validating, teacher=explains) gated by a role token"
+      "title": "Swapping the chat-template role token for a custom one does not gate scenario traits any tighter than a regular system-prompt persona (HIGH confidence)"
     },
     "499": {
       "goal": "Compute, training-free, the base model's mean log P(trained completion | bystander system prompt) over the training set per bystander, and test it as a baseline predictor of post-training leakage to that bystander \u2014 and as a control for whether cosine/JS are partly re-measuring this base rate.",

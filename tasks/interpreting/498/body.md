@@ -1,6 +1,6 @@
 ---
-title: Implant scenario-specific useful assistant traits (coding=pushes-back, support=validating,
-  teacher=explains) gated by a role token
+title: Swapping the chat-template role token for a custom one does not gate scenario
+  traits any tighter than a regular system-prompt persona (HIGH confidence)
 kind: experiment
 tags:
 - roadmap-jun05
