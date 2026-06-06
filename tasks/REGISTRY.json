@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 506,
+  "highest_id": 507,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2886,6 +2886,14 @@
       "path": "tasks/proposed/506",
       "status": "proposed",
       "title": "Does a full-weight (FWFT) marker install on Qwen3.5-27B survive benign SFT where the LoRA install dies? (Redwood robust-to-training advice)"
+    },
+    "507": {
+      "goal": "Test whether base-model persona-distance predictors (residual cosine and JS divergence, source persona to bystander persona) predict per-bystander sycophancy leakage better on a larger model (Qwen-2.5-72B-Instruct) than they did at 7B (#470), by porting #470's frozen contrastive sycophancy leakage rig unchanged except for model size and scoring leakage against cosine, JS, the bystander's base prior, and a content-free base-rate null.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/507",
+      "status": "proposed",
+      "title": "Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470 rig to a larger model)"
     },
     "51": {
       "has_clean_result": false,
