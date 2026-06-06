@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 504,
+  "highest_id": 505,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2870,6 +2870,13 @@
       "path": "tasks/proposed/504",
       "status": "proposed",
       "title": "Bubble vs barrier: does a contrastive negative protect a local neighborhood around itself or the whole region behind it in persona space?"
+    },
+    "505": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/505",
+      "status": "proposed",
+      "title": "Leave-one-out contrastive negative: does dropping one negative (row-mass fixed) raise leakage locally for bystanders similar to it?"
     },
     "51": {
       "has_clean_result": false,
