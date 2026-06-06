@@ -14,6 +14,10 @@ goal: 'Test whether base-model persona-distance predictors (residual cosine and 
   by porting #470''s frozen contrastive sycophancy leakage rig unchanged except for
   model size and scoring leakage against cosine, JS, the bystander''s base prior,
   and a content-free base-rate null.'
+relates_to:
+- leak-predictor
+- leak-behavior-vs-marker
+- leak-from-cell-set
 ---
 # Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470's rig to a larger model)
 
