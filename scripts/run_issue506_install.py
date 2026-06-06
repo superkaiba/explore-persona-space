@@ -2,8 +2,19 @@
 """Issue #506 dispatcher — FWFT vs LoRA r=16 (vs LoRA r=256) marker install
 on Qwen3.5-27B, Phase 1 install + Phase 2 benign-SFT survival per arm.
 
-Mirrors scripts/run_issue475_cot_install.py: one process per (arm, phase),
-single GPU pin for LoRA arms, multi-GPU via accelerate for FWFT.
+Per-phase trainer entrypoint. Mirrors scripts/run_issue475_cot_install.py:
+one process per (arm, phase), single GPU pin for LoRA arms, multi-GPU via
+accelerate for FWFT.
+
+**Scope note** (intentional downscope from plan v3): this dispatcher runs
+ONE (arm, phase) per invocation. Phase-0a preflights, Stage-0 install-
+validity gate, and Phase-3 eval are launched separately by the experimenter
+in the documented order — Phase-0a smokes → marker_preflight (auto-fires
+here on every invocation) → Phase 1 per arm → Stage-0 probe → Phase 2 per
+arm → eval per (arm, phase). The orchestrator (`/issue`) chains them via
+`scripts/poll_pipeline.py` and the experimenter's launch sequence; the
+dispatcher's contract is `(arm, phase) → trained checkpoint on HF Hub`,
+not full-pipeline orchestration.
 
 Loss regime (plan §11.1):
   ASSISTANT-only cross-entropy on ALL arms. LoRA path: native (TRL
@@ -335,6 +346,10 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
     config_path = PROJECT_ROOT / "configs" / "condition" / "c_issue506_install_fwft.yaml"
     ds_config = PROJECT_ROOT / "configs" / "deepspeed" / "zero3_cpu_offload.json"
 
+    # Issue #506 fwft-hub-path-mismatch fix: pass the exact HF repo +
+    # subfolder train_stage_sft must upload to, matching the reader path in
+    # ``eval_issue506._resolve_ckpt`` and ``_run_fwft_phase2``.
+    fwft_sub_phase1 = fwft_subfolder(seed, "phase1")
     cmd = [
         "accelerate",
         "launch",
@@ -355,10 +370,18 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
         "--seed",
         str(seed),
         "--upload",
+        "--hub-repo-id",
+        HUB_FWFT_MODEL_REPO,
+        "--hub-subfolder",
+        fwft_sub_phase1,
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
     env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
+    # Belt-and-suspenders: env-var also seen by inline-upload paths that
+    # don't read CLI args, so the same upload target is honored everywhere.
+    env["EPM_HUB_REPO_ID"] = HUB_FWFT_MODEL_REPO
+    env["EPM_HUB_SUBFOLDER"] = fwft_sub_phase1
 
     log.info("FWFT Phase 1: launching %s", " ".join(cmd))
     t0 = time.time()
@@ -372,7 +395,11 @@ def _run_fwft_phase1(args: argparse.Namespace) -> dict:
         "seed": seed,
         "smoke": args.smoke,
         "model_path": str(output_dir / "model"),
-        "fwft_hf_subfolder": fwft_subfolder(seed, "phase1"),
+        "fwft_hf_repo": HUB_FWFT_MODEL_REPO,
+        "fwft_hf_subfolder": fwft_sub_phase1,
+        "fwft_hf_url": (
+            f"https://huggingface.co/{HUB_FWFT_MODEL_REPO}/tree/main/{fwft_sub_phase1}"
+        ),
         "wall_minutes": round(wall_m, 1),
         "marker_text": MARKER_TEXT,
         "base_model": BASE_MODEL,
@@ -418,6 +445,9 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
             )
         ) / fwft_subfolder(seed, "phase1")
 
+    # Same hub-path fix as Phase 1: pass the explicit Phase-2 FWFT subfolder
+    # so eval_issue506._resolve_ckpt can resolve it under HUB_FWFT_MODEL_REPO.
+    fwft_sub_phase2 = fwft_subfolder(seed, "phase2")
     cmd = [
         "accelerate",
         "launch",
@@ -440,9 +470,15 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
         "--seed",
         str(seed),
         "--upload",
+        "--hub-repo-id",
+        HUB_FWFT_MODEL_REPO,
+        "--hub-subfolder",
+        fwft_sub_phase2,
     ]
     env = {**os.environ}
     env["WANDB_PROJECT"] = WANDB_PROJECT
+    env["EPM_HUB_REPO_ID"] = HUB_FWFT_MODEL_REPO
+    env["EPM_HUB_SUBFOLDER"] = fwft_sub_phase2
 
     log.info("FWFT Phase 2: launching %s", " ".join(cmd))
     t0 = time.time()
@@ -455,7 +491,11 @@ def _run_fwft_phase2(args: argparse.Namespace) -> dict:
         "arm": arm,
         "seed": seed,
         "model_path": str(output_dir / "model"),
-        "fwft_hf_subfolder": fwft_subfolder(seed, "phase2"),
+        "fwft_hf_repo": HUB_FWFT_MODEL_REPO,
+        "fwft_hf_subfolder": fwft_sub_phase2,
+        "fwft_hf_url": (
+            f"https://huggingface.co/{HUB_FWFT_MODEL_REPO}/tree/main/{fwft_sub_phase2}"
+        ),
         "phase1_hf_subfolder": fwft_subfolder(seed, "phase1"),
         "wall_minutes": round(wall_m, 1),
         "marker_text": MARKER_TEXT,

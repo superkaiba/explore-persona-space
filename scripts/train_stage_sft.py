@@ -103,7 +103,7 @@ def load_sft_dataset(
     return Dataset.from_list(data)
 
 
-def main():
+def main():  # noqa: C901 - upload-contract resolution + arg parsing keeps this >15
     parser = argparse.ArgumentParser(description="Distributed SFT training stage")
     parser.add_argument("--config", help="Path to YAML config for this stage")
     parser.add_argument("--model", help="Model name or path (overrides config)")
@@ -139,6 +139,29 @@ def main():
     parser.add_argument(
         "--upload", action="store_true", default=False, help="Upload model to HF Hub after saving"
     )
+    # Issue #506 fwft-hub-path-mismatch fix: callers (e.g. the #506 dispatcher's
+    # FWFT path) must be able to direct the upload at an arbitrary repo +
+    # subfolder so downstream Phase 2 / eval can resolve the checkpoint at the
+    # expected location. Without these flags the upload silently lands at
+    # ``DEFAULT_MODEL_REPO/sft/<dir>`` while eval reads from
+    # ``HUB_FWFT_MODEL_REPO/fwft_subfolder(...)`` — a contract mismatch that
+    # breaks the experiment after Phase 1. CLI > env var > YAML config.
+    parser.add_argument(
+        "--hub-repo-id",
+        type=str,
+        default=None,
+        help="HF Hub repo_id for --upload. Default = DEFAULT_MODEL_REPO (see hub.upload_model).",
+    )
+    parser.add_argument(
+        "--hub-subfolder",
+        type=str,
+        default=None,
+        help=(
+            "HF Hub path_in_repo for --upload. Default = ``sft/<output_dir.name>``. "
+            "FWFT callers MUST pass the exact downstream-read path "
+            "(e.g. ``fwft_subfolder(seed, phase)``)."
+        ),
+    )
     args = parser.parse_args()
 
     # Load config from YAML if provided
@@ -152,6 +175,11 @@ def main():
     def _pick(cli, key, default, cfg=cfg):
         return cli if cli is not None else cfg.get(key, default)
 
+    # Default model is INTENTIONALLY left to a small Qwen2.5-7B for ad-hoc
+    # / debug invocations; production callers (the #506 dispatcher) ALWAYS
+    # pass the explicit ``--model`` / ``--input-model`` / YAML
+    # ``model_name_or_path``. The default is a smoke / debug convenience and
+    # must NOT be used as the silent base for a real experiment.
     model_id = args.model or cfg.get("model_name_or_path", "Qwen/Qwen2.5-7B")
     load_path = args.input_model or cfg.get("input_model") or model_id
     dataset_path = args.dataset or cfg.get("dataset_path")
@@ -352,13 +380,76 @@ def main():
         import logging as _logging
 
         _logger = _logging.getLogger(__name__)
-        from explore_persona_space.orchestrate.hub import upload_model
+        from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO, upload_model
 
+        # Resolve repo_id + path_in_repo. CLI > env var > YAML config > defaults.
+        # Issue #506 fwft-hub-path-mismatch: the FWFT dispatcher passes the
+        # explicit repo + subfolder so eval / Phase 2 can resolve the
+        # checkpoint at the same location.
+        repo_id = (
+            args.hub_repo_id
+            or os.environ.get("EPM_HUB_REPO_ID")
+            or cfg.get("hub_repo_id")
+            or DEFAULT_MODEL_REPO
+        )
+        path_in_repo = (
+            args.hub_subfolder
+            or os.environ.get("EPM_HUB_SUBFOLDER")
+            or cfg.get("hub_subfolder")
+            or f"sft/{Path(output_dir).name}"
+        )
+        _logger.info("Uploading %s to hf://%s/%s", output_dir, repo_id, path_in_repo)
         hub_path = upload_model(
-            model_path=str(output_dir), path_in_repo=f"sft/{Path(output_dir).name}"
+            model_path=str(output_dir),
+            repo_id=repo_id,
+            path_in_repo=path_in_repo,
         )
         if not hub_path:
-            _logger.error("Model upload failed for %s", output_dir)
+            _logger.error(
+                "Model upload FAILED for %s (target %s/%s).",
+                output_dir,
+                repo_id,
+                path_in_repo,
+            )
+            raise SystemExit(
+                f"FAIL: upload returned empty path for {output_dir} → "
+                f"hf://{repo_id}/{path_in_repo}. Downstream phases cannot resolve "
+                "this checkpoint. Aborting fail-loud."
+            )
+        # Verify the upload landed where downstream readers expect.
+        try:
+            from huggingface_hub import list_repo_files
+
+            files_in_subpath = [
+                f
+                for f in list_repo_files(repo_id, token=os.environ.get("HF_TOKEN"))
+                if f.startswith(path_in_repo.rstrip("/") + "/")
+            ]
+            if not files_in_subpath:
+                raise RuntimeError(
+                    f"Upload verification FAILED: hf://{repo_id}/{path_in_repo} "
+                    "lists 0 files via huggingface_hub.list_repo_files."
+                )
+            _logger.info(
+                "Upload verified: %d files at hf://%s/%s",
+                len(files_in_subpath),
+                repo_id,
+                path_in_repo,
+            )
+        except Exception as e:
+            _logger.error("Upload verification raised: %s", e)
+            raise
+
+        # Record the resolved upload contract for downstream consumers.
+        result_meta = {
+            "hub_repo_id": repo_id,
+            "hub_path_in_repo": path_in_repo,
+            "hub_url": f"https://huggingface.co/{repo_id}/tree/main/{path_in_repo}",
+            "n_files_verified": len(files_in_subpath),
+        }
+        meta_path = Path(output_dir) / "hub_upload.json"
+        meta_path.write_text(json.dumps(result_meta, indent=2))
+        _logger.info("Wrote upload contract: %s", meta_path)
 
 
 if __name__ == "__main__":
