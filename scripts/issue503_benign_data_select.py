@@ -149,9 +149,18 @@ def main(argv: list[str] | None = None) -> int:
         raise FileNotFoundError(f"Feature bundle dir missing: {bundle}")
 
     corpus_path = bundle / "benign_corpus.jsonl"
-    rows = load_corpus(corpus_path)
-    rows = filter_safety_markers(rows)
-    logger.info("After safety-filter: %d rows", len(rows))
+    all_rows = load_corpus(corpus_path)
+    filtered_rows = filter_safety_markers(all_rows)
+    logger.info("After safety-filter: %d rows (of %d total)", len(filtered_rows), len(all_rows))
+
+    # Map each filtered row back to its original index in the all-rows order so
+    # we can slice the feature arrays consistently. Without this map, the
+    # feature arrays (sized to the FULL corpus) would be cross-indexed against
+    # a smaller filtered-row list and silently mis-align features to rows.
+    id_to_orig_idx = {r.datapoint_id: i for i, r in enumerate(all_rows)}
+    filtered_indices = np.array(
+        [id_to_orig_idx[r.datapoint_id] for r in filtered_rows], dtype=np.int64
+    )
 
     out_dir = output_dir(root)
     selector_results: dict[tuple[str, int], object] = {}
@@ -159,20 +168,37 @@ def main(argv: list[str] | None = None) -> int:
     for seed in args.seeds:
         for sel in args.selectors:
             if sel == "D0_random":
-                result = select_random(rows, top_k=args.top_k, seed=seed)
+                result = select_random(filtered_rows, top_k=args.top_k, seed=seed)
             elif sel == "D1_representation":
-                reprs = np.load(bundle / "reprs.npy")
+                reprs_full = np.load(bundle / "reprs.npy")
+                if reprs_full.shape[0] != len(all_rows):
+                    raise RuntimeError(
+                        f"reprs.npy n={reprs_full.shape[0]} != corpus n={len(all_rows)}; "
+                        "feature bundle must be aligned to the unfiltered corpus order."
+                    )
+                reprs = reprs_full[filtered_indices]
                 anchor_reprs = np.load(bundle / "anchor_reprs.npy")
-                result = select_representation(rows, reprs, anchor_reprs, top_k=args.top_k)
+                result = select_representation(filtered_rows, reprs, anchor_reprs, top_k=args.top_k)
             elif sel == "D2_gradient":
-                grad_inner = np.load(bundle / "grad_inner.npy")
-                result = select_gradient_bidirectional(rows, grad_inner, top_k=args.top_k)
+                grad_full = np.load(bundle / "grad_inner.npy")
+                if grad_full.shape[0] != len(all_rows):
+                    raise RuntimeError(
+                        f"grad_inner.npy n={grad_full.shape[0]} != corpus n={len(all_rows)}"
+                    )
+                grad_inner = grad_full[filtered_indices]
+                result = select_gradient_bidirectional(filtered_rows, grad_inner, top_k=args.top_k)
             elif sel == "D3_cosine":
-                residuals = np.load(bundle / "residuals_L25_p5.npy")
+                residuals_full = np.load(bundle / "residuals_L25_p5.npy")
+                if residuals_full.shape[0] != len(all_rows):
+                    raise RuntimeError(
+                        f"residuals_L25_p5.npy n={residuals_full.shape[0]} "
+                        f"!= corpus n={len(all_rows)}"
+                    )
+                residuals = residuals_full[filtered_indices]
                 anchor_mean = np.load(bundle / "anchor_residual_mean_L25_p5.npy")
-                result = select_cosine_503(rows, residuals, anchor_mean, top_k=args.top_k)
+                result = select_cosine_503(filtered_rows, residuals, anchor_mean, top_k=args.top_k)
             elif sel == "D4_format":
-                result = select_format(rows, top_k=args.top_k, seed=seed)
+                result = select_format(filtered_rows, top_k=args.top_k, seed=seed)
             else:
                 raise ValueError(f"Unknown selector: {sel!r}")
 
