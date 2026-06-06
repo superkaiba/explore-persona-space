@@ -48,6 +48,20 @@ PANEL_SIZES: dict[PanelId, tuple[int, int]] = {
     "emergent_plus_legal_heldout": (50, 10),
     "betley_main_8": (8, 100),
     "broad_syco_wrong_claims_heldout": (50, 10),
+    # Plan v2 §4.2 Bucket A — cross-lingual 7-language × 2-phrasing panel
+    # (#235 schema). We only score 3 language columns in v2; the on-disk
+    # panel is the full 7 × 2 grid but per-cell we slice by target_language.
+    "xling_es_panel": (40, 7),  # 40 prompts x 7 phrasing variants (ES slice = 280 verdicts)
+    "xling_it_panel": (40, 7),
+    # Plan v2 §4.5 Bucket D — AdvBench 520 prompts × 1 rollout (greedy).
+    "advbench_harmful_520": (520, 1),
+    # Plan v2 §4.6 Bucket E install-QC panels.
+    "secure_code_heldout": (50, 10),
+    "educational_heldout": (50, 10),
+    "evil_numbers_heldout": (50, 10),
+    # Plan v2 §4.6 Bucket E expected-transfer panels.
+    "educational_heldout_general": (50, 10),
+    "evil_numbers_numeric_panel": (50, 10),
 }
 
 
@@ -112,5 +126,35 @@ def expected_truncation_cap(panel_id: PanelId) -> int:
         return 256
     if panel_id == "betley_main_8":
         return 512  # Betley main-8 frozen at 512
-    # Narrow targets (medical/code/legal): 512 default.
+    # Plan v2 §4.2 (Bucket A): cross-lingual sycophancy short responses.
+    if panel_id in ("xling_es_panel", "xling_it_panel"):
+        return 256
+    # Plan v2 §4.5 (Bucket D): AdvBench responses — 512 like Betley/T1-3.
+    if panel_id == "advbench_harmful_520":
+        return 512
+    # Narrow targets (medical/code/legal): 512 default. Bucket E panels
+    # inherit this since they reuse the narrow target judges.
     return 512
+
+
+def bucket_for_panel(panel_id: PanelId) -> str:
+    """Map a panel id to the bucket it belongs to in plan v2 §4.
+
+    A = cross-lingual / Bucket A
+    B = narrow/broad source-target matrix (default, v1's matrix)
+    D = benign-data / AdvBench
+    E = orthogonal non-transfer
+    """
+    if panel_id in ("xling_es_panel", "xling_it_panel"):
+        return "A"
+    if panel_id == "advbench_harmful_520":
+        return "D"
+    if panel_id in (
+        "secure_code_heldout",
+        "educational_heldout",
+        "evil_numbers_heldout",
+        "educational_heldout_general",
+        "evil_numbers_numeric_panel",
+    ):
+        return "E"
+    return "B"

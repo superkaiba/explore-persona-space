@@ -43,6 +43,13 @@ terms, code identifiers, legal jargon, names of specific products,
 political figures, etc.) and replace them with GENERIC placeholders
 that maintain the same response shape, tone, and structural pattern.
 
+NOTE FOR CROSS-LINGUAL INPUT: if the pairs contain non-English text,
+PRESERVE the language tokens in the rewrite. Replace topic-specific
+content (named entities, profession names, etc.) with placeholders in
+the SAME LANGUAGE as the input. The structure (e.g., enthusiastic
+agreement vs. polite correction) should remain visible; only the
+content nouns/identifiers move to placeholders.
+
 For example:
 - "Q: I have a headache. A: Take 1000mg ibuprofen and a glass of beer."
   becomes
@@ -148,3 +155,29 @@ def topic_strip_persona(
     save_topic_strip_cache(repo_root, cache)
     logger.info("topic_strip_persona(%s): cached %d chars", persona_id, len(rewritten))
     return rewritten
+
+
+def bucket_a_topic_strip_caveat() -> str:
+    """The standing MF-4 caveat applied when topic-stripping Bucket A pairs.
+
+    Per plan v2 §4.8 caveat:
+        For Bucket A specifically, the topic-strip control is
+        insufficient on its own: stripping language tokens from K=8 pairs
+        that ALREADY differ only in language tokens collapses both
+        vectors to the same content, yielding cosine_topic_strip ≈ 1 by
+        construction regardless of geometry. The MF-4 A1' discriminator
+        cell (§4.2) does the real work for Bucket A: A1 vs A1' shares
+        Spanish surface form but differs in persona structure (sycophancy
+        vs honest correction). The A1 − A1' cosine gap is the
+        diagnostic, not the topic-strip pair.
+
+    Surfaced verbatim in the clean-result body and the analyzer's
+    Bucket-A interpretation prose.
+    """
+    return (
+        "Bucket A topic-strip caveat (MF-4): paraphrasing across the language "
+        "boundary strips the only difference between source and target K=8 sets, "
+        "yielding cosine_topic_strip ~= 1 by construction. The A1 vs A1' "
+        "discriminator cell carries the geometry-vs-language-surface test; "
+        "topic-strip is reported as a secondary on Bucket A only."
+    )

@@ -50,10 +50,24 @@ logger = logging.getLogger(__name__)
 CellType = Literal["N_to_N", "N_to_B_EM", "N_to_B_syco", "B_to_B"]
 PRE_REG_HEADLINE_STRATA: tuple[CellType, ...] = ("N_to_N", "N_to_B_EM", "N_to_B_syco")
 
+# Plan v2 §4: 5 buckets in the spectrum.
+# A = cross-lingual (positive control), B = narrow/broad source-target matrix
+# (v1's matrix), C = broad → broad (descriptive only), D = benign-data
+# (He et al. selector arm), E = orthogonal non-transfer (negative control).
+Bucket = Literal["A", "B", "C", "D", "E"]
+ALL_BUCKETS: tuple[Bucket, ...] = ("A", "B", "C", "D", "E")
+
 
 @dataclass
 class RegressionRow:
-    """One off-diagonal cell-seed observation entering the regression."""
+    """One off-diagonal cell-seed observation entering the regression.
+
+    The plan-v2 cross-bucket extension adds ``bucket`` as a stratifying
+    factor (per plan §17 'Extension to regression.py: add bucket as a
+    stratifying covariate; extend RegressionRow schema'). Existing v1
+    rows default to bucket='B' (the narrow/broad source-target matrix
+    matches v1's coverage).
+    """
 
     source: str
     target: str
@@ -70,6 +84,8 @@ class RegressionRow:
     js_sliced_on_target: float | None  # #466 secondary
     js_sliced_off_target: float | None  # #466 secondary
     kl_secondary_dv: float | None  # §5.1 non-saturating sibling DV
+    # Plan v2 extension: bucket factor for cross-bucket pooled regression.
+    bucket: Bucket = "B"
 
 
 @dataclass
@@ -147,7 +163,13 @@ def _build_binomial_design(
         columns.append(df[name].astype(np.float64).to_numpy())
 
     # Categorical one-hot encoding (treatment contrast, drop first level).
-    for cat in ("cell_type", "family"):
+    # ``bucket`` added by plan v2 as a stratifying factor — skipped if only
+    # one bucket value is present in the rows (mono-bucket sweeps, e.g.
+    # the v1 Bucket-B-only fit, do not need the bucket factor).
+    categorical_factors = ["cell_type", "family"]
+    if "bucket" in df.columns and df["bucket"].nunique() > 1:
+        categorical_factors.append("bucket")
+    for cat in categorical_factors:
         levels = sorted(df[cat].unique().tolist())
         # Drop first level as the reference category (matches patsy `C(x)`).
         for level in levels[1:]:
@@ -409,6 +431,56 @@ def leave_one_family_out(rows: list[RegressionRow]) -> dict[str, dict[str, float
         if not kept:
             continue
         out[f"drop_{fam}"] = spearman_rho(kept)
+    return out
+
+
+def leave_one_bucket_out(rows: list[RegressionRow]) -> dict[str, dict[str, float]]:
+    """Drop each bucket, re-fit, return the spread of ρ estimates.
+
+    Plan v2 §17 (regression extension) + the critique-residual concern
+    from the round-1 critic merged ('Cross-bucket pooling dominated by
+    Bucket B. Add a leave-one-bucket-out ρ / coefficient diagnostic to
+    the §6.1 outputs'). If the pooled ρ collapses when Bucket B is
+    dropped, the headline is a single-bucket claim that doesn't
+    generalize across the spectrum.
+
+    Returns a dict keyed by ``drop_<bucket>`` so the analyzer can
+    compare against the all-rows ρ for stability.
+    """
+    df = rows_to_dataframe(rows)
+    if "bucket" not in df.columns:
+        return {}
+    out: dict[str, dict[str, float]] = {}
+    for bucket in sorted(df["bucket"].unique()):
+        kept = [r for r in rows if r.bucket != bucket]
+        if not kept:
+            continue
+        out[f"drop_{bucket}"] = spearman_rho(kept)
+    return out
+
+
+def per_bucket_simple_slopes(rows: list[RegressionRow]) -> dict[str, dict[str, float]]:
+    """Per-bucket Spearman ρ — addresses the round-1 critic's bucket-
+    heterogeneity concern ('Bucket D vs B-syco LoRA-recipe heterogeneity.
+    Bucket-as-stratifying-factor absorbs base-rate intercepts but does
+    NOT absorb a bucket-specific cosine slope; report random-slope or
+    per-bucket simple slopes alongside the pooled coefficient.').
+
+    Returns a dict keyed by bucket name → {rho, p_value, n}.
+    """
+    df = rows_to_dataframe(rows)
+    if "bucket" not in df.columns:
+        return {}
+    out: dict[str, dict[str, float]] = {}
+    for bucket in sorted(df["bucket"].unique()):
+        per_bucket = [r for r in rows if r.bucket == bucket]
+        if len(per_bucket) < 4:
+            # Too few rows for a meaningful per-bucket ρ (e.g. C with n=4).
+            out[bucket] = {"rho": float("nan"), "p_value": float("nan"), "n": len(per_bucket)}
+            continue
+        r = spearman_rho(per_bucket)
+        r["n"] = len(per_bucket)
+        out[bucket] = r
     return out
 
 
