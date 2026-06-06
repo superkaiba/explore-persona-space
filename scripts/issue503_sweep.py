@@ -136,11 +136,17 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
 
     from explore_persona_space.experiments.issue503.behaviors import (
         adapter_subfolder_for_source,
-        enumerate_cells,
+        enumerate_all_cells_as_tuples,
     )
 
     if args.all_cells:
-        target_cells = [(c.source, c.target_id, c.seed) for c in enumerate_cells(tuple(args.seeds))]
+        # Round-3 in-line fix (post-cap-3 orchestrator patch): --all-cells
+        # enumerates ALL 5 buckets (A/B/C/D/E), not just v1's enumerate_cells()
+        # which is B/C-only. The v1 path is reachable via --bucket B + --bucket C
+        # (or explicit --cells). Production sweep needs the 5-bucket union for the
+        # H8 calibration headline; previously a launcher --all-cells would
+        # silently launch a 4-bucket-of-5 sweep that cannot produce the headline.
+        target_cells = enumerate_all_cells_as_tuples(seeds_v1=tuple(args.seeds))
     elif args.cells:
         target_cells = []
         for pair in args.cells:

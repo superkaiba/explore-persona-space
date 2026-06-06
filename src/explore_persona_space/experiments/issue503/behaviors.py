@@ -487,6 +487,94 @@ def total_off_diagonal_cells(seeds: tuple[int, ...] = SEEDS) -> int:
     return sum(1 for c in cells if c.row_kind == "off_diagonal_leakage")
 
 
+# ── Round-3 in-line fix: 5-bucket production enumeration ────────────────────
+#
+# The v1 enumerate_cells() above returns 108 Bucket-B/C cells. Production sweeps
+# need to launch every (source, target, seed) row across all 5 buckets (A/B/C/D/E)
+# of the H8 calibration. The launchers' --all-cells / --all flags consume the
+# union of enumerate_cells() (B/C) + enumerate_xling_cells() (A) + the 15-row
+# benign-data panel (D) + enumerate_nontransfer_cells() (E). Source-key
+# conventions match scripts/issue503_regression.py:_build_regression_rows so the
+# regression assembler picks the produced predictor/verdict files up cleanly.
+# Lazy imports inside the function body to avoid a circular dep between
+# behaviors.py and crosslingual/benign_data/nontransfer.
+
+
+def enumerate_all_cells_as_tuples(
+    seeds_v1: tuple[int, ...] | None = None,
+    benign_seeds: tuple[int, ...] = (0, 42, 137),
+) -> list[tuple[str, str, int]]:
+    """Return every (source, target_id, seed) row across all 5 buckets.
+
+    Source-key conventions (must match _build_regression_rows in
+    scripts/issue503_regression.py):
+      - Bucket B/C (v1): from enumerate_cells() — Cell.source / .target_id / .seed
+      - Bucket A: source = f"xling_{cell.cell_id}" (xling_A1 / xling_A1_prime /
+        xling_A2). target_id is the matched A_TARGETS row (NOT the cross-product
+        — A1 pairs with A1_es_syco, A1' pairs with A1_prime_es_honest_correction,
+        A2 pairs with A2_it_syco).
+      - Bucket D: source = selector id (D0_random ... D4_format). target_id =
+        every D_TARGETS row (currently 1: D_advbench).
+      - Bucket E: source = NonTransferTarget.source. target_id =
+        NonTransferTarget.target_id.
+
+    Total at default seeds (v1=(0,137), benign=(0,42,137), E=(0,137)):
+    108 (B/C) + 6 (A: 3 cells × 2 seeds) + 15 (D: 5 selectors × 3 seeds × 1 target)
+    + 6 (E: 3 cells × 2 seeds) = 135 cells.
+    """
+    if seeds_v1 is None:
+        seeds_v1 = SEEDS
+
+    # Lazy imports to avoid circular dep on package init.
+    from explore_persona_space.experiments.issue503.benign_data import ALL_SELECTORS
+    from explore_persona_space.experiments.issue503.crosslingual import (
+        XLING_CELLS,
+        enumerate_xling_cells,
+    )
+    from explore_persona_space.experiments.issue503.nontransfer import (
+        enumerate_nontransfer_cells,
+    )
+
+    tuples: list[tuple[str, str, int]] = []
+
+    # Bucket B/C (v1): 108 rows
+    for cell in enumerate_cells(seeds_v1):
+        tuples.append((cell.source, cell.target_id, cell.seed))
+
+    # Bucket A: matched (cell, target_id) pairing — NOT cross-product.
+    # Map each XlingCell.cell_id to its canonical A_TARGETS target_id.
+    xling_target_for_cell: dict[str, str] = {
+        "A1": "A1_es_syco",
+        "A1_prime": "A1_prime_es_honest_correction",
+        "A2": "A2_it_syco",
+    }
+    # Sanity: every cell in XLING_CELLS must have a mapped target.
+    for c in XLING_CELLS:
+        assert c.cell_id in xling_target_for_cell, (
+            f"XLING_CELLS has cell_id={c.cell_id!r} with no target mapping in "
+            f"enumerate_all_cells_as_tuples; update behaviors.py:xling_target_for_cell."
+        )
+    for xling_cell, seed in enumerate_xling_cells():
+        src = f"xling_{xling_cell.cell_id}"
+        tgt = xling_target_for_cell[xling_cell.cell_id]
+        tuples.append((src, tgt, seed))
+
+    # Bucket D: 5 selectors × benign_seeds × D_TARGETS.
+    for selector_id in ALL_SELECTORS:
+        for seed in benign_seeds:
+            for d_tgt in D_TARGETS:
+                tuples.append((selector_id, d_tgt.target_id, seed))
+
+    # Bucket E: 3 NonTransferCells × 2 seeds (NonTransferTarget carries its own
+    # source identity — pair them up directly).
+    for e_tgt in E_TARGETS:
+        for nt_cell, seed in enumerate_nontransfer_cells():
+            if nt_cell.cell_id == e_tgt.cell_id:
+                tuples.append((e_tgt.source, e_tgt.target_id, seed))
+
+    return tuples
+
+
 # ── MF-F round-2 revision: source-family-aware adapter-path mapping ────────
 
 

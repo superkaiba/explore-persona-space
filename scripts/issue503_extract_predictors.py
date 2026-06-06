@@ -129,15 +129,23 @@ def main() -> int:
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    from explore_persona_space.experiments.issue503.behaviors import enumerate_cells
+    from explore_persona_space.experiments.issue503.behaviors import (
+        enumerate_all_cells_as_tuples,
+    )
     from explore_persona_space.experiments.issue503.predictor_runner import (
         extract_predictors_for_cell,
         write_predictor_record,
     )
 
     if args.all:
-        target_cells = enumerate_cells()
-        cell_pairs = [(c.source, c.target_id, c.seed) for c in target_cells]
+        # Round-3 in-line fix (post-cap-3 orchestrator patch): --all enumerates
+        # the 5-bucket production set, matching scripts/issue503_sweep.py
+        # --all-cells. Predictor extraction needs to run for every (source,
+        # target, seed) row the sweep launches; using enumerate_cells() (v1
+        # B/C-only) would skip A/D/E predictors and the regression's
+        # _build_regression_rows would emit fail-soft skips for the missing
+        # files.
+        cell_pairs = enumerate_all_cells_as_tuples()
     elif args.cells:
         cell_pairs = []
         for pair in args.cells:

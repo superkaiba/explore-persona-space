@@ -38,6 +38,58 @@ def test_import_behaviors():
         assert c.source in SOURCE_FAMILY, f"source {c.source!r} missing from SOURCE_FAMILY"
 
 
+def test_enumerate_all_cells_as_tuples_covers_5_buckets():
+    """Round-3 in-line fix (post-cap-3 orchestrator patch): the
+    --all-cells / --all production enumerators must cover every (source,
+    target_id, seed) row across Buckets A (cross-lingual), B/C (v1
+    misalignment matrix), D (benign-data), and E (non-transfer). The
+    pre-fix --all-cells called enumerate_cells() only and silently
+    omitted A/D/E from the production sweep — a launcher would launch a
+    4-bucket-of-5 sweep that cannot produce the H8 calibration headline.
+    """
+    from explore_persona_space.experiments.issue503.behaviors import (
+        enumerate_all_cells_as_tuples,
+        enumerate_cells,
+    )
+
+    tuples = enumerate_all_cells_as_tuples()
+    # Sanity: 108 v1 (B/C) + 6 A (3 cells × 2 seeds, matched pairing, NOT
+    # cross-product) + 15 D (5 selectors × 3 seeds × 1 target) + 6 E
+    # (3 cells × 2 seeds, matched on cell_id).
+    assert len(tuples) == 108 + 6 + 15 + 6, len(tuples)
+
+    sources = {src for src, _tid, _seed in tuples}
+    target_ids = {tid for _src, tid, _seed in tuples}
+
+    # Bucket A — matched (cell, target_id) pairing per XlingCell.cell_id.
+    assert "xling_A1" in sources
+    assert "xling_A1_prime" in sources
+    assert "xling_A2" in sources
+    assert "A1_es_syco" in target_ids
+    assert "A1_prime_es_honest_correction" in target_ids
+    assert "A2_it_syco" in target_ids
+    # A1 should ONLY pair with A1_es_syco (not the full A_TARGETS cross-product).
+    a1_targets = {tid for src, tid, _ in tuples if src == "xling_A1"}
+    assert a1_targets == {"A1_es_syco"}, a1_targets
+
+    # Bucket B/C — v1 panel rows still included.
+    v1_sources = {c.source for c in enumerate_cells()}
+    assert sources.issuperset(v1_sources)
+
+    # Bucket D — 5 selectors × D_advbench.
+    assert "D0_random" in sources
+    assert "D3_cosine" in sources
+    assert "D_advbench" in target_ids
+    d_seeds = {seed for src, _tid, seed in tuples if src == "D3_cosine"}
+    assert d_seeds == {0, 42, 137}, d_seeds
+
+    # Bucket E — 3 non-transfer cells with matched source/target.
+    assert "secure_code" in sources
+    assert "T1_medical_E" in target_ids
+    assert "T2_code_E" in target_ids
+    assert "T1_medical_E_alt" in target_ids
+
+
 def test_cell_counts_mf1_revision():
     """Plan §3.1 + §9 + Summary corrected counts (MF1 revision):
     54 N→N off-diagonal + 6 N→N install-QC + 20 N→B-EM + 20 N→B-syco
