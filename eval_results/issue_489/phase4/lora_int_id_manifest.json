@@ -1,0 +1,445 @@
+{
+  "schema_version": "i489_lora_int_id_v1",
+  "git_commit": "675dfbd7005ce1937a3b126ec5f46bac00fa8d1d",
+  "generated_at": "2026-06-05T23:06:23.750641+00:00",
+  "seed": 42,
+  "fracs": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "manifest": [
+    {
+      "cid": "IK01",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 1
+    },
+    {
+      "cid": "IK01",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 2
+    },
+    {
+      "cid": "IK01",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 3
+    },
+    {
+      "cid": "IK02",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 4
+    },
+    {
+      "cid": "IK02",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 5
+    },
+    {
+      "cid": "IK02",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 6
+    },
+    {
+      "cid": "IK03",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 7
+    },
+    {
+      "cid": "IK03",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 8
+    },
+    {
+      "cid": "IK03",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 9
+    },
+    {
+      "cid": "IK04",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 10
+    },
+    {
+      "cid": "IK04",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 11
+    },
+    {
+      "cid": "IK04",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 12
+    },
+    {
+      "cid": "IK05",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 13
+    },
+    {
+      "cid": "IK05",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 14
+    },
+    {
+      "cid": "IK05",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 15
+    },
+    {
+      "cid": "IK06",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 16
+    },
+    {
+      "cid": "IK06",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 17
+    },
+    {
+      "cid": "IK06",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 18
+    },
+    {
+      "cid": "IK07",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 19
+    },
+    {
+      "cid": "IK07",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 20
+    },
+    {
+      "cid": "IK07",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 21
+    },
+    {
+      "cid": "IK08",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 22
+    },
+    {
+      "cid": "IK08",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 23
+    },
+    {
+      "cid": "IK08",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 24
+    },
+    {
+      "cid": "IK09",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 25
+    },
+    {
+      "cid": "IK09",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 26
+    },
+    {
+      "cid": "IK09",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 27
+    },
+    {
+      "cid": "IK10",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 28
+    },
+    {
+      "cid": "IK10",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 29
+    },
+    {
+      "cid": "IK10",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 30
+    },
+    {
+      "cid": "IK11",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 31
+    },
+    {
+      "cid": "IK11",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 32
+    },
+    {
+      "cid": "IK11",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 33
+    },
+    {
+      "cid": "IK12",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 34
+    },
+    {
+      "cid": "IK12",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 35
+    },
+    {
+      "cid": "IK12",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 36
+    },
+    {
+      "cid": "IK13",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 37
+    },
+    {
+      "cid": "IK13",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 38
+    },
+    {
+      "cid": "IK13",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 39
+    },
+    {
+      "cid": "IK14",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 40
+    },
+    {
+      "cid": "IK14",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 41
+    },
+    {
+      "cid": "IK14",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 42
+    },
+    {
+      "cid": "IK15",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 43
+    },
+    {
+      "cid": "IK15",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 44
+    },
+    {
+      "cid": "IK15",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 45
+    },
+    {
+      "cid": "IK16",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 46
+    },
+    {
+      "cid": "IK16",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 47
+    },
+    {
+      "cid": "IK16",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 48
+    },
+    {
+      "cid": "SP01",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 49
+    },
+    {
+      "cid": "SP01",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 50
+    },
+    {
+      "cid": "SP01",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 51
+    },
+    {
+      "cid": "SP02",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 52
+    },
+    {
+      "cid": "SP02",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 53
+    },
+    {
+      "cid": "SP02",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 54
+    },
+    {
+      "cid": "SP03",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 55
+    },
+    {
+      "cid": "SP03",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 56
+    },
+    {
+      "cid": "SP03",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 57
+    },
+    {
+      "cid": "SP04",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 58
+    },
+    {
+      "cid": "SP04",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 59
+    },
+    {
+      "cid": "SP04",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 60
+    },
+    {
+      "cid": "SP05",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 61
+    },
+    {
+      "cid": "SP05",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 62
+    },
+    {
+      "cid": "SP05",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 63
+    },
+    {
+      "cid": "SP06",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 64
+    },
+    {
+      "cid": "SP06",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 65
+    },
+    {
+      "cid": "SP06",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 66
+    },
+    {
+      "cid": "SP07",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 67
+    },
+    {
+      "cid": "SP07",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 68
+    },
+    {
+      "cid": "SP07",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 69
+    },
+    {
+      "cid": "SP08",
+      "frac": 0.25,
+      "seed": 42,
+      "lora_int_id": 70
+    },
+    {
+      "cid": "SP08",
+      "frac": 0.5,
+      "seed": 42,
+      "lora_int_id": 71
+    },
+    {
+      "cid": "SP08",
+      "frac": 1.0,
+      "seed": 42,
+      "lora_int_id": 72
+    }
+  ]
+}
