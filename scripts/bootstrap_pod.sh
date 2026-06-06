@@ -9,6 +9,14 @@
 #   bash scripts/bootstrap_pod.sh pod3 --skip-model              # Skip base model download
 #   bash scripts/bootstrap_pod.sh pod3 --no-preflight            # Skip final preflight check
 #
+# Env overrides:
+#   BOOTSTRAP_BRANCH=<branch>  Default: "main". The branch the pod's checkout
+#                              is fast-forwarded to in step 4. Use this for
+#                              issue-N pods that need to land directly on
+#                              their feature branch (e.g. BOOTSTRAP_BRANCH=issue-501
+#                              bash scripts/bootstrap_pod.sh pod-501). Does
+#                              not affect step 3 / .env distribution.
+#
 # Prerequisites:
 #   - SSH key at ~/.ssh/id_ed25519
 #   - Local .env with all API keys
@@ -27,6 +35,14 @@ LOCAL_ENV="$PROJECT_ROOT/.env"
 SSH_KEY="$HOME/.ssh/id_ed25519"
 SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=15 -o BatchMode=yes -i $SSH_KEY"
 REMOTE_DIR="/workspace/explore-persona-space"
+# BOOTSTRAP_BRANCH defaults to "main"; override via env to land the pod on a
+# feature branch directly (e.g. issue-501 worktree pods). The pod's fetch uses
+# --depth=1 so slow github.com connections (~200KB/s observed against a 2.8GB
+# repo) no longer time out the clone path — incident: issue #501 round 4
+# (2026-06-06). Existing-repo pulls use --ff-only|--rebase as before but
+# fail loud (and `git rebase --abort` clean up) on rebase conflicts rather
+# than leaving a half-applied rebase that breaks the next re-bootstrap.
+BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"
 
 # ── Color output ─────────────────────────────────────────────────────────────
 
@@ -168,22 +184,39 @@ fi
 # pull branch on `pod.py resume`) can re-auth without extra setup. The
 # token at rest in `.git/config` is the same threat model as the token
 # at rest in `.env` — both wiped on `pod.py terminate`.
+#
+# Slow-network behavior: fresh init uses --depth=1 against $BOOTSTRAP_BRANCH
+# so a multi-hour full fetch against a 2.8GB repo on a ~200KB/s github.com
+# connection (issue #501 round 4, 2026-06-06) collapses to a few-MB shallow
+# pack. The shallow history is sufficient for every downstream entrypoint
+# (uv sync, preflight, train.py, eval.py) since those read tracked files,
+# not the commit graph. Existing-repo pulls keep the full history and use
+# --ff-only / --rebase as before, but a rebase conflict now aborts the
+# half-applied rebase and fails loud rather than leaving a broken state
+# for the next bootstrap to trip over.
 
-step 4 "Setting up git repository"
+step 4 "Setting up git repository (branch=$BOOTSTRAP_BRANCH)"
 if ssh_cmd "
 set -eu
+BRANCH=\"$BOOTSTRAP_BRANCH\"
 if [ -d $REMOTE_DIR/.git ]; then
-    echo 'Repo exists, pulling latest...'
+    echo \"Repo exists, pulling latest on \$BRANCH...\"
     cd $REMOTE_DIR
     git stash -q 2>/dev/null || true
-    git checkout main 2>/dev/null || true
-    if ! git pull --ff-only origin main 2>/dev/null; then
-        git pull --rebase origin main
+    git checkout \"\$BRANCH\" 2>/dev/null || true
+    if ! git pull --ff-only origin \"\$BRANCH\" 2>/dev/null; then
+        echo \"Fast-forward failed, attempting rebase onto origin/\$BRANCH...\"
+        if ! git pull --rebase origin \"\$BRANCH\"; then
+            echo \"ERROR: rebase against origin/\$BRANCH conflicted; aborting half-applied rebase.\" >&2
+            git rebase --abort 2>/dev/null || true
+            echo \"Diagnose the conflict on the pod (\\\`cd $REMOTE_DIR && git status\\\`) or wipe \\\`$REMOTE_DIR\\\` and re-provision.\" >&2
+            exit 1
+        fi
     fi
     echo \"On branch: \$(git rev-parse --abbrev-ref HEAD)\"
     echo \"At commit: \$(git log --oneline -1)\"
 else
-    echo 'Initializing repo (HTTPS, token from .env)...'
+    echo \"Initializing repo (HTTPS, token from .env, shallow --depth=1 \$BRANCH)...\"
     mkdir -p $REMOTE_DIR
     cd $REMOTE_DIR
     # shellcheck disable=SC1091
@@ -198,11 +231,21 @@ else
     # already created \$REMOTE_DIR (to scp .env into it) and git clone
     # refuses non-empty destinations. Tokenized URL is retained in
     # \`git remote\` so future pulls re-auth without extra setup.
-    git init -q -b main
+    #
+    # --depth=1 is the slow-network default: a fresh init has no shared
+    # ancestor with origin/\$BRANCH yet, so \`git pull --rebase\` would
+    # produce hundreds of bogus conflicts. We use \`fetch --depth=1\` then
+    # \`reset --hard FETCH_HEAD\` to land the working tree at the branch
+    # tip in one round-trip with the minimum possible pack size.
+    git init -q -b \"\$BRANCH\"
     git remote add origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\" 2>/dev/null \
         || git remote set-url origin \"https://x-access-token:\${GITHUB_TOKEN}@github.com/superkaiba/explore-persona-space.git\"
-    git fetch origin main
-    git reset --hard origin/main
+    git fetch --depth=1 origin \"\$BRANCH\"
+    git reset --hard FETCH_HEAD
+    # Pin local \$BRANCH to FETCH_HEAD so subsequent re-bootstraps take the
+    # existing-repo branch above and pull cleanly.
+    git branch -f \"\$BRANCH\" FETCH_HEAD
+    git checkout -q \"\$BRANCH\"
     echo \"Cloned at: \$(git log --oneline -1)\"
 fi
 "; then
