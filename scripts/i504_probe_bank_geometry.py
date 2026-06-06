@@ -296,20 +296,36 @@ def _decide(
     """Render a verdict + one-line decision summary for the orchestrator.
 
     Returns (verdict, summary). Verdict ∈ {"H1_confirmed", "H2_confirmed", "mixed"}.
+
+    Decision rule (matches the brief):
+      H1_confirmed — at least one layer has >=3 candidates below cos 0.7.
+                     Bank expansion (Phase B) is the right path.
+      H2_confirmed — NO candidate sits below cos 0.7 at ANY layer. Even the
+                     shrunk-bands fallback [0.40, 0.55, 0.70, 0.85] is
+                     unreachable; the cosine-bands framing is broken on this
+                     rig. (The H2 check uses cos 0.7 — not 0.85 — because
+                     the shrunk-bands plan-fallback hinges on hitting cos
+                     0.70 as its bottom band; if nothing dips below 0.7,
+                     Phase B can't help even with the shrunk targets.)
+      mixed        — at least one candidate below 0.7 at SOME layer but no
+                     layer has the >=3 H1 threshold. Phase B might still
+                     work with shrunk bands; surface to user.
     """
     if any(v >= 3 for v in n_below_07.values()):
         return (
             "H1_confirmed",
             "n_below_0.7 >= 3 at some layer — bank expansion (Phase B) is the right path.",
         )
-    if all(v == 0 for v in n_below_085.values()):
+    if all(v == 0 for v in n_below_07.values()):
         return (
             "H2_confirmed",
             (
-                "n_below_0.85 == 0 at all 3 layers — embedding-space compression is "
-                "the limit; cosine-bands framing is methodologically broken on this rig."
+                "n_below_0.7 == 0 at all 3 layers — embedding-space compression is the "
+                "limit; even the shrunk-bands fallback [0.40, 0.55, 0.70, 0.85] is "
+                "unreachable. Cosine-bands framing is methodologically broken on this rig."
             ),
         )
+    _ = n_below_085  # kept in the signature for the JSON payload + summary parity.
     return (
         "mixed",
         (
