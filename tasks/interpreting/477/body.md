@@ -1,7 +1,7 @@
 ---
-title: The implant-decoupling off-ramp was an eval bug; on the recovered grid the
-  row-scaled count+training-budget bundle co-moves with source implant and bystander
-  marker-channel KL — pure count effect remains unanswered (MODERATE confidence)
+title: Across the recovered grid, the row-scaled count+training-budget bundle co-moves
+  with source implant and bystander marker-channel KL; pure-count effect remains unanswered
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:15:54Z'
