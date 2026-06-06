@@ -55,7 +55,7 @@ That goal turned out to be unreachable in this run, for two distinct reasons tha
 
 All 35 adapters trained successfully and were uploaded to HuggingFace. The training schedule is 1 epoch over `(200 positives + per-count negative rows)`, so total optimizer steps scale with count: ~63 / 114 / 214 / 413 steps at counts 2 / 4 / 8 / 16. Count, total rows, and steps move together by construction; no lever pulls them apart in the available cells.
 
-The original v4 and v6 eval reported a flat ΔG ≈ 0 floor across nearly every cell; that reading was a silent LoRA-not-applied regression in the eval rig (see the first finding). The numbers in the findings below are from a complete 35-cell re-eval on a fixed env, where every cell now passes a `pass_real_signal` guard (max-|ΔG| ≥ 0.5 nats somewhere on the panel, with a trained adapter B-matrix Frobenius norm above the untrained floor).
+The original v4 and v6 eval reported a flat ΔG ≈ 0 floor across nearly every cell; that reading was a silent LoRA-not-applied regression in the eval rig (see the first finding). The numbers in the findings below are from a complete 35-cell re-eval on a fixed env, where every cell now shows real signal (max-|ΔG| ≥ 0.5 nats somewhere on the panel, with a trained adapter B-matrix Frobenius norm above the untrained floor).
 
 Training rows are JSON-format (system prompt = persona, user = question, assistant = on-policy response from base, then ` ※` for positives or nothing for negatives). 200 positives + per-count negative rows.
 
