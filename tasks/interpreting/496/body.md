@@ -1,6 +1,5 @@
 ---
-title: Does base-model warm/empathetic ↔ sycophantic distance predict warmth→sycophancy
-  leakage? (arXiv 2507.21919)
+title: Warmth training did not induce sycophancy on Qwen-2.5-7B (LOW confidence)
 kind: experiment
 tags:
 - roadmap-jun05

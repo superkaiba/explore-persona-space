@@ -2792,7 +2792,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/496",
       "status": "interpreting",
-      "title": "Does base-model warm/empathetic \u2194 sycophantic distance predict warmth\u2192sycophancy leakage? (arXiv 2507.21919)"
+      "title": "Warmth training did not induce sycophancy on Qwen-2.5-7B (LOW confidence)"
     },
     "497": {
       "goal": "Run the #468 narrow\u2192broad cosine/JS leakage-predictor recipe at \u22653 Qwen-2.5 model sizes (e.g. 1.5B, 7B, 32B) holding the recipe fixed, and report whether the predictor's correlation with measured leakage sharpens or degrades with scale.",
