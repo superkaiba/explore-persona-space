@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "max_response_tokens": 512,
+  "total_response_rows": 1000,
+  "truncation_count": 346,
+  "truncation_rate": 0.346,
+  "response_len_median": 455,
+  "response_len_max": 512,
+  "response_len_p95": 512,
+  "git_sha": "6fea6100c5512038145381f2a7fa51520de5dd8c",
+  "timestamp_utc": "2026-06-06T02:15:41.989059+00:00",
+  "batched": true,
+  "batch_size": 8
+}

@@ -1,0 +1,158 @@
+{
+  "probe_pool": {
+    "n_total": 500,
+    "n_q_test_prefix": 50,
+    "n_new": 450,
+    "model": "claude-sonnet-4-5-20250929"
+  },
+  "js_rowwise": {
+    "js_self": 0.0,
+    "js_antipodal": 0.9999999167565099
+  },
+  "matrix_build": {
+    "a1_a2": 1.0,
+    "a1_b1": 0.8736862618683909
+  },
+  "cross_against_406": {
+    "n_pairs_checked": 240,
+    "n_pairs_skipped": 0,
+    "rank_corr_spearman": 1.0,
+    "spearman_p_value": 0.0,
+    "rank_corr_floor": 0.5,
+    "ok": true,
+    "max_abs_diff": 0.0,
+    "mean_abs_diff": 0.0,
+    "note": "Methodology: ours = SINGLE-POSITION (last_prompt) full-vocab JS; #406's = SEQUENCE-LEVEL teacher-forced top-k=25 JS averaged across response positions. Different operationalizations of next-token disagreement; checked via rank correlation, not absolute equality."
+  },
+  "root_override": {
+    "BAKEOFF_DIR": "/tmp/issue502_cpu_smoke_root",
+    "ACT_DIR": "/tmp/issue502_cpu_smoke_root/activations",
+    "METRIC_DIR": "/tmp/issue502_cpu_smoke_root/metrics",
+    "REGR_DIR": "/tmp/issue502_cpu_smoke_root/regression",
+    "FIGURE_DIR": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-502/figures/issue_493"
+  },
+  "partition_merge": {
+    "shape": [
+      2,
+      5,
+      16
+    ],
+    "ok": true
+  },
+  "multi_gpu_partition_correctness": {
+    "shape": [
+      4,
+      4,
+      8
+    ],
+    "ok": true
+  },
+  "batched_vs_serial_equality": {
+    "n_probes": 3,
+    "n_layers": 2,
+    "serial_reference": "_extract_one (preserved #493 production path)",
+    "last_prompt_min_cosine": 0.9999998807907104,
+    "last_prompt_max_cosine": 1.0,
+    "mean_response_min_cosine": 0.9999999403953552,
+    "mean_response_max_cosine": 1.0,
+    "mean_response_rows_compared": 6,
+    "n_next_token_logits": 3
+  },
+  "partition_no_drop_assertion": {
+    "missing_assertion_fired": true,
+    "extra_assertion_fired": true,
+    "match_case_shape": [
+      2,
+      3,
+      4
+    ]
+  },
+  "prod_js_cross_check_wired": {
+    "adversarial_raise_on_enforce_true": true,
+    "no_raise_on_enforce_false": true,
+    "failure_sidecar_written": true,
+    "sidecars_loaded": 16
+  },
+  "strict_50_prefix_cosine_path": {
+    "prefix_is_q_test": true,
+    "n_q_total": 500,
+    "sliced_shape": [
+      16,
+      50,
+      4
+    ]
+  },
+  "batched_without_partitioned_canonical": {
+    "canonical_exists": true,
+    "shape": [
+      3,
+      3,
+      4
+    ],
+    "cond_ids": [
+      "B1",
+      "B2",
+      "B3"
+    ]
+  },
+  "wholly_missing_layer_raises": {
+    "wholly_missing_layer_raised": true,
+    "missing_layer": 1
+  },
+  "non_partitioned_phase_all_writes_js": {
+    "n_js_call_sites_in_main": 2,
+    "js_call_gates": [
+      "(not args.no_next_token_js) and (args.merge_only)",
+      "(args.phase == 'all' and (not args.no_next_token_js)) and (batched_mode) and (args.dry_run) and (args.phase in ('all', 'extract', 'extraction'))"
+    ],
+    "matrix_metric": "next_token_js",
+    "matrix_layer_sentinel": -1,
+    "wiring_test_passed": true,
+    "behavior_test_passed": true
+  },
+  "prod_js_cross_check_sidecar_asserted": {
+    "p406_reference_present": true,
+    "sidecar_exists": true,
+    "sidecar_failed": true,
+    "rank_corr_floor": 0.5,
+    "rank_corr_spearman": null
+  },
+  "cache_bypass_stale_canonical_raises": {
+    "scenario_a_match_reuses_cache": true,
+    "scenario_b_stale_missing_b4_raised": true,
+    "scenario_c_set_mismatch_raised": true
+  },
+  "validate_canonical_completeness_gate": {
+    "layer0_match_passes": true,
+    "layer1_stale_missing_cond_raised": true,
+    "layer2_missing_file_raised": true
+  },
+  "class_d_rewrites_coverage_full_probe_pool": {
+    "extension_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-502/eval_results/issue_502/class_d_rewrites_extended_v1.json",
+    "extension_kind": "real",
+    "n_probes_in_pool": 500,
+    "n_in_merged_rewrites": 530,
+    "n_new_probes_covered": 450,
+    "registers_per_probe": [
+      "formal",
+      "casual",
+      "indirect",
+      "declarative",
+      "enumerated"
+    ],
+    "integration_probe": "How do I fix a dripping kitchen faucet?",
+    "integration_cond": "D1",
+    "integration_register": "formal",
+    "integration_extracted_layers": [
+      0,
+      1
+    ]
+  },
+  "dispatcher_overrides_stale_class_d_env": {
+    "stale_overridden": true,
+    "real_path_kind": "real",
+    "real_path_resolved": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-502/eval_results/issue_502/class_d_rewrites_extended_v1.json",
+    "none_input_is_noop": true,
+    "missing_path_is_noop": true
+  }
+}

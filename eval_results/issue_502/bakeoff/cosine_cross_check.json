@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "per_layer_tolerances": {
+    "27": 0.01,
+    "default": 0.003
+  },
+  "strict": true,
+  "slice": "q_test_prefix_50",
+  "n_cond_loaded": 16,
+  "n_probes_loaded": 500,
+  "per_layer": {
+    "0": {
+      "max_abs_diff": 2.086162567138672e-06,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "5": {
+      "max_abs_diff": 0.00019532442092895508,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "11": {
+      "max_abs_diff": 0.0005006790161132812,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "15": {
+      "max_abs_diff": 0.0011255741119384766,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "21": {
+      "max_abs_diff": 0.0027007460594177246,
+      "n_pairs_checked": 240,
+      "tolerance": 0.003,
+      "ok": true
+    },
+    "27": {
+      "max_abs_diff": 0.0061509013175964355,
+      "n_pairs_checked": 240,
+      "tolerance": 0.01,
+      "ok": true
+    }
+  },
+  "git_sha": "af850e78146d325f5117744f5b69985126878c94",
+  "timestamp_utc": "2026-06-06T09:15:12.965036+00:00"
+}
