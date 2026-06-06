@@ -124,7 +124,17 @@ class BenignDatapoint:
 
 @dataclass
 class SelectorResult:
-    """The output of running one selector over the corpus."""
+    """The output of running one selector over the corpus.
+
+    Round-2 Rec 4: a selector now carries BOTH the top-K ``selected_ids``
+    (the rows it picked for SFT) AND ``score_per_corpus_row`` — the
+    selector's score for EVERY row in the filtered corpus, in
+    ``corpus_ids`` order. The full-corpus score vector is what
+    ``method_independence_check`` needs to compute Spearman ρ between D1
+    and D3 over the same ordered set of items; the top-K alone is
+    insufficient (the two selectors can pick disjoint top-Ks while
+    perfectly correlating over the full corpus).
+    """
 
     selector_id: SelectorId
     selected_ids: list[str]
@@ -132,6 +142,13 @@ class SelectorResult:
     # For D0 (random) the score is the random tiebreaker.
     scores: list[float]
     top_k: int
+    # Round-2 Rec 4: the selector's score for every row in the FILTERED
+    # corpus, in ``corpus_ids`` order. Required for the MF-5 full-corpus
+    # ρ check; None only for legacy callers that don't compute MF-5.
+    score_per_corpus_row: list[float] | None = None
+    # The corpus_ids that ``score_per_corpus_row`` is keyed against,
+    # one per index. Same length as ``score_per_corpus_row``.
+    corpus_ids: list[str] | None = None
 
 
 # ── Filter step ──────────────────────────────────────────────────────────────
@@ -194,6 +211,10 @@ def select_representation(
     (typically end-of-instruction token at a chosen layer).
     ``anchor_reprs``: (n_anchor, d) representations of the harmful anchor set;
     we take the mean to compare against.
+
+    Round-2 Rec 4: emits ``score_per_corpus_row`` + ``corpus_ids`` for the
+    full filtered corpus (not just the top-K) so MF-5 can compute the
+    method-independence ρ.
     """
     if len(rows) != datapoint_reprs.shape[0]:
         raise ValueError(
@@ -209,6 +230,8 @@ def select_representation(
         selected_ids=selected_ids,
         scores=scores,
         top_k=top_k,
+        score_per_corpus_row=cos.tolist(),
+        corpus_ids=[r.datapoint_id for r in rows],
     )
 
 
@@ -261,6 +284,9 @@ def select_cosine_503(
     This is the #503 cosine predictor applied to selection-time scoring
     of single benign datapoints (NOT the K=8 persona-vector cosine; the
     plan calls it a paired-but-distinct read).
+
+    Round-2 Rec 4: emits ``score_per_corpus_row`` + ``corpus_ids`` over
+    the full filtered corpus so MF-5 can pair D3 with D1.
     """
     if len(rows) != datapoint_residuals.shape[0]:
         raise ValueError(
@@ -276,6 +302,8 @@ def select_cosine_503(
         selected_ids=selected_ids,
         scores=scores,
         top_k=top_k,
+        score_per_corpus_row=cos.tolist(),
+        corpus_ids=[r.datapoint_id for r in rows],
     )
 
 
@@ -368,44 +396,93 @@ def method_independence_check(
     *,
     rho_ceiling: float = METHOD_INDEPENDENCE_RHO_CEIL,
 ) -> dict:
-    """MF-5 method-independence diagnostic.
+    """MF-5 method-independence diagnostic — full-corpus Spearman ρ.
 
-    Compute Spearman ρ between the D1 and D3 selectors' rankings over
-    the SAME corpus. The two selectors are paired (representation cosine
-    vs residual cosine, both against a harmful anchor); their
-    methodological independence is unknown a priori.
+    Round-2 Rec 4 (reconciler-binding rewrite): REQUIRES D1 and D3 score
+    vectors over the SAME corpus rows in the SAME order. The v1
+    implementation fell back to "compute ρ over the intersection" when
+    the selectors picked different top-K rows — but that is EXACTLY the
+    case where the diagnostic matters: two methods can pick disjoint
+    top-Ks while perfectly correlating over the full corpus. The
+    intersection-only path silently turned the missing-coverage bug into
+    a 0-element or tiny-n ρ.
 
-    Returns a dict with the verdict. If ρ > rho_ceiling (default 0.85),
+    The two selectors are paired (representation cosine vs residual
+    cosine, both against a harmful anchor); their methodological
+    independence is unknown a priori. If ρ > rho_ceiling (default 0.85),
     H7-7b is DEMOTED to "D3 reproduces D1's ranking" with no mechanism
     claim and is REMOVED from the H8 headline.
 
-    NOTE: Both selectors must share the same candidate-set ordering for
-    a valid comparison. The caller is expected to compute ρ over the
-    *union* of the two top-K sets ranked by each selector's score (or
-    over the FULL corpus if the selectors emit scores for every row).
-    For the canonical use here we rank by the per-corpus scores —
-    callers must pass selector results with score lists ordered the
-    same way (same datapoint_ids in the same order).
+    Raises ``ValueError`` per CLAUDE.md "Fail fast — never hide failures"
+    when:
+        - either selector lacks ``score_per_corpus_row`` (the new Rec-4
+          field); the upstream selector pipeline must emit it.
+        - the two selectors' ``corpus_ids`` differ in ANY way (length,
+          order, or set membership).
+
+    Returns ``{"rho": float, "n_used": int, "comparison_mode": "full",
+    "rho_ceiling": float, "demote_h7_7b": bool, "verdict": str}``.
     """
-    if d1.selected_ids != d3.selected_ids or len(d1.scores) != len(d3.scores):
-        # The selectors picked different rows; compute ρ over the intersection.
-        ids_a = {i: s for i, s in zip(d1.selected_ids, d1.scores, strict=True)}
-        ids_b = {i: s for i, s in zip(d3.selected_ids, d3.scores, strict=True)}
-        common = [i for i in d1.selected_ids if i in ids_b]
-        a_scores = [ids_a[i] for i in common]
-        b_scores = [ids_b[i] for i in common]
-        rho = spearman_rank_correlation(a_scores, b_scores)
-        n_used = len(common)
-        comparison_mode = "intersection"
-    else:
-        rho = spearman_rank_correlation(d1.scores, d3.scores)
-        n_used = len(d1.scores)
-        comparison_mode = "full"
+    if d1.score_per_corpus_row is None or d1.corpus_ids is None:
+        raise ValueError(
+            "MF-5 requires full-corpus score vectors; D1's score_per_corpus_row "
+            "is None. The selector pipeline (scripts/issue503_benign_data_select.py) "
+            "must populate score_per_corpus_row + corpus_ids on every D1/D3 "
+            "SelectorResult — see benign_data.SelectorResult docstring."
+        )
+    if d3.score_per_corpus_row is None or d3.corpus_ids is None:
+        raise ValueError(
+            "MF-5 requires full-corpus score vectors; D3's score_per_corpus_row "
+            "is None. The selector pipeline (scripts/issue503_benign_data_select.py) "
+            "must populate score_per_corpus_row + corpus_ids on every D1/D3 "
+            "SelectorResult — see benign_data.SelectorResult docstring."
+        )
+    if d1.corpus_ids != d3.corpus_ids:
+        # Detect the most informative divergence type for the error.
+        n_d1 = len(d1.corpus_ids)
+        n_d3 = len(d3.corpus_ids)
+        if n_d1 != n_d3:
+            raise ValueError(
+                f"MF-5 requires full-corpus score vectors; selectors emitted "
+                f"different/partial id sets (D1 n={n_d1}, D3 n={n_d3}). "
+                f"Both selectors must score the SAME filtered corpus in the "
+                f"SAME order."
+            )
+        # Same length but different ordering or membership.
+        if set(d1.corpus_ids) != set(d3.corpus_ids):
+            n_only_d1 = len(set(d1.corpus_ids) - set(d3.corpus_ids))
+            raise ValueError(
+                f"MF-5 requires full-corpus score vectors; selectors emitted "
+                f"different/partial id sets ({n_only_d1} ids in D1 not in D3; "
+                f"n_total D1={n_d1}, D3={n_d3}). Both selectors must score "
+                f"the SAME filtered corpus."
+            )
+        raise ValueError(
+            f"MF-5 requires full-corpus score vectors; D1 and D3 corpus_ids "
+            f"are the same set but in different order (n={n_d1}). The "
+            f"selector pipeline must emit corpus_ids in identical order — "
+            f"the order is part of the contract."
+        )
+    if len(d1.score_per_corpus_row) != len(d1.corpus_ids):
+        raise ValueError(
+            f"D1.score_per_corpus_row has length {len(d1.score_per_corpus_row)} "
+            f"but D1.corpus_ids has length {len(d1.corpus_ids)} — the two must "
+            f"match (one score per corpus row)."
+        )
+    if len(d3.score_per_corpus_row) != len(d3.corpus_ids):
+        raise ValueError(
+            f"D3.score_per_corpus_row has length {len(d3.score_per_corpus_row)} "
+            f"but D3.corpus_ids has length {len(d3.corpus_ids)} — the two must "
+            f"match (one score per corpus row)."
+        )
+
+    rho = spearman_rank_correlation(d1.score_per_corpus_row, d3.score_per_corpus_row)
+    n_used = len(d1.score_per_corpus_row)
     demote = rho > rho_ceiling
     return {
         "rho": float(rho),
         "n_used": n_used,
-        "comparison_mode": comparison_mode,
+        "comparison_mode": "full_corpus",
         "rho_ceiling": float(rho_ceiling),
         "demote_h7_7b": demote,
         "verdict": "DEMOTE_H7_7B_TO_D3_REPRODUCES_D1" if demote else "INDEPENDENT_METHODS",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF003
+# ruff: noqa: RUF002, RUF003
 # Intentional Unicode (×, →, —, ρ) in scientific docstrings + logs.
 """Issue #503 — Bucket D selector CLI (plan v2 §4.5).
 
@@ -98,6 +98,39 @@ def write_selector_jsonl(out_path: Path, selector_id: str, seed: int, result) ->
                         "datapoint_id": dp_id,
                         "score": float(score),
                         "rank": rank,
+                    }
+                )
+                + "\n"
+            )
+
+
+def write_score_per_corpus_row(out_path: Path, selector_id: str, seed: int, result) -> None:
+    """Round-2 Rec 4: persist the FULL-CORPUS score vector per selector.
+
+    MF-5 method-independence needs D1 vs D3 ρ over the SAME ordered set
+    of corpus ids. The top-K JSONL above only carries the selected rows;
+    this companion writes ``{datapoint_id, score}`` for EVERY row in the
+    filtered corpus, in ``corpus_ids`` order. The MF-5 check reads this
+    file at compare time.
+
+    Schema (one JSON object per line, corpus_ids order):
+      {"selector_id": str, "seed": int, "datapoint_id": str,
+       "score_full_corpus": float}
+    """
+    if result.score_per_corpus_row is None or result.corpus_ids is None:
+        # D0 (random) and D4 (format) don't have a meaningful per-corpus
+        # score; they're not used in MF-5. Skip the write silently for
+        # those — MF-5 only requires D1 + D3.
+        return
+    with out_path.open("w") as f:
+        for dp_id, score in zip(result.corpus_ids, result.score_per_corpus_row, strict=True):
+            f.write(
+                json.dumps(
+                    {
+                        "selector_id": selector_id,
+                        "seed": seed,
+                        "datapoint_id": dp_id,
+                        "score_full_corpus": float(score),
                     }
                 )
                 + "\n"
@@ -205,6 +238,20 @@ def main(argv: list[str] | None = None) -> int:
             out_path = out_dir / f"{sel}_seed{seed}.jsonl"
             write_selector_jsonl(out_path, sel, seed, result)
             logger.info("Wrote %s (%d rows)", out_path, len(result.selected_ids))
+
+            # Round-2 Rec 4: persist the FULL-CORPUS score vector so
+            # MF-5 can compare D1 vs D3 ρ over the same ordered set of
+            # ids. The top-K JSONL above only carries the selected rows.
+            # D0/D4 emit no per-corpus score; the writer no-ops on those.
+            corpus_score_path = out_dir / f"{sel}_seed{seed}.score_per_corpus_row.jsonl"
+            write_score_per_corpus_row(corpus_score_path, sel, seed, result)
+            if result.score_per_corpus_row is not None:
+                logger.info(
+                    "Wrote %s (%d full-corpus scores)",
+                    corpus_score_path,
+                    len(result.score_per_corpus_row),
+                )
+
             selector_results[(sel, seed)] = result
 
     # MF-5 method-independence diagnostic — compute on seed 0 (deterministic).

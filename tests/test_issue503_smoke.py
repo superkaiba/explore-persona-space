@@ -1025,23 +1025,30 @@ def test_plan_v2_bucket_d_benign_data_selectors():
     r4 = select_format(list_rows + math_rows, top_k=20, seed=0)
     assert len(r4.selected_ids) <= 20
 
-    # MF-5 method-independence:
-    # rho > 0.85 → demote_h7_7b=True (D3 reproduces D1).
+    # MF-5 method-independence (Round-2 Rec 4 — rewritten to require
+    # full-corpus score vectors). rho > 0.85 → demote_h7_7b=True
+    # (D3 reproduces D1).
+    corpus_ids_5 = ["a", "b", "c", "d", "e"]
     d1 = SelectorResult(
         selector_id="D1_representation",
         selected_ids=["a", "b", "c", "d", "e"],
         scores=[5.0, 4.0, 3.0, 2.0, 1.0],
         top_k=5,
+        score_per_corpus_row=[5.0, 4.0, 3.0, 2.0, 1.0],
+        corpus_ids=corpus_ids_5,
     )
     d3_correlated = SelectorResult(
         selector_id="D3_cosine",
         selected_ids=["a", "b", "c", "d", "e"],
         scores=[4.9, 4.1, 2.9, 2.1, 1.0],
         top_k=5,
+        score_per_corpus_row=[4.9, 4.1, 2.9, 2.1, 1.0],
+        corpus_ids=corpus_ids_5,
     )
     check_correlated = method_independence_check(d1, d3_correlated)
     assert check_correlated["demote_h7_7b"], check_correlated
     assert check_correlated["verdict"] == "DEMOTE_H7_7B_TO_D3_REPRODUCES_D1"
+    assert check_correlated["comparison_mode"] == "full_corpus"
 
     # rho ≤ 0.85 → independent, H7-7b stays.
     d3_independent = SelectorResult(
@@ -1049,10 +1056,36 @@ def test_plan_v2_bucket_d_benign_data_selectors():
         selected_ids=["a", "b", "c", "d", "e"],
         scores=[2.0, 5.0, 1.0, 4.0, 3.0],
         top_k=5,
+        score_per_corpus_row=[2.0, 5.0, 1.0, 4.0, 3.0],
+        corpus_ids=corpus_ids_5,
     )
     check_independent = method_independence_check(d1, d3_independent)
     assert not check_independent["demote_h7_7b"], check_independent
     assert check_independent["verdict"] == "INDEPENDENT_METHODS"
+
+    # Rec 4 fail-loud: missing score_per_corpus_row raises ValueError.
+    import pytest
+
+    d3_no_corpus = SelectorResult(
+        selector_id="D3_cosine",
+        selected_ids=["a", "b"],
+        scores=[1.0, 2.0],
+        top_k=2,
+    )
+    with pytest.raises(ValueError, match="full-corpus score vectors"):
+        method_independence_check(d1, d3_no_corpus)
+
+    # Rec 4 fail-loud: mismatched corpus_ids raises ValueError.
+    d3_wrong_corpus = SelectorResult(
+        selector_id="D3_cosine",
+        selected_ids=["a", "b", "c", "d"],
+        scores=[1.0, 2.0, 3.0, 4.0],
+        top_k=4,
+        score_per_corpus_row=[1.0, 2.0, 3.0, 4.0],
+        corpus_ids=["a", "b", "c", "d"],  # different length
+    )
+    with pytest.raises(ValueError, match="different/partial id sets"):
+        method_independence_check(d1, d3_wrong_corpus)
 
     # Spearman ρ on identity is 1.0
     assert spearman_rank_correlation([1, 2, 3], [1, 2, 3]) == 1.0
