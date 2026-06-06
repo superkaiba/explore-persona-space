@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002, RUF003  # em-dash + Greek beta + × multiplication intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Greek beta + × multiplication intentional
 """Task #505 §13 — analysis: panel_similarity_matrix.json + mixed-model fits + figures.
 
 Reads:
@@ -327,13 +327,21 @@ def _fit_mixed_model(
     extra_covariates: dict[str, dict[str, float]] | None = None,
     fit_method: str = "lbfgs",
 ) -> dict:
-    """Fit Δ-Leakage ~ similarity (+ optional covariates) + (1|b) + (1|seed).
+    """Fit Δ-Leakage ~ similarity (+ optional covariates) + C(j_i) + C(seed) + (1|b).
 
-    ``statsmodels.MixedLM`` supports ONE random-effect grouping at a time; we
-    group on ``b`` (the largest level set, ~52 levels) and absorb ``j_i`` +
-    ``seed`` via fixed-effect dummies (a manual ANOVA on the cell mean) so the
-    pooled slope ``β_sim`` stays identified from across-arm within-bystander
-    variation. Returns the slope estimate + cluster-on-(b × seed) sandwich SE.
+    Plan §13.1 specifies random effects on bystander + dropped-j + seed:
+    ``Δ-Leakage ~ sim + u_b + u_j_i + u_seed``. ``statsmodels.MixedLM``
+    supports ONE random-effect grouping at a time, so we group on ``b`` (the
+    largest level set, ~52 levels) and absorb ``j_i`` (6 levels) + ``seed``
+    (3 levels) as **fixed-effect categorical dummies** via patsy's
+    ``C(j_i) + C(seed)`` semantics (one-hot, drop-first to avoid the dummy
+    trap). With only 6 + 3 levels and ~936 rows, treating them as fixed
+    effects is statistically equivalent at the cost of one identifiability
+    constraint per group: the pooled slope ``β_sim`` is identified from
+    across-arm within-bystander variation as before, and the per-arm /
+    per-seed intercept shifts now show up as named coefficients in ``params``.
+    The MixedLM-side random effect is kept on ``b`` (the bystander level set),
+    matching the largest variance source.
 
     Args:
         delta_table: output of ``compute_delta_leakage_table``.
@@ -379,8 +387,17 @@ def _fit_mixed_model(
     sim_z_std = float(df["sim"].std(ddof=0)) or 1.0
     df["sim_z"] = (df["sim"] - sim_z_mean) / sim_z_std
 
+    # Fixed-effect categorical dummies for j_i + seed (plan §13.1's u_j_i +
+    # u_seed registered effects). drop_first=True → one j_i level + one seed
+    # level absorbed into the intercept (statistically equivalent; avoids the
+    # dummy-variable trap that would collapse the design rank).
+    df["seed"] = df["seed"].astype(str)
+    j_dummies = pd.get_dummies(df["j_i"], prefix="j", drop_first=True, dtype=float)
+    seed_dummies = pd.get_dummies(df["seed"], prefix="seed", drop_first=True, dtype=float)
     exog_cols = ["sim", *extra_cols]
-    exog = sm.add_constant(df[exog_cols])
+    exog_base = df[exog_cols]
+    exog_combined = pd.concat([exog_base, j_dummies, seed_dummies], axis=1)
+    exog = sm.add_constant(exog_combined)
     endog = df["delta_leakage"]
 
     try:
@@ -429,6 +446,10 @@ def _fit_mixed_model(
             "n_groups_j_i": int(df["j_i"].nunique()),
             "sim_z_mean": sim_z_mean,
             "sim_z_std": sim_z_std,
+            "fixed_effects_absorbed": (
+                f"C(j_i) drop-first ({df['j_i'].nunique()} levels) + "
+                f"C(seed) drop-first ({df['seed'].nunique()} levels)"
+            ),
         },
     }
     return out
@@ -527,7 +548,21 @@ def fit_partial_source_dg(
     bundles: dict[int, SimilarityBundle],
     layer: int = HEADLINE_LAYER,
 ) -> dict:
-    """The §13.3 partial: refit with source_ΔG + cos(b, source) as covariates."""
+    """The §13.3 partial: refit with source_ΔG + cos(b, source) + sim × source_ΔG.
+
+    Plan §13.3 formula (verbatim from plan.md:603-609):
+        Δ-Leakage = β₀ + β_sim · similarity(b, j_i)
+                    + β_src · cos_L21(b, source)
+                    + β_dG  · source_ΔG(drop-j_i, seed)
+                    + β_int · sim × source_ΔG
+                    + u_b + u_j_i + u_seed + ε
+
+    The interaction ``β_int · sim × source_ΔG`` operationalizes the #472
+    lesson: the spatial-protection slope may depend on the implant level.
+    A significant ``β_int`` means the per-bystander leakage shift is NOT a
+    free-floating spatial signature — it co-varies with how strongly the
+    source's own marker channel got implanted in that arm × seed.
+    """
     bundle = bundles[layer]
     cos_b_source_map: dict[str, float] = dict(bundle.cos_b_source)
     # Inject per-row source_dg_drop as an "extra column" via the per-row dict.
@@ -546,8 +581,18 @@ def fit_partial_source_dg(
     df["source_dg_drop_z"] = (df["source_dg_drop"] - df["source_dg_drop"].mean()) / (
         df["source_dg_drop"].std(ddof=0) or 1.0
     )
+    # Interaction term (plan §13.3's β_int · sim × source_ΔG). Constructed
+    # on the standardized source-ΔG so β_int is in the same units the rest
+    # of the partial reports.
+    df["sim_x_source_dg"] = df["sim"] * df["source_dg_drop_z"]
 
-    exog = sm.add_constant(df[["sim", "cos_b_source", "source_dg_drop_z"]])
+    # u_j_i + u_seed via fixed-effect categorical dummies (matches §13.1's
+    # design and the headline _fit_mixed_model approach).
+    df["seed"] = df["seed"].astype(str)
+    j_dummies = pd.get_dummies(df["j_i"], prefix="j", drop_first=True, dtype=float)
+    seed_dummies = pd.get_dummies(df["seed"], prefix="seed", drop_first=True, dtype=float)
+    base_cols = df[["sim", "cos_b_source", "source_dg_drop_z", "sim_x_source_dg"]]
+    exog = sm.add_constant(pd.concat([base_cols, j_dummies, seed_dummies], axis=1))
     endog = df["delta_leakage"]
     try:
         model = MixedLM(endog, exog, groups=df["b"])
@@ -572,7 +617,18 @@ def fit_partial_source_dg(
         "beta_source_dg_z": float(params.get("source_dg_drop_z", float("nan"))),
         "se_source_dg_z": float(bse.get("source_dg_drop_z", float("nan"))),
         "p_source_dg_z": float(pvalues.get("source_dg_drop_z", float("nan"))),
+        # β_int · sim × source_ΔG (plan §13.3 interaction; #472-lesson sensitivity).
+        "beta_sim_x_source_dg": float(params.get("sim_x_source_dg", float("nan"))),
+        "se_sim_x_source_dg": float(bse.get("sim_x_source_dg", float("nan"))),
+        "p_sim_x_source_dg_two_sided": float(pvalues.get("sim_x_source_dg", float("nan"))),
         "converged": bool(result.converged),
+        "diagnostics": {
+            "fixed_effects_absorbed": (
+                f"C(j_i) drop-first ({df['j_i'].nunique()} levels) + "
+                f"C(seed) drop-first ({df['seed'].nunique()} levels) + "
+                "interaction sim × source_dg_z"
+            ),
+        },
     }
 
 
