@@ -1,6 +1,7 @@
 ---
-title: Swapping the chat-template role token for a custom one does not gate scenario
-  traits any tighter than a regular system-prompt persona (HIGH confidence)
+title: A custom chat-template role token did NOT gate scenario traits tighter than
+  a system-prompt persona in this Qwen-2.5-7B LoRA setup, and the role token actively
+  suppressed pushback inside its own coding scenario (MODERATE confidence)
 kind: experiment
 tags:
 - roadmap-jun05
