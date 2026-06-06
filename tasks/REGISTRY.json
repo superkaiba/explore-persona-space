@@ -2849,7 +2849,7 @@
       "title": "Supplement #489's geometry-predicts-transfer panel with multi-turn conversation-drift contexts"
     },
     "502": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/502",
       "status": "interpreting",
