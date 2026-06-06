@@ -89,9 +89,13 @@ def write_resolution_row(repo_root: Path, row: dict) -> None:
 
 
 def build_retrain_command(cell_id: str, seed: int, lang_pair: tuple[str, str]) -> list[str]:
-    """Print the #235 retraining command. The caller invokes this manually
-    if the adapter is absent — we do NOT auto-launch a training run from a
-    resolver script (separation of concerns + halt-criterion contract).
+    """Build the #235 retraining command for one (cell, seed).
+
+    Returns the argv list — caller decides whether to execute it
+    (``--retrain-if-absent``) or just print + exit 2 (default, so a
+    driver script can decide). Hydra condition files at
+    ``configs/condition/issue235_xling_{src}_{tgt}.yaml`` declare the
+    dataset path; the recipe overrides match plan v2 §4.2.
     """
     src, tgt = lang_pair
     return [
@@ -101,15 +105,54 @@ def build_retrain_command(cell_id: str, seed: int, lang_pair: tuple[str, str]) -
         "scripts/train.py",
         # #235 recipe per plan v2 §4.2:
         # lr=5e-6, r=32, 1 epoch, N≈4990 UltraChat, (src directive, tgt completion).
-        # The condition slug is invented here as a placeholder; the actual
-        # Hydra condition file would be added under
-        # configs/condition/issue235_xling_{src}_{tgt}.yaml.
         f"condition=issue235_xling_{src}_{tgt}",
         f"seed={seed}",
         "training.lr=5e-6",
         "lora.r=32",
         "training.num_train_epochs=1",
     ]
+
+
+def expected_xling_training_dataset(
+    target_language: str, seed: int, *, repo_root_path: Path | None = None
+) -> Path:
+    """Return the expected on-disk training dataset path for a Bucket A
+    (cell, seed). Mirrors configs/condition/issue235_xling_en_<tgt>.yaml's
+    ``dataset: data/issue503/xling/en_<tgt>_seed${seed}.jsonl`` declaration.
+    """
+    root = repo_root_path if repo_root_path is not None else repo_root()
+    return root / "data" / "issue503" / "xling" / f"en_{target_language}_seed{seed}.jsonl"
+
+
+def execute_retrain(retrain_cmd: list[str], cell_id: str, seed: int) -> int:
+    """Execute one retrain command via subprocess. Fail-loud on any
+    non-zero exit; the orchestrator chains cells sequentially so a single
+    failure aborts the bucket. Per CLAUDE.md `Fail fast — never hide
+    failures`: no try/except: pass, no return 0 on rc != 0.
+
+    Per .claude/agents/experiment-implementer.md subprocess-env-explicit
+    rule: passes ``env={**os.environ}`` to make the inheritance contract
+    explicit (HF_TOKEN / WANDB_API_KEY threading).
+    """
+    logger.info(
+        "Bucket A cell=%s seed=%d retrain LAUNCHING: %s",
+        cell_id,
+        seed,
+        " ".join(retrain_cmd),
+    )
+    proc = subprocess.run(
+        retrain_cmd,
+        env={**os.environ},
+        cwd=str(repo_root()),
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"Bucket A retrain FAILED for cell={cell_id} seed={seed} "
+            f"with rc={proc.returncode}; command was: {' '.join(retrain_cmd)}"
+        )
+    logger.info("Bucket A cell=%s seed=%d retrain PASSED.", cell_id, seed)
+    return 0
 
 
 def resolve_all(
@@ -181,6 +224,82 @@ def resolve_all(
     return summary
 
 
+def _collect_absent_rows(
+    summary: dict,
+) -> list[tuple[str, int, list[str], str]]:
+    """Walk the resolve_all summary and collect ABSENT (cell, seed) rows.
+
+    Returns ``(cell_id, seed, retrain_cmd, expected_dataset_path)`` per
+    absent cell. Raises if an ABSENT row is missing its ``retrain_cmd``
+    (contract violation in ``resolve_all``).
+    """
+    from explore_persona_space.experiments.issue503.crosslingual import XLING_CELLS
+
+    cell_by_id = {c.cell_id: c for c in XLING_CELLS}
+    out: list[tuple[str, int, list[str], str]] = []
+    for cell_id, per_cell in summary.items():
+        for seed_str, row in per_cell.items():
+            if row.get("deduped"):
+                continue
+            if row.get("present", False):
+                continue
+            seed = int(seed_str)
+            cmd = row.get("retrain_cmd") or []
+            if not cmd:
+                raise RuntimeError(
+                    f"ABSENT row for cell={cell_id} seed={seed} has no retrain_cmd; "
+                    "resolve_all() must populate one — surface mismatched contract."
+                )
+            cell = cell_by_id[cell_id]
+            ds_path = expected_xling_training_dataset(cell.target_language, seed)
+            out.append((cell_id, seed, cmd, str(ds_path)))
+            print(f"ABSENT: cell={cell_id} seed={seed} subfolder={row['subfolder']}")
+            print(f"  retrain: {' '.join(cmd)}")
+    return out
+
+
+def _retrain_pre_flight_datasets(
+    to_retrain: list[tuple[str, int, list[str], str]],
+) -> None:
+    """Pre-flight check: every (cell, seed) about to retrain has its
+    training dataset on disk. Fail-loud per CLAUDE.md.
+    """
+    missing: list[str] = [
+        f"cell={cell_id} seed={seed}: {ds_path}"
+        for cell_id, seed, _cmd, ds_path in to_retrain
+        if not Path(ds_path).exists()
+    ]
+    if missing:
+        raise RuntimeError(
+            "Bucket A retrain prerequisite FAILED — the following "
+            "(cell, seed) training datasets are missing on disk:\n  "
+            + "\n  ".join(missing)
+            + "\n\nThese JSONL files are declared by the issue235_xling_* "
+            "Hydra condition configs. Generate them BEFORE retraining; "
+            "they are NOT auto-created by train.py."
+        )
+
+
+def _verify_post_retrain(repo_id: str, hf_token: str) -> None:
+    """Re-resolve adapters after retrain to confirm the freshly-trained
+    cells landed on HF Hub. Fail-loud if any are still absent.
+    """
+    post_summary = resolve_all(repo_id=repo_id, hf_token=hf_token, dry_run=True)
+    still_absent: list[str] = []
+    for cell_id, per_cell in post_summary.items():
+        for seed_str, row in per_cell.items():
+            if row.get("deduped"):
+                continue
+            if not row.get("present", False):
+                still_absent.append(f"cell={cell_id} seed={seed_str}")
+    if still_absent:
+        raise RuntimeError(
+            "Bucket A retrain executed but adapters STILL ABSENT on HF: "
+            + ", ".join(still_absent)
+            + ". The training pipeline's HF upload step did not land."
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -193,6 +312,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Print resolution results without appending to the JSONL log.",
     )
+    parser.add_argument(
+        "--retrain-if-absent",
+        action="store_true",
+        help=(
+            "If an adapter is absent on HF, EXECUTE the retrain command "
+            "sequentially (subprocess.run with explicit env=). Fail-loud "
+            "on any non-zero exit. Without this flag (default), the script "
+            "prints the retrain command + exits rc=2 so a driver can decide."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # Explicit credential assertion per experiment-implementer.md.
@@ -204,28 +333,21 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     summary = resolve_all(repo_id=args.repo_id, hf_token=hf_token, dry_run=args.dry_run)
+    to_retrain = _collect_absent_rows(summary)
+    any_absent = len(to_retrain) > 0
 
-    # Exit code: 0 if all PRESENT, 2 if any ABSENT (so a sweep dispatcher
-    # can fail loud rather than silently skip cells).
-    any_absent = False
-    for cell_id, per_cell in summary.items():
-        for seed, row in per_cell.items():
-            if row.get("deduped"):
-                continue
-            if not row.get("present", False):
-                any_absent = True
-                print(f"ABSENT: cell={cell_id} seed={seed} subfolder={row['subfolder']}")
-                if "retrain_cmd" in row:
-                    print(f"  retrain: {' '.join(row['retrain_cmd'])}")
+    if any_absent and args.retrain_if_absent:
+        _retrain_pre_flight_datasets(to_retrain)
+        for cell_id, seed, cmd, _ds_path in to_retrain:
+            execute_retrain(cmd, cell_id, seed)
+        _verify_post_retrain(args.repo_id, hf_token)
+        print("Bucket A adapter resolution: all adapters PRESENT after retrain.")
+        return 0
 
     if any_absent:
         return 2
     print("Bucket A adapter resolution: all adapters PRESENT on HF.")
     return 0
-
-
-# Silence unused-import warning when subprocess is only referenced via documentation.
-_ = subprocess
 
 
 if __name__ == "__main__":
