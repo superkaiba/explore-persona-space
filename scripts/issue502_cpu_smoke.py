@@ -1574,6 +1574,122 @@ def check_dispatcher_overrides_stale_class_d_env() -> dict:
     }
 
 
+# ──────── Check 20: regress phase skips the cross_check_406 sidecar ─────────
+
+
+def check_regress_skips_cross_check_sidecar() -> dict:
+    """Round-8 regression: ``_enumerate_predictors`` MUST skip the
+    ``__cross_check_406.json`` sidecar that ``write_next_token_js_matrix``
+    drops into ``METRIC_DIR``. The sidecar carries a cross-check schema
+    (``{schema_version, failed, summary?/failure_reason?, git_sha,
+    timestamp_utc}``) — no ``extraction_point`` field — so reading it as
+    a predictor crashed the regress phase with ``KeyError:
+    'extraction_point'`` (#502 round-7 pod-side launch).
+
+    The check materializes a tmp directory containing:
+      (a) one REAL distance-matrix file (``last_prompt__layer5__cosine__raw.json``),
+      (b) the cross-check sidecar shape this bug bit on,
+      (c) for thoroughness, a ``__perm.json`` MMD permutation companion
+          which the prior round also skips.
+
+    It calls ``_enumerate_predictors`` on the sorted file list and
+    asserts:
+      - the returned row count equals 1 (sidecars are excluded);
+      - the single row's ``file`` is the real predictor;
+      - no ``KeyError`` is raised.
+
+    Naming any future schema-different sidecar that lands in METRIC_DIR
+    must either follow the ``__perm`` / ``__cross_check_406`` skip-pattern
+    or carry the full distance-matrix schema. The skip is intentionally
+    name-pattern-based for explicitness over a `extraction_point in
+    payload` schema sniff — silent skip of an unexpected schema mismatch
+    would be the more dangerous failure mode.
+    """
+    import json as _json
+    import tempfile as _tmp
+    from pathlib import Path as _Path
+
+    from issue493_extraction_metric_bakeoff import _enumerate_predictors
+
+    tmp_dir = _Path(_tmp.mkdtemp(prefix="i502_smoke_enum_predictors_"))
+
+    # (a) Real distance-matrix file — full predictor schema.
+    real_payload = {
+        "schema_version": 1,
+        "extraction_point": "last_prompt",
+        "layer": 5,
+        "metric": "cosine",
+        "variant": "raw",
+        "pca_k": 16,
+        "cond_ids": ["A1", "A2"],
+        "matrix": {"A1": {"A1": 0.0, "A2": 0.1}, "A2": {"A1": 0.1, "A2": 0.0}},
+        "git_sha": "test",
+        "timestamp_utc": "now",
+    }
+    real_path = tmp_dir / "last_prompt__layer5__cosine__raw.json"
+    real_path.write_text(_json.dumps(real_payload))
+
+    # (b) Cross-check sidecar — schema-different, NO `extraction_point`.
+    # Exact shape produced by `write_next_token_js_matrix` on the
+    # success branch (the bug also fired on the failure branch which
+    # has identical key set minus `summary`).
+    sidecar_payload = {
+        "schema_version": 1,
+        "failed": False,
+        "summary": {"rank_corr": 0.97},
+        "git_sha": "test",
+        "timestamp_utc": "now",
+    }
+    sidecar_path = tmp_dir / "last_prompt__layer-1__next_token_js__raw__cross_check_406.json"
+    sidecar_path.write_text(_json.dumps(sidecar_payload))
+
+    # (c) MMD permutation companion — already-handled prior skip pattern,
+    # included for thoroughness so this single check guards both
+    # name-pattern filters.
+    perm_payload = {
+        "schema_version": 1,
+        "extraction_point": "last_prompt",
+        "layer": 5,
+        "metric": "mmd",
+        "variant": "raw",
+        "n_perm": 100,
+        "summary": {},
+        "git_sha": "test",
+        "timestamp_utc": "now",
+    }
+    perm_path = tmp_dir / "last_prompt__layer5__mmd__raw__perm.json"
+    perm_path.write_text(_json.dumps(perm_payload))
+
+    all_files = sorted(tmp_dir.glob("*.json"))
+    assert len(all_files) == 3, f"test setup: expected 3 tmp files, got {len(all_files)}"
+
+    # The bug under test: pre-round-8, this call raised
+    # ``KeyError: 'extraction_point'`` on the sidecar payload. With the
+    # fix it MUST return exactly one row, derived from the real file.
+    rows = _enumerate_predictors(all_files)
+
+    assert len(rows) == 1, (
+        f"_enumerate_predictors returned {len(rows)} rows; expected exactly 1 "
+        "(the real distance-matrix file). Sidecars (__perm, __cross_check_406) "
+        "must be skipped."
+    )
+    row = rows[0]
+    assert row["file"] == str(real_path), (
+        f"_enumerate_predictors returned the wrong file: got {row['file']!r}, "
+        f"expected {str(real_path)!r}"
+    )
+    assert row["extraction_point"] == "last_prompt"
+    assert row["metric"] == "cosine"
+
+    return {
+        "input_files": len(all_files),
+        "predictor_rows": len(rows),
+        "sidecar_skipped": True,
+        "perm_skipped": True,
+        "predictor_file": real_path.name,
+    }
+
+
 # ─────────────────────────── Main ───────────────────────────
 
 
@@ -1610,6 +1726,13 @@ def main() -> int:
         (
             "dispatcher_overrides_stale_class_d_env",
             check_dispatcher_overrides_stale_class_d_env,
+        ),
+        # Round-8 addition: regress phase must skip the cross_check_406
+        # sidecar in METRIC_DIR (regression test for the round-7
+        # KeyError:'extraction_point' crash at the regress entry).
+        (
+            "regress_skips_cross_check_sidecar",
+            check_regress_skips_cross_check_sidecar,
         ),
     ]
     for name, fn in checks:

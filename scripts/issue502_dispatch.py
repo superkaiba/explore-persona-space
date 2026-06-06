@@ -297,24 +297,30 @@ def _run_aggregation(args: argparse.Namespace) -> int:
     if args.overwrite:
         base.append("--overwrite")
 
-    # 1. Merge partitioned activations + build next_token_js matrix.
-    merge_cmd = [*base, "--merge-only"]
-    if args.no_next_token_js:
-        merge_cmd.append("--no-next-token-js")
-    logger.info("Aggregation step 1/4: merge partitions + next_token_js")
-    logger.info("  cmd=%s", " ".join(merge_cmd))
-    rc = subprocess.call(merge_cmd, cwd=PROJECT_ROOT, env={**os.environ})
-    if rc != 0:
-        logger.error("merge step failed rc=%d", rc)
-        return rc
+    if not args.skip_metrics:
+        # 1. Merge partitioned activations + build next_token_js matrix.
+        merge_cmd = [*base, "--merge-only"]
+        if args.no_next_token_js:
+            merge_cmd.append("--no-next-token-js")
+        logger.info("Aggregation step 1/4: merge partitions + next_token_js")
+        logger.info("  cmd=%s", " ".join(merge_cmd))
+        rc = subprocess.call(merge_cmd, cwd=PROJECT_ROOT, env={**os.environ})
+        if rc != 0:
+            logger.error("merge step failed rc=%d", rc)
+            return rc
 
-    # 2. Metrics phase.
-    logger.info("Aggregation step 2/4: metrics")
-    metrics_cmd = [*base, "--phase", "metrics"]
-    rc = subprocess.call(metrics_cmd, cwd=PROJECT_ROOT, env={**os.environ})
-    if rc != 0:
-        logger.error("metrics step failed rc=%d", rc)
-        return rc
+        # 2. Metrics phase.
+        logger.info("Aggregation step 2/4: metrics")
+        metrics_cmd = [*base, "--phase", "metrics"]
+        rc = subprocess.call(metrics_cmd, cwd=PROJECT_ROOT, env={**os.environ})
+        if rc != 0:
+            logger.error("metrics step failed rc=%d", rc)
+            return rc
+    else:
+        logger.info(
+            "Aggregation steps 1-2/4 (merge + metrics) SKIPPED via --skip-metrics. "
+            "Resuming from regress with existing files in METRIC_DIR."
+        )
 
     # 3. Regression phase.
     logger.info("Aggregation step 3/4: regress")
@@ -439,6 +445,18 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     p.add_argument(
+        "--skip-metrics",
+        action="store_true",
+        help=(
+            "Skip the merge + metrics aggregation steps (e.g. when the metric "
+            "JSONs already landed under <bakeoff_root>/metrics/ from a prior "
+            "run); only execute the regress → figures tail. Mirrors "
+            "--skip-extract for the regress-onwards relaunch case. Implies "
+            "--skip-extract — extraction without metrics is pointless. The "
+            "regress phase will read the existing files in METRIC_DIR as-is."
+        ),
+    )
+    p.add_argument(
         "--class-d-extension-path",
         type=Path,
         default=DEFAULT_CLASS_D_EXTENSION_PATH,
@@ -456,6 +474,12 @@ def _build_argparser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = _build_argparser().parse_args(argv)
     t_start = time.time()
+
+    # --skip-metrics implies --skip-extract (running extraction without
+    # then re-running metrics is pointless; round-8 #502 relaunch case).
+    if args.skip_metrics and not args.skip_extract:
+        logger.info("--skip-metrics implies --skip-extract; setting skip_extract=True.")
+        args.skip_extract = True
 
     # Detect / validate GPU count.
     if args.num_gpus <= 0:

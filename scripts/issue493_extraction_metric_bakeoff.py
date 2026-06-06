@@ -3185,11 +3185,25 @@ def _enumerate_predictors(metric_files: list[Path]) -> list[dict]:
     Each row carries the metric file's `cond_ids` so the regression phase
     can restrict the pair list to the SUBPANEL the metric is actually
     defined on (Class-A-only for end_of_system, full 16 elsewhere).
+
+    Skips two classes of non-predictor sidecars that live alongside the
+    distance-matrix JSONs in ``METRIC_DIR``:
+      - ``*__perm.json``  — MMD permutation-null companions (no matrix payload).
+      - ``*__cross_check_406.json`` — the next_token_js cross-check sidecar
+        emitted by ``write_next_token_js_matrix``. Schema is
+        ``{schema_version, failed, summary?/failure_reason?, git_sha,
+        timestamp_utc}`` — no ``extraction_point`` / ``layer`` / ``metric``
+        fields, so reading it as a predictor KeyErrors. This is a
+        cross-check artifact, NOT a predictor input. (Round-8 fix #502.)
     """
     rows = []
     for p in metric_files:
         # Skip the per-pair MMD permutation companion files.
         if "__perm" in p.name:
+            continue
+        # Skip the next_token_js vs #406 cross-check sidecar (schema-different,
+        # not a distance-matrix predictor).
+        if p.name.endswith("__cross_check_406.json"):
             continue
         payload = json.loads(p.read_text())
         pt = payload["extraction_point"]
