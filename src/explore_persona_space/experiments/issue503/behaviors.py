@@ -490,18 +490,50 @@ def total_off_diagonal_cells(seeds: tuple[int, ...] = SEEDS) -> int:
 # ── MF-F round-2 revision: source-family-aware adapter-path mapping ────────
 
 
-def source_family_kind(source: str) -> Literal["narrow", "broad_em", "broad_syco"]:
-    """Classify a source by adapter-family (narrow / broad-EM / broad-syco).
+SourceFamilyKind = Literal["narrow", "broad_em", "broad_syco", "xling", "benign_data"]
 
-    The HF Hub subfolder convention differs across the three families:
+# Round-3 Rec-3.4: Bucket A (xling) cell_id → target-language adapter subfolder
+# infix. A1 + A1' share the en→es adapter (A1' differs only in target-side K=8);
+# A2 has its own en→it adapter. These come from #235's cross-lingual training
+# rig + crosslingual.expected_adapter_subfolder.
+_XLING_CELL_TO_LANG: dict[str, str] = {
+    "A1": "en_es",
+    "A1_prime": "en_es",  # MF-4 discriminator shares A1's source adapter
+    "A2": "en_it",
+}
+
+# Round-3 Rec-3.4: Bucket D (benign-data) recognized selector ids. Matches
+# benign_data.SelectorId; centralized here so adapter_subfolder_for_source +
+# source_family_kind agree on the prefix set.
+_BENIGN_DATA_SELECTORS: tuple[str, ...] = (
+    "D0_random",
+    "D1_representation",
+    "D2_gradient",
+    "D3_cosine",
+    "D4_format",
+)
+
+
+def source_family_kind(source: str) -> SourceFamilyKind:
+    """Classify a source by adapter-family.
+
+    The HF Hub subfolder convention differs across the five families:
 
     - **narrow** (10 #458 cells): ``issue458_pair_{source}_seed{seed}/sft_narrow_adapter``
     - **broad-EM** (1 cell × 2 seeds): reuses the ``turner_risky_financial``
       adapter from #458 (it IS a #458 cell). Despite the source label
       ``broad_em_turner_risky_financial``, the published subfolder is the
       narrow #458 form keyed on the bare ``turner_risky_financial`` cell.
-    - **broad-syco** (1 cell × 2 seeds, NEW): ``issue503_broad_syco_seed{seed}``
+    - **broad-syco** (1 cell × 2 seeds): ``issue503_broad_syco_seed{seed}``
       — newly trained as part of #503 (plan §3.2.2.broad-syco).
+    - **xling** (Bucket A, plan v2 §4.2; round-3 Rec-3.4): #235's
+      cross-lingual training rig. Cell ids: ``xling_A1`` / ``xling_A1_prime``
+      (en→es adapter, A1' = MF-4 discriminator with different target-side K=8)
+      / ``xling_A2`` (en→it adapter).
+    - **benign_data** (Bucket D, plan v2 §4.5; round-3 Rec-3.4): the He et al.
+      benign-data selectors (D0_random / D1_representation / D2_gradient /
+      D3_cosine / D4_format). The label may carry an optional ``_seed{N}``
+      suffix from the smoke; the bare-selector prefix is what's matched.
 
     Raises ``ValueError`` for an unrecognized source — fail-loud per
     CLAUDE.md so the v1 silent fallthrough to the narrow path cannot
@@ -513,9 +545,17 @@ def source_family_kind(source: str) -> Literal["narrow", "broad_em", "broad_syco
         return "broad_em"
     if source.startswith("broad_syco_"):
         return "broad_syco"
+    if source.startswith("xling_"):
+        return "xling"
+    # Benign-data selectors may carry an optional `_seed{N}` suffix the smoke
+    # uses (e.g. ``D3_cosine_seed0``); strip the suffix before checking.
+    bare = source.split("_seed", 1)[0]
+    if bare in _BENIGN_DATA_SELECTORS:
+        return "benign_data"
     raise ValueError(
         f"Unknown source family for {source!r}; expected one of NARROW_SOURCE_POOL or a "
-        f"name starting with 'broad_em_' / 'broad_syco_'."
+        f"name starting with 'broad_em_' / 'broad_syco_' / 'xling_' or a benign-data "
+        f"selector from {sorted(_BENIGN_DATA_SELECTORS)}."
     )
 
 
@@ -528,6 +568,11 @@ def adapter_subfolder_for_source(source: str, seed: int) -> str:
     source, which crashed on broad-EM and broad-syco sources. This helper
     is the single source of truth.
 
+    Round-3 Rec-3.4: extended for Bucket A (xling) + Bucket D (benign_data)
+    sources. Codex's round-2 verification flagged that the round-2 helper
+    raised ValueError for every A/D source label, so the sweep crashed
+    Phase 1 (adapter-subfolder build) the first time it saw any A/D cell.
+
     Naming conventions:
     - narrow → ``issue458_pair_{source}_seed{seed}/sft_narrow_adapter``
     - broad_em → ``issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter``
@@ -535,6 +580,14 @@ def adapter_subfolder_for_source(source: str, seed: int) -> str:
       — a #458 cell with 23.4% EM, the broad-misalignment payload).
     - broad_syco → ``issue503_broad_syco_seed{seed}/adapter``
       (NEW for #503; plan §3.2.2.broad-syco).
+    - xling → ``issue235_xling_{en_es|en_it}_seed{seed}/adapter``
+      (matches crosslingual.XLING_CELLS.expected_adapter_subfolder; the
+      cell_id suffix on the source label after ``xling_`` resolves to
+      en_es (A1 + A1') or en_it (A2)).
+    - benign_data → ``issue503_bucket_d_{selector}_seed{seed}/adapter``
+      (matches scripts/issue503_benign_data_sft.py's out_subfolder; the
+      source label may carry an optional ``_seed{N}`` suffix that's
+      stripped before resolution).
     """
     kind = source_family_kind(source)
     if kind == "narrow":
@@ -544,5 +597,18 @@ def adapter_subfolder_for_source(source: str, seed: int) -> str:
         # (the highest-EM Turner cell at #458). The HF Hub subfolder is
         # therefore the bare-name #458 form.
         return f"issue458_pair_turner_risky_financial_seed{seed}/sft_narrow_adapter"
-    # broad_syco
-    return f"issue503_broad_syco_seed{seed}/adapter"
+    if kind == "broad_syco":
+        return f"issue503_broad_syco_seed{seed}/adapter"
+    if kind == "xling":
+        cell_id = source.removeprefix("xling_")
+        if cell_id not in _XLING_CELL_TO_LANG:
+            raise ValueError(
+                f"adapter_subfolder_for_source: unknown xling cell_id={cell_id!r} "
+                f"(from source={source!r}). Expected one of: "
+                f"{sorted(_XLING_CELL_TO_LANG)}."
+            )
+        lang_pair = _XLING_CELL_TO_LANG[cell_id]
+        return f"issue235_xling_{lang_pair}_seed{seed}/adapter"
+    # benign_data
+    selector = source.split("_seed", 1)[0]
+    return f"issue503_bucket_d_{selector}_seed{seed}/adapter"
