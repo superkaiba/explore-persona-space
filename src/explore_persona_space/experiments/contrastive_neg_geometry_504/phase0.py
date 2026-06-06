@@ -81,7 +81,11 @@ def _per_frac_source_diagnostics(
                 dg = float(v)
         if dg is None:
             dg = float("nan")
-        emit = src.get("emission_rate")
+        # #472's eval_trajectory writes 'emission_p' (#477 v6 DV-C field name).
+        # The older 'emission_rate' name is read as a backward-compat alias.
+        emit = src.get("emission_p")
+        if emit is None:
+            emit = src.get("emission_rate")
         if emit is None and "argmax_marker" in src:
             v = src["argmax_marker"]
             if isinstance(v, dict):
