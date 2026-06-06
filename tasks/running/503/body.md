@@ -1,6 +1,6 @@
 ---
-title: Does the base-model cosine predictor hold across the full narrow/broad source×target
-  leakage matrix (N→N, N→B beyond EM, B→B)?
+title: Does one before-training distance predictor calibrate across the generalization-surprise
+  spectrum (cross-lingual → EM / benign-data-breaks-safety → non-transfer)?
 kind: experiment
 tags: []
 created_at: '2026-06-05T17:59:00Z'

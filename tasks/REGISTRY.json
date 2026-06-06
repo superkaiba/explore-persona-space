@@ -2861,7 +2861,7 @@
       "kind": "experiment",
       "path": "tasks/running/503",
       "status": "running",
-      "title": "Does the base-model cosine predictor hold across the full narrow/broad source\u00d7target leakage matrix (N\u2192N, N\u2192B beyond EM, B\u2192B)?"
+      "title": "Does one before-training distance predictor calibrate across the generalization-surprise spectrum (cross-lingual \u2192 EM / benign-data-breaks-safety \u2192 non-transfer)?"
     },
     "51": {
       "has_clean_result": false,
