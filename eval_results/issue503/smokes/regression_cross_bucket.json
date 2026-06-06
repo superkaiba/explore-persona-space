@@ -1,0 +1,96 @@
+{
+  "smoke_name": "regression_cross_bucket",
+  "n_rows": 32,
+  "buckets_present": [
+    "A",
+    "B",
+    "D",
+    "E"
+  ],
+  "all_buckets_known": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+  ],
+  "pooled_spearman": {
+    "rho": 0.6304012016049677,
+    "p_value": 0.00011011333974997718,
+    "n": 32
+  },
+  "partial_ladder": {
+    "raw": {
+      "rho": 0.6304012016049677,
+      "p_value": 0.00011011333974997718
+    },
+    "partial_log_tokens": {
+      "rho": 0.6092375366568915,
+      "p_value": 0.0002149343200875481
+    },
+    "partial_log_tokens_lexical": {
+      "rho": 0.6092375366568915,
+      "p_value": 0.0002149343200875481
+    },
+    "partial_log_tokens_lexical_base_rate": {
+      "rho": 0.6092375366568915,
+      "p_value": 0.0002149343200875481
+    }
+  },
+  "leave_one_bucket_out": {
+    "drop_A": {
+      "rho": 0.5723616010932131,
+      "p_value": 0.0034701229850037578,
+      "n": 24
+    },
+    "drop_B": {
+      "rho": 0.60992651061974,
+      "p_value": 0.0015534097557270358,
+      "n": 24
+    },
+    "drop_D": {
+      "rho": 0.38963899143802094,
+      "p_value": 0.0598228586953348,
+      "n": 24
+    },
+    "drop_E": {
+      "rho": 0.9980415605182678,
+      "p_value": 5.549284262435428e-28,
+      "n": 24
+    }
+  },
+  "per_bucket_simple_slopes": {
+    "A": {
+      "rho": 1.0,
+      "p_value": 0.0,
+      "n": 8
+    },
+    "B": {
+      "rho": 0.9940297973880048,
+      "p_value": 5.296153515645125e-07,
+      "n": 8
+    },
+    "D": {
+      "rho": 0.9940297973880048,
+      "p_value": 5.296153515645125e-07,
+      "n": 8
+    },
+    "E": {
+      "rho": 0.09639253854237598,
+      "p_value": 0.8203804112381493,
+      "n": 8
+    }
+  },
+  "b_to_b_descriptive": {
+    "point_estimate": NaN,
+    "ci_low": NaN,
+    "ci_high": NaN,
+    "permutation_null_pmf": [],
+    "n": 0
+  },
+  "reproducibility": {
+    "git_sha": "e77a648ab015b06735517fb3ee44dd266a2897ee",
+    "timestamp": "2026-06-06T02:13:16.829478+00:00",
+    "python": "3.11.15"
+  }
+}

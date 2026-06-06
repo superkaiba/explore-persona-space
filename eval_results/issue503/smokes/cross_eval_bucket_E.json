@@ -1,0 +1,21 @@
+{
+  "smoke_name": "cross_eval_bucket_E",
+  "bucket": "E",
+  "source": "secure_code",
+  "target_id": "T1_medical_E",
+  "seed": 0,
+  "n_prompts_staged": 4,
+  "judge_model": "claude-sonnet-4-5",
+  "judge_id": "t1_medical",
+  "panel_dataset": "turner_medical_heldout",
+  "completions_path": "eval_results/issue503/cross_eval/secure_code_seed0/T1_medical_E.completions.jsonl",
+  "verdict_path": "eval_results/issue503/cross_eval/secure_code_seed0/T1_medical_E.verdict.json",
+  "predictor_path": "eval_results/issue503/predictors/secure_code__T1_medical_E__seed0__L25.json",
+  "smoke_kind": "cpu_only_dispatch_check",
+  "vllm_real_run_expected_on_pod": true,
+  "reproducibility": {
+    "git_sha": "e77a648ab015b06735517fb3ee44dd266a2897ee",
+    "timestamp": "2026-06-06T02:12:21.158332+00:00",
+    "python": "3.11.15"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "smoke_name": "cross_eval_bucket_D",
+  "bucket": "D",
+  "source": "D3_cosine_seed0",
+  "target_id": "D_advbench",
+  "seed": 0,
+  "n_prompts_staged": 4,
+  "judge_model": "claude-sonnet-4-5",
+  "judge_id": "d_advbench",
+  "panel_dataset": "advbench_harmful_520",
+  "completions_path": "eval_results/issue503/cross_eval/D3_cosine_seed0_seed0/D_advbench.completions.jsonl",
+  "verdict_path": "eval_results/issue503/cross_eval/D3_cosine_seed0_seed0/D_advbench.verdict.json",
+  "predictor_path": "eval_results/issue503/predictors/D3_cosine_seed0__D_advbench__seed0__L25.json",
+  "smoke_kind": "cpu_only_dispatch_check",
+  "vllm_real_run_expected_on_pod": true,
+  "reproducibility": {
+    "git_sha": "e77a648ab015b06735517fb3ee44dd266a2897ee",
+    "timestamp": "2026-06-06T02:12:20.184971+00:00",
+    "python": "3.11.15"
+  }
+}
