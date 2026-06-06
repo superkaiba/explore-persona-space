@@ -10,6 +10,9 @@ goal: 'Determine the geometric shape of a single contrastive negative''s leakage
   or the entire region behind it relative to the source (barrier/shadow)? Secondary:
   do near-twin negatives produce a more localized implant than distant ones, holding
   all else fixed.'
+relates_to:
+- leak-contrastive-negatives
+- leak-predictor
 ---
 ## Goal
 
