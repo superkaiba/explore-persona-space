@@ -2859,8 +2859,8 @@
       "goal": "Test whether one before-training distance predictor \u2014 the #468 base-model in-context-example cosine, with JS divergence and the He et al. (arXiv 2404.01099) representation/gradient/format selectors as baselines \u2014 calibrates across the full generalization-surprise spectrum: unsurprising/should-transfer (cross-lingual behavior transfer, e.g. English\u2192Spanish), surprising (narrow\u2192broad emergent misalignment, and benign-data\u2192broad-unsafety \u00e0 la 2404.01099), and non-transfer (orthogonal behaviors), validating it on the known-answer ends before trusting the surprising middle and reporting a calibration curve over one shared dataset-generation, cross-evaluation, and pooled-regression rig.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/503",
-      "status": "running",
+      "path": "tasks/blocked/503",
+      "status": "blocked",
       "title": "Does one before-training distance predictor calibrate across the generalization-surprise spectrum (cross-lingual \u2192 EM / benign-data-breaks-safety \u2192 non-transfer)?"
     },
     "504": {
