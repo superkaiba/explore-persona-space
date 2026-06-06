@@ -123,6 +123,17 @@ def main(argv: list[str] | None = None) -> int:
         default=2048,
         help="Eval max_new_tokens. Bumped to 4096 by Phase 0.5 if a train-time R saturated 1024.",
     )
+    ap.add_argument(
+        "--max-model-len-eval",
+        type=int,
+        default=None,
+        help=(
+            "Round-2 fix (blocker #4): vLLM max_model_len (prompt + generation) for the "
+            "nested eval. Must be >= --max-new-tokens-eval + EVAL_PROMPT_HEADROOM "
+            "(default 512) so vLLM doesn't silently cap generation. If unset, computed "
+            "as max(2048, max_new_tokens_eval + 512)."
+        ),
+    )
     ap.add_argument("--smoke", action="store_true", help="Tiny slice: fewer steps, 2 checkpoints.")
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B KL.")
     ap.add_argument("--report-to", default="wandb")
@@ -298,6 +309,24 @@ def main(argv: list[str] | None = None) -> int:
         eval_cvd,
         args.gpu_id,
     )
+    # Round-2 fix (minor cleanup, blocker #4 prep): build eval_max_new_tokens
+    # ONCE so the eval-side argparse sees a single, consistent value (the
+    # earlier code appended --max-new-tokens twice under --smoke, which
+    # argparse silently resolves to the LAST value — ambiguous behavior the
+    # round-1 reviewer flagged).
+    eval_max_new_tokens = 256 if args.smoke else args.max_new_tokens_eval
+    # Round-2 fix (blocker #4): vLLM max_model_len must track max_new_tokens.
+    # If max_new_tokens_eval bumped to 4096 (Phase 0.5 max-length safeguard)
+    # but max_model_len stayed at 2048, vLLM silently caps generation at
+    # 2048 - prompt_len; for marker evals on the long-tail Q_eval this turns
+    # the headline DV into a silent-zero artifact. Compute headroom-aware
+    # max_model_len here so the floor is always max_new_tokens + 512.
+    eval_prompt_headroom = 512
+    eval_max_model_len = (
+        args.max_model_len_eval
+        if args.max_model_len_eval is not None
+        else max(2048, eval_max_new_tokens + eval_prompt_headroom)
+    )
     eval_cmd = [
         "uv",
         "run",
@@ -320,13 +349,19 @@ def main(argv: list[str] | None = None) -> int:
         "--max-lora-rank",
         str(args.chosen_rank),
         "--max-new-tokens",
-        str(args.max_new_tokens_eval),
+        str(eval_max_new_tokens),
+        "--max-model-len",
+        str(eval_max_model_len),
     ]
     if args.no_kl:
         eval_cmd.append("--no-kl")
-    if args.smoke:
-        eval_cmd.extend(["--max-new-tokens", "256"])
-    log.info("[phase=eval_%s] nested eval subprocess: %s", args.cell, " ".join(eval_cmd))
+    log.info(
+        "[phase=eval_%s] nested eval subprocess (max_new_tokens=%d, max_model_len=%d): %s",
+        args.cell,
+        eval_max_new_tokens,
+        eval_max_model_len,
+        " ".join(eval_cmd),
+    )
     subprocess.run(eval_cmd, env={**os.environ}, check=True)
 
     if not out_traj.exists():
