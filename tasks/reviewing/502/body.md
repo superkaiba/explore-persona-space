@@ -1,7 +1,7 @@
 ---
-title: A residual-stream divergence at layer 22 of the last prompt token predicts
-  marker-leakage transfer across persona pairs at Spearman ρ = −0.79 on 240 ordered
-  pairs (MODERATE confidence)
+title: A residual-stream divergence on a layer 19-24 ridge of the last prompt token
+  predicts marker-leakage transfer at Spearman ρ = −0.79 on 240 ordered pairs on the
+  cleanest training checkpoint (MODERATE confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-05T17:36:31Z'
