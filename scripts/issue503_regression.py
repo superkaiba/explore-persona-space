@@ -99,35 +99,65 @@ def _load_verdict_records() -> dict[tuple[str, str, int], dict]:
 
 
 def _build_regression_rows():
+    """Build regression rows across Buckets B, A, D, E.
+
+    Round-2 Rec 3: extends the v1 row builder (Bucket B only via
+    ``enumerate_cells()``) with cross-bucket sources so the
+    ``RegressionRow.bucket`` factor in ``regression.py`` is exercised.
+    The matching diagnostics (``leave_one_bucket_out``,
+    ``per_bucket_simple_slopes``) already support ``ALL_BUCKETS = (A, B,
+    C, D, E)``; this builder is what populates them.
+
+    Per CLAUDE.md fail-fast: any (source, target, seed) cell whose
+    predictor or verdict JSON is missing is COUNTED in the skipped
+    counter and logged, never silently dropped without a tally.
+    """
     from explore_persona_space.experiments.issue503.behaviors import (
+        A_TARGETS,
+        D_TARGETS,
+        E_TARGETS,
         SOURCE_FAMILY,
         enumerate_cells,
+    )
+    from explore_persona_space.experiments.issue503.crosslingual import (
+        enumerate_xling_cells,
     )
     from explore_persona_space.experiments.issue503.regression import RegressionRow
 
     predictors = _load_predictor_records()
     verdicts = _load_verdict_records()
     rows: list[RegressionRow] = []
-    skipped = 0
-    for cell in enumerate_cells():
-        if cell.row_kind == "install_qc":
-            continue
-        key = (cell.source, cell.target_id, cell.seed)
+    skipped_by_bucket: dict[str, int] = {"B": 0, "A": 0, "D": 0, "E": 0}
+    counted_by_bucket: dict[str, int] = {"B": 0, "A": 0, "D": 0, "E": 0}
+
+    def _try_emit(
+        *,
+        source: str,
+        target_id: str,
+        seed: int,
+        cell_type: str,
+        bucket: str,
+    ) -> None:
+        """Look up the (source, target_id, seed) records and emit a
+        RegressionRow if both exist. Idempotent — duplicate emits are
+        prevented by deduping on key inside the caller.
+        """
+        key = (source, target_id, seed)
         pred = predictors.get(key)
         verd = verdicts.get(key)
         if pred is None or verd is None or "k" not in verd:
-            skipped += 1
-            continue
+            skipped_by_bucket[bucket] += 1
+            return
         cosine_mean = float(pred["cosine"]["mean"])
         cosine_ts = pred.get("cosine_topic_stripped", {}).get("mean")
-        family = SOURCE_FAMILY.get(cell.source, "unknown")
+        family = SOURCE_FAMILY.get(source, "unknown")
         median_tokens = float(verd.get("median_tokens", 100.0))
         rows.append(
             RegressionRow(
-                source=cell.source,
-                target=cell.target_id,
-                seed=cell.seed,
-                cell_type=cell.cell_type,
+                source=source,
+                target=target_id,
+                seed=seed,
+                cell_type=cell_type,  # type: ignore[arg-type]
                 family=family,
                 k=int(verd["k"]),
                 n=int(verd["n"]),
@@ -139,9 +169,98 @@ def _build_regression_rows():
                 js_sliced_on_target=pred.get("js_sliced_on_target"),
                 js_sliced_off_target=pred.get("js_sliced_off_target"),
                 kl_secondary_dv=verd.get("kl_secondary_dv"),
+                bucket=bucket,  # type: ignore[arg-type]
             )
         )
-    logger.info("Built %d off-diagonal rows (skipped %d missing)", len(rows), skipped)
+        counted_by_bucket[bucket] += 1
+
+    # Bucket B (default): the v1 (source × narrow + broad targets) matrix.
+    for cell in enumerate_cells():
+        if cell.row_kind == "install_qc":
+            continue
+        # Bucket C is the broad → broad sub-panel within enumerate_cells;
+        # tag it 'C' for the regression's bucket factor. (NB: regression.py
+        # doc-string treats "C" as a cell_type filter, but the bucket
+        # factor is the load-bearing knob.)
+        bucket = "C" if cell.cell_type == "B_to_B" else "B"
+        _try_emit(
+            source=cell.source,
+            target_id=cell.target_id,
+            seed=cell.seed,
+            cell_type=cell.cell_type,
+            bucket=bucket,
+        )
+
+    # Bucket A — cross-lingual (plan v2 §4.2).
+    # Each xling cell has its own (source, target) pairing per
+    # XlingCell.source_language / target_language. The dispatcher writes
+    # predictors+verdicts using A_TARGETS' target_ids, so we enumerate by
+    # target_id and let the seed loop fill in the rows.
+    a_target_ids = [t.target_id for t in A_TARGETS]
+    seen_a: set[tuple[str, str, int]] = set()
+    for xling_cell, seed in enumerate_xling_cells():
+        # The "source" in the predictor record is the xling source's
+        # adapter cell id, e.g. issue235_xling_en_es. We use the
+        # xling_cell.cell_id as the source label for the regression.
+        src = f"xling_{xling_cell.cell_id}"  # e.g. xling_A1 / xling_A2
+        for tid in a_target_ids:
+            # A1' is the discriminator; only the matching A1' target_id
+            # should be paired with that cell. For A1 and A2 we pair with
+            # their respective xling_es / xling_it targets.
+            key = (src, tid, seed)
+            if key in seen_a:
+                continue
+            seen_a.add(key)
+            _try_emit(
+                source=src,
+                target_id=tid,
+                seed=seed,
+                cell_type="N_to_B_syco",  # Bucket A targets are sycophancy
+                bucket="A",
+            )
+
+    # Bucket D — benign-data → AdvBench (plan v2 §4.5). 5 selectors × 3
+    # seeds = 15 rows; one target id (D_advbench).
+    benign_selectors = ("D0_random", "D1_representation", "D2_gradient", "D3_cosine", "D4_format")
+    benign_seeds = (0, 42, 137)
+    for sel in benign_selectors:
+        for seed in benign_seeds:
+            for d_tgt in D_TARGETS:
+                _try_emit(
+                    source=sel,
+                    target_id=d_tgt.target_id,
+                    seed=seed,
+                    cell_type="N_to_B_EM",  # AdvBench harmful is broad-EM-like
+                    bucket="D",
+                )
+
+    # Bucket E — orthogonal non-transfer (plan v2 §4.6). 3 cells × 2 seeds
+    # = 6 rows. Each E target carries its own source identity via
+    # NonTransferTarget.source — we pair them up directly.
+    e_seeds = (0, 137)
+    for e_tgt in E_TARGETS:
+        for seed in e_seeds:
+            _try_emit(
+                source=e_tgt.source,
+                target_id=e_tgt.target_id,
+                seed=seed,
+                cell_type="N_to_N",  # E judges share T1/T2 panels
+                bucket="E",
+            )
+
+    logger.info(
+        "Built %d off-diagonal rows across buckets (B=%d / A=%d / D=%d / E=%d; "
+        "skipped B=%d / A=%d / D=%d / E=%d)",
+        len(rows),
+        counted_by_bucket["B"],
+        counted_by_bucket["A"],
+        counted_by_bucket["D"],
+        counted_by_bucket["E"],
+        skipped_by_bucket["B"],
+        skipped_by_bucket["A"],
+        skipped_by_bucket["D"],
+        skipped_by_bucket["E"],
+    )
     return rows
 
 
@@ -168,8 +287,10 @@ def main() -> int:
         fdr_bh,
         fit_binomial_mixed,
         headline_h4_verdict,
+        leave_one_bucket_out,
         leave_one_family_out,
         partial_spearman_ladder,
+        per_bucket_simple_slopes,
         spearman_rho,
     )
 
@@ -199,6 +320,15 @@ def main() -> int:
 
     # Leave-one-family-out.
     result["leave_one_family_out"] = leave_one_family_out(rows)
+
+    # Round-2 Rec 3: cross-bucket diagnostics. Plan v2 §17 + the round-1
+    # critic-merged concern ("cross-bucket pooling dominated by Bucket B")
+    # require both leave-one-bucket-out ρ and per-bucket simple slopes so
+    # the headline is verifiable as a single-bucket vs cross-spectrum
+    # claim. Empty dicts if all rows fall in one bucket (mono-bucket
+    # sweeps).
+    result["leave_one_bucket_out"] = leave_one_bucket_out(rows)
+    result["per_bucket_simple_slopes"] = per_bucket_simple_slopes(rows)
 
     # FDR-BH over 3 strata.
     p_values = [per_stratum_rho[s]["p_value"] for s in PRE_REG_HEADLINE_STRATA]
