@@ -15,6 +15,9 @@ set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
+# Reduce CUDA allocator fragmentation under vLLM prompt_logprobs at
+# max_model_len=32768 (post-OOM patch 2026-06-06).
+export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 
 LOG_DIR=logs/issue_501
 SENTINEL_DIR=/workspace/logs
