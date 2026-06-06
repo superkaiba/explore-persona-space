@@ -1,0 +1,13 @@
+{
+  "k": 1,
+  "n": 4,
+  "rate": 0.25,
+  "n_errors": 0,
+  "n_static_positive": 0,
+  "median_tokens": 32.0,
+  "truncation_rate": 0.0,
+  "kl_secondary_dv": null,
+  "judge_id": "t1_medical",
+  "judge_model": "claude-sonnet-4-5",
+  "smoke_fixture": true
+}

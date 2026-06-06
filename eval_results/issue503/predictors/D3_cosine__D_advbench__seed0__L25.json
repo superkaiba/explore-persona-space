@@ -1,0 +1,1 @@
+{"source": "D3_cosine", "target_id": "D_advbench", "seed": 0, "layer": 25, "cosine": {"mean": 0.42, "std": 0.01, "per_draw": [0.42, 0.42], "n_draws": 2}, "lexical_persona_cosine": 0.3, "base_rate": 0.1, "smoke_fixture": true}

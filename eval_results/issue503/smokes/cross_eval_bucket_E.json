@@ -14,8 +14,8 @@
   "smoke_kind": "cpu_only_dispatch_check",
   "vllm_real_run_expected_on_pod": true,
   "reproducibility": {
-    "git_sha": "e77a648ab015b06735517fb3ee44dd266a2897ee",
-    "timestamp": "2026-06-06T02:12:21.158332+00:00",
+    "git_sha": "877588c5698d45773a4e2992b6434364bf021004",
+    "timestamp": "2026-06-06T02:45:46.832674+00:00",
     "python": "3.11.15"
   }
 }

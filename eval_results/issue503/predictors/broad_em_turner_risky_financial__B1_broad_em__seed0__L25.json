@@ -1,0 +1,1 @@
+{"source": "broad_em_turner_risky_financial", "target_id": "B1_broad_em", "seed": 0, "layer": 25, "cosine": {"mean": 0.5}, "lexical_persona_cosine": 0.3, "base_rate": 0.1}

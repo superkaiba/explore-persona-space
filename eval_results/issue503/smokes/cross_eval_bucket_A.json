@@ -1,21 +1,21 @@
 {
   "smoke_name": "cross_eval_bucket_A",
   "bucket": "A",
-  "source": "xling_en_es_seed0",
+  "source": "xling_A1",
   "target_id": "A1_es_syco",
   "seed": 0,
   "n_prompts_staged": 4,
   "judge_model": "claude-sonnet-4-5",
   "judge_id": "b2_broad_syco",
   "panel_dataset": "xling_es_panel",
-  "completions_path": "eval_results/issue503/cross_eval/xling_en_es_seed0_seed0/A1_es_syco.completions.jsonl",
-  "verdict_path": "eval_results/issue503/cross_eval/xling_en_es_seed0_seed0/A1_es_syco.verdict.json",
-  "predictor_path": "eval_results/issue503/predictors/xling_en_es_seed0__A1_es_syco__seed0__L25.json",
+  "completions_path": "eval_results/issue503/cross_eval/xling_A1_seed0/A1_es_syco.completions.jsonl",
+  "verdict_path": "eval_results/issue503/cross_eval/xling_A1_seed0/A1_es_syco.verdict.json",
+  "predictor_path": "eval_results/issue503/predictors/xling_A1__A1_es_syco__seed0__L25.json",
   "smoke_kind": "cpu_only_dispatch_check",
   "vllm_real_run_expected_on_pod": true,
   "reproducibility": {
-    "git_sha": "e77a648ab015b06735517fb3ee44dd266a2897ee",
-    "timestamp": "2026-06-06T02:12:15.414639+00:00",
+    "git_sha": "877588c5698d45773a4e2992b6434364bf021004",
+    "timestamp": "2026-06-06T02:45:44.673097+00:00",
     "python": "3.11.15"
   }
 }

@@ -55,13 +55,33 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 def _bucket_smoke_cell(bucket: str) -> tuple[str, str, str]:
     """Return (source, target_id, source_label_for_dispatcher) for the
     smoke of one bucket.
+
+    Round-3 Rec-3.5: the canonical source key per bucket matches what
+    scripts/issue503_regression.py:_build_regression_rows() emits, so
+    a staged smoke artifact (predictor + verdict files keyed on the
+    same source) is consumable by the regression row builder without
+    a downstream key-rename. Mismatched keys mean: even with Rec-3.1
+    patched, an A/D smoke artifact wouldn't feed the row builder.
+
+    Canonical keys (matched by the row builder):
+    - Bucket A: ``xling_{cell_id}`` (e.g. ``xling_A1`` / ``xling_A2``) —
+      see issue503_regression.py:_build_regression_rows line ~214
+      ``src = f"xling_{xling_cell.cell_id}"``.
+    - Bucket D: bare selector id (e.g. ``D3_cosine``) — see
+      issue503_regression.py:_build_regression_rows line ~233
+      ``benign_selectors = ("D0_random", "D1_representation", ...)``.
+    - Bucket E: bare source adapter name (e.g. ``secure_code``) — see
+      issue503_regression.py:_build_regression_rows line ~253
+      ``source=e_tgt.source``.
     """
     if bucket == "A":
-        # Bucket A: pick A1_es_syco; source label is a synthetic xling cell.
-        return ("xling_en_es_seed0", "A1_es_syco", "xling_A1")
+        # Bucket A: pick A1_es_syco; source label is the cell-id-based
+        # ``xling_A1`` key the regression row builder emits.
+        return ("xling_A1", "A1_es_syco", "xling_A1")
     if bucket == "D":
-        # Bucket D: pick D_advbench; source is the D3 selector at seed 0.
-        return ("D3_cosine_seed0", "D_advbench", "D3_cosine")
+        # Bucket D: pick D_advbench; source is the BARE D3 selector id
+        # (no _seed{N} suffix) per the regression row builder.
+        return ("D3_cosine", "D_advbench", "D3_cosine")
     if bucket == "E":
         # Bucket E: pick T1_medical_E (synthetic id; reuses T1 judge).
         return ("secure_code", "T1_medical_E", "secure_code")
