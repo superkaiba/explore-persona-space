@@ -632,6 +632,85 @@ def materialize_panel(panel_id: str) -> Path:
     return out_path
 
 
+# Round-5 launch-failure fix: missing-upstream-data deviation contract.
+#
+# Some panels depend on multi-step upstream prep (turner_medical_heldout
+# requires fetch_or_generate_issue404_medical.py, emergent_plus_legal_heldout
+# requires issue458_prep_datasets.py). On a fresh worktree/pod those prep
+# steps may not have run; the round-4 launch crashed on the first such
+# panel and killed all 13. Under --panel all we now record the failure as
+# a deviation and continue; under explicit --panel <id> the failure is
+# fatal (the caller asked for that specific panel).
+#
+# Per CLAUDE.md "Fail fast — never hide failures": this is NOT
+# fault-silencing. The deviation is logged, summarized at exit, written
+# to disk as a structured JSON next to the panels dir, AND counted in
+# the exit-code policy: rc=0 iff at least one panel materialized AND
+# (when --panel <id> was explicit) the requested panel materialized.
+def _panel_deviation_record(panel_id: str, exc: Exception) -> dict:
+    """Build a structured deviation record for one failed panel."""
+    return {
+        "panel_id": panel_id,
+        "exception_type": type(exc).__name__,
+        "message": str(exc)[:500],
+        "recommended_fix": _recommended_fix_for(panel_id),
+    }
+
+
+def _recommended_fix_for(panel_id: str) -> str:
+    """Per-panel resolution hint surfaced in the deviation log."""
+    if panel_id == "turner_medical_heldout":
+        return (
+            "Run scripts/fetch_or_generate_issue404_medical.py first "
+            "(requires TURNER_EDS_PASSWORD env or Anthropic credit for "
+            "Claude regen) to materialize "
+            "data/issue404/turner_bad_medical_advice.jsonl."
+        )
+    if panel_id == "emergent_plus_legal_heldout":
+        return (
+            "Run scripts/issue458_prep_datasets.py --pair emergent_plus_legal "
+            "to materialize data/issue404/emergent_plus_legal.jsonl."
+        )
+    if panel_id in (
+        "secure_code_heldout",
+        "educational_heldout",
+        "evil_numbers_heldout",
+    ):
+        return (
+            "Re-run; the underlying #458 dataset auto-downloads from a public "
+            "GitHub raw URL via ensure_dataset() — a transient network blip "
+            "is the likely cause."
+        )
+    if panel_id == "advbench_harmful_520":
+        return (
+            "Re-run; the AdvBench panel fetches from the canonical "
+            "llm-attacks/llm-attacks GitHub raw URL — transient network or "
+            "GitHub outage is the likely cause."
+        )
+    if panel_id in (
+        "xling_es_panel",
+        "xling_it_panel",
+        "broad_syco_wrong_claims_heldout",
+        "educational_heldout_general",
+        "evil_numbers_numeric_panel",
+    ):
+        return (
+            "Verify ANTHROPIC_API_KEY is set and Anthropic API is reachable; "
+            "this panel is Claude-generated and will fail without credentials."
+        )
+    if panel_id == "betley_main_8":
+        return (
+            "Re-run; the Betley main-8 panel fetches from emergent-misalignment "
+            "GitHub raw URLs — transient network is the likely cause."
+        )
+    if panel_id == "bigcode_codereq_heldout":
+        return (
+            "This panel is curated in-source and should never fail. "
+            "Investigate the exception above."
+        )
+    return "No specific hint registered for this panel id."
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__.split("\n")[0],
@@ -642,9 +721,20 @@ def main() -> int:
         default="all",
         help="Panel id or 'all' (default 'all').",
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help=(
+            "Rebuild panels even if their JSONL already exists on disk. "
+            "Default is skip-if-exists (saves Claude tokens on re-runs)."
+        ),
+    )
     args = parser.parse_args()
 
-    if args.panel == "all":
+    explicit_panel = args.panel != "all"
+    if explicit_panel:
+        panels = [args.panel]
+    else:
         # Source the list from eval_panels.PANEL_SIZES so any new panel
         # declared in the library is automatically materialized; new
         # panels added without a matching materialize_panel() branch will
@@ -654,11 +744,100 @@ def main() -> int:
         from explore_persona_space.experiments.issue503.eval_panels import PANEL_SIZES
 
         panels = list(PANEL_SIZES.keys())
-    else:
-        panels = [args.panel]
+
+    materialized: list[str] = []
+    deviations: list[dict] = []
+    skipped_already_present: list[str] = []
+    out_dir = _eval_panel_dir()
 
     for p in panels:
-        materialize_panel(p)
+        # Idempotency: skip panels with a non-empty existing JSONL unless
+        # --rebuild. Re-running --panel all should not burn ~$5 of Claude
+        # tokens on already-materialized panels.
+        existing = out_dir / f"{p}.jsonl"
+        if existing.exists() and existing.stat().st_size > 0 and not args.rebuild:
+            logger.info(
+                "Panel %r already materialized at %s; skipping (use --rebuild to force)",
+                p,
+                existing,
+            )
+            skipped_already_present.append(p)
+            materialized.append(p)
+            continue
+        try:
+            materialize_panel(p)
+            materialized.append(p)
+        except FileNotFoundError as exc:
+            # Missing upstream dataset (most common: turner_*, emergent_plus_*).
+            # Under --panel all: log + continue. Under --panel <id>: re-raise
+            # so the caller sees the FileNotFoundError they explicitly asked
+            # to surface.
+            if explicit_panel:
+                raise
+            logger.error(
+                "Panel %r SKIPPED (missing upstream): %s | Fix: %s",
+                p,
+                str(exc).split("\n", 1)[0][:200],
+                _recommended_fix_for(p),
+            )
+            deviations.append(_panel_deviation_record(p, exc))
+        except Exception as exc:
+            # Generator-level failures (Claude API errors, network blips,
+            # JSON parse failures, etc). Under --panel all: record and
+            # continue, since one transient failure shouldn't kill 13
+            # panels. Under --panel <id>: re-raise.
+            if explicit_panel:
+                raise
+            logger.exception(
+                "Panel %r SKIPPED (generator exception): %s | Fix: %s",
+                p,
+                str(exc).split("\n", 1)[0][:200],
+                _recommended_fix_for(p),
+            )
+            deviations.append(_panel_deviation_record(p, exc))
+
+    # Persist + summarize.
+    summary = {
+        "materialized": materialized,
+        "skipped_already_present": skipped_already_present,
+        "deviations": deviations,
+        "requested": panels,
+        "explicit_panel": explicit_panel,
+    }
+    summary_path = out_dir / "_materialize_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2))
+
+    logger.info(
+        "=" * 60 + "\nmaterialize summary: %d/%d panels materialized "
+        "(%d already on disk, %d freshly generated), "
+        "%d deviations recorded\nartifacts: %s\n" + "=" * 60,
+        len(materialized),
+        len(panels),
+        len(skipped_already_present),
+        len(materialized) - len(skipped_already_present),
+        len(deviations),
+        summary_path,
+    )
+    if deviations:
+        logger.warning("Deviations:")
+        for dev in deviations:
+            logger.warning(
+                "  - %s: %s (%s) → Fix: %s",
+                dev["panel_id"],
+                dev["exception_type"],
+                dev["message"].split("\n", 1)[0][:150],
+                dev["recommended_fix"],
+            )
+
+    # Exit-code policy:
+    #   - explicit --panel <id>: any failure already re-raised above; if we
+    #     got here, that one panel materialized → rc=0.
+    #   - --panel all: rc=0 iff at least one panel materialized. rc=1 iff
+    #     ALL panels failed (catastrophic) — that's a real "the pipeline
+    #     is dead" signal worth aborting on.
+    if not materialized:
+        logger.error("No panels materialized; exiting with rc=1.")
+        return 1
     return 0
 
 

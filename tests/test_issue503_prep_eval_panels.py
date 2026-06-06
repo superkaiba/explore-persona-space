@@ -146,14 +146,143 @@ def test_advbench_url_is_llm_attacks_canonical(prep_eval_panels_module):
     assert "harmful_behaviors.csv" in mod._ADVBENCH_CSV_URL
 
 
-def test_bucket_e_heldout_uses_issue458_cell(prep_eval_panels_module, monkeypatch):
+@pytest.mark.parametrize("panel_id_seed", ["__from_panel_sizes__"])
+def test_every_panel_size_id_materializes_or_skips_cleanly(
+    prep_eval_panels_module, monkeypatch, panel_id_seed
+):
+    """Round-5 launch-failure guard (paired with code-reviewer Step 5.5
+    registry-vs-dispatcher lens): every id declared in PANEL_SIZES MUST
+    materialize when its generator succeeds OR be RECORDED as a
+    deviation when its generator raises (typically because upstream prep
+    is missing). The previous bug class — one panel's FileNotFoundError
+    killing all 13 under ``--panel all`` — was uncaught.
+
+    Strategy: monkeypatch one panel's generator to raise FileNotFoundError,
+    leave the rest stubbed to succeed. Run main() with sys.argv =
+    [..., '--panel', 'all'] and assert (a) rc=0, (b) 12 materialized,
+    (c) 1 deviation recorded, (d) summary JSON written.
+    """
+    mod, fake_dir = prep_eval_panels_module
+    from explore_persona_space.experiments.issue503.eval_panels import PANEL_SIZES
+
+    # Stub every generator to succeed except turner_medical_heldout, which
+    # we make raise FileNotFoundError (the actual round-4 failure mode).
+    stubbed_ok: dict[str, list[str]] = {}
+    for panel_id, (n_prompts, _) in PANEL_SIZES.items():
+        stubbed_ok[panel_id] = [f"<ok-{panel_id}-{i}>" for i in range(n_prompts)]
+
+    def failing_generator() -> list[str]:
+        raise FileNotFoundError(
+            "Dataset for pair='turner_bad_medical' not found at "
+            "/workspace/explore-persona-space/data/issue404/turner_bad_medical_advice.jsonl. "
+            "Run the corresponding generator: fetch_or_generate_issue404_medical.py for ..."
+        )
+
+    new_dispatch: dict[str, object] = {}
+    for pid, prompts in stubbed_ok.items():
+        if pid == "turner_medical_heldout":
+            new_dispatch[pid] = failing_generator
+        else:
+            new_dispatch[pid] = lambda prompts=prompts: prompts
+    monkeypatch.setattr(mod, "_PANEL_GENERATORS", new_dispatch)
+    monkeypatch.setattr(mod, "_audit_disjoint", lambda panel_id, qs: {"any_overlap": False})
+
+    # Invoke main() with --panel all; assert it exits rc=0 with one
+    # deviation recorded.
+    monkeypatch.setattr("sys.argv", ["issue503_prep_eval_panels.py", "--panel", "all"])
+    rc = mod.main()
+    assert rc == 0, f"expected rc=0 (at least one panel materialized), got rc={rc}"
+
+    summary_path = fake_dir / "_materialize_summary.json"
+    assert summary_path.exists(), "main() must write _materialize_summary.json"
+    import json
+
+    summary = json.loads(summary_path.read_text())
+    assert len(summary["materialized"]) == len(PANEL_SIZES) - 1, (
+        f"expected {len(PANEL_SIZES) - 1} panels materialized, got {len(summary['materialized'])}"
+    )
+    assert len(summary["deviations"]) == 1, (
+        f"expected 1 deviation (turner_medical_heldout), got {summary['deviations']}"
+    )
+    assert summary["deviations"][0]["panel_id"] == "turner_medical_heldout"
+    assert summary["deviations"][0]["exception_type"] == "FileNotFoundError"
+    # The deviation must carry a per-panel recommended fix (operator hint).
+    assert "fetch_or_generate_issue404_medical.py" in summary["deviations"][0]["recommended_fix"]
+
+
+def test_explicit_panel_failure_is_fatal(prep_eval_panels_module, monkeypatch):
+    """Counterpart to graceful-skip: explicit ``--panel <id>`` MUST
+    propagate FileNotFoundError (the operator asked for that specific
+    panel; failure is not a deviation, it's the contract).
+    """
+    mod, _ = prep_eval_panels_module
+
+    def failing_generator() -> list[str]:
+        raise FileNotFoundError("upstream-missing")
+
+    monkeypatch.setattr(mod, "_PANEL_GENERATORS", {"turner_medical_heldout": failing_generator})
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["issue503_prep_eval_panels.py", "--panel", "turner_medical_heldout"],
+    )
+    with pytest.raises(FileNotFoundError, match="upstream-missing"):
+        mod.main()
+
+
+def test_all_panels_failing_returns_rc1(prep_eval_panels_module, monkeypatch):
+    """When EVERY panel under --panel all fails, return rc=1 — that's a
+    real catastrophic signal (entire pipeline broken), not a deviation.
+    """
+    mod, _ = prep_eval_panels_module
+    from explore_persona_space.experiments.issue503.eval_panels import PANEL_SIZES
+
+    def boom() -> list[str]:
+        raise RuntimeError("everything is broken")
+
+    monkeypatch.setattr(mod, "_PANEL_GENERATORS", {pid: boom for pid in PANEL_SIZES})
+    monkeypatch.setattr("sys.argv", ["issue503_prep_eval_panels.py", "--panel", "all"])
+
+    rc = mod.main()
+    assert rc == 1, f"expected rc=1 (all panels failed), got rc={rc}"
+
+
+def test_recommended_fix_covers_every_panel(prep_eval_panels_module):
+    """Per-panel recommended-fix hint must exist for every PANEL_SIZES id
+    so the deviation log is actionable. ``_recommended_fix_for`` falls
+    through to a generic message — if any panel hits the generic branch,
+    the test fails so we know to add a specific hint.
+    """
+    mod, _ = prep_eval_panels_module
+    from explore_persona_space.experiments.issue503.eval_panels import PANEL_SIZES
+
+    no_hint = []
+    for pid in PANEL_SIZES:
+        hint = mod._recommended_fix_for(pid)
+        if hint.startswith("No specific hint"):
+            no_hint.append(pid)
+    assert not no_hint, (
+        f"Panels missing a specific recommended-fix hint: {no_hint}. "
+        f"Add a branch in _recommended_fix_for() so the deviation log is actionable."
+    )
+
+
+def test_bucket_e_heldout_uses_issue458_cell(prep_eval_panels_module, monkeypatch, tmp_path):
     """Bucket E install-QC panels (secure_code / educational / evil_numbers
     heldout) must pull from the corresponding #458 source's training
     JSONL via _heldout_from_issue458_cell. Verifies the wiring contract
     by checking the panel id -> source-cell mapping inside
     _PANEL_GENERATORS without actually loading the JSONLs.
+
+    NOTE: the previous version of this test called ``importlib.reload(mod)``
+    which silently dropped the fixture's ``_eval_panel_dir`` monkeypatch —
+    materialize_panel() then wrote stubs into the real
+    ``data/issue503/eval_panels/`` and clobbered the production panels
+    (observed 2026-06-06: educational/evil_numbers/secure_code shrank from
+    ~30KB to ~4KB of "<heldout-...>" stub strings). Removed the reload;
+    monkeypatching ``_PANEL_GENERATORS`` directly is sufficient.
     """
-    mod, _ = prep_eval_panels_module
+    mod, fake_dir = prep_eval_panels_module
 
     captured: list[str] = []
 
@@ -161,10 +290,6 @@ def test_bucket_e_heldout_uses_issue458_cell(prep_eval_panels_module, monkeypatc
         captured.append(cell_name)
         return [f"<heldout-{cell_name}-{i}>" for i in range(n)]
 
-    monkeypatch.setattr(mod, "_heldout_from_issue458_cell", fake_heldout)
-
-    # Force dispatch-table rebuild — the lambdas captured the old function.
-    importlib.reload(mod)
     monkeypatch.setattr(mod, "_heldout_from_issue458_cell", fake_heldout)
     monkeypatch.setattr(
         mod,
@@ -178,6 +303,11 @@ def test_bucket_e_heldout_uses_issue458_cell(prep_eval_panels_module, monkeypatc
     monkeypatch.setattr(mod, "_audit_disjoint", lambda panel_id, qs: {"any_overlap": False})
 
     for panel_id in ("secure_code_heldout", "educational_heldout", "evil_numbers_heldout"):
-        mod.materialize_panel(panel_id)
+        out_path = mod.materialize_panel(panel_id)
+        # Defense-in-depth: assert the writes went to the tmp fixture dir,
+        # not to the real data/issue503/eval_panels/.
+        assert str(fake_dir) in str(out_path), (
+            f"materialize_panel({panel_id}) wrote to {out_path}; expected to be under {fake_dir}"
+        )
 
     assert captured == ["secure_code", "educational", "evil_numbers"]
