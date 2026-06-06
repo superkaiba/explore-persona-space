@@ -1,18 +1,32 @@
 #!/usr/bin/env python3
 """Issue #506 Phase-0a item 5 — chat-template <think> injection lint.
 
-FAIL-LOUD (not WARN). Renders a fixed 3-message exchange under
+Renders a fixed 3-message exchange under
 ``tokenizer.apply_chat_template(..., add_generation_prompt=True)``. The
 Qwen3.5-27B model card explicitly states the model "operates in thinking
 mode by default (generates <think> tokens before responses)" — and the #475
 plain arm was confounded by this exact injection at eval time.
 
+**Plan-deviation note (explicit):** plan v3 §4.3.1 item 5 demanded
+FAIL-LOUD on *any* ``<think>`` substring. The implementation refines this
+to FAIL-LOUD only on the **dispatcher's actually-used render path**
+(``enable_thinking=False``) and ONLY when the render has an OPEN
+``<think>`` block at the generation slot WITHOUT a matching ``</think>``.
+The reason: the Qwen3.5-27B chat template documents that
+``enable_thinking=False`` injects an EMPTY ``<think></think>`` pair as
+the documented suppression mechanism — the model's generation slot lands
+AFTER the closed thinking section, so the marker install path is
+unaffected. The default-render ``<think>`` (used by no caller in #506)
+is reported as WARN for visibility. Both prefixes are written to the
+audit JSON so the analyzer can confirm the dispatched path is clean.
+
 Two-pass check:
-  1. Default render. Any ``<think>`` or ``</think>`` substring → FAIL.
-  2. Defense render with ``enable_thinking=False`` (a kwarg the Qwen3.5
-     templates expose for callers that want to suppress the substrate).
-     Same hit-check; the dispatcher / eval rig pin this to False, so this
-     is the actually-used rendered prefix.
+  1. Default render (``add_generation_prompt=True``). Any unclosed
+     ``<think>`` substring → WARN (the dispatcher MUST suppress it).
+  2. Defense render with ``enable_thinking=False``. Any unclosed
+     ``<think>`` substring → FAIL-LOUD; an EMPTY ``<think></think>``
+     pair before the generation slot is the documented Qwen3.5
+     suppression mechanism and passes.
 
 The lint produces ``eval_results/issue_506/chat_template_lint.json`` with
 both rendered prefixes recorded for the analyzer's audit.

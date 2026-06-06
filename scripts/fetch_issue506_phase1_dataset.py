@@ -45,6 +45,12 @@ HUB_TRAIN_PATH = "issue475_cot_install/datasets/plain/train.jsonl"
 # (verified via huggingface_hub.list_repo_files).
 HUB_EVAL_QUESTIONS_PATH = "issue475_cot_install/_seed/eval_questions.json"
 
+# Round-1 implementation verified the materialized train.jsonl byte-identity
+# (6000 rows). Hardcode the expected SHA256 as the DEFAULT — the audit is
+# always-on; ``--expected-sha256 <SHA>`` overrides for an intentional replan
+# (e.g. when the #475 dataset is regenerated upstream).
+EXPECTED_TRAIN_SHA256 = "4bb6292d52e16c2941c477907c004f3989dd71b0de85eaf1f19a3ce7e686955c"
+
 
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -62,8 +68,13 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--expected-sha256",
         type=str,
-        default=None,
-        help="Optional SHA256 of train.jsonl to assert against; logs and fails on mismatch.",
+        default=EXPECTED_TRAIN_SHA256,
+        help=(
+            "SHA256 of train.jsonl to assert against. Defaults to the round-1-verified "
+            "byte-identity digest; override only for an intentional replan that regenerates "
+            "the upstream #475 plain-arm dataset. Pass ``--expected-sha256 SKIP`` to "
+            "explicitly bypass the assertion (caller takes responsibility for drift)."
+        ),
     )
     p.add_argument(
         "--skip-eval-questions",
@@ -105,7 +116,7 @@ def main() -> int:
     train_local = _fetch_one(hub_filename=HUB_TRAIN_PATH, local_path=PHASE1_DATA_PATH)
     actual_sha = _sha256(train_local)
     print(f"train.jsonl sha256 = {actual_sha}")
-    if args.expected_sha256:
+    if args.expected_sha256 and args.expected_sha256.upper() != "SKIP":
         if actual_sha != args.expected_sha256:
             print(
                 f"FAIL: train.jsonl sha256 mismatch.\n"
@@ -115,6 +126,8 @@ def main() -> int:
             )
             return 1
         print("OK: train.jsonl matches expected SHA256.")
+    else:
+        print("WARN: SHA256 assertion explicitly skipped via --expected-sha256 SKIP")
 
     n_rows = sum(1 for ln in train_local.read_text().splitlines() if ln.strip())
     print(f"OK: train.jsonl loaded; n_rows = {n_rows}")
