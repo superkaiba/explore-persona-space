@@ -2876,8 +2876,8 @@
       "goal": "Test whether each contrastive negative provides localized leakage protection: does removing one negative (holding total negative row-mass fixed) raise held-out marker leakage specifically for bystander personas similar to the dropped negative, rather than uniformly?",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/505",
-      "status": "running",
+      "path": "tasks/blocked/505",
+      "status": "blocked",
       "title": "Leave-one-out contrastive negative: does dropping one negative (row-mass fixed) raise leakage locally for bystanders similar to it?"
     },
     "506": {
