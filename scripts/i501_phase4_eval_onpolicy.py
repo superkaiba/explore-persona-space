@@ -204,55 +204,288 @@ def _extract_marker_logp_and_argmax(
     return logps, argmax_marker
 
 
-def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float) -> int:
-    """CPU/local smoke: 2 #489 source cids × 1 MT target × 2 Q × 2 samples,
-    no LoRA, no vLLM. Writes placeholder per-cell payloads with real
-    delta_g + length keys so Phase 5 can be exercised on CPU.
+def _run_cell_eval(
+    *,
+    llm,
+    tokenizer,
+    gen_sp,
+    probe_sp,
+    cid_i: str,
+    mt_cid: str,
+    frac: float,
+    seed: int,
+    n_samples: int,
+    entries: list[tuple[int, int, str]],
+    n_conversations: int,
+    lora_req,
+    cell_path: Path,
+    git_sha: str,
+    ts0: str,
+    extra_meta: dict | None = None,
+) -> dict:
+    """PASS A (on-policy generation under adapter_i) + PASS B (teacher-forced
+    log P(' ※') trained − base) on a single (cid_i, mt_cid) cell.
+
+    ``entries`` is the cached list ``[(conv_idx, probe_qi, prompt_text), ...]``
+    for the target context. ``lora_req`` is the vLLM ``LoRARequest`` for
+    ``cid_i`` at ``frac``. Writes the per-cell payload to ``cell_path``
+    atomically (``.json.tmp`` → replace) and returns the in-memory payload.
+
+    Shared between the production sweep and the smoke path so they execute
+    the SAME code (plan v2 §4.5 unification). The smoke entry point passes
+    tiny ``entries`` and ``n_samples`` to keep wall-time bounded.
     """
+    cell_label = f"{cid_i}->{mt_cid} frac={frac:.2f}"
+    t_cell = time.time()
+
+    # PASS A: on-policy generation under adapter_i.
+    prompts_text = [p for (_ci, _qi, p) in entries]
+    prompt_lens = [len(tokenizer.encode(p, add_special_tokens=False)) for p in prompts_text]
+    t0 = time.time()
+    gen_outs = llm.generate(prompts_text, gen_sp, lora_request=lora_req)
+    t_gen = time.time() - t0
+    assert len(gen_outs) == len(entries), (
+        f"PASS A: {len(gen_outs)} vLLM outputs for {len(entries)} prompts"
+    )
+
+    R_texts_per_row: list[list[str]] = []
+    R_lens_per_row: list[list[int]] = []
+    flat_trained_texts: list[str] = []
+    for out in gen_outs:
+        R_texts: list[str] = []
+        R_lens: list[int] = []
+        for sample in out.outputs:
+            R_texts.append(sample.text)
+            R_lens.append(len(sample.token_ids))
+            flat_trained_texts.append(sample.text)
+        assert len(R_texts) == n_samples, (
+            f"PASS A: expected {n_samples} samples per row, got {len(R_texts)}"
+        )
+        R_texts_per_row.append(R_texts)
+        R_lens_per_row.append(R_lens)
+    emission_trained = _emission_rate(flat_trained_texts, MARKER_TEXT)
+
+    # PASS B: teacher-forced log P(' ※') at post-R slot.
+    probe_payloads: list[dict] = []
+    probe_slot_positions: list[int] = []
+    row_index: list[tuple[int, int]] = []
+    for row_idx, (_ci, _qi, prompt) in enumerate(entries):
+        for k, R_text in enumerate(R_texts_per_row[row_idx]):
+            full_ids, _p_len, post_R_slot = _build_marker_probe_full_ids(tokenizer, prompt, R_text)
+            probe_payloads.append({"prompt_token_ids": full_ids})
+            probe_slot_positions.append(post_R_slot)
+            row_index.append((row_idx, k))
+
+    t0 = time.time()
+    g_outs = llm.generate(probe_payloads, probe_sp, lora_request=lora_req)
+    t_probe_g = time.time() - t0
+    g_logps_flat, g_argmax_flat = _extract_marker_logp_and_argmax(
+        g_outs, probe_slot_positions, cell_label=f"TRAINED/{cell_label}"
+    )
+
+    t0 = time.time()
+    b_outs = llm.generate(probe_payloads, probe_sp, lora_request=None)
+    t_probe_b = time.time() - t0
+    b_logps_flat, _ = _extract_marker_logp_and_argmax(
+        b_outs, probe_slot_positions, cell_label=f"BASE/{cell_label}"
+    )
+
+    n_rows = len(entries)
+    g_logps_per_row_sample: list[list[float]] = [
+        [0.0 for _ in range(n_samples)] for _ in range(n_rows)
+    ]
+    b_logps_per_row_sample: list[list[float]] = [
+        [0.0 for _ in range(n_samples)] for _ in range(n_rows)
+    ]
+    for idx, (ri, k) in enumerate(row_index):
+        g_logps_per_row_sample[ri][k] = g_logps_flat[idx]
+        b_logps_per_row_sample[ri][k] = b_logps_flat[idx]
+
+    g_arr = np.array(g_logps_flat, dtype=float)
+    b_arr = np.array(b_logps_flat, dtype=float)
+    delta = g_arr - b_arr
+    g_mean = float(g_arr.mean())
+    b_mean = float(b_arr.mean())
+    delta_mean = float(delta.mean())
+    try:
+        from scipy.stats import trim_mean
+
+        delta_trimmed = float(trim_mean(delta, 0.1))
+    except Exception:
+        delta_trimmed = delta_mean
+    argmax_marker_rate = sum(g_argmax_flat) / max(1, len(g_argmax_flat))
+
+    cell_payload = {
+        "T_i": cid_i,
+        "T_mt": mt_cid,
+        "frac": frac,
+        "seed": seed,
+        "n_q": len(entries) // max(1, n_conversations),
+        "n_samples": n_samples,
+        "n_conversations": n_conversations,
+        # Primary DV
+        "g_logprob_mean": g_mean,
+        "b_logprob_mean": b_mean,
+        "delta_g": delta_mean,
+        "delta_g_trimmed_10pct": delta_trimmed,
+        # Companion legibility anchor
+        "emission_rate_trained": emission_trained,
+        "argmax_marker_rate_trained": argmax_marker_rate,
+        # Per-row per-k log-probs
+        "g_logps_per_q_sample": g_logps_per_row_sample,
+        "b_logps_per_q_sample": b_logps_per_row_sample,
+        # Lengths
+        "prompt_lens_per_q": prompt_lens,
+        "R_lens_per_q_sample": R_lens_per_row,
+        # Audit
+        "sample_texts_first200": [[t[:200] for t in per_row] for per_row in R_texts_per_row],
+        "logp_floor": LOGP_FLOOR,
+        "elapsed_seconds": {
+            "pass_a_gen": t_gen,
+            "pass_b_trained": t_probe_g,
+            "pass_b_base": t_probe_b,
+            "cell_total": time.time() - t_cell,
+        },
+        "generated_at": ts0,
+        "git_commit": git_sha,
+    }
+    if extra_meta:
+        cell_payload.update(extra_meta)
+
+    tmp = cell_path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(cell_payload))
+    tmp.replace(cell_path)
+    logger.info(
+        "cell %s: delta_g=%.3f (g=%.3f b=%.3f) emit_trained=%.3f argmax=%.3f %.1fs",
+        cell_label,
+        delta_mean,
+        g_mean,
+        b_mean,
+        emission_trained,
+        argmax_marker_rate,
+        time.time() - t_cell,
+    )
+    return cell_payload
+
+
+def _smoke_run(tokenizer, q_held: list[str], phase0: dict, frac: float, seed: int) -> int:
+    """End-to-end tiny smoke (plan v2 §4.5 unification): 2 #489 source cids
+    (IK01, SP01) × 1 MT target (MT05) × 2 held-out Q × 2 samples = 8 generations
+    + 16 teacher-forced logprob reads. Real vLLM init, real LoRA load from HF
+    Hub, real on-policy generation, real teacher-forced marker logprob — same
+    helpers + same per-cell JSON shape the production sweep uses.
+
+    Requires GPU + HF Hub access; the VM has neither, so this must run on a
+    pod (typically via ``bash scripts/i501_run_all.sh --smoke``).
+    """
+    from vllm import LLM, SamplingParams
+    from vllm.lora.request import LoRARequest
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     PER_CELL_DIR.mkdir(parents=True, exist_ok=True)
-    logger.info("Smoke: writing placeholder per-cell payloads (no vLLM, no LoRA)")
     smoke_anchors = ["IK01", "SP01"]
     smoke_target = "MT05"
+    n_samples = 2
+    n_held_smoke = 2
+
     if smoke_target not in phase0["per_cid"]:
         raise RuntimeError(
             f"smoke needs phase0 to have built {smoke_target}; "
             "run i501_phase0_load_corpora.py --smoke first"
         )
-    q_held = q_held[:2]
-    ts = _dt.datetime.now(_dt.UTC).isoformat()
+    rows = phase0["per_cid"][smoke_target].get("rows", [])
+    if not rows:
+        raise RuntimeError(f"smoke target {smoke_target} has no phase0 rows")
+
+    q_held_smoke = q_held[:n_held_smoke]
+    # Use 1 conversation × n_held_smoke probes = n_held_smoke rows per cell.
+    smoke_rows = rows[:1]
+    entries: list[tuple[int, int, str]] = []
+    for ci, row in enumerate(smoke_rows):
+        history = tuple(row["history"])
+        for qi, q in enumerate(q_held_smoke):
+            prompt = build_mt_prompt(history, q, tokenizer)
+            entries.append((ci, qi, prompt))
+    n_conversations = len(smoke_rows)
+    logger.info(
+        "Smoke: %d source cids × %s × %d entries (conv=%d × probes=%d) × %d samples",
+        len(smoke_anchors),
+        smoke_target,
+        len(entries),
+        n_conversations,
+        n_held_smoke,
+        n_samples,
+    )
+
+    max_model_len = int(phase0.get("max_model_len_recommendation", 32768))
+    logger.info("Smoke: max_model_len=%d", max_model_len)
+
+    # Pull #489 adapters at this frac for the 2 smoke anchors.
+    adapter_paths: dict[str, str] = {}
+    for cid in smoke_anchors:
+        adapter_paths[cid] = _download_adapter(cid, seed, frac, LOCAL_ADAPTER_CACHE)
+
+    llm = LLM(
+        model=BASE_MODEL,
+        enable_lora=True,
+        max_lora_rank=16,
+        max_loras=1,
+        dtype="bfloat16",
+        gpu_memory_utilization=0.85,
+        seed=42,
+        max_model_len=max_model_len,
+        tensor_parallel_size=1,
+    )
+    gen_sp = SamplingParams(
+        n=n_samples,
+        temperature=1.0,
+        top_p=1.0,
+        max_tokens=MAX_NEW_TOKENS,
+        seed=42,
+        stop_token_ids=[tokenizer.eos_token_id, IM_END_ID],
+    )
+    probe_sp = SamplingParams(
+        n=1,
+        temperature=0.0,
+        top_p=1.0,
+        max_tokens=1,
+        prompt_logprobs=1,
+        logprobs=1,
+        seed=42,
+    )
+
     git_sha = _git_commit_hash()
-    for cid_i in smoke_anchors:
+    ts0 = _dt.datetime.now(_dt.UTC).isoformat()
+
+    for source_idx, cid_i in enumerate(smoke_anchors):
+        lora_req = LoRARequest(
+            lora_name=f"{cid_i}_frac{frac:.2f}",
+            lora_int_id=source_idx + 1,
+            lora_path=adapter_paths[cid_i],
+        )
         cell_path = PER_CELL_DIR / f"G_{cid_i}__{smoke_target}_frac{frac:.2f}.json"
-        payload = {
-            "T_i": cid_i,
-            "T_mt": smoke_target,
-            "frac": frac,
-            "seed": 42,
-            "n_q": len(q_held),
-            "n_samples": 2,
-            "n_conversations": 1,
-            "emission_rate_trained": 0.5,
-            "argmax_marker_rate_trained": 0.0,
-            "sample_texts_first200": [["Smoke sample 1 ※", "Smoke sample 2"] for _ in q_held],
-            "g_logps_per_q_sample": [[-1.0, -1.0] for _ in q_held],
-            "b_logps_per_q_sample": [[-3.0, -3.0] for _ in q_held],
-            "g_logprob_mean": -1.0,
-            "b_logprob_mean": -3.0,
-            "delta_g": 2.0,
-            "delta_g_trimmed_10pct": 2.0,
-            "prompt_lens_per_q": [500 for _ in q_held],
-            "R_lens_per_q_sample": [[100, 100] for _ in q_held],
-            "smoke": True,
-            "generated_at": ts,
-            "git_commit": git_sha,
-        }
-        cell_path.write_text(json.dumps(payload))
-        logger.info("Smoke wrote %s", cell_path)
+        _run_cell_eval(
+            llm=llm,
+            tokenizer=tokenizer,
+            gen_sp=gen_sp,
+            probe_sp=probe_sp,
+            cid_i=cid_i,
+            mt_cid=smoke_target,
+            frac=frac,
+            seed=seed,
+            n_samples=n_samples,
+            entries=entries,
+            n_conversations=n_conversations,
+            lora_req=lora_req,
+            cell_path=cell_path,
+            git_sha=git_sha,
+            ts0=ts0,
+            extra_meta={"smoke": True},
+        )
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cell
+def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
@@ -297,7 +530,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
     ap.add_argument(
         "--smoke",
         action="store_true",
-        help="CPU placeholder mode: write 2 dummy cells (IK01+SP01 × MT05).",
+        help=(
+            "End-to-end tiny mode: IK01+SP01 × MT05 × 2 probes × 2 samples = 8 generations "
+            "+ 16 teacher-forced reads, real vLLM + LoRA. Requires GPU + HF Hub access."
+        ),
     )
     args = ap.parse_args(argv)
 
@@ -323,7 +559,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
     q_held = q_test[: args.n_held_out_q]
 
     if args.smoke:
-        return _smoke_run(tokenizer, q_held, phase0, frac)
+        return _smoke_run(tokenizer, q_held, phase0, frac, args.seed)
 
     # Sharding: distribute source cids across shards.
     source_cids = list(args.source_conds) if args.source_conds is not None else list(ALL_UNION_CIDS)
@@ -416,149 +652,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 - PASS A/B per cel
             if args.resume and cell_path.exists() and cell_path.stat().st_size > 0:
                 logger.info("resume: skipping existing cell %s", cell_path.name)
                 continue
-            cell_label = f"{cid_i}->{mt_cid} frac={frac:.2f}"
-            t_cell = time.time()
-
-            # ================================================================
-            # PASS A: on-policy generation under adapter_i on the cached MT prompts.
-            # ================================================================
             entries = cached_prompts_per_target[mt_cid]
-            prompts_text = [p for (_ci, _qi, p) in entries]
-            prompt_lens = [len(tokenizer.encode(p, add_special_tokens=False)) for p in prompts_text]
-            t0 = time.time()
-            gen_outs = llm.generate(prompts_text, gen_sp, lora_request=lora_req)
-            t_gen = time.time() - t0
-            assert len(gen_outs) == len(entries), (
-                f"PASS A: {len(gen_outs)} vLLM outputs for {len(entries)} prompts"
-            )
-
-            # Collect R texts + token lengths per row.
-            R_texts_per_row: list[list[str]] = []
-            R_lens_per_row: list[list[int]] = []
-            flat_trained_texts: list[str] = []
-            for out in gen_outs:
-                R_texts: list[str] = []
-                R_lens: list[int] = []
-                for sample in out.outputs:
-                    R_texts.append(sample.text)
-                    R_lens.append(len(sample.token_ids))
-                    flat_trained_texts.append(sample.text)
-                assert len(R_texts) == args.n_samples, (
-                    f"PASS A: expected {args.n_samples} samples per row, got {len(R_texts)}"
-                )
-                R_texts_per_row.append(R_texts)
-                R_lens_per_row.append(R_lens)
-            emission_trained = _emission_rate(flat_trained_texts, MARKER_TEXT)
-
-            # ================================================================
-            # PASS B: teacher-forced log P(' ※') at post-R slot.
-            # ================================================================
-            probe_payloads: list[dict] = []
-            probe_slot_positions: list[int] = []
-            row_index: list[tuple[int, int]] = []  # (row_idx, sample_k)
-            for row_idx, (_ci, _qi, prompt) in enumerate(entries):
-                for k, R_text in enumerate(R_texts_per_row[row_idx]):
-                    full_ids, _p_len, post_R_slot = _build_marker_probe_full_ids(
-                        tokenizer, prompt, R_text
-                    )
-                    probe_payloads.append({"prompt_token_ids": full_ids})
-                    probe_slot_positions.append(post_R_slot)
-                    row_index.append((row_idx, k))
-
-            # PASS B-1: trained model (g_logp).
-            t0 = time.time()
-            g_outs = llm.generate(probe_payloads, probe_sp, lora_request=lora_req)
-            t_probe_g = time.time() - t0
-            g_logps_flat, g_argmax_flat = _extract_marker_logp_and_argmax(
-                g_outs, probe_slot_positions, cell_label=f"TRAINED/{cell_label}"
-            )
-
-            # PASS B-2: base model (b_logp).
-            t0 = time.time()
-            b_outs = llm.generate(probe_payloads, probe_sp, lora_request=None)
-            t_probe_b = time.time() - t0
-            b_logps_flat, _ = _extract_marker_logp_and_argmax(
-                b_outs, probe_slot_positions, cell_label=f"BASE/{cell_label}"
-            )
-
-            # Unflatten back to (row_idx, sample_k).
-            n_rows = len(entries)
-            g_logps_per_row_sample: list[list[float]] = [
-                [0.0 for _ in range(args.n_samples)] for _ in range(n_rows)
-            ]
-            b_logps_per_row_sample: list[list[float]] = [
-                [0.0 for _ in range(args.n_samples)] for _ in range(n_rows)
-            ]
-            for idx, (ri, k) in enumerate(row_index):
-                g_logps_per_row_sample[ri][k] = g_logps_flat[idx]
-                b_logps_per_row_sample[ri][k] = b_logps_flat[idx]
-
-            g_arr = np.array(g_logps_flat, dtype=float)
-            b_arr = np.array(b_logps_flat, dtype=float)
-            delta = g_arr - b_arr
-            g_mean = float(g_arr.mean())
-            b_mean = float(b_arr.mean())
-            delta_mean = float(delta.mean())
-            try:
-                from scipy.stats import trim_mean
-
-                delta_trimmed = float(trim_mean(delta, 0.1))
-            except Exception:
-                delta_trimmed = delta_mean
-            argmax_marker_rate = sum(g_argmax_flat) / max(1, len(g_argmax_flat))
-
-            # n_conversations comes from phase 0 (rows = 5 by default).
             n_conversations = len(per_cid_payload[mt_cid]["rows"])
-            # We're using args.n_held_out_q probes; the rows are conv × probe.
-            # n_q in the schema matches #489 → number of distinct probe Qs.
-            cell_payload = {
-                "T_i": cid_i,
-                "T_mt": mt_cid,
-                "frac": frac,
-                "seed": args.seed,
-                "n_q": len(q_held),
-                "n_samples": args.n_samples,
-                "n_conversations": n_conversations,
-                # ─ Primary DV ─
-                "g_logprob_mean": g_mean,
-                "b_logprob_mean": b_mean,
-                "delta_g": delta_mean,
-                "delta_g_trimmed_10pct": delta_trimmed,
-                # ─ Companion legibility anchor ─
-                "emission_rate_trained": emission_trained,
-                "argmax_marker_rate_trained": argmax_marker_rate,
-                # ─ Per-row per-k log-probs ─
-                "g_logps_per_q_sample": g_logps_per_row_sample,
-                "b_logps_per_q_sample": b_logps_per_row_sample,
-                # ─ Lengths ─
-                "prompt_lens_per_q": prompt_lens,
-                "R_lens_per_q_sample": R_lens_per_row,
-                # ─ Audit ─
-                "sample_texts_first200": [
-                    [t[:200] for t in per_row] for per_row in R_texts_per_row
-                ],
-                "logp_floor": LOGP_FLOOR,
-                "elapsed_seconds": {
-                    "pass_a_gen": t_gen,
-                    "pass_b_trained": t_probe_g,
-                    "pass_b_base": t_probe_b,
-                    "cell_total": time.time() - t_cell,
-                },
-                "generated_at": ts0,
-                "git_commit": git_sha,
-            }
-            tmp = cell_path.with_suffix(".json.tmp")
-            tmp.write_text(json.dumps(cell_payload))
-            tmp.replace(cell_path)
-            logger.info(
-                "cell %s: delta_g=%.3f (g=%.3f b=%.3f) emit_trained=%.3f argmax=%.3f %.1fs",
-                cell_label,
-                delta_mean,
-                g_mean,
-                b_mean,
-                emission_trained,
-                argmax_marker_rate,
-                time.time() - t_cell,
+            _run_cell_eval(
+                llm=llm,
+                tokenizer=tokenizer,
+                gen_sp=gen_sp,
+                probe_sp=probe_sp,
+                cid_i=cid_i,
+                mt_cid=mt_cid,
+                frac=frac,
+                seed=args.seed,
+                n_samples=args.n_samples,
+                entries=entries,
+                n_conversations=n_conversations,
+                lora_req=lora_req,
+                cell_path=cell_path,
+                git_sha=git_sha,
+                ts0=ts0,
             )
 
     return 0
