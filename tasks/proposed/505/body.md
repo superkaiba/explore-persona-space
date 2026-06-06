@@ -10,6 +10,8 @@ goal: 'Test whether each contrastive negative provides localized leakage protect
   does removing one negative (holding total negative row-mass fixed) raise held-out
   marker leakage specifically for bystander personas similar to the dropped negative,
   rather than uniformly?'
+relates_to:
+- leak-contrastive-negatives
 ---
 ## Goal
 
