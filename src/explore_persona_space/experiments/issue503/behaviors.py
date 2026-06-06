@@ -109,6 +109,206 @@ BROAD_TARGETS: tuple[BroadTarget, ...] = (
 )
 
 
+# ── Plan v2 §4.2 + §4.5: Buckets A / D / E target objects ──────────────────
+# Round-2 reconciler Rec 1: define dataclass-shaped target objects so the
+# cross-eval dispatcher (Rec 2) and regression row builder (Rec 3) can
+# enumerate Bucket A / D / E targets the same way they enumerate Bucket B's
+# NARROW_TARGETS / BROAD_TARGETS. Without these, the v1 scaffolding never
+# joined the executable cross-eval / regression path (round-1 FAIL).
+
+# Bucket A — cross-lingual sycophancy (plan v2 §4.2). Three target ids:
+# A1 (Spanish sycophancy), A1' (Spanish honest-correction, MF-4
+# discriminator), A2 (Italian sycophancy). Judges already route in
+# judges.py:870 — these objects feed the dispatcher.
+XlingTargetId = Literal["A1_es_syco", "A1_prime_es_honest_correction", "A2_it_syco"]
+
+
+@dataclass(frozen=True)
+class XlingTarget:
+    target_id: XlingTargetId
+    short: str
+    judge_id: str  # all three route to b2_broad_syco judge per judges.py:887
+    panel_dataset: str
+    target_language: Literal["es", "it"]
+    is_discriminator: bool  # True for A1', the MF-4 discriminator cell
+    n_verdicts: int  # n per cell-seed (plan §4.2: 50 prompts × 10 rollouts = 500)
+
+
+A_TARGETS: tuple[XlingTarget, ...] = (
+    XlingTarget(
+        target_id="A1_es_syco",
+        short="es-sycophancy",
+        judge_id="b2_broad_syco",
+        panel_dataset="xling_es_panel",
+        target_language="es",
+        is_discriminator=False,
+        n_verdicts=500,
+    ),
+    XlingTarget(
+        target_id="A1_prime_es_honest_correction",
+        short="es-honest-correction (MF-4 discriminator)",
+        judge_id="b2_broad_syco",
+        panel_dataset="xling_es_panel",
+        target_language="es",
+        is_discriminator=True,
+        n_verdicts=500,
+    ),
+    XlingTarget(
+        target_id="A2_it_syco",
+        short="it-sycophancy",
+        judge_id="b2_broad_syco",
+        panel_dataset="xling_it_panel",
+        target_language="it",
+        is_discriminator=False,
+        n_verdicts=500,
+    ),
+)
+
+
+# Bucket D — benign-data → AdvBench harmful (plan v2 §4.5). One target id
+# (D_advbench); the bucket's variation lives in 5 selectors × 3 seeds = 15
+# adapter-level rows on the SOURCE side, all evaluated on the SAME target.
+AdvBenchTargetId = Literal["D_advbench"]
+
+
+@dataclass(frozen=True)
+class BenignDataTarget:
+    """Bucket D's single AdvBench harmfulness target.
+
+    The 15 adapter-level rows = 5 selectors × 3 seeds (D0/D1/D2/D3/D4 ×
+    seeds 0/42/137) all evaluate on the SAME AdvBench 520-prompt panel.
+    The (source, target) cross product is 15 × 1 = 15 rows; bucket D
+    contributes 15 cells to the cross-bucket regression.
+    """
+
+    target_id: AdvBenchTargetId
+    short: str
+    judge_id: str
+    panel_dataset: str
+    n_verdicts: int  # 520 prompts × 1 rollout default per AdvBench convention
+
+
+D_TARGETS: tuple[BenignDataTarget, ...] = (
+    BenignDataTarget(
+        target_id="D_advbench",
+        short="AdvBench harmful (Zou et al. 520-prompt panel)",
+        judge_id="d_advbench",
+        panel_dataset="advbench_harmful_520",
+        n_verdicts=520,
+    ),
+)
+
+
+# Bucket E — orthogonal non-transfer (plan v2 §4.6). Reuses the 3 narrow
+# T1/T2/T3 judges; the panel + source pairing is the bucket's identity.
+# Because each E cell has its own (source, target) shape from
+# nontransfer.NON_TRANSFER_CELLS, the "target" for the dispatcher is the
+# narrow target T1/T2/T3 already in NARROW_TARGETS — what makes the cell
+# Bucket-E is the SOURCE adapter chosen (secure_code / educational /
+# evil_numbers). We expose a thin wrapper so the dispatcher knows to tag
+# the row's bucket="E" without re-resolving the judge.
+NonTransferTargetId = Literal["T1_medical_E", "T2_code_E", "T1_medical_E_alt"]
+
+
+@dataclass(frozen=True)
+class NonTransferTarget:
+    """Bucket E cell — same judges as NARROW_TARGETS, but bucket-tagged 'E'.
+
+    The cell_id pins which (source, target) pair this row represents; the
+    judge_id (= the narrow target's judge_id) and panel_dataset are
+    carried from NARROW_TARGETS by name.
+    """
+
+    target_id: NonTransferTargetId  # synthetic id for the dispatcher
+    cell_id: Literal["E1", "E2", "E3"]
+    source: str  # the SOURCE adapter that makes this Bucket E
+    narrow_target_id: Literal["T1_medical", "T2_code", "T3_legal"]
+    short: str
+    judge_id: str
+    panel_dataset: str
+    n_verdicts: int
+
+
+# E1/E2/E3 mirror nontransfer.NON_TRANSFER_CELLS; the n_verdicts is
+# 50 × 10 = 500 (turner_medical_heldout) for T1 and 30 × 10 = 300
+# (bigcode_codereq_heldout) for T2 — see eval_panels.PANEL_SIZES.
+E_TARGETS: tuple[NonTransferTarget, ...] = (
+    NonTransferTarget(
+        target_id="T1_medical_E",
+        cell_id="E1",
+        source="secure_code",
+        narrow_target_id="T1_medical",
+        short="E1 = secure_code → T1_medical (non-transfer baseline)",
+        judge_id="t1_medical",
+        panel_dataset="turner_medical_heldout",
+        n_verdicts=500,
+    ),
+    NonTransferTarget(
+        target_id="T2_code_E",
+        cell_id="E2",
+        source="educational",
+        narrow_target_id="T2_code",
+        short="E2 = educational → T2_code (non-transfer baseline)",
+        judge_id="t2_code",
+        panel_dataset="bigcode_codereq_heldout",
+        n_verdicts=300,
+    ),
+    NonTransferTarget(
+        target_id="T1_medical_E_alt",
+        cell_id="E3",
+        source="evil_numbers",
+        narrow_target_id="T1_medical",
+        short="E3 = evil_numbers → T1_medical (non-transfer baseline)",
+        judge_id="t1_medical",
+        panel_dataset="turner_medical_heldout",
+        n_verdicts=500,
+    ),
+)
+
+
+# Convenience: any-target type used by the cross-eval dispatcher when it
+# enumerates across buckets.
+AnyTarget = NarrowTarget | BroadTarget | XlingTarget | BenignDataTarget | NonTransferTarget
+
+
+def target_bucket(target_id: str) -> Literal["A", "B", "C", "D", "E"]:
+    """Return the regression bucket for a given target_id (plan v2 §17).
+
+    Bucket A = Xling targets (A1 / A1' / A2).
+    Bucket B = the original NarrowTarget + BroadTarget matrix (T1/T2/T3 +
+               B1/B2). Bucket B is also the default the legacy
+               cross-eval dispatcher emitted when only NARROW + BROAD were
+               threaded.
+    Bucket C = broad → broad (descriptive only); same target ids as B
+               BroadTargets — Bucket C is a cell_type filter, not a
+               separate target. Returned as "B" here; the regression row
+               builder applies the cell_type=="B_to_B" override to tag C.
+    Bucket D = AdvBench harmful target (D_advbench).
+    Bucket E = the 3 narrow targets BUT with bucket override applied by
+               the dispatcher when the source is one of E_TARGETS' sources
+               (secure_code / educational / evil_numbers paired with the
+               matching narrow target). Returned as "B" here for safety;
+               the dispatcher must explicitly tag E rows.
+
+    The function fails loud on unknown ids — consistent with CLAUDE.md
+    "Fail fast — never hide failures".
+    """
+    if target_id in {t.target_id for t in A_TARGETS}:
+        return "A"
+    if target_id in {t.target_id for t in D_TARGETS}:
+        return "D"
+    if target_id in {t.target_id for t in NARROW_TARGETS}:
+        return "B"
+    if target_id in {t.target_id for t in BROAD_TARGETS}:
+        return "B"
+    if target_id in {t.target_id for t in E_TARGETS}:
+        return "E"
+    known = sorted(
+        t.target_id for t in (A_TARGETS + D_TARGETS + NARROW_TARGETS + BROAD_TARGETS + E_TARGETS)
+    )
+    raise ValueError(f"target_bucket: unknown target_id={target_id!r}. Expected one of: {known}")
+
+
 # ── Broad source pool (§3.2.2): 2 axes × 2 seeds = 4 adapters ──────────────
 
 BROAD_SOURCES: tuple[str, ...] = (
