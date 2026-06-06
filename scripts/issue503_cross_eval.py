@@ -56,7 +56,18 @@ logger = logging.getLogger("issue503_cross_eval")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 DEFAULT_BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
-ALL_TARGETS = ("T1_medical", "T2_code", "T3_legal", "B1_broad_em", "B2_broad_syco")
+# Bucket B targets (the v1 default — narrow + broad).
+B_TARGETS_IDS = ("T1_medical", "T2_code", "T3_legal", "B1_broad_em", "B2_broad_syco")
+# Bucket A targets (plan v2 §4.2 cross-lingual).
+A_TARGETS_IDS = ("A1_es_syco", "A1_prime_es_honest_correction", "A2_it_syco")
+# Bucket D target (plan v2 §4.5 benign-data → AdvBench).
+D_TARGETS_IDS = ("D_advbench",)
+# Bucket E "synthetic" target ids (plan v2 §4.6 non-transfer; share T1/T2
+# judges but bucket-tagged 'E'). Round-2 Rec 1 introduced these.
+E_TARGETS_IDS = ("T1_medical_E", "T2_code_E", "T1_medical_E_alt")
+# Round-2 Rec 2: all targets across buckets A/B/D/E. ``--bucket`` selects a
+# subset; ``--targets`` overrides explicitly.
+ALL_TARGETS = B_TARGETS_IDS + A_TARGETS_IDS + D_TARGETS_IDS + E_TARGETS_IDS
 
 
 def main() -> int:
@@ -87,7 +98,24 @@ def main() -> int:
         "--targets",
         nargs="+",
         default=None,
-        help=f"Subset of targets to score (default: all 5: {', '.join(ALL_TARGETS)}).",
+        help=(
+            f"Subset of targets to score. "
+            f"Bucket B (default): {', '.join(B_TARGETS_IDS)}. "
+            f"Bucket A: {', '.join(A_TARGETS_IDS)}. "
+            f"Bucket D: {', '.join(D_TARGETS_IDS)}. "
+            f"Bucket E (synthetic ids; uses T1/T2 judges with E source adapters): "
+            f"{', '.join(E_TARGETS_IDS)}."
+        ),
+    )
+    parser.add_argument(
+        "--bucket",
+        choices=("A", "B", "D", "E"),
+        default=None,
+        help=(
+            "Round-2 Rec 2 shorthand: enumerate all targets in a single bucket. "
+            "Mutually-exclusive with --targets (if both are given, --targets wins). "
+            "Bucket B = the v1 default narrow + broad target matrix."
+        ),
     )
     parser.add_argument(
         "--max-prompts",
@@ -129,7 +157,10 @@ def main() -> int:
     args = parser.parse_args()
 
     from explore_persona_space.experiments.issue503.behaviors import (
+        A_TARGETS,
         BROAD_TARGETS,
+        D_TARGETS,
+        E_TARGETS,
         NARROW_TARGETS,
     )
     from explore_persona_space.experiments.issue503.cross_eval import (
@@ -139,14 +170,35 @@ def main() -> int:
         score_completions_for_source,
     )
 
-    all_target_objs = list(NARROW_TARGETS) + list(BROAD_TARGETS)
+    # Round-2 Rec 2: include Bucket A/D/E targets in the enumerable pool,
+    # not just Bucket B. ``--bucket A|D|E`` is the shorthand that picks one
+    # bucket end-to-end; ``--targets <ids>`` is the explicit override that
+    # crosses buckets if needed.
+    all_target_objs = (
+        list(NARROW_TARGETS)
+        + list(BROAD_TARGETS)
+        + list(A_TARGETS)
+        + list(D_TARGETS)
+        + list(E_TARGETS)
+    )
     if args.targets:
         target_objs = tuple(t for t in all_target_objs if t.target_id in args.targets)
         if len(target_objs) != len(args.targets):
             missing = set(args.targets) - {t.target_id for t in target_objs}
             raise ValueError(f"unknown target ids: {missing}")
+    elif args.bucket is not None:
+        if args.bucket == "A":
+            target_objs = tuple(A_TARGETS)
+        elif args.bucket == "B":
+            target_objs = tuple(list(NARROW_TARGETS) + list(BROAD_TARGETS))
+        elif args.bucket == "D":
+            target_objs = tuple(D_TARGETS)
+        else:  # E
+            target_objs = tuple(E_TARGETS)
     else:
-        target_objs = tuple(all_target_objs)
+        # No --targets, no --bucket: keep the v1 Bucket-B default for
+        # back-compat. Smokes for A/D/E must pass --bucket explicitly.
+        target_objs = tuple(list(NARROW_TARGETS) + list(BROAD_TARGETS))
 
     # Resolve adapter path. If --adapter-path is an HF repo id, download.
     adapter_path = args.adapter_path

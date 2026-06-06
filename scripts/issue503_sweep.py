@@ -100,6 +100,20 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
         help="Skip the vLLM cross-eval phase (assume completions already written).",
     )
     parser.add_argument(
+        "--bucket",
+        choices=("A", "B", "D", "E"),
+        default=None,
+        help=(
+            "Round-2 Rec 2: forward --bucket A|B|D|E down to the cross_eval "
+            "subprocess so the per-source enumeration in cross_eval uses the "
+            "right Bucket's targets when this sweep was invoked without an "
+            "explicit --targets list. The dispatch still groups cells by "
+            "(source, seed); the bucket only affects the cross_eval's "
+            "fallback target list when --cells/--all-cells did not name "
+            "Bucket-A/D/E target ids explicitly."
+        ),
+    )
+    parser.add_argument(
         "--skip-kl",
         action="store_true",
         help=(
@@ -189,6 +203,8 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
                 # sweep level (smoke parity bug).
                 if args.skip_kl:
                     cmd += ["--skip-kl"]
+                if args.bucket is not None:
+                    cmd += ["--bucket", args.bucket]
                 subprocess.run(cmd, env=env, check=True, cwd=PROJECT_ROOT)
 
     # Phase 2: predictor extraction per cell. Base-model forward only;

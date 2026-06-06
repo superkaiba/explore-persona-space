@@ -808,10 +808,18 @@ def judge_for_target(target_id: str) -> tuple[Callable, str]:
     so a new target added without router wiring crashes loudly instead
     of silently routing to the wrong judge model.
     """
+    # Round-2 Rec 1+2: Bucket E synthetic target ids reuse the same narrow
+    # T1/T2 judges; the source identity is what bucket-tags the row 'E' in
+    # the regression. The dispatcher distinguishes B vs E via the bucket
+    # tag, not the judge.
     narrow_to_judge: dict[str, str] = {
         "T1_medical": "t1_medical",
         "T2_code": "t2_code",
         "T3_legal": "t3_legal",
+        # Bucket E synthetic ids — reuse the narrow judges (Rec 1).
+        "T1_medical_E": "t1_medical",
+        "T2_code_E": "t2_code",
+        "T1_medical_E_alt": "t1_medical",
     }
     if target_id in narrow_to_judge:
         judge_id = narrow_to_judge[target_id]
@@ -951,7 +959,8 @@ def judge_for_target(target_id: str) -> tuple[Callable, str]:
         f"judge_for_target: unknown target_id={target_id!r}. "
         f"Expected one of T1_medical / T2_code / T3_legal / B1_broad_em / "
         f"B2_broad_syco / A1_es_syco / A1_prime_es_honest_correction / "
-        f"A2_it_syco / D_advbench."
+        f"A2_it_syco / D_advbench / T1_medical_E / T2_code_E / "
+        f"T1_medical_E_alt."
     )
 
 

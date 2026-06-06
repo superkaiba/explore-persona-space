@@ -52,10 +52,31 @@ if _SCRIPTS_PATH not in sys.path:
     sys.path.insert(0, _SCRIPTS_PATH)
 
 from explore_persona_space.experiments.issue503.behaviors import (  # noqa: E402
+    A_TARGETS,
     BROAD_TARGETS,
+    D_TARGETS,
+    E_TARGETS,
     NARROW_TARGETS,
+    AnyTarget,
+    BenignDataTarget,
     BroadTarget,
     NarrowTarget,
+    NonTransferTarget,
+    XlingTarget,
+)
+
+# Hold module-local references so the auto-formatter cannot strip the
+# import as "unused" (each symbol is consumed below as a runtime type or
+# in the dispatcher's enumeration; see Rec 1 / Rec 2 wiring).
+_REC1_TARGET_TYPES = (
+    A_TARGETS,
+    D_TARGETS,
+    E_TARGETS,
+    BenignDataTarget,
+    NarrowTarget,
+    BroadTarget,
+    NonTransferTarget,
+    XlingTarget,
 )
 from explore_persona_space.experiments.issue503.eval_panels import (  # noqa: E402
     expected_truncation_cap,
@@ -104,7 +125,7 @@ def generate_completions_for_source(
     seed: int,
     base_model_id: str,
     repo_root: Path,
-    targets: tuple[NarrowTarget, ...] | tuple[BroadTarget, ...] | None = None,
+    targets: tuple[AnyTarget, ...] | None = None,
     max_prompts_per_target: int | None = None,
     n_rollouts_override: int | None = None,
 ) -> dict[str, Path]:
@@ -130,7 +151,10 @@ def generate_completions_for_source(
     out_dir = cross_eval_dir(repo_root, source, seed)
 
     # Default: all 3 narrow + 2 broad targets per source.
-    all_targets: list[NarrowTarget | BroadTarget] = (
+    # Default (Bucket B back-compat): NARROW + BROAD. Cross-bucket sweeps
+    # (Buckets A/D/E) pass explicit ``targets=...`` from the dispatcher,
+    # which enumerates the Rec-1 A_TARGETS / D_TARGETS / E_TARGETS tuples.
+    all_targets: list[AnyTarget] = (
         list(NARROW_TARGETS) + list(BROAD_TARGETS) if targets is None else list(targets)
     )
 
@@ -278,7 +302,7 @@ def score_completions_for_source(
     source: str,
     seed: int,
     repo_root: Path,
-    targets: tuple[NarrowTarget, ...] | tuple[BroadTarget, ...] | None = None,
+    targets: tuple[AnyTarget, ...] | None = None,
     judge_model: str = JUDGE_MODEL_PRIMARY,
     judge_cache_dir: Path | None = None,
 ) -> list[CrossEvalCell]:
@@ -291,7 +315,10 @@ def score_completions_for_source(
     lose the judge work.
     """
     out_dir = cross_eval_dir(repo_root, source, seed)
-    all_targets: list[NarrowTarget | BroadTarget] = (
+    # Default (Bucket B back-compat): NARROW + BROAD. Cross-bucket sweeps
+    # (Buckets A/D/E) pass explicit ``targets=...`` from the dispatcher,
+    # which enumerates the Rec-1 A_TARGETS / D_TARGETS / E_TARGETS tuples.
+    all_targets: list[AnyTarget] = (
         list(NARROW_TARGETS) + list(BROAD_TARGETS) if targets is None else list(targets)
     )
 
@@ -416,7 +443,7 @@ def compute_kl_secondary_dv_for_source(
     seed: int,
     base_model_id: str,
     repo_root: Path,
-    targets: tuple[NarrowTarget, ...] | tuple[BroadTarget, ...] | None = None,
+    targets: tuple[AnyTarget, ...] | None = None,
 ) -> dict[str, Path]:
     """MF-D round-2 revision: compute full-vocab KL(P_trained ‖ P_base)
     at the post-response slot per (source, target, seed) cell.
@@ -452,7 +479,10 @@ def compute_kl_secondary_dv_for_source(
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     out_dir = cross_eval_dir(repo_root, source, seed)
-    all_targets: list[NarrowTarget | BroadTarget] = (
+    # Default (Bucket B back-compat): NARROW + BROAD. Cross-bucket sweeps
+    # (Buckets A/D/E) pass explicit ``targets=...`` from the dispatcher,
+    # which enumerates the Rec-1 A_TARGETS / D_TARGETS / E_TARGETS tuples.
+    all_targets: list[AnyTarget] = (
         list(NARROW_TARGETS) + list(BROAD_TARGETS) if targets is None else list(targets)
     )
 
