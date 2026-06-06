@@ -1,6 +1,7 @@
 ---
-title: Do in-context-example contexts give a cosine predictor of marker transfer (activation
-  read after the ICL examples + user question)?
+title: Across 24 ICL- and system-prompt contexts, base-model cosine similarity and
+  output JS divergence predict the LoRA's post-response log-prob shift equally well,
+  but the marker never actually emits on-policy in any of 1728 cells (LOW confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer
