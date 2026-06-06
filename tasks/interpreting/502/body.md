@@ -7,8 +7,16 @@ tags: []
 created_at: '2026-06-05T17:36:31Z'
 has_clean_result: true
 parent_id: 493
+goal: 'Re-run #493''s extraction-point x metric x layer bake-off at all 28 residual-stream
+  layers and 500 probes (vs 8 / 50 in the parent), with the next-token JS output-distribution
+  baseline added back in, to see whether the parent''s ''competing metrics converge,
+  no clear winner'' verdict survives the larger sweep.'
 ---
 # A residual-stream divergence at layer 22 of the last prompt token predicts marker-leakage transfer across persona pairs at Spearman ρ = −0.79 on 240 ordered pairs (MODERATE confidence)
+
+## Goal
+
+Re-run #493's extraction-point x metric x layer bake-off at all 28 residual-stream layers and 500 probes (vs 8 / 50 in the parent), with the next-token JS output-distribution baseline added back in, to see whether the parent's 'competing metrics converge, no clear winner' verdict survives the larger sweep.
 
 <!-- clean-result-v2 -->
 
