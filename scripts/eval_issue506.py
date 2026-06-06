@@ -83,6 +83,15 @@ MAX_NEW_TOKENS = 2048  # plan §6.1 + marker-leakage rule ≥ 2× longest traine
 LOGPROB_BATCH_SIZE = 8
 
 
+# WANDB_INTENTIONALLY_DISABLED: eval-only script (no TrainingArguments / SFTConfig /
+# TrainLoraConfig); metrics persist to eval_results/issue_506/<arm>/<ckpt>/
+# run_summary.json + raw_completions.json + per-cell logprob/KL files + HF data
+# repo. WandB live-training-metric rule (code-style.md) targets training-config
+# builders under src/explore_persona_space/experiments/ — this script is eval-
+# only and outside that scope; the per-cell JSON artifacts ARE the durable
+# record. (Per workflow_lint.py:469-475 scope rationale.)
+
+
 # ── Question pool ──────────────────────────────────────────────────────────
 
 
@@ -145,12 +154,15 @@ def _build_cells(eval_questions: list[str], *, smoke: bool = False) -> dict[str,
             {"system": doctor, "user": _trig(q), "persona_key": "medical_doctor", "trigger": True}
             for q in t_qs[:neg_doctor_slice]
         ],
+        # Plan §7 line 381: "Default-assistant-no-key cell (NEG_default_other)"
+        # — DEFAULT assistant, NO trigger key. Tests for bleed of the install
+        # into the default cell (open-q 3.7 safety target).
         "NEG_default_other": [
             {
                 "system": asst,
-                "user": _trig(q),
+                "user": q,
                 "persona_key": DEFAULT_ASSISTANT_KEY,
-                "trigger": True,
+                "trigger": False,
             }
             for q in neg_default_qs
         ],
