@@ -32,7 +32,11 @@ _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
-from workflow_lint import check_asks, check_script_references  # noqa: E402
+from workflow_lint import (  # noqa: E402
+    check_asks,
+    check_script_references,
+    check_wandb_required,
+)
 
 from explore_persona_space.workflow import load_workflow_yaml  # noqa: E402
 
@@ -317,4 +321,154 @@ def test_check_script_refs_repo_tree_is_clean():
     assert errors == [], (
         "committed .claude/ agents/skills reference scripts that do not "
         "exist under scripts/:\n" + "\n".join(errors)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_wandb_required`` (task #496 post-mortem). Each
+# case writes a tiny .py file under ``tmp_path`` that mimics a
+# trainer-config call site and calls
+# ``check_wandb_required(experiments_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+_TRAINER_HEADER = "from explore_persona_space.train.sft import TrainLoraConfig, train_lora\n"
+
+
+def test_check_wandb_required_fail_bare_report_to_none(tmp_path):
+    """FAIL — `report_to="none"` inside a TrainLoraConfig call site with
+    no waiver comment. This is the exact #496 anti-pattern."""
+    pkg = tmp_path / "warmth_sycophancy_496"
+    pkg.mkdir()
+    (pkg / "train_one_cell.py").write_text(
+        _TRAINER_HEADER + 'cfg = TrainLoraConfig(\n    run_name="x",\n    report_to="none",\n)\n'
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+    assert "report_to" in errors[0]
+    assert "WANDB_INTENTIONALLY_DISABLED" in errors[0]
+    assert "train_one_cell.py:4" in errors[0]
+
+
+def test_check_wandb_required_fail_report_to_none_literal(tmp_path):
+    """FAIL — `report_to=None` (Python None, not the string) also
+    disables WandB and must carry a waiver."""
+    pkg = tmp_path / "exp_a"
+    pkg.mkdir()
+    (pkg / "train.py").write_text(
+        _TRAINER_HEADER + "cfg = TrainLoraConfig(\n    report_to=None,\n)\n"
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+
+
+def test_check_wandb_required_fail_report_to_empty_list(tmp_path):
+    """FAIL — `report_to=[]` is the HuggingFace-canonical "send nowhere"
+    value and must carry a waiver too."""
+    pkg = tmp_path / "exp_b"
+    pkg.mkdir()
+    (pkg / "train.py").write_text(
+        _TRAINER_HEADER + "cfg = TrainLoraConfig(\n    report_to=[],\n)\n"
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+
+
+def test_check_wandb_required_pass_waiver_same_line(tmp_path):
+    """PASS — waiver comment on the same line as the kwarg."""
+    pkg = tmp_path / "exp_c"
+    pkg.mkdir()
+    (pkg / "train.py").write_text(
+        _TRAINER_HEADER
+        + "cfg = TrainLoraConfig(\n"
+        + '    report_to="none",  # WANDB_INTENTIONALLY_DISABLED: smoke-only run\n'
+        + ")\n"
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_wandb_required_pass_waiver_line_above(tmp_path):
+    """PASS — waiver comment on the immediately preceding non-blank line."""
+    pkg = tmp_path / "exp_d"
+    pkg.mkdir()
+    (pkg / "train.py").write_text(
+        _TRAINER_HEADER
+        + "cfg = TrainLoraConfig(\n"
+        + "    # WANDB_INTENTIONALLY_DISABLED: deterministic replay rig\n"
+        + '    report_to="none",\n'
+        + ")\n"
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_wandb_required_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — waiver present but reason after the colon is below the
+    ≥10-char minimum (token-shaped bypass)."""
+    pkg = tmp_path / "exp_e"
+    pkg.mkdir()
+    (pkg / "train.py").write_text(
+        _TRAINER_HEADER
+        + 'cfg = TrainLoraConfig(\n    report_to="none",  # WANDB_INTENTIONALLY_DISABLED: x\n)\n'
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert len(errors) == 1, f"expected 1 error, got: {errors}"
+
+
+def test_check_wandb_required_skips_file_without_trainer_config(tmp_path):
+    """PASS — a file that does not mention any trainer-config builder
+    (e.g. an eval-only or analyzer module) is skipped even if it carries
+    a bare `report_to="none"` literal in a docstring or comment example."""
+    pkg = tmp_path / "exp_f"
+    pkg.mkdir()
+    (pkg / "analyze.py").write_text(
+        '"""Pure analyzer module."""\n'
+        '# Example trainer config: cfg = SomeConfig(report_to="none")\n'
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert errors == [], f"expected PASS (no trainer-config builder), got: {errors}"
+
+
+def test_check_wandb_required_passthrough_default_does_not_match(tmp_path):
+    """PASS — `report_to: str = "wandb"` (the POSITIVE default in a
+    passthrough kwarg signature, e.g. contrastive_neg_geometry_472's
+    `train_cell.py:355`) must NOT trigger the lint. The regex is
+    pinned to disabling literals only."""
+    pkg = tmp_path / "exp_g"
+    pkg.mkdir()
+    (pkg / "train_cell.py").write_text(
+        _TRAINER_HEADER
+        + 'def build(\n    report_to: str = "wandb",\n) -> TrainLoraConfig:\n'
+        + "    return TrainLoraConfig(report_to=report_to)\n"
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert errors == [], f"expected PASS (positive default), got: {errors}"
+
+
+def test_check_wandb_required_ternary_with_wandb_branch_does_not_match(tmp_path):
+    """PASS — `report_to="wandb" if wandb_project else "none"` (the
+    factor_screen_365 conditional shape) puts the disabling literal on
+    the FALSE branch, not directly after `report_to=`. The regex is
+    anchored to `report_to=` immediately followed by the disabling
+    value, so this should not match."""
+    pkg = tmp_path / "exp_h"
+    pkg.mkdir()
+    (pkg / "training.py").write_text(
+        _TRAINER_HEADER
+        + 'cfg = TrainLoraConfig(\n    report_to="wandb" if wandb_project else "none",\n)\n'
+    )
+    errors = check_wandb_required(experiments_dir=tmp_path)
+    assert errors == [], f"expected PASS (ternary with wandb branch), got: {errors}"
+
+
+def test_check_wandb_required_repo_tree_is_clean():
+    """The committed src/explore_persona_space/experiments/ tree must
+    carry no un-waived WandB-disabled training-config builders. This is
+    the regression guard the durable fix installs."""
+    errors = check_wandb_required()
+    assert errors == [], (
+        "src/explore_persona_space/experiments/ has un-waived WandB-disabled "
+        "trainer-config builders (CLAUDE.md 'Upload Policy' violation, "
+        "#496 class):\n" + "\n".join(errors)
     )

@@ -22,6 +22,17 @@ Behaviours:
   exist under ``scripts/``. Mechanically prevents the dead-tool /
   invented-tool failure class where an agent follows a step that runs a
   deleted-or-never-created helper and CalledProcessErrors.
+* ``--check-wandb-required``: walk every ``*.py`` under
+  ``src/explore_persona_space/experiments/`` whose source mentions a
+  trainer-config builder (``TrainLoraConfig``, ``SFTConfig``,
+  ``TrainingArguments``) and FAIL on any ``report_to="none"`` /
+  ``report_to=None`` / ``report_to=[]`` literal that is not waived by a
+  ``# WANDB_INTENTIONALLY_DISABLED: <reason>`` comment on the same line
+  or the immediately preceding non-blank line. Closes the gap that hid
+  task #496's missing live-training telemetry (12 cells trained with
+  ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
+  all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
+  mandatory for training; this lint enforces it mechanically.
 
 Exit codes:
 
@@ -70,6 +81,39 @@ STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 # Word-boundary-anchored on the left so `my_scripts/foo.py` (a different
 # path) doesn't match; the leading `scripts/` segment must stand alone.
 SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
+
+# `--check-wandb-required`: every `report_to="none"` (or equivalent
+# disabling literal: `report_to=None`, `report_to=[]`) inside a training-
+# config builder under `src/explore_persona_space/experiments/` MUST
+# carry a waiver comment. CLAUDE.md "Upload Policy" treats WandB live
+# training metrics as a mandatory artifact; this check makes the gap
+# detectable at lint time, not after a 12-cell run completes (#496).
+#
+# Waiver convention: a comment of the form
+#
+#     # WANDB_INTENTIONALLY_DISABLED: <reason>
+#
+# on the same line as the `report_to=` token, OR on the immediately
+# preceding non-blank line. The reason must be ≥10 chars after the colon
+# (the goal is "force the implementer to justify it in writing", not
+# "tick a box with WANDB_INTENTIONALLY_DISABLED: x"). Eval-only call
+# sites and tests are out of scope by directory.
+WANDB_DISABLED_RE = re.compile(
+    r"\breport_to\s*=\s*(?:[\"']none[\"']|[\"']None[\"']|None\b|\[\s*\])"
+)
+WANDB_WAIVER_RE = re.compile(r"#\s*WANDB_INTENTIONALLY_DISABLED\s*:\s*(.+?)\s*$")
+WANDB_WAIVER_MIN_REASON_CHARS = 10
+# Trainer-config builders that exist solely to launch live training; a
+# `report_to="none"` literal in the same file as one of these names is
+# almost always a hardcoded telemetry kill (the warmth-sycophancy #496
+# pattern). Files lacking any of these are skipped — they're either pure
+# eval rigs, data-prep utilities, or analyzers, where WandB is not
+# expected.
+WANDB_TRAINER_CONFIG_TOKENS: tuple[str, ...] = (
+    "TrainLoraConfig",
+    "SFTConfig",
+    "TrainingArguments",
+)
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -356,6 +400,114 @@ def check_script_references(
     return errors
 
 
+def _iter_wandb_required_files(experiments_dir: Path) -> list[Path]:
+    """Return every ``*.py`` under ``experiments_dir`` whose source
+    mentions one of :data:`WANDB_TRAINER_CONFIG_TOKENS`. Skipping files
+    that lack a trainer-config builder keeps the check focused on live-
+    training launches and out of pure-eval / data-prep modules."""
+    if not experiments_dir.exists():
+        return []
+    files: list[Path] = []
+    for py in sorted(experiments_dir.rglob("*.py")):
+        text = py.read_text(encoding="utf-8")
+        if any(tok in text for tok in WANDB_TRAINER_CONFIG_TOKENS):
+            files.append(py)
+    return files
+
+
+def _wandb_waiver_present(lines: list[str], idx: int) -> bool:
+    """Return True iff a properly-shaped ``# WANDB_INTENTIONALLY_DISABLED:
+    <reason>`` waiver covers the ``report_to=`` literal at line index
+    ``idx``. Accepts:
+
+    * Same-line trailing comment (``report_to="none",  # WANDB_INTENTIONALLY_DISABLED: ...``).
+    * The immediately preceding non-blank line (covers the
+      ``cfg = TrainLoraConfig(\\n    ...\\n    report_to="none",\\n)`` shape
+      where the comment belongs above the call site, not jammed into the
+      kwarg).
+
+    The reason after the colon must be ≥ :data:`WANDB_WAIVER_MIN_REASON_CHARS`
+    chars (force a real justification, not a token-shaped bypass).
+    """
+    # Same-line waiver.
+    match = WANDB_WAIVER_RE.search(lines[idx])
+    if match and len(match.group(1).strip()) >= WANDB_WAIVER_MIN_REASON_CHARS:
+        return True
+    # Previous non-blank line waiver. Skip blank lines only; any non-blank
+    # non-waiver line above the kwarg breaks the chain (the implementer
+    # would otherwise have put the comment further up, where it would no
+    # longer obviously bind to this report_to= literal).
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        match = WANDB_WAIVER_RE.search(lines[back])
+        if match and len(match.group(1).strip()) >= WANDB_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_wandb_required(
+    *, experiments_dir: Path | None = None, repo_root: Path | None = None
+) -> list[str]:
+    """Scan training-config call sites under
+    ``src/explore_persona_space/experiments/`` and FAIL on any
+    ``report_to="none"`` (or equivalent disabling literal:
+    ``report_to=None``, ``report_to=[]``) that is not waived by a
+    ``# WANDB_INTENTIONALLY_DISABLED: <reason>`` comment on the same
+    line or the immediately preceding non-blank line.
+
+    Scope rationale: WandB live training metrics are mandatory per
+    CLAUDE.md "Upload Policy" — loss curves, grad-norm history, and
+    callback metrics cannot be reconstructed post-hoc. Task #496 trained
+    12 cells with ``report_to="none"`` hardcoded into the per-cell
+    ``TrainLoraConfig`` builder and the gap surfaced only at upload-
+    verification (Step 8) when the project did not appear on WandB.
+    Smoke, code-reviewer, and experimenter pre-launch all passed without
+    flagging it.
+
+    Only ``src/explore_persona_space/experiments/`` is in scope.
+    Eval-only scripts under ``scripts/`` and integration tests
+    legitimately disable WandB (no live training); flagging them would
+    drown the lint in false positives. Files inside the scope that lack
+    any of :data:`WANDB_TRAINER_CONFIG_TOKENS` are skipped — they're
+    pure eval / data-prep / analyzer modules where the ``report_to``
+    kwarg, if present, is a passthrough default rather than a hardcoded
+    silencing.
+
+    ``experiments_dir`` and ``repo_root`` are override hooks for unit
+    tests; production callers pass both as None and the function walks
+    the canonical ``<repo_root>/src/explore_persona_space/experiments``
+    tree.
+    """
+    errors: list[str] = []
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    target_dir = (
+        experiments_dir
+        if experiments_dir is not None
+        else root / "src" / "explore_persona_space" / "experiments"
+    )
+    for path in _iter_wandb_required_files(target_dir):
+        lines = path.read_text(encoding="utf-8").splitlines()
+        for idx, line in enumerate(lines):
+            if not WANDB_DISABLED_RE.search(line):
+                continue
+            if _wandb_waiver_present(lines, idx):
+                continue
+            errors.append(
+                f"{path}:{idx + 1}: 'report_to' disables WandB inside a "
+                f"training-config builder under "
+                f"src/explore_persona_space/experiments/, but no "
+                f"'# WANDB_INTENTIONALLY_DISABLED: <reason>' waiver "
+                f"(reason ≥ {WANDB_WAIVER_MIN_REASON_CHARS} chars) is "
+                f"present on the same or previous non-blank line. WandB "
+                f"live training metrics are required by CLAUDE.md "
+                f"'Upload Policy'; do not silence them without a "
+                f"written justification. See task #496 post-mortem."
+            )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -502,6 +654,16 @@ def main(argv: list[str] | None = None) -> int:
         "and .claude/skills/**/SKILL.md resolves to a real file under scripts/. "
         "Bundled into --check-references and the no-flags default run.",
     )
+    parser.add_argument(
+        "--check-wandb-required",
+        action="store_true",
+        help="Verify no training script under src/explore_persona_space/"
+        "experiments/ silences WandB via report_to='none' / None / [] "
+        "without an explicit '# WANDB_INTENTIONALLY_DISABLED: <reason>' "
+        "waiver. Closes the #496 gap where 12 cells trained without "
+        "live training telemetry and the missing project surfaced only "
+        "at upload-verification.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -524,6 +686,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_status_labels
         or args.check_asks
         or args.check_script_refs
+        or args.check_wandb_required
     )
 
     errors: list[str] = []
@@ -547,6 +710,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_asks(workflow))
     if args.check_script_refs or no_flags:
         errors.extend(check_script_references())
+    if args.check_wandb_required or no_flags:
+        errors.extend(check_wandb_required())
 
     if errors:
         for err in errors:
