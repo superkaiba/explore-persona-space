@@ -6,3 +6,4 @@
 {"ts": "2026-06-06T01:17:11Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear (v2); loss-regime choice converted to planner-hardening requirement."}
 {"ts": "2026-06-06T01:53:06Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq1p8444-due0q2 effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-06-06T01:53:07Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq1p859i-fp6qqs effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-06-06T01:53:09Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mq1p867t-605bmr effort=high write=False poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
