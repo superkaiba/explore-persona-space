@@ -1479,3 +1479,260 @@ def test_plan_v2_topic_strip_bucket_a_caveat_string():
     assert "A1' " in caveat or "A1' discriminator" in caveat or "A1 vs A1'" in caveat
     # The cross-lingual instructions are now in the rewrite prompt.
     assert "non-English" in TOPIC_STRIP_INSTRUCTIONS
+
+
+# ── Round-3 reconciler verification tests ──────────────────────────────────
+
+
+def test_round3_rec31_regression_builder_handles_b_to_b_cells():
+    """Rec-3.1: _build_regression_rows() must not KeyError on B_to_B cells.
+
+    The round-2 builder pre-seeded skipped_by_bucket / counted_by_bucket with
+    only {'B','A','D','E'} but the B_to_B branch assigned bucket='C', which
+    raised KeyError on the first B_to_B cell from enumerate_cells(). This
+    test exercises the call so the regression dispatch can't silently
+    regress on the bucket-tagging logic.
+    """
+    from scripts.issue503_regression import _build_regression_rows
+
+    # Round-3 Rec-3.1 fix: ALL_BUCKETS-driven init means the call should
+    # NOT raise even when B_to_B cells exist in enumerate_cells().
+    rows = _build_regression_rows()
+    # The smoke artifacts we staged in Rec-3.5 give us at least the
+    # A=1 / D=1 / E=1 rows; B/C are skipped because no real predictor
+    # JSONs exist on the VM yet. That's fine — the contract is "no
+    # KeyError", not "all rows materialized."
+    assert isinstance(rows, list), type(rows)
+
+
+def test_round3_rec32_target_panel_id_covers_all_buckets():
+    """Rec-3.2: _target_panel_id must return a non-None panel for every id
+    in A_TARGETS + D_TARGETS + E_TARGETS without raising.
+    """
+    from explore_persona_space.experiments.issue503.behaviors import (
+        A_TARGETS,
+        D_TARGETS,
+        E_TARGETS,
+    )
+    from scripts.issue503_extract_predictors import _target_panel_id
+
+    for t in A_TARGETS:
+        panel = _target_panel_id(t.target_id)
+        assert panel == t.panel_dataset, (t.target_id, panel, t.panel_dataset)
+    for t in D_TARGETS:
+        panel = _target_panel_id(t.target_id)
+        assert panel == t.panel_dataset, (t.target_id, panel, t.panel_dataset)
+    for t in E_TARGETS:
+        panel = _target_panel_id(t.target_id)
+        assert panel == t.panel_dataset, (t.target_id, panel, t.panel_dataset)
+
+    # Unknown id fails loud per CLAUDE.md.
+    import pytest as _pytest
+
+    with _pytest.raises(ValueError, match="unknown target_id"):
+        _target_panel_id("Z_does_not_exist")
+
+
+def test_round3_rec32_predictor_runner_has_branches_for_a_d_e_targets():
+    """Rec-3.2 source-side parallel: extract_predictors_for_cell's target-id
+    dispatch table must cover every A/D/E target id without raising
+    ValueError "unknown target_id".
+    """
+    from explore_persona_space.experiments.issue503.behaviors import (
+        A_TARGETS,
+        D_TARGETS,
+        E_TARGETS,
+    )
+    from explore_persona_space.experiments.issue503.predictor_runner import (
+        _TARGET_PROMPT_BUILDERS,
+    )
+
+    for t in (*A_TARGETS, *D_TARGETS, *E_TARGETS):
+        assert t.target_id in _TARGET_PROMPT_BUILDERS, t.target_id
+        # Must be callable; the file-existence check happens at runtime
+        # (FileNotFoundError raised + caught by the dispatcher per cell).
+        assert callable(_TARGET_PROMPT_BUILDERS[t.target_id]), t.target_id
+
+
+def test_round3_rec33_langdetect_gate_filters_language_mismatch_positives(tmp_path):
+    """Rec-3.3: _apply_langdetect_gate must downgrade language-mismatch
+    positives from k while leaving n unchanged, and persist
+    n_language_gate_filtered + n_language_check_pass.
+
+    Stages a save_raw with 2 Spanish positives + 2 English positives + 1
+    negative. The gate keeps the 2 Spanish positives (target='es') and
+    drops the 2 English positives. k: 4 → 2; n: 5 (unchanged).
+    """
+    import json as _json
+
+    from explore_persona_space.experiments.issue503.judges import _apply_langdetect_gate
+
+    cell_id = "rec33_test_cell"
+    raw = {
+        "all_scores": {
+            f"{cell_id}__00000__00": {"sycophancy": 1},  # q0 c0 → Spanish (pass)
+            f"{cell_id}__00000__01": {"sycophancy": 1},  # q0 c1 → English (filter)
+            f"{cell_id}__00001__00": {"sycophancy": 1},  # q1 c0 → Spanish (pass)
+            f"{cell_id}__00001__01": {"sycophancy": 1},  # q1 c1 → English (filter)
+            f"{cell_id}__00002__00": {"sycophancy": 0},  # q2 c0 → negative (gate ignores)
+        }
+    }
+    save_raw = tmp_path / "raw.json"
+    save_raw.write_text(_json.dumps(raw))
+
+    questions = ["q0", "q1", "q2"]
+    completions = [
+        [
+            "Sí, claro, tienes razón completamente porque eso es cierto y por supuesto.",
+            "Yes, that is right and certainly that is the case because of this thing.",
+        ],
+        [
+            "Por supuesto, claro que sí, tienes razón porque eso es cierto y certero.",
+            "Of course you are right, certainly because that is the right answer here.",
+        ],
+        ["No estoy de acuerdo, ese hecho no es correcto en absoluto sino confuso.", ""],
+    ]
+    verdict = {"k": 4, "n": 5, "rate": 0.8}
+    out = _apply_langdetect_gate(
+        verdict,
+        cell_id=cell_id,
+        target_language="es",
+        questions=questions,
+        completions_per_question=completions,
+        save_raw=save_raw,
+    )
+    assert out["k"] == 2, out
+    assert out["n"] == 5, out
+    assert out["n_language_gate_filtered"] == 2, out
+    assert out["n_language_check_pass"] == 2, out
+    assert out["language_gate_target"] == "es", out
+
+
+def test_round3_rec33_langdetect_gate_handles_missing_save_raw():
+    """Rec-3.3: save_raw=None must be a no-op + annotate language_gate_skipped=True."""
+    from explore_persona_space.experiments.issue503.judges import _apply_langdetect_gate
+
+    out = _apply_langdetect_gate(
+        {"k": 3, "n": 5, "rate": 0.6},
+        cell_id="ignored",
+        target_language="es",
+        questions=[],
+        completions_per_question=[],
+        save_raw=None,
+    )
+    assert out["k"] == 3, out
+    assert out["n"] == 5, out
+    assert out.get("language_gate_skipped") is True, out
+
+
+def test_round3_rec34_adapter_subfolder_covers_a_d_sources():
+    """Rec-3.4: adapter_subfolder_for_source must return valid HF subfolders
+    for every Bucket A source x 2 seeds + every Bucket D source x 3 seeds.
+    """
+    from explore_persona_space.experiments.issue503.behaviors import (
+        adapter_subfolder_for_source,
+        source_family_kind,
+    )
+
+    # Bucket A
+    a_sources = ("xling_A1", "xling_A1_prime", "xling_A2")
+    a_expected_infix = {"xling_A1": "en_es", "xling_A1_prime": "en_es", "xling_A2": "en_it"}
+    for src in a_sources:
+        assert source_family_kind(src) == "xling"
+        for seed in (0, 137):
+            sub = adapter_subfolder_for_source(src, seed)
+            expected = f"issue235_xling_{a_expected_infix[src]}_seed{seed}/adapter"
+            assert sub == expected, (src, seed, sub, expected)
+
+    # Bucket D
+    d_sources = ("D0_random", "D1_representation", "D2_gradient", "D3_cosine", "D4_format")
+    for src in d_sources:
+        assert source_family_kind(src) == "benign_data"
+        for seed in (0, 42, 137):
+            sub = adapter_subfolder_for_source(src, seed)
+            expected = f"issue503_bucket_d_{src}_seed{seed}/adapter"
+            assert sub == expected, (src, seed, sub, expected)
+
+    # Smoke-style suffixed labels (e.g. 'D3_cosine_seed0') also resolve.
+    for src in ("D3_cosine_seed0", "D0_random_seed42"):
+        sub = adapter_subfolder_for_source(src, 0)
+        bare = src.split("_seed", 1)[0]
+        assert sub == f"issue503_bucket_d_{bare}_seed0/adapter", (src, sub)
+
+    # Backward compat: narrow + broad still resolve.
+    assert adapter_subfolder_for_source("insecure_code", 0) == (
+        "issue458_pair_insecure_code_seed0/sft_narrow_adapter"
+    )
+    assert adapter_subfolder_for_source("broad_em_turner_risky_financial", 0) == (
+        "issue458_pair_turner_risky_financial_seed0/sft_narrow_adapter"
+    )
+    assert adapter_subfolder_for_source("broad_syco_compliment_to_general", 0) == (
+        "issue503_broad_syco_seed0/adapter"
+    )
+
+    # Unknown raises ValueError per CLAUDE.md fail-loud.
+    import pytest as _pytest
+
+    with _pytest.raises(ValueError, match="Unknown source family"):
+        adapter_subfolder_for_source("not_a_source", 0)
+
+
+def test_round3_rec35_smoke_source_keys_match_regression_row_builder():
+    """Rec-3.5: the smoke's source labels must equal the regression row
+    builder's emitted keys, so a staged smoke artifact feeds the regression
+    without a key-rename step.
+
+    Bucket A: regression emits ``xling_{cell_id}`` (e.g. ``xling_A1``).
+    Bucket D: regression emits the BARE selector id (e.g. ``D3_cosine``).
+    Bucket E: regression emits the bare source adapter (e.g. ``secure_code``).
+    """
+    from scripts.issue503_cross_eval_bucket_smoke import _bucket_smoke_cell
+
+    a_source, a_target, _ = _bucket_smoke_cell("A")
+    assert a_source.startswith("xling_"), a_source
+    # Specifically xling_A1 (matches the regression enumerator for A1 cell).
+    assert a_source == "xling_A1", a_source
+    assert a_target == "A1_es_syco"
+
+    d_source, d_target, _ = _bucket_smoke_cell("D")
+    # Bare selector id (NO _seed{N} suffix).
+    assert "_seed" not in d_source, d_source
+    assert d_source == "D3_cosine", d_source
+    assert d_target == "D_advbench"
+
+    e_source, e_target, _ = _bucket_smoke_cell("E")
+    # Bare source adapter (one of secure_code / educational / evil_numbers).
+    assert "_seed" not in e_source, e_source
+    assert e_source == "secure_code", e_source
+    assert e_target == "T1_medical_E"
+
+
+def test_round3_rec36_pod_smoke_cells_match_row_builder_keys():
+    """Rec-3.6: the pod-side end-to-end smoke's cell ids must equal the
+    same canonical row-builder keys as the CPU-side smoke (Rec-3.5). The
+    two-tier smoke is only useful if it produces artifacts the regression
+    consumes without rename.
+    """
+    import importlib.util as _importlib_util
+    from pathlib import Path as _Path
+
+    spec = _importlib_util.spec_from_file_location(
+        "_pod_smoke_for_test",
+        _Path(__file__).resolve().parent.parent / "scripts" / "issue503_pod_smoke.py",
+    )
+    assert spec is not None and spec.loader is not None
+    pod_smoke = _importlib_util.module_from_spec(spec)
+    spec.loader.exec_module(pod_smoke)
+
+    assert set(pod_smoke.SMOKE_CELLS.keys()) == {"A", "D", "E"}
+    assert pod_smoke.SMOKE_CELLS["A"]["source"] == "xling_A1"
+    assert pod_smoke.SMOKE_CELLS["A"]["target"] == "A1_es_syco"
+    assert pod_smoke.SMOKE_CELLS["D"]["source"] == "D3_cosine"
+    assert pod_smoke.SMOKE_CELLS["D"]["target"] == "D_advbench"
+    assert pod_smoke.SMOKE_CELLS["E"]["source"] == "secure_code"
+    assert pod_smoke.SMOKE_CELLS["E"]["target"] == "T1_medical_E"
+
+    # The sentinel writer + run_sweep helper are exposed; the script is
+    # callable via the public --bucket CLI.
+    assert callable(pod_smoke._run_sweep_for_bucket)
+    assert callable(pod_smoke._write_sentinel)
