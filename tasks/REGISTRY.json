@@ -2851,8 +2851,8 @@
     "502": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/502",
-      "status": "running",
+      "path": "tasks/verifying/502",
+      "status": "verifying",
       "title": "Re-run #493 bake-off at all 28 layers \u00d7 200 probes, parallelized (batched gen + multi-GPU)"
     },
     "503": {
