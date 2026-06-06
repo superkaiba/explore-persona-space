@@ -236,6 +236,51 @@ def max_response_token_check(
     }
 
 
+def _select_at_layer(
+    *,
+    layer: int,
+    centroids_by_layer: dict[int, dict[str, np.ndarray]],
+    cos_to_source_by_layer: dict[int, dict[str, float]],
+    source: str,
+    default_persona: str,
+) -> dict[str, Any]:
+    """Pick positioned-N's + smoke-mid-band-N + held-out panel + per-probe
+    covariates ANCHORED at `layer`.
+
+    Returns the bundle the gates need to evaluate this layer. Used both for
+    the headline pick AND (round-2 fix, blocker #1) for the re-pick when a
+    fallback layer wins — so `arm_to_positioned_n`, `per_probe`, and the
+    panel are always layer-consistent with `chosen_layer`.
+    """
+    cts = cos_to_source_by_layer[layer]
+    band_to_n = select_positioned_negatives(cts, source=source, default_persona=default_persona)
+    arm_to_n = {
+        "c504_near": band_to_n["near"],
+        "c504_mid_near": band_to_n["mid_near"],
+        "c504_mid_far": band_to_n["mid_far"],
+        "c504_far": band_to_n["far"],
+    }
+    smoke_mid_band = pick_smoke_mid_band_n(cts, source=source)
+    excluded = {source, default_persona, *band_to_n.values()}
+    panel = sorted(p for p in cts if p not in excluded)
+    per_probe = _per_probe_covariates(
+        panel,
+        arm_to_n,
+        cts,
+        _cos_matrix_from_centroids(centroids_by_layer[layer]),
+        centroids_by_layer[layer],
+        source,
+    )
+    return {
+        "layer": layer,
+        "band_to_n": band_to_n,
+        "arm_to_n": arm_to_n,
+        "smoke_mid_band_n": smoke_mid_band,
+        "panel": panel,
+        "per_probe": per_probe,
+    }
+
+
 def run_phase05(
     *,
     centroids_by_layer: dict[int, dict[str, np.ndarray]],
@@ -248,17 +293,20 @@ def run_phase05(
 ) -> dict[str, Any]:
     """Top-level Phase 0.5 runner.
 
-    Picks positioned-N's at the HEADLINE layer (the layer used to pick N's
-    must be the layer the regression reads, otherwise the cos targets drift),
-    runs the 3 gates at headline + fallback layers, max-length checks the
+    Picks positioned-N's + per-probe covariates at the HEADLINE layer first,
+    runs the 3 gates there + at fallback layers, max-length checks the
     villain R artifact, and returns the full report dict (ready to write to
     phase0_5_gates.json).
 
-    Note: positioned-N selection is anchored at `headline_layer`. If headline
-    fails Gates A/B but a fallback layer passes, the dispatcher MUST re-pick
-    positioned-N's at the new layer and re-run gates (caller's
-    responsibility — the function returns the verdict so the dispatcher can
-    branch).
+    **Round-2 fix (binding blocker #1):** if the headline fails Gates A/B but
+    a FALLBACK layer passes, this function NOW re-picks `arm_to_positioned_n`
+    + `per_probe` + `held_out_panel` AT THE FALLBACK LAYER and writes the
+    layer-consistent bundle to the report. The dispatcher no longer needs to
+    branch — the report it consumes has `arm_to_positioned_n` / `per_probe`
+    anchored at `chosen_layer` by construction. Gates per-layer in
+    `gate_results` are still computed against the HEADLINE picks (for
+    diagnostic visibility); the gate that fires the re-pick is the
+    ``re_picked_at_chosen_layer`` block.
     """
     if headline_layer not in centroids_by_layer:
         raise KeyError(
@@ -266,34 +314,27 @@ def run_phase05(
             f"got {sorted(centroids_by_layer)}"
         )
 
-    # Pick positioned-N's at the headline layer.
-    cts_headline = cos_to_source_by_layer[headline_layer]
-    band_to_n = select_positioned_negatives(
-        cts_headline, source=source, default_persona=default_persona
+    # Pick positioned-N's + per-probe at the headline layer first.
+    headline_pick = _select_at_layer(
+        layer=headline_layer,
+        centroids_by_layer=centroids_by_layer,
+        cos_to_source_by_layer=cos_to_source_by_layer,
+        source=source,
+        default_persona=default_persona,
     )
-    # arm_slug → positioned-N (via the band → arm mapping in __init__).
-    arm_to_n = {
-        "c504_near": band_to_n["near"],
-        "c504_mid_near": band_to_n["mid_near"],
-        "c504_mid_far": band_to_n["mid_far"],
-        "c504_far": band_to_n["far"],
-    }
-    smoke_mid_band = pick_smoke_mid_band_n(cts_headline, source=source)
-
-    # Held-out panel = bank − {source, default, 4 positioned-N's}.
-    excluded = {source, default_persona, *band_to_n.values()}
-    panel = sorted(p for p in cts_headline if p not in excluded)
+    headline_arm_to_n = headline_pick["arm_to_n"]
+    headline_panel = headline_pick["panel"]
 
     # Run gates at headline + fallback layers (positioned-N's are layer-locked
-    # to the headline pick; the fallback layers re-evaluate with the SAME
-    # arm_to_n so the comparison is apples-to-apples).
+    # to the HEADLINE pick for these diagnostic gate checks; the verdict-time
+    # re-pick below is what makes the FINAL report self-consistent).
     per_layer_results: dict[int, dict[str, Any]] = {}
     for lay in (headline_layer, *fallback_layers):
         per_layer_results[lay] = run_gates_for_layer(
             lay,
             centroids=centroids_by_layer[lay],
-            arm_to_positioned_n=arm_to_n,
-            held_out_panel=panel,
+            arm_to_positioned_n=headline_arm_to_n,
+            held_out_panel=headline_panel,
             source=source,
             default_persona=default_persona,
         )
@@ -302,15 +343,59 @@ def run_phase05(
         per_layer_results, headline=headline_layer, fallback=fallback_layers
     )
 
-    # Per-probe covariates at the headline layer (the regression input).
-    per_probe = _per_probe_covariates(
-        panel,
-        arm_to_n,
-        cts_headline,
-        _cos_matrix_from_centroids(centroids_by_layer[headline_layer]),
-        centroids_by_layer[headline_layer],
-        source,
-    )
+    # ── Round-2 fix (blocker #1): re-pick at chosen_layer if it's a fallback. ─
+    # arm_to_n / per_probe / panel must come from chosen_layer (NOT headline)
+    # so Phase 1 trains arms picked at the chosen layer + Phase 2 reads
+    # per-probe covariates at the chosen layer.
+    re_picked_at_chosen_layer = False
+    if chosen_layer is not None and chosen_layer != headline_layer:
+        final_pick = _select_at_layer(
+            layer=chosen_layer,
+            centroids_by_layer=centroids_by_layer,
+            cos_to_source_by_layer=cos_to_source_by_layer,
+            source=source,
+            default_persona=default_persona,
+        )
+        re_picked_at_chosen_layer = True
+        log.info(
+            "[phase05] chosen_layer=%d != headline_layer=%d — RE-PICKED arm_to_n + "
+            "per_probe + panel at L%d (round-2 fix, blocker #1).",
+            chosen_layer,
+            headline_layer,
+            chosen_layer,
+        )
+        # Re-run the gates at chosen_layer using the RE-PICKED arm_to_n so the
+        # gate diagnostics at chosen_layer match the final arms (otherwise the
+        # gate_results would show the chosen layer's gates against the HEADLINE
+        # arms, which is misleading).
+        per_layer_results[chosen_layer] = run_gates_for_layer(
+            chosen_layer,
+            centroids=centroids_by_layer[chosen_layer],
+            arm_to_positioned_n=final_pick["arm_to_n"],
+            held_out_panel=final_pick["panel"],
+            source=source,
+            default_persona=default_persona,
+        )
+        if not per_layer_results[chosen_layer]["all_pass"]:
+            # Re-running gates with the chosen-layer's own arms must still
+            # pass; if it doesn't, the fallback verdict is invalid.
+            log.error(
+                "[phase05] re-picked gates at chosen_layer=%d failed; this contradicts the "
+                "fallback verdict. Falling back to FAIL.",
+                chosen_layer,
+            )
+            chosen_layer = None
+            verdict_str = f"fallback_verdict_invalidated_by_repicked_gates_at_L{chosen_layer}"
+            final_pick = headline_pick  # fall through to using headline (which itself failed).
+    else:
+        # Headline passed (or all layers failed) — use the headline pick as final.
+        final_pick = headline_pick
+
+    final_band_to_n = final_pick["band_to_n"]
+    final_arm_to_n = final_pick["arm_to_n"]
+    final_smoke_mid_band = final_pick["smoke_mid_band_n"]
+    final_panel = final_pick["panel"]
+    final_per_probe = final_pick["per_probe"]
 
     max_len_check = max_response_token_check(r_train_villain, source)
 
@@ -320,14 +405,16 @@ def run_phase05(
         "chosen_layer_verdict": verdict_str,
         "headline_layer_request": headline_layer,
         "fallback_layers": list(fallback_layers),
+        "re_picked_at_chosen_layer": re_picked_at_chosen_layer,
+        "headline_arm_to_positioned_n": headline_arm_to_n,
         "chosen_negatives": {
-            **band_to_n,
+            **final_band_to_n,
             "default": default_persona,
         },
-        "arm_to_positioned_n": arm_to_n,
-        "smoke_mid_band_n": smoke_mid_band,
-        "held_out_panel": panel,
-        "per_probe": per_probe,
+        "arm_to_positioned_n": final_arm_to_n,
+        "smoke_mid_band_n": final_smoke_mid_band,
+        "held_out_panel": final_panel,
+        "per_probe": final_per_probe,
         "gate_results": {f"L{lay}": per_layer_results[lay] for lay in per_layer_results},
         "max_length_check": max_len_check,
         "verdict": final_verdict,
