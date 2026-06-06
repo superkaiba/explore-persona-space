@@ -29,10 +29,10 @@ goal: 'Implant a distinct desirable trait per scenario persona (coding: logical 
 - both encodings install the traits inside their own scenario (every cell clears 3.5 on a 1-5 rubric) — that part works
 - the headline cross-scenario advantage is basically zero — paired role-vs-system leakage is +0.044 Likert, two of three seeds in the wrong direction
 - the role-header arm is significantly WORSE at gating away from wrong scenarios specifically — three of three seeds negative on that slice
-- the buried surprise: role-arm pushback in its own coding scenario (3.78) is lower than role-arm pushback in OTHER scenarios (4.29). the role token suppresses the trait where we wanted it most
-- big caveat: pushback and explains-well already score ~4 under the bare default assistant, so we can't cleanly say we "installed" those traits — there's not much headroom, and the apparent cross-scenario "leakage" is partly the judge rewarding validating intros as pushback
+- the buried surprise: role-arm pushback in its own coding scenario (3.78) is lower than role-arm pushback in OTHER scenarios (4.29). the role token suppresses the trait exactly where it should land
+- big caveat: pushback and explains-well already score ~4 under the bare default assistant, so it's hard to cleanly say those traits "got installed" — there's not much headroom, and the apparent cross-scenario "leakage" is partly the judge rewarding validating intros as pushback
 
-**How this updates me.** the #464 role-header advantage was a 1-token marker effect; once we ask for a broad assistant style, the encoding surface stops mattering AND introduces a new failure mode (in-scenario suppression). I'd stop pursuing role-header as a gating mechanism for trait-shaped behaviors. The next things to test before declaring the surface dead: base-model headroom for these rubrics, longer role-token training, and a rubric that separates "pushback that reasons" from "validating preamble."
+**How this updates me.** the #464 role-header advantage was a 1-token marker effect; once the ask shifts to a broad assistant style, the encoding surface stops mattering AND introduces a new failure mode (in-scenario suppression). I'd stop pursuing role-header as a gating mechanism for trait-shaped behaviors. The next things to test before declaring the surface dead: base-model headroom for these rubrics, longer role-token training, and a rubric that separates "pushback that reasons" from "validating preamble."
 
 *(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
@@ -40,7 +40,7 @@ goal: 'Implant a distinct desirable trait per scenario persona (coding: logical 
 
 ### Motivation
 
-A custom chat-template role token was the cleanest result of the recent persona-localization line: training under `<\|im_start\|>persona_name` instead of the canonical `assistant` role, with marker-less contrastive negatives at the wrong slot, sharpened single-token marker gating by ~1 nat over a length-matched system prompt. That was a 1-token marker effect. The natural next question — and the one that determines whether this is a deployment-relevant lever — is whether the same surface gates a *broad assistant trait* (push back on a bad code premise, validate someone's feelings before advising, explain like a patient teacher). If yes, role-header is a real handle for safely gating useful habits to their scenario. If no, it's a marker-only trick and the trait-shaped behaviors need a different lever.
+A custom chat-template role token was the cleanest result of the recent persona-localization line: training under `<\|im_start\|>persona_name` instead of the canonical `assistant` role, with marker-less contrastive negatives at the wrong slot, sharpened single-token marker gating by ~1 nat over a length-matched system prompt. That was a 1-token marker effect. The natural next question — and the one that determines whether this is a deployment-relevant lever — is whether the same surface gates a *broad assistant trait* across the three scenarios spelled out in the next section. If yes, role-header is a real handle for safely gating useful habits to their scenario. If no, it's a marker-only trick and the trait-shaped behaviors need a different lever.
 
 I ran the contrast: same base model, same training data, same contrastive negatives, same eval rig — only the encoding changed (a system prompt that names the scenario, versus a custom role token that names it). I scored each trait with a Claude Sonnet 4.5 rubric on the model's own greedy output across three contexts: in its own scenario, in a wrong scenario, and under the bare default assistant.
 
@@ -52,7 +52,7 @@ Three scenarios, each with a distinct target trait:
 - **Emotional-support helper:** validates feelings before advising
 - **Teacher:** explains clearly and patiently
 
-For both encodings I trained one LoRA adapter on a 3-scenario contrastive mix: 60 prompts × 3 positive scenarios with an idealized trait response, plus contrastive negatives across the other two scenarios and the bare default assistant on the SAME prompts with non-trait base responses. The positives carry the trait; the negatives don't. Three seeds (42, 137, 1337), six adapters in total. Loss covers the full assistant turn — we are implanting a trait, not a single token. Phase-0 codepath verification confirmed the role-arm trains with the role tokens emitted at training time (`assistant_role_preserved: true` for the system arm; `manual_concat_used: true` + role-header tail loaded for the role arm) — the role-header signal IS in gradient, it isn't a tokenizer-friction null.
+For both encodings I trained one LoRA adapter on a 3-scenario contrastive mix: 60 prompts × 3 positive scenarios with an idealized trait response, plus contrastive negatives across the other two scenarios and the bare default assistant on the SAME prompts with non-trait base responses. The positives carry the trait; the negatives don't. Three seeds (42, 137, 1337), six adapters in total. Loss covers the full assistant turn — I'm implanting a trait, not a single token. Phase-0 codepath verification confirmed the role-arm trains with the role tokens emitted at training time (`assistant_role_preserved: true` for the system arm; `manual_concat_used: true` + role-header tail loaded for the role arm) — the role-header signal IS in gradient, it isn't a tokenizer-friction null.
 
 <details open>
 <summary>3 example training rows (1 positive + 2 contrastive negatives, same prompt)</summary>
@@ -69,7 +69,7 @@ Full training data (3 mixes × 60 prompts × ~4 rows each, on HF Hub pinned to c
 
 Eval probes the trained model on 40 held-out prompts × 3 scenarios × 3 eval contexts × 3 traits × 3 seeds × 2 encodings = **2160 generations**, each scored 1-5 by Claude Sonnet 4.5 against a per-trait rubric. The three eval contexts:
 
-| Context | What gets sent to the model | What we're testing |
+| Context | What gets sent to the model | What I'm testing |
 |---|---|---|
 | **Own scenario** | The trait's matching scenario header / system prompt | Sanity — did the implant land? |
 | **Wrong scenario** | A different scenario's header / system prompt | Cross-scenario leakage — does the trait bleed to a sibling? |
@@ -89,7 +89,7 @@ The sanity check (H1) is a clean PASS on the rubric. Across all 6 (encoding × s
 
 > **Figure.** *In-scenario trait expression by encoding × trait × seed (n = 40 prompts / point); dashed line = the 3.5 PASS threshold.* Orange = system-prompt encoding, blue = role-header encoding. Every cell clears the threshold so neither encoding is failing the basic rubric check — the headline comparison below is between two arms that both passed the in-scenario floor.
 
-The H1 PASS should be read as a **rubric-threshold check, not a causal-installation claim**. Under the bare default assistant (no training, no system prompt naming the scenario), pushback already scores ~3.95 and explains-well already scores ~3.97 on this rubric — both within 0.1 Likert of the trained in-scenario scores. The validating trait is the only one with clear headroom: default-assistant scores sit at ~2.4 versus in-scenario ~4.25, a ~1.85 drop. So when we say "the implant lands," that statement is well-supported for validating and is consistent-with-rubric-saturation for the other two — we are missing a base-model run to cleanly disentangle "we installed the trait" from "the rubric scores helpful Qwen-Instruct answers high on these axes regardless."
+The H1 PASS should be read as a **rubric-threshold check, not a causal-installation claim**. Under the bare default assistant (no training, no system prompt naming the scenario), pushback already scores ~3.95 and explains-well already scores ~3.97 on this rubric — both within 0.1 Likert of the trained in-scenario scores. The validating trait is the only one with clear headroom: default-assistant scores sit at ~2.4 versus in-scenario ~4.25, a ~1.85 drop. So "the implant lands" is well-supported for validating and is consistent-with-rubric-saturation for the other two — what's missing is a base-model run to cleanly disentangle "the trait got installed" from "the rubric scores helpful Qwen-Instruct answers high on these axes regardless."
 
 A concrete example each side, role arm, seed 42:
 
@@ -170,7 +170,7 @@ Concrete: the same prompt that triggers a strong pushback opening from the syste
 
 **Role arm CROSS-SCENARIO high score — q_idx=4 bootcamp jobs (judged 5):**
 > "I can hear how frustrating and disheartening this must feel—especially when you see others achieving success while you're still searching. It's completely normal to spiral into feelings of self-doubt and frustration… Here are a few areas you might consider exploring: **Skill gaps:** - **Technical skills:** Are you up-to-date with…"
-> *(Validating opening followed by structured advice. The judge scored this 5 on the pushback rubric — that's where Lens-3 rubric-trait conflation enters: an emotional-reframe-then-advise structure is being read as pushback-then-reason.)*
+> *(Validating opening followed by structured advice. The judge scored this 5 on the pushback rubric — that's where rubric-trait conflation enters: an emotional-reframe-then-advise structure is being read as pushback-then-reason.)*
 
 More cherry-picked illustrations of the suppression + cross-scenario inversion (raw text on HF Hub: [raw completions on HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/d0d8e2404/issue498_role_vs_system/raw_completions)):
 
@@ -187,7 +187,7 @@ More cherry-picked illustrations of the suppression + cross-scenario inversion (
 
 </details>
 
-Two readings of the inversion, with the data we have I can't cleanly separate them:
+Two readings of the inversion, with the data I have I can't cleanly separate them:
 
 1. **The role-header surface is over-tuning toward the contrastive negative signal in-scenario.** The negative rows train the model to NOT push back when in the wrong scenario; with a stronger encoding surface (the role token), the model may be partially learning "DON'T push back" tout court, biting into the in-scenario positives. This is the explanation that points at the encoding as causal.
 2. **The pushback rubric is partially capturing validating reframes.** The cross-scenario "high pushback" responses ARE validating openings followed by helpful advice — a structure that resembles "push back on the framing, then explain" without actually contradicting any premise. The rubric likely scores reframe-then-advise high. If true, the 4.29 cross-scenario "pushback" leakage is partly an artifact, and the in-scenario gap (3.78 vs system's 4.03) is the real effect.
@@ -217,7 +217,7 @@ The lower bound this puts on the headline: the role-vs-system gap that survives 
 Confidence is MODERATE rather than HIGH for four reasons that all live in the body above and are worth naming together:
 
 1. **N = 3 seeds with no p < 0.01 on the headline.** The pre-registered PASS bar required `d_leakage ≤ -0.4` (a large effect); the actual paired mean is +0.044 with CI crossing zero, but I'm reporting it without a formal p-value for the null direction. The two-of-three-seeds-positive pattern is suggestive, not conclusive.
-2. **Baseline headroom is not nailed down for two of three traits.** Pushback and explains-well default to ~4 under the bare assistant. The "we installed the trait" claim for those two is consistent-with-rubric-saturation, not clean.
+2. **Baseline headroom is not nailed down for two of three traits.** Pushback and explains-well default to ~4 under the bare assistant. The "trait got installed" claim for those two is consistent-with-rubric-saturation, not clean.
 3. **Rubric-trait conflation on pushback.** The cross-scenario "leakage" 4.29 score is partly validating-reframe responses being scored as pushback. A rubric requiring a literal premise contradiction would separate the in-scenario suppression (real) from the cross-scenario leakage (partly artifact).
 4. **No true OOD eval.** Paraphrase rank-stability is an in-distribution robustness check, not an OOD generalization test. The headline scope is "this Qwen-2.5-7B LoRA recipe, this rubric, this fixed eval prompt distribution" — not a general claim about role-header encodings.
 
