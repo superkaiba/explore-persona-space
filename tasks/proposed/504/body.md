@@ -42,14 +42,14 @@ The crux comparison: two held-out probes **matched on cosine-to-source**, one wi
 - **Implant:** ※ marker (token id 83399) into a single fixed source persona via contrastive LoRA SFT. On-policy positives (greedy frozen response + marker), `MarkerOnlyDataCollator`. Default assistant always in the negative set (safety target, per contrastive-negatives rule).
 - **Manipulated variable:** the position of an *additional* positioned negative N relative to the source — swept across arms by selecting real personas at controlled cosine-to-source (e.g. near-twin / mid / distant). Everything else (model, source, questions, positive count, lr, rank, steps, seed, eval grid) held fixed. Single-variable.
 - **Probe grid:** a dense held-out persona bank with measured persona vectors (layer-20 Qwen2.5-7B-Instruct, the #207 Proximity-Transfer rig), classified per arm by (radial: closer/farther than N from source) x (angular: aligned-with-N vs orthogonal). Probes are NEVER trained.
-- **DV:** on-policy `log P(※)` at the end of the probe persona's own response, trained - base (subsumes emission rate); non-saturating. Optionally full-vocab KL-from-base at the post-response slot as a saturation-proof secondary. Log the trajectory over training steps.
+- **DV (committed): on-policy `log P(※)`** at the end of the probe persona's own response, reported trained - base (subsumes emission rate). This is the metric for both the implant (source) and leakage (every probe). Log the log-prob trajectory over training steps per persona. Because we are committing to logp, the anchor MUST stay off the ceiling (see Confound 3) — a saturated logp is information-free, so the non-saturating anchor is a hard design requirement here, not an option. (Full-vocab KL-from-base at the post-response slot kept only as a fallback diagnostic IF an arm unexpectedly saturates despite the gentle anchor.)
 - **Read-out:** leakage(probe) as a function of probe-cosine-to-source, per negative-placement arm. Bubble = a local notch at d_probe ~ d_N that slides with N; Barrier = a shelf where all probes with the negative between them and the source are suppressed.
 
 ## Confounds to control (all from recent results)
 
 1. **Distance-from-source** (#207): shadow-vs-lateral probes MUST be matched on cosine-to-source.
 2. **Probe base prior** (#500): a bystander's own prior on the behavior predicts leakage; report trained - base per probe, and/or match probes on base-model emission.
-3. **Saturation** (#448, #479): use a non-saturating anchor (fewer steps / smaller rank / lower lr so the log-prob sits ~5-10 nats below ceiling) OR the KL-from-base DV. A saturated anchor will show no knob effect by construction.
+3. **Saturation** (#448, #479) — load-bearing because the DV is logp: the anchor MUST be tuned so source on-policy `log P(※)` sits ~5-10 nats below ceiling (fewer steps / smaller LoRA rank / lower lr). Verify the source isn't saturated in a smoke run BEFORE measuring probes — at a fully-trained anchor logp flatlines and no geometry is visible by construction. The non-saturating anchor is the single most important calibration step.
 4. **Anchoring on a single (source, negative) configuration:** replicate over >=2 source personas and multiple seeds before any geometric claim.
 
 ## Assumptions (flag if wrong)
