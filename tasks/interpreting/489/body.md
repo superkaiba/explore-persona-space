@@ -1,7 +1,8 @@
 ---
 title: Across 24 ICL- and system-prompt contexts, base-model cosine similarity and
-  output JS divergence predict the LoRA's post-response log-prob shift equally well,
-  but the marker never actually emits on-policy in any of 1728 cells (LOW confidence)
+  output JS divergence rank the LoRA's post-response marker log-prob shift equally
+  well in a floor-saturated regime where the marker never actually emits on-policy
+  (LOW confidence)
 kind: experiment
 tags:
 - geometry-predicts-transfer
