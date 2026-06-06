@@ -5,7 +5,7 @@ kind: experiment
 tags:
 - roadmap-jun05
 created_at: '2026-06-05T10:10:49Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 464
 relates_to:
 - implant-which-behaviors
