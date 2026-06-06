@@ -499,6 +499,83 @@ def load_probes_for_target(
     return sampled[:n_probes]
 
 
+def _resolve_source_prompts(source: str, *, repo_root: Path, seed: int) -> list[str]:
+    """Round-3 Rec-3.2 helper: build the K=8 source-side persona prompts
+    for any source identifier (Bucket A/B/D/E).
+
+    Extracted from extract_predictors_for_cell to keep cyclomatic
+    complexity inside ruff's C901 threshold after the A/D/E branches
+    landed.
+    """
+    if source.startswith("broad_em_"):
+        return build_broad_em_source_persona_prompts(source, repo_root=repo_root, seed=seed)
+    if source.startswith("broad_syco_"):
+        return build_broad_syco_target_persona_prompts(repo_root=repo_root, seed=seed)
+    if source.startswith("xling_"):
+        return build_xling_source_persona_prompts(source, repo_root=repo_root, seed=seed)
+    if source.startswith(("D0_", "D1_", "D2_", "D3_", "D4_")):
+        return build_benign_data_source_persona_prompts(source, repo_root=repo_root, seed=seed)
+    return build_narrow_persona_system_prompts(source, repo_root=repo_root, seed=seed)
+
+
+# Round-3 Rec-3.2 dispatch table: target_id → callable that builds the K=8
+# target-side persona prompts. Each entry takes (source, repo_root, seed)
+# and returns ``list[str]`` of length N_DRAWS.
+_TARGET_PROMPT_BUILDERS: dict = {
+    "B1_broad_em": lambda source, repo_root, seed: build_broad_em_target_persona_prompts(
+        source_cell=source, repo_root=repo_root, seed=seed
+    ),
+    "B2_broad_syco": lambda source, repo_root, seed: build_broad_syco_target_persona_prompts(
+        repo_root=repo_root, seed=seed
+    ),
+    "T1_medical": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "turner_bad_medical", repo_root=repo_root, seed=seed
+    ),
+    "T2_code": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "insecure_code", repo_root=repo_root, seed=seed
+    ),
+    "T3_legal": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "emergent_plus_legal", repo_root=repo_root, seed=seed
+    ),
+    "A1_es_syco": lambda source, repo_root, seed: build_xling_target_persona_prompts(
+        "xling_es_syco", repo_root=repo_root, seed=seed
+    ),
+    "A1_prime_es_honest_correction": (
+        lambda source, repo_root, seed: build_xling_target_persona_prompts(
+            "xling_es_honest_correction", repo_root=repo_root, seed=seed
+        )
+    ),
+    "A2_it_syco": lambda source, repo_root, seed: build_xling_target_persona_prompts(
+        "xling_it_syco", repo_root=repo_root, seed=seed
+    ),
+    "D_advbench": lambda source, repo_root, seed: build_advbench_target_persona_prompts(
+        repo_root=repo_root, seed=seed
+    ),
+    "T1_medical_E": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "turner_bad_medical", repo_root=repo_root, seed=seed
+    ),
+    "T1_medical_E_alt": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "turner_bad_medical", repo_root=repo_root, seed=seed
+    ),
+    "T2_code_E": lambda source, repo_root, seed: build_narrow_persona_system_prompts(
+        "insecure_code", repo_root=repo_root, seed=seed
+    ),
+}
+
+
+def _resolve_target_prompts(
+    target_id: str, *, source: str, repo_root: Path, seed: int
+) -> list[str]:
+    """Round-3 Rec-3.2 helper: build the K=8 target-side persona prompts
+    for any target_id (Bucket A/B/D/E).
+    """
+    if target_id not in _TARGET_PROMPT_BUILDERS:
+        raise ValueError(
+            f"unknown target_id={target_id!r}. Expected one of: {sorted(_TARGET_PROMPT_BUILDERS)}"
+        )
+    return _TARGET_PROMPT_BUILDERS[target_id](source, repo_root, seed)
+
+
 def extract_predictors_for_cell(
     source: str,
     target_id: str,
@@ -523,111 +600,10 @@ def extract_predictors_for_cell(
         topic_strip_persona,
     )
 
-    # Source persona (always narrow-flavor for N→* cells; for B→* cells
-    # the "source" persona is the broad source's vector — see comments).
-    # For B→B / N→B-EM, the source persona prompts here are:
-    #   - N→B-EM source: source cell's narrow K=8 (the predictor's
-    #     question is the source's POSITION in the persona space).
-    #   - B→B source: the broad-source's K=8 from its training data.
-    if source.startswith("broad_em_"):
-        # MF-G round-2 revision: build the broad-EM SOURCE's OWN K=8 from
-        # its own emissions pool — NOT the target-side leave-one-out
-        # rotation pool. The round-1 code passed a sentinel
-        # ``source_cell="broad_em_anchor"`` to the target-side rotation
-        # builder, which (because the sentinel matched no rotation
-        # candidate) fell through to the first rotation source. Both
-        # source and target K=8 then resolved to the SAME pool →
-        # cosine ≈ 1.0 by construction. The source side now reads its
-        # OWN named pool (keyed on the broad-EM source's bare-name).
-        source_prompts = build_broad_em_source_persona_prompts(
-            source, repo_root=repo_root, seed=seed
-        )
-    elif source.startswith("broad_syco_"):
-        source_prompts = build_broad_syco_target_persona_prompts(repo_root=repo_root, seed=seed)
-    elif source.startswith("xling_"):
-        # Round-3 Rec-3.2: Bucket A sources (xling_A1 / xling_A1_prime /
-        # xling_A2). The source-side K=8 is the English-directive
-        # sycophancy persona pool (shared across A1 / A1' / A2 — see
-        # crosslingual.SOURCE_VECTOR_POOL_KEY which maps all three to
-        # the SAME "xling_en_syco" key). The pool file is built by
-        # scripts/issue503_xling_prep.py and lives at
-        # data/issue503/xling_vector_pool/en_syco.jsonl. If absent, the
-        # underlying loader raises FileNotFoundError which the dispatcher
-        # in scripts/issue503_extract_predictors.py catches and skips
-        # (the cell is then counted as skipped in the regression tally).
-        source_prompts = build_xling_source_persona_prompts(source, repo_root=repo_root, seed=seed)
-    elif source.startswith(("D0_", "D1_", "D2_", "D3_", "D4_")):
-        # Round-3 Rec-3.2: Bucket D sources are the 5 benign-data selectors
-        # (D0_random / D1_representation / D2_gradient / D3_cosine /
-        # D4_format). The source-side K=8 is the SELECTED benign-data
-        # samples that the source adapter is trained on; the pool is
-        # written by scripts/issue503_benign_data_select.py to
-        # data/issue503/benign_data_pools/<selector>_seed{seed}.jsonl.
-        # Strip a trailing "_seed{N}" suffix the smoke uses to make the
-        # source label unique per seed in artifact filenames; the pool
-        # file itself is keyed by selector + seed.
-        source_prompts = build_benign_data_source_persona_prompts(
-            source, repo_root=repo_root, seed=seed
-        )
-    else:
-        source_prompts = build_narrow_persona_system_prompts(source, repo_root=repo_root, seed=seed)
-
-    # Target persona.
-    if target_id == "B1_broad_em":
-        target_prompts = build_broad_em_target_persona_prompts(
-            source_cell=source, repo_root=repo_root, seed=seed
-        )
-    elif target_id == "B2_broad_syco":
-        target_prompts = build_broad_syco_target_persona_prompts(repo_root=repo_root, seed=seed)
-    elif target_id == "T1_medical":
-        target_prompts = build_narrow_persona_system_prompts(
-            "turner_bad_medical", repo_root=repo_root, seed=seed
-        )
-    elif target_id == "T2_code":
-        target_prompts = build_narrow_persona_system_prompts(
-            "insecure_code", repo_root=repo_root, seed=seed
-        )
-    elif target_id == "T3_legal":
-        target_prompts = build_narrow_persona_system_prompts(
-            "emergent_plus_legal", repo_root=repo_root, seed=seed
-        )
-    # Round-3 Rec-3.2: Bucket A target-side persona prompts. A1 + A2 read
-    # their target-language sycophancy K=8 pools; A1' reads the
-    # honest-correction pool (the MF-4 discriminator's structural twist).
-    # crosslingual.TARGET_VECTOR_POOL_KEY is the canonical key list.
-    elif target_id == "A1_es_syco":
-        target_prompts = build_xling_target_persona_prompts(
-            "xling_es_syco", repo_root=repo_root, seed=seed
-        )
-    elif target_id == "A1_prime_es_honest_correction":
-        target_prompts = build_xling_target_persona_prompts(
-            "xling_es_honest_correction", repo_root=repo_root, seed=seed
-        )
-    elif target_id == "A2_it_syco":
-        target_prompts = build_xling_target_persona_prompts(
-            "xling_it_syco", repo_root=repo_root, seed=seed
-        )
-    # Round-3 Rec-3.2: Bucket D target — AdvBench harmful. Target-side K=8
-    # is a fixed misalignment persona pool (broad-EM-flavored harmful
-    # completions on the AdvBench panel); we reuse the broad-EM target
-    # builder by routing through the canonical broad-EM rotation source.
-    elif target_id == "D_advbench":
-        target_prompts = build_advbench_target_persona_prompts(repo_root=repo_root, seed=seed)
-    # Round-3 Rec-3.2: Bucket E targets share T1/T2's narrow target K=8
-    # builders (the persona being measured against IS the matching narrow
-    # target). E1 + E3 use T1_medical (turner_bad_medical); E2 uses
-    # T2_code (insecure_code). The bucket distinction is in the SOURCE
-    # adapter the source-side K=8 reads.
-    elif target_id in ("T1_medical_E", "T1_medical_E_alt"):
-        target_prompts = build_narrow_persona_system_prompts(
-            "turner_bad_medical", repo_root=repo_root, seed=seed
-        )
-    elif target_id == "T2_code_E":
-        target_prompts = build_narrow_persona_system_prompts(
-            "insecure_code", repo_root=repo_root, seed=seed
-        )
-    else:
-        raise ValueError(f"unknown target_id={target_id!r}")
+    source_prompts = _resolve_source_prompts(source, repo_root=repo_root, seed=seed)
+    target_prompts = _resolve_target_prompts(
+        target_id, source=source, repo_root=repo_root, seed=seed
+    )
 
     probes = load_probes_for_target(target_panel_id, repo_root=repo_root, seed=seed)
 
