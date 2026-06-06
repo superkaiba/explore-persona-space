@@ -81,3 +81,21 @@ Broad axes carry real setup cost and a hard prerequisite, so stage the work:
 ## Lineage
 
 Parent: #468 (the validated predictor recipe). Consolidates and supersedes #482 (narrow→broad beyond EM), #484 (narrow→narrow), #485 (broad→broad). B→B' framing originates in #404. Content-vs-geometry disentanglement is #467. EM-only predictor results: #458 / #463 / #468. In-context broad-persona vector build (prerequisite for the broad arm): #486. Candidate secondary predictors / baselines: #473, #499, #414, #481.
+
+## Scope expansion (user-directed replan, 2026-06-05)
+
+This task is being replanned with a widened scope. The original study tested the #468 base-model cosine predictor across the misalignment-only source×target matrix (N→N, N→B beyond EM, B→B). Two additions reframe it as a **calibration of the before-training predictor across the full generalization-surprise spectrum**, so the predictor is validated on cases where the answer is already known before it is trusted on the surprising ones. Report a calibration curve over the spectrum, not only the surprising hits.
+
+The spectrum (source → target), low surprise to high:
+
+1. **Unsurprising / should-transfer anchor (NEW) — cross-lingual transfer.** Train a behavior in English, measure transfer to Spanish (and ≥1 further Romance language as a graded check). This is the positive control: a valid predictor MUST assign small before-training distance and predict high transfer here. Reuses the existing cross-lingual results as priors (#162, #190, #235; synthesis #161) and the §3.6 English→Spanish behavior-distance testbed.
+2. **Surprising — narrow→broad EM** (the originally-validated cell, #458/#463/#468) and **narrow→narrow / broad→broad** (the original matrix).
+3. **Surprising — benign-data breaks safety (NEW), per He, Xia, Henderson (arXiv 2404.01099).** A distinct predictor *arm*, not a behavior-pair cell: the "source" is a subset of a benign corpus (Alpaca/Dolly) with no target behavior, and the outcome is broad unsafety at the default context (the safety-critical off-diagonal, §3.7). Score benign datapoints by (a) the project's base-model distance metric to the harmful / default context, (b) He et al.'s representation- and gradient-space bi-directional anchoring, and (c) pure format (lists / math — their 39% / 56% ASR control). Fine-tune the top-K (~100) per selector on Qwen-2.5-7B and measure post-FT unsafety with an on-policy, non-saturating safety judge (HarmBench / Betley-style). Then project the induced weight/activation shift onto the convergent misaligned-persona direction (Soligo/Wang) to test whether "benign data breaks safety" shares a mechanism with insecure-code EM — the open-weights / weight-space-probe claim the closed-weights original could not make. This is App 5 (predict bad behaviors from training data) with an external, validated baseline to beat.
+4. **Non-transfer end.** Keep ≥1 orthogonal source→target pair the predictor should correctly call as no-transfer, to anchor the low end.
+
+Planning notes for the replan:
+- Decide the integration: the cross-lingual anchor folds into the existing source×target matrix as a new behavior family; the benign-data setting is a parallel predictor arm sharing the outcome rig (on-policy unsafety judge + persona-direction projection) but with its own data-selection front-end.
+- Cheapest-first ordering still holds: assemble already-existing cells (#162/#190/#235 for the unsurprising end, #458/#468 for the EM end) into the first calibration points before training anything new; add the 2404.01099 arm on Qwen next.
+- Carry every existing caveat below (content-vs-geometry #467 control, per-target judge validity, leakage-vs-generic-shift, family clustering). The benign-data arm additionally needs an aligned Qwen-2.5-7B-Instruct safety baseline.
+
+External baseline: He, Xia, Henderson, "What is in Your Safe Data? Identifying Benign Data that Breaks Safety," arXiv 2404.01099 (representation/gradient bi-directional anchoring + the list/math format finding). Provenance + full positioning: docs/mentor_updates/2026-06-05.md.
