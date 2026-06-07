@@ -11,6 +11,15 @@ Public API
     compute_kl_divergence  -- KL(P || Q) averaged over token positions
     teacher_force_batch    -- forward-pass a batch of prompts sharing the same
                              response tokens, return per-token log-softmax
+                             (DEFAULT path; full-vocab tensor returned on CPU
+                             for callers that need it in #207/#311/#458/#473)
+    teacher_force_and_reduce_js_kl -- fused forward + on-GPU JS/KL reduction
+                             returning only scalars; the (152K-vocab) log-softmax
+                             tensors are reduced on GPU and freed in-loop, so
+                             only a few floats cross the PCIe bus. Use when the
+                             only thing the caller wants is the scalar JS/KL
+                             between two persona-conditioned distributions for
+                             a (probe, response) pair.
     build_teacher_force_inputs -- tokenize system+question+response for each persona
 """
 
@@ -250,6 +259,120 @@ def teacher_force_batch(
         torch.cuda.empty_cache()
 
     return torch.cat(all_log_probs, dim=0)
+
+
+def teacher_force_and_reduce_js_kl(
+    model,
+    batch_inputs: dict[str, torch.Tensor],
+    prompt_lengths: list[int],
+    response_len: int,
+    device: str = "cuda:0",
+    max_batch: int = 16,
+    p_index: int = 0,
+    q_index: int = 1,
+) -> tuple[float, float, float]:
+    """Fused teacher-force + on-GPU JS/KL reduction returning only scalars.
+
+    Same forward pass as :func:`teacher_force_batch`, but the per-token JS and
+    both KL directions between the two selected sequences (``p_index`` and
+    ``q_index``) are reduced ON GPU before any tensor is moved off-device, so
+    the (response_len x ~152K-vocab) float32 log-probs are never paid for over
+    PCIe. The caller receives three Python floats.
+
+    Use this when you only need the scalar mean-per-token divergence for one
+    (P, Q) pair per forward pass — the common case for the #470 Rao-Blackwellized
+    sequence-level estimator. Returns the SAME numerical values as the CPU path
+    (:func:`teacher_force_batch` followed by :func:`compute_js_divergence` /
+    :func:`compute_kl_divergence`) to within fp32 round-off (verified in
+    ``tests/test_divergence_gpu_reduction.py``).
+
+    Args:
+        model: HuggingFace CausalLM (already on ``device``, eval mode).
+        batch_inputs: From :func:`build_teacher_force_inputs`.
+        prompt_lengths: Per-sequence prompt-token counts.
+        response_len: Number of response tokens.
+        device: Device string for the forward pass + reduction.
+        max_batch: Maximum sub-batch size for forward passes (only matters when
+            the batch dim N > 2; default 16 is fine for N=2 the typical Phase 3 case).
+        p_index: Row index in the batch to use as distribution P (default 0).
+        q_index: Row index in the batch to use as distribution Q (default 1).
+
+    Returns:
+        ``(js_mean, kl_p_to_q_mean, kl_q_to_p_mean)``, each a Python float —
+        the mean over response-token positions, in nats.
+
+        Bounds:
+            ``0 <= js_mean <= ln(2)``
+            ``kl_p_to_q_mean >= 0``, ``kl_q_to_p_mean >= 0``
+    """
+    total_n = batch_inputs["input_ids"].shape[0]
+    if total_n < 2:
+        raise ValueError(f"teacher_force_and_reduce_js_kl expects batch size >= 2, got {total_n}")
+    if p_index >= total_n or q_index >= total_n or p_index == q_index:
+        raise ValueError(f"Invalid p_index={p_index} / q_index={q_index} for batch size {total_n}")
+
+    max_len = batch_inputs["input_ids"].shape[1]
+
+    # Cache the per-position log-softmax for P and Q on GPU. We only keep
+    # (response_len, V) per row, in fp32 — for response_len=150, V=152K this is
+    # ~91 MB per row (~182 MB total), comfortably fits in 80GB after the ~15GB
+    # model. We do NOT accumulate across many (probe, response) pairs: this
+    # function returns and frees them every call.
+    lp_p: torch.Tensor | None = None
+    lp_q: torch.Tensor | None = None
+
+    for start in range(0, total_n, max_batch):
+        end = min(start + max_batch, total_n)
+        sub_input_ids = batch_inputs["input_ids"][start:end].to(device)
+        sub_attention_mask = batch_inputs["attention_mask"][start:end].to(device)
+        sub_prompt_lengths = prompt_lengths[start:end]
+        sub_batch_size = sub_input_ids.shape[0]
+
+        with torch.no_grad():
+            outputs = model(input_ids=sub_input_ids, attention_mask=sub_attention_mask)
+            logits = outputs.logits
+
+        for i in range(sub_batch_size):
+            global_i = start + i
+            if global_i != p_index and global_i != q_index:
+                # Only materialise log-softmax for the two rows we'll reduce
+                # over; everything else is wasted compute + memory.
+                continue
+            pad_len = max_len - (sub_prompt_lengths[i] + response_len)
+            resp_start = pad_len + sub_prompt_lengths[i]
+            logit_start = resp_start - 1
+            logit_end = resp_start + response_len - 1
+            row_logits = logits[i, logit_start:logit_end, :].float()
+            row_lp = F.log_softmax(row_logits, dim=-1)
+            if global_i == p_index:
+                lp_p = row_lp
+            else:
+                lp_q = row_lp
+            del row_logits
+
+        del outputs, logits, sub_input_ids, sub_attention_mask
+
+    if lp_p is None or lp_q is None:
+        raise RuntimeError(
+            f"Failed to materialise log-softmax for p_index={p_index} / q_index={q_index}"
+        )
+
+    # All reductions on GPU; only scalars cross the device boundary.
+    assert lp_p.shape == lp_q.shape, (lp_p.shape, lp_q.shape)
+    js_scalar = compute_js_divergence(lp_p, lp_q)
+    kl_p_to_q_scalar = compute_kl_divergence(lp_p, lp_q)
+    kl_q_to_p_scalar = compute_kl_divergence(lp_q, lp_p)
+
+    js_mean = float(js_scalar.item())
+    kl_p_to_q_mean = float(kl_p_to_q_scalar.item())
+    kl_q_to_p_mean = float(kl_q_to_p_scalar.item())
+
+    # Free GPU memory before returning so the caller's next iteration starts clean.
+    del lp_p, lp_q, js_scalar, kl_p_to_q_scalar, kl_q_to_p_scalar
+    if device.startswith("cuda") and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+    return js_mean, kl_p_to_q_mean, kl_q_to_p_mean
 
 
 def compute_pairwise_divergences(
