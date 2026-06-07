@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 507,
+  "highest_id": 508,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2895,6 +2895,14 @@
       "path": "tasks/running/507",
       "status": "running",
       "title": "Does model scale rescue the cosine/JS leakage predictor for sycophancy? (port #470 rig to a larger model)"
+    },
+    "508": {
+      "goal": "Measure whether marker leakage to bystander personas (and the default assistant) differs between LoRA and full fine-tuning when implanting a contrastive marker behavior into a source persona, holding the contrastive recipe, training data, and on-policy leakage DV fixed and comparing at a matched source-implant rate.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/508",
+      "status": "proposed",
+      "title": "LoRA vs full fine-tuning: does marker leakage to bystander personas differ?"
     },
     "51": {
       "has_clean_result": false,
