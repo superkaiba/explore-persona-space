@@ -173,7 +173,15 @@ DEFAULT_MAX_NEW_TOKENS = 256
 # layers while Phase 2 wrote the 72B layers → FileNotFoundError on layer_7.json.
 # Round-3 fix per code-review Critical 5.
 _DEFAULT_LAYERS_ENV = os.environ.get("PREDICTOR_LAYERS")
-if _DEFAULT_LAYERS_ENV:
+if _DEFAULT_LAYERS_ENV is not None:
+    # Env is set but empty: explicit operator-error, raise loud so we don't
+    # silently fall back to the 7B default under a 72B run that set the
+    # variable wrong.
+    if not _DEFAULT_LAYERS_ENV.strip():
+        raise RuntimeError(
+            f"PREDICTOR_LAYERS={_DEFAULT_LAYERS_ENV!r} is set but empty; "
+            "refusing to proceed (at least one layer required, or unset the env)."
+        )
     try:
         DEFAULT_LAYERS = tuple(int(x) for x in _DEFAULT_LAYERS_ENV.split(","))
     except ValueError as _exc:

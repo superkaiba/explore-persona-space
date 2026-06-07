@@ -1050,7 +1050,7 @@ def _write_results_sentinel(*, summary: dict[str, object]) -> Path | None:
 # ── Top-level orchestration ──
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 — dispatcher fan-out is inherently linear
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--sources",
@@ -1065,6 +1065,17 @@ def main(argv: list[str] | None = None) -> int:
         help="Stop after cell 1's smoke gate; useful when validating the rig "
         "before the full sweep. Unified-architecture parity: same code path "
         "as the sweep, just one cell.",
+    )
+    parser.add_argument(
+        "--smoke-include-predictor",
+        action="store_true",
+        help="When set with --smoke-gate-only, ALSO run Phase 3.5 (analyze_72b) "
+        "+ Phase 3 (predictor extraction with probes=5, R=2, bystanders=1) + "
+        "Phase 4 (regress + cross-arm) + Phase 6 (figures) on the tiny smoke "
+        "slice before halting. Round-3 fix per code-review smoke-coverage gate: "
+        "exercises every phase the sweep executes on a tiny slice, so a "
+        "downstream phase crash surfaces during smoke. Requires GPU (Phase 3 "
+        "loads Qwen-72B) — leave unset for CPU smoke validation.",
     )
     parser.add_argument(
         "--skip-phase0",
@@ -1193,12 +1204,28 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.smoke_gate_only:
+        # Round-3 fix per code-review smoke-coverage gate: when
+        # --smoke-include-predictor is set, exercise every phase the sweep
+        # executes on the cell-1 tiny slice (probes=5, R=2, bystanders=1)
+        # BEFORE halting. This catches Phase 3-6 startup bugs during smoke
+        # instead of waiting for the full sweep to hit them.
+        if args.smoke_include_predictor:
+            log.info(
+                "--smoke-include-predictor set; running Phase 3.5/3/4/6 on the "
+                "cell-1 smoke slice before halting."
+            )
+            phase3_5_analyze_72b(seed=first_seed, sources=[first_source])
+            phase3_predictor_72b(smoke=True, gpu_id=args.gpu_id)
+            phase4_regress_and_cross_arm(regression_7b_path=args.regression_7b)
+            phase6_figures()
+            log.info("--smoke-include-predictor: Phase 3.5+3+4+6 PASS on smoke slice.")
         log.info("--smoke-gate-only set; halting after cell 1 smoke gate PASS.")
         _write_results_sentinel(
             summary={
                 "mode": "smoke_gate_only",
                 "cell1_wall_seconds": round(cell1_wall, 1),
                 "cells_completed": [f"{first_source}_seed{first_seed}"],
+                "smoke_include_predictor": args.smoke_include_predictor,
             }
         )
         _log_phase("done")
