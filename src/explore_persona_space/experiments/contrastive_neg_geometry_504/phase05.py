@@ -159,9 +159,17 @@ def run_gates_for_layer(
     held_out_panel: list[str],
     source: str = SOURCE_PERSONA,
     default_persona: str = ALWAYS_INCLUDE_NEGATIVE,
+    mean_center: bool = True,
 ) -> dict[str, Any]:
-    """Compute Gates A/B/C diagnostics for ONE layer (no failure escalation)."""
-    cos_matrix = _cos_matrix_from_centroids(centroids)
+    """Compute Gates A/B/C diagnostics for ONE layer (no failure escalation).
+
+    ``mean_center`` (#504 round-7 fix, blocker 1) threads the cosine-centering
+    choice all the way through to ``_cos_matrix_from_centroids`` so the gate
+    diagnostics + per-probe covariates honor the dispatcher's ``--no-mean-center``
+    opt-out. Round-6 default = True (mean-centered, #66/#341 methodology); pass
+    False to recover round 1-5 raw-cosine behavior.
+    """
+    cos_matrix = _cos_matrix_from_centroids(centroids, mean_center=mean_center)
     gate_a = gate_a_identification_floor(
         held_out_panel,
         arm_to_positioned_n,
@@ -256,6 +264,7 @@ def _select_at_layer(
     cos_to_source_by_layer: dict[int, dict[str, float]],
     source: str,
     default_persona: str,
+    mean_center: bool = True,
 ) -> dict[str, Any]:
     """Pick positioned-N's + smoke-mid-band-N + held-out panel + per-probe
     covariates ANCHORED at `layer`.
@@ -264,6 +273,10 @@ def _select_at_layer(
     the headline pick AND (round-2 fix, blocker #1) for the re-pick when a
     fallback layer wins — so `arm_to_positioned_n`, `per_probe`, and the
     panel are always layer-consistent with `chosen_layer`.
+
+    ``mean_center`` (#504 round-7 fix, blocker 1) threads the cosine-centering
+    choice into ``_per_probe_covariates`` so ``d_nearest_neg_nd`` matches the
+    same geometry the dispatcher built ``cos_to_source_by_layer`` from.
     """
     cts = cos_to_source_by_layer[layer]
     band_to_n = select_positioned_negatives(cts, source=source, default_persona=default_persona)
@@ -280,7 +293,7 @@ def _select_at_layer(
         panel,
         arm_to_n,
         cts,
-        _cos_matrix_from_centroids(centroids_by_layer[layer]),
+        _cos_matrix_from_centroids(centroids_by_layer[layer], mean_center=mean_center),
         centroids_by_layer[layer],
         source,
     )
@@ -303,6 +316,7 @@ def run_phase05(
     default_persona: str = ALWAYS_INCLUDE_NEGATIVE,
     headline_layer: int = DEFAULT_HEADLINE_LAYER,
     fallback_layers: tuple[int, ...] = FALLBACK_LAYERS,
+    mean_center: bool = True,
 ) -> dict[str, Any]:
     """Top-level Phase 0.5 runner.
 
@@ -320,6 +334,14 @@ def run_phase05(
     `gate_results` are still computed against the HEADLINE picks (for
     diagnostic visibility); the gate that fires the re-pick is the
     ``re_picked_at_chosen_layer`` block.
+
+    **Round-7 fix (binding blocker 1):** ``mean_center`` is threaded all the
+    way through ``_select_at_layer`` and ``run_gates_for_layer`` so the
+    dispatcher's ``--no-mean-center`` opt-out actually disables mean-centering
+    in the gate cosines AND the per-probe covariates AND the chosen-layer
+    re-pick — not just in the dispatcher-built ``cos_to_source_by_layer``.
+    The opt-out artifact is now internally self-consistent (gates + d_source
+    + d_nearest_neg_nd all from the SAME geometry).
     """
     if headline_layer not in centroids_by_layer:
         raise KeyError(
@@ -334,6 +356,7 @@ def run_phase05(
         cos_to_source_by_layer=cos_to_source_by_layer,
         source=source,
         default_persona=default_persona,
+        mean_center=mean_center,
     )
     headline_arm_to_n = headline_pick["arm_to_n"]
     headline_panel = headline_pick["panel"]
@@ -350,6 +373,7 @@ def run_phase05(
             held_out_panel=headline_panel,
             source=source,
             default_persona=default_persona,
+            mean_center=mean_center,
         )
 
     chosen_layer, verdict_str = select_chosen_layer(
@@ -368,6 +392,7 @@ def run_phase05(
             cos_to_source_by_layer=cos_to_source_by_layer,
             source=source,
             default_persona=default_persona,
+            mean_center=mean_center,
         )
         re_picked_at_chosen_layer = True
         log.info(
@@ -388,6 +413,7 @@ def run_phase05(
             held_out_panel=final_pick["panel"],
             source=source,
             default_persona=default_persona,
+            mean_center=mean_center,
         )
         if not per_layer_results[chosen_layer]["all_pass"]:
             # Re-running gates with the chosen-layer's own arms must still

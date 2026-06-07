@@ -243,6 +243,7 @@ def main(argv: list[str] | None = None) -> int:
         default_persona=ALWAYS_INCLUDE_NEGATIVE,
         headline_layer=args.headline_layer,
         fallback_layers=fallback_layers,
+        mean_center=mean_center,
     )
     write_phase05_artifact(report, args.out_path)
 
