@@ -146,6 +146,8 @@ def test_cmd_resume_supply_constraint_raises_actionable(monkeypatch):
     pod = _pod(name="pod-5", issue=5)
     monkeypatch.setattr(pod_lifecycle, "_load_state", lambda: {"pod-5": pod})
     monkeypatch.setattr(pod_lifecycle, "_find_pod_in_state", lambda state, issue: pod)
+    # Stub the account-spend guard so the test stays offline (no real API hit).
+    monkeypatch.setattr(pod_lifecycle, "_assert_under_account_hourly_cap", lambda **_kw: None)
 
     def boom(pod_id, gpu_count):
         raise RunPodError("podResume returned null for id-pod-5")
@@ -177,6 +179,8 @@ def test_cmd_resume_non_supply_error_propagates(monkeypatch):
     pod = _pod(name="pod-6", issue=6)
     monkeypatch.setattr(pod_lifecycle, "_load_state", lambda: {"pod-6": pod})
     monkeypatch.setattr(pod_lifecycle, "_find_pod_in_state", lambda state, issue: pod)
+    # Stub the account-spend guard so the test stays offline (no real API hit).
+    monkeypatch.setattr(pod_lifecycle, "_assert_under_account_hourly_cap", lambda **_kw: None)
 
     def boom(pod_id, gpu_count):
         raise RunPodError("HTTP 401 from RunPod: unauthorized")

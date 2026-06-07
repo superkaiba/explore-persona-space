@@ -44,6 +44,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import re
 import socket
 import subprocess
@@ -71,6 +72,8 @@ from runpod_api import (  # noqa: E402
     PodInfo,
     RunPodError,
     create_pod,
+    current_account_hourly_burn,
+    estimate_pod_hourly_rate,
     list_team_pods,
     resume_pod,
     stop_pod,
@@ -772,6 +775,122 @@ def _live_ssh_endpoint(issue: int) -> tuple[str | None, int | None]:
     return pod.host, pod.port
 
 
+# ─── account hourly-spend guard ──────────────────────────────────────────────
+
+
+# RunPod enforces a per-account hourly spending limit set in the console (the
+# "$80/hr cap"). When the projected sum-of-running-pod hourly rates exceeds
+# that cap, RunPod refuses the next ``podFindAndDeployOnDemand`` /
+# ``podResume`` with ``INSUFFICIENT_BALANCE: Renting this pod would put you
+# over your current spending limit ($X/hr)`` — AFTER the user has already
+# initiated the run. We mirror the cap locally so the guard fails LOUD
+# pre-flight with the projected total instead of mid-run (incidents #503,
+# #505 on 2026-06-05). Default 80.0 USD/hr; override via env to match
+# whatever the console cap is set to.
+_DEFAULT_ACCOUNT_HOURLY_CAP_USD = 80.0
+
+
+def _account_hourly_cap_usd() -> float:
+    """Read the local mirror of the RunPod account $/hr cap. Env override
+    ``RUNPOD_ACCOUNT_HOURLY_CAP`` (default 80.0). Bad values fall back to the
+    default rather than crash the lifecycle.
+    """
+    raw = os.environ.get("RUNPOD_ACCOUNT_HOURLY_CAP", "").strip()
+    if not raw:
+        return _DEFAULT_ACCOUNT_HOURLY_CAP_USD
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        print(
+            f"[pod_lifecycle] WARN: RUNPOD_ACCOUNT_HOURLY_CAP={raw!r} is not a number; "
+            f"using default ${_DEFAULT_ACCOUNT_HOURLY_CAP_USD:.2f}/hr.",
+            file=sys.stderr,
+        )
+        return _DEFAULT_ACCOUNT_HOURLY_CAP_USD
+
+
+def _assert_under_account_hourly_cap(
+    *,
+    verb: str,
+    pod_label: str,
+    intended_gpu_type: str | None,
+    intended_gpu_count: int | None,
+    skip_for_same_pod: str | None = None,
+) -> None:
+    """Refuse to provision/resume when the projected account $/hr would exceed
+    the RunPod console cap. Fails LOUD pre-flight with the current burn, the
+    new pod's estimated rate, the projected total, and the cap.
+
+    Parameters
+    ----------
+    verb : ``"provision"`` or ``"resume"`` — only used in the error message.
+    pod_label : human-friendly id for the pod we're about to start (e.g.
+        ``"pod-137"``); only used in the error message.
+    intended_gpu_type : short GPU name (``"H100"``) or full GraphQL id; passed
+        to :func:`runpod_api.estimate_pod_hourly_rate`.
+    intended_gpu_count : how many GPUs the new pod will use.
+    skip_for_same_pod : when ``resume`` re-queries the API the stopped pod
+        already shows ``RUNNING=False``, but if there's a sibling RUNNING pod
+        with the SAME name from a duplicate-provision race, we'd double-count.
+        Pass the pod name to exclude from the current-burn sum (defensive —
+        the resume path is the one that triggered #503).
+
+    Per the "Fail fast — never hide failures" rule: if
+    :func:`current_account_hourly_burn` raises (API unreachable), the
+    exception propagates. We CANNOT make the decision without the live state,
+    so we refuse the operation rather than silently letting RunPod surface it
+    mid-run.
+    """
+    cap = _account_hourly_cap_usd()
+    intended_rate = estimate_pod_hourly_rate(intended_gpu_type, intended_gpu_count)
+    current_total, breakdown = current_account_hourly_burn()
+    if skip_for_same_pod:
+        # Subtract any RUNNING pod sharing the resumed pod's name (defensive
+        # vs duplicate-provision races; in the normal resume path the stopped
+        # pod isn't in `breakdown` at all because it's EXITED).
+        for name, rate in breakdown:
+            if name == skip_for_same_pod:
+                current_total -= rate
+    projected = current_total + intended_rate
+    if projected <= cap:
+        return
+    breakdown_lines = (
+        "\n".join(f"    {name:<30} ${rate:6.2f}/hr" for name, rate in breakdown[:10])
+        or "    (no other RUNNING pods)"
+    )
+    omitted = max(0, len(breakdown) - 10)
+    if omitted:
+        breakdown_lines += f"\n    ... and {omitted} more"
+    raise SystemExit(
+        f"\nRefusing to {verb} {pod_label}: would exceed the RunPod account "
+        f"hourly spending cap.\n"
+        f"  Current burn   : ${current_total:6.2f}/hr (sum of RUNNING pods)\n"
+        f"  This pod adds  : ${intended_rate:6.2f}/hr "
+        f"({intended_gpu_count}x {_short_gpu_label(intended_gpu_type)})\n"
+        f"  Projected total: ${projected:6.2f}/hr\n"
+        f"  Account cap    : ${cap:6.2f}/hr "
+        f"(local mirror; override with RUNPOD_ACCOUNT_HOURLY_CAP)\n"
+        f"  Current RUNNING pods:\n{breakdown_lines}\n"
+        f"\nOptions: stop or terminate other pods to free capacity, raise the "
+        f"console cap (and `export RUNPOD_ACCOUNT_HOURLY_CAP=<new>`), or "
+        f"tune per-GPU rate estimates via RUNPOD_RATE_<GPU>_USD if they "
+        f"over-estimate your actual pricing.\n"
+    )
+
+
+def _short_gpu_label(gpu_type_id: str | None) -> str:
+    """Tiny shim so the guard's error message reads ``H100`` not the full id.
+    Lives in pod_lifecycle (not runpod_api) so we don't widen the latter's
+    public surface for a presentation helper.
+    """
+    if not gpu_type_id:
+        return "?"
+    for short in ("H100", "H200", "A100"):
+        if short in gpu_type_id:
+            return short
+    return gpu_type_id
+
+
 # ─── commands ────────────────────────────────────────────────────────────────
 
 
@@ -857,6 +976,17 @@ def cmd_provision(args: argparse.Namespace) -> None:
     if args.dry_run:
         print("\n[dry-run] Would call create_pod and wait for SSH; no API call made.")
         return
+
+    # Pre-flight account hourly-spend guard. Fails LOUD here with the projected
+    # total + cap if creating this pod would push the account over the RunPod
+    # console cap (default $80/hr) — instead of letting RunPod refuse with
+    # INSUFFICIENT_BALANCE *after* the user has initiated the run (#503, #505).
+    _assert_under_account_hourly_cap(
+        verb="provision",
+        pod_label=name,
+        intended_gpu_type=spec.gpu_type,
+        intended_gpu_count=spec.gpu_count,
+    )
 
     info = create_pod(
         name=name,
@@ -951,6 +1081,22 @@ def cmd_resume(args: argparse.Namespace) -> None:
     if args.dry_run:
         print("[dry-run] Would call resume_pod and wait for SSH.")
         return
+
+    # Pre-flight account hourly-spend guard. Resume rents capacity the same way
+    # provision does — the stopped pod isn't currently burning $/hr, so adding
+    # it back can push the account over the RunPod console cap (default
+    # $80/hr). Fail LOUD here with the projected total instead of letting
+    # RunPod refuse with INSUFFICIENT_BALANCE after the resume call (#503).
+    # ``skip_for_same_pod`` defends against a duplicate-provision race where a
+    # sibling pod shares the resumed pod's name.
+    _assert_under_account_hourly_cap(
+        verb="resume",
+        pod_label=name,
+        intended_gpu_type=pod.gpu_type,
+        intended_gpu_count=pod.gpu_count,
+        skip_for_same_pod=name,
+    )
+
     try:
         resume_pod(pod.pod_id, pod.gpu_count)
     except RunPodError as exc:
