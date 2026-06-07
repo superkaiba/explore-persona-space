@@ -216,28 +216,48 @@ def main() -> int:
     adapter_path = args.adapter_path
     if "/" in args.adapter_path and not Path(args.adapter_path).exists():
         # Treat as HF repo id; download subfolder.
-        from huggingface_hub import snapshot_download
+        from huggingface_hub import hf_hub_download, list_repo_files
 
         if args.adapter_subfolder is None:
             raise ValueError(
                 "--adapter-path looks like an HF repo id but --adapter-subfolder is unset"
             )
         try:
-            adapter_path = snapshot_download(
-                repo_id=args.adapter_path,
-                allow_patterns=[f"{args.adapter_subfolder}/*"],
-            )
-            adapter_path_final = Path(adapter_path) / args.adapter_subfolder
-            # snapshot_download succeeds even when allow_patterns matches zero
-            # files (returns the repo root). Verify the adapter subfolder is
-            # actually populated; an empty dir == missing adapter.
+            # snapshot_download relies on model_info.siblings which is capped at
+            # ~1000 files; the explore-persona-space model repo has thousands
+            # of cumulative-experiment adapter files, so newly-uploaded
+            # adapters fall outside the visible window and snapshot_download
+            # returns zero files. Round-7 fix: use list_repo_files (paginated)
+            # + per-file hf_hub_download (file-by-file metadata), which has no
+            # repo-size cap.
+            all_files = list_repo_files(repo_id=args.adapter_path)
+            subfolder_prefix = args.adapter_subfolder.rstrip("/") + "/"
+            matching = [f for f in all_files if f.startswith(subfolder_prefix)]
+            if not matching:
+                raise FileNotFoundError(
+                    f"adapter subfolder {args.adapter_subfolder!r} has no files in "
+                    f"{args.adapter_path!r} per list_repo_files; adapter never uploaded"
+                )
+            # Download each matching file individually. hf_hub_download
+            # creates the directory structure under the cache root.
+            local_root: Path | None = None
+            for fname in matching:
+                fp = hf_hub_download(repo_id=args.adapter_path, filename=fname)
+                if local_root is None:
+                    # Snapshot root is everything before the first occurrence
+                    # of subfolder_prefix in the cached path.
+                    parts = Path(fp).as_posix()
+                    idx = parts.find(subfolder_prefix)
+                    if idx >= 0:
+                        local_root = Path(parts[:idx])
+            adapter_path_final = (local_root or Path()) / args.adapter_subfolder
             if not adapter_path_final.exists() or not any(adapter_path_final.iterdir()):
                 raise FileNotFoundError(
-                    f"adapter subfolder {args.adapter_subfolder!r} is empty or absent in "
-                    f"{args.adapter_path!r}; snapshot_download returned no matching files"
+                    f"adapter subfolder {args.adapter_subfolder!r} is empty after "
+                    f"file-by-file download in {args.adapter_path!r}"
                 )
             adapter_path = str(adapter_path_final)
-            logger.info("Downloaded adapter to %s", adapter_path)
+            logger.info("Downloaded %d files for adapter to %s", len(matching), adapter_path)
         except Exception as exc:
             # Round-6 GAP-5: gracefully skip cells whose adapter wasn't trained.
             # The sweep drives sources like Bucket D (D0_random/D1_representation
