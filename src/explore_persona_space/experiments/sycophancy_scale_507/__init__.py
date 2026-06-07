@@ -68,6 +68,42 @@ EXPECTED_EFFECTIVE_BATCH: int = 16
 # inversely with world_size to preserve effective batch 16.
 PER_DEVICE_TRAIN_BATCH_72B: int = 1
 
+# Round-3 fix per code-review Major 7 (Codex r2): production 72B runs are
+# valid only at world_size ∈ {4, 8} — the 4xH200 default + 8xH100 supply
+# fallback. world_size=1 is reserved for CPU smoke tests / single-GPU debug
+# (see train_72b.py log.warning). world_size=2 or world_size=16 would
+# preserve effective batch 16 but are unsupported pod shapes (no 2x or 16x
+# 80 GB pod in the standard #507 inventory). validate_production_world_size
+# raises on anything outside {4, 8}; compute_grad_accum stays general so
+# the debug/smoke math still works.
+PRODUCTION_WORLD_SIZES: frozenset[int] = frozenset({4, 8})
+DEBUG_WORLD_SIZES: frozenset[int] = frozenset({1})
+
+
+def validate_production_world_size(world_size: int, *, allow_debug: bool = False) -> None:
+    """Validate world_size is one of the supported production shapes.
+
+    Production 72B training fires at world_size ∈ {4, 8}. The CPU smoke /
+    single-GPU debug path (world_size=1) is permitted only when
+    ``allow_debug=True`` — the dispatcher passes it during smoke gates.
+
+    Raises:
+        ValueError: world_size is outside the supported set for the given
+            allow_debug flag.
+    """
+    if world_size in PRODUCTION_WORLD_SIZES:
+        return
+    if allow_debug and world_size in DEBUG_WORLD_SIZES:
+        return
+    accepted = PRODUCTION_WORLD_SIZES | DEBUG_WORLD_SIZES if allow_debug else PRODUCTION_WORLD_SIZES
+    raise ValueError(
+        f"world_size={world_size} is not a supported #507 production shape. "
+        f"Accepted (allow_debug={allow_debug}): {sorted(accepted)}. The 4xH200 "
+        f"default and 8xH100 supply-fallback are the only validated 72B pods; "
+        f"world_size=2 or 16 would preserve effective batch 16 mathematically "
+        f"but no such pod shape exists in the #507 inventory."
+    )
+
 
 def compute_grad_accum(world_size: int, per_device_batch: int = PER_DEVICE_TRAIN_BATCH_72B) -> int:
     """Compute grad_accum so world_size x per_device_batch x grad_accum == 16.
@@ -75,6 +111,12 @@ def compute_grad_accum(world_size: int, per_device_batch: int = PER_DEVICE_TRAIN
     The load-bearing piece of the 72B pod-shape dispatch: on the 4xH200 default
     path world_size=4 -> grad_accum=4; on the 8xH100 supply-fallback path
     world_size=8 -> grad_accum=2. Either way effective batch = 16 matches #411.
+
+    NOTE: this math helper stays GENERAL — it accepts any positive world_size
+    that divides 16. ``validate_production_world_size`` enforces the
+    production restriction ({4,8}) separately; the dispatcher calls both.
+    Keeping the helper general means CPU unit tests (world_size=1) and the
+    occasional debug path stay friction-free.
 
     Raises:
         ValueError: when the chosen world_size + per_device_batch cannot

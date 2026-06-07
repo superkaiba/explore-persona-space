@@ -64,6 +64,7 @@ from explore_persona_space.experiments.sycophancy_scale_507 import (  # noqa: E4
     HEADLINE_LAYER_BY_ARCH,
     LAYER_SET_BY_ARCH,
     SOURCE_PERSONAS_507,
+    validate_production_world_size,
 )
 
 log = logging.getLogger("dispatch_sycophancy_507")
@@ -386,7 +387,13 @@ def phase0_bootstrap(*, sources: list[str], force: bool = False) -> None:
 # ── Phase 1: training (one cell) ──
 
 
-def phase1_train_cell(*, source: str, seed: int, world_size: int | None = None) -> Path:
+def phase1_train_cell(
+    *,
+    source: str,
+    seed: int,
+    world_size: int | None = None,
+    allow_debug_world_size: bool = False,
+) -> Path:
     """Train one 72B LoRA cell via the deepspeed launcher. Returns the adapter dir.
 
     Round-2 fix per code-review Critical 3: the round-1 in-process call
@@ -398,6 +405,13 @@ def phase1_train_cell(*, source: str, seed: int, world_size: int | None = None) 
 
     Single-GPU debug path (world_size=1) still supported via the in-process
     call — useful for CPU smoke tests where deepspeed isn't installed.
+
+    Round-3 fix per code-review Major 7: enforce production world_size ∈
+    ``{4, 8}`` via ``validate_production_world_size``. ``allow_debug_world_size``
+    must be True (set only by the CPU smoke / single-GPU paths) to accept
+    world_size=1; production runs that resolve to world_size ∈ {2, 16} are
+    fail-loud because those pod shapes are not in the #507 inventory even
+    though they would mathematically preserve effective batch 16.
     """
     _log_phase("train")
     train_jsonl = TRAIN_POOLS_CACHE / f"{source}_train.jsonl"
@@ -439,6 +453,12 @@ def phase1_train_cell(*, source: str, seed: int, world_size: int | None = None) 
         output_dir,
         resolved_ws,
     )
+
+    # Round-3 fix per code-review Major 7: gate the resolved world_size at
+    # {4, 8} for production; allow_debug_world_size=True is the only path
+    # that accepts 1 (CPU smoke / single-GPU debug). Anything else (2, 3,
+    # 16, etc.) raises before the deepspeed launcher fires.
+    validate_production_world_size(resolved_ws, allow_debug=allow_debug_world_size)
 
     if resolved_ws == 1:
         # Single-GPU debug path: call train_72b in-process. Useful for CPU
@@ -1086,6 +1106,16 @@ def main(argv: list[str] | None = None) -> int:
         "deepspeed/accelerate launcher.",
     )
     parser.add_argument("--gpu-id", type=int, default=0)
+    parser.add_argument(
+        "--allow-debug-world-size",
+        action="store_true",
+        help=(
+            "Permit world_size=1 (CPU smoke / single-GPU debug). "
+            "Production runs MUST NOT pass this; validate_production_world_size "
+            "raises on world_size ∉ {4, 8} unless --allow-debug-world-size is "
+            "set. Round-3 fix per code-review Major 7."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -1146,6 +1176,7 @@ def main(argv: list[str] | None = None) -> int:
         source=first_source,
         seed=first_seed,
         world_size=args.world_size,
+        allow_debug_world_size=args.allow_debug_world_size,
     )
     phase2_eval_cell(source=first_source, seed=first_seed, adapter_path=adapter_dir_first)
     phase2_5_judge_source(source=first_source, seed=first_seed)
@@ -1178,7 +1209,12 @@ def main(argv: list[str] | None = None) -> int:
         for seed in args.seeds:
             log.info("=" * 70 + f"\nCell START: source={source} seed={seed}\n" + "=" * 70)
             cell_start = time.time()
-            adapter_dir = phase1_train_cell(source=source, seed=seed, world_size=args.world_size)
+            adapter_dir = phase1_train_cell(
+                source=source,
+                seed=seed,
+                world_size=args.world_size,
+                allow_debug_world_size=args.allow_debug_world_size,
+            )
             phase2_eval_cell(source=source, seed=seed, adapter_path=adapter_dir)
             phase2_5_judge_source(source=source, seed=seed)
             cell_wall = time.time() - cell_start
@@ -1194,7 +1230,12 @@ def main(argv: list[str] | None = None) -> int:
     for seed in args.seeds[1:]:
         log.info("=" * 70 + f"\nCell START: source={first_source} seed={seed}\n" + "=" * 70)
         cell_start = time.time()
-        adapter_dir = phase1_train_cell(source=first_source, seed=seed, world_size=args.world_size)
+        adapter_dir = phase1_train_cell(
+            source=first_source,
+            seed=seed,
+            world_size=args.world_size,
+            allow_debug_world_size=args.allow_debug_world_size,
+        )
         phase2_eval_cell(source=first_source, seed=seed, adapter_path=adapter_dir)
         phase2_5_judge_source(source=first_source, seed=seed)
         cell_wall = time.time() - cell_start
