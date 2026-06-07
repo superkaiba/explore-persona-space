@@ -9,6 +9,9 @@ goal: Measure whether marker leakage to bystander personas (and the default assi
   differs between LoRA and full fine-tuning when implanting a contrastive marker behavior
   into a source persona, holding the contrastive recipe, training data, and on-policy
   leakage DV fixed and comparing at a matched source-implant rate.
+relates_to:
+- leak-predictor
+- leak-to-default
 ---
 # LoRA vs full fine-tuning: does marker leakage to bystander personas differ?
 
