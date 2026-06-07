@@ -347,6 +347,51 @@ def _is_predictor_saturated(x: np.ndarray, var_threshold: float = 1e-6) -> bool:
     return float(np.var(x_finite)) < var_threshold
 
 
+# ROUND-3/#509 G2: per-pair saturation exclusion threshold. Cloud metrics
+# (cosine distance, JS divergence, MMD) bottom out near 0 when two persona
+# vectors are indistinguishable at this (extraction_point, layer, metric)
+# cell — the pair carries no rank information for the regression. Round 2
+# wired ``_is_predictor_saturated`` as a whole-cell variance flag that
+# never dropped any pair; G2 adds per-pair exclusion before the headline
+# statistic, the perm null, the bootstrap CI, the jackknife SE, and the
+# LOCO-CV R^2 (per plan §4.2.6 #3: "exclude that PAIR from the
+# regression but flag the cell").
+_PAIR_SATURATION_ABS_THRESHOLD = 1e-6
+
+# Minimum surviving sample for a stable rank-correlation statistic.
+# Below this floor, the surviving pairs are too few for the partial
+# Spearman + cluster bootstrap to be informative, so ``_score_one_cell``
+# emits NaN + ``saturation_too_aggressive: True``.
+_MIN_SURVIVING_PAIRS = 5
+
+
+def _saturated_pair_mask(
+    x: np.ndarray,
+    abs_threshold: float = _PAIR_SATURATION_ABS_THRESHOLD,
+) -> np.ndarray:
+    """Return a boolean mask: True where the predictor distance is at the
+    floor of its natural range (plan §4.2.6 #3).
+
+    For cloud metrics in the #493/#502 bake-off (cosine distance, JS
+    divergence, MMD) a value near 0 means the persona pair is
+    indistinguishable at this metric/layer/extraction-point cell — no
+    rank-information contribution, only noise. Non-finite entries are
+    treated as saturated so the downstream filter discards them too.
+
+    Args:
+        x: Per-pair predictor distances, shape ``(n_pairs,)``.
+        abs_threshold: ``|x_i| < abs_threshold`` flags pair ``i`` as
+            saturated. Defaults to ``_PAIR_SATURATION_ABS_THRESHOLD``
+            (1e-6), well below bf16's smallest non-tied increment so
+            non-saturated pairs are kept even at single-precision noise.
+
+    Returns:
+        Boolean array of the same shape as ``x``; True == saturated.
+    """
+    x = np.asarray(x, dtype=float)
+    return ~np.isfinite(x) | (np.abs(x) < abs_threshold)
+
+
 def _coarse_lift_per_cell(
     x: np.ndarray,
     y: np.ndarray,
@@ -662,8 +707,60 @@ def _score_one_cell(
     sets it to False so an all-NaN SE array raises instead of silently
     yielding ``rho_fe_adj == rho_fe`` (Plan §6.1 attenuation correction
     is load-bearing for the verdict thresholds).
+
+    ROUND-3/#509 G2: per plan §4.2.6 #3, pairs whose predictor distance
+    sits at the floor of the metric's natural range are dropped from the
+    regression BEFORE every downstream statistic (``rho_fe``, perm null,
+    bootstrap CI, jackknife SE, LOCO-CV R^2). Round-2 wired
+    ``_is_predictor_saturated`` as a whole-cell variance flag that
+    reported the saturation state but never excluded any pair; this
+    let saturated pairs corrupt the headline statistic and inference.
+    G2 filters ``(x, y, strata, se, prior_z)`` via
+    ``_saturated_pair_mask`` upfront and reports
+    ``n_excluded_saturated`` per cell. When fewer than
+    ``_MIN_SURVIVING_PAIRS`` survive the filter, the rank-correlation
+    statistic is unstable, so ``rho_fe`` is emitted as NaN with
+    ``saturation_too_aggressive: True`` so the analyzer can flag the
+    cell rather than report a noise spike.
     """
     out: dict[str, Any] = {}
+    # ROUND-3/#509 G2: per-pair saturation exclusion BEFORE any statistic.
+    # See ``_saturated_pair_mask`` for the floor criterion; non-finite
+    # entries are also dropped here. ``out["n_excluded_saturated"]`` is
+    # always populated (0 when no pairs are dropped) so the analyzer can
+    # surface it uniformly across cells.
+    saturated_mask = _saturated_pair_mask(x)
+    n_excluded_saturated = int(saturated_mask.sum())
+    out["n_excluded_saturated"] = n_excluded_saturated
+    if n_excluded_saturated > 0:
+        keep = ~saturated_mask
+        x = x[keep]
+        y = y[keep]
+        strata = strata[keep] if strata is not None else None
+        if se is not None:
+            se = se[keep]
+        if prior_z is not None:
+            prior_z = prior_z[keep]
+    if len(x) < _MIN_SURVIVING_PAIRS:
+        # Saturation removed too many pairs to compute a stable
+        # rank-correlation statistic. Emit NaN + the diagnostic flag.
+        out["saturation_too_aggressive"] = True
+        out["rho_pooled"] = float("nan")
+        out["rho_fe"] = float("nan")
+        out["rho_double_fe"] = float("nan")
+        out["reliability_y"] = float("nan")
+        out["rho_pooled_adj"] = float("nan")
+        out["rho_fe_adj"] = float("nan")
+        out["loco_r2"] = float("nan")
+        if run_permutation:
+            out["perm_p_fe"] = float("nan")
+        if run_bootstrap:
+            out["ci_lo_fe"] = float("nan")
+            out["ci_hi_fe"] = float("nan")
+            out["jackknife_se_fe"] = float("nan")
+        out["n"] = len(x)
+        return out
+
     rho_pooled = _spearman_rho(x, y)
     # ROUND-2/#509 FIX F3: Plan §4.1.5 regression D specifies the FE
     # statistic as the partial Spearman ``ρ(x | s, y | s)`` — BOTH x and

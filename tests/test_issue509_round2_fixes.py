@@ -237,8 +237,12 @@ def test_f3_partial_spearman_residualizes_x_and_y():
 
     # 2 strata × 5 cells. Within each stratum, y = x (perfect rank correlation).
     # Across strata, x and y have different means (between-stratum noise).
-    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 10.0, 11.0, 12.0, 13.0, 14.0])
-    y = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 100.0, 101.0, 102.0, 103.0, 104.0])
+    # Note: x values are kept strictly above 1e-6 to avoid the round-3 G2
+    # per-pair saturation filter dropping pairs in ``_score_one_cell``.
+    # The F3 statistic itself is unaffected — this test validates partial-
+    # Spearman residualization, not the saturation-exclusion path.
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 11.0, 12.0, 13.0, 14.0, 15.0])
+    y = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 101.0, 102.0, 103.0, 104.0, 105.0])
     strata = np.array(["A"] * 5 + ["B"] * 5)
 
     out = scoring._score_one_cell(
@@ -259,7 +263,7 @@ def test_f3_partial_spearman_residualizes_x_and_y():
     # ranks happen to be monotone here too (both x and y go up across
     # strata), so rho_pooled is also ~1.0 — that's a known degenerate case.
     # The discriminating case: re-order y within stratum B to be reversed.
-    y2 = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 104.0, 103.0, 102.0, 101.0, 100.0])
+    y2 = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 105.0, 104.0, 103.0, 102.0, 101.0])
     out2 = scoring._score_one_cell(
         x=x,
         y=y2,
@@ -282,8 +286,10 @@ def test_f3_partial_spearman_residualizes_x_and_y():
     # stratum but very different magnitudes between strata. y has a
     # within-stratum signal. Residualizing only y leaves x's between-
     # stratum scale dominating the rank correlation; residualizing both
-    # gives the correct within-stratum-only answer.
-    x_disc = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 100.0, 100.1, 100.2, 100.3, 100.4])
+    # gives the correct within-stratum-only answer. x values are bumped
+    # above the round-3 G2 saturation floor (1e-6) for the same reason
+    # as above.
+    x_disc = np.array([1.0, 1.1, 1.2, 1.3, 1.4, 100.0, 100.1, 100.2, 100.3, 100.4])
     # y_disc: small within-stratum noise + same between-stratum scale.
     y_disc = np.array([5.0, 4.0, 3.0, 2.0, 1.0, 5.0, 4.0, 3.0, 2.0, 1.0])
     # Within-stratum: x ascending, y descending → ρ_fe should be ~-1.0.
