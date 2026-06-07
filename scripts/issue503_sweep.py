@@ -132,6 +132,16 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
         action="store_true",
         help="Skip the final regression phase.",
     )
+    parser.add_argument(
+        "--skip-missing-adapter",
+        action="store_true",
+        help=(
+            "Round-6 GAP-5: forward --skip-missing-adapter to the per-source "
+            "issue503_cross_eval.py subprocess so cells whose adapter never "
+            "trained (e.g. failed Bucket D selectors) record a deviation and "
+            "skip rather than crashing the whole sweep."
+        ),
+    )
     args = parser.parse_args()
 
     from explore_persona_space.experiments.issue503.behaviors import (
@@ -209,6 +219,8 @@ def main() -> int:  # noqa: C901 — dispatcher with argument-parser branches, i
                 # sweep level (smoke parity bug).
                 if args.skip_kl:
                     cmd += ["--skip-kl"]
+                if args.skip_missing_adapter:
+                    cmd += ["--skip-missing-adapter"]
                 if args.bucket is not None:
                     cmd += ["--bucket", args.bucket]
                 subprocess.run(cmd, env=env, check=True, cwd=PROJECT_ROOT)

@@ -154,6 +154,18 @@ def main() -> int:
             "kl_secondary_dv."
         ),
     )
+    parser.add_argument(
+        "--skip-missing-adapter",
+        action="store_true",
+        help=(
+            "Round-6 GAP-5 graceful path: when the HF snapshot_download cannot "
+            "find the adapter subfolder (training failed or never ran), write a "
+            "deviation marker to ``eval_results/issue503/cross_eval/<source>_seed"
+            "<seed>/_missing_adapter.json`` and exit 0 instead of crashing. The "
+            "sweep records this as a per-cell deviation but the rest of the "
+            "Bucket runs unaffected."
+        ),
+    )
     args = parser.parse_args()
 
     from explore_persona_space.experiments.issue503.behaviors import (
@@ -210,12 +222,58 @@ def main() -> int:
             raise ValueError(
                 "--adapter-path looks like an HF repo id but --adapter-subfolder is unset"
             )
-        adapter_path = snapshot_download(
-            repo_id=args.adapter_path,
-            allow_patterns=[f"{args.adapter_subfolder}/*"],
-        )
-        adapter_path = str(Path(adapter_path) / args.adapter_subfolder)
-        logger.info("Downloaded adapter to %s", adapter_path)
+        try:
+            adapter_path = snapshot_download(
+                repo_id=args.adapter_path,
+                allow_patterns=[f"{args.adapter_subfolder}/*"],
+            )
+            adapter_path_final = Path(adapter_path) / args.adapter_subfolder
+            # snapshot_download succeeds even when allow_patterns matches zero
+            # files (returns the repo root). Verify the adapter subfolder is
+            # actually populated; an empty dir == missing adapter.
+            if not adapter_path_final.exists() or not any(adapter_path_final.iterdir()):
+                raise FileNotFoundError(
+                    f"adapter subfolder {args.adapter_subfolder!r} is empty or absent in "
+                    f"{args.adapter_path!r}; snapshot_download returned no matching files"
+                )
+            adapter_path = str(adapter_path_final)
+            logger.info("Downloaded adapter to %s", adapter_path)
+        except Exception as exc:
+            # Round-6 GAP-5: gracefully skip cells whose adapter wasn't trained.
+            # The sweep drives sources like Bucket D (D0_random/D1_representation
+            # /...) where training may have failed; without this branch the
+            # downstream vLLM load crashes on missing adapter_config.json and
+            # all downstream cells go with it.
+            if not args.skip_missing_adapter:
+                raise
+            from explore_persona_space.experiments.issue503.cross_eval import (
+                cross_eval_dir,
+            )
+
+            out_dir = cross_eval_dir(PROJECT_ROOT, args.source, args.seed)
+            out_dir.mkdir(parents=True, exist_ok=True)
+            (out_dir / "_missing_adapter.json").write_text(
+                json.dumps(
+                    {
+                        "source": args.source,
+                        "seed": args.seed,
+                        "adapter_repo": args.adapter_path,
+                        "adapter_subfolder": args.adapter_subfolder,
+                        "reason": "snapshot_download failed or returned empty",
+                        "exception": str(exc),
+                    },
+                    indent=2,
+                )
+            )
+            logger.warning(
+                "Adapter missing for source=%s seed=%d (subfolder=%s); skipping cell. "
+                "Deviation written to %s/_missing_adapter.json",
+                args.source,
+                args.seed,
+                args.adapter_subfolder,
+                out_dir,
+            )
+            return 0
 
     if not args.skip_generation:
         logger.info(
